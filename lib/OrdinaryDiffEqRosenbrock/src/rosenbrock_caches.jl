@@ -8,7 +8,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
     u::uType
     uprev::uType
     dense::Array{rateType, 1}
-    duw::Vector{rateType}
+    dus::Vector{rateType}
     ks::Array{rateType, 1}
     fsalfirst::rateType
     fsallast::rateType
@@ -957,47 +957,6 @@ struct Rosenbrock5ConstantCache{TF, UF, Tab, JType, WType, F} <: OrdinaryDiffEqC
     linsolve::F
 end
 
-@cache mutable struct Rosenbrock5Cache{
-    uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter} <:
-                      RosenbrockMutableCache
-    u::uType
-    uprev::uType
-    dense1::rateType
-    dense2::rateType
-    dense3::rateType
-    du::rateType
-    du1::rateType
-    du2::rateType
-    k1::rateType
-    k2::rateType
-    k3::rateType
-    k4::rateType
-    k5::rateType
-    k6::rateType
-    k7::rateType
-    k8::rateType
-    fsalfirst::rateType
-    fsallast::rateType
-    dT::rateType
-    J::JType
-    W::WType
-    tmp::rateType
-    atmp::uNoUnitsType
-    weight::uNoUnitsType
-    tab::TabType
-    tf::TFType
-    uf::UFType
-    linsolve_tmp::rateType
-    linsolve::F
-    jac_config::JCType
-    grad_config::GCType
-    reltol::RTolType
-    alg::A
-    step_limiter!::StepLimiter
-    stage_limiter!::StageLimiter
-end
-
 function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -1042,8 +1001,7 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rosenbrock5Cache(u, uprev, dense[1], dense[2], dense[3], dus[1], dus[2], dus[3], ks[1], 
-        ks[2], ks[3], ks[4], ks[5], ks[6], ks[7], ks[8],
+    RosenbrockCache(u, uprev, dense, dus, ks,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
@@ -1109,7 +1067,7 @@ function alg_cache(
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rosenbrock5Cache(u, uprev, dense, dus, ks,
+    RosenbrockCache(u, uprev, dense, dus, ks,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
