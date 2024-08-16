@@ -1227,7 +1227,7 @@ end
     f(cache.fsalfirst, uprev, p, t)
     integrator.stats.nf += 1
 
-    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+    calc_rosenbrock_differentiation!(integrator, cache, dtd[1], dtgamma, repeat_step, true)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
@@ -1248,7 +1248,7 @@ end
         integrator.stats.nsolve += 1
 
         # Update u
-        u .+= sum(a[i][j] * ks[j] for j in 1:i)
+        u .+= a[i][1] * ks[1]
 
         stage_limiter!(u, integrator, p, t + c[i] * dt)
         f(du, u, p, t + c[i] * dt)
@@ -1256,9 +1256,9 @@ end
 
         # Prepare linsolve_tmp
         if mass_matrix === I
-            @.. linsolve_tmp=dus[1] + sum(dtC[i][j] * ks[j] for j in 1:i) + dtd[i] * dT
+            @.. linsolve_tmp=dus[1] + dtC[i][1] * ks[1] + dtd[i] * dT
         else
-            @.. dus[2]=sum(dtC[i][j] * ks[j] for j in 1:i)
+            @.. dus[2]= dtC[i][1] * ks[1]
             mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
             @.. linsolve_tmp=dus[1] + dus[3] + dtd[i] * dT
         end
