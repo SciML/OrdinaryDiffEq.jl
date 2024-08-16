@@ -1691,159 +1691,42 @@ end
         integrator.opts.abstol, integrator.opts.reltol,
         integrator.opts.internalnorm, t)
 
-    if repeat_step
-        linres = dolinsolve(
-            integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-            du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma))
-    else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-            du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma))
+    for i in 1:8
+        if i == 1 && repeat_step
+            linres = dolinsolve(
+                integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
+                du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
+                solverdata = (; gamma = dtgamma))
+        else
+            linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
+                du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
+                solverdata = (; gamma = dtgamma))
+        end
+
+        vecu = _vec(linres.u)
+        veck = _vec(ks[i])
+
+        @.. broadcast=false veck=-vecu
+        integrator.stats.nsolve += 1
+
+        @.. broadcast=false u=uprev + sum(a[i, j] * ks[j] for j in 1:i-1)
+        stage_limiter!(u, integrator, p, t + c[i] * dt)
+        f(du, u, p, t + c[i] * dt)
+        integrator.stats.nf += 1
+
+        if mass_matrix === I
+            @.. broadcast=false linsolve_tmp=dus[1] + dtd[i] * dT + sum(dtC[i, j] * ks[j] for j in 1:i-1)
+        else
+            @.. broadcast=false dus[2]=sum(dtC[i, j] * ks[j] for j in 1:i-1)
+            mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
+            @.. broadcast=false linsolve_tmp=dus[1] + dtd[i] * dT + dus[3]
+        end
+
+        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+        integrator.stats.nsolve += 1
     end
 
-    vecu = _vec(linres.u)
-    veck1 = _vec(ks[2])
-
-    @.. broadcast=false veck1=-vecu
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + a[2][1] * ks[1]
-    stage_limiter!(u, integrator, p, t + c[2] * dt)
-    f(du, u, p, t + c[2] * dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=dus[1] + dtd[2] * dT + dtC[2][1] * ks[1]
-    else
-        @.. broadcast=false dus[2]=dtC[2][1] * ks[1]
-        mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
-        @.. broadcast=false linsolve_tmp=dus[1] + dtd[2] * dT + dus[3]
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    veck2 = _vec(ks[2])
-    @.. broadcast=false veck2=-vecu
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + a[3][1] * ks[1] + a[3][2] * ks[2]
-    stage_limiter!(u, integrator, p, t + c[3] * dt)
-    f(du, u, p, t + c[3] * dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=dus[1] + dtd[3] * dT + (dtC[3][1] * ks[1] + dtC[3][2] * ks[2])
-    else
-        @.. broadcast=false dus[2]=dtC[3][1] * ks[1] + dtC[3][2] * ks[2]
-        mul!(_vec(du2), mass_matrix, _vec(dus[2]))
-        @.. broadcast=false linsolve_tmp=dus[1] + dtd[3] * dT + dus[3]
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    veck3 = _vec(ks[3])
-    @.. broadcast=false veck3=-vecu
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + a[4][1] * ks[1] + a[4][2] * ks[2] + a[4][3] * ks[3]
-    stage_limiter!(u, integrator, p, t + c[4] * dt)
-    f(du, u, p, t + c[4] * dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=dus[1] + dtd[4] * dT +
-                                         (dtC[4][1] * ks[1] + dtC[4][2] * ks[2] + dtC[4][3] * ks[3])
-    else
-        @.. broadcast=false dus[2]=dtC[4][1] * ks[1] + dtC[4][2] * ks[2] + dtC[4][3] * ks[3]
-        mul!(_vec(du2), mass_matrix, _vec(dus[2]))
-        @.. broadcast=false linsolve_tmp=dus[1] + dtd[4] * dT + dus[3]
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    veck4 = _vec(ks[4])
-    @.. broadcast=false veck4=-vecu
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + a[5][1] * ks[1] + a[5][2] * ks[2] + a[5][3] * ks[3] + a[5][4] * ks[4]
-    stage_limiter!(u, integrator, p, t + c[5] * dt)
-    f(du, u, p, t + c[5] * dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=dus[1] + dtd[5] * dT +
-                                         (dtC[5][2] * ks[2] + dtC[5][4] * ks[4] + dtC[5][1] * ks[1] + dtC[5][3] * ks[3])
-    else
-        @.. broadcast=false du1=dtC[5][2] * ks[2] + dtC[5][4] * ks[4] + dtC[5][1] * ks[1] + dtC[5][3] * ks[3]
-        mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
-        @.. broadcast=false linsolve_tmp=dus[1] + dtd[5] * dT + dus[3]
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    veck5 = _vec(ks[5])
-    @.. broadcast=false veck5=-vecu
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + a[6][1] * ks[1] + a[6][2] * ks[2] + a[6][3] * ks[3] + a[6][4] * ks[4] + a[6][5] * ks[5]
-    stage_limiter!(u, integrator, p, t + dt)
-    f(du, u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du + (dtC[6][1] * ks[1] + dtC[6][2] * ks[2] + dtC[6][3] * ks[3] +
-                                          dtC[6][4] * ks[4] + dtC[6][5] * ks[5])
-    else
-        @.. broadcast=false du1=dtC[6][1] * ks[1] + dtC[6][2] * ks[2] + dtC[6][3] * ks[3] + dtC[6][4] * ks[4] +
-                                dtC[6][5] * ks[5]
-        mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
-        @.. broadcast=false linsolve_tmp=du + dus[3]
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    veck6 = _vec(ks[6])
-    @.. broadcast=false veck6=-vecu
-    integrator.stats.nsolve += 1
-
-    u .+= ks[6]
-    stage_limiter!(u, integrator, p, t + dt)
-    f(du, u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=dus[1] + (dtC[7][1] * ks[1] + dtC[7][2] * ks[2] + dtC[7][3] * ks[3] +
-                                          dtC[7][4] * ks[4] + dtC[7][5] * ks[5] + dtC[7][6] * ks[6])
-    else
-        @.. broadcast=false du1=dtC[7][1] * ks[1] + dtC[7][2] * ks[2] + dtC[7][3] * ks[3] + dtC[7][4] * ks[4] +
-                                dtC[7][5] * ks[5] + dtC[7][6] * ks[6]
-        mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
-        @.. broadcast=false linsolve_tmp=du + dus[3]
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    veck7 = _vec(ks[7])
-    @.. broadcast=false veck7=-vecu
-    integrator.stats.nsolve += 1
-
-    u .+= ks[7]
-    f(du, u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=dus[1] + (dtC[8][1] * ks[1] + dtC[8][2] * ks[2] + dtC[8][3] * ks[3] +
-                                          dtC[8][4] * ks[4] + dtC[8][5] * ks[5] + dtC[8][6] * ks[6] + dtC[8][7] * ks[7])
-    else
-        @.. broadcast=false du1=dtC[8][1] * ks[1] + dtC[8][2] * ks[2] + dtC[8][3] * ks[3] + dtC[8][4] * ks[4] +
-                                dtC[8][5] * ks[5] + dtC[8][6] * ks[6] + dtC[8][7] * ks[7]
-        mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
-        @.. broadcast=false linsolve_tmp=dus[1] + dus[3]
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    veck8 = _vec(ks[8])
-    @.. broadcast=false veck8=-vecu
-    integrator.stats.nsolve += 1
-
-    dus[1] .= ks[8]
     u .+= ks[8]
-
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
