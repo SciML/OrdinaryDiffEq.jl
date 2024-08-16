@@ -1244,11 +1244,11 @@ end
                 solverdata = (; gamma = dtgamma))
         end
 
-        @.. $(_vec(ks[i]))=-linres.u
+        @.. broadcast=false $(_vec(ks[i]))=-linres.u
         integrator.stats.nsolve += 1
 
         # Update u
-        u .+= a[i][1] * ks[1]
+        u .+= sum(a[i][j] * ks[j] for j in 1:i)
 
         stage_limiter!(u, integrator, p, t + c[i] * dt)
         f(du, u, p, t + c[i] * dt)
@@ -1256,11 +1256,11 @@ end
 
         # Prepare linsolve_tmp
         if mass_matrix === I
-            @.. linsolve_tmp=dus[1] + dtC[i][1] * ks[1] + dtd[i] * dT
+            @.. broadcast=false linsolve_tmp=dus[1] + sum(dtC[i][j] * ks[j] for j in 1:i) + dtd[i] * dT
         else
-            @.. dus[2]= dtC[i][1] * ks[1]
+            @.. broadcast=false dus[2]=sum(dtC[i][j] * ks[j] for j in 1:i)
             mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
-            @.. linsolve_tmp=dus[1] + dus[3] + dtd[i] * dT
+            @.. broadcast=false linsolve_tmp=dus[1] + dus[3] + dtd[i] * dT
         end
 
         linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
