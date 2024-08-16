@@ -1,3 +1,33 @@
+function implicit_rk_docstring(description::String,
+    name::String;
+    references::String = "",
+    extra_keyword_description::String = "",
+    extra_keyword_default::String = "")
+    keyword_default = """
+    chunk_size = Val{0}(),
+    autodiff = true,
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    """ * extra_keyword_default
+
+    keyword_default_description = """
+    - `chunk_size`: TBD
+    - `autodiff`: TBD
+    - `standardtag`: TBD
+    - `concrete_jac`: TBD
+    - `diff_type`: TBD
+    - `linsolve`: TBD
+    - `precs`: TBD
+    """ * extra_keyword_description
+
+    generic_solver_docstring(
+        description, name, "Fully-Implicit Runge-Kutta Method.", references,
+        keyword_default_description, keyword_default
+    )
+end
 # FIRK Methods
 
 """
@@ -102,11 +132,10 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         step_limiter!)
 end
 
-@doc generic_solver_docstring("An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
+@doc implicit_rk_docstring("An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
     Similar to Hairer's SEULEX.",
-    "RadauIIA9",
-    "Fully-Implicit Runge-Kutta Method.",
-    "@article{hairer1999stiff,
+    "RadauIIA9";
+    references = """@article{hairer1999stiff,
     title={Stiff differential equations solved by Radau methods},
     author={Hairer, Ernst and Wanner, Gerhard},
     journal={Journal of Computational and Applied Mathematics},
@@ -114,15 +143,8 @@ end
     number={1-2},
     pages={93--111},
     year={1999},
-    publisher={Elsevier}}",
-    """
-    - `chunk_size`: TBD
-    - `autodiff`: TBD
-    - `standardtag`: TBD
-    - `concrete_jac`: TBD
-    - `diff_type`: TBD
-    - `linsolve`: TBD
-    - `precs`: TBD
+    publisher={Elsevier}}""",
+    extra_keyword_description = """
     - `extrapolant`: TBD
     - `fast_convergence_cutoff`: TBD
     - `new_W_γdt_cutoff`: TBD
@@ -130,16 +152,8 @@ end
     - `κ`: TBD
     - `maxiters`: TBD
     - `smooth_est`: TBD
-    - `step_limiter!`: TBD
-    """,
-    """
-    chunk_size = Val{0}(),
-    autodiff = true,
-    standardtag = Val{true}(),
-    concrete_jac = nothing,
-    diff_type = Val{:forward},
-    linsolve = nothing,
-    precs = DEFAULT_PRECS,
+    - `step_limiter!`: TBD""",
+    extra_keyword_default = """
     extrapolant = :dense,
     fast_convergence_cutoff = 1 // 5,
     new_W_γdt_cutoff = 1 // 5,
