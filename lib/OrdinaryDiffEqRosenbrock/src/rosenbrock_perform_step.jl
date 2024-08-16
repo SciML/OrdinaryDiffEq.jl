@@ -1210,150 +1210,31 @@ function initialize!(integrator, cache::RosenbrockConstantCache)
     integrator.k[2] = zero(integrator.u)
 end
 
-@muladd function perform_step!(integrator, cache::RosenbrockConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tf, uf = cache
-    @unpack a, C, gamma, c, d = cache.tab
-
-    # Precalculations
-    dtC = C ./ dt
-    dtd = dt .* d
-    dtgamma = dt * gamma
-
-    mass_matrix = integrator.f.mass_matrix
-
-    # Time derivative
-    tf.u = uprev
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtgamma, repeat_step, true)
-    if !issuccess_W(W)
-        integrator.EEst = 2
-        return nothing
-    end
-
-    du = f(uprev, p, t)
-    integrator.stats.nf += 1
-
-    linsolve_tmp = du + dtd[1] * dT
-
-    k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a[2][1] * k1
-    du = f(u, p, t + c[2] * dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + dtd[2] * dT + dtC[2][1] * k1
-    else
-        linsolve_tmp = du + dtd[2] * dT + mass_matrix * (dtC[2][1] * k1)
-    end
-
-    k2 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a[3][1] * k1 + a[3][2] * k2
-    du = f(u, p, t + c[3] * dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + dtd[3] * dT + (dtC[3][1] * k1 + dtC[3][2] * k2)
-    else
-        linsolve_tmp = du + dtd[3] * dT + mass_matrix * (dtC[3][1] * k1 + dtC[3][2] * k2)
-    end
-
-    k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a[4][1] * k1 + a[4][2] * k2 + a[4][3] * k3
-    du = f(u, p, t + c[4] * dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + dtd[4] * dT + (dtC[4][1] * k1 + dtC[4][2] * k2 + dtC[4][3] * k3)
-    else
-        linsolve_tmp = du + dtd[4] * dT + mass_matrix * (dtC[4][1] * k1 + dtC[4][2] * k2 + dtC[4][3] * k3)
-    end
-
-    k4 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a[5][1] * k1 + a[5][2] * k2 + a[5][3] * k3 + a[5][4] * k4
-    du = f(u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + (dtC[5][2] * k2 + dtC[5][4] * k4 + dtC[5][1] * k1 + dtC[5][3] * k3)
-    else
-        linsolve_tmp = du +
-                       mass_matrix * (dtC[5][2] * k2 + dtC[5][4] * k4 + dtC[5][1] * k1 + dtC[5][3] * k3)
-    end
-
-    k5 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = u + k5
-    du = f(u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + (dtC[6][1] * k1 + dtC[6][2] * k2 + dtC[6][5] * k5 + dtC[6][4] * k4 + dtC[6][3] * k3)
-    else
-        linsolve_tmp = du +
-                       mass_matrix *
-                       (dtC[6][1] * k1 + dtC[6][2] * k2 + dtC[6][5] * k5 + dtC[6][4] * k4 + dtC[6][3] * k3)
-    end
-
-    k6 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = u + k6
-
-    if integrator.opts.adaptive
-        atmp = calculate_residuals(k6, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-
-    if integrator.opts.calck
-        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        integrator.k[1] = h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5
-        integrator.k[2] = h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 + h35 * k5
-    end
-    integrator.u = u
-    return nothing
-end
-
-function initialize!(integrator, cache::RosenbrockCache)
-    integrator.kshortsize = 2
-    @unpack dense = cache
-    resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = dense[1]
-    integrator.k[2] = dense[2]
-end
-
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack dus, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
-    @unpack a, C, gamma, c, d = cache.tab
+    @unpack a, C, gamma, c, d, h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
 
     # Assignments
     sizeu = size(u)
-    uidx = eachindex(integrator.uprev)
     mass_matrix = integrator.f.mass_matrix
 
-    # Precalculations
+    #Precalculations
     dtC = C ./ dt
     dtd = dt .* d
     dtgamma = dt * gamma
 
-    f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
+    f(cache.fsalfirst, uprev, p, t)
     integrator.stats.nf += 1
 
-    calc_rosenbrock_differentiation!(integrator, cache, dtd[1], dtgamma, repeat_step, true)
+    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
         integrator.opts.internalnorm, t)
 
     for i in 1:6
-        # Choose appropriate matrices depending on the step
-        if repeat_step
+        if i == 1 && repeat_step
             linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
                 du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
                 solverdata = (; gamma = dtgamma))
@@ -1363,33 +1244,29 @@ end
                 solverdata = (; gamma = dtgamma))
         end
 
-        @.. broadcast=false $(_vec(ks[i])) = -linres.u
+        @.. broadcast=false $(_vec(ks[i]))=-linres.u
         integrator.stats.nsolve += 1
 
-        # Update u for the current step
-        u .+= a[i+1, 1:i] * ks[1:i]
-        stage_limiter!(u, integrator, p, t + c[i+1] * dt)
-        f(du, u, p, t + c[i+1] * dt)
+        # Update u
+        u .+= sum(a[i][j] * ks[j] for j in 1:i)
+
+        stage_limiter!(u, integrator, p, t + c[i] * dt)
+        f(du, u, p, t + c[i] * dt)
         integrator.stats.nf += 1
 
+        # Prepare linsolve_tmp
         if mass_matrix === I
-            @.. broadcast=false linsolve_tmp = dus[1] + dtd[i+1] * dT + sum(dtC[i+1, 1:i] .* ks[1:i])
+            @.. broadcast=false linsolve_tmp=dus[1] + sum(dtC[i][j] * ks[j] for j in 1:i) + dtd[i] * dT
         else
-            @.. broadcast=false dus[2] = sum(dtC[i+1, 1:i] .* ks[1:i])
+            @.. broadcast=false dus[2]=sum(dtC[i][j] * ks[j] for j in 1:i)
             mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
-            @.. broadcast=false linsolve_tmp = dus[1] + dtd[i+1] * dT + dus[3]
+            @.. broadcast=false linsolve_tmp=dus[1] + dus[3] + dtd[i] * dT
         end
 
         linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-        @.. broadcast=false $(_vec(ks[i])) = -linres.u
-        integrator.stats.nsolve += 1
-
-        # Final update for u after all steps
-        if i == 6
-            u .+= ks[i]
-            step_limiter!(u, integrator, p, t + dt)
-        end
     end
+
+    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         calculate_residuals!(atmp, ks[6], uprev, u, integrator.opts.abstol,
@@ -1398,9 +1275,10 @@ end
     end
 
     if integrator.opts.calck
-        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        @.. broadcast=false integrator.k[1] = h21 * ks[1] + h22 * ks[2] + h23 * ks[3] + h24 * ks[4] + h25 * ks[5]
-        @.. broadcast=false integrator.k[2] = h31 * ks[1] + h32 * ks[2] + h33 * ks[3] + h34 * ks[4] + h35 * ks[5]
+        @.. broadcast=false integrator.k[1]=h21 * ks[1] + h22 * ks[2] + h23 * ks[3] + h24 * ks[4] +
+                                            h25 * ks[5]
+        @.. broadcast=false integrator.k[2]=h31 * ks[1] + h32 * ks[2] + h33 * ks[3] + h34 * ks[4] +
+                                            h35 * ks[5]
     end
     cache.linsolve = linres.cache
 end
@@ -1640,10 +1518,7 @@ end
         @.. broadcast=false veck=-vecu
         integrator.stats.nsolve += 1
 
-        @..  u=uprev
-        for j in 1:i-1
-            @.. u  += a[i, j] * ks[j]
-       end
+        @.. broadcast=false u=uprev + sum(a[i, j] * ks[j] for j in 1:i-1)
         stage_limiter!(u, integrator, p, t + c[i] * dt)
         f(du, u, p, t + c[i] * dt)
         integrator.stats.nf += 1
@@ -1651,10 +1526,7 @@ end
         if mass_matrix === I
             @.. broadcast=false linsolve_tmp=dus[1] + dtd[i] * dT + sum(dtC[i, j] * ks[j] for j in 1:i-1)
         else
-            @.. dus[2] = dtC[i, 1] * ks[1] 
-            for j in 2:i-1
-                @..  dus[2] += dtC[i, j] * ks[j] 
-           end
+            @.. broadcast=false dus[2]=sum(dtC[i, j] * ks[j] for j in 1:i-1)
             mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
             @.. broadcast=false linsolve_tmp=dus[1] + dtd[i] * dT + dus[3]
         end
