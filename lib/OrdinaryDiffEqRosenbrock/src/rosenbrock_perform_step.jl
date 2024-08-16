@@ -1709,7 +1709,10 @@ end
         @.. broadcast=false veck=-vecu
         integrator.stats.nsolve += 1
 
-        @.. broadcast=false u=uprev + sum(a[i, j] * ks[j] for j in 1:i-1)
+        @..  u=uprev
+        for j in 1:i-1
+            @.. u  += a[i, j] * ks[j]
+       end
         stage_limiter!(u, integrator, p, t + c[i] * dt)
         f(du, u, p, t + c[i] * dt)
         integrator.stats.nf += 1
