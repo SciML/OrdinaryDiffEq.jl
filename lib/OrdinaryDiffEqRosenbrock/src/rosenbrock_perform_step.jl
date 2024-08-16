@@ -1720,7 +1720,10 @@ end
         if mass_matrix === I
             @.. broadcast=false linsolve_tmp=dus[1] + dtd[i] * dT + sum(dtC[i, j] * ks[j] for j in 1:i-1)
         else
-            @.. broadcast=false dus[2]=sum(dtC[i, j] * ks[j] for j in 1:i-1)
+            @.. dus[2] = dtC[i, 1] * ks[1] 
+            for j in 2:i-1
+                @..  dus[2] += dtC[i, j] * ks[j] 
+           end
             mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
             @.. broadcast=false linsolve_tmp=dus[1] + dtd[i] * dT + dus[3]
         end
