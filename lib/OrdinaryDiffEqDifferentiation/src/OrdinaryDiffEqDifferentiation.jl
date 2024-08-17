@@ -51,7 +51,6 @@ else
     struct OrdinaryDiffEqTag end
 end
 
-include("utils.jl")
 include("alg_utils.jl")
 include("linsolve_utils.jl")
 include("derivative_utils.jl")
