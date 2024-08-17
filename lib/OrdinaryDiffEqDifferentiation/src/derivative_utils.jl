@@ -922,7 +922,29 @@ function LinearSolve.init_cacheval(
         assumptions::OperatorAssumptions)
 end
 
-for alg in subtypes(LinearSolve.AbstractFactorization)
+for alg in [LinearSolve.AppleAccelerateLUFactorization,
+             LinearSolve.BunchKaufmanFactorization,
+             LinearSolve.CHOLMODFactorization,
+             LinearSolve.CholeskyFactorization,
+             LinearSolve.CudaOffloadFactorization,
+             LinearSolve.DiagonalFactorization,
+             LinearSolve.FastLUFactorization,
+             LinearSolve.FastQRFactorization,
+             LinearSolve.GenericFactorization,
+             LinearSolve.GenericLUFactorization,
+             LinearSolve.KLUFactorization,
+             LinearSolve.LDLtFactorization,
+             LinearSolve.LUFactorization,
+             LinearSolve.MKLLUFactorization,
+             LinearSolve.MetalLUFactorization,
+             LinearSolve.NormalBunchKaufmanFactorization,
+             LinearSolve.NormalCholeskyFactorization,
+             LinearSolve.QRFactorization,
+             LinearSolve.RFLUFactorization,
+             LinearSolve.SVDFactorization,
+             LinearSolve.SimpleLUFactorization,
+             LinearSolve.SparspakFactorization,
+             LinearSolve.UMFPACKFactorization]
     @eval function LinearSolve.init_cacheval(alg::$alg, A::WOperator, b, u, Pl, Pr,
             maxiters::Int, abstol, reltol, verbose::Bool,
             assumptions::OperatorAssumptions)
