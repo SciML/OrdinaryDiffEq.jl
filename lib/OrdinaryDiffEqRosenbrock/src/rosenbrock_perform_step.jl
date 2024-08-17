@@ -1527,7 +1527,7 @@ end
         else
             @.. dus[2]=dtC[i, j] * ks[j]
             mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
-            @.. broadcast=false linsolve_tmp=dus[1] + dtd[i] * dT + dus[3]
+            @.. linsolve_tmp=dus[1] + dtd[i] * dT + dus[3]
         end
 
         linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
