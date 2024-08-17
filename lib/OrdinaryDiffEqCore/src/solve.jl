@@ -469,6 +469,7 @@ function DiffEqBase.__init(
     reinitiailize = true
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
+    faslfirst, fsallast = get_fsalfirstlast(cache)
 
     integrator = ODEIntegrator{typeof(_alg), isinplace(prob), uType, typeof(du),
         tType, typeof(p),
@@ -494,7 +495,8 @@ function DiffEqBase.__init(
         last_event_error, accept_step,
         isout, reeval_fsal,
         u_modified, reinitiailize, isdae,
-        opts, stats, initializealg, differential_vars)
+        opts, stats, initializealg, differential_vars,
+        faslfirst, fsallast)
 
     if initialize_integrator
         if isdae || SciMLBase.has_initializeprob(prob.f)

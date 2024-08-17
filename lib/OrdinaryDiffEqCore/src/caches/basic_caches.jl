@@ -4,13 +4,16 @@ abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
+# Don't worry about the potential alloc on a constant cache
+get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache) = zero(cache.u), zero(cache.u)
+
 mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     caches::T
     choice_function::F
     current::Int
 end
 
-TruncatedStacktraces.@truncate_stacktrace CompositeCache 1
+get_fsalfirstlast(cache::CompositeCache) = get_fsalfirstlast(cache.caches[1])
 
 mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F} <: OrdinaryDiffEqCache
     args::A
@@ -28,12 +31,7 @@ mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F} <: OrdinaryDiffEqCache
     end
 end
 
-TruncatedStacktraces.@truncate_stacktrace DefaultCache 1
-
-if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
-    Base.Experimental.silence!(CompositeCache)
-    Base.Experimental.silence!(DefaultCache)
-end
+get_fsalfirstlast(cache::DefaultCache) = get_fsalfirstlast(cache.cache1)
 
 function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
