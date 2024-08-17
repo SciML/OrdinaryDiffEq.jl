@@ -1210,7 +1210,7 @@ function initialize!(integrator, cache::RosenbrockConstantCache)
     integrator.k[2] = zero(integrator.u)
 end
 
-@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack dus, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack a, C, gamma, c, d, h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
@@ -1256,9 +1256,9 @@ end
 
         # Prepare linsolve_tmp
         if mass_matrix === I
-            @.. broadcast=false linsolve_tmp=dus[1] + sum(dtC[i][j] * ks[j] for j in 1:i) + dtd[i] * dT
+            @.. linsolve_tmp=dus[1] + dtC[i][j] * ks[j] + dtd[i] * dT
         else
-            @.. broadcast=false dus[2]=sum(dtC[i][j] * ks[j] for j in 1:i)
+            @.. dus[2]=dtC[i][j] * ks[j]
             mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
             @.. broadcast=false linsolve_tmp=dus[1] + dus[3] + dtd[i] * dT
         end
