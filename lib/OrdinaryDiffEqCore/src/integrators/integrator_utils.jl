@@ -477,7 +477,7 @@ handle_callback_modifiers!(integrator::ODEIntegrator) = nothing
 
 function reset_fsal!(integrator)
     # Under these conditions, these algorithms are not FSAL anymore
-    increment_nf_fsal!(integrator.stats)
+    increment_nf!(integrator.stats, 1)
 
     # Ignore DAEs but they already re-ran initialization
     # Mass matrix DAEs do need to reset FSAL if available
@@ -495,10 +495,6 @@ function reset_fsal!(integrator)
 
     # Do not set false here so it can be checked in the algorithm
     # integrator.reeval_fsal = false
-end
-
-function increment_nf_fsal!(stats)
-    stats.nf += 1
 end
 
 function nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm)

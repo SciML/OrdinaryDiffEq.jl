@@ -12,7 +12,7 @@ function initialize!(integrator, cache::SymplecticEulerConstantCache)
     @muladd du = duprev + integrator.dt * kdu
     ku = integrator.f.f2(du, uprev, integrator.p, integrator.t)
     integrator.stats.nf2 += 1
-    integrator.stats.nf += 2
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
     integrator.fsalfirst = ArrayPartition((kdu, kuprev))
     integrator.fsallast = ArrayPartition((zero(kdu), ku))
 end
@@ -30,7 +30,7 @@ end
 
     ku = f.f2(du, u, p, t)
     integrator.stats.nf2 += 1
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((kdu, ku))
@@ -56,7 +56,7 @@ function initialize!(integrator, cache::SymplecticEulerCache)
     integrator.f.f2(kuprev, duprev, uprev, integrator.p, integrator.t)
     @muladd @.. broadcast=false du=duprev + integrator.dt * kdu
     integrator.f.f2(ku, du, uprev, integrator.p, integrator.t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 2
 end
 
@@ -70,7 +70,7 @@ end
     # Now actually compute the step
     # Do it at the end for interpolations!
     integrator.stats.nf2 += 1
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     f.f1(kdu, duprev, u, p, t)
     @.. broadcast=false du=duprev + dt * kdu
     f.f2(ku, du, u, p, t)
@@ -155,7 +155,7 @@ function initialize!(integrator,
     integrator.f.f1(integrator.k[2].x[1], duprev, uprev, integrator.p, integrator.t)
     verify_f2(integrator.f.f2, integrator.k[2].x[2], duprev, uprev, integrator.p,
         integrator.t, integrator, cache)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
 end
 
@@ -170,7 +170,7 @@ function initialize!(integrator,
     kdu = integrator.f.f1(duprev, uprev, integrator.p, integrator.t)
     ku = verify_f2(integrator.f.f2, duprev, uprev, integrator.p, integrator.t, integrator,
         cache)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
     integrator.fsallast = ArrayPartition((kdu, ku))
     integrator.k[2] = integrator.fsallast
@@ -191,7 +191,7 @@ end
     # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
     du = duprev + dt * (half * ku + half * kdu)
 
-    integrator.stats.nf += 2
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
     store_symp_state!(integrator, cache, du, u, kdu, du)
 end
 
@@ -206,7 +206,7 @@ end
     half = cache.half
     @.. broadcast=false u=uprev + dt * duprev + dtsq * (half * ku)
     f.f1(kdu, duprev, u, p, t + dt)
-    integrator.stats.nf += 2
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
     # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
     @.. broadcast=false du=duprev + dt * (half * ku + half * kdu)
 
@@ -234,7 +234,7 @@ end
     kdu = f.f1(du, u, p, tnew)
     ku = f.f2(du, u, p, tnew)
 
-    integrator.stats.nf += 3
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
     integrator.stats.nf2 += 2
     store_symp_state!(integrator, cache, du, u, kdu, ku)
 end
@@ -260,7 +260,7 @@ end
     f.f1(kdu, du, u, p, tnew)
     f.f2(ku, du, u, p, tnew)
 
-    integrator.stats.nf += 3
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
     integrator.stats.nf2 += 2
     store_symp_state!(integrator, cache, kdu, ku)
 end
@@ -294,7 +294,7 @@ end
     kdu = f.f1(du, u, p, tnew)
     ku = f.f2(du, u, p, tnew)
 
-    integrator.stats.nf += 4
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
     integrator.stats.nf2 += 3
     store_symp_state!(integrator, cache, du, u, kdu, ku)
 end
@@ -328,7 +328,7 @@ end
     f.f1(kdu, du, u, p, tnew)
     f.f2(ku, du, u, p, tnew)
 
-    integrator.stats.nf += 4
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
     integrator.stats.nf2 += 3
     store_symp_state!(integrator, cache, kdu, ku)
 end
@@ -370,7 +370,7 @@ end
     kdu = f.f1(du, u, p, tnew)
     ku = f.f2(du, u, p, tnew)
 
-    integrator.stats.nf += 5
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
     integrator.stats.nf2 += 4
     store_symp_state!(integrator, cache, du, u, kdu, ku)
 end
@@ -412,7 +412,7 @@ end
     f.f1(kdu, du, u, p, tnew)
     f.f2(ku, du, u, p, tnew)
 
-    integrator.stats.nf += 5
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
     integrator.stats.nf2 += 4
     store_symp_state!(integrator, cache, kdu, ku)
 end
@@ -462,11 +462,11 @@ end
     if alg isa McAte42
         du = du + dt * a5 * kdu
         kdu = f.f1(du, u, p, tnew)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
     ku = f.f2(du, u, p, tnew)
 
-    integrator.stats.nf += 5
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
     integrator.stats.nf2 += 5
     store_symp_state!(integrator, cache, du, u, kdu, ku)
 end
@@ -516,11 +516,11 @@ end
     if alg isa McAte42
         @.. broadcast=false du=du + dt * a5 * kdu
         f.f1(kdu, du, u, p, tnew)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
     f.f2(ku, du, u, p, tnew)
 
-    integrator.stats.nf += 5
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
     integrator.stats.nf2 += 5
     store_symp_state!(integrator, cache, kdu, ku)
 end
@@ -577,7 +577,7 @@ end
     kdu = f.f1(du, u, p, tnew)
     ku = f.f2(du, u, p, tnew)
 
-    integrator.stats.nf += 7
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
     integrator.stats.nf2 += 6
     store_symp_state!(integrator, cache, du, u, kdu, ku)
 end
@@ -634,7 +634,7 @@ end
     f.f1(kdu, du, u, p, tnew)
     f.f2(ku, du, u, p, tnew)
 
-    integrator.stats.nf += 7
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
     integrator.stats.nf2 += 6
     store_symp_state!(integrator, cache, kdu, ku)
 end
@@ -704,7 +704,7 @@ end
     # @.. broadcast=false du = du + dt*a8*kdu
     ku = f.f2(du, u, p, tnew)
 
-    integrator.stats.nf += 8
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
     integrator.stats.nf2 += 8
     store_symp_state!(integrator, cache, du, u, kdu, ku)
 end
@@ -774,7 +774,7 @@ end
     # @.. broadcast=false du = du + dt*a8*kdu
     f.f2(ku, du, u, p, tnew)
 
-    integrator.stats.nf += 8
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
     integrator.stats.nf2 += 8
     store_symp_state!(integrator, cache, kdu, ku)
 end
@@ -858,7 +858,7 @@ end
     # @.. broadcast=false du = du + dt*a10*kdu
     ku = f.f2(du, u, p, tnew)
 
-    integrator.stats.nf += 10
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 10)
     integrator.stats.nf2 += 10
     store_symp_state!(integrator, cache, du, u, kdu, ku)
 end
@@ -942,7 +942,7 @@ end
     # @.. broadcast=false du = du + dt*a10*kdu
     f.f2(ku, du, u, p, tnew)
 
-    integrator.stats.nf += 10
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 10)
     integrator.stats.nf2 += 10
     store_symp_state!(integrator, cache, kdu, ku)
 end
@@ -1068,7 +1068,7 @@ end
     # @.. broadcast=false du = du + dt*a16*kdu
     ku = f.f2(du, u, p, tnew)
 
-    integrator.stats.nf += 16
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 16)
     integrator.stats.nf2 += 16
     store_symp_state!(integrator, cache, du, u, kdu, ku)
 end
@@ -1195,7 +1195,7 @@ end
     # @.. broadcast=false du = du + dt*a16*kdu
     f.f2(ku, du, u, p, tnew)
 
-    integrator.stats.nf += 16
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 16)
     integrator.stats.nf2 += 16
     store_symp_state!(integrator, cache, kdu, ku)
 end
@@ -1336,7 +1336,7 @@ end
     # @.. broadcast=false du = du + dt*a18*kdu
     ku = f.f2(du, u, p, tnew)
 
-    integrator.stats.nf += 18
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 18)
     integrator.stats.nf2 += 18
     store_symp_state!(integrator, cache, du, u, kdu, ku)
 end
@@ -1477,7 +1477,7 @@ end
     # @.. broadcast=false du = du + dt*a18*kdu
     f.f2(ku, du, u, p, tnew)
 
-    integrator.stats.nf += 18
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 18)
     integrator.stats.nf2 += 18
     store_symp_state!(integrator, cache, kdu, ku)
 end
@@ -1748,7 +1748,7 @@ end
     # @.. broadcast=false du = du + dt*a30*kdu
     ku = f.f2(du, u, p, tnew)
 
-    integrator.stats.nf += 36
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 36)
     integrator.stats.nf2 += 36
     store_symp_state!(integrator, cache, du, u, kdu, ku)
 end
@@ -2019,7 +2019,7 @@ end
     # @.. broadcast=false du = du + dt*a30*kdu
     f.f2(ku, du, u, p, tnew)
 
-    integrator.stats.nf += 36
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 36)
     integrator.stats.nf2 += 36
     store_symp_state!(integrator, cache, kdu, ku)
 end

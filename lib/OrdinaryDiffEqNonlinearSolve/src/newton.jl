@@ -156,7 +156,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
 
     if DiffEqBase.has_stats(integrator)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
     # update W
@@ -195,7 +195,7 @@ end
     isdae = f isa DAEFunction
 
     if DiffEqBase.has_stats(integrator)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
     if isdae

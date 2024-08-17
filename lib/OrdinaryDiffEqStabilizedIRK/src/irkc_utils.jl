@@ -19,7 +19,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
         else
             fz = fsalfirst
             z = f(fz, p, t)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
     else
         z = cache.zprev
@@ -56,7 +56,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
             tmp = fz - cache.du₂
         else
             fz = f(z, p, t)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             tmp = fz - fsalfirst
         end
         Δ = integrator.opts.internalnorm(tmp, t)
@@ -122,7 +122,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
         else
             @.. broadcast=false fz=fsalfirst
             f(z, fz, p, t)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
     else
         @.. broadcast=false z=ccache.zprev
@@ -159,7 +159,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
             @.. broadcast=false atmp=fz - cache.du₂
         else
             f(fz, z, p, t)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             @.. broadcast=false atmp=fz - fsalfirst
         end
         Δ = integrator.opts.internalnorm(atmp, t)
