@@ -1239,9 +1239,9 @@ end
         integrator.stats.nf += 1
 
         if mass_matrix === I
-            linsolve_tmp = du + dtd[i] * dT + sum(dtC[i][j] * k[j] for j in 1:(i-1))
+            linsolve_tmp = du + dtd[i] * dT + dtC[i][j] * k[j]
         else
-            linsolve_tmp = du + dtd[i] * dT + mass_matrix * sum(dtC[i][j] * k[j] for j in 1:(i-1))
+            linsolve_tmp = du + dtd[i] * dT + mass_matrix * dtC[i][j] * k[j]
         end
 
         k[i] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
