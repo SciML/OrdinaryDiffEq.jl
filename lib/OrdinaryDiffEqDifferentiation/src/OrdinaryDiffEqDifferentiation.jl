@@ -30,6 +30,7 @@ using DiffEqBase: TimeGradientWrapper,
                   UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
 using SciMLBase: AbstractSciMLOperator
+import OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                           DAEAlgorithm,
                           OrdinaryDiffEqImplicitAlgorithm, CompositeAlgorithm,

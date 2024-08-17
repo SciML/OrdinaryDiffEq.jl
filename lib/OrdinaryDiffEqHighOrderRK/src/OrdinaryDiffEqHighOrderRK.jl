@@ -18,6 +18,7 @@ using DiffEqBase
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!
 using DiffEqBase: @def, @tight_loop_macros
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase
