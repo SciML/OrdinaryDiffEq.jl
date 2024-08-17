@@ -1212,77 +1212,62 @@ end
 
 @muladd function perform_step!(integrator, cache::RosenbrockConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack dus, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
-    @unpack a, C, gamma, c, d, h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
+    @unpack tf, uf = cache
+    @unpack a, C, gamma, c, d = cache.tab
 
-    # Assignments
-    sizeu = size(u)
-    mass_matrix = integrator.f.mass_matrix
-
-    #Precalculations
+    # Precalculations
     dtC = C ./ dt
     dtd = dt .* d
     dtgamma = dt * gamma
 
-    f(cache.fsalfirst, uprev, p, t)
-    integrator.stats.nf += 1
+    mass_matrix = integrator.f.mass_matrix
 
-    calc_rosenbrock_differentiation!(integrator, cache, dtd[1], dtgamma, repeat_step, true)
+    # Time derivative
+    tf.u = uprev
+    dT = calc_tderivative(integrator, cache)
 
-    calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
-        integrator.opts.abstol, integrator.opts.reltol,
-        integrator.opts.internalnorm, t)
-
-    for i in 1:6
-        if i == 1 && repeat_step
-            linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
-                solverdata = (; gamma = dtgamma))
-        else
-            linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
-                solverdata = (; gamma = dtgamma))
-        end
-
-        @.. broadcast=false $(_vec(ks[i]))=-linres.u
-        integrator.stats.nsolve += 1
-
-        # Update u
-        u .+= sum(a[i][j] * ks[j] for j in 1:i)
-
-        stage_limiter!(u, integrator, p, t + c[i] * dt)
-        f(du, u, p, t + c[i] * dt)
-        integrator.stats.nf += 1
-
-        # Prepare linsolve_tmp
-        if mass_matrix === I
-            @.. linsolve_tmp=dus[1] + dtC[i][j] * ks[j] + dtd[i] * dT
-        else
-            @.. dus[2]=dtC[i][j] * ks[j]
-            mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
-            @.. broadcast=false linsolve_tmp=dus[1] + dus[3] + dtd[i] * dT
-        end
-
-        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+    W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+    if !issuccess_W(W)
+        integrator.EEst = 2
+        return nothing
     end
 
-    step_limiter!(u, integrator, p, t + dt)
+    k = Vector{typeof(uprev)}(undef, 6)
+
+    for i in 1:6
+        du = f(u, p, t + c[i] * dt)
+        integrator.stats.nf += 1
+
+        if mass_matrix === I
+            linsolve_tmp = du + dtd[i] * dT + sum(dtC[i][j] * k[j] for j in 1:(i-1))
+        else
+            linsolve_tmp = du + dtd[i] * dT + mass_matrix * sum(dtC[i][j] * k[j] for j in 1:(i-1))
+        end
+
+        k[i] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+        integrator.stats.nsolve += 1
+
+        if i < 6
+            u = uprev + sum(a[i+1][j] * k[j] for j in 1:i)
+        end
+    end
+
+    u = u + k[6]
 
     if integrator.opts.adaptive
-        calculate_residuals!(atmp, ks[6], uprev, u, integrator.opts.abstol,
+        atmp = calculate_residuals(k[6], uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
     if integrator.opts.calck
-        @.. broadcast=false integrator.k[1]=h21 * ks[1] + h22 * ks[2] + h23 * ks[3] + h24 * ks[4] +
-                                            h25 * ks[5]
-        @.. broadcast=false integrator.k[2]=h31 * ks[1] + h32 * ks[2] + h33 * ks[3] + h34 * ks[4] +
-                                            h35 * ks[5]
+        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
+        integrator.k[1] = h21 * k[1] + h22 * k[2] + h23 * k[3] + h24 * k[4] + h25 * k[5]
+        integrator.k[2] = h31 * k[1] + h32 * k[2] + h33 * k[3] + h34 * k[4] + h35 * k[5]
     end
-    cache.linsolve = linres.cache
+    integrator.u = u
+    return nothing
 end
-
 ###############################################################################
 
 ### Rodas5 Method
