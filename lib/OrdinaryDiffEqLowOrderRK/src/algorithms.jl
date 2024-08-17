@@ -1,11 +1,3 @@
-function Base.show(io::IO, alg::OrdinaryDiffEqAlgorithm)
-    print(io, String(typeof(alg).name.name), "(;")
-    for fieldname in fieldnames(typeof(alg))
-        print(io, " ", fieldname, " = ", getfield(alg, fieldname), ",")
-    end
-    print(io, ")")
-end
-
 """
 Euler - The canonical forward Euler method. Fixed timestep only.
 """
