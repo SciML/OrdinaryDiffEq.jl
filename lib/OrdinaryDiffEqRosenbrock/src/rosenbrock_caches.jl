@@ -700,20 +700,9 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense1 = zero(rate_prototype)
-    dense2 = zero(rate_prototype)
-    dense = [dense1, dense2]
-    du = zero(rate_prototype)
-    du1 = zero(rate_prototype)
-    du2 = zero(rate_prototype)
-    dus = [du, du1, du2]
-    k1 = zero(rate_prototype)
-    k2 = zero(rate_prototype)
-    k3 = zero(rate_prototype)
-    k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
-    k6 = zero(rate_prototype)
-    ks = [k1, k2, k3, k4, k5, k6]
+    dense = zeros(typeof(rate_prototype), 2)
+    dus = zeros(typeof(rate_prototype), 3)
+    ks = zeros(typeof(rate_prototype), 6)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -762,20 +751,9 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense1 = zero(rate_prototype)
-    dense2 = zero(rate_prototype)
-    dense = [dense1, dense2]
-    du = zero(rate_prototype)
-    du1 = zero(rate_prototype)
-    du2 = zero(rate_prototype)
-    dus = [du, du1, du2]
-    k1 = zero(rate_prototype)
-    k2 = zero(rate_prototype)
-    k3 = zero(rate_prototype)
-    k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
-    k6 = zero(rate_prototype)
-    ks = [k1, k2, k3, k4, k5, k6]
+    dense = zeros(typeof(rate_prototype), 2)
+    dus = zeros(typeof(rate_prototype), 3)
+    ks = zeros(typeof(rate_prototype), 6)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -824,20 +802,9 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense1 = zero(rate_prototype)
-    dense2 = zero(rate_prototype)
-    dense = [dense1, dense2]
-    du = zero(rate_prototype)
-    du1 = zero(rate_prototype)
-    du2 = zero(rate_prototype)
-    dus = [du, du1, du2]
-    k1 = zero(rate_prototype)
-    k2 = zero(rate_prototype)
-    k3 = zero(rate_prototype)
-    k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
-    k6 = zero(rate_prototype)
-    ks = [k1, k2, k3, k4, k5, k6]
+    dense = zeros(typeof(rate_prototype), 2)
+    dus = zeros(typeof(rate_prototype), 3)
+    ks = zeros(typeof(rate_prototype), 6)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -886,20 +853,9 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense1 = zero(rate_prototype)
-    dense2 = zero(rate_prototype)
-    dense = [dense1, dense2]
-    du = zero(rate_prototype)
-    du1 = zero(rate_prototype)
-    du2 = zero(rate_prototype)
-    dus = [du, du1, du2]
-    k1 = zero(rate_prototype)
-    k2 = zero(rate_prototype)
-    k3 = zero(rate_prototype)
-    k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
-    k6 = zero(rate_prototype)
-    ks = [k1, k2, k3, k4, k5, k6]
+    dense = zeros(typeof(rate_prototype), 2)
+    dus = zeros(typeof(rate_prototype), 3)
+    ks = zeros(typeof(rate_prototype), 6)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -961,23 +917,9 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense1 = zero(rate_prototype)
-    dense2 = zero(rate_prototype)
-    dense3 = zero(rate_prototype)
-    dense = [dense1, dense2, dense3]
-    du = zero(rate_prototype)
-    du1 = zero(rate_prototype)
-    du2 = zero(rate_prototype)
-    dus = [du, du1, du2]
-    k1 = zero(rate_prototype)
-    k2 = zero(rate_prototype)
-    k3 = zero(rate_prototype)
-    k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
-    k6 = zero(rate_prototype)
-    k7 = zero(rate_prototype)
-    k8 = zero(rate_prototype)
-    ks = [k1, k2, k3, k4, k5, k6, k7, k8]
+    dense = zeros(typeof(rate_prototype), 3)
+    dus = zeros(typeof(rate_prototype), 3)
+    ks = zeros(typeof(rate_prototype), 8)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -1027,23 +969,9 @@ function alg_cache(
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense1 = zero(rate_prototype)
-    dense2 = zero(rate_prototype)
-    dense3 = zero(rate_prototype)
-    dense = [dense1, dense2, dense3]
-    du = zero(rate_prototype)
-    du1 = zero(rate_prototype)
-    du2 = zero(rate_prototype)
-    dus = [du, du1, du2]
-    k1 = zero(rate_prototype)
-    k2 = zero(rate_prototype)
-    k3 = zero(rate_prototype)
-    k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
-    k6 = zero(rate_prototype)
-    k7 = zero(rate_prototype)
-    k8 = zero(rate_prototype)
-    ks = [k1, k2, k3, k4, k5, k6, k7, k8]
+    dense = zeros(typeof(rate_prototype), 3)
+    dus = zeros(typeof(rate_prototype), 3)
+    ks = zeros(typeof(rate_prototype), 9)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
