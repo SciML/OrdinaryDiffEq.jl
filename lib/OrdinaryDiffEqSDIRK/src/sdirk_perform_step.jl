@@ -21,7 +21,7 @@ function initialize!(integrator,
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -56,7 +56,7 @@ function initialize!(integrator,
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache,
@@ -109,7 +109,7 @@ end
         integrator.EEst += integrator.opts.internalnorm(atmp, t)
     end
 
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -159,7 +159,7 @@ end
     else
         integrator.EEst = 1
     end
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     f(integrator.fsallast, u, p, t + dt)
 
     if integrator.opts.adaptive && integrator.differential_vars !== nothing
@@ -190,7 +190,7 @@ end
     u = nlsolver.tmp + z
 
     integrator.fsallast = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -220,7 +220,7 @@ end
 
     step_limiter!(u, integrator, p, t + dt)
 
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     f(integrator.fsallast, u, p, t + dt)
 end
 
@@ -289,7 +289,7 @@ end
     end
 
     integrator.fsallast = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -370,7 +370,7 @@ end
         end
     end
 
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     f(integrator.fsallast, u, p, t + dt)
 end
 
@@ -606,7 +606,7 @@ end
     end
 
     integrator.fsallast = f(u, p, t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -669,7 +669,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     f(integrator.fsallast, u, p, t)
 end
 
@@ -742,7 +742,7 @@ end
         end
     end
 
-    integrator.stats.nf += 2
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -819,7 +819,7 @@ end
         end
     end
 
-    integrator.stats.nf += 2
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
     f(integrator.fsallast, u, p, t + dt)
 end
 
@@ -872,7 +872,7 @@ end
     ################################### Finalize
 
     integrator.fsallast = f(u, p, t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -921,7 +921,7 @@ end
 
     ################################### Finalize
 
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     f(integrator.fsallast, u, p, t)
 end
 

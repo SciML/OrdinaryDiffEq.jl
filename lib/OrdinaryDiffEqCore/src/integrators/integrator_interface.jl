@@ -419,7 +419,11 @@ function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
         integrator.opts.internalnorm, integrator.sol.prob,
         integrator)
     integrator.dtpropose = integrator.dt
-    integrator.stats.nf += 2
+    increment_nf!(integrator.stats, 2)
+end
+
+function increment_nf!(stats, amt = 1)
+    stats.nf += amt
 end
 
 function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)

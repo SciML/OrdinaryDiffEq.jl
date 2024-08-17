@@ -135,7 +135,7 @@ end
         end
     end
     if DiffEqBase.has_stats(integrator)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
     # compute norm of residuals
@@ -201,7 +201,7 @@ end
     end
 
     if DiffEqBase.has_stats(integrator)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
     # compute norm of residuals

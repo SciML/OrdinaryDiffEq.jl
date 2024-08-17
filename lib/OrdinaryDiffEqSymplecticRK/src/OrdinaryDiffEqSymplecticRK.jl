@@ -13,6 +13,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            explicit_rk_docstring, trivial_limiter!,
                            _ode_interpolant!, _ode_addsteps!
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase

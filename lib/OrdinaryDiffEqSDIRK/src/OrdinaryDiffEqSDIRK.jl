@@ -17,6 +17,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction
 using LinearAlgebra: mul!, I
+import OrdinaryDiffEqCore
 
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, dolinsolve
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlsolver,

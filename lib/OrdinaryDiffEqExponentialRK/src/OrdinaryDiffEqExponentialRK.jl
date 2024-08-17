@@ -10,6 +10,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, ismultistep,
                            ExponentialAlgorithm, fsal_typeof, isdtchangeable,
                            calculate_residuals, calculate_residuals!,
                            full_cache
+import OrdinaryDiffEqCore
 using RecursiveArrayTools
 using MuladdMacro, FastBroadcast
 using LinearAlgebra: axpy!, mul!
