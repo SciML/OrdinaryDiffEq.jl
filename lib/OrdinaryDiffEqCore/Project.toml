@@ -34,6 +34,12 @@ StaticArrayInterface = "0d7ed370-da01-4f52-bd93-41d350b8b718"
 StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 
+[weakdeps]
+EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
+
+[extensions]
+OrdinaryDiffEqCoreEnzymeCore = "EnzymeCore"
+
 [compat]
 ADTypes = "0.2, 1"
 Adapt = "3.0, 4"
