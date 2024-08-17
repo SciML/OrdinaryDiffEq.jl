@@ -4,28 +4,45 @@ authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "1.0.0"
 
 [deps]
+Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 Polyester = "f517fe37-dbe3-4b94-8317-1923a5111588"
-RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
-Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
-Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
+Adapt = "4.0.4"
+DiffEqBase = "6.152.2"
+DiffEqDevTools = "2.44.4"
+FastBroadcast = "0.3.5"
+MuladdMacro = "0.2.4"
+ODEProblemLibrary = "0.1.8"
+OrdinaryDiffEqCore = "<0.0.1, 1"
+Polyester = "0.7.16"
+PrecompileTools = "1.2.1"
+Preferences = "1.4.3"
+Random = "<0.0.1, 1"
+RecursiveArrayTools = "3.27.0"
+Reexport = "1.2.2"
+SafeTestsets = "0.1.0"
+Static = "1.1.1"
+StaticArrays = "1.9.7"
+Test = "<0.0.1, 1"
 julia = "1.10"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary"]

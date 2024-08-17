@@ -137,6 +137,3 @@ An adaptive order adaptive time Adams Moulton method.
 It uses an order adaptivity algorithm is derived from Shampine's DDEABM.
 """
 struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
-
-const MultistepAlgorithms = Union{
-    AB3, AB4, AB5, ABM32, ABM43, ABM54}
