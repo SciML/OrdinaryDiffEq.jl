@@ -1235,13 +1235,17 @@ end
     k = Vector{typeof(uprev)}(undef, 6)
 
     for i in 1:6
-        du = f(u, p, t + c[i] * dt)
+        if i == 1
+            du = f(uprev, p, t)
+        else
+            du = f(u, p, t + c[i] * dt)
+        end
         integrator.stats.nf += 1
     
         if mass_matrix === I
-            linsolve_tmp = du + dtd[i] * dT + sum(dtC[i][j] * k[j] for j in 1:i)
+            linsolve_tmp = du + dtd[i] * dT + sum(dtC[i][j] * k[j] for j in 1:i-1)
         else
-            linsolve_tmp = du + dtd[i] * dT + mass_matrix * sum(dtC[i][j] * k[j] for j in 1:i)
+            linsolve_tmp = du + dtd[i] * dT + mass_matrix * sum(dtC[i][j] * k[j] for j in 1:i-1)
         end
     
         k[i] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
