@@ -1239,16 +1239,16 @@ end
         integrator.stats.nf += 1
 
         if mass_matrix === I
-            linsolve_tmp = du + dtd[i] * dT + dtC[i][j] * k[j]
+            linsolve_tmp = du + dtd[i] * dT + dtC[i][1] * k[j]
         else
-            linsolve_tmp = du + dtd[i] * dT + mass_matrix * dtC[i][j] * k[j]
+            linsolve_tmp = du + dtd[i] * dT + mass_matrix * dtC[i][1] * k[j]
         end
 
         k[i] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
         integrator.stats.nsolve += 1
 
         if i < 6
-            u = uprev + sum(a[i+1][j] * k[j] for j in 1:i)
+            u = uprev + a[i+1][1] * k[1]
         end
     end
 
@@ -1508,9 +1508,9 @@ end
         integrator.stats.nf += 1
 
         if mass_matrix === I
-            @.. linsolve_tmp=dus[1] + dtd[i] * dT + dtC[i, j] * ks[j]
+            @.. linsolve_tmp=dus[1] + dtd[i] * dT + dtC[i, 1] * ks[1]
         else
-            @.. dus[2]=dtC[i, j] * ks[j]
+            @.. dus[2]=dtC[i, 1] * ks[1]
             mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
             @.. linsolve_tmp=dus[1] + dtd[i] * dT + dus[3]
         end
