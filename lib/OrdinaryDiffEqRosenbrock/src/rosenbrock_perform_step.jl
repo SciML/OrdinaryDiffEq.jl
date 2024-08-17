@@ -1517,15 +1517,15 @@ end
         @.. broadcast=false veck=-vecu
         integrator.stats.nsolve += 1
 
-        @.. broadcast=false u=uprev + sum(a[i, j] * ks[j] for j in 1:i-1)
+        @.. u=uprev
         stage_limiter!(u, integrator, p, t + c[i] * dt)
         f(du, u, p, t + c[i] * dt)
         integrator.stats.nf += 1
 
         if mass_matrix === I
-            @.. broadcast=false linsolve_tmp=dus[1] + dtd[i] * dT + sum(dtC[i, j] * ks[j] for j in 1:i-1)
+            @.. linsolve_tmp=dus[1] + dtd[i] * dT + dtC[i, j] * ks[j]
         else
-            @.. broadcast=false dus[2]=sum(dtC[i, j] * ks[j] for j in 1:i-1)
+            @.. dus[2]=dtC[i, j] * ks[j]
             mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
             @.. broadcast=false linsolve_tmp=dus[1] + dtd[i] * dT + dus[3]
         end
