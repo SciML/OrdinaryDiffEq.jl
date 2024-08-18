@@ -48,8 +48,6 @@ mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4
     stop_at_next_tstop::Bool
 end
 
-TruncatedStacktraces.@truncate_stacktrace DEOptions
-
 """
     ODEIntegrator
 

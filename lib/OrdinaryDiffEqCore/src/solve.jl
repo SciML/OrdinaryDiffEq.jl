@@ -476,7 +476,7 @@ function DiffEqBase.__init(
         typeof(eigen_est), typeof(EEst),
         QT, typeof(tdir), typeof(k), SolType,
         FType, cacheType,
-        typeof(opts), fsal_typeof(_alg, rate_prototype),
+        typeof(opts), typeof(faslfirst),
         typeof(last_event_error), typeof(callback_cache),
         typeof(initializealg), typeof(differential_vars)}(
         sol, u, du, k, t, tType(dt), f, p,
