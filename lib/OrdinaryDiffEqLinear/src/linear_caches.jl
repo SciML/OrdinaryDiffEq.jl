@@ -565,6 +565,8 @@ end
     exp_cache::expType
 end
 
+get_fsalfirstlast(cache::LinearExponentialCache,u) = (zero(u), zero(u))
+
 function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
     n = length(u_prototype)
     T = eltype(u_prototype)

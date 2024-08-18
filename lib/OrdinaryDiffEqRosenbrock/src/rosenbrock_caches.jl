@@ -1135,7 +1135,7 @@ end
 
 get_fsalfirstlast(cache::Union{Rosenbrock23Cache,Rosenbrock32Cache, Rosenbrock33Cache,
 Rosenbrock34Cache,
-Rosenbrock4Cache}) = (cache.fsalfirst, cache.fsallast)
+Rosenbrock4Cache},u) = (cache.fsalfirst, cache.fsallast)
 
 ################################################################################
 

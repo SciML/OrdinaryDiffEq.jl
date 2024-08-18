@@ -412,8 +412,6 @@ function initialize!(integrator,
             Rosenbrock4Cache})
     integrator.kshortsize = 2
     @unpack fsalfirst, fsallast = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = fsallast
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = fsalfirst
     integrator.k[2] = fsallast
