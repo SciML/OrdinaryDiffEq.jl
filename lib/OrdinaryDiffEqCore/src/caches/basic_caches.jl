@@ -5,7 +5,7 @@ struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
 # Don't worry about the potential alloc on a constant cache
-get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache) = zero(cache.u), zero(cache.u)
+get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache) = (zero(cache.u), zero(cache.u))
 
 mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     caches::T
@@ -19,13 +19,13 @@ mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiff
     args::A
     choice_function::F
     current::Int
+    u::uType
     cache1::T1
     cache2::T2
     cache3::T3
     cache4::T4
     cache5::T5
     cache6::T6
-    u::uType
     function DefaultCache{T1, T2, T3, T4, T5, T6, F, uType}(
             args, choice_function, current, u) where {T1, T2, T3, T4, T5, T6, F, uType}
         new{T1, T2, T3, T4, T5, T6, typeof(args), F, uType}(args, choice_function, current, u)
