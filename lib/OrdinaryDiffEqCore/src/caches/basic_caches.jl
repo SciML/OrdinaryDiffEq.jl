@@ -15,7 +15,7 @@ end
 
 get_fsalfirstlast(cache::CompositeCache) = get_fsalfirstlast(cache.caches[1])
 
-mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F} <: OrdinaryDiffEqCache
+mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiffEqCache
     args::A
     choice_function::F
     current::Int
@@ -25,31 +25,15 @@ mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F} <: OrdinaryDiffEqCache
     cache4::T4
     cache5::T5
     cache6::T6
+    u::uType
     function DefaultCache{T1, T2, T3, T4, T5, T6, F}(
             args, choice_function, current) where {T1, T2, T3, T4, T5, T6, F}
         new{T1, T2, T3, T4, T5, T6, typeof(args), F}(args, choice_function, current)
     end
 end
 
-function get_fsalfirstlast(cache::DefaultCache{T1, T2, T3, T4, T5, T6}) where {T1, T2, T3, T4, T5, T6} 
-    if isbitstype(T1)
-        get_fsalfirstlast(cache.cache1)
-    end
-    if isbitstype(T2)
-        get_fsalfirstlast(cache.cache2)
-    end
-    if isbitstype(T3)
-        get_fsalfirstlast(cache.cache3)
-    end
-    if isbitstype(T4)
-        get_fsalfirstlast(cache.cache4)
-    end
-    if isbitstype(T5)
-        get_fsalfirstlast(cache.cache5)
-    end
-    if isbitstype(T6)
-        get_fsalfirstlast(cache.cache6)
-    end
+function get_fsalfirstlast(cache::DefaultCache) 
+    (u,u)
 end
 
 function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -77,7 +61,7 @@ function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u
     T5 = Base.promote_op(alg_cache, A5, argT...)
     T6 = Base.promote_op(alg_cache, A6, argT...)
     cache = DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function)}(
-        args, alg.choice_function, 1)
+        args, alg.choice_function, 1, u)
     algs = alg.algs
     # If the type is a bitstype we need to initialize it correctly here since isdefined will always return true.
     if isbitstype(T1)

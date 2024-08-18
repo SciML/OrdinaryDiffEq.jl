@@ -32,24 +32,42 @@ function initialize!(integrator, cache::DefaultCache)
     init_ith_default_cache(cache, algs, cache.current)
     if cache.current == 1
         initialize!(integrator, cache.cache1)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache1)
+        integrator.fsalfirst = fsalfirst
+        integrator.fsallast = fsallast
     elseif cache.current == 2
         initialize!(integrator, cache.cache2)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache2)
+        integrator.fsalfirst = fsalfirst
+        integrator.fsallast = fsallast
         # the controller was initialized by default for algs[1]
         reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[2])
     elseif cache.current == 3
         initialize!(integrator, cache.cache3)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache3)
+        integrator.fsalfirst = fsalfirst
+        integrator.fsallast = fsallast
         # the controller was initialized by default for algs[1]
         reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[3])
     elseif cache.current == 4
         initialize!(integrator, cache.cache4)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache4)
+        integrator.fsalfirst = fsalfirst
+        integrator.fsallast = fsallast
         # the controller was initialized by default for algs[1]
         reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[4])
     elseif cache.current == 5
         initialize!(integrator, cache.cache5)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache5)
+        integrator.fsalfirst = fsalfirst
+        integrator.fsallast = fsallast
         # the controller was initialized by default for algs[1]
         reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[5])
     elseif cache.current == 6
         initialize!(integrator, cache.cache6)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache6)
+        integrator.fsalfirst = fsalfirst
+        integrator.fsallast = fsallast
         # the controller was initialized by default for algs[1]
         reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[6])
     end
