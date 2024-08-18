@@ -33,6 +33,8 @@ end
     integrator.u = u
 end
 
+get_fsalfirstlast(cache::LowStorageRK2NCache,u) = (cache.k, cache.k)
+
 function initialize!(integrator, cache::LowStorageRK2NCache)
     @unpack k, tmp, williamson_condition = cache
     integrator.kshortsize = 1
