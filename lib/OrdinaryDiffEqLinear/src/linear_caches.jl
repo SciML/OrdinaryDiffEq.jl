@@ -1,4 +1,4 @@
-abstract type OrdinaryDiffEqMutableCache <: LinearMutableCache end
+abstract type LinearMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::LinearMutableCache) = (cache.fsalfirst, cache.k)
 
 @cache struct MagnusMidpointCache{uType, rateType, WType, expType} <:
