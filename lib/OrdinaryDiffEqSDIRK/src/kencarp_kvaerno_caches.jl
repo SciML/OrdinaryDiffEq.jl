@@ -1,4 +1,4 @@
-mutable struct Kvaerno3ConstantCache{Tab, N} <: OrdinaryDiffEqConstantCache
+mutable struct Kvaerno3ConstantCache{Tab, N} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -50,7 +50,7 @@ function alg_cache(alg::Kvaerno3, u, rate_prototype, ::Type{uEltypeNoUnits},
         u, uprev, fsalfirst, z₁, z₂, z₃, z₄, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
-@cache mutable struct KenCarp3ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+@cache mutable struct KenCarp3ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -121,7 +121,7 @@ function alg_cache(alg::KenCarp3, u, rate_prototype, ::Type{uEltypeNoUnits},
         k3, k4, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
-@cache mutable struct CFNLIRK3ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+@cache mutable struct CFNLIRK3ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -181,7 +181,7 @@ function alg_cache(alg::CFNLIRK3, u, rate_prototype, ::Type{uEltypeNoUnits},
     CFNLIRK3Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, k1, k2, k3, k4, atmp, nlsolver, tab)
 end
 
-@cache mutable struct Kvaerno4ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+@cache mutable struct Kvaerno4ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -235,7 +235,7 @@ function alg_cache(alg::Kvaerno4, u, rate_prototype, ::Type{uEltypeNoUnits},
         u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
-@cache mutable struct KenCarp4ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+@cache mutable struct KenCarp4ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -318,7 +318,7 @@ function alg_cache(alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
         nlsolver, tab, alg.step_limiter!)
 end
 
-@cache mutable struct Kvaerno5ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+@cache mutable struct Kvaerno5ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -377,7 +377,7 @@ function alg_cache(alg::Kvaerno5, u, rate_prototype, ::Type{uEltypeNoUnits},
         z₇, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
-@cache mutable struct KenCarp5ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+@cache mutable struct KenCarp5ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -467,7 +467,7 @@ function alg_cache(alg::KenCarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
         k1, k2, k3, k4, k5, k6, k7, k8, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
-@cache mutable struct KenCarp47ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+@cache mutable struct KenCarp47ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -551,7 +551,7 @@ function alg_cache(alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
         k1, k2, k3, k4, k5, k6, k7, atmp, nlsolver, tab)
 end
 
-@cache mutable struct KenCarp58ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+@cache mutable struct KenCarp58ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
