@@ -17,8 +17,6 @@ import LinearAlgebra
 import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!, lmul!, axpby!, opnorm, lu
 import LinearAlgebra: LowerTriangular, UpperTriangular
 import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros
-
-import InteractiveUtils
 import ArrayInterface
 
 import StaticArrayInterface
@@ -30,6 +28,7 @@ using DiffEqBase: TimeGradientWrapper,
                   UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
 using SciMLBase: AbstractSciMLOperator
+import OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                           DAEAlgorithm,
                           OrdinaryDiffEqImplicitAlgorithm, CompositeAlgorithm,

@@ -13,6 +13,7 @@ using LinearAlgebra: mul!, I
 using SciMLOperators: AbstractSciMLOperator
 using ExponentialUtilities
 using RecursiveArrayTools
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase
