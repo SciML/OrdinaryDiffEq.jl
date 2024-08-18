@@ -916,8 +916,16 @@ end
 
 #SSP Optimized Runge-Kutta Methods
 
-@doc explicit_rk_docstring("To be done",
-    "KYK2014DGSSPRK_3S2")
+@doc explicit_rk_docstring("Optimal strong-stability-preserving Runge-Kutta time discretizations for discontinuous Galerkin methods",
+    "KYK2014DGSSPRK_3S2",
+    references = """@article{kubatko2014optimal,
+    title={Optimal strong-stability-preserving Runge--Kutta time discretizations for discontinuous Galerkin methods},
+    author={Kubatko, Ethan J and Yeager, Benjamin A and Ketcheson, David I},
+    journal={Journal of Scientific Computing},
+    volume={60},
+    pages={313--344},
+    year={2014},
+    publisher={Springer}}""")
 Base.@kwdef struct KYK2014DGSSPRK_3S2{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
