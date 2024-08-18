@@ -1,8 +1,6 @@
 abstract type HamiltonMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type HamiltonConstantCache <: OrdinaryDiffEqConstantCache end
 
-get_fsalfirstlast(cache::Union{HamiltonMutableCache, VelocityVerletCache, SymplecticEulerCache}) = (cache.fsalfirst, cache.k)
-
 @cache struct SymplecticEulerCache{uType, rateType} <: HamiltonMutableCache
     u::uType
     uprev::uType
@@ -422,3 +420,5 @@ function alg_cache(alg::SofSpa10, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SofSpa10ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
+
+get_fsalfirstlast(cache::Union{HamiltonMutableCache, VelocityVerletCache, SymplecticEulerCache}) = (cache.fsalfirst, cache.k)

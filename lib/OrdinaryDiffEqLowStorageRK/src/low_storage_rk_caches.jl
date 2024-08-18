@@ -1,4 +1,4 @@
-abstract type OrdinaryDiffEqMutableCache <: LowStorageRKMutableCache end
+abstract type LowStorageRKMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::LowStorageRKMutableCache) = (cache.fsalfirst, cache.k)
 
 # 2N low storage methods introduced by Williamson
