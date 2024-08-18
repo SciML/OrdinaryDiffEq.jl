@@ -7,6 +7,8 @@ first_steps = evalfile("./common_first_steps.jl")
 first_steps("OrdinaryDiffEqExtrapolation", "ImplicitEulerExtrapolation")
 ```
 
+## Full list of solvers
+
 ```@docs
 AitkenNeville
 ImplicitEulerExtrapolation

@@ -11,6 +11,8 @@ first_steps = evalfile("./common_first_steps.jl")
 first_steps("OrdinaryDiffEqRosenbrock", "Rodas5P")
 ```
 
+## Full list of solvers
+
 ```@docs
 Rosenbrock23
 Rosenbrock32
