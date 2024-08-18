@@ -168,6 +168,7 @@ function choose_algorithm!(integrator,
         cache::CompositeCache{Tuple{T1, T2}, F}) where {T1, T2, F}
     new_current = cache.choice_function(integrator)
     old_current = cache.current
+    u = integrator.u
     @inbounds if new_current != old_current
         cache.current = new_current
         if new_current == 1
@@ -198,6 +199,7 @@ end
 function choose_algorithm!(integrator, cache::DefaultCache)
     new_current = cache.choice_function(integrator)
     old_current = cache.current
+    u = integrator.u
     @inbounds if new_current != old_current
         algs = integrator.alg.algs
         cache.current = new_current
