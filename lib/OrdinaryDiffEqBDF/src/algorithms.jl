@@ -1,11 +1,61 @@
-"""
-E. Alberdi Celayaa, J. J. Anza Aguirrezabalab, P. Chatzipantelidisc. Implementation of
-an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Computer Science,
-29, pp 1014-1026, 2014. doi: https://doi.org/10.1016/j.procs.2014.05.091
+function BDF_docstring(description::String,
+    name::String;
+    references::String = "",
+    extra_keyword_description::String = "",
+    extra_keyword_default::String = "")
+    keyword_default = """
+        chunk_size = Val{0}(),
+        autodiff = true,
+        standardtag = Val{true}(),
+        concrete_jac = nothing,
+        diff_type = Val{:forward},
+        linsolve = nothing,
+        precs = DEFAULT_PRECS,
+        """ * extra_keyword_default
 
-ABDF2: Multistep Method
-An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.
-"""
+    keyword_default_description = """
+        - `chunk_size`: TBD
+        - `autodiff`: TBD
+        - `standardtag`: TBD
+        - `concrete_jac`: TBD
+        - `diff_type`: TBD
+        - `linsolve`: TBD
+        - `precs`: TBD
+        - `precs`: TBD
+        """ * extra_keyword_description
+
+    generic_solver_docstring(
+        description, name, "Multistep Method.", references,
+        keyword_default_description, keyword_default
+    )
+end
+
+
+@doc BDF_docstring("An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.",
+    "ABDF2",
+    references = """
+    E. Alberdi Celayaa, J. J. Anza Aguirrezabalab, P. Chatzipantelidisc. Implementation of
+    an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Computer Science,
+    29, pp 1014-1026, 2014. doi: https://doi.org/10.1016/j.procs.2014.05.091
+    """,
+    extra_keyword_description = """
+    - `κ`: TBD
+    - `tol`: TBD
+    - `nlsolve`: TBD
+    - `smooth_est`: TBD
+    - `extrapolant`: TBD
+    - `controller`: TBD
+    - `step_limiter!`: TBD
+    """,
+    extra_keyword_default = """
+    κ = nothing,
+    tol = nothing,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :Standard,
+    step_limiter! = trivial_limiter!,
+    """)
 struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -31,11 +81,29 @@ function ABDF2(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{true}
         smooth_est, extrapolant, controller, step_limiter!)
 end
 
-"""
-Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
-Dependent Partial Differential Equations. 1995 Society for Industrial and Applied Mathematics
-Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
-"""
+
+@doc BDF_docstring("description TBD.",
+    "SBDF",
+    references = """
+    E. Alberdi Celayaa, J. J. Anza Aguirrezabalab, P. Chatzipantelidisc. Implementation of
+    an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Computer Science,
+    29, pp 1014-1026, 2014. doi: https://doi.org/10.1016/j.procs.2014.05.091
+    """,
+    extra_keyword_description = """
+    - `κ`: TBD
+    - `tol`: TBD
+    - `nlsolve`: TBD
+    - `extrapolant`: TBD
+    - `ark`: TBD
+    """,
+    extra_keyword_default = """
+    κ = nothing,
+    tol = nothing,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    ark = false,
+    order,
+    """)
 struct SBDF{CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
        OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -129,13 +197,33 @@ See also `SBDF`.
 """
 SBDF4(; kwargs...) = SBDF(4; kwargs...)
 
-"""
-QNDF1: Multistep Method
-An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
-Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.
-
-See also `QNDF`.
-"""
+@doc BDF_docstring("An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
+    Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.",
+    "QNDF1",
+    references = """@article{shampine1997matlab,
+    title={The matlab ode suite},
+    author={Shampine, Lawrence F and Reichelt, Mark W},
+    journal={SIAM journal on scientific computing},
+    volume={18},
+    number={1},
+    pages={1--22},
+    year={1997},
+    publisher={SIAM}
+    }""",
+    extra_keyword_description = """
+    - `nlsolve`: TBD
+    - `extrapolant`: TBD
+    - `kappa`: TBD
+    - `controller`: TBD
+    - `step_limiter!`: TBD
+    """,
+    extra_keyword_default = """
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    kappa = -0.1850,
+    controller = :Standard,
+    step_limiter! = trivial_limiter!,
+    """)
 struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -164,12 +252,32 @@ function QNDF1(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Va
         step_limiter!)
 end
 
-"""
-QNDF2: Multistep Method
-An adaptive order 2 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
-
-See also `QNDF`.
-"""
+@doc BDF_docstring("An adaptive order 2 quasi-constant timestep L-stable numerical differentiation function (NDF) method.",
+    "QNDF2",
+    references = """@article{shampine1997matlab,
+    title={The matlab ode suite},
+    author={Shampine, Lawrence F and Reichelt, Mark W},
+    journal={SIAM journal on scientific computing},
+    volume={18},
+    number={1},
+    pages={1--22},
+    year={1997},
+    publisher={SIAM}
+    }""",
+    extra_keyword_description = """
+    - `nlsolve`: TBD
+    - `extrapolant`: TBD
+    - `kappa`: TBD
+    - `controller`: TBD
+    - `step_limiter!`: TBD
+    """,
+    extra_keyword_default = """
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    kappa =  -1 // 9,
+    controller = :Standard,
+    step_limiter! = trivial_limiter!,
+    """)
 struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -198,22 +306,37 @@ function QNDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Va
         step_limiter!)
 end
 
-"""
-QNDF: Multistep Method
-An adaptive order quasi-constant timestep NDF method.
-Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).
-
-@article{shampine1997matlab,
-title={The matlab ode suite},
-author={Shampine, Lawrence F and Reichelt, Mark W},
-journal={SIAM journal on scientific computing},
-volume={18},
-number={1},
-pages={1--22},
-year={1997},
-publisher={SIAM}
-}
-"""
+@doc BDF_docstring("An adaptive order quasi-constant timestep NDF method.
+    Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).",
+    "QNDF",
+    references = """@article{shampine1997matlab,
+    title={The matlab ode suite},
+    author={Shampine, Lawrence F and Reichelt, Mark W},
+    journal={SIAM journal on scientific computing},
+    volume={18},
+    number={1},
+    pages={1--22},
+    year={1997},
+    publisher={SIAM}
+    }""",
+    extra_keyword_description = """
+    - `κ`: TBD
+    - `tol`: TBD
+    - `nlsolve`: TBD
+    - `extrapolant`: TBD
+    - `kappa`: TBD
+    - `controller`: TBD
+    - `step_limiter!`: TBD
+    """,
+    extra_keyword_default = """
+    κ = nothing,
+    tol = nothing,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    kappa =  promote(-0.1850, -1 // 9, -0.0823, -0.0415, 0),
+    controller = :Standard,
+    step_limiter! = trivial_limiter!,
+    """)
 struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
@@ -246,11 +369,19 @@ end
 
 TruncatedStacktraces.@truncate_stacktrace QNDF
 
-"""
-MEBDF2: Multistep Method
-The second order Modified Extended BDF method, which has improved stability properties over the standard BDF.
-Fixed timestep only.
-"""
+@doc BDF_docstring("The second order Modified Extended BDF method,
+    which has improved stability properties over the standard BDF.
+    Fixed timestep only.",
+    "MEBDF2",
+    references = """TBD""",
+    extra_keyword_description = """
+    - `nlsolve`: TBD
+    - `extrapolant`: TBD
+    """,
+    extra_keyword_default = """
+    nlsolve = NLNewton(),
+    extrapolant = :constant,
+    """)
 struct MEBDF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -270,19 +401,33 @@ function MEBDF2(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{true
         extrapolant)
 end
 
-"""
-FBDF: Fixed leading coefficient BDF
-
-An adaptive order quasi-constant timestep NDF method.
-Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).
-
-@article{shampine2002solving,
-title={Solving 0= F (t, y (t), y′(t)) in Matlab},
-author={Shampine, Lawrence F},
-year={2002},
-publisher={Walter de Gruyter GmbH \\& Co. KG}
-}
-"""
+@doc BDF_docstring("An adaptive order quasi-constant timestep NDF method.
+    Fixed leading coefficient BDF.
+    Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).",
+    "FBDF",
+    references = """@article{shampine2002solving,
+    title={Solving 0= F (t, y (t), y′(t)) in Matlab},
+    author={Shampine, Lawrence F},
+    year={2002},
+    publisher={Walter de Gruyter GmbH \\& Co. KG}}""",
+    extra_keyword_description = """
+    - `κ`: TBD
+    - `tol`: TBD
+    - `nlsolve`: TBD
+    - `extrapolant`: TBD
+    - `controller`: TBD
+    - `step_limiter!`: TBD
+    - `max_order`: TBD
+    """,
+    extra_keyword_default = """
+    κ = nothing,
+    tol = nothing,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    controller = :Standard,
+    step_limiter! = trivial_limiter!,
+    max_order::Val{MO} = Val{5}(),
+    """)
 struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
@@ -390,6 +535,19 @@ See also `SBDF`, `IMEXEuler`.
 """
 IMEXEulerARK(; kwargs...) = SBDF(1; ark = true, kwargs...)
 
+@doc BDF_docstring("TBD.",
+    "DImplicitEuler",
+    references = """TBD""",
+    extra_keyword_description = """
+    - `nlsolve`: TBD
+    - `extrapolant`: TBD
+    - `controller`: TBD
+    """,
+    extra_keyword_default = """
+    nlsolve = NLNewton(),
+    extrapolant = :constant,
+    controller = :Standard,
+    """)
 struct DImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -409,6 +567,19 @@ function DImplicitEuler(;
         nlsolve, precs, extrapolant, controller)
 end
 
+@doc BDF_docstring("TBD.",
+    "DABDF2",
+    references = """TBD""",
+    extra_keyword_description = """
+    - `nlsolve`: TBD
+    - `extrapolant`: TBD
+    - `controller`: TBD
+    """,
+    extra_keyword_default = """
+    nlsolve = NLNewton(),
+    extrapolant = :constant,
+    controller = :Standard,
+    """)
 struct DABDF2{CS, AD, F, F2, P, FDT, ST, CJ} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -441,6 +612,25 @@ DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concr
      linsolve,nlsolve,precs,extrapolant)
 =#
 
+@doc BDF_docstring("Description TBD",
+    "DFBDF",
+    references = """TBD""",
+    extra_keyword_description = """
+    - `κ`: TBD
+    - `tol`: TBD
+    - `nlsolve`: TBD
+    - `extrapolant`: TBD
+    - `controller`: TBD
+    - `max_order`: TBD
+    """,
+    extra_keyword_default = """
+    κ = nothing,
+    tol = nothing,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    controller = :Standard,
+    max_order::Val{MO} = Val{5}(),
+    """)
 struct DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
     linsolve::F
