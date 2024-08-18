@@ -1,7 +1,7 @@
 abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 
 # Fake values since non-FSAL
-get_fsalfirstlast(cache::RosenbrockMutableCache) = (cache.u, cache.uprev)
+get_fsalfirstlast(cache::RosenbrockMutableCache) = (zero(cache.u), zero(cache.u))
 
 ################################################################################
 
