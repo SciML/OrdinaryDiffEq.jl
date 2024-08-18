@@ -872,7 +872,7 @@ struct ETD2ConstantCache{expType} <: OrdinaryDiffEqConstantCache
     B0::expType # -ϕ2(hA)
 end
 
-get_fsalfirstlast(cache::ETD2ConstantCache,u) = (ETD2Fsal(cache.rtmp1), ETD2Fsal(cache.rtmp1))
+get_fsalfirstlast(cache::ETD2ConstantCache,u) = (ETD2Fsal(u), ETD2Fsal(u))
 
 function alg_cache(alg::ETD2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
