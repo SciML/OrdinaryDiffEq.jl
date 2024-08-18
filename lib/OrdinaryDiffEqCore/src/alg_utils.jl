@@ -432,7 +432,7 @@ is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
 
 # All algorithms should be shown using their keyword definition, and not as structs
-function Base.show(io::IO, alg::OrdinaryDiffEqAlgorithm)
+function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
     print(io, String(typeof(alg).name.name), "(;")
     for fieldname in fieldnames(typeof(alg))
         print(io, " ", fieldname, " = ", getfield(alg, fieldname), ",")
