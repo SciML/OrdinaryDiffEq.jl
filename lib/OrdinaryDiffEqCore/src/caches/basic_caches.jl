@@ -31,7 +31,26 @@ mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F} <: OrdinaryDiffEqCache
     end
 end
 
-get_fsalfirstlast(cache::DefaultCache) = get_fsalfirstlast(cache.cache1)
+function get_fsalfirstlast(cache::DefaultCache) 
+    if isbitstype(T1)
+        get_fsalfirstlast(cache.cache1)
+    end
+    if isbitstype(T2)
+        get_fsalfirstlast(cache.cache2)
+    end
+    if isbitstype(T3)
+        get_fsalfirstlast(cache.cache3)
+    end
+    if isbitstype(T4)
+        get_fsalfirstlast(cache.cache4)
+    end
+    if isbitstype(T5)
+        get_fsalfirstlast(cache.cache5)
+    end
+    if isbitstype(T6)
+        get_fsalfirstlast(cache.cache6)
+    end
+end
 
 function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
