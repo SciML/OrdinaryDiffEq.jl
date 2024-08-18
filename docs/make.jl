@@ -29,7 +29,8 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         OrdinaryDiffEq.OrdinaryDiffEqDefault,
         OrdinaryDiffEq.OrdinaryDiffEqFIRK,
         OrdinaryDiffEq.OrdinaryDiffEqPDIRK,
-        OrdinaryDiffEq.OrdinaryDiffEqRosenbrock],
+        OrdinaryDiffEq.OrdinaryDiffEqRosenbrock,
+        OrdinaryDiffEq.OrdinaryDiffEqStabilizedIRK],
     warnonly = [:docs_block, :missing_docs, :eval_block],
     format = Documenter.HTML(analytics = "UA-90474609-3",
         assets = ["assets/favicon.ico"],
@@ -55,19 +56,16 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         "Iplicit Solvers" => [
             "implicit/FIRK.md",
             "implicit/PDIRK.md",
-            "implicit/Rosenbrock.md"
+            "implicit/Rosenbrock.md",
+            "implicit/StabalizedRK.md"
         ],
         "Standard Non-Stiff ODEProblem Solvers" => [
             "nonstiff/explicit_extrapolation.md",
             "nonstiff/nonstiff_multistep.md"
         ],
         "Standard Stiff ODEProblem Solvers" => [
-            "stiff/firk.md",
-            "stiff/rosenbrock.md",
-            "stiff/stabilized_rk.md",
             "stiff/sdirk.md",
             "stiff/stiff_multistep.md",
-            "stiff/implicit_extrapolation.md"
         ],
         "IMEX Solvers" => [
             "imex/imex_multistep.md",
