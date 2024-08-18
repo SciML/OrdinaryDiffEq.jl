@@ -1081,7 +1081,7 @@ function perform_step!(integrator, cache::PSRK4p7q6ConstantCache, repeat_step = 
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::RKMCache,u) = (cache.k1, cache.k6)
+get_fsalfirstlast(cache::PSRK4p7q6Cache,u) = (cache.k1, cache.k6)
 function initialize!(integrator, cache::PSRK4p7q6Cache)
     @unpack uprev, f, p, t = integrator
 
