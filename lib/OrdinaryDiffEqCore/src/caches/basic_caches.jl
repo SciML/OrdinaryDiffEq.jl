@@ -31,7 +31,7 @@ mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F} <: OrdinaryDiffEqCache
     end
 end
 
-function get_fsalfirstlast(cache::DefaultCache) 
+function get_fsalfirstlast(cache::DefaultCache{T1, T2, T3, T4, T5, T6}) where {T1, T2, T3, T4, T5, T6} 
     if isbitstype(T1)
         get_fsalfirstlast(cache.cache1)
     end
