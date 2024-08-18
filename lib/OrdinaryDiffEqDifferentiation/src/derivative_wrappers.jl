@@ -101,7 +101,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
         end
 
         df .= first.(ForwardDiff.partials.(grad_config))
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     elseif alg_autodiff(alg) isa AutoFiniteDiff
         FiniteDiff.finite_difference_gradient!(df, f, x, grad_config,
             dir = diffdir(integrator))
@@ -125,7 +125,7 @@ function derivative(f, x::Union{Number, AbstractArray{<:Number}},
     tmp = length(x) # We calculate derivative for all elements in gradient
     alg = unwrap_alg(integrator, true)
     if alg_autodiff(alg) isa AutoForwardDiff
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         if integrator.iter == 1
             try
                 d = ForwardDiff.derivative(f, x)
@@ -239,13 +239,13 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         else
             forwarddiff_color_jacobian!(J, f, x, jac_config)
         end
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     elseif alg_autodiff(alg) isa AutoFiniteDiff
         isforward = alg_difftype(alg) === Val{:forward}
         if isforward
             forwardcache = get_tmp_cache(integrator, alg, unwrap_cache(integrator, true))[2]
             f(forwardcache, x)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             tmp = jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache,
                 integrator)
         else # not forward difference

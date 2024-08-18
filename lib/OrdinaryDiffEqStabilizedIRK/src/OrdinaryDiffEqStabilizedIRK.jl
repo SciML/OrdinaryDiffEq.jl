@@ -17,6 +17,7 @@ using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver
                                     markfirststage!, du_alias_or_new, get_W
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase

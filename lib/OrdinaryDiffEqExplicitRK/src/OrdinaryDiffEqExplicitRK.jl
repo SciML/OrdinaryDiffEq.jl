@@ -9,6 +9,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, alg_stability_size,
                            full_cache
 using TruncatedStacktraces, RecursiveArrayTools, FastBroadcast, MuladdMacro, DiffEqBase
 import LinearAlgebra: norm
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase

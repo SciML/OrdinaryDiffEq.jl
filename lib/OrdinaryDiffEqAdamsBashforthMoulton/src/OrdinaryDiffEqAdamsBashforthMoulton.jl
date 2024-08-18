@@ -14,6 +14,7 @@ import RecursiveArrayTools: recursivefill!
 using MuladdMacro, FastBroadcast
 import Static: False
 import ADTypes: AutoForwardDiff
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase

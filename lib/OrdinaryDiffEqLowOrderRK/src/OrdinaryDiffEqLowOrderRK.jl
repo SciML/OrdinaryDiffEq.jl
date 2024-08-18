@@ -24,6 +24,7 @@ import LinearAlgebra: norm
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import Static: False
 using DiffEqBase: @def, @tight_loop_macros
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase

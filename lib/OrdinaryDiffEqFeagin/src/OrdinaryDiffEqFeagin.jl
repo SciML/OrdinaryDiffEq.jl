@@ -13,6 +13,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 using Static: False
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase

@@ -23,6 +23,8 @@ import ForwardDiff
 using FiniteDiff
 using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm
 import ADTypes: AutoForwardDiff
+import OrdinaryDiffEqCore
+
 using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
                                      UDerivativeWrapper, UJacobianWrapper,
                                      wrapprecs, calc_tderivative, build_grad_config,
