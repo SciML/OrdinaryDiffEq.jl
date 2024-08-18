@@ -282,8 +282,7 @@ function alg_cache(alg::SHLDDRK52, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache mutable struct SHLDDRK_2NCache{uType, rateType, TabType, StageLimiter, StepLimiter,
-    Thread} <:
-                      OrdinaryDiffEqMutableCache
+    Thread} <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -1028,8 +1027,7 @@ end
     StageLimiter,
     StepLimiter,
     Thread
-} <:
-                      OrdinaryDiffEqMutableCache
+} <: SSPRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType

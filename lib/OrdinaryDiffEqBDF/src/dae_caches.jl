@@ -12,6 +12,9 @@ get_fsalfirstlast(cache::DAEBDFMutableCache,u) = (cache.fsalfirst, du_alias_or_n
     nlsolver::N
 end
 
+# Not FSAL
+get_fsalfirstlast(cache::DImplicitEulerCache,u) = (u,u)
+
 mutable struct DImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
     nlsolver::N
 end
