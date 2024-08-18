@@ -74,3 +74,34 @@ function explicit_rk_docstring(description::String,
         keyword_default_description, keyword_default
     )
 end
+function differentiation_rk_docstring(description::String,
+    name::String,
+    solver_class::String;
+    references::String = "",
+    extra_keyword_description::String = "",
+    extra_keyword_default::String = "")
+    keyword_default = """
+    chunk_size = Val{0}(),
+    autodiff = true,
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    """ * extra_keyword_default
+
+    keyword_default_description = """
+    - `chunk_size`: TBD
+    - `autodiff`: TBD
+    - `standardtag`: TBD
+    - `concrete_jac`: TBD
+    - `diff_type`: TBD
+    - `linsolve`: TBD
+    - `precs`: TBD
+    """ * extra_keyword_description
+
+    generic_solver_docstring(
+        description, name, solver_class, references,
+        keyword_default_description, keyword_default
+    )
+end

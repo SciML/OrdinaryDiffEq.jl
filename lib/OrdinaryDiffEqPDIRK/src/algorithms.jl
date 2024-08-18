@@ -1,10 +1,17 @@
-################################################################################
-
-#################################################
-"""
-PDIRK44: Parallel Diagonally Implicit Runge-Kutta Method
-A 2 processor 4th order diagonally non-adaptive implicit method.
-"""
+@doc differentiation_rk_docstring("A 2 processor 4th order diagonally non-adaptive implicit method.",
+    "PDIRK44",
+    "Parallel Diagonally Implicit Runge-Kutta Method.";
+    references = "TBD",
+    extra_keyword_description = """
+    - `nlsolve`: TBD,
+    - `extrapolant`: TBD,
+    - `threading`: TBD,
+    """,
+    extra_keyword_default = """
+    nlsolve = NLNewton(),
+    extrapolant = :constant,
+    threading = true,
+    """)
 struct PDIRK44{CS, AD, F, F2, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
