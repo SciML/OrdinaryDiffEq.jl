@@ -1,3 +1,6 @@
+abstract type OrdinaryDiffEqMutableCache <: FIRKMutableCache end
+get_fsalfirstlast(cache::FIRKMutableCache) = (cache.fsalfirst, cache.k)
+
 mutable struct RadauIIA3ConstantCache{F, Tab, Tol, Dt, U, JType} <:
                OrdinaryDiffEqConstantCache
     uf::F
@@ -30,7 +33,7 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 mutable struct RadauIIA3Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, UF, JC,
-    F1, Tab, Tol, Dt, rTol, aTol, StepLimiter} <: OrdinaryDiffEqMutableCache
+    F1, Tab, Tol, Dt, rTol, aTol, StepLimiter} <: FIRKMutableCache
     u::uType
     uprev::uType
     z1::uType
@@ -156,7 +159,7 @@ end
 
 mutable struct RadauIIA5Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
     UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
-               OrdinaryDiffEqMutableCache
+               FIRKMutableCache
     u::uType
     uprev::uType
     z1::uType
@@ -307,7 +310,7 @@ end
 
 mutable struct RadauIIA9Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
     UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
-               OrdinaryDiffEqMutableCache
+               FIRKMutableCache
     u::uType
     uprev::uType
     z1::uType

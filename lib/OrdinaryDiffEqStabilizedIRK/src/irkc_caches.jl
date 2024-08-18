@@ -23,6 +23,8 @@ end
     constantcache::C
 end
 
+get_fsalfirstlast(cache::IRKCCache) = (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
+
 function alg_cache(alg::IRKC, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,

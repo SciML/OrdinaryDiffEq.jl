@@ -134,8 +134,6 @@ function initialize!(integrator, cache::IRKCCache)
     @unpack uprev, p, t = integrator
     @unpack f1, f2 = integrator.f
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast

@@ -1,3 +1,6 @@
+abstract type StabilizedRKMutableCache <: OrdinaryDiffEqMutableCache end
+get_fsalfirstlast(cache::StabilizedRKMutableCache) = (cache.fsalfirst, cache.k)
+
 mutable struct ROCK2ConstantCache{T, T2, zType} <: OrdinaryDiffEqConstantCache
     ms::SVector{46, Int}
     fp1::SVector{46, T}
@@ -11,7 +14,7 @@ mutable struct ROCK2ConstantCache{T, T2, zType} <: OrdinaryDiffEqConstantCache
     max_stage::Int
 end
 @cache struct ROCK2Cache{uType, rateType, uNoUnitsType, C <: ROCK2ConstantCache} <:
-              OrdinaryDiffEqMutableCache
+              StabilizedRKMutableCache
     u::uType
     uprev::uType
     uᵢ₋₁::uType
@@ -62,7 +65,7 @@ mutable struct ROCK4ConstantCache{T, T2, T3, T4, zType} <: OrdinaryDiffEqConstan
 end
 
 @cache struct ROCK4Cache{uType, rateType, uNoUnitsType, C <: ROCK4ConstantCache} <:
-              OrdinaryDiffEqMutableCache
+              StabilizedRKMutableCache
     u::uType
     uprev::uType
     uᵢ₋₁::uType
@@ -105,7 +108,7 @@ mutable struct RKCConstantCache{zType} <: OrdinaryDiffEqConstantCache
     zprev::zType
 end
 @cache struct RKCCache{uType, rateType, uNoUnitsType, C <: RKCConstantCache} <:
-              OrdinaryDiffEqMutableCache
+              StabilizedRKMutableCache
     u::uType
     uprev::uType
     gprev::uType
@@ -151,7 +154,7 @@ mutable struct ESERK4ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
 end
 
 @cache struct ESERK4Cache{uType, rateType, uNoUnitsType, C <: ESERK4ConstantCache} <:
-              OrdinaryDiffEqMutableCache
+              StabilizedRKMutableCache
     u::uType
     uprev::uType
     uᵢ::uType
@@ -201,7 +204,7 @@ mutable struct ESERK5ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
 end
 
 @cache struct ESERK5Cache{uType, rateType, uNoUnitsType, C <: ESERK5ConstantCache} <:
-              OrdinaryDiffEqMutableCache
+              StabilizedRKMutableCache
     u::uType
     uprev::uType
     uᵢ::uType
@@ -249,7 +252,7 @@ mutable struct SERK2ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
 end
 
 @cache struct SERK2Cache{uType, rateType, uNoUnitsType, C <: SERK2ConstantCache} <:
-              OrdinaryDiffEqMutableCache
+              StabilizedRKMutableCache
     u::uType
     uprev::uType
     uᵢ₋₁::uType
