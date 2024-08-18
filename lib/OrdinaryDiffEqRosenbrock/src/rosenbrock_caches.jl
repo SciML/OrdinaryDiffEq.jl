@@ -695,6 +695,7 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 ### Rodas4 methods
+
 function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -702,11 +703,11 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
     dense = zeros(typeof(rate_prototype), 2)
     dus = zeros(typeof(rate_prototype), 3)
     ks = zeros(typeof(rate_prototype), 6)
-    fsalfirst = zeros(rate_prototype)
-    fsallast = zeros(rate_prototype)
-    dT = zeros(rate_prototype)
+    fsalfirst = zero(rate_prototype)
+    fsallast = zero(rate_prototype)
+    dT = zero(rate_prototype)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-    tmp = zeros(rate_prototype)
+    tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     weight = similar(u, uEltypeNoUnits)
@@ -715,7 +716,7 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
-    linsolve_tmp = zeros(rate_prototype)
+    linsolve_tmp = zero(rate_prototype)
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
