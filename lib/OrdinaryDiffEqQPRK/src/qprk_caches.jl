@@ -1,3 +1,4 @@
+struct QPRK98ConstantCache <: OrdinaryDiffEqConstantCache end
 
 @cache struct QPRK98Cache{
     uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <:
