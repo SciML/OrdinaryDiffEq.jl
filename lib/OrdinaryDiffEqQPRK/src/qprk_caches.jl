@@ -1,5 +1,3 @@
-struct QPRK98ConstantCache <: OrdinaryDiffEqConstantCache end
-get_fsalfirstlast(cache::QPRK98Cache) = (cache.fsalfirst, cache.k)
 
 @cache struct QPRK98Cache{
     uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <:
@@ -30,6 +28,8 @@ get_fsalfirstlast(cache::QPRK98Cache) = (cache.fsalfirst, cache.k)
     step_limiter!::StepLimiter
     thread::Thread
 end
+
+get_fsalfirstlast(cache::QPRK98Cache) = (cache.fsalfirst, cache.k)
 
 function alg_cache(alg::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
