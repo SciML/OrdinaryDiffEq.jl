@@ -26,33 +26,19 @@ Base.@kwdef struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarSt
     threading::TO = false
 end
 
-@doc generic_solver_docstring("Extrapolation of implicit Euler method with Romberg sequence.
+@doc differentiation_rk_docstring("Extrapolation of implicit Euler method with Romberg sequence.
     Similar to Hairer's SEULEX.",
     "ImplicitEulerExtrapolation",
     "Parallelized Explicit Extrapolation Method.",
-    "TBD",
-    """
-    - `chunk_size`: TBD
-    - `autodiff`: TBD
-    - `standardtag`: TBD
-    - `concrete_jac`: TBD
-    - `diff_type`: TBD
-    - `linsolve`: TBD
-    - `precs`: TBD
+    references = "TBD",
+    extra_keyword_description = """
     - `max_order`: TBD
     - `min_order`: TBD
     - `init_order`: TBD
     - `threading`: TBD
     - `sequence`: TBD
     """,
-    """
-    chunk_size = Val{0}(),
-    autodiff = true,
-    standardtag = Val{true}(),
-    concrete_jac = nothing,
-    diff_type = Val{:forward},
-    linsolve = nothing,
-    precs = DEFAULT_PRECS,
+    extra_keyword_default = """
     max_order = 12,
     min_order = 3,
     init_order = 5,
@@ -110,10 +96,27 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         init_order,
         threading, sequence)
 end
-"""
-ExtrapolationMidpointDeuflhard: Parallelized Explicit Extrapolation Method
-Midpoint extrapolation using Barycentric coordinates
-"""
+
+@doc generic_solver_docstring("Midpoint extrapolation using Barycentric coordinates.",
+    "ExtrapolationMidpointDeuflhard",
+    "Parallelized Explicit Extrapolation Method.",
+    "REFS TBD",
+    """
+    - `max_order`: TBD
+    - `min_order`: TBD
+    - `init_order`: TBD
+    - `threading`: TBD
+    - `sequence`: TBD
+    - `sequence_factor`: TBD
+    """,
+    """
+    max_order = 10,
+    min_order = 1,
+    init_order = 5,
+    threading = true,
+    sequence = :harmonic,
+    sequence_factor = 2,
+    """)
 struct ExtrapolationMidpointDeuflhard{TO} <:
        OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
     min_order::Int # Minimal extrapolation order
@@ -163,10 +166,25 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     ExtrapolationMidpointDeuflhard(min_order, init_order, max_order, sequence, threading,
         sequence_factor)
 end
-"""
-ImplicitDeuflhardExtrapolation: Parallelized Implicit Extrapolation Method
-Midpoint extrapolation using Barycentric coordinates
-"""
+
+@doc differentiation_rk_docstring("Midpoint extrapolation using Barycentric coordinates.",
+    "ImplicitDeuflhardExtrapolation",
+    "Parallelized Explicit Extrapolation Method.",
+    references = "TBD",
+    extra_keyword_description = """
+    - `max_order`: TBD
+    - `min_order`: TBD
+    - `init_order`: TBD
+    - `threading`: TBD
+    - `sequence`: TBD
+    """,
+    extra_keyword_default = """
+    max_order = 10,
+    min_order = 1,
+    init_order = 5,
+    threading = false,
+    sequence = :harmonic,
+    """)
 struct ImplicitDeuflhardExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -221,10 +239,28 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         init_order, max_order,
         sequence, threading)
 end
-"""
-ExtrapolationMidpointHairerWanner: Parallelized Explicit Extrapolation Method
-Midpoint extrapolation using Barycentric coordinates, following Hairer's ODEX in the adaptivity behavior.
-"""
+
+@doc generic_solver_docstring("Midpoint extrapolation using Barycentric coordinates,
+    following Hairer's ODEX in the adaptivity behavior.",
+    "ExtrapolationMidpointHairerWanner",
+    "Parallelized Explicit Extrapolation Method.",
+    "REFS TBD",
+    """
+    - `max_order`: TBD
+    - `min_order`: TBD
+    - `init_order`: TBD
+    - `threading`: TBD
+    - `sequence`: TBD
+    - `sequence_factor`: TBD
+    """,
+    """
+    max_order = 10,
+    min_order = 2,
+    init_order = 5,
+    threading = true,
+    sequence = :harmonic,
+    sequence_factor = 2,
+    """)
 struct ExtrapolationMidpointHairerWanner{TO} <:
        OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
     min_order::Int # Minimal extrapolation order
@@ -276,10 +312,26 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         min_order, init_order, max_order, sequence, threading,
         sequence_factor)
 end
-"""
-ImplicitHairerWannerExtrapolation: Parallelized Implicit Extrapolation Method
-Midpoint extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
-"""
+
+@doc differentiation_rk_docstring("Midpoint extrapolation using Barycentric coordinates,
+    following Hairer's SODEX in the adaptivity behavior.",
+    "ImplicitHairerWannerExtrapolation",
+    "Parallelized Explicit Extrapolation Method.",
+    references = "TBD",
+    extra_keyword_description = """
+    - `max_order`: TBD
+    - `min_order`: TBD
+    - `init_order`: TBD
+    - `threading`: TBD
+    - `sequence`: TBD
+    """,
+    extra_keyword_default = """
+    max_order = 10,
+    min_order = 2,
+    init_order = 5,
+    threading = false,
+    sequence = :harmonic,
+    """)
 struct ImplicitHairerWannerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -337,10 +389,27 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         max_order, sequence, threading)
 end
 
-"""
-ImplicitEulerBarycentricExtrapolation: Parallelized Implicit Extrapolation Method
-Euler extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
-"""
+@doc differentiation_rk_docstring("Euler extrapolation using Barycentric coordinates,
+    following Hairer's SODEX in the adaptivity behavior.",
+    "ImplicitEulerBarycentricExtrapolation",
+    "Parallelized Explicit Extrapolation Method.",
+    references = "TBD",
+    extra_keyword_description = """
+    - `max_order`: TBD
+    - `min_order`: TBD
+    - `init_order`: TBD
+    - `threading`: TBD
+    - `sequence`: TBD
+    - `sequence_factor`: TBD
+    """,
+    extra_keyword_default = """
+    max_order = 10,
+    min_order = 3,
+    init_order = 5,
+    threading = false,
+    sequence = :harmonic,
+    sequence_factor = 2,
+    """)
 struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
