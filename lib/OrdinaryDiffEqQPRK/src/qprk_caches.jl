@@ -1,4 +1,5 @@
 struct QPRK98ConstantCache <: OrdinaryDiffEqConstantCache end
+get_fsalfirstlast(cache::QPRK98Cache) = (cache.fsalfirst, cache.k)
 
 @cache struct QPRK98Cache{
     uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <:

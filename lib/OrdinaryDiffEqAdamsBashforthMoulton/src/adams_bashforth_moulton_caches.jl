@@ -1,4 +1,8 @@
-@cache mutable struct AB3Cache{uType, rateType} <: OrdinaryDiffEqMutableCache
+abstract type ABMMutableCache <: OrdinaryDiffEqMutableCache end
+abstract type ABMVariableCoefficientMutableCache <: OrdinaryDiffEqMutableCache end
+get_fsalfirstlast(cache::ABMMutableCache) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::ABMVariableCoefficientMutableCache) = (cache.fsalfirst, cache.k4)
+@cache mutable struct AB3Cache{uType, rateType} <: ABMMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -38,7 +42,7 @@ function alg_cache(alg::AB3, u, rate_prototype, ::Type{uEltypeNoUnits},
     AB3ConstantCache(k2, k3, 1)
 end
 
-@cache mutable struct ABM32Cache{uType, rateType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ABM32Cache{uType, rateType} <: ABMMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -78,7 +82,7 @@ function alg_cache(alg::ABM32, u, rate_prototype, ::Type{uEltypeNoUnits},
     ABM32ConstantCache(k2, k3, 1)
 end
 
-@cache mutable struct AB4Cache{uType, rateType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct AB4Cache{uType, rateType} <: ABMMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -128,7 +132,7 @@ function alg_cache(alg::AB4, u, rate_prototype, ::Type{uEltypeNoUnits},
     AB4ConstantCache(k2, k3, k4, 1)
 end
 
-@cache mutable struct ABM43Cache{uType, rateType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ABM43Cache{uType, rateType} <: ABMMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -184,7 +188,7 @@ function alg_cache(alg::ABM43, u, rate_prototype, ::Type{uEltypeNoUnits},
     ABM43ConstantCache(k2, k3, k4, 1)
 end
 
-@cache mutable struct AB5Cache{uType, rateType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct AB5Cache{uType, rateType} <: ABMMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -236,7 +240,7 @@ function alg_cache(alg::AB5, u, rate_prototype, ::Type{uEltypeNoUnits},
     AB5ConstantCache(k2, k3, k4, k5, 1)
 end
 
-@cache mutable struct ABM54Cache{uType, rateType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ABM54Cache{uType, rateType} <: ABMMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -312,7 +316,7 @@ end
 
 @cache mutable struct VCAB3Cache{uType, rateType, TabType, bs3Type, tArrayType, cArrayType,
     uNoUnitsType, coefType, dtArrayType} <:
-                      OrdinaryDiffEqMutableCache
+                      ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -408,7 +412,7 @@ end
 
 @cache mutable struct VCAB4Cache{uType, rateType, rk4cacheType, tArrayType, cArrayType,
     uNoUnitsType, coefType, dtArrayType} <:
-                      OrdinaryDiffEqMutableCache
+                      ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -504,7 +508,7 @@ end
 
 @cache mutable struct VCAB5Cache{uType, rateType, rk4cacheType, tArrayType, cArrayType,
     uNoUnitsType, coefType, dtArrayType} <:
-                      OrdinaryDiffEqMutableCache
+                      ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -602,7 +606,7 @@ end
 @cache mutable struct VCABM3Cache{
     uType, rateType, TabType, bs3Type, tArrayType, cArrayType,
     uNoUnitsType, coefType, dtArrayType} <:
-                      OrdinaryDiffEqMutableCache
+                      ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -708,7 +712,7 @@ end
 
 @cache mutable struct VCABM4Cache{uType, rateType, rk4cacheType, tArrayType, cArrayType,
     uNoUnitsType, coefType, dtArrayType} <:
-                      OrdinaryDiffEqMutableCache
+                      ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -813,7 +817,7 @@ end
 
 @cache mutable struct VCABM5Cache{uType, rateType, rk4cacheType, tArrayType, cArrayType,
     uNoUnitsType, coefType, dtArrayType} <:
-                      OrdinaryDiffEqMutableCache
+                      ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -919,7 +923,7 @@ end
 
 @cache mutable struct VCABMCache{uType, rateType, dtType, tArrayType, cArrayType,
     uNoUnitsType, coefType, dtArrayType} <:
-                      OrdinaryDiffEqMutableCache
+                      ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType

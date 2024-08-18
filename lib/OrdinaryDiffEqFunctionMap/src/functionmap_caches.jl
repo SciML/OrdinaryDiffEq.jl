@@ -3,6 +3,7 @@
     uprev::uType
     tmp::rateType
 end
+get_fsalfirstlast(cache::FunctionMapCache) = (cache.u, cache.uprev)
 
 function alg_cache(alg::FunctionMap, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,

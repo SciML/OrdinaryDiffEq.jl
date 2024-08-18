@@ -1,5 +1,8 @@
+abstract type OrdinaryDiffEqMutableCache <: LinearMutableCache end
+get_fsalfirstlast(cache::LinearMutableCache) = (cache.fsalfirst, cache.k)
+
 @cache struct MagnusMidpointCache{uType, rateType, WType, expType} <:
-              OrdinaryDiffEqMutableCache
+              LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -31,7 +34,7 @@ function alg_cache(alg::MagnusMidpoint, u, rate_prototype, ::Type{uEltypeNoUnits
     MagnusMidpointConstantCache()
 end
 
-@cache struct RKMK2Cache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct RKMK2Cache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -63,7 +66,7 @@ function alg_cache(alg::RKMK2, u, rate_prototype, ::Type{uEltypeNoUnits},
     RKMK2ConstantCache()
 end
 
-@cache struct LieRK4Cache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct LieRK4Cache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -95,7 +98,7 @@ function alg_cache(alg::LieRK4, u, rate_prototype, ::Type{uEltypeNoUnits},
     LieRK4ConstantCache()
 end
 
-@cache struct CG3Cache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct CG3Cache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -127,7 +130,7 @@ function alg_cache(alg::CG3, u, rate_prototype, ::Type{uEltypeNoUnits},
     CG3ConstantCache()
 end
 
-@cache struct CG2Cache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct CG2Cache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -159,7 +162,7 @@ function alg_cache(alg::CG2, u, rate_prototype, ::Type{uEltypeNoUnits},
     CG2ConstantCache()
 end
 
-@cache struct CG4aCache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct CG4aCache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -187,7 +190,7 @@ function alg_cache(alg::CG4a, u, rate_prototype, uEltypeNoUnits,
     CG4aConstantCache()
 end
 
-@cache struct RKMK4Cache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct RKMK4Cache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -220,7 +223,7 @@ function alg_cache(alg::RKMK4, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct MagnusAdapt4Cache{uType, rateType, WType, uNoUnitsType, expType} <:
-              OrdinaryDiffEqMutableCache
+              LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -258,7 +261,7 @@ function alg_cache(alg::MagnusAdapt4, u, rate_prototype, ::Type{uEltypeNoUnits},
     MagnusAdapt4ConstantCache()
 end
 
-@cache struct MagnusNC8Cache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct MagnusNC8Cache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -290,7 +293,7 @@ function alg_cache(alg::MagnusNC8, u, rate_prototype, ::Type{uEltypeNoUnits},
     MagnusNC8ConstantCache()
 end
 
-@cache struct MagnusGL4Cache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct MagnusGL4Cache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -322,7 +325,7 @@ function alg_cache(alg::MagnusGL4, u, rate_prototype, ::Type{uEltypeNoUnits},
     MagnusGL4ConstantCache()
 end
 
-@cache struct MagnusGL8Cache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct MagnusGL8Cache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -354,7 +357,7 @@ function alg_cache(alg::MagnusGL8, u, rate_prototype, ::Type{uEltypeNoUnits},
     MagnusGL8ConstantCache()
 end
 
-@cache struct MagnusNC6Cache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct MagnusNC6Cache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -386,7 +389,7 @@ function alg_cache(alg::MagnusNC6, u, rate_prototype, ::Type{uEltypeNoUnits},
     MagnusNC6ConstantCache()
 end
 
-@cache struct MagnusGL6Cache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct MagnusGL6Cache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -418,7 +421,7 @@ function alg_cache(alg::MagnusGL6, u, rate_prototype, ::Type{uEltypeNoUnits},
     MagnusGL6ConstantCache()
 end
 @cache struct MagnusGauss4Cache{uType, rateType, WType, expType} <:
-              OrdinaryDiffEqMutableCache
+              LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -450,7 +453,7 @@ function alg_cache(alg::MagnusGauss4, u, rate_prototype, ::Type{uEltypeNoUnits},
     MagnusGauss4ConstantCache()
 end
 
-@cache struct LieEulerCache{uType, rateType, WType, expType} <: OrdinaryDiffEqMutableCache
+@cache struct LieEulerCache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -482,7 +485,7 @@ function alg_cache(alg::LieEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
     LieEulerConstantCache()
 end
 
-@cache struct CayleyEulerCache{uType, rateType} <: OrdinaryDiffEqMutableCache
+@cache struct CayleyEulerCache{uType, rateType} <: LinearMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -511,7 +514,7 @@ function alg_cache(alg::CayleyEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct MagnusLeapfrogCache{uType, rateType, WType, expType} <:
-              OrdinaryDiffEqMutableCache
+              LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -553,7 +556,7 @@ function alg_cache(alg::LinearExponential, u, rate_prototype, ::Type{uEltypeNoUn
 end
 
 @cache struct LinearExponentialCache{uType, rateType, KsType, expType} <:
-              OrdinaryDiffEqMutableCache
+              LinearMutableCache
     u::uType
     uprev::uType
     tmp::uType

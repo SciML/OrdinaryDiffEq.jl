@@ -40,9 +40,6 @@ end
 
 function initialize!(integrator, cache::SymplecticEulerCache)
     integrator.kshortsize = 2
-    @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -76,34 +73,20 @@ end
     f.f2(ku, du, u, p, t)
 end
 
-const MutableCachesHamilton = Union{Symplectic2Cache, Symplectic3Cache,
-    Symplectic4Cache, Symplectic45Cache, Symplectic5Cache,
-    Symplectic6Cache, Symplectic62Cache,
-    McAte8Cache, KahanLi8Cache, SofSpa10Cache}
-const MutableCachesNewton = Union{VelocityVerletCache}
-
-const ConstantCachesHamilton = Union{Symplectic2ConstantCache, Symplectic3ConstantCache,
-    Symplectic4ConstantCache, Symplectic45ConstantCache,
-    Symplectic5ConstantCache,
-    Symplectic6ConstantCache, Symplectic62ConstantCache,
-    McAte8ConstantCache, KahanLi8ConstantCache,
-    SofSpa10ConstantCache}
-const ConstantCachesNewton = Union{VelocityVerletConstantCache}
-
 # some of the algorithms are designed only for the case
 # f.f2(p, q, pa, t) = p which is the Newton/Lagrange equations
 # If called with different functions (which are possible in the Hamiltonian case)
 # an exception is thrown to avoid silently calculate wrong results.
-verify_f2(f, p, q, pa, t, ::Any, ::C) where {C <: ConstantCachesHamilton} = f(p, q, pa, t)
-function verify_f2(f, res, p, q, pa, t, ::Any, ::C) where {C <: MutableCachesHamilton}
+verify_f2(f, p, q, pa, t, ::Any, ::C) where {C <: HamiltonConstantCache} = f(p, q, pa, t)
+function verify_f2(f, res, p, q, pa, t, ::Any, ::C) where {C <: HamiltonMutableCache}
     f(res, p, q, pa, t)
 end
 
-function verify_f2(f, p, q, pa, t, integrator, ::C) where {C <: ConstantCachesNewton}
+function verify_f2(f, p, q, pa, t, integrator, ::C) where {C <: VelocityVerletConstantCache}
     res = f(p, q, pa, t)
     res == p ? p : throwex(integrator)
 end
-function verify_f2(f, res, p, q, pa, t, integrator, ::C) where {C <: MutableCachesNewton}
+function verify_f2(f, res, p, q, pa, t, integrator, ::C) where {C <: VelocityVerletCache}
     f(res, p, q, pa, t)
     res == p ? res : throwex(integrator)
 end
@@ -142,9 +125,7 @@ end
 
 function initialize!(integrator,
         cache::C) where {C <:
-                         Union{MutableCachesHamilton, MutableCachesNewton}}
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
+                         Union{HamiltonMutableCache, VelocityVerletCache}}
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
@@ -162,7 +143,7 @@ end
 function initialize!(integrator,
         cache::C) where {
         C <:
-        Union{ConstantCachesHamilton, ConstantCachesNewton}}
+        Union{HamiltonConstantCache, VelocityVerletConstantCache}}
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 

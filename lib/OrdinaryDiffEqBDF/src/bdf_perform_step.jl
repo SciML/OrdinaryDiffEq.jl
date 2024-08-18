@@ -86,8 +86,7 @@ end
 
 function initialize!(integrator, cache::ABDF2Cache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
+
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -255,8 +254,7 @@ function initialize!(integrator, cache::SBDFCache)
     @unpack uprev, p, t = integrator
     @unpack f1, f2 = integrator.f
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
+
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -412,8 +410,7 @@ end
 
 function initialize!(integrator, cache::QNDF1Cache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
+
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -608,8 +605,7 @@ end
 
 function initialize!(integrator, cache::QNDF2Cache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
+
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -833,8 +829,7 @@ end
 
 function initialize!(integrator, cache::QNDFCache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
+
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -1010,8 +1005,7 @@ end
 
 function initialize!(integrator, cache::MEBDF2Cache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
+
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -1218,8 +1212,7 @@ end
 
 function initialize!(integrator, cache::FBDFCache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
+
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast

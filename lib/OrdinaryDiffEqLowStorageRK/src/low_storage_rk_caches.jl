@@ -1,6 +1,9 @@
+abstract type OrdinaryDiffEqMutableCache <: LowStorageRKMutableCache end
+get_fsalfirstlast(cache::LowStorageRKMutableCache) = (cache.fsalfirst, cache.k)
+
 # 2N low storage methods introduced by Williamson
 @cache struct LowStorageRK2NCache{uType, rateType, TabType, StageLimiter, StepLimiter,
-    Thread} <: OrdinaryDiffEqMutableCache
+    Thread} <: LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -118,7 +121,7 @@ end
 
 @cache struct KYK2014DGSSPRK_3S2_Cache{uType, rateType, TabType, StageLimiter, StepLimiter,
     Thread} <:
-              OrdinaryDiffEqMutableCache
+              LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -206,7 +209,7 @@ function alg_cache(alg::RK46NL, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct RK46NLCache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -736,7 +739,7 @@ end
 
 # 2C low storage methods introduced by Calvo, Franco, Rández (2004)
 @cache struct LowStorageRK2CCache{uType, rateType, TabType, StageLimiter, StepLimiter,
-    Thread} <: OrdinaryDiffEqMutableCache
+    Thread} <: LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -859,7 +862,7 @@ end
 
 # 3S low storage methods introduced by Ketcheson
 @cache struct LowStorageRK3SCache{uType, rateType, TabType, StageLimiter, StepLimiter,
-    Thread} <: OrdinaryDiffEqMutableCache
+    Thread} <: LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -1744,7 +1747,7 @@ end
 #   Compressible Computational Fluid Dynamics
 #   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 @cache struct LowStorageRK3SpCache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
-    StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+    StepLimiter, Thread} <: LowStorageRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -2140,7 +2143,7 @@ end
 #   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 @cache struct LowStorageRK3SpFSALCache{
     uType, rateType, uNoUnitsType, TabType, StageLimiter,
-    StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+    StepLimiter, Thread} <: LowStorageRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -2534,7 +2537,7 @@ end
 # 2R+ low storage methods introduced by van der Houwen
 @cache struct LowStorageRK2RPCache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
     StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -2940,7 +2943,7 @@ end
 # 3R+ low storage methods introduced by van der Houwen
 @cache struct LowStorageRK3RPCache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
     StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -3464,7 +3467,7 @@ end
 # 4R+ low storage methods introduced by van der Houwen
 @cache struct LowStorageRK4RPCache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
     StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -3845,7 +3848,7 @@ end
 # 5R+ low storage methods introduced by van der Houwen
 @cache struct LowStorageRK5RPCache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
     StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType

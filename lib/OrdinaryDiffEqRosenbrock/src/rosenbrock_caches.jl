@@ -1,4 +1,8 @@
 abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
+
+# Fake values since non-FSAL
+get_fsalfirstlast(cache::RosenbrockMutableCache) = (cache.u, cache.uprev)
+
 ################################################################################
 
 # Shampine's Low-order Rosenbrocks
@@ -1126,6 +1130,11 @@ function alg_cache(
         Rodas5PTableau(constvalue(uBottomEltypeNoUnits),
             constvalue(tTypeNoUnits)), J, W, linsolve)
 end
+
+
+get_fsalfirstlast(cache::Union{Rosenbrock23Cache,Rosenbrock32Cache, Rosenbrock33Cache,
+Rosenbrock34Cache,
+Rosenbrock4Cache}) = (cache.fsalfirst, cache.fsallast)
 
 ################################################################################
 

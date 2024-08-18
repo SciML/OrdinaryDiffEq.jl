@@ -1,5 +1,8 @@
+abstract type FeaginCache <: OrdinaryDiffEqMutableCache end
+get_fsalfirstlast(cache::FeaginCache) = (cache.fsalfirst, cache.k)
+
 @cache struct Feagin10Cache{uType, uNoUnitsType, rateType, TabType, StepLimiter} <:
-              OrdinaryDiffEqMutableCache
+              FeaginCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -65,7 +68,7 @@ function alg_cache(alg::Feagin10, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct Feagin12Cache{uType, uNoUnitsType, rateType, TabType, StepLimiter} <:
-              OrdinaryDiffEqMutableCache
+              FeaginCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -148,7 +151,7 @@ function alg_cache(alg::Feagin12, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct Feagin14Cache{uType, uNoUnitsType, rateType, TabType, StepLimiter} <:
-              OrdinaryDiffEqMutableCache
+              FeaginCache
     u::uType
     uprev::uType
     fsalfirst::rateType

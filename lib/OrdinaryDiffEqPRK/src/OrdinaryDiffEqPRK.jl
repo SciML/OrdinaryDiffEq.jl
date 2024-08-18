@@ -2,7 +2,7 @@ module OrdinaryDiffEqPRK
 
 import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_order, OrdinaryDiffEqMutableCache,
                            OrdinaryDiffEqConstantCache, constvalue, @unpack, @cache,
-                           alg_cache,
+                           alg_cache, get_fsalfirstlast,
                            unwrap_alg, perform_step!, @threaded, initialize!, isthreaded,
                            full_cache
 import MuladdMacro: @muladd

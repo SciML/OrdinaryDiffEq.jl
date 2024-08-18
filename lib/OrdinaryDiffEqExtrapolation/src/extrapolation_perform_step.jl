@@ -1,8 +1,7 @@
 function initialize!(integrator, cache::AitkenNevilleCache)
     integrator.kshortsize = 2
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -251,10 +250,7 @@ end
 
 function initialize!(integrator, cache::ImplicitEulerExtrapolationCache)
     integrator.kshortsize = 2
-
-    integrator.fsalfirst = zero(first(cache.k_tmps))
     integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
-    integrator.fsallast = zero(integrator.fsalfirst)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -723,8 +719,7 @@ end
 function initialize!(integrator, cache::ExtrapolationMidpointDeuflhardCache)
     # cf. initialize! of MidpointCache
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -1135,8 +1130,7 @@ end
 function initialize!(integrator, cache::ImplicitDeuflhardExtrapolationCache)
     # cf. initialize! of MidpointCache
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -1807,8 +1801,7 @@ end
 function initialize!(integrator, cache::ExtrapolationMidpointHairerWannerCache)
     # cf. initialize! of MidpointCache
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -2508,8 +2501,7 @@ end
 function initialize!(integrator, cache::ImplicitHairerWannerExtrapolationCache)
     # cf. initialize! of MidpointCache
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -3207,8 +3199,7 @@ end
 function initialize!(integrator, cache::ImplicitEulerBarycentricExtrapolationCache)
     # cf. initialize! of MidpointCache
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
