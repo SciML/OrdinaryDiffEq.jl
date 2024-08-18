@@ -172,8 +172,14 @@ function choose_algorithm!(integrator,
         cache.current = new_current
         if new_current == 1
             initialize!(integrator, @inbounds(cache.caches[1]))
+            fsalfirst, fsallast = get_fsalfirstlast(cache.caches[1],u)
+            integrator.fsalfirst = fsalfirst
+            integrator.fsallast = fsallast
         elseif new_current == 2
             initialize!(integrator, @inbounds(cache.caches[2]))
+            fsalfirst, fsallast = get_fsalfirstlast(cache.caches[2],u)
+            integrator.fsalfirst = fsalfirst
+            integrator.fsallast = fsallast
         end
         if old_current == 1 && new_current == 2
             reset_alg_dependent_opts!(integrator, integrator.alg.algs[1],
@@ -199,21 +205,39 @@ function choose_algorithm!(integrator, cache::DefaultCache)
         if new_current == 1
             initialize!(integrator, @inbounds(cache.cache1))
             new_cache = cache.cache1
+            fsalfirst, fsallast = get_fsalfirstlast(cache.cache1,u)
+            integrator.fsalfirst = fsalfirst
+            integrator.fsallast = fsallast
         elseif new_current == 2
             initialize!(integrator, @inbounds(cache.cache2))
             new_cache = cache.cache2
+            fsalfirst, fsallast = get_fsalfirstlast(cache.cache2,u)
+            integrator.fsalfirst = fsalfirst
+            integrator.fsallast = fsallast
         elseif new_current == 3
             initialize!(integrator, @inbounds(cache.cache3))
             new_cache = cache.cache3
+            fsalfirst, fsallast = get_fsalfirstlast(cache.cache3,u)
+            integrator.fsalfirst = fsalfirst
+            integrator.fsallast = fsallast
         elseif new_current == 4
             initialize!(integrator, @inbounds(cache.cache4))
             new_cache = cache.cache4
+            fsalfirst, fsallast = get_fsalfirstlast(cache.cache4,u)
+            integrator.fsalfirst = fsalfirst
+            integrator.fsallast = fsallast
         elseif new_current == 5
             initialize!(integrator, @inbounds(cache.cache5))
             new_cache = cache.cache5
+            fsalfirst, fsallast = get_fsalfirstlast(cache.cache5,u)
+            integrator.fsalfirst = fsalfirst
+            integrator.fsallast = fsallast
         elseif new_current == 6
             initialize!(integrator, @inbounds(cache.cache6))
             new_cache = cache.cache6
+            fsalfirst, fsallast = get_fsalfirstlast(cache.cache6,u)
+            integrator.fsalfirst = fsalfirst
+            integrator.fsallast = fsallast
         end
 
         if old_current == 1

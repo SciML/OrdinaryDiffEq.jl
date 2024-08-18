@@ -469,7 +469,7 @@ function DiffEqBase.__init(
     reinitiailize = true
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
-    faslfirst, fsallast = get_fsalfirstlast(cache,u)
+    faslfirst, fsallast = get_fsalfirstlast(cache,rate_prototype)
 
     integrator = ODEIntegrator{typeof(_alg), isinplace(prob), uType, typeof(du),
         tType, typeof(p),
