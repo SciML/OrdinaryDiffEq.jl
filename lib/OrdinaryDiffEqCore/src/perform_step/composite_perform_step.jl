@@ -95,8 +95,14 @@ function initialize!(integrator, cache::CompositeCache{Tuple{T1, T2}, F}) where 
     cache.current = cache.choice_function(integrator)
     if cache.current == 1
         initialize!(integrator, @inbounds(cache.caches[1]))
+        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[1])
+        integrator.fsalfirst = fsalfirst
+        integrator.fsallast = fsallast
     elseif cache.current == 2
         initialize!(integrator, @inbounds(cache.caches[2]))
+        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[2])
+        integrator.fsalfirst = fsalfirst
+        integrator.fsallast = fsallast
         reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],
             integrator.alg.algs[2])
     end
