@@ -26,14 +26,14 @@ mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiff
     cache5::T5
     cache6::T6
     u::uType
-    function DefaultCache{T1, T2, T3, T4, T5, T6, F}(
-            args, choice_function, current) where {T1, T2, T3, T4, T5, T6, F}
-        new{T1, T2, T3, T4, T5, T6, typeof(args), F}(args, choice_function, current)
+    function DefaultCache{T1, T2, T3, T4, T5, T6, F, uType}(
+            args, choice_function, current, u) where {T1, T2, T3, T4, T5, T6, F, uType}
+        new{T1, T2, T3, T4, T5, T6, typeof(args), F, uType}(args, choice_function, current, u)
     end
 end
 
 function get_fsalfirstlast(cache::DefaultCache) 
-    (u,u)
+    (cache.u,cache.u) # will be overwritten by the cache choice
 end
 
 function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
