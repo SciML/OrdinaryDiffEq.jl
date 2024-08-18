@@ -1,5 +1,5 @@
 abstract type FIRKMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::FIRKMutableCache) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::FIRKMutableCache,u) = (cache.fsalfirst, cache.k)
 
 mutable struct RadauIIA3ConstantCache{F, Tab, Tol, Dt, U, JType} <:
                OrdinaryDiffEqConstantCache

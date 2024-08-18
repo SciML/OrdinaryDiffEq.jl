@@ -1,5 +1,5 @@
 abstract type FeaginCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::FeaginCache) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::FeaginCache,u) = (cache.fsalfirst, cache.k)
 
 @cache struct Feagin10Cache{uType, uNoUnitsType, rateType, TabType, StepLimiter} <:
               FeaginCache

@@ -1,5 +1,5 @@
 abstract type HighOrderRKMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::HighOrderRKMutableCache) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::HighOrderRKMutableCache,u) = (cache.fsalfirst, cache.k)
 @cache struct TanYam7Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
     StepLimiter, Thread} <:
               HighOrderRKMutableCache
@@ -92,7 +92,7 @@ end
     step_limiter!::StepLimiter
     thread::Thread
 end
-get_fsalfirstlast(cache::DP8Cache) = (cache.k1, cache.k13)
+get_fsalfirstlast(cache::DP8Cache,u) = (cache.k1, cache.k13)
 
 function alg_cache(alg::DP8, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,

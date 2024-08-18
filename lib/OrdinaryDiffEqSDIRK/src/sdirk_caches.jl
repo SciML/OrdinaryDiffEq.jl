@@ -1,6 +1,6 @@
 abstract type SDIRKMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type SDIRKConstantCache <: OrdinaryDiffEqConstantCache end
-get_fsalfirstlast(cache::SDIRKMutableCache) = (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
+get_fsalfirstlast(cache::SDIRKMutableCache,u) = (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
 
 @cache mutable struct ImplicitEulerCache{
     uType, rateType, uNoUnitsType, N, AV, StepLimiter} <:

@@ -21,7 +21,7 @@ function perform_step!(integrator, cache::EulerConstantCache, repeat_step = fals
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::EulerCache) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::EulerCache,u) = (cache.fsalfirst, cache.k)
 function initialize!(integrator, cache::EulerCache)
     integrator.kshortsize = 2
     @unpack k, fsalfirst = cache
@@ -97,7 +97,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::Union{HeunCache, RalstonCache}) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::Union{HeunCache, RalstonCache},u) = (cache.fsalfirst, cache.k)
 function initialize!(integrator, cache::Union{HeunCache, RalstonCache})
     integrator.kshortsize = 2
     @unpack k, fsalfirst = cache
@@ -189,7 +189,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::MidpointCache) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::MidpointCache,u) = (cache.fsalfirst, cache.k)
 function initialize!(integrator, cache::MidpointCache)
     @unpack k, fsalfirst = cache
     integrator.fsalfirst = fsalfirst
@@ -288,7 +288,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::RK4Cache) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::RK4Cache,u) = (cache.fsalfirst, cache.k)
 function initialize!(integrator, cache::RK4Cache)
     @unpack tmp, fsalfirst, k₂, k₃, k₄, k = cache
     integrator.fsalfirst = fsalfirst
@@ -420,7 +420,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::Anas5Cache) = (cache.k1, cache.k7)
+get_fsalfirstlast(cache::Anas5Cache,u) = (cache.k1, cache.k7)
 function initialize!(integrator, cache::Anas5Cache)
     integrator.kshortsize = 7
     resize!(integrator.k, integrator.kshortsize)

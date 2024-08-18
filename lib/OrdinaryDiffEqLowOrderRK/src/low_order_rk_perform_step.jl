@@ -33,7 +33,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::BS3Cache) = (cache.fsalfirst, cache.k4)
+get_fsalfirstlast(cache::BS3Cache,u) = (cache.fsalfirst, cache.k4)
 function initialize!(integrator, cache::BS3Cache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
@@ -113,7 +113,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::OwrenZen3Cache) = (cache.k1, cache.k4)
+get_fsalfirstlast(cache::OwrenZen3Cache,u) = (cache.k1, cache.k4)
 function initialize!(integrator, cache::OwrenZen3Cache)
     integrator.kshortsize = 4
     resize!(integrator.k, integrator.kshortsize)
@@ -195,7 +195,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::OwrenZen4Cache) = (cache.k1, cache.k6)
+get_fsalfirstlast(cache::OwrenZen4Cache,u) = (cache.k1, cache.k6)
 function initialize!(integrator, cache::OwrenZen4Cache)
     integrator.kshortsize = 6
     resize!(integrator.k, integrator.kshortsize)
@@ -297,7 +297,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::OwrenZen5Cache) = (cache.k1, cache.k8)
+get_fsalfirstlast(cache::OwrenZen5Cache,u) = (cache.k1, cache.k8)
 function initialize!(integrator, cache::OwrenZen5Cache)
     integrator.kshortsize = 8
     resize!(integrator.k, integrator.kshortsize)
@@ -454,7 +454,7 @@ end
     end
 end
 
-get_fsalfirstlast(cache::BS5Cache) = (cache.k1, cache.k8)
+get_fsalfirstlast(cache::BS5Cache,u) = (cache.k1, cache.k8)
 function initialize!(integrator, cache::BS5Cache)
     alg = unwrap_alg(integrator, false)
     alg.lazy ? (integrator.kshortsize = 8) : (integrator.kshortsize = 11)
@@ -619,7 +619,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::DP5Cache) = (cache.k1, cache.k7)
+get_fsalfirstlast(cache::DP5Cache,u) = (cache.k1, cache.k7)
 function initialize!(integrator, cache::DP5Cache)
     integrator.kshortsize = 4
     resize!(integrator.k, integrator.kshortsize)
@@ -736,7 +736,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::RKO65Cache) = (cache.k1, cache.k6)
+get_fsalfirstlast(cache::RKO65Cache,u) = (cache.k1, cache.k6)
 function initialize!(integrator, cache::RKO65Cache)
     @unpack k, fsalfirst = cache
     integrator.kshortsize = 6
@@ -863,7 +863,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::FRK65Cache) = (cache.k1, cache.k9)
+get_fsalfirstlast(cache::FRK65Cache,u) = (cache.k1, cache.k9)
 function initialize!(integrator, cache::FRK65Cache)
     integrator.kshortsize = 9
 
@@ -991,7 +991,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::RKMCache) = (cache.k1, zero(cache.k1))
+get_fsalfirstlast(cache::RKMCache,u) = (cache.k1, zero(cache.k1))
 function initialize!(integrator, cache::RKMCache)
     @unpack k, fsalfirst = cache
     integrator.kshortsize = 6
@@ -1081,7 +1081,7 @@ function perform_step!(integrator, cache::PSRK4p7q6ConstantCache, repeat_step = 
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::RKMCache) = (cache.k1, cache.k6)
+get_fsalfirstlast(cache::RKMCache,u) = (cache.k1, cache.k6)
 function initialize!(integrator, cache::PSRK4p7q6Cache)
     @unpack uprev, f, p, t = integrator
 
@@ -1169,7 +1169,7 @@ function perform_step!(integrator, cache::PSRK3p6q5ConstantCache, repeat_step = 
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::PSRK3p6q5Cache) = (cache.k1, cache.k5)
+get_fsalfirstlast(cache::PSRK3p6q5Cache,u) = (cache.k1, cache.k5)
 function initialize!(integrator, cache::PSRK3p6q5Cache)
     @unpack uprev, f, p, t = integrator
 
@@ -1246,7 +1246,7 @@ function perform_step!(integrator, cache::PSRK3p5q4ConstantCache, repeat_step = 
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::PSRK3p5q4Cache) = (cache.k1, cache.k4)
+get_fsalfirstlast(cache::PSRK3p5q4Cache,u) = (cache.k1, cache.k4)
 function initialize!(integrator, cache::PSRK3p5q4Cache)
     @unpack uprev, f, p, t = integrator
 
@@ -1335,7 +1335,7 @@ function perform_step!(integrator, cache::MSRK5ConstantCache, repeat_step = fals
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::MSRK5Cache) = (cache.k1, cache.k9)
+get_fsalfirstlast(cache::MSRK5Cache,u) = (cache.k1, cache.k9)
 function initialize!(integrator, cache::MSRK5Cache)
     @unpack uprev, f, p, t = integrator
 
@@ -1452,7 +1452,7 @@ function perform_step!(integrator, cache::MSRK6ConstantCache, repeat_step = fals
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::MSRK6Cache) = (cache.k1, cache.k9)
+get_fsalfirstlast(cache::MSRK6Cache,u) = (cache.k1, cache.k9)
 function initialize!(integrator, cache::MSRK6Cache)
     @unpack uprev, f, p, t = integrator
 
@@ -1572,7 +1572,7 @@ function perform_step!(integrator, cache::Stepanov5ConstantCache, repeat_step = 
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::Stepanov5Cache) = (cache.k1, cache.k7)
+get_fsalfirstlast(cache::Stepanov5Cache,u) = (cache.k1, cache.k7)
 function initialize!(integrator, cache::Stepanov5Cache)
     @unpack uprev, f, p, t = integrator
 
@@ -1693,7 +1693,7 @@ function perform_step!(integrator, cache::SIR54ConstantCache, repeat_step = fals
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::SIR54Cache) = (cache.k1, cache.k8)
+get_fsalfirstlast(cache::SIR54Cache,u) = (cache.k1, cache.k8)
 function initialize!(integrator, cache::SIR54Cache)
     @unpack uprev, f, p, t = integrator
 
@@ -1801,7 +1801,7 @@ function perform_step!(integrator, cache::Alshina2ConstantCache, repeat_step = f
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::Alshina2Cache) = (cache.k1, cache.k2)
+get_fsalfirstlast(cache::Alshina2Cache,u) = (cache.k1, cache.k2)
 function initialize!(integrator, cache::Alshina2Cache)
     @unpack uprev, f, p, t = integrator
 
@@ -1882,7 +1882,7 @@ function perform_step!(integrator, cache::Alshina3ConstantCache, repeat_step = f
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::Alshina3Cache) = (cache.k1, cache.k3)
+get_fsalfirstlast(cache::Alshina3Cache,u) = (cache.k1, cache.k3)
 function initialize!(integrator, cache::Alshina3Cache)
     @unpack uprev, f, p, t = integrator
 
@@ -1978,7 +1978,7 @@ function perform_step!(integrator, cache::Alshina6ConstantCache, repeat_step = f
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::Alshina6Cache) = (cache.k1, cache.k7)
+get_fsalfirstlast(cache::Alshina6Cache,u) = (cache.k1, cache.k7)
 function initialize!(integrator, cache::Alshina6Cache)
     @unpack uprev, f, p, t = integrator
 

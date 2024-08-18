@@ -30,42 +30,43 @@ function initialize!(integrator, cache::DefaultCache)
     cache.current = cache.choice_function(integrator)
     algs = integrator.alg.algs
     init_ith_default_cache(cache, algs, cache.current)
+    u = integrator.u
     if cache.current == 1
         initialize!(integrator, cache.cache1)
-        fsalfirst, fsallast = get_fsalfirstlast(cache.cache1)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache1,u)
         integrator.fsalfirst = fsalfirst
         integrator.fsallast = fsallast
     elseif cache.current == 2
         initialize!(integrator, cache.cache2)
-        fsalfirst, fsallast = get_fsalfirstlast(cache.cache2)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache2,u)
         integrator.fsalfirst = fsalfirst
         integrator.fsallast = fsallast
         # the controller was initialized by default for algs[1]
         reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[2])
     elseif cache.current == 3
         initialize!(integrator, cache.cache3)
-        fsalfirst, fsallast = get_fsalfirstlast(cache.cache3)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache3,u)
         integrator.fsalfirst = fsalfirst
         integrator.fsallast = fsallast
         # the controller was initialized by default for algs[1]
         reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[3])
     elseif cache.current == 4
         initialize!(integrator, cache.cache4)
-        fsalfirst, fsallast = get_fsalfirstlast(cache.cache4)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache4,u)
         integrator.fsalfirst = fsalfirst
         integrator.fsallast = fsallast
         # the controller was initialized by default for algs[1]
         reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[4])
     elseif cache.current == 5
         initialize!(integrator, cache.cache5)
-        fsalfirst, fsallast = get_fsalfirstlast(cache.cache5)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache5,u)
         integrator.fsalfirst = fsalfirst
         integrator.fsallast = fsallast
         # the controller was initialized by default for algs[1]
         reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[5])
     elseif cache.current == 6
         initialize!(integrator, cache.cache6)
-        fsalfirst, fsallast = get_fsalfirstlast(cache.cache6)
+        fsalfirst, fsallast = get_fsalfirstlast(cache.cache6,u)
         integrator.fsalfirst = fsalfirst
         integrator.fsallast = fsallast
         # the controller was initialized by default for algs[1]
@@ -76,14 +77,15 @@ end
 
 function initialize!(integrator, cache::CompositeCache)
     cache.current = cache.choice_function(integrator)
+    u = integrator.u
     if cache.current == 1
         initialize!(integrator, @inbounds(cache.caches[1]))
-        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[1])
+        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[1],u)
         integrator.fsalfirst = fsalfirst
         integrator.fsallast = fsallast
     elseif cache.current == 2
         initialize!(integrator, @inbounds(cache.caches[2]))
-        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[2])
+        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[2],u)
         integrator.fsalfirst = fsalfirst
         integrator.fsallast = fsallast
         # the controller was initialized by default for integrator.alg.algs[1]
@@ -91,7 +93,7 @@ function initialize!(integrator, cache::CompositeCache)
             integrator.alg.algs[2])
     else
         initialize!(integrator, @inbounds(cache.caches[cache.current]))
-        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[cache.current])
+        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[cache.current],u)
         integrator.fsalfirst = fsalfirst
         integrator.fsallast = fsallast
         reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],
@@ -102,14 +104,15 @@ end
 
 function initialize!(integrator, cache::CompositeCache{Tuple{T1, T2}, F}) where {T1, T2, F}
     cache.current = cache.choice_function(integrator)
+    u = integrator.u
     if cache.current == 1
         initialize!(integrator, @inbounds(cache.caches[1]))
-        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[1])
+        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[1],u)
         integrator.fsalfirst = fsalfirst
         integrator.fsallast = fsallast
     elseif cache.current == 2
         initialize!(integrator, @inbounds(cache.caches[2]))
-        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[2])
+        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[2],u)
         integrator.fsalfirst = fsalfirst
         integrator.fsallast = fsallast
         reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],

@@ -1,5 +1,5 @@
 abstract type LowStorageRKMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::LowStorageRKMutableCache) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::LowStorageRKMutableCache,u) = (cache.fsalfirst, cache.k)
 
 # 2N low storage methods introduced by Williamson
 @cache struct LowStorageRK2NCache{uType, rateType, TabType, StageLimiter, StepLimiter,

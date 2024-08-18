@@ -1,6 +1,6 @@
 # IMEX Multistep methods
 abstract type IMEXMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::IMEXMutableCache) = (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
+get_fsalfirstlast(cache::IMEXMutableCache,u) = (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
 
 # CNAB2
 

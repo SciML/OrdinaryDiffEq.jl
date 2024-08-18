@@ -2,7 +2,7 @@
 # Classical ExpRK method caches
 abstract type ExpRKCache <: OrdinaryDiffEqMutableCache end
 abstract type ExpRKConstantCache <: OrdinaryDiffEqConstantCache end
-get_fsalfirstlast(cache::ExpRKCache) = (zero(cache.rtmp), zero(cache.rtmp))
+get_fsalfirstlast(cache::ExpRKCache,u) = (zero(cache.rtmp), zero(cache.rtmp))
 
 # Precomputation of exponential-like operators
 """
@@ -892,7 +892,7 @@ end
     B1::expType # ϕ1(hA) + ϕ2(hA)
     B0::expType # -ϕ2(hA)
 end
-get_fsalfirstlast(cache::ETD2) = (ETD2Fsal(cache.rtmp1), ETD2Fsal(cache.rtmp1))
+get_fsalfirstlast(cache::ETD2,u) = (ETD2Fsal(cache.rtmp1), ETD2Fsal(cache.rtmp1))
 
 function alg_cache(alg::ETD2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,

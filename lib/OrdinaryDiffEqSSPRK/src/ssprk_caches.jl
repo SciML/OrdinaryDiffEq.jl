@@ -1,6 +1,6 @@
 abstract type SSPRKMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type SSPRKConstantCache <: OrdinaryDiffEqConstantCache end
-get_fsalfirstlast(cache::SSPRKMutableCache) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::SSPRKMutableCache,u) = (cache.fsalfirst, cache.k)
 
 @cache struct SSPRK22Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <: SSPRKMutableCache
     u::uType

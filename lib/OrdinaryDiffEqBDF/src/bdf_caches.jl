@@ -1,5 +1,5 @@
 abstract type BDFMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::BDFMutableCache) = (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
+get_fsalfirstlast(cache::BDFMutableCache,u) = (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
 
 @cache mutable struct ABDF2ConstantCache{N, dtType, rate_prototype} <:
                       OrdinaryDiffEqConstantCache

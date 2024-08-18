@@ -5,7 +5,7 @@ struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
 # Don't worry about the potential alloc on a constant cache
-get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache) = (zero(cache.u), zero(cache.u))
+get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache,u) = (zero(u), zero(u))
 
 mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     caches::T
@@ -13,7 +13,7 @@ mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     current::Int
 end
 
-get_fsalfirstlast(cache::CompositeCache) = get_fsalfirstlast(cache.caches[1])
+get_fsalfirstlast(cache::CompositeCache,u) = get_fsalfirstlast(cache.caches[1],u)
 
 mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiffEqCache
     args::A
@@ -32,7 +32,7 @@ mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiff
     end
 end
 
-function get_fsalfirstlast(cache::DefaultCache) 
+function get_fsalfirstlast(cache::DefaultCache,u) 
     (cache.u,cache.u) # will be overwritten by the cache choice
 end
 

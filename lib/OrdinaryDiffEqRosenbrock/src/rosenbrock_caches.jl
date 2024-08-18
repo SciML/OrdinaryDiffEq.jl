@@ -1,7 +1,8 @@
 abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
+abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
 
 # Fake values since non-FSAL
-get_fsalfirstlast(cache::RosenbrockMutableCache) = (zero(cache.u), zero(cache.u))
+get_fsalfirstlast(cache::RosenbrockMutableCache,u) = (zero(u), zero(u))
 
 ################################################################################
 
@@ -162,7 +163,7 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
-       OrdinaryDiffEqConstantCache
+       RosenbrockConstantCache
     c₃₂::T
     d::T
     tf::TF
@@ -192,7 +193,7 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <:
-       OrdinaryDiffEqConstantCache
+       RosenbrockConstantCache
     c₃₂::T
     d::T
     tf::TF
@@ -226,7 +227,7 @@ end
 ### 3rd order specialized Rosenbrocks
 
 struct Rosenbrock33ConstantCache{TF, UF, Tab, JType, WType, F} <:
-       OrdinaryDiffEqConstantCache
+       RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -395,7 +396,7 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 struct Rosenbrock34ConstantCache{TF, UF, Tab, JType, WType, F} <:
-       OrdinaryDiffEqConstantCache
+       RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -448,7 +449,7 @@ jac_cache(c::Rosenbrock4Cache) = (c.J, c.W)
 ### Rodas methods
 
 struct Rodas23WConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
-       OrdinaryDiffEqConstantCache
+       RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -458,7 +459,7 @@ struct Rodas23WConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
     autodiff::AD
 end
 
-struct Rodas3PConstantCache{TF, UF, Tab, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
+struct Rodas3PConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -662,7 +663,7 @@ end
 
 ### Rodas4 methods
 
-struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
+struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -953,7 +954,7 @@ end
 
 ### Rosenbrock5
 
-struct Rosenbrock5ConstantCache{TF, UF, Tab, JType, WType, F} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock5ConstantCache{TF, UF, Tab, JType, WType, F} <: RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab

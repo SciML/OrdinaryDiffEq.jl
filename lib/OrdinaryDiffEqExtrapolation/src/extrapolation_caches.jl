@@ -1,5 +1,5 @@
 abstract type ExtrapolationMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::ExtrapolationMutableCache) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::ExtrapolationMutableCache,u) = (cache.fsalfirst, cache.k)
 
 @cache mutable struct AitkenNevilleCache{
     uType,
