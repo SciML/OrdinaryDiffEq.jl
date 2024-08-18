@@ -27,7 +27,8 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         OrdinaryDiffEq.OrdinaryDiffEqSDIRK,
         OrdinaryDiffEq.OrdinaryDiffEqBDF,
         OrdinaryDiffEq.OrdinaryDiffEqDefault,
-        OrdinaryDiffEq.OrdinaryDiffEqFIRK],
+        OrdinaryDiffEq.OrdinaryDiffEqFIRK,
+        OrdinaryDiffEq.OrdinaryDiffEqPDIRK],
     warnonly = [:docs_block, :missing_docs, :eval_block],
     format = Documenter.HTML(analytics = "UA-90474609-3",
         assets = ["assets/favicon.ico"],
@@ -52,6 +53,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         ],
         "Iplicit Solvers" => [
             "implicit/FIRK.md"
+            "implicit/PDIRK.md"
         ],
         "Standard Non-Stiff ODEProblem Solvers" => [
             "nonstiff/explicit_extrapolation.md",
