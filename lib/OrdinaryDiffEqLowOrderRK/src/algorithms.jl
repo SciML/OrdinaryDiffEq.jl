@@ -1,6 +1,10 @@
-"""
-Euler - The canonical forward Euler method. Fixed timestep only.
-"""
+@doc generic_solver_docstring(
+    "The canonical forward Euler method. Fixed timestep only.",
+    "Euler",
+    "Explicit Runge-Kutta Method.",
+    """E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
+    Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
+    Springer-Verlag.""", "", "")
 struct Euler <: OrdinaryDiffEqAlgorithm end
 
 struct SplitEuler <:
@@ -8,7 +12,10 @@ struct SplitEuler <:
 
 @doc explicit_rk_docstring(
     "The second order Heun's method. Uses embedded Euler method for adaptivity.",
-    "Heun")
+    "Heun",
+    references = """E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
+    Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
+    Springer-Verlag.""")
 Base.@kwdef struct Heun{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -22,7 +29,10 @@ end
 
 @doc explicit_rk_docstring(
     "The optimized second order midpoint method. Uses embedded Euler method for adaptivity.",
-    "Ralston")
+    "Ralston",
+    references = """E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
+    Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
+    Springer-Verlag.""")
 Base.@kwdef struct Ralston{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -36,7 +46,10 @@ end
 
 @doc explicit_rk_docstring(
     "The second order midpoint method. Uses embedded Euler method for adaptivity.",
-    "Midpoint")
+    "Midpoint",
+    references = """E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
+    Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
+    Springer-Verlag.""")
 Base.@kwdef struct Midpoint{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -222,7 +235,16 @@ AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
     "Anas5",
     extra_keyword_description = """- `w`: a periodicity estimate, which when accurate the method becomes 5th order
                               (and is otherwise 4th order with less error for better estimates).""",
-    extra_keyword_default = "w = 1")
+    extra_keyword_default = "w = 1",
+    references = """@article{anastassi2005optimized,
+    title={An optimized Runge--Kutta method for the solution of orbital problems},
+    author={Anastassi, ZA and Simos, TE},
+    journal={Journal of Computational and Applied Mathematics},
+    volume={175},
+    number={1},
+    pages={1--9},
+    year={2005},
+    publisher={Elsevier}}""")
 Base.@kwdef struct Anas5{StageLimiter, StepLimiter, Thread, T} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -251,7 +273,16 @@ end
 @doc explicit_rk_docstring("Zero Dissipation Runge-Kutta of 6th order.", "FRK65",
     extra_keyword_description = """- `omega`: a periodicity phase estimate,
                                    when accurate this method results in zero numerical dissipation.""",
-    extra_keyword_default = "omega = 0.0")
+    extra_keyword_default = "omega = 0.0",
+    references = """@article{medvedev2018fitted,
+    title={Fitted modifications of Runge-Kutta pairs of orders 6 (5)},
+    author={Medvedev, Maxim A and Simos, TE and Tsitouras, Ch},
+    journal={Mathematical Methods in the Applied Sciences},
+    volume={41},
+    number={16},
+    pages={6184--6194},
+    year={2018},
+    publisher={Wiley Online Library}}""")
 Base.@kwdef struct FRK65{StageLimiter, StepLimiter, Thread, T} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
