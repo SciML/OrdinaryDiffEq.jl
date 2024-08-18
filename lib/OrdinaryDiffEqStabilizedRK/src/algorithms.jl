@@ -121,7 +121,7 @@ function ESERK4 end
 function ESERK5 end
 
 @doc generic_solver_docstring("""Second order method. description TBD""",
-    "ESERK5",
+    "SERK2",
     "Stabilized Explicit Method.",
     """REF TBD""",
     """
