@@ -54,8 +54,6 @@ end
 end
 
 function initialize!(integrator, cache::TanYam7Cache)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -308,8 +306,6 @@ end
 end
 
 function initialize!(integrator, cache::TsitPap8Cache)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -620,8 +616,6 @@ function initialize!(integrator, cache::DP8Cache)
         cache.dense_tmp6,
         cache.dense_tmp7
     ]
-    integrator.fsalfirst = cache.k1
-    integrator.fsallast = cache.k13
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
@@ -1006,8 +1000,6 @@ end
 end
 
 function initialize!(integrator, cache::PFRK87Cache)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
