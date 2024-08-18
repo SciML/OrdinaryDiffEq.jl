@@ -60,7 +60,7 @@ function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u
     T4 = Base.promote_op(alg_cache, A4, argT...)
     T5 = Base.promote_op(alg_cache, A5, argT...)
     T6 = Base.promote_op(alg_cache, A6, argT...)
-    cache = DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function)}(
+    cache = DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
         args, alg.choice_function, 1, u)
     algs = alg.algs
     # If the type is a bitstype we need to initialize it correctly here since isdefined will always return true.
