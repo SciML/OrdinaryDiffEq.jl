@@ -7,9 +7,9 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
     TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter} <: RosenbrockMutableCache
     u::uType
     uprev::uType
-    dense::Array{rateType, 1}
+    dense::Vector{rateType}
     dus::Vector{rateType}
-    ks::Array{rateType, 1}
+    ks::Vector{rateType}
     fsalfirst::rateType
     fsallast::rateType
     dT::rateType
