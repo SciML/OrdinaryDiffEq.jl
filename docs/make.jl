@@ -55,6 +55,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "explicit/Extrapolation.md",
         ],
         "Implicit Solvers" => [
+            "implicit/SDIRK.md",
             "implicit/FIRK.md",
             "implicit/PDIRK.md",
             "implicit/Rosenbrock.md",
