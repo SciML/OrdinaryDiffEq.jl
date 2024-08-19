@@ -22,7 +22,7 @@ FBDF
 ```
 ### IMEX Multistep
 ```@docs
-OrdinaryDiffEqBDF.SBDF
+SBDF
 SBDF2
 SBDF3
 SBDF4

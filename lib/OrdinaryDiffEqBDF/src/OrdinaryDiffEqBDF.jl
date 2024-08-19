@@ -93,7 +93,7 @@ PrecompileTools.@compile_workload begin
 end
 
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
-       SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,
+       SBDF, SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,
        DABDF2, DImplicitEuler, DFBDF
 
 end
