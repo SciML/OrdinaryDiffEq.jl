@@ -59,3 +59,24 @@ function InterpolationData(id::InterpolationData, f)
         id.differential_vars,
         id.sensitivitymode)
 end
+
+# strip interpolation of function information
+function SciMLBase.strip_interpolation(id::InterpolationData)
+    cache = id.cache
+    
+    cache = strip_cache(cache)
+
+    InterpolationData(nothing, id.timeseries,
+        id.ts,
+        id.ks,
+        id.alg_choice,
+        id.dense,
+        cache,
+        id.differential_vars,
+        id.sensitivitymode)
+end
+
+function strip_cache(cache::OrdinaryDiffEqCache)
+    # most caches don't have jac_config or grad_config
+    cache
+end
