@@ -9,10 +9,17 @@ first_steps("OrdinaryDiffEqAdamsBashforthMoulton", "VCABM")
 
 ## Full list of solvers
 
+### Explicit Multistep Methods
+
 ```@docs
 AB3
 AB4
 AB5
+```
+
+### Predictor-Corrector Methods
+
+```@docs
 ABM32
 ABM43
 ABM54
