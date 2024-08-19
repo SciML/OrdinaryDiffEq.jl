@@ -452,3 +452,7 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
 end
 
 DiffEqBase.has_stats(i::ODEIntegrator) = true
+
+DiffEqBase.get_tstops(integ::ODEIntegrator) = integ.opts.tstops
+DiffEqBase.get_tstops_array(integ::ODEIntegrator) = get_tstops(integ).valtree
+DiffEqBase.get_tstops_max(integ::ODEIntegrator) = maximum(get_tstops_array(integ))
