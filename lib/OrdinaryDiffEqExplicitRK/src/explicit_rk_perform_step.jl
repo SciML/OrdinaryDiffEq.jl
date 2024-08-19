@@ -75,8 +75,6 @@ end
 
 function initialize!(integrator, cache::ExplicitRKCache)
     integrator.kshortsize = 2
-    integrator.fsallast = cache.fsallast
-    integrator.fsalfirst = cache.kk[1]
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast

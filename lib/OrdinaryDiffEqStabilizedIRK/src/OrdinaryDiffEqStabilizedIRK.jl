@@ -10,7 +10,7 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
                            OrdinaryDiffEqAdaptiveAlgorithm,
                            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                            alg_cache, _unwrap_val, DEFAULT_PRECS, @cache,
-                           _reshape, _vec, full_cache
+                           _reshape, _vec, full_cache, get_fsalfirstlast
 
 using OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
 using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver,

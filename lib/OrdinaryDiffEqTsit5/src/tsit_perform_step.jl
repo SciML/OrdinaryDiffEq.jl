@@ -163,8 +163,6 @@ end
 
 function initialize!(integrator, cache::Tsit5Cache)
     integrator.kshortsize = 7
-    integrator.fsalfirst = cache.k1
-    integrator.fsallast = cache.k7 # setup pointers
     resize!(integrator.k, integrator.kshortsize)
     # Setup k pointers
     integrator.k[1] = cache.k1

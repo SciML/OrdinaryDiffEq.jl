@@ -33,6 +33,8 @@ end
     integrator.u = u
 end
 
+get_fsalfirstlast(cache::LowStorageRK2NCache,u) = (cache.k, cache.k)
+
 function initialize!(integrator, cache::LowStorageRK2NCache)
     @unpack k, tmp, williamson_condition = cache
     integrator.kshortsize = 1
@@ -107,8 +109,7 @@ end
 
 function initialize!(integrator, cache::LowStorageRK2CCache)
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -174,8 +175,7 @@ end
 
 function initialize!(integrator, cache::LowStorageRK3SCache)
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -256,8 +256,7 @@ end
 
 function initialize!(integrator, cache::LowStorageRK3SpCache)
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -355,8 +354,7 @@ end
 
 function initialize!(integrator, cache::LowStorageRK3SpFSALCache)
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -455,8 +453,7 @@ end
 
 function initialize!(integrator, cache::LowStorageRK2RPCache)
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -554,8 +551,7 @@ end
 
 function initialize!(integrator, cache::LowStorageRK3RPCache)
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -664,8 +660,7 @@ end
 
 function initialize!(integrator, cache::LowStorageRK4RPCache)
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -785,8 +780,7 @@ end
 
 function initialize!(integrator, cache::LowStorageRK5RPCache)
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -850,8 +844,7 @@ end
 
 function initialize!(integrator, cache::RK46NLCache)
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -968,8 +961,7 @@ end
 
 function initialize!(integrator, cache::KYK2014DGSSPRK_3S2_Cache)
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst

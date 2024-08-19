@@ -9,7 +9,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, qsteady_max_default,
                            initialize!, perform_step!, stepsize_controller!,
                            step_accept_controller!, step_reject_controller!,
                            calculate_residuals, calculate_residuals!,
-                           get_current_adaptive_order,
+                           get_current_adaptive_order, get_fsalfirstlast,
                            ode_interpolant, ode_interpolant!, trivial_limiter!
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import LinearAlgebra: rmul!

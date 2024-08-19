@@ -90,8 +90,6 @@ end
 
 function initialize!(integrator, cache::AN5Cache)
     integrator.kshortsize = 7
-    integrator.fsalfirst = cache.tsit5cache.k1
-    integrator.fsallast = cache.tsit5cache.k7 # setup pointers
     resize!(integrator.k, integrator.kshortsize)
     # Setup k pointers
     integrator.k[1] = cache.tsit5cache.k1
@@ -251,8 +249,6 @@ end
 
 function initialize!(integrator, cache::JVODECache)
     integrator.kshortsize = 7
-    integrator.fsalfirst = cache.tsit5cache.k1
-    integrator.fsallast = cache.tsit5cache.k7 # setup pointers
     resize!(integrator.k, integrator.kshortsize)
     # Setup k pointers
     integrator.k[1] = cache.tsit5cache.k1

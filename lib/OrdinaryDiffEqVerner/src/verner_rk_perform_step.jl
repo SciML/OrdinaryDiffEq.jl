@@ -94,8 +94,6 @@ end
 function initialize!(integrator, cache::Vern6Cache)
     alg = unwrap_alg(integrator, false)
     cache.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
-    integrator.fsalfirst = cache.k1
-    integrator.fsallast = cache.k9
     @unpack k = integrator
     resize!(k, integrator.kshortsize)
     k[1] = cache.k1

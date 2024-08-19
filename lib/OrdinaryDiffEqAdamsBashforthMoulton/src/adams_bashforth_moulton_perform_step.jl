@@ -24,8 +24,7 @@ function initialize!(integrator,
             ABM43Cache,
             ABM54Cache})
     @unpack fsalfirst, k = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -551,8 +550,7 @@ end
 
 function initialize!(integrator, cache::VCAB3Cache)
     @unpack fsalfirst, k4 = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k4
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -685,8 +683,7 @@ end
 
 function initialize!(integrator, cache::VCAB4Cache)
     @unpack fsalfirst, k4 = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k4
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -834,8 +831,7 @@ end
 
 function initialize!(integrator, cache::VCAB5Cache)
     @unpack fsalfirst, k4 = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k4
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -981,8 +977,7 @@ end
 
 function initialize!(integrator, cache::VCABM3Cache)
     @unpack fsalfirst, k4 = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k4
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -1125,8 +1120,7 @@ end
 
 function initialize!(integrator, cache::VCABM4Cache)
     @unpack fsalfirst, k4 = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k4
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -1282,8 +1276,7 @@ end
 
 function initialize!(integrator, cache::VCABM5Cache)
     @unpack fsalfirst, k4 = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k4
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -1459,8 +1452,7 @@ end
 
 function initialize!(integrator, cache::VCABMCache)
     @unpack fsalfirst, k4 = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k4
+
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst

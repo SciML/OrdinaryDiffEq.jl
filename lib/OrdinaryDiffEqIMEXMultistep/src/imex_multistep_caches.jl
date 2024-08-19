@@ -1,4 +1,6 @@
 # IMEX Multistep methods
+abstract type IMEXMutableCache <: OrdinaryDiffEqMutableCache end
+get_fsalfirstlast(cache::IMEXMutableCache,u) = (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
 
 # CNAB2
 
@@ -10,7 +12,7 @@
     tprev2::tType
 end
 
-@cache mutable struct CNAB2Cache{uType, rateType, N, tType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNAB2Cache{uType, rateType, N, tType} <: IMEXMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -67,7 +69,7 @@ end
     tprev2::tType
 end
 
-@cache mutable struct CNLF2Cache{uType, rateType, N, tType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNLF2Cache{uType, rateType, N, tType} <: IMEXMutableCache
     u::uType
     uprev::uType
     uprev2::uType
