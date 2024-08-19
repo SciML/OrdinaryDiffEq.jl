@@ -59,14 +59,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "implicit/PDIRK.md",
             "implicit/Rosenbrock.md",
             "implicit/StabalizedRK.md",
-            "implicit/BDF.md"
-        ],
-        "Standard Non-Stiff ODEProblem Solvers" => [
-            "nonstiff/explicit_extrapolation.md",
-            "nonstiff/nonstiff_multistep.md"
-        ],
-        "Standard Stiff ODEProblem Solvers" => [
-            "stiff/sdirk.md"
+            "implicit/BDF.md",
         ],
         "IMEX Solvers" => [
             "imex/imex_multistep.md",
