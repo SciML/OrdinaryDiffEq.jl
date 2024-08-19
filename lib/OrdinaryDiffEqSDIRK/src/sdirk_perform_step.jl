@@ -1,23 +1,4 @@
-function initialize!(integrator,
-        cache::Union{ImplicitEulerConstantCache,
-            ImplicitMidpointConstantCache,
-            TrapezoidConstantCache,
-            TRBDF2ConstantCache,
-            SDIRK2ConstantCache,
-            SDIRK22ConstantCache,
-            SSPSDIRK2ConstantCache,
-            Cash4ConstantCache,
-            Hairer4ConstantCache,
-            ESDIRK54I8L2SAConstantCache,
-            ESDIRK436L2SA2ConstantCache,
-            ESDIRK437L2SAConstantCache,
-            ESDIRK547L2SA2ConstantCache,
-            ESDIRK659L2SAConstantCache,
-            SFSDIRK4ConstantCache,
-            SFSDIRK5ConstantCache,
-            SFSDIRK6ConstantCache,
-            SFSDIRK7ConstantCache,
-            SFSDIRK8ConstantCache})
+function initialize!(integrator, cache::SDIRKConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -29,29 +10,8 @@ function initialize!(integrator,
     integrator.k[2] = integrator.fsallast
 end
 
-function initialize!(integrator,
-        cache::Union{ImplicitEulerCache,
-            ImplicitMidpointCache,
-            TrapezoidCache,
-            TRBDF2Cache,
-            SDIRK2Cache,
-            SDIRK22Cache,
-            SSPSDIRK2Cache,
-            Cash4Cache,
-            Hairer4Cache,
-            ESDIRK54I8L2SACache,
-            ESDIRK436L2SA2Cache,
-            ESDIRK437L2SACache,
-            ESDIRK547L2SA2Cache,
-            ESDIRK659L2SACache,
-            SFSDIRK4Cache,
-            SFSDIRK5Cache,
-            SFSDIRK6Cache,
-            SFSDIRK7Cache,
-            SFSDIRK8Cache})
+function initialize!(integrator, cache::SDIRKMutableCache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast

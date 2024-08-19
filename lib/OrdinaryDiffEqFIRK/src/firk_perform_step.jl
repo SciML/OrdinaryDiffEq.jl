@@ -66,8 +66,6 @@ end
 
 function initialize!(integrator, cache::RadauIIA3Cache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -78,8 +76,6 @@ end
 
 function initialize!(integrator, cache::RadauIIA5Cache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -100,8 +96,6 @@ end
 
 function initialize!(integrator, cache::RadauIIA9Cache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast

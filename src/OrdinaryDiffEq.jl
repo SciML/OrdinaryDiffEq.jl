@@ -58,7 +58,7 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order,
                            _change_t_via_interpolation!, ODEIntegrator, _ode_interpolant!,
                            current_interpolant, resize_nlsolver!, _ode_interpolant,
                            handle_tstop!, _postamble!, update_uprev!, resize_J_W!,
-                           DAEAlgorithm
+                           DAEAlgorithm, get_fsalfirstlast
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
 AutoSwitch

@@ -2,8 +2,6 @@ function initialize!(integrator, cache::Union{Rosenbrock23Cache,
         Rosenbrock32Cache})
     integrator.kshortsize = 2
     @unpack k₁, k₂, fsalfirst, fsallast = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = fsallast
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = k₁
     integrator.k[2] = k₂
@@ -414,8 +412,6 @@ function initialize!(integrator,
             Rosenbrock4Cache})
     integrator.kshortsize = 2
     @unpack fsalfirst, fsallast = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = fsallast
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = fsalfirst
     integrator.k[2] = fsallast
