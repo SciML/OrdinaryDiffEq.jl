@@ -207,7 +207,7 @@ end
         @testset "$solname" for (solname, solver) in pairs(solvers)
             sol = solve(prob, solver, maxiters = 2e4)
             @test sol.retcode == ReturnCode.Success
-            @test isapprox(sol.u[end], refsol.u[end], rtol = 1e-2, atol = 1e-5)
+            @test isapprox(sol.u[end], refsol.u[end], rtol = 2e-3, atol = 1e-6)
         end
     end
 end
