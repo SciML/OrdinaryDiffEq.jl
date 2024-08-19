@@ -73,8 +73,6 @@ end
 function initialize!(integrator, cache::ROCK2Cache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
-    integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
-    integrator.fsallast = cache.k
     alg = unwrap_alg(integrator, true)
     cache.constantcache.max_stage = (alg.max_stages < 1 || alg.max_stages > 200) ? 200 :
                                     alg.max_stages
@@ -278,8 +276,7 @@ end
 function initialize!(integrator, cache::ROCK4Cache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
+
     alg = unwrap_alg(integrator, true)
     cache.constantcache.max_stage = (alg.max_stages < 1 || alg.max_stages > 152) ? 152 :
                                     alg.max_stages
@@ -491,8 +488,6 @@ end
 function initialize!(integrator, cache::RKCCache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
-    integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
-    integrator.fsallast = cache.k
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -657,8 +652,7 @@ end
 function initialize!(integrator, cache::ESERK4Cache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
+
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
@@ -817,8 +811,7 @@ end
 function initialize!(integrator, cache::ESERK5Cache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
+
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
@@ -961,8 +954,7 @@ end
 function initialize!(integrator, cache::SERK2Cache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
+
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)

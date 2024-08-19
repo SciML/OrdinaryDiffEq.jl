@@ -38,9 +38,6 @@ const NystromDefaultInitialization = Union{Nystrom4Cache, FineRKN4Cache, FineRKN
 function initialize!(integrator, cache::NystromDefaultInitialization)
     @unpack fsalfirst, k = cache
     duprev, uprev = integrator.uprev.x
-
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -889,9 +886,6 @@ end
 function initialize!(integrator, cache::DPRKN6Cache)
     @unpack fsalfirst, k = cache
     duprev, uprev = integrator.uprev.x
-
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
     integrator.kshortsize = 3
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = ArrayPartition(cache.fsalfirst.x[1], cache.k2)
@@ -1823,8 +1817,6 @@ end
 function initialize!(integrator, cache::RKN4Cache)
     @unpack fsalfirst, k = cache
     duprev, uprev = integrator.uprev.x
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst

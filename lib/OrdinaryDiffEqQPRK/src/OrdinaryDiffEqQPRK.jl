@@ -5,7 +5,7 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConsta
                            OrdinaryDiffEqMutableCache,
                            OrdinaryDiffEqAdaptiveAlgorithm, @fold, @OnDemandTableauExtract,
                            trivial_limiter!, alg_cache, alg_order, initialize!,
-                           perform_step!,
+                           perform_step!, get_fsalfirstlast,
                            constvalue, calculate_residuals!, calculate_residuals,
                            full_cache
 using Static: False

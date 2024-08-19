@@ -160,8 +160,7 @@ end
 end
 
 function initialize!(integrator, cache::DABDF2Cache)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
+
 
     integrator.kshortsize = 2
     @unpack k₁, k₂ = cache.eulercache
@@ -352,8 +351,7 @@ end
 
 function initialize!(integrator, cache::DFBDFCache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
+
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast

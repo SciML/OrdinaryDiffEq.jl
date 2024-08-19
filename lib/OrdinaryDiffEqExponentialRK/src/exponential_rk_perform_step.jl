@@ -24,10 +24,8 @@ function initialize!(integrator, cache::ExpRKConstantCache)
 end
 function initialize!(integrator, cache::ExpRKCache)
     # Pre-start fsal
-    integrator.fsalfirst = zero(cache.rtmp)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    integrator.fsallast = zero(integrator.fsalfirst)
 
     # Initialize interpolation derivatives
     integrator.kshortsize = 2
@@ -1595,7 +1593,6 @@ function initialize!(integrator, cache::ETD2Cache)
     rate_prototype = cache.rtmp1
 
     # Pre-start fsal
-    integrator.fsalfirst = ETD2Fsal(rate_prototype)
     @unpack lin, nl = integrator.fsalfirst
     integrator.f.f1(lin, integrator.uprev, integrator.p, integrator.t)
     integrator.f.f2(nl, integrator.uprev, integrator.p, integrator.t)
@@ -1603,7 +1600,6 @@ function initialize!(integrator, cache::ETD2Cache)
     integrator.stats.nf2 += 1
 
     # Avoid undefined entries if k is an array of arrays
-    integrator.fsallast = ETD2Fsal(rate_prototype)
     integrator.k[1] = lin + nl
     integrator.k[2] = zero(rate_prototype)
 end

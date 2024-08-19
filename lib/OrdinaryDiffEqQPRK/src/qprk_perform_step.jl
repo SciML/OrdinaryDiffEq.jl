@@ -81,8 +81,6 @@ end
 end
 
 function initialize!(integrator, cache::QPRK98Cache)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
