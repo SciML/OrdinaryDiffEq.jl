@@ -113,6 +113,12 @@ function fsal_typeof(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, rate_pro
     typeof(rate_prototype)
 end
 
+function fsal_typeof(alg::CompositeAlgorithm, rate_prototype)
+    fsal = map(x -> fsal_typeof(x, rate_prototype), alg.algs)
+    @assert length(unique(fsal))==1 "`fsal_typeof` must be consistent"
+    return fsal[1]
+end
+
 isimplicit(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isimplicit(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = true
 isimplicit(alg::OrdinaryDiffEqImplicitAlgorithm) = true
