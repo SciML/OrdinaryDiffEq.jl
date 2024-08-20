@@ -61,6 +61,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "implicit/Rosenbrock.md",
             "implicit/StabalizedRK.md",
             "implicit/BDF.md",
+            "implicit/Extrapolation.md"
         ],
         "IMEX Solvers" => [
             "imex/imex_multistep.md",
