@@ -729,8 +729,8 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    grad_config = build_grad_config(alg, f, tf, dus[2], t)
+    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])
     RosenbrockCache(u, uprev, dense, dus, ks,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
@@ -780,8 +780,8 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    grad_config = build_grad_config(alg, f, tf, dus[2], t)
+    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])
     RosenbrockCache(u, uprev, dense, dus, ks,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
@@ -831,8 +831,8 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    grad_config = build_grad_config(alg, f, tf, dus[2], t)
+    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])
     RosenbrockCache(u, uprev, dense, dus, ks,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
@@ -882,8 +882,8 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    grad_config = build_grad_config(alg, f, tf, dus[2], t)
+    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])
     RosenbrockCache(u, uprev, dense, dus, ks,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
@@ -946,8 +946,8 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    grad_config = build_grad_config(alg, f, tf, dus[2], t)
+    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])
     RosenbrockCache(u, uprev, dense, dus, ks,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
@@ -998,8 +998,8 @@ function alg_cache(
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    grad_config = build_grad_config(alg, f, tf, dus[2], t)
+    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])
     RosenbrockCache(u, uprev, dense, dus, ks,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
