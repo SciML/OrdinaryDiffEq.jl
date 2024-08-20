@@ -1,4 +1,5 @@
 abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
+get_fsalfirstlast(cache::RosenbrockMutableCache,u) = (zero(u), zero(u))
 ################################################################################
 
 # Shampine's Low-order Rosenbrocks
@@ -75,8 +76,6 @@ get_fsalfirstlast(cache::RosenbrockCache) = (cache.fsalfirst, cache.fsallast)
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
 end
-
-get_fsalfirstlast(cache::Rosenbrock23Cache) = (cache.fsalfirst, cache.fsallast)
 
 @cache mutable struct Rosenbrock32Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
@@ -1022,6 +1021,10 @@ function alg_cache(
         Rodas5PTableau(constvalue(uBottomEltypeNoUnits),
             constvalue(tTypeNoUnits)), J, W, linsolve)
 end
+
+get_fsalfirstlast(cache::Union{Rosenbrock23Cache,Rosenbrock32Cache, Rosenbrock33Cache,
+Rosenbrock34Cache,
+Rosenbrock4Cache},u) = (cache.fsalfirst, cache.fsallast)
 
 ################################################################################
 
