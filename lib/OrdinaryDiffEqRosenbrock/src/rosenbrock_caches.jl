@@ -712,7 +712,7 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-    tmp = zero(rate_prototype)
+    tmp = zero(eltype(rate_prototype))
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     weight = similar(u, uEltypeNoUnits)
