@@ -705,9 +705,9 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense = zeros(typeof(rate_prototype), 2)
-    dus = zeros(typeof(rate_prototype), 3)
-    ks = zeros(typeof(rate_prototype), 6)
+    dense = zeros(eltype(rate_prototype), 2)
+    dus = zeros(eltype(rate_prototype), 3)
+    ks = zeros(eltype(rate_prototype), 6)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
