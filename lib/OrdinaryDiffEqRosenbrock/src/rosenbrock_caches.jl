@@ -76,6 +76,8 @@ get_fsalfirstlast(cache::RosenbrockCache) = (cache.fsalfirst, cache.fsallast)
     stage_limiter!::StageLimiter
 end
 
+get_fsalfirstlast(cache::Rosenbrock23Cache) = (cache.fsalfirst, cache.fsallast)
+
 @cache mutable struct Rosenbrock32Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
     RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
@@ -108,6 +110,8 @@ end
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
 end
+
+get_fsalfirstlast(cache::Rosenbrock32Cache) = (cache.fsalfirst, cache.fsallast)
 
 function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
