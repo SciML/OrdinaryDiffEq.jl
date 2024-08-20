@@ -41,6 +41,8 @@ struct RosenbrockConstantCache{TF, UF, Tab, JType, WType, F, AD} <: OrdinaryDiff
     autodiff::AD
 end
 
+get_fsalfirstlast(cache::RosenbrockCache) = (cache.fsalfirst, cache.fsallast)
+
 @cache mutable struct Rosenbrock23Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
     RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
