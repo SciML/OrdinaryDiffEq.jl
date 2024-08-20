@@ -358,7 +358,7 @@ function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits
 } where {MO}
     max_order = MO
-    γ, c = one(eltype(alg.kappa)), 1
+    γ, c = one(uEltypeNoUnits), 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
     dtprev = one(dt)
@@ -539,7 +539,7 @@ function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
         dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits
 } where {MO}
-    γ, c = 1.0, 1.0
+    γ, c = one(uEltypeNoUnits), 1
     max_order = MO
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
@@ -614,7 +614,7 @@ function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
         dt, reltol, p, calck,
         ::Val{true}) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits}
-    γ, c = 1.0, 1.0
+    γ, c = one(uEltypeNoUnits), 1
     fsalfirst = zero(rate_prototype)
     max_order = MO
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
