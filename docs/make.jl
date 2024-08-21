@@ -63,6 +63,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "implicit/PDIRK.md",
             "implicit/Rosenbrock.md",
             "implicit/StabalizedRK.md",
+            "implicit/StabalizedIRK.md",
             "implicit/BDF.md",
             "implicit/Extrapolation.md"
         ],
