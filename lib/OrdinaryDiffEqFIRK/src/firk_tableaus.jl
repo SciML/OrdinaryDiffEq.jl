@@ -266,11 +266,11 @@ struct adaptiveRadauTableau{T, T2, Int}
     α::AbstractVector{T}
     β::AbstractVector{T}
     c::AbstractVector{T}
-    e::AbstractVector{T}
-    S::Int
+    #e::AbstractVector{T}
+    num_stages::Int
 end
 
-using Polynomials, GenericLinearAlgebra, LinearAlgebra, LinearSolve, GenericSchur, BSeries
+using Polynomials, GenericLinearAlgebra, LinearAlgebra, LinearSolve, GenericSchur
 
 function adaptiveRadauTableau(T, T2, num_stages::Int)
     tmp = Vector{BigFloat}(undef, num_stages - 1)
@@ -341,7 +341,5 @@ function adaptiveRadauTableau(T, T2, num_stages::Int)
     #embedded = bseries(a, b_hat, c, num_stages - 2)
 
     #e = b_hat - b
-    #adaptiveRadautableau(T, TI, γ, α, β, c, e, s)
+    adaptiveRadauTableau{Any, T2, Int}(T, TI, γ, α, β, c, num_stages)
 end
-
-adaptiveRadauTableau(0, 0, 3)

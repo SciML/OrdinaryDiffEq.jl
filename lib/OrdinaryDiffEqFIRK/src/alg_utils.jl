@@ -3,6 +3,7 @@ qmax_default(alg::Union{RadauIIA3, RadauIIA5, RadauIIA9}) = 8
 alg_order(alg::RadauIIA3) = 3
 alg_order(alg::RadauIIA5) = 5
 alg_order(alg::RadauIIA9) = 9
+alg_order(alg::AdaptiveRadau) = 9
 
 isfirk(alg::RadauIIA3) = true
 isfirk(alg::RadauIIA5) = true

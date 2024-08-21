@@ -468,41 +468,42 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
         Convergence, alg.step_limiter!)
 end
 
-mutable struct adaptiveRadauConstantCache{S, F, Tab, Tol, Dt, U, JType} <:
+mutable struct AdaptiveRadauConstantCache{F, Tab, Tol, Dt, U, JType} <:
     OrdinaryDiffEqConstantCache
-uf::F
-tab::Tab
-κ::Tol
-ηold::Tol
-iter::Int
-cont::AbstractVector{U}
-dtprev::Dt
-W_γdt::Dt
-status::NLStatus
-J::JType
+    uf::F
+    tab::Tab
+    κ::Tol
+    ηold::Tol
+    iter::Int
+    cont::AbstractVector{U}
+    dtprev::Dt
+    W_γdt::Dt
+    status::NLStatus
+    J::JType
 end
 
 function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-uf = UDerivativeWrapper(f, t, p)
-uToltype = constvalue(uBottomEltypeNoUnits)
-tab = adaptiveRadau(uToltype, constvalue(tTypeNoUnits), alg.num_stages)
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    uf = UDerivativeWrapper(f, t, p)
+    uToltype = constvalue(uBottomEltypeNoUnits)
+    num_stages = alg.num_stages
+    tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
 
-cont = Vector{typeof(u)}(undef, num_stages - 1)
-for i in 1: (num_stages - 1)
-    cont[i] = zero(u)
+    cont = Vector{typeof(u)}(undef, num_stages - 1)
+    for i in 1: (num_stages - 1)
+        cont[i] = zero(u)
+    end
+
+    κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
+    J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
+
+    AdaptiveRadauConstantCache(uf, tab, κ, one(uToltype), 10000, cont, dt, dt,
+        Convergence, J)
 end
 
-κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
-J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
-
-adaptiveRadauConstantCache(uf, tab, κ, one(uToltype), 10000, cont, dt, dt,
-    Convergence, J)
-end
-
-mutable struct adaptiveRadauCache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
+mutable struct AdaptiveRadauCache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
     UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
                OrdinaryDiffEqMutableCache
     u::uType
@@ -540,89 +541,90 @@ mutable struct adaptiveRadauCache{uType, cuType, uNoUnitsType, rateType, JType, 
 end
 
 function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-uf = UJacobianWrapper(f, t, p)
-uToltype = constvalue(uBottomEltypeNoUnits)
-tab = RadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits))
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    uf = UJacobianWrapper(f, t, p)
+    uToltype = constvalue(uBottomEltypeNoUnits)
+    alg.num_stages = num_stages
+    tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
 
-κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
+    κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 
-z = Vector{typeof(u)}(undef, num_stages)
-w = Vector{typeof(u)}(undef, num_stages)
-for i in 1:s
-    z[i] = w[i] = zero(u)
-end
+    z = Vector{typeof(u)}(undef, num_stages)
+    w = Vector{typeof(u)}(undef, num_stages)
+    for i in 1:s
+        z[i] = w[i] = zero(u)
+    end
 
-dw1 = zero(u)
-ubuff = zero(u)
-dw2 = Vector{typeof(u)}(undef, floor(Int, num_stages/2))
-for i in 1 : floor(Int, num_stages/2)
-    dw2[i] = similar(u, Complex{eltype(u)})
-    recursivefill!(dw[i], false)
-end
-cubuff = Vector{typeof(u)}(undef, floor(Int, num_stages/2))
-for i in 1 :floor(Int, num_stages/2)
-    cubuff[i] = similar(u, Complex{eltype(u)})
-    recursivefill!(cubuff[i], false)
-end
+    dw1 = zero(u)
+    ubuff = zero(u)
+    dw2 = Vector{typeof(u)}(undef, floor(Int, num_stages/2))
+    for i in 1 : floor(Int, num_stages/2)
+        dw2[i] = similar(u, Complex{eltype(u)})
+        recursivefill!(dw[i], false)
+    end
+    cubuff = Vector{typeof(u)}(undef, floor(Int, num_stages/2))
+    for i in 1 :floor(Int, num_stages/2)
+        cubuff[i] = similar(u, Complex{eltype(u)})
+        recursivefill!(cubuff[i], false)
+    end
 
-cont = Vector{typeof(u)}(undef, num_stages - 1)
-for i in 1: (num_stages - 1)
-    cont[i] = zero(u)
-end
+    cont = Vector{typeof(u)}(undef, num_stages - 1)
+    for i in 1: (num_stages - 1)
+        cont[i] = zero(u)
+    end
 
-fsalfirst = zero(rate_prototype)
-fw = Vector{typeof(rate_prototype)}(undef, num_stages)
-k = Vector{typeof(rate_prototype)}(undef, num_stages)
-for i in 1: num_stages
-    k[i] = fw[i] = zero(rate_prototype)
-end
+    fsalfirst = zero(rate_prototype)
+    fw = Vector{typeof(rate_prototype)}(undef, num_stages)
+    k = Vector{typeof(rate_prototype)}(undef, num_stages)
+    for i in 1: num_stages
+        k[i] = fw[i] = zero(rate_prototype)
+    end
 
-J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-if J isa AbstractSciMLOperator
-    error("Non-concrete Jacobian not yet supported by RadauIIA5.")
-end
-W2 = vector{typeof(Complex{W1})}(undef, floor(Int, num_stages/2))
-for i in 1 : floor(Int, num_stages/2)
-    W2[i] = similar(J, Complex{eltype(W1)})
-    recursivefill!(w2[i], false)
-end
+    J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
+    if J isa AbstractSciMLOperator
+        error("Non-concrete Jacobian not yet supported by RadauIIA5.")
+    end
+    W2 = vector{typeof(Complex{W1})}(undef, floor(Int, num_stages/2))
+    for i in 1 : floor(Int, num_stages/2)
+        W2[i] = similar(J, Complex{eltype(W1)})
+        recursivefill!(w2[i], false)
+    end
 
-du1 = zero(rate_prototype)
+    du1 = zero(rate_prototype)
 
-tmp = Vector{typeof(u)}(undef, binomial(num_stages,2))
-for i in 1 : binomial(num_stages,2)
-    tmp[i] = zero(u)
-end
+    tmp = Vector{typeof(u)}(undef, binomial(num_stages,2))
+    for i in 1 : binomial(num_stages,2)
+        tmp[i] = zero(u)
+    end
 
-atmp = similar(u, uEltypeNoUnits)
-recursivefill!(atmp, false)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
 
-jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
-linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
-linsolve1 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-    assumptions = LinearSolve.OperatorAssumptions(true))
+    linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
+    linsolve1 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        assumptions = LinearSolve.OperatorAssumptions(true))
 
-linsolve2 = Vector{typeof(linsolve1)}(undef, floor(Int, num_stages/2))
-for i in 1 : floor(int, num_stages/2)
-    linprob = LinearProblem(W2[i], _vec(cubuff[i]); u0 = _vec(dw2[i]))
-    linsolve2 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-    assumptions = LinearSolve.OperatorAssumptions(true))
-end
+    linsolve2 = Vector{typeof(linsolve1)}(undef, floor(Int, num_stages/2))
+    for i in 1 : floor(int, num_stages/2)
+        linprob = LinearProblem(W2[i], _vec(cubuff[i]); u0 = _vec(dw2[i]))
+        linsolve2 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        assumptions = LinearSolve.OperatorAssumptions(true))
+    end
 
-rtol = reltol isa Number ? reltol : zero(reltol)
-atol = reltol isa Number ? reltol : zero(reltol)
+    rtol = reltol isa Number ? reltol : zero(reltol)
+    atol = reltol isa Number ? reltol : zero(reltol)
 
-adaptiveRadauCache(u, uprev,
-    z, w, dw1, ubuff, dw2, cubuff, cont,
-    du1, fsalfirst, k, fw,
-    J, W1, W2,
-    uf, tab, κ, one(uToltype), 10000,
-    tmp, atmp, jac_config,
-    linsolve1, linsolve2, rtol, atol, dt, dt,
-    Convergence, alg.step_limiter!)
+    AdaptiveRadauCache(u, uprev,
+        z, w, dw1, ubuff, dw2, cubuff, cont,
+        du1, fsalfirst, k, fw,
+        J, W1, W2,
+        uf, tab, κ, one(uToltype), 10000,
+        tmp, atmp, jac_config,
+        linsolve1, linsolve2, rtol, atol, dt, dt,
+        Convergence, alg.step_limiter!)
 end
 
