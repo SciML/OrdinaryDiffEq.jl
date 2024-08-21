@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+import SciMLBase
 
 function lorenz!(du, u, p, t)
     du[1] = 10.0 * (u[2] - u[1])
@@ -12,5 +13,5 @@ prob = ODEProblem(lorenz!, u0, tspan)
 
 sol = solve(prob, Rosenbrock23())
 
-@test isnothing(OrdinaryDiffEq.strip_interpolation(sol.interp).f)
-@test isnothing(OrdinaryDiffEq.strip_interpolation(sol.interp).cache.jac_config)
+@test isnothing(SciMLBase.strip_interpolation(sol.interp).f)
+@test isnothing(SciMLBase.strip_interpolation(sol.interp).cache.jac_config)
