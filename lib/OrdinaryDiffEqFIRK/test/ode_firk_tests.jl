@@ -8,7 +8,12 @@ for prob in [prob_ode_linear, prob_ode_2Dlinear]
     @test sim21.𝒪est[:final]≈5 atol=testTol
 end
 
-sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_linear, RadauIIA9())
+sol = solve(prob_ode_linear, AdaptiveRadau(), adaptive = false, dt = 1e-2)
+sol = solve(prob_ode_linear, RadauIIA9(), adaptive = false, dt = 1e-2)
+sol = solve(prob_ode_linear, RadauIIA5(), adaptive = false, dt = 1e-2)
+
+
+sim21 = test_convergence(1 ./ 10 .^ (4.5:-1:2.5), prob_ode_linear, AdaptiveRadau())
 @test sim21.𝒪est[:final]≈8 atol=testTol
 
 sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_2Dlinear, RadauIIA9())
