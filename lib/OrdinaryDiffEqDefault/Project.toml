@@ -1,30 +1,46 @@
 name = "OrdinaryDiffEqDefault"
 uuid = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.0.0"
+version = "1.1.0"
 
 [deps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
-DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+
+[compat]
+DiffEqBase = "6.152.2"
+DiffEqDevTools = "2.44.4"
+EnumX = "1.0.4"
+LinearAlgebra = "<0.0.1, 1"
+LinearSolve = "2.32.0"
+OrdinaryDiffEqBDF = "<0.0.1, 1"
+OrdinaryDiffEqCore = "1.1"
+OrdinaryDiffEqRosenbrock = "<0.0.1, 1"
+OrdinaryDiffEqTsit5 = "<0.0.1, 1"
+OrdinaryDiffEqVerner = "<0.0.1, 1"
+PrecompileTools = "1.2.1"
+Preferences = "1.4.3"
+Random = "<0.0.1, 1"
+Reexport = "1.2.2"
+SafeTestsets = "0.1.0"
+Test = "<0.0.1, 1"
+julia = "1.10"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[compat]
-julia = "1.10"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test"]

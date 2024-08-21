@@ -270,7 +270,7 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
             integrator.kshortsize = 2
             integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
             integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
             # Avoid undefined entries if k is an array of arrays
             integrator.fsallast = zero(integrator.fsalfirst)
@@ -286,7 +286,7 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
             resize!(integrator.k, integrator.kshortsize)
             integrator.k .= [fsalfirst,fsallast]
             integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
           end
     end
 end
@@ -314,7 +314,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             integrator.stats.nsolve += 1
             u=+(uprev,$(aijkj...))
             du = f(u, p, t+$(Symbol(:c,i+1))*dt)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             if mass_matrix === I
                 linsolve_tmp=+(du,$(Symbol(:dtd,i+1))*dT,$(Cijkj...))
             else
@@ -366,7 +366,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             $(iterexprs...)
 
             integrator.fsallast = f(u, p, t + dt)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
             integrator.k[1] = integrator.fsalfirst
             integrator.k[2] = integrator.fsallast
@@ -417,7 +417,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             integrator.stats.nsolve += 1
             @.. broadcast=false u = +(uprev,$(aijkj...))
             f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             if mass_matrix === I
                 @.. broadcast=false linsolve_tmp = +(du,$dtdj*dT,$(dtCijkj...))
             else
@@ -483,7 +483,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             $(iterexprs...)
 
             f( fsallast,  u, p, t + dt)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
             $(adaptiveexpr...)
         end

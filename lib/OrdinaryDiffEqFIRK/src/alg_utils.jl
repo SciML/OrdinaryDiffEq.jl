@@ -12,4 +12,4 @@ isfirk(alg::AdaptiveRadau) = true
 
 alg_adaptive_order(alg::RadauIIA3) = 1
 alg_adaptive_order(alg::RadauIIA5) = 3
-alg_adaptive_order(alg::RadauIIA9) = 7
+alg_adaptive_order(alg::RadauIIA9) = 5

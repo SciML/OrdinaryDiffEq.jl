@@ -16,8 +16,9 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_or
                            DEFAULT_PRECS, full_cache,
                            constvalue, PolyesterThreads, Sequential, BaseThreads,
                            _digest_beta1_beta2, timedepentdtmin, _unwrap_val,
-                           _reshape, _vec
+                           _reshape, _vec, get_fsalfirstlast
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, LinearSolve
+import OrdinaryDiffEqCore
 import OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, UDerivativeWrapper, calc_J,
                                       WOperator, TimeGradientWrapper, UJacobianWrapper,
                                       build_grad_config,

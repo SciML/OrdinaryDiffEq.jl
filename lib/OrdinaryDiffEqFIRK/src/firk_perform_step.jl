@@ -30,7 +30,7 @@ function initialize!(integrator, cache::Union{RadauIIA3ConstantCache, RadauIIA5C
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -41,25 +41,21 @@ end
 
 function initialize!(integrator, cache::RadauIIA3Cache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     nothing
 end
 
 function initialize!(integrator, cache::Union{RadauIIA5Cache, RadauIIA9Cache, AdaptiveRadauCache})
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     if integrator.opts.adaptive
         @unpack abstol, reltol = integrator.opts
         if reltol isa Number
@@ -114,7 +110,7 @@ end
         # evaluate function
         ff1 = f(uprev + z1, p, t + c1 * dt)
         ff2 = f(uprev + z2, p, t + c2 * dt)
-        integrator.stats.nf += 2
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
 
         fw1 = @. TI11 * ff1 + TI12 * ff2
         fw2 = @. TI21 * ff1 + TI22 * ff2
@@ -234,7 +230,7 @@ end
         f(fsallast, tmp, p, t + c1 * dt)
         @. tmp = uprev + z2
         f(k2, tmp, p, t + c2 * dt)
-        integrator.stats.nf += 2
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
 
         @. fw1 = TI11 * fsallast + TI12 * k2
         @. fw2 = TI21 * fsallast + TI22 * k2
@@ -325,7 +321,7 @@ end
         integrator.EEst = internalnorm(atmp, t)
     end
     f(fsallast, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return
 end
 
@@ -391,7 +387,7 @@ end
         ff1 = f(uprev + z1, p, t + c1 * dt)
         ff2 = f(uprev + z2, p, t + c2 * dt)
         ff3 = f(uprev + z3, p, t + dt) # c3 = 1
-        integrator.stats.nf += 3
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
 
         fw1 = @.. broadcast=false TI11*ff1+TI12*ff2+TI13*ff3
         fw2 = @.. broadcast=false TI21*ff1+TI22*ff2+TI23*ff3
@@ -476,7 +472,7 @@ end
         if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
            integrator.u_modified
             f0 = f(uprev .+ utilde, p, t)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             utilde = @.. broadcast=false f0+tmp
             alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -495,7 +491,7 @@ end
     end
 
     integrator.fsallast = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -573,7 +569,7 @@ end
         f(k2, tmp, p, t + c2 * dt)
         @.. broadcast=false tmp=uprev + z3
         f(k3, tmp, p, t + dt) # c3 = 1
-        integrator.stats.nf += 3
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
 
         @.. broadcast=false fw1=TI11 * fsallast + TI12 * k2 + TI13 * k3
         @.. broadcast=false fw2=TI21 * fsallast + TI22 * k2 + TI23 * k3
@@ -709,7 +705,7 @@ end
            integrator.u_modified
             @.. broadcast=false utilde=uprev + utilde
             f(fsallast, utilde, p, t)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             @.. broadcast=false ubuff=fsallast + tmp
 
             if alg.smooth_est
@@ -734,7 +730,7 @@ end
         end
     end
     f(fsallast, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return
 end
 
@@ -832,7 +828,7 @@ end
         ff3 = f(uprev + z3, p, t + c3 * dt)
         ff4 = f(uprev + z4, p, t + c4 * dt)
         ff5 = f(uprev + z5, p, t + dt) # c5 = 1
-        integrator.stats.nf += 5
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
 
         fw1 = @.. broadcast=false TI11*ff1+TI12*ff2+TI13*ff3+TI14*ff4+TI15*ff5
         fw2 = @.. broadcast=false TI21*ff1+TI22*ff2+TI23*ff3+TI24*ff4+TI25*ff5
@@ -936,7 +932,7 @@ end
         if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
            integrator.u_modified
             f0 = f(uprev .+ utilde, p, t)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             utilde = @.. broadcast=false f0+tmp
             alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -961,7 +957,7 @@ end
     end
 
     integrator.fsallast = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -1074,7 +1070,7 @@ end
         f(k4, tmp, p, t + c4 * dt)
         @.. broadcast=false tmp=uprev + z5
         f(k5, tmp, p, t + dt) # c5 = 1
-        integrator.stats.nf += 5
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
 
         @.. broadcast=false fw1=TI11 * fsallast + TI12 * k2 + TI13 * k3 + TI14 * k4 +
                                 TI15 * k5
@@ -1258,7 +1254,7 @@ end
            integrator.u_modified
             @.. broadcast=false utilde=uprev + utilde
             f(fsallast, utilde, p, t)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             @.. broadcast=false ubuff=fsallast + tmp
 
             if alg.smooth_est
@@ -1290,7 +1286,7 @@ end
     end
 
     f(fsallast, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return
 end
 

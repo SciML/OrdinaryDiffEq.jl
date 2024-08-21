@@ -15,7 +15,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            step_reject_controller!,
                            PredictiveController, alg_can_repeat_jac, NewtonAlgorithm,
                            fac_default_gamma,
-                           get_current_adaptive_order,
+                           get_current_adaptive_order, get_fsalfirstlast,
                            isfirk
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
 using Polynomials, GenericLinearAlgebra, GenericSchur
@@ -23,6 +23,7 @@ using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu
 import LinearSolve
 import FastBroadcast: @..
+import OrdinaryDiffEqCore
 
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_config,
                                      UDerivativeWrapper, calc_J!, dolinsolve, calc_J,
