@@ -8,11 +8,13 @@ To be able to access the solvers in `OrdinaryDiffEqRKN`, you must first install 
 using Pkg
 Pkg.add("OrdinaryDiffEqRKN")
 ```
+
 This will only install the solvers listed at the bottom of this page.
 If you want to explore other solvers for your problem,
 you will need to install some of the other libraries listed in the navigation bar on the left.
 
 ## Example usage
+
 ```julia
 using OrdinaryDiffEqOrdinaryDiffEqRKN
 function HH_acceleration!(dv, v, u, p, t)

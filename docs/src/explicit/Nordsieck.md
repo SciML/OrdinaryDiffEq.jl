@@ -11,7 +11,6 @@ The Nordsieck implementations here are considered experimental implementations o
 and are generally considered inferior to the fixed-leading history-based BDF implementation of FBDF, and thus for all standard usage we recommend FBDF.
 However, this algorithm is kept for experimental research and development purposes with the possibility of one day becoming a more discontinuity-aware BDF implementation.
 
-
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
 first_steps("OrdinaryDiffEqNordsieck", "AN5")

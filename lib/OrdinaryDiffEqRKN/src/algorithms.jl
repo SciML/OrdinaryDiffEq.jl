@@ -1,5 +1,6 @@
-@doc generic_solver_docstring("Method of order three, which minimizes the amount of evaluated functions in each step. Fixed time steps only.
-    Second order ODE should not depend on the first derivative.",
+@doc generic_solver_docstring(
+    "Method of order three, which minimizes the amount of evaluated functions in each step. Fixed time steps only.
+Second order ODE should not depend on the first derivative.",
     "IRKN3",
     "Improved Runge-Kutta-Nyström method",
     "@article{rabiei2012numerical,
@@ -8,10 +9,11 @@
     publisher={Citeseer}}", "", "")
 struct IRKN3 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("A 4th order explicit method which can be applied directly on second order ODEs.
-    Can only be used with fixed time steps.
-    In case the ODE Problem is not dependent on the first derivative consider using
-    [`Nystrom4VelocityIndependent`](@ref) to increase performance.",
+@doc generic_solver_docstring(
+    "A 4th order explicit method which can be applied directly on second order ODEs.
+Can only be used with fixed time steps.
+In case the ODE Problem is not dependent on the first derivative consider using
+[`Nystrom4VelocityIndependent`](@ref) to increase performance.",
     "Nystrom4",
     "Improved Runge-Kutta-Nyström method",
     "E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
@@ -19,8 +21,9 @@ struct IRKN3 <: OrdinaryDiffEqPartitionedAlgorithm end
     Springer-Verlag.", "", "")
 struct Nystrom4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("A 4th order explicit method which can be applied directly to second order ODEs.
-    In particular, this method allows the acceleration equation to depend on the velocity.",
+@doc generic_solver_docstring(
+    "A 4th order explicit method which can be applied directly to second order ODEs.
+In particular, this method allows the acceleration equation to depend on the velocity.",
     "FineRKN4",
     "Improved Runge-Kutta-Nyström method",
     "@article{fine1987low,
@@ -34,8 +37,9 @@ struct Nystrom4 <: OrdinaryDiffEqPartitionedAlgorithm end
     publisher={Springer}}", "", "")
 struct FineRKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
-@doc generic_solver_docstring("A 5th order explicit method which can be applied directly to second order ODEs.
-    In particular, this method allows the acceleration equation to depend on the velocity.",
+@doc generic_solver_docstring(
+    "A 5th order explicit method which can be applied directly to second order ODEs.
+In particular, this method allows the acceleration equation to depend on the velocity.",
     "FineRKN5",
     "Improved Runge-Kutta-Nyström method",
     "@article{fine1987low,
@@ -49,9 +53,10 @@ struct FineRKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
     publisher={Springer}}", "", "")
 struct FineRKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
-@doc generic_solver_docstring("A 4th order explicit method.
-    Used directly on second order ODEs, where the acceleration is independent from velocity
-    (ODE Problem is not dependent on the first derivative).",
+@doc generic_solver_docstring(
+    "A 4th order explicit method.
+Used directly on second order ODEs, where the acceleration is independent from velocity
+(ODE Problem is not dependent on the first derivative).",
     "Nystrom4VelocityIndependent",
     "Improved Runge-Kutta-Nyström method",
     "E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
@@ -72,9 +77,10 @@ struct Nystrom4VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
     publisher={Citeseer}}", "", "")
 struct IRKN4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("A 5th order explicit method.
-    Used directly on second order ODEs, where the acceleration is independent from velocity
-    (ODE Problem is not dependent on the first derivative).",
+@doc generic_solver_docstring(
+    "A 5th order explicit method.
+Used directly on second order ODEs, where the acceleration is independent from velocity
+(ODE Problem is not dependent on the first derivative).",
     "Nystrom5VelocityIndependent",
     "Improved Runge-Kutta-Nyström method",
     "E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
@@ -109,8 +115,9 @@ struct DPRKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
     publisher={Springer}}", "", "")
 struct DPRKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
-@doc generic_solver_docstring("6th order explicit method.
-    The second order ODE should not depend on the first derivative. Free 6th order interpolant",
+@doc generic_solver_docstring(
+    "6th order explicit method.
+The second order ODE should not depend on the first derivative. Free 6th order interpolant",
     "DPRKN6",
     "Improved Runge-Kutta-Nyström method",
     "@article{Dormand1987FamiliesOR,
@@ -218,11 +225,12 @@ struct ERKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
     pages={113753}}", "", "")
 struct ERKN7 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
-@doc generic_solver_docstring("3 stage fourth order method to solve second order linear inhomogeneous IVPs.
-    Does not include an adaptive method. Solves for for d-dimensional differential systems of second order linear inhomogeneous equations.
+@doc generic_solver_docstring(
+    "3 stage fourth order method to solve second order linear inhomogeneous IVPs.
+Does not include an adaptive method. Solves for for d-dimensional differential systems of second order linear inhomogeneous equations.
 
-    !!! warning
-    This method is only fourth order for these systems, the method is second order otherwise!",
+!!! warning
+This method is only fourth order for these systems, the method is second order otherwise!",
     "RKN4",
     "Improved Runge-Kutta-Nyström method",
     "@article{MONTIJANO2024115533,

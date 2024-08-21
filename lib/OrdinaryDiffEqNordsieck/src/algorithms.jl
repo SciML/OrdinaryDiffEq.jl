@@ -1,8 +1,9 @@
 # Adams/BDF methods in Nordsieck forms
-@doc generic_solver_docstring("""An adaptive 5th order fixed-leading coefficient Adams method in Nordsieck form.
-    !!! warning "Experimental"
-        `AN5` is experimental, the solver `VCABM` is generally preferred.
-    """,
+@doc generic_solver_docstring(
+    """An adaptive 5th order fixed-leading coefficient Adams method in Nordsieck form.
+!!! warning "Experimental"
+    `AN5` is experimental, the solver `VCABM` is generally preferred.
+""",
     "AN5",
     "Adaptive step size Adams explicit Method",
     "",
@@ -11,6 +12,7 @@
 struct AN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 """
 !!! warning "Experimental"
+
     `JVODE` is experimental, the solver `VCABM` is generally preferred.
 """
 struct JVODE{bType, aType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
@@ -27,11 +29,13 @@ function JVODE(algorithm = :Adams; bias1 = 6, bias2 = 6, bias3 = 10,
 end
 """
 !!! warning "Experimental"
+
     `JVODE` is experimental, the solver `VCABM` is generally preferred.
 """
 JVODE_Adams(; kwargs...) = JVODE(:Adams; kwargs...)
 """
 !!! warning "Experimental"
+
     `JVODE` is experimental, the solver `FBDF` is generally preferred.
 """
 JVODE_BDF(; kwargs...) = JVODE(:BDF; kwargs...)

@@ -9,14 +9,14 @@ There are some advantages to this,
 as no SDIRK method can be a higher order than 5,
 while DIRK methods generally can have arbitrarily high order and lower error coefficients,
 leading to lower errors at larger dt sizes.
-With the right construction of the tableau, 
+With the right construction of the tableau,
 these matrices can be factorized and the underlying steps can be computed in parallel,
 which is why these are the parallel DIRK methods.
 
 !!! warning "Experimental"
+    
     `OrdinaryDiffEqPDIRK` is experimental,
     as there are no parallel DIRK tableaus that achieve good performance in the literature.
-
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")

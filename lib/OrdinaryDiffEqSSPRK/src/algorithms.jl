@@ -320,7 +320,9 @@ function SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("Low dissipation and dispersion Runge-Kutta schemes for computational acoustics", "SHLDDRK_2N",
+@doc explicit_rk_docstring(
+    "Low dissipation and dispersion Runge-Kutta schemes for computational acoustics",
+    "SHLDDRK_2N",
     references = "@article{stanescu19982n,
     title={2N-storage low dissipation and dispersion Runge-Kutta schemes for computational acoustics},
     author={Stanescu, D and Habashi, WG},
@@ -342,7 +344,9 @@ function SHLDDRK_2N(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Optimal strong-stability-preserving Runge-Kutta time discretizations for discontinuous Galerkin methods", "KYKSSPRK42",
+@doc explicit_rk_docstring(
+    "Optimal strong-stability-preserving Runge-Kutta time discretizations for discontinuous Galerkin methods",
+    "KYKSSPRK42",
     references = "@article{kubatko2014optimal,
     title={Optimal strong-stability-preserving Runge--Kutta time discretizations for discontinuous Galerkin methods},
     author={Kubatko, Ethan J and Yeager, Benjamin A and Ketcheson, David I},
@@ -363,7 +367,9 @@ function KYKSSPRK42(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low dissipation and dispersion Runge-Kutta schemes for computational acoustics", "SHLDDRK52",
+@doc explicit_rk_docstring(
+    "Low dissipation and dispersion Runge-Kutta schemes for computational acoustics",
+    "SHLDDRK52",
     references = "@article{stanescu19982n,
     title={2N-storage low dissipation and dispersion Runge-Kutta schemes for computational acoustics},
     author={Stanescu, D and Habashi, WG},

@@ -1,4 +1,5 @@
-@doc differentiation_rk_docstring("A 2 processor 4th order diagonally non-adaptive implicit method.",
+@doc differentiation_rk_docstring(
+    "A 2 processor 4th order diagonally non-adaptive implicit method.",
     "PDIRK44",
     "Parallel Diagonally Implicit Runge-Kutta Method.";
     references = """"@article{iserles1990theory,

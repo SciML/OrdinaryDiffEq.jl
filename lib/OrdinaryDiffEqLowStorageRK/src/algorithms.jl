@@ -469,15 +469,15 @@ end
     "Low-Storage Method
 4-stage, third order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK43_2",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK43_2{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -495,15 +495,15 @@ end
     "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3C",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK54_3C{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -521,15 +521,15 @@ end
     "Low-Storage Method
 9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK95_4S",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK95_4S{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -547,15 +547,15 @@ end
     "Low-Storage Method
 9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK95_4C",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK95_4C{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -573,15 +573,15 @@ end
     "Low-Storage Method
 9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK95_4M",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK95_4M{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -599,15 +599,15 @@ end
     "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3C_3R",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK54_3C_3R{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -625,15 +625,15 @@ end
     "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3M_3R",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK54_3M_3R{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -651,15 +651,15 @@ end
     "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3N_3R",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK54_3N_3R{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -677,15 +677,15 @@ end
     "Low-Storage Method
 8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK85_4C_3R",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK85_4C_3R{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -703,15 +703,15 @@ end
     "Low-Storage Method
 8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK85_4M_3R",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK85_4M_3R{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -729,15 +729,15 @@ end
     "Low-Storage Method
 8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK85_4P_3R",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK85_4P_3R{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -755,15 +755,15 @@ end
     "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3N_4R",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK54_3N_4R{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -781,15 +781,15 @@ end
     "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3M_4R",
-references = """@article{kennedy2000low,
-  title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
-  journal={Applied numerical mathematics},
-  volume={35},
-  number={3},
-  pages={177--219},
-  year={2000},
-  publisher={Elsevier}}""")
+    references = """@article{kennedy2000low,
+      title={Low-storage, explicit Runge--Kutta schemes for the compressible Navier--Stokes equations},
+      author={Kennedy, Christopher A and Carpenter, Mark H and Lewis, R Michael},
+      journal={Applied numerical mathematics},
+      volume={35},
+      number={3},
+      pages={177--219},
+      year={2000},
+      publisher={Elsevier}}""")
 Base.@kwdef struct CKLLSRK54_3M_4R{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -1060,7 +1060,8 @@ end
 
 #SSP Optimized Runge-Kutta Methods
 
-@doc explicit_rk_docstring("Optimal strong-stability-preserving Runge-Kutta time discretizations for discontinuous Galerkin methods",
+@doc explicit_rk_docstring(
+    "Optimal strong-stability-preserving Runge-Kutta time discretizations for discontinuous Galerkin methods",
     "KYK2014DGSSPRK_3S2",
     references = """@article{kubatko2014optimal,
     title={Optimal strong-stability-preserving Runge--Kutta time discretizations for discontinuous Galerkin methods},

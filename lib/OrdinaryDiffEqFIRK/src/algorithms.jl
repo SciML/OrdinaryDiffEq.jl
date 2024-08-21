@@ -28,8 +28,9 @@ extra_keyword_default = """
     smooth_est = true,
     step_limiter! = trivial_limiter!"""
 
-@doc differentiation_rk_docstring("An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
-    Similar to Hairer's SEULEX.",
+@doc differentiation_rk_docstring(
+    "An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
+Similar to Hairer's SEULEX.",
     "RadauIIA3",
     "Fully-Implicit Runge-Kutta Method.";
     references = hairer1999stiff,
@@ -70,8 +71,9 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = Val{true}(),
         step_limiter!)
 end
 
-@doc differentiation_rk_docstring("An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
-    Similar to Hairer's SEULEX.",
+@doc differentiation_rk_docstring(
+    "An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
+Similar to Hairer's SEULEX.",
     "RadauIIA5",
     "Fully-Implicit Runge-Kutta Method.";
     references = hairer1999stiff,
@@ -114,8 +116,9 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         step_limiter!)
 end
 
-@doc differentiation_rk_docstring("An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
-    Similar to Hairer's SEULEX.",
+@doc differentiation_rk_docstring(
+    "An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
+Similar to Hairer's SEULEX.",
     "RadauIIA9",
     "Fully-Implicit Runge-Kutta Method.";
     references = hairer1999stiff,

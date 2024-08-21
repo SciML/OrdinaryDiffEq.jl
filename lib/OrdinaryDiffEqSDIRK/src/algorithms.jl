@@ -1,8 +1,8 @@
 function SDIRK_docstring(description::String,
-    name::String;
-    references::String = "",
-    extra_keyword_description::String = "",
-    extra_keyword_default::String = "")
+        name::String;
+        references::String = "",
+        extra_keyword_description::String = "",
+        extra_keyword_default::String = "")
     keyword_default = """
         chunk_size = Val{0}(),
         autodiff = true,
@@ -113,12 +113,12 @@ function ImplicitMidpoint(; chunk_size = Val{0}(), autodiff = Val{true}(),
         step_limiter!)
 end
 
-
-@doc SDIRK_docstring("""Second order A-stable symmetric ESDIRK method.
-    "Almost symplectic" without numerical dampening.
-    Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via divided
-    differences approximation to the second derivative terms in the local truncation error
-    estimate (the SPICE approximation strategy).""",
+@doc SDIRK_docstring(
+    """Second order A-stable symmetric ESDIRK method.
+"Almost symplectic" without numerical dampening.
+Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via divided
+differences approximation to the second derivative terms in the local truncation error
+estimate (the SPICE approximation strategy).""",
     "Trapezoid";
     references = "Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York, NY, USA.",
     extra_keyword_description = """
@@ -297,11 +297,12 @@ function SDIRK22(;
         step_limiter!)
 end
 
-@doc SDIRK_docstring("""SSPSDIRK is an SSP-optimized SDIRK method,
-    so it's an implicit SDIRK method for handling stiffness but if the `dt` is below the SSP `coefficient * dt`,
-    then the SSP property of the SSP integrators (the other page) is satisified.
-    As such this is a method which is expected to be good on advection-dominated cases where an explicit SSP integrator would be used,
-    but where reaction equations are sufficient stiff to justify implicit integration.""",
+@doc SDIRK_docstring(
+    """SSPSDIRK is an SSP-optimized SDIRK method,
+so it's an implicit SDIRK method for handling stiffness but if the `dt` is below the SSP `coefficient * dt`,
+then the SSP property of the SSP integrators (the other page) is satisified.
+As such this is a method which is expected to be good on advection-dominated cases where an explicit SSP integrator would be used,
+but where reaction equations are sufficient stiff to justify implicit integration.""",
     "SSPSDIRK2";
     references = "@article{ketcheson2009optimal,
     title={Optimal implicit strong stability preserving Runge--Kutta methods},
@@ -343,7 +344,6 @@ function SSPSDIRK2(; chunk_size = Val{0}(), autodiff = Val{true}(),
         _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
         controller)
 end
-
 
 @doc SDIRK_docstring("An A-L stable stiffly-accurate 3rd order ESDIRK method.",
     "Kvaerno3";
@@ -390,7 +390,8 @@ function Kvaerno3(; chunk_size = Val{0}(), autodiff = Val{true}(),
         smooth_est, extrapolant, controller, step_limiter!)
 end
 
-@doc SDIRK_docstring("An A-L stable stiffly-accurate 3rd order ESDIRK method with splitting.",
+@doc SDIRK_docstring(
+    "An A-L stable stiffly-accurate 3rd order ESDIRK method with splitting.",
     "KenCarp3";
     references = "@book{kennedy2001additive,
     title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
@@ -631,7 +632,6 @@ function SFSDIRK6(; chunk_size = Val{0}(), autodiff = Val{true}(),
         extrapolant)
 end
 
-
 @doc SDIRK_docstring("Method of order 7.",
     "SFSDIRK7";
     references = "@article{ferracina2008strong,
@@ -870,7 +870,8 @@ function Kvaerno5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         smooth_est, extrapolant, controller, step_limiter!)
 end
 
-@doc SDIRK_docstring("An A-L stable stiffly-accurate 4th order ESDIRK method with splitting.",
+@doc SDIRK_docstring(
+    "An A-L stable stiffly-accurate 4th order ESDIRK method with splitting.",
     "KenCarp4";
     references = "@book{kennedy2001additive,
     title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
@@ -913,7 +914,8 @@ end
 
 TruncatedStacktraces.@truncate_stacktrace KenCarp4
 
-@doc SDIRK_docstring("An A-L stable stiffly-accurate 4th order seven-stage ESDIRK method with splitting.",
+@doc SDIRK_docstring(
+    "An A-L stable stiffly-accurate 4th order seven-stage ESDIRK method with splitting.",
     "KenCarp47";
     references = "@article{kennedy2019higher,
     title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
@@ -954,7 +956,8 @@ function KenCarp47(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller)
 end
 
-@doc SDIRK_docstring("An A-L stable stiffly-accurate 5th order ESDIRK method with splitting.",
+@doc SDIRK_docstring(
+    "An A-L stable stiffly-accurate 5th order ESDIRK method with splitting.",
     "KenCarp5";
     references = "@book{kennedy2001additive,
     title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
@@ -995,7 +998,8 @@ function KenCarp5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         smooth_est, extrapolant, controller, step_limiter!)
 end
 
-@doc SDIRK_docstring("An A-L stable stiffly-accurate 5th order eight-stage ESDIRK method with splitting.",
+@doc SDIRK_docstring(
+    "An A-L stable stiffly-accurate 5th order eight-stage ESDIRK method with splitting.",
     "KenCarp58";
     references = "@article{kennedy2019higher,
     title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
@@ -1037,9 +1041,10 @@ function KenCarp58(; chunk_size = Val{0}(), autodiff = Val{true}(),
 end
 
 # `smooth_est` is not necessary, as the embedded method is also L-stable
-@doc SDIRK_docstring("Optimized ESDIRK tableaus.
-    Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
-    but are still being fully evaluated in context.",
+@doc SDIRK_docstring(
+    "Optimized ESDIRK tableaus.
+Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
+but are still being fully evaluated in context.",
     "ESDIRK54I8L2SA";
     references = """@article{Kennedy2019DiagonallyIR,
     title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
@@ -1076,9 +1081,10 @@ function ESDIRK54I8L2SA(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller)
 end
 
-@doc SDIRK_docstring("Optimized ESDIRK tableaus.
-    Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
-    but are still being fully evaluated in context.",
+@doc SDIRK_docstring(
+    "Optimized ESDIRK tableaus.
+Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
+but are still being fully evaluated in context.",
     "ESDIRK436L2SA2";
     references = """@article{Kennedy2019DiagonallyIR,
     title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
@@ -1115,9 +1121,10 @@ function ESDIRK436L2SA2(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller)
 end
 
-@doc SDIRK_docstring("Optimized ESDIRK tableaus.
-    Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
-    but are still being fully evaluated in context.",
+@doc SDIRK_docstring(
+    "Optimized ESDIRK tableaus.
+Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
+but are still being fully evaluated in context.",
     "ESDIRK437L2SA";
     references = """@article{Kennedy2019DiagonallyIR,
     title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
@@ -1154,9 +1161,10 @@ function ESDIRK437L2SA(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller)
 end
 
-@doc SDIRK_docstring("Optimized ESDIRK tableaus.
-    Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
-    but are still being fully evaluated in context.",
+@doc SDIRK_docstring(
+    "Optimized ESDIRK tableaus.
+Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
+but are still being fully evaluated in context.",
     "ESDIRK547L2SA2";
     references = """@article{Kennedy2019DiagonallyIR,
     title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
@@ -1193,11 +1201,12 @@ function ESDIRK547L2SA2(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller)
 end
 
-@doc SDIRK_docstring("Optimized ESDIRK tableaus.
-    Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
-    but are still being fully evaluated in context.
-    Currently has STABILITY ISSUES, causing it to fail the adaptive tests.
-    Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more details.",
+@doc SDIRK_docstring(
+    "Optimized ESDIRK tableaus.
+Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
+but are still being fully evaluated in context.
+Currently has STABILITY ISSUES, causing it to fail the adaptive tests.
+Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more details.",
     "ESDIRK659L2SA";
     references = """@article{Kennedy2019DiagonallyIR,
     title={Diagonally implicit Runge–Kutta methods for stiff ODEs},

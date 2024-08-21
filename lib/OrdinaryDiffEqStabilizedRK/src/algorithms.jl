@@ -1,6 +1,7 @@
 
-@doc generic_solver_docstring("""Second order method. Exhibits high stability for real eigenvalues
-    and is smoothened to allow for moderate sized complex eigenvalues.""",
+@doc generic_solver_docstring(
+    """Second order method. Exhibits high stability for real eigenvalues
+and is smoothened to allow for moderate sized complex eigenvalues.""",
     "ROCK2",
     "Stabilized Explicit Method.",
     """Assyr Abdulle, Alexei A. Medovikov. Second Order Chebyshev Methods based on Orthogonal Polynomials.
@@ -27,8 +28,9 @@ function ROCK2(; min_stages = 0, max_stages = 200, eigen_est = nothing)
     ROCK2(min_stages, max_stages, eigen_est)
 end
 
-@doc generic_solver_docstring("""Fourth order method. Exhibits high stability for real eigenvalues
-    and is smoothened to allow for moderate sized complex eigenvalues.""",
+@doc generic_solver_docstring(
+    """Fourth order method. Exhibits high stability for real eigenvalues
+and is smoothened to allow for moderate sized complex eigenvalues.""",
     "ROCK4",
     "Stabilized Explicit Method.",
     """Assyr Abdulle. Fourth Order Chebyshev Methods With Recurrence Relation. 2002 Society for
@@ -67,7 +69,8 @@ for Alg in [:ESERK4, :ESERK5, :RKC]
     end
 end
 
-@doc generic_solver_docstring("""Second order method. Exhibits high stability for real eigenvalues.""",
+@doc generic_solver_docstring(
+    """Second order method. Exhibits high stability for real eigenvalues.""",
     "RKC",
     "Stabilized Explicit Method.",
     """B. P. Sommeijer, L. F. Shampine, J. G. Verwer. RKC: An Explicit Solver for Parabolic PDEs,
@@ -84,8 +87,9 @@ end
     """)
 function RKC end
 
-@doc generic_solver_docstring("""Fourth order method. Exhibits high stability for real eigenvalues
-    and is smoothened to allow for moderate sized complex eigenvalues.""",
+@doc generic_solver_docstring(
+    """Fourth order method. Exhibits high stability for real eigenvalues
+and is smoothened to allow for moderate sized complex eigenvalues.""",
     "ESERK4",
     "Stabilized Explicit Method.",
     """J. Martín-Vaquero, B. Kleefeld. Extrapolated stabilized explicit Runge-Kutta methods,
@@ -102,8 +106,9 @@ function RKC end
     """)
 function ESERK4 end
 
-@doc generic_solver_docstring("""Fifth order method. Exhibits high stability for real eigenvalues
-    and is smoothened to allow for moderate sized complex eigenvalues.""",
+@doc generic_solver_docstring(
+    """Fifth order method. Exhibits high stability for real eigenvalues
+and is smoothened to allow for moderate sized complex eigenvalues.""",
     "ESERK5",
     "Stabilized Explicit Method.",
     """J. Martín-Vaquero, A. Kleefeld. ESERK5: A fifth-order extrapolated stabilized explicit Runge-Kutta method,

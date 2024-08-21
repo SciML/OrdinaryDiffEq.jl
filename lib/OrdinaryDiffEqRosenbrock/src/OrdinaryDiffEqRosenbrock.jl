@@ -84,25 +84,25 @@ function rosenbrock_docstring(description::String,
         extra_keyword_description = "",
         extra_keyword_default = "",
         with_step_limiter = false)
-        keyword_default = """
-        chunk_size = Val{0}(),
-        standardtag = Val{true}(),
-        autodiff = Val{true}(),
-        concrete_jac = nothing,
-        diff_type = Val{:central},
-        linsolve = nothing,
-        precs = DEFAULT_PRECS,
-        """ * extra_keyword_default
+    keyword_default = """
+    chunk_size = Val{0}(),
+    standardtag = Val{true}(),
+    autodiff = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:central},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    """ * extra_keyword_default
 
-        keyword_default_description = """
-        - `chunk_size`: TBD
-        - `standardtag`: TBD
-        - `autodiff`: boolean to control if the Jacobian should be computed via AD or not
-        - `concrete_jac`: function of the form `jac!(J, u, p, t)`
-        - `diff_type`: TBD
-        - `linsolve`: custom solver for the inner linear systems
-        - `precs`: custom preconditioner for the inner linear solver
-        """ * extra_keyword_description
+    keyword_default_description = """
+    - `chunk_size`: TBD
+    - `standardtag`: TBD
+    - `autodiff`: boolean to control if the Jacobian should be computed via AD or not
+    - `concrete_jac`: function of the form `jac!(J, u, p, t)`
+    - `diff_type`: TBD
+    - `linsolve`: custom solver for the inner linear systems
+    - `precs`: custom preconditioner for the inner linear solver
+    """ * extra_keyword_description
 
     if with_step_limiter
         keyword_default *= "step_limiter! = OrdinaryDiffEq.trivial_limiter!,\n"

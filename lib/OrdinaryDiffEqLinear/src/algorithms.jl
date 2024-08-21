@@ -69,12 +69,19 @@ for (Alg, Description, Ref) in [
     (:MagnusMidpoint, "Second order Magnus Midpoint method.", "ref TBD"),
     (:MagnusLeapfrog, "Second order Magnus Leapfrog method.", "ref TBD"),
     (:LieEuler, "description", REF1),
-    (:MagnusGauss4, "Fourth order Magnus method approximated using a two stage Gauss quadrature.", REF5),
-    (:MagnusNC6, "Sixth order Magnus method approximated using Newton-Cotes quadrature.", REF3),
-    (:MagnusGL6, "Sixth order Magnus method approximated using Gauss-Legendre quadrature.", REF3),
-    (:MagnusGL8, "Eighth order Magnus method approximated using Newton-Cotes quadrature.", REF3),
-    (:MagnusNC8, "Eighth order Magnus method approximated using Gauss-Legendre quadrature.", REF3),
-    (:MagnusGL4, "Fourth order Magnus method approximated using Gauss-Legendre quadrature.", REF4),
+    (:MagnusGauss4,
+        "Fourth order Magnus method approximated using a two stage Gauss quadrature.",
+        REF5),
+    (:MagnusNC6,
+        "Sixth order Magnus method approximated using Newton-Cotes quadrature.", REF3),
+    (:MagnusGL6,
+        "Sixth order Magnus method approximated using Gauss-Legendre quadrature.", REF3),
+    (:MagnusGL8,
+        "Eighth order Magnus method approximated using Newton-Cotes quadrature.", REF3),
+    (:MagnusNC8,
+        "Eighth order Magnus method approximated using Gauss-Legendre quadrature.", REF3),
+    (:MagnusGL4,
+        "Fourth order Magnus method approximated using Gauss-Legendre quadrature.", REF4),
     (:RKMK2, "Second order Runge–Kutta–Munthe-Kaas method.", REF1),
     (:RKMK4, "Fourth order Runge–Kutta–Munthe-Kaas method.", REF1),
     (:LieRK4, "Fourth order Lie Runge-Kutta method.", REF1),
@@ -99,9 +106,9 @@ for (Alg, Description, Ref) in [
             iop = 0,
             """)
         struct $Alg <: OrdinaryDiffEqLinearExponentialAlgorithm
-        krylov::Bool
-        m::Int
-        iop::Int
+            krylov::Bool
+            m::Int
+            iop::Int
         end
     end
     @eval $Alg(; krylov = false, m = 30, iop = 0) = $Alg(krylov, m, iop)
@@ -119,7 +126,8 @@ struct MagnusAdapt4 <: OrdinaryDiffEqAdaptiveAlgorithm end
     "ref TBD", "", "")
 struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 
-@doc generic_solver_docstring("Exact solution formula for linear, time-independent problems.",
+@doc generic_solver_docstring(
+    "Exact solution formula for linear, time-independent problems.",
     "LinearExponential",
     "Semilinear ODE solver",
     "@book{strogatz2018nonlinear,

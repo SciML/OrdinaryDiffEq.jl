@@ -10,10 +10,11 @@ reference = """@inproceedings{elrod2022parallelizing,
   year={2022},
   organization={IEEE}}
 """
-@doc generic_solver_docstring("Euler extrapolation using Aitken-Neville with the Romberg Sequence.",
+@doc generic_solver_docstring(
+    "Euler extrapolation using Aitken-Neville with the Romberg Sequence.",
     "AitkenNeville",
     "Parallelized Explicit Extrapolation Method.",
-    reference ,
+    reference,
     """
     - `max_order`: TBD
     - `min_order`: TBD
@@ -33,8 +34,9 @@ Base.@kwdef struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarSt
     threading::TO = false
 end
 
-@doc differentiation_rk_docstring("Extrapolation of implicit Euler method with Romberg sequence.
-    Similar to Hairer's SEULEX.",
+@doc differentiation_rk_docstring(
+    "Extrapolation of implicit Euler method with Romberg sequence.
+Similar to Hairer's SEULEX.",
     "ImplicitEulerExtrapolation",
     "Parallelized Explicit Extrapolation Method.",
     references = reference,

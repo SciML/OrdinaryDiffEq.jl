@@ -31,7 +31,9 @@ Hairer42
 Kvaerno4
 Kvaerno5
 ```
+
 ### IMEX SDIRK
+
 ```@docs
 KenCarp4
 KenCarp47

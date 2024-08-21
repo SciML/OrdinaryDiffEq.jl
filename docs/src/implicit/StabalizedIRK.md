@@ -17,4 +17,3 @@ first_steps("OrdinaryDiffEqStabalizedIRK", "IRKC")
 ```@docs
 IRKC
 ```
-

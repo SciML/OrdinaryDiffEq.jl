@@ -29,6 +29,7 @@ SBDF2
 SBDF3
 SBDF4
 ```
+
 ### IMEX SDIRK
 
 ```@docs

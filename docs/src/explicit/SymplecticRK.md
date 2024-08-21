@@ -5,20 +5,23 @@ Because of discretization error, when it is solving a Hamiltonian system it does
 Instead, that trajectory itself is perturbed `O(Δtn)` for the order n from the true trajectory.
 Then there's a linear drift due to numerical error of this trajectory over time
 Normal integrators tend to have a quadratic (or more) drift, and do not have any good global guarantees about this phase space path (just local).
-What means is that symplectic integrators tend to capture the long-time patterns better than normal integrators because of this lack of drift and this almost guarantee of periodicity. 
+What means is that symplectic integrators tend to capture the long-time patterns better than normal integrators because of this lack of drift and this almost guarantee of periodicity.
 
 ## Installation
+
 To be able to access the solvers in `OrdinaryDiffEqSymplecticRK`, you must first install them use the Julia package manager:
 
 ```julia
 using Pkg
 Pkg.add("OrdinaryDiffEqSymplecticRK")
 ```
+
 This will only install the solvers listed at the bottom of this page.
 If you want to explore other solvers for your problem,
 you will need to install some of the other libraries listed in the navigation bar on the left.
 
 ## Example usage
+
 ```julia
 using OrdinaryDiffEqSymplecticRK
 function HH_acceleration!(dv, v, u, p, t)

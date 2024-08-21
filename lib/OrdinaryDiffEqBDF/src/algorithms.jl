@@ -1,8 +1,8 @@
 function BDF_docstring(description::String,
-    name::String;
-    references::String = "",
-    extra_keyword_description::String = "",
-    extra_keyword_default::String = "")
+        name::String;
+        references::String = "",
+        extra_keyword_description::String = "",
+        extra_keyword_default::String = "")
     keyword_default = """
         chunk_size = Val{0}(),
         autodiff = true,
@@ -30,8 +30,8 @@ function BDF_docstring(description::String,
     )
 end
 
-
-@doc BDF_docstring("An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.",
+@doc BDF_docstring(
+    "An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.",
     "ABDF2",
     references = """
     E. Alberdi Celayaa, J. J. Anza Aguirrezabalab, P. Chatzipantelidisc. Implementation of
@@ -81,11 +81,11 @@ function ABDF2(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{true}
         smooth_est, extrapolant, controller, step_limiter!)
 end
 
-
-@doc BDF_docstring("Implicit-explicit (IMEX) method designed for SplitODEFunction equations,
-    which reduce the size of the implicit handling to a subset of the equations.
-    It's similar to the additive Runge-Kutta methods in splitting mode,
-    like `KenCarp4`, but instead using a multistep BDF approach",
+@doc BDF_docstring(
+    "Implicit-explicit (IMEX) method designed for SplitODEFunction equations,
+which reduce the size of the implicit handling to a subset of the equations.
+It's similar to the additive Runge-Kutta methods in splitting mode,
+like `KenCarp4`, but instead using a multistep BDF approach",
     "SBDF",
     references = """@article{ascher1995implicit,
     title={Implicit-explicit methods for time-dependent partial differential equations},
@@ -205,8 +205,9 @@ See also `SBDF`.
 """
 SBDF4(; kwargs...) = SBDF(4; kwargs...)
 
-@doc BDF_docstring("An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
-    Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.",
+@doc BDF_docstring(
+    "An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
+Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.",
     "QNDF1",
     references = """@article{shampine1997matlab,
     title={The matlab ode suite},
@@ -260,7 +261,8 @@ function QNDF1(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Va
         step_limiter!)
 end
 
-@doc BDF_docstring("An adaptive order 2 quasi-constant timestep L-stable numerical differentiation function (NDF) method.",
+@doc BDF_docstring(
+    "An adaptive order 2 quasi-constant timestep L-stable numerical differentiation function (NDF) method.",
     "QNDF2",
     references = """@article{shampine1997matlab,
     title={The matlab ode suite},
@@ -314,8 +316,9 @@ function QNDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Va
         step_limiter!)
 end
 
-@doc BDF_docstring("An adaptive order quasi-constant timestep NDF method.
-    Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).",
+@doc BDF_docstring(
+    "An adaptive order quasi-constant timestep NDF method.
+Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).",
     "QNDF",
     references = """@article{shampine1997matlab,
     title={The matlab ode suite},
@@ -417,9 +420,10 @@ function MEBDF2(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{true
         extrapolant)
 end
 
-@doc BDF_docstring("An adaptive order quasi-constant timestep NDF method.
-    Fixed leading coefficient BDF.
-    Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).",
+@doc BDF_docstring(
+    "An adaptive order quasi-constant timestep NDF method.
+Fixed leading coefficient BDF.
+Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).",
     "FBDF",
     references = """@article{shampine2002solving,
     title={Solving 0= F (t, y (t), y′(t)) in Matlab},
@@ -551,8 +555,9 @@ See also `SBDF`, `IMEXEuler`.
 """
 IMEXEulerARK(; kwargs...) = SBDF(1; ark = true, kwargs...)
 
-@doc BDF_docstring("Implicit Euler for implicit DAE form.
-    It uses an apriori error estimator for adaptivity based on a finite differencing approximation from SPICE.",
+@doc BDF_docstring(
+    "Implicit Euler for implicit DAE form.
+It uses an apriori error estimator for adaptivity based on a finite differencing approximation from SPICE.",
     "DImplicitEuler",
     extra_keyword_description = """
     - `nlsolve`: TBD

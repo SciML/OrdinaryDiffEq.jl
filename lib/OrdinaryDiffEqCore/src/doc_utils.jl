@@ -75,11 +75,11 @@ function explicit_rk_docstring(description::String,
     )
 end
 function differentiation_rk_docstring(description::String,
-    name::String,
-    solver_class::String;
-    references::String = "",
-    extra_keyword_description::String = "",
-    extra_keyword_default::String = "")
+        name::String,
+        solver_class::String;
+        references::String = "",
+        extra_keyword_description::String = "",
+        extra_keyword_default::String = "")
     keyword_default = """
     chunk_size = Val{0}(),
     autodiff = true,
