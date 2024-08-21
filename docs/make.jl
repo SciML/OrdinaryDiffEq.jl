@@ -32,7 +32,9 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         OrdinaryDiffEq.OrdinaryDiffEqRosenbrock,
         OrdinaryDiffEq.OrdinaryDiffEqStabilizedIRK,
         OrdinaryDiffEq.OrdinaryDiffEqBDF,
-        OrdinaryDiffEq.OrdinaryDiffEqLinear],
+        OrdinaryDiffEq.OrdinaryDiffEqLinear,
+        OrdinaryDiffEq.OrdinaryDiffEqExponentialRK,
+        ],
     warnonly = [:docs_block, :missing_docs, :eval_block],
     format = Documenter.HTML(analytics = "UA-90474609-3",
         assets = ["assets/favicon.ico"],
@@ -69,7 +71,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "imex/imex_sdirk.md"
         ],
         "Semilinear ODE Solvers" => [
-            "semilinear/exponential_rk.md",
+            "semilinear/ExponentialRK.md",
             "semilinear/Linear.md"
         ],
         "Misc Solvers" => [
