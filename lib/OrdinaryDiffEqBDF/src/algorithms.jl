@@ -82,12 +82,20 @@ function ABDF2(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{true}
 end
 
 
-@doc BDF_docstring("description TBD.",
+@doc BDF_docstring("Implicit-explicit (IMEX) method designed for SplitODEFunction equations,
+    which reduce the size of the implicit handling to a subset of the equations.
+    It's similar to the additive Runge-Kutta methods in splitting mode,
+    like `KenCarp4`, but instead using a multistep BDF approach",
     "SBDF",
-    references = """
-    E. Alberdi Celayaa, J. J. Anza Aguirrezabalab, P. Chatzipantelidisc. Implementation of
-    an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Computer Science,
-    29, pp 1014-1026, 2014. doi: https://doi.org/10.1016/j.procs.2014.05.091
+    references = """@article{ascher1995implicit,
+    title={Implicit-explicit methods for time-dependent partial differential equations},
+    author={Ascher, Uri M and Ruuth, Steven J and Wetton, Brian TR},
+    journal={SIAM Journal on Numerical Analysis},
+    volume={32},
+    number={3},
+    pages={797--823},
+    year={1995},
+    publisher={SIAM}}
     """,
     extra_keyword_description = """
     - `κ`: TBD
@@ -373,7 +381,15 @@ TruncatedStacktraces.@truncate_stacktrace QNDF
     which has improved stability properties over the standard BDF.
     Fixed timestep only.",
     "MEBDF2",
-    references = """TBD""",
+    references = """@article{cash2000modified,
+    title={Modified extended backward differentiation formulae for the numerical solution of stiff initial value problems in ODEs and DAEs},
+    author={Cash, JR},
+    journal={Journal of Computational and Applied Mathematics},
+    volume={125},
+    number={1-2},
+    pages={117--130},
+    year={2000},
+    publisher={Elsevier}}""",
     extra_keyword_description = """
     - `nlsolve`: TBD
     - `extrapolant`: TBD
@@ -535,9 +551,9 @@ See also `SBDF`, `IMEXEuler`.
 """
 IMEXEulerARK(; kwargs...) = SBDF(1; ark = true, kwargs...)
 
-@doc BDF_docstring("TBD.",
+@doc BDF_docstring("Implicit Euler for implicit DAE form.
+    It uses an apriori error estimator for adaptivity based on a finite differencing approximation from SPICE.",
     "DImplicitEuler",
-    references = """TBD""",
     extra_keyword_description = """
     - `nlsolve`: TBD
     - `extrapolant`: TBD
@@ -567,9 +583,16 @@ function DImplicitEuler(;
         nlsolve, precs, extrapolant, controller)
 end
 
-@doc BDF_docstring("TBD.",
+@doc BDF_docstring("Fully implicit implementation of BDF2.",
     "DABDF2",
-    references = """TBD""",
+    references = """@article{celaya2014implementation,
+    title={Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s},
+    author={Celaya, E Alberdi and Aguirrezabala, JJ Anza and Chatzipantelidis, Panagiotis},
+    journal={Procedia Computer Science},
+    volume={29},
+    pages={1014--1026},
+    year={2014},
+    publisher={Elsevier}}""",
     extra_keyword_description = """
     - `nlsolve`: TBD
     - `extrapolant`: TBD
@@ -612,9 +635,14 @@ DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concr
      linsolve,nlsolve,precs,extrapolant)
 =#
 
-@doc BDF_docstring("Description TBD",
+@doc BDF_docstring("Fully implicit implementation of FBDF based on Shampine's",
     "DFBDF",
-    references = """TBD""",
+    references = """@article{shampine2002solving,
+    title={Solving 0= F (t, y (t), y′(t)) in Matlab},
+    author={Shampine, Lawrence F},
+    year={2002},
+    publisher={Walter de Gruyter GmbH and Co. KG}
+    }""",
     extra_keyword_description = """
     - `κ`: TBD
     - `tol`: TBD

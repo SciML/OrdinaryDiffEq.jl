@@ -2,11 +2,18 @@ abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <:
               OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ} <:
               OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
-
+reference = """@inproceedings{elrod2022parallelizing,
+  title={Parallelizing explicit and implicit extrapolation methods for ordinary differential equations},
+  author={Elrod, Chris and Ma, Yingbo and Althaus, Konstantin and Rackauckas, Christopher and others},
+  booktitle={2022 IEEE High Performance Extreme Computing Conference (HPEC)},
+  pages={1--9},
+  year={2022},
+  organization={IEEE}}
+"""
 @doc generic_solver_docstring("Euler extrapolation using Aitken-Neville with the Romberg Sequence.",
     "AitkenNeville",
     "Parallelized Explicit Extrapolation Method.",
-    "TBD",
+    reference ,
     """
     - `max_order`: TBD
     - `min_order`: TBD
@@ -30,7 +37,7 @@ end
     Similar to Hairer's SEULEX.",
     "ImplicitEulerExtrapolation",
     "Parallelized Explicit Extrapolation Method.",
-    references = "TBD",
+    references = reference,
     extra_keyword_description = """
     - `max_order`: TBD
     - `min_order`: TBD
@@ -100,7 +107,7 @@ end
 @doc generic_solver_docstring("Midpoint extrapolation using Barycentric coordinates.",
     "ExtrapolationMidpointDeuflhard",
     "Parallelized Explicit Extrapolation Method.",
-    "REFS TBD",
+    reference,
     """
     - `max_order`: TBD
     - `min_order`: TBD
@@ -170,7 +177,7 @@ end
 @doc differentiation_rk_docstring("Midpoint extrapolation using Barycentric coordinates.",
     "ImplicitDeuflhardExtrapolation",
     "Parallelized Explicit Extrapolation Method.",
-    references = "TBD",
+    references = reference,
     extra_keyword_description = """
     - `max_order`: TBD
     - `min_order`: TBD
@@ -244,7 +251,7 @@ end
     following Hairer's ODEX in the adaptivity behavior.",
     "ExtrapolationMidpointHairerWanner",
     "Parallelized Explicit Extrapolation Method.",
-    "REFS TBD",
+    reference,
     """
     - `max_order`: TBD
     - `min_order`: TBD
@@ -317,7 +324,7 @@ end
     following Hairer's SODEX in the adaptivity behavior.",
     "ImplicitHairerWannerExtrapolation",
     "Parallelized Explicit Extrapolation Method.",
-    references = "TBD",
+    references = reference,
     extra_keyword_description = """
     - `max_order`: TBD
     - `min_order`: TBD
@@ -393,7 +400,7 @@ end
     following Hairer's SODEX in the adaptivity behavior.",
     "ImplicitEulerBarycentricExtrapolation",
     "Parallelized Explicit Extrapolation Method.",
-    references = "TBD",
+    references = reference,
     extra_keyword_description = """
     - `max_order`: TBD
     - `min_order`: TBD

@@ -35,7 +35,12 @@ end
     Adaptive timestepping through a divided differences estimate via memory.
     Strong-stability preserving (SSP).",
     "ImplicitEuler";
-    references = "TBD",
+    references = "@book{wanner1996solving,
+    title={Solving ordinary differential equations II},
+    author={Wanner, Gerhard and Hairer, Ernst},
+    volume={375},
+    year={1996},
+    publisher={Springer Berlin Heidelberg New York}}",
     extra_keyword_description = """
     - `extrapolant`: TBD
     - `controller`: TBD
@@ -71,7 +76,12 @@ end
 @doc SDIRK_docstring("A second order A-stable symplectic and symmetric implicit solver.
     Good for highly stiff equations which need symplectic integration.",
     "ImplicitMidpoint";
-    references = "TBD",
+    references = "@book{wanner1996solving,
+    title={Solving ordinary differential equations II},
+    author={Wanner, Gerhard and Hairer, Ernst},
+    volume={375},
+    year={1996},
+    publisher={Springer Berlin Heidelberg New York}}",
     extra_keyword_description = """
     - `extrapolant`: TBD
     - `step_limiter!`: TBD
@@ -245,7 +255,10 @@ end
 
 @doc SDIRK_docstring("Description TBD",
     "SDIRK22";
-    references = "TBD",
+    references = "@techreport{kennedy2016diagonally,
+    title={Diagonally implicit Runge-Kutta methods for ordinary differential equations. A review},
+    author={Kennedy, Christopher A and Carpenter, Mark H},
+    year={2016}}",
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
@@ -284,9 +297,21 @@ function SDIRK22(;
         step_limiter!)
 end
 
-@doc SDIRK_docstring("Description TBD",
+@doc SDIRK_docstring("""SSPSDIRK is an SSP-optimized SDIRK method,
+    so it's an implicit SDIRK method for handling stiffness but if the `dt` is below the SSP `coefficient * dt`,
+    then the SSP property of the SSP integrators (the other page) is satisified.
+    As such this is a method which is expected to be good on advection-dominated cases where an explicit SSP integrator would be used,
+    but where reaction equations are sufficient stiff to justify implicit integration.""",
     "SSPSDIRK2";
-    references = "TBD",
+    references = "@article{ketcheson2009optimal,
+    title={Optimal implicit strong stability preserving Runge--Kutta methods},
+    author={Ketcheson, David I and Macdonald, Colin B and Gottlieb, Sigal},
+    journal={Applied Numerical Mathematics},
+    volume={59},
+    number={2},
+    pages={373--392},
+    year={2009},
+    publisher={Elsevier}}",
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
@@ -406,9 +431,17 @@ function KenCarp3(; chunk_size = Val{0}(), autodiff = Val{true}(),
         smooth_est, extrapolant, controller, step_limiter!)
 end
 
-@doc SDIRK_docstring("Description TBD.",
+@doc SDIRK_docstring("Third order method.",
     "CFNLIRK3";
-    references = "TBD",
+    references = "@article{calvo2001linearly,
+    title={Linearly implicit Runge--Kutta methods for advection--reaction--diffusion equations},
+    author={Calvo, MP and De Frutos, J and Novo, J},
+    journal={Applied Numerical Mathematics},
+    volume={37},
+    number={4},
+    pages={535--549},
+    year={2001},
+    publisher={Elsevier}}",
     extra_keyword_description = """
     - `extrapolant`: TBD
     """,
@@ -485,9 +518,17 @@ function Cash4(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Va
         controller)
 end
 
-@doc SDIRK_docstring("Description TBD.",
+@doc SDIRK_docstring("Method of order 4.",
     "SFSDIRK4";
-    references = "TBD",
+    references = "@article{ferracina2008strong,
+    title={Strong stability of singly-diagonally-implicit Runge--Kutta methods},
+    author={Ferracina, Luca and Spijker, MN},
+    journal={Applied Numerical Mathematics},
+    volume={58},
+    number={11},
+    pages={1675--1686},
+    year={2008},
+    publisher={Elsevier}}",
     extra_keyword_description = """
     - `extrapolant`: TBD
     """,
@@ -514,9 +555,17 @@ function SFSDIRK4(; chunk_size = Val{0}(), autodiff = Val{true}(),
         extrapolant)
 end
 
-@doc SDIRK_docstring("Description TBD.",
+@doc SDIRK_docstring("Method of order 5.",
     "SFSDIRK5";
-    references = "TBD",
+    references = "@article{ferracina2008strong,
+    title={Strong stability of singly-diagonally-implicit Runge--Kutta methods},
+    author={Ferracina, Luca and Spijker, MN},
+    journal={Applied Numerical Mathematics},
+    volume={58},
+    number={11},
+    pages={1675--1686},
+    year={2008},
+    publisher={Elsevier}}",
     extra_keyword_description = """
     - `extrapolant`: TBD
     """,
@@ -544,9 +593,17 @@ function SFSDIRK5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         extrapolant)
 end
 
-@doc SDIRK_docstring("Description TBD.",
+@doc SDIRK_docstring("Method of order 6.",
     "SFSDIRK6";
-    references = "TBD",
+    references = "@article{ferracina2008strong,
+    title={Strong stability of singly-diagonally-implicit Runge--Kutta methods},
+    author={Ferracina, Luca and Spijker, MN},
+    journal={Applied Numerical Mathematics},
+    volume={58},
+    number={11},
+    pages={1675--1686},
+    year={2008},
+    publisher={Elsevier}}",
     extra_keyword_description = """
     - `extrapolant`: TBD
     """,
@@ -575,9 +632,17 @@ function SFSDIRK6(; chunk_size = Val{0}(), autodiff = Val{true}(),
 end
 
 
-@doc SDIRK_docstring("Description TBD.",
+@doc SDIRK_docstring("Method of order 7.",
     "SFSDIRK7";
-    references = "TBD",
+    references = "@article{ferracina2008strong,
+    title={Strong stability of singly-diagonally-implicit Runge--Kutta methods},
+    author={Ferracina, Luca and Spijker, MN},
+    journal={Applied Numerical Mathematics},
+    volume={58},
+    number={11},
+    pages={1675--1686},
+    year={2008},
+    publisher={Elsevier}}",
     extra_keyword_description = """
     - `extrapolant`: TBD
     """,
@@ -605,9 +670,17 @@ function SFSDIRK7(; chunk_size = Val{0}(), autodiff = Val{true}(),
         extrapolant)
 end
 
-@doc SDIRK_docstring("Description TBD.",
+@doc SDIRK_docstring("Method of order 8.",
     "SFSDIRK8";
-    references = "TBD",
+    references = "@article{ferracina2008strong,
+    title={Strong stability of singly-diagonally-implicit Runge--Kutta methods},
+    author={Ferracina, Luca and Spijker, MN},
+    journal={Applied Numerical Mathematics},
+    volume={58},
+    number={11},
+    pages={1675--1686},
+    year={2008},
+    publisher={Elsevier}}",
     extra_keyword_description = """
     - `extrapolant`: TBD
     """,
@@ -964,9 +1037,18 @@ function KenCarp58(; chunk_size = Val{0}(), autodiff = Val{true}(),
 end
 
 # `smooth_est` is not necessary, as the embedded method is also L-stable
-@doc SDIRK_docstring("Description TBD.",
+@doc SDIRK_docstring("Optimized ESDIRK tableaus.
+    Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
+    but are still being fully evaluated in context.",
     "ESDIRK54I8L2SA";
-    references = "TBD",
+    references = """@article{Kennedy2019DiagonallyIR,
+    title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
+    author={Christopher A. Kennedy and Mark H. Carpenter},
+    journal={Applied Numerical Mathematics},
+    year={2019},
+    volume={146},
+    pages={221-244}
+    }""",
     extra_keyword_description = """
     - `extrapolant`: TBD
     - `controller`: TBD
@@ -994,7 +1076,9 @@ function ESDIRK54I8L2SA(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller)
 end
 
-@doc SDIRK_docstring("Description TBD.",
+@doc SDIRK_docstring("Optimized ESDIRK tableaus.
+    Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
+    but are still being fully evaluated in context.",
     "ESDIRK436L2SA2";
     references = """@article{Kennedy2019DiagonallyIR,
     title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
@@ -1031,7 +1115,9 @@ function ESDIRK436L2SA2(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller)
 end
 
-@doc SDIRK_docstring("Description TBD.",
+@doc SDIRK_docstring("Optimized ESDIRK tableaus.
+    Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
+    but are still being fully evaluated in context.",
     "ESDIRK437L2SA";
     references = """@article{Kennedy2019DiagonallyIR,
     title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
@@ -1068,7 +1154,9 @@ function ESDIRK437L2SA(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller)
 end
 
-@doc SDIRK_docstring("Description TBD.",
+@doc SDIRK_docstring("Optimized ESDIRK tableaus.
+    Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
+    but are still being fully evaluated in context.",
     "ESDIRK547L2SA2";
     references = """@article{Kennedy2019DiagonallyIR,
     title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
@@ -1105,7 +1193,9 @@ function ESDIRK547L2SA2(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller)
 end
 
-@doc SDIRK_docstring("Description TBD.
+@doc SDIRK_docstring("Optimized ESDIRK tableaus.
+    Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
+    but are still being fully evaluated in context.
     Currently has STABILITY ISSUES, causing it to fail the adaptive tests.
     Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more details.",
     "ESDIRK659L2SA";

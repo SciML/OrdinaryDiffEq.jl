@@ -1,7 +1,7 @@
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("First order explicit symplectic integrator.",
         "SymplecticEuler",
         "Symplectic Runge-Kutta Methods",
-        "REF TBD", "", "")
+        "https://en.wikipedia.org/wiki/Semi-implicit_Euler_method", "", "")
 struct SymplecticEuler <: OrdinaryDiffEqPartitionedAlgorithm end
 
 verlet1967 = """
@@ -17,19 +17,19 @@ publisher={APS}
 }
 """
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("2nd order explicit symplectic integrator. Requires f_2(t,u) = v, i.e. a second order ODE.",
         "VelocityVerlet",
         "Symplectic Runge-Kutta Methods",
         verlet1967, "", "")
 struct VelocityVerlet <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("2nd order explicit symplectic integrator.",
         "VerletLeapfrog",
         "Symplectic Runge-Kutta Methods",
         verlet1967, "", "")
 struct VerletLeapfrog <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("2nd order explicit symplectic integrator.",
         "PseudoVerletLeapfrog",
         "Symplectic Runge-Kutta Methods",
         verlet1967, "", "")
@@ -48,13 +48,13 @@ publisher={IOP Publishing}
 }
 """
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("Optimized efficiency 2nd order explicit symplectic integrator.",
         "McAte2",
         "Symplectic Runge-Kutta Methods",
         mclachlan1992, "", "")
 struct McAte2 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("3rd order explicit symplectic integrator.",
     "Ruth3",
     "Symplectic Runge-Kutta Methods",
     """@article{ruth1983canonical,
@@ -67,13 +67,13 @@ struct McAte2 <: OrdinaryDiffEqPartitionedAlgorithm end
     year={1983}}""", "", "")
 struct Ruth3 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("Optimized efficiency 3rd order explicit symplectic integrator.",
         "McAte3",
         "Symplectic Runge-Kutta Methods",
         mclachlan1992, "", "")
 struct McAte3 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("4th order explicit symplectic integrator.",
     "CandyRoz4",
     "Symplectic Runge-Kutta Methods",
     """@article{candy1991symplectic,
@@ -87,13 +87,13 @@ struct McAte3 <: OrdinaryDiffEqPartitionedAlgorithm end
     ublisher={Elsevier}}""", "", "")
 struct CandyRoz4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("4th order explicit symplectic integrator. Requires quadratic kinetic energy.",
         "McAte4",
         "Symplectic Runge-Kutta Methods",
         mclachlan1992, "", "")
 struct McAte4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("Optimized efficiency 4th order explicit symplectic integrator.",
     "CalvoSanz4",
     "Symplectic Runge-Kutta Methods",
     """@article{sanz1993symplectic,
@@ -108,19 +108,19 @@ struct McAte4 <: OrdinaryDiffEqPartitionedAlgorithm end
     }""", "", "")
 struct CalvoSanz4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("4th order explicit symplectic integrator. BROKEN",
         "McAte42",
         "Symplectic Runge-Kutta Methods",
         mclachlan1992, "", "")
 struct McAte42 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("Optimized efficiency 5th order explicit symplectic integrator. Requires quadratic kinetic energy.",
         "McAte5",
         "Symplectic Runge-Kutta Methods",
         mclachlan1992, "", "")
 struct McAte5 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("6th order explicit symplectic integrator.",
     "Yoshida6",
     "Symplectic Runge-Kutta Methods",
     """@article{yoshida1990construction,
@@ -134,7 +134,7 @@ struct McAte5 <: OrdinaryDiffEqPartitionedAlgorithm end
     publisher={Elsevier}}""", "", "")
 struct Yoshida6 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("Optimized efficiency 6th order explicit symplectic integrator.",
     "KahanLi6",
     "Symplectic Runge-Kutta Methods",
     """@article{yoshida1990construction,
@@ -148,7 +148,7 @@ struct Yoshida6 <: OrdinaryDiffEqPartitionedAlgorithm end
     publisher={Elsevier}}""", "", "")
 struct KahanLi6 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("8th order explicit symplectic integrator.",
     "McAte8",
     "Symplectic Runge-Kutta Methods",
     """@article{mclachlan1995numerical,
@@ -163,7 +163,7 @@ struct KahanLi6 <: OrdinaryDiffEqPartitionedAlgorithm end
     }""", "", "")
 struct McAte8 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("Optimized efficiency 8th order explicit symplectic integrator.",
     "KahanLi8",
     "Symplectic Runge-Kutta Methods",
     """@article{kahan1997composition,
@@ -176,7 +176,7 @@ struct McAte8 <: OrdinaryDiffEqPartitionedAlgorithm end
     year={1997}}""", "", "")
 struct KahanLi8 <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("DESCRIPTION TBD",
+@doc generic_solver_docstring("10th order explicit symplectic integrator.",
     "SofSpa10",
     "Symplectic Runge-Kutta Methods",
     """@article{sofroniou2005derivation,

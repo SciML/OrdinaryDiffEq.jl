@@ -120,10 +120,18 @@ function ESERK4 end
     """)
 function ESERK5 end
 
-@doc generic_solver_docstring("""Second order method. description TBD""",
+@doc generic_solver_docstring("""Second order method.""",
     "SERK2",
     "Stabilized Explicit Method.",
-    """REF TBD""",
+    """@article{kleefeld2013serk2v2,
+    title={SERK2v2: A new second-order stabilized explicit Runge-Kutta method for stiff problems},
+    author={Kleefeld, B and Martin-Vaquero, J},
+    journal={Numerical Methods for Partial Differential Equations},
+    volume={29},
+    number={1},
+    pages={170--185},
+    year={2013},
+    publisher={Wiley Online Library}}""",
     """
     - `controller`: TBD
     - `eigen_est`: function of the form
