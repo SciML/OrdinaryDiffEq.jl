@@ -1,3 +1,12 @@
+@doc generic_solver_docstring("Description TBD",
+    "IRKC",
+    "Stabalized Implicit Runge Kutta method.",
+    "REF TBD",
+    "- `eigen_est`: function of the form
+    `(integrator) -> integrator.eigen_est = upper_bound`,
+    where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
+    If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.",
+    "eigen_est = nothing,")
 struct IRKC{CS, AD, F, F2, P, FDT, ST, CJ, K, T, E} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
