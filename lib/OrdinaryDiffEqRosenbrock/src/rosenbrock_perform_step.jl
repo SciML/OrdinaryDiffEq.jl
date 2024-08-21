@@ -1206,7 +1206,7 @@ function initialize!(integrator, cache::RosenbrockConstantCache)
     integrator.k[2] = zero(integrator.u)
 end
 
-@muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
     @unpack a, C, gamma, c, d = cache.tab
