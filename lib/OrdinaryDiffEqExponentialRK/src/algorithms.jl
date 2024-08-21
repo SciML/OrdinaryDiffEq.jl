@@ -48,9 +48,15 @@ end
 
 const ETD1 = NorsettEuler # alias
 
+
+REF2 = """
+Hochbruck, M., & Ostermann, A. (2010). Exponential integrators. Acta Numerica, 19, 209-286. (https://doi.org/10.1017/S0962492910000048)
+"""
+
+
 for (Alg, Description, Ref) in [
-            (:Exprb32, "3rd order adaptive Exponential-Rosenbrock scheme.", "ref TBD"),
-            (:Exprb43, "4th order adaptive Exponential-Rosenbrock scheme.", "ref TBD")]
+            (:Exprb32, "3rd order adaptive Exponential-Rosenbrock scheme.", REF2),
+            (:Exprb43, "4th order adaptive Exponential-Rosenbrock scheme.", REF2)]
     @eval begin @doc generic_solver_docstring($Description,
                         $(string(Alg)),
                         "Semilinear ODE solver",
@@ -79,14 +85,26 @@ for (Alg, Description, Ref) in [
             iop)
     end
 end
+
+REF3 = """
+Hochbruck, M., Lubich, C., & Selhofer, H. (1998). Exponential integrators for large systems of differential equations. SIAM Journal on Scientific Computing, 19(5), 1552-1574. (https://doi.org/10.1137/S1064827595295337)
+"""
+
+REF4 = """
+Rainwater, G., & Tokman, M. (2016). A new approach to constructing efficient stiffly accurate EPIRK methods. Journal of Computational Physics, 323, 283-309. (https://doi.org/10.1016/j.jcp.2016.07.026)
+"""
+REF5 = """
+Tokman, M., Loffeld, J., & Tranquilli, P. (2012). New Adaptive Exponential Propagation Iterative Methods of Runge--Kutta Type. SIAM Journal on Scientific Computing, 34(5), A2650-A2669. (https://doi.org/10.1137/110849961)
+"""
+
 for (Alg, Description, Ref) in [
-    (:Exp4, "4th order EPIRK scheme.", "REF TBD")
-    (:EPIRK4s3A, "4th order EPIRK scheme with stiff order 4.", "REF TBD")
-    (:EPIRK4s3B, "4th order EPIRK scheme with stiff order 4.", "REF TBD")
-    (:EPIRK5s3, "5th order “horizontal” EPIRK scheme with stiff order 5. Broken.", "REF TBD")
-    (:EXPRB53s3, "5th order EPIRK scheme with stiff order 5.", "REF TBD")
-    (:EPIRK5P1, "5th order EPIRK scheme", "REF TBD")
-    (:EPIRK5P2, "5th order EPIRK scheme", "REF TBD")
+    (:Exp4, "4th order EPIRK scheme.", REF3)
+    (:EPIRK4s3A, "4th order EPIRK scheme with stiff order 4.", REF4)
+    (:EPIRK4s3B, "4th order EPIRK scheme with stiff order 4.", REF4)
+    (:EPIRK5s3, "5th order “horizontal” EPIRK scheme with stiff order 5. Broken.", REF4)
+    (:EXPRB53s3, "5th order EPIRK scheme with stiff order 5.", REF4)
+    (:EPIRK5P1, "5th order EPIRK scheme", REF5)
+    (:EPIRK5P2, "5th order EPIRK scheme", REF5)
     ]
     @eval begin
         @doc generic_solver_docstring($Description,
