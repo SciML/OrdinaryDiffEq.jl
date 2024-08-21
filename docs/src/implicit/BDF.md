@@ -20,14 +20,24 @@ QBDF2
 MEBDF2
 FBDF
 ```
+
 ### IMEX Multistep
+
 ```@docs
 SBDF
 SBDF2
 SBDF3
 SBDF4
 ```
+### IMEX SDIRK
+
+```@docs
+IMEXEuler
+IMEXEulerARK
+```
+
 ### DAE
+
 ```@docs
 DImplicitEuler
 DABDF2
