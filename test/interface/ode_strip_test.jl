@@ -1,5 +1,4 @@
 using OrdinaryDiffEq, Test
-import OrdinaryDiffEqCore
 
 function lorenz!(du, u, p, t)
     du[1] = 10.0 * (u[2] - u[1])
@@ -13,5 +12,5 @@ prob = ODEProblem(lorenz!, u0, tspan)
 
 sol = solve(prob, Rosenbrock23())
 
-@test isnothing(OrdinaryDiffEqCore.strip_interpolation(sol.interp).f)
-@test isnothing(OrdinaryDiffEqCore.strip_interpolation(sol.interp).cache.jac_config)
+@test isnothing(OrdinaryDiffEq.strip_interpolation(sol.interp).f)
+@test isnothing(OrdinaryDiffEq.strip_interpolation(sol.interp).cache.jac_config)
