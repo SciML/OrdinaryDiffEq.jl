@@ -16,7 +16,7 @@ import OrdinaryDiffEqCore: alg_order, isfsal, beta2_default, beta1_default,
                            copyat_or_push!,
                            AutoAlgSwitch, _ode_interpolant, _ode_interpolant!, full_cache,
                            accept_step_controller, DerivativeOrderNotPossibleError,
-                           has_lazy_interpolation, du_cache, u_cache
+                           has_lazy_interpolation, du_cache, u_cache, get_fsalfirstlast
 using SciMLBase
 import MuladdMacro: @muladd
 import FastBroadcast: @..
@@ -24,6 +24,7 @@ import LinearAlgebra: norm
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import Static: False
 using DiffEqBase: @def, @tight_loop_macros
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase

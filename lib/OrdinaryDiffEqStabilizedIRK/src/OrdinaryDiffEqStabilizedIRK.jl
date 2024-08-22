@@ -10,13 +10,14 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
                            OrdinaryDiffEqAdaptiveAlgorithm,
                            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                            alg_cache, _unwrap_val, DEFAULT_PRECS, @cache,
-                           _reshape, _vec, full_cache
+                           _reshape, _vec, full_cache, get_fsalfirstlast
 
 using OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
 using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver,
                                     markfirststage!, du_alias_or_new, get_W
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase

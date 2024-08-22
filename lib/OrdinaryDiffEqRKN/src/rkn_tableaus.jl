@@ -1,4 +1,5 @@
-struct FineRKN4ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+abstract type NystromConstantCache <: OrdinaryDiffEqConstantCache end
+struct FineRKN4ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -99,7 +100,7 @@ function FineRKN4ConstantCache(T::Type, T2::Type)
         bptilde3, bptilde4, bptilde5)
 end
 
-struct FineRKN5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct FineRKN5ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -266,7 +267,7 @@ function FineRKN5ConstantCache(T::Type, T2::Type)
         bptilde3, bptilde4, bptilde5, bptilde6, bptilde7)
 end
 
-struct IRKN3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct IRKN3ConstantCache{T, T2} <: NystromConstantCache
     bconst1::T
     bconst2::T
     c1::T2
@@ -301,7 +302,7 @@ function IRKN3ConstantCache(T::Type, T2::Type)
     IRKN3ConstantCache(bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2)
 end
 
-struct IRKN4ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct IRKN4ConstantCache{T, T2} <: NystromConstantCache
     bconst1::T
     bconst2::T
     c1::T2
@@ -351,7 +352,7 @@ function IRKN4ConstantCache(T::Type, T2::Type)
     IRKN4ConstantCache(bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3)
 end
 
-struct Nystrom5VelocityIndependentConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct Nystrom5VelocityIndependentConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     a21::T
@@ -412,7 +413,7 @@ function Nystrom5VelocityIndependentConstantCache(T::Type, T2::Type)
         bbar2, bbar3, b1, b2, b3, b4)
 end
 
-struct ERKN4ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct ERKN4ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -499,7 +500,7 @@ function ERKN4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
         convert(T, 0.0016835016835016834))
 end
 
-struct ERKN5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct ERKN5ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -581,7 +582,7 @@ function ERKN5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
         convert(T, -0.0025465161641516788))
 end
 
-struct ERKN7ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct ERKN7ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -739,7 +740,7 @@ function ERKN7ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
         convert(T, 0.5))
 end
 
-struct DPRKN4ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct DPRKN4ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -826,7 +827,7 @@ function DPRKN4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
         bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4,
         bptilde1, bptilde2, bptilde3, bptilde4)
 end
-struct DPRKN5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct DPRKN5ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -966,7 +967,7 @@ function DPRKN5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
         bptilde1, bptilde3, bptilde4, bptilde5, bptilde6)
 end
 
-struct DPRKN6ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct DPRKN6ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -1252,7 +1253,7 @@ function DPRKN6ConstantCache(T::Type, T2::Type)
         rp64, rp63, rp62, rp61)
 end
 
-struct DPRKN6FMConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct DPRKN6FMConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -1398,7 +1399,7 @@ function DPRKN6FMConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFlo
         bptilde1, bptilde2, bptilde3, bptilde4, bptilde5)
 end
 
-struct DPRKN8ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct DPRKN8ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -1643,7 +1644,7 @@ function DPRKN8ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
         convert(T, -0.15))
 end
 
-struct DPRKN12ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct DPRKN12ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
     c3::T2

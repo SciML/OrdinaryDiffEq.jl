@@ -161,14 +161,14 @@ end
 using OrdinaryDiffEq, StaticArrays, LinearSolve, ParameterizedFunctions
 
 hires = @ode_def Hires begin
-    dy1 = -1.71 * y1 + 0.43 * y2 + 8.32 * y3 + 0.0007
-    dy2 = 1.71 * y1 - 8.75 * y2
-    dy3 = -10.03 * y3 + 0.43 * y4 + 0.035 * y5
-    dy4 = 8.32 * y2 + 1.71 * y3 - 1.12 * y4
-    dy5 = -1.745 * y5 + 0.43 * y6 + 0.43 * y7
-    dy6 = -280.0 * y6 * y8 + 0.69 * y4 + 1.71 * y5 - 0.43 * y6 + 0.69 * y7
-    dy7 = 280.0 * y6 * y8 - 1.81 * y7
-    dy8 = -280.0 * y6 * y8 + 1.81 * y7
+    dy1 = -1.71f0 * y1 + 0.43f0 * y2 + 8.32f0 * y3 + 0.0007f0 + 1f-18*t
+    dy2 = 1.71f0 * y1 - 8.75f0 * y2
+    dy3 = -10.03f0 * y3 + 0.43f0 * y4 + 0.035f0 * y5
+    dy4 = 8.32f0 * y2 + 1.71f0 * y3 - 1.12f0 * y4
+    dy5 = -1.745f0 * y5 + 0.43f0 * y6 + 0.43f0 * y7
+    dy6 = -280.0f0 * y6 * y8 + 0.69f0 * y4 + 1.71f0 * y5 - 0.43f0 * y6 + 0.69f0 * y7
+    dy7 = 280.0f0 * y6 * y8 - 1.81f0 * y7
+    dy8 = -280.0f0 * y6 * y8 + 1.81f0 * y7
 end
 
 u0 = zeros(8)
@@ -178,7 +178,11 @@ u0[8] = 0.0057
 probiip = ODEProblem{true}(hires, u0, (0.0, 10.0))
 proboop = ODEProblem{false}(hires, u0, (0.0, 10.0))
 probstatic = ODEProblem{false}(hires, SVector{8}(u0), (0.0, 10.0))
+probiipf32 = ODEProblem{true}(hires, Float32.(u0), (0f0, 10f0))
+proboopf32 = ODEProblem{false}(hires, Float32.(u0), (0f0, 10f0))
+probstaticf32 = ODEProblem{false}(hires, SVector{8}(Float32.(u0)), (0f0, 10f0))
 probs = (; probiip, proboop, probstatic)
+probsf32 = (;probiipf32, proboopf32, probstaticf32)
 qndf = QNDF()
 krylov_qndf = QNDF(linsolve = KrylovJL_GMRES())
 fbdf = FBDF()
@@ -194,6 +198,16 @@ refsol = solve(probiip, FBDF(), abstol = 1e-12, reltol = 1e-12)
             sol = solve(prob, solver, abstol = 1e-12, reltol = 1e-12, maxiters = 2e4)
             @test sol.retcode == ReturnCode.Success
             @test isapprox(sol.u[end], refsol.u[end], rtol = 1e-8, atol = 1e-10)
+        end
+    end
+end
+
+@testset "Hires Float32 calc_W tests" begin
+    @testset "$probname" for (probname, prob) in pairs(probsf32)
+        @testset "$solname" for (solname, solver) in pairs(solvers)
+            sol = solve(prob, solver, maxiters = 2e4)
+            @test sol.retcode == ReturnCode.Success
+            @test isapprox(sol.u[end], refsol.u[end], rtol = 2e-3, atol = 1e-6)
         end
     end
 end
