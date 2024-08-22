@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 using OrdinaryDiffEq
+=======
+using OrdinaryDiffEqCore
+>>>>>>> 1b257031152b893ed04eb8a96ba99eb2f917b708
 using DiffEqDevTools
 using DiffEqBase
 using LineSearches

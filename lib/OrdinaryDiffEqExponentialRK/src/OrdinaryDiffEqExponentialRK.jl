@@ -1,17 +1,27 @@
 module OrdinaryDiffEqExponentialRK
 
-import OrdinaryDiffEq: alg_order, alg_adaptive_order, ismultistep, OrdinaryDiffEqExponentialAlgorithm,
-                       _unwrap_val, OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-                       build_jac_config, UJacobianWrapper, @cache, alg_cache, UDerivativeWrapper,
-                       initialize!, perform_step!, @unpack, unwrap_alg, calc_J, calc_J!,
-                       OrdinaryDiffEqAdaptiveExponentialAlgorithm, CompositeAlgorithm,
-                       ExponentialAlgorithm, fsal_typeof, isdtchangeable, calculate_residuals, calculate_residuals!
+import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, ismultistep,
+                           OrdinaryDiffEqExponentialAlgorithm,
+                           _unwrap_val, OrdinaryDiffEqMutableCache,
+                           OrdinaryDiffEqConstantCache,
+                           @cache, alg_cache,
+                           initialize!, perform_step!, @unpack, unwrap_alg,
+                           OrdinaryDiffEqAdaptiveExponentialAlgorithm, CompositeAlgorithm,
+                           ExponentialAlgorithm, fsal_typeof, isdtchangeable,
+                           calculate_residuals, calculate_residuals!,
+                           full_cache, get_fsalfirstlast
+import OrdinaryDiffEqCore
 using RecursiveArrayTools
 using MuladdMacro, FastBroadcast
 using LinearAlgebra: axpy!, mul!
 using DiffEqBase, SciMLBase
 using ExponentialUtilities
 import RecursiveArrayTools: recursivecopy!
+using OrdinaryDiffEqDifferentiation: build_jac_config, UJacobianWrapper, UDerivativeWrapper,
+                                     calc_J, calc_J!
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

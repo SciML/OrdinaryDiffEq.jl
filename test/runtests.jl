@@ -27,7 +27,7 @@ end
 
 @time begin
     if contains(GROUP, "OrdinaryDiffEq")
-        Pkg.develop(path="../lib/$GROUP")
+        Pkg.develop(path = "../lib/$GROUP")
         Pkg.test(GROUP)
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
@@ -56,6 +56,7 @@ end
         @time @safetestset "Inplace Interpolation Tests" include("interface/inplace_interpolation.jl")
         @time @safetestset "Algebraic Interpolation Tests" include("interface/algebraic_interpolation.jl")
         @time @safetestset "Default Solver Tests" include("interface/default_solver_tests.jl")
+        @time @safetestset "Interpolation and Cache Stripping Tests" include("interface/ode_strip_test.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
@@ -90,7 +91,6 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "AD Tests" include("interface/ad_tests.jl")
-        @time @safetestset "Newton Tests" include("interface/newton_tests.jl")
         @time @safetestset "DAE Initialize Integration" include("interface/dae_initialize_integration.jl")
         @time @safetestset "DAE Initialization Tests" include("interface/dae_initialization_tests.jl")
     end
@@ -164,8 +164,8 @@ end
     if !is_APPVEYOR && GROUP == "GPU"
         activate_gpu_env()
         @time @safetestset "Simple GPU" begin
-            import OrdinaryDiffEq
-            include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..",
+            import OrdinaryDiffEqCore
+            include(joinpath(dirname(pathof(OrdinaryDiffEqCore.DiffEqBase)), "..",
                 "test/gpu/simple_gpu.jl"))
         end
         @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")

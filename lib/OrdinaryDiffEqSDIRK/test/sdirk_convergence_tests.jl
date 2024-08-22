@@ -1,5 +1,5 @@
 # This definitely needs cleaning
-using OrdinaryDiffEq, ODEProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEqSDIRK, ODEProblemLibrary, DiffEqDevTools
 using Test, Random
 Random.seed!(100)
 
@@ -10,7 +10,7 @@ testTol = 0.2
     prob = (ODEProblemLibrary.prob_ode_linear,
         ODEProblemLibrary.prob_ode_2Dlinear)[i]
 
-        dts = 1 .// 2 .^ (9:-1:5)
+    dts = 1 .// 2 .^ (9:-1:5)
 
     @show "Very low order"
 

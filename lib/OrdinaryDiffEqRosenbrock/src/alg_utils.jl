@@ -60,6 +60,10 @@ isfsal(alg::Rodas42) = false
 isfsal(alg::Rodas4P) = false
 isfsal(alg::Rodas4P2) = false
 
-has_stiff_interpolation(::Union{Rosenbrock23, Rosenbrock32, Rodas23W,
-                        Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5,
-                        Rodas5P, Rodas5Pe, Rodas5Pr}) = true
+function has_stiff_interpolation(::Union{Rosenbrock23, Rosenbrock32, Rodas23W,
+        Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5,
+        Rodas5P, Rodas5Pe, Rodas5Pr})
+    true
+end
+
+only_diagonal_mass_matrix(alg::Union{Rosenbrock23, Rosenbrock32}) = true

@@ -1,4 +1,9 @@
 abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
+abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
+
+# Fake values since non-FSAL
+get_fsalfirstlast(cache::RosenbrockMutableCache,u) = (zero(u), zero(u))
+
 ################################################################################
 
 # Shampine's Low-order Rosenbrocks
@@ -35,8 +40,6 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
 end
-
-TruncatedStacktraces.@truncate_stacktrace Rosenbrock23Cache 1
 
 @cache mutable struct Rosenbrock32Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
@@ -160,7 +163,7 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
-       OrdinaryDiffEqConstantCache
+       RosenbrockConstantCache
     c₃₂::T
     d::T
     tf::TF
@@ -190,7 +193,7 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <:
-       OrdinaryDiffEqConstantCache
+       RosenbrockConstantCache
     c₃₂::T
     d::T
     tf::TF
@@ -224,7 +227,7 @@ end
 ### 3rd order specialized Rosenbrocks
 
 struct Rosenbrock33ConstantCache{TF, UF, Tab, JType, WType, F} <:
-       OrdinaryDiffEqConstantCache
+       RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -393,7 +396,7 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 struct Rosenbrock34ConstantCache{TF, UF, Tab, JType, WType, F} <:
-       OrdinaryDiffEqConstantCache
+       RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -446,7 +449,7 @@ jac_cache(c::Rosenbrock4Cache) = (c.J, c.W)
 ### Rodas methods
 
 struct Rodas23WConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
-       OrdinaryDiffEqConstantCache
+       RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -456,7 +459,7 @@ struct Rodas23WConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
     autodiff::AD
 end
 
-struct Rodas3PConstantCache{TF, UF, Tab, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
+struct Rodas3PConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -584,7 +587,6 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         alg.stage_limiter!)
 end
 
-TruncatedStacktraces.@truncate_stacktrace Rodas23WCache 1
 function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -629,8 +631,6 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         alg.stage_limiter!)
 end
 
-TruncatedStacktraces.@truncate_stacktrace Rodas3PCache 1
-
 function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -663,7 +663,7 @@ end
 
 ### Rodas4 methods
 
-struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
+struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -754,8 +754,6 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
         alg.stage_limiter!)
 end
-
-TruncatedStacktraces.@truncate_stacktrace Rodas4Cache 1
 
 function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -956,7 +954,7 @@ end
 
 ### Rosenbrock5
 
-struct Rosenbrock5ConstantCache{TF, UF, Tab, JType, WType, F} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock5ConstantCache{TF, UF, Tab, JType, WType, F} <: RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -1005,8 +1003,6 @@ end
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
 end
-
-TruncatedStacktraces.@truncate_stacktrace Rosenbrock5Cache 1
 
 function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -1135,6 +1131,11 @@ function alg_cache(
         Rodas5PTableau(constvalue(uBottomEltypeNoUnits),
             constvalue(tTypeNoUnits)), J, W, linsolve)
 end
+
+
+get_fsalfirstlast(cache::Union{Rosenbrock23Cache,Rosenbrock32Cache, Rosenbrock33Cache,
+Rosenbrock34Cache,
+Rosenbrock4Cache},u) = (cache.fsalfirst, cache.fsallast)
 
 ################################################################################
 

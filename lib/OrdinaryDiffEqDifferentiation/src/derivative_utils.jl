@@ -1,10 +1,19 @@
 const ROSENBROCK_INV_CUTOFF = 7 # https://github.com/SciML/OrdinaryDiffEq.jl/pull/1539
 
-struct StaticWOperator{isinv, T} <: AbstractSciMLOperator{T}
+struct StaticWOperator{isinv, T, F} <: AbstractSciMLOperator{T}
     W::T
+    F::F
     function StaticWOperator(W::T, callinv = true) where {T}
-        isinv = size(W, 1) <= ROSENBROCK_INV_CUTOFF
+        n = size(W, 1)
+        isinv = n <= ROSENBROCK_INV_CUTOFF
 
+        F = if isinv && callinv
+            # this should be in ArrayInterface but can't be for silly reasons
+            # doing to how StaticArrays and StaticArraysCore are split up
+            StaticArrays.LU(LowerTriangular(W), UpperTriangular(W), SVector{n}(1:n))
+        else
+            lu(W, check=false)
+        end
         # when constructing W for the first time for the type
         # inv(W) can be singular
         _W = if isinv && callinv
@@ -12,11 +21,11 @@ struct StaticWOperator{isinv, T} <: AbstractSciMLOperator{T}
         else
             W
         end
-        new{isinv, T}(_W)
+        new{isinv, T, typeof(F)}(_W, F)
     end
 end
 isinv(W::StaticWOperator{S}) where {S} = S
-Base.:\(W::StaticWOperator, v::AbstractArray) = isinv(W) ? W.W * v : W.W \ v
+Base.:\(W::StaticWOperator, v::AbstractArray) = isinv(W) ? W.W * v : W.F \ v
 
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     @inbounds begin
@@ -922,7 +931,29 @@ function LinearSolve.init_cacheval(
         assumptions::OperatorAssumptions)
 end
 
-for alg in InteractiveUtils.subtypes(LinearSolve.AbstractFactorization)
+for alg in [LinearSolve.AppleAccelerateLUFactorization,
+             LinearSolve.BunchKaufmanFactorization,
+             LinearSolve.CHOLMODFactorization,
+             LinearSolve.CholeskyFactorization,
+             LinearSolve.CudaOffloadFactorization,
+             LinearSolve.DiagonalFactorization,
+             LinearSolve.FastLUFactorization,
+             LinearSolve.FastQRFactorization,
+             LinearSolve.GenericFactorization,
+             LinearSolve.GenericLUFactorization,
+             LinearSolve.KLUFactorization,
+             LinearSolve.LDLtFactorization,
+             LinearSolve.LUFactorization,
+             LinearSolve.MKLLUFactorization,
+             LinearSolve.MetalLUFactorization,
+             LinearSolve.NormalBunchKaufmanFactorization,
+             LinearSolve.NormalCholeskyFactorization,
+             LinearSolve.QRFactorization,
+             LinearSolve.RFLUFactorization,
+             LinearSolve.SVDFactorization,
+             LinearSolve.SimpleLUFactorization,
+             LinearSolve.SparspakFactorization,
+             LinearSolve.UMFPACKFactorization]
     @eval function LinearSolve.init_cacheval(alg::$alg, A::WOperator, b, u, Pl, Pr,
             maxiters::Int, abstol, reltol, verbose::Bool,
             assumptions::OperatorAssumptions)

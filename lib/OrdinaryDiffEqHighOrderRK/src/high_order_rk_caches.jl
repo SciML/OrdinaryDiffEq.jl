@@ -1,6 +1,8 @@
+abstract type HighOrderRKMutableCache <: OrdinaryDiffEqMutableCache end
+get_fsalfirstlast(cache::HighOrderRKMutableCache,u) = (cache.fsalfirst, cache.k)
 @cache struct TanYam7Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
     StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              HighOrderRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -55,7 +57,7 @@ function alg_cache(alg::TanYam7, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct DP8Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
-    Thread} <: OrdinaryDiffEqMutableCache
+    Thread} <: HighOrderRKMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -90,6 +92,7 @@ end
     step_limiter!::StepLimiter
     thread::Thread
 end
+get_fsalfirstlast(cache::DP8Cache,u) = (cache.k1, cache.k13)
 
 function alg_cache(alg::DP8, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -141,7 +144,7 @@ end
 
 @cache struct TsitPap8Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
     StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              HighOrderRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -204,7 +207,7 @@ end
 @cache struct PFRK87Cache{
     uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
     Thread} <:
-              OrdinaryDiffEqMutableCache
+              HighOrderRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType

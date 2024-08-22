@@ -1,25 +1,45 @@
 module OrdinaryDiffEqRosenbrock
 
-import OrdinaryDiffEq: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
-                       DEFAULT_PRECS, OrdinaryDiffEqRosenbrockAlgorithm, @cache, alg_cache, initialize!, @unpack,
-                       calc_W, calculate_residuals!, calc_rosenbrock_differentiation!, OrdinaryDiffEqMutableCache,
-                       build_J_W, UJacobianWrapper, OrdinaryDiffEqConstantCache, _ode_interpolant, _ode_interpolant!,
-                       _vec, _reshape, perform_step!, trivial_limiter!, dolinsolve, OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-                       OrdinaryDiffEqRosenbrockAlgorithm, generic_solver_docstring, namify, initialize!, perform_step!,
-                       constvalue, TimeDerivativeWrapper, TimeGradientWrapper, UDerivativeWrapper, UJacobianWrapper,
-                       wrapprecs, alg_autodiff, calc_tderivative, build_grad_config, build_jac_config,
-                       issuccess_W, calculate_residuals, has_stiff_interpolation, ODEIntegrator,
-                       resize_non_user_cache!, _ode_addsteps!, jacobian2W!, full_cache,
-                       resize_jac_config!, resize_grad_config!, DerivativeOrderNotPossibleError
-using TruncatedStacktraces, MuladdMacro, FastBroadcast, DiffEqBase, RecursiveArrayTools
+import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
+                           DEFAULT_PRECS, OrdinaryDiffEqRosenbrockAlgorithm, @cache,
+                           alg_cache, initialize!, @unpack,
+                           calculate_residuals!, OrdinaryDiffEqMutableCache,
+                           OrdinaryDiffEqConstantCache, _ode_interpolant, _ode_interpolant!,
+                           _vec, _reshape, perform_step!, trivial_limiter!,
+                           OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
+                           OrdinaryDiffEqRosenbrockAlgorithm, generic_solver_docstring,
+                           namify, initialize!, perform_step!, get_fsalfirstlast,
+                           constvalue, only_diagonal_mass_matrix,
+                           calculate_residuals, has_stiff_interpolation, ODEIntegrator,
+                           resize_non_user_cache!, _ode_addsteps!, full_cache,
+                           DerivativeOrderNotPossibleError
+using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import MacroTools
 using MacroTools: @capture
 using DiffEqBase: @def
 import LinearSolve
+import LinearSolve: UniformScaling
 import ForwardDiff
 using FiniteDiff
 using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm
 import ADTypes: AutoForwardDiff
+import OrdinaryDiffEqCore
+
+using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
+                                     UDerivativeWrapper, UJacobianWrapper,
+                                     wrapprecs, calc_tderivative, build_grad_config,
+                                     build_jac_config, issuccess_W, jacobian2W!,
+                                     resize_jac_config!, resize_grad_config!,
+                                     calc_W, calc_rosenbrock_differentiation!, build_J_W,
+                                     UJacobianWrapper, dolinsolve
+
+import OrdinaryDiffEqNonlinearSolve # Required for DAE initialization
+
+using Reexport
+@reexport using DiffEqBase
+
+import OrdinaryDiffEqCore: alg_autodiff
+import OrdinaryDiffEqCore
 
 function rosenbrock_wanner_docstring(description::String,
         name::String;
@@ -93,6 +113,53 @@ include("rosenbrock_interpolants.jl")
 include("stiff_addsteps.jl")
 include("rosenbrock_perform_step.jl")
 include("integrator_interface.jl")
+
+import PrecompileTools
+import Preferences
+PrecompileTools.@compile_workload begin
+    lorenz = OrdinaryDiffEqCore.lorenz
+    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    solver_list = [Rosenbrock23(), Rodas5P()]
+    prob_list = []
+
+    if Preferences.@load_preference("PrecompileDefaultSpecialize", true)
+        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileAutoSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileNoSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
+                Float64[]))
+    end
+
+    for prob in prob_list, solver in solver_list
+        solve(prob, solver)(5.0)
+    end
+
+    prob_list = nothing
+    solver_list = nothing
+end
 
 export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
        Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
