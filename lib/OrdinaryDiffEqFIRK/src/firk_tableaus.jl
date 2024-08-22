@@ -270,7 +270,8 @@ struct adaptiveRadauTableau{T, T2, Int}
     num_stages::Int
 end
 
-using Polynomials, GenericLinearAlgebra, LinearAlgebra, LinearSolve, GenericSchur
+using Polynomials, GenericLinearAlgebra, LinearAlgebra, LinearSolve, GenericSchur, RootedTrees, Symbolics
+using Symbolics: variables, variable, unwrap
 
 function adaptiveRadauTableau(T, T2, num_stages::Int)
     tmp = Vector{BigFloat}(undef, num_stages - 1)
@@ -281,11 +282,11 @@ function adaptiveRadauTableau(T, T2, num_stages::Int)
     for i in 1:(num_stages + 1)
        tmp2[i]=(-1)^(num_stages + 1 - i) * binomial(num_stages , num_stages + 1 - i)
     end
-    p = Polynomial{BigFloat}([tmp; tmp2])
+    radau_p = Polynomial{BigFloat}([tmp; tmp2])
     for i in 1:(num_stages - 1)
-        p = derivative(p)
+        radau_p = derivative(radau_p)
     end
-    c = roots(p)
+    c = roots(radau_p)
     c[num_stages] = 1
     c_powers = Matrix{BigFloat}(undef, num_stages, num_stages)
     for i in 1 : num_stages
@@ -337,9 +338,22 @@ function adaptiveRadauTableau(T, T2, num_stages::Int)
         end
     end
     TI = inv(T)
-    #b_hat = Vector{BigFloat}(undef, num_stages)
-    #embedded = bseries(a, b_hat, c, num_stages - 2)
 
+    eb = variables(:b, 1:num_stages + 1)
+    zz = zeros(size(a, 1) + 1)
+    zz2 = zeros(size(a, 1))
+    eA = [zz'
+          zz2 a]
+    ec = [0; c]
+    constraints = map(Iterators.flatten(RootedTreeIterator(i) for i in 1:p)) do t
+        residual_order_condition(t, RungeKuttaMethod(eA, eb, ec))
+    end
+    AA, bb, islinear = Symbolics.linear_expansion(substitute.(constraints, (eb[1]=>γ,)), eb[2:end])
+    AA = Float64.(map(unwrap, AA))
+    idxs = qr(AA', ColumnNorm()).p[1:num_stages]
+    @assert rank(AA[idxs, :]) == num_stages
+    @assert islinear
+    Symbolics.expand.((AA[idxs, :] \ -bb[idxs]) - b)
     #e = b_hat - b
     adaptiveRadauTableau{Any, T2, Int}(T, TI, γ, α, β, c, num_stages)
 end
