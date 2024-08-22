@@ -1,6 +1,7 @@
 # OrdinaryDiffEqQPRK
 
-This article is a stub.
+Explicit solvers optimized for a certain number of parallel calls of the system of ordinary differential equations `f`.
+Particularly good at low tolerances, when using quad-precision arithmetic, `Float128`.
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
