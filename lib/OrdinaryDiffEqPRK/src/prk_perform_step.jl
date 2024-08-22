@@ -58,8 +58,6 @@ end
 
 function initialize!(integrator, cache::KuttaPRK2p5Cache)
     @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation

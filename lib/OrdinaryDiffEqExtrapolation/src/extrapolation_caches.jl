@@ -1,10 +1,13 @@
+abstract type ExtrapolationMutableCache <: OrdinaryDiffEqMutableCache end
+get_fsalfirstlast(cache::ExtrapolationMutableCache,u) = (cache.fsalfirst, cache.k)
+
 @cache mutable struct AitkenNevilleCache{
     uType,
     rateType,
     arrayType,
     dtType,
     uNoUnitsType
-} <: OrdinaryDiffEqMutableCache
+} <: ExtrapolationMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -86,7 +89,7 @@ end
     dtType, JType, WType, F, JCType,
     GCType, uNoUnitsType, TFType, UFType,
     sequenceType} <:
-                      OrdinaryDiffEqMutableCache
+                      ExtrapolationMutableCache
     uprev::uType
     u_tmps::Array{uType, 1}
     u_tmps2::Array{uType, 1}
@@ -125,6 +128,7 @@ end
     diff1::Array{uType, 1}
     diff2::Array{uType, 1}
 end
+get_fsalfirstlast(cache::ImplicitEulerExtrapolationCache,u) = (zero(u), zero(u))
 
 @cache mutable struct ImplicitEulerExtrapolationConstantCache{QType, dtType, arrayType, TF,
     UF, sequenceType} <:
@@ -921,7 +925,7 @@ end
 
 @cache mutable struct ExtrapolationMidpointDeuflhardCache{uType, uNoUnitsType, rateType,
     QType, extrapolation_coefficients
-} <: OrdinaryDiffEqMutableCache
+} <: ExtrapolationMutableCache
     # Values that are mutated
     utilde::uType
     u_temp1::uType
@@ -1005,7 +1009,7 @@ end
     rateType, JType, WType, F, JCType,
     GCType, uNoUnitsType, TFType,
     UFType} <:
-                      OrdinaryDiffEqMutableCache
+                      ExtrapolationMutableCache
     # Values that are mutated
     utilde::uType
     u_temp1::uType
@@ -1228,7 +1232,7 @@ end
 @cache mutable struct ExtrapolationMidpointHairerWannerCache{uType, uNoUnitsType, rateType,
     QType,
     extrapolation_coefficients} <:
-                      OrdinaryDiffEqMutableCache
+                      ExtrapolationMutableCache
     # Values that are mutated
     utilde::uType
     u_temp1::uType
@@ -1371,7 +1375,7 @@ end
     extrapolation_coefficients,
     JType, WType, F, JCType,
     GCType, TFType, UFType} <:
-                      OrdinaryDiffEqMutableCache
+                      ExtrapolationMutableCache
     # Values that are mutated
     utilde::uType
     u_temp1::uType
@@ -1568,7 +1572,7 @@ end
     extrapolation_coefficients,
     JType, WType, F, JCType,
     GCType, TFType, UFType} <:
-                      OrdinaryDiffEqMutableCache
+                      ExtrapolationMutableCache
     # Values that are mutated
     utilde::uType
     u_temp1::uType

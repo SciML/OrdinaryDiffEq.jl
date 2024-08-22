@@ -23,7 +23,7 @@
     lazy::Bool
 end
 
-TruncatedStacktraces.@truncate_stacktrace Vern6Cache 1
+get_fsalfirstlast(cache::Vern6Cache,u) = (cache.k1, cache.k9)
 
 function alg_cache(alg::Vern6, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -86,7 +86,8 @@ end
     lazy::Bool
 end
 
-TruncatedStacktraces.@truncate_stacktrace Vern7Cache 1
+# fake values since non-FSAL method
+get_fsalfirstlast(cache::Vern7Cache,u) = (cache.k1, cache.k2)
 
 function alg_cache(alg::Vern7, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -151,7 +152,8 @@ end
     lazy::Bool
 end
 
-TruncatedStacktraces.@truncate_stacktrace Vern8Cache 1
+# fake values since non-FSAL method
+get_fsalfirstlast(cache::Vern8Cache,u) = (cache.k1, cache.k2)
 
 function alg_cache(alg::Vern8, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -224,7 +226,8 @@ end
     lazy::Bool
 end
 
-TruncatedStacktraces.@truncate_stacktrace Vern9Cache 1
+# fake values since non-FSAL method
+get_fsalfirstlast(cache::Vern9Cache,u) = (cache.k1, cache.k2)
 
 function alg_cache(alg::Vern9, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,

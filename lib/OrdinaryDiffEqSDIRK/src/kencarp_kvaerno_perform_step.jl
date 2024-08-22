@@ -1,46 +1,3 @@
-function initialize!(integrator,
-        cache::Union{Kvaerno3ConstantCache,
-            KenCarp3ConstantCache,
-            Kvaerno4ConstantCache,
-            KenCarp4ConstantCache,
-            KenCarp47ConstantCache,
-            Kvaerno5ConstantCache,
-            KenCarp5ConstantCache,
-            KenCarp58ConstantCache,
-            CFNLIRK3ConstantCache
-        })
-    integrator.kshortsize = 2
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
-
-    # Avoid undefined entries if k is an array of arrays
-    integrator.fsallast = zero(integrator.fsalfirst)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-end
-
-function initialize!(integrator,
-        cache::Union{Kvaerno3Cache,
-            KenCarp3Cache,
-            Kvaerno4Cache,
-            KenCarp4Cache,
-            Kvaerno5Cache,
-            KenCarp5Cache,
-            CFNLIRK3Cache,
-            KenCarp47Cache,
-            KenCarp58Cache
-        })
-    integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
-    resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
-end
-
 @muladd function perform_step!(integrator, cache::Kvaerno3ConstantCache,
         repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
@@ -1782,7 +1739,7 @@ end
     if integrator.f isa SplitFunction
         f2(k8, u, p, t + dt)
         k8 .*= dt
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast=false u=uprev + a81 * z₁ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇ +
                               γ * z₈ + eb1 * k1 + eb4 * k4 + eb5 * k5 + eb6 * k6 +
                               eb7 * k7 + eb8 * k8
@@ -2180,7 +2137,7 @@ end
     if integrator.f isa SplitFunction
         f2(k7, u, p, t + dt)
         k7 .*= dt
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast=false u=uprev + a73 * z₃ + a74 * z₄ + a75 * z₅ + a76 * z₆ + γ * z₇ +
                               eb3 * k3 + eb4 * k4 + eb5 * k5 + eb6 * k6 + eb7 * k7
     end
@@ -2623,7 +2580,7 @@ end
     if integrator.f isa SplitFunction
         f2(k8, u, p, t + dt)
         k8 .*= dt
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast=false u=uprev + a83 * z₃ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇ +
                               γ * z₈ + eb3 * k3 + eb4 * k4 + eb5 * k5 + eb6 * k6 +
                               eb7 * k7 + eb8 * k8

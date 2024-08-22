@@ -19,7 +19,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            default_controller, stepsize_controller!,
                            step_accept_controller!,
                            step_reject_controller!, post_newton_controller!,
-                           u_modified!, DAEAlgorithm, _unwrap_val, DummyController
+                           u_modified!, DAEAlgorithm, _unwrap_val, DummyController,
+                           get_fsalfirstlast
 using OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache
 
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
