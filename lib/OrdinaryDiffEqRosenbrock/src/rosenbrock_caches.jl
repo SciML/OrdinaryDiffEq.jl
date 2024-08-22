@@ -974,7 +974,7 @@ function alg_cache(
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense = zeros(eltype(rate_prototype), 3)
+    dense = [zero(rate_protoype) for i in 1:3]
     dus = zeros(eltype(rate_prototype), 3)
     ks = zeros(eltype(rate_prototype), 9)
     fsalfirst = zero(rate_prototype)

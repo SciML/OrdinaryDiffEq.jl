@@ -503,7 +503,7 @@ function Rodas5Tableau(T, T2)
     b8 = convert(T,1)
     =#
 
-    Rodas5Tableau(a, C, gamma, d, c,
+    RodasTableau(a, C, gamma, d, c,
     h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37,
     h38, h41, h42, h43, h44, h45, h46, h47, h48)
 end
@@ -560,7 +560,7 @@ function Rodas5PTableau(T, T2)
     h47 = convert(T, -0.15582684282751913)
     h48 = convert(T, 4.883087185713722)
 
-    Rodas5Tableau(a,
+    RodasTableau(a,
         C,
         gamma, d, c,
         h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37,
