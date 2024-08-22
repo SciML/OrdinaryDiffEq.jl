@@ -39,6 +39,7 @@ end
 
     if repeat_step
         f(integrator.fsalfirst, uprev, p, t)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         integrator.stats.nf += 1
     end
 

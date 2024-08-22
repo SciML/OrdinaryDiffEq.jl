@@ -587,11 +587,11 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         # Final calculations for k
         @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
         
-        # Calculate the final results for k
-        for j in 1:3
-            tmp = sum(eval(Symbol("h$j$i")) * ks[i] for i in 1:8)
-            copyat_or_push!(k, j, copy(tmp))
-        end
+        @.. broadcast=false k6=h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5
+        copyat_or_push!(k, 1, copy(k6))
+
+        @.. broadcast=false k6=h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 + h35 * k5
+        copyat_or_push!(k, 2, copy(k6))
     end
     nothing
 end
