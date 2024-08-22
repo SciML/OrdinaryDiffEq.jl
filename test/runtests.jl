@@ -56,6 +56,7 @@ end
         @time @safetestset "Inplace Interpolation Tests" include("interface/inplace_interpolation.jl")
         @time @safetestset "Algebraic Interpolation Tests" include("interface/algebraic_interpolation.jl")
         @time @safetestset "Default Solver Tests" include("interface/default_solver_tests.jl")
+        @time @safetestset "Interpolation and Cache Stripping Tests" include("interface/ode_strip_test.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
