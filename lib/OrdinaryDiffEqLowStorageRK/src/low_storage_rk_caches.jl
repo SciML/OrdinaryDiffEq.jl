@@ -181,7 +181,7 @@ end
     thread::Thread
 end
 
-mutable struct SHLDDRK_2NConstantCache{T1, T2} <: SSPRKConstantCache
+mutable struct SHLDDRK_2NConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
     α21::T1
     α31::T1
     α41::T1
@@ -273,7 +273,7 @@ function alg_cache(alg::SHLDDRK_2N, u, rate_prototype, ::Type{uEltypeNoUnits},
         alg.step_limiter!, alg.thread)
 end
 
-struct SHLDDRK52ConstantCache{T1, T2} <: SSPRKConstantCache
+struct SHLDDRK52ConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
     α2::T1
     α3::T1
     α4::T1
