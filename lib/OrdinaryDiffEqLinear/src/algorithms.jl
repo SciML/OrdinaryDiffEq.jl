@@ -66,8 +66,8 @@ REF6 = """
 """
 
 for (Alg, Description, Ref) in [
-    (:MagnusMidpoint, "Second order Magnus Midpoint method.", "ref TBD"),
-    (:MagnusLeapfrog, "Second order Magnus Leapfrog method.", "ref TBD"),
+    (:MagnusMidpoint, "Second order Magnus Midpoint method.", "https://joshuagoings.com/2017/06/15/magnus/"),
+    (:MagnusLeapfrog, "Second order Magnus Leapfrog method.", "https://joshuagoings.com/2017/06/15/magnus/"),
     (:LieEuler, "description", REF1),
     (:MagnusGauss4,
         "Fourth order Magnus method approximated using a two stage Gauss quadrature.",
