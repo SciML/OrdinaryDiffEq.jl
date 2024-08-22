@@ -7,6 +7,9 @@
     tab::TabType
 end
 
+# Non-FSAL
+get_fsalfirstlast(cache::PDIRK44Cache,u) = (cache.u, cache.uprev)
+
 struct PDIRK44ConstantCache{N, TabType} <: OrdinaryDiffEqConstantCache
     nlsolver::N
     tab::TabType

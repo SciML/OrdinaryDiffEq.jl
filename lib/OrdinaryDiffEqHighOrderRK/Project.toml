@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqHighOrderRK"
 uuid = "d28bc4f8-55e1-4f49-af69-84c1a99f0f58"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.0.0"
+version = "1.1.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -18,7 +18,7 @@ DiffEqDevTools = "2.44.4"
 FastBroadcast = "0.3.5"
 MuladdMacro = "0.2.4"
 ODEProblemLibrary = "0.1.8"
-OrdinaryDiffEqCore = "<0.0.1, 1"
+OrdinaryDiffEqCore = "1.1"
 Random = "<0.0.1, 1"
 RecursiveArrayTools = "3.27.0"
 Reexport = "1.2.2"

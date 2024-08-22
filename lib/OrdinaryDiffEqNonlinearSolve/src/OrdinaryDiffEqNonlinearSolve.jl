@@ -22,6 +22,7 @@ using ForwardDiff: Dual
 using LinearSolve: I, rmul!, norm, mul!, ldiv!
 using RecursiveArrayTools: recursivecopy!
 import SciMLStructures: canonicalize, Tunable, isscimlstructure
+import OrdinaryDiffEqCore
 
 import SciMLOperators: islinear
 import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
