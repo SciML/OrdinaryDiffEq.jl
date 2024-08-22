@@ -221,6 +221,8 @@ function resize!(integrator::ODEIntegrator, i::Int)
         # may be required for things like units
         c !== nothing && resize!(c, i)
     end
+    resize!(integrator.fsalfirst, i)
+    resize!(integrator.fsallast, i)
     resize_f!(integrator.f, i)
     resize_nlsolver!(integrator, i)
     resize_J_W!(cache, integrator, i)
@@ -233,6 +235,8 @@ function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
     for c in full_cache(cache)
         resize!(c, i)
     end
+    resize!(integrator.fsalfirst, i)
+    resize!(integrator.fsallast, i)
     resize_f!(integrator.f, i)
     # TODO the parts below need to be adapted for implicit methods
     isdefined(integrator.cache, :nlsolver) && resize_nlsolver!(integrator, i)
@@ -419,7 +423,11 @@ function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
         integrator.opts.internalnorm, integrator.sol.prob,
         integrator)
     integrator.dtpropose = integrator.dt
-    integrator.stats.nf += 2
+    increment_nf!(integrator.stats, 2)
+end
+
+function increment_nf!(stats, amt = 1)
+    stats.nf += amt
 end
 
 function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
@@ -448,3 +456,7 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
 end
 
 DiffEqBase.has_stats(i::ODEIntegrator) = true
+
+DiffEqBase.get_tstops(integ::ODEIntegrator) = integ.opts.tstops
+DiffEqBase.get_tstops_array(integ::ODEIntegrator) = get_tstops(integ).valtree
+DiffEqBase.get_tstops_max(integ::ODEIntegrator) = maximum(get_tstops_array(integ))

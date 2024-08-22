@@ -109,7 +109,7 @@ function initialize!(integrator, cache::Tsit5ConstantCache)
     integrator.kshortsize = 7
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -136,7 +136,7 @@ end
     u = uprev + dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6)
     integrator.fsallast = f(u, p, t + dt)
     k7 = integrator.fsallast
-    integrator.stats.nf += 6
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     if integrator.alg isa CompositeAlgorithm
         g7 = u
         # Hairer II, page 22 modified to use the Inf norm
@@ -163,8 +163,6 @@ end
 
 function initialize!(integrator, cache::Tsit5Cache)
     integrator.kshortsize = 7
-    integrator.fsalfirst = cache.k1
-    integrator.fsallast = cache.k7 # setup pointers
     resize!(integrator.k, integrator.kshortsize)
     # Setup k pointers
     integrator.k[1] = cache.k1
@@ -175,7 +173,7 @@ function initialize!(integrator, cache::Tsit5Cache)
     integrator.k[6] = cache.k6
     integrator.k[7] = cache.k7
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return nothing
 end
 
@@ -210,7 +208,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     f(k7, u, p, t + dt)
-    integrator.stats.nf += 6
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     if integrator.alg isa CompositeAlgorithm
         g7 = u
         g6 = tmp

@@ -2,13 +2,11 @@ function initialize!(integrator, cache::Union{Rosenbrock23Cache,
         Rosenbrock32Cache})
     integrator.kshortsize = 2
     @unpack k₁, k₂, fsalfirst, fsallast = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = fsallast
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = k₁
     integrator.k[2] = k₂
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 function initialize!(integrator,
@@ -17,7 +15,7 @@ function initialize!(integrator,
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -41,7 +39,7 @@ end
 
     if repeat_step
         f(integrator.fsalfirst, uprev, p, t)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
     calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
@@ -70,7 +68,7 @@ end
     @.. broadcast=false u=uprev + dto2 * k₁
     stage_limiter!(u, integrator, p, t + dto2)
     f(f₁, u, p, t + dto2)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         copyto!(tmp, k₁)
@@ -94,7 +92,7 @@ end
 
     if integrator.opts.adaptive
         f(fsallast, u, p, t + dt)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         if mass_matrix === I
             @.. broadcast=false linsolve_tmp=fsallast - c₃₂ * (k₂ - f₁) -
@@ -153,7 +151,7 @@ end
 
     if repeat_step
         f(integrator.fsalfirst, uprev, p, t)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
     calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
@@ -182,7 +180,7 @@ end
     @.. broadcast=false u=uprev + dto2 * k₁
     stage_limiter!(u, integrator, p, t + dto2)
     f(f₁, u, p, t + dto2)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         tmp .= k₁
@@ -203,7 +201,7 @@ end
     @.. broadcast=false tmp=uprev + dt * k₂
     stage_limiter!(u, integrator, p, t + dt)
     f(fsallast, tmp, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=fsallast - c₃₂ * (k₂ - f₁) - 2(k₁ - fsalfirst) +
@@ -252,7 +250,7 @@ end
 
     if repeat_step
         integrator.fsalfirst = f(uprev, p, t)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
     mass_matrix = integrator.f.mass_matrix
@@ -269,7 +267,7 @@ end
     k₁ = _reshape(W \ -_vec((integrator.fsalfirst + γ * dT)), axes(uprev))
     integrator.stats.nsolve += 1
     f₁ = f(uprev + dto2 * k₁, p, t + dto2)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         k₂ = _reshape(W \ -_vec(f₁ - k₁), axes(uprev)) + k₁
@@ -281,7 +279,7 @@ end
 
     if integrator.opts.adaptive
         integrator.fsallast = f(u, p, t + dt)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         if mass_matrix === I
             k₃ = _reshape(
@@ -331,7 +329,7 @@ end
 
     if repeat_step
         integrator.fsalfirst = f(uprev, p, t)
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
     # Time derivative
@@ -346,7 +344,7 @@ end
     k₁ = _reshape(W \ -_vec((integrator.fsalfirst + γ * dT)), axes(uprev))
     integrator.stats.nsolve += 1
     f₁ = f(uprev + dto2 * k₁, p, t + dto2)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         k₂ = _reshape(W \ -_vec(f₁ - k₁), axes(uprev)) + k₁
@@ -358,7 +356,7 @@ end
     integrator.stats.nsolve += 1
     tmp = uprev + dt * k₂
     integrator.fsallast = f(tmp, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         k₃ = _reshape(
@@ -400,7 +398,7 @@ function initialize!(integrator,
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -414,13 +412,11 @@ function initialize!(integrator,
             Rosenbrock4Cache})
     integrator.kshortsize = 2
     @unpack fsalfirst, fsallast = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = fsallast
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = fsalfirst
     integrator.k[2] = fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33ConstantCache,
@@ -456,7 +452,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a21 * k1
     du = f(u, p, t + c2 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd2 * dT + dtC21 * k1
@@ -468,7 +464,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a31 * k1 + a32 * k2
     du = f(u, p, t + c3 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd3 * dT + dtC31 * k1 + dtC32 * k2
@@ -480,7 +476,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + b1 * k1 + b2 * k2 + b3 * k3
     integrator.fsallast = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if integrator.opts.adaptive
         utilde = btilde1 * k1 + btilde2 * k2 + btilde3 * k3
@@ -541,7 +537,7 @@ end
     @.. broadcast=false u=uprev + a21 * k1
     stage_limiter!(u, integrator, p, t + c2 * dt)
     f(du, u, p, t + c2 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd2 * dT + dtC21 * k1
@@ -562,7 +558,7 @@ end
     @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
     stage_limiter!(u, integrator, p, t + c3 * dt)
     f(du, u, p, t + c3 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd3 * dT + dtC31 * k1 + dtC32 * k2
@@ -585,7 +581,7 @@ end
     step_limiter!(u, integrator, p, t + dt)
 
     f(fsallast, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if integrator.opts.adaptive
         @.. broadcast=false utilde=btilde1 * k1 + btilde2 * k2 + btilde3 * k3
@@ -646,7 +642,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a31 * k1 + a32 * k2
     du = f(u, p, t + c3 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd3 * dT + dtC31 * k1 + dtC32 * k2
@@ -658,7 +654,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a41 * k1 + a42 * k2 + a43 * k3
     du = f(u, p, t + dt) #-- c4 = 1
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 + dtC43 * k3
@@ -670,7 +666,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4
     integrator.fsallast = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if integrator.opts.adaptive
         utilde = btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4
@@ -757,7 +753,7 @@ end
     @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
     stage_limiter!(u, integrator, p, t + c3 * dt)
     f(du, u, p, t + c3 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd3 * dT + dtC31 * k1 + dtC32 * k2
@@ -774,7 +770,7 @@ end
     @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
     stage_limiter!(u, integrator, p, t + dt)
     f(du, u, p, t + dt) #-- c4 = 1
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 +
@@ -795,7 +791,7 @@ end
     step_limiter!(u, integrator, p, t + dt)
 
     f(fsallast, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if integrator.opts.adaptive
         @.. broadcast=false utilde=btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4
@@ -883,7 +879,7 @@ end
     end
 
     du = f(uprev, p, t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     k3 = copy(du)  #-- save for stage 3
 
     linsolve_tmp = du + dtd1 * dT
@@ -892,7 +888,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a21 * k1
     du = f(u, p, t + c2 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd2 * dT + dtC21 * k1
@@ -913,7 +909,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a41 * k1 + a42 * k2 + a43 * k3
     du = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
@@ -1016,7 +1012,7 @@ end
     dtgamma = dt * gamma
 
     f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
@@ -1042,7 +1038,7 @@ end
     @.. broadcast=false u=uprev + a21 * k1
     stage_limiter!(u, integrator, p, t + c2 * dt)
     f(du, u, p, t + c2 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd2 * dT + dtC21 * k1
@@ -1072,7 +1068,7 @@ end
     @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
     stage_limiter!(u, integrator, p, t + c2 * dt)
     f(du, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du +
@@ -1251,7 +1247,7 @@ end
     end
 
     du = f(uprev, p, t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     linsolve_tmp = du + dtd1 * dT
 
@@ -1259,7 +1255,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a21 * k1
     du = f(u, p, t + c2 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd2 * dT + dtC21 * k1
@@ -1271,7 +1267,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a31 * k1 + a32 * k2
     du = f(u, p, t + c3 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
@@ -1283,7 +1279,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a41 * k1 + a42 * k2 + a43 * k3
     du = f(u, p, t + c4 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd4 * dT + (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
@@ -1295,7 +1291,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
     du = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
@@ -1308,7 +1304,7 @@ end
     integrator.stats.nsolve += 1
     u = u + k5
     du = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 + dtC64 * k4 + dtC63 * k3)
@@ -1379,7 +1375,7 @@ end
     dtgamma = dt * gamma
 
     f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
@@ -1405,7 +1401,7 @@ end
     @.. broadcast=false u=uprev + a21 * k1
     stage_limiter!(u, integrator, p, t + c2 * dt)
     f(du, u, p, t + c2 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd2 * dT + dtC21 * k1
@@ -1422,7 +1418,7 @@ end
     @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
     stage_limiter!(u, integrator, p, t + c3 * dt)
     f(du, u, p, t + c3 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
@@ -1439,7 +1435,7 @@ end
     @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
     stage_limiter!(u, integrator, p, t + c4 * dt)
     f(du, u, p, t + c4 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd4 * dT +
@@ -1457,7 +1453,7 @@ end
     @.. broadcast=false u=uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
     stage_limiter!(u, integrator, p, t + dt)
     f(du, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du +
@@ -1474,7 +1470,7 @@ end
 
     u .+= k5
     f(du, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 +
@@ -1578,7 +1574,7 @@ end
     end
 
     du1 = f(uprev, p, t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     linsolve_tmp = du1 + dtd1 * dT
 
@@ -1586,7 +1582,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a21 * k1
     du = f(u, p, t + c2 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd2 * dT + dtC21 * k1
@@ -1598,7 +1594,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a31 * k1 + a32 * k2
     du = f(u, p, t + c3 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
@@ -1610,7 +1606,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a41 * k1 + a42 * k2 + a43 * k3
     du = f(u, p, t + c4 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd4 * dT + (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
@@ -1622,7 +1618,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
     du = f(u, p, t + c5 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + dtd5 * dT + (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
@@ -1635,7 +1631,7 @@ end
     integrator.stats.nsolve += 1
     u = uprev + a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5
     du = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du + (dtC61 * k1 + dtC62 * k2 + dtC63 * k3 + dtC64 * k4 + dtC65 * k5)
@@ -1649,7 +1645,7 @@ end
     integrator.stats.nsolve += 1
     u = u + k6
     du = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du +
@@ -1666,7 +1662,7 @@ end
     integrator.stats.nsolve += 1
     u = u + k7
     du = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         linsolve_tmp = du +
@@ -1710,7 +1706,7 @@ end
                   0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
             du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
             du = f(k2, p, t + dt / 2)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             if mass_matrix === I
                 du2 = du1 - du
             else
@@ -1782,7 +1778,7 @@ end
     dtgamma = dt * gamma
 
     f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
@@ -1810,7 +1806,7 @@ end
     @.. broadcast=false u=uprev + a21 * k1
     stage_limiter!(u, integrator, p, t + c2 * dt)
     f(du, u, p, t + c2 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd2 * dT + dtC21 * k1
@@ -1828,7 +1824,7 @@ end
     @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
     stage_limiter!(u, integrator, p, t + c3 * dt)
     f(du, u, p, t + c3 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
@@ -1846,7 +1842,7 @@ end
     @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
     stage_limiter!(u, integrator, p, t + c4 * dt)
     f(du, u, p, t + c4 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd4 * dT +
@@ -1865,7 +1861,7 @@ end
     @.. broadcast=false u=uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
     stage_limiter!(u, integrator, p, t + c5 * dt)
     f(du, u, p, t + c5 * dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd5 * dT +
@@ -1884,7 +1880,7 @@ end
     @.. broadcast=false u=uprev + a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5
     stage_limiter!(u, integrator, p, t + dt)
     f(du, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + (dtC61 * k1 + dtC62 * k2 + dtC63 * k3 +
@@ -1904,7 +1900,7 @@ end
     u .+= k6
     stage_limiter!(u, integrator, p, t + dt)
     f(du, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + (dtC71 * k1 + dtC72 * k2 + dtC73 * k3 +
@@ -1923,7 +1919,7 @@ end
 
     u .+= k7
     f(du, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + (dtC81 * k1 + dtC82 * k2 + dtC83 * k3 +
@@ -1971,7 +1967,7 @@ end
                   0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
             du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
             f(du, k2, p, t + dt / 2)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             if mass_matrix === I
                 du2 = du1 - du
             else

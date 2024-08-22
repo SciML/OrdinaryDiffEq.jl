@@ -16,7 +16,7 @@ function perform_step!(integrator, cache::FunctionMapCache, repeat_step = false)
         else
             f(u, uprev, p, t + dt)
         end
-        integrator.stats.nf += 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 end
 
@@ -28,11 +28,11 @@ function perform_step!(integrator, cache::FunctionMapConstantCache, repeat_step 
          integrator.f.f === DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT)
         if FunctionMap_scale_by_time(alg)
             tmp = f(uprev, p, t + dt)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             @muladd integrator.u = @.. broadcast=false uprev+dt * tmp
         else
             integrator.u = f(uprev, p, t + dt)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
     end
 end

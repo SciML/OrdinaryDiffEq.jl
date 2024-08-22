@@ -1,6 +1,6 @@
 function initialize!(integrator, ::QPRK98ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -61,7 +61,7 @@ end
         dt * (b16_1 * k1 + b16_6 * k6 + b16_7 * k7 + b16_8 * k8 + b16_9 * k9
          + b16_10 * k10 + b16_11 * k11 + b16_12 * k12 + b16_13 * k13 + b16_14 * k14),
         p, t + dt)
-    integrator.stats.nf += 15
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 15)
     u = uprev +
         dt * (w1 * k1 + w8 * k8 + w9 * k9 + w10 * k10 + w11 * k11 + w12 * k12 +
          w13 * k13 + w14 * k14 + w15 * k15 + w16 * k16)
@@ -74,21 +74,19 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.fsallast = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
 end
 
 function initialize!(integrator, cache::QPRK98Cache)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::QPRK98Cache, repeat_step = false)
@@ -173,7 +171,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     f(k16, tmp, p, t + dt)
 
-    integrator.stats.nf += 16
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 16)
 
     @.. broadcast=false thread=thread u=uprev +
                                         dt * (w1 * k1 + w8 * k8 + w9 * k9
@@ -195,6 +193,6 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return nothing
 end

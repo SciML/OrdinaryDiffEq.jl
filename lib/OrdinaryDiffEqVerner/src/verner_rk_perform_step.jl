@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::Vern6ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     alg = unwrap_alg(integrator, false)
     cache.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -37,7 +37,7 @@ end
     u = uprev + dt * (a91 * k1 + a94 * k4 + a95 * k5 + a96 * k6 + a97 * k7 + a98 * k8)
     integrator.fsallast = f(u, p, t + dt)
     k9 = integrator.fsallast
-    integrator.stats.nf += 8
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
     if integrator.alg isa CompositeAlgorithm
         g9 = u
         integrator.eigen_est = integrator.opts.internalnorm(
@@ -85,7 +85,7 @@ end
              a1211 * k[11]),
             p,
             t + c12 * dt)
-        integrator.stats.nf += 3
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
     end
 
     integrator.u = u
@@ -94,8 +94,6 @@ end
 function initialize!(integrator, cache::Vern6Cache)
     alg = unwrap_alg(integrator, false)
     cache.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
-    integrator.fsalfirst = cache.k1
-    integrator.fsallast = cache.k9
     @unpack k = integrator
     resize!(k, integrator.kshortsize)
     k[1] = cache.k1
@@ -115,7 +113,7 @@ function initialize!(integrator, cache::Vern6Cache)
     end
 
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::Vern6Cache, repeat_step = false)
@@ -158,7 +156,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     f(k9, u, p, t + dt)
-    integrator.stats.nf += 8
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
     if integrator.alg isa CompositeAlgorithm
         g9 = u
         g8 = tmp
@@ -202,7 +200,7 @@ end
                                                a1206 * k[6] +
                                                a1207 * k[7] + a1208 * k[8] + a1209 * k[9] +
                                                a1210 * k[10] + a1211 * k[11])
-        integrator.stats.nf += 3
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
         f(k[12], tmp, p, t + c12 * dt)
     end
     return nothing
@@ -245,7 +243,7 @@ end
           dt * (a101 * k1 + a103 * k3 + a104 * k4 + a105 * k5 + a106 * k6 + a107 * k7)
     k9 = f(g9, p, t + dt)
     k10 = f(g10, p, t + dt)
-    integrator.stats.nf += 10
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 10)
     u = uprev + dt * (b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9)
     if integrator.alg isa CompositeAlgorithm
         integrator.eigen_est = integrator.opts.internalnorm(
@@ -316,7 +314,7 @@ end
              a1612 * k[12] + a1613 * k[13]),
             p,
             t + c16 * dt)
-        integrator.stats.nf += 6
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     end
 end
 
@@ -406,7 +404,7 @@ end
                                          b9 * k9)
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
-    integrator.stats.nf += 10
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 10)
     if integrator.alg isa CompositeAlgorithm
         g10 = u
         g9 = tmp
@@ -474,7 +472,7 @@ end
                                                a1611 * k[11] + a1612 * k[12] +
                                                a1613 * k[13])
         f(k[16], tmp, p, t + c16 * dt)
-        integrator.stats.nf += 6
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     end
     return nothing
 end
@@ -534,7 +532,7 @@ end
            a1309 * k9 + a1310 * k10)
     k12 = f(g12, p, t + dt)
     k13 = f(g13, p, t + dt)
-    integrator.stats.nf += 13
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 13)
     u = uprev +
         dt * (b1 * k1 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 +
          b12 * k12)
@@ -625,7 +623,7 @@ end
              a2114 * k[14] + a2115 * k[15] + a2116 * k[16] + a2117 * k[17]),
             p,
             t + c21 * dt)
-        integrator.stats.nf += 8
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
     end
 end
 
@@ -726,7 +724,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     f(k13, u, p, t + dt)
-    integrator.stats.nf += 13
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 13)
     if integrator.alg isa CompositeAlgorithm
         g13 = u
         g12 = tmp
@@ -831,7 +829,7 @@ end
                                                a2112 * k[12] + a2114 * k[14] +
                                                a2115 * k[15] +
                                                a2116 * k[16] + a2117 * k[17])
-        integrator.stats.nf += 8
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
         f(k[21], tmp, p, t + c21 * dt)
     end
     return nothing
@@ -901,7 +899,7 @@ end
            a1611 * k11 + a1612 * k12 + a1613 * k13)
     k15 = f(g15, p, t + dt)
     k16 = f(g16, p, t + dt)
-    integrator.stats.nf += 16
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 16)
     u = uprev +
         dt * (b1 * k1 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 + b12 * k12 + b13 * k13 +
          b14 * k14 + b15 * k15)
@@ -1011,7 +1009,7 @@ end
              a2620 * k[14] + a2621 * k[15]),
             p,
             t + c26 * dt)
-        integrator.stats.nf += 10
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 10)
     end
 end
 
@@ -1131,7 +1129,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     f(k16, u, p, t + dt)
-    integrator.stats.nf += 16
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 16)
     if integrator.alg isa CompositeAlgorithm
         g16 = u
         g15 = tmp
@@ -1261,7 +1259,7 @@ end
                                                a2618 * k[12] +
                                                a2619 * k[13] + a2620 * k[14] +
                                                a2621 * k[15])
-        integrator.stats.nf += 10
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 10)
         f(k[20], tmp, p, t + c26 * dt)
     end
     return nothing
