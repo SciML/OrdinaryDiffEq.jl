@@ -168,7 +168,7 @@ function CarpenterKennedy2N54ConstantCache(T, T2)
 end
 
 @cache mutable struct SHLDDRK_2NCache{uType, rateType, TabType, StageLimiter, StepLimiter,
-    Thread} <: SSPRKMutableCache
+    Thread} <: LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType

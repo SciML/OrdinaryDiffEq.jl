@@ -1088,7 +1088,7 @@ end
 
 @cache struct KYK2014DGSSPRK_3S2_Cache{uType, rateType, TabType, StageLimiter, StepLimiter,
     Thread} <:
-              LowStorageRKMutableCache
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
