@@ -41,6 +41,39 @@ test_problems_nonlinear = [prob_ode_nonlinear, prob_ode_nonlinear_inplace]
 u0_large = rand(10^6)
 prob_ode_large = ODEProblem((du, u, p, t) -> du .= u, u0_large, (0.0, 1.0))
 
+println("SHLDDRK_2N")
+dts_SHLDDRK_2N = (1 / 2) .^ (0:3)
+alg = SHLDDRK_2N()
+for prob in test_problems_only_time
+    sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
+    @test sim.𝒪est[:final]≈4 atol=0.46
+end
+for prob in test_problems_linear
+    sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
+    @test sim.𝒪est[:final]≈4 atol=0.46
+end
+for prob in test_problems_nonlinear
+    sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
+    @test sim.𝒪est[:final]≈4 atol=1
+    # due to unusual saturation towards high dts(0.5 and onwards) and
+    # saturation towards low dts due to less precision in the provided values of weights , tolerance is kept so high
+end
+
+println("SHLDDRK52")
+alg = SHLDDRK52()
+for prob in test_problems_only_time
+    sim = test_convergence(dts, prob, alg)
+    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
+end
+for prob in test_problems_linear
+    sim = test_convergence(dts, prob, alg)
+    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
+end
+for prob in test_problems_nonlinear
+    sim = test_convergence(dts, prob, alg)
+    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
+end
+
 @testset "ORK256" begin
     alg = ORK256()
     alg2 = ORK256(; williamson_condition = false)
