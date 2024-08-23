@@ -705,7 +705,7 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense = [zero(rate_protoype) for i in 1:2]
+    dense = [zero(rate_prototype) for i in 1:2]
     dus = [zero(rate_prototype) for i in 1:3]
     ks = [zero(rate_prototype) for i in 1:6]
     fsalfirst = zero(rate_prototype)
@@ -756,7 +756,7 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense = [zero(rate_protoype) for i in 1:2]
+    dense = [zero(rate_prototype) for i in 1:2]
     dus = [zero(rate_prototype) for i in 1:3]
     ks = [zero(rate_prototype) for i in 1:6]
     fsalfirst = zero(rate_prototype)
@@ -807,7 +807,7 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense = [zero(rate_protoype) for i in 1:2]
+    dense = [zero(rate_prototype) for i in 1:2]
     dus = [zero(rate_prototype) for i in 1:3]
     ks = [zero(rate_prototype) for i in 1:6]
     fsalfirst = zero(rate_prototype)
@@ -858,7 +858,7 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense = [zero(rate_protoype) for i in 1:2]
+    dense = [zero(rate_prototype) for i in 1:2]
     dus = [zero(rate_prototype) for i in 1:3]
     ks = [zero(rate_prototype) for i in 1:6]
     fsalfirst = zero(rate_prototype)
@@ -922,7 +922,7 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense = [zero(rate_protoype) for i in 1:3]
+    dense = [zero(rate_prototype) for i in 1:3]
     dus = [zero(rate_prototype) for i in 1:3]
     ks = [zero(rate_prototype) for i in 1:8]
     fsalfirst = zero(rate_prototype)
@@ -974,7 +974,7 @@ function alg_cache(
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense = [zero(rate_protoype) for i in 1:3]
+    dense = [zero(rate_prototype) for i in 1:3]
     dus = [zero(rate_prototype) for i in 1:3]
     ks = [zero(rate_prototype) for i in 1:9]
     fsalfirst = zero(rate_prototype)
