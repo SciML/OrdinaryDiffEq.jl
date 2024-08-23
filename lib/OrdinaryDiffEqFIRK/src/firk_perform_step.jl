@@ -1344,10 +1344,7 @@ end
     if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         for i in 1 : num_stages
-            z[i] = w[i] = map(zero, u)
-        end
-        for i in 1 : (num_stages - 1)
-            cache.cont[i] = map(zero, u)
+            z[i] = w[i] = cache.cont[i] = map(zero, u)
         end
     else 
         c_prime = Vector{eltype(u)}(undef, num_stages) #time stepping
@@ -1356,8 +1353,8 @@ end
             c_prime[i] = c[i] * c_prime[num_stages]
         end
         for i in 1 : num_stages # collocation polynomial
-            z[i] = @.. cont[num_stages - 1] * (c_prime[i] - c[1] + 1) + cont[num_stages - 2]
-            j = num_stages - 3
+            z[i] = @.. cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
+            j = num_stages - 2
             while j > 0
                 z[i] = @.. z[i] * (c_prime[i] - c[num_stages- j - 1] + 1) + cont[j]
                 j = j - 1
@@ -1483,9 +1480,10 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            derivatives = Matrix{eltype(u)}(undef, num_stages - 1, num_stages - 1)
-            for i in 1 : (num_stages - 1)
-                for j in i : (num_stages - 1)
+            derivatives = Matrix{eltype(u)}(undef, num_stages, num_stages)
+            pushfirst!(c, 0)
+            for i in 1 : num_stages
+                for j in i : num_stages
                     if i == 1
                         derivatives[i, j] = @.. (z[i] - z[i + 1]) / (c[i] - c[i + 1]) #first derivatives
                     else
@@ -1493,8 +1491,9 @@ end
                     end
                 end
             end
+            popfirst!(c)
             for i in 1 : (num_stages - 1)
-                cache.cont[i] = derivatives[i, num_stages - 1]
+                cache.cont[i] = derivatives[i, num_stages]
             end
         end
     end
@@ -1537,12 +1536,8 @@ end
     # TODO better initial guess
     if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
-        uzero = zero(eltype(u))
         for i in 1 : num_stages
-            @..  z[i] = w[i] = uzero
-        end
-        for i in 1 : (num_stages-1)
-            @.. cache.cont[i] = uzero
+            z[i] = w[i] = cache.cont[i] = map(zero, u)
         end
     else 
         c_prime = Vector{eltype(u)}(undef, num_stages) #time stepping
@@ -1551,8 +1546,8 @@ end
             c_prime[i] = c[i] * c_prime[num_stages]
         end
         for i in 1 : num_stages # collocation polynomial
-            z[i] = @.. cont[num_stages - 1] * (c_prime[i] - c[1] + 1) + cont[num_stages - 2]
-            j = num_stages - 3
+            z[i] = @.. cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
+            j = num_stages - 2
             while j > 0
                 z[i] = @.. z[i] * (c_prime[i] - c[num_stages- j - 1] + 1) + cont[j]
                 j = j - 1
@@ -1728,18 +1723,20 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            derivatives = Matrix{eltype(u)}(undef, num_stages - 1, num_stages - 1)
-            for i in 1 : (num_stages - 1)
-                for j in i : (num_stages - 1)
+            derivatives = Matrix{eltype(u)}(undef, num_stages, num_stages)
+            pushfirst!(c, 0)
+            for i in 1 : num_stages
+                for j in i : num_stages
                     if i == 1
-                        @.. derivatives[i, j] = (z[i] - z[i + 1]) / (c[i] - c[i + 1]) #first derivatives
+                        derivatives[i, j] = @.. (z[i] - z[i + 1]) / (c[i] - c[i + 1]) #first derivatives
                     else
-                        @.. derivatives[i, j] = (derivatives[i - 1, j - 1] - derivatives[i - 1, j]) / (c[j - i + 1] - c[j + 1]) #all others
+                        derivatives[i, j] = @.. (derivatives[i - 1, j - 1] - derivatives[i - 1, j]) / (c[j - i + 1] - c[j + 1]) #all others
                     end
                 end
             end
+            popfirst!(c)
             for i in 1 : (num_stages - 1)
-                cache.cont[i] = derivatives[i, num_stages - 1]
+                cache.cont[i] = derivatives[i, num_stages]
             end
         end
     end

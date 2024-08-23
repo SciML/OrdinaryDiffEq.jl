@@ -497,8 +497,8 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     num_stages = alg.num_stages
     tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
 
-    cont = Vector{typeof(u)}(undef, num_stages - 1)
-    for i in 1: (num_stages - 1)
+    cont = Vector{typeof(u)}(undef, num_stages)
+    for i in 1: num_stages
         cont[i] = zero(u)
     end
 
@@ -576,8 +576,8 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         recursivefill!(cubuff[i], false)
     end
 
-    cont = Vector{typeof(u)}(undef, num_stages - 1)
-    for i in 1: (num_stages - 1)
+    cont = Vector{typeof(u)}(undef, num_stages)
+    for i in 1: num_stages
         cont[i] = zero(u)
     end
 
