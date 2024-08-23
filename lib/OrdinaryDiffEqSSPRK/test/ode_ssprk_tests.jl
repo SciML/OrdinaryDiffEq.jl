@@ -474,7 +474,7 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 
 println("KYK2014DGSSPRK_3S2")
-alg = OrdinaryDiffEqLowStorageRK.KYK2014DGSSPRK_3S2()
+alg = KYK2014DGSSPRK_3S2()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
     @test abs(sim.𝒪est[:final] - OrdinaryDiffEqSSPRK.alg_order(alg)) < testTol
