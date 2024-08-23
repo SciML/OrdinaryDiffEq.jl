@@ -727,8 +727,9 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
             nothing)..., weight, tmp)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-        Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true))
+    Pl = Pl, Pr = Pr,
+    assumptions = LinearSolve.OperatorAssumptions(true), 
+    u0 = [u])
     grad_config = build_grad_config(alg, f, tf, dus[2], t)
     jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])
     RosenbrockCache(u, uprev, dense, dus, ks,
