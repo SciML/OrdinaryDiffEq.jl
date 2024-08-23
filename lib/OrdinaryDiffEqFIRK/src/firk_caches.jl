@@ -287,6 +287,7 @@ mutable struct RadauIIA9ConstantCache{F, Tab, Tol, Dt, U, JType} <:
     cont2::U
     cont3::U
     cont4::U
+    cont5::U
     dtprev::Dt
     W_γdt::Dt
     status::NLStatus
@@ -304,7 +305,7 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
-    RadauIIA9ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, u, dt, dt,
+    RadauIIA9ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, u, u, dt, dt,
         Convergence, J)
 end
 
@@ -333,6 +334,7 @@ mutable struct RadauIIA9Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Ty
     cont2::uType
     cont3::uType
     cont4::uType
+    cont5::uType
     du1::rateType
     fsalfirst::rateType
     k::rateType
@@ -407,6 +409,7 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
     cont2 = zero(u)
     cont3 = zero(u)
     cont4 = zero(u)
+    cont5 = zero(u)
 
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
@@ -462,7 +465,7 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     RadauIIA9Cache(u, uprev,
         z1, z2, z3, z4, z5, w1, w2, w3, w4, w5,
-        dw1, ubuff, dw23, dw45, cubuff1, cubuff2, cont1, cont2, cont3, cont4,
+        dw1, ubuff, dw23, dw45, cubuff1, cubuff2, cont1, cont2, cont3, cont4, cont5,
         du1, fsalfirst, k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5,
         J, W1, W2, W3,
         uf, tab, κ, one(uToltype), 10000,

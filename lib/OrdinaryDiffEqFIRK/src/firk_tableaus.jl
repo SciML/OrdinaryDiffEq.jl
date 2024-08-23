@@ -308,7 +308,7 @@ function adaptiveRadauTableau(T, T2, num_stages::Int)
         b[i] = a[num_stages, i]
     end
     vals = eigvals(a_inverse)
-    γ = real(b[num_stages])
+    γ = real(vals[num_stages])
     α = Vector{BigFloat}(undef, floor(Int, num_stages/2))
     β = Vector{BigFloat}(undef, floor(Int, num_stages/2))
     index = 1
@@ -338,8 +338,10 @@ function adaptiveRadauTableau(T, T2, num_stages::Int)
         end
     end
     TI = inv(T)
-
+    #=
+    p = num_stages
     eb = variables(:b, 1:num_stages + 1)
+    @variables y
     zz = zeros(size(a, 1) + 1)
     zz2 = zeros(size(a, 1))
     eA = [zz'
@@ -348,12 +350,12 @@ function adaptiveRadauTableau(T, T2, num_stages::Int)
     constraints = map(Iterators.flatten(RootedTreeIterator(i) for i in 1:p)) do t
         residual_order_condition(t, RungeKuttaMethod(eA, eb, ec))
     end
-    AA, bb, islinear = Symbolics.linear_expansion(substitute.(constraints, (eb[1]=>γ,)), eb[2:end])
-    AA = Float64.(map(unwrap, AA))
+    AA, bb, islinear = Symbolics.linear_expansion(substitute.(constraints, (eb[1]=>y,)), eb[2:end])
+    AA = BigFloat.(map(unwrap, AA))
     idxs = qr(AA', ColumnNorm()).p[1:num_stages]
     @assert rank(AA[idxs, :]) == num_stages
     @assert islinear
-    Symbolics.expand.((AA[idxs, :] \ -bb[idxs]) - b)
+    Symbolics.expand.((AA[idxs, :] \ -bb[idxs]) - b)=#
     #e = b_hat - b
     adaptiveRadauTableau{Any, T2, Int}(T, TI, γ, α, β, c, num_stages)
 end
