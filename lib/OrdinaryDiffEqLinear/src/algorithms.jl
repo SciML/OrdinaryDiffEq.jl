@@ -117,7 +117,15 @@ end
 @doc generic_solver_docstring("Fourth Order Adaptive Magnus method.",
     "MagnusAdapt4",
     "Semilinear ODE solver",
-    "ref TBD", "", "")
+    "@article{li2008adaptive,
+    title={Adaptive explicit Magnus numerical method for nonlinear dynamical systems},
+    author={Li, Wen-cheng and Deng, Zi-chen},
+    journal={Applied Mathematics and Mechanics},
+    volume={29},
+    number={9},
+    pages={1111--1118},
+    year={2008},
+    publisher={Springer}}", "", "")
 struct MagnusAdapt4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 @doc generic_solver_docstring("First order method using Cayley transformations.",
