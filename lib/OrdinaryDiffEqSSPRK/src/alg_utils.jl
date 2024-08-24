@@ -31,21 +31,6 @@ alg_order(alg::SSPRK932) = 3
 alg_order(alg::SSPRK54) = 4
 alg_order(alg::SSPRK104) = 4
 
-"""
-    ssp_coefficient(alg)
-
-Return the SSP coefficient of the ODE algorithm `alg`. If one time step of size
-`dt` with `alg` can be written as a convex combination of explicit Euler steps
-with step sizes `cᵢ * dt`, the SSP coefficient is the minimal value of `1/cᵢ`.
-
-# Examples
-
-```julia-repl
-julia> ssp_coefficient(SSPRK104())
-6
-```
-"""
-
 ssp_coefficient(alg::SSPRK53_2N1) = 2.18
 ssp_coefficient(alg::SSPRK53_2N2) = 2.148
 ssp_coefficient(alg::SSPRK53) = 2.65
