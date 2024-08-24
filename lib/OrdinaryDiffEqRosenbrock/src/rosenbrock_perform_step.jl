@@ -1326,7 +1326,7 @@ end
             solverdata = (; gamma = dtgamma))
     end
 
-    @.. $(_vec(ks[1])) = -linres.u
+    ks[1] .= .-linres.u
     integrator.stats.nsolve += 1
 
     for i in 2:6
