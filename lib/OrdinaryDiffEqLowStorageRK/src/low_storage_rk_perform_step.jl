@@ -967,10 +967,8 @@ end
 
     integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = f(integrator.u, p, t + dt) # For interpolation, then FSAL'd
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-    integrator.fsallast = integrator.k[2]
-    return nothing
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
 end
 
 function initialize!(integrator, cache::SHLDDRK52Cache)
