@@ -1285,7 +1285,7 @@ end
 
 function initialize!(integrator, cache::RosenbrockCache)
     integrator.kshortsize = 2
-    @unpack dense1, dense2 = cache
+    @unpack dense = cache
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = dense[1]
     integrator.k[2] = dense[2]
