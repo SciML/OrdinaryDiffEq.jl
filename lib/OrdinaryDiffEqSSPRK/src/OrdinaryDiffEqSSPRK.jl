@@ -46,7 +46,6 @@ PrecompileTools.@compile_workload begin
     ]
 
     low_storage_nonadaptive = [
-
     ]
 
     if Preferences.@load_preference("PrecompileLowStorage", false)

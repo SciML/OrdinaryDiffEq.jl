@@ -1,5 +1,5 @@
 abstract type ExtrapolationMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::ExtrapolationMutableCache,u) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::ExtrapolationMutableCache, u) = (cache.fsalfirst, cache.k)
 
 @cache mutable struct AitkenNevilleCache{
     uType,
@@ -128,7 +128,7 @@ end
     diff1::Array{uType, 1}
     diff2::Array{uType, 1}
 end
-get_fsalfirstlast(cache::ImplicitEulerExtrapolationCache,u) = (zero(u), zero(u))
+get_fsalfirstlast(cache::ImplicitEulerExtrapolationCache, u) = (zero(u), zero(u))
 
 @cache mutable struct ImplicitEulerExtrapolationConstantCache{QType, dtType, arrayType, TF,
     UF, sequenceType} <:

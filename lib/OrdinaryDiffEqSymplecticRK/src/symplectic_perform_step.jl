@@ -126,7 +126,6 @@ end
 function initialize!(integrator,
         cache::C) where {C <:
                          Union{HamiltonMutableCache, VelocityVerletCache}}
-
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst

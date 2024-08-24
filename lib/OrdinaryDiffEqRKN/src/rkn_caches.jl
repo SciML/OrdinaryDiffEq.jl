@@ -1,5 +1,5 @@
 abstract type NystromMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::NystromMutableCache,u) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::NystromMutableCache, u) = (cache.fsalfirst, cache.k)
 
 @cache struct Nystrom4Cache{uType, rateType, reducedRateType} <: NystromMutableCache
     u::uType

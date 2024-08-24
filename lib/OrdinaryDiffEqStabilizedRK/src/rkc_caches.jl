@@ -1,5 +1,5 @@
 abstract type StabilizedRKMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::StabilizedRKMutableCache,u) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::StabilizedRKMutableCache, u) = (cache.fsalfirst, cache.k)
 
 mutable struct ROCK2ConstantCache{T, T2, zType} <: OrdinaryDiffEqConstantCache
     ms::SVector{46, Int}
