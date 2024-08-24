@@ -1,7 +1,9 @@
 abstract type ABMMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type ABMVariableCoefficientMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::ABMMutableCache,u) = (cache.fsalfirst, cache.k)
-get_fsalfirstlast(cache::ABMVariableCoefficientMutableCache,u) = (cache.fsalfirst, cache.k4)
+get_fsalfirstlast(cache::ABMMutableCache, u) = (cache.fsalfirst, cache.k)
+function get_fsalfirstlast(cache::ABMVariableCoefficientMutableCache, u)
+    (cache.fsalfirst, cache.k4)
+end
 @cache mutable struct AB3Cache{uType, rateType} <: ABMMutableCache
     u::uType
     uprev::uType

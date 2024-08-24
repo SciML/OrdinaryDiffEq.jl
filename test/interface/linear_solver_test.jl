@@ -161,7 +161,7 @@ end
 using OrdinaryDiffEq, StaticArrays, LinearSolve, ParameterizedFunctions
 
 hires = @ode_def Hires begin
-    dy1 = -1.71f0 * y1 + 0.43f0 * y2 + 8.32f0 * y3 + 0.0007f0 + 1f-18*t
+    dy1 = -1.71f0 * y1 + 0.43f0 * y2 + 8.32f0 * y3 + 0.0007f0 + 1.0f-18 * t
     dy2 = 1.71f0 * y1 - 8.75f0 * y2
     dy3 = -10.03f0 * y3 + 0.43f0 * y4 + 0.035f0 * y5
     dy4 = 8.32f0 * y2 + 1.71f0 * y3 - 1.12f0 * y4
@@ -178,11 +178,11 @@ u0[8] = 0.0057
 probiip = ODEProblem{true}(hires, u0, (0.0, 10.0))
 proboop = ODEProblem{false}(hires, u0, (0.0, 10.0))
 probstatic = ODEProblem{false}(hires, SVector{8}(u0), (0.0, 10.0))
-probiipf32 = ODEProblem{true}(hires, Float32.(u0), (0f0, 10f0))
-proboopf32 = ODEProblem{false}(hires, Float32.(u0), (0f0, 10f0))
-probstaticf32 = ODEProblem{false}(hires, SVector{8}(Float32.(u0)), (0f0, 10f0))
+probiipf32 = ODEProblem{true}(hires, Float32.(u0), (0.0f0, 10.0f0))
+proboopf32 = ODEProblem{false}(hires, Float32.(u0), (0.0f0, 10.0f0))
+probstaticf32 = ODEProblem{false}(hires, SVector{8}(Float32.(u0)), (0.0f0, 10.0f0))
 probs = (; probiip, proboop, probstatic)
-probsf32 = (;probiipf32, proboopf32, probstaticf32)
+probsf32 = (; probiipf32, proboopf32, probstaticf32)
 qndf = QNDF()
 krylov_qndf = QNDF(linsolve = KrylovJL_GMRES())
 fbdf = FBDF()

@@ -160,8 +160,6 @@ end
 end
 
 function initialize!(integrator, cache::DABDF2Cache)
-
-
     integrator.kshortsize = 2
     @unpack k₁, k₂ = cache.eulercache
     resize!(integrator.k, integrator.kshortsize)
