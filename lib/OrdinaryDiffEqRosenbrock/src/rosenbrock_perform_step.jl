@@ -1354,7 +1354,7 @@ end
         end
 
         linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-        $(_vec(ks[i])) = -linres.u
+        ks[i] .= .-linres.u
         integrator.stats.nsolve += 1
 
         if i == 5 || i == 6
