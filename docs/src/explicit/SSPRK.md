@@ -1,3 +1,6 @@
+```@meta
+CollapsedDocStrings = true
+```
 # OrdinaryDiffEqSSPRK
 
 SSPRK methods are Runge-Kutta methods which support the "strongly preserving property" (SSP).

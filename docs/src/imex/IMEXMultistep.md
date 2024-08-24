@@ -1,3 +1,6 @@
+```@meta
+CollapsedDocStrings = true
+```
 # OrdinaryDiffEqIMEXMultistep
 
 Solvers if your system of ordinary differential equations can be split up into the sum of a stiff and non-stiff part.

@@ -1,3 +1,6 @@
+```@meta
+CollapsedDocStrings = true
+```
 # OrdinaryDiffEqExponentialRK
 
 Methods for semi-linear differential equations.

@@ -1,3 +1,6 @@
+```@meta
+CollapsedDocStrings = true
+```
 # OrdinaryDiffEqRKN
 
 Second order solvers.

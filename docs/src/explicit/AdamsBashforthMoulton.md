@@ -1,3 +1,6 @@
+```@meta
+CollapsedDocStrings = true
+```
 # OrdinaryDiffEqAdamsBashforthMoulton
 
 Multistep methods, useful for integrating a very expensive to evaluate non-stiff system of differential equations.

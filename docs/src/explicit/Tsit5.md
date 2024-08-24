@@ -1,3 +1,6 @@
+```@meta
+CollapsedDocStrings = true
+```
 # [OrdinaryDiffEqTsit5](@id OrdinaryDiffEqTsit5)
 
 Recommended solver for most non-stiff problems at default and higher tolerance.

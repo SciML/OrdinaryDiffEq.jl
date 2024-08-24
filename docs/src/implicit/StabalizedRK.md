@@ -1,3 +1,6 @@
+```@meta
+CollapsedDocStrings = true
+```
 # OrdinaryDiffEqStabalizedRK
 
 Explicit stabilized methods utilize an upper bound on the spectral radius of the Jacobian.

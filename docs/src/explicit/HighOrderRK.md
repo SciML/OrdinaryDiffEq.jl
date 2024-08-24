@@ -1,3 +1,6 @@
+```@meta
+CollapsedDocStrings = true
+```
 # OrdinaryDiffEqHighOrderRK
 
 Solvers for non-stiff problems at low tolerance.

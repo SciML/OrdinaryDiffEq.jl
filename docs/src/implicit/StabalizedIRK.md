@@ -1,3 +1,6 @@
+```@meta
+CollapsedDocStrings = true
+```
 # OrdinaryDiffEqStabalizedIRK
 
 Stabilized Explicit Runge-Kutta methods,

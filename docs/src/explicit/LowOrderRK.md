@@ -1,3 +1,6 @@
+```@meta
+CollapsedDocStrings = true
+```
 # OrdinaryDiffEqLowOrderRK
 
 If [`OrdinaryDiffEqTsit5`](@ref OrdinaryDiffEqTsit5) is not working well for your non-stiff problem at default and higher tolerance,

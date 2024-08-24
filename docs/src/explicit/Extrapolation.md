@@ -1,3 +1,6 @@
+```@meta
+CollapsedDocStrings = true
+```
 # OrdinaryDiffEqExtrapolation
 
 Solvers based on within method parallelism.
