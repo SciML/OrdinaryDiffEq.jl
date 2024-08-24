@@ -10,8 +10,8 @@
     pages={49--82},
     year={1995},
     publisher={SIAM}}""",
-    "- `threading`: TBD",
-    "threading = true,")
+    "- `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.",
+    "thread = OrdinaryDiffEq.True(),")
 Base.@kwdef struct KuttaPRK2p5{TO} <: OrdinaryDiffEqAlgorithm
     threading::TO = true
 end
