@@ -49,7 +49,7 @@ function initialize!(integrator, cache::RadauIIA3Cache)
     nothing
 end
 
-function initialize!(integrator, cache::Union{RadauIIA5Cache, RadauIIA9Cache, AdaptiveRadauCache})
+function initialize!(integrator, cache::RadauIIA5Cache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -69,6 +69,47 @@ function initialize!(integrator, cache::Union{RadauIIA5Cache, RadauIIA9Cache, Ad
     nothing
 end
 
+function initialize!(integrator, cache::RadauIIA9Cache)
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    if integrator.opts.adaptive
+        @unpack abstol, reltol = integrator.opts
+        if reltol isa Number
+            cache.rtol = reltol^(3 / 5) / 10
+            cache.atol = cache.rtol * (abstol / reltol)
+        else
+            @.. broadcast=false cache.rtol=reltol^(3 / 5) / 10
+            @.. broadcast=false cache.atol=cache.rtol * (abstol / reltol)
+        end
+    end
+    nothing
+end
+
+function initialize!(integrator, cache::AdaptiveRadauCache)
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    num_stages = alg.num_stages
+    if integrator.opts.adaptive
+        @unpack abstol, reltol = integrator.opts
+        if reltol isa Number
+            cache.rtol = reltol^((num_stages + 1) / (2 * num_stages)) / 10
+            cache.atol = cache.rtol * (abstol / reltol)
+        else
+            @.. broadcast=false cache.rtol=reltol^((num_stages + 1) / (2 * num_stages)) / 10
+            @.. broadcast=false cache.atol=cache.rtol * (abstol / reltol)
+        end
+    end
+    nothing
+end
+
 
 @muladd function perform_step!(integrator, cache::RadauIIA3ConstantCache)
     @unpack t, dt, uprev, u, f, p = integrator
@@ -81,7 +122,7 @@ end
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations
-    rtol = @. reltol^(2 / 3) / 10
+    rtol = @. reltol^(3 / 4) / 10
     atol = @. rtol * (abstol / reltol)
     αdt, βdt = α / dt, β / dt
     J = calc_J(integrator, cache)
@@ -747,7 +788,7 @@ end
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations rtol pow is (num stages + 1)/(2*num stages)
-    rtol = @.. broadcast=false reltol^(5 / 8)/10
+    rtol = @.. broadcast=false reltol^(3 / 5)/10
     atol = @.. broadcast=false rtol*(abstol / reltol)
     c1m1 = c1 - 1
     c2m1 = c2 - 1
@@ -1321,7 +1362,7 @@ end
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations rtol pow is (num stages + 1)/(2*num stages)
-    rtol = @.. broadcast=false reltol^(5 / 8)/10
+    rtol = @.. broadcast=false reltol^((num_stages + 1) / (num_stages * 2))/10
     atol = @.. broadcast=false rtol*(abstol / reltol)
 
     γdt, αdt, βdt = γ / dt, α ./ dt, β ./ dt
@@ -1356,12 +1397,12 @@ end
             z[i] = @.. cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
             j = num_stages - 2
             while j > 0
-                z[i] = @.. z[i] * (c_prime[i] - c[num_stages- j - 1] + 1) + cont[j]
+                z[i] = @.. z[i] * (c_prime[i] - c[num_stages - j] + 1) + cont[j]
                 j = j - 1
             end
             z[i] = @.. z[i] * c_prime[i]
         end
-        w = @.. TI * z
+        w = TI * z
     end
 
     # Newton iteration
@@ -1434,7 +1475,7 @@ end
         w = @.. w - dw
 
         # transform `w` to `z`
-        z = T * w
+        z = vec(T * w)
         
         # check stopping criterion
         iter > 1 && (η = θ / (1 - θ))
@@ -1482,17 +1523,19 @@ end
         if alg.extrapolant != :constant
             derivatives = Matrix{eltype(u)}(undef, num_stages, num_stages)
             pushfirst!(c, 0)
+            pushfirst!(z, 0)
             for i in 1 : num_stages
                 for j in i : num_stages
                     if i == 1
-                        derivatives[i, j] = @.. (z[i] - z[i + 1]) / (c[i] - c[i + 1]) #first derivatives
+                        derivatives[i, j] = @.. (z[j] - z[j + 1]) / (c[j] - c[j + 1]) #first derivatives
                     else
                         derivatives[i, j] = @.. (derivatives[i - 1, j - 1] - derivatives[i - 1, j]) / (c[j - i + 1] - c[j + 1]) #all others
                     end
                 end
             end
             popfirst!(c)
-            for i in 1 : (num_stages - 1)
+            popfirst!(z)
+            for i in 1 : num_stages
                 cache.cont[i] = derivatives[i, num_stages]
             end
         end
@@ -1549,7 +1592,7 @@ end
             z[i] = @.. cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
             j = num_stages - 2
             while j > 0
-                z[i] = @.. z[i] * (c_prime[i] - c[num_stages- j - 1] + 1) + cont[j]
+                z[i] = @.. z[i] * (c_prime[i] - c[num_stages - j] + 1) + cont[j]
                 j = j - 1
             end
             z[i] = @.. z[i] * c_prime[i]
@@ -1735,7 +1778,7 @@ end
                 end
             end
             popfirst!(c)
-            for i in 1 : (num_stages - 1)
+            for i in 1 : num_stages
                 cache.cont[i] = derivatives[i, num_stages]
             end
         end

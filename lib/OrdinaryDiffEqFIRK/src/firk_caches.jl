@@ -552,26 +552,26 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
-    alg.num_stages = num_stages
+    num_stages = alg.num_stages
     tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 
     z = Vector{typeof(u)}(undef, num_stages)
     w = Vector{typeof(u)}(undef, num_stages)
-    for i in 1:s
+    for i in 1 : num_stages
         z[i] = w[i] = zero(u)
     end
 
     dw1 = zero(u)
     ubuff = zero(u)
-    dw2 = Vector{typeof(u)}(undef, floor(Int, num_stages/2))
-    for i in 1 : floor(Int, num_stages/2)
+    dw2 = Vector{typeof(u)}(undef, floor(Int, num_stages / 2))
+    for i in 1 : floor(Int, num_stages / 2)
         dw2[i] = similar(u, Complex{eltype(u)})
         recursivefill!(dw[i], false)
     end
-    cubuff = Vector{typeof(u)}(undef, floor(Int, num_stages/2))
-    for i in 1 :floor(Int, num_stages/2)
+    cubuff = Vector{typeof(u)}(undef, floor(Int, num_stages / 2))
+    for i in 1 : floor(Int, num_stages / 2)
         cubuff[i] = similar(u, Complex{eltype(u)})
         recursivefill!(cubuff[i], false)
     end
@@ -593,15 +593,15 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         error("Non-concrete Jacobian not yet supported by RadauIIA5.")
     end
     W2 = vector{typeof(Complex{W1})}(undef, floor(Int, num_stages/2))
-    for i in 1 : floor(Int, num_stages/2)
+    for i in 1 : floor(Int, num_stages / 2)
         W2[i] = similar(J, Complex{eltype(W1)})
         recursivefill!(w2[i], false)
     end
 
     du1 = zero(rate_prototype)
 
-    tmp = Vector{typeof(u)}(undef, binomial(num_stages,2))
-    for i in 1 : binomial(num_stages,2)
+    tmp = Vector{typeof(u)}(undef, binomial(num_stages , 2))
+    for i in 1 : binomial(num_stages , 2)
         tmp[i] = zero(u)
     end
 
@@ -614,8 +614,8 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     linsolve1 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         assumptions = LinearSolve.OperatorAssumptions(true))
 
-    linsolve2 = Vector{typeof(linsolve1)}(undef, floor(Int, num_stages/2))
-    for i in 1 : floor(int, num_stages/2)
+    linsolve2 = Vector{typeof(linsolve1)}(undef, floor(Int, num_stages / 2))
+    for i in 1 : floor(int, num_stages / 2)
         linprob = LinearProblem(W2[i], _vec(cubuff[i]); u0 = _vec(dw2[i]))
         linsolve2 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         assumptions = LinearSolve.OperatorAssumptions(true))
