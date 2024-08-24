@@ -1235,35 +1235,35 @@ end
             linsolve_tmp = du + dtd[1] * dT
         else
             if i < 6
-                u = uprev + sum(a[i][j] * k[j] for j in 1:(i-1))
+                u = uprev + sum(a[i-1, j] * k[j] for j in 1:(i-1))
                 du = f(u, p, t + c[i] * dt)
             else
                 du = f(u, p, t + dt)
             end
-
+    
             if mass_matrix === I
                 if i < 6
-                    linsolve_tmp = du + dtd[i] * dT + sum(dtC[i][j] * k[j] for j in 1:(i-1))
+                    linsolve_tmp = du + dtd[i] * dT + sum(dtC[i-1, j] * k[j] for j in 1:(i-1))
                 else
-                    linsolve_tmp = du + sum(dtC[i][j] * k[j] for j in 1:5)
+                    linsolve_tmp = du + sum(dtC[i-1, j] * k[j] for j in 1:5)
                 end
             else
                 if i < 6
-                    linsolve_tmp = du + dtd[i] * dT + mass_matrix * sum(dtC[i][j] * k[j] for j in 1:(i-1))
+                    linsolve_tmp = du + dtd[i] * dT + mass_matrix * sum(dtC[i-1, j] * k[j] for j in 1:(i-1))
                 else
-                    linsolve_tmp = du + mass_matrix * sum(dtC[i][j] * k[j] for j in 1:5)
+                    linsolve_tmp = du + mass_matrix * sum(dtC[i-1, j] * k[j] for j in 1:5)
                 end
             end
         end
-
+    
         k[i] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
         integrator.stats.nsolve += 1
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
+    
         if i == 5 || i == 6
-            u = i == 5 ? (uprev + sum(a[5][j] * k[j] for j in 1:4)) : (u + k[5])
+            u = i == 5 ? (uprev + sum(a[4, j] * k[j] for j in 1:4)) : (u + k[5])
         end
-    end
+    end    
 
     u = u + k[6]
 
