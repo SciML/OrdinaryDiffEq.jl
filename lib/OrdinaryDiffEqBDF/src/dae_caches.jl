@@ -1,5 +1,7 @@
 abstract type DAEBDFMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::DAEBDFMutableCache,u) = (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
+function get_fsalfirstlast(cache::DAEBDFMutableCache, u)
+    (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
+end
 
 @cache mutable struct DImplicitEulerCache{uType, rateType, uNoUnitsType, N} <:
                       DAEBDFMutableCache
@@ -13,7 +15,7 @@ get_fsalfirstlast(cache::DAEBDFMutableCache,u) = (cache.fsalfirst, du_alias_or_n
 end
 
 # Not FSAL
-get_fsalfirstlast(cache::DImplicitEulerCache,u) = (u,u)
+get_fsalfirstlast(cache::DImplicitEulerCache, u) = (u, u)
 
 mutable struct DImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
     nlsolver::N

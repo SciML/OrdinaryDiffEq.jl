@@ -86,7 +86,6 @@ end
 end
 
 function initialize!(integrator, cache::Feagin10Cache)
-
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -417,7 +416,6 @@ end
 end
 
 function initialize!(integrator, cache::Feagin12Cache)
-
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -907,7 +905,6 @@ end
 end
 
 function initialize!(integrator, cache::Feagin14Cache)
-
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst

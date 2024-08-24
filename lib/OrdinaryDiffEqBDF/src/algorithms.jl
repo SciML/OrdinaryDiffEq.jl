@@ -150,7 +150,7 @@ end
 function QNDF1(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
-        extrapolant = :linear, kappa = -37//200,
+        extrapolant = :linear, kappa = -37 // 200,
         controller = :Standard, step_limiter! = trivial_limiter!)
     QNDF1{
         _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve), typeof(nlsolve),
@@ -233,7 +233,8 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, kappa = (-37//200, -1//9, -823//10000, -83//2000, 0//1),
+        extrapolant = :linear, kappa = (
+            -37 // 200, -1 // 9, -823 // 10000, -83 // 2000, 0 // 1),
         controller = :Standard, step_limiter! = trivial_limiter!) where {MO}
     QNDF{MO, _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),

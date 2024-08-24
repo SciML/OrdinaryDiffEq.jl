@@ -206,7 +206,7 @@ function choose_order!(alg::FBDF, integrator,
                 Val(max_order))
             local terk_tmp
             if u isa Number
-                terk_tmp = fd_weights[k - 2, 1]*u
+                terk_tmp = fd_weights[k - 2, 1] * u
                 for i in 2:(k - 2)
                     terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
                 end
@@ -215,7 +215,7 @@ function choose_order!(alg::FBDF, integrator,
                 # we need terk_tmp to be mutable.
                 # so it can be updated
                 terk_tmp = similar(u)
-                @.. terk_tmp = fd_weights[k - 2, 1]*_vec(u)
+                @.. terk_tmp = fd_weights[k - 2, 1] * _vec(u)
                 for i in 2:(k - 2)
                     @.. @views terk_tmp += fd_weights[i, k - 2] * u_history[:, i - 1]
                 end
