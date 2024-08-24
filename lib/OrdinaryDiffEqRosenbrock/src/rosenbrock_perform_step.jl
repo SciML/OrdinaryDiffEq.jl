@@ -1326,12 +1326,12 @@ end
             solverdata = (; gamma = dtgamma))
     end
 
-    @.. broadcast=false $(_vec(ks[1])) = -linres.u
+    @.. $(_vec(ks[1])) = -linres.u
     integrator.stats.nsolve += 1
 
     for i in 2:6
         if i < 6
-            @.. broadcast=false u = uprev + sum(a[i][j] * ks[j] for j in 1:(i-1))
+            u = uprev + sum(a[i][j] * ks[j] for j in 1:(i-1))
             stage_limiter!(u, integrator, p, t + c[i] * dt)
             f(du, u, p, t + c[i] * dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1339,22 +1339,22 @@ end
 
         if mass_matrix === I
             if i < 6
-                @.. broadcast=false linsolve_tmp = dus[1] + dtd[i] * dT + sum(dtC[i][j] * ks[j] for j in 1:(i-1))
+                linsolve_tmp = dus[1] + dtd[i] * dT + sum(dtC[i][j] * ks[j] for j in 1:(i-1))
             else
-                @.. broadcast=false linsolve_tmp = dus[1] + sum(dtC[i][j] * ks[j] for j in 1:5)
+                linsolve_tmp = dus[1] + sum(dtC[i][j] * ks[j] for j in 1:5)
             end
         else
-            @.. broadcast=false dus[2] = sum(dtC[i][j] * ks[j] for j in 1:(i-1))
+            dus[2] = sum(dtC[i][j] * ks[j] for j in 1:(i-1))
             mul!(_vec(dus[3]), mass_matrix, _vec(dus[2]))
             if i < 6
-                @.. broadcast=false linsolve_tmp = dus[1] + dtd[i] * dT + dus[3]
+                linsolve_tmp = dus[1] + dtd[i] * dT + dus[3]
             else
-                @.. broadcast=false linsolve_tmp = dus[1] + dus[3]
+                linsolve_tmp = dus[1] + dus[3]
             end
         end
 
         linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-        @.. broadcast=false $(_vec(ks[i])) = -linres.u
+        $(_vec(ks[i])) = -linres.u
         integrator.stats.nsolve += 1
 
         if i == 5 || i == 6
@@ -1376,8 +1376,8 @@ end
 
     if integrator.opts.calck
         @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        @.. broadcast=false integrator.k[1] = sum(getfield(cache.tab, Symbol(:h2, j)) * ks[j] for j in 1:5)
-        @.. broadcast=false integrator.k[2] = sum(getfield(cache.tab, Symbol(:h3, j)) * ks[j] for j in 1:5)
+        integrator.k[1] = sum(getfield(cache.tab, Symbol(:h2, j)) * ks[j] for j in 1:5)
+        integrator.k[2] = sum(getfield(cache.tab, Symbol(:h3, j)) * ks[j] for j in 1:5)
     end
     cache.linsolve = linres.cache
 end
