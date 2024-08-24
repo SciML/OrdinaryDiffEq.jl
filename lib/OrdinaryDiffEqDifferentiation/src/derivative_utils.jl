@@ -141,14 +141,14 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         if DiffEqBase.has_jac(f)
             f.jac(J, uprev, p, t)
         else
-            @unpack dus[2], uf, jac_config = cache
+            @unpack du1, uf, jac_config = cache
 
             uf.f = nlsolve_f(f, alg)
             uf.t = t
             if !(p isa DiffEqBase.NullParameters)
                 uf.p = p
             end
-            jacobian!(J, uf, uprev, dus[2], integrator, jac_config)
+            jacobian!(J, uf, uprev, du1, integrator, jac_config)
         end
     end
 
