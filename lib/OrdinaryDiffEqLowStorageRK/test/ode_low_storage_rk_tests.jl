@@ -60,6 +60,7 @@ for prob in test_problems_nonlinear
 end
 
 println("SHLDDRK52")
+dts = 1 .// 2 .^ (8:-1:4)
 alg = SHLDDRK52()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
