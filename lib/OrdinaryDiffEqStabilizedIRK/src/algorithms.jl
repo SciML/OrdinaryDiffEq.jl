@@ -1,4 +1,4 @@
-@doc generic_solver_docstring("Description TBD",
+@doc generic_solver_docstring("Implicit Runge-Kutta-Chebyshev method.",
     "IRKC",
     "Stabalized Implicit Runge Kutta method.",
     "REF TBD",
