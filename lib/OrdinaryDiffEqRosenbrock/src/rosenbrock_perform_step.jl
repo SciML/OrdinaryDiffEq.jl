@@ -1261,9 +1261,9 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     
         if i == 5 || i == 6
-            u = i == 5 ? (uprev + sum(a[4, j] * k[j] for j in 1:4)) : (u + k[5])
+            u = i == 5 ? (uprev + sum(a[min(4, i-1), j] * k[j] for j in 1:(i-1))) : (u + k[5])
         end
-    end    
+    end        
 
     u = u + k[6]
 
