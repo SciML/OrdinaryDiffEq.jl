@@ -24,7 +24,7 @@ function alg_cache(alg::Tsit5, u, rate_prototype, ::Type{uEltypeNoUnits},
         alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
-get_fsalfirstlast(cache::Tsit5Cache, u) = (cache.k1, cache.k7)
+get_fsalfirstlast(cache::Tsit5Cache, u) = (cache.k[1], cache.k[7])
 
 function alg_cache(alg::Tsit5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
