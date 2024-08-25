@@ -266,7 +266,7 @@ function Rodas4Tableau(T, T2)
     ])
 
     # Coefficients for the "c" vector
-    c = convert(Vectpr{T2}, [0.0, 0.386, 0.21, 0.63])
+    c = convert(Vector{T2}, [0.0, 0.386, 0.21, 0.63])
 
     # Coefficients for the "d" vector
     d = convert(Vector{T}, [0.2500000000000000, -0.1043000000000000, 0.1035000000000000, -0.03620000000000023])
