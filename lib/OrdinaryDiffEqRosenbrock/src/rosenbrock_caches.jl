@@ -712,6 +712,7 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
     ks = [zero(rate_prototype) for _ in 1:6]
     
     # Initialize other variables
+    du1 = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -740,7 +741,7 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
     
-    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
+    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
     
     # Return the cache struct with vectors
@@ -776,6 +777,7 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
     ks = [zero(rate_prototype) for _ in 1:6]
     
     # Initialize other variables
+    du1 = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -804,7 +806,7 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
     
-    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
+    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
     
     # Return the cache struct with vectors
@@ -840,6 +842,7 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
     ks = [zero(rate_prototype) for _ in 1:6]
     
     # Initialize other variables
+    du1 = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -868,7 +871,7 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
     
-    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
+    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
     
     # Return the cache struct with vectors
@@ -904,6 +907,7 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
     ks = [zero(rate_prototype) for _ in 1:6]
     
     # Initialize other variables
+    du1 = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -932,7 +936,7 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
     
-    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
+    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
     
     # Return the cache struct with vectors
