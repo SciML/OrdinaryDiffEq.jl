@@ -9,8 +9,8 @@
         @unpack k, tmp = cache
         
         # Loop-based implementation
-        for i in 2:7
-            tmp = uprev + dt * sum(a[i, j] * k[j] for j in 1:(i-1))
+        for i in 2:6
+            tmp = uprev + dt * sum(a[i, j] * k[j] for j in 1:(i))
             f(k[i], tmp, p, t + c[i-1] * dt)
         end
         
