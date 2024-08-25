@@ -64,15 +64,15 @@ dts = 1 .// 2 .^ (8:-1:4)
 alg = SHLDDRK52()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
+    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
+    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
+    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
 end
 
 @testset "ORK256" begin
