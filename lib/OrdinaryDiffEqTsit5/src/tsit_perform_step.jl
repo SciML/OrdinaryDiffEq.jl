@@ -10,7 +10,7 @@
         
         # Loop-based implementation
         for i in 2:7
-            @.. tmp = uprev + dt * sum(a[i, j] * k[j] for j in 1:(i-1))
+            tmp = uprev + dt * sum(a[i, j] * k[j] for j in 1:(i-1))
             f(k[i], tmp, p, t + c[i-1] * dt)
         end
         
@@ -215,7 +215,7 @@ end
     if integrator.alg isa CompositeAlgorithm
         g7 = u
         g6 = tmp
-        @.. broadcast=false thread=thread utilde .= abs.((k[7] .- k[6]) ./ (g7 .- g6))
+        @.. thread=thread utilde .= abs.((k[7] .- k[6]) ./ (g7 .- g6))
         integrator.eigen_est = integrator.opts.internalnorm(norm(utilde, Inf), t)
     end
 
