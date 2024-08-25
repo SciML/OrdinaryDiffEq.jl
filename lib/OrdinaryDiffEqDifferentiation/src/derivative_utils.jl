@@ -144,7 +144,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             @unpack du1, uf, jac_config = cache
 
             if cache isa RosenbrockCache
-                @unpack dus[2], uf, jac_config = cache
+                @unpack dus, uf, jac_config = cache
             end
 
             uf.f = nlsolve_f(f, alg)
