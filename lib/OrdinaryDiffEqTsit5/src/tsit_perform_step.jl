@@ -122,50 +122,66 @@ end
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
 
-    k = Vector{eltype(u)}(undef, 7)
-    k[1] = integrator.fsalfirst
+    k1 = integrator.fsalfirst
+    k2 = k3 = k4 = k5 = k6 = k7 = zero(k1) # Initialize k2 through k7
 
-    for i in 2:6
-        u_increment = uprev
-        for j in 1:(i-1)
-            u_increment += dt * a[i, j] * k[j]
+    # Coefficient access pattern for a
+    a_index = [
+        [], # No coefficients for k1 (already known)
+        [1], # For k2: a[1,1]
+        [2, 1], # For k3: a[2,1], a[2,2]
+        [3, 2, 1], # For k4: a[3,1], a[3,2], a[3,3]
+        [4, 3, 2, 1], # For k5: a[4,1], a[4,2], a[4,3], a[4,4]
+        [5, 4, 3, 2, 1], # For k6: a[5,1], a[5,2], a[5,3], a[5,4], a[5,5]
+        [6, 5, 4, 3, 2, 1] # For k7: a[6,1], a[6,2], a[6,3], a[6,4], a[6,5], a[6,6]
+    ]
+
+    k_vars = [k1, k2, k3, k4, k5, k6, k7]
+    c_values = [c[1], c[2], c[3], c[4], dt, dt, dt]
+
+    for i in 2:7
+        temp = uprev
+        for j in 1:length(a_index[i])
+            temp += dt * a[i-1, a_index[i][j]] * k_vars[a_index[i][j]]
         end
-        k[i] = f(u_increment, p, t + c[i-1] * dt)
+        if i <= 6
+            k_vars[i] = f(temp, p, t + c_values[i-1] * dt)
+        else
+            integrator.fsallast = f(temp, p, t + dt)
+            k_vars[i] = integrator.fsallast
+        end
     end
-
-    g6 = uprev
-    for j in 1:5
-        g6 += dt * a[6, j] * k[j]
-    end
-    k[6] = f(g6, p, t + dt)
 
     u = uprev
     for j in 1:6
-        u += dt * a[6, j] * k[j]
+        u += dt * a[7, j] * k_vars[j]
     end
-
-    integrator.fsallast = f(u, p, t + dt)
-    k[7] = integrator.fsallast
+    integrator.u = u
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
 
     if integrator.alg isa CompositeAlgorithm
         g7 = u
+        g6 = temp
         integrator.eigen_est = integrator.opts.internalnorm(
-            maximum(abs.((k[7] .- k[6]) ./ (g7 .- g6))), t)
+            maximum(abs.((k7 .- k6) ./ (g7 .- g6))), t)
     end
 
     if integrator.opts.adaptive
-        utilde = dt * sum(btilde[j] * k[j] for j in 1:7)
+        utilde = dt * (btilde[1] * k1 + btilde[2] * k2 + btilde[3] * k3 + btilde[4] * k4 + btilde[5] * k5 + btilde[6] * k6 + btilde7 * k7)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
-    for i in 1:7
-        integrator.k[i] = k[i]
-    end
-    integrator.u = u
+    # Assign the values back to the integrator's k array
+    integrator.k[1] = k1
+    integrator.k[2] = k2
+    integrator.k[3] = k3
+    integrator.k[4] = k4
+    integrator.k[5] = k5
+    integrator.k[6] = k6
+    integrator.k[7] = k7
 end
 
 function initialize!(integrator, cache::Tsit5Cache)
