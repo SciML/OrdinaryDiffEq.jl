@@ -13,6 +13,7 @@ isfsal(alg::SSPRK932) = false
 isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
+alg_order(alg::KYK2014DGSSPRK_3S2) = 2
 alg_order(alg::KYKSSPRK42) = 2
 alg_order(alg::SSPRKMSVS32) = 2
 alg_order(alg::SSPRK33) = 3
