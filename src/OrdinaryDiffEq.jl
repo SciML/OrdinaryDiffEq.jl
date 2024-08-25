@@ -58,7 +58,7 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order,
                            _change_t_via_interpolation!, ODEIntegrator, _ode_interpolant!,
                            current_interpolant, resize_nlsolver!, _ode_interpolant,
                            handle_tstop!, _postamble!, update_uprev!, resize_J_W!,
-                           DAEAlgorithm, get_fsalfirstlast, strip_cache, strip_interpolation
+                           DAEAlgorithm, get_fsalfirstlast, strip_cache
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
 AutoSwitch
@@ -101,12 +101,12 @@ export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK8
        ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
        ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
        RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510,
-       KYK2014DGSSPRK_3S2, RK46NL
+       RK46NL, SHLDDRK_2N, SHLDDRK52
 
 using OrdinaryDiffEqSSPRK
 export SSPRK53_2N2, SSPRK22, SSPRK53, SSPRK63, SSPRK83, SSPRK43, SSPRK432, SSPRKMSVS32,
        SSPRK54, SSPRK53_2N1, SSPRK104, SSPRK932, SSPRKMSVS43, SSPRK73, SSPRK53_H,
-       SSPRK33, SHLDDRK_2N, KYKSSPRK42, SHLDDRK52
+       SSPRK33, KYKSSPRK42, KYK2014DGSSPRK_3S2
 
 using OrdinaryDiffEqFeagin
 export Feagin10, Feagin12, Feagin14

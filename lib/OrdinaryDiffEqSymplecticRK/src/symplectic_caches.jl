@@ -421,4 +421,7 @@ function alg_cache(alg::SofSpa10, u, rate_prototype, ::Type{uEltypeNoUnits},
     SofSpa10ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-get_fsalfirstlast(cache::Union{HamiltonMutableCache, VelocityVerletCache, SymplecticEulerCache},u) = (cache.fsalfirst, cache.k)
+function get_fsalfirstlast(
+        cache::Union{HamiltonMutableCache, VelocityVerletCache, SymplecticEulerCache}, u)
+    (cache.fsalfirst, cache.k)
+end
