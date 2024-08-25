@@ -20,7 +20,7 @@ function alg_cache(alg::Tsit5, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
-    TsitCache(u, uprev, k, utilde, tmp, atmp,
+    Tsit5Cache(u, uprev, k, utilde, tmp, atmp,
         alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
