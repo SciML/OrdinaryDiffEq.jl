@@ -1,63 +1,59 @@
 @muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Tsit5Cache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
+
     if length(k) < 7 || always_calc_begin
         T = constvalue(recursive_unitless_bottom_eltype(u))
         T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
-        @unpack k1, k2, k3, k4, k5, k6, k7, tmp = cache
-        @.. broadcast=false tmp=uprev + dt * (a21 * k1)
-        f(k2, tmp, p, t + c1 * dt)
-        @.. broadcast=false tmp=uprev + dt * (a31 * k1 + a32 * k2)
-        f(k3, tmp, p, t + c2 * dt)
-        @.. broadcast=false tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
-        f(k4, tmp, p, t + c3 * dt)
-        @.. broadcast=false tmp=uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
-        f(k5, tmp, p, t + c4 * dt)
-        @.. broadcast=false tmp=uprev +
-                                dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
-        f(k6, tmp, p, t + dt)
-        @.. broadcast=false tmp=uprev +
-                                dt *
-                                (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 +
-                                 a76 * k6)
-        f(k7, tmp, p, t + dt)
-        copyat_or_push!(k, 1, k1)
-        copyat_or_push!(k, 2, k2)
-        copyat_or_push!(k, 3, k3)
-        copyat_or_push!(k, 4, k4)
-        copyat_or_push!(k, 5, k5)
-        copyat_or_push!(k, 6, k6)
-        copyat_or_push!(k, 7, k7)
+        @unpack k, tmp = cache
+        
+        # Loop-based implementation
+        for i in 2:7
+            @.. tmp = uprev + dt * sum(a[i, j] * k[j] for j in 1:(i-1))
+            f(k[i], tmp, p, t + c[i-1] * dt)
+        end
+        
+        # Copy results back into `k`
+        for i in 1:7
+            copyat_or_push!(k, i, k[i])
+        end
     end
     nothing
 end
 
+
 @muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Tsit5ConstantCache,
-        always_calc_begin = false, allow_calc_end = true,
-        force_calc_end = false)
+                                always_calc_begin = false, allow_calc_end = true,
+                                force_calc_end = false)
     if length(k) < 7 || always_calc_begin
         T = constvalue(recursive_unitless_bottom_eltype(u))
         T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
-        copyat_or_push!(k, 1, f(uprev, p, t))
-        copyat_or_push!(k, 2, f(uprev + dt * (a21 * k[1]), p, t + c1 * dt))
-        copyat_or_push!(k, 3, f(uprev + dt * (a31 * k[1] + a32 * k[2]), p, t + c2 * dt))
-        copyat_or_push!(k, 4,
-            f(uprev + dt * (a41 * k[1] + a42 * k[2] + a43 * k[3]), p,
-                t + c3 * dt))
-        copyat_or_push!(k, 5,
-            f(uprev + dt * (a51 * k[1] + a52 * k[2] + a53 * k[3] + a54 * k[4]),
-                p, t + c4 * dt))
-        copyat_or_push!(k, 6,
-            f(
-                uprev +
-                dt *
-                (a61 * k[1] + a62 * k[2] + a63 * k[3] + a64 * k[4] + a65 * k[5]),
-                p, t + dt))
+
+        a_coeffs = [a[2, 1],
+                    a[3, 1], a[3, 2],
+                    a[4, 1], a[4, 2], a[4, 3],
+                    a[5, 1], a[5, 2], a[5, 3], a[5, 4],
+                    a[6, 1], a[6, 2], a[6, 3], a[6, 4], a[6, 5],
+                    a[7, 1], a[7, 2], a[7, 3], a[7, 4], a[7, 5], a[7, 6]]
+
+        c_coeffs = [c[1], c[2], c[3], c[4]]
+
+        for i in 1:6
+            u_increment = uprev
+            for j in 1:(i-1)
+                u_increment += dt * a_coeffs[(i*(i-1))÷2 + j] * k[j]
+            end
+
+            u_tmp = uprev + dt * u_increment
+            t_tmp = t + (i <= 4 ? c_coeffs[i] : dt)
+            copyat_or_push!(k, i, f(u_tmp, p, t_tmp))
+        end
+
         utmp = uprev +
                dt *
-               (a71 * k[1] + a72 * k[2] + a73 * k[3] + a74 * k[4] + a75 * k[5] + a76 * k[6])
+               (a[7, 1] * k[1] + a[7, 2] * k[2] + a[7, 3] * k[3] + a[7, 4] * k[4] + a[7, 5] * k[5] + a[7, 6] * k[6])
         copyat_or_push!(k, 7, f(utmp, p, t + dt))
     end
     nothing
@@ -125,39 +121,50 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
-    k1 = integrator.fsalfirst
-    a = dt * a21
-    k2 = f(uprev + a * k1, p, t + c1 * dt)
-    k3 = f(uprev + dt * (a31 * k1 + a32 * k2), p, t + c2 * dt)
-    k4 = f(uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3), p, t + c3 * dt)
-    k5 = f(uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4), p, t + c4 * dt)
-    g6 = uprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
-    k6 = f(g6, p, t + dt)
-    u = uprev + dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6)
+
+    k = Vector{typeof(k1)}(undef, 7)
+    k[1] = integrator.fsalfirst
+
+    for i in 2:6
+        u_increment = uprev
+        for j in 1:(i-1)
+            u_increment += dt * a[i, j] * k[j]
+        end
+        k[i] = f(u_increment, p, t + c[i-1] * dt)
+    end
+
+    g6 = uprev
+    for j in 1:5
+        g6 += dt * a[6, j] * k[j]
+    end
+    k[6] = f(g6, p, t + dt)
+
+    u = uprev
+    for j in 1:6
+        u += dt * a[7, j] * k[j]
+    end
+
     integrator.fsallast = f(u, p, t + dt)
-    k7 = integrator.fsallast
+    k[7] = integrator.fsallast
+
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
+
     if integrator.alg isa CompositeAlgorithm
         g7 = u
-        # Hairer II, page 22 modified to use the Inf norm
         integrator.eigen_est = integrator.opts.internalnorm(
-            maximum(abs.((k7 .- k6) ./ (g7 .- g6))), t)
+            maximum(abs.((k[7] .- k[6]) ./ (g7 .- g6))), t)
     end
+
     if integrator.opts.adaptive
-        utilde = dt *
-                 (btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 +
-                  btilde6 * k6 + btilde7 * k7)
+        utilde = dt * sum(btilde[j] * k[j] for j in 1:7)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
-    integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
-    integrator.k[7] = k7
+
+    for i in 1:7
+        integrator.k[i] = k[i]
+    end
     integrator.u = u
 end
 
@@ -165,13 +172,13 @@ function initialize!(integrator, cache::Tsit5Cache)
     integrator.kshortsize = 7
     resize!(integrator.k, integrator.kshortsize)
     # Setup k pointers
-    integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
-    integrator.k[5] = cache.k5
-    integrator.k[6] = cache.k6
-    integrator.k[7] = cache.k7
+    integrator.k[1] = cache.k[1]
+    integrator.k[2] = cache.k[2]
+    integrator.k[3] = cache.k[3]
+    integrator.k[4] = cache.k[4]
+    integrator.k[5] = cache.k[5]
+    integrator.k[6] = cache.k[6]
+    integrator.k[7] = cache.k[7]
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return nothing
@@ -182,48 +189,44 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
-    @unpack k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
-    a = dt * a21
-    @.. broadcast=false thread=thread tmp=uprev + a * k1
-    stage_limiter!(tmp, f, p, t + c1 * dt)
-    f(k2, tmp, p, t + c1 * dt)
-    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
-    stage_limiter!(tmp, f, p, t + c2 * dt)
-    f(k3, tmp, p, t + c2 * dt)
-    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
-    stage_limiter!(tmp, f, p, t + c3 * dt)
-    f(k4, tmp, p, t + c3 * dt)
-    @.. broadcast=false thread=thread tmp=uprev +
-                                          dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
-    stage_limiter!(tmp, f, p, t + c4 * dt)
-    f(k5, tmp, p, t + c4 * dt)
-    @.. broadcast=false thread=thread tmp=uprev +
-                                          dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 +
-                                           a65 * k5)
-    stage_limiter!(tmp, f, p, t + dt)
-    f(k6, tmp, p, t + dt)
-    @.. broadcast=false thread=thread u=uprev +
-                                        dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 +
-                                         a75 * k5 + a76 * k6)
+    @unpack k, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
+
+    # Loop through stages 2 to 6
+    for i in 2:6
+        tmp .= uprev
+        for j in 1:(i-1)
+            tmp .+= dt * a[i, j] * k[j]
+        end
+        stage_limiter!(tmp, f, p, t + c[i-1] * dt)
+        f(k[i], tmp, p, t + c[i-1] * dt)
+    end
+
+    # Handle the final (7th) stage separately
+    u .= uprev
+    for j in 1:6
+        u .+= dt * a[7, j] * k[j]
+    end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
-    f(k7, u, p, t + dt)
+    f(k[7], u, p, t + dt)
+
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
+
     if integrator.alg isa CompositeAlgorithm
         g7 = u
         g6 = tmp
-        # Hairer II, page 22 modified to use Inf norm
-        @.. broadcast=false thread=thread utilde=abs((k7 - k6) / (g7 - g6))
+        @.. broadcast=false thread=thread utilde .= abs.((k[7] .- k[6]) ./ (g7 .- g6))
         integrator.eigen_est = integrator.opts.internalnorm(norm(utilde, Inf), t)
     end
+
     if integrator.opts.adaptive
-        @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 +
-                                                  btilde3 * k3 + btilde4 * k4 +
-                                                  btilde5 * k5 + btilde6 * k6 +
-                                                  btilde7 * k7)
+        utilde .= 0.0
+        for j in 1:7
+            utilde .+= dt * btilde[j] * k[j]
+        end
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t,
-            thread)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     return nothing
