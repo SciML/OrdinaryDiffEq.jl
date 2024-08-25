@@ -15,7 +15,7 @@ get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (zero(u), zero(u))
     dense::Vector{rateType}      
     dus::Vector{rateType}            
     ks::Vector{rateType}
-    du1::uType
+    du1::rateType
     fsalfirst::rateType
     fsallast::rateType
     dT::rateType
@@ -745,11 +745,13 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
     
     # Return the cache struct with vectors
-    RosenbrockCache(u, uprev, dense, dus, ks,
-                fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-                linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
-                alg.stage_limiter!)
+    RosenbrockCache(
+        u, uprev, dense, dus, ks, du1, fsalfirst, fsallast,
+        dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
+        linsolve, jac_config, grad_config, reltol, alg,
+        alg.step_limiter!, alg.stage_limiter!)
 end
+
 
 
 function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -810,10 +812,11 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
     
     # Return the cache struct with vectors
-    RosenbrockCache(u, uprev, dense, dus, ks,
-                fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-                linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
-                alg.stage_limiter!)
+    RosenbrockCache(
+        u, uprev, dense, dus, ks, du1, fsalfirst, fsallast,
+        dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
+        linsolve, jac_config, grad_config, reltol, alg,
+        alg.step_limiter!, alg.stage_limiter!)
 end
 
 
@@ -940,10 +943,11 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
     
     # Return the cache struct with vectors
-    RosenbrockCache(u, uprev, dense, dus, ks,
-                fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-                linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
-                alg.stage_limiter!)
+    RosenbrockCache(
+        u, uprev, dense, dus, ks, du1, fsalfirst, fsallast,
+        dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
+        linsolve, jac_config, grad_config, reltol, alg,
+        alg.step_limiter!, alg.stage_limiter!)
 end
 
 

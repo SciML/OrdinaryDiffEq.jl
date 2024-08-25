@@ -1232,12 +1232,8 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     # Initialize k arrays
-    k = Array{typeof(du)}(undef, 6)
-    linsolve_tmp = Array{typeof(du)}(undef, 6)
-
-    # Define arrays for a and C coefficients
-    a_coeffs = [a[1, :], a[2, :], a[3, :], a[4, :], a[5, :]]
-    C_coeffs = [dtC[1:5], dtC[6:10], dtC[11:15]]
+    k = Vector{typeof(du)}(undef, 6)
+    linsolve_tmp = Vector{typeof(du)}(undef, 6)
 
     # Solve for k1
     linsolve_tmp[1] = du .+ dtd[1] .* dT
@@ -1248,7 +1244,7 @@ end
     for stage in 1:5
         u_temp = uprev
         for i in 1:stage
-            u_temp .+= a_coeffs[stage][i] .* k[i]
+            u_temp .+= a[stage, i] .* k[i]
         end
 
         du = f(u_temp, p, t + c[stage] * dt)
@@ -1274,7 +1270,7 @@ end
     # Compute final k values and update u
     u_temp = uprev
     for i in 1:5
-        u_temp .+= a_coeffs[6][i] .* k[i]
+        u_temp .+= a[6, i] .* k[i]
     end
 
     du = f(u_temp, p, t + dt)
@@ -1308,10 +1304,10 @@ end
         integrator.k[1] = h21 .* k[1] .+ h22 .* k[2] .+ h23 .* k[3] .+ h24 .* k[4] .+ h25 .* k[5]
         integrator.k[2] = h31 .* k[1] .+ h32 .* k[2] .+ h33 .* k[3] .+ h34 .* k[4] .+ h35 .* k[5]
     end
+
     integrator.u = u
     return nothing
 end
-
 
 function initialize!(integrator, cache::RosenbrockCache)
     dense = cache.dense
