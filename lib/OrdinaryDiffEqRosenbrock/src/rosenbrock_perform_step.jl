@@ -1240,7 +1240,7 @@ end
     C_coeffs = [dtC[1:5], dtC[6:10], dtC[11:15]]
 
     # Solve for k1
-    linsolve_tmp[1] = du + dtd[1] * dT
+    linsolve_tmp[1] = du .+ dtd[1] .* dT
     k[1] = _reshape(W \ -_vec(linsolve_tmp[1]), axes(uprev))
     integrator.stats.nsolve += 1
 
@@ -1248,7 +1248,7 @@ end
     for stage in 1:5
         u_temp = uprev
         for i in 1:stage
-            u_temp += a_coeffs[stage, i] * k[i]
+            u_temp .+= a_coeffs[stage][i] .* k[i]
         end
 
         du = f(u_temp, p, t + c[stage] * dt)
@@ -1256,14 +1256,14 @@ end
 
         # Compute linsolve_tmp for current stage
         if mass_matrix === I
-            linsolve_tmp[stage + 1] = du + dtd[stage + 1] * dT
+            linsolve_tmp[stage + 1] = du .+ dtd[stage + 1] .* dT
             for i in 1:stage
-                linsolve_tmp[stage + 1] += dtC[i] * k[i]
+                linsolve_tmp[stage + 1] .+= dtC[i] .* k[i]
             end
         else
-            linsolve_tmp[stage + 1] = du + dtd[stage + 1] * dT
+            linsolve_tmp[stage + 1] = du .+ dtd[stage + 1] .* dT
             for i in 1:stage
-                linsolve_tmp[stage + 1] += mass_matrix * (dtC[i] * k[i])
+                linsolve_tmp[stage + 1] .+= mass_matrix * (dtC[i] .* k[i])
             end
         end
 
@@ -1274,7 +1274,7 @@ end
     # Compute final k values and update u
     u_temp = uprev
     for i in 1:5
-        u_temp += a_coeffs[6, i] * k[i]
+        u_temp .+= a_coeffs[6][i] .* k[i]
     end
 
     du = f(u_temp, p, t + dt)
@@ -1283,19 +1283,19 @@ end
     if mass_matrix === I
         linsolve_tmp[6] = du
         for i in 1:5
-            linsolve_tmp[6] += dtC[5 + i] * k[i]
+            linsolve_tmp[6] .+= dtC[5 + i] .* k[i]
         end
     else
         linsolve_tmp[6] = du
         for i in 1:5
-            linsolve_tmp[6] += mass_matrix * (dtC[5 + i] * k[i])
+            linsolve_tmp[6] .+= mass_matrix * (dtC[5 + i] .* k[i])
         end
     end
 
     k[6] = _reshape(W \ -_vec(linsolve_tmp[6]), axes(uprev))
     integrator.stats.nsolve += 1
 
-    u = u_temp + k[6]
+    u = u_temp .+ k[6]
 
     if integrator.opts.adaptive
         atmp = calculate_residuals(k[6], uprev, u, integrator.opts.abstol,
@@ -1305,12 +1305,13 @@ end
 
     if integrator.opts.calck
         @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        integrator.k[1] = h21 * k[1] + h22 * k[2] + h23 * k[3] + h24 * k[4] + h25 * k[5]
-        integrator.k[2] = h31 * k[1] + h32 * k[2] + h33 * k[3] + h34 * k[4] + h35 * k[5]
+        integrator.k[1] = h21 .* k[1] .+ h22 .* k[2] .+ h23 .* k[3] .+ h24 .* k[4] .+ h25 .* k[5]
+        integrator.k[2] = h31 .* k[1] .+ h32 .* k[2] .+ h33 .* k[3] .+ h34 .* k[4] .+ h35 .* k[5]
     end
     integrator.u = u
     return nothing
 end
+
 
 function initialize!(integrator, cache::RosenbrockCache)
     dense = cache.dense
