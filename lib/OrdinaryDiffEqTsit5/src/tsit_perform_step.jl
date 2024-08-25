@@ -168,7 +168,7 @@ end
     end
 
     if integrator.opts.adaptive
-        utilde = dt * (btilde[1] * k1 + btilde[2] * k2 + btilde[3] * k3 + btilde[4] * k4 + btilde[5] * k5 + btilde[6] * k6 + btilde7 * k7)
+        utilde = dt * (btilde[1] * k1 + btilde[2] * k2 + btilde[3] * k3 + btilde[4] * k4 + btilde[5] * k5 + btilde[6] * k6 + btilde[7] * k7)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
