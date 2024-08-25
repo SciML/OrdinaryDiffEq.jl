@@ -345,6 +345,18 @@ qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 
 #DiffEqBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2
 
 # SSP coefficients
+
+"""
+    ssp_coefficient(alg)
+Return the SSP coefficient of the ODE algorithm `alg`. If one time step of size
+`dt` with `alg` can be written as a convex combination of explicit Euler steps
+with step sizes `cᵢ * dt`, the SSP coefficient is the minimal value of `1/cᵢ`.
+# Examples
+```julia-repl
+julia> ssp_coefficient(SSPRK104())
+6
+```
+"""
 ssp_coefficient(alg) = error("$alg is not a strong stability preserving method.")
 
 # We shouldn't do this probably.

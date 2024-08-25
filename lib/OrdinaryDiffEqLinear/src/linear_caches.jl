@@ -1,5 +1,5 @@
 abstract type LinearMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::LinearMutableCache,u) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::LinearMutableCache, u) = (cache.fsalfirst, cache.k)
 
 @cache struct MagnusMidpointCache{uType, rateType, WType, expType} <:
               LinearMutableCache
@@ -565,7 +565,7 @@ end
     exp_cache::expType
 end
 
-get_fsalfirstlast(cache::LinearExponentialCache,u) = (zero(u), zero(u))
+get_fsalfirstlast(cache::LinearExponentialCache, u) = (zero(u), zero(u))
 
 function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
     n = length(u_prototype)

@@ -2,7 +2,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
 
 # Fake values since non-FSAL
-get_fsalfirstlast(cache::RosenbrockMutableCache,u) = (zero(u), zero(u))
+get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (zero(u), zero(u))
 
 ################################################################################
 
@@ -1132,10 +1132,13 @@ function alg_cache(
             constvalue(tTypeNoUnits)), J, W, linsolve)
 end
 
-
-get_fsalfirstlast(cache::Union{Rosenbrock23Cache,Rosenbrock32Cache, Rosenbrock33Cache,
-Rosenbrock34Cache,
-Rosenbrock4Cache},u) = (cache.fsalfirst, cache.fsallast)
+function get_fsalfirstlast(
+        cache::Union{Rosenbrock23Cache, Rosenbrock32Cache, Rosenbrock33Cache,
+            Rosenbrock34Cache,
+            Rosenbrock4Cache},
+        u)
+    (cache.fsalfirst, cache.fsallast)
+end
 
 ################################################################################
 
