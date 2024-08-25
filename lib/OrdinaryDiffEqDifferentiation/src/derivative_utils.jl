@@ -143,10 +143,17 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         else
             @unpack du1, uf, jac_config = cache
 
+            if cache isa RosenbrockCache
+                @unpack dus[2], uf, jac_config = cache
+            end
+
             uf.f = nlsolve_f(f, alg)
             uf.t = t
             if !(p isa DiffEqBase.NullParameters)
                 uf.p = p
+            end
+            if cache isa RosenbrockCache
+                jacobian!(J, uf, uprev, dus[2], integrator, jac_config)
             end
             jacobian!(J, uf, uprev, du1, integrator, jac_config)
         end
