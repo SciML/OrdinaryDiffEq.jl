@@ -12,10 +12,11 @@ get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (zero(u), zero(u))
     TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter} <: RosenbrockMutableCache
     u::uType
     uprev::uType
-    dense::Vector{rateType}      
-    dus::Vector{rateType}            
-    ks::Vector{rateType}
+    dense::Vector{rateType}
+    du::rateType
     du1::rateType
+    du2::rateType
+    ks::Vector{rateType}
     fsalfirst::rateType
     fsallast::rateType
     dT::rateType
@@ -708,18 +709,19 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     # Initialize vectors
     dense = [zero(rate_prototype) for _ in 1:2]
-    dus = [zero(rate_prototype) for _ in 1:3]
     ks = [zero(rate_prototype) for _ in 1:6]
-    
+
     # Initialize other variables
+    du = zero(rate_prototype)
     du1 = zero(rate_prototype)
+    du2 = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
-    
+
     # Build J and W matrices
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-    
+
     # Temporary and helper variables
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
@@ -727,26 +729,26 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
     tab = Rodas4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    
+
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    
+
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                   nothing)..., weight, tmp)
-    
+
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
-    
+
     grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
-    
+
     # Return the cache struct with vectors
     RosenbrockCache(
-        u, uprev, dense, dus, ks, du1, fsalfirst, fsallast,
+        u, uprev, dense, du, du1, du2, ks, fsalfirst, fsallast,
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
         alg.step_limiter!, alg.stage_limiter!)
@@ -777,16 +779,16 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
     dense = [zero(rate_prototype) for _ in 1:2]
     dus = [zero(rate_prototype) for _ in 1:3]
     ks = [zero(rate_prototype) for _ in 1:6]
-    
+
     # Initialize other variables
     du1 = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
-    
+
     # Build J and W matrices
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-    
+
     # Temporary and helper variables
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
@@ -794,23 +796,23 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
     tab = Rodas42Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    
+
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    
+
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                   nothing)..., weight, tmp)
-    
+
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
-    
+
     grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
-    
+
     # Return the cache struct with vectors
     RosenbrockCache(
         u, uprev, dense, dus, ks, du1, fsalfirst, fsallast,
@@ -843,16 +845,16 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
     dense = [zero(rate_prototype) for _ in 1:2]
     dus = [zero(rate_prototype) for _ in 1:3]
     ks = [zero(rate_prototype) for _ in 1:6]
-    
+
     # Initialize other variables
     du1 = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
-    
+
     # Build J and W matrices
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-    
+
     # Temporary and helper variables
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
@@ -860,23 +862,23 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
     tab = Rodas4PTableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    
+
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    
+
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                   nothing)..., weight, tmp)
-    
+
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
-    
+
     grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
-    
+
     # Return the cache struct with vectors
     RosenbrockCache(u, uprev, dense, dus, ks,
                 fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
@@ -906,18 +908,17 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     # Initialize vectors
     dense = [zero(rate_prototype) for _ in 1:2]
-    dus = [zero(rate_prototype) for _ in 1:3]
     ks = [zero(rate_prototype) for _ in 1:6]
-    
+
     # Initialize other variables
     du1 = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
-    
+
     # Build J and W matrices
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-    
+
     # Temporary and helper variables
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
@@ -925,23 +926,23 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
     tab = Rodas4P2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    
+
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    
+
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                   nothing)..., weight, tmp)
-    
+
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
-    
+
     grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
-    
+
     # Return the cache struct with vectors
     RosenbrockCache(
         u, uprev, dense, dus, ks, du1, fsalfirst, fsallast,
