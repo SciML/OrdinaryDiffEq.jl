@@ -247,7 +247,7 @@ function Rodas4Tableau(T, T2)
     #BET3P=0.0635D0
     #BET4P=0.3438D0
     # Coefficients for the "a" matrix
-    a = convert(T, [
+    a = convert(Matrix{T}, [
         0                       0                       0                       0                       0;
         1.544000000000000       0                       0                       0                       0;
         0.9466785280815826      0.2557011698983284      0                       0                       0;
@@ -256,7 +256,7 @@ function Rodas4Tableau(T, T2)
     ])
 
     # Coefficients for the "C" matrix
-    C = convert(T, [
+    C = convert(Matrix{T}, [
         0                       0                       0                       0                       0;
         -5.668800000000000      0                       0                       0                       0;
         -2.430093356833875      -0.2063599157091915     0                       0                       0;
@@ -266,10 +266,10 @@ function Rodas4Tableau(T, T2)
     ])
 
     # Coefficients for the "c" vector
-    c = convert(T2, [0.0, 0.386, 0.21, 0.63])
+    c = convert(Vectpr{T2}, [0.0, 0.386, 0.21, 0.63])
 
     # Coefficients for the "d" vector
-    d = convert(T, [0.2500000000000000, -0.1043000000000000, 0.1035000000000000, -0.03620000000000023])
+    d = convert(Vector{T}, [0.2500000000000000, -0.1043000000000000, 0.1035000000000000, -0.03620000000000023])
 
     # Coefficients for the "h" (kept as is)
     h21 = convert(T, 10.12623508344586)
@@ -290,7 +290,7 @@ function Rodas42Tableau(T, T2)
     gamma = convert(T, 1 // 4)
 
     # Create matrices for a and C coefficients
-    a = convert(T, [
+    a = convert(Matrix{T}, [
         0.0        0.0  0.0  0.0;  # Placeholder for a11, a12, a13, a14 (unused)
         1.4028884  0.0  0.0  0.0;
         0.6581213 -1.320936088384301 0.0  0.0;
@@ -298,7 +298,7 @@ function Rodas42Tableau(T, T2)
         22.73885722420363 67.38147284535289 -31.21877493038560 0.7285641833203814
     ])
     
-    C = convert(T, [
+    C = convert(Matrix{T}, [
         0.0  0.0  0.0  0.0  0.0;  # Placeholder for C11, C12, C13, C14, C15 (unused)
         -5.1043536 0.0  0.0  0.0  0.0;
         -2.899967805418783 4.040399359702244 0.0  0.0  0.0;
@@ -308,8 +308,8 @@ function Rodas42Tableau(T, T2)
     ])
 
     # Create vectors for c and d coefficients
-    c = convert(T2, [0.0, 0.3507221, 0.2557041, 0.6817790])
-    d = convert(T, [0.2500000000000000, -0.06902209999999998, -0.0009671999999999459, -0.08797900000000025])
+    c = convert(Vector{T2}, [0.0, 0.3507221, 0.2557041, 0.6817790])
+    d = convert(Vector{T}, [0.2500000000000000, -0.06902209999999998, -0.0009671999999999459, -0.08797900000000025])
 
     # h coefficients remain unchanged
     h21 = -convert(T, 38.71940424117216)
@@ -334,7 +334,7 @@ function Rodas4PTableau(T, T2)
     #BET4P=0.3438D0
 
     # Coefficients for the "a" matrix
-    a = convert(T, [
+    a = convert(Matrix{T}, [
         0.0  0.0  0.0  0.0; 
         3.0  0.0  0.0  0.0;
         1.831036793486759 0.4955183967433795 0.0  0.0;
@@ -343,7 +343,7 @@ function Rodas4PTableau(T, T2)
     ])
 
     # Coefficients for the "C" matrix
-    C = convert(T, [
+    C = convert(Matrix{T}, [
         0.0  0.0  0.0  0.0  0.0;
         -12.0 0.0  0.0  0.0  0.0;
         -8.791795173947035 -2.207865586973518 0.0  0.0  0.0;
@@ -353,10 +353,10 @@ function Rodas4PTableau(T, T2)
     ])
 
     # Coefficients for the "c" vector
-    c = convert(T2, [3 * gamma, 0.21, 0.63])
+    c = convert(Vector{T2}, [3 * gamma, 0.21, 0.63])
 
     # Coefficients for the "d" vector
-    d = convert(T, [0.2500000000000000, -0.5000000000000000, -0.0235040000000000, -0.0362000000000000])
+    d = convert(Vector{T}, [0.2500000000000000, -0.5000000000000000, -0.0235040000000000, -0.0362000000000000])
 
     # Coefficients for the "h" (kept as is)
     h21 = convert(T, 25.09876703708589)
@@ -377,7 +377,7 @@ function Rodas4P2Tableau(T, T2)
     gamma = convert(T, 1 // 4)
 
     # Coefficients for the "a" matrix
-    a = convert(T, [
+    a = convert(Matrix{T}, [
         0.0  0.0  0.0  0.0;  # Placeholder for a11, a12, a13, a14 (unused)
         3.0  0.0  0.0  0.0;
         0.906377755268814 -0.189707390391685 0.0  0.0;
@@ -386,7 +386,7 @@ function Rodas4P2Tableau(T, T2)
     ])
 
     # Coefficients for the "C" matrix
-    C = convert(T, [
+    C = convert(Matrix{T}, [
         0.0  0.0  0.0  0.0  0.0;  # Placeholder for C11, C12, C13, C14, C15 (unused)
         -12.0 0.0  0.0  0.0  0.0;
         -6.354581592719008 0.338972550544623 0.0  0.0  0.0;
@@ -396,10 +396,10 @@ function Rodas4P2Tableau(T, T2)
     ])
 
     # Coefficients for the "c" vector
-    c = convert(T2, [0.750000000000000, 0.321448134013046, 0.519745732277726])
+    c = convert(Vector{T2}, [0.750000000000000, 0.321448134013046, 0.519745732277726])
 
     # Coefficients for the "d" vector
-    d = convert(T, [0.250000000000000, -0.500000000000000, -0.189532918363016, 0.085612108792769])
+    d = convert(Vector{T}, [0.250000000000000, -0.500000000000000, -0.189532918363016, 0.085612108792769])
 
     # Coefficients for the "h" (kept as is)
     h21 = convert(T, -5.323528268423303)
