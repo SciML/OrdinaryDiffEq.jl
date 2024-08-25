@@ -130,12 +130,12 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             uf = cache.uf
             f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
         else
-            @unpack dus, uf, jac_config = cache
+            @unpack du1, uf, jac_config = cache
             # using `dz` as temporary array
             x = cache.dz
             uf.t = t
             fill!(x, zero(eltype(x)))
-            jacobian!(J, uf, x, dus[2], integrator, jac_config)
+            jacobian!(J, uf, x, du1, integrator, jac_config)
         end
     else
         if DiffEqBase.has_jac(f)
@@ -148,7 +148,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             if !(p isa DiffEqBase.NullParameters)
                 uf.p = p
             end
-            jacobian!(J, uf, uprev, dus[2], integrator, jac_config)
+            jacobian!(J, uf, uprev, du1, integrator, jac_config)
         end
     end
 
