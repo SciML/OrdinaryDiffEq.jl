@@ -8,6 +8,34 @@ get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (zero(u), zero(u))
 
 # Shampine's Low-order Rosenbrocks
 
+@cache mutable struct RosenbrockCache{uType, rateType, uNoUnitsType, JType, WType, TabType,
+    TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter} <: RosenbrockMutableCache
+    u::uType
+    uprev::uType
+    dense::Vector{rateType}      
+    dus::Vector{rateType}            
+    ks::Vector{rateType}
+    fsalfirst::rateType
+    fsallast::rateType
+    dT::rateType
+    J::JType
+    W::WType
+    tmp::rateType
+    atmp::uNoUnitsType
+    weight::uNoUnitsType
+    tab::TabType
+    tf::TFType
+    uf::UFType
+    linsolve_tmp::rateType
+    linsolve::F
+    jac_config::JCType
+    grad_config::GCType
+    reltol::RTolType
+    alg::A
+    step_limiter!::StepLimiter
+    stage_limiter!::StageLimiter
+end
+
 @cache mutable struct Rosenbrock23Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
     RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
@@ -673,87 +701,54 @@ struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConsta
     autodiff::AD
 end
 
-@cache mutable struct Rodas4Cache{uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter} <:
-                      RosenbrockMutableCache
-    u::uType
-    uprev::uType
-    dense1::rateType
-    dense2::rateType
-    du::rateType
-    du1::rateType
-    du2::rateType
-    k1::rateType
-    k2::rateType
-    k3::rateType
-    k4::rateType
-    k5::rateType
-    k6::rateType
-    fsalfirst::rateType
-    fsallast::rateType
-    dT::rateType
-    J::JType
-    W::WType
-    tmp::rateType
-    atmp::uNoUnitsType
-    weight::uNoUnitsType
-    tab::TabType
-    tf::TFType
-    uf::UFType
-    linsolve_tmp::rateType
-    linsolve::F
-    jac_config::JCType
-    grad_config::GCType
-    reltol::RTolType
-    alg::A
-    step_limiter!::StepLimiter
-    stage_limiter!::StageLimiter
-end
-
 function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense1 = zero(rate_prototype)
-    dense2 = zero(rate_prototype)
-    du = zero(rate_prototype)
-    du1 = zero(rate_prototype)
-    du2 = zero(rate_prototype)
-    k1 = zero(rate_prototype)
-    k2 = zero(rate_prototype)
-    k3 = zero(rate_prototype)
-    k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
-    k6 = zero(rate_prototype)
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+                   dt, reltol, p, calck, ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+
+    # Initialize vectors
+    dense = [zero(rate_prototype) for _ in 1:2]
+    dus = [zero(rate_prototype) for _ in 1:3]
+    ks = [zero(rate_prototype) for _ in 1:6]
+    
+    # Initialize other variables
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
+    
+    # Build J and W matrices
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
+    
+    # Temporary and helper variables
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
     tab = Rodas4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-
+    
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
+    
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
+                  nothing)..., weight, tmp)
+    
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-        Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
-        k5, k6,
-        fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
-        alg.stage_limiter!)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(true))
+    
+    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
+    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    
+    # Return the cache struct with vectors
+    RosenbrockCache(u, uprev, dense, dus, ks,
+                fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
+                linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
+                alg.stage_limiter!)
 end
+
 
 function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -771,49 +766,53 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense1 = zero(rate_prototype)
-    dense2 = zero(rate_prototype)
-    du = zero(rate_prototype)
-    du1 = zero(rate_prototype)
-    du2 = zero(rate_prototype)
-    k1 = zero(rate_prototype)
-    k2 = zero(rate_prototype)
-    k3 = zero(rate_prototype)
-    k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
-    k6 = zero(rate_prototype)
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+                   dt, reltol, p, calck, ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+
+    # Initialize vectors
+    dense = [zero(rate_prototype) for _ in 1:2]
+    dus = [zero(rate_prototype) for _ in 1:3]
+    ks = [zero(rate_prototype) for _ in 1:6]
+    
+    # Initialize other variables
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
+    
+    # Build J and W matrices
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
+    
+    # Temporary and helper variables
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
     tab = Rodas42Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-
+    
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
+    
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
+                  nothing)..., weight, tmp)
+    
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-        Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
-        k5, k6,
-        fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
-        alg.stage_limiter!)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(true))
+    
+    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
+    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    
+    # Return the cache struct with vectors
+    RosenbrockCache(u, uprev, dense, dus, ks,
+                fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
+                linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
+                alg.stage_limiter!)
 end
+
 
 function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -831,49 +830,53 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense1 = zero(rate_prototype)
-    dense2 = zero(rate_prototype)
-    du = zero(rate_prototype)
-    du1 = zero(rate_prototype)
-    du2 = zero(rate_prototype)
-    k1 = zero(rate_prototype)
-    k2 = zero(rate_prototype)
-    k3 = zero(rate_prototype)
-    k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
-    k6 = zero(rate_prototype)
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+                   dt, reltol, p, calck, ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+
+    # Initialize vectors
+    dense = [zero(rate_prototype) for _ in 1:2]
+    dus = [zero(rate_prototype) for _ in 1:3]
+    ks = [zero(rate_prototype) for _ in 1:6]
+    
+    # Initialize other variables
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
+    
+    # Build J and W matrices
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
+    
+    # Temporary and helper variables
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
     tab = Rodas4PTableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-
+    
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
+    
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
+                  nothing)..., weight, tmp)
+    
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-        Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
-        k5, k6,
-        fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
-        alg.stage_limiter!)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(true))
+    
+    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
+    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    
+    # Return the cache struct with vectors
+    RosenbrockCache(u, uprev, dense, dus, ks,
+                fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
+                linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
+                alg.stage_limiter!)
 end
+
 
 function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -891,49 +894,53 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense1 = zero(rate_prototype)
-    dense2 = zero(rate_prototype)
-    du = zero(rate_prototype)
-    du1 = zero(rate_prototype)
-    du2 = zero(rate_prototype)
-    k1 = zero(rate_prototype)
-    k2 = zero(rate_prototype)
-    k3 = zero(rate_prototype)
-    k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
-    k6 = zero(rate_prototype)
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+                   dt, reltol, p, calck, ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+
+    # Initialize vectors
+    dense = [zero(rate_prototype) for _ in 1:2]
+    dus = [zero(rate_prototype) for _ in 1:3]
+    ks = [zero(rate_prototype) for _ in 1:6]
+    
+    # Initialize other variables
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
+    
+    # Build J and W matrices
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
+    
+    # Temporary and helper variables
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
     tab = Rodas4P2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-
+    
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
+    
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
+                  nothing)..., weight, tmp)
+    
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-        Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
-        k5, k6,
-        fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
-        alg.stage_limiter!)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(true))
+    
+    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
+    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    
+    # Return the cache struct with vectors
+    RosenbrockCache(u, uprev, dense, dus, ks,
+                fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
+                linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
+                alg.stage_limiter!)
 end
+
 
 function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
