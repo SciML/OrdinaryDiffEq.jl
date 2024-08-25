@@ -103,6 +103,6 @@ export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK8
        ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
        ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
        ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
-       RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510,
-       KYK2014DGSSPRK_3S2, RK46NL
+       RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510, 
+       RK46NL, SHLDDRK_2N, SHLDDRK52
 end
