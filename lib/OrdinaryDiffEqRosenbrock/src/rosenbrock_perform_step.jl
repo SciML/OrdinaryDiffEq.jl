@@ -1312,7 +1312,7 @@ end
     return nothing
 end
 
-function initialize!(integrator, cache::Rodas4Cache)
+function initialize!(integrator, cache::RosenbrockCache)
     dense = cache.dense
     dense1, dense2 = dense[1], dense[2]
     integrator.kshortsize = 2
@@ -1322,7 +1322,7 @@ function initialize!(integrator, cache::Rodas4Cache)
 end
 
 
-@muladd function perform_step!(integrator, cache::Rodas4Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack dus, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack a, C, gamma, c, d = cache.tab

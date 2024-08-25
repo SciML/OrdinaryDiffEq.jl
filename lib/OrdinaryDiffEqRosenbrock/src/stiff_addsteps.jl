@@ -347,7 +347,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
     nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
