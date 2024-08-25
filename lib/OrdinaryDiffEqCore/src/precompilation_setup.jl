@@ -12,16 +12,16 @@ PrecompileTools.@compile_workload begin
     ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0))
     ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
     ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                    (0.0, 1.0))
+        (0.0, 1.0))
     ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                    (0.0, 1.0), Float64[])
+        (0.0, 1.0), Float64[])
     ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                    (0.0, 1.0))
+        (0.0, 1.0))
     ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                    (0.0, 1.0), Float64[])
+        (0.0, 1.0), Float64[])
     ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0))
     ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
-                    Float64[])
+        Float64[])
 
     lorenz([1.0; 0.0; 0.0], [1.0; 0.0; 0.0], DiffEqBase.NullParameters(), 0.0)
     lorenz([1.0; 0.0; 0.0], [1.0; 0.0; 0.0], Float64[], 0.0)

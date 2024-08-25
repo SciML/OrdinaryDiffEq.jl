@@ -255,8 +255,8 @@ function _loopfooter!(integrator)
     end
     if integrator.opts.progress && integrator.iter % integrator.opts.progress_steps == 0
         log_step!(integrator.opts.progress_name, integrator.opts.progress_id,
-                  integrator.opts.progress_message, integrator.dt, integrator.u,
-                  integrator.p, integrator.t, integrator.sol.prob.tspan)
+            integrator.opts.progress_message, integrator.dt, integrator.u,
+            integrator.p, integrator.t, integrator.sol.prob.tspan)
     end
 
     # Take value because if t is dual then maxeig can be dual
@@ -280,18 +280,18 @@ end
 
 function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, tspan)
     t1, t2 = tspan
-    @logmsg(LogLevel(-1),progress_name,
-    _id=progress_id,
-    message=progress_message(dt, u, p, t),
-    progress=(t - t1) / (t2 - t1))
+    @logmsg(LogLevel(-1), progress_name,
+        _id=progress_id,
+        message=progress_message(dt, u, p, t),
+        progress=(t - t1) / (t2 - t1))
 end
 
 function fixed_t_for_floatingpoint_error!(integrator, ttmp)
     if has_tstop(integrator)
         tstop = integrator.tdir * first_tstop(integrator)
         if abs(ttmp - tstop) <
-        100eps(float(max(integrator.t, tstop) / oneunit(integrator.t))) *
-        oneunit(integrator.t)
+           100eps(float(max(integrator.t, tstop) / oneunit(integrator.t))) *
+           oneunit(integrator.t)
             tstop
         else
             ttmp

@@ -24,7 +24,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::SplitEulerCache,u) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::SplitEulerCache, u) = (cache.fsalfirst, cache.k)
 function initialize!(integrator, cache::SplitEulerCache)
     integrator.kshortsize = 2
     @unpack k, fsalfirst = cache
