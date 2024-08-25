@@ -1,15 +1,6 @@
 name = "OrdinaryDiffEqNonlinearSolve"
 uuid = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-<<<<<<< HEAD
-version = "1.0.0"
-
-[deps]
-OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
-OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
-
-[compat]
-=======
 version = "1.1.0"
 
 [deps]
@@ -57,7 +48,6 @@ SciMLStructures = "1.4.2"
 SimpleNonlinearSolve = "1.12.0"
 StaticArrays = "1.9.7"
 Test = "<0.0.1, 1"
->>>>>>> 1b257031152b893ed04eb8a96ba99eb2f917b708
 julia = "1.10"
 
 [extras]
