@@ -14,12 +14,12 @@
     extra_keyword_description = """
     - `nlsolve`: TBD,
     - `extrapolant`: TBD,
-    - `threading`: TBD,
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
     """,
     extra_keyword_default = """
     nlsolve = NLNewton(),
     extrapolant = :constant,
-    threading = true,
+    thread = OrdinaryDiffEq.True(),
     """)
 struct PDIRK44{CS, AD, F, F2, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}

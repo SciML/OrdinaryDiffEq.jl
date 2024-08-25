@@ -7,8 +7,8 @@ and is smoothened to allow for moderate sized complex eigenvalues.""",
     """Assyr Abdulle, Alexei A. Medovikov. Second Order Chebyshev Methods based on Orthogonal Polynomials.
     Numerische Mathematik, 90 (1), pp 1-18, 2001. doi: https://dx.doi.org/10.1007/s002110100292""",
     """
-    - `min_stages`: TBD
-    - `max_stages`: TBD
+    - `min_stages`: The minimum degree of the Chebyshev polynomial.
+    - `max_stages`: The maximumdegree of the Chebyshev polynomial.
     - `eigen_est`: function of the form
         `(integrator) -> integrator.eigen_est = upper_bound`,
         where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
@@ -37,8 +37,8 @@ and is smoothened to allow for moderate sized complex eigenvalues.""",
     Industrial and Applied Mathematics Journal on Scientific Computing, 23(6), pp 2041-2054, 2001.
     doi: https://doi.org/10.1137/S1064827500379549""",
     """
-    - `min_stages`: TBD
-    - `max_stages`: TBD
+    - `min_stages`: The minimum degree of the Chebyshev polynomial.
+    - `max_stages`: The maximumdegree of the Chebyshev polynomial.
     - `eigen_est`: function of the form
         `(integrator) -> integrator.eigen_est = upper_bound`,
         where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.

@@ -11,20 +11,10 @@ hairer1999stiff = """@article{hairer1999stiff,
 
 extra_keyword_description = """
     - `extrapolant`: TBD
-    - `fast_convergence_cutoff`: TBD
-    - `new_W_γdt_cutoff`: TBD
-    - `controller`: TBD
-    - `κ`: TBD
-    - `maxiters`: TBD
     - `smooth_est`: TBD
-    - `step_limiter!`: TBD"""
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`"""
 extra_keyword_default = """
     extrapolant = :dense,
-    fast_convergence_cutoff = 1 // 5,
-    new_W_γdt_cutoff = 1 // 5,
-    controller = :Predictive,
-    κ = nothing,
-    maxiters = 10,
     smooth_est = true,
     step_limiter! = trivial_limiter!"""
 
