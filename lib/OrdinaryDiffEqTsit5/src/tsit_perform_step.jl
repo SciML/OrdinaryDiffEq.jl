@@ -31,12 +31,12 @@ end
         T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
 
-        a_coeffs = [a[2, 1],
-                    a[3, 1], a[3, 2],
-                    a[4, 1], a[4, 2], a[4, 3],
-                    a[5, 1], a[5, 2], a[5, 3], a[5, 4],
-                    a[6, 1], a[6, 2], a[6, 3], a[6, 4], a[6, 5],
-                    a[7, 1], a[7, 2], a[7, 3], a[7, 4], a[7, 5], a[7, 6]]
+        a_coeffs = [a[1, 1],
+                    a[2, 1], a[2, 2],
+                    a[3, 1], a[3, 2], a[3, 3],
+                    a[4, 1], a[4, 2], a[4, 3], a[4, 4],
+                    a[5, 1], a[5, 2], a[5, 3], a[5, 4], a[5, 5],
+                    a[6, 1], a[6, 2], a[6, 3], a[6, 4], a[6, 5], a[6, 6]]
 
         c_coeffs = [c[1], c[2], c[3], c[4]]
 
@@ -53,7 +53,7 @@ end
 
         utmp = uprev +
                dt *
-               (a[7, 1] * k[1] + a[7, 2] * k[2] + a[7, 3] * k[3] + a[7, 4] * k[4] + a[7, 5] * k[5] + a[7, 6] * k[6])
+               (a[6, 1] * k[1] + a[6, 2] * k[2] + a[6, 3] * k[3] + a[6, 4] * k[4] + a[6, 5] * k[5] + a[6, 6] * k[6])
         copyat_or_push!(k, 7, f(utmp, p, t + dt))
     end
     nothing
@@ -141,7 +141,7 @@ end
 
     u = uprev
     for j in 1:6
-        u += dt * a[7, j] * k[j]
+        u += dt * a[6, j] * k[j]
     end
 
     integrator.fsallast = f(u, p, t + dt)
@@ -204,7 +204,7 @@ end
     # Handle the final (7th) stage separately
     u .= uprev
     for j in 1:6
-        u .+= dt * a[7, j] * k[j]
+        u .+= dt * a[6, j] * k[j]
     end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
