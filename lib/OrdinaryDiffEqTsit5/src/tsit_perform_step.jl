@@ -139,7 +139,7 @@ end
     k_vars = [k1, k2, k3, k4, k5, k6, k7]
     c_values = [c[1], c[2], c[3], c[4], dt, dt, dt]
 
-    for i in 2:7
+    for i in 2:6
         temp = uprev
         for j in 1:length(a_index[i])
             temp += dt * a[i-1, a_index[i][j]] * k_vars[a_index[i][j]]
@@ -154,7 +154,7 @@ end
 
     u = uprev
     for j in 1:6
-        u += dt * a[7, j] * k_vars[j]
+        u += dt * a[6, j] * k_vars[j]
     end
     integrator.u = u
 
