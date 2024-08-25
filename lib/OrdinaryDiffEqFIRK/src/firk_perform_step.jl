@@ -90,6 +90,7 @@ function initialize!(integrator, cache::RadauIIA9Cache)
 end
 
 function initialize!(integrator, cache::AdaptiveRadauCache)
+    println("here")
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
