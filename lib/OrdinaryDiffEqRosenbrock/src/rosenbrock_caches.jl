@@ -15,6 +15,7 @@ get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (zero(u), zero(u))
     dense::Vector{rateType}      
     dus::Vector{rateType}            
     ks::Vector{rateType}
+    du1::uType
     fsalfirst::rateType
     fsallast::rateType
     dT::rateType
@@ -739,8 +740,8 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
     
-    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
-    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
     
     # Return the cache struct with vectors
     RosenbrockCache(u, uprev, dense, dus, ks,
@@ -803,8 +804,8 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
     
-    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
-    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
     
     # Return the cache struct with vectors
     RosenbrockCache(u, uprev, dense, dus, ks,
@@ -867,8 +868,8 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
     
-    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
-    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
     
     # Return the cache struct with vectors
     RosenbrockCache(u, uprev, dense, dus, ks,
@@ -931,8 +932,8 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
     
-    grad_config = build_grad_config(alg, f, tf, dus[2], t)  # Using dus[2] instead of du1
-    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
     
     # Return the cache struct with vectors
     RosenbrockCache(u, uprev, dense, dus, ks,
