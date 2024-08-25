@@ -122,7 +122,7 @@ end
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
 
-    k = Vector{typeof(k1)}(undef, 7)
+    k = Vector{T}(undef, 7)
     k[1] = integrator.fsalfirst
 
     for i in 2:6
