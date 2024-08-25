@@ -51,6 +51,32 @@ function DGLDDRK73_C(stage_limiter!, step_limiter! = trivial_limiter!;
         williamson_condition)
 end
 
+@doc explicit_rk_docstring("TBD", "SHLDDRK_2N")
+Base.@kwdef struct SHLDDRK_2N{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function SHLDDRK_2N(stage_limiter!, step_limiter! = trivial_limiter!)
+    SHLDDRK_2N(stage_limiter!,
+        step_limiter!,
+        False())
+end
+
+@doc explicit_rk_docstring("TBD", "SHLDDRK52")
+Base.@kwdef struct SHLDDRK52{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function SHLDDRK52(stage_limiter!, step_limiter! = trivial_limiter!)
+    SHLDDRK52(stage_limiter!,
+        step_limiter!,
+        False())
+end
+
 @doc explicit_rk_docstring(
     "A fourth-order, five-stage explicit low-storage method of Carpenter and Kennedy
 (free 3rd order Hermite interpolant). Fixed timestep only. Designed for
@@ -889,18 +915,3 @@ function NDBLSRK134(stage_limiter!, step_limiter! = trivial_limiter!;
 end
 
 #SSP Optimized Runge-Kutta Methods
-
-@doc explicit_rk_docstring("TBD",
-    "KYK2014DGSSPRK_3S2")
-Base.@kwdef struct KYK2014DGSSPRK_3S2{StageLimiter, StepLimiter, Thread} <:
-                   OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter = trivial_limiter!
-    step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function KYK2014DGSSPRK_3S2(stage_limiter!, step_limiter! = trivial_limiter!)
-    KYK2014DGSSPRK_3S2(stage_limiter!,
-        step_limiter!,
-        False())
-end

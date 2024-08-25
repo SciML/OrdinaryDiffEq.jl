@@ -13,6 +13,7 @@ isfsal(alg::SSPRK932) = false
 isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
+alg_order(alg::KYK2014DGSSPRK_3S2) = 2
 alg_order(alg::KYKSSPRK42) = 2
 alg_order(alg::SSPRKMSVS32) = 2
 alg_order(alg::SSPRK33) = 3
@@ -30,8 +31,6 @@ alg_order(alg::SSPRKMSVS43) = 3
 alg_order(alg::SSPRK932) = 3
 alg_order(alg::SSPRK54) = 4
 alg_order(alg::SSPRK104) = 4
-alg_order(alg::SHLDDRK_2N) = 4
-alg_order(alg::SHLDDRK52) = 2
 
 ssp_coefficient(alg::SSPRK53_2N1) = 2.18
 ssp_coefficient(alg::SSPRK53_2N2) = 2.148
@@ -50,3 +49,4 @@ ssp_coefficient(alg::SSPRK22) = 1
 ssp_coefficient(alg::SSPRKMSVS32) = 0.5
 ssp_coefficient(alg::SSPRKMSVS43) = 0.33
 ssp_coefficient(alg::KYKSSPRK42) = 2.459
+ssp_coefficient(alg::KYK2014DGSSPRK_3S2) = 0.8417
