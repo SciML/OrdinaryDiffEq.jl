@@ -709,7 +709,7 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     # Initialize vectors
     dense = [zero(rate_prototype) for _ in 1:2]
-    ks = [zero(rate_prototype) for _ in 1:6]
+    ks = [zero(rate_prototype) for _ in 1:5]
 
     # Initialize other variables
     du = zero(rate_prototype)
@@ -777,7 +777,7 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     # Initialize vectors
     dense = [zero(rate_prototype) for _ in 1:2]
-    ks = [zero(rate_prototype) for _ in 1:6]
+    ks = [zero(rate_prototype) for _ in 1:5]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
@@ -844,7 +844,7 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     # Initialize vectors
     dense = [zero(rate_prototype) for _ in 1:2]
-    ks = [zero(rate_prototype) for _ in 1:6]
+    ks = [zero(rate_prototype) for _ in 1:5]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
@@ -911,7 +911,7 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     # Initialize vectors
     dense = [zero(rate_prototype) for _ in 1:2]
-    ks = [zero(rate_prototype) for _ in 1:6]
+    ks = [zero(rate_prototype) for _ in 1:5]
 
     # Initialize other variables
     du1 = zero(rate_prototype)
