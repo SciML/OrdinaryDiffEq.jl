@@ -1234,12 +1234,12 @@ end
 
     # Loop for stages 2 to 6
     for stage in 1:num_stages
-        u_temp = uprev
+        u = uprev
         for i in 1:stage-1
-            u_temp = @.. u_temp + A[stage, i] * ks[i]
+            u = @.. u + A[stage, i] * ks[i]
         end
 
-        du = f(u_temp, p, t + c[stage] * dt)
+        du = f(u, p, t + c[stage] * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         # Compute linsolve_tmp for current stage
@@ -1257,32 +1257,7 @@ end
         ks[stage] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
         integrator.stats.nsolve += 1
     end
-
-    # Compute final k values and update u
-    u_temp = uprev
-    for i in 1:num_stages
-        u_temp .+= A[num_stages, i] .* ks[i]
-    end
-
-    du = f(u_temp, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        linsolve_tmp = du
-        for i in 1:(num_stages)
-            linsolve_tmp .+= dtC[num_stages, i] .* ks[i]
-        end
-    else
-        linsolve_tmp = du
-        for i in 1:(num_stages)
-            linsolve_tmp .+= mass_matrix * (dtC[num_stages, i] .* ks[i])
-        end
-    end
-
-    ks[end] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-
-    u = u_temp .+ ks[end]
+    u = u .+ ks[end]
 
     if integrator.opts.adaptive
         atmp = calculate_residuals(ks[end], uprev, u, integrator.opts.abstol,
@@ -1291,13 +1266,15 @@ end
     end
 
     if integrator.opts.calck
-        integrator.k[1] = zero(integrator.k[1])
-        integrator.k[2] = zero(integrator.k[1])
+        k1 = zero(integrator.k[1])
+        k2 = zero(integrator.k[2])
         H = cache.tab.H
         for i in 1:length(ks)
-            @.. integrator.k[1] += H[1, i] * ks[i]
-            @.. integrator.k[2] += H[2, i] * ks[i]
+            k1 = @.. k1 + H[1, i] * ks[i]
+            k2 = @.. k2 + H[2, i] * ks[i]
         end
+        integrator.k[1] = k1
+        integrator.k[2] = k2
     end
 
     integrator.u = u
