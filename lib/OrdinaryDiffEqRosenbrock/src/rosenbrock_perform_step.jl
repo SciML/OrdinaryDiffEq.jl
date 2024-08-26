@@ -1364,7 +1364,7 @@ end
         end
 
         if i != length(ks)
-            stage_limiter!(u, integrator, p, t + c[i] * dt)
+            stage_limiter!(u, integrator, p, t + c[i - 1] * dt)
             f(du1, u, p, t + c[i] * dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
