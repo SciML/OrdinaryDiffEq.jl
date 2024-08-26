@@ -1368,7 +1368,7 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         if mass_matrix === I
-            linsolve_tmp .= du + dtd[i+1] * dT
+            linsolve_tmp .= du + dtd[i] * dT
             for j in 1:i
                 @.. broadcast=false linsolve_tmp += dtC[i+1, j] * ks[j]
             end
