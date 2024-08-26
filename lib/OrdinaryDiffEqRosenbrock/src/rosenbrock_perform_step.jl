@@ -1229,7 +1229,7 @@ end
     end
 
     # Initialize k arrays
-    num_stages = size(A,1)-1
+    num_stages = size(A,1)
     ks = Vector{typeof(u)}(undef, num_stages)
 
     # Loop for stages 2 to 6
@@ -1385,12 +1385,9 @@ end
         linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
         @.. $(_vec(ks[i+1]))=-linres.u
         integrator.stats.nsolve += 1
-
-        if i == 4
-            u .+= ks[5]
-        end
     end
 
+    u .+= ks[end]
     f(du, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
