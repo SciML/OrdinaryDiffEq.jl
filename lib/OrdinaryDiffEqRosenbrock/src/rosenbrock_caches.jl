@@ -743,8 +743,8 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
 
-    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
 
     # Return the cache struct with vectors
     RosenbrockCache(
@@ -777,11 +777,12 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     # Initialize vectors
     dense = [zero(rate_prototype) for _ in 1:2]
-    dus = [zero(rate_prototype) for _ in 1:3]
     ks = [zero(rate_prototype) for _ in 1:6]
+    du = zero(rate_prototype)
+    du1 = zero(rate_prototype)
+    du2 = zero(rate_prototype)
 
     # Initialize other variables
-    du1 = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -810,12 +811,12 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
 
-    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
 
     # Return the cache struct with vectors
     RosenbrockCache(
-        u, uprev, dense, dus, ks, du1, fsalfirst, fsallast,
+        u, uprev, dense, du, du1, du2, ks, fsalfirst, fsallast,
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
         alg.step_limiter!, alg.stage_limiter!)
@@ -843,8 +844,10 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     # Initialize vectors
     dense = [zero(rate_prototype) for _ in 1:2]
-    dus = [zero(rate_prototype) for _ in 1:3]
     ks = [zero(rate_prototype) for _ in 1:6]
+    du = zero(rate_prototype)
+    du1 = zero(rate_prototype)
+    du2 = zero(rate_prototype)
 
     # Initialize other variables
     du1 = zero(rate_prototype)
@@ -876,11 +879,11 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
 
-    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
 
     # Return the cache struct with vectors
-    RosenbrockCache(u, uprev, dense, dus, ks,
+    RosenbrockCache(u, uprev, dense, du, du1, du2, ks,
                 fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
                 linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
                 alg.stage_limiter!)
@@ -940,12 +943,12 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
                     Pl = Pl, Pr = Pr,
                     assumptions = LinearSolve.OperatorAssumptions(true))
 
-    grad_config = build_grad_config(alg, f, tf, du1, t)  # Using dus[2] instead of du1
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dus[3])  # Using dus[3] instead of du2
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
 
     # Return the cache struct with vectors
     RosenbrockCache(
-        u, uprev, dense, dus, ks, du1, fsalfirst, fsallast,
+        u, uprev, dense, du, du1, du2, ks, fsalfirst, fsallast,
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
         alg.step_limiter!, alg.stage_limiter!)
