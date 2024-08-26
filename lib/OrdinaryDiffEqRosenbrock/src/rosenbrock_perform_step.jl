@@ -1209,7 +1209,7 @@ end
 @muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step = false)
     (;t, dt, uprev, u, f, p) = integrator
     (;tf, uf) = cache
-    (;A, C, gamma, c, d) = cache.tab
+    (;A, C, gamma, c, d, H) = cache.tab
 
     # Precalculations
     dtC = C ./ dt
@@ -1269,7 +1269,6 @@ end
     if integrator.opts.calck
         k1 = zero(integrator.k[1])
         k2 = zero(integrator.k[2])
-        H = cache.tab.H
         for i in 1:length(ks)
             k1 = @.. k1 + H[1, i] * ks[i]
             k2 = @.. k2 + H[2, i] * ks[i]
@@ -1303,7 +1302,7 @@ end
     mass_matrix = integrator.f.mass_matrix
 
     # Precalculations
-    dtC = C ./ dt
+    dtC = C .* inv(dt)
     dtd = dt .* d
     dtgamma = dt * gamma
 
@@ -1330,7 +1329,7 @@ end
     @.. broadcast=false $(_vec(ks[1]))=-linres.u
     integrator.stats.nsolve += 1
 
-    for stage in eachindex(ks)
+    for stage in 2:length(ks)
         u .= uprev
         for i in 1:stage-1
             @.. u += A[stage, i] * ks[i]

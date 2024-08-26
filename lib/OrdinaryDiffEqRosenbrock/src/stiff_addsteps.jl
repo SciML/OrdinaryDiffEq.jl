@@ -291,8 +291,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @unpack tf, uf = cache
-        @unpack a, C, gamma, c, d = cache.tab
+        (;tf, uf) = cache
+        (;A, C, gamma, c, d, H) = cache.tab
 
         # Precalculations
         dtC = C ./ dt
@@ -318,31 +318,43 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
             W = 1 / dtgamma - J
         end
 
-        du = f(uprev, p, t)
+        num_stages = size(A, 1)
+        k = Vector{typeof(du)}(undef, num_stages)
 
-        k = Vector{typeof(du)}(undef, 5)
-
-        for i in 1:4
-            if i == 1
-                linsolve_tmp = du + dtd[1] * dT
-            else
-                linsolve_tmp = du + dtd[i] * dT + sum(dtC[i, j] * k[j] for j in 1:i-1)
+        for stage in 1:num_stages
+            u = uprev
+            for i in 1:stage-1
+                u = @.. u + A[stage, i] * ks[i]
             end
 
-            k[i] = W \ linsolve_tmp
-            u = uprev + sum(a[i+1, j] * k[j] for j in 1:i)
-            du = f(u, p, t + c[i] * dt)
+            du = f(u, p, t + c[stage] * dt)
+
+            # Compute linsolve_tmp for current stage
+            linsolve_tmp = @.. du + dtd[stage] * dT
+            if mass_matrix === I
+                for i in 1:stage-1
+                    linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
+                end
+            else
+                for i in 1:stage-1
+                    linsolve_tmp1 = mass_matrix * @..dtC[stage, i] * ks[i]
+                    linsolve_tmp = @.. linsolve_tmp + linsolve_tmp1
+                end
+            end
+
+            ks[stage] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
         end
 
-        linsolve_tmp = du + (dtC[5, 1] * k[1] + dtC[5, 2] * k[2] + dtC[5, 3] * k[3] + dtC[5, 4] * k[4])
-        k[5] = W \ linsolve_tmp
+        k1 = zero(du)
+        k2 = zero(du)
+        H = cache.tab.H
+        for i in 1:length(ks)
+            k1 = @.. k1 + H[1, i] * ks[i]
+            k2 = @.. k2 + H[2, i] * ks[i]
+        end
 
-        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        k₁ = h21 * k[1] + h22 * k[2] + h23 * k[3] + h24 * k[4] + h25 * k[5]
-        k₂ = h31 * k[1] + h32 * k[2] + h33 * k[3] + h34 * k[4] + h35 * k[5]
-
-        copyat_or_push!(k, 1, k₁)
-        copyat_or_push!(k, 2, k₂)
+        copyat_or_push!(k, 1, k1)
+        copyat_or_push!(k, 2, k2)
     end
     nothing
 end
@@ -351,7 +363,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @unpack dus, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight = cache
+        @unpack du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight = cache
         @unpack a, C, gamma, c, d = cache.tab
 
         # Assignments
@@ -371,48 +383,41 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
 
         linsolve = cache.linsolve
 
-        for i in 1:4
-            linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp),
-                reltol = cache.reltol)
-            vecu = _vec(linres.u)
-            veck = _vec(ks[i])
-
-            @.. broadcast=false veck=-vecu
-
-            if i < 4
-                @.. broadcast=false tmp=uprev
-                for j in 1:i
-                    @.. broadcast=false tmp += a[i + 1, j] * ks[j]
-                end
-                f(dus[1], tmp, p, t + c[i] * dt)
-
-                if mass_matrix === I
-                    @.. broadcast=false linsolve_tmp=dus[1] + dtd[i + 1] * dT
-                    for j in 1:i
-                        @.. broadcast=false linsolve_tmp += dtC[i + 1, j] * ks[j]
-                    end
-                else
-                    @.. broadcast=false dus[2] = 0.0
-                    for j in 1:i
-                        @.. broadcast=false dus[2] += dtC[i + 1, j] * ks[j]
-                    end
-                    mul!(dus[3], mass_matrix, dus[2])
-                    @.. broadcast=false linsolve_tmp=dus[1] + dtd[i + 1] * dT + dus[3]
-                end
+        for stage in 1:length(ks)
+            u .= uprev
+            for i in 1:stage-1
+                @.. u += A[stage, i] * ks[i]
             end
+
+            f(du, u, p, t + c[stage] * dt)
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+            if mass_matrix === I
+                @.. linsolve_tmp = du + dtd[stage] * dT
+                for i in 1:stage-1
+                    @.. linsolve_tmp += dtC[stage, i] * ks[i]
+                end
+            else
+                du1 .= du
+                for i in 1:stage-1
+                    @.. du1 += dtC[stage, i] * ks[i]
+                end
+                mul!(_vec(du2), mass_matrix, _vec(du1))
+                @.. linsolve_tmp = du + dtd[stage] * dT + du2
+            end
+
+            linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp))
+            @.. $(_vec(ks[stage]))=-linres.u
         end
+        u .+= ks[end]
 
-        linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp),
-            reltol = cache.reltol)
-        vecu = _vec(linres.u)
-        veck5 = _vec(ks[5])
-        @.. broadcast=false veck5=-vecu
-        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        @.. broadcast=false ks[6]=h21 * ks[1] + h22 * ks[2] + h23 * ks[3] + h24 * ks[4] + h25 * ks[5]
-        copyat_or_push!(k, 1, copy(ks[6]))
 
-        @.. broadcast=false ks[6]=h31 * ks[1] + h32 * ks[2] + h33 * ks[3] + h34 * ks[4] + h35 * ks[5]
-        copyat_or_push!(k, 2, copy(ks[6]))
+        copyat_or_push!(k, 1, zero(du))
+        copyat_or_push!(k, 2, zero(du))
+        for i in 1:length(ks)
+            @.. k[1] += H[1, i] * ks[i]
+            @.. k[2] += H[2, i] * ks[i]
+        end
     end
     nothing
 end
