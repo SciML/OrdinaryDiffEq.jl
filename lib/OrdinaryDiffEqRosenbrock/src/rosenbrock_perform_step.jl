@@ -1250,7 +1250,8 @@ end
             end
         else
             for i in 1:stage-1
-                linsolve_tmp = linsolve_tmp .+ mass_matrix * (dtC[i] .* ks[i])
+                linsolve_tmp1 = mass_matrix * @..dtC[stage, i] * ks[i]
+                linsolve_tmp = @.. linsolve_tmp + linsolve_tmp1
             end
         end
 
