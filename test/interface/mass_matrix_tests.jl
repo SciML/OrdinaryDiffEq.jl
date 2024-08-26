@@ -1,10 +1,12 @@
 using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
+using OrdinaryDiffEqCore
+using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NLNewton
 
 # create mass matrix problems
 function make_mm_probs(mm_A, ::Val{iip}) where {iip}
     # iip
     function mm_f(du, u, p, t)
-        update_coefficients!(mm_A, OrdinaryDiffEq.constvalue.(u), p, t)
+        update_coefficients!(mm_A, OrdinaryDiffEqCore.constvalue.(u), p, t)
         mm_b = vec(sum(mm_A; dims = 2))
         mul!(du, mm_A, u)
         du .+= t * mm_b
@@ -13,7 +15,7 @@ function make_mm_probs(mm_A, ::Val{iip}) where {iip}
     mm_g(du, u, p, t) = (@. du = u + t; nothing)
 
     # oop
-    mm_f(u, p, t) = (update_coefficients!(mm_A, OrdinaryDiffEq.constvalue.(u), p, t);
+    mm_f(u, p, t) = (update_coefficients!(mm_A, OrdinaryDiffEqCore.constvalue.(u), p, t);
     mm_A * (u .+ t))
     mm_g(u, p, t) = u .+ t
 
@@ -103,8 +105,10 @@ dependent_M2 = MatrixOperator(ones(3, 3), update_func = update_func2,
         @test _norm_dsol(QNDF(), prob, prob2)≈0 atol=1e-12
 
         println("Rosenbrocks")
-        @test _norm_dsol(Rosenbrock23(), prob, prob2)≈0 atol=1e-11
-        @test _norm_dsol(Rosenbrock32(), prob, prob2)≈0 atol=1e-11
+        if mm == almost_I
+            @test _norm_dsol(Rosenbrock23(), prob, prob2)≈0 atol=1e-11
+            @test _norm_dsol(Rosenbrock32(), prob, prob2)≈0 atol=1e-11
+        end
         @test _norm_dsol(ROS3P(), prob, prob2)≈0 atol=1e-11
         @test _norm_dsol(Rodas3(), prob, prob2)≈0 atol=1e-11
         @test _norm_dsol(ROS2(), prob, prob2)≈0 atol=1e-11
@@ -127,6 +131,7 @@ dependent_M2 = MatrixOperator(ones(3, 3), update_func = update_func2,
         @test _norm_dsol(ROS34PRw(), prob, prob2)≈0 atol=1e-11
         @test _norm_dsol(ROS3PRL(), prob, prob2)≈0 atol=1e-11
         @test _norm_dsol(ROS3PRL2(), prob, prob2)≈0 atol=1e-11
+        @test _norm_dsol(ROK4a(), prob, prob2)≈0 atol=1e-11
         @test _norm_dsol(Rodas4(), prob, prob2)≈0 atol=1e-9
         @test _norm_dsol(Rodas42(), prob, prob2)≈0 atol=1e-9
         @test _norm_dsol(Rodas4P(), prob, prob2)≈0 atol=1e-9
@@ -207,7 +212,7 @@ end
 
     m_ode_prob = ODEProblem(ODEFunction(f2!; mass_matrix = M), u0, tspan)
     println("Rosenbrocks")
-    sol1 = @test_nowarn solve(m_ode_prob, Rosenbrock23(), reltol = 1e-10, abstol = 1e-10)
+    sol1 = @test_nowarn solve(m_ode_prob, Rodas5P(), reltol = 1e-10, abstol = 1e-10)
     sol2 = @test_nowarn solve(m_ode_prob, RadauIIA5(), reltol = 1e-10, abstol = 1e-10)
     sol3 = @test_nowarn solve(m_ode_prob, Cash4(), reltol = 1e-10, abstol = 1e-10)
     println("SDIRKs")

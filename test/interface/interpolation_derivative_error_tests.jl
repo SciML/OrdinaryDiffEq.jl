@@ -1,4 +1,4 @@
-using OrdinaryDiffEq
+using OrdinaryDiffEq, OrdinaryDiffEqCore
 function lorenz!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
@@ -13,7 +13,8 @@ out = rand(3)
 for alg in [Rosenbrock23(), Rodas4(), Rodas5P(), Tsit5(), DP5(),
     BS5(), OwrenZen3(), OwrenZen4(), OwrenZen5(),
     Vern6(), Vern7(), Vern8(), Vern9(), BS3()]
+    @show alg
     sol = solve(prob, alg)
-    @test_throws OrdinaryDiffEq.DerivativeOrderNotPossibleError sol(0.5, Val{10})
-    @test_throws OrdinaryDiffEq.DerivativeOrderNotPossibleError sol(out, 0.5, Val{10})
+    @test_throws OrdinaryDiffEqCore.DerivativeOrderNotPossibleError sol(0.5, Val{10})
+    @test_throws OrdinaryDiffEqCore.DerivativeOrderNotPossibleError sol(out, 0.5, Val{10})
 end

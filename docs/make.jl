@@ -7,41 +7,74 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
     authors = "Chris Rackauckas et al.",
     clean = true,
     doctest = false,
-    modules = [OrdinaryDiffEq],
+    modules = [OrdinaryDiffEq,
+        OrdinaryDiffEq.OrdinaryDiffEqAdamsBashforthMoulton,
+        OrdinaryDiffEq.OrdinaryDiffEqBDF,
+        OrdinaryDiffEq.OrdinaryDiffEqDefault,
+        OrdinaryDiffEq.OrdinaryDiffEqExplicitRK,
+        OrdinaryDiffEq.OrdinaryDiffEqExponentialRK,
+        OrdinaryDiffEq.OrdinaryDiffEqExtrapolation,
+        OrdinaryDiffEq.OrdinaryDiffEqFeagin,
+        OrdinaryDiffEq.OrdinaryDiffEqFIRK,
+        OrdinaryDiffEq.OrdinaryDiffEqHighOrderRK,
+        OrdinaryDiffEq.OrdinaryDiffEqIMEXMultistep,
+        OrdinaryDiffEq.OrdinaryDiffEqLinear,
+        OrdinaryDiffEq.OrdinaryDiffEqLowOrderRK,
+        OrdinaryDiffEq.OrdinaryDiffEqLowStorageRK,
+        OrdinaryDiffEq.OrdinaryDiffEqNordsieck,
+        OrdinaryDiffEq.OrdinaryDiffEqPDIRK,
+        OrdinaryDiffEq.OrdinaryDiffEqPRK,
+        OrdinaryDiffEq.OrdinaryDiffEqQPRK,
+        OrdinaryDiffEq.OrdinaryDiffEqRKN,
+        OrdinaryDiffEq.OrdinaryDiffEqRosenbrock,
+        OrdinaryDiffEq.OrdinaryDiffEqSDIRK,
+        OrdinaryDiffEq.OrdinaryDiffEqSSPRK,
+        OrdinaryDiffEq.OrdinaryDiffEqStabilizedIRK,
+        OrdinaryDiffEq.OrdinaryDiffEqStabilizedRK,
+        OrdinaryDiffEq.OrdinaryDiffEqSymplecticRK,
+        OrdinaryDiffEq.OrdinaryDiffEqTsit5,
+        OrdinaryDiffEq.OrdinaryDiffEqVerner
+    ],
+    warnonly = [:docs_block, :missing_docs, :eval_block],
     format = Documenter.HTML(analytics = "UA-90474609-3",
         assets = ["assets/favicon.ico"],
-        canonical = "https://ordinarydiffeq.sciml.ai/stable/"),
+        canonical = "https://ordinarydiffeq.sciml.ai/stable/",
+        size_threshold_ignore = [joinpath("implicit", "Rosenbrock.md")]),
     pages = [
         "OrdinaryDiffEq.jl: ODE solvers and utilities" => "index.md",
         "Usage" => "usage.md",
-        "Standard Non-Stiff ODEProblem Solvers" => [
-            "nonstiff/explicitrk.md",
-            "nonstiff/lowstorage_ssprk.md",
-            "nonstiff/explicit_extrapolation.md",
-            "nonstiff/nonstiff_multistep.md"
+        "Explicit Solvers" => [
+            "explicit/Tsit5.md",
+            "explicit/LowOrderRK.md",
+            "explicit/HighOrderRK.md",
+            "explicit/Verner.md",
+            "explicit/Feagin.md",
+            "explicit/LowStorageRK.md",
+            "explicit/SSPRK.md",
+            "explicit/AdamsBashforthMoulton.md",
+            "explicit/Nordsieck.md",
+            "explicit/RKN.md",
+            "explicit/SymplecticRK.md",
+            "explicit/PRK.md",
+            "explicit/QPRK.md",
+            "explicit/Extrapolation.md"
         ],
-        "Standard Stiff ODEProblem Solvers" => [
-            "stiff/firk.md",
-            "stiff/rosenbrock.md",
-            "stiff/stabilized_rk.md",
-            "stiff/sdirk.md",
-            "stiff/stiff_multistep.md",
-            "stiff/implicit_extrapolation.md"
-        ],
-        "Second Order and Dynamical ODE Solvers" => [
-            "dynamical/nystrom.md",
-            "dynamical/symplectic.md"
+        "Implicit Solvers" => [
+            "implicit/SDIRK.md",
+            "implicit/FIRK.md",
+            "implicit/PDIRK.md",
+            "implicit/Rosenbrock.md",
+            "implicit/StabalizedRK.md",
+            "implicit/StabalizedIRK.md",
+            "implicit/BDF.md",
+            "implicit/Extrapolation.md"
         ],
         "IMEX Solvers" => [
-            "imex/imex_multistep.md",
-            "imex/imex_sdirk.md"
+            "imex/IMEXMultistep.md"
         ],
         "Semilinear ODE Solvers" => [
-            "semilinear/exponential_rk.md",
-            "semilinear/magnus.md"
-        ],
-        "DAEProblem Solvers" => [
-            "dae/fully_implicit.md"
+            "semilinear/ExponentialRK.md",
+            "semilinear/Linear.md"
         ],
         "Misc Solvers" => [
             "misc.md"

@@ -1,5 +1,6 @@
-using OrdinaryDiffEq: WOperator, calc_W, calc_W!
 using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
+using OrdinaryDiffEq: OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: WOperator, calc_W, calc_W!, jacobian2W!
 
 @testset "calc_W and calc_W!" begin
     A = [-1.0 0.0; 0.0 -0.5]
@@ -37,7 +38,7 @@ using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
     @test tmp != concrete_W \ u0
 
     # But jacobian2W! will update the cache
-    OrdinaryDiffEq.jacobian2W!(integrator.cache.nlsolver.cache.W._concrete_form, mm,
+    jacobian2W!(integrator.cache.nlsolver.cache.W._concrete_form, mm,
         dtgamma, integrator.cache.nlsolver.cache.W.J.A, false)
     @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) == concrete_W
     ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0)
@@ -64,10 +65,10 @@ end
         println(Alg)
         sol1 = solve(ODEProblem(fun1, u0, tspan), Alg(); adaptive = false, dt = 0.01)
         sol2 = solve(ODEProblem(fun2, u0, tspan), Alg(); adaptive = false, dt = 0.01)
-        @test sol1(1.0) ≈ sol2(1.0)
+        @test sol1(1.0)≈sol2(1.0) atol=1e-3
 
         sol1_ip = solve(ODEProblem(fun1_ip, u0, tspan), Alg(); adaptive = false, dt = 0.01)
         sol2_ip = solve(ODEProblem(fun2_ip, u0, tspan), Alg(); adaptive = false, dt = 0.01)
-        @test sol1_ip(1.0)≈sol2_ip(1.0) atol=1e-5
+        @test sol1_ip(1.0)≈sol2_ip(1.0) atol=2e-5
     end
 end

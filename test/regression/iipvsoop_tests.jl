@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqCore
 
 f(u, p, t) = 0.98u
 u0 = 1.0
@@ -69,7 +70,7 @@ rk_algs = [Euler(), Midpoint(), Heun(), Ralston(), RK4(), SSPRK104(), SSPRK22(),
 
 @testset "Algorithm $(nameof(typeof(alg)))" for alg in rk_algs
     println(nameof(typeof(alg)))
-    high_order = OrdinaryDiffEq.alg_order(alg) > 5
+    high_order = OrdinaryDiffEqCore.alg_order(alg) > 5
     if high_order
         _prob_ip = remake(prob_ip, tspan = big.(tspan), u0 = [big(1.0)])
         _prob_scalar = remake(prob_scalar, tspan = big.(tspan), u0 = big(1.0))
@@ -118,8 +119,8 @@ working_rosenbrock_algs = [Rosenbrock23(), ROS3P(), Rodas3(),
     Ros4LStab(), Rodas4(), Rodas42(), Rodas4P(), Rodas5(),
     Rodas23W(), Rodas3P(), Rodas5Pe(), Rodas5P(),
     ROS2(), ROS2PR(), ROS2S(), ROS3(), ROS3PR(), Scholz4_7(),
-    ROS34PW1a(), ROS34PW1b(), ROS34PW2(), ROS34PW3(), 
-    ROS34PRw(), ROS3PRL(), ROS3PRL2()] 
+    ROS34PW1a(), ROS34PW1b(), ROS34PW2(), ROS34PW3(),
+    ROS34PRw(), ROS3PRL(), ROS3PRL2(), ROK4a()]
 
 rosenbrock_algs = [Rosenbrock32()
 ]

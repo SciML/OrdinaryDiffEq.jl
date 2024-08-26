@@ -1,0 +1,52 @@
+name = "OrdinaryDiffEqExponentialRK"
+uuid = "e0540318-69ee-4070-8777-9e2de6de23de"
+authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
+version = "1.1.0"
+
+[deps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+ExponentialUtilities = "d4d017d3-3776-5f7e-afef-a10c40355c18"
+FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+
+[compat]
+DiffEqBase = "6.152.2"
+DiffEqDevTools = "2.44.4"
+ExponentialUtilities = "1.26.1"
+FastBroadcast = "0.3.5"
+LinearAlgebra = "<0.0.1, 1"
+LinearSolve = "2.32.0"
+MuladdMacro = "0.2.4"
+OrdinaryDiffEqCore = "1.1"
+OrdinaryDiffEqDifferentiation = "<0.0.1, 1"
+OrdinaryDiffEqSDIRK = "<0.0.1, 1"
+OrdinaryDiffEqTsit5 = "<0.0.1, 1"
+OrdinaryDiffEqVerner = "<0.0.1, 1"
+Random = "<0.0.1, 1"
+RecursiveArrayTools = "3.27.0"
+Reexport = "1.2.2"
+SafeTestsets = "0.1.0"
+SciMLBase = "2.48.1"
+SparseArrays = "<0.0.1, 1"
+Test = "<0.0.1, 1"
+julia = "1.10"
+
+[extras]
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqTsit5", "LinearSolve", "SparseArrays"]

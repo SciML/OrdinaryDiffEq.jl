@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, LinearAlgebra
+using OrdinaryDiffEq, OrdinaryDiffEqCore, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 using DiffEqDevTools
 
@@ -28,13 +28,17 @@ solve!(integrator2)
 
 sol = solve(prob, alg_switch)
 @inferred DiffEqBase.__init(prob, alg_switch)
-v = @inferred OrdinaryDiffEq.ode_interpolant(1.0, integrator1, integrator1.opts.save_idxs,
+v = @inferred OrdinaryDiffEqCore.ode_interpolant(
+    1.0, integrator1, integrator1.opts.save_idxs,
     Val{0})
-@inferred OrdinaryDiffEq.ode_interpolant!(v, 1.0, integrator1, integrator1.opts.save_idxs,
+@inferred OrdinaryDiffEqCore.ode_interpolant!(
+    v, 1.0, integrator1, integrator1.opts.save_idxs,
     Val{0})
-v = @inferred OrdinaryDiffEq.ode_extrapolant(1.0, integrator1, integrator1.opts.save_idxs,
+v = @inferred OrdinaryDiffEqCore.ode_extrapolant(
+    1.0, integrator1, integrator1.opts.save_idxs,
     Val{0})
-@inferred OrdinaryDiffEq.ode_extrapolant!(v, 1.0, integrator1, integrator1.opts.save_idxs,
+@inferred OrdinaryDiffEqCore.ode_extrapolant!(
+    v, 1.0, integrator1, integrator1.opts.save_idxs,
     Val{0})
 
 @testset "Mixed adaptivity" begin
@@ -70,5 +74,9 @@ sol = solve(prob, alg = AutoVern7(Rodas5()))
 @test sol.t[end] == 1000.0
 
 sol = solve(prob,
-    alg = OrdinaryDiffEq.AutoAlgSwitch(ExplicitRK(constructVerner7()), Rodas5()))
+    alg = OrdinaryDiffEqCore.AutoAlgSwitch(ExplicitRK(constructVerner7()), Rodas5()))
 @test sol.t[end] == 1000.0
+
+prob = remake(prob_ode_2Dlinear, u0 = rand(ComplexF64, 2, 2))
+sol = solve(prob, AutoTsit5(Rosenbrock23(autodiff = false))) # Complex and AD don't mix
+@test sol.retcode == ReturnCode.Success
