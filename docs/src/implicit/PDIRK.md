@@ -18,7 +18,7 @@ these matrices can be factorized and the underlying steps can be computed in par
 which is why these are the parallel DIRK methods.
 
 !!! warning "Experimental"
-    
+
     `OrdinaryDiffEqPDIRK` is experimental,
     as there are no parallel DIRK tableaus that achieve good performance in the literature.
 

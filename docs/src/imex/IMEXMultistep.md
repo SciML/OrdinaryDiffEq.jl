@@ -5,6 +5,8 @@ CollapsedDocStrings = true
 # OrdinaryDiffEqIMEXMultistep
 
 Solvers if your system of ordinary differential equations can be split up into the sum of a stiff and non-stiff part.
+These are "standard" low order IMEX methods common in many naive partial differential
+equation applications.
 
 ## Installation
 
