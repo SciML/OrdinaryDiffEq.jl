@@ -3,9 +3,11 @@ CollapsedDocStrings = true
 ```
 # OrdinaryDiffEqExtrapolation
 
-Solvers based on within method parallelism.
-The explicit solvers are outclassed by other explicit methods.
-However, some [stiff extrapolation](@ref StiffExtrapolation) methods perform very well.
+Solvers based on within method parallelism, allowing multithreading of the solution across
+different values of `f`.
+The explicit extrapolation solvers are generally outclassed by other explicit methods.
+However, some [stiff extrapolation](@ref StiffExtrapolation) methods perform very well if
+the problem is sufficiently stiff.
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")

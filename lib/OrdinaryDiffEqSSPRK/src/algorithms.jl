@@ -321,30 +321,6 @@ function SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "Low dissipation and dispersion Runge-Kutta schemes for computational acoustics",
-    "SHLDDRK_2N",
-    references = "@article{stanescu19982n,
-    title={2N-storage low dissipation and dispersion Runge-Kutta schemes for computational acoustics},
-    author={Stanescu, D and Habashi, WG},
-    journal={Journal of Computational Physics},
-    volume={143},
-    number={2},
-    pages={674--681},
-    year={1998},
-    publisher={Elsevier}}")
-Base.@kwdef struct SHLDDRK_2N{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter = trivial_limiter!
-    step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SHLDDRK_2N(stage_limiter!, step_limiter! = trivial_limiter!)
-    SHLDDRK_2N(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-@doc explicit_rk_docstring(
     "Optimal strong-stability-preserving Runge-Kutta time discretizations for discontinuous Galerkin methods",
     "KYKSSPRK42",
     references = "@article{kubatko2014optimal,
@@ -368,18 +344,18 @@ function KYKSSPRK42(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "Low dissipation and dispersion Runge-Kutta schemes for computational acoustics",
-    "SHLDDRK52",
-    references = "@article{stanescu19982n,
-    title={2N-storage low dissipation and dispersion Runge-Kutta schemes for computational acoustics},
-    author={Stanescu, D and Habashi, WG},
-    journal={Journal of Computational Physics},
-    volume={143},
-    number={2},
-    pages={674--681},
-    year={1998},
-    publisher={Elsevier}}")
-Base.@kwdef struct SHLDDRK52{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    "Optimal strong-stability-preserving Runge-Kutta time discretizations for discontinuous Galerkin methods",
+    "KYK2014DGSSPRK_3S2",
+    references = """@article{kubatko2014optimal,
+    title={Optimal strong-stability-preserving Runge--Kutta time discretizations for discontinuous Galerkin methods},
+    author={Kubatko, Ethan J and Yeager, Benjamin A and Ketcheson, David I},
+    journal={Journal of Scientific Computing},
+    volume={60},
+    pages={313--344},
+    year={2014},
+    publisher={Springer}}""")
+Base.@kwdef struct KYK2014DGSSPRK_3S2{StageLimiter, StepLimiter, Thread} <:
+                   OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
