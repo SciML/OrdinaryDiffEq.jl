@@ -1363,7 +1363,7 @@ end
             end
         end
 
-        if i >= 1 && i <= 4
+        if i != length(ks)
             stage_limiter!(u, integrator, p, t + c[i] * dt)
             f(du1, u, p, t + c[i] * dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
