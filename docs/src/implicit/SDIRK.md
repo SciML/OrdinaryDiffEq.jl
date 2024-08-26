@@ -1,6 +1,7 @@
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # OrdinaryDiffEqSDIRK
 
 This article is a stub.

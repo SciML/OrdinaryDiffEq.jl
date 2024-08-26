@@ -1,6 +1,7 @@
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # OrdinaryDiffEqQPRK
 
 Explicit solvers optimized for a certain number of parallel calls of the system of ordinary differential equations `f`.

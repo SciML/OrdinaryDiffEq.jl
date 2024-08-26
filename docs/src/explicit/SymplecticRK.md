@@ -1,6 +1,7 @@
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # OrdinaryDiffEqSymplecticRK
 
 A symplectic integrator is an integrator whose solution resides on a symplectic manifold.

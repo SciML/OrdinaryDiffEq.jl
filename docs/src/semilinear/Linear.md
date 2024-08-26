@@ -1,6 +1,7 @@
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # OrdinaryDiffEqLinear
 
 Methods for semi-linear differential equations.

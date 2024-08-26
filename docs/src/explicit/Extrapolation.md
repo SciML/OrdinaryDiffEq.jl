@@ -1,6 +1,7 @@
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # OrdinaryDiffEqExtrapolation
 
 Solvers based on within method parallelism, allowing multithreading of the solution across

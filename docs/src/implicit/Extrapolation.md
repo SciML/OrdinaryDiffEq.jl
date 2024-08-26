@@ -1,6 +1,7 @@
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # [OrdinaryDiffEqExtrapolation](@id StiffExtrapolation)
 
 Solvers based on within method parallelism.

@@ -1,8 +1,9 @@
 abstract type SSPRKMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type SSPRKConstantCache <: OrdinaryDiffEqConstantCache end
-get_fsalfirstlast(cache::SSPRKMutableCache,u) = (cache.fsalfirst, cache.k)
+get_fsalfirstlast(cache::SSPRKMutableCache, u) = (cache.fsalfirst, cache.k)
 
-@cache struct SSPRK22Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <: SSPRKMutableCache
+@cache struct SSPRK22Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <:
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -34,7 +35,8 @@ function alg_cache(alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRK22ConstantCache()
 end
 
-@cache struct SSPRK33Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <: SSPRKMutableCache
+@cache struct SSPRK33Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <:
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -144,7 +146,8 @@ function alg_cache(alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
     KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK53Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <: SSPRKMutableCache
+@cache struct SSPRK53Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -363,7 +366,8 @@ function alg_cache(alg::SSPRK53_2N2, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRK53_2N2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK53_HCache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <: SSPRKMutableCache
+@cache struct SSPRK53_HCache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -434,7 +438,8 @@ function alg_cache(alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRK53_HConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK63Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <: SSPRKMutableCache
+@cache struct SSPRK63Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -512,7 +517,8 @@ function alg_cache(alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRK63ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK73Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <: SSPRKMutableCache
+@cache struct SSPRK73Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -599,7 +605,8 @@ function alg_cache(alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRK73ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK83Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <: SSPRKMutableCache
+@cache struct SSPRK83Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -961,7 +968,8 @@ function alg_cache(alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRK932ConstantCache()
 end
 
-@cache struct SSPRK54Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <: SSPRKMutableCache
+@cache struct SSPRK54Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -1049,7 +1057,8 @@ function alg_cache(alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRK54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK104Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <: SSPRKMutableCache
+@cache struct SSPRK104Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <:
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType

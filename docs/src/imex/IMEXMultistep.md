@@ -1,6 +1,7 @@
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # OrdinaryDiffEqIMEXMultistep
 
 Solvers if your system of ordinary differential equations can be split up into the sum of a stiff and non-stiff part.
@@ -27,7 +28,7 @@ f2 = (u, p, t) -> 2u
 u0 = 1.0
 tspan = (0.0, 1.0)
 prob = SplitODEProblem(f1, f2, u0, tspan)
-sol = solve(prob,CNAB2(), dt = 1 / 10)
+sol = solve(prob, CNAB2(), dt = 1 / 10)
 ```
 
 ## Full list of solvers

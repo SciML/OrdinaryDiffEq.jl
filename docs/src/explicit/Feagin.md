@@ -1,6 +1,7 @@
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # OrdinaryDiffEqFeagin
 
 Preferred solvers for non-stiff problems at very low tolerance, `<1e-30`.

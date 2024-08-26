@@ -1,7 +1,7 @@
-
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # OrdinaryDiffEqRosenbrock
 
 Methods for small and medium sized stiff systems of differential equations.

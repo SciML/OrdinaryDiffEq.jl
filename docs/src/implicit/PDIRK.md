@@ -1,6 +1,7 @@
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # OrdinaryDiffEqPDIRK
 
 PDIRK methods are parallel DIRK methods.

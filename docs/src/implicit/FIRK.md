@@ -1,6 +1,7 @@
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # OrdinaryDiffEqFIRK
 
 FIRK methods are fully implicit Runge-Kutta methods.

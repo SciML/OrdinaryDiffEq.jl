@@ -273,7 +273,8 @@ function alg_cache(alg::SHLDDRK_2N, u, rate_prototype, ::Type{uEltypeNoUnits},
         alg.step_limiter!, alg.thread)
 end
 
-@cache struct SHLDDRK52Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <: LowStorageRKMutableCache
+@cache struct SHLDDRK52Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType

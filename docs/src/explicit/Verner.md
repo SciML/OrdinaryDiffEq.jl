@@ -1,6 +1,7 @@
 ```@meta
 CollapsedDocStrings = true
 ```
+
 # [OrdinaryDiffEqVerner](@id OrdinaryDiffEqVerner)
 
 Preferred solvers for non-stiff problems at low tolerance.
