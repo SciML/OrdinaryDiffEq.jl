@@ -1363,9 +1363,11 @@ end
             end
         end
 
-        stage_limiter!(u, integrator, p, t + c[i] * dt)
-        f(du1, u, p, t + c[i] * dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        if i >= 1 && i <= 4
+            stage_limiter!(u, integrator, p, t + c[i] * dt)
+            f(du1, u, p, t + c[i] * dt)
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        end
 
         if mass_matrix === I
             linsolve_tmp .= du + dtd[i] * dT
