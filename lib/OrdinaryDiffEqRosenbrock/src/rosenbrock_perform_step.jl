@@ -1359,7 +1359,7 @@ end
         else
             u .= uprev
             for j in 1:i
-                @.. broadcast=false u += A[i+1, j] * ks[j]
+                @.. broadcast=false u += A[i, j] * ks[j]
             end
         end
 
