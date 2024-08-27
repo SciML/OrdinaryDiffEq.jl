@@ -15,3 +15,10 @@ sol = solve(prob, Rosenbrock23())
 
 @test isnothing(SciMLBase.strip_interpolation(sol.interp).f)
 @test isnothing(SciMLBase.strip_interpolation(sol.interp).cache.jac_config)
+@test isnothing(SciMLBase.strip_interpolation(sol.interp).cache.grad_config)
+
+@test isnothing(SciMLBase.strip_solution(sol).prob)
+@test isnothing(SciMLBase.strip_solution(sol).alg)
+@test isnothing(SciMLBase.strip_solution(sol).interp.f)
+@test isnothing(SciMLBase.strip_solution(sol).interp.cache.jac_config)
+@test isnothing(SciMLBase.strip_solution(sol).interp.cache.grad_config)
