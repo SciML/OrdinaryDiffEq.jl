@@ -902,7 +902,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
     else
         J = if !IIP && DiffEqBase.has_jac(f)
             if f isa DAEFunction
-                f.jac(uprev, uprev, p, 1.0, t)
+                f.jac(uprev, uprev, p, one(t), t)
             else
                 f.jac(uprev, p, t)
             end
