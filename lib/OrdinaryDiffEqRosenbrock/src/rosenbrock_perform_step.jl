@@ -1335,9 +1335,7 @@ end
             @.. u += A[stage, i] * ks[i]
         end
 
-        if false
-            stage_limiter!(u, integrator, p, t + c[stage - 1] * dt)
-        end
+        stage_limiter!(u, integrator, p, t + c[stage] * dt)
         f(du, u, p, t + c[stage] * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
@@ -1347,7 +1345,7 @@ end
                 @.. linsolve_tmp += dtC[stage, i] * ks[i]
             end
         else
-            du1 .= du
+            du1 .= 0
             for i in 1:stage-1
                 @.. du1 += dtC[stage, i] * ks[i]
             end
