@@ -5,10 +5,10 @@ Random.seed!(100)
 dts = 1 .// 2 .^ (9:-1:5)
 testTol = 0.2
 
-f_dae_linear     = (res, du, u, p, t) -> (@. res = du - u)
+f_dae_linear = (res, du, u, p, t) -> (@. res = du - u)
 function f_dae_linear_jac(J, du, u, p, gamma, t)
-    J[1,1] = gamma - 1.0
-    J[2,2] = gamma - 1.0
+    J[1, 1] = gamma - 1.0
+    J[2, 2] = gamma - 1.0
 end
 f_dae_linear_analytic = (du0, u0, p, t) -> @. u0 * exp(t)
 prob_dae_linear_iip = DAEProblem(
@@ -60,9 +60,9 @@ end
 
 f_dae_linear = (du, u, p, t) -> (@. du - u)
 function f_dae_linear_jac(du, u, p, gamma, t)
-    J = zeros(2,2)
-    J[1,1] = gamma - 1.0
-    J[2,2] = gamma - 1.0
+    J = zeros(2, 2)
+    J[1, 1] = gamma - 1.0
+    J[2, 2] = gamma - 1.0
 end
 f_dae_linear_analytic = (du0, u0, p, t) -> @. u0 * exp(t)
 prob_dae_linear_oop = DAEProblem(
