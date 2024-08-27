@@ -410,7 +410,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
             linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
             @.. $(_vec(ks[stage]))=-linres.u
         end
-        u .+= ks[end]
+        u .+= _vec(ks[end])
 
 
         copyat_or_push!(k, 1, zero(du))
