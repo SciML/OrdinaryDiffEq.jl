@@ -363,8 +363,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @unpack du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight = cache
-        @unpack a, C, gamma, c, d = cache.tab
+        (;du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
+        (;A, C, gamma, c, d , H) = cache.tab
 
         # Assignments
         sizeu = size(u)
