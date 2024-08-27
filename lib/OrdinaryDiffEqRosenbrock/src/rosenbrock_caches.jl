@@ -25,6 +25,7 @@ get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (zero(u), zero(u))
     tmp::rateType
     atmp::uNoUnitsType
     weight::uNoUnitsType
+    opts::Dict{Symbol, Any}
     tab::TabType
     tf::TFType
     uf::UFType
