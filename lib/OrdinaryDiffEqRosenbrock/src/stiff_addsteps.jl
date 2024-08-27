@@ -407,7 +407,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
                 @.. linsolve_tmp = du + dtd[stage] * dT + du2
             end
 
-            linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp))
+            linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
             @.. $(_vec(ks[stage]))=-linres.u
         end
         u .+= ks[end]
