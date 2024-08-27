@@ -376,7 +376,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         dtd = dt .* d
         dtgamma = dt * gamma
 
-        @.. broadcast=false linsolve_tmp = @muladd(fsalfirst, dtgamma * dT)
+        @.. broadcast=false linsolve_tmp=@muladd fsalfirst + dtgamma * dT
 
         # Jacobian does not need to be re-evaluated after an event since it's unchanged
         jacobian2W!(W, mass_matrix, dtgamma, J, true)
@@ -385,7 +385,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
 
         linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp),
             reltol = cache.reltol)
-        @.. $(_vec(ks[1])) = -linres.u
+        @.. $(_vec(ks[1]))=-linres.u
         for stage in 2:length(ks)
             u .= uprev
             for i in 1:stage-1
@@ -408,20 +408,20 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
             end
 
             linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
-            @.. $(_vec(ks[stage])) = -linres.u 
+            @.. $(_vec(ks[stage]))=-linres.u
         end
         u .+= ks[end]
+
 
         copyat_or_push!(k, 1, zero(du))
         copyat_or_push!(k, 2, zero(du))
         for i in 1:length(ks)
-            @.. k[1] += H[1, i] * _vec(ks[i]) 
+            @.. k[1] += H[1, i] * _vec(ks[i])
             @.. k[2] += H[2, i] * _vec(ks[i])
         end
     end
     nothing
 end
-
 
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCache,
         always_calc_begin = false, allow_calc_end = true,
