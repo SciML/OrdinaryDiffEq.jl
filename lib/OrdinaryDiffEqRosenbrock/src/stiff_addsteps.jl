@@ -383,14 +383,15 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
 
         linsolve = cache.linsolve
 
-        for stage in 1:length(ks)
+        linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp),
+            reltol = cache.reltol)
+        @.. $(_vec(ks[1]))=-linres.u
+        for stage in 2:length(ks)
             u .= uprev
             for i in 1:stage-1
                 @.. u += A[stage, i] * ks[i]
             end
-
             f(du, u, p, t + c[stage] * dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
             if mass_matrix === I
                 @.. linsolve_tmp = du + dtd[stage] * dT
