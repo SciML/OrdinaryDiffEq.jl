@@ -40,7 +40,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         assets = ["assets/favicon.ico"],
         canonical = "https://ordinarydiffeq.sciml.ai/stable/",
         size_threshold_ignore = [joinpath("implicit", "Rosenbrock.md"),
-                            joinpath("massmatrixdae", "Rosenbrock.md")],
+                            joinpath("massmatrixdae", "Rosenbrock.md")]),
     pages = [
         "OrdinaryDiffEq.jl: ODE solvers and utilities" => "index.md",
         "Usage" => "usage.md",
