@@ -32,6 +32,7 @@ end
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).prob)
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).alg)
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).interp.f)
+    @test isnothing(SciMLBase.strip_solution(TRBDF_sol).interp.cache.nlsolver)
 end
 
 @test_throws SciMLBase.LazyInterpolationException SciMLBase.strip_solution(vern_sol)
