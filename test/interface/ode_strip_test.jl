@@ -13,7 +13,7 @@ prob = ODEProblem(lorenz!, u0, tspan)
 
 rosenbrock_sol = solve(prob, Rosenbrock23())
 TRBDF_sol = solve(prob, TRBDF2())
-vern_sol = solve(prob,Vern7())
+vern_sol = solve(prob, Vern7())
 @testset "Interpolation Stripping" begin
     @test isnothing(SciMLBase.strip_interpolation(rosenbrock_sol.interp).f)
     @test isnothing(SciMLBase.strip_interpolation(rosenbrock_sol.interp).cache.jac_config)
@@ -26,13 +26,12 @@ end
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.f)
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.cache.jac_config)
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.cache.grad_config)
-end 
+end
 
-@testset "TRBDF Solution Stripping" begin 
+@testset "TRBDF Solution Stripping" begin
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).prob)
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).alg)
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).interp.f)
 end
-
 
 @test_throws SciMLBase.LazyInterpolationException SciMLBase.strip_solution(vern_sol)
