@@ -31,7 +31,7 @@ sol = solve(prob_mm, Rodas5(), reltol = 1e-8, abstol = 1e-8)
 
 ## Full list of solvers
 
-```@docs
+```@docs; canonical=false
 Rosenbrock23
 Rosenbrock32
 ROS3P
