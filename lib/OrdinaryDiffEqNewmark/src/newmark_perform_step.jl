@@ -12,50 +12,72 @@ end
     @unpack t, dt, f, p = integrator
     @unpack upred, β, γ, nlsolver = cache
 
-    # Given Mu'' = f(u,u',t) we need to solve the non-linear problem
-    #   Mu(tₙ₊₁)'' - f(ũ(tₙ₊₁) + u(tₙ₊₁)'' β Δtₙ²,ũ(tₙ₊₁)' + u(tₙ₊₁)'' γ Δtₙ,t) = 0
-    # for u(tₙ₊₁)''.
-    # The predictors ũ(tₙ₊₁) are computed as
-    #   ũ(tₙ₊₁)  = u(tₙ) + u(tₙ)' Δtₙ + u(tₙ)'' (0.5 - β) Δtₙ²
-    #   ũ(tₙ₊₁)' = u(tₙ)' + u(tₙ)'' (1.0 - γ) Δtₙ
-    # such that we can compute the solution with the correctors
-    #   u(tₙ₊₁)  = ũ(tₙ₊₁)  + u(tₙ₊₁)'' β Δtₙ²
-    #   u(tₙ₊₁)' = ũ(tₙ₊₁)' + u(tₙ₊₁)'' γ Δtₙ
+    # This is derived from the idea stated in Nonlinear Finite Elements by Peter Wriggers, Ch 6.1.2 .
+    #
+    # Let us introduce the notation v = u' and a = u'' = v' such that we write the ODE problem as Ma = f(u,v,t).
+    # For the time discretization we assume that:
+    #   uₙ₊₁ = uₙ + Δtₙ vₙ + Δtₙ²/2 aₙ₊ₐ₁
+    #   vₙ₊₁ = vₙ + Δtₙ aₙ₊ₐ₂
+    # with a₁ = 1-2β and a₂ = 1-γ, such that
+    #   uₙ₊₁ = uₙ + Δtₙ vₙ + Δtₙ²/2 [(1-2β)aₙ + 2βaₙ₊₁]
+    #   vₙ₊₁ = vₙ + Δtₙ [(1-γ)aₙ + γaₙ₊₁]
+    # 
+    # This allows us to reduce the implicit discretization to have only aₙ₊₁ as the unknown:
+    #   Maₙ₊₁ = f(uₙ₊₁(aₙ₊₁), vₙ₊₁(aₙ₊₁), tₙ₊₁) 
+    #         = f(uₙ + Δtₙ vₙ + Δtₙ²/2 [(1-2β)aₙ + 2βaₙ₊₁], vₙ + Δtₙ [(1-γ)aₙ + γaₙ₊₁], tₙ₊₁)
+    # Such that we have to solve the nonlinear problem
+    #   Maₙ₊₁ - f(uₙ₊₁(aₙ₊₁), vₙ₊₁(aₙ₊₁), tₙ₊₁)  = 0
+    # for aₙ₊₁'' in each time step.
 
-    mass_matrix = f.mass_matrix
+    # For the Newton method the linearization becomes
+    #   M - (dₐuₙ₊₁ ∂fᵤ + dₐvₙ₊₁ ∂fᵥ) = 0
+    #   M - (Δtₙ²β  ∂fᵤ +  Δtₙγ  ∂fᵥ) = 0
+
+    M = f.mass_matrix
 
     # Evaluate predictor
-    dduprev = integrator.fsalfirst.x[1]
-    duprev, uprev = integrator.uprev.x
-    upred_full = ArrayPartition(
-        duprev + dt*(1.0 - γ)*dduprev,
-        uprev  + dt*dt*(0.5 - β)*dduprev + dt*duprev
-    )
+    aₙ     = integrator.fsalfirst.x[1]
+    uₙ, vₙ = integrator.uprev.x
 
     # _tmp = mass_matrix * @.. broadcast=false (α₁ * uprev+α₂ * uprev2)
     # nlsolver.tmp = @.. broadcast=false _tmp/(dt * β₀)
 
+    # Note, we switch to notation closer to the SciML implemenation now. Needs to be double checked, also to be consistent with the formulation above
     # nlsolve!(...) solves for
     #   dt⋅f(innertmp + γ̂⋅z, p, t + c⋅dt) + outertmp = z
     # So we rewrite the problem
-    #     u(tₙ₊₁)'' - f₁(ũ(tₙ₊₁) + u(tₙ₊₁)'' β Δtₙ², ũ(tₙ₊₁)' + u(tₙ₊₁)'' γ Δtₙ,t) = 0
+    #     u(tₙ₊₁)'' - f₁(ũ(tₙ₊₁) + u(tₙ₊₁)'' 2β Δtₙ², ũ(tₙ₊₁)' + u(tₙ₊₁)'' γ Δtₙ,t) = 0
     #   z = Δtₙ u(tₙ₊₁)'':
-    #     z         - Δtₙ f₁(ũ(tₙ₊₁) +         z β Δtₙ, ũ(tₙ₊₁)' +         z γ,t) = 0
-    #                 Δtₙ f₁(ũ(tₙ₊₁) +         z β Δtₙ, ũ(tₙ₊₁)' +         z γ,t) = z
-    #   γ̂ = [γ, β Δtₙ]:
+    #     z         - Δtₙ f₁(ũ(tₙ₊₁) +         z 2β Δtₙ, ũ(tₙ₊₁)' +         z γ,t) = 0
+    #                 Δtₙ f₁(ũ(tₙ₊₁) +         z 2β Δtₙ, ũ(tₙ₊₁)' +         z γ,t) = z
+    #   γ̂ = [γ, 2β Δtₙ]:
     #                 Δtₙ f₁(ũ(tₙ₊₁) +         z γ̂₂    , ũ(tₙ₊₁)' +         z γ̂₁   ,t) = z
     #   innertmp = [ũ(tₙ₊₁)', ũ(tₙ₊₁)]:
-    #                 Δtₙ f₁(innertmp₂ +         z β Δtₙ², innertmp₁ +         z γ Δtₙ,t) = z
+    #                 Δtₙ f₁(innertmp₂ +         z 2β Δtₙ², innertmp₁ +         z γ Δtₙ,t) = z
     # Note: innertmp = nlsolve.tmp
-    nlsolver.γ = ArrayPartitionNLSolveHelper(γ, β * dt) # = γ̂
-    # nlsolver.γ = ArrayPartitionNLSolveHelper(0.0, β * dt)
-    nlsolver.tmp .= upred_full # TODO check f tmp is potentially modified and if not elimiate the allocation of upred_full
+    # nlsolver.γ = ???
+    # nlsolver.tmp .= vₙ # TODO check f tmp is potentially modified and if not elimiate the allocation of upred_full
+    # nlsolver.z .= aₙ
+    # ddu = nlsolve!(nlsolver, integrator, cache, repeat_step) / dt
+    # nlsolvefail(nlsolver) && return
 
-    # Use the linear extrapolation Δtₙ u(tₙ)'' as initial guess for the nonlinear solve
-    nlsolver.z = dt*dduprev
-    ddu = nlsolve!(nlsolver, integrator, cache, repeat_step) / dt
-    nlsolvefail(nlsolver) && return
-
+    # Manually unrolled to see what needs to go where
+    aₙ₊₁ = copy(aₙ) # acceleration term
+    atmp = copy(aₙ)
+    for i in 1:10 # = max iter - Newton loop for eq [1] above
+        uₙ₊₁ = uₙ + Δtₙ * vₙ + Δtₙ^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁)
+        vₙ₊₁ = vₙ + Δtₙ * ((1-γ)aₙ + γaₙ₊₁)
+        # Compute residual
+        f.f1(atmp, uₙ₊₁, vₙ₊₁, p, t)
+        residual = M*(aₙ₊₁ - atmp)
+        # Compute jacobian
+        f.jac(J, upred_full, (β*dt*dt, γ*dt), t)
+        # Solve for increment
+        Δddu = (M-J) \ residual
+        ddu .+= Δddu
+        norm(Δddu) < 1e-4 && break
+        i == 10 && error("Newton diverged. Δddu=$(norm(Δddu))")
+    end
     # Apply corrector
     u = ArrayPartition(
         upred_full.x[1] + ddu*γ*dt,

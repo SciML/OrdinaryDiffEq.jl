@@ -46,6 +46,14 @@ abstract type OrdinaryDiffEqAdaptivePartitionedAlgorithm <: OrdinaryDiffEqAdapti
 const PartitionedAlgorithm = Union{OrdinaryDiffEqPartitionedAlgorithm,
     OrdinaryDiffEqAdaptivePartitionedAlgorithm}
 
+# Second order ODE Specific Algorithms
+abstract type OrdinaryDiffEqImplicitSecondOrderAlgorithm{CS, AD, FDT, ST, CJ} <:
+    OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+abstract type OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm{CS, AD, FDT, ST, CJ} <:
+    OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+const ImplicitSecondOrderAlgorithm = Union{OrdinaryDiffEqImplicitSecondOrderAlgorithm,
+    OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm}
+
 function DiffEqBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
     T = SciMLBase.remaker_of(thing)
     T(; SciMLBase.struct_as_namedtuple(thing)..., kwargs...)
