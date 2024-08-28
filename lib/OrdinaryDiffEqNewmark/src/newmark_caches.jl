@@ -23,10 +23,12 @@ function alg_cache(alg::NewmarkBeta, u, rate_prototype, ::Type{uEltypeNoUnits},
     @assert 0.0 ≤ γ ≤ 1.0
 
     c = 1.0
-    γ̂ = ArrayPartitionNLSolveHelper(1.0,1.0)
+    γ̂ = NaN # FIXME
     nlsolver = build_nlsolver(alg, u.x[1], uprev.x[1], p, t, dt, f.f1, rate_prototype.x[1], uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ̂, c, Val(true); tmp = zero(u))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ̂, c, Val(true))
 
     tmp = zero(u)
     NewmarkBetaCache(u, uprev, upred, fsalfirst, β, γ, nlsolver, tmp)
 end
+
+get_fsalfirstlast(cache::NewmarkBetaCache, u) = (cache.fsalfirst, u) # FIXME use fsal

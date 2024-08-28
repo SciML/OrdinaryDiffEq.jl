@@ -14,7 +14,7 @@ end
 
     # This is derived from the idea stated in Nonlinear Finite Elements by Peter Wriggers, Ch 6.1.2 .
     #
-    # Let us introduce the notation v = u' and a = u'' = v' such that we write the ODE problem as Ma = f(u,v,t).
+    # Let us introduce the notation v = u' and a = u'' = v' such that we write the ODE problem as Ma = f(v,u,t).
     # For the time discretization we assume that:
     #   uₙ₊₁ = uₙ + Δtₙ vₙ + Δtₙ²/2 aₙ₊ₐ₁
     #   vₙ₊₁ = vₙ + Δtₙ aₙ₊ₐ₂
@@ -23,10 +23,10 @@ end
     #   vₙ₊₁ = vₙ + Δtₙ [(1-γ)aₙ + γaₙ₊₁]
     # 
     # This allows us to reduce the implicit discretization to have only aₙ₊₁ as the unknown:
-    #   Maₙ₊₁ = f(uₙ₊₁(aₙ₊₁), vₙ₊₁(aₙ₊₁), tₙ₊₁) 
-    #         = f(uₙ + Δtₙ vₙ + Δtₙ²/2 [(1-2β)aₙ + 2βaₙ₊₁], vₙ + Δtₙ [(1-γ)aₙ + γaₙ₊₁], tₙ₊₁)
+    #   Maₙ₊₁ = f(vₙ₊₁(aₙ₊₁), uₙ₊₁(aₙ₊₁), tₙ₊₁) 
+    #         = f(vₙ + Δtₙ [(1-γ)aₙ + γaₙ₊₁], uₙ + Δtₙ vₙ + Δtₙ²/2 [(1-2β)aₙ + 2βaₙ₊₁], tₙ₊₁)
     # Such that we have to solve the nonlinear problem
-    #   Maₙ₊₁ - f(uₙ₊₁(aₙ₊₁), vₙ₊₁(aₙ₊₁), tₙ₊₁)  = 0
+    #   Maₙ₊₁ - f(vₙ₊₁(aₙ₊₁), uₙ₊₁(aₙ₊₁), tₙ₊₁)  = 0
     # for aₙ₊₁'' in each time step.
 
     # For the Newton method the linearization becomes
@@ -37,7 +37,7 @@ end
 
     # Evaluate predictor
     aₙ     = integrator.fsalfirst.x[1]
-    uₙ, vₙ = integrator.uprev.x
+    vₙ, uₙ = integrator.uprev.x
 
     # _tmp = mass_matrix * @.. broadcast=false (α₁ * uprev+α₂ * uprev2)
     # nlsolver.tmp = @.. broadcast=false _tmp/(dt * β₀)
@@ -58,30 +58,33 @@ end
     # nlsolver.γ = ???
     # nlsolver.tmp .= vₙ # TODO check f tmp is potentially modified and if not elimiate the allocation of upred_full
     # nlsolver.z .= aₙ
-    # ddu = nlsolve!(nlsolver, integrator, cache, repeat_step) / dt
+    # aₙ₊₁ = nlsolve!(nlsolver, integrator, cache, repeat_step) / dt
     # nlsolvefail(nlsolver) && return
 
     # Manually unrolled to see what needs to go where
     aₙ₊₁ = copy(aₙ) # acceleration term
     atmp = copy(aₙ)
+    J = zeros(length(aₙ), length(aₙ))
     for i in 1:10 # = max iter - Newton loop for eq [1] above
-        uₙ₊₁ = uₙ + Δtₙ * vₙ + Δtₙ^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁)
-        vₙ₊₁ = vₙ + Δtₙ * ((1-γ)aₙ + γaₙ₊₁)
+        uₙ₊₁ = uₙ + dt * vₙ + dt^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁)
+        vₙ₊₁ = vₙ + dt * ((1-γ)*aₙ + γ*aₙ₊₁)
         # Compute residual
-        f.f1(atmp, uₙ₊₁, vₙ₊₁, p, t)
+        f.f1(atmp, vₙ₊₁, uₙ₊₁, p, t)
+        integrator.stats.nf += 1
         residual = M*(aₙ₊₁ - atmp)
         # Compute jacobian
-        f.jac(J, upred_full, (β*dt*dt, γ*dt), t)
+        f.jac(J, vₙ₊₁, uₙ₊₁, (γ*dt, β*dt*dt), p, t)
         # Solve for increment
-        Δddu = (M-J) \ residual
-        ddu .+= Δddu
-        norm(Δddu) < 1e-4 && break
-        i == 10 && error("Newton diverged. Δddu=$(norm(Δddu))")
+        Δaₙ₊₁ = (M-J) \ residual
+        aₙ₊₁ .-= Δaₙ₊₁ # Looks like I messed up the signs somewhere :')
+        increment_norm = integrator.opts.internalnorm(Δaₙ₊₁, t)
+        increment_norm < 1e-4 && break
+        i == 10 && error("Newton diverged. ||Δaₙ₊₁||=$increment_norm")
     end
-    # Apply corrector
+
     u = ArrayPartition(
-        upred_full.x[1] + ddu*γ*dt,
-        upred_full.x[2] + ddu*β*dt*dt,
+        vₙ + dt * ((1-γ)*aₙ + γ*aₙ₊₁),
+        uₙ + dt * vₙ + dt^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁),
     )
 
     f(integrator.fsallast, u, p, t + dt)
@@ -94,8 +97,8 @@ end
             integrator.EEst = one(integrator.EEst)
         else
             # Zienkiewicz and Xie (1991) Eq. 21
-            δddu = (integrator.fsallast.x[1] - ddu)
-            integrator.EEst = dt*dt/2 * (2*β - 1/3) * integrator.opts.internalnorm(δddu, t)
+            δaₙ₊₁ = (integrator.fsallast.x[1] - aₙ₊₁)
+            integrator.EEst = dt*dt/2 * (2*β - 1/3) * integrator.opts.internalnorm(δaₙ₊₁, t)
         end
     end
 

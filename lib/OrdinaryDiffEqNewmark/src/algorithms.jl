@@ -39,7 +39,7 @@ function NewmarkBeta(β, γ; chunk_size = Val{0}(), autodiff = Val{true}(), stan
 end
 
 # Needed for remake
-function NewmarkBeta(; β=nothing, γ=nothing, chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
+function NewmarkBeta(; β=0.25, γ=0.5, chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
     concrete_jac = nothing, diff_type = Val{:forward},
     linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
     extrapolant = :linear)
