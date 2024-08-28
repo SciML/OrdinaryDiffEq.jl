@@ -336,7 +336,7 @@ end
 
 @muladd function perform_step!(integrator, cache::TRBDF2ConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack γ, d, ω, btilde1, btilde2, btilde3, α1, α2 = cache.tab
+    @unpack γ, d, ω, btilde, α = cache.tab
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
     markfirststage!(nlsolver)
@@ -358,7 +358,7 @@ end
     ################################## Solve BDF2 Step
 
     ### Initial Guess From Shampine
-    z = α1 * zprev + α2 * zᵧ
+    z = α[1] * zprev + α[2] * zᵧ
     nlsolver.z = z
     nlsolver.c = 1
 
@@ -371,7 +371,7 @@ end
     ################################### Finalize
 
     if integrator.opts.adaptive
-        tmp = btilde1 * zprev + btilde2 * zᵧ + btilde3 * z
+        tmp = btilde[1] * zprev + btilde[2] * zᵧ + btilde[3] * z
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
             integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
@@ -395,7 +395,7 @@ end
     @unpack z, tmp = nlsolver
     W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     b = nlsolver.ztmp
-    @unpack γ, d, ω, btilde1, btilde2, btilde3, α1, α2 = cache.tab
+    @unpack γ, d, ω, btilde, α = cache.tab
     alg = unwrap_alg(integrator, true)
 
     # FSAL
@@ -415,7 +415,7 @@ end
     ################################## Solve BDF2 Step
 
     ### Initial Guess From Shampine
-    @.. broadcast=false z=α1 * zprev + α2 * zᵧ
+    @.. broadcast=false z=α[1] * zprev + α[2] * zᵧ
     @.. broadcast=false tmp=uprev + ω * zprev + ω * zᵧ
     nlsolver.c = 1
     isnewton(nlsolver) && set_new_W!(nlsolver, false)
@@ -429,7 +429,7 @@ end
     ################################### Finalize
 
     if integrator.opts.adaptive
-        @.. broadcast=false tmp=btilde1 * zprev + btilde2 * zᵧ + btilde3 * z
+        @.. broadcast=false tmp=btilde[1] * zprev + btilde[2] * zᵧ + btilde[3] * z
         if alg.smooth_est && isnewton(nlsolver) # From Shampine
             est = nlsolver.cache.dz
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
@@ -453,7 +453,7 @@ end
     @unpack z, tmp = nlsolver
     W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     b = nlsolver.ztmp
-    @unpack γ, d, ω, btilde1, btilde2, btilde3, α1, α2 = cache.tab
+    @unpack γ, d, ω, btilde, α = cache.tab
     alg = unwrap_alg(integrator, true)
 
     # FSAL
@@ -478,7 +478,7 @@ end
 
     ### Initial Guess From Shampine
     @inbounds @simd ivdep for i in eachindex(u)
-        z[i] = α1 * zprev[i] + α2 * zᵧ[i]
+        z[i] = α[1] * zprev[i] + α[2] * zᵧ[i]
     end
     @inbounds @simd ivdep for i in eachindex(u)
         tmp[i] = uprev[i] + ω * zprev[i] + ω * zᵧ[i]
@@ -498,7 +498,7 @@ end
 
     if integrator.opts.adaptive
         @inbounds @simd ivdep for i in eachindex(u)
-            tmp[i] = btilde1 * zprev[i] + btilde2 * zᵧ[i] + btilde3 * z[i]
+            tmp[i] = btilde[1] * zprev[i] + btilde[2] * zᵧ[i] + btilde[3] * z[i]
         end
         if alg.smooth_est && isnewton(nlsolver) # From Shampine
             est = nlsolver.cache.dz
