@@ -80,7 +80,9 @@ function calc_J(integrator, cache, next_step::Bool = false)
 
     if alg isa DAEAlgorithm
         if DiffEqBase.has_jac(f)
-            J = f.jac(duprev, uprev, p, t)
+            duprev = integrator.duprev
+            uf = cache.uf
+            J = f.jac(duprev, uprev, p, uf.α * uf.invγdt, t)
         else
             @unpack uf = cache
             x = zero(uprev)
@@ -899,7 +901,11 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         end
     else
         J = if !IIP && DiffEqBase.has_jac(f)
-            f.jac(uprev, p, t)
+            if f isa DAEFunction
+                f.jac(uprev, uprev, p, one(t), t)
+            else
+                f.jac(uprev, p, t)
+            end
         elseif f.jac_prototype === nothing
             ArrayInterface.undefmatrix(u)
         else
