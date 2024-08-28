@@ -28,7 +28,7 @@ first_steps("OrdinaryDiffEqExponentialRK", "EPIRK5s3")
 
 ## Full list of solvers
 
-```@docs
+```@docs; canonical=false
 LawsonEuler
 NorsettEuler
 ETD2

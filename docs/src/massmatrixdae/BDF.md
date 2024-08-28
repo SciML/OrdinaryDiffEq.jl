@@ -25,7 +25,7 @@ sol = solve(prob_mm, FBDF(), reltol = 1e-8, abstol = 1e-8)
 
 ## Full list of solvers
 
-```@docs
+```@docs; canonical=false
 ABDF2
 QNDF
 QNDF1
