@@ -348,10 +348,13 @@ qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 
 
 """
     ssp_coefficient(alg)
+
 Return the SSP coefficient of the ODE algorithm `alg`. If one time step of size
 `dt` with `alg` can be written as a convex combination of explicit Euler steps
 with step sizes `cᵢ * dt`, the SSP coefficient is the minimal value of `1/cᵢ`.
+
 # Examples
+
 ```julia-repl
 julia> ssp_coefficient(SSPRK104())
 6
@@ -430,3 +433,12 @@ is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::CompositeAlgorithm) = all(is_mass_matrix_alg, alg.algs)
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
+
+# All algorithms should be shown using their keyword definition, and not as structs
+function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
+    print(io, String(typeof(alg).name.name), "(;")
+    for fieldname in fieldnames(typeof(alg))
+        print(io, " ", fieldname, " = ", getfield(alg, fieldname), ",")
+    end
+    print(io, ")")
+end
