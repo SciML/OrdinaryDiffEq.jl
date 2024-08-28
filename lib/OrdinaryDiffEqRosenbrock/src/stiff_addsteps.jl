@@ -387,11 +387,11 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
             reltol = cache.reltol)
         @.. $(_vec(ks[1]))=-linres.u
         for stage in 2:length(ks)
-            u .= uprev
+            tmp .= uprev
             for i in 1:stage-1
-                @.. u += A[stage, i] * _vec(ks[i])
+                @.. tmp += A[stage, i] * _vec(ks[i])
             end
-            f(du, u, p, t + c[stage] * dt)
+            f(du, tmp, p, t + c[stage] * dt)
 
             if mass_matrix === I
                 @.. linsolve_tmp = du + dtd[stage] * dT
@@ -410,8 +410,6 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
             linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
             @.. $(_vec(ks[stage]))=-linres.u
         end
-        @.. u = uprev + _vec(ks[end])
-
 
         copyat_or_push!(k, 1, zero(du))
         copyat_or_push!(k, 2, zero(du))

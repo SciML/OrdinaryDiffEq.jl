@@ -1294,7 +1294,7 @@ end
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     (;t, dt, uprev, u, f, p) = integrator
     (;du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
-    (;A, C, gamma, c, d) = cache.tab
+    (;A, C, gamma, c, d, H) = cache.tab
 
     # Assignments
     sizeu = size(u)
@@ -1370,7 +1370,6 @@ end
     if integrator.opts.calck
         integrator.k[1] .= 0
         integrator.k[2] .= 0
-        H = cache.tab.H
         for i in 1:length(ks)
             @.. integrator.k[1] += H[1, i] * ks[i]
             @.. integrator.k[2] += H[2, i] * ks[i]
