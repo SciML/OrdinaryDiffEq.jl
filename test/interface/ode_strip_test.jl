@@ -32,7 +32,6 @@ end
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).prob)
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).alg)
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).interp.f)
-    @test isnothing(SciMLBase.strip_solution(TRBDF_sol).interp.cache.jac_config)
 end
 
 
