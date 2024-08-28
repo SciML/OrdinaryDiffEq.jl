@@ -1243,21 +1243,23 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         # Compute linsolve_tmp for current stage
-        linsolve_tmp = @.. du + dtd[stage] * dT
+        linsolve_tmp1 = zero(du)
         if mass_matrix === I
             for i in 1:stage-1
-                linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
+                linsolve_tmp1 = @.. linsolve_tmp1 + dtC[stage, i] * ks[i]
             end
         else
             for i in 1:stage-1
-                linsolve_tmp1 = mass_matrix * @..dtC[stage, i] * ks[i]
-                linsolve_tmp = @.. linsolve_tmp + linsolve_tmp1
+                linsolve_tmp1 = @.. linsolve_tmp1 + dtC[stage, i] * ks[i]
             end
+            linsolve_tmp1 = mass_matrix * linsolve_tmp1
         end
+        linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp1
 
         ks[stage] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
         integrator.stats.nsolve += 1
     end
+    #@show ks
     u = u .+ ks[end]
 
     if integrator.opts.adaptive
@@ -1339,19 +1341,19 @@ end
         f(du, u, p, t + c[stage] * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
+        du1 .= 0
         if mass_matrix === I
-            @.. linsolve_tmp = du + dtd[stage] * dT
             for i in 1:stage-1
-                @.. linsolve_tmp += dtC[stage, i] * ks[i]
+                @.. du1 += dtC[stage, i] * ks[i]
             end
         else
-            du1 .= 0
             for i in 1:stage-1
                 @.. du1 += dtC[stage, i] * ks[i]
             end
             mul!(_vec(du2), mass_matrix, _vec(du1))
-            @.. linsolve_tmp = du + dtd[stage] * dT + du2
+            du1 .= du2
         end
+        @.. linsolve_tmp = du + dtd[stage] * dT + du1
 
         linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
         @.. $(_vec(ks[stage]))=-linres.u
