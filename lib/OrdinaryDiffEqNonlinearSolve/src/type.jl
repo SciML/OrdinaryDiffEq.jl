@@ -68,11 +68,11 @@ end
 
 # solver
 
-mutable struct NLSolver{algType, iip, uType, gamType, tmpType, tmp2Type, tType,
-    C <: AbstractNLSolverCache} <: AbstractNLSolver{algType, iip}
+mutable struct NLSolver{algType, iip, uType, gamType, tmpType, tType,
+    C <: AbstractNLSolverCache, E} <: AbstractNLSolver{algType, iip}
     z::uType
-    tmp::tmpType # DIRK and multistep methods only use tmp
-    tmp2::tmp2Type # for GLM if neccssary
+    tmp::uType # DIRK and multistep methods only use tmp
+    tmp2::tmpType # for GLM if neccssary
     ztmp::uType
     γ::gamType
     c::tType
@@ -94,7 +94,8 @@ end
 function NLSolver{iip, tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold,
         iter, maxiters, status, cache, method = DIRK, tmp2 = nothing,
         nfails::Int = 0) where {iip, tType}
-    NLSolver{typeof(alg), iip, typeof(z), typeof(γ), typeof(tmp), typeof(tmp2), tType, typeof(cache)}(z,
+    NLSolver{typeof(alg), iip, typeof(z), typeof(γ), typeof(tmp), tType, typeof(cache), RT}(
+        z,
         tmp,
         tmp2,
         ztmp,
