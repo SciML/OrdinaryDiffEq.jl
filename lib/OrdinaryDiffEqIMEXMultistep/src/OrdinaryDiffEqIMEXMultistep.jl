@@ -4,7 +4,8 @@ import OrdinaryDiffEqCore: alg_order, issplit, OrdinaryDiffEqNewtonAlgorithm, _u
                            DEFAULT_PRECS, OrdinaryDiffEqConstantCache,
                            OrdinaryDiffEqMutableCache,
                            @cache, alg_cache, initialize!, perform_step!, @unpack,
-                           full_cache, get_fsalfirstlast
+                           full_cache, get_fsalfirstlast,
+                           generic_solver_docstring
 
 using FastBroadcast
 import OrdinaryDiffEqCore
