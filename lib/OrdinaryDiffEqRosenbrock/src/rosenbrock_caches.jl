@@ -729,7 +729,7 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2}, u, rate_proto
 
     # Initialize vectors
     dense = [zero(rate_prototype) for _ in 1:2]
-    ks = [zero(rate_prototype) for _ in 1:5]
+    ks = [zero(rate_prototype) for _ in 1:6]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
