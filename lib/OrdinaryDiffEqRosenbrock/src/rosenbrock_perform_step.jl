@@ -1208,7 +1208,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step = false)
     (;t, dt, uprev, u, f, p) = integrator
-    (;tf, uf) = cache
+    (;tf, uf, ks) = cache
     (;A, C, gamma, c, d, H) = cache.tab
 
     # Precalculations
@@ -1230,7 +1230,6 @@ end
 
     # Initialize k arrays
     num_stages = size(A,1)
-    ks = Vector{typeof(u)}(undef, num_stages)
 
     # Loop for stages
     for stage in 1:num_stages

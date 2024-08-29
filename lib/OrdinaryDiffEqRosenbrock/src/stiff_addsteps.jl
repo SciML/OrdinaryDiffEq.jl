@@ -291,7 +291,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        (;tf, uf, du) = cache
+        (;tf, uf, ks) = cache
         (;A, C, gamma, c, d, H) = cache.tab
 
         # Precalculations
@@ -319,7 +319,6 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
         end
 
         num_stages = size(A, 1)
-        k = Vector{typeof(du)}(undef, num_stages)
 
         for stage in 1:num_stages
             u = uprev
