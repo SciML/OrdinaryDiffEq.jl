@@ -12,4 +12,4 @@ alg_stability_size(alg::Vern7) = 4.6400
 alg_stability_size(alg::Vern8) = 5.8641
 alg_stability_size(alg::Vern9) = 4.4762
 
-has_lazy_interpolation(alg::Union{Vern6, Vern7, Vern8, Vern9}) = true
+SciMLBase.has_lazy_interpolation(alg::Union{Vern6, Vern7, Vern8, Vern9}) = true

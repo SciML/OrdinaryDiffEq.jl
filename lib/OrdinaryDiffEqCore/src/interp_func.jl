@@ -75,7 +75,7 @@ function SciMLBase.strip_interpolation(id::InterpolationData)
 end
 
 function strip_cache(cache)
-    if hasfield(typeof(cache), :jac_config) || hasfield(typeof(cache), :grad_config)
+    if hasfield(typeof(cache), :jac_config) || hasfield(typeof(cache), :grad_config) || hasfield(typeof(cache), :nlsolver)
         fieldnums = length(fieldnames(typeof(cache)))
         noth_list = fill(nothing, fieldnums)
         cache_type_name = Base.typename(typeof(cache)).wrapper
@@ -84,3 +84,4 @@ function strip_cache(cache)
         cache
     end
 end
+

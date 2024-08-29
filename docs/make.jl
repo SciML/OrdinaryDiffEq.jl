@@ -39,8 +39,8 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
     format = Documenter.HTML(analytics = "UA-90474609-3",
         assets = ["assets/favicon.ico"],
         canonical = "https://ordinarydiffeq.sciml.ai/stable/",
-        size_threshold_ignore = [joinpath("implicit", "Rosenbrock.md"),
-                            joinpath("massmatrixdae", "Rosenbrock.md")]),
+        size_threshold_ignore = [joinpath("semiimplicit", "Rosenbrock.md"),
+            joinpath("massmatrixdae", "Rosenbrock.md")]),
     pages = [
         "OrdinaryDiffEq.jl: ODE solvers and utilities" => "index.md",
         "Usage" => "usage.md",
@@ -60,7 +60,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         "Semi-Implicit Solvers" => [
             "semiimplicit/Rosenbrock.md",
             "semiimplicit/StabalizedRK.md",
-            "semiimplicit/ExponentialRK.md",
+            "semiimplicit/ExponentialRK.md"
         ],
         "Implicit Solvers" => [
             "implicit/SDIRK.md",
@@ -68,8 +68,8 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "implicit/BDF.md",
             "implicit/Extrapolation.md",
             "implicit/PDIRK.md",
-            "implicit/Nordsieck.md",
-            ],
+            "implicit/Nordsieck.md"
+        ],
         "IMEX Solvers" => [
             "imex/IMEXMultistep.md",
             "imex/StabalizedIRK.md",
@@ -77,7 +77,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         ],
         "Dynamical ODE Explicit Solvers" => [
             "dynamicalodeexplicit/RKN.md",
-            "dynamicalodeexplicit/SymplecticRK.md",
+            "dynamicalodeexplicit/SymplecticRK.md"
         ],
         "Semilinear ODE Solvers" => [
             "semilinear/ExponentialRK.md",
@@ -85,10 +85,10 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         ],
         "Mass Matrix DAE Solvers" => [
             "massmatrixdae/Rosenbrock.md",
-            "massmatrixdae/BDF.md",
+            "massmatrixdae/BDF.md"
         ],
         "Fully Implicit DAE Solvers" => [
-            "fullyimplicitdae/BDF.md",
+            "fullyimplicitdae/BDF.md"
         ],
         "Misc Solvers" => [
             "misc.md"
