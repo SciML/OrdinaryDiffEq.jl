@@ -247,7 +247,7 @@ end
     z₄::uType
     z₅::uType
     z₆::uType
-    k1::Vector{kType}
+    k::Vector{kType}
     atmp::uNoUnitsType
     nlsolver::N
     tab::Tab
