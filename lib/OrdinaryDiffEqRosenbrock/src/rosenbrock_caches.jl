@@ -8,7 +8,7 @@ get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (zero(u), zero(u))
 
 # Shampine's Low-order Rosenbrocks
 
-@cache mutable struct RosenbrockCache{uType, rateType, uNoUnitsType, JType, WType, TabType,
+mutable struct RosenbrockCache{uType, rateType, uNoUnitsType, JType, WType, TabType,
     TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter} <: RosenbrockMutableCache
     u::uType
     uprev::uType
@@ -36,6 +36,10 @@ get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (zero(u), zero(u))
     alg::A
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
+end
+function full_cache(c::RosenbrockCache)
+    return [c.u, c.uprev, c.dense..., c.du, c.du1, c.du2,
+            c.ks..., c.fsalfirst, c.fsallast, c.dT, c.tmp, c.atmp, c.weight, c.linsolve_tmp]
 end
 
 @cache mutable struct Rosenbrock23Cache{uType, rateType, uNoUnitsType, JType, WType,

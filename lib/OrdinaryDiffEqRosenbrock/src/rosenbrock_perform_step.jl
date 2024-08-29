@@ -1328,7 +1328,7 @@ end
             solverdata = (; gamma = dtgamma))
     end
 
-    @.. broadcast=false $(_vec(ks[1]))=-linres.u
+    @.. $(_vec(ks[1]))=-linres.u
     integrator.stats.nsolve += 1
 
     for stage in 2:length(ks)
