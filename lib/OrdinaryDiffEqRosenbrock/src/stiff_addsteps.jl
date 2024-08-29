@@ -291,7 +291,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        (;tf, uf) = cache
+        (;tf, uf, du) = cache
         (;A, C, gamma, c, d, H) = cache.tab
 
         # Precalculations

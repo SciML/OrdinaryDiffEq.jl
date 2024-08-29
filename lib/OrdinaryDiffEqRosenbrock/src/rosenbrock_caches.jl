@@ -699,6 +699,7 @@ struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConsta
     tab::Tab
     J::JType
     W::WType
+    du::rateType
     linsolve::F
     autodiff::AD
 end
