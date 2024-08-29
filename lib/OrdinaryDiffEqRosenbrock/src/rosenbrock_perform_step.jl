@@ -1328,7 +1328,7 @@ end
             solverdata = (; gamma = dtgamma))
     end
 
-    @.. broadcast=false $(_vec(ks[1]))=-linres.u
+    @.. $(_vec(ks[1]))=-linres.u
     integrator.stats.nsolve += 1
 
     for stage in 2:length(ks)
@@ -1370,11 +1370,13 @@ end
     end
 
     if integrator.opts.calck
-        integrator.k[1] .= 0
-        integrator.k[2] .= 0
+        for j in 1:length(integrator.k)
+            integrator.k[j] .= 0
+        end
         for i in 1:length(ks)
-            @.. integrator.k[1] += H[1, i] * ks[i]
-            @.. integrator.k[2] += H[2, i] * ks[i]
+            for j in 1:length(integrator.k)
+                @.. integrator.k[j] += H[j, i] * ks[i]
+            end
         end
     end
     cache.linsolve = linres.cache
