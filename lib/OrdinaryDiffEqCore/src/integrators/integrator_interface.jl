@@ -59,7 +59,7 @@ end
 @inline function DiffEqBase.get_du(integrator::ODEIntegrator)
     isdiscretecache(integrator.cache) &&
         error("Derivatives are not defined for this stepper.")
-    return if isdefined(integrator, :fsallast)
+    return if isfsal(integrator.alg)
         integrator.fsallast
     else
         integrator(integrator.t, Val{1})
@@ -72,7 +72,7 @@ end
     if isdiscretecache(integrator.cache)
         out .= integrator.cache.tmp
     else
-        return if isdefined(integrator, :fsallast) &&
+        return if isfsal(integrator.alg) &&
                   !has_stiff_interpolation(integrator.alg)
             # Special stiff interpolations do not store the
             # right value in fsallast
