@@ -291,7 +291,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        (;tf, uf, du, ks) = cache
+        (;tf, uf, ks) = cache
         (;A, C, gamma, c, d, H) = cache.tab
 
         # Precalculations
@@ -344,8 +344,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
             ks[stage] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
         end
 
-        k1 = zero(du)
-        k2 = zero(du)
+        k1 = zero(ks[1])
+        k2 = zero(ks[1])
         H = cache.tab.H
         for i in 1:length(ks)
             k1 = @.. k1 + H[1, i] * ks[i]

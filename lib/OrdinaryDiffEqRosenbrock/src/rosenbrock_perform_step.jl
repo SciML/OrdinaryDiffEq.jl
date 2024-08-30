@@ -1208,7 +1208,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step = false)
     (;t, dt, uprev, u, f, p) = integrator
-    (;tf, uf, du, ks) = cache
+    (;tf, uf, ks) = cache
     (;A, C, gamma, c, d, H) = cache.tab
 
     # Precalculations

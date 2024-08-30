@@ -81,7 +81,7 @@ end
     @unpack tstep, invγdt = cache
 
     nlcache = nlsolver.cache.cache
-    step!(nlcache)
+    step!(nlcache, recompute_jacobian=false)
     nlsolver.ztmp = nlcache.u
 
     ustep = compute_ustep(tmp, γ, z, method)
@@ -103,7 +103,7 @@ end
     @unpack tstep, invγdt, atmp, ustep = cache
 
     nlcache = nlsolver.cache.cache
-    step!(nlcache)
+    step!(nlcache, recompute_jacobian=false)
     @.. broadcast=false ztmp=nlcache.u
 
     ustep = compute_ustep!(ustep, tmp, γ, z, method)
