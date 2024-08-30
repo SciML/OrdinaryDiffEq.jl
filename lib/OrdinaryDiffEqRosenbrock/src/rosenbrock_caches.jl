@@ -705,7 +705,7 @@ struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD, rateType} <: Rosenb
     W::WType
     linsolve::F
     autodiff::AD
-    ks::Vector{rateType}
+    du::Vector{rateType}
 end
 
 tabtype(::Rodas4) = Rodas4Tableau
