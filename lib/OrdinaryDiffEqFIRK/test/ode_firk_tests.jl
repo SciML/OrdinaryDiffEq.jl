@@ -21,13 +21,16 @@ sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_2Dlinear, RadauIIA9())
 prob_ode_linear_big = remake(prob_ode_linear, u0 = big.(prob_ode_linear.u0), tspan = big.(prob_ode_linear.tspan))
 prob_ode_2Dlinear_big = remake(prob_ode_2Dlinear, u0 = big.(prob_ode_2Dlinear.u0), tspan = big.(prob_ode_2Dlinear.tspan))
 
-sol = solve(prob_ode_linear_big, AdaptiveRadau(), adaptive=false, dt = 1e-2)
-sim21 = test_convergence(1 ./ 2 .^ (2.25:-1:0.25), prob_ode_linear_big, AdaptiveRadau())
-@test sim21.𝒪est[:final]≈9 atol=testTol
+for i in [3, 5, 7, 9]
+    sim21 = test_convergence(1 ./ 2 .^ (2.25:-1:0.25), prob_ode_linear_big, AdaptiveRadau(num_stages = i))
+    @test sim21.𝒪est[:final]≈ (2 * i - 1) atol=testTol
+end
 
-sol = solve(prob_ode_2Dlinear_big, AdaptiveRadau(), adaptive=false, dt = 1e-2)
-sim21 = test_convergence(1 ./ 2 .^(2.25:-1:0.25), prod_ode_2Dlinear, AdaptiveRadau())
-@test sim21.𝒪est[:final]≈9 atol=testTol
+sol = solve(prob_ode_2Dlinear_big, RadauIIA9(), adaptive=false, dt = 1e-5)
+for i in [5]
+    sim21 = test_convergence(1 ./ 10 .^ (5:-1:3), prob_ode_2Dlinear_big, AdaptiveRadau(num_stages = i))
+    @test sim21.𝒪est[:final]≈ (2 * i - 1) atol=testTol
+end
 
 # test adaptivity
 for iip in (true, false)

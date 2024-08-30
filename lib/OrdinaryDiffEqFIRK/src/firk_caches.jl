@@ -523,7 +523,8 @@ mutable struct AdaptiveRadauCache{uType, cuType, uNoUnitsType, rateType, JType, 
     cont::AbstractVector{uType}
     du1::rateType
     fsalfirst::rateType
-    k::AbstractVector{rateType}
+    ks::AbstractVector{rateType}
+    k::rateType
     fw::AbstractVector{rateType}
     J::JType
     W1::W1Type #real
@@ -533,6 +534,7 @@ mutable struct AdaptiveRadauCache{uType, cuType, uNoUnitsType, rateType, JType, 
     κ::Tol
     ηold::Tol
     iter::Int
+    tmp::uType
     atmp::uNoUnitsType
     jac_config::JC
     linsolve1::F1 #real
@@ -582,10 +584,11 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
 
     fsalfirst = zero(rate_prototype)
     fw = Vector{typeof(rate_prototype)}(undef, num_stages)
-    k = Vector{typeof(rate_prototype)}(undef, num_stages)
+    ks = Vector{typeof(rate_prototype)}(undef, num_stages)
     for i in 1: num_stages
-        k[i] = fw[i] = zero(rate_prototype)
+        ks[i] = fw[i] = zero(rate_prototype)
     end
+    k = ks[1]
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
     if J isa AbstractSciMLOperator
@@ -598,6 +601,8 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     end
 
     du1 = zero(rate_prototype)
+
+    tmp = zero(u)
 
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
@@ -620,9 +625,9 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
 
     AdaptiveRadauCache(u, uprev,
         z, w, dw1, ubuff, dw2, cubuff, cont,
-        du1, fsalfirst, k, fw,
+        du1, fsalfirst, ks, k, fw,
         J, W1, W2,
-        uf, tab, κ, one(uToltype), 10000,
+        uf, tab, κ, one(uToltype), 10000, tmp,
         atmp, jac_config,
         linsolve1, linsolve2, rtol, atol, dt, dt,
         Convergence, alg.step_limiter!)

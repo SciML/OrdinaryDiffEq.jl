@@ -90,14 +90,13 @@ function initialize!(integrator, cache::RadauIIA9Cache)
 end
 
 function initialize!(integrator, cache::AdaptiveRadauCache)
-    println("here")
+    @unpack num_stages = cache.tab
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    num_stages = alg.num_stages
     if integrator.opts.adaptive
         @unpack abstol, reltol = integrator.opts
         if reltol isa Number
@@ -1214,7 +1213,6 @@ end
         end
 
         cache.linsolve3 = linres3.cache
-
         integrator.stats.nsolve += 3
         dw2 = z2
         dw3 = z3
@@ -1554,8 +1552,8 @@ end
     @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
     @unpack T, TI, γ, α, β, c, #=e,=# num_stages = cache.tab 
     @unpack κ, cont, z, w = cache
-    @unpack dw1, ubuff, dw2, cubuff1, cubuff2 = cache
-    @unpack k, fw, J, W1, W2 = cache
+    @unpack dw1, ubuff, dw2, cubuff = cache
+    @unpack ks, k, fw, J, W1, W2 = cache
     @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
@@ -1570,8 +1568,8 @@ end
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-            for i in 1 : (num_stages - 1) / 2
-                W2[i][II] = -(α[i]dt + β[i]dt * im) * mass_matrix[Tuple(II)...] + J[II]
+            for i in 1 : Int((num_stages - 1) / 2)
+                W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] + J[II]
             end        
         end
         integrator.stats.nw += 1
@@ -1611,14 +1609,14 @@ end
         integrator.stats.nnonliniter += 1
 
         # evaluate function
-        k[1] = fsallast
+        ks[1] = fsallast
         for i in 1 : num_stages
             @.. tmp = uprev + z[i]
-            f(k[i], tmp, p, t + c[i] * dt)
+            f(ks[i], tmp, p, t + c[i] * dt)
         end
         integrator.stats.nf += num_stages
 
-        @.. fw = TI * k
+        fw = TI * ks
         if mass_matrix === I
             Mw = w
         elseif mass_matrix isa UniformScaling
@@ -1637,47 +1635,50 @@ end
         needfactor = iter == 1 && new_W
 
         linsolve1 = cache.linsolve1
-        linres = Vector{BigFloat}(undef, num_stages)
         if needfactor
-            linres[1] = dolinsolve(integrator, linsolve1; A = W1, b = _vec(ubuff),
+            linres = dolinsolve(integrator, linsolve1; A = W1, b = _vec(ubuff),
                 linu = _vec(dw1))
         else
-            linres[1] = dolinsolve(integrator, linsolve1; A = nothing, b = _vec(ubuff),
+            linres = dolinsolve(integrator, linsolve1; A = nothing, b = _vec(ubuff),
                 linu = _vec(dw1))
         end
 
-        cache.linsolve1 = linres1.cache
-
-        for i in 1 : (num_stages - 1)/2
-            @.. broadcast=false cubuff[i]=complex(
-            fw2 - αdt[i] * Mw[2 * i] + βdt[i] * Mw[2 * i + 1], fw3 - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1])
+        cache.linsolve1 = linres.cache
+        linres2 = Vector{Any}(undef, Int((num_stages - 1) / 2))
+        for i in 1 : Int((num_stages - 1) / 2)
+            @.. cubuff[i]=complex(
+            fw[2 * i] - αdt[i] * Mw[2 * i] + βdt[i] * Mw[2 * i + 1], fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1])
             linsolve2[i] = cache.linsolve2[i]
             if needfactor
-                linres[i + 1] = dolinsolve(integrator, linsolve2[i]; A = W2[i], b = _vec(cubuff[i]),
+                linres2[i] = dolinsolve(integrator, linsolve2[i]; A = W2[i], b = _vec(cubuff[i]),
                     linu = _vec(dw2[i]))
             else
-                linres[i + 1] = dolinsolve(integrator, linsolve2[i]; A = nothing, b = _vec(cubuff[i]),
+                linres2[i] = dolinsolve(integrator, linsolve2[i]; A = nothing, b = _vec(cubuff[i]),
                     linu = _vec(dw2[i]))
             end
-            cache.linsolve2[i] = linres[i + 1].cache
+            cache.linsolve2[i] = linres2[i].cache
         end
 
         integrator.stats.nsolve += (num_stages + 1) / 2
-        dw[1] = dw1
-        i = 2
-        while i <= num_stages
+        dw = Vector{Any}(undef, num_stages - 1)
+        i = 1
+        while i <= Int((num_stages - 1) / 2)
             dw[i] = z[i]
             dw[i + 1] = z[i + 1]
-            @.. dw[i] = real(dw2[i - 1])
-            @.. dw[i + 1] = imag(dw2[i - 1])
+            @.. dw[i] = real(dw2[i])
+            @.. dw[i + 1] = imag(dw2[i])
             i += 2
         end
 
         # compute norm of residuals
         iter > 1 && (ndwprev = ndw)
-        ndws = Vector{BigFloat}(undef, num_stages)
-        for i in 1:num_stages
-            calculate_residuals!(atmp, dw[i], uprev, u, atol, rtol, internalnorm, t)
+        ndws = Vector{Any}(undef, num_stages)
+        ndws[1] = calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
+        ndws[1] = internalnorm(atmp, t)
+
+        for i in 2 : num_stages
+            @show i
+            calculate_residuals!(atmp, dw[i - 1], uprev, u, atol, rtol, internalnorm, t)
             ndws[i] = internalnorm(atmp, t)
         end
 
@@ -1698,10 +1699,13 @@ end
             end
         end
 
-        @.. w = w - dw
+        w[1] -= dw1
+        for i in 2 : num_stages
+            w[i] -= dw[i - 1]
+        end
 
         # transform `w` to `z`
-        @.. z = T * w
+        z = T * w
         # check stopping criterion
 
         iter > 1 && (η = θ / (1 - θ))
@@ -1722,7 +1726,7 @@ end
     cache.ηold = η
     cache.iter = iter
 
-    @.. broadcast=false u=uprev + z[s]
+    @.. broadcast=false u=uprev + z[num_stages]
 
     step_limiter!(u, integrator, p, t + dt)
     #=
@@ -1767,7 +1771,7 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            derivatives = Matrix{eltype(u)}(undef, num_stages, num_stages)
+            derivatives = Matrix{Any}(undef, num_stages, num_stages)
             pushfirst!(c, 0)
             for i in 1 : num_stages
                 for j in i : num_stages
