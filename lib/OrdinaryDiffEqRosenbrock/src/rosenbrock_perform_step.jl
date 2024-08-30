@@ -1268,14 +1268,14 @@ end
     end
 
     if integrator.opts.calck
-        k1 = zero(integrator.k[1])
-        k2 = zero(integrator.k[2])
-        for i in 1:length(ks)
-            k1 = @.. k1 + H[1, i] * ks[i]
-            k2 = @.. k2 + H[2, i] * ks[i]
+        for j in eachindex(integrator.k)
+            integrator.k[j] = zero(integrator.k[1])
         end
-        integrator.k[1] = k1
-        integrator.k[2] = k2
+        for i in eachindex(ks)
+            for j in eachindex(integrator.k)
+                integrator.k[j] = @.. integrator.k[j] + H[j, i] * ks[i]
+            end
+        end
     end
 
     integrator.u = u
@@ -1369,11 +1369,11 @@ end
     end
 
     if integrator.opts.calck
-        for j in 1:length(integrator.k)
+        for j in eachindex(integrator.k)
             integrator.k[j] .= 0
         end
-        for i in 1:length(ks)
-            for j in 1:length(integrator.k)
+        for i in eachindex(ks)
+            for j in eachindex(integrator.k)
                 @.. integrator.k[j] += H[j, i] * ks[i]
             end
         end

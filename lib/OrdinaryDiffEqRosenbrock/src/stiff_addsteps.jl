@@ -319,8 +319,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
         end
 
         num_stages = size(A, 1)
-
-        for stage in 1:num_stages
+        # Last stage doesn't affect ks
+        for stage in 1:num_stages-1
             u = uprev
             for i in 1:stage-1
                 u = @.. u + A[stage, i] * ks[i]
@@ -341,13 +341,14 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
                 end
             end
 
-            ks[stage] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+            ks[stage] = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
         end
 
         k1 = zero(ks[1])
         k2 = zero(ks[1])
         H = cache.tab.H
-        for i in 1:length(ks)
+        # Last stage doesn't affect ks
+        for i in 1:length(ks)-1
             k1 = @.. k1 + H[1, i] * ks[i]
             k2 = @.. k2 + H[2, i] * ks[i]
         end
@@ -384,7 +385,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
 
         linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp), reltol = cache.reltol)
         @.. $(_vec(ks[1]))=-linres.u
-        for stage in 2:length(ks)
+        # Last stage doesn't affect ks
+        for stage in 2:length(ks)-1
             tmp .= uprev
             for i in 1:stage-1
                 @.. tmp += A[stage, i] * _vec(ks[i])
@@ -411,7 +413,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
 
         copyat_or_push!(k, 1, zero(du))
         copyat_or_push!(k, 2, zero(du))
-        for i in 1:length(ks)
+        # Last stage doesn't affect ks
+        for i in 1:length(ks)-1
             @.. k[1] += H[1, i] * _vec(ks[i])
             @.. k[2] += H[2, i] * _vec(ks[i])
         end
