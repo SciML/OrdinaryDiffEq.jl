@@ -59,7 +59,7 @@ end
 @inline function DiffEqBase.get_du(integrator::ODEIntegrator)
     isdiscretecache(integrator.cache) &&
         error("Derivatives are not defined for this stepper.")
-    return if isdefined(integrator, :fsallast)
+    return if isfsal(integrator.alg)
         integrator.fsallast
     else
         integrator(integrator.t, Val{1})
@@ -72,7 +72,7 @@ end
     if isdiscretecache(integrator.cache)
         out .= integrator.cache.tmp
     else
-        return if isdefined(integrator, :fsallast) &&
+        return if isfsal(integrator.alg) &&
                   !has_stiff_interpolation(integrator.alg)
             # Special stiff interpolations do not store the
             # right value in fsallast
@@ -221,8 +221,8 @@ function resize!(integrator::ODEIntegrator, i::Int)
         # may be required for things like units
         c !== nothing && resize!(c, i)
     end
-    resize!(integrator.fsalfirst, i)
-    resize!(integrator.fsallast, i)
+    !isnothing(integrator.fsalfirst) && resize!(integrator.fsalfirst, i)
+    !isnothing(integrator.fsallast) && resize!(integrator.fsallast, i)
     resize_f!(integrator.f, i)
     resize_nlsolver!(integrator, i)
     resize_J_W!(cache, integrator, i)
@@ -235,8 +235,8 @@ function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
     for c in full_cache(cache)
         resize!(c, i)
     end
-    resize!(integrator.fsalfirst, i)
-    resize!(integrator.fsallast, i)
+    !isnothing(integrator.fsalfirst) && resize!(integrator.fsalfirst, i)
+    !isnothing(integrator.fsallast) && resize!(integrator.fsallast, i)
     resize_f!(integrator.f, i)
     # TODO the parts below need to be adapted for implicit methods
     isdefined(integrator.cache, :nlsolver) && resize_nlsolver!(integrator, i)

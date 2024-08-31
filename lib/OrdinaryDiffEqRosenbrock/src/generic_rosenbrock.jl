@@ -176,7 +176,7 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
         end
     end
     cacheexpr=quote
-        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: GenericRosenbrockMutableCache
             u::uType
             uprev::uType
             du::rateType

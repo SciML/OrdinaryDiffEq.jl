@@ -13,7 +13,14 @@ mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     current::Int
 end
 
-get_fsalfirstlast(cache::CompositeCache, u) = get_fsalfirstlast(cache.caches[1], u)
+function get_fsalfirstlast(cache::CompositeCache, u) 
+    _x = get_fsalfirstlast(cache.caches[1], u)
+    if first(_x) !== nothing
+        return _x
+    else
+        return get_fsalfirstlast(cache.caches[2], u)
+    end
+end
 
 mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiffEqCache
     args::A
