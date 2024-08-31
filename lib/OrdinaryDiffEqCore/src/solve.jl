@@ -469,7 +469,7 @@ function DiffEqBase.__init(
     reinitiailize = true
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
-    faslfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
+    fsalfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
 
     @show typeof(fsalfirst)
 
@@ -478,7 +478,7 @@ function DiffEqBase.__init(
         typeof(eigen_est), typeof(EEst),
         QT, typeof(tdir), typeof(k), SolType,
         FType, cacheType,
-        typeof(opts), typeof(faslfirst),
+        typeof(opts), typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),
         typeof(initializealg), typeof(differential_vars)}(
         sol, u, du, k, t, tType(dt), f, p,
@@ -498,7 +498,7 @@ function DiffEqBase.__init(
         isout, reeval_fsal,
         u_modified, reinitiailize, isdae,
         opts, stats, initializealg, differential_vars,
-        faslfirst, fsallast)
+        fsalfirst, fsallast)
 
     if initialize_integrator
         if isdae || SciMLBase.has_initializeprob(prob.f)
