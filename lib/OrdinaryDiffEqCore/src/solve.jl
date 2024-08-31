@@ -471,6 +471,8 @@ function DiffEqBase.__init(
     saveiter_dense = 0
     faslfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
 
+    @show typeof(fsalfirst)
+
     integrator = ODEIntegrator{typeof(_alg), isinplace(prob), uType, typeof(du),
         tType, typeof(p),
         typeof(eigen_est), typeof(EEst),
