@@ -40,8 +40,6 @@ function initialize!(integrator, cache::LowStorageRK2NCache)
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = k
-    integrator.fsalfirst = k # used for get_du
-    integrator.fsallast = k
     integrator.f(k, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
