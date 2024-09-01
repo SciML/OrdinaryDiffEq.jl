@@ -15,7 +15,7 @@ end
 end
 
 # Not FSAL
-get_fsalfirstlast(cache::DImplicitEulerCache, u) = (u, u)
+get_fsalfirstlast(cache::DImplicitEulerCache, u) = (nothing, nothing)
 
 mutable struct DImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
     nlsolver::N

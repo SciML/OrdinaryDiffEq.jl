@@ -758,16 +758,17 @@ function perform_step!(integrator, cache::QNDFConstantCache{max_order},
     α₀ = 1
     β₀ = inv((1 - κ) * γₖ[k])
     if u isa Number
-        u₀ = sum(D[1:k]) + uprev
+        u₀ = sum(view(D, 1:k)) + uprev
         ϕ = zero(u)
         for i in 1:k
             ϕ += γₖ[i] * D[i]
         end
     else
-        u₀ = reshape(sum(D[:, 1:k], dims = 2) .+ uprev, size(u))
+        u₀ = _reshape(sum(view(D, :, 1:k), dims = 2), axes(u)) .+ uprev
         ϕ = zero(u)
         for i in 1:k
-            ϕ = @.. ϕ + γₖ[i] * D[:, i]
+            D_row = _reshape(view(D, :, i), axes(u))
+            ϕ = @.. ϕ + γₖ[i] * D_row
         end
     end
     markfirststage!(nlsolver)
@@ -802,14 +803,14 @@ function perform_step!(integrator, cache::QNDFConstantCache{max_order},
         end
         integrator.EEst = error_constant(integrator, k) * internalnorm(atmp, t)
         if k > 1
-            @views atmpm1 = calculate_residuals(D[:, k], uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol,
-                integrator.opts.internalnorm, t)
+            @views atmpm1 = calculate_residuals(_reshape(view(D, :, k), axes(u)),
+                uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
             cache.EEst1 = error_constant(integrator, k - 1) * internalnorm(atmpm1, t)
         end
         if k < max_order
-            @views atmpp1 = calculate_residuals(D[:, k + 2], uprev, u, abstol, reltol,
-                internalnorm, t)
+            @views atmpp1 = calculate_residuals(_reshape(view(D, :, k + 2), axes(u)),
+                uprev, u, abstol, reltol, internalnorm, t)
             cache.EEst2 = error_constant(integrator, k + 1) * internalnorm(atmpp1, t)
         end
     end
@@ -925,13 +926,13 @@ function perform_step!(integrator, cache::QNDFCache{max_order},
         integrator.EEst = error_constant(integrator, k) * internalnorm(atmp, t)
         if k > 1
             @views calculate_residuals!(
-                atmpm1, reshape(D[:, k], size(u)), uprev, u, abstol,
+                atmpm1, _reshape(D[:, k], axes(u)), uprev, u, abstol,
                 reltol, internalnorm, t)
             cache.EEst1 = error_constant(integrator, k - 1) * internalnorm(atmpm1, t)
         end
         if k < max_order
             @views calculate_residuals!(
-                atmpp1, reshape(D[:, k + 2], size(u)), uprev, u, abstol,
+                atmpp1, _reshape(D[:, k + 2], axes(u)), uprev, u, abstol,
                 reltol, internalnorm, t)
             cache.EEst2 = error_constant(integrator, k + 1) * internalnorm(atmpp1, t)
         end
@@ -1112,7 +1113,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order},
         end
         tmp = -uprev * bdf_coeffs[k, 2]
         for i in 1:(k - 1)
-            @views tmp = @.. tmp - u_corrector[:, i] * bdf_coeffs[k, i + 2]
+            tmp = @.. tmp - $(_reshape(view(u_corrector, :, i), axes(u))) * bdf_coeffs[k, i + 2]
         end
     end
 
@@ -1169,7 +1170,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order},
             terk *= abs(dt^(k))
         else
             for i in 2:(k + 1)
-                @views terk = @.. terk + fd_weights[i, k + 1] * u_history[:, i - 1]
+                terk = @.. terk + fd_weights[i, k + 1] * $(_reshape(view(u_history, :, i - 1), axes(u)))
             end
             terk *= abs(dt^(k))
         end
