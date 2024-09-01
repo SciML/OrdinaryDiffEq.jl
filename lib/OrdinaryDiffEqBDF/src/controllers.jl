@@ -217,7 +217,7 @@ function choose_order!(alg::FBDF, integrator,
                 terk_tmp = similar(u)
                 @.. terk_tmp = fd_weights[k - 2, 1] * _vec(u)
                 for i in 2:(k - 2)
-                    @.. terk_tmp += fd_weights[i, k - 2] * $(reshape(view(u_history, :, i - 1), size(u)))
+                    @.. terk_tmp += fd_weights[i, k - 2] * $(_reshape(view(u_history, :, i - 1), axes(u)))
                 end
                 @.. terk_tmp *= abs(dt^(k - 2))
             end
