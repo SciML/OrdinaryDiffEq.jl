@@ -1362,11 +1362,18 @@ end
         @.. $(_vec(ks[stage]))=-linres.u
         integrator.stats.nsolve += 1
     end
+    du .= ks[end]
     u .+= ks[end]
 
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
+        if (integrator.alg isa Rodas5Pe)
+            @. du = 0.2606326497975715 * ks[1] - 0.005158627295444251 * ks[2] +
+                    1.3038988631109731 * ks[3] + 1.235000722062074 * ks[4] +
+                    -0.7931985603795049 * ks[5] - 1.005448461135913 * ks[6] -
+                    0.18044626132120234 * ks[7] + 0.17051519239113755 * ks[8]
+        end
         calculate_residuals!(atmp, ks[end], uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -1381,6 +1388,22 @@ end
                 @.. integrator.k[j] += H[j, i] * ks[i]
             end
         end
+        if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
+            (integrator.EEst < 1.0)
+             ks[2] = 0.5 * (uprev + u +
+                   0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
+             du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
+             f(du, ks[2], p, t + dt / 2)
+             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+             if mass_matrix === I
+                 du2 = du1 - du
+             else
+                 mul!(_vec(du2), mass_matrix, _vec(du1))
+                 du2 = du2 - du
+             end
+             EEst = norm(du2) / norm(integrator.opts.abstol .+ integrator.opts.reltol .* k2)
+             integrator.EEst = max(EEst, integrator.EEst)
+         end
     end
     cache.linsolve = linres.cache
 end
@@ -1608,119 +1631,6 @@ function initialize!(integrator, cache::RosenbrockCache)
     integrator.k[1] = dense1
     integrator.k[2] = dense2
     integrator.k[3] = dense3
-end
-
-@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
-    (;t, dt, uprev, u, f, p) = integrator
-    (;du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
-    (;A, C, gamma, c, d, H) = cache.tab
-
-    # Assignments
-    sizeu = size(u)
-    uidx = eachindex(integrator.uprev)
-    mass_matrix = integrator.f.mass_matrix
-
-    # Precalculations
-    dtC = C .* inv(dt)
-    dtd = dt .* d
-    dtgamma = dt * gamma
-
-    f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    calc_rosenbrock_differentiation!(integrator, cache, dtd[1], dtgamma, repeat_step, true)
-
-    calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
-        integrator.opts.abstol, integrator.opts.reltol,
-        integrator.opts.internalnorm, t)
-
-    if repeat_step
-        linres = dolinsolve(
-            integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-            du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma))
-    else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-            du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma))
-    end
-
-    @.. $(_vec(ks[1]))=-linres.u
-    integrator.stats.nsolve += 1
-
-    for stage in 2:length(ks)
-        u .= uprev
-        for i in 1:stage-1
-            @.. u += A[stage, i] * ks[i]
-        end
-
-        stage_limiter!(u, integrator, p, t + c[stage] * dt)
-        f(du, u, p, t + c[stage] * dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-        du1 .= 0
-        if mass_matrix === I
-            for i in 1:stage-1
-                @.. du1 += dtC[stage, i] * ks[i]
-            end
-        else
-            for i in 1:stage-1
-                @.. du1 += dtC[stage, i] * ks[i]
-            end
-            mul!(_vec(du2), mass_matrix, _vec(du1))
-            du1 .= du2
-        end
-        @.. linsolve_tmp = du + dtd[stage] * dT + du1
-
-        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-        @.. $(_vec(ks[stage]))=-linres.u
-        integrator.stats.nsolve += 1
-    end
-
-    du .= ks[end]
-    u .+= ks[end]
-
-    step_limiter!(u, integrator, p, t + dt)
-
-    if integrator.opts.adaptive
-        if (integrator.alg isa Rodas5Pe)
-            @. du = 0.2606326497975715 * ks[1] - 0.005158627295444251 * ks[2] +
-                    1.3038988631109731 * ks[3] + 1.235000722062074 * ks[4] +
-                    -0.7931985603795049 * ks[5] - 1.005448461135913 * ks[6] -
-                    0.18044626132120234 * ks[7] + 0.17051519239113755 * ks[8]
-        end
-        calculate_residuals!(atmp, du, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-
-    if integrator.opts.calck
-        for j in eachindex(integrator.k)
-            integrator.k[j] .= 0
-        end
-        for i in eachindex(ks)
-            for j in eachindex(integrator.k)
-                @.. integrator.k[j] += H[j, i] * ks[i]
-            end
-        end
-        if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
-           (integrator.EEst < 1.0)
-            ks[2] = 0.5 * (uprev + u +
-                  0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
-            du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
-            f(du, ks[2], p, t + dt / 2)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            if mass_matrix === I
-                du2 = du1 - du
-            else
-                mul!(_vec(du2), mass_matrix, _vec(du1))
-                du2 = du2 - du
-            end
-            EEst = norm(du2) / norm(integrator.opts.abstol .+ integrator.opts.reltol .* k2)
-            integrator.EEst = max(EEst, integrator.EEst)
-        end
-    end
-    cache.linsolve = linres.cache
 end
 
 @RosenbrockW6S4OS(:init)
