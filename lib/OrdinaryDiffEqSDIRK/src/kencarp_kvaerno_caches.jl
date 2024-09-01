@@ -77,7 +77,7 @@ end
     z₂::uType
     z₃::uType
     z₄::uType
-    k::Vector{kType}
+    ks::Vector{kType}
     atmp::uNoUnitsType
     nlsolver::N
     tab::Tab
@@ -95,9 +95,9 @@ function alg_cache(alg::KenCarp3, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
 
     if f isa SplitFunction
-        k = [zero(u) for _ in 1:4] 
+        ks = [zero(u) for _ in 1:4] 
     else
-        k = [nothing for _ in 1:4]
+        ks = [nothing for _ in 1:4]
         uf = UJacobianWrapper(f, t, p)
     end
 
@@ -108,7 +108,7 @@ function alg_cache(alg::KenCarp3, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    KenCarp3Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, k, atmp, nlsolver, tab, alg.step_limiter!)
+    KenCarp3Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, ks, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
 @cache mutable struct CFNLIRK3ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -137,7 +137,7 @@ end
     z₂::uType
     z₃::uType
     z₄::uType
-    k::Vector{kType}
+    ks::Vector{kType}
     atmp::uNoUnitsType
     nlsolver::N
     tab::Tab
@@ -153,7 +153,7 @@ function alg_cache(alg::CFNLIRK3, u, rate_prototype, ::Type{uEltypeNoUnits},
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
-    k = [zero(u) for _ in 1:4]
+    ks = [zero(u) for _ in 1:4]
 
     z₁ = zero(u)
     z₂ = zero(u)
@@ -162,7 +162,7 @@ function alg_cache(alg::CFNLIRK3, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    CFNLIRK3Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, k, atmp, nlsolver, tab)
+    CFNLIRK3Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, ks, atmp, nlsolver, tab)
 end
 
 @cache mutable struct Kvaerno4ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -247,7 +247,7 @@ end
     z₄::uType
     z₅::uType
     z₆::uType
-    k::Vector{kType}
+    ks::Vector{kType}
     atmp::uNoUnitsType
     nlsolver::N
     tab::Tab
@@ -267,9 +267,9 @@ function alg_cache(alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
 
     if f isa SplitFunction
-        k = [zero(u) for _ in 1:6]
+        ks = [zero(u) for _ in 1:6]
     else
-        k = [nothing for _ in 1:6]
+        ks = [nothing for _ in 1:6]
         uf = UJacobianWrapper(f, t, p)
     end
 
@@ -283,7 +283,7 @@ function alg_cache(alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
 
     KenCarp4Cache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, k, atmp,
+        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, ks, atmp,
         nlsolver, tab, alg.step_limiter!)
 end
 
@@ -377,7 +377,7 @@ end
     z₆::uType
     z₇::uType
     z₈::uType
-    k::Vector{kType}
+    ks::Vector{kType}
     atmp::uNoUnitsType
     nlsolver::N
     tab::Tab
@@ -395,9 +395,9 @@ function alg_cache(alg::KenCarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
 
     if f isa SplitFunction
-        k = [zero(u) for _ in 1:8]
+        ks = [zero(u) for _ in 1:8]
     else
-        k = [nothing for _ in 1:8]
+        ks = [nothing for _ in 1:8]
     end
 
     z₁ = zero(u)
@@ -412,7 +412,7 @@ function alg_cache(alg::KenCarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
 
     KenCarp5Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈,
-        k, atmp, nlsolver, tab, alg.step_limiter!)
+        ks, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
 @cache mutable struct KenCarp47ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -444,7 +444,7 @@ end
     z₅::uType
     z₆::uType
     z₇::uType
-    k::Vector{kType}
+    ks::Vector{kType}
     atmp::uNoUnitsType
     nlsolver::N
     tab::Tab
@@ -462,9 +462,9 @@ function alg_cache(alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
 
     if f isa SplitFunction
-        k = [zero(u) for _ in 1:7]
+        ks = [zero(u) for _ in 1:7]
     else
-        k = [nothing for _ in 1:7]
+        ks = [nothing for _ in 1:7]
     end
 
     z₁ = zero(u)
@@ -478,7 +478,7 @@ function alg_cache(alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
 
     KenCarp47Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇,
-        k, atmp, nlsolver, tab)
+        ks, atmp, nlsolver, tab)
 end
 
 @cache mutable struct KenCarp58ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -511,7 +511,7 @@ end
     z₆::uType
     z₇::uType
     z₈::uType
-    k::Vector{kType}
+    ks::Vector{kType}
     atmp::uNoUnitsType
     nlsolver::N
     tab::Tab
@@ -530,9 +530,9 @@ function alg_cache(alg::KenCarp58, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
 
     if f isa SplitFunction
-        k = [zero(u) for _ in 1:8]
+        ks = [zero(u) for _ in 1:8]
     else
-        k = [nothing for _ in 1:8]
+        ks = [nothing for _ in 1:8]
     end
 
     z₁ = zero(u)
@@ -547,5 +547,5 @@ function alg_cache(alg::KenCarp58, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
 
     KenCarp58Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈,
-        k, atmp, nlsolver, tab)
+        ks, atmp, nlsolver, tab)
 end
