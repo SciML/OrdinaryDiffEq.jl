@@ -697,7 +697,7 @@ end
 
 ### Rodas4 methods
 
-struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD, rateType} <: RosenbrockConstantCache
+struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -705,7 +705,6 @@ struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD, rateType} <: Rosenb
     W::WType
     linsolve::F
     autodiff::AD
-    ks::Vector{rateType}
 end
 
 tabtype(::Rodas4) = Rodas4Tableau
@@ -722,11 +721,10 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2}, u, rate_proto
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
-    ks = Vector{typeof(rate_prototype)}(undef, 6)
     Rodas4ConstantCache(tf, uf,
         tabtype(alg)(constvalue(uBottomEltypeNoUnits),
             constvalue(tTypeNoUnits)), J, W, linsolve,
-        alg_autodiff(alg), ks)
+        alg_autodiff(alg))
 end
 
 function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2}, u, rate_prototype, ::Type{uEltypeNoUnits},

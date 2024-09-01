@@ -1208,7 +1208,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step = false)
     (;t, dt, uprev, u, f, p) = integrator
-    (;tf, uf, ks) = cache
+    (;tf, uf) = cache
     (;A, C, gamma, c, d, H) = cache.tab
 
     # Precalculations
@@ -1228,11 +1228,15 @@ end
         return nothing
     end
 
-    # Initialize k arrays
+    # Initialize ks
     num_stages = size(A,1)
-
+    du = f(u, p, t)
+    linsolve_tmp = @.. du + dtd[1] * dT
+    k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+    # constant number for type stability make sure this is greater than num_stages
+    ks = ntuple(Returns(k1), 10)
     # Loop for stages
-    for stage in 1:num_stages
+    for stage in 2:num_stages
         u = uprev
         for i in 1:stage-1
             u = @.. u + A[stage, i] * ks[i]
@@ -1255,7 +1259,7 @@ end
         end
         linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp1
 
-        ks[stage] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+        ks = Base.setindex(ks, _reshape(W \ -_vec(linsolve_tmp), axes(uprev)), stage)
         integrator.stats.nsolve += 1
     end
     #@show ks
@@ -1271,7 +1275,7 @@ end
         for j in eachindex(integrator.k)
             integrator.k[j] = zero(integrator.k[1])
         end
-        for i in eachindex(ks)
+        for i in 1:num_stages
             for j in eachindex(integrator.k)
                 integrator.k[j] = @.. integrator.k[j] + H[j, i] * ks[i]
             end

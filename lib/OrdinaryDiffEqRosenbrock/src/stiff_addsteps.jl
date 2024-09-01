@@ -291,7 +291,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        (;tf, uf, ks) = cache
+        (;tf, uf) = cache
         (;A, C, gamma, c, d, H) = cache.tab
 
         # Precalculations
@@ -317,10 +317,16 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
             J = ForwardDiff.derivative(uf, uprev)
             W = 1 / dtgamma - J
         end
-
-        num_stages = size(A, 1)
+        
+        
+        num_stages = size(A,1)
+        du = f(u, p, t)
+        linsolve_tmp = @.. du + dtd[1] * dT
+        k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+        # constant number for type stability make sure this is greater than num_stages
+        ks = ntuple(Returns(k1), 10)
         # Last stage doesn't affect ks
-        for stage in 1:num_stages-1
+        for stage in 2:num_stages-1
             u = uprev
             for i in 1:stage-1
                 u = @.. u + A[stage, i] * ks[i]
@@ -341,14 +347,14 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
                 end
             end
 
-            ks[stage] = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
+            ks = Base.setindex(ks, _reshape(W \ _vec(linsolve_tmp), axes(uprev)), stage)
         end
 
         k1 = zero(ks[1])
         k2 = zero(ks[1])
         H = cache.tab.H
         # Last stage doesn't affect ks
-        for i in 1:length(ks)-1
+        for i in 1:num_stages-1
             k1 = @.. k1 + H[1, i] * ks[i]
             k2 = @.. k2 + H[2, i] * ks[i]
         end
