@@ -322,7 +322,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
         num_stages = size(A,1)
         du = f(u, p, t)
         linsolve_tmp = @.. du + dtd[1] * dT
-        k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+        k1 = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
         # constant number for type stability make sure this is greater than num_stages
         ks = ntuple(Returns(k1), 10)
         # Last stage doesn't affect ks
@@ -335,18 +335,18 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
             du = f(u, p, t + c[stage] * dt)
 
             # Compute linsolve_tmp for current stage
-            linsolve_tmp = @.. du + dtd[stage] * dT
+            linsolve_tmp = zero(du)
             if mass_matrix === I
                 for i in 1:stage-1
                     linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
                 end
             else
                 for i in 1:stage-1
-                    linsolve_tmp1 = mass_matrix * @..dtC[stage, i] * ks[i]
-                    linsolve_tmp = @.. linsolve_tmp + linsolve_tmp1
+                    linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
                 end
+                linsolve_tmp = mass_matrix * linsolve_tmp
             end
-
+            linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp
             ks = Base.setindex(ks, _reshape(W \ _vec(linsolve_tmp), axes(uprev)), stage)
         end
 
