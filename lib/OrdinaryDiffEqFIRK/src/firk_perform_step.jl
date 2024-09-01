@@ -169,7 +169,7 @@ end
 
         rhs1 = @. fw1 - αdt * Mw1 + βdt * Mw2
         rhs2 = @. fw2 - βdt * Mw1 - αdt * Mw2
-        dw12 = LU1 \ (@. rhs1 + rhs2 * im)
+        dw12 = _reshape(LU1 \ _vec(@. rhs1 + rhs2 * im), axes(u))
         integrator.stats.nsolve += 1
         dw1 = real(dw12)
         dw2 = imag(dw12)
@@ -450,8 +450,8 @@ end
         rhs1 = @.. broadcast=false fw1-γdt * Mw1
         rhs2 = @.. broadcast=false fw2 - αdt * Mw2+βdt * Mw3
         rhs3 = @.. broadcast=false fw3 - βdt * Mw2-αdt * Mw3
-        dw1 = LU1 \ rhs1
-        dw23 = LU2 \ (@.. broadcast=false rhs2+rhs3 * im)
+        dw1 = _reshape(LU1 \ _vec(rhs1), axes(u))
+        dw23 = _reshape(LU2 \ _vec(@.. broadcast=false rhs2+rhs3 * im), axes(u))
         integrator.stats.nsolve += 2
         dw2 = real(dw23)
         dw3 = imag(dw23)
@@ -507,7 +507,10 @@ end
         tmp = @.. broadcast=false e1dt*z1+e2dt*z2+e3dt*z3
         mass_matrix != I && (tmp = mass_matrix * tmp)
         utilde = @.. broadcast=false integrator.fsalfirst+tmp
-        alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
+        if alg.smooth_est
+            utilde = _reshape(LU1 \ _vec(utilde), axes(u))
+            integrator.stats.nsolve += 1
+        end
         # RadauIIA5 needs a transformed rtol and atol see
         # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -899,9 +902,9 @@ end
         rhs3 = @.. broadcast=false fw3 - β1dt * Mw2-α1dt * Mw3
         rhs4 = @.. broadcast=false fw4 - α2dt * Mw4+β2dt * Mw5
         rhs5 = @.. broadcast=false fw5 - β2dt * Mw4-α2dt * Mw5
-        dw1 = LU1 \ rhs1
-        dw23 = LU2 \ (@.. broadcast=false rhs2+rhs3 * im)
-        dw45 = LU3 \ (@.. broadcast=false rhs4+rhs5 * im)
+        dw1  = _reshape(LU1 \ _vec(rhs1), axes(u))
+        dw23 = _reshape(LU2 \ _vec(@.. broadcast=false rhs2+rhs3 * im), axes(u))
+        dw45 = _reshape(LU3 \ _vec(@.. broadcast=false rhs4+rhs5 * im), axes(u))
         integrator.stats.nsolve += 3
         dw2 = real(dw23)
         dw3 = imag(dw23)
@@ -969,7 +972,10 @@ end
         tmp = @.. broadcast=false e1dt*z1+e2dt*z2+e3dt*z3+e4dt*z4+e5dt*z5
         mass_matrix != I && (tmp = mass_matrix * tmp)
         utilde = @.. broadcast=false integrator.fsalfirst+tmp
-        alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
+        if alg.smooth_est
+            utilde = _reshape(LU1 \ _vec(utilde), axes(u))
+            integrator.stats.nsolve += 1
+        end
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
         integrator.EEst = internalnorm(atmp, t)
 
