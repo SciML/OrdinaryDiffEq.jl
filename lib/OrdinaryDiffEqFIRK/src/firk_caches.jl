@@ -594,7 +594,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     if J isa AbstractSciMLOperator
         error("Non-concrete Jacobian not yet supported by RadauIIA5.")
     end
-    W2 = Vector{Any}(undef, floor(Int, num_stages/2))
+    W2 = Vector{Any}(undef, floor(Int, num_stages / 2))
     for i in 1 : floor(Int, num_stages / 2)
         W2[i] = similar(J, Complex{eltype(W1)})
         recursivefill!(W2[i], false)

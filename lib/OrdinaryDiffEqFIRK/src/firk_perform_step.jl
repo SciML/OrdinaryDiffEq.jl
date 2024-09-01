@@ -770,6 +770,7 @@ end
             @.. broadcast=false cache.cont3=cache.cont2 - (tmp - z1 / c1) / c2
         end
     end
+
     f(fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return
@@ -1175,11 +1176,9 @@ end
         linsolve1 = cache.linsolve1
 
         if needfactor
-            linres1 = dolinsolve(integrator, linsolve1; A = W1, b = _vec(ubuff),
-                linu = _vec(dw1))
+            linres1 = dolinsolve(integrator, linsolve1; A = W1, b = _vec(ubuff), linu = _vec(dw1))
         else
-            linres1 = dolinsolve(integrator, linsolve1; A = nothing, b = _vec(ubuff),
-                linu = _vec(dw1))
+            linres1 = dolinsolve(integrator, linsolve1; A = nothing, b = _vec(ubuff), linu = _vec(dw1))
         end
 
         cache.linsolve1 = linres1.cache
@@ -1190,11 +1189,9 @@ end
         linsolve2 = cache.linsolve2
 
         if needfactor
-            linres2 = dolinsolve(integrator, linsolve2; A = W2, b = _vec(cubuff1),
-                linu = _vec(dw23))
+            linres2 = dolinsolve(integrator, linsolve2; A = W2, b = _vec(cubuff1), linu = _vec(dw23))
         else
-            linres2 = dolinsolve(integrator, linsolve2; A = nothing, b = _vec(cubuff1),
-                linu = _vec(dw23))
+            linres2 = dolinsolve(integrator, linsolve2; A = nothing, b = _vec(cubuff1), linu = _vec(dw23))
         end
 
         cache.linsolve2 = linres2.cache
@@ -1205,11 +1202,9 @@ end
         linsolve3 = cache.linsolve3
 
         if needfactor
-            linres3 = dolinsolve(integrator, linsolve3; A = W3, b = _vec(cubuff2),
-                linu = _vec(dw45))
+            linres3 = dolinsolve(integrator, linsolve3; A = W3, b = _vec(cubuff2), linu = _vec(dw45))
         else
-            linres3 = dolinsolve(integrator, linsolve3; A = nothing, b = _vec(cubuff2),
-                linu = _vec(dw45))
+            linres3 = dolinsolve(integrator, linsolve3; A = nothing, b = _vec(cubuff2), linu = _vec(dw45))
         end
 
         cache.linsolve3 = linres3.cache
@@ -1596,7 +1591,7 @@ end
             end
             z[i] = @.. z[i] * c_prime[i]
         end
-        w = @.. TI * z
+        w = TI * z
     end
 
     # Newton iteration
@@ -1636,25 +1631,23 @@ end
 
         linsolve1 = cache.linsolve1
         if needfactor
-            linres = dolinsolve(integrator, linsolve1; A = W1, b = _vec(ubuff),
-                linu = _vec(dw1))
+            linres = dolinsolve(integrator, linsolve1; A = W1, b = _vec(ubuff), linu = _vec(dw1))
         else
-            linres = dolinsolve(integrator, linsolve1; A = nothing, b = _vec(ubuff),
-                linu = _vec(dw1))
+            linres = dolinsolve(integrator, linsolve1; A = nothing, b = _vec(ubuff), linu = _vec(dw1))
         end
 
         cache.linsolve1 = linres.cache
+
         linres2 = Vector{Any}(undef, Int((num_stages - 1) / 2))
+
         for i in 1 : Int((num_stages - 1) / 2)
             @.. cubuff[i]=complex(
             fw[2 * i] - αdt[i] * Mw[2 * i] + βdt[i] * Mw[2 * i + 1], fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1])
             linsolve2[i] = cache.linsolve2[i]
             if needfactor
-                linres2[i] = dolinsolve(integrator, linsolve2[i]; A = W2[i], b = _vec(cubuff[i]),
-                    linu = _vec(dw2[i]))
+                linres2[i] = dolinsolve(integrator, linsolve2[i]; A = W2[i], b = _vec(cubuff[i]), linu = _vec(dw2[i]))
             else
-                linres2[i] = dolinsolve(integrator, linsolve2[i]; A = nothing, b = _vec(cubuff[i]),
-                    linu = _vec(dw2[i]))
+                linres2[i] = dolinsolve(integrator, linsolve2[i]; A = nothing, b = _vec(cubuff[i]), linu = _vec(dw2[i]))
             end
             cache.linsolve2[i] = linres2[i].cache
         end
@@ -1662,12 +1655,13 @@ end
         integrator.stats.nsolve += (num_stages + 1) / 2
         dw = Vector{Any}(undef, num_stages - 1)
         i = 1
+
         while i <= Int((num_stages - 1) / 2)
-            dw[i] = z[i]
-            dw[i + 1] = z[i + 1]
-            @.. dw[i] = real(dw2[i])
-            @.. dw[i + 1] = imag(dw2[i])
-            i += 2
+            dw[2 * i - 1] = z[2 * i - 1]
+            dw[2 * i] = z[2 * i]
+            dw[2 * i - 1] = real(dw2[i])
+            dw[2 * i] = imag(dw2[i])
+            i = i + 1
         end
 
         # compute norm of residuals
@@ -1675,9 +1669,7 @@ end
         ndws = Vector{Any}(undef, num_stages)
         ndws[1] = calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
         ndws[1] = internalnorm(atmp, t)
-
         for i in 2 : num_stages
-            @show i
             calculate_residuals!(atmp, dw[i - 1], uprev, u, atol, rtol, internalnorm, t)
             ndws[i] = internalnorm(atmp, t)
         end
@@ -1705,7 +1697,7 @@ end
         end
 
         # transform `w` to `z`
-        z = T * w
+        z = vec(T * w)
         # check stopping criterion
 
         iter > 1 && (η = θ / (1 - θ))
@@ -1773,16 +1765,18 @@ end
         if alg.extrapolant != :constant
             derivatives = Matrix{Any}(undef, num_stages, num_stages)
             pushfirst!(c, 0)
+            pushfirst!(z, map(zero, u))
             for i in 1 : num_stages
                 for j in i : num_stages
                     if i == 1
-                        derivatives[i, j] = @.. (z[i] - z[i + 1]) / (c[i] - c[i + 1]) #first derivatives
+                        derivatives[i, j] = @.. (z[j] - z[j + 1]) / (c[j] - c[j + 1]) #first derivatives
                     else
                         derivatives[i, j] = @.. (derivatives[i - 1, j - 1] - derivatives[i - 1, j]) / (c[j - i + 1] - c[j + 1]) #all others
                     end
                 end
             end
             popfirst!(c)
+            popfirst!(z)
             for i in 1 : num_stages
                 cache.cont[i] = derivatives[i, num_stages]
             end
