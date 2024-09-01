@@ -21,7 +21,7 @@ function DiffEqBase.interp_summary(::Type{cacheType},
         dense::Bool) where {
         cacheType <:
         Union{Rosenbrock5ConstantCache,
-        Rosenbrock5Cache}}
+        RosenbrockCache}}
     dense ? "specialized 4rd order \"free\" stiffness-aware interpolation" :
     "1st order linear"
 end
