@@ -1602,6 +1602,7 @@ end
 
 function initialize!(integrator, cache::RosenbrockCache)
     integrator.kshortsize = 3
+    dense = cache.dense
     dense1, dense2, dense3 = dense[1], dense[2], dense[3] 
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = dense1
