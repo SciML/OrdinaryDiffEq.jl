@@ -364,7 +364,7 @@ end
         ks[4] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false u=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * ks[1] +
-                              eb2 * ks[2] + eb3 * ks[3] + eb4 * k4
+                              eb2 * ks[2] + eb3 * ks[3] + eb4 * ks[4]
     end
 
     step_limiter!(u, integrator, p, t + dt)
