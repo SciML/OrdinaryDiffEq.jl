@@ -269,7 +269,7 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp3Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
-    @unpack z₁, z₂, z₃, z₄, k, atmp, nlsolver, step_limiter! = cache
+    @unpack z₁, z₂, z₃, z₄, ks, atmp, nlsolver, step_limiter! = cache
     @unpack tmp = nlsolver
     @unpack γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32 = cache.tab
     @unpack ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4 = cache.tab
@@ -308,8 +308,8 @@ end
 
     if integrator.f isa SplitFunction
         # This assumes the implicit part is cheaper than the explicit part
-        @.. broadcast=false k[1]=dt * integrator.fsalfirst - z₁
-        @.. broadcast=false tmp+=ea21 * k[1]
+        @.. broadcast=false ks[1]=dt * integrator.fsalfirst - z₁
+        @.. broadcast=false tmp+=ea21 * ks[1]
     end
 
     nlsolver.c = 2γ
@@ -322,10 +322,10 @@ end
     if integrator.f isa SplitFunction
         z₃ .= z₂
         @.. broadcast=false u=tmp + γ * z₂
-        f2(k[2], u, p, t + 2γdt)
-        k[2] .*= dt
+        f2(ks[2], u, p, t + 2γdt)
+        ks[2] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k[1] + ea32 * k[2]
+        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * ks[1] + ea32 * ks[2]
     else
         # Guess is from Hermite derivative on z₁ and z₂
         @.. broadcast=false z₃=α31 * z₁ + α32 * z₂
@@ -342,11 +342,11 @@ end
     if integrator.f isa SplitFunction
         z₄ .= z₂
         @.. broadcast=false u=tmp + γ * z₃
-        f2(k[3], u, p, t + c3 * dt)
-        k[3] .*= dt
+        f2(ks[3], u, p, t + c3 * dt)
+        ks[3] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k[1] +
-                                ea42 * k[2] + ea43 * k[3]
+        @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * ks[1] +
+                                ea42 * ks[2] + ea43 * ks[3]
     else
         @unpack α41, α42 = cache.tab
         @.. broadcast=false z₄=α41 * z₁ + α42 * z₂
@@ -360,11 +360,11 @@ end
 
     @.. broadcast=false u=tmp + γ * z₄
     if integrator.f isa SplitFunction
-        f2(k[4], u, p, t + dt)
-        k[4] .*= dt
+        f2(ks[4], u, p, t + dt)
+        ks[4] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false u=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * k[1] +
-                              eb2 * k[2] + eb3 * k[3] + eb4 * k4
+        @.. broadcast=false u=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * ks[1] +
+                              eb2 * ks[2] + eb3 * ks[3] + eb4 * k4
     end
 
     step_limiter!(u, integrator, p, t + dt)
@@ -374,8 +374,8 @@ end
     if integrator.opts.adaptive
         if integrator.f isa SplitFunction
             @.. broadcast=false tmp=btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ +
-                                    btilde4 * z₄ + ebtilde1 * k1 + ebtilde2 * k2 +
-                                    ebtilde3 * k3 + ebtilde4 * k4
+                                    btilde4 * z₄ + ebtilde1 * ks[1] + ebtilde2 * ks[2] +
+                                    ebtilde3 * ks[3] + ebtilde4 * ks[4]
         else
             @.. broadcast=false tmp=btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ +
                                     btilde4 * z₄
@@ -510,7 +510,7 @@ end
 
 @muladd function perform_step!(integrator, cache::CFNLIRK3Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
-    @unpack z₁, z₂, z₃, z₄, k, atmp, nlsolver = cache
+    @unpack z₁, z₂, z₃, z₄, ks, atmp, nlsolver = cache
     @unpack tmp = nlsolver
     @unpack γ, a31, a32, a41, a42, a43, c2, c3 = cache.tab
     @unpack ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4 = cache.tab
@@ -547,8 +547,8 @@ end
 
     if integrator.f isa SplitFunction
         # This assumes the implicit part is cheaper than the explicit part
-        @.. broadcast=false k[1]=dt * integrator.fsalfirst - z₁
-        @.. broadcast=false tmp+=ea21 * k[1]
+        @.. broadcast=false ks[1]=dt * integrator.fsalfirst - z₁
+        @.. broadcast=false tmp+=ea21 * ks[1]
     end
 
     nlsolver.c = c2
@@ -561,10 +561,10 @@ end
     if integrator.f isa SplitFunction
         z₃ .= z₂
         @.. broadcast=false u=tmp + γ * z₂
-        f2(k[2], u, p, t + c2 * dt)
-        k[2] .*= dt
+        f2(ks[2], u, p, t + c2 * dt)
+        ks[2] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k[1] + ea32 * k[2]
+        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * ks[1] + ea32 * ks[2]
     else
         @.. broadcast=false z₃=z₂
         @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂
@@ -580,11 +580,11 @@ end
     if integrator.f isa SplitFunction
         z₄ .= z₂
         @.. broadcast=false u=tmp + γ * z₃
-        f2(k[3], u, p, t + c3 * dt)
-        k[3] .*= dt
+        f2(ks[3], u, p, t + c3 * dt)
+        ks[3] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k[1] +
-                                ea42 * k[2] + ea43 * k[3]
+        @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * ks[1] +
+                                ea42 * ks[2] + ea43 * ks[3]
     else
         @.. broadcast=false z₄=z₂
         @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃
@@ -597,11 +597,11 @@ end
 
     @.. broadcast=false u=tmp + γ * z₄
     if integrator.f isa SplitFunction
-        f2(k4, u, p, t + dt)
-        k4 .*= dt
+        f2(ks[4], u, p, t + dt)
+        ks[4] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false u=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * k[1] +
-                              eb2 * k[2] + eb3 * k[3] + eb4 * k[4]
+        @.. broadcast=false u=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * ks[1] +
+                              eb2 * ks[2] + eb3 * ks[3] + eb4 * ks[4]
     end
 
     if integrator.f isa SplitFunction
@@ -957,7 +957,7 @@ end
     @unpack t, dt, uprev, u, p = integrator
     @unpack z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver, step_limiter! = cache
     @unpack tmp = nlsolver
-    @unpack k = cache
+    @unpack ks = cache
     @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c3, c4, c5 = cache.tab
     @unpack α31, α32, α41, α42, α51, α52, α53, α54, α61, α62, α63, α64, α65 = cache.tab
     @unpack btilde1, btilde3, btilde4, btilde5, btilde6 = cache.tab
@@ -1000,8 +1000,8 @@ end
 
     if integrator.f isa SplitFunction
         # This assumes the implicit part is cheaper than the explicit part
-        @.. broadcast=false k1=dt * integrator.fsalfirst - z₁
-        @.. broadcast=false tmp+=ea21 * k1
+        @.. broadcast=false ks[1]=dt * integrator.fsalfirst - z₁
+        @.. broadcast=false tmp+=ea21 * ks[1]
     end
 
     nlsolver.c = 2γ
@@ -1015,10 +1015,10 @@ end
     if integrator.f isa SplitFunction
         z₃ .= z₂
         @.. broadcast=false u=tmp + γ * z₂
-        f2(k2, u, p, t + 2γdt)
-        k2 .*= dt
+        f2(ks[2], u, p, t + 2γdt)
+        ks[2] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
+        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * ks[1] + ea32 * ks[2]
     else
         # Guess is from Hermite derivative on z₁ and z₂
         @.. broadcast=false z₃=α31 * z₁ + α32 * z₂
@@ -1035,11 +1035,11 @@ end
     if integrator.f isa SplitFunction
         z₄ .= z₂
         @.. broadcast=false u=tmp + γ * z₃
-        f2(k3, u, p, t + c3 * dt)
-        k3 .*= dt
+        f2(ks[3], u, p, t + c3 * dt)
+        ks[3] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 +
-                                ea42 * k2 + ea43 * k3
+        @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * ks[1] +
+                                ea42 * ks[2] + ea43 * ks[3]
     else
         @.. broadcast=false z₄=α41 * z₁ + α42 * z₂
         @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃
@@ -1055,11 +1055,11 @@ end
     if integrator.f isa SplitFunction
         z₅ .= z₄
         @.. broadcast=false u=tmp + γ * z₄
-        f2(k4, u, p, t + c4 * dt)
-        k4 .*= dt
+        f2(ks[4], u, p, t + c4 * dt)
+        ks[4] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄ +
-                                ea51 * k1 + ea52 * k2 + ea53 * k3 + ea54 * k4
+                                ea51 * ks[1] + ea52 * ks[2] + ea53 * ks[3] + ea54 * ks[4]
     else
         @.. broadcast=false z₅=α51 * z₁ + α52 * z₂ + α53 * z₃ + α54 * z₄
         @.. broadcast=false tmp=uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄
@@ -1075,11 +1075,11 @@ end
     if integrator.f isa SplitFunction
         z₆ .= z₅
         @.. broadcast=false u=tmp + γ * z₅
-        f2(k5, u, p, t + c5 * dt)
-        k5 .*= dt
+        f2(ks[5], u, p, t + c5 * dt)
+        ks[5] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a61 * z₁ + a63 * z₃ + a64 * z₄ + a65 * z₅ +
-                                ea61 * k1 + ea62 * k2 + ea63 * k3 + ea64 * k4 + ea65 * k5
+                                ea61 * ks[1] + ea62 * ks[2] + ea63 * ks[3] + ea64 * ks[4] + ea65 * ks[5]
     else
         @.. broadcast=false z₆=α61 * z₁ + α62 * z₂ + α63 * z₃ + α64 * z₄ + α65 * z₅
         @.. broadcast=false tmp=uprev + a61 * z₁ + a63 * z₃ + a64 * z₄ + a65 * z₅
@@ -1092,11 +1092,11 @@ end
 
     @.. broadcast=false u=tmp + γ * z₆
     if integrator.f isa SplitFunction
-        f2(k6, u, p, t + dt)
-        k6 .*= dt
+        f2(ks[6], u, p, t + dt)
+        ks[6] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false u=uprev + a61 * z₁ + a63 * z₃ + a64 * z₄ + a65 * z₅ + γ * z₆ +
-                              eb1 * k1 + eb3 * k3 + eb4 * k4 + eb5 * k5 + eb6 * k6
+                              eb1 * ks[1] + eb3 * ks[3] + eb4 * ks[4] + eb5 * ks[5] + eb6 * ks[6]
     end
 
     step_limiter!(u, integrator, p, t + dt)
@@ -1105,9 +1105,9 @@ end
     if integrator.opts.adaptive
         if integrator.f isa SplitFunction
             @.. broadcast=false tmp=btilde1 * z₁ + btilde3 * z₃ + btilde4 * z₄ +
-                                    btilde5 * z₅ + btilde6 * z₆ + ebtilde1 * k1 +
-                                    ebtilde3 * k3 + ebtilde4 * k4 + ebtilde5 * k5 +
-                                    ebtilde6 * k6
+                                    btilde5 * z₅ + btilde6 * z₆ + ebtilde1 * ks[1] +
+                                    ebtilde3 * ks[3] + ebtilde4 * ks[4] + ebtilde5 * ks[5] +
+                                    ebtilde6 * ks[6]
         else
             @.. broadcast=false tmp=btilde1 * z₁ + btilde3 * z₃ + btilde4 * z₄ +
                                     btilde5 * z₅ + btilde6 * z₆
@@ -1560,7 +1560,7 @@ end
 @muladd function perform_step!(integrator, cache::KenCarp5Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver, step_limiter! = cache
-    @unpack k = cache
+    @unpack ks = cache
     @unpack tmp = nlsolver
     @unpack γ, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, c3, c4, c5, c6, c7 = cache.tab
     @unpack α31, α32, α41, α42, α51, α52, α61, α62, α71, α72, α73, α74, α75, α81, α82, α83, α84, α85 = cache.tab
@@ -1605,8 +1605,8 @@ end
 
     if integrator.f isa SplitFunction
         # This assumes the implicit part is cheaper than the explicit part
-        @.. broadcast=false k1=dt * integrator.fsalfirst - z₁
-        @.. broadcast=false tmp+=ea21 * k1
+        @.. broadcast=false ks[1]=dt * integrator.fsalfirst - z₁
+        @.. broadcast=false tmp+=ea21 * ks[1]
     end
 
     nlsolver.c = 2γ
@@ -1619,10 +1619,10 @@ end
     if integrator.f isa SplitFunction
         z₃ .= z₂
         @.. broadcast=false u=tmp + γ * z₂
-        f2(k2, u, p, t + 2γdt)
-        k2 .*= dt
+        f2(ks[2], u, p, t + 2γdt)
+        ks[2] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
+        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * ks[1] + ea32 * ks[2]
     else
         # Guess is from Hermite derivative on z₁ and z₂
         @.. broadcast=false z₃=a31 * z₁ + α32 * z₂
@@ -1639,10 +1639,10 @@ end
     if integrator.f isa SplitFunction
         z₄ .= z₃
         @.. broadcast=false u=tmp + γ * z₃
-        f2(k3, u, p, t + c3 * dt)
-        k3 .*= dt
+        f2(ks[3], u, p, t + c3 * dt)
+        ks[3] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a41 * z₁ + a43 * z₃ + ea41 * k1 + ea43 * k3
+        @.. broadcast=false tmp=uprev + a41 * z₁ + a43 * z₃ + ea41 * ks[1] + ea43 * ks[3]
     else
         @.. broadcast=false z₄=α41 * z₁ + α42 * z₂
         @.. broadcast=false tmp=uprev + a41 * z₁ + a43 * z₃
@@ -1658,11 +1658,11 @@ end
     if integrator.f isa SplitFunction
         z₅ .= z₂
         @.. broadcast=false u=tmp + γ * z₄
-        f2(k4, u, p, t + c4 * dt)
-        k4 .*= dt
+        f2(ks[4], u, p, t + c4 * dt)
+        ks[4] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a51 * z₁ + a53 * z₃ + a54 * z₄ + ea51 * k1 +
-                                ea53 * k3 + ea54 * k4
+        @.. broadcast=false tmp=uprev + a51 * z₁ + a53 * z₃ + a54 * z₄ + ea51 * ks[1] +
+                                ea53 * ks[3] + ea54 * ks[4]
     else
         @.. broadcast=false z₅=α51 * z₁ + α52 * z₂
         @.. broadcast=false tmp=uprev + a51 * z₁ + a53 * z₃ + a54 * z₄
@@ -1678,11 +1678,11 @@ end
     if integrator.f isa SplitFunction
         z₆ .= z₃
         @.. broadcast=false u=tmp + γ * z₅
-        f2(k5, u, p, t + c5 * dt)
-        k5 .*= dt
+        f2(ks[5], u, p, t + c5 * dt)
+        ks[5] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a61 * z₁ + a63 * z₃ + a64 * z₄ + a65 * z₅ +
-                                ea61 * k1 + ea63 * k3 + ea64 * k4 + ea65 * k5
+                                ea61 * ks[1] + ea63 * ks[3] + ea64 * ks[4] + ea65 * ks[5]
     else
         @.. broadcast=false z₆=α61 * z₁ + α62 * z₂
         @.. broadcast=false tmp=uprev + a61 * z₁ + a63 * z₃ + a64 * z₄ + a65 * z₅
@@ -1698,12 +1698,12 @@ end
     if integrator.f isa SplitFunction
         z₇ .= z₂
         @.. broadcast=false u=tmp + γ * z₆
-        f2(k6, u, p, t + c6 * dt)
-        k6 .*= dt
+        f2(ks[6], u, p, t + c6 * dt)
+        ks[6] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a71 * z₁ + a73 * z₃ + a74 * z₄ + a75 * z₅ +
-                                a76 * z₆ + ea71 * k1 + ea73 * k3 + ea74 * k4 + ea75 * k5 +
-                                ea76 * k6
+                                a76 * z₆ + ea71 * ks[1] + ea73 * ks[3] + ea74 * ks[4] + ea75 * ks[5] +
+                                ea76 * ks[6]
     else
         @.. broadcast=false z₇=α71 * z₁ + α72 * z₂ + α73 * z₃ + α74 * z₄ + α75 * z₅
         @.. broadcast=false tmp=uprev + a71 * z₁ + a73 * z₃ + a74 * z₄ + a75 * z₅ + a76 * z₆
@@ -1719,12 +1719,12 @@ end
     if integrator.f isa SplitFunction
         z₈ .= z₅
         @.. broadcast=false u=tmp + γ * z₇
-        f2(k7, u, p, t + c7 * dt)
-        k7 .*= dt
+        f2(ks[7], u, p, t + c7 * dt)
+        ks[7] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a81 * z₁ + a84 * z₄ + a85 * z₅ + a86 * z₆ +
-                                a87 * z₇ + ea81 * k1 + ea83 * k3 + ea84 * k4 + ea85 * k5 +
-                                ea86 * k6 + ea87 * k7
+                                a87 * z₇ + ea81 * ks[1] + ea83 * ks[3] + ea84 * ks[4] + ea85 * ks[5] +
+                                ea86 * ks[6] + ea87 * ks[7]
     else
         @.. broadcast=false z₈=α81 * z₁ + α82 * z₂ + α83 * z₃ + α84 * z₄ + α85 * z₅
         @.. broadcast=false tmp=uprev + a81 * z₁ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇
@@ -1737,12 +1737,12 @@ end
 
     @.. broadcast=false u=tmp + γ * z₈
     if integrator.f isa SplitFunction
-        f2(k8, u, p, t + dt)
-        k8 .*= dt
+        f2(ks[8], u, p, t + dt)
+        ks[8] .*= dt
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast=false u=uprev + a81 * z₁ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇ +
-                              γ * z₈ + eb1 * k1 + eb4 * k4 + eb5 * k5 + eb6 * k6 +
-                              eb7 * k7 + eb8 * k8
+                              γ * z₈ + eb1 * ks[1] + eb4 * ks[4] + eb5 * ks[5] + eb6 * ks[6] +
+                              eb7 * ks[7] + eb8 * ks[8]
     end
 
     step_limiter!(u, integrator, p, t + dt)
@@ -1752,8 +1752,8 @@ end
         if integrator.f isa SplitFunction
             @.. broadcast=false tmp=btilde1 * z₁ + btilde4 * z₄ + btilde5 * z₅ +
                                     btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈ +
-                                    ebtilde1 * k1 + ebtilde4 * k4 + ebtilde5 * k5 +
-                                    ebtilde6 * k6 + ebtilde7 * k7 + ebtilde8 * k8
+                                    ebtilde1 * ks[1] + ebtilde4 * ks[4] + ebtilde5 * ks[5] +
+                                    ebtilde6 * ks[6] + ebtilde7 * ks[7] + ebtilde8 * ks[8]
         else
             @.. broadcast=false tmp=btilde1 * z₁ + btilde4 * z₄ + btilde5 * z₅ +
                                     btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈
@@ -1977,7 +1977,7 @@ end
 @muladd function perform_step!(integrator, cache::KenCarp47Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver = cache
-    @unpack k = cache
+    @unpack ks = cache
     @unpack tmp = nlsolver
     @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a73, a74, a75, a76, c3, c4, c5, c6 = cache.tab
     @unpack α31, α32, α41, α42, α43, α51, α52, α61, α62, α63, α71, α72, α73, α74, α75, α76 = cache.tab
@@ -2021,8 +2021,8 @@ end
 
     if integrator.f isa SplitFunction
         # This assumes the implicit part is cheaper than the explicit part
-        @.. broadcast=false k[1]=dt * integrator.fsalfirst - z₁
-        @.. broadcast=false tmp+=ea21 * k[1]
+        @.. broadcast=false ks[1]=dt * integrator.fsalfirst - z₁
+        @.. broadcast=false tmp+=ea21 * ks[1]
     end
 
     nlsolver.c = 2γ
@@ -2035,10 +2035,10 @@ end
     if integrator.f isa SplitFunction
         z₃ .= z₂
         @.. broadcast=false u=tmp + γ * z₂
-        f2(k[2], u, p, t + 2γdt)
-        k[2] .*= dt
+        f2(ks[2], u, p, t + 2γdt)
+        ks[2] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k[1] + ea32 * k[2]
+        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * ks[1] + ea32 * ks[2]
     else
         #Guess is from Hermite derivative on z₁ and z₂
         @.. broadcast=false z₃=a31 * z₁ + α32 * z₂
@@ -2055,11 +2055,11 @@ end
     if integrator.f isa SplitFunction
         z₄ .= z₃
         @.. broadcast=false u=tmp + γ * z₃
-        f2(k[3], u, p, t + c3 * dt)
-        k[3] .*= dt
+        f2(ks[3], u, p, t + c3 * dt)
+        ks[3] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k[1] +
-                                ea42 * k[2] + ea43 * k[3]
+        @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * ks[1] +
+                                ea42 * ks[2] + ea43 * ks[3]
     else
         @.. broadcast=false z₄=α41 * z₁ + α42 * z₂ + α43 * z₃
         @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃
@@ -2075,11 +2075,11 @@ end
     if integrator.f isa SplitFunction
         z₅ .= z₁
         @.. broadcast=false u=tmp + γ * z₄
-        f2(k[4], u, p, t + c4 * dt)
-        k[4] .*= dt
+        f2(ks[4], u, p, t + c4 * dt)
+        ks[4] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄ +
-                                ea51 * k[1] + ea52 * k[2] + ea53 * k[3] + ea54 * k[4]
+                                ea51 * ks[1] + ea52 * ks[2] + ea53 * ks[3] + ea54 * ks[4]
     else
         @.. broadcast=false z₅=α51 * z₁ + α52 * z₂
         @.. broadcast=false tmp=uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄
@@ -2095,12 +2095,12 @@ end
     if integrator.f isa SplitFunction
         z₆ .= z₃
         @.. broadcast=false u=tmp + γ * z₅
-        f2(k[5], u, p, t + c5 * dt)
-        k[5] .*= dt
+        f2(ks[5], u, p, t + c5 * dt)
+        ks[5] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a61 * z₁ + a62 * z₂ + a63 * z₃ + a64 * z₄ +
-                                a65 * z₅ + ea61 * k[1] + ea62 * k[2] + ea63 * k[3] + ea64 * k[4] +
-                                ea65 * k[5]
+                                a65 * z₅ + ea61 * ks[1] + ea62 * ks[2] + ea63 * ks[3] + ea64 * ks[4] +
+                                ea65 * ks[5]
     else
         @.. broadcast=false z₆=α61 * z₁ + α62 * z₂ + α63 * z₃
         @.. broadcast=false tmp=uprev + a61 * z₁ + a62 * z₂ + a63 * z₃ + a64 * z₄ + a65 * z₅
@@ -2116,12 +2116,12 @@ end
     if integrator.f isa SplitFunction
         z₇ .= z₆
         @.. broadcast=false u=tmp + γ * z₆
-        f2(k[6], u, p, t + c6 * dt)
-        k[6] .*= dt
+        f2(ks[6], u, p, t + c6 * dt)
+        ks[6] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a73 * z₃ + a74 * z₄ + a75 * z₅ + a76 * z₆ +
-                                ea71 * k[1] + ea72 * k[2] + ea73 * k[3] + ea74 * k[4] + ea75 * k[5] +
-                                ea76 * k[6]
+                                ea71 * ks[1] + ea72 * ks[2] + ea73 * ks[3] + ea74 * ks[4] + ea75 * ks[5] +
+                                ea76 * ks[6]
     else
         @.. broadcast=false z₇=α71 * z₁ + α72 * z₂ + α73 * z₃ + α74 * z₄ + α75 * z₅ +
                                α76 * z₆
@@ -2135,11 +2135,11 @@ end
 
     @.. broadcast=false u=tmp + γ * z₇
     if integrator.f isa SplitFunction
-        f2(k7, u, p, t + dt)
-        k7 .*= dt
+        f2(ks[7], u, p, t + dt)
+        ks[7] .*= dt
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast=false u=uprev + a73 * z₃ + a74 * z₄ + a75 * z₅ + a76 * z₆ + γ * z₇ +
-                              eb3 * k[3] + eb4 * k[4] + eb5 * k[5] + eb6 * k[6] + eb7 * k[7]
+                              eb3 * ks[3] + eb4 * ks[4] + eb5 * ks[5] + eb6 * ks[6] + eb7 * ks[7]
     end
 
     ################################### Finalize
@@ -2147,9 +2147,9 @@ end
     if integrator.opts.adaptive
         if integrator.f isa SplitFunction
             @.. broadcast=false tmp=btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
-                                    btilde6 * z₆ + btilde7 * z₇ + ebtilde3 * k[3] +
-                                    ebtilde4 * k[4] + ebtilde5 * k[5] + ebtilde6 * k[6] +
-                                    ebtilde7 * k[7]
+                                    btilde6 * z₆ + btilde7 * z₇ + ebtilde3 * ks[3] +
+                                    ebtilde4 * ks[4] + ebtilde5 * ks[5] + ebtilde6 * ks[6] +
+                                    ebtilde7 * ks[7]
         else
             @.. broadcast=false tmp=btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
                                     btilde6 * z₆ + btilde7 * z₇
@@ -2397,7 +2397,7 @@ end
 @muladd function perform_step!(integrator, cache::KenCarp58Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver = cache
-    @unpack k = cache
+    @unpack ks = cache
     @unpack tmp = nlsolver
     @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a83, a84, a85, a86, a87, c3, c4, c5, c6, c7 = cache.tab
     @unpack α31, α32, α41, α42, α51, α52, α61, α62, α63, α71, α72, α73, α81, α82, α83, α84, α85, α86, α87 = cache.tab
@@ -2442,8 +2442,8 @@ end
 
     if integrator.f isa SplitFunction
         # This assumes the implicit part is cheaper than the explicit part
-        @.. broadcast=false k[1]=dt * integrator.fsalfirst - z₁
-        @.. broadcast=false tmp+=ea21 * k[1]
+        @.. broadcast=false ks[1]=dt * integrator.fsalfirst - z₁
+        @.. broadcast=false tmp+=ea21 * ks[1]
     end
 
     nlsolver.c = 2γ
@@ -2456,10 +2456,10 @@ end
     if integrator.f isa SplitFunction
         z₃ .= z₂
         @.. broadcast=false u=tmp + γ * z₂
-        f2(k[2], u, p, t + 2γdt)
-        k[2] .*= dt
+        f2(ks[2], u, p, t + 2γdt)
+        ks[2] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k[1] + ea32 * k[2]
+        @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * ks[1] + ea32 * ks[2]
     else
         # Guess is from Hermite derivative on z₁ and z₂
         @.. broadcast=false z₃=α31 * z₁ + α32 * z₂
@@ -2476,11 +2476,11 @@ end
     if integrator.f isa SplitFunction
         z₄ .= z₁
         @.. broadcast=false u=tmp + γ * z₃
-        f2(k[3], u, p, t + c3 * dt)
-        k[3] .*= dt
+        f2(ks[3], u, p, t + c3 * dt)
+        ks[3] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k[1] +
-                                ea42 * k[2] + ea43 * k[3]
+        @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * ks[1] +
+                                ea42 * ks[2] + ea43 * ks[3]
     else
         @.. broadcast=false z₄=α41 * z₁ + α42 * z₂
         @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃
@@ -2496,11 +2496,11 @@ end
     if integrator.f isa SplitFunction
         z₅ .= z₂
         @.. broadcast=false u=tmp + γ * z₄
-        f2(k[4], u, p, t + c4 * dt)
-        k[4] .*= dt
+        f2(ks[4], u, p, t + c4 * dt)
+        ks[4] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄ +
-                                ea51 * k[1] + ea52 * k[2] + ea53 * k[3] + ea54 * k[4]
+                                ea51 * ks[1] + ea52 * ks[2] + ea53 * ks[3] + ea54 * ks[4]
     else
         @.. broadcast=false z₅=α51 * z₁ + α52 * z₂
         @.. broadcast=false tmp=uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄
@@ -2516,12 +2516,12 @@ end
     if integrator.f isa SplitFunction
         z₆ .= z₃
         @.. broadcast=false u=tmp + γ * z₅
-        f2(k5, u, p, t + c5 * dt)
-        k[5] .*= dt
+        f2(ks[5], u, p, t + c5 * dt)
+        ks[5] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a61 * z₁ + a62 * z₂ + a63 * z₃ + a64 * z₄ +
-                                a65 * z₅ + ea61 * k[1] + ea62 * k[2] + ea63 * k[3] + ea64 * k[4] +
-                                ea65 * k[5]
+                                a65 * z₅ + ea61 * ks[1] + ea62 * ks[2] + ea63 * ks[3] + ea64 * ks[4] +
+                                ea65 * ks[5]
     else
         @.. broadcast=false z₆=α61 * z₁ + α62 * z₂ + α63 * z₃
         @.. broadcast=false tmp=uprev + a61 * z₁ + a62 * z₂ + a63 * z₃ + a64 * z₄ + a65 * z₅
@@ -2537,12 +2537,12 @@ end
     if integrator.f isa SplitFunction
         z₇ .= z₃
         @.. broadcast=false u=tmp + γ * z₆
-        f2(k6, u, p, t + c6 * dt)
-        k[6] .*= dt
+        f2(ks[6], u, p, t + c6 * dt)
+        ks[6] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a71 * z₁ + a72 * z₂ + a73 * z₃ + a74 * z₄ +
-                                a75 * z₅ + a76 * z₆ + ea71 * k[1] + ea72 * k[2] + ea73 * k[3] +
-                                ea74 * k[4] + ea75 * k[5] + ea76 * k[6]
+                                a75 * z₅ + a76 * z₆ + ea71 * ks[1] + ea72 * ks[2] + ea73 * ks[3] +
+                                ea74 * ks[4] + ea75 * ks[5] + ea76 * ks[6]
     else
         @.. broadcast=false z₇=α71 * z₁ + α72 * z₂ + α73 * z₃
         @.. broadcast=false tmp=uprev + a71 * z₁ + a72 * z₂ + a73 * z₃ + a74 * z₄ +
@@ -2559,12 +2559,12 @@ end
     if integrator.f isa SplitFunction
         z₈ .= z₇
         @.. broadcast=false u=tmp + γ * z₇
-        f2(k[7], u, p, t + c7 * dt)
-        k[7] .*= dt
+        f2(ks[7], u, p, t + c7 * dt)
+        ks[7] .*= dt
         integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a83 * z₃ + a84 * z₄ + a85 * z₅ + a86 * z₆ +
-                                a87 * z₇ + ea81 * k[1] + ea82 * k[2] + ea83 * k[3] + ea84 * k[4] +
-                                ea85 * k[5] + ea86 * k[6] + ea87 * k[7]
+                                a87 * z₇ + ea81 * ks[1] + ea82 * ks[2] + ea83 * ks[3] + ea84 * ks[4] +
+                                ea85 * ks[5] + ea86 * ks[6] + ea87 * ks[7]
     else
         @.. broadcast=false z₈=α81 * z₁ + α82 * z₂ + α83 * z₃ + α84 * z₄ + α85 * z₅ +
                                α86 * z₆ + α87 * z₇
@@ -2578,12 +2578,12 @@ end
 
     @.. broadcast=false u=tmp + γ * z₈
     if integrator.f isa SplitFunction
-        f2(k[8], u, p, t + dt)
-        k[8] .*= dt
+        f2(ks[8], u, p, t + dt)
+        ks[8] .*= dt
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast=false u=uprev + a83 * z₃ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇ +
-                              γ * z₈ + eb3 * k[3] + eb4 * k[4] + eb5 * k[5] + eb6 * k[6] +
-                              eb7 * k[7] + eb8 * k[8]
+                              γ * z₈ + eb3 * ks[3] + eb4 * ks[4] + eb5 * ks[5] + eb6 * ks[6] +
+                              eb7 * ks[7] + eb8 * ks[8]
     end
 
     ################################### Finalize
@@ -2592,8 +2592,8 @@ end
         if integrator.f isa SplitFunction
             @.. broadcast=false tmp=btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
                                     btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈ +
-                                    ebtilde3 * k[3] + ebtilde4 * k[4] + ebtilde5 * k[5] +
-                                    ebtilde6 * k[6] + ebtilde7 * k[7] + ebtilde8 * k[8]
+                                    ebtilde3 * ks[3] + ebtilde4 * ks[4] + ebtilde5 * ks[5] +
+                                    ebtilde6 * ks[6] + ebtilde7 * ks[7] + ebtilde8 * ks[8]
         else
             @.. broadcast=false tmp=btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
                                     btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈
