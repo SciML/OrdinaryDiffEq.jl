@@ -71,7 +71,7 @@ end
         dt *
         (b1 * k1 + b2 * k2 + b3 * k3 + b5 * k5 + b7 * k7 + b9 * k9 + b10 * k10 + b11 * k11 +
          b12 * k12 + b13 * k13 + b14 * k14 + b15 * k15 + b16 * k16 + b17 * k17)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = @.. broadcast=false dt*(k2-k16)*adaptiveConst
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -134,7 +134,7 @@ end
   @.. broadcast=false tmp = uprev + dt*(a1600*k1 + a1601*k2 + a1602*k3 + a1604*k5 + a1605*k6 + a1606*k7 + a1607*k8 + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16)
   f(k17, tmp, p, t + c16*dt)
   @.. broadcast=false u = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b5*k5 + b7*k7 + b9*k9 + b10*k10 + b11*k11 + b12*k12 + b13*k13 + b14*k14 + b15*k15 + b16*k16 + b17*k17)
-  if integrator.opts.adaptive
+  if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
     @.. broadcast=false tmp = dt*(k2 - k16) * adaptiveConst
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -258,7 +258,7 @@ end
 
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @tight_loop_macros for i in uidx
             @inbounds tmp[i] = dt * (k2[i] - k16[i]) * adaptiveConst
         end
@@ -404,7 +404,7 @@ end
     k = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = k
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = @.. broadcast=false dt*(k2-k24)*adaptiveConst
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -480,7 +480,7 @@ end
   @.. broadcast=false tmp = uprev + dt*((a2400*k1 + a2401*k2 + a2402*k3) + (a2404*k5 + a2406*k7 + a2407*k8 + a2408*k9) + (a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13) + (a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17) + (a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21) + (a2421*k22 + a2422*k23 + a2423*k24))
   f(k25, tmp, p, t + c24*dt)
   @.. broadcast=false u = uprev + dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b13*k13 + b14*k14 + b15*k15 + b16*k16) + (b17*k17 + b18*k18 + b19*k19 + b20*k20) + (b21*k21 + b22*k22 + b23*k23) + (b24*k24 + b25*k25))
-  if integrator.opts.adaptive
+  if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
     @.. broadcast=false tmp = dt*(k2 - k24) * adaptiveConst
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -672,7 +672,7 @@ end
 
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @tight_loop_macros for i in uidx
             @inbounds tmp[i] = dt * (k2[i] - k24[i]) * adaptiveConst
         end
@@ -890,7 +890,7 @@ end
          b21 * k21 + b22 * k22 + b23 * k23 + b24 * k24 + b25 * k25 + b26 * k26 + b27 * k27 +
          b28 * k28 + b29 * k29 + b30 * k30 + b31 * k31 + b32 * k32 + b33 * k33 + b34 * k34 +
          b35 * k35)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = @.. broadcast=false dt*(k2-k34)*adaptiveConst
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -990,7 +990,7 @@ end
   @.. broadcast=false tmp = uprev + dt*(a3400*k1 + a3401*k2 + a3402*k3 + a3404*k5 + a3406*k7 + a3407*k8 + a3409*k10 + a3410*k11 + a3411*k12 + a3412*k13 + a3413*k14 + a3414*k15 + a3415*k16 + a3416*k17 + a3417*k18 + a3418*k19 + a3419*k20 + a3420*k21 + a3421*k22 + a3422*k23 + a3423*k24 + a3424*k25 + a3425*k26 + a3426*k27 + a3427*k28 + a3428*k29 + a3429*k30 + a3430*k31 + a3431*k32 + a3432*k33 + a3433*k34)
   f(k35, tmp, p, t + c34*dt)
   @.. broadcast=false u = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b5*k5 + b7*k7 + b8*k8 + b10*k10 + b11*k11 + b12*k12 + b14*k14 + b15*k15 + b16*k16 + b18*k18 + b19*k19 + b20*k20 + b21*k21 + b22*k22 + b23*k23 + b24*k24 + b25*k25 + b26*k26 + b27*k27 + b28*k28 + b29*k29 + b30*k30 + b31*k31 + b32*k32 + b33*k33 + b34*k34 + b35*k35)
-  if integrator.opts.adaptive
+  if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
     @.. broadcast=false tmp = dt*(k2 - k34) * adaptiveConst
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -1278,7 +1278,7 @@ end
 
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @tight_loop_macros for i in uidx
             @inbounds tmp[i] = dt * (k2[i] - k34[i]) * adaptiveConst
         end

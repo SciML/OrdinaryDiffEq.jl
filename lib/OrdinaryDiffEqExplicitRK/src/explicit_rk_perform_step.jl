@@ -53,7 +53,7 @@ end
         integrator.eigen_est = integrator.opts.internalnorm(n, t)
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = αEEst[1] .* kk[1]
         for i in 2:stages
             utilde = utilde + αEEst[i] * kk[i]
@@ -223,7 +223,7 @@ end
         integrator.eigen_est = integrator.opts.internalnorm(norm(utilde, Inf), t)
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         runtime_split_EEst!(tmp, αEEst, utilde, kk, dt, stages)
         calculate_residuals!(atmp, tmp, uprev, u,
             integrator.opts.abstol, integrator.opts.reltol,

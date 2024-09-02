@@ -1,5 +1,7 @@
-abstract type AbstractController end
 using OrdinaryDiffEqCore
+
+abstract type AbstractController end
+overrides_adaptive(::AbstractController) = false
 
 @inline function stepsize_controller!(integrator, alg)
     stepsize_controller!(integrator, integrator.opts.controller, alg)

@@ -22,7 +22,7 @@ end
     k4 = f(u, p, t + dt)
     integrator.fsallast = k4
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt * (btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -62,7 +62,7 @@ end
     step_limiter!(u, integrator, p, t + dt)
     f(k4, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 +
                                                   btilde3 * k3 + btilde4 * k4)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
@@ -100,7 +100,7 @@ end
     k4 = f(u, p, t + dt)
     integrator.fsallast = k4
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt * (btilde1 * k1 + btilde2 * k2 + btilde3 * k3)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -141,7 +141,7 @@ end
     step_limiter!(u, integrator, p, t + dt)
     f(k4, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 +
                                                   btilde3 * k3)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
@@ -180,7 +180,7 @@ end
     k6 = f(u, p, t + dt)
     integrator.fsallast = k6
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -233,7 +233,7 @@ end
     step_limiter!(u, integrator, p, t + dt)
     f(k6, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 +
                                                   btilde4 * k4 +
                                                   btilde5 * k5)
@@ -278,7 +278,7 @@ end
     k8 = f(u, p, t + dt)
     integrator.fsallast = k8
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt *
                  (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6 +
                   btilde7 * k7)
@@ -350,7 +350,7 @@ end
     step_limiter!(u, integrator, p, t + dt)
     f(k8, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 +
                                                   btilde4 * k4 +
                                                   btilde5 * k5 + btilde6 * k6 +
@@ -403,7 +403,7 @@ end
     integrator.fsallast = f(u, p, t + dt)
     k8 = integrator.fsallast
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         uhat = dt * (bhat1 * k1 + bhat3 * k3 + bhat4 * k4 + bhat5 * k5 + bhat6 * k6)
         utilde = dt *
                  (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6 +
@@ -427,7 +427,7 @@ end
     integrator.u = u
 
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (integrator.opts.adaptive == false ||
+    if !alg.lazy && (integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         @unpack c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110 = cache
         k = integrator.k
@@ -514,7 +514,7 @@ end
     step_limiter!(u, integrator, p, t + dt)
     f(k8, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt *
                                                  (bhat1 * k1 + bhat3 * k3 + bhat4 * k4 +
                                                   bhat5 * k5 +
@@ -535,7 +535,7 @@ end
         integrator.EEst = max(EEst1, EEst2)
     end
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (integrator.opts.adaptive == false ||
+    if !alg.lazy && (integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @unpack c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110 = cache.tab
@@ -603,7 +603,7 @@ end
         integrator.eigen_est = integrator.opts.internalnorm(
             maximum(abs.((k7 .- k6) ./ (g7 .- g6))), t)
     end
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt *
                  (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6 +
                   btilde7 * k7)
@@ -671,7 +671,7 @@ end
         integrator.eigen_est = integrator.opts.internalnorm(
             norm(utilde, Inf) * oneunit(t), t)
     end
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 +
                                                   btilde4 * k4 +
                                                   btilde5 * k5 + btilde6 * k6 +
@@ -842,7 +842,7 @@ end
     u = uprev + dt * (β1 * k1 + β4 * k4 + β5 * k5 + β6 * k6 + β7 * k7 + β8 * k8)
     integrator.fsallast = f(u, p, t + dt)
     k9 = integrator.fsallast
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt *
                  (β1tilde * k1 + β4tilde * k4 + β5tilde * k5 + β6tilde * k6 + β7tilde * k7 +
                   β8tilde * k8 + β9tilde * k9)
@@ -936,7 +936,7 @@ end
     f(k9, u, p, t + dt)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (β1tilde * k1 + β4tilde * k4 +
                                                   β5tilde * k5 +
                                                   β6tilde * k6 + β7tilde * k7 +
@@ -1552,7 +1552,7 @@ function perform_step!(integrator, cache::Stepanov5ConstantCache, repeat_step = 
     integrator.fsallast = k7
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false utilde=dt * (btilde1 * k1 + btilde2 * k2 +
                                     btilde3 * k3 + btilde4 * k4 +
                                     btilde5 * k5 + btilde6 * k6 +
@@ -1624,7 +1624,7 @@ function perform_step!(integrator, cache::Stepanov5Cache, repeat_step = false)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     integrator.fsallast = k7
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt *
                  (btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 +
                   btilde6 * k6 +
@@ -1672,7 +1672,7 @@ function perform_step!(integrator, cache::SIR54ConstantCache, repeat_step = fals
     integrator.fsallast = k8
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt * (btilde1 * k1 + btilde2 * k2 + btilde3 * k3 +
                   btilde4 * k4 +
                   btilde5 * k5 + btilde6 * k6 +
@@ -1752,7 +1752,7 @@ function perform_step!(integrator, cache::SIR54Cache, repeat_step = false)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
     integrator.fsallast = k8
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt *
                                                  (btilde1 * k1 + btilde2 * k2 +
                                                   btilde3 * k3 + btilde4 * k4 +
@@ -1786,7 +1786,7 @@ function perform_step!(integrator, cache::Alshina2ConstantCache, repeat_step = f
     k2 = f(tmp, p, t + c2 * dt)
     u = uprev + dt * (b1 * k1 + b2 * k2)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt * (b1tilde * k1)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -1831,7 +1831,7 @@ function perform_step!(integrator, cache::Alshina2Cache, repeat_step = false)
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (b1tilde * k1)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t,
@@ -1866,7 +1866,7 @@ function perform_step!(integrator, cache::Alshina3ConstantCache, repeat_step = f
     k3 = f(tmp, p, t + c3 * dt)
     u = uprev + dt * (b1 * k1 + b2 * k2 + b3 * k3)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt * (b2tilde * k2)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -1914,7 +1914,7 @@ function perform_step!(integrator, cache::Alshina3Cache, repeat_step = false)
                                         dt * (b1 * k1 + b2 * k2 + b3 * k3)
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (b2tilde * k2)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t,

@@ -1392,7 +1392,7 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step = fa
     w2 = phiv(dt, A, F2, 3; m = min(alg.m, size(A, 1)),
         opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     u = uprev + dt * (w1[:, 2] - 2w1[:, 4] + 2w2[:, 4])
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # error estimator for the imbedded method
         utilde = 2dt * (-w1[:, 4] + w2[:, 4])
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
@@ -1436,7 +1436,7 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
     axpy!(dt, @view(w1[:, 2]), u)
     axpy!(-2dt, @view(w1[:, 4]), u)
     axpy!(2dt, @view(w2[:, 4]), u)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # error estimator for the imbedded method
         @views @.. broadcast=false utilde=(2 * dt) * (-w1[:, 4] + w2[:, 4])
         calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol,
@@ -1476,7 +1476,7 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step = fa
     u = uprev +
         dt * (w1[:, 2] - 14w1[:, 4] + 36w1[:, 5] + 16w2[:, 4] - 48w2[:, 5] - 2w3[:, 4] +
          12w3[:, 5])
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # error estimator for the imbedded method
         utilde = dt * (36w1[:, 5] - 48w2[:, 5] + 12w3[:, 5])
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
@@ -1527,7 +1527,7 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step = false)
     @views @.. broadcast=false rtmp=w1[:, 2] - 14w1[:, 4] + 36w1[:, 5] + 16w2[:, 4] -
                                     48w2[:, 5] - 2w3[:, 4] + 12w3[:, 5]
     @muladd @.. broadcast=false u=uprev + dt * rtmp
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @views @.. broadcast=false rtmp=36w1[:, 5] - 48w2[:, 5] + 12w3[:, 5]
         @.. broadcast=false utilde=dt * rtmp
         calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol,

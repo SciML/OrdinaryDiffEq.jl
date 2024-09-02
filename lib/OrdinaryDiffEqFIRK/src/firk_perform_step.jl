@@ -2,7 +2,7 @@ function do_newJ(integrator, alg, cache, repeat_step)::Bool # for FIRK
     integrator.iter <= 1 && return true
     repeat_step && return false
     first(islinearfunction(integrator)) && return false
-    integrator.opts.adaptive || return true
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || return true
     alg_can_repeat_jac(alg) || return true
     integrator.u_modified && return true
     # below is Newton specific logic, so we return non-Newton algs here
@@ -81,7 +81,7 @@ function initialize!(integrator, cache::RadauIIA5Cache)
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @unpack abstol, reltol = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^(2 / 3) / 10
@@ -101,7 +101,7 @@ function initialize!(integrator, cache::RadauIIA9Cache)
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @unpack abstol, reltol = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^(5 / 8) / 10

@@ -38,7 +38,7 @@ end
         t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 9)
     u = uprev + dt * (b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt *
                  (btilde1 * k1 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6 + btilde7 * k7 +
                   btilde8 * k8 + btilde9 * k9 + btilde10 * k10)
@@ -117,7 +117,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 10)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde4 * k4 +
                                                   btilde5 * k5 +
                                                   btilde6 * k6 + btilde7 * k7 +
@@ -182,7 +182,7 @@ end
     @inbounds u[i] = uprev[i] + dt*(b1*k1[i]+b4*k4[i]+b5*k5[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i])
   end
   OrdinaryDiffEqCore.increment_nf!(integrator.stats, 10)
-  if integrator.opts.adaptive
+  if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i]+btilde4*k4[i]+btilde5*k5[i]+btilde6*k6[i]+btilde7*k7[i]+btilde8*k8[i]+btilde9*k9[i]+btilde10*k10[i])
     end
@@ -225,7 +225,7 @@ end
   k12= f(t+dt, @.. broadcast=false uprev+dt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
   k13= f(t+dt, @.. broadcast=false uprev+dt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10))
   u = @.. broadcast=false uprev + dt*(b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12)
-  if integrator.opts.adaptive
+  if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
     utilde = @.. broadcast=false dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -290,7 +290,7 @@ end
     u = uprev +
         dt * (b1 * k1 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 +
          b12 * k12)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt *
                  (btilde1 * k1 + btilde6 * k6 + btilde7 * k7 + btilde8 * k8 + btilde9 * k9 +
                   btilde10 * k10 + btilde11 * k11 + btilde12 * k12 + btilde13 * k13)
@@ -391,7 +391,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 13)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde6 * k6 +
                                                   btilde7 * k7 +
                                                   btilde8 * k8 + btilde9 * k9 +
@@ -469,7 +469,7 @@ end
     @inbounds u[i] = uprev[i] + dt*(b1*k1[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i])
   end
   OrdinaryDiffEqCore.increment_nf!(integrator.stats, 13)
-  if integrator.opts.adaptive
+  if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i] + btilde11*k11[i] + btilde12*k12[i] + btilde13*k13[i])
     end
@@ -539,7 +539,7 @@ end
     kupdate = b1 * k1 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 +
               b12 * k12
     u = uprev + dt * kupdate
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt * (k1 * er1 + k6 * er6 + k7 * er7 + k8 * er8 + k9 * er9 + k10 * er10 +
                   k11 * er11 + k12 * er12)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
@@ -689,7 +689,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 12)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt *
                                                  (k1 * er1 + k6 * er6 + k7 * er7 +
                                                   k8 * er8 + k9 * er9 +
@@ -829,7 +829,7 @@ end
     @inbounds u[i] = uprev[i] + dt*kupdate[i]
   end
   OrdinaryDiffEqCore.increment_nf!(integrator.stats, 12)
-  if integrator.opts.adaptive
+  if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(k1[i]*er1 + k6[i]*er6 + k7[i]*er7 + k8[i]*er8 + k9[i]*er9 + k10[i]*er10 + k11[i]*er11 + k12[i]*er12)
     end
@@ -984,7 +984,7 @@ end
     u = uprev +
         dt * (β1 * k1 + β6 * k6 + β7 * k7 + β8 * k8 + β9 * k9 + β10 * k10 + β11 * k11 +
          β12 * k12 + β13 * k13)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt *
                  (β1tilde * k1 + β6tilde * k6 + β7tilde * k7 + β8tilde * k8 + β9tilde * k9 +
                   β10tilde * k10 + β11tilde * k11 + β12tilde * k12)
@@ -1128,7 +1128,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 13)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (β1tilde * k1 + β6tilde * k6 +
                                                   β7tilde * k7 +
                                                   β8tilde * k8 + β9tilde * k9 +

@@ -327,7 +327,7 @@ function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step = false
 
     integrator.f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = u - exponential!(y6, exp_method, exp_cache) * uprev
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)

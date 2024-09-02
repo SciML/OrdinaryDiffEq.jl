@@ -228,7 +228,7 @@ end
     integrator.k[1] = integrator.fsalfirst
     tmp = uprev
     u = tmp + β1 * dt * integrator.fsalfirst
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = bhat1 * dt * integrator.fsalfirst
     end
 
@@ -238,12 +238,12 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tmp = tmp + δ2end[i] * u
         u = γ12end[i] * u + γ22end[i] * tmp + γ32end[i] * uprev + β2end[i] * dt * k
-        if integrator.opts.adaptive
+        if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
             utilde = utilde + bhat2end[i] * dt * k
         end
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -270,7 +270,7 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast=false thread=thread tmp=uprev
     @.. broadcast=false thread=thread u=tmp + β1 * dt * integrator.fsalfirst
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=bhat1 * dt * integrator.fsalfirst
     end
 
@@ -282,7 +282,7 @@ end
         @.. broadcast=false thread=thread tmp=tmp + δ2end[i] * u
         @.. broadcast=false thread=thread u=γ12end[i] * u + γ22end[i] * tmp +
                                             γ32end[i] * uprev + β2end[i] * dt * k
-        if integrator.opts.adaptive
+        if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
             @.. broadcast=false thread=thread utilde=utilde + bhat2end[i] * dt * k
         end
     end
@@ -290,7 +290,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread)
@@ -319,7 +319,7 @@ end
     # u1
     tmp = uprev
     u = tmp + β1 * dt * integrator.fsalfirst
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = bhat1 * dt * integrator.fsalfirst
     end
 
@@ -329,7 +329,7 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tmp = tmp + δ2end[i] * u
         u = γ12end[i] * u + γ22end[i] * tmp + γ32end[i] * uprev + β2end[i] * dt * k
-        if integrator.opts.adaptive
+        if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
             utilde = utilde + bhat2end[i] * dt * k
         end
     end
@@ -338,7 +338,7 @@ end
     integrator.fsallast = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = utilde + bhatfsal * dt * integrator.fsallast
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -370,7 +370,7 @@ end
     # u1
     @.. broadcast=false thread=thread tmp=uprev
     @.. broadcast=false thread=thread u=tmp + β1 * dt * integrator.fsalfirst
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=bhat1 * dt * integrator.fsalfirst
     end
 
@@ -382,7 +382,7 @@ end
         @.. broadcast=false thread=thread tmp=tmp + δ2end[i] * u
         @.. broadcast=false thread=thread u=γ12end[i] * u + γ22end[i] * tmp +
                                             γ32end[i] * uprev + β2end[i] * dt * k
-        if integrator.opts.adaptive
+        if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
             @.. broadcast=false thread=thread utilde=utilde + bhat2end[i] * dt * k
         end
     end
@@ -394,7 +394,7 @@ end
     f(k, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=utilde + bhatfsal * dt * k
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t,
@@ -421,11 +421,11 @@ end
     @unpack Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ = cache
 
     k = fsalfirst
-    integrator.opts.adaptive && (tmp = zero(uprev))
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = zero(uprev))
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ)
-        integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
         gprev = u + Aᵢ[i] * dt * k
         u = u + Bᵢ[i] * dt * k
         k = f(gprev, p, t + Cᵢ[i] * dt)
@@ -433,11 +433,11 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
     u = u + Bₗ * dt * k
 
     #Error estimate
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -465,11 +465,11 @@ end
     @unpack Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ = cache.tab
 
     @.. broadcast=false thread=thread k=fsalfirst
-    integrator.opts.adaptive && (@.. broadcast=false tmp=zero(uprev))
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (@.. broadcast=false tmp=zero(uprev))
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ)
-        integrator.opts.adaptive &&
+        integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) &&
             (@.. broadcast=false thread=thread tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
         @.. broadcast=false thread=thread gprev=u + Aᵢ[i] * dt * k
         @.. broadcast=false thread=thread u=u + Bᵢ[i] * dt * k
@@ -478,12 +478,12 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive &&
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) &&
         (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
     @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     #Error estimate
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread)
@@ -516,11 +516,11 @@ end
     k = fsalfirst
     uᵢ₋₁ = uprev
     uᵢ₋₂ = uprev
-    integrator.opts.adaptive && (tmp = zero(uprev))
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = zero(uprev))
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ₁)
-        integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
         gprev = uᵢ₋₂ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂) * dt
         u = u + Bᵢ[i] * dt * k
         fᵢ₋₂ = k
@@ -531,11 +531,11 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
     u = u + Bₗ * dt * k
 
     #Error estimate
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -564,13 +564,13 @@ end
 
     @.. broadcast=false thread=thread fᵢ₋₂=zero(fsalfirst)
     @.. broadcast=false thread=thread k=fsalfirst
-    integrator.opts.adaptive && (@.. broadcast=false thread=thread tmp=zero(uprev))
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (@.. broadcast=false thread=thread tmp=zero(uprev))
     @.. broadcast=false thread=thread uᵢ₋₁=uprev
     @.. broadcast=false thread=thread uᵢ₋₂=uprev
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ₁)
-        integrator.opts.adaptive &&
+        integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) &&
             (@.. broadcast=false thread=thread tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
         @.. broadcast=false thread=thread gprev=uᵢ₋₂ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂) * dt
         @.. broadcast=false thread=thread u=u + Bᵢ[i] * dt * k
@@ -582,14 +582,14 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive &&
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) &&
         (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
     @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     step_limiter!(u, integrator, p, t + dt)
 
     #Error estimate
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread)
@@ -623,11 +623,11 @@ end
     uᵢ₋₁ = uprev
     uᵢ₋₂ = uprev
     uᵢ₋₃ = uprev
-    integrator.opts.adaptive && (tmp = zero(uprev))
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = zero(uprev))
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ₁)
-        integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
         gprev = uᵢ₋₃ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃) * dt
         u = u + Bᵢ[i] * dt * k
         fᵢ₋₃ = fᵢ₋₂
@@ -640,11 +640,11 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
     u = u + Bₗ * dt * k
 
     #Error estimate
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -674,14 +674,14 @@ end
     @.. broadcast=false thread=thread fᵢ₋₂=zero(fsalfirst)
     @.. broadcast=false thread=thread fᵢ₋₃=zero(fsalfirst)
     @.. broadcast=false thread=thread k=fsalfirst
-    integrator.opts.adaptive && (@.. broadcast=false thread=thread tmp=zero(uprev))
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (@.. broadcast=false thread=thread tmp=zero(uprev))
     @.. broadcast=false thread=thread uᵢ₋₁=uprev
     @.. broadcast=false thread=thread uᵢ₋₂=uprev
     @.. broadcast=false thread=thread uᵢ₋₃=uprev
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ₁)
-        integrator.opts.adaptive &&
+        integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) &&
             (@.. broadcast=false thread=thread tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
         @.. broadcast=false thread=thread gprev=uᵢ₋₃ +
                                                 (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ +
@@ -698,14 +698,14 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive &&
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) &&
         (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
     @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     step_limiter!(u, integrator, p, t + dt)
 
     #Error estimate
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread)
@@ -741,11 +741,11 @@ end
     uᵢ₋₂ = uprev
     uᵢ₋₃ = uprev
     uᵢ₋₄ = uprev
-    integrator.opts.adaptive && (tmp = zero(uprev))
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = zero(uprev))
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ₁)
-        integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
         gprev = uᵢ₋₄ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃ + Aᵢ₄[i] * fᵢ₋₄) * dt
         u = u + Bᵢ[i] * dt * k
         fᵢ₋₄ = fᵢ₋₃
@@ -760,11 +760,11 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
     u = u + Bₗ * dt * k
 
     #Error estimate
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -795,7 +795,7 @@ end
     @.. broadcast=false thread=thread fᵢ₋₃=zero(fsalfirst)
     @.. broadcast=false thread=thread fᵢ₋₄=zero(fsalfirst)
     @.. broadcast=false thread=thread k=fsalfirst
-    integrator.opts.adaptive && (@.. broadcast=false thread=thread tmp=zero(uprev))
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) && (@.. broadcast=false thread=thread tmp=zero(uprev))
     @.. broadcast=false thread=thread uᵢ₋₁=uprev
     @.. broadcast=false thread=thread uᵢ₋₂=uprev
     @.. broadcast=false thread=thread uᵢ₋₃=uprev
@@ -803,7 +803,7 @@ end
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ₁)
-        integrator.opts.adaptive &&
+        integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) &&
             (@.. broadcast=false thread=thread tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
         @.. broadcast=false thread=thread gprev=uᵢ₋₄ +
                                                 (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ +
@@ -822,14 +822,14 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive &&
+    integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) &&
         (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
     @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     step_limiter!(u, integrator, p, t + dt)
 
     #Error estimate
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread)

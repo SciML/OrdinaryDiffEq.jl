@@ -62,7 +62,7 @@ end
     integrator.fsallast = f(uₙ, p, t + dtₙ)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         tmp = integrator.fsallast - (1 + dtₙ / dtₙ₋₁) * integrator.fsalfirst +
               (dtₙ / dtₙ₋₁) * cache.fsalfirstprev
         est = (dtₙ₋₁ + dtₙ) / 6 * tmp
@@ -151,7 +151,7 @@ end
 
     f(integrator.fsallast, uₙ, p, t + dtₙ)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         btilde0 = (dtₙ₋₁ + dtₙ) * 1 // 6
         btilde1 = 1 + dtₙ / dtₙ₋₁
         btilde2 = dtₙ / dtₙ₋₁
@@ -382,7 +382,7 @@ function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = fals
     u = nlsolve!(nlsolver, integrator, cache, repeat_step)
 
     nlsolvefail(nlsolver) && return
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         if integrator.success_iter == 0
             integrator.EEst = one(integrator.EEst)
         else
@@ -471,7 +471,7 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
 
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         if integrator.success_iter == 0
             integrator.EEst = one(integrator.EEst)
         else
@@ -567,7 +567,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     u = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         if integrator.success_iter == 0
             integrator.EEst = one(integrator.EEst)
         elseif integrator.success_iter == 1
@@ -681,7 +681,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         if integrator.success_iter == 0
             integrator.EEst = one(integrator.EEst)
         elseif integrator.success_iter == 1
@@ -791,7 +791,7 @@ function perform_step!(integrator, cache::QNDFConstantCache{max_order},
     dd = u - u₀
     update_D!(D, dd, k)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @unpack abstol, reltol, internalnorm = integrator.opts
         if cache.consfailcnt > 1 && mass_matrix !== I
             # if we get repeated failure and mass_matrix !== I it's likely that
@@ -913,7 +913,7 @@ function perform_step!(integrator, cache::QNDFCache{max_order},
 
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @unpack abstol, reltol, internalnorm = integrator.opts
         if cache.consfailcnt > 1 && mass_matrix !== I
             # if we get repeated failure and mass_matrix !== I it's likely that
@@ -1151,7 +1151,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order},
     end
     lte *= terkp1
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         for i in 1:(k + 1)
             ts_tmp[i + 1] = ts[i]
         end
@@ -1292,7 +1292,7 @@ function perform_step!(integrator, cache::FBDFCache{max_order},
         lte -= bdf_coeffs[k, j] * r[j]
     end
     @.. broadcast=false terk_tmp=lte * terkp1_tmp
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @unpack abstol, reltol, internalnorm = integrator.opts
         for i in 1:(k + 1)
             ts_tmp[i + 1] = ts[i]

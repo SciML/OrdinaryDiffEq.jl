@@ -143,7 +143,7 @@ end
         integrator.eigen_est = integrator.opts.internalnorm(
             maximum(abs.((k7 .- k6) ./ (g7 .- g6))), t)
     end
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         utilde = dt *
                  (btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 +
                   btilde6 * k6 + btilde7 * k7)
@@ -216,7 +216,7 @@ end
         @.. broadcast=false thread=thread utilde=abs((k7 - k6) / (g7 - g6))
         integrator.eigen_est = integrator.opts.internalnorm(norm(utilde, Inf), t)
     end
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 +
                                                   btilde3 * k3 + btilde4 * k4 +
                                                   btilde5 * k5 + btilde6 * k6 +

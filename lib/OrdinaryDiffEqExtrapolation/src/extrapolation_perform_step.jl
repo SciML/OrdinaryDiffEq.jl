@@ -76,7 +76,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
         end
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         minimum_work = Inf
         if isone(cache.step_no)
             range_start = 2
@@ -196,7 +196,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
         end
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller) || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         minimum_work = Inf
         if isone(cache.step_no)
             range_start = 2
@@ -271,7 +271,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
     @unpack sequence = cache
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
         if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
@@ -418,7 +418,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
         end
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (win_min - 1):win_min
             @.. broadcast=false integrator.u=T[i + 1, i + 1]
@@ -528,7 +528,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
     @unpack dtpropose, T, n_curr, work, A, tf, uf = cache
     @unpack sequence, stage_number = cache
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
         if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
@@ -637,7 +637,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
 
     integrator.dt = dt
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (win_min - 1):win_min
             u = T[i + 1, i + 1]
@@ -747,7 +747,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
     fill!(cache.Q, zero(eltype(cache.Q)))
     tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         win_min = max(alg.min_order, n_curr - 1)
         win_max = min(alg.max_order, n_curr + 1)
@@ -840,7 +840,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
         integrator.stats.nf += nevals
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (alg.min_order):n_curr
 
@@ -968,7 +968,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
     fill!(cache.Q, zero(eltype(cache.Q)))
 
     # Start computation
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         win_min = max(alg.min_order, n_curr - 1)
         win_max = min(alg.max_order, n_curr + 1)
@@ -1051,7 +1051,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
         integrator.stats.nf += nevals
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (alg.min_order):n_curr
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
@@ -1158,7 +1158,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         win_min = max(alg.min_order, n_curr - 1)
         win_max = min(alg.max_order, n_curr + 1)
@@ -1416,7 +1416,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
         return
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (alg.min_order):n_curr
 
@@ -1564,7 +1564,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
     fill!(cache.Q, zero(eltype(cache.Q)))
 
     # Start computation
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         win_min = max(alg.min_order, n_curr - 1)
         win_max = min(alg.max_order, n_curr + 1)
@@ -1712,7 +1712,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
         return
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (alg.min_order):n_curr
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
@@ -1826,7 +1826,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
         if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
@@ -1924,7 +1924,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
         integrator.stats.nf += nevals
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (win_min - 1):win_min
 
@@ -2051,7 +2051,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
     T = fill(zero(uprev), alg.max_order + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
     fill!(cache.Q, zero(eltype(cache.Q)))
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
         if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
@@ -2136,7 +2136,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
         nevals = cache.stage_number[n_curr + 1] - 1
         integrator.stats.nf += nevals
     end
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (win_min - 1):win_min
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
@@ -2246,7 +2246,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
     T = fill(zero(uprev), alg.max_order + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
     fill!(cache.Q, zero(eltype(cache.Q)))
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
         if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
@@ -2409,7 +2409,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
         return
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (win_min - 1):win_min
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
@@ -2527,7 +2527,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
         if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
@@ -2787,7 +2787,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         return
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (win_min - 1):win_min
 
@@ -2952,7 +2952,7 @@ function perform_step!(integrator,
     T = fill(zero(uprev), alg.max_order + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
     fill!(cache.Q, zero(eltype(cache.Q)))
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
         if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
@@ -3109,7 +3109,7 @@ function perform_step!(integrator,
         return
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (win_min - 1):win_min
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
@@ -3226,7 +3226,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
         if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
@@ -3500,7 +3500,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         return
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive || OrdinaryDiffEqCore.overrides_adaptive(integrator.opts.controller)
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (win_min - 1):win_min
 
