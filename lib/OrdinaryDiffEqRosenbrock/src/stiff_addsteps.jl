@@ -376,6 +376,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         sizeu = size(u)
         uidx = eachindex(uprev)
         mass_matrix = f.mass_matrix
+        tmp = ks[end] 
 
         # Precalculations
         dtC = C ./ dt
@@ -554,76 +555,6 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCach
         copyat_or_push!(k, 1, k₁)
         copyat_or_push!(k, 2, k₂)
         copyat_or_push!(k, 3, k₃)
-    end
-    nothing
-end
-
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
-        always_calc_begin = false, allow_calc_end = true,
-        force_calc_end = false)
-    if length(k) < 3 || always_calc_begin
-        (;du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
-        (;A, C, gamma, c, d , H) = cache.tab
-
-        # Assignments
-        sizeu = size(u)
-        uidx = eachindex(uprev)
-        mass_matrix = f.mass_matrix
-        tmp = ks[end] # integrator.tmp === linsolve_tmp, aliasing fails due to linsolve mutation
-
-        # Precalculations
-        dtC = C ./ dt
-        dtd = dt .* d
-        dtgamma = dt * gamma
-
-        @.. broadcast=false linsolve_tmp=@muladd fsalfirst + dtgamma * dT
-
-        ### Jacobian does not need to be re-evaluated after an event
-        ### Since it's unchanged
-        jacobian2W!(W, mass_matrix, dtgamma, J, true)
-
-        linsolve = cache.linsolve
-
-        linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp),
-            reltol = cache.reltol)
-        @.. $(_vec(ks[1]))=-linres.u
-
-        for stage in 2:length(ks)-1
-            tmp .= uprev
-            for i in 1:stage-1
-                @.. tmp += A[stage, i] * _vec(ks[i])
-            end
-            f(du, tmp, p, t + c[stage] * dt)
-
-            if mass_matrix === I
-                @.. linsolve_tmp = du + dtd[stage] * dT
-                for i in 1:stage-1
-                    @.. linsolve_tmp += dtC[stage, i] * _vec(ks[i])
-                end
-            else
-                du1 .= du
-                for i in 1:stage-1
-                    @.. du1 += dtC[stage, i] * _vec(ks[i])
-                end
-                mul!(_vec(du2), mass_matrix, _vec(du1))
-                @.. linsolve_tmp = du + dtd[stage] * dT + du2
-            end
-
-            linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
-            @.. $(_vec(ks[stage]))=-linres.u
-        end
-
-        # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2055
-        tmp = linsolve_tmp
-        copyat_or_push!(k, 1, copy(tmp))
-        copyat_or_push!(k, 2, copy(tmp))
-        copyat_or_push!(k, 3, copy(tmp))
-
-        for i in 1:length(ks)-1
-            @.. k[1] += H[1, i] * _vec(ks[i])
-            @.. k[2] += H[2, i] * _vec(ks[i])
-            @.. k[3] += H[3, i] * _vec(ks[i])
-        end
     end
     nothing
 end
