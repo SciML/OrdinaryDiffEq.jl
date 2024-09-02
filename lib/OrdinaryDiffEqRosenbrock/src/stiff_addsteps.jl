@@ -569,7 +569,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         sizeu = size(u)
         uidx = eachindex(uprev)
         mass_matrix = f.mass_matrix
-        tmp = ks[8] # integrator.tmp === linsolve_tmp, aliasing fails due to linsolve mutation
+        tmp = ks[end] # integrator.tmp === linsolve_tmp, aliasing fails due to linsolve mutation
 
         # Precalculations
         dtC = C ./ dt
