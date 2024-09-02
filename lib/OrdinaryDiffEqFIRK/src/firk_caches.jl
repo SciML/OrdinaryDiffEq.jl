@@ -500,8 +500,8 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         tab = BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits), Int)
     elseif (num_stages == 5)
         tab = BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits), Int)
-    #elseif (num_stages == 7)
-    #    tab = BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits), Int)
+    elseif (num_stages == 7)
+        tab = BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits), Int)
     else 
         tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
     end
@@ -568,8 +568,8 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         tab = BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits), Int)
     elseif (num_stages == 5)
         tab = BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits), Int)
-    #elseif (num_stages == 7)
-    #    tab = BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits), Int)
+    elseif (num_stages == 7)
+        tab = BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits), Int)
     else 
         tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
     end
