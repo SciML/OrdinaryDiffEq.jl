@@ -495,7 +495,16 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     num_stages = alg.num_stages
-    tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
+
+    if (num_stages == 3)
+        tab = BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits), Int)
+    elseif (num_stages == 5)
+        tab = BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits), Int)
+    #elseif (num_stages == 7)
+    #    tab = BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits), Int)
+    else 
+        tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
+    end
 
     cont = Vector{typeof(u)}(undef, num_stages)
     for i in 1: num_stages
@@ -554,7 +563,16 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     num_stages = alg.num_stages
-    tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
+
+    if (num_stages == 3)
+        tab = BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits), Int)
+    elseif (num_stages == 5)
+        tab = BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits), Int)
+    #elseif (num_stages == 7)
+    #    tab = BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits), Int)
+    else 
+        tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
+    end
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 
