@@ -441,7 +441,7 @@ Controller to perform a relaxation on a step of a Runge-Kuttas method.
 mutable struct RelaxationController{CON, T} <: AbstractController
     controller::CON
     gamma::T
-    function RelaxationController(controller::AbstractController, T)
+    function RelaxationController(controller::AbstractController, T=Float64)
         new{typeof(controller), T}(controller, one(T))
     end
 end

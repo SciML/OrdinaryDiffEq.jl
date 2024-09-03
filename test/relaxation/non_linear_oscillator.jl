@@ -1,6 +1,6 @@
-using OrdinaryDiffEq, DiffEqDevTools
+using OrdinaryDiffEq, DiffEqDevTools, LinearAlgebra, Test
 
-printstyled("Non linear harmonic oscillator\n"; bold = true)
+@testset "Non linear harmonic oscillator" begin
 
 dts = (1 / 2) .^ (6:-1:4)
 
@@ -10,13 +10,15 @@ prob = ODEProblem(
     [1.0, 0.0],
     (0.0, 1.0))
 
-invariant(x) = norm(x)
 
 # Convergence with the method Tsit5()
 sim = test_convergence(dts, prob, Tsit5())
-println("order of convergence of older perform_step! : "*string(sim.𝒪est[:final]))
+@test sim.𝒪est[:final] ≈ 5.4 atol=0.2
 
-# Convergence with relaxation with FSAL-R, i.e  f(uᵧ,ₙ₊₁) ≈ f(uᵧ,ₙ) + γ ( f(uₙ₊₁) - f(uᵧ,ₙ)) 
-r = Relaxation(invariant)
-sim = test_convergence(dts, prob, Tsit5(); relaxation = r)
-println("order with relaxation with FSAL-R modification: "*string(sim.𝒪est[:final]))
+# Convergence with relaxation with FSAL-R, i.e  f(uᵧ,ₙ₊₁) ≈ f(uᵧ,ₙ) + γ ( f(uₙ₊₁) - f(uᵧ,ₙ))
+relaxation = Relaxation(norm)
+controller = RelaxationController(NonAdaptiveController())
+sim_relax = test_convergence(dts, prob, Tsit5(); relaxation, controller, adaptive=true)
+@test sim.𝒪est[:final] ≈ 5.4 atol=0.2
+
+end
