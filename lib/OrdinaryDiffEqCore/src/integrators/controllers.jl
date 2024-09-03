@@ -318,11 +318,6 @@ end
     return dt_factor
 end
 
-# checks whether the controller should accept a step based on the error estimate
-@inline function accept_step_controller(integrator, controller::AbstractController)
-    return integrator.EEst <= 1
-end
-
 @inline function accept_step_controller(integrator, controller::PIDController)
     return integrator.qold >= controller.accept_safety
 end
@@ -412,7 +407,7 @@ end
 """
     RelaxationController(controller, T)
 
-Controller to perform a relaxation on a step of a Runge-Kuttas method.  
+Controller to perform a relaxation on a step of a Runge-Kuttas method.
 
 ## References
  - Sebastian Bleecke, Hendrik Ranocha (2023)
@@ -427,23 +422,29 @@ mutable struct RelaxationController{CON, T} <: AbstractController
     end
 end
 
-mutable struct Relaxation{INV, OPT, T}
+mutable struct Relaxation{INV, T}
     invariant::INV
-    opt::OPT
     gamma_min::T
     gamma_max::T
-    function Relaxation(invariant, opt = AlefeldPotraShi, gamma_min = 4//5, gamma_max = 6//5)
-        new{typeof(invariant), typeof(opt), typeof(gamma_min)}(invariant, opt, gamma_min, gamma_max)
+    function Relaxation(invariant, gamma_min = 4/5, gamma_max = 6/5)
+        new{typeof(invariant), typeof(gamma_min)}(invariant, gamma_min, gamma_max)
     end
+end
+
+
+function _relaxation_nlsolve(gamma, p)
+    u, uprev, invariant = p
+    invariant(@.. gamma * u + (1-gamma) * uprev) .- invariant(uprev)
 end
 
 @muladd function (r::Relaxation)(integrator)
     @unpack t, dt, uprev, u = integrator
-    @unpack invariant, opt, gamma_min, gamma_max = integrator.opts.relaxation
+    @unpack invariant, gamma_min, gamma_max = integrator.opts.relaxation
     gamma = one(t)
-    S_u = u .- uprev
-    if (invariant(gamma_min * S_u .+ uprev) .- invariant(uprev)) * (invariant(gamma_max * S_u .+ uprev) .- invariant(uprev)) ≤ 0 
-        gamma = find_zero(gamma -> invariant(gamma*S_u .+ uprev) .- invariant(uprev), (gamma_min, gamma_max), opt())
+    p = (u, uprev, invariant)
+    if _relaxation_nlsolve(gamma_min, p) * _relaxation_nlsolve(gamma_max, p) ≤ 0
+        gamma = solve(IntervalNonlinearProblem{false}(_relaxation_nlsolve, (gamma_min, gamma_max), p),
+            DiffEqBase.InternalITP()).left
     end
     gamma
 end

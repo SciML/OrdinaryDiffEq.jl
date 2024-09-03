@@ -58,7 +58,7 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order,
                            _change_t_via_interpolation!, ODEIntegrator, _ode_interpolant!,
                            current_interpolant, resize_nlsolver!, _ode_interpolant,
                            handle_tstop!, _postamble!, update_uprev!, resize_J_W!,
-                           DAEAlgorithm, get_fsalfirstlast, strip_cache
+                           DAEAlgorithm, get_fsalfirstlast, strip_cache, Relaxation
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
 AutoSwitch
@@ -228,5 +228,5 @@ export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
 import OrdinaryDiffEqCore: IController, PIController, PIDController
-export IController, PIController, PIDController
+export IController, PIController, PIDController, Relaxation
 end # module
