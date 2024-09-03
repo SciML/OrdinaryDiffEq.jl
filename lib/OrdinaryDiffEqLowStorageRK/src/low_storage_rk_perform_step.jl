@@ -33,15 +33,13 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::LowStorageRK2NCache, u) = (cache.k, cache.k)
+get_fsalfirstlast(cache::LowStorageRK2NCache, u) = (nothing, nothing)
 
 function initialize!(integrator, cache::LowStorageRK2NCache)
     @unpack k, tmp, williamson_condition = cache
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = k
-    integrator.fsalfirst = k # used for get_du
-    integrator.fsallast = k
     integrator.f(k, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end

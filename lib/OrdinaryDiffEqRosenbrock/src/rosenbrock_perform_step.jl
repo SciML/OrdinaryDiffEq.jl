@@ -1207,31 +1207,13 @@ function initialize!(integrator, cache::Rodas4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tf, uf = cache
-    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
+    (;t, dt, uprev, u, f, p) = integrator
+    (;tf, uf) = cache
+    (;A, C, gamma, c, d, H) = cache.tab
 
     # Precalculations
-    dtC21 = C21 / dt
-    dtC31 = C31 / dt
-    dtC32 = C32 / dt
-    dtC41 = C41 / dt
-    dtC42 = C42 / dt
-    dtC43 = C43 / dt
-    dtC51 = C51 / dt
-    dtC52 = C52 / dt
-    dtC53 = C53 / dt
-    dtC54 = C54 / dt
-    dtC61 = C61 / dt
-    dtC62 = C62 / dt
-    dtC63 = C63 / dt
-    dtC64 = C64 / dt
-    dtC65 = C65 / dt
-
-    dtd1 = dt * d1
-    dtd2 = dt * d2
-    dtd3 = dt * d3
-    dtd4 = dt * d4
+    dtC = C ./ dt
+    dtd = dt .* d
     dtgamma = dt * gamma
 
     mass_matrix = integrator.f.mass_matrix
@@ -1246,105 +1228,78 @@ end
         return nothing
     end
 
+    # Initialize ks
+    num_stages = size(A,1)
     du = f(uprev, p, t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    linsolve_tmp = du + dtd1 * dT
-
+    linsolve_tmp = @.. du + dtd[1] * dT
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a21 * k1
-    du = f(u, p, t + c2 * dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    # constant number for type stability make sure this is greater than num_stages
+    ks = ntuple(Returns(k1), 10)
+    # Loop for stages
+    for stage in 2:num_stages
+        u = uprev
+        for i in 1:stage-1
+            u = @.. u + A[stage, i] * ks[i]
+        end
 
-    if mass_matrix === I
-        linsolve_tmp = du + dtd2 * dT + dtC21 * k1
-    else
-        linsolve_tmp = du + dtd2 * dT + mass_matrix * (dtC21 * k1)
+        du = f(u, p, t + c[stage] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+        # Compute linsolve_tmp for current stage
+        linsolve_tmp = zero(du)
+        if mass_matrix === I
+            for i in 1:stage-1
+                linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
+            end
+        else
+            for i in 1:stage-1
+                linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
+            end
+            linsolve_tmp = mass_matrix * linsolve_tmp
+        end
+        linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp
+
+        ks = Base.setindex(ks, _reshape(W \ -_vec(linsolve_tmp), axes(uprev)), stage)
+        integrator.stats.nsolve += 1
     end
-
-    k2 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a31 * k1 + a32 * k2
-    du = f(u, p, t + c3 * dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        linsolve_tmp = du + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
-    else
-        linsolve_tmp = du + dtd3 * dT + mass_matrix * (dtC31 * k1 + dtC32 * k2)
-    end
-
-    k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a41 * k1 + a42 * k2 + a43 * k3
-    du = f(u, p, t + c4 * dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        linsolve_tmp = du + dtd4 * dT + (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
-    else
-        linsolve_tmp = du + dtd4 * dT + mass_matrix * (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
-    end
-
-    k4 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
-    du = f(u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        linsolve_tmp = du + (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
-    else
-        linsolve_tmp = du +
-                       mass_matrix * (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
-    end
-
-    k5 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = u + k5
-    du = f(u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        linsolve_tmp = du + (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 + dtC64 * k4 + dtC63 * k3)
-    else
-        linsolve_tmp = du +
-                       mass_matrix *
-                       (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 + dtC64 * k4 + dtC63 * k3)
-    end
-
-    k6 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = u + k6
+    #@show ks
+    u = u .+ ks[num_stages]
 
     if integrator.opts.adaptive
-        atmp = calculate_residuals(k6, uprev, u, integrator.opts.abstol,
+        atmp = calculate_residuals(ks[num_stages], uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
     if integrator.opts.calck
-        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        integrator.k[1] = h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5
-        integrator.k[2] = h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 + h35 * k5
+        for j in eachindex(integrator.k)
+            integrator.k[j] = zero(integrator.k[1])
+        end
+        for i in 1:num_stages
+            for j in eachindex(integrator.k)
+                integrator.k[j] = @.. integrator.k[j] + H[j, i] * ks[i]
+            end
+        end
     end
+
     integrator.u = u
     return nothing
 end
 
-function initialize!(integrator, cache::Rodas4Cache)
+function initialize!(integrator, cache::RosenbrockCache)
+    dense = cache.dense
+    dense1, dense2 = dense[1], dense[2]
     integrator.kshortsize = 2
-    @unpack dense1, dense2 = cache
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = dense1
     integrator.k[2] = dense2
 end
 
-@muladd function perform_step!(integrator, cache::Rodas4Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, k6, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
-    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
+
+@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
+    (;t, dt, uprev, u, f, p) = integrator
+    (;du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
+    (;A, C, gamma, c, d, H) = cache.tab
 
     # Assignments
     sizeu = size(u)
@@ -1352,32 +1307,14 @@ end
     mass_matrix = integrator.f.mass_matrix
 
     # Precalculations
-    dtC21 = C21 / dt
-    dtC31 = C31 / dt
-    dtC32 = C32 / dt
-    dtC41 = C41 / dt
-    dtC42 = C42 / dt
-    dtC43 = C43 / dt
-    dtC51 = C51 / dt
-    dtC52 = C52 / dt
-    dtC53 = C53 / dt
-    dtC54 = C54 / dt
-    dtC61 = C61 / dt
-    dtC62 = C62 / dt
-    dtC63 = C63 / dt
-    dtC64 = C64 / dt
-    dtC65 = C65 / dt
-
-    dtd1 = dt * d1
-    dtd2 = dt * d2
-    dtd3 = dt * d3
-    dtd4 = dt * d4
+    dtC = C .* inv(dt)
+    dtd = dt .* d
     dtgamma = dt * gamma
 
-    f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
+    f(cache.fsalfirst, uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+    calc_rosenbrock_differentiation!(integrator, cache, dtd[1], dtgamma, repeat_step, true)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
@@ -1394,114 +1331,56 @@ end
             solverdata = (; gamma = dtgamma))
     end
 
-    @.. broadcast=false $(_vec(k1))=-linres.u
-
+    @.. $(_vec(ks[1]))=-linres.u
     integrator.stats.nsolve += 1
 
-    @.. broadcast=false u=uprev + a21 * k1
-    stage_limiter!(u, integrator, p, t + c2 * dt)
-    f(du, u, p, t + c2 * dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    for stage in 2:length(ks)
+        u .= uprev
+        for i in 1:stage-1
+            @.. u += A[stage, i] * ks[i]
+        end
 
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du + dtd2 * dT + dtC21 * k1
-    else
-        @.. broadcast=false du1=dtC21 * k1
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=du + dtd2 * dT + du2
+        stage_limiter!(u, integrator, p, t + c[stage] * dt)
+        f(du, u, p, t + c[stage] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+        du1 .= 0
+        if mass_matrix === I
+            for i in 1:stage-1
+                @.. du1 += dtC[stage, i] * ks[i]
+            end
+        else
+            for i in 1:stage-1
+                @.. du1 += dtC[stage, i] * ks[i]
+            end
+            mul!(_vec(du2), mass_matrix, _vec(du1))
+            du1 .= du2
+        end
+        @.. linsolve_tmp = du + dtd[stage] * dT + du1
+
+        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+        @.. $(_vec(ks[stage]))=-linres.u
+        integrator.stats.nsolve += 1
     end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false $(_vec(k2))=-linres.u
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
-    stage_limiter!(u, integrator, p, t + c3 * dt)
-    f(du, u, p, t + c3 * dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
-    else
-        @.. broadcast=false du1=dtC31 * k1 + dtC32 * k2
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=du + dtd3 * dT + du2
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false $(_vec(k3))=-linres.u
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
-    stage_limiter!(u, integrator, p, t + c4 * dt)
-    f(du, u, p, t + c4 * dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du + dtd4 * dT +
-                                         (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
-    else
-        @.. broadcast=false du1=dtC41 * k1 + dtC42 * k2 + dtC43 * k3
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=du + dtd4 * dT + du2
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false $(_vec(k4))=-linres.u
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
-    stage_limiter!(u, integrator, p, t + dt)
-    f(du, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du +
-                                         (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
-    else
-        @.. broadcast=false du1=dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=du + du2
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false $(_vec(k5))=-linres.u
-    integrator.stats.nsolve += 1
-
-    u .+= k5
-    f(du, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du + (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 +
-                                          dtC64 * k4 + dtC63 * k3)
-    else
-        @.. broadcast=false du1=dtC61 * k1 + dtC62 * k2 + dtC65 * k5 + dtC64 * k4 +
-                                dtC63 * k3
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=du + du2
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false $(_vec(k6))=-linres.u
-    integrator.stats.nsolve += 1
-
-    u .+= k6
+    u .+= ks[end]
 
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
-        calculate_residuals!(atmp, k6, uprev, u, integrator.opts.abstol,
+        calculate_residuals!(atmp, ks[end], uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
     if integrator.opts.calck
-        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        @.. broadcast=false integrator.k[1]=h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 +
-                                            h25 * k5
-        @.. broadcast=false integrator.k[2]=h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 +
-                                            h35 * k5
+        for j in eachindex(integrator.k)
+            integrator.k[j] .= 0
+        end
+        for i in eachindex(ks)
+            for j in eachindex(integrator.k)
+                @.. integrator.k[j] += H[j, i] * ks[i]
+            end
+        end
     end
     cache.linsolve = linres.cache
 end

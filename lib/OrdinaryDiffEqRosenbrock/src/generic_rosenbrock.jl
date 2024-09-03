@@ -176,7 +176,7 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
         end
     end
     cacheexpr=quote
-        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: GenericRosenbrockMutableCache
             u::uType
             uprev::uType
             du::rateType
@@ -959,25 +959,65 @@ with_step_limiter = true) Rodas23W
 """
 A 4th order L-stable Rosenbrock-W method.
 """,
-"ROS34PW1a") ROS34PW1a
+"ROS34PW1a",
+references = """
+@article{rang2005new,
+  title={New Rosenbrock W-methods of order 3 for partial differential algebraic equations of index 1},
+  author={Rang, Joachim and Angermann, L},
+  journal={BIT Numerical Mathematics},
+  volume={45},
+  pages={761--787},
+  year={2005},
+  publisher={Springer}}
+""") ROS34PW1a
 
 @doc rosenbrock_wanner_docstring(
 """
 A 4th order L-stable Rosenbrock-W method.
 """,
-"ROS34PW1b") ROS34PW1b
+"ROS34PW1b",
+references = """
+@article{rang2005new,
+  title={New Rosenbrock W-methods of order 3 for partial differential algebraic equations of index 1},
+  author={Rang, Joachim and Angermann, L},
+  journal={BIT Numerical Mathematics},
+  volume={45},
+  pages={761--787},
+  year={2005},
+  publisher={Springer}}
+""") ROS34PW1b
 
 @doc rosenbrock_wanner_docstring(
 """
 A 4th order stiffy accurate Rosenbrock-W method for PDAEs.
 """,
-"ROS34PW2") ROS34PW2
+"ROS34PW2",
+references = """
+@article{rang2005new,
+  title={New Rosenbrock W-methods of order 3 for partial differential algebraic equations of index 1},
+  author={Rang, Joachim and Angermann, L},
+  journal={BIT Numerical Mathematics},
+  volume={45},
+  pages={761--787},
+  year={2005},
+  publisher={Springer}}
+""") ROS34PW2
 
 @doc rosenbrock_wanner_docstring(
 """
 A 4th order strongly A-stable (Rinf~0.63) Rosenbrock-W method.
 """,
-"ROS34PW3") ROS34PW3
+"ROS34PW3",
+references = """
+@article{rang2005new,
+  title={New Rosenbrock W-methods of order 3 for partial differential algebraic equations of index 1},
+  author={Rang, Joachim and Angermann, L},
+  journal={BIT Numerical Mathematics},
+  volume={45},
+  pages={761--787},
+  year={2005},
+  publisher={Springer}}
+""") ROS34PW3
 
 @doc rosenbrock_docstring(
 """
@@ -995,7 +1035,7 @@ references = """
 """,
 "Rodas3",
 references = """
-- Steinebach G. Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks 
+- Steinebach G. Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks
   within the Julia Differential Equations package.
   In: BIT Numerical Mathematics, 63(2), 2023
 """,
@@ -1056,7 +1096,7 @@ lower if not corrected).
 """,
 "Rodas4P",
 references = """
-- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate 
+- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate
   for dense output and Julia implementation,
   In progress.
 """,
@@ -1070,7 +1110,7 @@ of Roadas4P and in case of inexact Jacobians a second order W method.
 """,
 "Rodas4P2",
 references = """
-- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate 
+- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate
   for dense output and Julia implementation,
   In progress.
 """,
@@ -1095,7 +1135,7 @@ Has improved stability in the adaptive time stepping embedding.
 """,
 "Rodas5P",
 references = """
-- Steinebach G. Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks 
+- Steinebach G. Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks
   within the Julia Differential Equations package.
   In: BIT Numerical Mathematics, 63(2), 2023
 """,
@@ -1225,10 +1265,10 @@ references = """
     ROS2PRTableau()
 
 2nd order stiffly accurate Rosenbrock method with 3 internal stages with (Rinf=0).
-For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use 
+For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use
 [`ROS2S`](@ref) instead.
 
-Rang, Joachim (2014): The Prothero and Robinson example: 
+Rang, Joachim (2014): The Prothero and Robinson example:
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
 """
 function ROS2PRTableau() # 2nd order
@@ -1248,7 +1288,7 @@ end
 @doc rosenbrock_docstring(
 """
 2nd order stiffly accurate Rosenbrock method with 3 internal stages with (Rinf=0).
-For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use 
+For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use
 [`ROS2S`](@ref) instead.
 """,
 "ROS2PR",
@@ -1267,7 +1307,7 @@ ROS2PR
 2nd order stiffly accurate Rosenbrock-Wanner W-method with 3 internal stages with B_PR consistent of order 2 with (Rinf=0).
 More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
 
-Rang, Joachim (2014): The Prothero and Robinson example: 
+Rang, Joachim (2014): The Prothero and Robinson example:
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
 """
 function ROS2STableau() # 2nd order
@@ -1335,7 +1375,7 @@ references = """
 
 3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
 
-Rang, Joachim (2014): The Prothero and Robinson example: 
+Rang, Joachim (2014): The Prothero and Robinson example:
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
 """
 function ROS3PRTableau() # 3rd order
@@ -1371,7 +1411,7 @@ references = """
 3nd order stiffly accurate Rosenbrock method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73
 Convergence with order 4 for the stiff case, but has a poor accuracy.
 
-Rang, Joachim (2014): The Prothero and Robinson example: 
+Rang, Joachim (2014): The Prothero and Robinson example:
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
 """
 function Scholz4_7Tableau() # 3rd order
@@ -1599,7 +1639,7 @@ references = """
 B_PR consistent of order 2 with Rinf=0.
 The order of convergence decreases if medium stiff problems are considered, but it has good results for very stiff cases.
 
-Rang, Joachim (2014): The Prothero and Robinson example: 
+Rang, Joachim (2014): The Prothero and Robinson example:
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
 """
 function ROS3PRLTableau() # 3rd order
@@ -1639,7 +1679,7 @@ references = """
 B_PR consistent of order 3.
 The order of convergence does NOT decreases if medium stiff problems are considered as it does for [`ROS3PRL`](@ref).
 
-Rang, Joachim (2014): The Prothero and Robinson example: 
+Rang, Joachim (2014): The Prothero and Robinson example:
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
 """
 function ROS3PRL2Tableau() # 3rd order
@@ -1677,7 +1717,7 @@ references = """
 
 4rd order L-stable Rosenbrock-Krylov method with 4 internal stages,
 with a 3rd order embedded method which is strongly A-stable with Rinf~=0.55. (when using exact Jacobians)
-Tranquilli, Paul and Sandu, Adrian (2014): Rosenbrock--Krylov Methods for Large Systems of Differential Equations 
+Tranquilli, Paul and Sandu, Adrian (2014): Rosenbrock--Krylov Methods for Large Systems of Differential Equations
 https://doi.org/10.1137/130923336
 """
 function ROK4aTableau() # 4rd order
@@ -1703,7 +1743,7 @@ with a 3rd order embedded method which is strongly A-stable with Rinf~=0.55. (wh
 """,
 "ROK4a",
 references = """
-- Tranquilli, Paul and Sandu, Adrian (2014): 
+- Tranquilli, Paul and Sandu, Adrian (2014):
   Rosenbrock--Krylov Methods for Large Systems of Differential Equations
   https://doi.org/10.1137/130923336
 """) ROK4a

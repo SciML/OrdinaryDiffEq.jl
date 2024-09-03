@@ -8,54 +8,87 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
     clean = true,
     doctest = false,
     modules = [OrdinaryDiffEq,
-        OrdinaryDiffEq.OrdinaryDiffEqExtrapolation,
-        OrdinaryDiffEq.OrdinaryDiffEqStabilizedRK,
-        OrdinaryDiffEq.OrdinaryDiffEqStabilizedIRK,
-        OrdinaryDiffEq.OrdinaryDiffEqLowStorageRK,
-        OrdinaryDiffEq.OrdinaryDiffEqSSPRK,
-        OrdinaryDiffEq.OrdinaryDiffEqFeagin,
-        OrdinaryDiffEq.OrdinaryDiffEqSymplecticRK,
-        OrdinaryDiffEq.OrdinaryDiffEqRKN,
-        OrdinaryDiffEq.OrdinaryDiffEqVerner,
-        OrdinaryDiffEq.OrdinaryDiffEqSDIRK,
+        OrdinaryDiffEq.OrdinaryDiffEqAdamsBashforthMoulton,
         OrdinaryDiffEq.OrdinaryDiffEqBDF,
         OrdinaryDiffEq.OrdinaryDiffEqDefault,
-        OrdinaryDiffEq.OrdinaryDiffEqFIRK],
+        OrdinaryDiffEq.OrdinaryDiffEqExplicitRK,
+        OrdinaryDiffEq.OrdinaryDiffEqExponentialRK,
+        OrdinaryDiffEq.OrdinaryDiffEqExtrapolation,
+        OrdinaryDiffEq.OrdinaryDiffEqFeagin,
+        OrdinaryDiffEq.OrdinaryDiffEqFIRK,
+        OrdinaryDiffEq.OrdinaryDiffEqHighOrderRK,
+        OrdinaryDiffEq.OrdinaryDiffEqIMEXMultistep,
+        OrdinaryDiffEq.OrdinaryDiffEqLinear,
+        OrdinaryDiffEq.OrdinaryDiffEqLowOrderRK,
+        OrdinaryDiffEq.OrdinaryDiffEqLowStorageRK,
+        OrdinaryDiffEq.OrdinaryDiffEqNordsieck,
+        OrdinaryDiffEq.OrdinaryDiffEqPDIRK,
+        OrdinaryDiffEq.OrdinaryDiffEqPRK,
+        OrdinaryDiffEq.OrdinaryDiffEqQPRK,
+        OrdinaryDiffEq.OrdinaryDiffEqRKN,
+        OrdinaryDiffEq.OrdinaryDiffEqRosenbrock,
+        OrdinaryDiffEq.OrdinaryDiffEqSDIRK,
+        OrdinaryDiffEq.OrdinaryDiffEqSSPRK,
+        OrdinaryDiffEq.OrdinaryDiffEqStabilizedIRK,
+        OrdinaryDiffEq.OrdinaryDiffEqStabilizedRK,
+        OrdinaryDiffEq.OrdinaryDiffEqSymplecticRK,
+        OrdinaryDiffEq.OrdinaryDiffEqTsit5,
+        OrdinaryDiffEq.OrdinaryDiffEqVerner
+    ],
     warnonly = [:docs_block, :missing_docs, :eval_block],
     format = Documenter.HTML(analytics = "UA-90474609-3",
         assets = ["assets/favicon.ico"],
-        canonical = "https://ordinarydiffeq.sciml.ai/stable/"),
+        canonical = "https://ordinarydiffeq.sciml.ai/stable/",
+        size_threshold_ignore = [joinpath("semiimplicit", "Rosenbrock.md"),
+            joinpath("massmatrixdae", "Rosenbrock.md")]),
     pages = [
         "OrdinaryDiffEq.jl: ODE solvers and utilities" => "index.md",
         "Usage" => "usage.md",
-        "Standard Non-Stiff ODEProblem Solvers" => [
-            "nonstiff/explicitrk.md",
-            "nonstiff/lowstorage_ssprk.md",
-            "nonstiff/explicit_extrapolation.md",
-            "nonstiff/nonstiff_multistep.md"
+        "Explicit Solvers" => [
+            "explicit/Tsit5.md",
+            "explicit/Verner.md",
+            "explicit/AdamsBashforthMoulton.md",
+            "explicit/LowStorageRK.md",
+            "explicit/SSPRK.md",
+            "explicit/LowOrderRK.md",
+            "explicit/HighOrderRK.md",
+            "explicit/Feagin.md",
+            "explicit/PRK.md",
+            "explicit/QPRK.md",
+            "explicit/Extrapolation.md"
         ],
-        "Standard Stiff ODEProblem Solvers" => [
-            "stiff/firk.md",
-            "stiff/rosenbrock.md",
-            "stiff/stabilized_rk.md",
-            "stiff/sdirk.md",
-            "stiff/stiff_multistep.md",
-            "stiff/implicit_extrapolation.md"
+        "Semi-Implicit Solvers" => [
+            "semiimplicit/Rosenbrock.md",
+            "semiimplicit/StabalizedRK.md",
+            "semiimplicit/ExponentialRK.md"
         ],
-        "Second Order and Dynamical ODE Solvers" => [
-            "dynamical/nystrom.md",
-            "dynamical/symplectic.md"
+        "Implicit Solvers" => [
+            "implicit/SDIRK.md",
+            "implicit/FIRK.md",
+            "implicit/BDF.md",
+            "implicit/Extrapolation.md",
+            "implicit/PDIRK.md",
+            "implicit/Nordsieck.md"
         ],
         "IMEX Solvers" => [
-            "imex/imex_multistep.md",
-            "imex/imex_sdirk.md"
+            "imex/IMEXMultistep.md",
+            "imex/StabalizedIRK.md",
+            "imex/IMEXBDF.md"
+        ],
+        "Dynamical ODE Explicit Solvers" => [
+            "dynamicalodeexplicit/RKN.md",
+            "dynamicalodeexplicit/SymplecticRK.md"
         ],
         "Semilinear ODE Solvers" => [
-            "semilinear/exponential_rk.md",
-            "semilinear/magnus.md"
+            "semilinear/ExponentialRK.md",
+            "semilinear/Linear.md"
         ],
-        "DAEProblem Solvers" => [
-            "dae/fully_implicit.md"
+        "Mass Matrix DAE Solvers" => [
+            "massmatrixdae/Rosenbrock.md",
+            "massmatrixdae/BDF.md"
+        ],
+        "Fully Implicit DAE Solvers" => [
+            "fullyimplicitdae/BDF.md"
         ],
         "Misc Solvers" => [
             "misc.md"

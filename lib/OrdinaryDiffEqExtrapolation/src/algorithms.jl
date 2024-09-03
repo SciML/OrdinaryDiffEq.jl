@@ -2,25 +2,59 @@ abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <:
               OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ} <:
               OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+reference = """@inproceedings{elrod2022parallelizing,
+  title={Parallelizing explicit and implicit extrapolation methods for ordinary differential equations},
+  author={Elrod, Chris and Ma, Yingbo and Althaus, Konstantin and Rackauckas, Christopher and others},
+  booktitle={2022 IEEE High Performance Extreme Computing Conference (HPEC)},
+  pages={1--9},
+  year={2022},
+  organization={IEEE}}
+"""
 
-"""
-AitkenNeville: Parallelized Explicit Extrapolation Method
-Euler extrapolation using Aitken-Neville with the Romberg Sequence.
-"""
-struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
-    max_order::Int
-    min_order::Int
-    init_order::Int
-    threading::TO
+@doc generic_solver_docstring(
+    "Euler extrapolation using Aitken-Neville with the Romberg Sequence.",
+    "AitkenNeville",
+    "Parallelized Explicit Extrapolation Method.",
+    reference,
+    """
+    - `max_order`: maximum order of the adaptive order algorithm.
+    - `min_order`: minimum order of the adaptive order algorithm.
+    - `init_order`: initial order of the adaptive order algorithm.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    """,
+    """
+    max_order::Int = 10,
+    min_order::Int = 1,
+    init_order = 3,
+    thread = OrdinaryDiffEq.False(),
+    """)
+Base.@kwdef struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+    max_order::Int = 10
+    min_order::Int = 1
+    init_order::Int = 5
+    threading::TO = false
 end
-function AitkenNeville(; max_order = 10, min_order = 1, init_order = 5, threading = false)
-    AitkenNeville(max_order, min_order, init_order, threading)
-end
-"""
-ImplicitEulerExtrapolation: Parallelized Implicit Extrapolation Method
-Extrapolation of implicit Euler method with Romberg sequence.
-Similar to Hairer's SEULEX.
-"""
+
+@doc differentiation_rk_docstring(
+    "Extrapolation of implicit Euler method with Romberg sequence.
+Similar to Hairer's SEULEX.",
+    "ImplicitEulerExtrapolation",
+    "Parallelized Explicit Extrapolation Method.",
+    references = reference,
+    extra_keyword_description = """
+    - `max_order`: maximum order of the adaptive order algorithm.
+    - `min_order`: minimum order of the adaptive order algorithm.
+    - `init_order`: initial order of the adaptive order algorithm.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
+    """,
+    extra_keyword_default = """
+    max_order = 12,
+    min_order = 3,
+    init_order = 5,
+    thread = OrdinaryDiffEq.False(),
+    sequence = :harmonic
+    """)
 struct ImplicitEulerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -72,10 +106,27 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         init_order,
         threading, sequence)
 end
-"""
-ExtrapolationMidpointDeuflhard: Parallelized Explicit Extrapolation Method
-Midpoint extrapolation using Barycentric coordinates
-"""
+
+@doc generic_solver_docstring("Midpoint extrapolation using Barycentric coordinates.",
+    "ExtrapolationMidpointDeuflhard",
+    "Parallelized Explicit Extrapolation Method.",
+    reference,
+    """
+    - `max_order`: maximum order of the adaptive order algorithm.
+    - `min_order`: minimum order of the adaptive order algorithm.
+    - `init_order`: initial order of the adaptive order algorithm.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
+    - `sequence_factor`: denotes which even multiple of sequence to take while evaluating internal discretizations.
+    """,
+    """
+    max_order = 10,
+    min_order = 1,
+    init_order = 5,
+    thread = OrdinaryDiffEq.True(),
+    sequence = :harmonic,
+    sequence_factor = 2,
+    """)
 struct ExtrapolationMidpointDeuflhard{TO} <:
        OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
     min_order::Int # Minimal extrapolation order
@@ -125,10 +176,25 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     ExtrapolationMidpointDeuflhard(min_order, init_order, max_order, sequence, threading,
         sequence_factor)
 end
-"""
-ImplicitDeuflhardExtrapolation: Parallelized Implicit Extrapolation Method
-Midpoint extrapolation using Barycentric coordinates
-"""
+
+@doc differentiation_rk_docstring("Midpoint extrapolation using Barycentric coordinates.",
+    "ImplicitDeuflhardExtrapolation",
+    "Parallelized Explicit Extrapolation Method.",
+    references = reference,
+    extra_keyword_description = """
+    - `max_order`: maximum order of the adaptive order algorithm.
+    - `min_order`: minimum order of the adaptive order algorithm.
+    - `init_order`: initial order of the adaptive order algorithm.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
+    """,
+    extra_keyword_default = """
+    max_order = 10,
+    min_order = 1,
+    init_order = 5,
+    thread = OrdinaryDiffEq.False(),
+    sequence = :harmonic,
+    """)
 struct ImplicitDeuflhardExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -183,10 +249,28 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         init_order, max_order,
         sequence, threading)
 end
-"""
-ExtrapolationMidpointHairerWanner: Parallelized Explicit Extrapolation Method
-Midpoint extrapolation using Barycentric coordinates, following Hairer's ODEX in the adaptivity behavior.
-"""
+
+@doc generic_solver_docstring("Midpoint extrapolation using Barycentric coordinates,
+    following Hairer's ODEX in the adaptivity behavior.",
+    "ExtrapolationMidpointHairerWanner",
+    "Parallelized Explicit Extrapolation Method.",
+    reference,
+    """
+    - `max_order`: maximum order of the adaptive order algorithm.
+    - `min_order`: minimum order of the adaptive order algorithm.
+    - `init_order`: initial order of the adaptive order algorithm.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
+    - `sequence_factor`: denotes which even multiple of sequence to take while evaluating internal discretizations.
+    """,
+    """
+    max_order = 10,
+    min_order = 2,
+    init_order = 5,
+    thread = OrdinaryDiffEq.True(),
+    sequence = :harmonic,
+    sequence_factor = 2,
+    """)
 struct ExtrapolationMidpointHairerWanner{TO} <:
        OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
     min_order::Int # Minimal extrapolation order
@@ -238,10 +322,26 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         min_order, init_order, max_order, sequence, threading,
         sequence_factor)
 end
-"""
-ImplicitHairerWannerExtrapolation: Parallelized Implicit Extrapolation Method
-Midpoint extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
-"""
+
+@doc differentiation_rk_docstring("Midpoint extrapolation using Barycentric coordinates,
+    following Hairer's SODEX in the adaptivity behavior.",
+    "ImplicitHairerWannerExtrapolation",
+    "Parallelized Explicit Extrapolation Method.",
+    references = reference,
+    extra_keyword_description = """
+    - `max_order`: maximum order of the adaptive order algorithm.
+    - `min_order`: minimum order of the adaptive order algorithm.
+    - `init_order`: initial order of the adaptive order algorithm.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
+    """,
+    extra_keyword_default = """
+    max_order = 10,
+    min_order = 2,
+    init_order = 5,
+    thread = OrdinaryDiffEq.False(),
+    sequence = :harmonic,
+    """)
 struct ImplicitHairerWannerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -299,10 +399,27 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         max_order, sequence, threading)
 end
 
-"""
-ImplicitEulerBarycentricExtrapolation: Parallelized Implicit Extrapolation Method
-Euler extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
-"""
+@doc differentiation_rk_docstring("Euler extrapolation using Barycentric coordinates,
+    following Hairer's SODEX in the adaptivity behavior.",
+    "ImplicitEulerBarycentricExtrapolation",
+    "Parallelized Explicit Extrapolation Method.",
+    references = reference,
+    extra_keyword_description = """
+    - `max_order`: maximum order of the adaptive order algorithm.
+    - `min_order`: minimum order of the adaptive order algorithm.
+    - `init_order`: initial order of the adaptive order algorithm.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
+    - `sequence_factor`: denotes which even multiple of sequence to take while evaluating internal discretizations.
+    """,
+    extra_keyword_default = """
+    max_order = 10,
+    min_order = 3,
+    init_order = 5,
+    thread = OrdinaryDiffEq.False(),
+    sequence = :harmonic,
+    sequence_factor = 2,
+    """)
 struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
