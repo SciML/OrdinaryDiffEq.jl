@@ -1435,9 +1435,9 @@ end
         end 
 
         dw = Vector{eltype(u)}(undef, num_stages)
-        dw[1] = LU[1] \ rhs[1]
+        dw[1] = _reshape(LU[1] \ _vec(rhs[1]))
         for i in 2 : Int((num_stages + 1) / 2) 
-            tmp = LU[i] \ (@.. rhs[2 * i - 2] + rhs[2 * i - 1] * im)
+            tmp = _reshape(LU[i] \ _vec(@.. rhs[2 * i - 2] + rhs[2 * i - 1] * im), axes(u))
             dw[2 * i - 2] = real(tmp)
             dw[2 * i - 1] = imag(tmp)
         end
