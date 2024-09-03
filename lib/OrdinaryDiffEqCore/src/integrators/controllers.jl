@@ -67,6 +67,30 @@ end
 struct DummyController <: AbstractController
 end
 
+
+"""
+    NonAdaptiveController()
+This Controller exists to match the interface when one does not want to use a controller,
+basically if you want to keep a fixed time step.
+"""
+struct NonAdaptiveController <: AbstractController
+end
+
+@inline function stepsize_controller!(integrator, ::NonAdaptiveController, alg)
+    nothing
+end
+
+@inline function accept_step_controller(integrator, ::NonAdaptiveController)
+    return true
+end
+
+function step_accept_controller!(integrator, ::NonAdaptiveController, alg, q)
+    integrator.dt
+end
+
+function step_reject_controller!(integrator, ::NonAdaptiveController, alg)
+end
+
 @inline function stepsize_controller!(integrator, controller::IController, alg)
     @unpack qmin, qmax, gamma = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)

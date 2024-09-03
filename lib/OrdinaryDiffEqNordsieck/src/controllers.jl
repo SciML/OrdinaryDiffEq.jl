@@ -1,6 +1,3 @@
-struct DummyController <: AbstractController
-end
-
 # JVODE
 function stepsize_controller!(integrator, alg::JVODE)
     if iszero(integrator.EEst)
