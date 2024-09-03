@@ -1769,7 +1769,7 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            derivatives = Matrix{Any}(undef, num_stages, num_stages)
+            derivatives = Matrix{typeof(u)}(undef, num_stages, num_stages)
             pushfirst!(c, 0)
             pushfirst!(z, map(zero, u))
             for i in 1 : num_stages
