@@ -214,7 +214,7 @@ end
 
 #-
 
-@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Rosenbrock5ConstantCache,
+@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::RosenbrockCombinedConstantCache,
         idxs::Nothing, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     @inbounds Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * (k[2] + Θ * k[3])))
