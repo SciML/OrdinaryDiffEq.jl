@@ -1368,7 +1368,7 @@ end
     γdt, αdt, βdt = γ / dt, α ./ dt, β ./ dt
 
     J = calc_J(integrator, cache)
-    LU = Vector{Any}(undef, Int((num_stages + 1) / 2))
+    LU = Vector{Complex{BigFloat}}(undef, Int((num_stages + 1) / 2))
     if u isa Number
         LU[1] = -γdt * mass_matrix + J
         for i in 2 : Int((num_stages + 1) / 2)
@@ -1380,6 +1380,7 @@ end
             LU[i] = lu(-(αdt[i - 1] + βdt[i - 1] * im) * mass_matrix + J)
         end
     end
+
     integrator.stats.nw += 1
     z = w = Vector{typeof(u)}(undef, num_stages)
     if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
@@ -1659,7 +1660,7 @@ end
         end
 
         integrator.stats.nsolve += (num_stages + 1) / 2
-        dw = Vector{Any}(undef, num_stages - 1)
+        dw = Vector{typeof(u)}(undef, num_stages - 1)
         i = 1
 
         while i <= Int((num_stages - 1) / 2)
