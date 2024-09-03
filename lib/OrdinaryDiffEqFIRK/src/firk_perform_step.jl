@@ -1381,7 +1381,7 @@ end
         end
     end
     integrator.stats.nw += 1
-    z = w = Vector{BigFloat}(undef, num_stages)
+    z = w = Vector{typeof(u)}(undef, num_stages)
     if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         for i in 1 : num_stages
@@ -1441,7 +1441,7 @@ end
         end 
 
         dw = Vector{eltype(u)}(undef, num_stages)
-        dw[1] = _reshape(LU[1] \ _vec(rhs[1]))
+        dw[1] = _reshape(LU[1] \ _vec(rhs[1]), axes(u))
         for i in 2 : Int((num_stages + 1) / 2) 
             tmp = _reshape(LU[i] \ _vec(@.. rhs[2 * i - 2] + rhs[2 * i - 1] * im), axes(u))
             dw[2 * i - 2] = real(tmp)

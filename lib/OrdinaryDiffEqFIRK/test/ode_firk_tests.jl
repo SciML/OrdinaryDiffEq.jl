@@ -18,7 +18,8 @@ prob_ode_linear_big = remake(prob_ode_linear, u0 = big.(prob_ode_linear.u0), tsp
 prob_ode_2Dlinear_big = remake(prob_ode_2Dlinear, u0 = big.(prob_ode_2Dlinear.u0), tspan = big.(prob_ode_2Dlinear.tspan))
 
 for i in [3, 5, 7, 9], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
-    sim21 = test_convergence(1 ./ 2 .^ (2.25:-1:0.25), prob, AdaptiveRadau(num_stages = i))
+    dts = 1 ./ 2 .^ (4.25:-1:0.25)
+    sim21 = test_convergence(dts, prob, AdaptiveRadau(num_stages = i))
     @test sim21.𝒪est[:final]≈ (2 * i - 1) atol=testTol
 end
 
