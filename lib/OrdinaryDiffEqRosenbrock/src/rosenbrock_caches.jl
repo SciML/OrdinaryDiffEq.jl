@@ -46,6 +46,16 @@ function full_cache(c::RosenbrockCache)
             c.ks..., c.fsalfirst, c.fsallast, c.dT, c.tmp, c.atmp, c.weight, c.linsolve_tmp]
 end
 
+struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
+    tf::TF
+    uf::UF
+    tab::Tab
+    J::JType
+    W::WType
+    linsolve::F
+    autodiff::AD
+end
+
 @cache mutable struct Rosenbrock23Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
     RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
@@ -701,16 +711,6 @@ end
 
 ### Rodas4 methods
 
-struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
-    tf::TF
-    uf::UF
-    tab::Tab
-    J::JType
-    W::WType
-    linsolve::F
-    autodiff::AD
-end
-
 tabtype(::Rodas4) = Rodas4Tableau
 tabtype(::Rodas42) = Rodas42Tableau
 tabtype(::Rodas4P) = Rodas4PTableau
@@ -725,7 +725,7 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2}, u, rate_proto
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
-    Rodas4ConstantCache(tf, uf,
+    RosenbrockCombinedConstantCache(tf, uf,
         tabtype(alg)(constvalue(uBottomEltypeNoUnits),
             constvalue(tTypeNoUnits)), J, W, linsolve,
         alg_autodiff(alg))
@@ -786,15 +786,6 @@ end
 
 ### Rosenbrock5
 
-struct Rosenbrock5ConstantCache{TF, UF, Tab, JType, WType, F} <: RosenbrockConstantCache
-    tf::TF
-    uf::UF
-    tab::Tab
-    J::JType
-    W::WType
-    linsolve::F
-end
-
 function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -843,9 +834,9 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
-    Rosenbrock5ConstantCache(tf, uf,
+    RosenbrockCombinedConstantCache(tf, uf,
         Rodas5Tableau(constvalue(uBottomEltypeNoUnits),
-            constvalue(tTypeNoUnits)), J, W, linsolve)
+            constvalue(tTypeNoUnits)), J, W, linsolve, alg_autodiff(alg))
 end
 
 function alg_cache(
@@ -898,7 +889,7 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
-    Rosenbrock5ConstantCache(tf, uf,
+    RosenbrockConstantCache(tf, uf,
         Rodas5PTableau(constvalue(uBottomEltypeNoUnits),
             constvalue(tTypeNoUnits)), J, W, linsolve)
 end
