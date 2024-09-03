@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, Test, LinearSolve, LinearAlgebra, SparseArrays
+using OrdinaryDiffEqDefault, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF
+using Test, LinearSolve, LinearAlgebra, SparseArrays, StaticArrays
 
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
 
@@ -72,7 +73,7 @@ for n in (100, 600)
 
     prob_ex_rober = ODEProblem(ODEFunction(exrober; jac_prototype),
         vcat([1.0, 0.0, 0.0], ones(n)), (0.0, 100.0), (0.04, 3e7, 1e4))
-    sol = solve(prob_ex_rober)
+    global sol = solve(prob_ex_rober)
     fsol = solve(prob_ex_rober, AutoTsit5(FBDF(; autodiff = false, linsolve)))
     # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
     @test sol.stats.naccept == fsol.stats.naccept
