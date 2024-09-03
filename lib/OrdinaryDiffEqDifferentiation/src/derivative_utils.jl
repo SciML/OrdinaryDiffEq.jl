@@ -12,7 +12,7 @@ struct StaticWOperator{isinv, T, F} <: AbstractSciMLOperator{T}
             # doing to how StaticArrays and StaticArraysCore are split up
             StaticArrays.LU(LowerTriangular(W), UpperTriangular(W), SVector{n}(1:n))
         else
-            lu(W, check = false)
+            lu(W, check=false)
         end
         # when constructing W for the first time for the type
         # inv(W) can be singular
@@ -80,7 +80,9 @@ function calc_J(integrator, cache, next_step::Bool = false)
 
     if alg isa DAEAlgorithm
         if DiffEqBase.has_jac(f)
-            J = f.jac(duprev, uprev, p, t)
+            duprev = integrator.duprev
+            uf = cache.uf
+            J = f.jac(duprev, uprev, p, uf.α * uf.invγdt, t)
         else
             @unpack uf = cache
             x = zero(uprev)
@@ -899,7 +901,11 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         end
     else
         J = if !IIP && DiffEqBase.has_jac(f)
-            f.jac(uprev, p, t)
+            if f isa DAEFunction
+                f.jac(uprev, uprev, p, one(t), t)
+            else
+                f.jac(uprev, p, t)
+            end
         elseif f.jac_prototype === nothing
             ArrayInterface.undefmatrix(u)
         else
@@ -932,28 +938,28 @@ function LinearSolve.init_cacheval(
 end
 
 for alg in [LinearSolve.AppleAccelerateLUFactorization,
-    LinearSolve.BunchKaufmanFactorization,
-    LinearSolve.CHOLMODFactorization,
-    LinearSolve.CholeskyFactorization,
-    LinearSolve.CudaOffloadFactorization,
-    LinearSolve.DiagonalFactorization,
-    LinearSolve.FastLUFactorization,
-    LinearSolve.FastQRFactorization,
-    LinearSolve.GenericFactorization,
-    LinearSolve.GenericLUFactorization,
-    LinearSolve.KLUFactorization,
-    LinearSolve.LDLtFactorization,
-    LinearSolve.LUFactorization,
-    LinearSolve.MKLLUFactorization,
-    LinearSolve.MetalLUFactorization,
-    LinearSolve.NormalBunchKaufmanFactorization,
-    LinearSolve.NormalCholeskyFactorization,
-    LinearSolve.QRFactorization,
-    LinearSolve.RFLUFactorization,
-    LinearSolve.SVDFactorization,
-    LinearSolve.SimpleLUFactorization,
-    LinearSolve.SparspakFactorization,
-    LinearSolve.UMFPACKFactorization]
+             LinearSolve.BunchKaufmanFactorization,
+             LinearSolve.CHOLMODFactorization,
+             LinearSolve.CholeskyFactorization,
+             LinearSolve.CudaOffloadFactorization,
+             LinearSolve.DiagonalFactorization,
+             LinearSolve.FastLUFactorization,
+             LinearSolve.FastQRFactorization,
+             LinearSolve.GenericFactorization,
+             LinearSolve.GenericLUFactorization,
+             LinearSolve.KLUFactorization,
+             LinearSolve.LDLtFactorization,
+             LinearSolve.LUFactorization,
+             LinearSolve.MKLLUFactorization,
+             LinearSolve.MetalLUFactorization,
+             LinearSolve.NormalBunchKaufmanFactorization,
+             LinearSolve.NormalCholeskyFactorization,
+             LinearSolve.QRFactorization,
+             LinearSolve.RFLUFactorization,
+             LinearSolve.SVDFactorization,
+             LinearSolve.SimpleLUFactorization,
+             LinearSolve.SparspakFactorization,
+             LinearSolve.UMFPACKFactorization]
     @eval function LinearSolve.init_cacheval(alg::$alg, A::WOperator, b, u, Pl, Pr,
             maxiters::Int, abstol, reltol, verbose::Bool,
             assumptions::OperatorAssumptions)

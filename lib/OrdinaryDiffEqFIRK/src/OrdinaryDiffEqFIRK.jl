@@ -8,7 +8,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
                            alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                            constvalue, _unwrap_val,
-                           explicit_rk_docstring, trivial_limiter!,
+                           differentiation_rk_docstring, trivial_limiter!,
                            _ode_interpolant!, _ode_addsteps!, AbstractController,
                            qmax_default, alg_adaptive_order, DEFAULT_PRECS,
                            stepsize_controller!, step_accept_controller!,
@@ -16,7 +16,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            PredictiveController, alg_can_repeat_jac, NewtonAlgorithm,
                            fac_default_gamma,
                            get_current_adaptive_order, get_fsalfirstlast,
-                           isfirk
+                           isfirk, generic_solver_docstring
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
 using Polynomials, GenericLinearAlgebra, GenericSchur
 using SciMLOperators: AbstractSciMLOperator

@@ -66,6 +66,7 @@ end
         @time @safetestset "Linear Solver Split ODE Tests" include("interface/linear_solver_split_ode_test.jl")
         @time @safetestset "Sparse Diff Tests" include("interface/sparsediff_tests.jl")
         @time @safetestset "Enum Tests" include("interface/enums.jl")
+        @time @safetestset "Enum Tests" include("interface/get_du.jl")
         @time @safetestset "Mass Matrix Tests" include("interface/mass_matrix_tests.jl")
         @time @safetestset "W-Operator prototype tests" include("interface/wprototype_tests.jl")
     end

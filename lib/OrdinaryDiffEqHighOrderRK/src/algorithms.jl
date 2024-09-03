@@ -15,7 +15,16 @@ function TanYam7(stage_limiter!, step_limiter! = trivial_limiter!)
     TanYam7(stage_limiter!, step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("Tsitouras-Papakostas 8/7 Runge-Kutta method.", "TsitPap8")
+@doc explicit_rk_docstring("Tsitouras-Papakostas 8/7 Runge-Kutta method.", "TsitPap8",
+    references = """@article{tsitouras1999cheap,
+  title={Cheap error estimation for Runge--Kutta methods},
+  author={Tsitouras, Ch and Papakostas, SN},
+  journal={SIAM Journal on Scientific Computing},
+  volume={20},
+  number={6},
+  pages={2067--2088},
+  year={1999},
+  publisher={SIAM}}""")
 Base.@kwdef struct TsitPap8{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -44,6 +53,14 @@ function DP8(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring("Phase-fitted Runge-Kutta of 8th order.", "PFRK87",
+    references = """@article{tsitouras2017phase,
+    title={Phase-fitted Runge--Kutta pairs of orders 8 (7)},
+    author={Tsitouras, Ch and Famelis, I Th and Simos, TE},
+    journal={Journal of Computational and Applied Mathematics},
+    volume={321},
+    pages={226--231},
+    year={2017},
+    publisher={Elsevier}}""",
     extra_keyword_description = """- `omega`: a periodicity phase estimate,
                                    when accurate this method results in zero numerical dissipation.
                     """,

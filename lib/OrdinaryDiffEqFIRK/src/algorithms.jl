@@ -1,20 +1,31 @@
-# FIRK Methods
 
-"""
-@article{hairer1999stiff,
-title={Stiff differential equations solved by Radau methods},
-author={Hairer, Ernst and Wanner, Gerhard},
-journal={Journal of Computational and Applied Mathematics},
-volume={111},
-number={1-2},
-pages={93--111},
-year={1999},
-publisher={Elsevier}
-}
+hairer1999stiff = """@article{hairer1999stiff,
+    title={Stiff differential equations solved by Radau methods},
+    author={Hairer, Ernst and Wanner, Gerhard},
+    journal={Journal of Computational and Applied Mathematics},
+    volume={111},
+    number={1-2},
+    pages={93--111},
+    year={1999},
+    publisher={Elsevier}}"""
 
-RadauIIA3: Fully-Implicit Runge-Kutta Method
-An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
-"""
+extra_keyword_description = """
+    - `extrapolant`: TBD
+    - `smooth_est`: TBD
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`"""
+extra_keyword_default = """
+    extrapolant = :dense,
+    smooth_est = true,
+    step_limiter! = trivial_limiter!"""
+
+@doc differentiation_rk_docstring(
+    "An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
+Similar to Hairer's SEULEX.",
+    "RadauIIA3",
+    "Fully-Implicit Runge-Kutta Method.";
+    references = hairer1999stiff,
+    extra_keyword_description = extra_keyword_description,
+    extra_keyword_default = extra_keyword_default)
 struct RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -50,21 +61,14 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = Val{true}(),
         step_limiter!)
 end
 
-"""
-@article{hairer1999stiff,
-title={Stiff differential equations solved by Radau methods},
-author={Hairer, Ernst and Wanner, Gerhard},
-journal={Journal of Computational and Applied Mathematics},
-volume={111},
-number={1-2},
-pages={93--111},
-year={1999},
-publisher={Elsevier}
-}
-
-RadauIIA5: Fully-Implicit Runge-Kutta Method
-An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
-"""
+@doc differentiation_rk_docstring(
+    "An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
+Similar to Hairer's SEULEX.",
+    "RadauIIA5",
+    "Fully-Implicit Runge-Kutta Method.";
+    references = hairer1999stiff,
+    extra_keyword_description = extra_keyword_description,
+    extra_keyword_default = extra_keyword_default)
 struct RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -102,21 +106,14 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         step_limiter!)
 end
 
-"""
-@article{hairer1999stiff,
-title={Stiff differential equations solved by Radau methods},
-author={Hairer, Ernst and Wanner, Gerhard},
-journal={Journal of Computational and Applied Mathematics},
-volume={111},
-number={1-2},
-pages={93--111},
-year={1999},
-publisher={Elsevier}
-}
-
-RadauIIA9: Fully-Implicit Runge-Kutta Method
-An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
-"""
+@doc differentiation_rk_docstring(
+    "An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
+Similar to Hairer's SEULEX.",
+    "RadauIIA9",
+    "Fully-Implicit Runge-Kutta Method.";
+    references = hairer1999stiff,
+    extra_keyword_description = extra_keyword_description,
+    extra_keyword_default = extra_keyword_default)
 struct RadauIIA9{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
