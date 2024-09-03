@@ -1198,7 +1198,7 @@ end
 
 #### Rodas4 type method
 
-function initialize!(integrator, cache::Rodas4ConstantCache)
+function initialize!(integrator, cache::RosenbrockCombinedConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     # Avoid undefined entries if k is an array of arrays
@@ -1206,7 +1206,7 @@ function initialize!(integrator, cache::Rodas4ConstantCache)
     integrator.k[2] = zero(integrator.u)
 end
 
-@muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCombinedConstantCache, repeat_step = false)
     (;t, dt, uprev, u, f, p) = integrator
     (;tf, uf) = cache
     (;A, C, gamma, c, d, H) = cache.tab
@@ -1412,7 +1412,7 @@ end
 
 ### Rodas5 Method
 
-function initialize!(integrator, cache::Rosenbrock5ConstantCache)
+function initialize!(integrator, cache::RosenbrockCombinedConstantCache)
     integrator.kshortsize = 3
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     # Avoid undefined entries if k is an array of arrays
@@ -1421,7 +1421,7 @@ function initialize!(integrator, cache::Rosenbrock5ConstantCache)
     integrator.k[3] = zero(integrator.u)
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock5ConstantCache,
+@muladd function perform_step!(integrator, cache::RosenbrockCombinedConstantCache,
         repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
