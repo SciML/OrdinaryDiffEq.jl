@@ -40,6 +40,7 @@ mutable struct RosenbrockCache{uType, rateType, uNoUnitsType, JType, WType, TabT
     alg::A
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
+    order::Int
 end
 function full_cache(c::RosenbrockCache)
     return [c.u, c.uprev, c.dense..., c.du, c.du1, c.du2,
@@ -54,6 +55,7 @@ struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <: Rose
     W::WType
     linsolve::F
     autodiff::AD
+    order::Int
 end
 
 @cache mutable struct Rosenbrock23Cache{uType, rateType, uNoUnitsType, JType, WType,
@@ -728,7 +730,7 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2}, u, rate_proto
     RosenbrockCombinedConstantCache(tf, uf,
         tabtype(alg)(constvalue(uBottomEltypeNoUnits),
             constvalue(tTypeNoUnits)), J, W, linsolve,
-        alg_autodiff(alg))
+        alg_autodiff(alg), 4)
 end
 
 function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2}, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -779,7 +781,7 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2}, u, rate_proto
         u, uprev, dense, du, du1, du2, ks, fsalfirst, fsallast,
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
-        alg.step_limiter!, alg.stage_limiter!)
+        alg.step_limiter!, alg.stage_limiter!, 4)
 end
 
 ################################################################################
@@ -794,7 +796,7 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
-    ks = [zero(rate_prototype) for _ in 1:8]
+    ks = [zero(rate_prototype) for _ in 1:7]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -822,7 +824,7 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
-        alg.stage_limiter!)
+        alg.stage_limiter!, 5)
 end
 
 function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -836,7 +838,7 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
     RosenbrockCombinedConstantCache(tf, uf,
         Rodas5Tableau(constvalue(uBottomEltypeNoUnits),
-            constvalue(tTypeNoUnits)), J, W, linsolve, alg_autodiff(alg))
+            constvalue(tTypeNoUnits)), J, W, linsolve, alg_autodiff(alg), 5)
 end
 
 function alg_cache(
@@ -848,7 +850,7 @@ function alg_cache(
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
-    ks = [zero(rate_prototype) for _ in 1:8]
+    ks = [zero(rate_prototype) for _ in 1:7]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -876,7 +878,7 @@ function alg_cache(
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
-        alg.stage_limiter!)
+        alg.stage_limiter!, 5)
 end
 
 function alg_cache(
@@ -889,9 +891,9 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
-    RosenbrockConstantCache(tf, uf,
+    RosenbrockCombinedConstantCache(tf, uf,
         Rodas5PTableau(constvalue(uBottomEltypeNoUnits),
-            constvalue(tTypeNoUnits)), J, W, linsolve)
+            constvalue(tTypeNoUnits)), J, W, linsolve, alg_autodiff(alg), 5)
 end
 
 function get_fsalfirstlast(

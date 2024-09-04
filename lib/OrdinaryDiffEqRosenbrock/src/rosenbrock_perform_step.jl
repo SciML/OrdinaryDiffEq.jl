@@ -1199,11 +1199,12 @@ end
 #### Rodas4 type method
 
 function initialize!(integrator, cache::RosenbrockCombinedConstantCache)
-    integrator.kshortsize = 2
+    integrator.kshortsize = cache.order == 5 ? 3 : 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     # Avoid undefined entries if k is an array of arrays
-    integrator.k[1] = zero(integrator.u)
-    integrator.k[2] = zero(integrator.u)
+    for i in 1:integrator.kshortsize
+        integrator.k[i] = zero(integrator.u)
+    end
 end
 
 @muladd function perform_step!(integrator, cache::RosenbrockCombinedConstantCache, repeat_step = false)
@@ -1302,12 +1303,11 @@ end
 end
 
 function initialize!(integrator, cache::RosenbrockCache)
-    dense = cache.dense
-    dense1, dense2 = dense[1], dense[2]
-    integrator.kshortsize = 2
+    integrator.kshortsize = cache.order == 5 ? 3 : 2
     resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = dense1
-    integrator.k[2] = dense2
+    for i in 1:integrator.kshortsize
+        integrator.k[i] = cache.dense[i]
+    end
 end
 
 
