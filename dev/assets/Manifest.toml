@@ -279,9 +279,9 @@ version = "1.15.1"
 
 [[deps.DifferentiationInterface]]
 deps = ["ADTypes", "Compat", "DocStringExtensions", "FillArrays", "LinearAlgebra", "PackageExtensionCompat", "SparseArrays", "SparseMatrixColorings"]
-git-tree-sha1 = "55f6241766b0d0c0157005c9526d1ecf33a12cdc"
+git-tree-sha1 = "9b23f9a816790b8ab9914c3c86321a546e92cbe7"
 uuid = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
-version = "0.5.16"
+version = "0.5.17"
 
     [deps.DifferentiationInterface.extensions]
     DifferentiationInterfaceChainRulesCoreExt = "ChainRulesCore"
@@ -1367,9 +1367,9 @@ version = "7.2.1+1"
 
 [[deps.SymbolicIndexingInterface]]
 deps = ["Accessors", "ArrayInterface", "RuntimeGeneratedFunctions", "StaticArraysCore"]
-git-tree-sha1 = "c9fce29fb41a10677e24f74421ebe31220b81ad0"
+git-tree-sha1 = "161e37de84fdc2d071c50b55ed07c8bac537268c"
 uuid = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
-version = "0.3.28"
+version = "0.3.29"
 
 [[deps.TOML]]
 deps = ["Dates"]
