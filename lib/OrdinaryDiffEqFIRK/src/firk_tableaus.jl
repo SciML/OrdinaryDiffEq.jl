@@ -111,7 +111,7 @@ function RadauIIA5Tableau(T, T2)
         e1, e2, e3)
 end
 
-struct BigRadauIIA5Tableau{T1, T2, Int}
+struct RadauIIATableau{T1, T2, Int}
     T::AbstractMatrix{T1}
     TI::AbstractMatrix{T1}
     c::AbstractVector{T2}
@@ -155,19 +155,8 @@ function BigRadauIIA5Tableau(T1, T2, Int)
     T[3, 1] = big"0.966048182615092936190567080794590794996748754810883844283183333914131408744555961195911605614405476210484499875001737558078500322423463946527349731087504518"
     T[3, 2] = big"1.0"
     T[3, 3] = big"0.0"
-    BigRadauIIA5Tableau{T1, T2, Int}(T, TI,  
+    RadauIIATableau{T1, T2, Int}(T, TI,  
     c, γ, α, β, 3)
-end
-
-struct BigRadauIIA9Tableau{T1, T2, Int}
-    T::AbstractMatrix{T1}
-    TI::AbstractMatrix{T1}
-    c::AbstractVector{T2}
-    γ::T1
-    α::AbstractVector{T1}
-    β::AbstractVector{T1}
-    #e::AbstractVector{T1}
-    num_stages::Int
 end
 
 function BigRadauIIA9Tableau(T1, T2, Int)
@@ -240,7 +229,7 @@ function BigRadauIIA9Tableau(T1, T2, Int)
     T[5, 4] = big"1.0"
     T[5, 5] = big"0.0"
 
-    BigRadauIIA9Tableau{T1, T2, Int}(T, TI,  
+    RadauIIATableau{T1, T2, Int}(T, TI,  
     c, γ, α, β, 5)
 end
 
@@ -393,17 +382,6 @@ function RadauIIA9Tableau(T, T2)
         e1, e2, e3, e4, e5)
 end
 
-struct BigRadauIIA13Tableau{T1, T2, Int}
-    T::AbstractMatrix{T1}
-    TI::AbstractMatrix{T1}
-    c::AbstractVector{T2}
-    γ::T1
-    α::AbstractVector{T1}
-    β::AbstractVector{T1}
-    #e::AbstractVector{T1}
-    num_stages::Int
-end
-
 function BigRadauIIA13Tableau(T1, T2, Int)
     γ = convert(T1, big"8.93683278840521633730209691330107970355008194433956657198414191417624969654351559268800871286734194720118970058657997472527299153742511021973612156231867783")
     α = Vector{T1}(undef, 3)
@@ -526,25 +504,14 @@ function BigRadauIIA13Tableau(T1, T2, Int)
     T[7, 6] = big"1.0"
     T[7, 7] = big"0.0"
 
-    BigRadauIIA13Tableau{T1, T2, Int}(T, TI,  
+    RadauIIATableau{T1, T2, Int}(T, TI,  
     c, γ, α, β, 7)
-end
-
-struct adaptiveRadauTableau{T, T2, Int}
-    T:: AbstractMatrix{T}
-    TI::AbstractMatrix{T}
-    γ::T
-    α::AbstractVector{T}
-    β::AbstractVector{T}
-    c::AbstractVector{T}
-    #e::AbstractVector{T}
-    num_stages::Int
 end
 
 using Polynomials, GenericLinearAlgebra, LinearAlgebra, LinearSolve, GenericSchur, RootedTrees, Symbolics
 using Symbolics: variables, variable, unwrap
 
-function adaptiveRadauTableau(T, T2, num_stages::Int)
+function adaptiveRadauTableau(T1, T2, num_stages::Int)
     tmp = Vector{BigFloat}(undef, num_stages - 1)
     for i in 1:(num_stages - 1)
         tmp[i] = 0
@@ -628,8 +595,6 @@ function adaptiveRadauTableau(T, T2, num_stages::Int)
     @assert islinear
     Symbolics.expand.((AA[idxs, :] \ -bb[idxs]) - b)=#
     #e = b_hat - b
-    #T_test = T
-    #return T_test 
-    adaptiveRadauTableau{Any, T2, Int}(T, TI, γ, α, β, c, num_stages)
+    RadauIIATableau{T1, T2, Int}(T, TI, c, γ, α, β, num_stages)
 end
 

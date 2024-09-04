@@ -1368,7 +1368,7 @@ end
     γdt, αdt, βdt = γ / dt, α ./ dt, β ./ dt
 
     J = calc_J(integrator, cache)
-    LU = Vector{Complex{BigFloat}}(undef, Int((num_stages + 1) / 2))
+    LU = Vector{Complex{typeof(u)}}(undef, Int((num_stages + 1) / 2))
     if u isa Number
         LU[1] = -γdt * mass_matrix + J
         for i in 2 : Int((num_stages + 1) / 2)
