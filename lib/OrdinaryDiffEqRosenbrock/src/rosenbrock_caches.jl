@@ -850,7 +850,7 @@ function alg_cache(
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
-    ks = [zero(rate_prototype) for _ in 1:7]
+    ks = [zero(rate_prototype) for _ in 1:8]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
