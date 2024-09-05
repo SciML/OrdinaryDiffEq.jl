@@ -37,6 +37,17 @@ end
     c2 = Θ * (Θ - 2d) / (1 - 2d)
 end
 
+@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, idxs, T::Type{Val{0}}, differential_vars, alg)
+    order = alg_order(alg)
+    
+    Θ1 = 1 - Θ
+
+    if order == 2
+        @rosenbrock2332pre0
+        @inbounds y₀ + dt * (c1 * k[1] + c2 * k[2])
+    end
+end
+
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
         cache::Union{Rosenbrock23ConstantCache,
             Rosenbrock32ConstantCache}, idxs::Nothing,
