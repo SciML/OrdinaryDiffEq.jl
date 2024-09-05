@@ -37,31 +37,27 @@ end
     c2 = Θ * (Θ - 2d) / (1 - 2d)
 end
 
-@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, idxs, T::Type{Val{0}}, differential_vars, alg)
-    order = alg_order(alg)
-    
-    Θ1 = 1 - Θ
+@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
+        cache::Union{Rosenbrock23ConstantCache,
+            Rosenbrock32ConstantCache}, idxs::Nothing,
+        T::Type{Val{0}}, differential_vars)
+    @rosenbrock2332pre0
+    @inbounds y₀ + dt * (c1 * k[1] + c2 * k[2])
+end
 
-    if order == 2 && typeof(idxs) == Nothing
-        @rosenbrock2332pre0
-        @inbounds y₀ + dt * (c1 * k[1] + c2 * k[2])
-    end
+@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
+        cache::Union{Rosenbrock23Cache, Rosenbrock32Cache},
+        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+    @rosenbrock2332pre0
+    @inbounds @.. y₀+dt * (c1 * k[1] + c2 * k[2])
+end
 
-    if order == 2 && typeof(idxs) != Nothing
-        @rosenbrock2332pre0
-        @views @.. out=y₀[idxs] + dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
-        out
-    end
-
-    if order == 3 && typeof(idxs) == Nothing
-        @rosenbrock2332pre0
-        @inbounds y₀ + dt * (c1 * k[1] + c2 * k[2])
-    end
-
-    if order == 3 & typeof(idxs) != Nothing
-        @rosenbrock2332pre0
-        @.. y₀[idxs]+dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
-    end
+@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
+        cache::Union{Rosenbrock23ConstantCache, Rosenbrock23Cache,
+            Rosenbrock32ConstantCache, Rosenbrock32Cache
+        }, idxs, T::Type{Val{0}}, differential_vars)
+    @rosenbrock2332pre0
+    @.. y₀[idxs]+dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
@@ -75,7 +71,10 @@ end
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-        cache::Union{Rosenbrock32ConstantCache, Rosenbrock32Cache}, idxs, T::Type{Val{0}}, differential_vars)
+        cache::Union{Rosenbrock23ConstantCache,
+            Rosenbrock23Cache,
+            Rosenbrock32ConstantCache, Rosenbrock32Cache
+        }, idxs, T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
     @views @.. out=y₀[idxs] + dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
     out
@@ -136,9 +135,16 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCache, Rodas23WCache, Rodas3PCache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars, alg)
+    order = alg_order(alg)
     Θ1 = 1 - Θ
-    @inbounds @.. Θ1 * y₀+Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
+
+    if order == 4 || order == 3
+        @inbounds @.. Θ1 * y₀+Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
+    elseif order == 5
+        Θ1 = 1 - Θ
+        @inbounds @.. Θ1 * y₀+Θ * (y₁ + Θ1 * (k[1] + Θ * (k[2] + Θ * k[3])))
+    end
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -209,19 +215,6 @@ end
 end
 
 #-
-
-@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::RosenbrockCombinedConstantCache,
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
-    Θ1 = 1 - Θ
-    @inbounds Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * (k[2] + Θ * k[3])))
-end
-
-@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::RosenbrockCache, idxs::Nothing,
-        T::Type{Val{0}}, differential_vars)
-    Θ1 = 1 - Θ
-    @inbounds @.. Θ1 * y₀+Θ * (y₁ + Θ1 * (k[1] + Θ * (k[2] + Θ * k[3])))
-end
-
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
         cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache},
         idxs, T::Type{Val{0}}, differential_vars)
