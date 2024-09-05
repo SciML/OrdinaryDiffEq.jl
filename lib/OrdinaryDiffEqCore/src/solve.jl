@@ -342,7 +342,7 @@ function DiffEqBase.__init(
     end
 
     if prob isa DAEProblem
-        cache = alg_cache(_alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
+        cache = alg_cache(_alg, u, rate_prototype, uEltypeNoUnits,
             uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
             reltol_internal, p, calck, Val(isinplace(prob)))
     else
