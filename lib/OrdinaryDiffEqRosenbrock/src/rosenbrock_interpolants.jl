@@ -42,33 +42,26 @@ end
     
     Θ1 = 1 - Θ
 
-    if order == 2
+    if order == 2 && typeof(idxs) == Nothing
         @rosenbrock2332pre0
         @inbounds y₀ + dt * (c1 * k[1] + c2 * k[2])
     end
-end
 
-@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{Rosenbrock23ConstantCache,
-            Rosenbrock32ConstantCache}, idxs::Nothing,
-        T::Type{Val{0}}, differential_vars)
-    @rosenbrock2332pre0
-    @inbounds y₀ + dt * (c1 * k[1] + c2 * k[2])
-end
+    if order == 2 && typeof(idxs) != Nothing
+        @rosenbrock2332pre0
+        @views @.. out=y₀[idxs] + dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
+        out
+    end
 
-@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{Rosenbrock23Cache, Rosenbrock32Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
-    @rosenbrock2332pre0
-    @inbounds @.. y₀+dt * (c1 * k[1] + c2 * k[2])
-end
+    if order == 3 && typeof(idxs) == Nothing
+        @rosenbrock2332pre0
+        @inbounds y₀ + dt * (c1 * k[1] + c2 * k[2])
+    end
 
-@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{Rosenbrock23ConstantCache, Rosenbrock23Cache,
-            Rosenbrock32ConstantCache, Rosenbrock32Cache
-        }, idxs, T::Type{Val{0}}, differential_vars)
-    @rosenbrock2332pre0
-    @.. y₀[idxs]+dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
+    if order == 3 & typeof(idxs) != Nothing
+        @rosenbrock2332pre0
+        @.. y₀[idxs]+dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
+    end
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
@@ -82,10 +75,7 @@ end
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-        cache::Union{Rosenbrock23ConstantCache,
-            Rosenbrock23Cache,
-            Rosenbrock32ConstantCache, Rosenbrock32Cache
-        }, idxs, T::Type{Val{0}}, differential_vars)
+        cache::Union{Rosenbrock32ConstantCache, Rosenbrock32Cache}, idxs, T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
     @views @.. out=y₀[idxs] + dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
     out
