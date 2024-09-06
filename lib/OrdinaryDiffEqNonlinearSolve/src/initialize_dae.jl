@@ -1,3 +1,17 @@
+## If an alg is given use it
+default_nlsolve(alg, isinplace, u, initprob, autodiff = false) = alg
+
+## If the initialization is trivial just use nothing alg
+function default_nlsolve(
+        ::Nothing, isinplace, u::Nothing, ::NonlinearProblem, autodiff = false)
+    nothing
+end
+
+function default_nlsolve(
+        ::Nothing, isinplace, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
+    nothing
+end
+
 function default_nlsolve(::Nothing, isinplace::Val{true}, u, ::NonlinearProblem, autodiff = false)
     FastShortcutNonlinearPolyalg(;
         autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
