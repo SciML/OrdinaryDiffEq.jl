@@ -33,8 +33,6 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
                                      calc_W, calc_rosenbrock_differentiation!, build_J_W,
                                      UJacobianWrapper, dolinsolve
 
-import OrdinaryDiffEqNonlinearSolve # Required for DAE initialization
-
 using Reexport
 @reexport using DiffEqBase
 

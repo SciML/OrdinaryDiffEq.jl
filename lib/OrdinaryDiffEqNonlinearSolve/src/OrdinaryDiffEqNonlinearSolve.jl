@@ -27,6 +27,10 @@ import OrdinaryDiffEqCore
 import SciMLOperators: islinear
 import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
 
+@static if isdefined(OrdinaryDiffEqCore, :default_nlsolve)
+    import OrdinaryDiffEqCore: default_nlsolve
+end
+
 using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
                           AbstractNLSolverAlgorithm, AbstractNLSolverCache,
                           AbstractNLSolver, NewtonAlgorithm, @unpack,
