@@ -1,4 +1,4 @@
-if isdefined(OrdinaryDiffEqCore, :default_nlsolve)
+@static if isdefined(OrdinaryDiffEqCore, :default_nlsolve)
     function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{true}, u, ::NonlinearProblem, autodiff = false)
         FastShortcutNonlinearPolyalg(;
             autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
