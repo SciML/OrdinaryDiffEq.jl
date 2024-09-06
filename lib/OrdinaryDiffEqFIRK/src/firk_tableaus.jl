@@ -111,18 +111,18 @@ function RadauIIA5Tableau(T, T2)
         e1, e2, e3)
 end
 
-struct RadauIIATableau{T1, T2, Int}
-    T::AbstractMatrix{T1}
-    TI::AbstractMatrix{T1}
-    c::AbstractVector{T2}
+struct RadauIIATableau{T1, T2}
+    T::Matrix{T1}
+    TI::Matrix{T1}
+    c::Vector{T2}
     γ::T1
-    α::AbstractVector{T1}
-    β::AbstractVector{T1}
-    #e::AbstractVector{T1}
+    α::Vector{T1}
+    β::Vector{T1}
+    #e::Vector{T1}
     num_stages::Int
 end
 
-function BigRadauIIA5Tableau(T1, T2, Int)
+function BigRadauIIA5Tableau(T1, T2)
     γ = convert(T1, big"3.63783425274449573220841851357777579794593608687391153215117488565841871456727143375130115708511223004183651123208497057248238260532214672028700625775335843")
     α = Vector{T1}(undef, 1)
     β = Vector{T1}(undef, 1)
@@ -155,11 +155,11 @@ function BigRadauIIA5Tableau(T1, T2, Int)
     T[3, 1] = big"0.966048182615092936190567080794590794996748754810883844283183333914131408744555961195911605614405476210484499875001737558078500322423463946527349731087504518"
     T[3, 2] = big"1.0"
     T[3, 3] = big"0.0"
-    RadauIIATableau{T1, T2, Int}(T, TI,  
+    RadauIIATableau{T1, T2}(T, TI,  
     c, γ, α, β, 3)
 end
 
-function BigRadauIIA9Tableau(T1, T2, Int)
+function BigRadauIIA9Tableau(T1, T2)
     γ = convert(T1, big"6.28670475172927664517315334186940904959068186655567041187229167532923622489525703260842273089261139845280626287956099768662193453067483410165932355981736786")
     α = Vector{T1}(undef, 2)
     β = Vector{T1}(undef, 2)
@@ -229,7 +229,7 @@ function BigRadauIIA9Tableau(T1, T2, Int)
     T[5, 4] = big"1.0"
     T[5, 5] = big"0.0"
 
-    RadauIIATableau{T1, T2, Int}(T, TI,  
+    RadauIIATableau{T1, T2}(T, TI,  
     c, γ, α, β, 5)
 end
 
@@ -382,7 +382,7 @@ function RadauIIA9Tableau(T, T2)
         e1, e2, e3, e4, e5)
 end
 
-function BigRadauIIA13Tableau(T1, T2, Int)
+function BigRadauIIA13Tableau(T1, T2)
     γ = convert(T1, big"8.93683278840521633730209691330107970355008194433956657198414191417624969654351559268800871286734194720118970058657997472527299153742511021973612156231867783")
     α = Vector{T1}(undef, 3)
     β = Vector{T1}(undef, 3)
@@ -504,7 +504,7 @@ function BigRadauIIA13Tableau(T1, T2, Int)
     T[7, 6] = big"1.0"
     T[7, 7] = big"0.0"
 
-    RadauIIATableau{T1, T2, Int}(T, TI,  
+    RadauIIATableau{T1, T2}(T, TI,  
     c, γ, α, β, 7)
 end
 
@@ -595,6 +595,6 @@ function adaptiveRadauTableau(T1, T2, num_stages::Int)
     @assert islinear
     Symbolics.expand.((AA[idxs, :] \ -bb[idxs]) - b)=#
     #e = b_hat - b
-    RadauIIATableau{T1, T2, Int}(T, TI, c, γ, α, β, num_stages)
+    RadauIIATableau{T1, T2}(T, TI, c, γ, α, β, num_stages)
 end
 
