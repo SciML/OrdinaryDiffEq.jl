@@ -1369,21 +1369,16 @@ end
 
     J = calc_J(integrator, cache)
 
-    #if u isa Number
-    #    LU1 = Complex(-γdt * mass_matrix + J)
-    #    LU2 = -(αdt[1] + βdt[1] * im) * mass_matrix + J
-    #else
-        LU1 = lu(-γdt * mass_matrix + J)
-        LU2 = lu(-(αdt[1] + βdt[1] * im) * mass_matrix + J)
-    #end
-    LU = [LU2 for _ in 1:(num_stages + 1) ÷ 2]
+    LU2 = Vector{Complex{typeof(u)}}(undef,  (num_stages - 1) ÷ 2)
     if u isa Number
-        for i in 3 :(num_stages + 1) ÷ 2
-            LU[i] = -(αdt[i - 1] + βdt[i - 1] * im) * mass_matrix + J
+        LU1 = -γdt * mass_matrix + J
+        for i in 1 : (num_stages - 1) ÷ 2
+            LU2[i] = -(αdt[i] + βdt[i] * im) * mass_matrix + J
         end
     else
-        for i in 3 :(num_stages + 1) ÷ 2
-            LU[i] = lu(-(αdt[i - 1] + βdt[i - 1] * im) * mass_matrix + J)
+        LU1 = lu(-γdt * mass_matrix + J)
+        for i in 1 : (num_stages - 1) ÷ 2
+            LU2[i] = lu(-(αdt[i] + βdt[i] * im) * mass_matrix + J)
         end
     end
 
@@ -1453,7 +1448,7 @@ end
         dw = Vector{typeof(u)}(undef, num_stages)
         dw[1] = _reshape(LU1 \ _vec(rhs[1]), axes(u))
         for i in 2 :(num_stages + 1) ÷ 2
-            tmp = _reshape(LU[i] \ _vec(@.. rhs[2 * i - 2] + rhs[2 * i - 1] * im), axes(u))
+            tmp = _reshape(LU2[i - 1] \ _vec(@.. rhs[2 * i - 2] + rhs[2 * i - 1] * im), axes(u))
             dw[2 * i - 2] = real(tmp)
             dw[2 * i - 1] = imag(tmp)
         end
@@ -1555,7 +1550,7 @@ end
 @muladd function perform_step!(integrator, cache::AdaptiveRadauCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
     @unpack T, TI, γ, α, β, c, #=e,=# num_stages = cache.tab
-    @unpack κ, cont, z, w = cache
+    @unpack κ, cont, derivatives, z, w = cache
     @unpack dw1, ubuff, dw2, cubuff = cache
     @unpack ks, k, fw, J, W1, W2 = cache
     @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
@@ -1763,15 +1758,14 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            derivatives = Matrix{typeof(u)}(undef, num_stages, num_stages)
-            derivatives[1, 1] = @.. z[1] / c[1]
+            @.. derivatives[1, 1] = z[1] / c[1]
             for j in 2 : num_stages
-                derivatives[1, j] = @.. (z[j - 1] - z[j]) / (c[j - 1] - c[j]) #first derivatives
+                @.. derivatives[1, j] = (z[j - 1] - z[j]) / (c[j - 1] - c[j]) #first derivatives
             end
             for i in 2 : num_stages
-                derivatives[i, i] = @.. (derivatives[i - 1, i] - derivatives[i - 1, i - 1]) /  c[i]
+                @.. derivatives[i, i] = (derivatives[i - 1, i] - derivatives[i - 1, i - 1]) /  c[i]
                 for j in i+1 : num_stages
-                    derivatives[i, j] = @.. (derivatives[i - 1, j - 1] - derivatives[i - 1, j]) / (c[j - i] - c[j]) #all others
+                    @.. derivatives[i, j] = (derivatives[i - 1, j - 1] - derivatives[i - 1, j]) / (c[j - i] - c[j]) #all others
                 end
             end
             for i in 1 : num_stages
