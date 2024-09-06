@@ -120,11 +120,11 @@ function default_nlsolve(
     nothing
 end
 
-function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{true}, u, ::NonlinearProblem, autodiff = false)
+function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
     error("This ODE requires a DAE initialization and thus a nonlinear solve but no nonlinear solve has been loaded. To solve this problem, do `using OrdinaryDiffEqNonlinearSolve` or pass a custom `nlsolve` choice into the `initializealg`.")
 end
 
-function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem, autodiff = false)
+function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace, u, ::NonlinearLeastSquaresProblem, autodiff = false)
     error("This ODE requires a DAE initialization and thus a nonlinear solve but no nonlinear solve has been loaded. To solve this problem, do `using OrdinaryDiffEqNonlinearSolve` or pass a custom `nlsolve` choice into the `initializealg`.")
 end
 
