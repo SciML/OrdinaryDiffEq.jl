@@ -767,9 +767,9 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            @.. broadcast=false cache.cont1=(z2 - z3) / c2m1 
-            @.. broadcast=false tmp=(z1 - z2) / c1mc2 
-            @.. broadcast=false cache.cont2=(tmp - cache.cont1) / c1m1 
+            @.. broadcast=false cache.cont1=(z2 - z3) / c2m1
+            @.. broadcast=false tmp=(z1 - z2) / c1mc2
+            @.. broadcast=false cache.cont2=(tmp - cache.cont1) / c1m1
             @.. broadcast=false cache.cont3=cache.cont2 - (tmp - z1 / c1) / c2
         end
     end
@@ -837,24 +837,24 @@ end
         c2′ = c2 * c5′
         c3′ = c3 * c5′
         c4′ = c4 * c5′
-        z1 = @.. c1′ * (cont1 + 
-                                (c1′-c4m1) * (cont2 + 
-                                                     (c1′ - c3m1) * (cont3 + 
+        z1 = @.. c1′ * (cont1 +
+                                (c1′-c4m1) * (cont2 +
+                                                     (c1′ - c3m1) * (cont3 +
                                                                             (c1′ - c2m1) * (cont4 + (c1′ - c1m1) * cont5))))
-        z2 = @.. c2′ * (cont1 + 
-                                (c2′-c4m1) * (cont2 + 
-                                                     (c2′ - c3m1) * (cont3 + 
+        z2 = @.. c2′ * (cont1 +
+                                (c2′-c4m1) * (cont2 +
+                                                     (c2′ - c3m1) * (cont3 +
                                                                             (c2′ - c2m1) * (cont4 + (c2′ - c1m1) * cont5))))
-        z3 = @.. c3′ * (cont1 + 
-                                (c3′-c4m1) * (cont2 + 
-                                                     (c3′ - c3m1) * (cont3 + 
+        z3 = @.. c3′ * (cont1 +
+                                (c3′-c4m1) * (cont2 +
+                                                     (c3′ - c3m1) * (cont3 +
                                                                             (c3′ - c2m1) * (cont4 + (c3′ - c1m1) * cont5))))
-        z4 = @.. c4′ * (cont1 + 
-                                (c4′-c4m1) * (cont2 + 
-                                                     (c4′ - c3m1) * (cont3 + 
+        z4 = @.. c4′ * (cont1 +
+                                (c4′-c4m1) * (cont2 +
+                                                     (c4′ - c3m1) * (cont3 +
                                                                             (c4′ - c2m1) * (cont4 + (c4′ - c1m1) * cont5))))
-        z5 = @.. c5′ * (cont1 + 
-                                (c5′-c4m1) * (cont2 + 
+        z5 = @.. c5′ * (cont1 +
+                                (c5′-c4m1) * (cont2 +
                                                      (c5′ - c3m1) * (cont3 + (c5′ - c2m1) * (cont4 + (c5′ - c1m1) * cont5))))
         w1 = @.. broadcast=false TI11*z1+TI12*z2+TI13*z3+TI14*z4+TI15*z5
         w2 = @.. broadcast=false TI21*z1+TI22*z2+TI23*z3+TI24*z4+TI25*z5
@@ -1087,24 +1087,24 @@ end
         c2′ = c2 * c5′
         c3′ = c3 * c5′
         c4′ = c4 * c5′
-        z1 = @.. c1′ * (cont1 + 
-                                (c1′-c4m1) * (cont2 + 
-                                                     (c1′ - c3m1) * (cont3 + 
+        z1 = @.. c1′ * (cont1 +
+                                (c1′-c4m1) * (cont2 +
+                                                     (c1′ - c3m1) * (cont3 +
                                                                             (c1′ - c2m1) * (cont4 + (c1′ - c1m1) * cont5))))
-        z2 = @.. c2′ * (cont1 + 
-                                (c2′-c4m1) * (cont2 + 
-                                                     (c2′ - c3m1) * (cont3 + 
+        z2 = @.. c2′ * (cont1 +
+                                (c2′-c4m1) * (cont2 +
+                                                     (c2′ - c3m1) * (cont3 +
                                                                             (c2′ - c2m1) * (cont4 + (c2′ - c1m1) * cont5))))
-        z3 = @.. c3′ * (cont1 + 
-                                (c3′-c4m1) * (cont2 + 
-                                                     (c3′ - c3m1) * (cont3 + 
+        z3 = @.. c3′ * (cont1 +
+                                (c3′-c4m1) * (cont2 +
+                                                     (c3′ - c3m1) * (cont3 +
                                                                             (c3′ - c2m1) * (cont4 + (c3′ - c1m1) * cont5))))
-        z4 = @.. c4′ * (cont1 + 
-                                (c4′-c4m1) * (cont2 + 
-                                                     (c4′ - c3m1) * (cont3 + 
+        z4 = @.. c4′ * (cont1 +
+                                (c4′-c4m1) * (cont2 +
+                                                     (c4′ - c3m1) * (cont3 +
                                                                             (c4′ - c2m1) * (cont4 + (c4′ - c1m1) * cont5))))
-        z5 = @.. c5′ * (cont1 + 
-                                (c5′-c4m1) * (cont2 + 
+        z5 = @.. c5′ * (cont1 +
+                                (c5′-c4m1) * (cont2 +
                                                      (c5′ - c3m1) * (cont3 + (c5′ - c2m1) * (cont4 + (c5′ - c1m1) * cont5))))
         w1 = @.. broadcast=false TI11*z1+TI12*z2+TI13*z3+TI14*z4+TI15*z5
         w2 = @.. broadcast=false TI21*z1+TI22*z2+TI23*z3+TI24*z4+TI25*z5
@@ -1354,7 +1354,7 @@ end
 @muladd function perform_step!(integrator, cache::AdaptiveRadauConstantCache,
     repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack T, TI, γ, α, β, c, #=e,=# num_stages = cache.tab 
+    @unpack T, TI, γ, α, β, c, #=e,=# num_stages = cache.tab
     @unpack κ, cont = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
@@ -1368,15 +1368,21 @@ end
     γdt, αdt, βdt = γ / dt, α ./ dt, β ./ dt
 
     J = calc_J(integrator, cache)
-    LU = Vector{Complex{typeof(u)}}(undef,(num_stages + 1) ÷ 2)
+
+    #if u isa Number
+    #    LU1 = Complex(-γdt * mass_matrix + J)
+    #    LU2 = -(αdt[1] + βdt[1] * im) * mass_matrix + J
+    #else
+        LU1 = lu(-γdt * mass_matrix + J)
+        LU2 = lu(-(αdt[1] + βdt[1] * im) * mass_matrix + J)
+    #end
+    LU = [LU2 for _ in 1:(num_stages + 1) ÷ 2]
     if u isa Number
-        LU[1] = -γdt * mass_matrix + J
-        for i in 2 :(num_stages + 1) ÷ 2
+        for i in 3 :(num_stages + 1) ÷ 2
             LU[i] = -(αdt[i - 1] + βdt[i - 1] * im) * mass_matrix + J
         end
     else
-        LU[1] = lu(-γdt * mass_matrix + J)
-        for i in 2 :(num_stages + 1) ÷ 2
+        for i in 3 :(num_stages + 1) ÷ 2
             LU[i] = lu(-(αdt[i - 1] + βdt[i - 1] * im) * mass_matrix + J)
         end
     end
@@ -1391,7 +1397,7 @@ end
             w[i] = map(zero, u)
             cache.cont[i] = map(zero, u)
         end
-    else 
+    else
         c_prime = Vector{eltype(u)}(undef, num_stages) #time stepping
         c_prime[num_stages] = dt / cache.dtprev
         for i in 1 : num_stages - 1
@@ -1406,7 +1412,7 @@ end
             end
             z[i] = @.. z[i] * c_prime[i]
         end
-        w = TI * z
+        w = TI*z
     end
 
     # Newton iteration
@@ -1419,14 +1425,14 @@ end
         integrator.stats.nnonliniter += 1
 
         # evaluate function
-        ff = Vector{eltype(u)}(undef, num_stages)
+        ff = Vector{typeof(u)}(undef, num_stages)
         for i in 1 : num_stages
             ff[i] = f(uprev + z[i], p, t + c[i] * dt)
-        end    
+        end
         integrator.stats.nf += num_stages
 
         fw = TI * ff
-        Mw = Vector{eltype(u)}(undef, num_stages)
+        Mw = Vector{typeof(u)}(undef, num_stages)
         if mass_matrix isa UniformScaling # `UniformScaling` doesn't play nicely with broadcast
             for i in 1 : num_stages
                 Mw[i] = @.. mass_matrix.λ * w[i] #scaling by eigenvalue
@@ -1435,18 +1441,18 @@ end
             Mw = mass_matrix * w #standard multiplication
         end
 
-        rhs = Vector{eltype(u)}(undef, num_stages)
+        rhs = Vector{typeof(u)}(undef, num_stages)
         rhs[1] = @.. fw[1] - γdt * Mw[1]
         i = 2
         while i <= num_stages #block by block multiplication
             rhs[i] = @.. fw[i] - αdt[i ÷ 2] * Mw[i] + βdt[i ÷ 2] * Mw[i + 1]
             rhs[i + 1] = @.. fw[i + 1] - βdt[i ÷ 2] * Mw[i] - αdt[i ÷ 2] * Mw[i + 1]
             i += 2
-        end 
+        end
 
-        dw = Vector{eltype(u)}(undef, num_stages)
-        dw[1] = _reshape(LU[1] \ _vec(rhs[1]), axes(u))
-        for i in 2 :(num_stages + 1) ÷ 2 
+        dw = Vector{typeof(u)}(undef, num_stages)
+        dw[1] = _reshape(LU1 \ _vec(rhs[1]), axes(u))
+        for i in 2 :(num_stages + 1) ÷ 2
             tmp = _reshape(LU[i] \ _vec(@.. rhs[2 * i - 2] + rhs[2 * i - 1] * im), axes(u))
             dw[2 * i - 2] = real(tmp)
             dw[2 * i - 1] = imag(tmp)
@@ -1475,8 +1481,8 @@ end
         w = @.. w - dw
 
         # transform `w` to `z`
-        z = vec(T * w)
-        
+        z = T * w
+
         # check stopping criterion
         iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
@@ -1548,7 +1554,7 @@ end
 
 @muladd function perform_step!(integrator, cache::AdaptiveRadauCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
-    @unpack T, TI, γ, α, β, c, #=e,=# num_stages = cache.tab 
+    @unpack T, TI, γ, α, β, c, #=e,=# num_stages = cache.tab
     @unpack κ, cont, z, w = cache
     @unpack dw1, ubuff, dw2, cubuff = cache
     @unpack ks, k, fw, J, W1, W2 = cache
@@ -1568,7 +1574,7 @@ end
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
             for i in 1 :(num_stages - 1) ÷ 2
                 W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] + J[II]
-            end        
+            end
         end
         integrator.stats.nw += 1
     end
@@ -1579,7 +1585,7 @@ end
         for i in 1 : num_stages
             z[i] = w[i] = cache.cont[i] = map(zero, u)
         end
-    else 
+    else
         c_prime = Vector{eltype(u)}(undef, num_stages) #time stepping
         c_prime[num_stages] = dt / cache.dtprev
         for i in 1 : num_stages - 1
@@ -1613,7 +1619,7 @@ end
             f(ks[i], tmp, p, t + c[i] * dt)
         end
         integrator.stats.nf += num_stages
-        
+
         mul!(fw, TI, ks)
 
         if mass_matrix === I
@@ -1692,9 +1698,8 @@ end
         end
 
         # transform `w` to `z`
-        z = vec(T * w)
+        mul!(z, T, w)
         # check stopping criterion
-
         iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
