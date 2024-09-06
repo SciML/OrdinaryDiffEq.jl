@@ -1,37 +1,18 @@
-@static if isdefined(OrdinaryDiffEqCore, :default_nlsolve)
-    function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{true}, u, ::NonlinearProblem, autodiff = false)
-        FastShortcutNonlinearPolyalg(;
-            autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-    end
-    function OrdinaryDiffEqCore.default_nlsolve(
-        ::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem, autodiff = false)
-        FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-    end
-    function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
-        ::NonlinearProblem, autodiff = false)
-        SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-    end
-    function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
-            ::NonlinearLeastSquaresProblem, autodiff = false)
-        SimpleGaussNewton(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-    end
-else
-    function default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
-        FastShortcutNonlinearPolyalg(;
-            autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-    end
-    function default_nlsolve(
-        ::Nothing, isinplace, u, ::NonlinearLeastSquaresProblem, autodiff = false)
-        FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-    end
-    function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
-        ::NonlinearProblem, autodiff = false)
-        SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-    end
-    function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
-            ::NonlinearLeastSquaresProblem, autodiff = false)
-        SimpleGaussNewton(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-    end
+function default_nlsolve(::Nothing, isinplace::Val{true}, u, ::NonlinearProblem, autodiff = false)
+    FastShortcutNonlinearPolyalg(;
+        autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+end
+function default_nlsolve(
+    ::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem, autodiff = false)
+    FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+end
+function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
+    ::NonlinearProblem, autodiff = false)
+    SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+end
+function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
+        ::NonlinearLeastSquaresProblem, autodiff = false)
+    SimpleGaussNewton(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
 
 ## ShampineCollocationInit
