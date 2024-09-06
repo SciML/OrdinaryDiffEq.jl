@@ -104,8 +104,65 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 end
 
+## Nonlinear Solver Defaulting
+
+## If an alg is given use it
+default_nlsolve(alg, isinplace, u, initprob, autodiff = false) = alg
+
+## If the initialization is trivial just use nothing alg
+function default_nlsolve(
+        ::Nothing, isinplace, u::Nothing, ::NonlinearProblem, autodiff = false)
+    nothing
+end
+
+function default_nlsolve(
+        ::Nothing, isinplace, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
+    nothing
+end
+
+function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{true}, u, ::NonlinearProblem, autodiff = false)
+    error("This ODE requires a DAE initialization and thus a nonlinear solve but no nonlinear solve has been loaded. To solve this problem, do `using OrdinaryDiffEqNonlinearSolve` or pass a custom `nlsolve` choice into the `initializealg`.")
+end
+
+function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem, autodiff = false)
+    error("This ODE requires a DAE initialization and thus a nonlinear solve but no nonlinear solve has been loaded. To solve this problem, do `using OrdinaryDiffEqNonlinearSolve` or pass a custom `nlsolve` choice into the `initializealg`.")
+end
+
 ## NoInit
 
 function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
         alg::NoInit, x::Union{Val{true}, Val{false}})
+end
+
+## OverrideInit
+
+function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
+        alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
+    initializeprob = prob.f.initializeprob
+
+    # If it doesn't have autodiff, assume it comes from symbolic system like ModelingToolkit
+    # Since then it's the case of not a DAE but has initializeprob
+    # In which case, it should be differentiable
+    isAD = if initializeprob.u0 === nothing
+        AutoForwardDiff
+    elseif has_autodiff(integrator.alg)
+        alg_autodiff(integrator.alg) isa AutoForwardDiff
+    else
+        true
+    end
+
+    alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, initializeprob, isAD)
+    nlsol = solve(initializeprob, alg)
+    if isinplace === Val{true}()
+        integrator.u .= prob.f.initializeprobmap(nlsol)
+    elseif isinplace === Val{false}()
+        integrator.u = prob.f.initializeprobmap(nlsol)
+    else
+        error("Unreachable reached. Report this error.")
+    end
+
+    if nlsol.retcode != ReturnCode.Success
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
+            ReturnCode.InitialFailure)
+    end
 end

@@ -1,61 +1,36 @@
-default_nlsolve(alg, isinplace, u, initprob, autodiff = false) = alg
-
-function default_nlsolve(
-        ::Nothing, isinplace, u::Nothing, ::NonlinearProblem, autodiff = false)
-    nothing
-end
-function default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
-    FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-end
-function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
+if isdefined(OrdinaryDiffEqCore, :default_nlsolve)
+    function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{true}, u, ::NonlinearProblem, autodiff = false)
+        FastShortcutNonlinearPolyalg(;
+            autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+    end
+    function OrdinaryDiffEqCore.default_nlsolve(
+        ::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem, autodiff = false)
+        FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+    end
+    function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
         ::NonlinearProblem, autodiff = false)
-    SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-end
-
-function default_nlsolve(
-        ::Nothing, isinplace, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
-    nothing
-end
-function default_nlsolve(
+        SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+    end
+    function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
+            ::NonlinearLeastSquaresProblem, autodiff = false)
+        SimpleGaussNewton(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+    end
+else
+    function default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
+        FastShortcutNonlinearPolyalg(;
+            autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+    end
+    function default_nlsolve(
         ::Nothing, isinplace, u, ::NonlinearLeastSquaresProblem, autodiff = false)
-    FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-end
-function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
-        ::NonlinearLeastSquaresProblem, autodiff = false)
-    SimpleGaussNewton(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-end
-
-## OverrideInit
-
-function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
-        alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
-    initializeprob = prob.f.initializeprob
-
-    # If it doesn't have autodiff, assume it comes from symbolic system like ModelingToolkit
-    # Since then it's the case of not a DAE but has initializeprob
-    # In which case, it should be differentiable
-    isAD = if initializeprob.u0 === nothing
-        AutoForwardDiff
-    elseif has_autodiff(integrator.alg)
-        alg_autodiff(integrator.alg) isa AutoForwardDiff
-    else
-        true
+        FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
     end
-
-    alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, initializeprob, isAD)
-    nlsol = solve(initializeprob, alg)
-    if isinplace === Val{true}()
-        integrator.u .= prob.f.initializeprobmap(nlsol)
-    elseif isinplace === Val{false}()
-        integrator.u = prob.f.initializeprobmap(nlsol)
-    else
-        error("Unreachable reached. Report this error.")
+    function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
+        ::NonlinearProblem, autodiff = false)
+        SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
     end
-
-    if nlsol.retcode != ReturnCode.Success
-        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
-            ReturnCode.InitialFailure)
+    function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
+            ::NonlinearLeastSquaresProblem, autodiff = false)
+        SimpleGaussNewton(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
     end
 end
 
