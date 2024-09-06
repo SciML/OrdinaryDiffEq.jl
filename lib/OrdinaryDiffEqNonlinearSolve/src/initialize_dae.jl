@@ -6,6 +6,14 @@ function default_nlsolve(
     ::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem, autodiff = false)
     FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
+function default_nlsolve(::Nothing, isinplace::Val{false}, u, ::NonlinearProblem, autodiff = false)
+    FastShortcutNonlinearPolyalg(;
+        autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+end
+function default_nlsolve(
+    ::Nothing, isinplace::Val{false}, u, ::NonlinearLeastSquaresProblem, autodiff = false)
+    FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+end
 function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
     ::NonlinearProblem, autodiff = false)
     SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
