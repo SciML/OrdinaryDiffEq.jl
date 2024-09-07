@@ -408,7 +408,6 @@ end
 
 function initialize!(integrator,
         cache::Union{RosenbrockCache,
-            Rosenbrock34Cache,
             Rosenbrock4Cache})
     integrator.kshortsize = 2
     @unpack fsalfirst, fsallast = cache
@@ -506,127 +505,6 @@ end
     integrator.k[2] = integrator.fsallast
     integrator.u = u
     return nothing
-end
-
-@muladd function perform_step!(integrator, cache::Rosenbrock34Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
-    @unpack a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
-
-    # Assignments
-    uidx = eachindex(integrator.uprev)
-    sizeu = size(u)
-    mass_matrix = integrator.f.mass_matrix
-    utilde = du
-
-    # Precalculations
-    dtC21 = C21 / dt
-    dtC31 = C31 / dt
-    dtC32 = C32 / dt
-    dtC41 = C41 / dt
-    dtC42 = C42 / dt
-    dtC43 = C43 / dt
-
-    dtd1 = dt * d1
-    dtd2 = dt * d2
-    dtd3 = dt * d3
-    dtd4 = dt * d4
-    dtgamma = dt * gamma
-
-    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
-
-    calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
-        integrator.opts.abstol, integrator.opts.reltol,
-        integrator.opts.internalnorm, t)
-
-    if repeat_step
-        linres = dolinsolve(
-            integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-            du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma))
-    else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-            du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma))
-    end
-
-    vecu = _vec(linres.u)
-    veck1 = _vec(k1)
-
-    @.. broadcast=false veck1=-vecu
-    integrator.stats.nsolve += 1
-
-    #=
-    a21 == 0 and c2 == 0
-    so du = integrator.fsalfirst!
-    @.. broadcast=false u = uprev + a21*k1
-
-    f(du, u, p, t+c2*dt)
-    =#
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=fsalfirst + dtd2 * dT + dtC21 * k1
-    else
-        @.. broadcast=false du1=dtC21 * k1
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=fsalfirst + dtd2 * dT + du2
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    veck2 = _vec(k2)
-    @.. broadcast=false veck2=-vecu
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
-    stage_limiter!(u, integrator, p, t + c3 * dt)
-    f(du, u, p, t + c3 * dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du + dtd3 * dT + dtC31 * k1 + dtC32 * k2
-    else
-        @.. broadcast=false du1=dtC31 * k1 + dtC32 * k2
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=du + dtd3 * dT + du2
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    veck3 = _vec(k3)
-    @.. broadcast=false veck3=-vecu
-    integrator.stats.nsolve += 1
-    @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
-    stage_limiter!(u, integrator, p, t + dt)
-    f(du, u, p, t + dt) #-- c4 = 1
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 +
-                                         dtC43 * k3
-    else
-        @.. broadcast=false du1=dtC41 * k1 + dtC42 * k2 + dtC43 * k3
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=du + dtd4 * dT + du2
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    veck4 = _vec(k4)
-    @.. broadcast=false veck4=-vecu
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4
-
-    step_limiter!(u, integrator, p, t + dt)
-
-    f(fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if integrator.opts.adaptive
-        @.. broadcast=false utilde=btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4
-        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-    cache.linsolve = linres.cache
 end
 
 ################################################################################

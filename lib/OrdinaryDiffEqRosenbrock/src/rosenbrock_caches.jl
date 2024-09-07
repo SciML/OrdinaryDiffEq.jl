@@ -765,7 +765,6 @@ end
 
 function get_fsalfirstlast(
         cache::Union{Rosenbrock23Cache, Rosenbrock32Cache, RosenbrockCache,
-            Rosenbrock34Cache,
             Rosenbrock4Cache},
         u)
     (cache.fsalfirst, cache.fsallast)
