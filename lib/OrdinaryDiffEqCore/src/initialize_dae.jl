@@ -111,20 +111,30 @@ default_nlsolve(alg, isinplace, u, initprob, autodiff = false) = alg
 
 ## If the initialization is trivial just use nothing alg
 function default_nlsolve(
-        ::Nothing, isinplace, u::Nothing, ::NonlinearProblem, autodiff = false)
+        ::Nothing, isinplace::Val{true}, u::Nothing, ::NonlinearProblem, autodiff = false)
     nothing
 end
 
 function default_nlsolve(
-        ::Nothing, isinplace, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
+        ::Nothing, isinplace::Val{true}, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
     nothing
 end
 
-function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{true}, u, ::NonlinearProblem, autodiff = false)
+function default_nlsolve(
+    ::Nothing, isinplace::Val{false}, u::Nothing, ::NonlinearProblem, autodiff = false)
+nothing
+end
+
+function default_nlsolve(
+    ::Nothing, isinplace::Val{false}, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
+nothing
+end
+
+function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
     error("This ODE requires a DAE initialization and thus a nonlinear solve but no nonlinear solve has been loaded. To solve this problem, do `using OrdinaryDiffEqNonlinearSolve` or pass a custom `nlsolve` choice into the `initializealg`.")
 end
 
-function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem, autodiff = false)
+function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace, u, ::NonlinearLeastSquaresProblem, autodiff = false)
     error("This ODE requires a DAE initialization and thus a nonlinear solve but no nonlinear solve has been loaded. To solve this problem, do `using OrdinaryDiffEqNonlinearSolve` or pass a custom `nlsolve` choice into the `initializealg`.")
 end
 
