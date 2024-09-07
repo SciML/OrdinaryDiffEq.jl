@@ -111,13 +111,23 @@ default_nlsolve(alg, isinplace, u, initprob, autodiff = false) = alg
 
 ## If the initialization is trivial just use nothing alg
 function default_nlsolve(
-        ::Nothing, isinplace, u::Nothing, ::NonlinearProblem, autodiff = false)
+        ::Nothing, isinplace::Val{true}, u::Nothing, ::NonlinearProblem, autodiff = false)
     nothing
 end
 
 function default_nlsolve(
-        ::Nothing, isinplace, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
+        ::Nothing, isinplace::Val{true}, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
     nothing
+end
+
+function default_nlsolve(
+    ::Nothing, isinplace::Val{false}, u::Nothing, ::NonlinearProblem, autodiff = false)
+nothing
+end
+
+function default_nlsolve(
+    ::Nothing, isinplace::Val{false}, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
+nothing
 end
 
 function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
