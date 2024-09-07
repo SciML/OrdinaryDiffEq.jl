@@ -1368,16 +1368,21 @@ end
     γdt, αdt, βdt = γ / dt, α ./ dt, β ./ dt
 
     J = calc_J(integrator, cache)
-
-    LU2 = Vector{Complex{typeof(u)}}(undef,  (num_stages - 1) ÷ 2)
+    if u isa Number
+        tmp = -(αdt[1] + βdt[1] * im) * mass_matrix + J
+    else
+        tmp = lu(-(αdt[1] + βdt[1] * im) * mass_matrix + J)
+    end
+    LU2 = Vector{typeof(tmp)}(undef,  (num_stages - 1) ÷ 2)
+    LU2[1] = tmp
     if u isa Number
         LU1 = -γdt * mass_matrix + J
-        for i in 1 : (num_stages - 1) ÷ 2
+        for i in 2 : (num_stages - 1) ÷ 2
             LU2[i] = -(αdt[i] + βdt[i] * im) * mass_matrix + J
         end
     else
         LU1 = lu(-γdt * mass_matrix + J)
-        for i in 1 : (num_stages - 1) ÷ 2
+        for i in 2 : (num_stages - 1) ÷ 2
             LU2[i] = lu(-(αdt[i] + βdt[i] * im) * mass_matrix + J)
         end
     end

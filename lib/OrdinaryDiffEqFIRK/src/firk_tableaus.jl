@@ -508,7 +508,7 @@ function BigRadauIIA13Tableau(T1, T2)
     c, γ, α, β, 7)
 end
 
-using Polynomials, GenericLinearAlgebra, LinearAlgebra, LinearSolve, GenericSchur, RootedTrees, Symbolics
+using Polynomials, LinearAlgebra, GenericSchur, RootedTrees, Symbolics
 using Symbolics: variables, variable, unwrap
 
 function adaptiveRadauTableau(T1, T2, num_stages::Int)
