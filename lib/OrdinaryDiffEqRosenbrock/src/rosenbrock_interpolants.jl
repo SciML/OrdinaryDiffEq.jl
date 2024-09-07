@@ -1,7 +1,7 @@
 ### Fallbacks to capture
 ROSENBROCKS_WITH_INTERPOLATIONS = Union{Rosenbrock23ConstantCache, Rosenbrock23Cache,
     Rosenbrock32ConstantCache, Rosenbrock32Cache,
-    Rodas23WConstantCache, Rodas3PConstantCache,
+    Rodas23WConstantCache,
     Rodas23WCache, Rodas3PCache,
     RosenbrockCombinedConstantCache,
     RosenbrockCache}
@@ -128,7 +128,7 @@ From MATLAB ODE Suite by Shampine
 """
 
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCombinedConstantCache, Rodas23WConstantCache, Rodas3PConstantCache, RosenbrockCache, Rodas23WCache, Rodas3PCache},
+        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCombinedConstantCache, Rodas23WConstantCache, RosenbrockCache, Rodas23WCache, Rodas3PCache},
         idxs::Nothing, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     if !isdefined(cache, :order) || cache.order == 4
@@ -140,7 +140,7 @@ end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
         cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
-            Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
+            Rodas23WCache, Rodas3PCache},
         idxs, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     if !isdefined(cache, :order) || cache.order == 4
@@ -152,7 +152,7 @@ end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
         cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
-            Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
+            Rodas23WCache, Rodas3PCache},
         idxs::Nothing, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     if !isdefined(cache, :order) || cache.order == 4
@@ -165,7 +165,7 @@ end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
         cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
-            Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
+            Rodas23WCache, Rodas3PCache},
         idxs, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     if !isdefined(cache, :order) || cache.order == 4
@@ -179,7 +179,7 @@ end
 
 # First Derivative
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCache, Rodas23WCache, Rodas3PCache, RosenbrockCombinedConstantCache, Rodas23WConstantCache, Rodas3PConstantCache},
+        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCache, Rodas23WCache, Rodas3PCache, RosenbrockCombinedConstantCache, Rodas23WConstantCache},
         idxs::Nothing, T::Type{Val{1}}, differential_vars)
     if !isdefined(cache, :order) || cache.order == 4
         @.. (k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ + y₁)/dt
@@ -191,7 +191,7 @@ end
 end
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
         cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
-            Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
+            Rodas23WCache, Rodas3PCache},
         idxs, T::Type{Val{1}}, differential_vars)
     if !isdefined(cache, :order) || cache.order == 4
         @views @.. (k[1][idxs] + Θ * (-2 * k[1][idxs] + 2 * k[2][idxs] - 3 * k[2][idxs] * Θ) -
@@ -204,7 +204,7 @@ end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
         cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
-            Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
+            Rodas23WCache, Rodas3PCache},
         idxs::Nothing, T::Type{Val{1}}, differential_vars)
     if !isdefined(cache, :order) || cache.order == 4
         @.. out=(k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ + y₁) / dt
@@ -217,7 +217,7 @@ end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
         cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
-            Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
+            Rodas23WCache, Rodas3PCache},
         idxs, T::Type{Val{1}}, differential_vars)
     if !isdefined(cache, :order) || cache.order == 4
         @views @.. out=(k[1][idxs] +
