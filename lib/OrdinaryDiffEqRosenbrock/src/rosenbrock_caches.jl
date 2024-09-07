@@ -764,7 +764,7 @@ function alg_cache(
 end
 
 function get_fsalfirstlast(
-        cache::Union{Rosenbrock23Cache, Rosenbrock32Cache, Rosenbrock33Cache,
+        cache::Union{Rosenbrock23Cache, Rosenbrock32Cache, RosenbrockCache,
             Rosenbrock34Cache,
             Rosenbrock4Cache},
         u)
