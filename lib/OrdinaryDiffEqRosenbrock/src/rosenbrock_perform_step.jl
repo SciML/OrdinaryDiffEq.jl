@@ -762,13 +762,23 @@ end
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     (;t, dt, uprev, u, f, p) = integrator
     (;du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
-    (;A, C, gamma, b, btilde, c, d, H) = cache.tab
+    (;A, C, gamma, c, d, H) = cache.tab
 
     # Assignments
     sizeu = size(u)
     uidx = eachindex(integrator.uprev)
     mass_matrix = integrator.f.mass_matrix
     utilde = du
+
+    b_exists = hasproperty(cache.tab, :b)
+    btilde_exists = hasproperty(cache.tab, :btilde)
+
+    if b_exists
+        b = cache.tab.b
+    end
+    if btilde_exists
+        btilde = cache.tab.btilde
+    end
 
     # Precalculations
     dtC = C .* inv(dt)
