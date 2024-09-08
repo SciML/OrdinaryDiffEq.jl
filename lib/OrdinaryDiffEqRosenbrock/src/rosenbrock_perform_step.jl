@@ -701,7 +701,7 @@ end
                 integrator.k[j] = @.. integrator.k[j] + H[j, i] * ks[i]
             end
         end
-        integrator.k[3] = h2_21 * k1 + h2_22 * k2 + h2_23 * k3 + h2_24 * k4 + h2_25 * k5
+        integrator.k[3] = h2_2[1] * k1 + h2_2[2] * k2 + h2_2[3] * k3 + h2_2[4] * k4 + h2_2[5] * k5
         if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
             (integrator.EEst < 1.0)
              k2 = 0.5 * (uprev + u +
@@ -770,14 +770,11 @@ end
     mass_matrix = integrator.f.mass_matrix
     utilde = du
 
-    b_exists = hasproperty(cache.tab, :b)
-    btilde_exists = hasproperty(cache.tab, :btilde)
-
-    if b_exists
-        b = cache.tab.b
+    if hasproperty(cache.tab, :b)
+        (;b) = cache.tab.b
     end
-    if btilde_exists
-        btilde = cache.tab.btilde
+    if hasproperty(cache.tab, :btilde)
+        (;btilde) = cache.tab.btilde
     end
 
     # Precalculations
