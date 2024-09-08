@@ -8,7 +8,7 @@ This article is a stub.
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
-first_steps("OrdinaryDiffEqSDIRK", "PDIRK44")
+first_steps("OrdinaryDiffEqSDIRK", "KenCarp3")
 ```
 
 ## Full list of solvers

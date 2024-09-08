@@ -14,7 +14,7 @@ Note that for SSPRK methods, a algorithm utility `OrdinaryDiffEqCore.ssp_coeffic
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
-first_steps("OrdinaryDiffEqSSPRK", "SSPRK22")
+first_steps("OrdinaryDiffEqSSPRK", "SSPRK432")
 ```
 
 ## Full list of solvers
