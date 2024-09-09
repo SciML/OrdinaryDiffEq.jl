@@ -777,7 +777,6 @@ end
     if hasproperty(cache.tab, :btilde)
         btilde = cache.tab.btilde
     end
-        
     # Assignments
     sizeu = size(u)
     uidx = eachindex(integrator.uprev)
@@ -843,7 +842,9 @@ end
     du .= ks[end]
     u .+= ks[end]
 
-    @.. u=uprev + b[1] * ks[1] + b[2] * ks[2] + b[3] * ks[3]
+    if hasproperty(cache.tab, :b)
+        @.. u=uprev + b[1] * ks[1] + b[2] * ks[2] + b[3] * ks[3]
+    end
 
     step_limiter!(u, integrator, p, t + dt)
 
