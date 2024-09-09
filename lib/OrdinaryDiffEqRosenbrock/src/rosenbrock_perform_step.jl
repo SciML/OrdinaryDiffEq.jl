@@ -631,6 +631,12 @@ end
     (;tf, uf) = cache
     (;A, C, gamma, c, d, H) = cache.tab
 
+    if !isdefined(cache, :order) || cache.order == 3
+        (;A, C, gamma, h2_2, c, d, H) = cache.tab
+    else
+        (;A, C, gamma, c, d, H) = cache.tab
+    end
+
     # Precalculations
     dtC = C ./ dt
     dtd = dt .* d
@@ -701,7 +707,7 @@ end
                 integrator.k[j] = @.. integrator.k[j] + H[j, i] * ks[i]
             end
         end
-        integrator.k[3] = h2_2[1] * k1 + h2_2[2] * k2 + h2_2[3] * k3 + h2_2[4] * k4 + h2_2[5] * k5
+        integrator.k[3] = h2_21 * k1 + h2_22 * k2 + h2_23 * k3 + h2_24 * k4 + h2_25 * k5
         if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
             (integrator.EEst < 1.0)
              k2 = 0.5 * (uprev + u +
@@ -762,8 +768,12 @@ end
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     (;t, dt, uprev, u, f, p) = integrator
     (;du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
-    (;A, C, gamma, c, d, H) = cache.tab
 
+    if !isdefined(cache, :order) || cache.order == 3
+        (;A, C, gamma, b, c, d, H) = cache.tab
+    else
+        (;A, C, gamma, c, d, H) = cache.tab
+    end
     # Assignments
     sizeu = size(u)
     uidx = eachindex(integrator.uprev)
@@ -771,10 +781,10 @@ end
     utilde = du
 
     if hasproperty(cache.tab, :b)
-        (;b) = cache.tab.b
+        b = cache.tab.b
     end
     if hasproperty(cache.tab, :btilde)
-        (;btilde) = cache.tab.btilde
+        btilde = cache.tab.btilde
     end
 
     # Precalculations

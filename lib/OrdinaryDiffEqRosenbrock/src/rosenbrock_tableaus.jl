@@ -93,7 +93,7 @@ struct Rodas3PTableau{T, T2}
     c::Vector{T2}
     d::Vector{T}
     h::Matrix{T}
-    h2::Vector{T}
+    h2_2::Vector{T}
 end
 
 function Rodas3PTableau(T, T2)
