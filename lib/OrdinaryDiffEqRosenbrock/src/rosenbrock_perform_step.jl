@@ -631,10 +631,8 @@ end
     (;tf, uf) = cache
     (;A, C, gamma, c, d, H) = cache.tab
 
-    if !isdefined(cache, :order) || cache.order == 3
-        (;A, C, gamma, h2_2, c, d, H) = cache.tab
-    else
-        (;A, C, gamma, c, d, H) = cache.tab
+    if hasproperty(cache.tab, :h2_2)
+        h2_2 = cache.tab.h2_2
     end
 
     # Precalculations
@@ -707,7 +705,9 @@ end
                 integrator.k[j] = @.. integrator.k[j] + H[j, i] * ks[i]
             end
         end
-        integrator.k[3] = h2_2[1] * k1 + h2_2[2] * k2 + h2_2[3] * k3 + h2_2[4] * k4 + h2_2[5] * k5
+        if hasproperty(cache.tab, :h2_2)
+            integrator.k[3] = h2_2[1] * k1 + h2_2[2] * k2 + h2_2[3] * k3 + h2_2[4] * k4 + h2_2[5] * k5
+        end
         if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
             (integrator.EEst < 1.0)
              k2 = 0.5 * (uprev + u +
