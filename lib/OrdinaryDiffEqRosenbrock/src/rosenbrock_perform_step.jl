@@ -849,7 +849,10 @@ end
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
-        @.. utilde=btilde[1] * ks[1] + btilde[2] * ks[2] + btilde[3] * ks[3]
+        if hasproperty(cache.tab, :btilde)
+            @.. utilde=btilde[1] * ks[1] + btilde[2] * ks[2] + btilde[3] * ks[3]
+        end
+        
         if (integrator.alg isa Rodas5Pe)
             @. du = 0.2606326497975715 * ks[1] - 0.005158627295444251 * ks[2] +
                     1.3038988631109731 * ks[3] + 1.235000722062074 * ks[4] +
