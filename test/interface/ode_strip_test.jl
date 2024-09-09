@@ -26,6 +26,8 @@ end
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.f)
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.cache.jac_config)
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.cache.grad_config)
+    @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.cache.uf.f)
+    @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.cache.tf.f)
 end
 
 @testset "TRBDF Solution Stripping" begin
