@@ -854,7 +854,7 @@ end
         end
         
         if (integrator.alg isa Rodas5Pe)
-            @. du = 0.2606326497975715 * ks[1] - 0.005158627295444251 * ks[2] +
+            @.. du = 0.2606326497975715 * ks[1] - 0.005158627295444251 * ks[2] +
                     1.3038988631109731 * ks[3] + 1.235000722062074 * ks[4] +
                     -0.7931985603795049 * ks[5] - 1.005448461135913 * ks[6] -
                     0.18044626132120234 * ks[7] + 0.17051519239113755 * ks[8]
@@ -889,7 +889,7 @@ end
             end
             calculate_residuals!(atmp, du2, uprev, du1, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
-            EEst = max(EEst, integrator.opts.internalnorm(atmp, t))  #-- role of t unclear
+            integrator.EEst = max(integrator.EEst, integrator.opts.internalnorm(atmp, t))  #-- role of t unclear
         end
         if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
             (integrator.EEst < 1.0) && integrator.kshortsize == 3
