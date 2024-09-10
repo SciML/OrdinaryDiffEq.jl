@@ -40,7 +40,7 @@ function DiffEqBase.reeval_internals_due_to_modification!(
         callback_initializealg = nothing)
 
     if integrator.isdae
-        DiffEqBase.initialize_dae!(integrator, initializealg)
+        DiffEqBase.initialize_dae!(integrator, isnothing(callback_initializealg) ? integrator.initializealg : callback_initializealg)
         update_uprev!(integrator)
     end
 
