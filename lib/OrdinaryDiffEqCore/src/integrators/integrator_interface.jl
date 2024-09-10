@@ -36,9 +36,11 @@ function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
 end
 
 function DiffEqBase.reeval_internals_due_to_modification!(
-        integrator::ODEIntegrator, continuous_modification = true)
+        integrator::ODEIntegrator, continuous_modification = true;
+        callback_initializealg = nothing)
+
     if integrator.isdae
-        DiffEqBase.initialize_dae!(integrator)
+        DiffEqBase.initialize_dae!(integrator, isnothing(callback_initializealg) ? integrator.initializealg : callback_initializealg)
         update_uprev!(integrator)
     end
 
