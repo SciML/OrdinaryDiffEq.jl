@@ -178,6 +178,14 @@ function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
 end
 
 ## CheckInit
+struct CheckInitFailureError <: Exception
+    normresid
+    abstol
+end
+
+function Base.showerror(io::IO, e::CheckInitFailureError)
+    print(io, "CheckInit specified but initialization not satisifed. normresid = $(e.normresid) > abstol = $(e.abstol)")
+end
 
 function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
         isinplace::Val{true})
@@ -195,7 +203,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
 
     normresid = integrator.opts.internalnorm(tmp, t)
     if normresid > integrator.opts.abstol 
-        error("CheckInit specified but initialization not satisifed. normresid = $normresid > abstol = $(integrator.opts.abstol )")
+        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
     end
 end
 
@@ -212,9 +220,9 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
     du = f(u0, p, t)
     resid = _vec(du)[algebraic_eqs]
 
-    normresid = integrator.opts.internalnorm(tmp, t)
+    normresid = integrator.opts.internalnorm(resid, t)
     if normresid > integrator.opts.abstol 
-        error("CheckInit specified but initialization not satisifed. normresid = $normresid > abstol = $(integrator.opts.abstol )")
+        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
     end
 end
 
@@ -227,7 +235,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     f(resid, integrator.du, u0, p, t)
     normresid = integrator.opts.internalnorm(resid, t)
     if normresid > integrator.opts.abstol 
-        error("CheckInit specified but initialization not satisifed. normresid = $normresid > abstol = $(integrator.opts.abstol )")
+        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
     end
 end
 
@@ -245,6 +253,6 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     resid = f(integrator.du, u0, p, t)
     normresid = integrator.opts.internalnorm(resid, t)
     if normresid > integrator.opts.abstol 
-        error("CheckInit specified but initialization not satisifed. normresid = $normresid > abstol = $(integrator.opts.abstol )")
+        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
     end
 end
