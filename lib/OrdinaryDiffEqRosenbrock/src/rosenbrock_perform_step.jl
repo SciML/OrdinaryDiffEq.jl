@@ -705,11 +705,11 @@ end
                 integrator.k[j] = @.. integrator.k[j] + H[j, i] * ks[i]
             end
         end
-        if hasproperty(cache.tab, :h2_2)
+        if hasproperty(cache.tab, :h2_2) && integrator.kshortsize == 3
             integrator.k[3] = h2_2[1] * k1 + h2_2[2] * k2 + h2_2[3] * k3 + h2_2[4] * k4 + h2_2[5] * k5
         end
         if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
-            (integrator.EEst < 1.0)
+            (integrator.EEst < 1.0) && integrator.kshortsize == 3
              k2 = 0.5 * (uprev + u +
                    0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
              du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
@@ -724,7 +724,7 @@ end
              integrator.EEst = max(EEst, integrator.EEst)
          end
 
-         if integrator.opts.adaptive
+         if integrator.opts.adaptive && integrator.kshortsize == 3
             if isa(linsolve_tmp, AbstractFloat)
                 u_int, u_diff = calculate_interpoldiff(
                     uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
@@ -739,7 +739,7 @@ end
             EEst = max(EEst, integrator.opts.internalnorm(atmp, t))  #-- role of t unclear
         end
 
-        if (integrator.alg isa Rodas23W)
+        if (integrator.alg isa Rodas23W) && integrator.kshortsize == 3
             k1 = u .+ 0
             u = du .+ 0
             du = k1 .+ 0
@@ -883,14 +883,16 @@ end
             end
         end
         if integrator.opts.adaptive
-            calculate_interpoldiff!(
-                du1, du2, uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
+            if integrator.kshortsize == 3
+                calculate_interpoldiff!(
+                    du1, du2, uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
+            end
             calculate_residuals!(atmp, du2, uprev, du1, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
             EEst = max(EEst, integrator.opts.internalnorm(atmp, t))  #-- role of t unclear
         end
         if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
-            (integrator.EEst < 1.0)
+            (integrator.EEst < 1.0) && integrator.kshortsize == 3
              ks[2] = 0.5 * (uprev + u +
                    0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
              du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
