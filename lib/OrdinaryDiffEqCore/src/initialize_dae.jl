@@ -176,3 +176,75 @@ function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
             ReturnCode.InitialFailure)
     end
 end
+
+## CheckInit
+
+function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
+        isinplace::Val{true})
+    @unpack p, t, f = integrator
+    M = integrator.f.mass_matrix
+    tmp = first(get_tmp_cache(integrator))
+    u0 = integrator.u
+
+    algebraic_vars = [all(iszero, x) for x in eachcol(M)]
+    algebraic_eqs = [all(iszero, x) for x in eachrow(M)]
+    (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
+    update_coefficients!(M, u0, p, t)
+    f(tmp, u0, p, t)
+    tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
+
+    normresid = integrator.opts.internalnorm(tmp, t)
+    if normresid > integrator.opts.abstol 
+        error("CheckInit specified but initialization not satisifed. normresid = $normresid > abstol = $(integrator.opts.abstol )")
+    end
+end
+
+function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
+        isinplace::Val{false})
+    @unpack p, t, f = integrator
+    u0 = integrator.u
+    M = integrator.f.mass_matrix
+
+    algebraic_vars = [all(iszero, x) for x in eachcol(M)]
+    algebraic_eqs = [all(iszero, x) for x in eachrow(M)]
+    (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
+    update_coefficients!(M, u0, p, t)
+    du = f(u0, p, t)
+    resid = _vec(du)[algebraic_eqs]
+
+    normresid = integrator.opts.internalnorm(tmp, t)
+    if normresid > integrator.opts.abstol 
+        error("CheckInit specified but initialization not satisifed. normresid = $normresid > abstol = $(integrator.opts.abstol )")
+    end
+end
+
+function _initialize_dae!(integrator, prob::DAEProblem,
+        alg::CheckInit, isinplace::Val{true})
+    @unpack p, t, f = integrator
+    u0 = integrator.u
+    resid = get_tmp_cache(integrator)[2]
+
+    f(resid, integrator.du, u0, p, t)
+    normresid = integrator.opts.internalnorm(resid, t)
+    if normresid > integrator.opts.abstol 
+        error("CheckInit specified but initialization not satisifed. normresid = $normresid > abstol = $(integrator.opts.abstol )")
+    end
+end
+
+function _initialize_dae!(integrator, prob::DAEProblem,
+        alg::CheckInit, isinplace::Val{false})
+    @unpack p, t, f = integrator
+    u0 = integrator.u
+
+    nlequation_oop = u -> begin
+        f((u - u0) / dt, u, p, t)
+    end
+
+    nlequation = (u, _) -> nlequation_oop(u)
+
+    resid = f(integrator.du, u0, p, t)
+    normresid = integrator.opts.internalnorm(resid, t)
+    if normresid > integrator.opts.abstol 
+        error("CheckInit specified but initialization not satisifed. normresid = $normresid > abstol = $(integrator.opts.abstol )")
+    end
+end
