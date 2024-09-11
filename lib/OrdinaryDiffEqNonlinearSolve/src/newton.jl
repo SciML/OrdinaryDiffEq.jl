@@ -222,7 +222,7 @@ end
 
     make_new_W = is_always_new(nlsolver) || (iter == 1 && new_W)
     linres = dolinsolve(integrator, linsolve; A = make_new_W ? W : nothing, b = _vec(b),
-        linu = dz, reltol)
+        linu = _vec(dz), reltol)
     cache.linsolve = linres.cache
 
     if DiffEqBase.has_stats(integrator)
