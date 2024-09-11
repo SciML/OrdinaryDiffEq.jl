@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::Feagin10ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -66,7 +66,7 @@ end
          a1612 * k13 + a1613 * k14 + a1614 * k15 + a1615 * k16),
         p,
         t + c16 * dt)
-    integrator.stats.nf += 16
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 16)
     u = uprev +
         dt *
         (b1 * k1 + b2 * k2 + b3 * k3 + b5 * k5 + b7 * k7 + b9 * k9 + b10 * k10 + b11 * k11 +
@@ -78,7 +78,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = k
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -86,14 +86,12 @@ end
 end
 
 function initialize!(integrator, cache::Feagin10Cache)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 #=
@@ -256,7 +254,7 @@ end
                           b13 * k13[i] + b14 * k14[i] + b15 * k15[i] + b16 * k16[i] +
                           b17 * k17[i])
     end
-    integrator.stats.nf += 16
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 16)
 
     step_limiter!(u, integrator, p, t + dt)
 
@@ -269,12 +267,12 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 function initialize!(integrator, cache::Feagin12ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -396,7 +394,7 @@ end
          (a2421 * k22 + a2422 * k23 + a2423 * k24)),
         p,
         t + c24 * dt)
-    integrator.stats.nf += 24
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 24)
     u = uprev +
         dt * ((b1 * k1 + b2 * k2 + b3 * k3 + b5 * k5) +
          (b7 * k7 + b8 * k8 + b10 * k10 + b11 * k11) +
@@ -404,7 +402,7 @@ end
          (b17 * k17 + b18 * k18 + b19 * k19 + b20 * k20) +
          (b21 * k21 + b22 * k22 + b23 * k23) + (b24 * k24 + b25 * k25))
     k = f(u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = k
     if integrator.opts.adaptive
         utilde = @.. broadcast=false dt*(k2-k24)*adaptiveConst
@@ -418,14 +416,12 @@ end
 end
 
 function initialize!(integrator, cache::Feagin12Cache)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 #=
@@ -672,7 +668,7 @@ end
                           (b21 * k21[i] + b22 * k22[i] + b23 * k23[i]) +
                           (b24 * k24[i] + b25 * k25[i]))
     end
-    integrator.stats.nf += 24
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 24)
 
     step_limiter!(u, integrator, p, t + dt)
 
@@ -685,12 +681,12 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 function initialize!(integrator, cache::Feagin14ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -886,7 +882,7 @@ end
          a3429 * k30 + a3430 * k31 + a3431 * k32 + a3432 * k33 + a3433 * k34),
         p,
         t + c34 * dt)
-    integrator.stats.nf += 34
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 34)
     u = uprev +
         dt *
         (b1 * k1 + b2 * k2 + b3 * k3 + b5 * k5 + b7 * k7 + b8 * k8 + b10 * k10 + b11 * k11 +
@@ -901,7 +897,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = k
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -909,14 +905,12 @@ end
 end
 
 function initialize!(integrator, cache::Feagin14Cache)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = cache.k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 #=
@@ -1280,7 +1274,7 @@ end
                           b31 * k31[i] + b32 * k32[i] + b33 * k33[i] + b34 * k34[i] +
                           b35 * k35[i])
     end
-    integrator.stats.nf += 35
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 35)
 
     step_limiter!(u, integrator, p, t + dt)
 
@@ -1293,5 +1287,5 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end

@@ -1,4 +1,7 @@
-@cache struct SymplecticEulerCache{uType, rateType} <: OrdinaryDiffEqMutableCache
+abstract type HamiltonMutableCache <: OrdinaryDiffEqMutableCache end
+abstract type HamiltonConstantCache <: OrdinaryDiffEqConstantCache end
+
+@cache struct SymplecticEulerCache{uType, rateType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -13,7 +16,7 @@ function alg_cache(alg::SymplecticEuler, u, rate_prototype, ::Type{uEltypeNoUnit
     SymplecticEulerCache(u, uprev, zero(u), zero(rate_prototype), zero(rate_prototype))
 end
 
-struct SymplecticEulerConstantCache <: OrdinaryDiffEqConstantCache end
+struct SymplecticEulerConstantCache <: HamiltonConstantCache end
 
 function alg_cache(alg::SymplecticEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -32,7 +35,7 @@ end
     half::uEltypeNoUnits
 end
 
-struct VelocityVerletConstantCache{uEltypeNoUnits} <: OrdinaryDiffEqConstantCache
+struct VelocityVerletConstantCache{uEltypeNoUnits} <: HamiltonConstantCache
     half::uEltypeNoUnits
 end
 
@@ -54,7 +57,7 @@ function alg_cache(alg::VelocityVerlet, u, rate_prototype, ::Type{uEltypeNoUnits
     VelocityVerletConstantCache(uEltypeNoUnits(1 // 2))
 end
 
-@cache struct Symplectic2Cache{uType, rateType, tableauType} <: OrdinaryDiffEqMutableCache
+@cache struct Symplectic2Cache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -120,7 +123,7 @@ function alg_cache(alg::McAte2, u, rate_prototype, ::Type{uEltypeNoUnits},
     McAte2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct Symplectic3Cache{uType, rateType, tableauType} <: OrdinaryDiffEqMutableCache
+@cache struct Symplectic3Cache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -165,7 +168,7 @@ function alg_cache(alg::McAte3, u, rate_prototype, ::Type{uEltypeNoUnits},
     McAte3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct Symplectic4Cache{uType, rateType, tableauType} <: OrdinaryDiffEqMutableCache
+@cache struct Symplectic4Cache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -210,7 +213,7 @@ function alg_cache(alg::CandyRoz4, u, rate_prototype, ::Type{uEltypeNoUnits},
     McAte4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct Symplectic45Cache{uType, rateType, tableauType} <: OrdinaryDiffEqMutableCache
+@cache struct Symplectic45Cache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -256,7 +259,7 @@ function alg_cache(alg::McAte42, u, rate_prototype, ::Type{uEltypeNoUnits},
     McAte42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct Symplectic5Cache{uType, rateType, tableauType} <: OrdinaryDiffEqMutableCache
+@cache struct Symplectic5Cache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -283,7 +286,7 @@ function alg_cache(alg::McAte5, u, rate_prototype, ::Type{uEltypeNoUnits},
     McAte5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct Symplectic6Cache{uType, rateType, tableauType} <: OrdinaryDiffEqMutableCache
+@cache struct Symplectic6Cache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -310,7 +313,7 @@ function alg_cache(alg::Yoshida6, u, rate_prototype, ::Type{uEltypeNoUnits},
     Yoshida6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct Symplectic62Cache{uType, rateType, tableauType} <: OrdinaryDiffEqMutableCache
+@cache struct Symplectic62Cache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -337,7 +340,7 @@ function alg_cache(alg::KahanLi6, u, rate_prototype, ::Type{uEltypeNoUnits},
     KahanLi6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct McAte8Cache{uType, rateType, tableauType} <: OrdinaryDiffEqMutableCache
+@cache struct McAte8Cache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -364,7 +367,7 @@ function alg_cache(alg::McAte8, u, rate_prototype, ::Type{uEltypeNoUnits},
     McAte8ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct KahanLi8Cache{uType, rateType, tableauType} <: OrdinaryDiffEqMutableCache
+@cache struct KahanLi8Cache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -391,7 +394,7 @@ function alg_cache(alg::KahanLi8, u, rate_prototype, ::Type{uEltypeNoUnits},
     KahanLi8ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SofSpa10Cache{uType, rateType, tableauType} <: OrdinaryDiffEqMutableCache
+@cache struct SofSpa10Cache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -416,4 +419,9 @@ function alg_cache(alg::SofSpa10, u, rate_prototype, ::Type{uEltypeNoUnits},
         dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SofSpa10ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+function get_fsalfirstlast(
+        cache::Union{HamiltonMutableCache, VelocityVerletCache, SymplecticEulerCache}, u)
+    (cache.fsalfirst, cache.k)
 end

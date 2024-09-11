@@ -7,13 +7,15 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCac
                            OrdinaryDiffEqAdaptiveAlgorithm,
                            OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,
                            constvalue, calculate_residuals, calculate_residuals!,
-                           trivial_limiter!,
+                           trivial_limiter!, get_fsalfirstlast,
+                           generic_solver_docstring,
                            full_cache
 import OrdinaryDiffEqLowOrderRK: BS3ConstantCache, BS3Cache, RK4ConstantCache, RK4Cache
 import RecursiveArrayTools: recursivefill!
 using MuladdMacro, FastBroadcast
 import Static: False
 import ADTypes: AutoForwardDiff
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase

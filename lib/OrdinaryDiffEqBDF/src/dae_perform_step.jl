@@ -160,9 +160,6 @@ end
 end
 
 function initialize!(integrator, cache::DABDF2Cache)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
-
     integrator.kshortsize = 2
     @unpack k₁, k₂ = cache.eulercache
     resize!(integrator.k, integrator.kshortsize)
@@ -200,7 +197,7 @@ end
     @.. broadcast=false du=(nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt)
 
     @.. broadcast=false integrator.fsallast=du
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     if integrator.opts.adaptive
         btilde0 = (dtₙ₋₁ + dtₙ) * 1 // 6
         btilde1 = 1 + ρ
@@ -227,7 +224,7 @@ function initialize!(integrator, cache::DFBDFConstantCache)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.du, integrator.uprev, integrator.p,
         integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
@@ -352,13 +349,12 @@ end
 
 function initialize!(integrator, cache::DFBDFCache)
     integrator.kshortsize = 2
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
+
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     #integrator.f(integrator.fsalfirst, integrator.du, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    #integrator.stats.nf += 1
+    #OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 function perform_step!(integrator, cache::DFBDFCache{max_order},

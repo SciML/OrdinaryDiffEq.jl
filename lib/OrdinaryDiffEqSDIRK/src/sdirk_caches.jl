@@ -1,4 +1,8 @@
 abstract type SDIRKMutableCache <: OrdinaryDiffEqMutableCache end
+abstract type SDIRKConstantCache <: OrdinaryDiffEqConstantCache end
+function get_fsalfirstlast(cache::SDIRKMutableCache, u)
+    (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
+end
 
 @cache mutable struct ImplicitEulerCache{
     uType, rateType, uNoUnitsType, N, AV, StepLimiter} <:
@@ -32,7 +36,7 @@ function alg_cache(alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits}
         u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, alg.step_limiter!)
 end
 
-mutable struct ImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
+mutable struct ImplicitEulerConstantCache{N} <: SDIRKConstantCache
     nlsolver::N
 end
 
@@ -46,7 +50,7 @@ function alg_cache(alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits}
     ImplicitEulerConstantCache(nlsolver)
 end
 
-mutable struct ImplicitMidpointConstantCache{N} <: OrdinaryDiffEqConstantCache
+mutable struct ImplicitMidpointConstantCache{N} <: SDIRKConstantCache
     nlsolver::N
 end
 
@@ -80,7 +84,7 @@ function alg_cache(alg::ImplicitMidpoint, u, rate_prototype, ::Type{uEltypeNoUni
     ImplicitMidpointCache(u, uprev, fsalfirst, nlsolver, alg.step_limiter!)
 end
 
-mutable struct TrapezoidConstantCache{uType, tType, N} <: OrdinaryDiffEqConstantCache
+mutable struct TrapezoidConstantCache{uType, tType, N} <: SDIRKConstantCache
     uprev3::uType
     tprev2::tType
     nlsolver::N
@@ -132,7 +136,7 @@ function alg_cache(alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
         u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, alg.step_limiter!)
 end
 
-mutable struct TRBDF2ConstantCache{Tab, N} <: OrdinaryDiffEqConstantCache
+mutable struct TRBDF2ConstantCache{Tab, N} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -179,7 +183,7 @@ function alg_cache(alg::TRBDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
     TRBDF2Cache(u, uprev, fsalfirst, zprev, zᵧ, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
-mutable struct SDIRK2ConstantCache{N} <: OrdinaryDiffEqConstantCache
+mutable struct SDIRK2ConstantCache{N} <: SDIRKConstantCache
     nlsolver::N
 end
 
@@ -222,7 +226,7 @@ function alg_cache(alg::SDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
     SDIRK2Cache(u, uprev, fsalfirst, z₁, z₂, atmp, nlsolver, alg.step_limiter!)
 end
 
-struct SDIRK22ConstantCache{uType, tType, N, Tab} <: OrdinaryDiffEqConstantCache
+struct SDIRK22ConstantCache{uType, tType, N, Tab} <: SDIRKConstantCache
     uprev3::uType
     tprev2::tType
     nlsolver::N
@@ -278,7 +282,7 @@ function alg_cache(alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, tab, alg.step_limiter!) # shouldn't this be SDIRK22Cache instead of SDIRK22?
 end
 
-mutable struct SSPSDIRK2ConstantCache{N} <: OrdinaryDiffEqConstantCache
+mutable struct SSPSDIRK2ConstantCache{N} <: SDIRKConstantCache
     nlsolver::N
 end
 
@@ -318,7 +322,7 @@ function alg_cache(alg::SSPSDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPSDIRK2Cache(u, uprev, fsalfirst, z₁, z₂, nlsolver)
 end
 
-mutable struct Cash4ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct Cash4ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -369,7 +373,7 @@ function alg_cache(alg::Cash4, u, rate_prototype, ::Type{uEltypeNoUnits},
     Cash4Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, atmp, nlsolver, tab)
 end
 
-mutable struct SFSDIRK4ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct SFSDIRK4ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -421,7 +425,7 @@ function alg_cache(alg::SFSDIRK4, u, rate_prototype, ::Type{uEltypeNoUnits},
     SFSDIRK4Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, atmp, nlsolver, tab)
 end
 
-mutable struct SFSDIRK5ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct SFSDIRK5ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -475,7 +479,7 @@ function alg_cache(alg::SFSDIRK5, u, rate_prototype, ::Type{uEltypeNoUnits},
     SFSDIRK5Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver, tab)
 end
 
-mutable struct SFSDIRK6ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct SFSDIRK6ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -529,7 +533,7 @@ function alg_cache(alg::SFSDIRK6, u, rate_prototype, ::Type{uEltypeNoUnits},
     SFSDIRK6Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver, tab)
 end
 
-mutable struct SFSDIRK7ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct SFSDIRK7ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -585,7 +589,7 @@ function alg_cache(alg::SFSDIRK7, u, rate_prototype, ::Type{uEltypeNoUnits},
     SFSDIRK7Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver, tab)
 end
 
-mutable struct SFSDIRK8ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct SFSDIRK8ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -643,7 +647,7 @@ function alg_cache(alg::SFSDIRK8, u, rate_prototype, ::Type{uEltypeNoUnits},
     SFSDIRK8Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver, tab)
 end
 
-mutable struct Hairer4ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct Hairer4ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -749,7 +753,7 @@ function alg_cache(alg::ESDIRK54I8L2SA, u, rate_prototype, ::Type{uEltypeNoUnits
         tab)
 end
 
-mutable struct ESDIRK54I8L2SAConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct ESDIRK54I8L2SAConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -804,7 +808,7 @@ function alg_cache(alg::ESDIRK436L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits
         tab)
 end
 
-mutable struct ESDIRK436L2SA2ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct ESDIRK436L2SA2ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -861,7 +865,7 @@ function alg_cache(alg::ESDIRK437L2SA, u, rate_prototype, ::Type{uEltypeNoUnits}
         tab)
 end
 
-mutable struct ESDIRK437L2SAConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct ESDIRK437L2SAConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -918,7 +922,7 @@ function alg_cache(alg::ESDIRK547L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits
         tab)
 end
 
-mutable struct ESDIRK547L2SA2ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct ESDIRK547L2SA2ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -980,7 +984,7 @@ function alg_cache(alg::ESDIRK659L2SA, u, rate_prototype, ::Type{uEltypeNoUnits}
         nlsolver, tab)
 end
 
-mutable struct ESDIRK659L2SAConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+mutable struct ESDIRK659L2SAConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end

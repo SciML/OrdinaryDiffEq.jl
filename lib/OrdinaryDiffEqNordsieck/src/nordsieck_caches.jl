@@ -264,3 +264,7 @@ function alg_cache(alg::JVODE, u, rate_prototype, ::Type{uEltypeNoUnits},
         c_LTE₊₁, c_LTE, c_LTE₋₁, c_conv, c_𝒟, prev_𝒟,
         dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η)
 end
+
+function get_fsalfirstlast(cache::Union{JVODECache, AN5Cache}, u)
+    get_fsalfirstlast(cache.tsit5cache, u)
+end

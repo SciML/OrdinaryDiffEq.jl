@@ -172,7 +172,7 @@ function choose_order!(alg::FBDF, integrator,
             terk_tmp = @.. broadcast=false fd_weights[k - 2, 1]*u
             vc = _vec(terk_tmp)
             for i in 2:(k - 2)
-                @.. broadcast=false @views vc += fd_weights[i, k - 2] * u_history[:, i - 1]
+                @.. @views vc += fd_weights[i, k - 2] * u_history[:, i - 1]
             end
             @.. broadcast=false terk_tmp*=abs(dt^(k - 2))
             calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
@@ -204,22 +204,24 @@ function choose_order!(alg::FBDF, integrator,
             terkm1 = terkm2
             fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 2,
                 Val(max_order))
-            terk_tmp = @.. broadcast=false fd_weights[k - 2, 1]*u
+            local terk_tmp
             if u isa Number
+                terk_tmp = fd_weights[k - 2, 1] * u
                 for i in 2:(k - 2)
                     terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
                 end
                 terk_tmp *= abs(dt^(k - 2))
             else
-                vc = _vec(terk_tmp)
+                # we need terk_tmp to be mutable.
+                # so it can be updated
+                terk_tmp = similar(u)
+                @.. terk_tmp = fd_weights[k - 2, 1] * _vec(u)
                 for i in 2:(k - 2)
-                    @.. broadcast=false @views vc += fd_weights[i, k - 2] *
-                                                     u_history[:, i - 1]
+                    @.. terk_tmp += fd_weights[i, k - 2] * $(_reshape(view(u_history, :, i - 1), axes(u)))
                 end
-                terk_tmp = reshape(vc, size(terk_tmp))
-                terk_tmp *= @.. broadcast=false abs(dt^(k - 2))
+                @.. terk_tmp *= abs(dt^(k - 2))
             end
-            atmp = calculate_residuals(_vec(terk_tmp), _vec(uprev), _vec(u),
+            atmp = calculate_residuals(terk_tmp, _vec(uprev), _vec(u),
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t)
             terkm2 = integrator.opts.internalnorm(atmp, t)

@@ -113,6 +113,12 @@ function fsal_typeof(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, rate_pro
     typeof(rate_prototype)
 end
 
+function fsal_typeof(alg::CompositeAlgorithm, rate_prototype)
+    fsal = map(x -> fsal_typeof(x, rate_prototype), alg.algs)
+    @assert length(unique(fsal))==1 "`fsal_typeof` must be consistent"
+    return fsal[1]
+end
+
 isimplicit(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isimplicit(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = true
 isimplicit(alg::OrdinaryDiffEqImplicitAlgorithm) = true
@@ -185,7 +191,6 @@ end
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 function alg_autodiff end
-has_lazy_interpolation(alg) = false
 
 # Linear Exponential doesn't have any of the AD stuff
 function DiffEqBase.prepare_alg(
@@ -339,6 +344,21 @@ qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 
 #DiffEqBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2
 
 # SSP coefficients
+
+"""
+    ssp_coefficient(alg)
+
+Return the SSP coefficient of the ODE algorithm `alg`. If one time step of size
+`dt` with `alg` can be written as a convex combination of explicit Euler steps
+with step sizes `cᵢ * dt`, the SSP coefficient is the minimal value of `1/cᵢ`.
+
+# Examples
+
+```julia-repl
+julia> ssp_coefficient(SSPRK104())
+6
+```
+"""
 ssp_coefficient(alg) = error("$alg is not a strong stability preserving method.")
 
 # We shouldn't do this probably.
@@ -412,3 +432,12 @@ is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::CompositeAlgorithm) = all(is_mass_matrix_alg, alg.algs)
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
+
+# All algorithms should be shown using their keyword definition, and not as structs
+function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
+    print(io, String(typeof(alg).name.name), "(;")
+    for fieldname in fieldnames(typeof(alg))
+        print(io, " ", fieldname, " = ", getfield(alg, fieldname), ",")
+    end
+    print(io, ")")
+end

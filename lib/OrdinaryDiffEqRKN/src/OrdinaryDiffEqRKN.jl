@@ -10,9 +10,12 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
                            alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                            constvalue, _unwrap_val, _ode_interpolant,
-                           trivial_limiter!, _ode_interpolant!, _ode_addsteps!
+                           get_fsalfirstlast,
+                           trivial_limiter!, _ode_interpolant!, _ode_addsteps!,
+                           generic_solver_docstring
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase

@@ -11,7 +11,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
                            alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                            constvalue, _unwrap_val,
                            trivial_limiter!, perform_step!, initialize!,
-                           explicit_rk_docstring
+                           explicit_rk_docstring, get_fsalfirstlast
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, Adapt
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import Static: False
@@ -104,5 +104,5 @@ export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK8
        ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
        ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
        RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510,
-       KYK2014DGSSPRK_3S2, RK46NL
+       RK46NL, SHLDDRK_2N, SHLDDRK52
 end

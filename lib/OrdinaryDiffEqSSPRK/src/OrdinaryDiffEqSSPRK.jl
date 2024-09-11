@@ -12,7 +12,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            constvalue, _unwrap_val,
                            explicit_rk_docstring, trivial_limiter!,
                            _ode_interpolant, _ode_interpolant!,
-                           _ode_addsteps!
+                           _ode_addsteps!, get_fsalfirstlast
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def
 using Static: False
@@ -46,7 +46,6 @@ PrecompileTools.@compile_workload begin
     ]
 
     low_storage_nonadaptive = [
-
     ]
 
     if Preferences.@load_preference("PrecompileLowStorage", false)
@@ -99,6 +98,6 @@ end
 
 export SSPRK53_2N2, SSPRK22, SSPRK53, SSPRK63, SSPRK83, SSPRK43, SSPRK432, SSPRKMSVS32,
        SSPRK54, SSPRK53_2N1, SSPRK104, SSPRK932, SSPRKMSVS43, SSPRK73, SSPRK53_H,
-       SSPRK33, SHLDDRK_2N, KYKSSPRK42, SHLDDRK52
+       SSPRK33, KYKSSPRK42, KYK2014DGSSPRK_3S2
 
 end

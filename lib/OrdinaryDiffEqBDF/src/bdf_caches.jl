@@ -1,3 +1,8 @@
+abstract type BDFMutableCache <: OrdinaryDiffEqMutableCache end
+function get_fsalfirstlast(cache::BDFMutableCache, u)
+    (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
+end
+
 @cache mutable struct ABDF2ConstantCache{N, dtType, rate_prototype} <:
                       OrdinaryDiffEqConstantCache
     nlsolver::N
@@ -22,7 +27,7 @@ function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache mutable struct ABDF2Cache{uType, rateType, uNoUnitsType, N, dtType, StepLimiter} <:
-                      OrdinaryDiffEqMutableCache
+                      BDFMutableCache
     uₙ::uType
     uₙ₋₁::uType
     uₙ₋₂::uType
@@ -78,7 +83,7 @@ end
     du₂::rateType
 end
 
-@cache mutable struct SBDFCache{uType, rateType, N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct SBDFCache{uType, rateType, N} <: BDFMutableCache
     cnt::Int
     ark::Bool
     u::uType
@@ -164,7 +169,7 @@ end
 end
 
 @cache mutable struct QNDF1Cache{uType, rateType, coefType, coefType1, coefType2,
-    uNoUnitsType, N, dtType, StepLimiter} <: OrdinaryDiffEqMutableCache
+    uNoUnitsType, N, dtType, StepLimiter} <: BDFMutableCache
     uprev2::uType
     fsalfirst::rateType
     D::coefType1
@@ -252,7 +257,7 @@ end
 end
 
 @cache mutable struct QNDF2Cache{uType, rateType, coefType, coefType1, coefType2,
-    uNoUnitsType, N, dtType, StepLimiter} <: OrdinaryDiffEqMutableCache
+    uNoUnitsType, N, dtType, StepLimiter} <: BDFMutableCache
     uprev2::uType
     uprev3::uType
     fsalfirst::rateType
@@ -355,7 +360,7 @@ function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits
 } where {MO}
     max_order = MO
-    γ, c = one(eltype(alg.kappa)), 1
+    γ, c = one(uEltypeNoUnits), 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
     dtprev = one(dt)
@@ -383,7 +388,7 @@ end
 
 @cache mutable struct QNDFCache{MO, UType, RUType, rateType, N, coefType, dtType, EEstType,
     gammaType, uType, uNoUnitsType, StepLimiter} <:
-                      OrdinaryDiffEqMutableCache
+                      BDFMutableCache
     fsalfirst::rateType
     dd::uType
     utilde::uType
@@ -462,7 +467,7 @@ function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache mutable struct MEBDF2Cache{uType, rateType, uNoUnitsType, N} <:
-                      OrdinaryDiffEqMutableCache
+                      BDFMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -536,7 +541,7 @@ function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
         dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits
 } where {MO}
-    γ, c = 1.0, 1.0
+    γ, c = one(uEltypeNoUnits), 1
     max_order = MO
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
@@ -574,7 +579,7 @@ end
 @cache mutable struct FBDFCache{
     MO, N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
     coeffType, EEstType, rType, wType, StepLimiter} <:
-                      OrdinaryDiffEqMutableCache
+                      BDFMutableCache
     fsalfirst::rateType
     nlsolver::N
     ts::tsType
@@ -611,7 +616,7 @@ function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
         dt, reltol, p, calck,
         ::Val{true}) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits}
-    γ, c = 1.0, 1.0
+    γ, c = one(uEltypeNoUnits), 1
     fsalfirst = zero(rate_prototype)
     max_order = MO
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,

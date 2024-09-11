@@ -41,7 +41,7 @@ using SimpleUnPack, RecursiveArrayTools, DataStructures, ArrayInterface
 import TruncatedStacktraces
 
 import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
-                     StaticMatrix
+                         StaticMatrix
 
 # Integrator Interface
 import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
@@ -51,13 +51,14 @@ import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, 
                    add_tstop!, has_tstop, first_tstop, pop_tstop!,
                    add_saveat!, set_reltol!,
                    set_abstol!, postamble!, last_step_failed,
-                   isautodifferentiable
+                   isautodifferentiable,
+                   get_tstops, get_tstops_array, get_tstops_max
 
 using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., True, False
 
-using SciMLBase: NoInit, _unwrap_val
+using SciMLBase: NoInit, CheckInit, _unwrap_val
 
 import SciMLBase: alg_order
 

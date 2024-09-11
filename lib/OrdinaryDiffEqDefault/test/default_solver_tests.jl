@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, Test, LinearSolve, LinearAlgebra, SparseArrays
+using OrdinaryDiffEqDefault, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF
+using Test, LinearSolve, LinearAlgebra, SparseArrays, StaticArrays
 
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
 
@@ -72,7 +73,7 @@ for n in (100, 600)
 
     prob_ex_rober = ODEProblem(ODEFunction(exrober; jac_prototype),
         vcat([1.0, 0.0, 0.0], ones(n)), (0.0, 100.0), (0.04, 3e7, 1e4))
-    sol = solve(prob_ex_rober)
+    global sol = solve(prob_ex_rober)
     fsol = solve(prob_ex_rober, AutoTsit5(FBDF(; autodiff = false, linsolve)))
     # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
     @test sol.stats.naccept == fsol.stats.naccept
@@ -112,9 +113,9 @@ SA_ode_problem = ODEProblem((u, p, t) -> zero(u), SA[0], 2)
 @test solve(SA_ode_problem; callback = cb).retcode == ReturnCode.Success
 
 # test Complex numbers
-H(s) = (1-s) * complex([0 1; 1 0]) + s * complex([1 0; 0 -1])
+H(s) = (1 - s) * complex([0 1; 1 0]) + s * complex([1 0; 0 -1])
 schrod_eq(state, time, s) = -im * time * H(s) * state
 
-prob_complex = ODEProblem(schrod_eq, complex([1, -1]/sqrt(2)), (0,1), 100)
+prob_complex = ODEProblem(schrod_eq, complex([1, -1] / sqrt(2)), (0, 1), 100)
 complex_sol = solve(prob_complex)
 @test complex_sol.retcode == ReturnCode.Success

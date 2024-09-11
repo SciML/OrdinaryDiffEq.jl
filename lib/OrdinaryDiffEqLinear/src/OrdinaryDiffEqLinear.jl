@@ -7,12 +7,14 @@ import OrdinaryDiffEqCore: alg_order, alg_extrapolates, dt_required,
                            OrdinaryDiffEqMutableCache, @cache, alg_cache,
                            OrdinaryDiffEqConstantCache,
                            initialize!, perform_step!, @unpack, unwrap_alg,
-                           calculate_residuals!,
-                           _vec, isdtchangeable, full_cache
+                           calculate_residuals!, get_fsalfirstlast,
+                           _vec, isdtchangeable, full_cache,
+                           generic_solver_docstring
 using LinearAlgebra: mul!, I
 using SciMLOperators: AbstractSciMLOperator
 using ExponentialUtilities
 using RecursiveArrayTools
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase

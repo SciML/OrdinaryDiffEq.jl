@@ -4,35 +4,44 @@ abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
+# Don't worry about the potential alloc on a constant cache
+get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache, u) = (zero(u), zero(u))
+
 mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     caches::T
     choice_function::F
     current::Int
 end
 
-TruncatedStacktraces.@truncate_stacktrace CompositeCache 1
+function get_fsalfirstlast(cache::CompositeCache, u)
+    _x = get_fsalfirstlast(cache.caches[1], u)
+    if first(_x) !== nothing
+        return _x
+    else
+        return get_fsalfirstlast(cache.caches[2], u)
+    end
+end
 
-mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F} <: OrdinaryDiffEqCache
+mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiffEqCache
     args::A
     choice_function::F
     current::Int
+    u::uType
     cache1::T1
     cache2::T2
     cache3::T3
     cache4::T4
     cache5::T5
     cache6::T6
-    function DefaultCache{T1, T2, T3, T4, T5, T6, F}(
-            args, choice_function, current) where {T1, T2, T3, T4, T5, T6, F}
-        new{T1, T2, T3, T4, T5, T6, typeof(args), F}(args, choice_function, current)
+    function DefaultCache{T1, T2, T3, T4, T5, T6, F, uType}(
+            args, choice_function, current, u) where {T1, T2, T3, T4, T5, T6, F, uType}
+        new{T1, T2, T3, T4, T5, T6, typeof(args), F, uType}(
+            args, choice_function, current, u)
     end
 end
 
-TruncatedStacktraces.@truncate_stacktrace DefaultCache 1
-
-if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
-    Base.Experimental.silence!(CompositeCache)
-    Base.Experimental.silence!(DefaultCache)
+function get_fsalfirstlast(cache::DefaultCache, u)
+    (cache.u, cache.u) # will be overwritten by the cache choice
 end
 
 function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -59,8 +68,8 @@ function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u
     T4 = Base.promote_op(alg_cache, A4, argT...)
     T5 = Base.promote_op(alg_cache, A5, argT...)
     T6 = Base.promote_op(alg_cache, A6, argT...)
-    cache = DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function)}(
-        args, alg.choice_function, 1)
+    cache = DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
+        args, alg.choice_function, 1, u)
     algs = alg.algs
     # If the type is a bitstype we need to initialize it correctly here since isdefined will always return true.
     if isbitstype(T1)

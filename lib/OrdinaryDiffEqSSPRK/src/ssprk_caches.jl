@@ -1,5 +1,9 @@
+abstract type SSPRKMutableCache <: OrdinaryDiffEqMutableCache end
+abstract type SSPRKConstantCache <: OrdinaryDiffEqConstantCache end
+get_fsalfirstlast(cache::SSPRKMutableCache, u) = (cache.fsalfirst, cache.k)
+
 @cache struct SSPRK22Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -9,7 +13,7 @@
     thread::Thread
 end
 
-struct SSPRK22ConstantCache <: OrdinaryDiffEqConstantCache end
+struct SSPRK22ConstantCache <: SSPRKConstantCache end
 
 function alg_cache(alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -32,7 +36,7 @@ function alg_cache(alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct SSPRK33Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -42,7 +46,7 @@ end
     thread::Thread
 end
 
-struct SSPRK33ConstantCache <: OrdinaryDiffEqConstantCache end
+struct SSPRK33ConstantCache <: SSPRKConstantCache end
 
 function alg_cache(alg::SSPRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -71,7 +75,7 @@ end
     StageLimiter,
     StepLimiter,
     Thread
-} <: OrdinaryDiffEqMutableCache
+} <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -83,7 +87,7 @@ end
     thread::Thread
 end
 
-struct KYKSSPRK42ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct KYKSSPRK42ConstantCache{T, T2} <: SSPRKConstantCache
     α20::T
     α21::T
     α30::T
@@ -143,7 +147,7 @@ function alg_cache(alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct SSPRK53Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -155,7 +159,7 @@ end
     thread::Thread
 end
 
-struct SSPRK53ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct SSPRK53ConstantCache{T, T2} <: SSPRKConstantCache
     α30::T
     α32::T
     α40::T
@@ -216,178 +220,6 @@ function alg_cache(alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRK53ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SHLDDRK52Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
-    u::uType
-    uprev::uType
-    k::rateType
-    tmp::uType
-    fsalfirst::rateType
-    tab::TabType
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-struct SHLDDRK52ConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
-    α2::T1
-    α3::T1
-    α4::T1
-    α5::T1
-    β1::T1
-    β2::T1
-    β3::T1
-    β4::T1
-    β5::T1
-    c2::T2
-    c3::T2
-    c4::T2
-    c5::T2
-end
-
-function SHLDDRK52ConstantCache(T1, T2)
-    α2 = T1(-0.6913065)
-    α3 = T1(-2.655155)
-    α4 = T1(-0.8147688)
-    α5 = T1(-0.6686587)
-    β1 = T1(0.1)
-    β2 = T1(0.75)
-    β3 = T1(0.7)
-    β4 = T1(0.479313)
-    β5 = T1(0.310392)
-    c2 = T2(0.1)
-    c3 = T2(0.3315201)
-    c4 = T2(0.4577796)
-    c5 = T2(0.8666528)
-    SHLDDRK52ConstantCache(α2, α3, α4, α5, β1, β2, β3, β4, β5, c2, c3, c4, c5)
-end
-
-function alg_cache(alg::SHLDDRK52, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SHLDDRK52ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function alg_cache(alg::SHLDDRK52, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = SHLDDRK52ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    SHLDDRK52Cache(u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
-        alg.thread)
-end
-
-@cache mutable struct SHLDDRK_2NCache{uType, rateType, TabType, StageLimiter, StepLimiter,
-    Thread} <:
-                      OrdinaryDiffEqMutableCache
-    u::uType
-    uprev::uType
-    k::rateType
-    tmp::uType
-    fsalfirst::rateType
-    tab::TabType
-    step::Int
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-mutable struct SHLDDRK_2NConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
-    α21::T1
-    α31::T1
-    α41::T1
-    α51::T1
-    β11::T1
-    β21::T1
-    β31::T1
-    β41::T1
-    β51::T1
-    c21::T2
-    c31::T2
-    c41::T2
-    c51::T2
-
-    α22::T1
-    α32::T1
-    α42::T1
-    α52::T1
-    α62::T1
-    β12::T1
-    β22::T1
-    β32::T1
-    β42::T1
-    β52::T1
-    β62::T1
-    c22::T2
-    c32::T2
-    c42::T2
-    c52::T2
-    c62::T2
-
-    step::Int
-end
-
-function SHLDDRK_2NConstantCache(T1, T2)
-    α21 = T1(-0.6051226)
-    α31 = T1(-2.0437564)
-    α41 = T1(-0.7406999)
-    α51 = T1(-4.4231765)
-    β11 = T1(0.2687454)
-    β21 = T1(0.8014706)
-    β31 = T1(0.5051570)
-    β41 = T1(0.5623568)
-    β51 = T1(0.0590065)
-    c21 = T2(0.2687454)
-    c31 = T2(0.5852280)
-    c41 = T2(0.6827066)
-    c51 = T2(1.1646854)
-
-    α22 = T1(-0.4412737)
-    α32 = T1(-1.0739820)
-    α42 = T1(-1.7063570)
-    α52 = T1(-2.7979293)
-    α62 = T1(-4.0913537)
-    β12 = T1(0.1158488)
-    β22 = T1(0.3728769)
-    β32 = T1(0.7379536)
-    β42 = T1(0.5798110)
-    β52 = T1(1.0312849)
-    β62 = T1(0.15)
-    c22 = T2(0.1158485)
-    c32 = T2(0.3241850)
-    c42 = T2(0.6193208)
-    c52 = T2(0.8034472)
-    c62 = T2(0.9184166)
-    SHLDDRK_2NConstantCache(
-        α21, α31, α41, α51, β11, β21, β31, β41, β51, c21, c31, c41, c51,
-        α22, α32, α42, α52, α62, β12, β22, β32, β42, β52, β62, c22, c32,
-        c42, c52, c62, 1)
-end
-
-function alg_cache(alg::SHLDDRK_2N, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SHLDDRK_2NConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function alg_cache(alg::SHLDDRK_2N, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = SHLDDRK_2NConstantCache(constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits))
-    SHLDDRK_2NCache(u, uprev, k, tmp, fsalfirst, tab, 1, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread)
-end
-
 @cache struct SSPRK53_2N1Cache{
     uType,
     rateType,
@@ -395,7 +227,7 @@ end
     StageLimiter,
     StepLimiter,
     Thread
-} <: OrdinaryDiffEqMutableCache
+} <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -406,7 +238,7 @@ end
     thread::Thread
 end
 
-struct SSPRK53_2N1ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct SSPRK53_2N1ConstantCache{T, T2} <: SSPRKConstantCache
     α40::T
     α43::T
     β10::T
@@ -466,7 +298,7 @@ end
     StageLimiter,
     StepLimiter,
     Thread
-} <: OrdinaryDiffEqMutableCache
+} <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -477,7 +309,7 @@ end
     thread::Thread
 end
 
-struct SSPRK53_2N2ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct SSPRK53_2N2ConstantCache{T, T2} <: SSPRKConstantCache
     α30::T
     α32::T
     α50::T
@@ -535,7 +367,7 @@ function alg_cache(alg::SSPRK53_2N2, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct SSPRK53_HCache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -547,7 +379,7 @@ end
     thread::Thread
 end
 
-struct SSPRK53_HConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct SSPRK53_HConstantCache{T, T2} <: SSPRKConstantCache
     α30::T
     α32::T
     α40::T
@@ -607,7 +439,7 @@ function alg_cache(alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct SSPRK63Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -620,7 +452,7 @@ end
     thread::Thread
 end
 
-struct SSPRK63ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct SSPRK63ConstantCache{T, T2} <: SSPRKConstantCache
     α40::T
     α41::T
     α43::T
@@ -686,7 +518,7 @@ function alg_cache(alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct SSPRK73Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -699,7 +531,7 @@ end
     thread::Thread
 end
 
-struct SSPRK73ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct SSPRK73ConstantCache{T, T2} <: SSPRKConstantCache
     α40::T
     α43::T
     α50::T
@@ -774,7 +606,7 @@ function alg_cache(alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct SSPRK83Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -788,7 +620,7 @@ end
     thread::Thread
 end
 
-struct SSPRK83ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct SSPRK83ConstantCache{T, T2} <: SSPRKConstantCache
     α50::T
     α51::T
     α54::T
@@ -869,7 +701,7 @@ function alg_cache(alg::SSPRK83, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct SSPRK43Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
-    StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+    StepLimiter, Thread} <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -882,7 +714,7 @@ end
     thread::Thread
 end
 
-struct SSPRK43ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct SSPRK43ConstantCache{T, T2} <: SSPRKConstantCache
     one_third_u::T
     two_thirds_u::T
     half_u::T
@@ -930,7 +762,7 @@ end
     StageLimiter,
     StepLimiter,
     Thread
-} <: OrdinaryDiffEqMutableCache
+} <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -942,7 +774,7 @@ end
     thread::Thread
 end
 
-struct SSPRK432ConstantCache <: OrdinaryDiffEqConstantCache end
+struct SSPRK432ConstantCache <: SSPRKConstantCache end
 
 function alg_cache(alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -969,7 +801,7 @@ function alg_cache(alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache mutable struct SSPRKMSVS32Cache{uType, rateType, dtArrayType, dtType, StageLimiter,
-    StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+    StepLimiter, Thread} <: SSPRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -1032,8 +864,7 @@ end
     StageLimiter,
     StepLimiter,
     Thread
-} <:
-                      OrdinaryDiffEqMutableCache
+} <: SSPRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -1099,7 +930,7 @@ end
     StageLimiter,
     StepLimiter,
     Thread
-} <: OrdinaryDiffEqMutableCache
+} <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -1111,7 +942,7 @@ end
     thread::Thread
 end
 
-struct SSPRK932ConstantCache <: OrdinaryDiffEqConstantCache end
+struct SSPRK932ConstantCache <: SSPRKConstantCache end
 
 function alg_cache(alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -1138,7 +969,7 @@ function alg_cache(alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct SSPRK54Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -1153,7 +984,7 @@ end
     thread::Thread
 end
 
-struct SSPRK54ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct SSPRK54ConstantCache{T, T2} <: SSPRKConstantCache
     β10::T
     α20::T
     α21::T
@@ -1227,7 +1058,7 @@ function alg_cache(alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct SSPRK104Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+              SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -1239,7 +1070,7 @@ end
     thread::Thread
 end
 
-struct SSPRK104ConstantCache <: OrdinaryDiffEqConstantCache end
+struct SSPRK104ConstantCache <: SSPRKConstantCache end
 
 function alg_cache(alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -1262,4 +1093,81 @@ function alg_cache(alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
         dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK104ConstantCache()
+end
+
+@cache struct KYK2014DGSSPRK_3S2_Cache{uType, rateType, TabType, StageLimiter, StepLimiter,
+    Thread} <:
+              SSPRKMutableCache
+    u::uType
+    uprev::uType
+    k::rateType
+    fsalfirst::rateType
+    tab::TabType
+    #temporary values for Shu-Osher
+    u_1::uType
+    u_2::uType
+    kk_1::rateType
+    kk_2::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+struct KYK2014DGSSPRK_3S2_ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    #These are not α and β for RK but for Shu-Osher
+    #see top of page 317 in
+    #Optimal Strong-Stability-Preserving Runge–Kutta Time Discretizations for
+    #Discontinuous Garlekin Methods, Kubatko, Yaeger, Ketcheson 2014
+    α_10::T
+    α_20::T
+    α_21::T
+    α_30::T
+    α_32::T
+    β_10::T
+    β_21::T
+    β_30::T
+    β_32::T
+    #Shu-Osher is normally stated for autonomous systems, the times
+    #are calculated by hand for this scheme
+    c_1::T
+    c_2::T
+
+    function KYK2014DGSSPRK_3S2_ConstantCache(T, T2)
+        α_10 = T(1.0)
+        α_20 = T(0.087353119859156)
+        α_21 = T(0.912646880140844)
+        α_30 = T(0.344956917166841)
+        α_32 = T(0.655043082833159)
+        β_10 = T(0.528005024856522)
+        β_21 = T(0.481882138633993)
+        β_30 = T(0.022826837460491)
+        β_32 = T(0.345866039233415)
+        c_1 = β_10
+        c_2 = α_21 * β_10 + β_21 # ==0.96376427726
+        new{T, T2}(α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2)
+    end
+end
+
+function alg_cache(alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    u_1 = zero(u)
+    u_2 = zero(u)
+    kk_1 = zero(rate_prototype)
+    kk_2 = zero(rate_prototype)
+    k = zero(rate_prototype)
+    fsalfirst = zero(rate_prototype)
+    tab = KYK2014DGSSPRK_3S2_ConstantCache(constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits))
+    KYK2014DGSSPRK_3S2_Cache(u, uprev, k, fsalfirst, tab, u_1, u_2, kk_1, kk_2,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread)
+end
+
+function alg_cache(alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    KYK2014DGSSPRK_3S2_ConstantCache(constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits))
 end

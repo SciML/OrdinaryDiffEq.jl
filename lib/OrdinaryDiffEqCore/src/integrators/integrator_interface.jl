@@ -36,16 +36,18 @@ function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
 end
 
 function DiffEqBase.reeval_internals_due_to_modification!(
-        integrator::ODEIntegrator, continuous_modification = true)
+        integrator::ODEIntegrator, continuous_modification = true;
+        callback_initializealg = nothing)
+
     if integrator.isdae
-        DiffEqBase.initialize_dae!(integrator)
+        DiffEqBase.initialize_dae!(integrator, isnothing(callback_initializealg) ? integrator.initializealg : callback_initializealg)
         update_uprev!(integrator)
     end
 
     if continuous_modification && integrator.opts.calck
         resize!(integrator.k, integrator.kshortsize) # Reset k for next step!
         alg = unwrap_alg(integrator, false)
-        if has_lazy_interpolation(alg)
+        if SciMLBase.has_lazy_interpolation(alg)
             ode_addsteps!(integrator, integrator.f, true, false, !alg.lazy)
         else
             ode_addsteps!(integrator, integrator.f, true, false)
@@ -59,7 +61,7 @@ end
 @inline function DiffEqBase.get_du(integrator::ODEIntegrator)
     isdiscretecache(integrator.cache) &&
         error("Derivatives are not defined for this stepper.")
-    return if isdefined(integrator, :fsallast)
+    return if isfsal(integrator.alg)
         integrator.fsallast
     else
         integrator(integrator.t, Val{1})
@@ -72,7 +74,7 @@ end
     if isdiscretecache(integrator.cache)
         out .= integrator.cache.tmp
     else
-        return if isdefined(integrator, :fsallast) &&
+        return if isfsal(integrator.alg) &&
                   !has_stiff_interpolation(integrator.alg)
             # Special stiff interpolations do not store the
             # right value in fsallast
@@ -221,6 +223,8 @@ function resize!(integrator::ODEIntegrator, i::Int)
         # may be required for things like units
         c !== nothing && resize!(c, i)
     end
+    !isnothing(integrator.fsalfirst) && resize!(integrator.fsalfirst, i)
+    !isnothing(integrator.fsallast) && resize!(integrator.fsallast, i)
     resize_f!(integrator.f, i)
     resize_nlsolver!(integrator, i)
     resize_J_W!(cache, integrator, i)
@@ -233,6 +237,8 @@ function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
     for c in full_cache(cache)
         resize!(c, i)
     end
+    !isnothing(integrator.fsalfirst) && resize!(integrator.fsalfirst, i)
+    !isnothing(integrator.fsallast) && resize!(integrator.fsallast, i)
     resize_f!(integrator.f, i)
     # TODO the parts below need to be adapted for implicit methods
     isdefined(integrator.cache, :nlsolver) && resize_nlsolver!(integrator, i)
@@ -419,7 +425,11 @@ function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
         integrator.opts.internalnorm, integrator.sol.prob,
         integrator)
     integrator.dtpropose = integrator.dt
-    integrator.stats.nf += 2
+    increment_nf!(integrator.stats, 2)
+end
+
+function increment_nf!(stats, amt = 1)
+    stats.nf += amt
 end
 
 function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
@@ -448,3 +458,7 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
 end
 
 DiffEqBase.has_stats(i::ODEIntegrator) = true
+
+DiffEqBase.get_tstops(integ::ODEIntegrator) = integ.opts.tstops
+DiffEqBase.get_tstops_array(integ::ODEIntegrator) = get_tstops(integ).valtree
+DiffEqBase.get_tstops_max(integ::ODEIntegrator) = maximum(get_tstops_array(integ))
