@@ -37,6 +37,14 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     return linres
 end
 
+#for backward compat delete soon
+function wrapprecs(PL, PR, weight, u)
+    Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pl
+        return linsolver
+    Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pr
+    end
+    Pl, Pr
+end
 function wrapprecs(linsolver, W, weight)
     if hasproperty(linsolver, :precs) && isnothing(linsolver.precs)
         Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
