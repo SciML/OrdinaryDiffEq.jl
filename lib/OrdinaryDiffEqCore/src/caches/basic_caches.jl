@@ -17,9 +17,7 @@ mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
 end
 
 function ismutablecache(cache::CompositeCache{T, F}) where {T, F}
-    @show T
-    @show eltype(T)
-    @show eltype(T) <: OrdinaryDiffEqMutableCache
+    eltype(T) <: OrdinaryDiffEqMutableCache
 end
 
 function get_fsalfirstlast(cache::CompositeCache, u)
@@ -54,7 +52,7 @@ function get_fsalfirstlast(cache::DefaultCache, u)
 end
 
 function ismutablecache(cache::DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType}) where {T1, T2, T3, T4, T5, T6, A, F, uType}
-    T1 isa OrdinaryDiffEqMutableCache
+    T1 <: OrdinaryDiffEqMutableCache
 end
 
 function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},

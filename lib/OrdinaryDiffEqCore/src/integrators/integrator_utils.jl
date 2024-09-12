@@ -482,8 +482,7 @@ function reset_fsal!(integrator)
     # Ignore DAEs but they already re-ran initialization
     # Mass matrix DAEs do need to reset FSAL if available
     if !(integrator.sol.prob isa DAEProblem)
-        @show integrator.cache
-        if @show ismutablecache(integrator.cache)
+        if ismutablecache(integrator.cache)
             integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
         else
             integrator.fsalfirst = integrator.f(integrator.u, integrator.p, integrator.t)
