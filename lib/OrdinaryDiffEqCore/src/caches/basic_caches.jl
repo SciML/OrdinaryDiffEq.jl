@@ -17,6 +17,7 @@ mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
 end
 
 function ismutablecache(cache::CompositeCache{T, F}) where {T, F}
+    @show eltype(T)
     eltype(T) <: OrdinaryDiffEqMutableCache
 end
 
