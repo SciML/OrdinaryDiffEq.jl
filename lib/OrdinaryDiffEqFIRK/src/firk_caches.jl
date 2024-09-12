@@ -527,10 +527,12 @@ mutable struct AdaptiveRadauCache{uType, cuType, uNoUnitsType, rateType, JType, 
     uprev::uType
     z::Vector{uType}
     w::Vector{uType}
+    c_prime::Vector{BigFloat}
     dw1::uType
     ubuff::uType
     dw2::Vector{cuType}
     cubuff::Vector{cuType}
+    dw::Vector{uType}
     cont::Vector{uType}
     derivatives:: Matrix{uType}
     du1::rateType
@@ -587,12 +589,15 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         z[i] = w[i] = zero(u)
     end
 
+    c_prime = Vector{BigFloat}(undef, num_stages) #time stepping
+
     dw1 = zero(u)
     ubuff = zero(u)
     dw2 = [similar(u, Complex{eltype(u)}) for _ in 1 : (num_stages - 1) ÷ 2]
     recursivefill!.(dw2, false)
     cubuff = [similar(u, Complex{eltype(u)}) for _ in 1 : (num_stages - 1) ÷ 2]
     recursivefill!.(cubuff, false)
+    dw = Vector{typeof(u)}(undef, num_stages - 1)
 
     cont = Vector{typeof(u)}(undef, num_stages)
     for i in 1 : num_stages
@@ -641,7 +646,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     atol = reltol isa Number ? reltol : zero(reltol)
 
     AdaptiveRadauCache(u, uprev,
-        z, w, dw1, ubuff, dw2, cubuff, cont, derivatives, 
+        z, w, c_prime, dw1, ubuff, dw2, cubuff, dw, cont, derivatives, 
         du1, fsalfirst, ks, k, fw,
         J, W1, W2,
         uf, tab, κ, one(uToltype), 10000, tmp,

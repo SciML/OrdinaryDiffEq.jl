@@ -1398,7 +1398,7 @@ end
             cache.cont[i] = map(zero, u)
         end
     else
-        c_prime = Vector{eltype(u)}(undef, num_stages) #time stepping
+        c_prime = Vector{typeof(u)}(undef, num_stages) #time stepping
         c_prime[num_stages] = dt / cache.dtprev
         for i in 1 : num_stages - 1
             c_prime[i] = c[i] * c_prime[num_stages]
@@ -1491,8 +1491,10 @@ end
                 break
             end
         end
-
-        w = @.. w - dw
+        
+        for i in 1 : num_stages
+            w[i] -= dw[i]
+        end
 
         # transform `w` to `z`
         #z = T * w
@@ -1574,8 +1576,8 @@ end
 @muladd function perform_step!(integrator, cache::AdaptiveRadauCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
     @unpack T, TI, γ, α, β, c, #=e,=# num_stages = cache.tab
-    @unpack κ, cont, derivatives, z, w = cache
-    @unpack dw1, ubuff, dw2, cubuff = cache
+    @unpack κ, cont, derivatives, z, w, c_prime = cache
+    @unpack dw1, ubuff, dw2, cubuff, dw = cache
     @unpack ks, k, fw, J, W1, W2 = cache
     @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
@@ -1604,7 +1606,6 @@ end
             z[i] = w[i] = cache.cont[i] = map(zero, u)
         end
     else
-        c_prime = Vector{eltype(u)}(undef, num_stages) #time stepping
         c_prime[num_stages] = dt / cache.dtprev
         for i in 1 : num_stages - 1
             c_prime[i] = c[i] * c_prime[num_stages]
@@ -1692,7 +1693,6 @@ end
         end
 
         integrator.stats.nsolve += (num_stages + 1) / 2
-        dw = Vector{typeof(u)}(undef, num_stages - 1)
 
         for i in 1 : (num_stages - 1) ÷ 2
             dw[2 * i - 1] = z[2 * i - 1]
@@ -1757,7 +1757,7 @@ end
     @.. broadcast=false u=uprev + z[num_stages]
 
     step_limiter!(u, integrator, p, t + dt)
-    #=
+    
     if adaptive
         utilde = w2
         edt = e./dt
@@ -1795,7 +1795,7 @@ end
             integrator.EEst = internalnorm(atmp, t)
         end
     end
-    =#
+
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
