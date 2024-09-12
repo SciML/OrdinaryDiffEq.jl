@@ -12,6 +12,7 @@ jobs:
     continue-on-error: ${{ matrix.group == 'Downstream' }}
     strategy:
       fail-fast: false
+      coverage: false
       matrix:
         group:
           - InterfaceI
