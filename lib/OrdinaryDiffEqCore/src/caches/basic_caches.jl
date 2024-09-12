@@ -19,7 +19,7 @@ end
 function ismutablecache(cache::CompositeCache{T, F}) where {T, F}
     @show T
     @show eltype(T)
-    eltype(T) <: OrdinaryDiffEqMutableCache
+    @show eltype(T) <: OrdinaryDiffEqMutableCache
 end
 
 function get_fsalfirstlast(cache::CompositeCache, u)
