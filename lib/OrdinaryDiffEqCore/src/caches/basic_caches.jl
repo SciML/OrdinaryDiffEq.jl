@@ -4,6 +4,9 @@ abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
+ismutablecache(cache::OrdinaryDiffEqMutableCache) = true
+ismutablecache(cache::OrdinaryDiffEqConstantCache) = false
+
 # Don't worry about the potential alloc on a constant cache
 get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache, u) = (zero(u), zero(u))
 
@@ -11,6 +14,10 @@ mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     caches::T
     choice_function::F
     current::Int
+end
+
+function ismutablecache(cache::CompositeCache{T, F}) where {T, F}
+    eltype(T) <: OrdinaryDiffEqMutableCache
 end
 
 function get_fsalfirstlast(cache::CompositeCache, u)
@@ -42,6 +49,10 @@ end
 
 function get_fsalfirstlast(cache::DefaultCache, u)
     (cache.u, cache.u) # will be overwritten by the cache choice
+end
+
+function ismutablecache(cache::DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType}) where {T1, T2, T3, T4, T5, T6, A, F, uType}
+    T1 isa OrdinaryDiffEqMutableCache
 end
 
 function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
