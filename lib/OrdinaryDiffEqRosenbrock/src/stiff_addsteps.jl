@@ -63,7 +63,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
 
         ### Jacobian does not need to be re-evaluated after an event
         ### Since it's unchanged
-        jacobian2W!(W, mass_matrix, dtγ, J, true)
+        jacobian2W!(W, mass_matrix, dtγ, J)
 
         linsolve = cache.linsolve
 
@@ -215,7 +215,7 @@ function _ode_addsteps!(
 
         ### Jacobian does not need to be re-evaluated after an event
         ### Since it's unchanged
-        jacobian2W!(W, mass_matrix, dtgamma, J, true)
+        jacobian2W!(W, mass_matrix, dtgamma, J)
 
         linsolve = cache.linsolve
 
@@ -394,7 +394,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         @.. linsolve_tmp = @muladd fsalfirst + dtgamma * dT
 
         # Jacobian does not need to be re-evaluated after an event since it's unchanged
-        jacobian2W!(W, mass_matrix, dtgamma, J, true)
+        jacobian2W!(W, mass_matrix, dtgamma, J)
 
         linsolve = cache.linsolve
 
@@ -623,7 +623,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
 
         ### Jacobian does not need to be re-evaluated after an event
         ### Since it's unchanged
-        jacobian2W!(W, mass_matrix, dtgamma, J, true)
+        jacobian2W!(W, mass_matrix, dtgamma, J)
 
         linsolve = cache.linsolve
 
