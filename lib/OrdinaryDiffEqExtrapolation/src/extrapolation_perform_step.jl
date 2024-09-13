@@ -3240,7 +3240,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, true)
             integrator.stats.nw += 1
             @.. broadcast=false u_temp2=uprev
-            @.. broadcast=false linsolve_tmps[1]=dt_int * fsalfirst
+            @.. broadcast=false linsolve_tmps[1]=fsalfirst
 
             linsolve = cache.linsolve[1]
 
@@ -3254,8 +3254,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             cache.linsolve[1] = linres.cache
 
             integrator.stats.nsolve += 1
-            @.. broadcast=false k=-k
-            @.. broadcast=false u_temp1=u_temp2 + k # Euler starting step
+            @.. broadcast=false u_temp1=u_temp2 - k # Euler starting step
             @.. broadcast=false diff1[1]=u_temp1 - u_temp2
             for j in 2:(j_int + 1)
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
@@ -3314,8 +3313,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                         jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix,
                             dt_int_temp, J, true)
                         @.. broadcast=false u_temp4[Threads.threadid()]=uprev
-                        @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
-                                                                              fsalfirst
+                        @.. broadcast=false linsolve_tmps[Threads.threadid()]=fsalfirst
 
                         linsolve = cache.linsolve[Threads.threadid()]
 
@@ -3332,7 +3330,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                         cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast=false k_tmps[Threads.threadid()]=-k_tmps[Threads.threadid()]
-                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] +
+                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] -
                                                                         k_tmps[Threads.threadid()] # Euler starting step
                         @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
                                                                       u_temp4[Threads.threadid()]
@@ -3340,8 +3338,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                             f(k_tmps[Threads.threadid()],
                                 cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
-                            @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
-                                                                                  k_tmps[Threads.threadid()]
+                            @.. broadcast=false linsolve_tmps[Threads.threadid()]=k_tmps[Threads.threadid()]
 
                             linsolve = cache.linsolve[Threads.threadid()]
 
@@ -3357,8 +3354,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
-                            @.. broadcast=false k_tmps[Threads.threadid()]=-k_tmps[Threads.threadid()]
-                            @.. broadcast=false T[index + 1]=u_temp3[Threads.threadid()] +
+                            @.. broadcast=false T[index + 1]=u_temp3[Threads.threadid()] -
                                                              k_tmps[Threads.threadid()] # Explicit Midpoint rule
                             if (j == j_int_temp + 1)
                                 @.. broadcast=false T[index + 1]=0.25(T[index + 1] +
@@ -3405,8 +3401,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                         jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix,
                             dt_int_temp, J, true)
                         @.. broadcast=false u_temp4[Threads.threadid()]=uprev
-                        @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
-                                                                              fsalfirst
+                        @.. broadcast=false linsolve_tmps[Threads.threadid()]=fsalfirst
 
                         linsolve = cache.linsolve[Threads.threadid()]
 
@@ -3422,8 +3417,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                         end
                         cache.linsolve[Threads.threadid()] = linres.cache
 
-                        @.. broadcast=false k_tmps[Threads.threadid()]=-k_tmps[Threads.threadid()]
-                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] +
+                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] -
                                                                         k_tmps[Threads.threadid()] # Euler starting step
                         @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
                                                                       u_temp4[Threads.threadid()]
@@ -3431,8 +3425,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                             f(k_tmps[Threads.threadid()],
                                 cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
-                            @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
-                                                                                  k_tmps[Threads.threadid()]
+                            @.. broadcast=false linsolve_tmps[Threads.threadid()]=k_tmps[Threads.threadid()]
 
                             linsolve = cache.linsolve[Threads.threadid()]
 
@@ -3448,8 +3441,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
-                            @.. broadcast=false k_tmps[Threads.threadid()]=-k_tmps[Threads.threadid()]
-                            @.. broadcast=false T[index + 1]=u_temp3[Threads.threadid()] +
+                            @.. broadcast=false T[index + 1]=u_temp3[Threads.threadid()] -
                                                              k_tmps[Threads.threadid()] # Explicit Midpoint rule
                             if (j == j_int_temp + 1)
                                 @.. broadcast=false T[index + 1]=0.25(T[index + 1] +
@@ -3559,7 +3551,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                 for j in 2:(j_int + 1)
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                    @.. broadcast=false linsolve_tmps[1]=dt_int * k
+                    @.. broadcast=false linsolve_tmps[1]=k
 
                     linsolve = cache.linsolve[1]
                     linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]),
@@ -3567,8 +3559,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                     cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
-                    @.. broadcast=false k=-k
-                    @.. broadcast=false T[n_curr + 1]=u_temp1 + k # Explicit Midpoint rule
+                    @.. broadcast=false T[n_curr + 1]=u_temp1 - k # Explicit Midpoint rule
                     if (j == j_int + 1)
                         @.. broadcast=false T[n_curr + 1]=0.25(T[n_curr + 1] + 2 * u_temp1 +
                                                                u_temp2)
