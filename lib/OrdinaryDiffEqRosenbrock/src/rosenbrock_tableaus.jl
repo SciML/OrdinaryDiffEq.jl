@@ -49,7 +49,7 @@ function ROS3PTableau(T, T2)
     # btilde1 = convert(T,2.113248654051871)
     # btilde2 = convert(T,1.000000000000000)
     # btilde3 = convert(T,0.4226497308103742)
-    btilde = [(b1 - convert(T, 2.113248654051871)), (b2 - convert(T, 1.000000000000000)), (b3 - convert(T, 0.4226497308103742))]
+    btilde = [(convert(T, 2.113248654051871)), (convert(T, 1.000000000000000)), (convert(T, 0.4226497308103742))]
     c = T[1, 1]
     d = T[0.7886751345948129, -0.2113248654051871, -1.077350269189626]
     ROS3PTableau(A, C, b, btilde, gamma, c, d)
