@@ -520,14 +520,14 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         Convergence, J)
 end
 
-mutable struct AdaptiveRadauCache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
+mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, JType, W1Type, W2Type,
     UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
                FIRKMutableCache
     u::uType
     uprev::uType
     z::Vector{uType}
     w::Vector{uType}
-    c_prime::Vector{BigFloat}
+    c_prime::Vector{tType}
     dw1::uType
     ubuff::uType
     dw2::Vector{cuType}
@@ -589,7 +589,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         z[i] = w[i] = zero(u)
     end
 
-    c_prime = Vector{BigFloat}(undef, num_stages) #time stepping
+    c_prime = Vector{typeof(t)}(undef, num_stages) #time stepping
 
     dw1 = zero(u)
     ubuff = zero(u)

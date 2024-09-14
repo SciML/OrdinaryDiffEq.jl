@@ -1498,12 +1498,20 @@ end
 
         # transform `w` to `z`
         #z = T * w
-        for i in 1:num_stages
+        for i in 1:num_stages - 1
             z[i] = zero(u)
             for j in 1:num_stages
                 z[i] += T[i,j] * w[j]
             end
         end
+        z[num_stages] = T[num_stages, 1] * w[1]
+        i = 2
+        while i < num_stages
+            z[num_stages] += w[i]
+            i += 2
+        end
+
+        
         # check stopping criterion
         iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
@@ -1524,13 +1532,16 @@ end
     cache.iter = iter
 
     u = @.. uprev + z[num_stages]
-    #=
+    
     if adaptive
         edt = e ./ dt
-        tmp = @.. dot(edt, z)
+        tmp = dot(edt, z)
         mass_matrix != I && (tmp = mass_matrix * tmp)
         utilde = @.. broadcast=false integrator.fsalfirst+tmp
-        alg.smooth_est && (utilde = LU[1] \ utilde; integrator.stats.nsolve += 1)
+        if alg.smooth_est
+            utilde = _reshape(LU1 \ _vec(utilde), axes(u))
+            integrator.stats.nsolve += 1
+        end
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
         integrator.EEst = internalnorm(atmp, t)
 
@@ -1539,12 +1550,15 @@ end
             f0 = f(uprev .+ utilde, p, t)
             integrator.stats.nf += 1
             utilde = @.. broadcast=false f0+tmp
-            alg.smooth_est && (utilde = LU[1] \ utilde; integrator.stats.nsolve += 1)
+            if alg.smooth_est
+                utilde = _reshape(LU1 \ _vec(utilde), axes(u))
+                integrator.stats.nsolve += 1
+            end
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
             integrator.EEst = internalnorm(atmp, t)
         end
     end
-    =#
+
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
@@ -1729,12 +1743,19 @@ end
 
         # transform `w` to `z`
         #mul!(z, T, w)
-        for i in 1:num_stages
+        for i in 1:num_stages - 1
             z[i] = zero(u)
             for j in 1:num_stages
                 z[i] += T[i,j] * w[j]
             end
         end
+        z[num_stages] = T[num_stages, 1] * w[1]
+        i = 2
+        while i < num_stages
+            z[num_stages] += w[i]
+            i += 2
+        end
+
         # check stopping criterion
         iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
