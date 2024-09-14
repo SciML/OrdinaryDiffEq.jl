@@ -55,7 +55,6 @@ end
         @time @safetestset "Controller Tests" include("interface/controllers.jl")
         @time @safetestset "Inplace Interpolation Tests" include("interface/inplace_interpolation.jl")
         @time @safetestset "Algebraic Interpolation Tests" include("interface/algebraic_interpolation.jl")
-        @time @safetestset "Default Solver Tests" include("interface/default_solver_tests.jl")
         @time @safetestset "Interpolation and Cache Stripping Tests" include("interface/ode_strip_test.jl")
     end
 
@@ -66,7 +65,8 @@ end
         @time @safetestset "Linear Solver Split ODE Tests" include("interface/linear_solver_split_ode_test.jl")
         @time @safetestset "Sparse Diff Tests" include("interface/sparsediff_tests.jl")
         @time @safetestset "Enum Tests" include("interface/enums.jl")
-        @time @safetestset "Enum Tests" include("interface/get_du.jl")
+        @time @safetestset "CheckInit Tests" include("interface/checkinit_tests.jl")
+        @time @safetestset "Get du Tests" include("interface/get_du.jl")
         @time @safetestset "Mass Matrix Tests" include("interface/mass_matrix_tests.jl")
         @time @safetestset "W-Operator prototype tests" include("interface/wprototype_tests.jl")
     end
