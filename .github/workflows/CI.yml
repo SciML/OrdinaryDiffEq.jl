@@ -82,6 +82,9 @@ jobs:
               Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
           '
       - uses: julia-actions/julia-runtest@v1
+        with:
+          coverage: false
+          check_bounds: auto
         env:
           GROUP: ${{ matrix.group }}
       - uses: julia-actions/julia-processcoverage@v1
