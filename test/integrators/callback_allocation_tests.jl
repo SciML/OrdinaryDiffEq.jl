@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, Test
-using OrdinaryDiffEqCore, AllocCheck
+using OrdinaryDiffEqCore
 
 # Setup a simple ODE problem with several callbacks (to test LLVM code gen)
 # We will manually trigger the first callback and check its allocations.
@@ -32,15 +32,17 @@ cbs = CallbackSet(ContinuousCallback(cond_1, cb_affect!),
     ContinuousCallback(cond_9, cb_affect!))
 
 integrator = init(
-    ODEProblem(f!, [0.8, 1.0], (0.0, 100.0), [0, 0]), Tsit5(), callback = cbs,
+    ODEProblem{true, SciMLBase.FullSpecialize}(f!, [0.8, 1.0], 
+    (0.0, 100.0), [0, 0]), Tsit5(), callback = cbs,
     save_on = false);
 # Force a callback event to occur so we can call handle_callbacks! directly.
 # Step to a point where u[1] is still > 0.5, so we can force it below 0.5 and
 # call handle callbacks
 step!(integrator, 0.1, true)
 
-@check_allocs function handle_allocs(integrator)
+function handle_allocs(integrator)
     integrator.u[1] = 0.4
-    OrdinaryDiffEqCore.handle_callbacks!(integrator)
+    @allocations OrdinaryDiffEqCore.handle_callbacks!(integrator)
 end
 handle_allocs(integrator)
+@test handle_allocs(integrator) == 0
