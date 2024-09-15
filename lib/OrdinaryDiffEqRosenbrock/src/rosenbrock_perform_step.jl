@@ -66,7 +66,7 @@ end
     @.. veck₁ = vecu * neginvdtγ
     integrator.stats.nsolve += 1
 
-    @.. u=uprev + dto2 * k₁
+    @.. u = uprev + dto2 * k₁
     stage_limiter!(u, integrator, p, t + dto2)
     f(f₁, u, p, t + dto2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -231,7 +231,7 @@ end
 
         if mass_matrix !== I
             invatol = inv(integrator.opts.abstol)
-            @.. atmp=ifelse(cache.algebraic_vars, fsallast, false) * invatol
+            @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) * invatol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
@@ -286,11 +286,11 @@ end
 
         if mass_matrix === I
             linsolve_tmp = @.. (integrator.fsallast - c₃₂ * (k₂ - f₁) -
-                       2 * (k₁ - integrator.fsalfirst) + dt * dT)
+                                2 * (k₁ - integrator.fsalfirst) + dt * dT)
         else
             linsolve_tmp = mass_matrix * (@.. c₃₂ * k₂ + 2 * k₁)
             linsolve_tmp = @.. (integrator.fsallast - linsolve_tmp +
-                           c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT)
+                                c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT)
         end
         k₃ = _reshape(W \ _vec(linsolve_tmp), axes(uprev)) * neginvdtγ
         integrator.stats.nsolve += 1
@@ -306,7 +306,8 @@ end
 
         if mass_matrix !== I
             invatol = inv(integrator.opts.abstol)
-            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) * invatol
+            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) *
+                      invatol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
@@ -343,7 +344,7 @@ end
         return nothing
     end
 
-    k₁ = _reshape(W \ -_vec((integrator.fsalfirst + dtγ * dT)), axes(uprev))/dtγ
+    k₁ = _reshape(W \ -_vec((integrator.fsalfirst + dtγ * dT)), axes(uprev)) / dtγ
     integrator.stats.nsolve += 1
     tmp = @.. uprev + dto2 * k₁
     f₁ = f(tmp, p, t + dto2)
@@ -364,11 +365,11 @@ end
 
     if mass_matrix === I
         linsolve_tmp = @.. (integrator.fsallast - c₃₂ * (k₂ - f₁) -
-                   2(k₁ - integrator.fsalfirst) + dt * dT)
+                            2(k₁ - integrator.fsalfirst) + dt * dT)
     else
         linsolve_tmp = mass_matrix * (@.. c₃₂ * k₂ + 2 * k₁)
         linsolve_tmp = @.. (integrator.fsallast - linsolve_tmp +
-                       c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT)
+                            c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT)
     end
     k₃ = _reshape(W \ _vec(linsolve_tmp), axes(uprev)) * neginvdtγ
     integrator.stats.nsolve += 1
@@ -382,7 +383,8 @@ end
 
         if mass_matrix !== I
             invatol = inv(integrator.opts.abstol)
-            atmp = ifelse(integrator.differential_vars, false, integrator.fsallast) .* invatol
+            atmp = ifelse(integrator.differential_vars, false, integrator.fsallast) .*
+                   invatol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
@@ -655,7 +657,7 @@ end
     end
 
     # Initialize ks
-    num_stages = size(A,1)
+    num_stages = size(A, 1)
     du = f(uprev, p, t)
     linsolve_tmp = @.. du + dtd[1] * dT
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
@@ -664,7 +666,7 @@ end
     # Loop for stages
     for stage in 2:num_stages
         u = uprev
-        for i in 1:stage-1
+        for i in 1:(stage - 1)
             u = @.. u + A[stage, i] * ks[i]
         end
 
@@ -674,11 +676,11 @@ end
         # Compute linsolve_tmp for current stage
         linsolve_tmp = zero(du)
         if mass_matrix === I
-            for i in 1:stage-1
+            for i in 1:(stage - 1)
                 linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
             end
         else
-            for i in 1:stage-1
+            for i in 1:(stage - 1)
                 linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
             end
             linsolve_tmp = mass_matrix * linsolve_tmp
@@ -766,11 +768,10 @@ function initialize!(integrator, cache::RosenbrockCache)
     end
 end
 
-
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
-    (;t, dt, uprev, u, f, p) = integrator
-    (;du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
-    (;A, C, gamma, c, d, H) = cache.tab
+    (; t, dt, uprev, u, f, p) = integrator
+    (; du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
+    (; A, C, gamma, c, d, H) = cache.tab
 
     if hasproperty(cache.tab, :b)
         b = cache.tab.b
@@ -810,12 +811,12 @@ end
             solverdata = (; gamma = dtgamma))
     end
 
-    @.. $(_vec(ks[1]))=-linres.u
+    @.. $(_vec(ks[1])) = -linres.u
     integrator.stats.nsolve += 1
 
     for stage in 2:length(ks)
         u .= uprev
-        for i in 1:stage-1
+        for i in 1:(stage - 1)
             @.. u += A[stage, i] * ks[i]
         end
 
@@ -825,11 +826,11 @@ end
 
         du1 .= 0
         if mass_matrix === I
-            for i in 1:stage-1
+            for i in 1:(stage - 1)
                 @.. du1 += dtC[stage, i] * ks[i]
             end
         else
-            for i in 1:stage-1
+            for i in 1:(stage - 1)
                 @.. du1 += dtC[stage, i] * ks[i]
             end
             mul!(_vec(du2), mass_matrix, _vec(du1))
@@ -838,7 +839,7 @@ end
         @.. linsolve_tmp = du + dtd[stage] * dT + du1
 
         linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-        @.. $(_vec(ks[stage]))=-linres.u
+        @.. $(_vec(ks[stage])) = -linres.u
         integrator.stats.nsolve += 1
     end
     du .= ks[end]

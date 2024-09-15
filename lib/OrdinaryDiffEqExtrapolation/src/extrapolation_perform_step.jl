@@ -1193,7 +1193,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
             for j in 2:j_int
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                @.. broadcast=false linsolve_tmps[1]=k - (u_temp1 - u_temp2)/dt_int
+                @.. broadcast=false linsolve_tmps[1]=k - (u_temp1 - u_temp2) / dt_int
 
                 linsolve = cache.linsolve[1]
 
@@ -1270,7 +1270,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                                 p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=k_tmps[Threads.threadid()] -
                                                                                   (u_temp3[Threads.threadid()] -
-                                                                                   u_temp4[Threads.threadid()])/dt_int_temp
+                                                                                   u_temp4[Threads.threadid()]) /
+                                                                                  dt_int_temp
 
                             linsolve = cache.linsolve[Threads.threadid()]
 
@@ -1354,7 +1355,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                                 p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=k_tmps[Threads.threadid()] -
                                                                                   (u_temp3[Threads.threadid()] -
-                                                                                   u_temp4[Threads.threadid()])/dt_int_temp
+                                                                                   u_temp4[Threads.threadid()]) /
+                                                                                  dt_int_temp
 
                             linsolve = cache.linsolve[Threads.threadid()]
 
@@ -2555,7 +2557,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             for j in 2:(j_int + 1)
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                @.. broadcast=false linsolve_tmps[1]=k - (u_temp1 - u_temp2)/dt_int
+                @.. broadcast=false linsolve_tmps[1]=k - (u_temp1 - u_temp2) / dt_int
 
                 linsolve = cache.linsolve[1]
 
@@ -2634,9 +2636,10 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                             f(k_tmps[Threads.threadid()],
                                 cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
-                            @.. broadcast=false linsolve_tmps[Threads.threadid()]= k_tmps[Threads.threadid()] -
+                            @.. broadcast=false linsolve_tmps[Threads.threadid()]=k_tmps[Threads.threadid()] -
                                                                                   (u_temp3[Threads.threadid()] -
-                                                                                   u_temp4[Threads.threadid()]) / dt_int_temp
+                                                                                   u_temp4[Threads.threadid()]) /
+                                                                                  dt_int_temp
 
                             linsolve = cache.linsolve[Threads.threadid()]
                             if !repeat_step && j == 1
@@ -2717,7 +2720,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                         for j in 2:(j_int_temp + 1)
                             f(ktmp, cache.u_temp3[tid], p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolvetmp=ktmp -
-                                                            (u_temp3[tid] - u_temp4[tid])/dt_int_temp
+                                                            (u_temp3[tid] - u_temp4[tid]) /
+                                                            dt_int_temp
 
                             linsolve = cache.linsolve[tid]
 
@@ -2832,7 +2836,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                 for j in 2:(j_int + 1)
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                    @.. broadcast=false linsolve_tmps[1]=k - (u_temp1 - u_temp2)/dt_int
+                    @.. broadcast=false linsolve_tmps[1]=k - (u_temp1 - u_temp2) / dt_int
 
                     linsolve = cache.linsolve[1]
 

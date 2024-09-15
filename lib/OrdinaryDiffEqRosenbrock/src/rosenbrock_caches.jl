@@ -45,7 +45,7 @@ mutable struct RosenbrockCache{uType, rateType, uNoUnitsType, JType, WType, TabT
 end
 function full_cache(c::RosenbrockCache)
     return [c.u, c.uprev, c.dense..., c.du, c.du1, c.du2,
-            c.ks..., c.fsalfirst, c.fsallast, c.dT, c.tmp, c.atmp, c.weight, c.linsolve_tmp]
+        c.ks..., c.fsalfirst, c.fsallast, c.dT, c.tmp, c.atmp, c.weight, c.linsolve_tmp]
 end
 
 struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
@@ -561,7 +561,8 @@ tabtype(::Rodas42) = Rodas42Tableau
 tabtype(::Rodas4P) = Rodas4PTableau
 tabtype(::Rodas4P2) = Rodas4P2Tableau
 
-function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2}, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2},
+        u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
@@ -576,9 +577,11 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2}, u, rate_proto
         alg_autodiff(alg), 4)
 end
 
-function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2}, u, rate_prototype, ::Type{uEltypeNoUnits},
-                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-                   dt, reltol, p, calck, ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2},
+        u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
 
     # Initialize vectors
     dense = [zero(rate_prototype) for _ in 1:2]
@@ -612,11 +615,11 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2}, u, rate_proto
 
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-                  nothing)..., weight, tmp)
+            nothing)..., weight, tmp)
 
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr,
-                    assumptions = LinearSolve.OperatorAssumptions(true))
+        Pl = Pl, Pr = Pr,
+        assumptions = LinearSolve.OperatorAssumptions(true))
 
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)

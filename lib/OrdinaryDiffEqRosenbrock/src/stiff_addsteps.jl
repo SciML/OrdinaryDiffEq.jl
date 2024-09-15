@@ -22,9 +22,9 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         else
             J = ForwardDiff.jacobian(uf, uprev)
             if mass_matrix isa UniformScaling
-                W = neginvdtγ*mass_matrix + J
+                W = neginvdtγ * mass_matrix + J
             else
-                W = @.. neginvdtγ*mass_matrix .+ J
+                W = @.. neginvdtγ * mass_matrix .+ J
             end
         end
         f₀ = f(uprev, p, t)
@@ -59,7 +59,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         neginvdtγ = -inv(dtγ)
         dto2 = dt / 2
 
-        @.. linsolve_tmp=@muladd fsalfirst + dtγ * dT
+        @.. linsolve_tmp = @muladd fsalfirst + dtγ * dT
 
         ### Jacobian does not need to be re-evaluated after an event
         ### Since it's unchanged
@@ -74,7 +74,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         veck₁ = _vec(k₁)
         @.. veck₁ = vecu * neginvdtγ
 
-        @.. tmp=uprev + dto2 * k₁
+        @.. tmp = uprev + dto2 * k₁
         f(f₁, tmp, p, t + dto2)
 
         if mass_matrix === I
@@ -103,8 +103,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        (;tf, uf) = cache
-        (;A, C, gamma, c, d, H) = cache.tab
+        (; tf, uf) = cache
+        (; A, C, gamma, c, d, H) = cache.tab
 
         # Precalculations
         dtC = C ./ dt
@@ -137,9 +137,9 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
         # constant number for type stability make sure this is greater than num_stages
         ks = ntuple(Returns(k1), 10)
         # Last stage doesn't affect ks
-        for stage in 2:num_stages-1
+        for stage in 2:(num_stages - 1)
             u = uprev
-            for i in 1:stage-1
+            for i in 1:(stage - 1)
                 u = @.. u + A[stage, i] * ks[i]
             end
 
@@ -148,11 +148,11 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
             # Compute linsolve_tmp for current stage
             linsolve_tmp = zero(du)
             if mass_matrix === I
-                for i in 1:stage-1
+                for i in 1:(stage - 1)
                     linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
                 end
             else
-                for i in 1:stage-1
+                for i in 1:(stage - 1)
                     linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
                 end
                 linsolve_tmp = mass_matrix * linsolve_tmp
@@ -165,7 +165,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
         k2 = zero(ks[1])
         H = cache.tab.H
         # Last stage doesn't affect ks
-        for i in 1:num_stages-1
+        for i in 1:(num_stages - 1)
             k1 = @.. k1 + H[1, i] * ks[i]
             k2 = @.. k2 + H[2, i] * ks[i]
         end
@@ -180,8 +180,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        (;du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
-        (;A, C, gamma, c, d , H) = cache.tab
+        (; du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
+        (; A, C, gamma, c, d, H) = cache.tab
 
         # Assignments
         sizeu = size(u)
@@ -194,45 +194,47 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         dtd = dt .* d
         dtgamma = dt * gamma
 
-        @.. linsolve_tmp=@muladd fsalfirst + dtgamma * dT
+        @.. linsolve_tmp = @muladd fsalfirst + dtgamma * dT
 
         # Jacobian does not need to be re-evaluated after an event since it's unchanged
         jacobian2W!(W, mass_matrix, dtgamma, J, true)
 
         linsolve = cache.linsolve
 
-        linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp), reltol = cache.reltol)
-        @.. $(_vec(ks[1]))=-linres.u
+        linres = dolinsolve(
+            cache, linsolve; A = W, b = _vec(linsolve_tmp), reltol = cache.reltol)
+        @.. $(_vec(ks[1])) = -linres.u
         # Last stage doesn't affect ks
-        for stage in 2:length(ks)-1
+        for stage in 2:(length(ks) - 1)
             tmp .= uprev
-            for i in 1:stage-1
+            for i in 1:(stage - 1)
                 @.. tmp += A[stage, i] * _vec(ks[i])
             end
             f(du, tmp, p, t + c[stage] * dt)
 
             if mass_matrix === I
                 @.. linsolve_tmp = du + dtd[stage] * dT
-                for i in 1:stage-1
+                for i in 1:(stage - 1)
                     @.. linsolve_tmp += dtC[stage, i] * _vec(ks[i])
                 end
             else
                 du1 .= du
-                for i in 1:stage-1
+                for i in 1:(stage - 1)
                     @.. du1 += dtC[stage, i] * _vec(ks[i])
                 end
                 mul!(_vec(du2), mass_matrix, _vec(du1))
                 @.. linsolve_tmp = du + dtd[stage] * dT + du2
             end
 
-            linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
-            @.. $(_vec(ks[stage]))=-linres.u
+            linres = dolinsolve(
+                cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
+            @.. $(_vec(ks[stage])) = -linres.u
         end
 
         copyat_or_push!(k, 1, zero(du))
         copyat_or_push!(k, 2, zero(du))
         # Last stage doesn't affect ks
-        for i in 1:length(ks)-1
+        for i in 1:(length(ks) - 1)
             @.. k[1] += H[1, i] * _vec(ks[i])
             @.. k[2] += H[2, i] * _vec(ks[i])
         end
