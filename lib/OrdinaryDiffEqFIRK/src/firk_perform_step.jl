@@ -1399,9 +1399,9 @@ end
         end
     else
         c_prime = Vector{typeof(u)}(undef, num_stages) #time stepping
-        c_prime[num_stages] = dt / cache.dtprev
+        c_prime[num_stages] = @.. dt / cache.dtprev
         for i in 1 : num_stages - 1
-            c_prime[i] = c[i] * c_prime[num_stages]
+            c_prime[i] = @.. c[i] * c_prime[num_stages]
         end
         for i in 1 : num_stages # collocation polynomial
             z[i] = @.. cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
@@ -1414,9 +1414,9 @@ end
         end
         #w = TI*z
         for i in 1:num_stages
-            w[i] = zero(u)
+            w[i] = @.. zero(u)
             for j in 1:num_stages
-                w[i] += TI[i,j] * z[j]
+                w[i] =@.. w[i] + TI[i,j] * z[j]
             end
         end
     end
@@ -1439,10 +1439,10 @@ end
 
         #fw = TI * ff
         fw = Vector{typeof(u)}(undef, num_stages)
-        for i in 1:num_stages
-            fw[i] = zero(u)
+        for i in 1 : num_stages
+            fw[i] = @.. zero(u)
             for j in 1:num_stages
-                fw[i] += TI[i,j] * ff[j]
+                fw[i] = @.. fw[i] + TI[i,j] * ff[j]
             end
         end
 
@@ -1468,8 +1468,8 @@ end
         dw[1] = _reshape(LU1 \ _vec(rhs[1]), axes(u))
         for i in 2 :(num_stages + 1) ÷ 2
             tmp = _reshape(LU2[i - 1] \ _vec(@.. rhs[2 * i - 2] + rhs[2 * i - 1] * im), axes(u))
-            dw[2 * i - 2] = real(tmp)
-            dw[2 * i - 1] = imag(tmp)
+            dw[2 * i - 2] = @.. real(tmp)
+            dw[2 * i - 1] = @.. imag(tmp)
         end
         integrator.stats.nsolve +=(num_stages + 1) ÷ 2
 
@@ -1493,21 +1493,21 @@ end
         end
         
         for i in 1 : num_stages
-            w[i] -= dw[i]
+            w[i] = @.. w[i] - dw[i]
         end
 
         # transform `w` to `z`
         #z = T * w
         for i in 1:num_stages - 1
-            z[i] = zero(u)
+            z[i] = @.. zero(u)
             for j in 1:num_stages
-                z[i] += T[i,j] * w[j]
+                z[i] = @.. z[i] + T[i,j] * w[j]
             end
         end
-        z[num_stages] = T[num_stages, 1] * w[1]
+        z[num_stages] = @.. T[num_stages, 1] * w[1]
         i = 2
         while i < num_stages
-            z[num_stages] += w[i]
+            z[num_stages] = @.. z[num_stages] + w[i]
             i += 2
         end
 
@@ -1617,7 +1617,9 @@ end
     if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         for i in 1 : num_stages
-            z[i] = w[i] = cache.cont[i] = map(zero, u)
+            @.. z[i] = map(zero, u)
+            @.. w[i] = map(zero, u)
+            @.. cache.cont[i] = map(zero, u)
         end
     else
         c_prime[num_stages] = dt / cache.dtprev
@@ -1635,9 +1637,9 @@ end
         end
         #mul!(w, TI, z)
         for i in 1:num_stages
-            w[i] = zero(u)
+            @.. w[i] = zero(u)
             for j in 1:num_stages
-                w[i] += TI[i,j] * z[j]
+                @.. w[i] += TI[i,j] * z[j]
             end
         end
     end
@@ -1661,9 +1663,9 @@ end
 
         #mul!(fw, TI, ks)
         for i in 1:num_stages
-            fw[i] = zero(u)
+            fw[i] = @.. zero(u)
             for j in 1:num_stages
-                fw[i] += TI[i,j] * ks[j]
+                fw[i] = @.. fw[i] + TI[i,j] * ks[j]
             end
         end
 
@@ -1736,23 +1738,23 @@ end
             end
         end
 
-        w[1] -= dw1
+        w[1] = @.. w[1] -  dw1
         for i in 2 : num_stages
-            w[i] -= dw[i - 1]
+            w[i] = @.. w[i] - dw[i - 1]
         end
 
         # transform `w` to `z`
         #mul!(z, T, w)
         for i in 1:num_stages - 1
-            z[i] = zero(u)
+            z[i] = @.. zero(u)
             for j in 1:num_stages
-                z[i] += T[i,j] * w[j]
+                z[i] = @.. z[i] + T[i,j] * w[j]
             end
         end
-        z[num_stages] = T[num_stages, 1] * w[1]
+        z[num_stages] = @.. T[num_stages, 1] * w[1]
         i = 2
         while i < num_stages
-            z[num_stages] += w[i]
+            z[num_stages] = @.. z[num_stages] + w[i]
             i += 2
         end
 
