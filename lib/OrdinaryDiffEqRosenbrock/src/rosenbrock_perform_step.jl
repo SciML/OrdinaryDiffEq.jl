@@ -1,4 +1,4 @@
-function initialize!(integrator, cache::Union{Rosenbrock23Cache,
+function initialize!(integrator, cache::Union{RosenbrockCache,
         Rosenbrock32Cache})
     integrator.kshortsize = 2
     @unpack k₁, k₂, fsalfirst, fsallast = cache
@@ -23,7 +23,7 @@ function initialize!(integrator,
     integrator.k[2] = zero(integrator.fsalfirst)
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, opts = integrator
     @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack c₃₂, d = cache.tab
