@@ -39,9 +39,8 @@ integrator = init(
 # call handle callbacks
 step!(integrator, 0.1, true)
 
-function handle_allocs(integrator)
+@check_allocs function handle_allocs(integrator)
     integrator.u[1] = 0.4
     OrdinaryDiffEqCore.handle_callbacks!(integrator)
 end
 handle_allocs(integrator)
-@check_allocs handle_allocs(integrator)
