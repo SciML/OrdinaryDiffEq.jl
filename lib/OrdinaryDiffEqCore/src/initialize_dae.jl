@@ -121,20 +121,23 @@ function default_nlsolve(
 end
 
 function default_nlsolve(
-    ::Nothing, isinplace::Val{false}, u::Nothing, ::NonlinearProblem, autodiff = false)
-nothing
+        ::Nothing, isinplace::Val{false}, u::Nothing, ::NonlinearProblem, autodiff = false)
+    nothing
 end
 
 function default_nlsolve(
-    ::Nothing, isinplace::Val{false}, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
-nothing
+        ::Nothing, isinplace::Val{false}, u::Nothing,
+        ::NonlinearLeastSquaresProblem, autodiff = false)
+    nothing
 end
 
-function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
+function OrdinaryDiffEqCore.default_nlsolve(
+        ::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
     error("This ODE requires a DAE initialization and thus a nonlinear solve but no nonlinear solve has been loaded. To solve this problem, do `using OrdinaryDiffEqNonlinearSolve` or pass a custom `nlsolve` choice into the `initializealg`.")
 end
 
-function OrdinaryDiffEqCore.default_nlsolve(::Nothing, isinplace, u, ::NonlinearLeastSquaresProblem, autodiff = false)
+function OrdinaryDiffEqCore.default_nlsolve(
+        ::Nothing, isinplace, u, ::NonlinearLeastSquaresProblem, autodiff = false)
     error("This ODE requires a DAE initialization and thus a nonlinear solve but no nonlinear solve has been loaded. To solve this problem, do `using OrdinaryDiffEqNonlinearSolve` or pass a custom `nlsolve` choice into the `initializealg`.")
 end
 
@@ -179,12 +182,13 @@ end
 
 ## CheckInit
 struct CheckInitFailureError <: Exception
-    normresid
-    abstol
+    normresid::Any
+    abstol::Any
 end
 
 function Base.showerror(io::IO, e::CheckInitFailureError)
-    print(io, "CheckInit specified but initialization not satisifed. normresid = $(e.normresid) > abstol = $(e.abstol)")
+    print(io,
+        "CheckInit specified but initialization not satisifed. normresid = $(e.normresid) > abstol = $(e.abstol)")
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
@@ -202,7 +206,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
     tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
 
     normresid = integrator.opts.internalnorm(tmp, t)
-    if normresid > integrator.opts.abstol 
+    if normresid > integrator.opts.abstol
         throw(CheckInitFailureError(normresid, integrator.opts.abstol))
     end
 end
@@ -221,7 +225,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
     resid = _vec(du)[algebraic_eqs]
 
     normresid = integrator.opts.internalnorm(resid, t)
-    if normresid > integrator.opts.abstol 
+    if normresid > integrator.opts.abstol
         throw(CheckInitFailureError(normresid, integrator.opts.abstol))
     end
 end
@@ -234,7 +238,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     f(resid, integrator.du, u0, p, t)
     normresid = integrator.opts.internalnorm(resid, t)
-    if normresid > integrator.opts.abstol 
+    if normresid > integrator.opts.abstol
         throw(CheckInitFailureError(normresid, integrator.opts.abstol))
     end
 end
@@ -252,7 +256,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     resid = f(integrator.du, u0, p, t)
     normresid = integrator.opts.internalnorm(resid, t)
-    if normresid > integrator.opts.abstol 
+    if normresid > integrator.opts.abstol
         throw(CheckInitFailureError(normresid, integrator.opts.abstol))
     end
 end

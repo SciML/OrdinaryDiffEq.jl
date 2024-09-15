@@ -11,7 +11,7 @@ the former is more efficient, but the latter is more reliable.
 For larger systems look at multistep methods.
 
 !!! warn
-
+    
     In order to use OrdinaryDiffEqRosenbrock with DAEs that require a non-trivial
     consistent initialization, a nonlinear solver is required and thus
     `using OrdinaryDiffEqNonlinearSolve` is required or you must pass an `initializealg`

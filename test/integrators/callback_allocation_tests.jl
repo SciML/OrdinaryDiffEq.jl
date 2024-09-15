@@ -32,8 +32,8 @@ cbs = CallbackSet(ContinuousCallback(cond_1, cb_affect!),
     ContinuousCallback(cond_9, cb_affect!))
 
 integrator = init(
-    ODEProblem{true, SciMLBase.FullSpecialize}(f!, [0.8, 1.0], 
-    (0.0, 100.0), [0, 0]), Tsit5(), callback = cbs,
+    ODEProblem{true, SciMLBase.FullSpecialize}(f!, [0.8, 1.0],
+        (0.0, 100.0), [0, 0]), Tsit5(), callback = cbs,
     save_on = false);
 # Force a callback event to occur so we can call handle_callbacks! directly.
 # Step to a point where u[1] is still > 0.5, so we can force it below 0.5 and

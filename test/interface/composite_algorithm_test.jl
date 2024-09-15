@@ -95,5 +95,6 @@ M = [1.0 0 0
      0 0 0]
 f = ODEFunction(rober, mass_matrix = M)
 prob_mm = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4))
-cb = DiscreteCallback((u,t,integrator)->true, (integrator)->u_modified!(integrator,true))
+cb = DiscreteCallback(
+    (u, t, integrator) -> true, (integrator) -> u_modified!(integrator, true))
 sol = solve(prob_mm, DefaultODEAlgorithm(), callback = cb)

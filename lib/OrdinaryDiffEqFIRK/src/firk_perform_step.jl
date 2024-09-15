@@ -902,7 +902,7 @@ end
         rhs3 = @.. broadcast=false fw3 - β1dt * Mw2-α1dt * Mw3
         rhs4 = @.. broadcast=false fw4 - α2dt * Mw4+β2dt * Mw5
         rhs5 = @.. broadcast=false fw5 - β2dt * Mw4-α2dt * Mw5
-        dw1  = _reshape(LU1 \ _vec(rhs1), axes(u))
+        dw1 = _reshape(LU1 \ _vec(rhs1), axes(u))
         dw23 = _reshape(LU2 \ _vec(@.. broadcast=false rhs2+rhs3 * im), axes(u))
         dw45 = _reshape(LU3 \ _vec(@.. broadcast=false rhs4+rhs5 * im), axes(u))
         integrator.stats.nsolve += 3

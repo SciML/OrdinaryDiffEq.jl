@@ -51,7 +51,8 @@ function get_fsalfirstlast(cache::DefaultCache, u)
     (cache.u, cache.u) # will be overwritten by the cache choice
 end
 
-function ismutablecache(cache::DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType}) where {T1, T2, T3, T4, T5, T6, A, F, uType}
+function ismutablecache(cache::DefaultCache{
+        T1, T2, T3, T4, T5, T6, A, F, uType}) where {T1, T2, T3, T4, T5, T6, A, F, uType}
     T1 <: OrdinaryDiffEqMutableCache
 end
 
