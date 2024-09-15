@@ -1,4 +1,5 @@
-using OrdinaryDiffEqDefault, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF
+using OrdinaryDiffEqDefault, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
+      OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF
 using Test, LinearSolve, LinearAlgebra, SparseArrays, StaticArrays
 
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
