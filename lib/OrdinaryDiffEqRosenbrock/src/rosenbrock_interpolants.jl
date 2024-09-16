@@ -113,7 +113,7 @@ end
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
         cache::Union{Rosenbrock23ConstantCache,
             RosenbrockCache,
-            Rosenbrock32ConstantCache, Rosenbrock32Cache
+            Rosenbrock32ConstantCache, RosenbrockCache
         }, idxs, T::Type{Val{1}}, differential_vars)
     @rosenbrock2332pre1
     @views @.. out=c1diff * k[1][idxs] + c2diff * k[2][idxs]

@@ -44,7 +44,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
 end
 
 function _ode_addsteps!(k, t, uprev, u, dt, f, p,
-        cache::Union{RosenbrockCache, Rosenbrock32Cache},
+        cache::Union{RosenbrockCache},
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
