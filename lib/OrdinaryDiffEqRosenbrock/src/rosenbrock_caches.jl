@@ -59,39 +59,6 @@ struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <: Rose
     order::Int
 end
 
-@cache mutable struct Rosenbrock32Cache{uType, rateType, uNoUnitsType, JType, WType,
-    TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
-    u::uType
-    uprev::uType
-    k₁::rateType
-    k₂::rateType
-    k₃::rateType
-    du1::rateType
-    du2::rateType
-    f₁::rateType
-    fsalfirst::rateType
-    fsallast::rateType
-    dT::rateType
-    J::JType
-    W::WType
-    tmp::rateType
-    atmp::uNoUnitsType
-    weight::uNoUnitsType
-    tab::TabType
-    tf::TFType
-    uf::UFType
-    linsolve_tmp::rateType
-    linsolve::F
-    jac_config::JCType
-    grad_config::GCType
-    reltol::RTolType
-    alg::A
-    algebraic_vars::AV
-    step_limiter!::StepLimiter
-    stage_limiter!::StageLimiter
-end
-
 function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -141,11 +108,10 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    k₁ = zero(rate_prototype)
-    k₂ = zero(rate_prototype)
-    k₃ = zero(rate_prototype)
+    ks = [zero(rate_prototype) for _ in 1:3]
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dense = Vector{rate_prototype}(undef, 0)
     # f₀ = zero(u) fsalfirst
     f₁ = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
@@ -175,9 +141,12 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-    Rosenbrock32Cache(u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
-        tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
-        grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!)
+    RosenbrockCache(u, uprev, dense, du, du1, du2, f₁,
+        ks,
+        fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
+        linsolve_tmp,
+        linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
+        alg.stage_limiter!, 3)
 end
 
 struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
@@ -251,6 +220,7 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    ks = [zero(rate_prototype) for _ in 1:4]
     dense = Vector{rate_prototype}(undef, 0)
     f₁ = zero(rate_prototype)
     ks = [zero(rate_prototype) for _ in 1:4]
@@ -405,58 +375,15 @@ struct Rodas23WConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
     autodiff::AD
 end
 
-@cache mutable struct Rodas23WCache{uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter} <:
-                      RosenbrockMutableCache
-    u::uType
-    uprev::uType
-    dense1::rateType
-    dense2::rateType
-    dense3::rateType
-    du::rateType
-    du1::rateType
-    du2::rateType
-    k1::rateType
-    k2::rateType
-    k3::rateType
-    k4::rateType
-    k5::rateType
-    fsalfirst::rateType
-    fsallast::rateType
-    dT::rateType
-    J::JType
-    W::WType
-    tmp::rateType
-    atmp::uNoUnitsType
-    weight::uNoUnitsType
-    tab::TabType
-    tf::TFType
-    uf::UFType
-    linsolve_tmp::rateType
-    linsolve::F
-    jac_config::JCType
-    grad_config::GCType
-    reltol::RTolType
-    alg::A
-    step_limiter!::StepLimiter
-    stage_limiter!::StageLimiter
-end
-
 function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    dense1 = zero(rate_prototype)
-    dense2 = zero(rate_prototype)
-    dense3 = zero(rate_prototype)
+    dense = [zero(rate_prototype) for _ in 1:3]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
-    k1 = zero(rate_prototype)
-    k2 = zero(rate_prototype)
-    k3 = zero(rate_prototype)
-    k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
+    ks = [zero(rate_prototype) for _ in 1:5]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -480,10 +407,10 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rodas23WCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
-        fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
-        alg.stage_limiter!)
+    RosenbrockCache(u, uprev, dense, du, du1, du2, ks, f₁, fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
+        linsolve_tmp,
+        linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
+        alg.stage_limiter!, 3)
 end
 
 function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -753,7 +680,7 @@ function alg_cache(
 end
 
 function get_fsalfirstlast(
-        cache::Union{RosenbrockCache, Rosenbrock32Cache, RosenbrockCache,
+        cache::Union{RosenbrockCache,
             Rosenbrock4Cache},
         u)
     (cache.fsalfirst, cache.fsallast)
