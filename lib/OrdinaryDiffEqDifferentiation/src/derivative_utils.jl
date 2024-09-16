@@ -540,7 +540,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     if W isa WOperator
         if isnewton(nlsolver)
             # we will call `update_coefficients!` for u/p/t in NLNewton
-            update_coefficients!(W, dtgamma)
+            update_coefficients!(W; dtgamma)
         else
             update_coefficients!(W, uprev, p, t; dtgamma)
         end
