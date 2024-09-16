@@ -830,8 +830,7 @@ function resize_J_W!(cache, integrator, i)
                 integrator.dt,
                 cache.J,
                 integrator.u,
-                cache.W.jacvec;
-                transform = cache.W.transform)
+                cache.W.jacvec)
             cache.J = cache.W.J
         end
     else
