@@ -1,5 +1,5 @@
 function initialize!(integrator, cache::Union{RosenbrockCache,
-    Rosenbrock32Cache})
+    RosenbrockCache})
 integrator.kshortsize = 2
 @unpack k₁, k₂, fsalfirst, fsallast = cache
 resize!(integrator.k, integrator.kshortsize)
