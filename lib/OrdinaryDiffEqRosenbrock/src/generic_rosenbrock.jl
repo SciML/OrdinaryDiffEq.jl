@@ -358,9 +358,9 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
 
             # Time derivative
             tf.u = uprev
-            dT = ForwardDiff.derivative(tf, t)
+            dT = calc_tderivative(integrator, cache)
 
-            W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+            W = calc_W(integrator, cache, dtgamma, repeat_step)
             linsolve_tmp = integrator.fsalfirst + dtd1*dT #calc_rosenbrock_differentiation!
 
             $(iterexprs...)
@@ -476,7 +476,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                                  integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
-            calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+            calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
 
             linsolve = cache.linsolve
 
