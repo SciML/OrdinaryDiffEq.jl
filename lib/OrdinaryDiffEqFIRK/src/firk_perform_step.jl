@@ -1354,7 +1354,7 @@ end
 @muladd function perform_step!(integrator, cache::AdaptiveRadauConstantCache,
     repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack T, TI, γ, α, β, c, #=e,=# num_stages = cache.tab
+    @unpack T, TI, γ, α, β, c, e, num_stages = cache.tab
     @unpack κ, cont = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
@@ -1393,9 +1393,9 @@ end
     if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         for i in 1 : num_stages
-            z[i] = map(zero, u)
-            w[i] = map(zero, u)
-            cache.cont[i] = map(zero, u)
+            z[i] = @.. map(zero, u)
+            w[i] = @.. map(zero, u)
+            cache.cont[i] = @.. map(zero, u)
         end
     else
         c_prime = Vector{typeof(u)}(undef, num_stages) #time stepping
@@ -1416,7 +1416,7 @@ end
         for i in 1:num_stages
             w[i] = @.. zero(u)
             for j in 1:num_stages
-                w[i] =@.. w[i] + TI[i,j] * z[j]
+                w[i] = @.. w[i] + TI[i,j] * z[j]
             end
         end
     end
@@ -1537,7 +1537,7 @@ end
         edt = e ./ dt
         tmp = dot(edt, z)
         mass_matrix != I && (tmp = mass_matrix * tmp)
-        utilde = @.. broadcast=false integrator.fsalfirst+tmp
+        utilde = @.. broadcast=false 1 / γ * dt * integrator.fsalfirst+tmp
         if alg.smooth_est
             utilde = _reshape(LU1 \ _vec(utilde), axes(u))
             integrator.stats.nsolve += 1
@@ -1549,7 +1549,7 @@ end
         integrator.u_modified
             f0 = f(uprev .+ utilde, p, t)
             integrator.stats.nf += 1
-            utilde = @.. broadcast=false f0+tmp
+            utilde = @.. broadcast=false 1 / γ * dt * f0 + tmp
             if alg.smooth_est
                 utilde = _reshape(LU1 \ _vec(utilde), axes(u))
                 integrator.stats.nsolve += 1
@@ -1574,7 +1574,7 @@ end
                 end
             end
             for i in 1 : num_stages
-                cache.cont[i] = derivatives[i, num_stages]
+                cache.cont[i] = @.. derivatives[i, num_stages]
             end
         end
     end
@@ -1589,7 +1589,7 @@ end
 
 @muladd function perform_step!(integrator, cache::AdaptiveRadauCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
-    @unpack T, TI, γ, α, β, c, #=e,=# num_stages = cache.tab
+    @unpack T, TI, γ, α, β, c, e, num_stages = cache.tab
     @unpack κ, cont, derivatives, z, w, c_prime = cache
     @unpack dw1, ubuff, dw2, cubuff, dw = cache
     @unpack ks, k, fw, J, W1, W2 = cache
@@ -1738,9 +1738,9 @@ end
             end
         end
 
-        w[1] = @.. w[1] -  dw1
+        @.. w[1] = w[1] -  dw1
         for i in 2 : num_stages
-            w[i] = @.. w[i] - dw[i - 1]
+            @.. w[i] = w[i] - dw[i - 1]
         end
 
         # transform `w` to `z`
@@ -1784,7 +1784,7 @@ end
     if adaptive
         utilde = w2
         edt = e./dt
-        @.. tmp= dot(edt, z)
+        @.. tmp = dot(edt, z) + 1 / γ * dt * fsalfirst
         mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
         @.. ubuff=integrator.fsalfirst + tmp
 
