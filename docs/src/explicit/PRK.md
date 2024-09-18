@@ -8,7 +8,7 @@ Explicit solvers optimized for a certain number of parallel calls of the system 
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
-first_steps("OrdinaryDiffEqPRK", "KuttaPRK2p5")
+first_steps("OrdinaryDiffEqPRK", "KuttaPRK2p5", fixed_timesteps = true)
 ```
 
 ## Full list of solvers

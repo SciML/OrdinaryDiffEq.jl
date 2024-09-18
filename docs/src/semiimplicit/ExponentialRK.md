@@ -23,7 +23,7 @@ you will need to install some of the other libraries listed in the navigation ba
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
-first_steps("OrdinaryDiffEqExponentialRK", "EPIRK5s3")
+first_steps("OrdinaryDiffEqExponentialRK", "Exprb43", fixed_timesteps = true)
 ```
 
 ## Full list of solvers

@@ -12,7 +12,7 @@ are generally only recommended in situations which are RAM bound, like large-sca
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
-first_steps("OrdinaryDiffEqLowStorageRK", "CarpenterKennedy2N54")
+first_steps("OrdinaryDiffEqLowStorageRK", "CKLLSRK43_2")
 ```
 
 ## Full list of solvers

@@ -24,7 +24,7 @@ which is why these are the parallel DIRK methods.
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
-first_steps("OrdinaryDiffEqPDIRK", "PDIRK44")
+first_steps("OrdinaryDiffEqPDIRK", "PDIRK44", fixed_timesteps = true)
 ```
 
 ## Full list of solvers

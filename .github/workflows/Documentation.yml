@@ -25,7 +25,11 @@ jobs:
               Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
           '
       - name: Install dependencies
-        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        run: julia --project=docs/ -e '
+              using Pkg;
+              Pkg.develop(PackageSpec(path=pwd()));
+              Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
+              Pkg.instantiate()'
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
