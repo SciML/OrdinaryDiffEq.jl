@@ -171,7 +171,7 @@ end
     if !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @views @.. out=Θ1 * y₀[idxs] + Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * k[2][idxs]))
     else
-        @views @.. Θ1 * y₀[idxs]+Θ * (y₁[idxs] +
+        @views @.. out=Θ1 * y₀[idxs]+Θ * (y₁[idxs] +
             Θ1 * (k[1][idxs] + Θ * (k[2][idxs] + Θ * k[3][idxs])))
     end
     out
