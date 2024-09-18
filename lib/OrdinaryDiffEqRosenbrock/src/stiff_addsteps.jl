@@ -43,66 +43,10 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
     nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p,
-        cache::Union{RosenbrockCache},
-        always_calc_begin = false, allow_calc_end = true,
-        force_calc_end = false)
-    if length(k) < 2 || always_calc_begin
-        @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, weight = cache
-        @unpack c₃₂, d = cache.tab
-        uidx = eachindex(uprev)
-
-        # Assignments
-        sizeu = size(u)
-        mass_matrix = f.mass_matrix
-        dtγ = dt * d
-        neginvdtγ = -inv(dtγ)
-        dto2 = dt / 2
-
-        @.. linsolve_tmp = @muladd fsalfirst + dtγ * dT
-
-        ### Jacobian does not need to be re-evaluated after an event
-        ### Since it's unchanged
-        jacobian2W!(W, mass_matrix, dtγ, J)
-
-        linsolve = cache.linsolve
-
-        linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp),
-            reltol = cache.reltol)
-
-        vecu = _vec(linres.u)
-        veck₁ = _vec(k₁)
-        @.. veck₁ = vecu * neginvdtγ
-
-        @.. tmp = uprev + dto2 * k₁
-        f(f₁, tmp, p, t + dto2)
-
-        if mass_matrix === I
-            tmp .= k₁
-        else
-            mul!(_vec(tmp), mass_matrix, _vec(k₁))
-        end
-
-        @.. linsolve_tmp = f₁ - tmp
-
-        linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp),
-            reltol = cache.reltol)
-        vecu = _vec(linres.u)
-        veck₂ = _vec(k₂)
-
-        @.. veck₂ = vecu * neginvdtγ + veck₁
-
-        copyat_or_push!(k, 1, k₁)
-        copyat_or_push!(k, 2, k₂)
-        cache.linsolve = linres.cache
-    end
-    nothing
-end
-
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConstantCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
-    if length(k) < 2 || always_calc_begin
+    if length(k) < size(cache.tab.H, 1) || always_calc_begin
         (; tf, uf) = cache
         (; A, C, gamma, c, d, H) = cache.tab
 
@@ -129,7 +73,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
             J = ForwardDiff.derivative(uf, uprev)
             W = 1 / dtgamma - J
         end
-        
+
         num_stages = size(A,1)
         du = f(u, p, t)
         linsolve_tmp = @.. du + dtd[1] * dT
@@ -161,17 +105,14 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
             ks = Base.setindex(ks, _reshape(W \ _vec(linsolve_tmp), axes(uprev)), stage)
         end
 
-        k1 = zero(ks[1])
-        k2 = zero(ks[1])
-        H = cache.tab.H
-        # Last stage doesn't affect ks
-        for i in 1:(num_stages - 1)
-            k1 = @.. k1 + H[1, i] * ks[i]
-            k2 = @.. k2 + H[2, i] * ks[i]
+        for j in 1:size(H, 1)
+            k = zero(ks[1])
+            # Last stage doesn't affect ks
+            for i in 1:(num_stages - 1)
+                k = @.. k1 + H[j, i] * ks[i]
+            end
+            copyat_or_push!(k, j, k)
         end
-
-        copyat_or_push!(k, 1, k1)
-        copyat_or_push!(k, 2, k2)
     end
     nothing
 end
@@ -187,7 +128,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         sizeu = size(u)
         uidx = eachindex(uprev)
         mass_matrix = f.mass_matrix
-        tmp = ks[end] 
+        tmp = ks[end]
 
         # Precalculations
         dtC = C ./ dt
@@ -231,12 +172,13 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
             @.. $(_vec(ks[stage])) = -linres.u
         end
 
-        copyat_or_push!(k, 1, zero(du))
-        copyat_or_push!(k, 2, zero(du))
-        # Last stage doesn't affect ks
-        for i in 1:(length(ks) - 1)
-            @.. k[1] += H[1, i] * _vec(ks[i])
-            @.. k[2] += H[2, i] * _vec(ks[i])
+
+        for j in 1:size(H, 1)
+            copyat_or_push!(k, j, zero(du))
+            # Last stage doesn't affect ks
+            for i in 1:(length(ks) - 1)
+                @.. k[j] += H[j, i] * _vec(ks[i])
+            end
         end
     end
     nothing

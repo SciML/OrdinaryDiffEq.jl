@@ -1203,7 +1203,7 @@ end
 #### Rodas4 type method
 
 function initialize!(integrator, cache::RosenbrockCombinedConstantCache)
-    integrator.kshortsize = cache.order == 5 ? 3 : 2
+    integrator.kshortsize = size(cache.tab.H, 1)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     # Avoid undefined entries if k is an array of arrays
     for i in 1:integrator.kshortsize
@@ -1307,7 +1307,7 @@ end
 end
 
 function initialize!(integrator, cache::RosenbrockCache)
-    integrator.kshortsize = cache.order == 5 ? 3 : 2
+    integrator.kshortsize = size(cache.tab.H, 1)
     resize!(integrator.k, integrator.kshortsize)
     for i in 1:integrator.kshortsize
         integrator.k[i] = cache.dense[i]
