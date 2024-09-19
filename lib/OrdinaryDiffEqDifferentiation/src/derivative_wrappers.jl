@@ -239,7 +239,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         else
             forwarddiff_color_jacobian!(J, f, x, jac_config)
         end
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, maximum(jac_config.colorvec))
     elseif alg_autodiff(alg) isa AutoFiniteDiff
         isforward = alg_difftype(alg) === Val{:forward}
         if isforward

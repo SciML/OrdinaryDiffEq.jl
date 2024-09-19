@@ -488,8 +488,12 @@ tabtype(::Rodas4) = Rodas4Tableau
 tabtype(::Rodas42) = Rodas42Tableau
 tabtype(::Rodas4P) = Rodas4PTableau
 tabtype(::Rodas4P2) = Rodas4P2Tableau
+tabtype(::Rodas5) = Rodas5Tableau
+tabtype(::Rodas5P) = Rodas5PTableau
+tabtype(::Rodas5Pr) = Rodas5PTableau
+tabtype(::Rodas5Pe) = Rodas5PTableau
 
-function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2},
+function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
         u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -505,15 +509,16 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2},
         alg_autodiff(alg), 4)
 end
 
-function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2},
+function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
         u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
 
+    tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     # Initialize vectors
-    dense = [zero(rate_prototype) for _ in 1:2]
-    ks = [zero(rate_prototype) for _ in 1:6]
+    dense = [zero(rate_prototype) for _ in 1:size(tab.H, 1)]
+    ks = [zero(rate_prototype) for _ in 1:size(tab.A, 1)]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
@@ -534,7 +539,6 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2},
     recursivefill!(atmp, false)
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
-    tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)

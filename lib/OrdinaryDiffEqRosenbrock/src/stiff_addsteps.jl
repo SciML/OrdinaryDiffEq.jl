@@ -102,7 +102,7 @@ end
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConstantCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
-    if length(k) < 2 || always_calc_begin
+    if length(k) < size(cache.tab.H, 1) || always_calc_begin
         (; tf, uf) = cache
         (; A, C, gamma, c, d, H) = cache.tab
 
@@ -129,7 +129,6 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
             J = ForwardDiff.derivative(uf, uprev)
             W = 1 / dtgamma - J
         end
-        
         num_stages = size(A,1)
         du = f(u, p, t)
         linsolve_tmp = @.. du + dtd[1] * dT
@@ -161,17 +160,14 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
             ks = Base.setindex(ks, _reshape(W \ _vec(linsolve_tmp), axes(uprev)), stage)
         end
 
-        k1 = zero(ks[1])
-        k2 = zero(ks[1])
-        H = cache.tab.H
-        # Last stage doesn't affect ks
-        for i in 1:(num_stages - 1)
-            k1 = @.. k1 + H[1, i] * ks[i]
-            k2 = @.. k2 + H[2, i] * ks[i]
+        for j in 1:size(H, 1)
+            kj = zero(ks[1])
+            # Last stage doesn't affect ks
+            for i in 1:(num_stages - 1)
+                kj = @.. kj + H[j, i] * ks[i]
+            end
+            copyat_or_push!(k, j, kj)
         end
-
-        copyat_or_push!(k, 1, k1)
-        copyat_or_push!(k, 2, k2)
     end
     nothing
 end
