@@ -609,7 +609,7 @@ import LinearSolve
 
     prob = prob_ode_linear
 
-    dts = (1 / 2) .^ (6:-1:3)
+    dts = (1 / 2) .^ (5:-1:2)
     sim = test_convergence(dts, prob, Rodas5(), dense_errors = true)
     @test sim.𝒪est[:final]≈5 atol=testTol
     @test sim.𝒪est[:L2]≈5 atol=testTol
@@ -630,7 +630,6 @@ import LinearSolve
 
     prob = prob_ode_linear
 
-    dts = (1 / 2) .^ (5:-1:2)
     sim = test_convergence(dts, prob, Rodas5P(), dense_errors = true)
     #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
     @test sim.𝒪est[:L2]≈5 atol=testTol
