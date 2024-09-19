@@ -1236,6 +1236,7 @@ end
     # Initialize ks
     num_stages = size(A, 1)
     du = f(uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     linsolve_tmp = @.. du + dtd[1] * dT
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     # constant number for type stability make sure this is greater than num_stages
@@ -1387,7 +1388,7 @@ end
 
     if integrator.opts.adaptive
         if (integrator.alg isa Rodas5Pe)
-            @. du = 0.2606326497975715 * ks[1] - 0.005158627295444251 * ks[2] +
+            @.. du = 0.2606326497975715 * ks[1] - 0.005158627295444251 * ks[2] +
                     1.3038988631109731 * ks[3] + 1.235000722062074 * ks[4] +
                     -0.7931985603795049 * ks[5] - 1.005448461135913 * ks[6] -
                     0.18044626132120234 * ks[7] + 0.17051519239113755 * ks[8]
@@ -1414,10 +1415,10 @@ end
              f(du, ks[2], p, t + dt / 2)
              OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
              if mass_matrix === I
-                 du2 = du1 - du
+                 @.. du2 = du1 - du
              else
                  mul!(_vec(du2), mass_matrix, _vec(du1))
-                 du2 = du2 - du
+                 @.. du2 -= du
              end
              EEst = norm(du2) / norm(integrator.opts.abstol .+ integrator.opts.reltol .* ks[2])
              integrator.EEst = max(EEst, integrator.EEst)
