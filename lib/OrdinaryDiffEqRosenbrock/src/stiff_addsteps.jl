@@ -106,12 +106,12 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
         end
 
         for j in 1:size(H, 1)
-            k = zero(ks[1])
+            kj = zero(ks[1])
             # Last stage doesn't affect ks
             for i in 1:(num_stages - 1)
-                k = @.. k1 + H[j, i] * ks[i]
+                kj = @.. kj + H[j, i] * ks[i]
             end
-            copyat_or_push!(k, j, k)
+            copyat_or_push!(k, j, kj)
         end
     end
     nothing
