@@ -3,27 +3,20 @@ issuccess_W(W::Number) = !iszero(W)
 issuccess_W(::Any) = true
 
 function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing,
-        du = nothing, u = nothing, p = nothing, t = nothing,
-        weight = nothing, solverdata = nothing,
         reltol = integrator === nothing ? nothing : integrator.opts.reltol)
-    A !== nothing && (linsolve.A = A)
     b !== nothing && (linsolve.b = b)
     linu !== nothing && (linsolve.u = linu)
 
-    Plprev = linsolve.Pl isa LinearSolve.ComposePreconditioner ? linsolve.Pl.outer :
-             linsolve.Pl
-    Prprev = linsolve.Pr isa LinearSolve.ComposePreconditioner ? linsolve.Pr.outer :
-             linsolve.Pr
-
     _alg = unwrap_alg(integrator, true)
-
-    _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
-        solverdata)
-    if (_Pl !== nothing || _Pr !== nothing)
-        __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pl
-        __Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pr
-        linsolve.Pl = __Pl
-        linsolve.Pr = __Pr
+    if !isnothing(A)
+        if integrator isa DEIntegrator
+            (;u, p, t) = integrator
+            du = hasproperty(integrator, :du) ? integrator.du : nothing
+            p = (du, u, p, t)
+            reinit!(linsolve; A, p)
+        else
+            reinit!(linsolve; A)
+        end
     end
 
     linres = solve!(linsolve; reltol)
@@ -44,16 +37,21 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     return linres
 end
 
-function wrapprecs(_Pl::Nothing, _Pr::Nothing, weight, u)
-    Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
-    Pr = Diagonal(_vec(weight))
-    Pl, Pr
-end
-
+#for backward compat delete soon
 function wrapprecs(_Pl, _Pr, weight, u)
     Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pl
     Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pr
     Pl, Pr
+end
+function wrapprecs(linsolver, W, weight)
+    if hasproperty(linsolver, :precs) && isnothing(linsolver.precs)
+        Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
+        Pr = Diagonal(_vec(weight))
+        precs = Returns((Pl, Pr))
+        return remake(linsolver; precs)
+    else
+        return linsolver
+    end
 end
 
 Base.resize!(p::LinearSolve.LinearCache, i) = p

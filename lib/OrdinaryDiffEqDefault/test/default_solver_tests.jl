@@ -50,7 +50,7 @@ rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23(autodiff = false)))
 sol = solve(prob_rober, reltol = 1e-7, abstol = 1e-7)
 rosensol = solve(
     prob_rober, AutoVern7(Rodas5P(autodiff = false)), reltol = 1e-7, abstol = 1e-7)
-# test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
+# test that default has the same performance as AutoTsit5(Rodas5P()) (which we expect it to use for this).
 @test sol.stats.naccept == rosensol.stats.naccept
 @test sol.stats.nf == rosensol.stats.nf
 @test unique(sol.alg_choice) == [2, 4]
@@ -76,7 +76,7 @@ for n in (100, 600)
         vcat([1.0, 0.0, 0.0], ones(n)), (0.0, 100.0), (0.04, 3e7, 1e4))
     global sol = solve(prob_ex_rober)
     fsol = solve(prob_ex_rober, AutoTsit5(FBDF(; autodiff = false, linsolve)))
-    # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
+    # test that default has the same performance as AutoTsit5(FBDF()) (which we expect it to use for this).
     @test sol.stats.naccept == fsol.stats.naccept
     @test sol.stats.nf == fsol.stats.nf
     @test unique(sol.alg_choice) == [1, stiffalg]

@@ -27,7 +27,7 @@ import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, S
 using DiffEqBase: TimeGradientWrapper,
                   UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
-using SciMLBase: AbstractSciMLOperator
+using SciMLBase: AbstractSciMLOperator, DEIntegrator
 import OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                           DAEAlgorithm,

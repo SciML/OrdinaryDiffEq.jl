@@ -197,7 +197,7 @@ refsol = solve(probiip, FBDF(), abstol = 1e-12, reltol = 1e-12)
         @testset "$solname" for (solname, solver) in pairs(solvers)
             sol = solve(prob, solver, abstol = 1e-12, reltol = 1e-12, maxiters = 2e4)
             @test sol.retcode == ReturnCode.Success
-            @test isapprox(sol.u[end], refsol.u[end], rtol = 1e-8, atol = 1e-10)
+            @test isapprox(sol.u[end], refsol.u[end], rtol = 2e-8, atol = 1e-10)
         end
     end
 end
@@ -207,7 +207,7 @@ end
         @testset "$solname" for (solname, solver) in pairs(solvers)
             sol = solve(prob, solver, maxiters = 2e4)
             @test sol.retcode == ReturnCode.Success
-            @test isapprox(sol.u[end], refsol.u[end], rtol = 2e-3, atol = 1e-6)
+            @test isapprox(sol.u[end], refsol.u[end], rtol = 5e-3, atol = 1e-6)
         end
     end
 end

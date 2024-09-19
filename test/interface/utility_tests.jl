@@ -60,9 +60,7 @@ end
         jac_prototype = MatrixOperator(similar(A);
             update_func! = (J, u, p, t) -> J .= t .*
                                                 A))
-
-    for Alg in [ImplicitEuler, Rosenbrock23, Rodas5]
-        println(Alg)
+    @testset "$Alg" for Alg in [ImplicitEuler, Rosenbrock23, Rodas5]
         sol1 = solve(ODEProblem(fun1, u0, tspan), Alg(); adaptive = false, dt = 0.01)
         sol2 = solve(ODEProblem(fun2, u0, tspan), Alg(); adaptive = false, dt = 0.01)
         @test sol1(1.0)≈sol2(1.0) atol=1e-3

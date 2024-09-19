@@ -35,10 +35,8 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order,
                            unwrap_alg, apply_step!, initialize_tstops, uses_uprev,
                            initialize_saveat,
                            isimplicit, initialize_d_discontinuities, isdtchangeable,
-                           _searchsortedfirst,
-                           _searchsortedlast,
-                           @unpack, ismultistep, DEFAULT_PRECS, isautoswitch,
-                           get_chunksize_int,
+                           _searchsortedfirst, _searchsortedlast,
+                           @unpack, ismultistep, isautoswitch, get_chunksize_int,
                            _unwrap_val, alg_autodiff, concrete_jac, alg_difftype,
                            standardtag,
                            alg_extrapolates, alg_maximum_order, alg_adaptive_order,
@@ -229,4 +227,8 @@ export AutoSwitch, AutoTsit5, AutoDP5,
 
 import OrdinaryDiffEqCore: IController, PIController, PIDController
 export IController, PIController, PIDController
+
+# unused, delete once StocasticDiffEq doesn't use this
+import OrdinaryDiffEqCore: DEFAULT_PRECS
+export DEFAULT_PRECS
 end # module

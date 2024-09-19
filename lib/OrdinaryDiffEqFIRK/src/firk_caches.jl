@@ -107,11 +107,9 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     jac_config = jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
 
-    linprob = LinearProblem(W1, _vec(cubuff); u0 = _vec(dw12))
+    linprob = LinearProblem(W1, _vec(cubuff), (nothing,u,p,t); u0 = _vec(dw12))
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-    #Pr = Diagonal(_vec(weight)))
 
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
@@ -252,16 +250,12 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
-    linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
+    linprob = LinearProblem(W1, _vec(ubuff), (nothing,u,p,t); u0 = _vec(dw1))
     linsolve1 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-    #Pr = Diagonal(_vec(weight)))
-    linprob = LinearProblem(W2, _vec(cubuff); u0 = _vec(dw23))
+    linprob = LinearProblem(W2, _vec(cubuff), (nothing,u,p,t); u0 = _vec(dw23))
     linsolve2 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-    #Pr = Diagonal(_vec(weight)))
 
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
@@ -441,21 +435,15 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
-    linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
+    linprob = LinearProblem(W1, _vec(ubuff), (nothing,u,p,t); u0 = _vec(dw1))
     linsolve1 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-    #Pr = Diagonal(_vec(weight)))
-    linprob = LinearProblem(W2, _vec(cubuff1); u0 = _vec(dw23))
+    linprob = LinearProblem(W2, _vec(cubuff1), (nothing,u,p,t); u0 = _vec(dw23))
     linsolve2 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-    #Pr = Diagonal(_vec(weight)))
-    linprob = LinearProblem(W3, _vec(cubuff2); u0 = _vec(dw45))
+    linprob = LinearProblem(W3, _vec(cubuff2), (nothing,u,p,t); u0 = _vec(dw45))
     linsolve3 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-    #Pr = Diagonal(_vec(weight)))
 
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)

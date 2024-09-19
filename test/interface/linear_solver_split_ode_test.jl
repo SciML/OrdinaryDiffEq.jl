@@ -2,8 +2,6 @@ using Test
 using OrdinaryDiffEq
 using LinearAlgebra, LinearSolve
 
-import OrdinaryDiffEqCore.dolinsolve
-
 n = 8
 dt = 1 / 1000
 u0 = ones(n)

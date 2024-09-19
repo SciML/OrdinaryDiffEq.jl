@@ -4,9 +4,8 @@ using OrdinaryDiffEqStabilizedIRK: maxeig!
 @testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
     Random.seed!(123)
     eigen_est = (integrator) -> integrator.eigen_est = 1.5e2
-    for iip in [true, false], Alg in [IRKC]
+    @testset "iip=$iip, $Alg" for iip in [true, false], Alg in [IRKC]
         alg = Alg()
-        println(typeof(alg))
         A = randn(20, 20)
         B = randn(20, 20)
         test_f1 = !iip ? (u, p, t) -> A * u : (du, u, p, t) -> mul!(du, A, u)

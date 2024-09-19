@@ -104,22 +104,21 @@ for Alg in [
     :Rodas5Pe,
     :Rodas5Pr]
     @eval begin
-        struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
+        struct $Alg{CS, AD, F, FDT, ST, CJ, StepLimiter, StageLimiter} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
             linsolve::F
-            precs::P
             step_limiter!::StepLimiter
             stage_limiter!::StageLimiter
         end
         function $Alg(; chunk_size = Val{0}(), autodiff = Val{true}(),
                 standardtag = Val{true}(), concrete_jac = nothing,
                 diff_type = Val{:forward}, linsolve = nothing,
-                precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
+                step_limiter! = trivial_limiter!,
                 stage_limiter! = trivial_limiter!)
             $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
-                typeof(precs), diff_type, _unwrap_val(standardtag),
+                diff_type, _unwrap_val(standardtag),
                 _unwrap_val(concrete_jac), typeof(step_limiter!),
-                typeof(stage_limiter!)}(linsolve, precs, step_limiter!,
+                typeof(stage_limiter!)}(linsolve, step_limiter!,
                 stage_limiter!)
         end
     end
@@ -147,20 +146,17 @@ end
     references = """
     https://doi.org/10.1016/j.cam.2009.09.017
     """)
-struct RosenbrockW6S4OS{CS, AD, F, P, FDT, ST, CJ} <:
+struct RosenbrockW6S4OS{CS, AD, F, FDT, ST, CJ} <:
        OrdinaryDiffEqRosenbrockAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
-    precs::P
 end
 function RosenbrockW6S4OS(; chunk_size = Val{0}(), autodiff = true,
         standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:central},
-        linsolve = nothing,
-        precs = DEFAULT_PRECS)
+        linsolve = nothing)
     RosenbrockW6S4OS{_unwrap_val(chunk_size),
-        _unwrap_val(autodiff), typeof(linsolve), typeof(precs), diff_type,
-        _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(linsolve,
-        precs)
+        _unwrap_val(autodiff), typeof(linsolve), diff_type,
+        _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(linsolve)
 end
 
 for Alg in [
@@ -185,18 +181,16 @@ for Alg in [
     :GRK4A,
     :Ros4LStab]
     @eval begin
-        struct $Alg{CS, AD, F, P, FDT, ST, CJ} <:
+        struct $Alg{CS, AD, F, FDT, ST, CJ} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
             linsolve::F
-            precs::P
         end
         function $Alg(; chunk_size = Val{0}(), autodiff = Val{true}(),
                 standardtag = Val{true}(), concrete_jac = nothing,
-                diff_type = Val{:forward}, linsolve = nothing, precs = DEFAULT_PRECS)
+                diff_type = Val{:forward}, linsolve = nothing)
             $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
-                typeof(precs), diff_type, _unwrap_val(standardtag),
-                _unwrap_val(concrete_jac)}(linsolve,
-                precs)
+                diff_type, _unwrap_val(standardtag),
+                _unwrap_val(concrete_jac)}(linsolve)
         end
     end
 end
