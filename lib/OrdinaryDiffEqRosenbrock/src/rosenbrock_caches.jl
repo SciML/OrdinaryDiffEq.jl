@@ -8,6 +8,54 @@ function get_fsalfirstlast(cache::GenericRosenbrockMutableCache, u)
     (cache.fsalfirst, cache.fsallast)
 end
 
+mutable struct RosenbrockCache{uType, rateType, uNoUnitsType, JType, WType, TabType,
+    TFType, UFType, F, JCType, GCType, RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
+    u::uType
+    uprev::uType
+    dense::Vector{rateType}
+    du::rateType
+    du1::rateType
+    du2::rateType
+    ks::Vector{rateType}
+    fsalfirst::rateType
+    fsallast::rateType
+    dT::rateType
+    J::JType
+    W::WType
+    tmp::rateType
+    atmp::uNoUnitsType
+    weight::uNoUnitsType
+    tab::TabType
+    tf::TFType
+    uf::UFType
+    linsolve_tmp::rateType
+    linsolve::F
+    jac_config::JCType
+    grad_config::GCType
+    reltol::RTolType
+    alg::A
+    algebraic_vars::AV
+    step_limiter!::StepLimiter
+    stage_limiter!::StageLimiter
+    interp_order::Int
+end
+
+function full_cache(c::RosenbrockCache)
+    return [c.u, c.uprev, c.dense..., c.du, c.du1, c.du2,
+        c.ks..., c.fsalfirst, c.fsallast, c.dT, c.tmp, c.atmp, c.weight, c.linsolve_tmp]
+end
+
+struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
+    tf::TF
+    uf::UF
+    tab::Tab
+    J::JType
+    W::WType
+    linsolve::F
+    autodiff::AD
+    interp_order::Int
+end
+
 @cache mutable struct Rosenbrock23Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
     RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
@@ -72,6 +120,10 @@ end
     algebraic_vars::AV
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
+end
+
+function get_fsalfirstlast(cache::Union{Rosenbrock23Cache, Rosenbrock32Cache}, u)
+    (cache.fsalfirst, cache.fsallast)
 end
 
 function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -222,57 +274,6 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         alg_autodiff(alg))
 end
 
-################################################################################
-
-# Shampine's Low-order Rosenbrocks
-mutable struct RosenbrockCache{uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
-    u::uType
-    uprev::uType
-    dense::Vector{rateType}
-    du::rateType
-    du1::rateType
-    du2::rateType
-    ks::Vector{rateType}
-    fsalfirst::rateType
-    fsallast::rateType
-    dT::rateType
-    J::JType
-    W::WType
-    tmp::rateType
-    atmp::uNoUnitsType
-    weight::uNoUnitsType
-    tab::TabType
-    tf::TFType
-    uf::UFType
-    linsolve_tmp::rateType
-    linsolve::F
-    jac_config::JCType
-    grad_config::GCType
-    reltol::RTolType
-    alg::A
-    algebraic_vars::AV
-    step_limiter!::StepLimiter
-    stage_limiter!::StageLimiter
-    interp_order::Int
-end
-
-function full_cache(c::RosenbrockCache)
-    return [c.u, c.uprev, c.dense..., c.du, c.du1, c.du2,
-        c.ks..., c.fsalfirst, c.fsallast, c.dT, c.tmp, c.atmp, c.weight, c.linsolve_tmp]
-end
-
-struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
-    tf::TF
-    uf::UF
-    tab::Tab
-    J::JType
-    W::WType
-    linsolve::F
-    autodiff::AD
-    interp_order::Int
-end
-
 @ROS2(:cache)
 
 ################################################################################
@@ -296,9 +297,6 @@ jac_cache(c::Rosenbrock4Cache) = (c.J, c.W)
 
 ###############################################################################
 
-### Rodas methods
-tabtype(::Rosenbrock23) = Rosenbrock23Tableau
-tabtype(::Rosenbrock32) = Rosenbrock32Tableau
 tabtype(::Rodas23W) = Rodas23WTableau
 tabtype(::ROS3P) = ROS3PTableau
 tabtype(::Rodas3) = Rodas3Tableau
