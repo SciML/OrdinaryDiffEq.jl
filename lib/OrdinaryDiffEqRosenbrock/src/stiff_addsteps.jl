@@ -1,3 +1,48 @@
+function _ode_addsteps!(k, t, uprev, u, dt, f, p,
+        cache::Union{Rosenbrock23ConstantCache,
+            Rosenbrock32ConstantCache},
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
+    if length(k) < 2 || always_calc_begin
+        @unpack tf, uf, d = cache
+        dtγ = dt * d
+        neginvdtγ = -inv(dtγ)
+        dto2 = dt / 2
+        tf.u = uprev
+        if cache.autodiff isa AutoForwardDiff
+            dT = ForwardDiff.derivative(tf, t)
+        else
+            dT = FiniteDiff.finite_difference_derivative(tf, t, dir = sign(dt))
+        end
+
+        mass_matrix = f.mass_matrix
+        if uprev isa Number
+            J = ForwardDiff.derivative(uf, uprev)
+            W = neginvdtγ .+ J
+        else
+            J = ForwardDiff.jacobian(uf, uprev)
+            if mass_matrix isa UniformScaling
+                W = neginvdtγ * mass_matrix + J
+            else
+                W = @.. neginvdtγ * mass_matrix .+ J
+            end
+        end
+        f₀ = f(uprev, p, t)
+        k₁ = _reshape(W \ _vec((f₀ + dtγ * dT)), axes(uprev)) * neginvdtγ
+        tmp = @.. uprev + dto2 * k₁
+        f₁ = f(tmp, p, t + dto2)
+        if mass_matrix === I
+            k₂ = _reshape(W \ _vec(f₁ - k₁), axes(uprev))
+        else
+            k₂ = _reshape(W \ _vec(f₁ - mass_matrix * k₁), axes(uprev))
+        end
+        k₂ = @.. k₂ * neginvdtγ + k₁
+        copyat_or_push!(k, 1, k₁)
+        copyat_or_push!(k, 2, k₂)
+    end
+    nothing
+end
+
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConstantCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
