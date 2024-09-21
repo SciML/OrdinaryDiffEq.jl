@@ -51,17 +51,17 @@ function ROS3PTableau(T, T2)
     btilde = T[2.113248654051871, 1, 0.4226497308103742]
     c = T2[0, 1, 1]
     d = T[0.7886751345948129, -0.2113248654051871, -1.077350269189626]
-    H = zeros(T, 3, 3)
+    H = zeros(T, 2, 3)
     RodasTableau(A, C, b, btilde, gamma, c, d, H)
 end
 
 function Rodas3Tableau(T, T2)
     gamma = convert(T, 1 // 2)
     A = T[
-        0  0  0
-        0  0  0
-        2  0  0
-        2  0  1
+        0  0  0  0
+        0  0  0  0
+        2  0  0  0
+        2  0  1  0
     ]
     C = T[
         0  0  0
@@ -71,31 +71,32 @@ function Rodas3Tableau(T, T2)
     ]
     b = T[2, 0, 1, 1]
     btilde = T[0, 0, 0, 1]
-    c = T[0, 1, 1]
+    c = T[0, 0, 1, 1]
     d = T[1 // 2, 3 // 2, 0, 0]
-    H = zeros(T, 3, 3)
+    H = zeros(T, 2, 4)
     RodasTableau(A, C, b, btilde, gamma, c, d, H)
 end
 
 function Rodas3PTableau(T, T2)
     gamma = convert(T, 1 // 3)
     A = T[
-        0        0      0        0
-        4 // 3   0      0        0
-        4 // 3   0      0        0
-        2.90625  3.375  0.40625  0
+        0        0      0        0 0
+        4 // 3   0      0        0 0
+        4 // 3   0      0        0 0
+        2.90625  3.375  0.40625  0 0
+        2.90625  3.375  0.40625  0 0
     ]
     C = T[
         0        0        0        0
-        4.0      0        0        0
+       -4.0      0        0        0
         8.25     6.75     0        0
-        1.21875  5.0625   1.96875  0
-        4.03125  15.1875  4.03125  6.0
+        1.21875 -5.0625  -1.96875  0
+        4.03125 -15.1875 -4.03125  6.0
     ]
-    b = A[end, :]
-    btilde = T[0, 0, 0, 1]
-    c = T2[0, 4 // 9, 1]
-    d =  T[1 // 3, 1 // 9, 1]
+    b = T[2.90625,  3.375,  0.40625, 1, 0]
+    btilde = T[0, 0, 0, 1, -1]
+    c = T2[0, 4 // 9, 4 // 9, 1, 1]
+    d =  T[1 // 3, -1 // 9, 1, 0, 0]
     H = T[
         1.78125  6.75     0.15625  6  1
         4.21875  15.1875  3.09375  9  0
@@ -104,6 +105,10 @@ function Rodas3PTableau(T, T2)
     RodasTableau(A, C, b, btilde, gamma, c, d, H)#, h2_2)
 end
 
+function Rodas23WTableau(T, T2)
+    tab = Rodas3PTableau(T, T2)
+    RodasTableau(tab.A, tab.C, tab.btilde, tab.b, tab.gamma, tab.c, tab.d, tab.H)#, h2_2)
+end
 @ROS2(:tableau)
 
 @ROS23(:tableau)

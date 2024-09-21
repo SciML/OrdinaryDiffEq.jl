@@ -495,7 +495,7 @@ end
     end
 
     if integrator.opts.adaptive
-        utilde = uprev
+        utilde = zero(u)
         for i in 1:num_stages
             utilde = @.. utilde + btilde[i] * ks[i]
         end
@@ -592,14 +592,10 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         du1 .= 0
-        if mass_matrix === I
-            for i in 1:(stage - 1)
-                @.. du1 += dtC[stage, i] * ks[i]
-            end
-        else
-            for i in 1:(stage - 1)
-                @.. du1 += dtC[stage, i] * ks[i]
-            end
+        for i in 1:(stage - 1)
+            @.. du1 += dtC[stage, i] * ks[i]
+        end
+        if mass_matrix !== I
             mul!(_vec(du2), mass_matrix, _vec(du1))
             du1 .= du2
         end
@@ -617,7 +613,7 @@ end
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
-        utilde .= 0
+        @.. utilde = 0 * u
         for i in 1:num_stages
             @.. utilde += btilde[i] * ks[i]
         end

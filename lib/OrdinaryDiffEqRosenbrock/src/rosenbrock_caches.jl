@@ -300,6 +300,7 @@ jac_cache(c::Rosenbrock4Cache) = (c.J, c.W)
 tabtype(::Rodas23W) = Rodas23WTableau
 tabtype(::ROS3P) = ROS3PTableau
 tabtype(::Rodas3) = Rodas3Tableau
+tabtype(::Rodas3P) = Rodas3PTableau
 tabtype(::Rodas4) = Rodas4Tableau
 tabtype(::Rodas42) = Rodas42Tableau
 tabtype(::Rodas4P) = Rodas4PTableau
@@ -310,7 +311,7 @@ tabtype(::Rodas5Pr) = Rodas5PTableau
 tabtype(::Rodas5Pe) = Rodas5PTableau
 
 function alg_cache(
-        alg::Union{ROS3P, Rodas3, Rodas23W, Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
+        alg::Union{ROS3P, Rodas3, Rodas3P, Rodas23W, Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
         u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -353,7 +354,7 @@ function alg_cache(
 end
 
 function alg_cache(
-        alg::Union{ROS3P, Rodas3, Rodas23W, Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
+        alg::Union{ROS3P, Rodas3, Rodas3P, Rodas23W, Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
         u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
