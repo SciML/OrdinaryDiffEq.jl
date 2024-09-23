@@ -21,7 +21,7 @@ vern_sol = solve(prob, Vern7())
 end
 
 @testset "Rosenbrock Solution Stripping" begin
-    @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).f)
+    @test SciMLBase.strip_solution(rosenbrock_sol).prob isa NamedTuple
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol, strip_alg = true).alg)
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.f)
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.cache.jac_config)
@@ -31,7 +31,7 @@ end
 end
 
 @testset "TRBDF Solution Stripping" begin
-    @test isnothing(SciMLBase.strip_solution(TRBDF_sol).f)
+    @test SciMLBase.strip_solution(TRBDF_sol).prob isa NamedTuple
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol, strip_alg = true).alg)
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).interp.f)
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).interp.cache.nlsolver)
