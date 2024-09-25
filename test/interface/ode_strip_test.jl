@@ -14,6 +14,7 @@ prob = ODEProblem(lorenz!, u0, tspan)
 rosenbrock_sol = solve(prob, Rosenbrock23())
 TRBDF_sol = solve(prob, TRBDF2())
 vern_sol = solve(prob, Vern7())
+
 @testset "Interpolation Stripping" begin
     @test isnothing(SciMLBase.strip_interpolation(rosenbrock_sol.interp).f)
     @test isnothing(SciMLBase.strip_interpolation(rosenbrock_sol.interp).cache.jac_config)
@@ -21,8 +22,8 @@ vern_sol = solve(prob, Vern7())
 end
 
 @testset "Rosenbrock Solution Stripping" begin
-    @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).prob)
-    @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).alg)
+    @test SciMLBase.strip_solution(rosenbrock_sol).prob isa NamedTuple
+    @test isnothing(SciMLBase.strip_solution(rosenbrock_sol, strip_alg = true).alg)
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.f)
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.cache.jac_config)
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol).interp.cache.grad_config)
@@ -31,8 +32,8 @@ end
 end
 
 @testset "TRBDF Solution Stripping" begin
-    @test isnothing(SciMLBase.strip_solution(TRBDF_sol).prob)
-    @test isnothing(SciMLBase.strip_solution(TRBDF_sol).alg)
+    @test SciMLBase.strip_solution(TRBDF_sol).prob isa NamedTuple
+    @test isnothing(SciMLBase.strip_solution(TRBDF_sol, strip_alg = true).alg)
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).interp.f)
     @test isnothing(SciMLBase.strip_solution(TRBDF_sol).interp.cache.nlsolver)
 end
