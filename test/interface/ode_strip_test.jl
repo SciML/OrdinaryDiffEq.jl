@@ -14,6 +14,7 @@ prob = ODEProblem(lorenz!, u0, tspan)
 rosenbrock_sol = solve(prob, Rosenbrock23())
 TRBDF_sol = solve(prob, TRBDF2())
 vern_sol = solve(prob, Vern7())
+
 @testset "Interpolation Stripping" begin
     @test isnothing(SciMLBase.strip_interpolation(rosenbrock_sol.interp).f)
     @test isnothing(SciMLBase.strip_interpolation(rosenbrock_sol.interp).cache.jac_config)
