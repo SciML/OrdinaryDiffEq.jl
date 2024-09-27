@@ -498,12 +498,12 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
-    num_stages = alg.min_num_stages
-    max = alg.max_num_stages
+    num_stages = alg.min_stages
+    max = alg.max_stages
     tabs = [BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits))]
     
     i = 9
-    while i <= alg.max_num_stages
+    while i <= alg.max_stages
         push!(tabs, adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), i))
         i += 2
     end
@@ -570,8 +570,8 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
 
-    min = alg.min_num_stages
-    max = alg.max_num_stages
+    min = alg.min_stages
+    max = alg.max_stages
 
     num_stages = min
 
