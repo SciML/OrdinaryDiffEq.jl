@@ -23,57 +23,7 @@ for i in [3, 5, 7, 9], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
     @test sim21.𝒪est[:final]≈ (2 * i - 1) atol=testTol
 end
 
-solve(prob_ode_linear, AdaptiveRadau(min_num_stages = 3, max_num_stages = 3))
-solve(prob_ode_linear, RadauIIA5())
-
-using OrdinaryDiffEq, StaticArrays, LinearSolve, ParameterizedFunctions
-
-hires = @ode_def Hires begin
-    dy1 = -1.71 * y1 + 0.43 * y2 + 8.32 * y3 + 0.0007
-    dy2 = 1.71 * y1 - 8.75 * y2
-    dy3 = -10.03 * y3 + 0.43 * y4 + 0.035 * y5
-    dy4 = 8.32 * y2 + 1.71 * y3 - 1.12 * y4
-    dy5 = -1.745 * y5 + 0.43 * y6 + 0.43 * y7
-    dy6 = -280.0 * y6 * y8 + 0.69 * y4 + 1.71 * y5 - 0.43 * y6 + 0.69 * y7
-    dy7 = 280.0 * y6 * y8 - 1.81 * y7
-    dy8 = -280.0 * y6 * y8 + 1.81 * y7
-end
-
-u0 = SA[1, 0, 0, 0, 0, 0, 0, 0.0057]
-probiip = ODEProblem{true}(hires, Vector(u0), (0.0, 10.0))
-proboop = ODEProblem{false}(hires, Vector(u0), (0.0, 10.0))
-proboop = ODEProblem{false}(hires, u0, (0.0, 10.0))
-
-#=@btime =# sol = solve(proboop, AdaptiveRadau(min_num_stages = 3, max_num_stages = 7), reltol = 1e-1)
-#=@btime =# sol = solve(proboop, RadauIIA5())
-
-function rober!(du, u, p, t)
-    y₁, y₂, y₃ = u
-    k₁, k₂, k₃ = p
-    du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
-    du[2] = k₁ * y₁ - k₂ * y₂^2 - k₃ * y₂ * y₃
-    du[3] = k₂ * y₂^2
-    nothing
-end
-prob = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1e5), [0.04, 3e7, 1e4])
-sol = solve(prob, AdaptiveRadau(min_num_stages = 3, max_num_stages =7))
-sol2 = solve(prob, RadauIIA5())
-
-using BenchmarkTools
-#oop
-@btime solve(prob_ode_linear, RadauIIA5(), adaptive = false, dt = 1e-2)
-@btime solve(prob_ode_linear, AdaptiveRadau(num_stages = 3), adaptive = false, dt = 1e-2)
-
-#ip
-@btime solve(prob_ode_2Dlinear, RadauIIA5(), adaptive = false, dt = 1e-2)
-@btime solve(prob_ode_2Dlinear, AdaptiveRadau(num_stages = 3), adaptive = false, dt = 1e-2)
-
-VSCodeServer.@profview solve(prob_ode_linear, AdaptiveRadau(num_stages = 3), adaptive = false, dt = 1e-5)
-VSCodeServer.@profview solve(prob_ode_linear, RadauIIA5(), adaptive = false, dt = 1e-5)
-
-
-solve(prob_ode_linear, AdaptiveRadau(num_stages = 3), adaptive = false, dt = 1e-2)
-
+solve(prob_ode_2Dlinear, AdaptiveRadau())
 
 # test adaptivity
 for iip in (true, false)

@@ -490,7 +490,6 @@ mutable struct AdaptiveRadauConstantCache{F, Tab, Tol, Dt, U, JType} <:
     step::Int
     θ::BigFloat
     θprev::BigFloat
-    orders::Vector{Int}
 end
 
 function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -508,19 +507,6 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         push!(tabs, adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), i))
         i += 2
     end
-    #=
-    if (num_stages == 3)
-        tab = BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits))
-    elseif (num_stages == 5)
-        tab = BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits))
-    elseif (num_stages == 7)
-        tab = BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits))
-    elseif iseven(num_stages) || num_stages <3
-        error("num_stages must be odd and 3 or greater")
-    else
-        tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), min_num_stages)
-    end
-    =#
     cont = Vector{typeof(u)}(undef, max)
     for i in 1: max
         cont[i] = zero(u)
@@ -528,9 +514,8 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
-    orders = [0,0,0,0]
     AdaptiveRadauConstantCache(uf, tabs, κ, one(uToltype), 10000, cont, dt, dt,
-        Convergence, J, num_stages, 1, big"1.0", big"1.0", orders)
+        Convergence, J, num_stages, 1, big"1.0", big"1.0")
 end
 
 mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, JType, W1Type, W2Type,
@@ -576,7 +561,6 @@ mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, 
     step::Int
     θ::BigFloat
     θprev::BigFloat
-    orders::Vector{Int}
 end
 
 function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -597,19 +581,6 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         push!(tabs, adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), i))
         i += 2
     end
-    #=
-    if (num_stages == 3)
-        tab = BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits))
-    elseif (num_stages == 5)
-        tab = BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits))
-    elseif (num_stages == 7)
-        tab = BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits))
-    elseif iseven(num_stages) || num_stages < 3
-        error("num_stages must be odd and 3 or greater")
-    else
-        tab = adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
-    end
-    =#
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 
@@ -682,6 +653,6 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         uf, tabs, κ, one(uToltype), 10000, tmp,
         atmp, jac_config,
         linsolve1, linsolve2, rtol, atol, dt, dt,
-        Convergence, alg.step_limiter!, num_stages, 1, big"1.0", big"1.0", [0,0,0,0])
+        Convergence, alg.step_limiter!, num_stages, 1, big"1.0", big"1.0")
 end
 

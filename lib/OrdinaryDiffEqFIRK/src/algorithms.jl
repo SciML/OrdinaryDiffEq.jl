@@ -169,7 +169,7 @@ end
 
 function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = Val{true}(),
      standardtag = Val{true}(), concrete_jac = nothing,
-     diff_type = Val{:forward}, min_num_stages = 3, max_num_stages = 3, 
+     diff_type = Val{:forward}, min_num_stages = 3, max_num_stages = 7, 
      linsolve = nothing, precs = DEFAULT_PRECS,
      extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
      new_W_γdt_cutoff = 1 // 5,
