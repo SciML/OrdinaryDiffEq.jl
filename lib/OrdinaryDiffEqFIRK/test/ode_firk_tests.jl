@@ -23,8 +23,6 @@ for i in [3, 5, 7, 9], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
     @test sim21.𝒪est[:final]≈ (2 * i - 1) atol=testTol
 end
 
-solve(prob_ode_2Dlinear, AdaptiveRadau())
-
 # test adaptivity
 for iip in (true, false)
     if iip
