@@ -488,7 +488,6 @@ end
         ks = Base.setindex(ks, _reshape(W \ -_vec(linsolve_tmp), axes(uprev)), stage)
         integrator.stats.nsolve += 1
     end
-    #@show ks
     u = uprev
     for i in 1:num_stages
         u = @.. u + b[i] * ks[i]

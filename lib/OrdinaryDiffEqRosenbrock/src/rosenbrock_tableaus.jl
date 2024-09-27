@@ -33,22 +33,21 @@ end
 
 
 function ROS3PTableau(T, T2)
-    gamma = convert(T, 1 / 2 + sqrt(3) / 6)
-    igamma = inv(gamma)
+    sqrt3 = convert(T, -sqrt(3))
+    gamma = convert(T, 0.5 + sqrt3 / 6)
+    igamma = 3 - sqrt3
     A = T[
         0      0 0
         igamma 0 0
         igamma 0 0
     ]
-    tmp = -igamma * (convert(T, 2) - convert(T, 1 / 2) * igamma)
     C = T[
-        0                    0    0
-        -igamma^2            0    0
-        -igamma * (1 - tmp)  tmp  0
+        0          0     0
+        -igamma^2  0     0
+        2*sqrt3   -sqrt3 0
     ]
-    tmp = igamma * (convert(T, 2 // 3) - convert(T, 1 // 6) * igamma)
-    b = T[igamma * (1 + tmp), tmp, igamma / 3]
-    btilde = T[2.113248654051871, 1, 0.4226497308103742]
+    b = T[2, inv(sqrt3), igamma / 3]
+    btilde = b .- T[2.113248654051871, 1, 0.4226497308103742]
     c = T2[0, 1, 1]
     d = T[0.7886751345948129, -0.2113248654051871, -1.077350269189626]
     H = zeros(T, 2, 3)
@@ -80,20 +79,20 @@ end
 function Rodas3PTableau(T, T2)
     gamma = convert(T, 1 // 3)
     A = T[
-        0        0      0        0 0
-        4 // 3   0      0        0 0
-        4 // 3   0      0        0 0
-        2.90625  3.375  0.40625  0 0
-        2.90625  3.375  0.40625  0 0
+        0       0     0       0 0
+        4 // 3  0     0       0 0
+        0       0     0       0 0
+        2.90625 3.375 0.40625 0 0
+        2.90625 3.375 0.40625 0 0
     ]
     C = T[
-        0        0        0        0
-       -4.0      0        0        0
-        8.25     6.75     0        0
-        1.21875 -5.0625  -1.96875  0
-        4.03125 -15.1875 -4.03125  6.0
+        0        0        0       0
+       -4        0        0       0
+        8.25     6.75     0       0
+        1.21875 -5.0625  -1.96875 0
+        4.03125 -15.1875 -4.03125 6
     ]
-    b = T[2.90625,  3.375,  0.40625, 1, 0]
+    b = T[2.90625, 3.375, 0.40625, 0, 1]
     btilde = T[0, 0, 0, 1, -1]
     c = T2[0, 4 // 9, 4 // 9, 1, 1]
     d =  T[1 // 3, -1 // 9, 1, 0, 0]
@@ -107,7 +106,9 @@ end
 
 function Rodas23WTableau(T, T2)
     tab = Rodas3PTableau(T, T2)
-    RodasTableau(tab.A, tab.C, tab.btilde, tab.b, tab.gamma, tab.c, tab.d, tab.H)#, h2_2)
+    b = T[2.90625, 3.375, 0.40625, 1, 0]
+    btilde = T[0, 0, 0, 1, -1]
+    RodasTableau(tab.A, tab.C, b, btilde, tab.gamma, tab.c, tab.d, tab.H)#, h2_2)
 end
 @ROS2(:tableau)
 
