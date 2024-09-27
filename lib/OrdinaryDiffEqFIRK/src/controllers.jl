@@ -51,7 +51,7 @@ end
 function step_accept_controller!(integrator, controller::PredictiveController, alg::AdaptiveRadau, q)
     @unpack qmin, qmax, gamma, qsteady_min, qsteady_max = integrator.opts
     @unpack cache = integrator
-    @unpack num_stages, step, θ, θprev, orders = cache
+    @unpack num_stages, step, θ, θprev = cache
  
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -71,11 +71,12 @@ function step_accept_controller!(integrator, controller::PredictiveController, a
     integrator.erracc = max(1e-2, EEst)
     
     cache.step = step + 1
+    @show cache.num_stages
     if (step > 10)
         Ψ = θ * θprev
-        if (Ψ <= 0.002 && num_stages < alg.max_num_stages)
+        if (Ψ <= 0.001 && num_stages < alg.max_num_stages)
             cache.num_stages += 2
-        elseif ((Ψ >= 0.8 || cache.status == VerySlowConvergence || cache.status == Divergence) && num_stages > alg.min_num_stages)
+        elseif ((Ψ >= 0.1 || cache.status == VerySlowConvergence || cache.status == Divergence) && num_stages > alg.min_num_stages)
             cache.num_stages -= 2 
             cache.step = 1
         end
