@@ -14,7 +14,7 @@ const FIRST_AUTODIFF_TGRAD_MESSAGE = """
 
                                Note 1: this failure occurred inside of the time gradient function. These
                                time gradients are only required by Rosenbrock methods (`Rosenbrock23`,
-                               `Rodas4`, etc.) are are done by automatic differentiation w.r.t. the
+                               `Rodas4`, etc.) and are done by automatic differentiation w.r.t. the
                                argument `t`. If your function is compatible with automatic differentiation
                                w.r.t. `u`, i.e. for Jacobian generation, another way to work around this
                                issue is to switch to a non-Rosenbrock method.
