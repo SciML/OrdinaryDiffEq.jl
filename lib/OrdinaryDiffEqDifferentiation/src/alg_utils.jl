@@ -19,7 +19,8 @@ function alg_autodiff(alg)
     if autodiff == Val(false)
         return AutoFiniteDiff()
     elseif autodiff == Val(true)
-        return AutoForwardDiff()
+        tag = ForwardDiff.Tag(OrdinaryDiffEqTag(), Float64) # FIXME
+        return AutoForwardDiff{1, typeof(tag)}(tag)
     else
         return _unwrap_val(autodiff)
     end

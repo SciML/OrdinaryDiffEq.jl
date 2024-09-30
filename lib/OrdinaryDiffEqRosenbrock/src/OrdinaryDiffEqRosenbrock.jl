@@ -257,6 +257,7 @@ PrecompileTools.@compile_workload begin
                 Float64[]))
     end
 
+    prob_list = []
     for prob in prob_list, solver in solver_list
         solve(prob, solver)(5.0)
     end

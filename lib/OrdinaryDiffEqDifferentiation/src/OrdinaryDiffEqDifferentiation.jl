@@ -48,6 +48,8 @@ import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_aut
 
 using FastBroadcast: @..
 
+import DifferentiationInterface as DI
+
 @static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
     import DiffEqBase: OrdinaryDiffEqTag
 else
