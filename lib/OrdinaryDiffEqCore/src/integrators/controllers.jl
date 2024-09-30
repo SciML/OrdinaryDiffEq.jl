@@ -5,6 +5,11 @@ using OrdinaryDiffEqCore
     stepsize_controller!(integrator, integrator.opts.controller, alg)
 end
 
+# checks whether the controller should accept a step based on the error estimate
+@inline function accept_step_controller(integrator, controller::AbstractController)
+    return integrator.EEst <= 1
+end
+
 @inline function step_accept_controller!(integrator, alg, q)
     step_accept_controller!(integrator, integrator.opts.controller, alg, q)
 end
@@ -22,6 +27,8 @@ end
 reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
 
 DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
+
+@inline next_time_controller(::ODEIntegrator, ::AbstractController, ttmp, dt) = ttmp
 
 # Standard integral (I) step size controller
 """
@@ -58,6 +65,30 @@ struct IController <: AbstractController
 end
 
 struct DummyController <: AbstractController
+end
+
+
+"""
+    NonAdaptiveController()
+This Controller exists to match the interface when one does not want to use a controller,
+basically if you want to keep a fixed time step.
+"""
+struct NonAdaptiveController <: AbstractController
+end
+
+@inline function stepsize_controller!(integrator, ::NonAdaptiveController, alg)
+    nothing
+end
+
+@inline function accept_step_controller(integrator, ::NonAdaptiveController)
+    return true
+end
+
+function step_accept_controller!(integrator, ::NonAdaptiveController, alg, q)
+    integrator.dt
+end
+
+function step_reject_controller!(integrator, ::NonAdaptiveController, alg)
 end
 
 @inline function stepsize_controller!(integrator, controller::IController, alg)
@@ -311,11 +342,6 @@ end
     return dt_factor
 end
 
-# checks whether the controller should accept a step based on the error estimate
-@inline function accept_step_controller(integrator, controller::AbstractController)
-    return integrator.EEst <= 1
-end
-
 @inline function accept_step_controller(integrator, controller::PIDController)
     return integrator.qold >= controller.accept_safety
 end
@@ -400,3 +426,85 @@ function post_newton_controller!(integrator, alg)
     integrator.dt = integrator.dt / integrator.opts.failfactor
     nothing
 end
+
+# Relaxation step size controller
+"""
+    RelaxationController(controller, T)
+
+Controller to perform a relaxation on a step of a Runge-Kuttas method.
+
+## References
+ - Sebastian Bleecke, Hendrik Ranocha (2023)
+    Step size control for explicit relaxation Runge-Kutta methods preserving invariants
+    [DOI: 10.1145/641876.641877](https://doi.org/10.1145/641876.641877)
+"""
+mutable struct RelaxationController{CON, T} <: AbstractController
+    controller::CON
+    gamma::T
+    function RelaxationController(controller::AbstractController, T=Float64)
+        new{typeof(controller), T}(controller, one(T))
+    end
+end
+
+mutable struct Relaxation{INV, T}
+    invariant::INV
+    gamma_min::T
+    gamma_max::T
+    function Relaxation(invariant, gamma_min = 4/5, gamma_max = 6/5)
+        new{typeof(invariant), typeof(gamma_min)}(invariant, gamma_min, gamma_max)
+    end
+end
+
+
+function _relaxation_nlsolve(gamma, p)
+    u, uprev, invariant = p
+    invariant(@.. gamma * u + (1-gamma) * uprev) .- invariant(uprev)
+end
+
+@muladd function (r::Relaxation)(integrator)
+    @unpack t, dt, uprev, u = integrator
+    @unpack invariant, gamma_min, gamma_max = integrator.opts.relaxation
+    gamma = one(t)
+    p = (u, uprev, invariant)
+    if _relaxation_nlsolve(gamma_min, p) * _relaxation_nlsolve(gamma_max, p) ≤ 0
+        gamma = solve(IntervalNonlinearProblem{false}(_relaxation_nlsolve, (gamma_min, gamma_max), p),
+            DiffEqBase.InternalITP()).left
+    end
+    gamma
+end
+
+function Base.show(io::IO, controller::RelaxationController)
+    print(io, controller.controller)
+    print(io, "\n Relaxation parameters = ", controller.gamma)
+end
+
+@inline function next_time_controller(integrator::ODEIntegrator, controller::RelaxationController, ttmp, dt)
+    gamma = integrator.opts.relaxation(integrator)
+    integrator.dt *= oftype(dt, gamma)
+    vdt = integrator.dt
+    modify_dt_for_tstops!(integrator)
+    if integrator.dt != vdt
+        gamma = integrator.dt/dt
+    end
+    @. integrator.u =  integrator.uprev + gamma*(integrator.u .- integrator.uprev)
+    @. integrator.fsallast = integrator.fsalfirst + gamma*(integrator.fsallast - integrator.fsalfirst)
+    controller.gamma = gamma
+    ttmp + integrator.dt - dt
+end
+
+@inline function stepsize_controller!(integrator, controller::RelaxationController, alg)
+    stepsize_controller!(integrator, controller.controller, alg)
+end
+
+@inline function accept_step_controller(integrator, controller::RelaxationController)
+    accept_step_controller(integrator, controller.controller)
+end
+
+function step_accept_controller!(integrator, controller::RelaxationController, alg, dt_factor)
+    step_accept_controller!(integrator, controller.controller, alg, dt_factor)
+end
+
+function step_reject_controller!(integrator, controller::RelaxationController, alg)
+    integrator.dt = integrator.dt * integrator.qold / controller.gamma
+end
+

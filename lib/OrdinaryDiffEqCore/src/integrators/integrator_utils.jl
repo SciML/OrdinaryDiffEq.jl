@@ -238,6 +238,7 @@ function _loopfooter!(integrator)
                 q)) *
                     oneunit(integrator.dt)
             integrator.tprev = integrator.t
+            ttmp = next_time_controller(integrator, integrator.opts.controller, ttmp, integrator.dt)
             integrator.t = fixed_t_for_floatingpoint_error!(integrator, ttmp)
             calc_dt_propose!(integrator, dtnew)
             handle_callbacks!(integrator)
