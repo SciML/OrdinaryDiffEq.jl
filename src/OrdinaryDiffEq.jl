@@ -206,6 +206,9 @@ export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, 
        EPIRK4s3B,
        EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2, ETD2, Exprb32, Exprb43
 
+using OrdinaryDiffEqNewmark
+export NewmarkBeta
+
 import PrecompileTools
 import Preferences
 import DocStringExtensions
