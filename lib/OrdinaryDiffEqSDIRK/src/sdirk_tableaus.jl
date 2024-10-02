@@ -2,11 +2,8 @@ struct TRBDF2Tableau{T, T2}
     γ::T2
     d::T
     ω::T
-    btilde1::T
-    btilde2::T
-    btilde3::T
-    α1::T
-    α2::T
+    btilde::Vector{T}
+    α::Vector{T}
 end
 
 #=
@@ -36,12 +33,9 @@ function TRBDF2Tableau(T, T2)
     γ = convert(T2, 2 - sqrt(2))
     d = convert(T, 1 - sqrt(2) / 2)
     ω = convert(T, sqrt(2) / 4)
-    btilde1 = convert(T, (1 - sqrt(2)) / 3)
-    btilde2 = convert(T, 1 // 3)
-    btilde3 = convert(T, (sqrt(2) - 2) / 3)
-    α1 = convert(T, -sqrt(2) / 2)
-    α2 = convert(T, 1 + sqrt(2) / 2)
-    TRBDF2Tableau(γ, d, ω, btilde1, btilde2, btilde3, α1, α2)
+    btilde = convert.(T, [(1 - sqrt(2)) / 3, 1 // 3, (sqrt(2) - 2) / 3])
+    α = convert.(T, [-sqrt(2) / 2, 1 + sqrt(2) / 2])
+    TRBDF2Tableau(γ, d, ω, btilde, α)
 end
 
 struct ESDIRK4Tableau{T, T2}
