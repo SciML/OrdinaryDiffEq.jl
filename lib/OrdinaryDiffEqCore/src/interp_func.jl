@@ -90,6 +90,9 @@ function strip_cache(cache)
     if hasfield(typeof(cache), :uf)
         SciMLBase.@reset cache.uf = nothing
     end
+    if hasfield(typeof(cache),:args)
+        SciMLBase.@reset cache.args = nothing
+    end
     
     cache
 end
