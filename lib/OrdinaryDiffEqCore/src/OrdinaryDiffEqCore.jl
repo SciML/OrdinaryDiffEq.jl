@@ -73,6 +73,8 @@ import ADTypes: AutoFiniteDiff, AutoForwardDiff
 
 using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
+using SymbolicIndexingInterface: parameter_values, is_variable, variable_index, symbolic_type, NotSymbolic
+
 const CompiledFloats = Union{Float32, Float64}
 import Preferences
 
