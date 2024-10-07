@@ -265,6 +265,30 @@ function DiffEqBase.__init(
 
     ### Algorithm-specific defaults ###
     if save_idxs === nothing
+        saved_subsystem = nothing
+    else
+        if !(save_idxs isa AbstractArray) || symbolic_type(save_idxs) != NotSymbolic()
+            _save_idxs = [save_idxs]
+        else
+            _save_idxs = save_idxs
+        end
+        saved_subsystem = SciMLBase.SavedSubsystem(prob, parameter_values(prob), _save_idxs)
+        if saved_subsystem !== nothing
+            _save_idxs = SciMLBase.get_saved_state_idxs(saved_subsystem)
+            if isempty(_save_idxs)
+                # no states to save
+                save_idxs = Int[]
+            elseif !(save_idxs isa AbstractArray) || symbolic_type(save_idxs) != NotSymbolic()
+                # only a single state to save, and save it as a scalar timeseries instead of
+                # single-element array
+                save_idxs = only(_save_idxs)
+            else
+                save_idxs = _save_idxs
+            end
+        end
+    end
+
+    if save_idxs === nothing
         ksEltype = Vector{rateType}
     else
         ks_prototype = rate_prototype[save_idxs]
@@ -427,7 +451,7 @@ function DiffEqBase.__init(
         f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
     sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
         dense = dense, k = ks, interp = id, alg_choice = alg_choice,
-        calculate_error = false, stats = stats)
+        calculate_error = false, stats = stats, saved_subsystem = saved_subsystem)
 
     if recompile_flag == true
         FType = typeof(f)
