@@ -229,6 +229,11 @@ function initialize!(integrator, cache::DFBDFConstantCache)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
+
+    u_modified = integrator.u_modified
+    integrator.u_modified = true
+    reinitFBDF!(integrator, cache)
+    integrator.u_modified = u_modified
 end
 
 function perform_step!(integrator, cache::DFBDFConstantCache{max_order},
@@ -355,6 +360,11 @@ function initialize!(integrator, cache::DFBDFCache)
     integrator.k[2] = integrator.fsallast
     #integrator.f(integrator.fsalfirst, integrator.du, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     #OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    u_modified = integrator.u_modified
+    integrator.u_modified = true
+    reinitFBDF!(integrator, cache)
+    integrator.u_modified = u_modified
 end
 
 function perform_step!(integrator, cache::DFBDFCache{max_order},
