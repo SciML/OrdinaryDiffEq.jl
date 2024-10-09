@@ -302,10 +302,10 @@ uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
 version = "1.15.1"
 
 [[deps.DifferentiationInterface]]
-deps = ["ADTypes", "Compat", "LinearAlgebra", "PackageExtensionCompat"]
-git-tree-sha1 = "75d1716eb46e1b77304f7d79ec9ac6a4e6185d02"
+deps = ["ADTypes", "LinearAlgebra"]
+git-tree-sha1 = "e61c544812d735a53ffbf406a80a73b7c2425532"
 uuid = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
-version = "0.6.7"
+version = "0.6.9"
 
     [deps.DifferentiationInterface.extensions]
     DifferentiationInterfaceChainRulesCoreExt = "ChainRulesCore"
@@ -903,9 +903,9 @@ version = "0.2.4"
 
 [[deps.MultivariatePolynomials]]
 deps = ["ChainRulesCore", "DataStructures", "LinearAlgebra", "MutableArithmetics"]
-git-tree-sha1 = "5c1d1d9361e1417e5a065e1f84dc3686cbdaea21"
+git-tree-sha1 = "8d39779e29f80aa6c071e7ac17101c6e31f075d7"
 uuid = "102ac46a-7ee4-5c85-9060-abc95bfdeaa3"
-version = "0.5.6"
+version = "0.5.7"
 
 [[deps.MutableArithmetics]]
 deps = ["LinearAlgebra", "SparseArrays", "Test"]
@@ -1415,9 +1415,9 @@ version = "0.6.43"
 
 [[deps.SciMLBase]]
 deps = ["ADTypes", "Accessors", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "Expronicon", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "PrecompileTools", "Preferences", "Printf", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLOperators", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "Tables"]
-git-tree-sha1 = "d01eebc2dbd30c83a857ae8fcc7f12ea6bd5b10c"
+git-tree-sha1 = "50ed64cd5ad79b0bef71fdb6a11d10c3448bfef0"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "2.56.0"
+version = "2.56.1"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
@@ -1521,10 +1521,10 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 version = "1.11.0"
 
 [[deps.SparseConnectivityTracer]]
-deps = ["ADTypes", "DocStringExtensions", "FillArrays", "LinearAlgebra", "Random", "Requires", "SparseArrays"]
-git-tree-sha1 = "e5efbf152d3e14a513f19a9119b810340b7ac86b"
+deps = ["ADTypes", "DocStringExtensions", "FillArrays", "LinearAlgebra", "Random", "SparseArrays"]
+git-tree-sha1 = "35d346f6aa78814859f1f69cd4f41c24108afa00"
 uuid = "9f842d2f-2579-4b1d-911e-f412cf18a3f5"
-version = "0.6.6"
+version = "0.6.7"
 
     [deps.SparseConnectivityTracer.extensions]
     SparseConnectivityTracerDataInterpolationsExt = "DataInterpolations"
@@ -1561,10 +1561,16 @@ version = "2.22.0"
     Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [[deps.SparseMatrixColorings]]
-deps = ["ADTypes", "Compat", "DataStructures", "DocStringExtensions", "LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "ad17e2069015839e58a1f9275608b405fae1f28e"
+deps = ["ADTypes", "DataStructures", "DocStringExtensions", "LinearAlgebra", "Random", "SparseArrays"]
+git-tree-sha1 = "ccc32032d8f6790ad198c99fb8ef20d8100a0de4"
 uuid = "0a514795-09f3-496d-8182-132a7b665d35"
-version = "0.4.6"
+version = "0.4.7"
+
+    [deps.SparseMatrixColorings.extensions]
+    SparseMatrixColoringsColorsExt = "Colors"
+
+    [deps.SparseMatrixColorings.weakdeps]
+    Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 
 [[deps.Sparspak]]
 deps = ["Libdl", "LinearAlgebra", "Logging", "OffsetArrays", "Printf", "SparseArrays", "Test"]
@@ -1755,9 +1761,9 @@ version = "0.5.2"
 
 [[deps.TimerOutputs]]
 deps = ["ExprTools", "Printf"]
-git-tree-sha1 = "5a13ae8a41237cff5ecf34f73eb1b8f42fff6531"
+git-tree-sha1 = "3a6f063d690135f5c1ba351412c82bae4d1402bf"
 uuid = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
-version = "0.5.24"
+version = "0.5.25"
 
 [[deps.TranscodingStreams]]
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
