@@ -39,7 +39,9 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
             else
                 tf.uprev = uprev
                 tf.p = p
-                derivative!(dT, tf, t, du2, integrator, cache.grad_config)
+                alg = unwrap_alg(integrator, true)
+                # DI.derivative(f!, y, dy_dt, prep, backend, t) for y(t)
+                DI.derivative!(tf, linsolve_tmp, dT, cache.grad_config, alg_autodiff(alg), t)
             end
         end
 
@@ -57,7 +59,8 @@ function calc_tderivative(integrator, cache)
         tf = cache.tf
         tf.u = uprev
         tf.p = p
-        dT = derivative(tf, t, integrator)
+        alg = unwrap_alg(integrator, true)
+        dT = DI.derivative(tf, alg_autodiff(alg), t)
     end
     dT
 end
@@ -117,7 +120,7 @@ Update the Jacobian object `J`.
 
 If `integrator.f` has a custom Jacobian update function, then it will be called. Otherwise,
 either automatic or finite differencing will be used depending on the `cache`.
-If `next_step`, then it will evaluate the Jacobian at the next step.
+If `next_step`, theOrdinaryDiffEqRosenbrock/src/rosenbrock_perform_step.jl:n it will evaluate the Jacobian at the next step.
 """
 function calc_J!(J, integrator, cache, next_step::Bool = false)
     @unpack dt, t, uprev, f, p, alg = integrator
