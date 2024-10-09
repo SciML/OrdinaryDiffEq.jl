@@ -1066,6 +1066,11 @@ function initialize!(integrator, cache::FBDFConstantCache)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
+
+    u_modified = integrator.u_modified
+    integrator.u_modified = true
+    reinitFBDF!(integrator, cache)
+    integrator.u_modified = u_modified
 end
 
 function perform_step!(integrator, cache::FBDFConstantCache{max_order},
@@ -1222,6 +1227,11 @@ function initialize!(integrator, cache::FBDFCache)
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    u_modified = integrator.u_modified
+    integrator.u_modified = true
+    reinitFBDF!(integrator, cache)
+    integrator.u_modified = u_modified
 end
 
 function perform_step!(integrator, cache::FBDFCache{max_order},

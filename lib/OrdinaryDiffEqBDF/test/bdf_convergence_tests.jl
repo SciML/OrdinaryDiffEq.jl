@@ -1,9 +1,12 @@
 # This definitely needs cleaning
 using OrdinaryDiffEqBDF, ODEProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NonlinearSolveAlg
 using Test, Random
 Random.seed!(100)
 
 testTol = 0.2
+dts = 1 .// 2 .^ (9:-1:5)
+dts3 = 1 .// 2 .^ (12:-1:7)
 
 @testset "Implicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
     prob = (ODEProblemLibrary.prob_ode_linear,
