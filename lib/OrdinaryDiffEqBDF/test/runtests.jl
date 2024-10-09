@@ -1,6 +1,6 @@
 using SafeTestsets
 
-@time @safetestset "BDF Convergence Tests" include("bdd_convergence_tests.jl")
+@time @safetestset "BDF Convergence Tests" include("bdf_convergence_tests.jl")
 @time @safetestset "BDF Regression Tests" include("bdf_regression_tests.jl")
 
 @time @safetestset "DAE Convergence Tests" include("dae_convergence_tests.jl")
