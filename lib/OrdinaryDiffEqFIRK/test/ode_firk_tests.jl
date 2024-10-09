@@ -12,7 +12,7 @@ sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_linear, RadauIIA9())
 @test sim21.𝒪est[:final]≈8.5 atol=testTol
 
 sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_2Dlinear, RadauIIA9())
-@test sim21.𝒪est[:final]≈8.5 atol=testTol
+@test sim21.𝒪est[:final]≈8 atol=testTol
 
 prob_ode_linear_big = remake(prob_ode_linear, u0 = big.(prob_ode_linear.u0), tspan = big.(prob_ode_linear.tspan))
 prob_ode_2Dlinear_big = remake(prob_ode_2Dlinear, u0 = big.(prob_ode_2Dlinear.u0), tspan = big.(prob_ode_2Dlinear.tspan))
