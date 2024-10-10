@@ -703,7 +703,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # If factorization, then just use the jac_prototype
         J = similar(f.jac_prototype)
         W = similar(J)
-    elseif (IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
+    elseif (IIP && (concrete_jac(alg) != true) &&
             alg.linsolve !== nothing &&
             !LinearSolve.needs_concrete_A(alg.linsolve))
         # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
@@ -716,7 +716,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
     elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
-           concrete_jac(alg) !== nothing && concrete_jac(alg)
+           concrete_jac(alg) == true
         # The linear solver does not need a concrete Jacobian, but the user has
         # asked for one. This will happen when the Jacobian is used in the preconditioner
         # or when jvp computation is expensive. Therefore, use concrete J, and sparsity when possible
