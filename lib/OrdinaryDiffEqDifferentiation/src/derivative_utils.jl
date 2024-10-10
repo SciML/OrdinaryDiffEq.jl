@@ -719,7 +719,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
            concrete_jac(alg) !== nothing && concrete_jac(alg)
         # The linear solver does not need a concrete Jacobian, but the user has
         # asked for one. This will happen when the Jacobian is used in the preconditioner
-        # Thus setup JacVec and a concrete J, using sparsity when possible
+        # or when jvp computation is expensive. Therefore, use concrete J, and sparsity when possible
         _f = islin ? (isode ? f.f : f.f1.f) : f
         J = if f.jac_prototype === nothing
             ArrayInterface.undefmatrix(u)
