@@ -391,7 +391,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     # TODO: add `isJcurrent` support for Rosenbrock solvers
     if !isnewton(nlsolver)
         isfreshJ = !(integrator.alg isa CompositeAlgorithm) &&
-                   (integrator.iter > 1 && errorfail && !integrator.u_modified)
+                   (!integrator.u_modified)
         return !isfreshJ, true
     end
     isfirstcall(nlsolver) && return true, true
@@ -684,9 +684,9 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
     # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
     islin, isode = islinearfunction(f, alg)
-    if isdefined(f, :W_prototype) && (f.W_prototype isa AbstractSciMLOperator)
-        # We use W_prototype when it is provided as a SciMLOperator, and in this case we require jac_prototype to be a SciMLOperator too.
-        if !(f.jac_prototype isa AbstractSciMLOperator)
+    if isdefined(f, :W_prototype) && !isnothing(f.W_prototype)
+        # If W_prototype is a SciMLOperator, we require jac_prototype to be a SciMLOperator too.
+        if f.W_prototype isa AbstractSciMLOperator && !(f.jac_prototype isa AbstractSciMLOperator)
             error("SciMLOperator for W_prototype only supported when jac_prototype is a SciMLOperator, but got $(typeof(f.jac_prototype))")
         end
         W = f.W_prototype
