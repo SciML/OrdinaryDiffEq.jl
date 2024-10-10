@@ -734,9 +734,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             else
                 (u, p, t) -> _f(u, p, t)
             end
-            jacvec = JacVec(__f, copy(u), p, t;
-                autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
-            WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
+            WOperator{IIP}(f.mass_matrix, dt, J, u, nothing)
         end
     else
         J = if !IIP && DiffEqBase.has_jac(f)
