@@ -11,8 +11,9 @@ handling compared to some other Julia packages. When running the full test suite
 recommended that one has dev'd all of the relevant packages. This can be done via:
 
 ```julia
+using Pkg
 pathtolibrary = Pkg.pkgdir(OrdinaryDiffEq)
-sublibs = string.((pathtolibrary,), readdir(pathtolibrary))
+sublibs = joinpath.(pathtolibrary, "lib", readdir(joinpath(pathtolibrary, "lib")))
 Pkg.develop(map(name -> Pkg.PackageSpec.(; path = name), sublibs));
 ```
 
