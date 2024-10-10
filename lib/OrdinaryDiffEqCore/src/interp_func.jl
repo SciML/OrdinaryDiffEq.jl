@@ -80,9 +80,8 @@ function strip_cache(cache)
                                                         for name in fieldnames(typeof(cache))]...)
     else
         # need to do something special for default cache
-        noth_type = Nothing
-        cache = OrdinaryDiffEqCore.DefaultCache{noth_type, noth_type, noth_type, noth_type,
-            noth_type, noth_type, noth_type, noth_type}(nothing, nothing, 0, nothing)
+        cache = OrdinaryDiffEqCore.DefaultCache{Nothing, Nothing, Nothing, Nothing,
+            Nothing, Nothing, Nothing, Nothing}(nothing, nothing, 0, nothing)
     end
 
     cache
