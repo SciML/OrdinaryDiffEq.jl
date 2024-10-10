@@ -90,7 +90,7 @@ function initialize!(integrator, cache::RadauIIA9Cache)
 end
 
 function initialize!(integrator, cache::AdaptiveRadauCache)
-    @unpack num_stages = cache.tab
+    @unpack num_stages = cache
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -1354,8 +1354,10 @@ end
 @muladd function perform_step!(integrator, cache::AdaptiveRadauConstantCache,
     repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack T, TI, γ, α, β, c, e, num_stages = cache.tab
-    @unpack κ, cont = cache
+    @unpack tabs, num_stages = cache
+    tab = tabs[(num_stages - 1) ÷ 2]
+    @unpack T, TI, γ, α, β, c, e = tab
+    @unpack κ, cont, θ, θprev = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -1398,7 +1400,7 @@ end
             cache.cont[i] = @.. map(zero, u)
         end
     else
-        c_prime = Vector{typeof(u)}(undef, num_stages) #time stepping
+        c_prime = Vector{typeof(dt)}(undef, num_stages) #time stepping
         c_prime[num_stages] = @.. dt / cache.dtprev
         for i in 1 : num_stages - 1
             c_prime[i] = @.. c[i] * c_prime[num_stages]
@@ -1435,7 +1437,7 @@ end
         for i in 1 : num_stages
             ff[i] = f(uprev + z[i], p, t + c[i] * dt)
         end
-        integrator.stats.nf += num_stages
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
 
         #fw = TI * ff
         fw = Vector{typeof(u)}(undef, num_stages)
@@ -1483,7 +1485,9 @@ end
         # check divergence (not in initial step)
 
         if iter > 1
+            cache.θprev = θ
             θ = ndw / ndwprev
+            cache.θ = θ
             (diverge = θ > 1) && (cache.status = Divergence)
             (veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ)) &&
                 (cache.status = VerySlowConvergence)
@@ -1535,9 +1539,13 @@ end
     
     if adaptive
         edt = e ./ dt
-        tmp = dot(edt, z)
+        tmp = 0
+        for i in 1 : num_stages
+            tmp = @.. tmp + edt[i] * z[i]
+        end
         mass_matrix != I && (tmp = mass_matrix * tmp)
-        utilde = @.. broadcast=false 1 / γ * dt * integrator.fsalfirst+tmp
+        #utilde = @.. broadcast=false 1 / γ * dt * integrator.fsalfirst + tmp
+        utilde = @.. broadcast=false integrator.fsalfirst + tmp
         if alg.smooth_est
             utilde = _reshape(LU1 \ _vec(utilde), axes(u))
             integrator.stats.nsolve += 1
@@ -1548,8 +1556,9 @@ end
         if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
         integrator.u_modified
             f0 = f(uprev .+ utilde, p, t)
-            integrator.stats.nf += 1
-            utilde = @.. broadcast=false 1 / γ * dt * f0 + tmp
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            #utilde = @.. broadcast=false 1 / γ * dt * f0 + tmp
+            utilde = @.. broadcast=false f0+tmp
             if alg.smooth_est
                 utilde = _reshape(LU1 \ _vec(utilde), axes(u))
                 integrator.stats.nsolve += 1
@@ -1589,11 +1598,13 @@ end
 
 @muladd function perform_step!(integrator, cache::AdaptiveRadauCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
-    @unpack T, TI, γ, α, β, c, e, num_stages = cache.tab
+    @unpack num_stages, tabs = cache
+    tab = tabs[(num_stages - 1) ÷ 2]
+    @unpack T, TI, γ, α, β, c, e = tab
     @unpack κ, cont, derivatives, z, w, c_prime = cache
     @unpack dw1, ubuff, dw2, cubuff, dw = cache
     @unpack ks, k, fw, J, W1, W2 = cache
-    @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
+    @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!, θ, θprev = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -1659,7 +1670,7 @@ end
             @.. tmp = uprev + z[i]
             f(ks[i], tmp, p, t + c[i] * dt)
         end
-        integrator.stats.nf += num_stages
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
 
         #mul!(fw, TI, ks)
         for i in 1:num_stages
@@ -1729,7 +1740,9 @@ end
         # check divergence (not in initial step)
 
         if iter > 1
+            cache.θprev = θ
             θ = ndw / ndwprev
+            cache.θ = θ
             (diverge = θ > 1) && (cache.status = Divergence)
             (veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ)) &&
                 (cache.status = VerySlowConvergence)
@@ -1782,16 +1795,20 @@ end
     step_limiter!(u, integrator, p, t + dt)
     
     if adaptive
-        utilde = w2
+        utilde = w[2]
         edt = e./dt
-        @.. tmp = dot(edt, z) + 1 / γ * dt * fsalfirst
-        mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
-        @.. ubuff=integrator.fsalfirst + tmp
+        @.. tmp = 0
+        for i in 1 : num_stages
+            @.. tmp += edt[i] * z[i]
+        end
+        mass_matrix != I && (mul!(w[1], mass_matrix, tmp); copyto!(tmp, w[1]))
+        #@.. ubuff=1 / γ * dt * integrator.fsalfirst + tmp
+        @.. broadcast=false ubuff=integrator.fsalfirst + tmp
 
         if alg.smooth_est
-            linres1 = dolinsolve(integrator, linres1.cache; b = _vec(ubuff),
+            linres = dolinsolve(integrator, linres.cache; b = _vec(ubuff),
                 linu = _vec(utilde))
-            cache.linsolve1 = linres1.cache
+            cache.linsolve1 = linres.cache
             integrator.stats.nsolve += 1
         end
 
@@ -1804,13 +1821,14 @@ end
            integrator.u_modified
             @.. broadcast=false utilde=uprev + utilde
             f(fsallast, utilde, p, t)
-            integrator.stats.nf += 1
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            #@.. broadcast=false ubuff = 1 / γ * dt * fsallast + tmp
             @.. broadcast=false ubuff=fsallast + tmp
 
             if alg.smooth_est
-                linres1 = dolinsolve(integrator, linres1.cache; b = _vec(ubuff),
+                linres = dolinsolve(integrator, linres.cache; b = _vec(ubuff),
                     linu = _vec(utilde))
-                cache.linsolve1 = linres1.cache
+                cache.linsolve1 = linres.cache
                 integrator.stats.nsolve += 1
             end
 
