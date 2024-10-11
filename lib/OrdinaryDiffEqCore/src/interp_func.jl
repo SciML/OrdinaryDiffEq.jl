@@ -75,24 +75,14 @@ function SciMLBase.strip_interpolation(id::InterpolationData)
 end
 
 function strip_cache(cache)
-    if hasfield(typeof(cache), :jac_config) 
-        SciMLBase.@reset cache.jac_config = nothing
+    if !(cache isa OrdinaryDiffEqCore.DefaultCache)
+        cache = SciMLBase.constructorof(typeof(cache))([nothing
+                                                        for name in fieldnames(typeof(cache))]...)
+    else
+        # need to do something special for default cache
+        cache = OrdinaryDiffEqCore.DefaultCache{Nothing, Nothing, Nothing, Nothing,
+            Nothing, Nothing, Nothing, Nothing}(nothing, nothing, 0, nothing)
     end
-    if hasfield(typeof(cache), :grad_config)
-        SciMLBase.@reset cache.grad_config = nothing
-    end
-    if hasfield(typeof(cache), :nlsolver)
-        SciMLBase.@reset cache.nlsolver = nothing
-    end
-    if hasfield(typeof(cache), :tf)
-        SciMLBase.@reset cache.tf = nothing
-    end
-    if hasfield(typeof(cache), :uf)
-        SciMLBase.@reset cache.uf = nothing
-    end
-    if hasfield(typeof(cache),:args)
-        SciMLBase.@reset cache.args = nothing
-    end
-    
+
     cache
 end
