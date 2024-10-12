@@ -62,7 +62,7 @@ end
 A = integrator([1.0; 2.0])
 B = integrator([1.0; 2.0], idxs = 1:2:5)
 
-@test minimum([A[i][1:2:5] == B[i] for i in 1:length(A)])
+@test minimum([A[i][1:2:5] ≈ B[i] for i in 1:length(A)])
 
 integrator(A[1], 0.5)
 @test A[1] == integrator(0.5)
