@@ -236,7 +236,7 @@ end
     dtmax_tdir = tdir * dtmax
 
     dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
-    smalldt = convert(_tType, oneunit_tType * 1 // 10^(6))
+    smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
         return tdir * max(smalldt, dtmin)
