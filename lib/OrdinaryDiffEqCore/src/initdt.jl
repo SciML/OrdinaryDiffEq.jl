@@ -8,8 +8,8 @@
     oneunit_tType = oneunit(_tType)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(integrator.opts.dtmin)
-    smalldt = convert(_tType, oneunit_tType * 1 // 10^(6))
+    dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
+    smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
         return tdir * max(smalldt, dtmin)
@@ -235,8 +235,8 @@ end
     oneunit_tType = oneunit(_tType)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(integrator.opts.dtmin)
-    smalldt = convert(_tType, oneunit_tType * 1 // 10^(6))
+    dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
+    smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
         return tdir * max(smalldt, dtmin)
