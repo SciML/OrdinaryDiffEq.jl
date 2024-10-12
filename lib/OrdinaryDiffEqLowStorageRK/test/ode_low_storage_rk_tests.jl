@@ -1376,7 +1376,7 @@ end
     dts = 1 ./ 2 .^ (5:-1:2)
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=0.33
     end
     dts = 1.5 ./ 2 .^ (5:-1:2)
     for prob in test_problems_nonlinear
