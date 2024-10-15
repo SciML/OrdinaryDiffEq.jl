@@ -56,3 +56,6 @@ end
     @test sol.stats.naccept + sol.stats.nreject <= 30
     @test_broken sol.retcode = ReturnCode.Success
 end
+
+@test_throws ArgumentError solve(prob, Euler(), dt=0.1 adaptive=true)
+@test_throws ArgumentError solve(prob, Euler())

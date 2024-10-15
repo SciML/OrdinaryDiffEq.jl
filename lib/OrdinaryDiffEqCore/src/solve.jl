@@ -112,7 +112,7 @@ function DiffEqBase.__init(
     if only_diagonal_mass_matrix(alg) &&
        prob.f.mass_matrix isa AbstractMatrix &&
        !isdiag(prob.f.mass_matrix)
-        error("$(typeof(alg).name.name) only works with diagonal mass matrices. Please choose a solver suitable for your problem (e.g. Rodas5P)")
+        throw(ArgumentError("$(typeof(alg).name.name) only works with diagonal mass matrices. Please choose a solver suitable for your problem (e.g. Rodas5P)"))
     end
 
     if !isempty(saveat) && dense
@@ -131,7 +131,10 @@ function DiffEqBase.__init(
           !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
           !(alg isa DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
         dt == tType(0) && isempty(tstops)) && dt_required(alg)
-        error("Fixed timestep methods require a choice of dt or choosing the tstops")
+        throw(ArgumentError("Fixed timestep methods require a choice of dt or choosing the tstops"))
+    end
+    if !isadaptive(alg) && adaptive
+        throw(ArgumentError("Fixed timestep methods can not be run with adaptive=true"))
     end
 
     isdae = alg isa DAEAlgorithm || (!(prob isa DiscreteProblem) &&
