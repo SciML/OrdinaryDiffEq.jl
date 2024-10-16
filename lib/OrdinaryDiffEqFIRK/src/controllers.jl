@@ -26,6 +26,7 @@ end
 
 function step_accept_controller!(integrator, controller::PredictiveController, alg, q)
     @unpack qmin, qmax, gamma, qsteady_min, qsteady_max = integrator.opts
+ 
     EEst = DiffEqBase.value(integrator.EEst)
 
     if integrator.success_iter > 0
@@ -42,6 +43,44 @@ function step_accept_controller!(integrator, controller::PredictiveController, a
     end
     integrator.dtacc = integrator.dt
     integrator.erracc = max(1e-2, EEst)
+    
+    return integrator.dt / qacc
+end
+
+
+function step_accept_controller!(integrator, controller::PredictiveController, alg::AdaptiveRadau, q)
+    @unpack qmin, qmax, gamma, qsteady_min, qsteady_max = integrator.opts
+    @unpack cache = integrator
+    @unpack num_stages, step, θ, θprev = cache
+ 
+    EEst = DiffEqBase.value(integrator.EEst)
+
+    if integrator.success_iter > 0
+        expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
+        qgus = (integrator.dtacc / integrator.dt) *
+               DiffEqBase.fastpow((EEst^2) / integrator.erracc, expo)
+        qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
+        qacc = max(q, qgus)
+    else
+        qacc = q
+    end
+    if qsteady_min <= qacc <= qsteady_max
+        qacc = one(qacc)
+    end
+    integrator.dtacc = integrator.dt
+    integrator.erracc = max(1e-2, EEst)
+    
+    cache.step = step + 1
+    @show cache.num_stages
+    if (step > 10)
+        Ψ = θ * θprev
+        if (Ψ <= 0.001 && num_stages < alg.max_stages)
+            cache.num_stages += 2
+        elseif ((Ψ >= 0.1 || cache.status == VerySlowConvergence || cache.status == Divergence) && num_stages > alg.min_stages)
+            cache.num_stages -= 2 
+            cache.step = 1
+        end
+    end
     return integrator.dt / qacc
 end
 
