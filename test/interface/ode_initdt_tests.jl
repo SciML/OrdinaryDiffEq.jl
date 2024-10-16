@@ -10,7 +10,7 @@ sol = solve(prob, ExplicitRK(tableau = constructBogakiShampine3()))
 dt₀ = sol.t[2]
 
 @test 1e-7 < dt₀ < 0.1
-@test_throws ErrorException local sol = solve(prob, Euler())
+@test_throws ArgumentError local sol = solve(prob, Euler())
 #dt₀ = sol.t[2]
 
 sol3 = solve(prob, ExplicitRK(tableau = constructDormandPrince8_64bit()))
