@@ -47,7 +47,7 @@ v = @inferred OrdinaryDiffEqCore.ode_extrapolant(
     alg_mixed_r = CompositeAlgorithm((ABM54(), Tsit5()), reverse_choice)
     alg_mixed2 = CompositeAlgorithm((Tsit5(), ABM54()), reverse_choice)
 
-    @test_throws ErrorException solve(prob_ode_linear, alg_mixed)
+    @test_throws ArgumentError solve(prob_ode_linear, alg_mixed)
     sol2 = solve(prob_ode_linear, Tsit5())
     sol3 = solve(prob_ode_linear, alg_mixed; dt = 0.05)
     sol4 = solve(prob_ode_linear, alg_mixed_r; dt = 0.05)
