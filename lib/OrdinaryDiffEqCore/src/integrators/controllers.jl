@@ -141,8 +141,8 @@ end
     if iszero(EEst)
         q = inv(qmax)
     else
-        q11 = FastPower.fastpower(EEst, float(beta1))
-        q = q11 / FastPower.fastpower(qold, float(beta2))
+        q11 = FastPower.fastpower(EEst, convert(typeof(EEst),beta1))
+        q = q11 / FastPower.fastpower(qold, convert(typeof(EEst),beta2))
         integrator.q11 = q11
         @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
     end
