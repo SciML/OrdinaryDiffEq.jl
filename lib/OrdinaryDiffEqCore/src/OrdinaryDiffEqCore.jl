@@ -19,6 +19,8 @@ using PrecompileTools
 
 import FillArrays: Trues, Falses
 
+import FastPower
+
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive
 
