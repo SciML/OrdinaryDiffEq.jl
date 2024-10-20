@@ -488,8 +488,7 @@ mutable struct AdaptiveRadauConstantCache{F, Tab, Tol, Dt, U, JType} <:
     J::JType
     num_stages::Int
     step::Int
-    θ::BigFloat
-    θprev::BigFloat
+    hist_iter::Float64
 end
 
 function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -515,11 +514,11 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
     AdaptiveRadauConstantCache(uf, tabs, κ, one(uToltype), 10000, cont, dt, dt,
-        Convergence, J, num_stages, 1, big"1.0", big"1.0")
+        Convergence, J, num_stages, 1, 0.0)
 end
 
 mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, JType, W1Type, W2Type,
-    UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
+    UF, JC, F1, F2, #=F3,=# Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
                FIRKMutableCache
     u::uType
     uprev::uType
@@ -551,6 +550,7 @@ mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, 
     jac_config::JC
     linsolve1::F1 #real
     linsolve2::Vector{F2} #complex
+    #linres2::Vector{F3} 
     rtol::rTol
     atol::aTol
     dtprev::Dt
@@ -559,8 +559,7 @@ mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, 
     step_limiter!::StepLimiter
     num_stages::Int
     step::Int
-    θ::BigFloat
-    θprev::BigFloat
+    hist_iter::Float64
 end
 
 function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -598,12 +597,9 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     recursivefill!.(dw2, false)
     cubuff = [similar(u, Complex{eltype(u)}) for _ in 1 : (max - 1) ÷ 2]
     recursivefill!.(cubuff, false)
-    dw = Vector{typeof(u)}(undef, max - 1)
+    dw = [zero(u) for i in 1 : max]
 
-    cont = Vector{typeof(u)}(undef, max)
-    for i in 1 : max
-        cont[i] = zero(u)
-    end
+    cont = [zero(u) for i in 1:max]
 
     derivatives = Matrix{typeof(u)}(undef, max, max)
     for i in 1 : max, j in 1 : max
@@ -611,11 +607,9 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     end
 
     fsalfirst = zero(rate_prototype)
-    fw = Vector{typeof(rate_prototype)}(undef, max)
-    ks = Vector{typeof(rate_prototype)}(undef, max)
-    for i in 1: max
-        ks[i] = fw[i] = zero(rate_prototype)
-    end
+    fw = [zero(rate_prototype) for i in 1 : max]
+    ks = [zero(rate_prototype) for i in 1 : max]
+    
     k = ks[1]
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
@@ -642,7 +636,14 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     linsolve2 = [
         init(LinearProblem(W2[i], _vec(cubuff[i]); u0 = _vec(dw2[i])), alg.linsolve, alias_A = true, alias_b = true,
             assumptions = LinearSolve.OperatorAssumptions(true)) for i in 1 : (max - 1) ÷ 2]
-
+    #=
+    linres_tmp = dolinsolve(nothing, linsolve2[1]; A = W2[1], b = _vec(cubuff[1]), linu = _vec(dw2[1]))
+    linres2 = Vector{typeof(linres_tmp)}(undef , (max - 1) ÷ 2)
+    linres2[1] = linres_tmp
+    for i in 2 : (num_stages - 1) ÷ 2
+        linres2[i] = dolinsolve(nothing, linsolve2[1]; A = W2[1], b = _vec(cubuff[i]), linu = _vec(dw2[i]))
+    end
+    =#
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
 
@@ -652,7 +653,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         J, W1, W2,
         uf, tabs, κ, one(uToltype), 10000, tmp,
         atmp, jac_config,
-        linsolve1, linsolve2, rtol, atol, dt, dt,
-        Convergence, alg.step_limiter!, num_stages, 1, big"1.0", big"1.0")
+        linsolve1, linsolve2, #=linres2,=# rtol, atol, dt, dt,
+        Convergence, alg.step_limiter!, num_stages, 1, 0.0)
 end
 
