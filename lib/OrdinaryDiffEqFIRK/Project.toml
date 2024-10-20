@@ -6,6 +6,7 @@ version = "1.1.1"
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
+FastPower = "a4df4552-cc26-4903-aec0-212e50a0e84b"
 GenericLinearAlgebra = "14197337-ba66-59df-a3e3-ca00e7dcff7a"
 GenericSchur = "c145ed77-6b09-5dd9-b285-bf645a82121e"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

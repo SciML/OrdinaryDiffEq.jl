@@ -528,6 +528,7 @@ end
              integrator.EEst = max(EEst, integrator.EEst)
          end
     end
+    @show "her2"
 
     integrator.u = u
     return nothing
@@ -654,6 +655,7 @@ end
          end
     end
     cache.linsolve = linres.cache
+    @show "her1"
 end
 
 @RosenbrockW6S4OS(:init)
