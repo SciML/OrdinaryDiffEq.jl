@@ -1357,7 +1357,7 @@ end
     @unpack tabs, num_stages = cache
     tab = tabs[(num_stages - 1) ÷ 2]
     @unpack T, TI, γ, α, β, c, e = tab
-    @unpack κ, cont, θ, θprev = cache
+    @unpack κ, cont = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -1401,15 +1401,15 @@ end
         end
     else
         c_prime = Vector{typeof(dt)}(undef, num_stages) #time stepping
-        c_prime[num_stages] = @.. dt / cache.dtprev
+        c_prime[num_stages] = dt / cache.dtprev
         for i in 1 : num_stages - 1
-            c_prime[i] = @.. c[i] * c_prime[num_stages]
+            c_prime[i] = c[i] * c_prime[num_stages]
         end
         for i in 1 : num_stages # collocation polynomial
-            z[i] = @.. cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
+            z[i] = @.. cont[num_stages - 1] + cont[num_stages] * (c_prime[i] - c[1] + 1)
             j = num_stages - 2
             while j > 0
-                z[i] = @.. z[i] * (c_prime[i] - c[num_stages - j] + 1) + cont[j]
+                z[i] = @.. cont[j] + z[i] * (c_prime[i] - c[num_stages - j] + 1)
                 j = j - 1
             end
             z[i] = @.. z[i] * c_prime[i]
@@ -1433,9 +1433,9 @@ end
         integrator.stats.nnonliniter += 1
 
         # evaluate function
-        ff = Vector{typeof(u)}(undef, num_stages)
+        #ff = Vector{typeof(u)}(undef, num_stages)
         for i in 1 : num_stages
-            ff[i] = f(uprev + z[i], p, t + c[i] * dt)
+            z[i] = f(uprev + z[i], p, t + c[i] * dt)
         end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
 
@@ -1444,34 +1444,34 @@ end
         for i in 1 : num_stages
             fw[i] = @.. zero(u)
             for j in 1:num_stages
-                fw[i] = @.. fw[i] + TI[i,j] * ff[j]
+                fw[i] = @.. fw[i] + TI[i,j] * z[j]
             end
         end
 
-        Mw = Vector{typeof(u)}(undef, num_stages)
+        #Mw = Vector{typeof(u)}(undef, num_stages)
         if mass_matrix isa UniformScaling # `UniformScaling` doesn't play nicely with broadcast
             for i in 1 : num_stages
-                Mw[i] = @.. mass_matrix.λ * w[i] #scaling by eigenvalue
+                z[i] = @.. mass_matrix.λ * w[i] #scaling by eigenvalue
             end
         else
-            Mw = mass_matrix * w #standard multiplication
+            z = mass_matrix * w #standard multiplication
         end
 
         rhs = Vector{typeof(u)}(undef, num_stages)
-        rhs[1] = @.. fw[1] - γdt * Mw[1]
+        rhs[1] = @.. fw[1] - γdt * z[1]
         i = 2
         while i <= num_stages #block by block multiplication
-            rhs[i] = @.. fw[i] - αdt[i ÷ 2] * Mw[i] + βdt[i ÷ 2] * Mw[i + 1]
-            rhs[i + 1] = @.. fw[i + 1] - βdt[i ÷ 2] * Mw[i] - αdt[i ÷ 2] * Mw[i + 1]
+            rhs[i] = @.. fw[i] - αdt[i ÷ 2] * z[i] + βdt[i ÷ 2] * z[i + 1]
+            rhs[i + 1] = @.. fw[i + 1] - βdt[i ÷ 2] * z[i] - αdt[i ÷ 2] * z[i + 1]
             i += 2
         end
 
-        dw = Vector{typeof(u)}(undef, num_stages)
-        dw[1] = _reshape(LU1 \ _vec(rhs[1]), axes(u))
+        #dw = Vector{typeof(u)}(undef, num_stages)
+        z[1] = _reshape(LU1 \ _vec(rhs[1]), axes(u))
         for i in 2 :(num_stages + 1) ÷ 2
             tmp = _reshape(LU2[i - 1] \ _vec(@.. rhs[2 * i - 2] + rhs[2 * i - 1] * im), axes(u))
-            dw[2 * i - 2] = @.. real(tmp)
-            dw[2 * i - 1] = @.. imag(tmp)
+            z[2 * i - 2] = @.. real(tmp)
+            z[2 * i - 1] = @.. imag(tmp)
         end
         integrator.stats.nsolve +=(num_stages + 1) ÷ 2
 
@@ -1479,15 +1479,13 @@ end
         iter > 1 && (ndwprev = ndw)
         ndw = 0.0
         for i in 1 : num_stages
-            ndw += internalnorm(calculate_residuals(dw[i], uprev, u, atol, rtol, internalnorm, t), t)
+            ndw += internalnorm(calculate_residuals(z[i], uprev, u, atol, rtol, internalnorm, t), t)
         end
 
         # check divergence (not in initial step)
 
         if iter > 1
-            cache.θprev = θ
             θ = ndw / ndwprev
-            cache.θ = θ
             (diverge = θ > 1) && (cache.status = Divergence)
             (veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ)) &&
                 (cache.status = VerySlowConvergence)
@@ -1497,7 +1495,7 @@ end
         end
         
         for i in 1 : num_stages
-            w[i] = @.. w[i] - dw[i]
+            w[i] = @.. w[i] - z[i]
         end
 
         # transform `w` to `z`
@@ -1538,10 +1536,9 @@ end
     u = @.. uprev + z[num_stages]
     
     if adaptive
-        edt = e ./ dt
         tmp = 0
         for i in 1 : num_stages
-            tmp = @.. tmp + edt[i] * z[i]
+            tmp = @.. tmp + e[i]/dt * z[i]
         end
         mass_matrix != I && (tmp = mass_matrix * tmp)
         #utilde = @.. broadcast=false 1 / γ * dt * integrator.fsalfirst + tmp
@@ -1604,7 +1601,7 @@ end
     @unpack κ, cont, derivatives, z, w, c_prime = cache
     @unpack dw1, ubuff, dw2, cubuff, dw = cache
     @unpack ks, k, fw, J, W1, W2 = cache
-    @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!, θ, θprev = cache
+    @unpack tmp, atmp, jac_config, linsolve1, linsolve2, #=linres2,=# rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -1638,13 +1635,14 @@ end
             c_prime[i] = c[i] * c_prime[num_stages]
         end
         for i in 1 : num_stages # collocation polynomial
-            @.. z[i] = cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
+            z[i] = cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
             j = num_stages - 2
             while j > 0
-                @.. z[i] *= (c_prime[i] - c[num_stages - j] + 1) + cont[j]
+                @.. z[i] *= (c_prime[i] - c[num_stages - j] + 1) 
+                @.. z[i] += cont[j]
                 j = j - 1
             end
-            @.. z[i] *= c_prime[i]
+            z[i] = z[i] * c_prime[i]
         end
         #mul!(w, TI, z)
         for i in 1:num_stages
@@ -1674,9 +1672,9 @@ end
 
         #mul!(fw, TI, ks)
         for i in 1:num_stages
-            fw[i] = @.. zero(u)
+            fw[i] =  zero(u)
             for j in 1:num_stages
-                fw[i] = @.. fw[i] + TI[i,j] * ks[j]
+                @.. fw[i] += TI[i,j] * ks[j]
             end
         end
 
@@ -1722,10 +1720,8 @@ end
         integrator.stats.nsolve += (num_stages + 1) / 2
 
         for i in 1 : (num_stages - 1) ÷ 2
-            dw[2 * i - 1] = z[2 * i - 1]
-            dw[2 * i] = z[2 * i]
-            dw[2 * i - 1] = real(dw2[i])
-            dw[2 * i] = imag(dw2[i])
+            @.. dw[2 * i - 1] = real(dw2[i])
+            @.. dw[2 * i] = imag(dw2[i])
         end
 
         # compute norm of residuals
@@ -1740,9 +1736,7 @@ end
         # check divergence (not in initial step)
 
         if iter > 1
-            cache.θprev = θ
             θ = ndw / ndwprev
-            cache.θ = θ
             (diverge = θ > 1) && (cache.status = Divergence)
             (veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ)) &&
                 (cache.status = VerySlowConvergence)
@@ -1759,15 +1753,15 @@ end
         # transform `w` to `z`
         #mul!(z, T, w)
         for i in 1:num_stages - 1
-            z[i] = @.. zero(u)
+            z[i] = zero(u)
             for j in 1:num_stages
-                z[i] = @.. z[i] + T[i,j] * w[j]
+                @.. z[i] += T[i,j] * w[j]
             end
         end
-        z[num_stages] = @.. T[num_stages, 1] * w[1]
+        z[num_stages] = T[num_stages, 1] * w[1]
         i = 2
         while i < num_stages
-            z[num_stages] = @.. z[num_stages] + w[i]
+            @.. z[num_stages] += w[i]
             i += 2
         end
 
@@ -1796,10 +1790,9 @@ end
     
     if adaptive
         utilde = w[2]
-        edt = e./dt
         @.. tmp = 0
         for i in 1 : num_stages
-            @.. tmp += edt[i] * z[i]
+            @.. tmp += e[i]/dt * z[i]
         end
         mass_matrix != I && (mul!(w[1], mass_matrix, tmp); copyto!(tmp, w[1]))
         #@.. ubuff=1 / γ * dt * integrator.fsalfirst + tmp
@@ -1851,7 +1844,7 @@ end
                 end
             end
             for i in 1 : num_stages
-                cache.cont[i] = derivatives[i, num_stages]
+                @.. cache.cont[i] = derivatives[i, num_stages]
             end
         end
     end
