@@ -20,6 +20,7 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_or
                            differentiation_rk_docstring
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, LinearSolve
 import OrdinaryDiffEqCore
+import FastPower
 import OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, UDerivativeWrapper, calc_J,
                                       WOperator, TimeGradientWrapper, UJacobianWrapper,
                                       build_grad_config,
