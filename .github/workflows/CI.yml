@@ -56,7 +56,9 @@ jobs:
           - OrdinaryDiffEqVerner
 
         version:
+          - 'lts'
           - '1'
+          - 'pre'
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
