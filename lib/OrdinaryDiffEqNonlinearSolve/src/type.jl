@@ -72,7 +72,7 @@ mutable struct NLSolver{algType, iip, uType, gamType, tmpType, tType,
     C <: AbstractNLSolverCache, E} <: AbstractNLSolver{algType, iip}
     z::uType
     tmp::uType # DIRK and multistep methods only use tmp
-    tmp2::tmpType # for GLM if necessary
+    tmp2::tmpType # for GLM if neccssary
     ztmp::uType
     γ::gamType
     c::tType
@@ -140,7 +140,7 @@ mutable struct NLNewtonCache{
     firststage::Bool
     firstcall::Bool
     W_γdt::tType
-    du1::uType
+    du1::rateType
     uf::ufType
     jac_config::jcType
     linsolve::lsType
