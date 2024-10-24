@@ -1,6 +1,6 @@
 @doc generic_solver_docstring("Implicit Runge-Kutta-Chebyshev method.",
     "IRKC",
-    "Stabalized Implicit Runge Kutta method.",
+    "Stabilized Implicit Runge Kutta method.",
     "REF TBD",
     "- `eigen_est`: function of the form
     `(integrator) -> integrator.eigen_est = upper_bound`,
