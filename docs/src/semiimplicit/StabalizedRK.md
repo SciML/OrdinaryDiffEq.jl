@@ -2,7 +2,7 @@
 CollapsedDocStrings = true
 ```
 
-# OrdinaryDiffEqStabalizedRK
+# OrdinaryDiffEqStabilizedRK
 
 Explicit stabilized methods utilize an upper bound on the spectral radius of the Jacobian.
 Users can supply an upper bound by specifying the keyword argument `eigen_est`, for example
@@ -13,7 +13,7 @@ Users can supply an upper bound by specifying the keyword argument `eigen_est`, 
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
-first_steps("OrdinaryDiffEqStabalizedRK", "ROCK4")
+first_steps("OrdinaryDiffEqStabilizedRK", "ROCK4")
 ```
 
 ## Full list of solvers

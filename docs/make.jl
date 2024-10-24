@@ -59,7 +59,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         ],
         "Semi-Implicit Solvers" => [
             "semiimplicit/Rosenbrock.md",
-            "semiimplicit/StabalizedRK.md",
+            "semiimplicit/StabilizedRK.md",
             "semiimplicit/ExponentialRK.md"
         ],
         "Implicit Solvers" => [
@@ -72,7 +72,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         ],
         "IMEX Solvers" => [
             "imex/IMEXMultistep.md",
-            "imex/StabalizedIRK.md",
+            "imex/StabilizedIRK.md",
             "imex/IMEXBDF.md"
         ],
         "Dynamical ODE Explicit Solvers" => [
