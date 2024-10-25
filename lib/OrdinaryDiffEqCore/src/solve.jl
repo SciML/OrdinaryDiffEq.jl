@@ -120,6 +120,10 @@ function DiffEqBase.__init(
         @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
     end
 
+    if !(alias isa ODEAliases)
+        error("Keyword argument `alias` must be a `ODEAliases`. ")
+    end
+
     progress && @logmsg(LogLevel(-1), progress_name, _id=progress_id, progress=0)
 
     tType = eltype(prob.tspan)
