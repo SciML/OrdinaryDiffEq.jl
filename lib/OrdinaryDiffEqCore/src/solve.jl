@@ -161,6 +161,8 @@ function DiffEqBase.__init(
     p = prob.p
 
     # Get the control variables
+    # If alias kwarg is just default, use alias_u0, which is false by default, or is set by a kwarg to solve
+    # If alias_u0 is not nothing, use the alias_u0 provided by the user
     if isnothing(alias.alias_u0)
         alias = ODEAliases(alias_u0)
     end
