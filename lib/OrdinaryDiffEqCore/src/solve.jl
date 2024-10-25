@@ -121,7 +121,7 @@ function DiffEqBase.__init(
     end
 
     if !(alias isa ODEAliases)
-        error("Keyword argument `alias` must be a `ODEAliases`. ")
+        error("Keyword argument `alias` must be a `ODEAliases`.")
     end
 
     progress && @logmsg(LogLevel(-1), progress_name, _id=progress_id, progress=0)
