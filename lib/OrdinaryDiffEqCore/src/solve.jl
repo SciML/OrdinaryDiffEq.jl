@@ -69,6 +69,7 @@ function DiffEqBase.__init(
         initialize_integrator = true,
         alias_u0 = false,
         alias_du0 = false,
+        alias = ODEAliases(),
         initializealg = DefaultInit(),
         kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -160,8 +161,11 @@ function DiffEqBase.__init(
     p = prob.p
 
     # Get the control variables
+    if isnothing(alias.alias_u0)
+        alias = ODEAliases(alias_u0)
+    end
 
-    if alias_u0
+    if alias.alias_u0
         u = prob.u0
     else
         u = recursivecopy(prob.u0)
