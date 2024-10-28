@@ -67,9 +67,7 @@ function DiffEqBase.__init(
         userdata = nothing,
         allow_extrapolation = alg_extrapolates(alg),
         initialize_integrator = true,
-        alias_u0 = false,
-        alias_du0 = false,
-        alias = ODEAliases(),
+        alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
         kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -118,10 +116,6 @@ function DiffEqBase.__init(
         @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
     end
 
-    if !(alias isa ODEAliases)
-        error("Keyword argument `alias` must be a `ODEAliases`.")
-    end
-
     progress && @logmsg(LogLevel(-1), progress_name, _id=progress_id, progress=0)
 
     tType = eltype(prob.tspan)
@@ -164,21 +158,47 @@ function DiffEqBase.__init(
     f = prob.f
     p = prob.p
 
-    # Get the control variables
-    # If alias kwarg is just default, use alias_u0, which is false by default, or is set by a kwarg to solve
-    # If alias_u0 is not nothing, use the alias_u0 provided by the user
-    if isnothing(alias.alias_u0)
-        alias = ODEAliases(alias_u0)
+    use_old_kwargs = haskey(kwargs,:alias_u0) || haskey(kwargs,:alias_du0)
+
+    if use_old_kwargs
+        if haskey(kwargs, :alias_u0)
+            Base.depwarn("alias_u0 keyword argument is deprecated, to set `alias_u0`,
+            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))", :alias_u0)
+            old_alias_u0 = values(kwargs).alias_u0
+        else
+            old_alias_u0 = false
+
+        end
+
+        if haskey(kwargs, :alias_du0)
+            Base.depwarn("alias_du0 keyword argument is deprecated, to set `alias_du0`,
+            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))", :alias_du0)
+            old_alias_du0 = values(kwargs).alias_du0
+        else
+            old_alias_du0 = false
+        end
+        
+        aliases = ODEAliasSpecifier(alias_u0 = old_alias_u0, alias_du0 = old_alias_du0)
+
+    else
+         # If alias isa Bool, all fields of ODEAliases set to alias
+        if alias isa Bool
+            aliases = ODEAliasSpecifier(alias = alias)
+        elseif alias isa ODEAliasSpecifier
+            aliases = alias
+        else 
+            error("Keyword argument `alias` must be a `Bool` or `ODEAliasSpecifier`.")
+        end
     end
 
-    if alias.alias_u0
+    if aliases.alias_u0
         u = prob.u0
     else
         u = recursivecopy(prob.u0)
     end
 
     if _alg isa DAEAlgorithm
-        if alias_du0
+        if aliases.alias_du0
             du = prob.du0
         else
             du = recursivecopy(prob.du0)
