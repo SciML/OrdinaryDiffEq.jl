@@ -161,33 +161,32 @@ function DiffEqBase.__init(
     use_old_kwargs = haskey(kwargs,:alias_u0) || haskey(kwargs,:alias_du0)
 
     if use_old_kwargs
+        aliases = ODEAliasSpecifier()
         if haskey(kwargs, :alias_u0)
             Base.depwarn("alias_u0 keyword argument is deprecated, to set `alias_u0`,
             please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))", :alias_u0)
-            old_alias_u0 = values(kwargs).alias_u0
+            @reset aliases.alias_u0 = values(kwargs).alias_u0
         else
-            old_alias_u0 = false
+            @reset aliases.alias_u0 = false
 
         end
 
         if haskey(kwargs, :alias_du0)
             Base.depwarn("alias_du0 keyword argument is deprecated, to set `alias_du0`,
             please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))", :alias_du0)
-            old_alias_du0 = values(kwargs).alias_du0
+            @reset aliases.alias_du0 = values(kwargs).alias_du0
         else
-            old_alias_du0 = false
+            @reset aliases.alias_du0 = false
         end
         
-        aliases = ODEAliasSpecifier(alias_u0 = old_alias_u0, alias_du0 = old_alias_du0)
+        aliases 
 
     else
          # If alias isa Bool, all fields of ODEAliases set to alias
         if alias isa Bool
             aliases = ODEAliasSpecifier(alias = alias)
-        elseif alias isa ODEAliasSpecifier
+        elseif alias isa ODEAliasSpecifier || isnothing(alias)
             aliases = alias
-        else 
-            error("Keyword argument `alias` must be a `Bool` or `ODEAliasSpecifier`.")
         end
     end
 
