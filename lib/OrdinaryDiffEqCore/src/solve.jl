@@ -69,7 +69,7 @@ function DiffEqBase.__init(
         userdata = nothing,
         allow_extrapolation = alg_extrapolates(alg),
         initialize_integrator = true,
-        alias = ODEAliasSpecifier(),
+        alias = ODEAliasSpecifier(alias_u0 = false, alias_du0 = false),
         initializealg = DefaultInit(),
         kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
