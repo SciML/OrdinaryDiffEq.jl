@@ -17,7 +17,7 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_or
                            constvalue, PolyesterThreads, Sequential, BaseThreads,
                            _digest_beta1_beta2, timedepentdtmin, _unwrap_val,
                            _reshape, _vec, get_fsalfirstlast, generic_solver_docstring,
-                           differentiation_rk_docstring
+                           differentiation_rk_docstring, bool_to_ADType
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, LinearSolve
 import OrdinaryDiffEqCore
 import FastPower

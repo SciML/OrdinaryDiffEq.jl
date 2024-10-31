@@ -5,7 +5,7 @@ import OrdinaryDiffEqCore: alg_order, issplit, OrdinaryDiffEqNewtonAlgorithm, _u
                            OrdinaryDiffEqMutableCache,
                            @cache, alg_cache, initialize!, perform_step!, @unpack,
                            full_cache, get_fsalfirstlast,
-                           generic_solver_docstring
+                           generic_solver_docstring, bool_to_ADType
 
 using FastBroadcast
 import OrdinaryDiffEqCore
