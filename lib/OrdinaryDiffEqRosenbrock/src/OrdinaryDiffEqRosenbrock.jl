@@ -48,7 +48,7 @@ function rosenbrock_wolfbrandt_docstring(description::String,
     keyword_default = """
     chunk_size = Val{0}(),
     standardtag = Val{true}(),
-    autodiff = Val{true}(),
+    autodiff = AutoForwardDiff(),
     concrete_jac = nothing,
     diff_type = Val{:central},
     linsolve = nothing,
