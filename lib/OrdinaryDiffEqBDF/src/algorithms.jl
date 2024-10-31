@@ -120,10 +120,12 @@ function ABDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
         smooth_est = true, extrapolant = :linear,
         controller = :Standard, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     ABDF2{
@@ -182,10 +184,12 @@ function SBDF(order; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         tol = nothing,
         extrapolant = :linear, ark = false)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     SBDF{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
@@ -208,10 +212,12 @@ function SBDF(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag
         extrapolant = :linear,
         order, ark = false)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     SBDF{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
@@ -316,10 +322,12 @@ function QNDF1(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
         extrapolant = :linear, kappa = -37 // 200,
         controller = :Standard, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     QNDF1{
@@ -378,10 +386,12 @@ function QNDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
         extrapolant = :linear, kappa = -1 // 9,
         controller = :Standard, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     QNDF2{
@@ -451,10 +461,12 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
             -37 // 200, -1 // 9, -823 // 10000, -83 // 2000, 0 // 1),
         controller = :Standard, step_limiter! = trivial_limiter!) where {MO}
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     QNDF{MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -500,10 +512,12 @@ function MEBDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardt
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     MEBDF2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -562,10 +576,13 @@ function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         tol = nothing,
         extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!) where {MO}
 
-    if autodiff isa AbstractADType
+    println(autodiff)
+    if autodiff isa AbstracADType || autodiff <: AbstractADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     FBDF{MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -684,10 +701,12 @@ function DImplicitEuler(;
         extrapolant = :constant,
         controller = :Standard)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     DImplicitEuler{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -729,10 +748,12 @@ function DABDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardt
         extrapolant = :constant,
         controller = :Standard)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     DABDF2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -796,10 +817,12 @@ function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         tol = nothing,
         extrapolant = :linear, controller = :Standard) where {MO}
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     DFBDF{MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
