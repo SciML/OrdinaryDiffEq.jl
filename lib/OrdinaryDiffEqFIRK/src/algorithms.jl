@@ -39,7 +39,7 @@ struct RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     step_limiter!::StepLimiter
 end
 
-function RadauIIA3(; chunk_size = Val{0}(), autodiff = Val{true}(),
+function RadauIIA3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS,
@@ -47,7 +47,14 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = Val{true}(),
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10,
         step_limiter! = trivial_limiter!)
-    RadauIIA3{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+
+    if autodiff isa AbstractADType
+        AD_choice = autodiff
+    else
+        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    end
+
+    RadauIIA3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
         typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
@@ -83,7 +90,7 @@ struct RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     step_limiter!::StepLimiter
 end
 
-function RadauIIA5(; chunk_size = Val{0}(), autodiff = Val{true}(),
+function RadauIIA5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS,
@@ -91,7 +98,14 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!)
-    RadauIIA5{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+
+    if autodiff isa AbstractADType
+        AD_choice = autodiff
+    else
+        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    end
+
+    RadauIIA5{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
         typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
@@ -128,7 +142,7 @@ struct RadauIIA9{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     step_limiter!::StepLimiter
 end
 
-function RadauIIA9(; chunk_size = Val{0}(), autodiff = Val{true}(),
+function RadauIIA9(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS,
@@ -136,7 +150,14 @@ function RadauIIA9(; chunk_size = Val{0}(), autodiff = Val{true}(),
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!)
-    RadauIIA9{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+
+    if autodiff isa AbstractADType
+        AD_choice = autodiff
+    else
+        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    end
+
+    RadauIIA9{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
         typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
@@ -168,7 +189,7 @@ struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, TO} <:
  threading::TO
 end
 
-function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = Val{true}(),
+function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
      standardtag = Val{true}(), concrete_jac = nothing,
      diff_type = Val{:forward}, min_order = 5, max_order = 13, threading = false,
      linsolve = nothing, precs = DEFAULT_PRECS,
@@ -176,7 +197,14 @@ function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = Val{true}(),
      new_W_γdt_cutoff = 1 // 5,
      controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
      step_limiter! = trivial_limiter!)
- AdaptiveRadau{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+
+    if autodiff isa AbstractADType
+        AD_choice = autodiff
+    else
+        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    end
+
+ AdaptiveRadau{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
      typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
      typeof(κ), typeof(fast_convergence_cutoff),
      typeof(new_W_γdt_cutoff), typeof(step_limiter!), typeof(threading)}(linsolve,

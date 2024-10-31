@@ -34,11 +34,18 @@ for (Alg, Description, Ref) in [
             iop::Int
         end
     end
-    @eval function $Alg(; krylov = false, m = 30, iop = 0, autodiff = true,
+    @eval function $Alg(; krylov = false, m = 30, iop = 0, autodiff = AutoForwardDiff(),
             standardtag = Val{true}(), concrete_jac = nothing,
             chunk_size = Val{0}(),
             diff_type = Val{:forward})
-        $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff),
+
+        if autodiff isa AbstractADType
+            AD_choice = autodiff
+        else
+            AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+        end
+
+        $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
             diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(krylov,
             m,
             iop)
@@ -74,10 +81,17 @@ for (Alg, Description, Ref) in [
             iop::Int
         end
     end
-    @eval function $Alg(; m = 30, iop = 0, autodiff = true, standardtag = Val{true}(),
+    @eval function $Alg(; m = 30, iop = 0, autodiff = AutoForwardDiff(), standardtag = Val{true}(),
             concrete_jac = nothing, chunk_size = Val{0}(),
             diff_type = Val{:forward})
-        $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff),
+
+        if autodiff isa AbstractADType
+            AD_choice = autodiff
+        else
+            AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+        end
+
+        $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
             diff_type, _unwrap_val(standardtag),
             _unwrap_val(concrete_jac)}(m,
             iop)
@@ -123,6 +137,7 @@ for (Alg, Description, Ref) in [(:Exp4, "4th order EPIRK scheme.", REF3)
             m = 30,
             iop = 0,
             """)
+
         struct $Alg{CS, AD, FDT, ST, CJ} <:
                OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ}
             adaptive_krylov::Bool
@@ -130,10 +145,17 @@ for (Alg, Description, Ref) in [(:Exp4, "4th order EPIRK scheme.", REF3)
             iop::Int
         end
     end
-    @eval function $Alg(; adaptive_krylov = true, m = 30, iop = 0, autodiff = true,
+    @eval function $Alg(; adaptive_krylov = true, m = 30, iop = 0, autodiff = AutoForwardDiff(),
             standardtag = Val{true}(), concrete_jac = nothing,
             chunk_size = Val{0}(), diff_type = Val{:forward})
-        $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff), diff_type,
+
+        if autodiff isa AbstractADType
+            AD_choice = autodiff
+        else
+            AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+        end
+
+        $Alg{_unwrap_val(chunk_size), typeof(AD_choice), diff_type,
             _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(adaptive_krylov,
             m,
             iop)
