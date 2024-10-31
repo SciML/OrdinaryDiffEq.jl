@@ -28,12 +28,19 @@ struct CNAB2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     extrapolant::Symbol
 end
 
-function CNAB2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
+function CNAB2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
+
+    if autodiff isa AbstractADType
+        AD_choice = autodiff
+    else
+        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    end
+
     CNAB2{
-        _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
         linsolve,
         nlsolve,
@@ -67,12 +74,19 @@ struct CNLF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     precs::P
     extrapolant::Symbol
 end
-function CNLF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
+function CNLF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
+
+    if autodiff isa AbstractADType
+        AD_choice = autodiff
+    else
+        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    end
+
     CNLF2{
-        _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
         linsolve,
         nlsolve,

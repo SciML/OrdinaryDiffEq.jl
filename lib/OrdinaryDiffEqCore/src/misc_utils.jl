@@ -130,3 +130,14 @@ function get_differential_vars(f, u)
 end
 
 isnewton(::Any) = false
+
+
+function bool_to_ADType(AD::Val{true}, chunk_size, diff_type)
+    Base.depwarn("Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.", :bool_to_ADType)
+    AutoForwardDiff(chunk_size = SciMLBase._unwrap_val(chunksize))
+end
+
+function bool_to_ADType(AD::Val{false}, chunk_size, diff_type)
+    Base.depwarn("Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.", :bool_to_ADType)
+    AutoFiniteDiff(fdtype = diff_type)
+end
