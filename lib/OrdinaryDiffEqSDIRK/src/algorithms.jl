@@ -5,7 +5,7 @@ function SDIRK_docstring(description::String,
         extra_keyword_default::String = "")
     keyword_default = """
         chunk_size = Val{0}(),
-        autodiff = true,
+        autodiff = AutoForwardDiff(),
         standardtag = Val{true}(),
         concrete_jac = nothing,
         diff_type = Val{:forward},
