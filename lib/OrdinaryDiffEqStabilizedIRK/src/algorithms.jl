@@ -25,10 +25,12 @@ function IRKC(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag
         tol = nothing,
         extrapolant = :linear, controller = :Standard, eigen_est = nothing)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     IRKC{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),

@@ -48,10 +48,12 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         controller = :Predictive, κ = nothing, maxiters = 10,
         step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     RadauIIA3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -99,10 +101,12 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     RadauIIA5{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -151,10 +155,12 @@ function RadauIIA9(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     RadauIIA9{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -197,10 +203,12 @@ function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
      controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
      step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
  AdaptiveRadau{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),

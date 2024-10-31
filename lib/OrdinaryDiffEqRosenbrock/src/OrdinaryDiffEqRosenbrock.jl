@@ -12,7 +12,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _un
                            constvalue, only_diagonal_mass_matrix,
                            calculate_residuals, has_stiff_interpolation, ODEIntegrator,
                            resize_non_user_cache!, _ode_addsteps!, full_cache,
-                           DerivativeOrderNotPossibleError
+                           DerivativeOrderNotPossibleError, bool_to_ADType
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import MacroTools
 using MacroTools: @capture
@@ -22,7 +22,7 @@ import LinearSolve: UniformScaling
 import ForwardDiff
 using FiniteDiff
 using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm
-import ADTypes: AutoForwardDiff
+import ADTypes: AutoForwardDiff, AbstractADType
 import OrdinaryDiffEqCore
 
 using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
