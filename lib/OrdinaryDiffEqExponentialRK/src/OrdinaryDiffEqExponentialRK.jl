@@ -20,6 +20,7 @@ using ExponentialUtilities
 import RecursiveArrayTools: recursivecopy!
 using OrdinaryDiffEqDifferentiation: build_jac_config, UJacobianWrapper, UDerivativeWrapper,
                                      calc_J, calc_J!
+import ADTypes: AutoForwardDiff
 
 using Reexport
 @reexport using DiffEqBase
