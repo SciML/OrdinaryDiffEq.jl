@@ -12,7 +12,7 @@ import OrdinaryDiffEqCore
 using OrdinaryDiffEqDifferentiation: dolinsolve
 using OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, markfirststage!, nlsolve!,
                                     nlsolvefail, du_alias_or_new
-import ADTypes: AutoForwardDiff
+import ADTypes: AutoForwardDiff, AbstractADType
 
 using Reexport
 @reexport using DiffEqBase
