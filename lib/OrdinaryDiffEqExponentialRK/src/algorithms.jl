@@ -39,10 +39,12 @@ for (Alg, Description, Ref) in [
             chunk_size = Val{0}(),
             diff_type = Val{:forward})
 
-        if autodiff isa AbstractADType
+        if autodiff isa AbstracADType || autodiff <: AbstractADType
             AD_choice = autodiff
-        else
+        elseif autodiff isa Bool
             AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+        else
+            error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
         end
 
         $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
@@ -85,10 +87,12 @@ for (Alg, Description, Ref) in [
             concrete_jac = nothing, chunk_size = Val{0}(),
             diff_type = Val{:forward})
 
-        if autodiff isa AbstractADType
+        if autodiff isa AbstracADType || autodiff <: AbstractADType
             AD_choice = autodiff
-        else
+        elseif autodiff isa Bool
             AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+        else
+            error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
         end
 
         $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
@@ -149,10 +153,12 @@ for (Alg, Description, Ref) in [(:Exp4, "4th order EPIRK scheme.", REF3)
             standardtag = Val{true}(), concrete_jac = nothing,
             chunk_size = Val{0}(), diff_type = Val{:forward})
 
-        if autodiff isa AbstractADType
+        if autodiff isa AbstracADType || autodiff <: AbstractADType
             AD_choice = autodiff
-        else
+        elseif autodiff isa Bool
             AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+        else
+            error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
         end
 
         $Alg{_unwrap_val(chunk_size), typeof(AD_choice), diff_type,
