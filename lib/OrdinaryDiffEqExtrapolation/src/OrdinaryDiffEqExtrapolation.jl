@@ -25,6 +25,7 @@ import OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, UDerivativeWrapper,
                                       WOperator, TimeGradientWrapper, UJacobianWrapper,
                                       build_grad_config,
                                       build_jac_config, calc_J!, jacobian2W!, dolinsolve
+import ADTypes: AutoForwardDiff
 
 using Reexport
 @reexport using DiffEqBase

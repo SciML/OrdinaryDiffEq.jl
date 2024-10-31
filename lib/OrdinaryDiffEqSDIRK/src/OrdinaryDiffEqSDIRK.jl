@@ -23,6 +23,7 @@ using OrdinaryDiffEqDifferentiation: UJacobianWrapper, dolinsolve
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlsolver,
                                     nlsolve!, nlsolvefail, isnewton, get_W, set_new_W!,
                                     NLNewton, COEFFICIENT_MULTISTEP
+import ADTypes: AutoForwardDiff
 
 using Reexport
 @reexport using DiffEqBase

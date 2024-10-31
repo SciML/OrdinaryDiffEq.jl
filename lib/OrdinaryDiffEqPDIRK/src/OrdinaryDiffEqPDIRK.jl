@@ -18,6 +18,8 @@ using OrdinaryDiffEqDifferentiation: dolinsolve
 using OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, nlsolve!, nlsolvefail,
                                     markfirststage!
 
+import ADTypes: AutoForwardDiff
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("pdirk_caches.jl")
