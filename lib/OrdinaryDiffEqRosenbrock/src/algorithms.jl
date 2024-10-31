@@ -117,10 +117,12 @@ for Alg in [
                 precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
                 stage_limiter! = trivial_limiter!)
 
-            if autodiff isa AbstractADType
+            if autodiff isa AbstracADType || autodiff <: AbstractADType
                 AD_choice = autodiff
-            else
+            elseif autodiff isa Bool
                 AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+            else
+                error("Keyword `autodiff` should be an `AbstractADType` or a `Bool`.") 
             end
 
             $Alg{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -141,10 +143,12 @@ function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = AutoForwardDiff()
         standardtag = Val{true}(), concrete_jac = nothing,
         factorization = lu!, tableau = ROSENBROCK_DEFAULT_TABLEAU)
         
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     GeneralRosenbrock{
@@ -172,10 +176,12 @@ function RosenbrockW6S4OS(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing,
         precs = DEFAULT_PRECS)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     RosenbrockW6S4OS{_unwrap_val(chunk_size),
@@ -215,10 +221,12 @@ for Alg in [
                 standardtag = Val{true}(), concrete_jac = nothing,
                 diff_type = Val{:forward}, linsolve = nothing, precs = DEFAULT_PRECS)
 
-            if autodiff isa AbstractADType
+            if autodiff isa AbstracADType || autodiff <: AbstractADType
                 AD_choice = autodiff
-            else
+            elseif autodiff isa Bool
                 AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+            else
+                error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
             end
 
             $Alg{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),

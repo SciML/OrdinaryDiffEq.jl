@@ -73,10 +73,12 @@ function ImplicitEulerExtrapolation(; chunk_size = Val{0}(), autodiff = AutoForw
         max_order = 12, min_order = 3, init_order = 5,
         threading = false, sequence = :harmonic)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     linsolve = (linsolve === nothing &&
@@ -219,10 +221,12 @@ function ImplicitDeuflhardExtrapolation(; chunk_size = Val{0}(), autodiff = Auto
         min_order = 1, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     # Enforce 1 <=  min_order <= init_order <= max_order:
@@ -405,10 +409,12 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence = :harmonic
     end
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
     # Initialize algorithm
     ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), typeof(AD_choice),
@@ -491,10 +497,12 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence = :harmonic
     end
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
     # Initialize algorithm
     ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), typeof(AD_choice),

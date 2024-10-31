@@ -115,10 +115,12 @@ function ImplicitEuler(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         extrapolant = :constant,
         controller = :PI, step_limiter! = trivial_limiter!)
     
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     ImplicitEuler{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -159,10 +161,12 @@ function ImplicitMidpoint(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     ImplicitMidpoint{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -209,10 +213,12 @@ function Trapezoid(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     Trapezoid{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -267,10 +273,12 @@ function TRBDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardt
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     TRBDF2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -321,10 +329,12 @@ function SDIRK2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardt
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     SDIRK2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -370,10 +380,12 @@ function SDIRK22(;
         extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     Trapezoid{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -429,10 +441,12 @@ function SSPSDIRK2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est = true, extrapolant = :constant,
         controller = :PI)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     SSPSDIRK2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -481,10 +495,12 @@ function Kvaerno3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     Kvaerno3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -530,10 +546,12 @@ function KenCarp3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     KenCarp3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -572,10 +590,12 @@ function CFNLIRK3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     CFNLIRK3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -625,11 +645,12 @@ function Cash4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
         smooth_est = true, extrapolant = :linear,
         controller = :PI, embedding = 3)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
-        # deprecation path
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     Cash4{
@@ -674,10 +695,12 @@ function SFSDIRK4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     SFSDIRK4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -719,10 +742,12 @@ function SFSDIRK5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     SFSDIRK5{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -764,10 +789,12 @@ function SFSDIRK6(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     SFSDIRK6{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -809,10 +836,12 @@ function SFSDIRK7(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     SFSDIRK7{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -854,10 +883,12 @@ function SFSDIRK8(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     SFSDIRK8{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -899,10 +930,12 @@ function Hairer4(;
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     Hairer4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -942,10 +975,12 @@ function Hairer42(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     Hairer42{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -994,10 +1029,12 @@ function Kvaerno4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     Kvaerno4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -1046,10 +1083,12 @@ function Kvaerno5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     Kvaerno5{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -1095,10 +1134,12 @@ function KenCarp4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     KenCarp4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
@@ -1146,10 +1187,12 @@ function KenCarp47(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     KenCarp47{_unwrap_val(chunk_size),typeof(AD_choice), typeof(linsolve),
@@ -1195,10 +1238,12 @@ function KenCarp5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     KenCarp5{_unwrap_val(chunk_size),typeof(AD_choice), typeof(linsolve),
@@ -1244,10 +1289,12 @@ function KenCarp58(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     KenCarp58{_unwrap_val(chunk_size),typeof(AD_choice), typeof(linsolve),
@@ -1292,10 +1339,12 @@ function ESDIRK54I8L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     ESDIRK54I8L2SA{_unwrap_val(chunk_size),typeof(AD_choice), typeof(linsolve),
@@ -1339,10 +1388,12 @@ function ESDIRK436L2SA2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     ESDIRK436L2SA2{_unwrap_val(chunk_size),typeof(AD_choice), typeof(linsolve),
@@ -1386,10 +1437,12 @@ function ESDIRK437L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     ESDIRK437L2SA{_unwrap_val(chunk_size),typeof(AD_choice), typeof(linsolve),
@@ -1433,10 +1486,12 @@ function ESDIRK547L2SA2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     ESDIRK547L2SA2{_unwrap_val(chunk_size),typeof(AD_choice), typeof(linsolve),
@@ -1482,10 +1537,12 @@ function ESDIRK659L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
 
-    if autodiff isa AbstractADType
+    if autodiff isa AbstracADType || autodiff <: AbstractADType
         AD_choice = autodiff
-    else
+    elseif autodiff isa Bool
         AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    else
+        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
     end
 
     ESDIRK659L2SA{_unwrap_val(chunk_size),typeof(AD_choice), typeof(linsolve),
