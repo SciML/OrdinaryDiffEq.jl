@@ -18,7 +18,7 @@ using OrdinaryDiffEqDifferentiation: dolinsolve
 using OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, nlsolve!, nlsolvefail,
                                     markfirststage!
 
-import ADTypes: AutoForwardDiff
+import ADTypes: AutoForwardDiff, AbstractADType
 
 include("algorithms.jl")
 include("alg_utils.jl")
