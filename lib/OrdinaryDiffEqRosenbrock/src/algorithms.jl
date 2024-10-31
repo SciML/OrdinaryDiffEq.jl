@@ -111,12 +111,19 @@ for Alg in [
             step_limiter!::StepLimiter
             stage_limiter!::StageLimiter
         end
-        function $Alg(; chunk_size = Val{0}(), autodiff = Val{true}(),
+        function $Alg(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
                 diff_type = Val{:forward}, linsolve = nothing,
                 precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
                 stage_limiter! = trivial_limiter!)
-            $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+
+            if autodiff isa AbstractADType
+                AD_choice = autodiff
+            else
+                AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+            end
+
+            $Alg{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
                 typeof(precs), diff_type, _unwrap_val(standardtag),
                 _unwrap_val(concrete_jac), typeof(step_limiter!),
                 typeof(stage_limiter!)}(linsolve, precs, step_limiter!,
@@ -130,11 +137,18 @@ struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
     factorization::F
 end
 
-function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = true,
+function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
         factorization = lu!, tableau = ROSENBROCK_DEFAULT_TABLEAU)
+        
+    if autodiff isa AbstractADType
+        AD_choice = autodiff
+    else
+        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    end
+
     GeneralRosenbrock{
-        _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(factorization),
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(factorization),
         _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(tableau)}(tableau,
         factorization)
 end
@@ -152,13 +166,20 @@ struct RosenbrockW6S4OS{CS, AD, F, P, FDT, ST, CJ} <:
     linsolve::F
     precs::P
 end
-function RosenbrockW6S4OS(; chunk_size = Val{0}(), autodiff = true,
+function RosenbrockW6S4OS(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:central},
         linsolve = nothing,
         precs = DEFAULT_PRECS)
+
+    if autodiff isa AbstractADType
+        AD_choice = autodiff
+    else
+        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+    end
+
     RosenbrockW6S4OS{_unwrap_val(chunk_size),
-        _unwrap_val(autodiff), typeof(linsolve), typeof(precs), diff_type,
+        typeof(AD_choice), typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(linsolve,
         precs)
 end
@@ -190,10 +211,17 @@ for Alg in [
             linsolve::F
             precs::P
         end
-        function $Alg(; chunk_size = Val{0}(), autodiff = Val{true}(),
+        function $Alg(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
                 diff_type = Val{:forward}, linsolve = nothing, precs = DEFAULT_PRECS)
-            $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+
+            if autodiff isa AbstractADType
+                AD_choice = autodiff
+            else
+                AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
+            end
+
+            $Alg{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
                 typeof(precs), diff_type, _unwrap_val(standardtag),
                 _unwrap_val(concrete_jac)}(linsolve,
                 precs)
