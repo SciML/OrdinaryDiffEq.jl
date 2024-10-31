@@ -31,7 +31,7 @@ using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_conf
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, Convergence, FastConvergence, NLStatus,
                                     VerySlowConvergence,
                                     Divergence, get_new_W_γdt_cutoff
-import ADTypes: AutoForwardDiff
+import ADTypes: AutoForwardDiff, AbstractADType
 
 using Reexport
 @reexport using DiffEqBase

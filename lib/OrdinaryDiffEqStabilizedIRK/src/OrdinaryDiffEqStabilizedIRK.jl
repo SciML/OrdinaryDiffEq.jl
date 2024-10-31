@@ -19,7 +19,7 @@ using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import OrdinaryDiffEqCore
-import ADTypes: AutoForwardDiff
+import ADTypes: AutoForwardDiff, AbstractADType
 
 using Reexport
 @reexport using DiffEqBase
