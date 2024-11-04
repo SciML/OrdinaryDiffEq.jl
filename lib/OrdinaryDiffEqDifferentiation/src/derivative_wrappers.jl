@@ -80,7 +80,8 @@ function derivative!(df::AbstractArray{<:Number}, f,
         integrator, grad_config)
     alg = unwrap_alg(integrator, true)
     tmp = length(x) # We calculate derivative for all elements in gradient
-    if alg_autodiff(alg) isa AutoForwardDiff
+    autodiff_alg = alg_autodiff(alg) 
+    if autodiff_alg isa AutoForwardDiff
         T = if standardtag(alg)
             typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(df)))
         else
@@ -102,7 +103,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
 
         df .= first.(ForwardDiff.partials.(grad_config))
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    elseif alg_autodiff(alg) isa AutoFiniteDiff
+    elseif autodiff_alg isa AutoFiniteDiff
         FiniteDiff.finite_difference_gradient!(df, f, x, grad_config,
             dir = diffdir(integrator))
         fdtype = alg_difftype(alg)
