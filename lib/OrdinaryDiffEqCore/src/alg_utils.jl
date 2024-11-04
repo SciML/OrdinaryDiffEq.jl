@@ -232,7 +232,7 @@ function alg_difftype(alg::Union{
             CJ},
         DAEAlgorithm{CS, AD, FDT, ST, CJ}}) where {CS, AD, FDT, ST,
         CJ}
-    FDT
+    typeof(AD.fdtype)
 end
 
 function standardtag(alg::Union{
