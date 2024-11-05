@@ -172,31 +172,36 @@ function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
 
-_get_fwd_chunksize(AD::AutoForwardDiff{CS, T}) where {CS, T} = Val(CS)
-_get_fwd_chunksize_int(AD::AutoForwardDiff{CS, T}) where {CS, T} = CS
+_get_fwd_chunksize(::Type{AutoForwardDiff{CS, T}}) where {CS, T} = Val(CS)
+_get_fwd_chunksize_int(::Type{AutoForwardDiff{CS, T}}) where {CS, T} = CS
 _get_fwd_chunksize(AD) = Val(0)
+_get_fwd_chunksize_int(AD) = 0
+_get_fwd_tag(::Type{AutoForwardDiff{CS,T}}) where {CS,T} = T
 
 
-function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{AD},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{AD},
-        OrdinaryDiffEqImplicitAlgorithm{AD},
-        OrdinaryDiffEqAdaptiveImplicitAlgorithm{AD},
-        DAEAlgorithm{AD},
-        CompositeAlgorithm{AD}}) where {AD}
+function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
+        OrdinaryDiffEqImplicitAlgorithm{CS, AD},
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD},
+        DAEAlgorithm{CS, AD},
+        CompositeAlgorithm{CS, AD}}) where {CS, AD}
     _get_fwd_chunksize(AD)
 end
 
 function get_chunksize_int(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
-function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{AD},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{AD},
-        OrdinaryDiffEqImplicitAlgorithm{AD},
-        OrdinaryDiffEqAdaptiveImplicitAlgorithm{AD},
-        DAEAlgorithm{AD},
-        CompositeAlgorithm{AD}}) where {AD}
+
+function get_chunksize_int(alg::Union{
+        OrdinaryDiffEqExponentialAlgorithm{CS},
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
+        OrdinaryDiffEqImplicitAlgorithm{CS, AD},
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD},
+        DAEAlgorithm{CS, AD},
+        CompositeAlgorithm{CS, AD}}) where {CS, AD}
     _get_fwd_chunksize_int(AD)
 end
+
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 function alg_autodiff end
@@ -452,6 +457,6 @@ function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
 end
 
 
-function get_chunksize(alg::AutoForwardDiff{CS}) where {CS}
-    Val(CS)
-end
+#function get_chunksize(alg::AutoForwardDiff{CS}) where {CS}
+#    Val(CS)
+#end
