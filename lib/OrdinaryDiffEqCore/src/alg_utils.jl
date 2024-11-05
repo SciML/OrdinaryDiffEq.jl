@@ -452,11 +452,6 @@ function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
 end
 
 
-function get_chunksize(alg::AutoForwardDiff{chunksize}) where {chunksize}
-    Val(chunksize)
+function get_chunksize(alg::AutoForwardDiff{CS}) where {CS}
+    Val(CS)
 end
-
-
-remake_AD(ad)
-
-remake_AD()
