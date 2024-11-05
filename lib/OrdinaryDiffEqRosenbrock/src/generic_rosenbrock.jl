@@ -911,7 +911,7 @@ function ROS2Tableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 An Order 2/3 L-Stable Rosenbrock-W method which is good for very stiff equations with oscillations at low tolerances. 2nd order stiff-aware interpolation.
 """,
@@ -922,7 +922,7 @@ Scientific Computing, 18 (1), pp. 1-22.
 """,
 with_step_limiter = true) Rosenbrock23
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 An Order 3/2 A-Stable Rosenbrock-W method which is good for mildly stiff equations without oscillations at low tolerances. Note that this method is prone to instability in the presence of oscillations, so use with caution. 2nd order stiff-aware interpolation.
 """,
@@ -944,7 +944,7 @@ references = """
 """,
 with_step_limiter = true) ROS3P
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 An Order 2/3 L-Stable Rosenbrock-W method for stiff ODEs and DAEs in mass matrix form. 2nd order stiff-aware interpolation and additional error test for interpolation.
 """,
@@ -955,7 +955,7 @@ references = """
 """,
 with_step_limiter = true) Rodas23W
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order L-stable Rosenbrock-W method.
 """,
@@ -971,7 +971,7 @@ references = """
   publisher={Springer}}
 """) ROS34PW1a
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order L-stable Rosenbrock-W method.
 """,
@@ -987,7 +987,7 @@ references = """
   publisher={Springer}}
 """) ROS34PW1b
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order stiffy accurate Rosenbrock-W method for PDAEs.
 """,
@@ -1003,7 +1003,7 @@ references = """
   publisher={Springer}}
 """) ROS34PW2
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order strongly A-stable (Rinf~0.63) Rosenbrock-W method.
 """,
@@ -1088,7 +1088,7 @@ references = """
 """,
 with_step_limiter=true) Rodas42
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 4th order A-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant. 4th order
 on linear parabolic problems and 3rd order accurate on nonlinear parabolic problems (as opposed to
@@ -1102,7 +1102,7 @@ references = """
 """,
 with_step_limiter=true) Rodas4P
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order L-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant. 4th order
 on linear parabolic problems and 3rd order accurate on nonlinear parabolic problems. It is an improvement
@@ -1128,7 +1128,7 @@ references = """
 """,
 with_step_limiter=true) Rodas5
 
-@doc rosenbrock_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
 Has improved stability in the adaptive time stepping embedding.
@@ -1141,7 +1141,7 @@ references = """
 """,
 with_step_limiter=true) Rodas5P
 
-@doc rosenbrock_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
 Has improved stability in the adaptive time stepping embedding.
@@ -1154,7 +1154,7 @@ references = """
 """,
 with_step_limiter=true) Rodas5Pr
 
-@doc rosenbrock_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
 Has improved stability in the adaptive time stepping embedding.
@@ -1200,7 +1200,7 @@ references = """
 """,
 with_step_limiter=true) Veldd4
 
-@doc rosenbrock_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order A-stable Rosenbrock method.
 """,
@@ -1324,7 +1324,7 @@ function ROS2STableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 2nd order stiffly accurate Rosenbrock-Wanner W-method with 3 internal stages with B_PR consistent of order 2 with (Rinf=0).
 """,
@@ -1619,7 +1619,7 @@ function ROS34PRwTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 3rd order stiffly accurate Rosenbrock-Wanner W-method with 4 internal stages,
 B_PR consistent of order 2.
@@ -1736,7 +1736,7 @@ function ROK4aTableau() # 4rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 4rd order L-stable Rosenbrock-Krylov method with 4 internal stages,
 with a 3rd order embedded method which is strongly A-stable with Rinf~=0.55. (when using exact Jacobians)
