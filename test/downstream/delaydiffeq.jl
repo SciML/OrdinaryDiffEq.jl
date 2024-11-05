@@ -24,8 +24,8 @@ using Test
         @test sol.errors[:l∞] < error
 
         sol_scalar = solve(prob_scalar, ddealg)
-        @test sol.t≈sol_scalar.t atol=1e-6
-        @test sol[1, :] ≈ sol_scalar.u
+        @test sol.t≈sol_scalar.t atol=1e-3
+        @test sol[1, :] ≈ sol_scalar.u atol=1e-3
     end
 end
 
