@@ -102,7 +102,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
           :$(sequence) --> :harmonic"
         sequence = :harmonic
     end
-    ImplicitEulerExtrapolation{_unwrap_val(chunk_size), AD_choice),
+    ImplicitEulerExtrapolation{_unwrap_val(chunk_size), AD_choice,
         typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(threading)}(linsolve, precs, max_order, min_order,
@@ -248,7 +248,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
     # Initialize algorithm
-    ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), AD_choice),
+    ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), AD_choice,
         typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(threading)}(linsolve, precs, min_order,
@@ -399,7 +399,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
     # Initialize algorithm
-    ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), AD_choice),
+    ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), AD_choice,
         typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(threading)}(linsolve, precs, min_order,
@@ -481,7 +481,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
     # Initialize algorithm
-    ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), AD_choice),
+    ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), AD_choice,
         typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(threading)}(linsolve,
