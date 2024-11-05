@@ -171,25 +171,31 @@ end
 function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
-function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
-        OrdinaryDiffEqImplicitAlgorithm{CS},
-        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
-        DAEAlgorithm{CS},
-        CompositeAlgorithm{CS}}) where {CS}
-    Val(CS)
+
+_get_fwd_chunksize(AD::AutoForwardDiff{CS}) where {CS} = Val(CS)
+_get_fwd_chunksize_int(AD::AutoForwardDiff{CS}) where {CS} = CS
+_get_fwd_chunksize(AD) = Val(0)
+
+
+function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{AD},
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm{AD},
+        OrdinaryDiffEqImplicitAlgorithm{AD},
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm{AD},
+        DAEAlgorithm{AD},
+        CompositeAlgorithm{AD}}) where {AD}
+    _get_fwd_chunksize(AD)
 end
 
 function get_chunksize_int(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
-function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
-        OrdinaryDiffEqImplicitAlgorithm{CS},
-        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
-        DAEAlgorithm{CS},
-        CompositeAlgorithm{CS}}) where {CS}
-    CS
+function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{AD},
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm{AD},
+        OrdinaryDiffEqImplicitAlgorithm{AD},
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm{AD},
+        DAEAlgorithm{AD},
+        CompositeAlgorithm{AD}}) where {AD}
+    _get_fwd_chunksize_int(AD)
 end
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
@@ -444,3 +450,13 @@ function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
     end
     print(io, ")")
 end
+
+
+function get_chunksize(alg::AutoForwardDiff{chunksize}) where {chunksize}
+    Val(chunksize)
+end
+
+
+remake_AD(ad)
+
+remake_AD()
