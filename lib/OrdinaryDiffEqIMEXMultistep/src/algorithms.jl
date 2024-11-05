@@ -33,16 +33,10 @@ function CNAB2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
-    if autodiff isa AbstracADType || autodiff <: AbstractADType
-        AD_choice = autodiff
-    elseif autodiff isa Bool
-        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
-    else
-        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
-    end
+    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     CNAB2{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
         linsolve,
         nlsolve,
@@ -81,16 +75,10 @@ function CNLF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
-    if autodiff isa AbstracADType || autodiff <: AbstractADType
-        AD_choice = autodiff
-    elseif autodiff isa Bool
-        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
-    else
-        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
-    end
+    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     CNLF2{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
         linsolve,
         nlsolve,
