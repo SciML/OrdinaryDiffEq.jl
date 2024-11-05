@@ -118,7 +118,6 @@ for Alg in [
                 stage_limiter! = trivial_limiter!)
 
             AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
-
             $Alg{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
                 typeof(precs), diff_type, _unwrap_val(standardtag),
                 _unwrap_val(concrete_jac), typeof(step_limiter!),
