@@ -81,7 +81,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
     alg = unwrap_alg(integrator, true)
     tmp = length(x) # We calculate derivative for all elements in gradient
     autodiff_alg = alg_autodiff(alg) 
-    if autodiff_alg isa AutoForwardDiff
+    if nameof(autodiff_alg) == :AutoForwardDiff
         T = if standardtag(alg)
             typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(df)))
         else
@@ -103,7 +103,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
 
         df .= first.(ForwardDiff.partials.(grad_config))
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    elseif autodiff_alg isa AutoFiniteDiff
+    elseif nameof(autodiff_alg) == :AutoFiniteDiff
         FiniteDiff.finite_difference_gradient!(df, f, x, grad_config,
             dir = diffdir(integrator))
         fdtype = alg_difftype(alg)
@@ -282,7 +282,6 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2) where {F1
         sparsity, colorvec = sparsity_colorvec(f, u)
         if nameof(alg_autodiff(alg)) == :AutoForwardDiff
             _chunksize = get_chunksize(alg) === Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
-            println(get_chunksize(alg))
             T = if standardtag(alg)
                 typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u)))
             else
