@@ -119,7 +119,7 @@ for Alg in [
 
             AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-            $Alg{_unwrap_val(chunk_size), AD_choice), typeof(linsolve),
+            $Alg{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
                 typeof(precs), diff_type, _unwrap_val(standardtag),
                 _unwrap_val(concrete_jac), typeof(step_limiter!),
                 typeof(stage_limiter!)}(linsolve, precs, step_limiter!,
@@ -140,7 +140,7 @@ function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = AutoForwardDiff()
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     GeneralRosenbrock{
-        _unwrap_val(chunk_size), AD_choice), typeof(factorization),
+        _unwrap_val(chunk_size), AD_choice, typeof(factorization),
         _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(tableau)}(tableau,
         factorization)
 end
@@ -167,7 +167,7 @@ function RosenbrockW6S4OS(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     RosenbrockW6S4OS{_unwrap_val(chunk_size),
-        AD_choice), typeof(linsolve), typeof(precs), diff_type,
+        AD_choice, typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(linsolve,
         precs)
 end
@@ -205,7 +205,7 @@ for Alg in [
 
             AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-            $Alg{_unwrap_val(chunk_size), AD_choice), typeof(linsolve),
+            $Alg{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
                 typeof(precs), diff_type, _unwrap_val(standardtag),
                 _unwrap_val(concrete_jac)}(linsolve,
                 precs)

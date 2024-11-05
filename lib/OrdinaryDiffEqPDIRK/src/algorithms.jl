@@ -36,7 +36,7 @@ function PDIRK44(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standard
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    PDIRK44{_unwrap_val(chunk_size), AD_choice), typeof(linsolve),
+    PDIRK44{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(threading)}(linsolve, nlsolve, precs,
         extrapolant, threading)

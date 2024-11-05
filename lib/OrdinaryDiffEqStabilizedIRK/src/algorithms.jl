@@ -27,7 +27,7 @@ function IRKC(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    IRKC{_unwrap_val(chunk_size), AD_choice), typeof(linsolve), typeof(nlsolve),
+    IRKC{_unwrap_val(chunk_size), AD_choice, typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(tol), typeof(eigen_est)}(linsolve, nlsolve, precs, κ, tol,
         extrapolant, controller, eigen_est)

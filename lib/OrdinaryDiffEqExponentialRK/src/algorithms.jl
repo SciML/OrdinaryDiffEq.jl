@@ -41,7 +41,7 @@ for (Alg, Description, Ref) in [
 
         AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-        $Alg{_unwrap_val(chunk_size), AD_choice),
+        $Alg{_unwrap_val(chunk_size), AD_choice,
             diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(krylov,
             m,
             iop)
@@ -83,7 +83,7 @@ for (Alg, Description, Ref) in [
 
         AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-        $Alg{_unwrap_val(chunk_size), AD_choice),
+        $Alg{_unwrap_val(chunk_size), AD_choice,
             diff_type, _unwrap_val(standardtag),
             _unwrap_val(concrete_jac)}(m,
             iop)
@@ -143,7 +143,7 @@ for (Alg, Description, Ref) in [(:Exp4, "4th order EPIRK scheme.", REF3)
 
         AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-        $Alg{_unwrap_val(chunk_size), AD_choice), diff_type,
+        $Alg{_unwrap_val(chunk_size), AD_choice, diff_type,
             _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(adaptive_krylov,
             m,
             iop)

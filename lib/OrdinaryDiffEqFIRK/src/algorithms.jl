@@ -50,7 +50,7 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    RadauIIA3{_unwrap_val(chunk_size), AD_choice), typeof(linsolve),
+    RadauIIA3{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
         typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
@@ -97,7 +97,7 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    RadauIIA5{_unwrap_val(chunk_size), AD_choice), typeof(linsolve),
+    RadauIIA5{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
         typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
@@ -145,7 +145,7 @@ function RadauIIA9(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    RadauIIA9{_unwrap_val(chunk_size), AD_choice), typeof(linsolve),
+    RadauIIA9{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
         typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
@@ -187,7 +187,7 @@ function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
- AdaptiveRadau{_unwrap_val(chunk_size), AD_choice), typeof(linsolve),
+ AdaptiveRadau{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
      typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
      typeof(κ), typeof(fast_convergence_cutoff),
      typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
