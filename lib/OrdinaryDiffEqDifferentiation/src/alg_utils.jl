@@ -50,11 +50,15 @@ function DiffEqBase.prepare_alg(
 
     # If not using autodiff or norecompile mode or very large bitsize (like a dual number u0 already)
     # don't use a large chunksize as it will either error or not be beneficial
-    if !(nameof(alg_autodiff(alg)) == :AutoForwardDiff) ||
-       (isbitstype(T) && sizeof(T) > 24) ||
-       (prob.f isa ODEFunction &&
-        prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
-        return remake(alg, chunk_size = Val{1}())
+    if nameof(alg_autodiff(alg)) == :AutoForwardDiff
+        if !(isbitstype(T) && sizeof(T) > 24) ||
+            (prob.f isa ODEFunction &&
+            prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+            return remake(alg, autodiff = constructorof(alg_autodiff(alg))(chunksize = 1, tag = _get_fwd_tag(alg_autodiff(alg))))
+        end
+        return alg
+    else
+        return alg
     end
 
     L = StaticArrayInterface.known_length(typeof(u0))
@@ -68,10 +72,14 @@ function DiffEqBase.prepare_alg(
         end
 
         cs = ForwardDiff.pickchunksize(x)
-        return remake(alg, chunk_size = Val{cs}())
+        return remake(alg,
+            autodiff = constructorof(alg_autodiff(alg))(
+                chunksize = cs, tag = _get_fwd_tag(alg_autodiff(alg))))
     else # statically sized
         cs = pick_static_chunksize(Val{L}())
-        return remake(alg, chunk_size = cs)
+        return remake(
+            alg, autodiff = constructorof(alg_autodiff(alg))(
+                chunksize = cs, tag = _get_fwd_tag(alg_autodiff(alg))))
     end
 end
 
