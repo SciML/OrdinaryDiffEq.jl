@@ -50,7 +50,7 @@ function DiffEqBase.prepare_alg(
 
     # If not using autodiff or norecompile mode or very large bitsize (like a dual number u0 already)
     # don't use a large chunksize as it will either error or not be beneficial
-    if !(alg_autodiff(alg) isa AutoForwardDiff) ||
+    if !(nameof(alg_autodiff(alg)) == :AutoForwardDiff) ||
        (isbitstype(T) && sizeof(T) > 24) ||
        (prob.f isa ODEFunction &&
         prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
