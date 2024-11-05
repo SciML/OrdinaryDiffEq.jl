@@ -39,15 +39,9 @@ for (Alg, Description, Ref) in [
             chunk_size = Val{0}(),
             diff_type = Val{:forward})
 
-        if autodiff isa AbstracADType || autodiff <: AbstractADType
-            AD_choice = autodiff
-        elseif autodiff isa Bool
-            AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
-        else
-            error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
-        end
+        AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-        $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
+        $Alg{_unwrap_val(chunk_size), AD_choice),
             diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(krylov,
             m,
             iop)
@@ -87,15 +81,9 @@ for (Alg, Description, Ref) in [
             concrete_jac = nothing, chunk_size = Val{0}(),
             diff_type = Val{:forward})
 
-        if autodiff isa AbstracADType || autodiff <: AbstractADType
-            AD_choice = autodiff
-        elseif autodiff isa Bool
-            AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
-        else
-            error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
-        end
+        AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-        $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
+        $Alg{_unwrap_val(chunk_size), AD_choice),
             diff_type, _unwrap_val(standardtag),
             _unwrap_val(concrete_jac)}(m,
             iop)
@@ -153,15 +141,9 @@ for (Alg, Description, Ref) in [(:Exp4, "4th order EPIRK scheme.", REF3)
             standardtag = Val{true}(), concrete_jac = nothing,
             chunk_size = Val{0}(), diff_type = Val{:forward})
 
-        if autodiff isa AbstracADType || autodiff <: AbstractADType
-            AD_choice = autodiff
-        elseif autodiff isa Bool
-            AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
-        else
-            error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
-        end
+        AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-        $Alg{_unwrap_val(chunk_size), typeof(AD_choice), diff_type,
+        $Alg{_unwrap_val(chunk_size), AD_choice), diff_type,
             _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(adaptive_krylov,
             m,
             iop)

@@ -117,15 +117,9 @@ for Alg in [
                 precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
                 stage_limiter! = trivial_limiter!)
 
-            if autodiff isa AbstracADType || autodiff <: AbstractADType
-                AD_choice = autodiff
-            elseif autodiff isa Bool
-                AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
-            else
-                error("Keyword `autodiff` should be an `AbstractADType` or a `Bool`.") 
-            end
+            AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-            $Alg{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
+            $Alg{_unwrap_val(chunk_size), AD_choice), typeof(linsolve),
                 typeof(precs), diff_type, _unwrap_val(standardtag),
                 _unwrap_val(concrete_jac), typeof(step_limiter!),
                 typeof(stage_limiter!)}(linsolve, precs, step_limiter!,
@@ -143,16 +137,10 @@ function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = AutoForwardDiff()
         standardtag = Val{true}(), concrete_jac = nothing,
         factorization = lu!, tableau = ROSENBROCK_DEFAULT_TABLEAU)
         
-    if autodiff isa AbstracADType || autodiff <: AbstractADType
-        AD_choice = autodiff
-    elseif autodiff isa Bool
-        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
-    else
-        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
-    end
+    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     GeneralRosenbrock{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(factorization),
+        _unwrap_val(chunk_size), AD_choice), typeof(factorization),
         _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(tableau)}(tableau,
         factorization)
 end
@@ -176,16 +164,10 @@ function RosenbrockW6S4OS(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing,
         precs = DEFAULT_PRECS)
 
-    if autodiff isa AbstracADType || autodiff <: AbstractADType
-        AD_choice = autodiff
-    elseif autodiff isa Bool
-        AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
-    else
-        error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
-    end
+    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     RosenbrockW6S4OS{_unwrap_val(chunk_size),
-        typeof(AD_choice), typeof(linsolve), typeof(precs), diff_type,
+        AD_choice), typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(linsolve,
         precs)
 end
@@ -221,15 +203,9 @@ for Alg in [
                 standardtag = Val{true}(), concrete_jac = nothing,
                 diff_type = Val{:forward}, linsolve = nothing, precs = DEFAULT_PRECS)
 
-            if autodiff isa AbstracADType || autodiff <: AbstractADType
-                AD_choice = autodiff
-            elseif autodiff isa Bool
-                AD_choice = bool_to_ADType(autodiff, chunk_size, diff_type)
-            else
-                error("Keyword `autodiff` should be an `AbstractADType` or `Bool`.")
-            end
+            AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-            $Alg{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
+            $Alg{_unwrap_val(chunk_size), AD_choice), typeof(linsolve),
                 typeof(precs), diff_type, _unwrap_val(standardtag),
                 _unwrap_val(concrete_jac)}(linsolve,
                 precs)
