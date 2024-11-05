@@ -36,7 +36,7 @@ function CNAB2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     CNAB2{
-        _unwrap_val(chunk_size), AD_choice), typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), AD_choice, typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
         linsolve,
         nlsolve,
@@ -78,7 +78,7 @@ function CNLF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     CNLF2{
-        _unwrap_val(chunk_size), AD_choice), typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), AD_choice, typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
         linsolve,
         nlsolve,
