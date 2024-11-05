@@ -149,7 +149,7 @@ function _initialize_dae!(integrator, prob::AbstractDEProblem,
     isAD = if initializeprob.u0 === nothing
         AutoForwardDiff
     elseif has_autodiff(integrator.alg)
-        alg_autodiff(integrator.alg) isa AutoForwardDiff
+        nameof(alg_autodiff(integrator.alg)) == :AutoForwardDiff
     else
         true
     end
