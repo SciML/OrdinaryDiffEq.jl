@@ -144,7 +144,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             f.jac(J, uprev, p, t)
         else
             @unpack du1, uf, jac_config = cache
-
+            println(typeof(cache))
             uf.f = nlsolve_f(f, alg)
             uf.t = t
             if !(p isa DiffEqBase.NullParameters)
