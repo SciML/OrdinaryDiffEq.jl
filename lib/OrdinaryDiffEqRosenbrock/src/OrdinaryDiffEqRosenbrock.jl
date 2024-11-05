@@ -118,7 +118,7 @@ function rosenbrock_wolfbrandt_docstring(description::String,
     end
 
     generic_solver_docstring(
-        description, name, "Rosenbrock-Wanner-Wolfbrandt Method. ", references,
+        description, name, "Rosenbrock-Wanner-W(olfbrandt) Method. ", references,
         keyword_default_description, keyword_default
     )
 end
