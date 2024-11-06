@@ -1088,7 +1088,7 @@ references = """
 """,
 with_step_limiter=true) Rodas42
 
-@doc rosenbrock_wolfbrandt_docstring(
+@doc rosenbrock_docstring(
 """
 4th order A-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant. 4th order
 on linear parabolic problems and 3rd order accurate on nonlinear parabolic problems (as opposed to
