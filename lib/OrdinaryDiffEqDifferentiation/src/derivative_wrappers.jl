@@ -386,8 +386,6 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
                     false)
             end
         elseif nameof(alg_autodiff(alg)) == :AutoFiniteDiff
-            println(alg)
-            println(alg_difftype(alg))
             grad_config = FiniteDiff.GradientCache(du1, t, alg_difftype(alg))
         else
             error("$alg_autodiff not yet supported in build_grad_config function")
