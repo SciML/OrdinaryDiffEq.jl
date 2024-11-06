@@ -175,6 +175,8 @@ _get_fwd_chunksize(AD) = Val(0)
 _get_fwd_chunksize_int(AD) = 0
 _get_fwd_tag(::Type{AutoForwardDiff{CS,T}}) where {CS,T} = T
 
+_get_fdtype(::Type{AutoFiniteDiff{T1, T2, T3}}) where {T1, T2, T3} = T1
+
 
 function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
         OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
@@ -231,6 +233,8 @@ function get_current_alg_autodiff(alg::CompositeAlgorithm, cache)
     _eval_index(alg_autodiff, alg.algs, cache.current)::Bool
 end
 
+
+
 function alg_difftype(alg::Union{
         OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ
         },
@@ -240,7 +244,7 @@ function alg_difftype(alg::Union{
             CJ},
         DAEAlgorithm{CS, AD, FDT, ST, CJ}}) where {CS, AD, FDT, ST,
         CJ}
-    typeof(AD.fdtype)
+    _get_fdtype(AD)
 end
 
 function standardtag(alg::Union{
