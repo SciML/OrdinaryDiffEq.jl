@@ -330,8 +330,6 @@ function resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJacCache, i)
     resize!(jac_config.fx, i)
     resize!(jac_config.dx, i)
     resize!(jac_config.t, i)
-    println("jac_config = $jac_config")
-    println(" Val(ForwardDiff.npartials(jac_config.t[1])) = $(Val(ForwardDiff.npartials(jac_config.t[1])))")
     ps = SparseDiffTools.adapt.(DiffEqBase.parameterless_type(jac_config.dx),
         SparseDiffTools.generate_chunked_partials(jac_config.dx,
             1:length(jac_config.dx),
