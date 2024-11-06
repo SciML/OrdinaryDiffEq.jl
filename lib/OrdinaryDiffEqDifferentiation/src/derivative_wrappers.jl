@@ -283,7 +283,6 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2) where {F1
         if nameof(alg_autodiff(alg)) == :AutoForwardDiff
             #_chunksize = get_chunksize(alg) === Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
             _chunksize = get_chunksize(alg)
-            println("_chunksize = $_chunksize")
             T = if standardtag(alg)
                 typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u)))
             else
