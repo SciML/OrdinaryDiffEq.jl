@@ -281,12 +281,19 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2) where {F1
 
         sparsity, colorvec = sparsity_colorvec(f, u)
         if nameof(alg_autodiff(alg)) == :AutoForwardDiff
-            _chunksize = get_chunksize(alg) === Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
+            #_chunksize = get_chunksize(alg) === Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
+            _chunksize = get_chunksize(alg)
+            println("_chunksize = $_chunksize")
             T = if standardtag(alg)
                 typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u)))
             else
                 typeof(ForwardDiff.Tag(uf, eltype(u)))
             end
+            
+            if _chunksize === Val{nothing}()
+                _chunksize = nothing
+            end
+
             jac_config = ForwardColorJacCache(uf, uprev, _chunksize; colorvec = colorvec,
                 sparsity = sparsity, tag = T)
         elseif nameof(alg_autodiff(alg)) == :AutoFiniteDiff
@@ -324,6 +331,8 @@ function resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJacCache, i)
     resize!(jac_config.fx, i)
     resize!(jac_config.dx, i)
     resize!(jac_config.t, i)
+    println("jac_config = $jac_config")
+    println(" Val(ForwardDiff.npartials(jac_config.t[1])) = $(Val(ForwardDiff.npartials(jac_config.t[1])))")
     ps = SparseDiffTools.adapt.(DiffEqBase.parameterless_type(jac_config.dx),
         SparseDiffTools.generate_chunked_partials(jac_config.dx,
             1:length(jac_config.dx),
@@ -380,6 +389,8 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
                     false)
             end
         elseif nameof(alg_autodiff(alg)) == :AutoFiniteDiff
+            println(alg)
+            println(alg_difftype(alg))
             grad_config = FiniteDiff.GradientCache(du1, t, alg_difftype(alg))
         else
             error("$alg_autodiff not yet supported in build_grad_config function")
