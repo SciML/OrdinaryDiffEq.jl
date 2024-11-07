@@ -37,6 +37,10 @@ variable, then the system is not Index 1!
 
 function DiffEqBase.initialize_dae!(integrator::ODEIntegrator,
         initializealg = integrator.initializealg)
+    if !hasmethod(_initialize_dae!, (Any, typeof(integrator.sol.prob), 
+        BrownFullBasicInit, Val))
+        error("This ODE requires a DAE initialization and thus a nonlinear solve but no nonlinear solve has been loaded. To solve this problem, do `using OrdinaryDiffEqNonlinearSolve` or pass a custom `nlsolve` choice into the `initializealg`.")
+    end
     _initialize_dae!(integrator, integrator.sol.prob,
         initializealg,
         Val(DiffEqBase.isinplace(integrator.sol.prob)))
