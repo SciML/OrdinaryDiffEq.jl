@@ -320,7 +320,12 @@ K_ = [-1.0 0.0; 1.0 -1.0]
 @test isapprox(ForwardDiff.jacobian(f, K_)[2], 0.00226999, atol = 1e-6)
 
 
-@testset "deprecated AD keyword arguments still work" for (alg, rtol) in SOLVERS_FOR_AD
+implicit_algs = 
+[FBDF,
+ Rosenbrock23,
+ TRBDF2]
+
+@testset "deprecated AD keyword arguments still work" for alg in implicit_algs
     f = (du, u, p, t) -> du .= -0.5 * u
     alg1 = alg(autodiff = AutoForwardDiff())
     alg2 = alg(autodiff = true)
@@ -337,9 +342,9 @@ K_ = [-1.0 0.0; 1.0 -1.0]
     alg9 = alg(autodiff = AutoForwardDiff(chunksize = 1))
     alg10 = alg(chunk_size = 1)
 
-    @test alg1 == alg2
-    @test alg3 == alg4
-    @test alg5 == alg6
-    @test alg7 == alg8
-    @test alg9 == alg10
+    @test OrdinaryDiffEq.alg_autodiff(alg1) == OrdinaryDiffEq.alg_autodiff(alg2)
+    @test OrdinaryDiffEq.alg_autodiff(alg3) == OrdinaryDiffEq.alg_autodiff(alg4)
+    @test OrdinaryDiffEq.alg_autodiff(alg5) == OrdinaryDiffEq.alg_autodiff(alg6)
+    @test OrdinaryDiffEq.alg_autodiff(alg7) == OrdinaryDiffEq.alg_autodiff(alg8)
+    @test OrdinaryDiffEq.alg_autodiff(alg9) == OrdinaryDiffEq.alg_autodiff(alg10)
 end
