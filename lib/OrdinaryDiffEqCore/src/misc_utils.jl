@@ -140,7 +140,11 @@ end
 
 function _bool_to_ADType(::Val{false}, chunksize, diff_type)
     Base.depwarn("Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.", :_bool_to_ADType)
-    typeof(AutoFiniteDiff(fdtype = diff_type))
+    if diff_type isa Type
+        return typeof(AutoFiniteDiff(fdtype = diff_type()))
+    else
+        return typeof(AutoFiniteDiff(fdtype = diff_type))
+    end
 end
 
 # Functions to get ADType type from Bool or ADType object, or ADType type
