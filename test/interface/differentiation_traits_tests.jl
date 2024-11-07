@@ -35,11 +35,11 @@ good_sol = solve(prob, Rosenbrock23())
 
 prob2 = ODEProblem(Lotka, ones(2), (0.0, 10.0))
 
-sol = solve(prob2, Rosenbrock23(autodiff = true))
+sol = solve(prob2, Rosenbrock23(autodiff = AutoForwardDiff()))
 @test ≈(good_sol[:, end], sol[:, end], rtol = 1e-2)
 
-sol = solve(prob2, Rosenbrock23(autodiff = true, chunk_size = 1))
+sol = solve(prob2, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 1)))
 @test ≈(good_sol[:, end], sol[:, end], rtol = 1e-2)
 
-sol = solve(prob2, Rosenbrock23(autodiff = false))
+sol = solve(prob2, Rosenbrock23(autodiff = AutoFiniteDiff()))
 @test ≈(good_sol[:, end], sol[:, end], rtol = 1e-2)

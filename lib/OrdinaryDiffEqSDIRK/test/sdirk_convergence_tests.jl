@@ -56,7 +56,7 @@ testTol = 0.2
     sim14 = test_convergence(dts, prob, TRBDF2())
     @test sim14.𝒪est[:final]≈2 atol=testTol
 
-    sim152 = test_convergence(dts, prob, TRBDF2(autodiff = false))
+    sim152 = test_convergence(dts, prob, TRBDF2(autodiff = AutoFiniteDiff()))
     @test sim152.𝒪est[:final]≈2 atol=testTol + 0.1
 
     sim15 = test_convergence(dts, prob, SDIRK2())

@@ -253,6 +253,6 @@ integ = init(prob, Rosenbrock23(linsolve = SimpleLUFactorization()), abstol = 1e
 integ = init(prob, Rosenbrock23(linsolve = GenericLUFactorization()), abstol = 1e-6,
     reltol = 1e-6)
 @test integ.cache.jac_config === nothing
-integ = init(prob, Rosenbrock23(linsolve = RFLUFactorization(), chunk_size = Val{3}()),
+integ = init(prob, Rosenbrock23(linsolve = RFLUFactorization(), autodiff = AutoForwardDiff(chunksize = 3)),
     abstol = 1e-6, reltol = 1e-6)
 @test integ.cache.jac_config === nothing

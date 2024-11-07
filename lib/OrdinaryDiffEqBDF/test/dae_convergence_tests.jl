@@ -22,13 +22,13 @@ prob_dae_linear_iip = DAEProblem(
     sim11 = test_convergence(dts, prob, DImplicitEuler())
     @test sim11.𝒪est[:final]≈1 atol=testTol
 
-    sim12 = test_convergence(dts, prob, DImplicitEuler(; autodiff = false))
+    sim12 = test_convergence(dts, prob, DImplicitEuler(; autodiff = AutoFiniteDiff()))
     @test sim12.𝒪est[:final]≈1 atol=testTol
 
     sim13 = test_convergence(dts, prob, DABDF2())
     @test sim13.𝒪est[:final]≈2 atol=testTol
 
-    sim14 = test_convergence(dts, prob, DABDF2(; autodiff = false))
+    sim14 = test_convergence(dts, prob, DABDF2(; autodiff = AutoFiniteDiff()))
     @test sim14.𝒪est[:final]≈2 atol=testTol
 
     @test_nowarn solve(prob, DFBDF())
@@ -46,13 +46,13 @@ prob_dae_linear_iip_jac = DAEProblem(
     sim11 = test_convergence(dts, prob, DImplicitEuler())
     @test sim11.𝒪est[:final]≈1 atol=testTol
 
-    sim12 = test_convergence(dts, prob, DImplicitEuler(; autodiff = false))
+    sim12 = test_convergence(dts, prob, DImplicitEuler(; autodiff = AutoFiniteDiff()))
     @test sim12.𝒪est[:final]≈1 atol=testTol
 
     sim13 = test_convergence(dts, prob, DABDF2())
     @test sim13.𝒪est[:final]≈2 atol=testTol
 
-    sim14 = test_convergence(dts, prob, DABDF2(; autodiff = false))
+    sim14 = test_convergence(dts, prob, DABDF2(; autodiff = AutoFiniteDiff()))
     @test sim14.𝒪est[:final]≈2 atol=testTol
 
     @test_nowarn solve(prob, DFBDF())
@@ -76,13 +76,13 @@ prob_dae_linear_oop = DAEProblem(
     sim21 = test_convergence(dts, prob, DImplicitEuler())
     @test sim21.𝒪est[:final]≈1 atol=testTol
 
-    sim22 = test_convergence(dts, prob, DImplicitEuler(; autodiff = false))
+    sim22 = test_convergence(dts, prob, DImplicitEuler(; autodiff = AutoFiniteDiff()))
     @test sim22.𝒪est[:final]≈1 atol=testTol
 
     sim23 = test_convergence(dts, prob, DABDF2())
     @test sim23.𝒪est[:final]≈2 atol=testTol
 
-    sim24 = test_convergence(dts, prob, DABDF2(; autodiff = false))
+    sim24 = test_convergence(dts, prob, DABDF2(; autodiff = AutoFiniteDiff()))
     @test sim24.𝒪est[:final]≈2 atol=testTol
 
     @test_nowarn solve(prob, DFBDF())
@@ -100,13 +100,13 @@ prob_dae_linear_oop = DAEProblem(
     sim21 = test_convergence(dts, prob, DImplicitEuler())
     @test sim21.𝒪est[:final]≈1 atol=testTol
 
-    sim22 = test_convergence(dts, prob, DImplicitEuler(; autodiff = false))
+    sim22 = test_convergence(dts, prob, DImplicitEuler(; autodiff = AutoFiniteDiff()))
     @test sim22.𝒪est[:final]≈1 atol=testTol
 
     sim23 = test_convergence(dts, prob, DABDF2())
     @test sim23.𝒪est[:final]≈2 atol=testTol
 
-    sim24 = test_convergence(dts, prob, DABDF2(; autodiff = false))
+    sim24 = test_convergence(dts, prob, DABDF2(; autodiff = AutoFiniteDiff()))
     @test sim24.𝒪est[:final]≈2 atol=testTol
 
     @test_nowarn solve(prob, DFBDF())
