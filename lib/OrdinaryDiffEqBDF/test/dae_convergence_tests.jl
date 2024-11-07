@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, DiffEqDevTools
+using OrdinaryDiffEqBDF, DiffEqDevTools, ADTypes
 using Test, Random
 Random.seed!(100)
 
