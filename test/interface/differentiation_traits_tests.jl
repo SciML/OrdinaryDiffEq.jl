@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, ADTypes
 
 jac_called = Ref(false)
 tgrad_called = Ref(false)

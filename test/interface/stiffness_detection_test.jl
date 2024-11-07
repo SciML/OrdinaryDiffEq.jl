@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, ADTypes
 import ODEProblemLibrary: van
 using ForwardDiff: Dual
 

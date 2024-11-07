@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, ADTypes
 f(du, u, p, t) = du .= u
 prob = ODEProblem(f, [1.0], (0.0, 1.0))
 

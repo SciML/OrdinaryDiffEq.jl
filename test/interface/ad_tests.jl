@@ -1,5 +1,5 @@
 using Test
-using OrdinaryDiffEq, Calculus, ForwardDiff, FiniteDiff, LinearAlgebra
+using OrdinaryDiffEq, Calculus, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes
 
 function f(du, u, p, t)
     du[1] = -p[1]

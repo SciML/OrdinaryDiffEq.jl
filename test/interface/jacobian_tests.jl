@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, ForwardDiff, Test
+using OrdinaryDiffEq, ForwardDiff, Test, ADTypes
 
 function d_alembert(du, u, p, t)
     du[1] = p[1] - p[2] * u[1] + p[3] * t

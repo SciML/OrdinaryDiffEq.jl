@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, OrdinaryDiffEqCore, DiffEqBase, Test
+using OrdinaryDiffEq, OrdinaryDiffEqCore, DiffEqBase, Test, ADTypes
 using Random, SparseDiffTools
 using OrdinaryDiffEqDefault
 using ElasticArrays, LinearSolve
