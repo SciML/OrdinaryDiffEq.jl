@@ -205,7 +205,7 @@ of_a = p -> begin
     prob = ODEProblem(f_a, u0, tspan, p)
     # sol = solve(prob, Tsit5())                      # works
     # sol = solve(prob, Rodas5(autodiff=false))       # works
-    sol = solve(prob, Rodas5(autodiff = true), abstol = 1e-14, reltol = 1e-14)          # fails
+    sol = solve(prob, Rodas5(autodiff = AutoForwardDiff()), abstol = 1e-14, reltol = 1e-14)          # fails
     return sum(t -> abs2(t[1]), sol([1.0, 2.0, 3.0]))
 end
 
