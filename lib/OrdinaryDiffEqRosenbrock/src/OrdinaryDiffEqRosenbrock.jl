@@ -39,7 +39,7 @@ using Reexport
 import OrdinaryDiffEqCore: alg_autodiff
 import OrdinaryDiffEqCore
 
-function rosenbrock_wanner_docstring(description::String,
+function rosenbrock_wolfbrandt_docstring(description::String,
         name::String;
         references::String = "",
         extra_keyword_description = "",
@@ -118,7 +118,7 @@ function rosenbrock_wanner_docstring(description::String,
     end
 
     generic_solver_docstring(
-        description, name, "Rosenbrock-Wanner Method. ", references,
+        description, name, "Rosenbrock-Wanner-W(olfbrandt) Method. ", references,
         keyword_default_description, keyword_default
     )
 end
@@ -202,7 +202,7 @@ function rosenbrock_docstring(description::String,
     end
 
     generic_solver_docstring(
-        description, name, "Rosenbrock Method. ", references,
+        description, name, "Rosenbrock-Wanner Method. ", references,
         keyword_default_description, keyword_default
     )
 end

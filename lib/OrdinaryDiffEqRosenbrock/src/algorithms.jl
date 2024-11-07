@@ -139,7 +139,7 @@ function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = true,
         factorization)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
     """
     A 4th order L-stable Rosenbrock-W method (fixed step only).
     """,
