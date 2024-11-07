@@ -56,7 +56,7 @@ tspan = (0.0, 100000.0)
 differential_vars = [true, true, false]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
 integrator = init(prob, DABDF2())
-integrator2 = init(prob, DABDF2(autodiff = false))
+integrator2 = init(prob, DABDF2(autodiff = AutoFiniteDiff()))
 
 @test integrator.du[1]≈-0.04 atol=1e-9
 @test integrator.du[2]≈0.04 atol=1e-9
