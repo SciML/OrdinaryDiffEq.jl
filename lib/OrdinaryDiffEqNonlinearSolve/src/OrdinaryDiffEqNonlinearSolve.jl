@@ -26,7 +26,7 @@ import SciMLStructures: canonicalize, Tunable, isscimlstructure
 import OrdinaryDiffEqCore
 
 import SciMLOperators: islinear
-import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
+import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!, _ADType_to_Bool
 
 @static if isdefined(OrdinaryDiffEqCore, :default_nlsolve)
     import OrdinaryDiffEqCore: default_nlsolve
