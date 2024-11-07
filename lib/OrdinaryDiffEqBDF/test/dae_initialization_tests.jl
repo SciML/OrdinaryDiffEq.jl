@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, StaticArrays, LinearAlgebra, Test
+using OrdinaryDiffEqBDF, StaticArrays, LinearAlgebra, Test, ADTypes
 using OrdinaryDiffEqNonlinearSolve
 
 f = function (du, u, p, t)

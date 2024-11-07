@@ -1,5 +1,5 @@
 # stats.nf tests
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, ADTypes
 x = Ref(0)
 function f(u, p, t)
     x[] += 1

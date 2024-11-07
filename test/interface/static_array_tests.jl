@@ -1,6 +1,6 @@
 using StaticArrays, Test
 using OrdinaryDiffEq, OrdinaryDiffEqCore, OrdinaryDiffEqNonlinearSolve
-using RecursiveArrayTools
+using RecursiveArrayTools, ADTypes
 
 u0 = VectorOfArray([fill(2, MVector{2, Float64}), ones(MVector{2, Float64})])
 g0(u, p, t) = SA[u[1] + u[2], u[1]]
