@@ -3,7 +3,7 @@
 # Hence, we need to have two separate functions.
 
 function _change_t_via_interpolation!(integrator, t,
-        modify_save_endpoint::Type{Val{T}}) where {T}
+        modify_save_endpoint::Type{Val{T}}, reinitialize_alg=nothing) where {T}
     # Can get rid of an allocation here with a function
     # get_tmp_arr(integrator.cache) which gives a pointer to some
     # cache array which can be modified.
@@ -17,7 +17,7 @@ function _change_t_via_interpolation!(integrator, t,
         end
         integrator.t = t
         integrator.dt = integrator.t - integrator.tprev
-        DiffEqBase.reeval_internals_due_to_modification!(integrator)
+        DiffEqBase.reeval_internals_due_to_modification!(integrator; callback_initializealg=reinitialize_alg)
         if T
             solution_endpoint_match_cur_integrator!(integrator)
         end
@@ -28,10 +28,10 @@ function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
         t,
         modify_save_endpoint::Type{Val{T}} = Val{
             false,
-        }) where {
+        }, reinitialize_alg=nothing) where {
         T,
 }
-    _change_t_via_interpolation!(integrator, t, modify_save_endpoint)
+    _change_t_via_interpolation!(integrator, t, modify_save_endpoint, reinitialize_alg)
     return nothing
 end
 
