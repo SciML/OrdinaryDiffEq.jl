@@ -29,7 +29,7 @@ PrecompileTools.@compile_workload begin
     prob_list = []
 
     default_ode = [
-        DefaultODEAlgorithm(autodiff = false)
+        DefaultODEAlgorithm(autodiff = AutoFiniteDiff())
     ]
 
     default_autodiff_ode = [

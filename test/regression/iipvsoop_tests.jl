@@ -10,28 +10,35 @@ sol = solve(prob, Tsit5())
 # Make sure various differentiation forms work on scalars
 
 sol1 = solve(prob, Rosenbrock23(), abstol = 1e-12, reltol = 1e-12)
-sol2 = solve(prob, Rosenbrock23(autodiff = false), abstol = 1e-12, reltol = 1e-12)
-sol3 = solve(prob, Rosenbrock23(autodiff = false, diff_type = Val{:central}),
+sol2 = solve(
+    prob, Rosenbrock23(autodiff = AutoFiniteDiff()), abstol = 1e-12, reltol = 1e-12)
+sol3 = solve(prob, Rosenbrock23(autodiff = AutoFiniteDiff(fdtype = Val(:central))),
     abstol = 1e-12, reltol = 1e-12)
-sol4 = solve(prob, Rosenbrock23(autodiff = false, diff_type = Val{:complex}),
+sol4 = solve(prob, Rosenbrock23(autodiff = AutoFiniteDiff(fdtype = Val(:complex))),
     abstol = 1e-12, reltol = 1e-12)
 sol5 = solve(prob, KenCarp4(), abstol = 1e-12, reltol = 1e-12)
-sol6 = solve(prob, KenCarp4(autodiff = false), abstol = 1e-12, reltol = 1e-12)
-sol7 = solve(prob, KenCarp4(autodiff = false, diff_type = Val{:central}), abstol = 1e-12,
+sol6 = solve(prob, KenCarp4(autodiff = AutoFiniteDiff()), abstol = 1e-12, reltol = 1e-12)
+sol7 = solve(
+    prob, KenCarp4(autodiff = AutoFiniteDiff(fdtype = Val(:central))), abstol = 1e-12,
     reltol = 1e-12)
-sol8 = solve(prob, KenCarp4(autodiff = false, diff_type = Val{:complex}), abstol = 1e-12,
+sol8 = solve(
+    prob, KenCarp4(autodiff = AutoFiniteDiff(fdtype = Val(:complex))), abstol = 1e-12,
     reltol = 1e-12)
 sol9 = solve(prob, KenCarp47(), abstol = 1e-12, reltol = 1e-12)
-sol10 = solve(prob, KenCarp47(autodiff = false), abstol = 1e-12, reltol = 1e-12)
-sol11 = solve(prob, KenCarp47(autodiff = false, diff_type = Val{:central}), abstol = 1e-12,
+sol10 = solve(prob, KenCarp47(autodiff = AutoFiniteDiff()), abstol = 1e-12, reltol = 1e-12)
+sol11 = solve(
+    prob, KenCarp47(autodiff = AutoFiniteDiff(fdtype = Val(:central))), abstol = 1e-12,
     reltol = 1e-12)
-sol12 = solve(prob, KenCarp47(autodiff = false, diff_type = Val{:complex}), abstol = 1e-12,
+sol12 = solve(
+    prob, KenCarp47(autodiff = AutoFiniteDiff(fdtype = Val(:complex))), abstol = 1e-12,
     reltol = 1e-12)
 sol13 = solve(prob, KenCarp58(), abstol = 1e-12, reltol = 1e-12)
-sol14 = solve(prob, KenCarp58(autodiff = false), abstol = 1e-12, reltol = 1e-12)
-sol15 = solve(prob, KenCarp58(autodiff = false, diff_type = Val{:central}), abstol = 1e-12,
+sol14 = solve(prob, KenCarp58(autodiff = AutoFiniteDiff()), abstol = 1e-12, reltol = 1e-12)
+sol15 = solve(
+    prob, KenCarp58(autodiff = AutoFiniteDiff(fdtype = Val(:central))), abstol = 1e-12,
     reltol = 1e-12)
-sol16 = solve(prob, KenCarp58(autodiff = false, diff_type = Val{:complex}), abstol = 1e-12,
+sol16 = solve(
+    prob, KenCarp58(autodiff = AutoFiniteDiff(fdtype = Val(:complex))), abstol = 1e-12,
     reltol = 1e-12)
 
 ts = 0.0:0.1:1.0
@@ -87,7 +94,7 @@ end
 
 working_sdirk_algs = [ImplicitMidpoint(),
     ImplicitEuler(),
-    ImplicitMidpoint(autodiff = false),
+    ImplicitMidpoint(autodiff = AutoFiniteDiff()),
     SSPSDIRK2()]
 
 sdirk_algs = [Trapezoid(),

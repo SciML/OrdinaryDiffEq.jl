@@ -43,4 +43,4 @@ h(p, t) = [1.0, 1.0]
 h(p, t; idxs = 1) = 1.0
 p = [1.5, 1.0, 3.0, 1.0, 1.0]
 prob = DDEProblem(lotka_volterra!, uₒ, h, tspan, p, constant_lags = (p[end],))
-sol = solve(prob, MethodOfSteps(AutoTsit5(Rosenbrock23(autodiff = false))))
+sol = solve(prob, MethodOfSteps(AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff()))))
