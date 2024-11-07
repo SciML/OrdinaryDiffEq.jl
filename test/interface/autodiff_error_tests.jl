@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, ADTypes
 using OrdinaryDiffEqDifferentiation
 
 const a = Float64[1.0]

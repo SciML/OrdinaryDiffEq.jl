@@ -2,7 +2,7 @@
 
 using Test
 using StaticArrays, LinearAlgebra
-using OrdinaryDiffEq, DiffEqBase
+using OrdinaryDiffEq, DiffEqBase, ADTypes
 
 H(t) = -im * (@SMatrix [t 1; 1 -t])
 
