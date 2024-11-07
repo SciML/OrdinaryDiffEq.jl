@@ -34,7 +34,7 @@ using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
                                     nlsolve!, nlsolvefail, isnewton, markfirststage!,
                                     set_new_W!, DIRK, compute_step!, COEFFICIENT_MULTISTEP
 import ADTypes
-import ADTypes: AutoForwardDiff, AbstractADType
+import ADTypes: AutoForwardDiff, AutoFiniteDiff, AbstractADType
 
 using Reexport
 @reexport using DiffEqBase
