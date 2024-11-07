@@ -325,7 +325,7 @@ implicit_algs =
  Rosenbrock23,
  TRBDF2]
 
-@testset "deprecated AD keyword arguments still work" for alg in implicit_algs
+@testset "deprecated AD keyword arguments still work with $alg" for alg in implicit_algs
     f = (du, u, p, t) -> du .= -0.5 * u
     alg1 = alg(autodiff = AutoForwardDiff())
     alg2 = alg(autodiff = true)
