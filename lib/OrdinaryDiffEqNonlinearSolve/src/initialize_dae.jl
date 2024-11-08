@@ -573,7 +573,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     if alg.nlsolve !== nothing
         nlsolve = alg.nlsolve
     else
-        nlsolve = NewtonRaphson(autodiff = constructorof(alg_autodiff(integrator.alg))())
+        nlsolve = NewtonRaphson(autodiff = SciMLBase.constructorof(alg_autodiff(integrator.alg))())
     end
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)
