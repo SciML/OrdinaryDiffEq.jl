@@ -1,5 +1,5 @@
 # This definitely needs cleaning
-using OrdinaryDiffEqSDIRK, ODEProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEqSDIRK, ODEProblemLibrary, DiffEqDevTools, ADTypes
 using Test, Random
 Random.seed!(100)
 
