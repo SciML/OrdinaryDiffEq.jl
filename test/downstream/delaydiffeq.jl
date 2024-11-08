@@ -1,4 +1,4 @@
-using DelayDiffEq, DDEProblemLibrary
+using DelayDiffEq, DDEProblemLibrary, ADTypes
 using Test
 
 @testset "Constant delays" begin
