@@ -518,7 +518,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
 end
 
 mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, JType, W1Type, W2Type,
-    UF, JC, F1, F2, #=F3,=# Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
+    UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
                FIRKMutableCache
     u::uType
     uprev::uType
@@ -550,7 +550,6 @@ mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, 
     jac_config::JC
     linsolve1::F1 #real
     linsolve2::Vector{F2} #complex
-    #linres2::Vector{F3} 
     rtol::rTol
     atol::aTol
     dtprev::Dt
@@ -569,10 +568,8 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
 
-    min = alg.min_stages
     max = alg.max_stages
-
-    num_stages = min
+    num_stages = alg.min_stages
 
     tabs = [BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits))]
     i = 9
@@ -590,6 +587,9 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     end
 
     c_prime = Vector{typeof(t)}(undef, max) #time stepping
+    for i in 1 : max
+        c_prime[i] = zero(t)
+    end
 
     dw1 = zero(u)
     ubuff = zero(u)
@@ -636,14 +636,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     linsolve2 = [
         init(LinearProblem(W2[i], _vec(cubuff[i]); u0 = _vec(dw2[i])), alg.linsolve, alias_A = true, alias_b = true,
             assumptions = LinearSolve.OperatorAssumptions(true)) for i in 1 : (max - 1) ÷ 2]
-    #=
-    linres_tmp = dolinsolve(nothing, linsolve2[1]; A = W2[1], b = _vec(cubuff[1]), linu = _vec(dw2[1]))
-    linres2 = Vector{typeof(linres_tmp)}(undef , (max - 1) ÷ 2)
-    linres2[1] = linres_tmp
-    for i in 2 : (num_stages - 1) ÷ 2
-        linres2[i] = dolinsolve(nothing, linsolve2[1]; A = W2[1], b = _vec(cubuff[i]), linu = _vec(dw2[i]))
-    end
-    =#
+
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
 
@@ -653,7 +646,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         J, W1, W2,
         uf, tabs, κ, one(uToltype), 10000, tmp,
         atmp, jac_config,
-        linsolve1, linsolve2, #=linres2,=# rtol, atol, dt, dt,
+        linsolve1, linsolve2, rtol, atol, dt, dt,
         Convergence, alg.step_limiter!, num_stages, 1, 0.0)
 end
 
