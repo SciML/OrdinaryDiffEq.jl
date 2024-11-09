@@ -1601,7 +1601,7 @@ end
     @unpack κ, cont, derivatives, z, w, c_prime = cache
     @unpack dw1, ubuff, dw2, cubuff, dw = cache
     @unpack ks, k, fw, J, W1, W2 = cache
-    @unpack tmp, atmp, jac_config, linsolve1, linsolve2, #=linres2,=# rtol, atol, step_limiter! = cache
+    @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -1635,14 +1635,14 @@ end
             c_prime[i] = c[i] * c_prime[num_stages]
         end
         for i in 1 : num_stages # collocation polynomial
-            z[i] = cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
+            @.. z[i] = cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
             j = num_stages - 2
             while j > 0
                 @.. z[i] *= (c_prime[i] - c[num_stages - j] + 1) 
                 @.. z[i] += cont[j]
                 j = j - 1
             end
-            z[i] = z[i] * c_prime[i]
+            @.. z[i] *= c_prime[i]
         end
         #mul!(w, TI, z)
         for i in 1:num_stages
@@ -1672,7 +1672,7 @@ end
 
         #mul!(fw, TI, ks)
         for i in 1:num_stages
-            fw[i] =  zero(u)
+            @.. fw[i] = zero(u)
             for j in 1:num_stages
                 @.. fw[i] += TI[i,j] * ks[j]
             end
@@ -1704,17 +1704,14 @@ end
 
         cache.linsolve1 = linres.cache
 
-        linres2 = Vector{Any}(undef,(num_stages - 1) ÷ 2)
-
         for i in 1 :(num_stages - 1) ÷ 2
             @.. cubuff[i]=complex(
             fw[2 * i] - αdt[i] * Mw[2 * i] + βdt[i] * Mw[2 * i + 1], fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1])
             if needfactor
-                linres2[i] = dolinsolve(integrator, linsolve2[i]; A = W2[i], b = _vec(cubuff[i]), linu = _vec(dw2[i]))
+                cache.linsolve2[i] = dolinsolve(integrator, linsolve2[i]; A = W2[i], b = _vec(cubuff[i]), linu = _vec(dw2[i])).cache
             else
-                linres2[i] = dolinsolve(integrator, linsolve2[i]; A = nothing, b = _vec(cubuff[i]), linu = _vec(dw2[i]))
+                cache.linsolve2[i] = dolinsolve(integrator, linsolve2[i]; A = nothing, b = _vec(cubuff[i]), linu = _vec(dw2[i])).cache
             end
-            cache.linsolve2[i] = linres2[i].cache
         end
 
         integrator.stats.nsolve += (num_stages + 1) / 2
