@@ -242,6 +242,12 @@ function DiffEqBase.__init(
         resType = typeof(res_prototype)
     end
 
+    if tstops isa AbstractArray || tstops isa Tuple
+        _tstops = nothing
+    else
+        _tstops = tstops
+        tstops = ()
+    end
     tstops_internal = initialize_tstops(tType, tstops, d_discontinuities, tspan)
     saveat_internal = initialize_saveat(tType, saveat, tspan)
     d_discontinuities_internal = initialize_d_discontinuities(tType, d_discontinuities,
@@ -539,6 +545,13 @@ function DiffEqBase.__init(
                     copyat_or_push!(alg_choice, i, integrator.cache.current)
                 end
             end
+        end
+    end
+
+    if _tstops !== nothing
+        tstops = _tstops(parameter_values(integrator), prob.tspan)
+        for tstop in tstops
+            add_tstop!(integrator, tstop)
         end
     end
 
