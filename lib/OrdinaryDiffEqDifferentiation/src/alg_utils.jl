@@ -18,12 +18,25 @@ end
 #    autodiff = _alg_autodiff(alg)
 #    if autodiff == Val(false)
 #        return AutoFiniteDiff()
-#   elseif autodiff == Val(true)
+#    elseif autodiff == Val(true)
 #        return AutoForwardDiff()
 #    else
 #        return _unwrap_val(autodiff)
 #    end
 #end
+
+function alg_autodiff(alg)
+    autodiff = _alg_autodiff(alg)
+    if nameof(autodiff) == :AutoForwardDiff
+        return AutoForwardDiff()
+    elseif nameof(autodiff) == :AutoFiniteDiff
+        return AutoFiniteDiff()
+    elseif autodiff == Val{true}
+        return AutoForwardDiff()
+    elseif autodiff == Val{false}
+        return AutoFiniteDiff()
+    end
+end
 
 alg_autodiff(alg) = _alg_autodiff(alg)
 
