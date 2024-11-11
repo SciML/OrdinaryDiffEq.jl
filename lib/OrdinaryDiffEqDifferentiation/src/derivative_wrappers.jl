@@ -295,7 +295,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2) where {F1
 
             jac_config = ForwardColorJacCache(uf, uprev, _chunksize; colorvec = colorvec,
                 sparsity = sparsity, tag = T)
-        elseif alg_autodiff(alg) isa SAutoFiniteDiff
+        elseif alg_autodiff(alg) isa AutoFiniteDiff
             if alg_difftype(alg) !== Val{:complex}
                 jac_config = FiniteDiff.JacobianCache(tmp, du1, du2, alg_difftype(alg),
                     colorvec = colorvec,
