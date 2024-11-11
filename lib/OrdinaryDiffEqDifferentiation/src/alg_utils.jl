@@ -38,8 +38,6 @@ function alg_autodiff(alg)
     end
 end
 
-alg_autodiff(alg) = _alg_autodiff(alg)
-
 Base.@pure function determine_chunksize(u, alg::DiffEqBase.DEAlgorithm)
     determine_chunksize(u, get_chunksize(alg))
 end
