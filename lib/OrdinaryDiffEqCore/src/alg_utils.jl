@@ -12,7 +12,7 @@ end
 function SciMLBase.forwarddiffs_model(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm,
         DAEAlgorithm,
         OrdinaryDiffEqImplicitAlgorithm, ExponentialAlgorithm})
-    nameof(alg_autodiff(alg)) == :AutoForwardDiff
+    alg_autodiff(alg) isa AutoForwardDiff
 end
 
 SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
@@ -176,9 +176,9 @@ _get_fwd_chunksize(::Type{AutoForwardDiff{CS, T}}) where {CS, T} = Val(CS)
 _get_fwd_chunksize_int(::Type{AutoForwardDiff{CS, T}}) where {CS, T} = CS
 _get_fwd_chunksize(AD) = Val(0)
 _get_fwd_chunksize_int(AD) = 0
-_get_fwd_tag(::Type{AutoForwardDiff{CS,T}}) where {CS,T} = T
+_get_fwd_tag(::AutoForwardDiff{CS,T}) where {CS,T} = T
 
-_get_fdtype(::Type{AutoFiniteDiff{T1, T2, T3}}) where {T1, T2, T3} = T1
+_get_fdtype(::AutoFiniteDiff{T1, T2, T3}) where {T1, T2, T3} = T1
 
 
 function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
