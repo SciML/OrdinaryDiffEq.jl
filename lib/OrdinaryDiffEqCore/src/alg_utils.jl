@@ -179,6 +179,7 @@ _get_fwd_chunksize_int(AD) = 0
 _get_fwd_tag(::AutoForwardDiff{CS,T}) where {CS,T} = T
 
 _get_fdtype(::AutoFiniteDiff{T1, T2, T3}) where {T1, T2, T3} = T1
+_get_fdtype(::Type{AutoFiniteDiff{T1,T2,T3}}) where {T1, T2, T3} = T1
 
 
 function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
