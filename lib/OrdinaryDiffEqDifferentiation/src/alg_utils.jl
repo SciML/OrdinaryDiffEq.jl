@@ -65,17 +65,17 @@ function DiffEqBase.prepare_alg(
     # don't use a large chunksize as it will either error or not be beneficial
     # If prob.f.f is a FunctionWrappersWrappers from ODEFunction, need to set chunksize to 1
 
-    if nameof(alg_autodiff(alg)) == :AutoForwardDiff && ((prob.f isa ODEFunction &&
+    if alg_autodiff(alg) isa AutoForwardDiff && ((prob.f isa ODEFunction &&
         prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) || (isbitstype(T) && sizeof(T) > 24))
-        return remake(alg, autodiff = constructorof(alg_autodiff(alg))(chunksize = 1, tag = _get_fwd_tag(alg_autodiff(alg))))
+        return remake(alg, autodiff = AutoForwardDiff(chunksize = 1, tag = _get_fwd_tag(alg_autodiff(alg))))
     end
 
     # If the autodiff alg is AutoFiniteDiff, prob.f.f isa FunctionWrappersWrapper,
     # and fdtype is complex, fdtype needs to change to something not complex
-    if nameof(alg_autodiff(alg)) == :AutoFiniteDiff 
+    if alg_autodiff(alg) isa AutoFiniteDiff 
         if alg_difftype(alg) == Val{:complex} && (prob.f isa ODEFunction && prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
             @warn "AutoFiniteDiff fdtype complex is not compatible with this function"
-            return remake(alg, autodiff = constructorof(alg_autodiff(alg))(fdtype = Val{:forward}()))
+            return remake(alg, autodiff = AutoFiniteDiff(fdtype = Val{:forward}()))
         end
         return alg
     end
@@ -92,14 +92,13 @@ function DiffEqBase.prepare_alg(
 
         cs = ForwardDiff.pickchunksize(x)
         return remake(alg,
-            autodiff = constructorof(alg_autodiff(alg))(
-                chunksize = cs, tag = _get_fwd_tag(alg_autodiff(alg))))
+            autodiff = AutoForwardDiff(
+                chunksize = cs))
     else # statically sized
         cs = pick_static_chunksize(Val{L}())
         cs = SciMLBase._unwrap_val(cs)
         return remake(
-            alg, autodiff = constructorof(alg_autodiff(alg))(
-                chunksize = cs, tag = _get_fwd_tag(alg_autodiff(alg))))
+            alg, autodiff = AutoForwardDiff(chunksize = cs))
     end
 end
 
