@@ -67,7 +67,7 @@ function DiffEqBase.__init(
         userdata = nothing,
         allow_extrapolation = alg_extrapolates(alg),
         initialize_integrator = true,
-        alias = ODEAliasSpecifier(alias_u0 = false, alias_du0 = false),
+        alias = ODEAliasSpecifier(alias_u0 = false, alias_du0 = false, alias_p = true, alias_f = true),
         initializealg = DefaultInit(),
         kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -156,18 +156,6 @@ function DiffEqBase.__init(
         _alg = alg
     end
 
-    if aliases.alias_f 
-        f = prob.f
-    else
-        f = deepcopy(prob.f)
-    end
-
-    if aliases.alias_p
-        p = prob.p
-    else
-        p = recursivecopy(prob.p)
-    end
-
     use_old_kwargs = haskey(kwargs,:alias_u0) || haskey(kwargs,:alias_du0)
 
     if use_old_kwargs
@@ -198,6 +186,18 @@ function DiffEqBase.__init(
         elseif alias isa ODEAliasSpecifier || isnothing(alias)
             aliases = alias
         end
+    end
+
+    if aliases.alias_f || isnothing(aliases.alias_f)
+        f = prob.f
+    else
+        f = deepcopy(prob.f)
+    end
+
+    if aliases.alias_p || isnothing(aliases.alias_f)
+        p = prob.p
+    else
+        p = recursivecopy(prob.p)
     end
 
     if aliases.alias_u0
