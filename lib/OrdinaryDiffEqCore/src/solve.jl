@@ -155,8 +155,18 @@ function DiffEqBase.__init(
     else
         _alg = alg
     end
-    f = prob.f
-    p = prob.p
+
+    if aliases.alias_f 
+        f = prob.f
+    else
+        f = deepcopy(prob.f)
+    end
+
+    if aliases.alias_p
+        p = prob.p
+    else
+        p = recursivecopy(prob.p)
+    end
 
     use_old_kwargs = haskey(kwargs,:alias_u0) || haskey(kwargs,:alias_du0)
 
