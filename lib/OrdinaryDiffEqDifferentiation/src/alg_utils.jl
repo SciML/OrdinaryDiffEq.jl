@@ -27,13 +27,14 @@ end
 
 function alg_autodiff(alg)
     autodiff = _alg_autodiff(alg)
-    if nameof(autodiff) == :AutoForwardDiff
-        return AutoForwardDiff()
-    elseif nameof(autodiff) == :AutoFiniteDiff
-        return AutoFiniteDiff()
-    elseif autodiff == Val{true}
+    
+    if autodiff == Val{true}
         return AutoForwardDiff()
     elseif autodiff == Val{false}
+        return AutoFiniteDiff()
+    elseif nameof(autodiff) == :AutoForwardDiff
+        return AutoForwardDiff()
+    elseif nameof(autodiff) == :AutoFiniteDiff
         return AutoFiniteDiff()
     end
 end
