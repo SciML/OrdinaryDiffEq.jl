@@ -28,9 +28,9 @@ end
 function alg_autodiff(alg)
     autodiff = _alg_autodiff(alg)
     
-    if autodiff == Val{true}
+    if autodiff == Val(true)
         return AutoForwardDiff()
-    elseif autodiff == Val{false}
+    elseif autodiff == Val(false)
         return AutoFiniteDiff()
     elseif nameof(autodiff) == :AutoForwardDiff
         return AutoForwardDiff()
