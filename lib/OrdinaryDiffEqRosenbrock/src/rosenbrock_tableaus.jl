@@ -118,6 +118,15 @@ end
 
 @Rosenbrock4(:tableau)
 
+struct RodasTableau{T, T2}
+    A::Matrix{T}
+    C::Matrix{T}
+    gamma::T2
+    c::Vector{T2}
+    d::Vector{T}
+    H::Matrix{T}
+end
+
 function Rodas4Tableau(T, T2)
     gamma = convert(T, 1 // 4)
     #BET2P=0.0317D0
