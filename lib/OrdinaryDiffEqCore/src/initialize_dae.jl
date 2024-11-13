@@ -176,6 +176,94 @@ function _initialize_dae!(integrator, prob::AbstractDEProblem,
 end
 
 ## CheckInit
+struct CheckInitFailureError <: Exception
+    normresid::Any
+    abstol::Any
+end
+
+function Base.showerror(io::IO, e::CheckInitFailureError)
+    print(io,
+        "DAE initialization failed: your u0 did not satisfy the initialization requirements, 
+        normresid = $(e.normresid) > abstol = $(e.abstol). If you wish for the system to 
+        automatically change the algebraic variables to satisfy the algebraic constraints, 
+        please pass `initializealg = BrownBasicInit()` to solve (this option will require 
+        `using OrdinaryDiffEqNonlinearSolve`). If you wish to perform an initialization on the
+        complete u0, please pass initializealg = ShampineCollocationInit() to solve. Note that 
+        initialization can be a very difficult process for DAEs and in many cases can be 
+        numerically intractable without symbolic manipulation of the system. For an automated 
+        system that will generate numerically stable initializations, see ModelingToolkit.jl 
+        structural simplification for more details."
+    )
+end
+
+function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
+        isinplace::Val{true})
+    @unpack p, t, f = integrator
+    M = integrator.f.mass_matrix
+    tmp = first(get_tmp_cache(integrator))
+    u0 = integrator.u
+
+    algebraic_vars = [all(iszero, x) for x in eachcol(M)]
+    algebraic_eqs = [all(iszero, x) for x in eachrow(M)]
+    (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
+    update_coefficients!(M, u0, p, t)
+    f(tmp, u0, p, t)
+    tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
+
+    normresid = integrator.opts.internalnorm(tmp, t)
+    if normresid > integrator.opts.abstol
+        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
+    end
+end
+
+function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
+        isinplace::Val{false})
+    @unpack p, t, f = integrator
+    u0 = integrator.u
+    M = integrator.f.mass_matrix
+
+    algebraic_vars = [all(iszero, x) for x in eachcol(M)]
+    algebraic_eqs = [all(iszero, x) for x in eachrow(M)]
+    (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
+    update_coefficients!(M, u0, p, t)
+    du = f(u0, p, t)
+    resid = _vec(du)[algebraic_eqs]
+
+    normresid = integrator.opts.internalnorm(resid, t)
+    if normresid > integrator.opts.abstol
+        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
+    end
+end
+
+function _initialize_dae!(integrator, prob::DAEProblem,
+        alg::CheckInit, isinplace::Val{true})
+    @unpack p, t, f = integrator
+    u0 = integrator.u
+    resid = get_tmp_cache(integrator)[2]
+
+    f(resid, integrator.du, u0, p, t)
+    normresid = integrator.opts.internalnorm(resid, t)
+    if normresid > integrator.opts.abstol
+        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
+    end
+end
+
+function _initialize_dae!(integrator, prob::DAEProblem,
+        alg::CheckInit, isinplace::Val{false})
+    @unpack p, t, f = integrator
+    u0 = integrator.u
+
+    nlequation_oop = u -> begin
+        f((u - u0) / dt, u, p, t)
+    end
+
+    nlequation = (u, _) -> nlequation_oop(u)
+
+    resid = f(integrator.du, u0, p, t)
+    normresid = integrator.opts.internalnorm(resid, t)
+    if normresid > integrator.opts.abstol
+        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
+    end
 function _initialize_dae!(integrator, prob::AbstractDEProblem, alg::CheckInit,
         isinplace::Union{Val{true}, Val{false}})
     SciMLBase.get_initial_values(
