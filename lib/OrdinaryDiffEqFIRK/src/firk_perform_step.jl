@@ -1598,7 +1598,7 @@ end
     @unpack num_stages, tabs = cache
     tab = tabs[(num_stages - 1) ÷ 2]
     @unpack T, TI, γ, α, β, c, e = tab
-    @unpack κ, cont, derivatives, z, w, c_prime = cache
+    @unpack κ, cont, derivatives, z, w, c_prime, αdt, βdt= cache
     @unpack dw1, ubuff, dw2, cubuff, dw = cache
     @unpack ks, k, fw, J, W1, W2 = cache
     @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
@@ -1608,7 +1608,12 @@ end
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations
-    γdt, αdt, βdt = γ / dt, α ./ dt, β ./ dt
+    γdt = γ / dt
+    for i in 1 : (num_stages - 1) ÷ 2
+        αdt[i] = α[i]/dt
+        βdt[i] = β[i]/dt
+    end
+
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
         (calc_J!(J, integrator, cache); cache.W_γdt = dt)
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
@@ -1750,12 +1755,12 @@ end
         # transform `w` to `z`
         #mul!(z, T, w)
         for i in 1:num_stages - 1
-            z[i] = zero(u)
+            @.. z[i] = zero(u)
             for j in 1:num_stages
                 @.. z[i] += T[i,j] * w[j]
             end
         end
-        z[num_stages] = T[num_stages, 1] * w[1]
+        @.. z[num_stages] = T[num_stages, 1] * w[1]
         i = 2
         while i < num_stages
             @.. z[num_stages] += w[i]

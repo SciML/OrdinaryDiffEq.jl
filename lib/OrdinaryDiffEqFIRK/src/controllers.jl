@@ -23,11 +23,11 @@ function step_accept_controller!(integrator, controller::PredictiveController, a
     hist_iter = hist_iter * 0.8 + iter * 0.2
     cache.hist_iter = hist_iter
     if (step > 10)
-        if (hist_iter < 2.6 && num_stages < alg.max_stages)
+        if (hist_iter < 2.6 && num_stages < (alg.max_order + 1) ÷ 2)
             cache.num_stages += 2
             cache.step = 1
             cache.hist_iter = iter
-        elseif ((hist_iter > 8 || cache.status == VerySlowConvergence || cache.status == Divergence) && num_stages > alg.min_stages)
+        elseif ((hist_iter > 8 || cache.status == VerySlowConvergence || cache.status == Divergence) && num_stages > (alg.min_order + 1) ÷ 2)
             cache.num_stages -= 2 
             cache.step = 1
             cache.hist_iter = iter
@@ -45,7 +45,7 @@ function step_reject_controller!(integrator, controller::PredictiveController, a
     hist_iter = hist_iter * 0.8 + iter * 0.2
     cache.hist_iter = hist_iter
     if (step > 10)
-        if ((hist_iter > 8 || cache.status == VerySlowConvergence || cache.status == Divergence) && num_stages > alg.min_stages)
+        if ((hist_iter > 8 || cache.status == VerySlowConvergence || cache.status == Divergence) && num_stages > (alg.min_order + 1) ÷ 2)
             cache.num_stages -= 2 
             cache.step = 1
             cache.hist_iter = iter

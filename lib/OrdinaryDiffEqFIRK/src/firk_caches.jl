@@ -497,12 +497,12 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
-    num_stages = alg.min_stages
-    max = alg.max_stages
+    max = (alg.max_order + 1) ÷ 2
+    num_stages = (alg.min_order + 1) ÷ 2
     tabs = [BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits))]
     
     i = 9
-    while i <= alg.max_stages
+    while i <= max
         push!(tabs, adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), i))
         i += 2
     end
@@ -525,6 +525,8 @@ mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, 
     z::Vector{uType}
     w::Vector{uType}
     c_prime::Vector{tType}
+    αdt::Vector{tType}
+    βdt::Vector{tType}
     dw1::uType
     ubuff::uType
     dw2::Vector{cuType}
@@ -568,8 +570,8 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
 
-    max = alg.max_stages
-    num_stages = alg.min_stages
+    max = (alg.max_order + 1) ÷ 2
+    num_stages = (alg.min_order + 1) ÷ 2
 
     tabs = [BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits))]
     i = 9
@@ -583,9 +585,12 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     z = Vector{typeof(u)}(undef, max)
     w = Vector{typeof(u)}(undef, max)
     for i in 1 : max
-        z[i] = w[i] = zero(u)
+        z[i] = zero(u)
+        w[i] = zero(u)
     end
 
+    αdt = [zero(t) for i in 1:max]
+    βdt = [zero(t) for i in 1:max]
     c_prime = Vector{typeof(t)}(undef, max) #time stepping
     for i in 1 : max
         c_prime[i] = zero(t)
@@ -641,7 +646,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     atol = reltol isa Number ? reltol : zero(reltol)
 
     AdaptiveRadauCache(u, uprev,
-        z, w, c_prime, dw1, ubuff, dw2, cubuff, dw, cont, derivatives, 
+        z, w, c_prime, αdt, βdt, dw1, ubuff, dw2, cubuff, dw, cont, derivatives, 
         du1, fsalfirst, ks, k, fw,
         J, W1, W2,
         uf, tabs, κ, one(uToltype), 10000, tmp,
