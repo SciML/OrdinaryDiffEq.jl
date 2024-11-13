@@ -66,7 +66,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
             OverrideInit(integrator.opts.abstol), x)
     else
         _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(integrator.opts.abstol), x)
+            CheckInit(), x)
     end
 end
 
@@ -77,7 +77,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
             OverrideInit(integrator.opts.abstol), x)
     else
         _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(integrator.opts.abstol), x)
+            CheckInit(), x)
     end
 end
 
@@ -91,7 +91,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
             ShampineCollocationInit(), x)
     else
         _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(integrator.opts.abstol), x)
+            CheckInit(), x)
     end
 end
 
@@ -105,7 +105,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
             ShampineCollocationInit(), x)
     else
         _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(integrator.opts.abstol), x)
+            CheckInit(), x)
     end
 end
 
