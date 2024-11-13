@@ -54,12 +54,20 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     if SciMLBase.has_initializeprob(prob.f)
         _initialize_dae!(integrator, prob,
             OverrideInit(integrator.opts.abstol), x)
-    elseif !applicable(_initialize_dae!, integrator, prob,
-        BrownFullBasicInit(integrator.opts.abstol), x)
-        error("`OrdinaryDiffEqNonlinearSolve` is not loaded, which is required for the default initialization algorithm (`BrownFullBasicInit` or `ShampineCollocationInit`). To solve this problem, either do `using OrdinaryDiffEqNonlinearSolve` or pass `initializealg = CheckInit()` to the `solve` function. This second option requires consistent `u0`.")
     else
         _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(integrator.opts.abstol), x)
+            CheckInit(), x)
+    end
+end
+
+function _initialize_dae!(integrator, prob::ODEProblem,
+        alg::DefaultInit, x::Val{false})
+    if SciMLBase.has_initializeprob(prob.f)
+        _initialize_dae!(integrator, prob,
+            OverrideInit(integrator.opts.abstol), x)
+    else
+        _initialize_dae!(integrator, prob,
+            CheckInit(), x)
     end
 end
 
@@ -78,7 +86,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
             ShampineCollocationInit(), x)
     else
         _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(integrator.opts.abstol), x)
+            CheckInit(), x)
     end
 end
 
