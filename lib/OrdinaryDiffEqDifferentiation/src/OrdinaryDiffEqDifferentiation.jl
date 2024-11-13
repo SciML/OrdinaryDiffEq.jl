@@ -1,6 +1,6 @@
 module OrdinaryDiffEqDifferentiation
 
-import ADTypes: AutoFiniteDiff, AutoForwardDiff
+import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType
 
 import SparseDiffTools: SparseDiffTools, matrix_colors, forwarddiff_color_jacobian!,
                         forwarddiff_color_jacobian, ForwardColorJacCache,
