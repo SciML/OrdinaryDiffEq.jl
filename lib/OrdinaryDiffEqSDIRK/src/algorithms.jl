@@ -106,6 +106,7 @@ struct ImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 
 function ImplicitEuler(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
@@ -117,10 +118,10 @@ function ImplicitEuler(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
     
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    ImplicitEuler{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    ImplicitEuler{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
-        nlsolve, precs, extrapolant, controller, step_limiter!)
+        nlsolve, precs, extrapolant, controller, step_limiter!, AD_choice)
 end
 
 @doc SDIRK_docstring("A second order A-stable symplectic and symmetric implicit solver.
@@ -147,6 +148,7 @@ struct ImplicitMidpoint{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     precs::P
     extrapolant::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 
 function ImplicitMidpoint(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
@@ -157,13 +159,13 @@ function ImplicitMidpoint(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    ImplicitMidpoint{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    ImplicitMidpoint{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
         extrapolant,
-        step_limiter!)
+        step_limiter!, AD_choice)
 end
 
 @doc SDIRK_docstring(
@@ -192,6 +194,7 @@ struct Trapezoid{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 
 function Trapezoid(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
@@ -203,14 +206,15 @@ function Trapezoid(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    Trapezoid{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    Trapezoid{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
         extrapolant,
         controller,
-        step_limiter!)
+        step_limiter!,
+        AD_choice)
 end
 
 @doc SDIRK_docstring("A second order A-B-L-S-stable one-step ESDIRK method.
@@ -247,6 +251,7 @@ struct TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 
 function TRBDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
@@ -256,10 +261,10 @@ function TRBDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardt
         controller = :PI, step_limiter! = trivial_limiter!)
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    TRBDF2{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    TRBDF2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
-        smooth_est, extrapolant, controller, step_limiter!)
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
 TruncatedStacktraces.@truncate_stacktrace TRBDF2
@@ -296,6 +301,7 @@ struct SDIRK2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 
 function SDIRK2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
@@ -306,12 +312,13 @@ function SDIRK2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardt
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    SDIRK2{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    SDIRK2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(
         linsolve, nlsolve, precs, smooth_est, extrapolant,
         controller,
-        step_limiter!)
+        step_limiter!,
+        AD_choice)
 end
 
 @doc SDIRK_docstring("Description TBD",
@@ -340,6 +347,7 @@ struct SDIRK22{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 
 function SDIRK22(;
@@ -351,14 +359,15 @@ function SDIRK22(;
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    Trapezoid{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    Trapezoid{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
         extrapolant,
         controller,
-        step_limiter!)
+        step_limiter!,
+        AD_choice)
 end
 
 @doc SDIRK_docstring(
@@ -395,6 +404,7 @@ struct SSPSDIRK2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 
 function SSPSDIRK2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
@@ -406,10 +416,10 @@ function SSPSDIRK2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    SSPSDIRK2{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    SSPSDIRK2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        controller, AD_choice)
 end
 
 @doc SDIRK_docstring("An A-L stable stiffly-accurate 3rd order ESDIRK method.",
@@ -454,10 +464,10 @@ function Kvaerno3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    Kvaerno3{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    Kvaerno3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
-        smooth_est, extrapolant, controller, step_limiter!)
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
 @doc SDIRK_docstring(
@@ -489,6 +499,7 @@ struct KenCarp3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 function KenCarp3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -499,10 +510,10 @@ function KenCarp3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    KenCarp3{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    KenCarp3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
-        smooth_est, extrapolant, controller, step_limiter!)
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
 @doc SDIRK_docstring("Third order method.",
@@ -528,6 +539,7 @@ struct CFNLIRK3{CS, AD, F, F2, P, FDT, ST, CJ} <:
     nlsolve::F2
     precs::P
     extrapolant::Symbol
+    autodiff::AD
 end
 function CFNLIRK3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -537,12 +549,13 @@ function CFNLIRK3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    CFNLIRK3{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    CFNLIRK3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve,
         nlsolve,
         precs,
-        extrapolant)
+        extrapolant,
+        AD_choice)
 end
 
 @doc SDIRK_docstring("An A-L stable 4th order SDIRK method.",
@@ -577,6 +590,7 @@ struct Cash4{CS, AD, F, F2, P, FDT, ST, CJ} <:
     extrapolant::Symbol
     embedding::Int
     controller::Symbol
+    autodiff::AD
 end
 function Cash4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
@@ -587,7 +601,7 @@ function Cash4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     Cash4{
-        _unwrap_val(chunk_size), AD_choice, typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
         linsolve,
         nlsolve,
@@ -595,7 +609,8 @@ function Cash4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
         smooth_est,
         extrapolant,
         embedding,
-        controller)
+        controller,
+        AD_choice)
 end
 
 @doc SDIRK_docstring("Method of order 4.",
@@ -621,6 +636,7 @@ struct SFSDIRK4{CS, AD, F, F2, P, FDT, ST, CJ} <:
     nlsolve::F2
     precs::P
     extrapolant::Symbol
+    autodiff::AD
 end
 function SFSDIRK4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -630,12 +646,13 @@ function SFSDIRK4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    SFSDIRK4{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    SFSDIRK4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve,
         nlsolve,
         precs,
-        extrapolant)
+        extrapolant,
+        AD_choice)
 end
 
 @doc SDIRK_docstring("Method of order 5.",
@@ -661,6 +678,7 @@ struct SFSDIRK5{CS, AD, F, F2, P, FDT, ST, CJ} <:
     nlsolve::F2
     precs::P
     extrapolant::Symbol
+    autodiff::AD
 end
 
 function SFSDIRK5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
@@ -671,12 +689,13 @@ function SFSDIRK5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    SFSDIRK5{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    SFSDIRK5{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve,
         nlsolve,
         precs,
-        extrapolant)
+        extrapolant, 
+        AD_choice)
 end
 
 @doc SDIRK_docstring("Method of order 6.",
@@ -702,6 +721,7 @@ struct SFSDIRK6{CS, AD, F, F2, P, FDT, ST, CJ} <:
     nlsolve::F2
     precs::P
     extrapolant::Symbol
+    autodiff::AD
 end
 
 function SFSDIRK6(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
@@ -712,12 +732,13 @@ function SFSDIRK6(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    SFSDIRK6{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    SFSDIRK6{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve,
         nlsolve,
         precs,
-        extrapolant)
+        extrapolant,
+        AD_choice)
 end
 
 @doc SDIRK_docstring("Method of order 7.",
@@ -743,6 +764,7 @@ struct SFSDIRK7{CS, AD, F, F2, P, FDT, ST, CJ} <:
     nlsolve::F2
     precs::P
     extrapolant::Symbol
+    autodiff::AD
 end
 
 function SFSDIRK7(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
@@ -753,12 +775,13 @@ function SFSDIRK7(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    SFSDIRK7{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    SFSDIRK7{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve,
         nlsolve,
         precs,
-        extrapolant)
+        extrapolant,
+        AD_choice)
 end
 
 @doc SDIRK_docstring("Method of order 8.",
@@ -784,6 +807,7 @@ struct SFSDIRK8{CS, AD, F, F2, P, FDT, ST, CJ} <:
     nlsolve::F2
     precs::P
     extrapolant::Symbol
+    autodiff::AD
 end
 
 function SFSDIRK8(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
@@ -794,12 +818,13 @@ function SFSDIRK8(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    SFSDIRK8{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    SFSDIRK8{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve,
         nlsolve,
         precs,
-        extrapolant)
+        extrapolant,
+        AD_choice)
 end
 
 @doc SDIRK_docstring("An A-L stable 4th order SDIRK method.",
@@ -825,6 +850,7 @@ struct Hairer4{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function Hairer4(;
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
@@ -835,10 +861,10 @@ function Hairer4(;
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    Hairer4{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    Hairer4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        controller, AD_choice)
 end
 
 @doc SDIRK_docstring("An A-L stable 4th order SDIRK method.",
@@ -864,6 +890,7 @@ struct Hairer42{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function Hairer42(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -874,10 +901,10 @@ function Hairer42(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    Hairer42{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    Hairer42{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        controller, AD_choice)
 end
 
 @doc SDIRK_docstring("An A-L stable stiffly-accurate 4th order ESDIRK method.",
@@ -912,6 +939,7 @@ struct Kvaerno4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 function Kvaerno4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -922,10 +950,10 @@ function Kvaerno4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    Kvaerno4{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    Kvaerno4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
-        smooth_est, extrapolant, controller, step_limiter!)
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
 @doc SDIRK_docstring("An A-L stable stiffly-accurate 5th order ESDIRK method.",
@@ -960,6 +988,7 @@ struct Kvaerno5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 function Kvaerno5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -970,10 +999,10 @@ function Kvaerno5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    Kvaerno5{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    Kvaerno5{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
-        smooth_est, extrapolant, controller, step_limiter!)
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
 @doc SDIRK_docstring(
@@ -1005,6 +1034,7 @@ struct KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 function KenCarp4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -1015,10 +1045,10 @@ function KenCarp4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    KenCarp4{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    KenCarp4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
-        smooth_est, extrapolant, controller, step_limiter!)
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
 TruncatedStacktraces.@truncate_stacktrace KenCarp4
@@ -1052,6 +1082,7 @@ struct KenCarp47{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function KenCarp47(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -1062,10 +1093,10 @@ function KenCarp47(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    KenCarp47{_unwrap_val(chunk_size),AD_choice, typeof(linsolve),
+    KenCarp47{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        controller, AD_choice)
 end
 
 @doc SDIRK_docstring(
@@ -1097,6 +1128,7 @@ struct KenCarp5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 function KenCarp5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -1107,10 +1139,10 @@ function KenCarp5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    KenCarp5{_unwrap_val(chunk_size),AD_choice, typeof(linsolve),
+    KenCarp5{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
-        smooth_est, extrapolant, controller, step_limiter!)
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
 @doc SDIRK_docstring(
@@ -1142,6 +1174,7 @@ struct KenCarp58{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function KenCarp58(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -1152,10 +1185,10 @@ function KenCarp58(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    KenCarp58{_unwrap_val(chunk_size),AD_choice, typeof(linsolve),
+    KenCarp58{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        controller, AD_choice)
 end
 
 # `smooth_est` is not necessary, as the embedded method is also L-stable
@@ -1187,6 +1220,7 @@ struct ESDIRK54I8L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function ESDIRK54I8L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -1196,10 +1230,10 @@ function ESDIRK54I8L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    ESDIRK54I8L2SA{_unwrap_val(chunk_size),AD_choice, typeof(linsolve),
+    ESDIRK54I8L2SA{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
-        controller)
+        controller, AD_choice)
 end
 
 @doc SDIRK_docstring(
@@ -1230,6 +1264,7 @@ struct ESDIRK436L2SA2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function ESDIRK436L2SA2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -1239,10 +1274,10 @@ function ESDIRK436L2SA2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    ESDIRK436L2SA2{_unwrap_val(chunk_size),AD_choice, typeof(linsolve),
+    ESDIRK436L2SA2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
-        controller)
+        controller, AD_choice)
 end
 
 @doc SDIRK_docstring(
@@ -1282,10 +1317,10 @@ function ESDIRK437L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    ESDIRK437L2SA{_unwrap_val(chunk_size),AD_choice, typeof(linsolve),
+    ESDIRK437L2SA{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
-        controller)
+        controller, AD_choice)
 end
 
 @doc SDIRK_docstring(
@@ -1316,6 +1351,7 @@ struct ESDIRK547L2SA2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function ESDIRK547L2SA2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -1325,10 +1361,10 @@ function ESDIRK547L2SA2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    ESDIRK547L2SA2{_unwrap_val(chunk_size),AD_choice, typeof(linsolve),
+    ESDIRK547L2SA2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
-        controller)
+        controller, AD_choice)
 end
 
 @doc SDIRK_docstring(
@@ -1361,6 +1397,7 @@ struct ESDIRK659L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function ESDIRK659L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -1370,8 +1407,8 @@ function ESDIRK659L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    ESDIRK659L2SA{_unwrap_val(chunk_size),AD_choice, typeof(linsolve),
+    ESDIRK659L2SA{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
-        controller)
+        controller, AD_choice)
 end
