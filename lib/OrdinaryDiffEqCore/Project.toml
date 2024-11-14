@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqCore"
 uuid = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.10.1"
+version = "1.10.2"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -49,7 +49,7 @@ Accessors = "0.1.36"
 Adapt = "3.0, 4"
 ArrayInterface = "7"
 DataStructures = "0.18"
-DiffEqBase = "6.157"
+DiffEqBase = "6.159"
 DiffEqDevTools = "2.44.4"
 DocStringExtensions = "0.9"
 EnumX = "1"
