@@ -229,6 +229,10 @@ end
             reltol = reltol)
     end
 
+    if !SciMLBase.successful_retcode(linres.retcode)
+        return convert(eltype(atmp,),Inf)
+    end
+
     cache.linsolve = linres.cache
 
     if DiffEqBase.has_stats(integrator)
