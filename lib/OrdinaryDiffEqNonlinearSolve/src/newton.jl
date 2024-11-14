@@ -229,7 +229,7 @@ end
             reltol = reltol)
     end
 
-    if !SciMLBase.successful_retcode(linres.retcode)
+    if !SciMLBase.successful_retcode(linres.retcode) && linres.retcode != SciMLBase.ReturnCode.Default
         return convert(eltype(atmp,),Inf)
     end
 
