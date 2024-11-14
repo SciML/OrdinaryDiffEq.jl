@@ -110,6 +110,7 @@ for Alg in [
             precs::P
             step_limiter!::StepLimiter
             stage_limiter!::StageLimiter
+            autodiff::AD
         end
         function $Alg(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
@@ -118,11 +119,11 @@ for Alg in [
                 stage_limiter! = trivial_limiter!)
 
             AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
-            $Alg{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+            $Alg{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
                 typeof(precs), diff_type, _unwrap_val(standardtag),
                 _unwrap_val(concrete_jac), typeof(step_limiter!),
                 typeof(stage_limiter!)}(linsolve, precs, step_limiter!,
-                stage_limiter!)
+                stage_limiter!, AD_choice)
         end
     end
 end
@@ -130,6 +131,7 @@ struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
        OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, Val{:forward}, ST, CJ}
     tableau::TabType
     factorization::F
+    autodiff::AD
 end
 
 function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
@@ -139,9 +141,9 @@ function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = AutoForwardDiff()
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     GeneralRosenbrock{
-        _unwrap_val(chunk_size), AD_choice, typeof(factorization),
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(factorization),
         _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(tableau)}(tableau,
-        factorization)
+        factorization, AD_choice)
 end
 
 @doc rosenbrock_wolfbrandt_docstring(
@@ -156,6 +158,7 @@ struct RosenbrockW6S4OS{CS, AD, F, P, FDT, ST, CJ} <:
        OrdinaryDiffEqRosenbrockAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
+    autodiff::AD
 end
 function RosenbrockW6S4OS(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(),
@@ -166,9 +169,9 @@ function RosenbrockW6S4OS(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     RosenbrockW6S4OS{_unwrap_val(chunk_size),
-        AD_choice, typeof(linsolve), typeof(precs), diff_type,
+        typeof(AD_choice), typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(linsolve,
-        precs)
+        precs, AD_choice)
 end
 
 for Alg in [
@@ -197,6 +200,7 @@ for Alg in [
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
             linsolve::F
             precs::P
+            autodiff::AD
         end
         function $Alg(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
@@ -204,10 +208,10 @@ for Alg in [
 
             AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-            $Alg{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+            $Alg{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
                 typeof(precs), diff_type, _unwrap_val(standardtag),
                 _unwrap_val(concrete_jac)}(linsolve,
-                precs)
+                precs, AD_choice)
         end
     end
 end
