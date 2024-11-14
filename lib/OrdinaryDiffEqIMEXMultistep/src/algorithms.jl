@@ -26,6 +26,7 @@ struct CNAB2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     nlsolve::F2
     precs::P
     extrapolant::Symbol
+    autodiff::AD
 end
 
 function CNAB2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
@@ -36,12 +37,13 @@ function CNAB2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     CNAB2{
-        _unwrap_val(chunk_size), AD_choice, typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
         linsolve,
         nlsolve,
         precs,
-        extrapolant)
+        extrapolant,
+        AD_choice)
 end
 
 @doc generic_solver_docstring("Crank-Nicholson Leapfrong 2.",
@@ -69,6 +71,7 @@ struct CNLF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     nlsolve::F2
     precs::P
     extrapolant::Symbol
+    autodiff::AD
 end
 function CNLF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
@@ -78,10 +81,11 @@ function CNLF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     CNLF2{
-        _unwrap_val(chunk_size), AD_choice, typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
         linsolve,
         nlsolve,
         precs,
-        extrapolant)
+        extrapolant,
+        AD_choice)
 end
