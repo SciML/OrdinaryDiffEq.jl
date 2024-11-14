@@ -112,6 +112,7 @@ struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 function ABDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
@@ -123,10 +124,10 @@ function ABDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     ABDF2{
-        _unwrap_val(chunk_size), AD_choice, typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(tol), typeof(step_limiter!)}(linsolve, nlsolve, precs, κ, tol,
-        smooth_est, extrapolant, controller, step_limiter!)
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
 @doc BDF_docstring(
@@ -170,6 +171,7 @@ struct SBDF{CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
     extrapolant::Symbol
     order::Int
     ark::Bool
+    autodiff::AD
 end
 
 function SBDF(order; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
@@ -180,7 +182,7 @@ function SBDF(order; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    SBDF{_unwrap_val(chunk_size), AD_choice, typeof(linsolve), typeof(nlsolve),
+    SBDF{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(tol)}(linsolve,
         nlsolve,
@@ -189,7 +191,8 @@ function SBDF(order; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         tol,
         extrapolant,
         order,
-        ark)
+        ark,
+        AD_choice)
 end
 
 # All keyword form needed for remake
@@ -202,7 +205,7 @@ function SBDF(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    SBDF{_unwrap_val(chunk_size), AD_choice, typeof(linsolve), typeof(nlsolve),
+    SBDF{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(tol)}(linsolve,
         nlsolve,
@@ -211,7 +214,8 @@ function SBDF(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag
         tol,
         extrapolant,
         order,
-        ark)
+        ark,
+        AD_choice)
 end
 
 """
@@ -296,6 +300,7 @@ struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
     kappa::κType
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 
 function QNDF1(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
@@ -307,7 +312,7 @@ function QNDF1(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     QNDF1{
-        _unwrap_val(chunk_size), AD_choice, typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(kappa), typeof(step_limiter!)}(linsolve,
         nlsolve,
@@ -315,7 +320,8 @@ function QNDF1(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
         extrapolant,
         kappa,
         controller,
-        step_limiter!)
+        step_limiter!,
+        AD_choice)
 end
 
 @doc BDF_docstring(
@@ -354,6 +360,7 @@ struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
     kappa::κType
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 
 function QNDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
@@ -365,7 +372,7 @@ function QNDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     QNDF2{
-        _unwrap_val(chunk_size), AD_choice, typeof(linsolve), typeof(nlsolve),
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(kappa), typeof(step_limiter!)}(linsolve,
         nlsolve,
@@ -373,7 +380,8 @@ function QNDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardta
         extrapolant,
         kappa,
         controller,
-        step_limiter!)
+        step_limiter!,
+        AD_choice)
 end
 
 @doc BDF_docstring(
@@ -420,6 +428,7 @@ struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType, StepLimiter} <:
     kappa::κType
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 
 function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
@@ -433,12 +442,12 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    QNDF{MO, _unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    QNDF{MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
         typeof(κ), typeof(tol), typeof(kappa), typeof(step_limiter!)}(
         max_order, linsolve, nlsolve, precs, κ, tol,
-        extrapolant, kappa, controller, step_limiter!)
+        extrapolant, kappa, controller, step_limiter!, AD_choice)
 end
 
 TruncatedStacktraces.@truncate_stacktrace QNDF
@@ -470,6 +479,7 @@ struct MEBDF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     nlsolve::F2
     precs::P
     extrapolant::Symbol
+    autodiff::AD
 end
 function MEBDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
@@ -478,12 +488,13 @@ function MEBDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardt
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    MEBDF2{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    MEBDF2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve,
         nlsolve,
         precs,
-        extrapolant)
+        extrapolant,
+        AD_choice)
 end
 
 @doc BDF_docstring(
@@ -525,6 +536,7 @@ struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 
 function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
@@ -536,12 +548,12 @@ function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    FBDF{MO, _unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    FBDF{MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
         typeof(κ), typeof(tol), typeof(step_limiter!)}(
         max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller, step_limiter!)
+        controller, step_limiter!, AD_choice)
 end
 
 TruncatedStacktraces.@truncate_stacktrace FBDF
@@ -644,6 +656,7 @@ struct DImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ} <: DAEAlgorithm{CS, AD, FDT
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function DImplicitEuler(;
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
@@ -654,10 +667,10 @@ function DImplicitEuler(;
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    DImplicitEuler{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    DImplicitEuler{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve,
-        nlsolve, precs, extrapolant, controller)
+        nlsolve, precs, extrapolant, controller, AD_choice)
 end
 
 @doc BDF_docstring("Fully implicit implementation of BDF2.",
@@ -686,6 +699,7 @@ struct DABDF2{CS, AD, F, F2, P, FDT, ST, CJ} <: DAEAlgorithm{CS, AD, FDT, ST, CJ
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function DABDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
@@ -695,10 +709,10 @@ function DABDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardt
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    DABDF2{_unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    DABDF2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac)}(linsolve,
-        nlsolve, precs, extrapolant, controller)
+        nlsolve, precs, extrapolant, controller, AD_choice)
 end
 
 #=
@@ -748,6 +762,7 @@ struct DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <: DAEAlgorithm{CS, AD, FD
     tol::T
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         autodiff = AutoForwardDiff(), standardtag = Val{true}(), concrete_jac = nothing,
@@ -758,11 +773,11 @@ function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
 
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    DFBDF{MO, _unwrap_val(chunk_size), AD_choice, typeof(linsolve),
+    DFBDF{MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
         typeof(κ), typeof(tol)}(max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller)
+        controller, AD_choice)
 end
 
 TruncatedStacktraces.@truncate_stacktrace DFBDF
