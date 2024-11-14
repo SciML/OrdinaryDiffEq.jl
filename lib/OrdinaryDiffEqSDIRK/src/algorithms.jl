@@ -454,6 +454,7 @@ struct Kvaerno3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    autodiff::AD
 end
 function Kvaerno3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
