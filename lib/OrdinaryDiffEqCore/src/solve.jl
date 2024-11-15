@@ -242,7 +242,7 @@ function DiffEqBase.__init(
         resType = typeof(res_prototype)
     end
 
-    if tstops isa AbstractArray || tstops isa Tuple
+    if tstops isa AbstractArray || tstops isa Tuple || tstops isa Number
         _tstops = nothing
     else
         _tstops = tstops
