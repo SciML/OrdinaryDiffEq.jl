@@ -113,7 +113,7 @@ end
 
 @muladd function perform_step!(integrator, cache::RadauIIA3ConstantCache)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
+    @unpack T11, T12, T21, TI12, TI21, TI22 = cache.tab
     @unpack c1, c2, α, β, e1, e2 = cache.tab
     @unpack κ, cont1, cont2 = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
@@ -153,7 +153,7 @@ end
         ff2 = f(uprev + z2, p, t + c2 * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
 
-        fw1 = @. TI11 * ff1 + TI12 * ff2
+        fw1 = @. TI12 * ff2 #TI11 = 0
         fw2 = @. TI21 * ff1 + TI22 * ff2
 
         if mass_matrix isa UniformScaling
@@ -193,7 +193,7 @@ end
 
         # transform `w` to `z`
         z1 = @. T11 * w1 + T12 * w2
-        z2 = @. T21 * w1 + T22 * w2
+        z2 = @. T21 * w1 # T22 = 0
 
         # check stopping criterion
         iter > 1 && (η = θ / (1 - θ))
@@ -226,7 +226,7 @@ end
 
 @muladd function perform_step!(integrator, cache::RadauIIA3Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
-    @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
+    @unpack T11, T12, T21, TI12, TI21, TI22 = cache.tab
     @unpack c1, c2, α, β, e1, e2 = cache.tab
     @unpack κ, cont1, cont2 = cache
     @unpack z1, z2, w1, w2,
@@ -273,7 +273,7 @@ end
         f(k2, tmp, p, t + c2 * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
 
-        @. fw1 = TI11 * fsallast + TI12 * k2
+        @. fw1 = TI12 * k2 # TI11=0
         @. fw2 = TI21 * fsallast + TI22 * k2
 
         if mass_matrix === I
@@ -332,7 +332,7 @@ end
 
         # transform `w` to `z`
         @. z1 = T11 * w1 + T12 * w2
-        @. z2 = T21 * w1 + T22 * w2
+        @. z2 = T21 * w1 #T22 = 0
 
         # check stopping criterion
         iter > 1 && (η = θ / (1 - θ))
@@ -1493,7 +1493,7 @@ end
                 break
             end
         end
-        
+
         for i in 1 : num_stages
             w[i] = @.. w[i] - z[i]
         end
@@ -1513,7 +1513,7 @@ end
             i += 2
         end
 
-        
+
         # check stopping criterion
         iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
@@ -1534,7 +1534,7 @@ end
     cache.iter = iter
 
     u = @.. uprev + z[num_stages]
-    
+
     if adaptive
         tmp = 0
         for i in 1 : num_stages
@@ -1638,7 +1638,7 @@ end
             @.. z[i] = cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
             j = num_stages - 2
             while j > 0
-                @.. z[i] *= (c_prime[i] - c[num_stages - j] + 1) 
+                @.. z[i] *= (c_prime[i] - c[num_stages - j] + 1)
                 @.. z[i] += cont[j]
                 j = j - 1
             end
@@ -1682,7 +1682,7 @@ end
             Mw = w
         elseif mass_matrix isa UniformScaling
             for i in 1 : num_stages
-                mul!(z[i], mass_matrix.λ, w[i])       
+                mul!(z[i], mass_matrix.λ, w[i])
             end
             Mw = z
         else
@@ -1784,7 +1784,7 @@ end
     @.. broadcast=false u=uprev + z[num_stages]
 
     step_limiter!(u, integrator, p, t + dt)
-    
+
     if adaptive
         utilde = w[2]
         @.. tmp = 0
