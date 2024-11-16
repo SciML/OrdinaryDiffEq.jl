@@ -1,5 +1,5 @@
 using OrdinaryDiffEqFIRK, OrdinaryDiffEqFIRKGenerator, DiffEqDevTools, Test, LinearAlgebra
-import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, van
+import ODEProblemLibrary: prob_ode_linear_big, prob_ode_2Dlinear_big
 
 for i in [9], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
     dts = 1 ./ 2 .^ (4.25:-1:0.25)
