@@ -225,7 +225,7 @@ end
 struct RodasTableau{T, T2}
     A::Matrix{T}
     C::Matrix{T}
-    gamma::T
+    gamma::T2
     c::Vector{T2}
     d::Vector{T}
     H::Matrix{T}
