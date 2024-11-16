@@ -278,24 +278,15 @@ function RadauIIA9Tableau(T, T2)
         e1, e2, e3, e4, e5)
 end
 
-using Polynomials, LinearAlgebra, GenericSchur, RootedTrees, Symbolics
+using Polynomials, LinearAlgebra, RootedTrees
+using Symbolics
 using Symbolics: variables, variable, unwrap
+import FastGaussQuadrature: gaussjacobi
+import GenericSchur # for eigen
 
 function generateRadauTableau(T1, T2, num_stages::Int)
-    tmp = Vector{BigFloat}(undef, num_stages - 1)
-    for i in 1:(num_stages - 1)
-        tmp[i] = 0
-    end
-    tmp2 = Vector{BigFloat}(undef, num_stages + 1)
-    for i in 1:(num_stages + 1)
-       tmp2[i]=(-1)^(num_stages + 1 - i) * binomial(BigFloat(num_stages), num_stages + 1 - i)
-    end
-    radau_p = Polynomial{BigFloat}([tmp; tmp2])
-    for i in 1:(num_stages - 1)
-        radau_p = derivative(radau_p)
-    end
-    c = real(roots(radau_p))
-    c[num_stages] = 1
+    c = (1 .- gaussjacobi(num_stages-1, big(0.0), big(1.0))[1])/2
+    c = push!(reverse!(c), 1)
     c_powers = Matrix{BigFloat}(undef, num_stages, num_stages)
     for i in 1 : num_stages
         c_powers[i, 1] = 1
@@ -310,7 +301,6 @@ function generateRadauTableau(T1, T2, num_stages::Int)
         end
     end
     a = c_q / c_powers
-    b = a[num_stages, :]
 
     eigval, eigvec = eigen(a)
     vals = inv.(eigval)
@@ -353,5 +343,5 @@ end
 # cache order 5, 9, 13 by default
 const RadauIIATableauCache = Dict{Int, RadauIIATableau{BigFloat, BigFloat}}(
     5=>generateRadauTableau(BigFloat, BigFloat, 5),
-    9=>generateRadauTableau(BigFloat, BigFloat, 9),
+    9=>generateRadauTableau(BigFloat, BigFloat, 9),)
     13=>generateRadauTableau(BigFloat, BigFloat, 13),)
