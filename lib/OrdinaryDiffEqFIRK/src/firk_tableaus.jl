@@ -29,7 +29,7 @@ function RadauIIA3Tableau(T, T2)
     e1 = T(.25)
     e2 = T(-.25)
     RadauIIA3Tableau{T, T2}(T11, T12, T21,
-        TI11, TI12, TI21, TI22,
+        TI12, TI21, TI22,
         c1, c2, α, β, e1, e2)
 end
 
