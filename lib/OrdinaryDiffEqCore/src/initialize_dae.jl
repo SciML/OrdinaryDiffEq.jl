@@ -169,7 +169,7 @@ function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
     end
 
     alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, initializeprob, isAD)
-    nlsol = solve(initializeprob, alg)
+    nlsol = solve(initializeprob, alg, abstol = integrator.opts.abstol, reltol = integrator.opts.reltol)
     if isinplace === Val{true}()
         integrator.u .= prob.f.initializeprobmap(nlsol)
     elseif isinplace === Val{false}()

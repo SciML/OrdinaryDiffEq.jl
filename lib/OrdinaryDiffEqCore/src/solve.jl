@@ -242,6 +242,12 @@ function DiffEqBase.__init(
         resType = typeof(res_prototype)
     end
 
+    if tstops isa AbstractArray || tstops isa Tuple || tstops isa Number
+        _tstops = nothing
+    else
+        _tstops = tstops
+        tstops = ()
+    end
     tstops_internal = initialize_tstops(tType, tstops, d_discontinuities, tspan)
     saveat_internal = initialize_saveat(tType, saveat, tspan)
     d_discontinuities_internal = initialize_d_discontinuities(tType, d_discontinuities,
@@ -264,29 +270,7 @@ function DiffEqBase.__init(
     end
 
     ### Algorithm-specific defaults ###
-    if save_idxs === nothing
-        saved_subsystem = nothing
-    else
-        if !(save_idxs isa AbstractArray) || symbolic_type(save_idxs) != NotSymbolic()
-            _save_idxs = [save_idxs]
-        else
-            _save_idxs = save_idxs
-        end
-        saved_subsystem = SciMLBase.SavedSubsystem(prob, parameter_values(prob), _save_idxs)
-        if saved_subsystem !== nothing
-            _save_idxs = SciMLBase.get_saved_state_idxs(saved_subsystem)
-            if isempty(_save_idxs)
-                # no states to save
-                save_idxs = Int[]
-            elseif !(save_idxs isa AbstractArray) || symbolic_type(save_idxs) != NotSymbolic()
-                # only a single state to save, and save it as a scalar timeseries instead of
-                # single-element array
-                save_idxs = only(_save_idxs)
-            else
-                save_idxs = _save_idxs
-            end
-        end
-    end
+    save_idxs, saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(prob, save_idxs)
 
     if save_idxs === nothing
         ksEltype = Vector{rateType}
@@ -561,6 +545,13 @@ function DiffEqBase.__init(
                     copyat_or_push!(alg_choice, i, integrator.cache.current)
                 end
             end
+        end
+    end
+
+    if _tstops !== nothing
+        tstops = _tstops(parameter_values(integrator), prob.tspan)
+        for tstop in tstops
+            add_tstop!(integrator, tstop)
         end
     end
 

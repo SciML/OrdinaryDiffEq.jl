@@ -76,3 +76,15 @@ end
     prob = ODEProblem(ff, [0.0], (0.0f0, 1.0f0))
     sol = solve(prob, Tsit5(), tstops = [tval], callback = cb)
 end
+
+@testset "Late binding tstops" begin
+    function rhs(u, p, t)
+        u * p + t
+    end
+    prob = ODEProblem(rhs, 1.0, (0.0, 1.0), 0.1; tstops = (p, tspan) -> tspan[1]:p:tspan[2])
+    sol = solve(prob, Tsit5())
+    @test 0.0:0.1:1.0 ⊆ sol.t
+    prob2 = remake(prob; p = 0.07)
+    sol2 = solve(prob2, Tsit5())
+    @test 0.0:0.07:1.0 ⊆ sol2.t
+end
