@@ -121,7 +121,7 @@ function OrdinaryDiffEqFIRK.adaptiveRadauTableau(T1, T2, num_stages::Int)
         b_2 = vcat(-1/big(num_stages), -(num_stages)^2, -1, zeros(size(A, 1) - 3))
         e = A \ b_2
     end
-    RadauIIATableau{T1, T2}(T, TI, c, γ, α, β, e)
+    OrdinaryDiffEqFIRK.RadauIIATableau{T1, T2}(T, TI, c, γ, α, β, e)
 end
 
 end
