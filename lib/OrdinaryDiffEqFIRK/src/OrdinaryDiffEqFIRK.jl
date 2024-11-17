@@ -18,7 +18,6 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            get_current_adaptive_order, get_fsalfirstlast,
                            isfirk, generic_solver_docstring
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
-using Polynomials, GenericLinearAlgebra, GenericSchur
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu
 import LinearSolve
