@@ -591,7 +591,7 @@ function alg_cache(alg::LinearExponential, u, rate_prototype, ::Type{uEltypeNoUn
     if alg.krylov == :off
         KsCache = nothing
     elseif alg.krylov == :simple
-        Ks = KrylovSubspace{T}(n, m)
+        Ks = KrylovSubspace{T,T,typeof(similar(u,size(u,1),2))}(n, m)
         expv_cache = ExpvCache{T}(m)
         KsCache = (Ks, expv_cache)
     elseif alg.krylov == :adaptive
