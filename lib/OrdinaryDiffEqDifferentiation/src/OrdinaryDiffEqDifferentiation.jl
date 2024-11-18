@@ -47,6 +47,8 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
 import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff,
                            _get_fwd_tag
 
+import DifferentiationInterface as DI
+
 using FastBroadcast: @..
 
 @static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
