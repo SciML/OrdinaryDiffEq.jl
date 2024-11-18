@@ -158,8 +158,3 @@ function _process_AD_choice(ad_alg::AbstractADType, chunksize, diff_type)
 
     ad_alg
 end
-
-
-_ADType_to_Bool(::Type{T}) where {T <: AutoForwardDiff} = true
-
-_ADType_to_Bool(::Type{T}) where {T <: AutoFiniteDiff} = false 
