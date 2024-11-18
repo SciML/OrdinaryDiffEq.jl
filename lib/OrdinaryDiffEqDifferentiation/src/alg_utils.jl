@@ -2,16 +2,16 @@
 function _alg_autodiff(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have an autodifferentiation option defined.")
 end
-_alg_autodiff(::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = AD
-_alg_autodiff(::DAEAlgorithm{CS, AD}) where {CS, AD} = AD
-_alg_autodiff(::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = AD
+_alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
+_alg_autodiff(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
+_alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
 _alg_autodiff(alg::CompositeAlgorithm) = _alg_autodiff(alg.algs[end])
 function _alg_autodiff(::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
         OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD}
 }) where {
         CS, AD
 }
-    AD
+    alg.autodiff
 end
 
 function alg_autodiff(alg)
