@@ -90,7 +90,17 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
 end
 
 function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2) where {F1, F2}
-    return DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
+
+    # TODO: this is only for ForwardDiff I think, need to build way to specialize based on ADType?
+    tag = if standardtag(alg)
+        ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u))
+    else
+        ForwardDiff.Tag(uf, eltype(u))
+    end
+
+    autodiff_alg = constructorof(typeof(alg_autodiff(alg)))(tag) # this is ugly but Accessors doesn't do it for some reason
+
+    return DI.prepare_jacobian(uf, du1, autodiff_alg, u)
 end
 
 function get_chunksize(jac_config::ForwardDiff.JacobianConfig{
