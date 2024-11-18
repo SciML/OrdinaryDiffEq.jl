@@ -14,17 +14,6 @@ function _alg_autodiff(::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
     AD
 end
 
-#function alg_autodiff(alg)
-#    autodiff = _alg_autodiff(alg)
-#    if autodiff == Val(false)
-#        return AutoFiniteDiff()
-#    elseif autodiff == Val(true)
-#        return AutoForwardDiff()
-#    else
-#        return _unwrap_val(autodiff)
-#    end
-#end
-
 function alg_autodiff(alg)
     autodiff = _alg_autodiff(alg)
     
@@ -32,10 +21,8 @@ function alg_autodiff(alg)
         return AutoForwardDiff()
     elseif autodiff == Val(false)
         return AutoFiniteDiff()
-    elseif nameof(autodiff) == :AutoForwardDiff
-        return AutoForwardDiff()
-    elseif nameof(autodiff) == :AutoFiniteDiff
-        return AutoFiniteDiff()
+    else 
+        return autodiff
     end
 end
 

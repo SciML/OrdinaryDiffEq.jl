@@ -135,15 +135,15 @@ isnewton(::Any) = false
 function _bool_to_ADType(::Val{true}, chunksize, diff_type)
     Base.depwarn("Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.", :_bool_to_ADType)
     chunksize = SciMLBase._unwrap_val(chunksize) == 0 ? nothing : SciMLBase._unwrap_val(chunksize)
-    typeof(AutoForwardDiff(chunksize = chunksize))
+    AutoForwardDiff(chunksize = chunksize)
 end
 
 function _bool_to_ADType(::Val{false}, chunksize, diff_type)
     Base.depwarn("Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.", :_bool_to_ADType)
     if diff_type isa Type
-        return typeof(AutoFiniteDiff(fdtype = diff_type()))
+        return AutoFiniteDiff(fdtype = diff_type())
     else
-        return typeof(AutoFiniteDiff(fdtype = diff_type))
+        return AutoFiniteDiff(fdtype = diff_type)
     end
 end
 
@@ -156,7 +156,7 @@ function _process_AD_choice(ad_alg::AbstractADType, chunksize, diff_type)
         return _bool_to_ADType(Val{true}(), chunksize, diff_type)
     end
 
-    typeof(ad_alg)
+    ad_alg
 end
 
 
