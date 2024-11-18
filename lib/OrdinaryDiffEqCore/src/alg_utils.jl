@@ -460,8 +460,3 @@ function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
     end
     print(io, ")")
 end
-
-
-#function get_chunksize(alg::AutoForwardDiff{CS}) where {CS}
-#    Val(CS)
-#end
