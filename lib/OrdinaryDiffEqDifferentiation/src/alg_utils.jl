@@ -53,7 +53,7 @@ function DiffEqBase.prepare_alg(
 
     if alg_autodiff(alg) isa AutoForwardDiff && ((prob.f isa ODEFunction &&
         prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) || (isbitstype(T) && sizeof(T) > 24))
-        return remake(alg, autodiff = AutoForwardDiff(chunksize = 1, tag = _get_fwd_tag(alg_autodiff(alg))))
+        return remake(alg, autodiff = AutoForwardDiff(chunksize = 1, tag = alg_autodiff(alg).tag))
     end
 
     # If the autodiff alg is AutoFiniteDiff, prob.f.f isa FunctionWrappersWrapper,
