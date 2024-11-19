@@ -362,6 +362,10 @@ mutable struct RadauIIA9Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Ty
     tmp4::uType
     tmp5::uType
     tmp6::uType
+    tmp7::uType
+    tmp8::uType
+    tmp9::uType
+    tmp10::uType
     atmp::uNoUnitsType
     jac_config::JC
     linsolve1::F1
@@ -440,6 +444,10 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp4 = zero(u)
     tmp5 = zero(u)
     tmp6 = zero(u)
+    tmp7 = zero(u)
+    tmp8 = zero(u)
+    tmp9 = zero(u)
+    tmp10 = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
@@ -469,7 +477,7 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
         du1, fsalfirst, k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5,
         J, W1, W2, W3,
         uf, tab, κ, one(uToltype), 10000,
-        tmp, tmp2, tmp3, tmp4, tmp5, tmp6, atmp, jac_config,
+        tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
         linsolve1, linsolve2, linsolve3, rtol, atol, dt, dt,
         Convergence, alg.step_limiter!)
 end
@@ -497,17 +505,26 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
-    num_stages = alg.min_stages
-    max = alg.max_stages
+
+    max_order = alg.max_order
+    min_order = alg.min_order
+    max = (max_order - 1) ÷ 4 * 2 + 1
+    min = (min_order - 1) ÷ 4 * 2 + 1
+    if (alg.min_order < 5)
+        error("min_order choice $min_order below 5 is not compatible with the algorithm")
+    elseif (max < min)
+        error("max_order $max_order is below min_order $min_order")
+    end
+    num_stages = min
+
     tabs = [BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits))]
-    
     i = 9
-    while i <= alg.max_stages
+    while i <= max
         push!(tabs, adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), i))
         i += 2
     end
     cont = Vector{typeof(u)}(undef, max)
-    for i in 1: max
+    for i in 1:max
         cont[i] = zero(u)
     end
 
@@ -525,6 +542,8 @@ mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, 
     z::Vector{uType}
     w::Vector{uType}
     c_prime::Vector{tType}
+    αdt::Vector{tType}
+    βdt::Vector{tType}
     dw1::uType
     ubuff::uType
     dw2::Vector{cuType}
@@ -568,8 +587,16 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
 
-    max = alg.max_stages
-    num_stages = alg.min_stages
+    max_order = alg.max_order
+    min_order = alg.min_order
+    max = (max_order - 1) ÷ 4 * 2 + 1
+    min = (min_order - 1) ÷ 4 * 2 + 1
+    if (alg.min_order < 5)
+        error("min_order choice $min_order below 5 is not compatible with the algorithm")
+    elseif (max < min)
+        error("max_order $max_order is below min_order $min_order")
+    end
+    num_stages = min
 
     tabs = [BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits))]
     i = 9
@@ -583,9 +610,12 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     z = Vector{typeof(u)}(undef, max)
     w = Vector{typeof(u)}(undef, max)
     for i in 1 : max
-        z[i] = w[i] = zero(u)
+        z[i] = zero(u)
+        w[i] = zero(u)
     end
 
+    αdt = [zero(t) for i in 1:max]
+    βdt = [zero(t) for i in 1:max]
     c_prime = Vector{typeof(t)}(undef, max) #time stepping
     for i in 1 : max
         c_prime[i] = zero(t)
@@ -641,7 +671,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     atol = reltol isa Number ? reltol : zero(reltol)
 
     AdaptiveRadauCache(u, uprev,
-        z, w, c_prime, dw1, ubuff, dw2, cubuff, dw, cont, derivatives, 
+        z, w, c_prime, αdt, βdt, dw1, ubuff, dw2, cubuff, dw, cont, derivatives, 
         du1, fsalfirst, ks, k, fw,
         J, W1, W2,
         uf, tabs, κ, one(uToltype), 10000, tmp,
