@@ -568,11 +568,12 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
+    tToltype = constvalue(tTypeNoUnits)
 
     max = alg.max_stages
     num_stages = alg.min_stages
 
-    tabs = [BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits))]
+    tabs = [RadauIIATableau(uToltype, tToltype, 3), RadauIIATableau(uToltype, tToltype, 4), RadauIIATableau(uToltype, tToltype, 5)]
     i = 9
     while i <= max
         push!(tabs, adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), i))

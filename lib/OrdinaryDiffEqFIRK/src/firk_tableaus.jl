@@ -278,15 +278,12 @@ function RadauIIA9Tableau(T, T2)
         e1, e2, e3, e4, e5)
 end
 
-using Polynomials, LinearAlgebra, RootedTrees
-using Symbolics
-using Symbolics: variables, variable, unwrap
-import FastGaussQuadrature: gaussjacobi
+using LinearAlgebra
+import FastGaussQuadrature: gaussradau
 import GenericSchur # for eigen
 
 function generateRadauTableau(T1, T2, num_stages::Int)
-    c = (1 .- gaussjacobi(num_stages-1, big(0.0), big(1.0))[1])/2
-    c = push!(reverse!(c), 1)
+    c = (1 .- gaussradau(num_stages, BigFloat)[1])/2
     c_powers = Matrix{BigFloat}(undef, num_stages, num_stages)
     for i in 1 : num_stages
         c_powers[i, 1] = 1
@@ -325,23 +322,16 @@ function generateRadauTableau(T1, T2, num_stages::Int)
         end
     end
     TI = inv(T)
-
-    e_sym = variables(:e, 1:num_stages)
-    constraints = map(Iterators.flatten(RootedTreeIterator(i) for i in 1:num_stages)) do t
-        residual_order_condition(t, RungeKuttaMethod(a, e_sym, c))
-    end
-    AA, bb, islinear = Symbolics.linear_expansion(constraints, e_sym[1:end])
-    AA = BigFloat.(map(unwrap, AA))
-    bb = BigFloat.(map(unwrap, bb))
-    A = vcat([zeros(num_stages -1); 1]', AA)
+    # TODO: figure out why all the order conditions are the same
+    A = vcat([zeros(num_stages -1); 1]', c_powers'./([factorial(i-1) for i in 1:num_stages]))
     # TODO: figure out why these are the right b_2
-    b_2 = vcat(-1/big(num_stages), -(num_stages)^2, -1, zeros(size(A, 1) - 3))
-    e = A \ b_2
+    b = vcat(-1/big(num_stages), -(num_stages)^2, -1, zeros(num_stages - 2))
+    e = A \ b
     tab = RadauIIATableau{T1, T2}(T, TI, c, γ, α, β, e)
 end
 
 # cache order 5, 9, 13 by default
 const RadauIIATableauCache = Dict{Int, RadauIIATableau{BigFloat, BigFloat}}(
+    3=>generateRadauTableau(BigFloat, BigFloat, 3),
     5=>generateRadauTableau(BigFloat, BigFloat, 5),
-    9=>generateRadauTableau(BigFloat, BigFloat, 9),)
-    13=>generateRadauTableau(BigFloat, BigFloat, 13),)
+    7=>generateRadauTableau(BigFloat, BigFloat, 7),)
