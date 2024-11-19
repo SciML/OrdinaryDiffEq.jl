@@ -163,8 +163,8 @@ struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
  new_W_γdt_cutoff::C2
  controller::Symbol
  step_limiter!::StepLimiter
- min_stages::Int
- max_stages::Int
+ min_order::Int
+ max_order::Int
 end
 
 function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = Val{true}(),
