@@ -84,23 +84,13 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator,
         jac_config)
     alg = unwrap_alg(integrator, true)
-    println(jac_config)
     DI.jacobian!(f, fx, J, jac_config, alg_autodiff(alg), x)
     nothing
 end
 
-function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2) where {F1, F2}
-
-    # TODO: this is only for ForwardDiff I think, need to build way to specialize based on ADType?
-    tag = if standardtag(alg)
-        ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u))
-    else
-        ForwardDiff.Tag(uf, eltype(u))
-    end
-
-    autodiff_alg = constructorof(typeof(alg_autodiff(alg)))(tag) # this is ugly but Accessors doesn't do it for some reason
-
-    return DI.prepare_jacobian(uf, du1, autodiff_alg, u)
+function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
+     u, tmp, du2) where {F1, F2}
+    return DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
 end
 
 function get_chunksize(jac_config::ForwardDiff.JacobianConfig{
@@ -149,7 +139,7 @@ function resize_grad_config!(grad_config::FiniteDiff.GradientCache, i)
 end
 
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
-    return DI.prepare_gradient(tf,du1, alg_autodiff(alg), t)
+    return DI.prepare_derivative(tf, du1, alg_autodiff(alg), t)
 end
 
 function sparsity_colorvec(f, x)
