@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqFIRKGenerator"
 uuid = "677d4f02-548a-44fa-8eaf-26579094acaf"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.0.0"
+version = "1.1.0"
 
 [deps]
 GenericLinearAlgebra = "14197337-ba66-59df-a3e3-ca00e7dcff7a"
