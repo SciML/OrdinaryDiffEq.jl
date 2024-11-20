@@ -50,7 +50,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 end
 
 function calc_tderivative(integrator, cache)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack t, dt, uprev, u, f, p, alg = integrator
 
     # Time derivative
     if DiffEqBase.has_tgrad(f)
@@ -99,7 +99,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
             uf.f = nlsolve_f(f, alg)
             uf.p = p
             uf.t = t
-
+            println("uprev = $uprev")
             J = jacobian(uf, uprev, integrator)
         end
 
