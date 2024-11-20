@@ -75,9 +75,15 @@ function Base.showerror(io::IO, e::FirstAutodiffJacError)
     Base.showerror(io, e.e)
 end
 
-function jacobian(f, x, integrator)
+function jacobian(f, x::AbstractArray{<:Number}, integrator)
     alg = unwrap_alg(integrator, true)
     return DI.jacobian(f, alg_autodiff(alg), x)
+end
+
+# fallback for scalar x, is needed for calc_J to work
+function jacobian(f, x, integrator)
+    alg = unwrap_alg(integrator, true)
+    return DI.derivative(f, alg_autodiff(alg), x)
 end
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
