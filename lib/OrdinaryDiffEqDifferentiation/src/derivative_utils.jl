@@ -99,7 +99,6 @@ function calc_J(integrator, cache, next_step::Bool = false)
             uf.f = nlsolve_f(f, alg)
             uf.p = p
             uf.t = t
-            println("uprev = $uprev")
             J = jacobian(uf, uprev, integrator)
         end
 
