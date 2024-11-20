@@ -47,13 +47,20 @@ function DiffEqBase.prepare_alg(
         u0::AbstractArray{T},
         p, prob) where {AD, FDT, T}
 
+    if alg_autodiff(alg) isa AutoForwardDiff
+        tag = if standardtag(alg)
+            ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(prob.u0))
+        else
+            nothing
+        end
+    end
+
     # If not using autodiff or norecompile mode or very large bitsize (like a dual number u0 already)
     # don't use a large chunksize as it will either error or not be beneficial
     # If prob.f.f is a FunctionWrappersWrappers from ODEFunction, need to set chunksize to 1
-
     if alg_autodiff(alg) isa AutoForwardDiff && ((prob.f isa ODEFunction &&
         prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) || (isbitstype(T) && sizeof(T) > 24))
-        return remake(alg, autodiff = AutoForwardDiff(chunksize = 1, tag = alg_autodiff(alg).tag))
+        return remake(alg, autodiff = AutoForwardDiff(chunksize = 1, tag = tag))
     end
 
     # If the autodiff alg is AutoFiniteDiff, prob.f.f isa FunctionWrappersWrapper,
@@ -79,12 +86,12 @@ function DiffEqBase.prepare_alg(
         cs = ForwardDiff.pickchunksize(x)
         return remake(alg,
             autodiff = AutoForwardDiff(
-                chunksize = cs))
+                chunksize = cs, tag = tag))
     else # statically sized
         cs = pick_static_chunksize(Val{L}())
         cs = SciMLBase._unwrap_val(cs)
         return remake(
-            alg, autodiff = AutoForwardDiff(chunksize = cs))
+            alg, autodiff = AutoForwardDiff(chunksize = cs, tag = tag))
     end
 end
 
