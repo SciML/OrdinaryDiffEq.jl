@@ -24,9 +24,9 @@ roberf_oop = ODEFunction{false}(rober, mass_matrix = M)
 prob_mm = ODEProblem(roberf, [1.0, 0.0, 0.2], (0.0, 1e5), (0.04, 3e7, 1e4))
 prob_mm_oop = ODEProblem(roberf_oop, [1.0, 0.0, 0.2], (0.0, 1e5), (0.04, 3e7, 1e4))
 
-@test_throws OrdinaryDiffEqCore.CheckInitFailureError solve(
+@test_throws SciMLBase.CheckInitFailureError solve(
     prob_mm, Rodas5P(), reltol = 1e-8, abstol = 1e-8, initializealg = SciMLBase.CheckInit())
-@test_throws OrdinaryDiffEqCore.CheckInitFailureError solve(
+@test_throws SciMLBase.CheckInitFailureError solve(
     prob_mm_oop, Rodas5P(), reltol = 1e-8, abstol = 1e-8,
     initializealg = SciMLBase.CheckInit())
 
@@ -49,7 +49,7 @@ tspan = (0.0, 100000.0)
 differential_vars = [true, true, false]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
 prob_oop = DAEProblem(f_oop, du₀, u₀, tspan, differential_vars = differential_vars)
-@test_throws OrdinaryDiffEqCore.CheckInitFailureError solve(
+@test_throws SciMLBase.CheckInitFailureError solve(
     prob, DFBDF(), reltol = 1e-8, abstol = 1e-8, initializealg = SciMLBase.CheckInit())
-@test_throws OrdinaryDiffEqCore.CheckInitFailureError solve(
+@test_throws SciMLBase.CheckInitFailureError solve(
     prob_oop, DFBDF(), reltol = 1e-8, abstol = 1e-8, initializealg = SciMLBase.CheckInit())
