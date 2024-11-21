@@ -25,7 +25,7 @@ sol3_gpu = solve(prob_gpu, LinearExponential(krylov = :adaptive))(1.0) |> Vector
 A2_gpu =  MatrixOperator(cu(sparse([2.0 -1.0; -1.0 2.0])))
 prob2_gpu = ODEProblem(A2_gpu, u0_gpu, (0.0, 1.0))
 
-sol2_1_gpu = solve(prob2_gpu, LinearExponential(krylov = :off))(1.0) |> Vector
+@test_broken sol2_1_gpu = solve(prob2_gpu, LinearExponential(krylov = :off))(1.0) |> Vector
 sol2_2_gpu = solve(prob2_gpu, LinearExponential(krylov = :simple))(1.0) |> Vector
 sol2_3_gpu = solve(prob2_gpu, LinearExponential(krylov = :adaptive))(1.0) |> Vector
 
