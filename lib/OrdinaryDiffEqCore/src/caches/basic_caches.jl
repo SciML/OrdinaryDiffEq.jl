@@ -73,7 +73,8 @@ function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u
     args = (u, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
         reltol, p, calck, Val(V))
-    argT = map(typeof, args)
+    # Core.Typeof to turn uEltypeNoUnits into Type{uEltypeNoUnits} rather than DataType
+    argT = map(Core.Typeof, args)
     T1 = Base.promote_op(alg_cache, A1, argT...)
     T2 = Base.promote_op(alg_cache, A2, argT...)
     T3 = Base.promote_op(alg_cache, A3, argT...)
