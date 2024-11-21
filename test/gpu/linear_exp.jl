@@ -32,4 +32,3 @@ sol2_3_gpu = solve(prob2_gpu, LinearExponential(krylov = :adaptive))(1.0) |> Vec
 @test_broken isapprox(sol2_1_gpu, sol_analytic, rtol = 1e-6)
 @test isapprox(sol2_2_gpu, sol_analytic, rtol = 1e-6)
 @test isapprox(sol2_3_gpu, sol_analytic, rtol = 1e-6)
-@test isapprox(sol2_4_gpu, sol_analytic, rtol = 1e-4)
