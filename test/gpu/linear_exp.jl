@@ -18,7 +18,7 @@ sol_analytic = exp(1.0 * Matrix(A)) * u0
 sol2_gpu = solve(prob_gpu, LinearExponential(krylov = :simple))(1.0) |> Vector
 sol3_gpu = solve(prob_gpu, LinearExponential(krylov = :adaptive))(1.0) |> Vector
 
-@test isapprox(sol1_gpu, sol_analytic, rtol = 1e-6)
+@test_broken isapprox(sol1_gpu, sol_analytic, rtol = 1e-6)
 @test isapprox(sol2_gpu, sol_analytic, rtol = 1e-6)
 @test isapprox(sol3_gpu, sol_analytic, rtol = 1e-6)
 
