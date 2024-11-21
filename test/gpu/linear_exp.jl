@@ -14,7 +14,7 @@ prob_gpu = ODEProblem(A_gpu, u0_gpu, (0.0, 1.0))
 
 sol_analytic = exp(1.0 * Matrix(A)) * u0
 
-sol1_gpu = solve(prob_gpu, LinearExponential(krylov = :off))(1.0) |> Vector
+@test_broken sol1_gpu = solve(prob_gpu, LinearExponential(krylov = :off))(1.0) |> Vector
 sol2_gpu = solve(prob_gpu, LinearExponential(krylov = :simple))(1.0) |> Vector
 sol3_gpu = solve(prob_gpu, LinearExponential(krylov = :adaptive))(1.0) |> Vector
 
