@@ -573,7 +573,7 @@ function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
     u = zero(u_prototype)                         # stores the current state
     W = Matrix{T}(undef, n, p + 1)                  # stores the w vectors
     P = Matrix{T}(undef, n, p + 2)                  # stores output from phiv!
-    Ks = KrylovSubspace{T}(n, maxiter)            # stores output from arnoldi!
+    Ks = KrylovSubspace{T,T,typeof(similar(u_prototype,size(u_prototype,1),2))}(n, maxiter) # stores output from arnoldi!
     phiv_cache = PhivCache(u_prototype, maxiter, p + 1) # cache used by phiv! (need +1 for error estimation)
     return u, W, P, Ks, phiv_cache
 end
