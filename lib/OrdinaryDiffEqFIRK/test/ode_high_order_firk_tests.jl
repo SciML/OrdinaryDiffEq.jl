@@ -1,6 +1,7 @@
-using OrdinaryDiffEqFIRK, OrdinaryDiffEqFIRKGenerator, DiffEqDevTools, Test, LinearAlgebra
+using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
+using GenericSchur
 testTol = 0.5
 
 prob_ode_linear_big = remake(prob_ode_linear, u0 = big.(prob_ode_linear.u0), tspan = big.(prob_ode_linear.tspan))
