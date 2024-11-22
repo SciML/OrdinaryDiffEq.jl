@@ -47,9 +47,12 @@ function DiffEqBase.prepare_alg(
         u0::AbstractArray{T},
         p, prob) where {AD, FDT, T}
 
+
+    autodiff = prepare_ADType(alg_autodiff(alg), prob, u0, p, standardtag(alg))
+
     if alg_autodiff(alg) isa AutoForwardDiff
         tag = if standardtag(alg)
-            ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(prob.u0))
+            ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u0))
         else
             nothing
         end
@@ -73,26 +76,55 @@ function DiffEqBase.prepare_alg(
         return alg
     end
 
-    L = StaticArrayInterface.known_length(typeof(u0))
-    if L === nothing # dynamic sized
+    return alg
+end
+
+function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
+    tag = if standardtag
+        ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u0))
+    else
+        nothing
+    end
+
+    if ((prob.f isa ODEFunction &&
+      prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) ||
+     (isbitstype(T) && sizeof(T) > 24))
+        autodiff = AutoForwardDiff(chunksize = 1, tag = tag)
+
+    end
+
+    #L = StaticArrayInterface.known_length(typeof(u0))
+    #if L === nothing # dynamic sized
         # If chunksize is zero, pick chunksize right at the start of solve and
         # then do function barrier to infer the full solve
-        x = if prob.f.colorvec === nothing
-            length(u0)
-        else
-            maximum(prob.f.colorvec)
-        end
+    #    x = if prob.f.colorvec === nothing
+    #        length(u0)
+    #    else
+    #        maximum(prob.f.colorvec)
+    #    end
 
-        cs = ForwardDiff.pickchunksize(x)
-        return remake(alg,
-            autodiff = AutoForwardDiff(
-                chunksize = cs, tag = tag))
-    else # statically sized
-        cs = pick_static_chunksize(Val{L}())
-        cs = SciMLBase._unwrap_val(cs)
-        return remake(
-            alg, autodiff = AutoForwardDiff(chunksize = cs, tag = tag))
+    #    cs = ForwardDiff.pickchunksize(x)
+    #    return remake(alg,
+    #        autodiff = AutoForwardDiff(
+    #            chunksize = cs, tag = tag))
+    #else # statically sized
+    #    cs = pick_static_chunksize(Val{L}())
+    #    cs = SciMLBase._unwrap_val(cs)
+    #    return remake(
+    #        alg, autodiff = AutoForwardDiff(chunksize = cs, tag = tag))
+    #end
+
+end
+
+function prepare_ADType(alg::AutoFiniteDiff, prob, u0, p, standardtag)
+    if alg.fdtype == Val{:complex}() && (prob.f isa ODEFunction && prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+         @warn "AutoFiniteDiff fdtype complex is not compatible with this function"
+         return AutoFiniteDiff(fdtype = Val{:forward}())
     end
+end
+
+function prepare_ADType(alg::DiffEqAutoAD, prob, u0, p, standardtag)
+
 end
 
 @generated function pick_static_chunksize(::Val{chunksize}) where {chunksize}
