@@ -96,7 +96,33 @@ end
 
 function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
      u, tmp, du2) where {F1, F2}
-    return DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
+
+    haslinsolve = hasfield(typeof(alg), :linsolve)
+
+    if !DiffEqBase.has_jac(f) &&
+        (!DiffEqBase.has_Wfact_t(f)) && 
+        ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve && 
+        (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
+        (concrete_jac(alg) !== nothing && concrete_jac(alg)))
+
+        jac_prototype = f.jac_prototype
+
+        if jac_prototype isa SparseMatrixCSC
+            if f.mass_matrix isa UniformScaling
+                idxs = diagind(jac_prototype)
+                @. @view(jac_prototype[idxs]) = 1
+            else
+                idxs = findall(!iszero, f.mass_matrix)
+                @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
+            end
+        end
+        println(alg_autodiff(alg))
+        jac_config = DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
+    else 
+        jac_config = nothing
+    end
+
+    jac_config
 end
 
 function get_chunksize(jac_config::ForwardDiff.JacobianConfig{
@@ -145,7 +171,7 @@ function resize_grad_config!(grad_config::FiniteDiff.GradientCache, i)
 end
 
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
-    return DI.prepare_derivative(tf, du1, alg_autodiff(alg), t)
+    return DI.prepare_derivative(tf, du1, dense_ad(alg_autodiff(alg)), t)
 end
 
 function sparsity_colorvec(f, x)
