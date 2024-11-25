@@ -52,36 +52,32 @@ function DiffEqBase.prepare_alg(
 
     autodiff = prepare_ADType(alg_autodiff(alg), prob, u0, p, standardtag(alg))
 
-    if alg_autodiff(alg) isa AutoForwardDiff
-        tag = if standardtag(alg)
-            ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u0))
+    #sparsity preparation
+
+    sparsity = prob.f.sparsity
+
+    if sparsity isa SparseMatrixCSC
+        if f.mass_matrix isa UniformScaling
+            idxs = diagind(sparsity)
+            @. @view(sparsity[idxs]) = 1
         else
-            nothing
+            idxs = findall(!iszero, f.mass_matrix)
+            @. @view(sparsity[idxs]) = @view(f.mass_matrix[idxs])
         end
     end
 
-    # If not using autodiff or norecompile mode or very large bitsize (like a dual number u0 already)
-    # don't use a large chunksize as it will either error or not be beneficial
-    # If prob.f.f is a FunctionWrappersWrappers from ODEFunction, need to set chunksize to 1
-    if alg_autodiff(alg) isa AutoForwardDiff && ((prob.f isa ODEFunction &&
-         prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) ||
-        (isbitstype(T) && sizeof(T) > 24))
-        return remake(
-            alg, autodiff = AutoForwardDiff(chunksize = 1, tag = alg_autodiff(alg).tag))
-    end
+    sparsity_detector = isnothing(sparsity) ? TracerSparsityDetector() : ADTypes.KnownJacobianSparsityDetector(sparsity)
+    color_alg = DiffEqBase.has_colorvec(prob.f) ? ADTypes.ConstantColoringAlgorithm(sparsity, prob.f.colorvec) : GreedyColoringAlgorithm()
 
-    # If the autodiff alg is AutoFiniteDiff, prob.f.f isa FunctionWrappersWrapper,
-    # and fdtype is complex, fdtype needs to change to something not complex
-    if alg_autodiff(alg) isa AutoFiniteDiff
-        if alg_difftype(alg) == Val{:complex} && (prob.f isa ODEFunction &&
-            prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
-            @warn "AutoFiniteDiff fdtype complex is not compatible with this function"
-            return remake(alg, autodiff = AutoFiniteDiff(fdtype = Val{:forward}()))
-        end
-        return alg
-    end
+    autodiff = AutoSparse(autodiff, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg)
+
+    alg = remake(alg, autodiff = autodiff)
 
     return alg
+end
+
+function prepare_ADType(autodiff_alg::AutoSparse, prob, u0, p, standardtag)
+    prepare_ADType(dense_ad(autodiff_alg), prob, u0, p, standardtag)
 end
 
 function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
@@ -122,15 +118,22 @@ function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
 end
 
 function prepare_ADType(alg::AutoFiniteDiff, prob, u0, p, standardtag)
+    # If the autodiff alg is AutoFiniteDiff, prob.f.f isa FunctionWrappersWrapper,
+    # and fdtype is complex, fdtype needs to change to something not complex
     if alg.fdtype == Val{:complex}() && (prob.f isa ODEFunction && prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
          @warn "AutoFiniteDiff fdtype complex is not compatible with this function"
          return AutoFiniteDiff(fdtype = Val{:forward}())
     end
+    return alg
 end
 
-function prepare_ADType(alg::DiffEqAutoAD, prob, u0, p, standardtag)
-
+function prepare_ADType(alg::AbstractADType, prob, u0,p,standardtag)
+    return alg
 end
+
+#function prepare_ADType(alg::DiffEqAutoAD, prob, u0, p, standardtag)
+
+#end
 
 @generated function pick_static_chunksize(::Val{chunksize}) where {chunksize}
     x = ForwardDiff.pickchunksize(chunksize)
