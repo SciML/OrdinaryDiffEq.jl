@@ -34,7 +34,6 @@ jobs:
           - OrdinaryDiffEqExponentialRK
           - OrdinaryDiffEqExtrapolation
           - OrdinaryDiffEqFIRK
-          - OrdinaryDiffEqFIRKGenerator
           - OrdinaryDiffEqFeagin
           - OrdinaryDiffEqFunctionMap
           - OrdinaryDiffEqHighOrderRK

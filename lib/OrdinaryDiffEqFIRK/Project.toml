@@ -6,6 +6,7 @@ version = "1.5.0"
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
+FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
 FastPower = "a4df4552-cc26-4903-aec0-212e50a0e84b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
@@ -15,12 +16,14 @@ OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [compat]
 DiffEqBase = "6.152.2"
 DiffEqDevTools = "2.44.4"
 FastBroadcast = "0.3.5"
+FastGaussQuadrature = "1.0.2"
 FastPower = "1"
 LinearAlgebra = "<0.0.1, 1"
 LinearSolve = "2.32.0"
@@ -33,16 +36,18 @@ Random = "<0.0.1, 1"
 RecursiveArrayTools = "3.27.0"
 Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
+SciMLBase = "2.60.0"
 SciMLOperators = "0.3.9"
 Test = "<0.0.1, 1"
 julia = "1.10"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+GenericSchur = "c145ed77-6b09-5dd9-b285-bf645a82121e"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary"]
+test = ["DiffEqDevTools", "GenericSchur", "Random", "SafeTestsets", "Test", "ODEProblemLibrary"]

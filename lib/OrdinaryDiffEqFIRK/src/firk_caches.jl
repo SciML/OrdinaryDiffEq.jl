@@ -517,10 +517,10 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     end
     num_stages = min
 
-    tabs = [BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits))]
+    tabs = [RadauIIATableau5(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau9(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau13(uToltype, constvalue(tTypeNoUnits))]
     i = 9
     while i <= max
-        push!(tabs, adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), i))
+        push!(tabs, RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i))
         i += 2
     end
     cont = Vector{typeof(u)}(undef, max)
@@ -598,10 +598,10 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     end
     num_stages = min
 
-    tabs = [BigRadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits)), BigRadauIIA13Tableau(uToltype, constvalue(tTypeNoUnits))]
+    tabs = [RadauIIATableau5(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau9(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau13(uToltype, constvalue(tTypeNoUnits))]
     i = 9
     while i <= max
-        push!(tabs, adaptiveRadauTableau(uToltype, constvalue(tTypeNoUnits), i))
+        push!(tabs, RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i))
         i += 2
     end
 
@@ -639,7 +639,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     fsalfirst = zero(rate_prototype)
     fw = [zero(rate_prototype) for i in 1 : max]
     ks = [zero(rate_prototype) for i in 1 : max]
-    
+
     k = ks[1]
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
@@ -671,7 +671,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     atol = reltol isa Number ? reltol : zero(reltol)
 
     AdaptiveRadauCache(u, uprev,
-        z, w, c_prime, αdt, βdt, dw1, ubuff, dw2, cubuff, dw, cont, derivatives, 
+        z, w, c_prime, αdt, βdt, dw1, ubuff, dw2, cubuff, dw, cont, derivatives,
         du1, fsalfirst, ks, k, fw,
         J, W1, W2,
         uf, tabs, κ, one(uToltype), 10000, tmp,
