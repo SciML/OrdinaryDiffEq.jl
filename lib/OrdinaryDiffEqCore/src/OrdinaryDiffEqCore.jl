@@ -62,7 +62,7 @@ using FastBroadcast: @.., True, False
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val
 
-import SciMLBase: alg_order
+import SciMLBase: AbstractNonlinearProblem, alg_order
 
 import DiffEqBase: calculate_residuals,
                    calculate_residuals!, unwrap_cache,
@@ -76,7 +76,8 @@ import Accessors: @reset
 
 using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
-using SymbolicIndexingInterface: parameter_values, is_variable, variable_index, symbolic_type, NotSymbolic
+using SymbolicIndexingInterface: state_values, parameter_values, is_variable, variable_index,
+                                 symbolic_type, NotSymbolic
 
 const CompiledFloats = Union{Float32, Float64}
 import Preferences

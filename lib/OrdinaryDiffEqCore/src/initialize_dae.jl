@@ -101,7 +101,7 @@ default_nlsolve(alg, isinplace, u, initprob, autodiff = false) = alg
 
 ## If the initialization is trivial just use nothing alg
 function default_nlsolve(
-        ::Nothing, isinplace::Val{true}, u::Nothing, ::NonlinearProblem, autodiff = false)
+        ::Nothing, isinplace::Val{true}, u::Nothing, ::AbstractNonlinearProblem, autodiff = false)
     nothing
 end
 
@@ -111,7 +111,7 @@ function default_nlsolve(
 end
 
 function default_nlsolve(
-        ::Nothing, isinplace::Val{false}, u::Nothing, ::NonlinearProblem, autodiff = false)
+        ::Nothing, isinplace::Val{false}, u::Nothing, ::AbstractNonlinearProblem, autodiff = false)
     nothing
 end
 
@@ -122,7 +122,7 @@ function default_nlsolve(
 end
 
 function OrdinaryDiffEqCore.default_nlsolve(
-        ::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
+        ::Nothing, isinplace, u, ::AbstractNonlinearProblem, autodiff = false)
     error("This ODE requires a DAE initialization and thus a nonlinear solve but no nonlinear solve has been loaded. To solve this problem, do `using OrdinaryDiffEqNonlinearSolve` or pass a custom `nlsolve` choice into the `initializealg`.")
 end
 
@@ -146,7 +146,8 @@ function _initialize_dae!(integrator, prob::AbstractDEProblem,
     # If it doesn't have autodiff, assume it comes from symbolic system like ModelingToolkit
     # Since then it's the case of not a DAE but has initializeprob
     # In which case, it should be differentiable
-    isAD = if initializeprob.u0 === nothing
+    iu0 = state_values(initializeprob)
+    isAD = if iu0 === nothing
         AutoForwardDiff
     elseif has_autodiff(integrator.alg)
         alg_autodiff(integrator.alg) isa AutoForwardDiff
@@ -154,7 +155,7 @@ function _initialize_dae!(integrator, prob::AbstractDEProblem,
         true
     end
 
-    nlsolve_alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, initializeprob, isAD)
+    nlsolve_alg = default_nlsolve(alg.nlsolve, isinplace, iu0, initializeprob, isAD)
 
     u0, p, success = SciMLBase.get_initial_values(prob, integrator, prob.f, alg, isinplace; nlsolve_alg, abstol = integrator.opts.abstol, reltol = integrator.opts.reltol)
 
