@@ -87,11 +87,12 @@ function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
         nothing
     end
 
+    T = eltype(u0)
+
     if ((prob.f isa ODEFunction &&
       prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) ||
      (isbitstype(T) && sizeof(T) > 24))
-        autodiff = AutoForwardDiff(chunksize = 1, tag = tag)
-
+        autodiff_alg = AutoForwardDiff(chunksize = 1, tag = tag)
     end
 
     #L = StaticArrayInterface.known_length(typeof(u0))
@@ -114,7 +115,7 @@ function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
     #    return remake(
     #        alg, autodiff = AutoForwardDiff(chunksize = cs, tag = tag))
     #end
-
+    autodiff_alg
 end
 
 function prepare_ADType(alg::AutoFiniteDiff, prob, u0, p, standardtag)
