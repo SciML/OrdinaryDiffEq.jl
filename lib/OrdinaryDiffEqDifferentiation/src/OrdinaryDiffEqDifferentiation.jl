@@ -20,7 +20,7 @@ using DiffEqBase
 import LinearAlgebra
 import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!, lmul!, axpby!, opnorm, lu
 import LinearAlgebra: LowerTriangular, UpperTriangular
-import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros
+import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros, sparse
 import ArrayInterface
 
 import StaticArrayInterface

@@ -774,7 +774,11 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         elseif J isa StaticMatrix
             StaticWOperator(J, false)
         else
-            ArrayInterface.lu_instance(J)
+            if alg.autodiff isa AutoSparse
+                ArrayInterface.lu_instance(sparse(J))
+            else
+                ArrayInterface.lu_instance(J)
+            end
         end
     end
     return J, W
