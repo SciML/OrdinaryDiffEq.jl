@@ -41,7 +41,16 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
                 tf.p = p
                 alg = unwrap_alg(integrator, true)
                 #derivative!(dT, tf, t, du2, integrator, cache.grad_config)
-                DI.derivative!(tf, linsolve_tmp, dT, cache.grad_config, alg_autodiff(alg), t)
+                autodiff_alg = alg_autodiff(alg)
+                
+                autodiff_alg = if autodiff_alg isa AutoSparse
+                    ADTypes.dense_ad(autodiff_alg)
+                else
+                    autodiff_alg
+                end
+
+                autodiff_alg = ADTypes.dense_ad(alg_autodiff(alg))
+                DI.derivative!(tf, linsolve_tmp, dT, cache.grad_config, autodiff_alg, t)
             end
         end
 
