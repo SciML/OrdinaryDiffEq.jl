@@ -55,12 +55,12 @@ function DiffEqBase.prepare_alg(
     sparsity = prob.f.sparsity
 
     if sparsity isa SparseMatrixCSC
-        if f.mass_matrix isa UniformScaling
+        if prob.f.mass_matrix isa UniformScaling
             idxs = diagind(sparsity)
             @. @view(sparsity[idxs]) = 1
         else
-            idxs = findall(!iszero, f.mass_matrix)
-            @. @view(sparsity[idxs]) = @view(f.mass_matrix[idxs])
+            idxs = findall(!iszero, prob.f.mass_matrix)
+            @. @view(sparsity[idxs]) = @view(prob.f.mass_matrix[idxs])
         end
     end
 
