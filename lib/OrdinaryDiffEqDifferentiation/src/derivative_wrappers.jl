@@ -116,6 +116,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
                 @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
             end
         end
+        uf = SciMLBase.@set uf.f = SciMLBase.unwrapped_f(uf.f)
         jac_config = DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
     else 
         jac_config = nothing
