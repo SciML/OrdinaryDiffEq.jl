@@ -17,7 +17,8 @@ struct StaticWOperator{isinv, T, F} <: AbstractSciMLOperator{T}
         # when constructing W for the first time for the type
         # inv(W) can be singular
         _W = if isinv && callinv
-            inv(W)
+            # W may be sparse, needs to be dense to inv
+            inv(Matrix(W))
         else
             W
         end
