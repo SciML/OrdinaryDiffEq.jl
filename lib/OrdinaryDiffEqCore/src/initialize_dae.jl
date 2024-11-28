@@ -156,12 +156,23 @@ function _initialize_dae!(integrator, prob::AbstractDEProblem,
 
     nlsolve_alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, initializeprob, isAD)
 
-    u0, p, success = SciMLBase.get_initial_values(prob, integrator, prob.f, alg, isinplace; nlsolve_alg, abstol = integrator.opts.abstol, reltol = integrator.opts.reltol)
+    if prob isa DAEProblem
+        du0, u0, p, success = SciMLBase.get_initial_values(prob, integrator, prob.f, alg, isinplace; nlsolve_alg, abstol = integrator.opts.abstol, reltol = integrator.opts.reltol, return_du0 = true)
+    else
+        u0, p, success = SciMLBase.get_initial_values(prob, integrator, prob.f, alg, isinplace; nlsolve_alg, abstol = integrator.opts.abstol, reltol = integrator.opts.reltol)
+        du0 = nothing
+    end
 
     if isinplace === Val{true}()
         integrator.u .= u0
+        if du0 !== nothing
+            integrator.du .= du0
+        end
     elseif isinplace === Val{false}()
         integrator.u = u0
+        if du0 !== nothing
+            integrator.du = du0
+        end
     else
         error("Unreachable reached. Report this error.")
     end
