@@ -1,6 +1,6 @@
 module OrdinaryDiffEqNonlinearSolve
 
-import ADTypes: AutoFiniteDiff, AutoForwardDiff
+import ADTypes: AutoFiniteDiff, AutoForwardDiff, AutoSparse
 
 import SciMLBase
 import SciMLBase: init, solve, solve!, remake
