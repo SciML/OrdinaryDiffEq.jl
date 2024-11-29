@@ -68,7 +68,7 @@ function DiffEqBase.prepare_alg(
     color_alg = DiffEqBase.has_colorvec(prob.f) ? ADTypes.ConstantColoringAlgorithm(sparsity, prob.f.colorvec) : GreedyColoringAlgorithm()
 
     # don't use sparsity if the vectors are SVectors, or the eltype of u0 is Complex
-    if !(u0 isa SVector) && !(eltype(u0) <: Complex)
+    if !(u0 isa SVector) && !(eltype(u0) <: Complex) && !(eltype(u0) == ForwardDiff.Dual)
         autodiff = AutoSparse(autodiff, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg)
     end
 
