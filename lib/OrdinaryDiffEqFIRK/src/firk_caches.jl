@@ -497,6 +497,7 @@ mutable struct AdaptiveRadauConstantCache{F, Tab, Tol, Dt, U, JType} <:
     num_stages::Int
     step::Int
     hist_iter::Float64
+    index::Int
 end
 
 function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -518,7 +519,11 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     num_stages = min
 
     tabs = [RadauIIATableau5(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau9(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau13(uToltype, constvalue(tTypeNoUnits))]
-    i = 9
+    if (min == 3 || min == 5 || min == 7)
+        i = 9
+    else
+        i = min
+    end
     while i <= max
         push!(tabs, RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i))
         i += 2
@@ -528,10 +533,20 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         cont[i] = zero(u)
     end
 
+    if (min == 3)
+        index = 1
+    elseif (min == 5)
+        index = 2
+    elseif (min == 7)
+        index = 3
+    else
+        index = 4
+    end
+
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
     AdaptiveRadauConstantCache(uf, tabs, κ, one(uToltype), 10000, cont, dt, dt,
-        Convergence, J, num_stages, 1, 0.0)
+        Convergence, J, num_stages, 1, 0.0, index)
 end
 
 mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, JType, W1Type, W2Type,
@@ -578,6 +593,7 @@ mutable struct AdaptiveRadauCache{uType, cuType, tType, uNoUnitsType, rateType, 
     num_stages::Int
     step::Int
     hist_iter::Float64
+    index::Int
 end
 
 function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -599,10 +615,24 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     num_stages = min
 
     tabs = [RadauIIATableau5(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau9(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau13(uToltype, constvalue(tTypeNoUnits))]
-    i = 9
+    if (min == 3 || min == 5 || min == 7)
+        i = 9
+    else
+        i = min
+    end
     while i <= max
         push!(tabs, RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i))
         i += 2
+    end
+
+    if (min == 3)
+        index = 1
+    elseif (min == 5)
+        index = 2
+    elseif (min == 7)
+        index = 3
+    else
+        index = 4
     end
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
@@ -677,6 +707,6 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         uf, tabs, κ, one(uToltype), 10000, tmp,
         atmp, jac_config,
         linsolve1, linsolve2, rtol, atol, dt, dt,
-        Convergence, alg.step_limiter!, num_stages, 1, 0.0)
+        Convergence, alg.step_limiter!, num_stages, 1, 0.0, index)
 end
 

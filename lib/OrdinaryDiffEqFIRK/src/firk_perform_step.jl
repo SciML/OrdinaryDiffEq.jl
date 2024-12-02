@@ -1354,8 +1354,8 @@ end
 @muladd function perform_step!(integrator, cache::AdaptiveRadauConstantCache,
     repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tabs, num_stages = cache
-    tab = tabs[(num_stages - 1) ÷ 2]
+    @unpack tabs, num_stages, index = cache
+    tab = tabs[index]
     @unpack T, TI, γ, α, β, c, e = tab
     @unpack κ, cont = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
@@ -1595,8 +1595,8 @@ end
 
 @muladd function perform_step!(integrator, cache::AdaptiveRadauCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
-    @unpack num_stages, tabs = cache
-    tab = tabs[(num_stages - 1) ÷ 2]
+    @unpack num_stages, tabs, index = cache
+    tab = tabs[index]
     @unpack T, TI, γ, α, β, c, e = tab
     @unpack κ, cont, derivatives, z, w, c_prime, αdt, βdt= cache
     @unpack dw1, ubuff, dw2, cubuff, dw = cache
