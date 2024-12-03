@@ -509,39 +509,27 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
 
     max_order = alg.max_order
     min_order = alg.min_order
-    max = (max_order - 1) ÷ 4 * 2 + 1
-    min = (min_order - 1) ÷ 4 * 2 + 1
+    max_stages = (max_order - 1) ÷ 4 * 2 + 1
+    min_stages = (min_order - 1) ÷ 4 * 2 + 1
     if (alg.min_order < 5)
         error("min_order choice $min_order below 5 is not compatible with the algorithm")
-    elseif (max < min)
+    elseif (max_stages < min_stages)
         error("max_order $max_order is below min_order $min_order")
     end
-    num_stages = min
+    num_stages = min_stages
 
     tabs = [RadauIIATableau5(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau9(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau13(uToltype, constvalue(tTypeNoUnits))]
-    if (min == 3 || min == 5 || min == 7)
-        i = 9
-    else
-        i = min
-    end
-    while i <= max
+    i = max(min_stages, 9)
+    while i <= max_stages
         push!(tabs, RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i))
         i += 2
     end
-    cont = Vector{typeof(u)}(undef, max)
-    for i in 1:max
+    cont = Vector{typeof(u)}(undef, max_stages)
+    for i in 1:max_stages
         cont[i] = zero(u)
     end
 
-    if (min == 3)
-        index = 1
-    elseif (min == 5)
-        index = 2
-    elseif (min == 7)
-        index = 3
-    else
-        index = 4
-    end
+    index = min((min_stages - 1) ÷ 2, 4)
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
@@ -605,70 +593,58 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
 
     max_order = alg.max_order
     min_order = alg.min_order
-    max = (max_order - 1) ÷ 4 * 2 + 1
-    min = (min_order - 1) ÷ 4 * 2 + 1
+    max_stages = (max_order - 1) ÷ 4 * 2 + 1
+    min_stages = (min_order - 1) ÷ 4 * 2 + 1
     if (alg.min_order < 5)
         error("min_order choice $min_order below 5 is not compatible with the algorithm")
-    elseif (max < min)
+    elseif (max_stages < min_stages)
         error("max_order $max_order is below min_order $min_order")
     end
-    num_stages = min
+    num_stages = min_stages
 
     tabs = [RadauIIATableau5(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau9(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau13(uToltype, constvalue(tTypeNoUnits))]
-    if (min == 3 || min == 5 || min == 7)
-        i = 9
-    else
-        i = min
-    end
-    while i <= max
+    i = max(min_stages, 9)
+    while i <= max_stages
         push!(tabs, RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i))
         i += 2
     end
 
-    if (min == 3)
-        index = 1
-    elseif (min == 5)
-        index = 2
-    elseif (min == 7)
-        index = 3
-    else
-        index = 4
-    end
+    index = min((min_stages - 1) ÷ 2, 4)
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 
-    z = Vector{typeof(u)}(undef, max)
-    w = Vector{typeof(u)}(undef, max)
-    for i in 1 : max
+    z = Vector{typeof(u)}(undef, max_stages)
+    w = Vector{typeof(u)}(undef, max_stages)
+    for i in 1 : max_stages
         z[i] = zero(u)
         w[i] = zero(u)
     end
 
-    αdt = [zero(t) for i in 1:max]
-    βdt = [zero(t) for i in 1:max]
-    c_prime = Vector{typeof(t)}(undef, max) #time stepping
-    for i in 1 : max
+    αdt = [zero(t) for i in 1:max_stages]
+    βdt = [zero(t) for i in 1:max_stages]
+    c_prime = Vector{typeof(t)}(undef, max_stages) #time stepping
+    for i in 1 : max_stages
         c_prime[i] = zero(t)
     end
 
     dw1 = zero(u)
     ubuff = zero(u)
-    dw2 = [similar(u, Complex{eltype(u)}) for _ in 1 : (max - 1) ÷ 2]
+    dw2 = [similar(u, Complex{eltype(u)}) for _ in 1 : (max_stages - 1) ÷ 2]
     recursivefill!.(dw2, false)
-    cubuff = [similar(u, Complex{eltype(u)}) for _ in 1 : (max - 1) ÷ 2]
+    cubuff = [similar(u, Complex{eltype(u)}) for _ in 1 : (max_stages - 1) ÷ 2]
     recursivefill!.(cubuff, false)
-    dw = [zero(u) for i in 1 : max]
+    dw = [zero(u) for i in 1:max_stages]
 
-    cont = [zero(u) for i in 1:max]
+    cont = [zero(u) for i in 1:max_stages]
 
-    derivatives = Matrix{typeof(u)}(undef, max, max)
-    for i in 1 : max, j in 1 : max
+    derivatives = Matrix{typeof(u)}(undef, max_stages, max_stages)
+    for i in 1 : max_stages, j in 1 : max_stages
         derivatives[i, j] = zero(u)
     end
 
     fsalfirst = zero(rate_prototype)
-    fw = [zero(rate_prototype) for i in 1 : max]
-    ks = [zero(rate_prototype) for i in 1 : max]
+    fw = [zero(rate_prototype) for i in 1 : max_stages]
+    ks = [zero(rate_prototype) for i in 1 : max_stages]
 
     k = ks[1]
 
@@ -677,7 +653,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         error("Non-concrete Jacobian not yet supported by AdaptiveRadau.")
     end
 
-    W2 = [similar(J, Complex{eltype(W1)}) for _ in 1 : (max - 1) ÷ 2]
+    W2 = [similar(J, Complex{eltype(W1)}) for _ in 1 : (max_stages - 1) ÷ 2]
     recursivefill!.(W2, false)
 
     du1 = zero(rate_prototype)
@@ -695,7 +671,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
 
     linsolve2 = [
         init(LinearProblem(W2[i], _vec(cubuff[i]); u0 = _vec(dw2[i])), alg.linsolve, alias_A = true, alias_b = true,
-            assumptions = LinearSolve.OperatorAssumptions(true)) for i in 1 : (max - 1) ÷ 2]
+            assumptions = LinearSolve.OperatorAssumptions(true)) for i in 1 : (max_stages - 1) ÷ 2]
 
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
