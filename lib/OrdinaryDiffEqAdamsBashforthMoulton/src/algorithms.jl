@@ -10,7 +10,13 @@ reference = """E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differentia
     reference,
     "",
     "")
-struct AB3 <: OrdinaryDiffEqAlgorithm end
+struct AB3{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread
+end
+
+function AB3()
+    AB3(False())
+end
 
 @doc generic_solver_docstring("The 4-step fourth order multistep method.
     Runge-Kutta method of order 4 is used to calculate starting values.",
@@ -19,7 +25,13 @@ struct AB3 <: OrdinaryDiffEqAlgorithm end
     reference,
     "",
     "")
-struct AB4 <: OrdinaryDiffEqAlgorithm end
+struct AB4{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread
+end
+function AB4()
+    AB4(False())
+end
+
 @doc generic_solver_docstring("The 5-step fifth order multistep method.
     Ralston's 3rd order Runge-Kutta method is used to calculate starting values.",
     "AB5",
@@ -27,7 +39,12 @@ struct AB4 <: OrdinaryDiffEqAlgorithm end
     reference,
     "",
     "")
-struct AB5 <: OrdinaryDiffEqAlgorithm end
+struct AB5{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread
+end
+function AB5()
+    AB5(False())
+end
 
 @doc generic_solver_docstring("It is third order method.
     In ABM32, AB3 works as predictor and Adams Moulton 2-steps method works as Corrector.
@@ -37,7 +54,12 @@ struct AB5 <: OrdinaryDiffEqAlgorithm end
     reference,
     "",
     "")
-struct ABM32 <: OrdinaryDiffEqAlgorithm end
+struct ABM32{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread
+end
+function ABM32()
+    ABM32(False())
+end
 
 @doc generic_solver_docstring("It is fourth order method.
     In ABM43, AB4 works as predictor and Adams Moulton 3-steps method works as Corrector.
@@ -47,7 +69,12 @@ struct ABM32 <: OrdinaryDiffEqAlgorithm end
     reference,
     "",
     "")
-struct ABM43 <: OrdinaryDiffEqAlgorithm end
+struct ABM43{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread
+end
+function ABM43()
+    ABM43(False())
+end
 
 @doc generic_solver_docstring("It is fifth order method.
     In ABM54, AB5 works as predictor and Adams Moulton 4-steps method works as Corrector.
@@ -57,7 +84,12 @@ struct ABM43 <: OrdinaryDiffEqAlgorithm end
     reference,
     "",
     "")
-struct ABM54 <: OrdinaryDiffEqAlgorithm end
+struct ABM54{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread
+end
+function ABM54()
+    ABM54(False())
+end
 
 # Variable Step Size Adams methods
 
@@ -68,7 +100,12 @@ struct ABM54 <: OrdinaryDiffEqAlgorithm end
     reference,
     "",
     "")
-struct VCAB3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct VCAB3{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread
+end
+function VCAB3()
+    VCAB3(False())
+end
 
 @doc generic_solver_docstring("The 4th order Adams method.
     Runge-Kutta 4 is used to calculate starting values.",
@@ -77,7 +114,12 @@ struct VCAB3 <: OrdinaryDiffEqAdaptiveAlgorithm end
     reference,
     "",
     "")
-struct VCAB4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct VCAB4{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread
+end
+function VCAB4()
+    VCAB4(False())
+end
 
 @doc generic_solver_docstring("The 5th order Adams method.
     Runge-Kutta 4 is used to calculate starting values.",
@@ -86,7 +128,12 @@ struct VCAB4 <: OrdinaryDiffEqAdaptiveAlgorithm end
     reference,
     "",
     "")
-struct VCAB5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct VCAB5{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread
+end
+function VCAB5()
+    VCAB5(False())
+end
 
 @doc generic_solver_docstring("The 3rd order Adams-Moulton method.
     Bogacki-Shampine 3/2 method is used to calculate starting values.",
@@ -95,7 +142,12 @@ struct VCAB5 <: OrdinaryDiffEqAdaptiveAlgorithm end
     reference,
     "",
     "")
-struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct VCABM3{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread
+end
+function VCABM3()
+    VCABM3(False())
+end
 
 @doc generic_solver_docstring("The 4th order Adams-Moulton method.
     Runge-Kutta 4 is used to calculate starting values.",
@@ -104,7 +156,12 @@ struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
     reference,
     "",
     "")
-struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct VCABM4{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread
+end
+function VCABM4()
+    VCABM4(False())
+end
 
 @doc generic_solver_docstring("The 5th order Adams-Moulton method.
     Runge-Kutta 4 is used to calculate starting values.",
@@ -113,7 +170,12 @@ struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
     reference,
     "",
     "")
-struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct VCABM5{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread
+end
+function VCABM5()
+    VCABM5(False())
+end
 
 # Variable Order and Variable Step Size Adams methods
 
@@ -124,4 +186,9 @@ struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
     reference,
     "",
     "")
-struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
+struct VCABM{Thread} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
+    thread::Thread
+end
+function VCABM()
+    VCABM(False())
+end
