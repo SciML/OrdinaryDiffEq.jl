@@ -17,6 +17,9 @@ end
 
 SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 
+SciMLBase.allows_late_binding_tstops(::OrdinaryDiffEqAlgorithm) = true
+SciMLBase.allows_late_binding_tstops(::DAEAlgorithm) = true
+
 # isadaptive is defined below.
 
 ## OrdinaryDiffEq Internal Traits

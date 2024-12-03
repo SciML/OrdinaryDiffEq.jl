@@ -40,6 +40,8 @@ end
 prob_rober = ODEProblem(rober, [1.0, 0.0, 0.0], (0.0, 1e3), (0.04, 3e7, 1e4))
 sol = solve(prob_rober)
 rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23(autodiff = false)))
+#test that cache is type stable
+@test typeof(sol.interp.cache.cache3) == typeof(rosensol.interp.cache.caches[2])
 # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
 @test sol.stats.naccept == rosensol.stats.naccept
 @test sol.stats.nf == rosensol.stats.nf
@@ -50,6 +52,8 @@ rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23(autodiff = false)))
 sol = solve(prob_rober, reltol = 1e-7, abstol = 1e-7)
 rosensol = solve(
     prob_rober, AutoVern7(Rodas5P(autodiff = false)), reltol = 1e-7, abstol = 1e-7)
+#test that cache is type stable
+@test typeof(sol.interp.cache.cache4) == typeof(rosensol.interp.cache.caches[2])
 # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
 @test sol.stats.naccept == rosensol.stats.naccept
 @test sol.stats.nf == rosensol.stats.nf

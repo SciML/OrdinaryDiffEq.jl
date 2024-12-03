@@ -17,10 +17,10 @@ sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_2Dlinear, RadauIIA9())
 prob_ode_linear_big = remake(prob_ode_linear, u0 = big.(prob_ode_linear.u0), tspan = big.(prob_ode_linear.tspan))
 prob_ode_2Dlinear_big = remake(prob_ode_2Dlinear, u0 = big.(prob_ode_2Dlinear.u0), tspan = big.(prob_ode_2Dlinear.tspan))
 
-for i in [3, 5, 7, 9], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
+for i in [5, 9, 13], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
     dts = 1 ./ 2 .^ (4.25:-1:0.25)
-    sim21 = test_convergence(dts, prob, AdaptiveRadau(num_stages = i))
-    @test sim21.𝒪est[:final]≈ (2 * i - 1) atol=testTol
+    local sim21 = test_convergence(dts, prob, AdaptiveRadau(min_order = i, max_order = i))
+    @test sim21.𝒪est[:final]≈ i atol=testTol
 end
 
 # test adaptivity

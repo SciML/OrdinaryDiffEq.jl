@@ -20,16 +20,6 @@ function BrownFullBasicInit(; abstol = 1e-10, nlsolve = nothing)
 end
 BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = nothing)
 
-struct OverrideInit{T, F} <: DiffEqBase.DAEInitializationAlgorithm
-    abstol::T
-    nlsolve::F
-end
-
-function OverrideInit(; abstol = 1e-10, nlsolve = nothing)
-    OverrideInit(abstol, nlsolve)
-end
-OverrideInit(abstol) = OverrideInit(; abstol = abstol, nlsolve = nothing)
-
 ## Notes
 
 #=
@@ -116,7 +106,7 @@ default_nlsolve(alg, isinplace, u, initprob, autodiff = false) = alg
 
 ## If the initialization is trivial just use nothing alg
 function default_nlsolve(
-        ::Nothing, isinplace::Val{true}, u::Nothing, ::NonlinearProblem, autodiff = false)
+        ::Nothing, isinplace::Val{true}, u::Nothing, ::AbstractNonlinearProblem, autodiff = false)
     nothing
 end
 
@@ -126,7 +116,7 @@ function default_nlsolve(
 end
 
 function default_nlsolve(
-        ::Nothing, isinplace::Val{false}, u::Nothing, ::NonlinearProblem, autodiff = false)
+        ::Nothing, isinplace::Val{false}, u::Nothing, ::AbstractNonlinearProblem, autodiff = false)
     nothing
 end
 
@@ -137,7 +127,7 @@ function default_nlsolve(
 end
 
 function OrdinaryDiffEqCore.default_nlsolve(
-        ::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
+        ::Nothing, isinplace, u, ::AbstractNonlinearProblem, autodiff = false)
     error("This ODE requires a DAE initialization and thus a nonlinear solve but no nonlinear solve has been loaded. To solve this problem, do `using OrdinaryDiffEqNonlinearSolve` or pass a custom `nlsolve` choice into the `initializealg`.")
 end
 
@@ -148,24 +138,21 @@ end
 
 ## NoInit
 
-function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
+function _initialize_dae!(integrator, prob::AbstractDEProblem,
         alg::NoInit, x::Union{Val{true}, Val{false}})
 end
 
 ## OverrideInit
 
-function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
+function _initialize_dae!(integrator, prob::AbstractDEProblem,
         alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
-    initializeprob = prob.f.initializeprob
-
-    if SciMLBase.has_update_initializeprob!(prob.f)
-        prob.f.update_initializeprob!(initializeprob, prob)
-    end
+    initializeprob = prob.f.initialization_data.initializeprob
 
     # If it doesn't have autodiff, assume it comes from symbolic system like ModelingToolkit
     # Since then it's the case of not a DAE but has initializeprob
     # In which case, it should be differentiable
-    isAD = if initializeprob.u0 === nothing
+    iu0 = state_values(initializeprob)
+    isAD = if iu0 === nothing
         AutoForwardDiff
     elseif has_autodiff(integrator.alg)
         alg_autodiff(integrator.alg) isa AutoForwardDiff
@@ -173,115 +160,30 @@ function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
         true
     end
 
-    alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, initializeprob, isAD)
-    nlsol = solve(initializeprob, alg)
+    nlsolve_alg = default_nlsolve(alg.nlsolve, isinplace, iu0, initializeprob, isAD)
+
+    u0, p, success = SciMLBase.get_initial_values(prob, integrator, prob.f, alg, isinplace; nlsolve_alg, abstol = integrator.opts.abstol, reltol = integrator.opts.reltol)
+
     if isinplace === Val{true}()
-        integrator.u .= prob.f.initializeprobmap(nlsol)
+        integrator.u .= u0
     elseif isinplace === Val{false}()
-        integrator.u = prob.f.initializeprobmap(nlsol)
+        integrator.u = u0
     else
         error("Unreachable reached. Report this error.")
     end
-    if SciMLBase.has_initializeprobpmap(prob.f)
-        integrator.p = prob.f.initializeprobpmap(prob, nlsol)
-        sol = integrator.sol
-        @reset sol.prob.p = integrator.p
-        integrator.sol = sol
-    end
+    integrator.p = p
+    sol = integrator.sol
+    @reset sol.prob.p = integrator.p
+    integrator.sol = sol
 
-    if nlsol.retcode != ReturnCode.Success
+    if !success
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
             ReturnCode.InitialFailure)
     end
 end
 
 ## CheckInit
-struct CheckInitFailureError <: Exception
-    normresid::Any
-    abstol::Any
-end
-
-function Base.showerror(io::IO, e::CheckInitFailureError)
-    print(io,
-        "DAE initialization failed: your u0 did not satisfy the initialization requirements, 
-        normresid = $(e.normresid) > abstol = $(e.abstol). If you wish for the system to 
-        automatically change the algebraic variables to satisfy the algebraic constraints, 
-        please pass `initializealg = BrownBasicInit()` to solve (this option will require 
-        `using OrdinaryDiffEqNonlinearSolve`). If you wish to perform an initialization on the
-        complete u0, please pass initializealg = ShampineCollocationInit() to solve. Note that 
-        initialization can be a very difficult process for DAEs and in many cases can be 
-        numerically intractable without symbolic manipulation of the system. For an automated 
-        system that will generate numerically stable initializations, see ModelingToolkit.jl 
-        structural simplification for more details."
-    )
-end
-
-function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
-        isinplace::Val{true})
-    @unpack p, t, f = integrator
-    M = integrator.f.mass_matrix
-    tmp = first(get_tmp_cache(integrator))
-    u0 = integrator.u
-
-    algebraic_vars = [all(iszero, x) for x in eachcol(M)]
-    algebraic_eqs = [all(iszero, x) for x in eachrow(M)]
-    (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
-    update_coefficients!(M, u0, p, t)
-    f(tmp, u0, p, t)
-    tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
-
-    normresid = integrator.opts.internalnorm(tmp, t)
-    if normresid > integrator.opts.abstol
-        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
-    end
-end
-
-function _initialize_dae!(integrator, prob::ODEProblem, alg::CheckInit,
-        isinplace::Val{false})
-    @unpack p, t, f = integrator
-    u0 = integrator.u
-    M = integrator.f.mass_matrix
-
-    algebraic_vars = [all(iszero, x) for x in eachcol(M)]
-    algebraic_eqs = [all(iszero, x) for x in eachrow(M)]
-    (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
-    update_coefficients!(M, u0, p, t)
-    du = f(u0, p, t)
-    resid = _vec(du)[algebraic_eqs]
-
-    normresid = integrator.opts.internalnorm(resid, t)
-    if normresid > integrator.opts.abstol
-        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
-    end
-end
-
-function _initialize_dae!(integrator, prob::DAEProblem,
-        alg::CheckInit, isinplace::Val{true})
-    @unpack p, t, f = integrator
-    u0 = integrator.u
-    resid = get_tmp_cache(integrator)[2]
-
-    f(resid, integrator.du, u0, p, t)
-    normresid = integrator.opts.internalnorm(resid, t)
-    if normresid > integrator.opts.abstol
-        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
-    end
-end
-
-function _initialize_dae!(integrator, prob::DAEProblem,
-        alg::CheckInit, isinplace::Val{false})
-    @unpack p, t, f = integrator
-    u0 = integrator.u
-
-    nlequation_oop = u -> begin
-        f((u - u0) / dt, u, p, t)
-    end
-
-    nlequation = (u, _) -> nlequation_oop(u)
-
-    resid = f(integrator.du, u0, p, t)
-    normresid = integrator.opts.internalnorm(resid, t)
-    if normresid > integrator.opts.abstol
-        throw(CheckInitFailureError(normresid, integrator.opts.abstol))
-    end
+function _initialize_dae!(integrator, prob::AbstractDEProblem, alg::CheckInit,
+        isinplace::Union{Val{true}, Val{false}})
+    SciMLBase.get_initial_values(prob, integrator, prob.f, alg, isinplace; abstol = integrator.opts.abstol)
 end

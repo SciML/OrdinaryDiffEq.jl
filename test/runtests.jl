@@ -85,6 +85,7 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIV" || GROUP == "Interface")
         @time @safetestset "Autodiff Error Tests" include("interface/autodiff_error_tests.jl")
         @time @safetestset "Ambiguity Tests" include("interface/ambiguity_tests.jl")
+        @time @safetestset "Precision Mixing Tests" include("interface/precision_mixing.jl")
         @time @safetestset "Sized Matrix Tests" include("interface/sized_matrix_tests.jl")
         @time @safetestset "Second Order with First Order Solver Tests" include("interface/second_order_with_first_order_solvers.jl")
     end
@@ -171,6 +172,7 @@ end
         end
         @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
         @time @safetestset "Linear LSRK GPU" include("gpu/linear_lsrk.jl")
+        @time @safetestset "Linear Exponential GPU" include("gpu/linear_exp.jl")
         @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
         @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
     end
