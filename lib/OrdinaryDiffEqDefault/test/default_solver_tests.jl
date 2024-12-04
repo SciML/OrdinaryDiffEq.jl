@@ -108,7 +108,7 @@ end
 f = ODEFunction(rober_mm, mass_matrix = [1 0 0; 0 1 0; 0 0 0])
 prob_rober_mm = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1e5), (0.04, 3e7, 1e4))
 sol = solve(prob_rober_mm)
-@test all(isequal(3), sol.alg_choice)
+@test all(isequal(4), sol.alg_choice)
 @test sol(0.5) isa Vector{Float64} # test dense output
 
 # test callback on ConstantCache (https://github.com/SciML/OrdinaryDiffEq.jl/issues/2287)

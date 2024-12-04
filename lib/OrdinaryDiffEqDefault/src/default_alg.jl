@@ -81,7 +81,7 @@ function stiffchoice(reltol, len, mass_matrix)
     elseif len > SMALLSIZE
         DefaultSolverChoice.FBDF
     else
-        if reltol < LOW_TOL || !isdiag(mass_matrix)
+        if reltol < LOW_TOL || mass_matrix != I
             DefaultSolverChoice.Rodas5P
         else
             DefaultSolverChoice.Rosenbrock23
