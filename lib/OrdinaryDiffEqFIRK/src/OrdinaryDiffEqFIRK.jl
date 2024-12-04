@@ -19,7 +19,6 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            isfirk, generic_solver_docstring, _bool_to_ADType,
                            _process_AD_choice
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
-using Polynomials, GenericLinearAlgebra, GenericSchur
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu
 import LinearSolve

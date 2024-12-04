@@ -39,7 +39,10 @@ function rober(u, p, t)
 end
 prob_rober = ODEProblem(rober, [1.0, 0.0, 0.0], (0.0, 1e3), (0.04, 3e7, 1e4))
 sol = solve(prob_rober)
+
 rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff())))
+#test that cache is type stable
+@test typeof(sol.interp.cache.cache3) == typeof(rosensol.interp.cache.caches[2])
 # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
 @test sol.stats.naccept == rosensol.stats.naccept
 @test sol.stats.nf == rosensol.stats.nf
@@ -50,6 +53,8 @@ rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff())
 sol = solve(prob_rober, reltol = 1e-7, abstol = 1e-7)
 rosensol = solve(
     prob_rober, AutoVern7(Rodas5P(autodiff = AutoFiniteDiff())), reltol = 1e-7, abstol = 1e-7)
+#test that cache is type stable
+@test typeof(sol.interp.cache.cache4) == typeof(rosensol.interp.cache.caches[2])
 # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
 @test sol.stats.naccept == rosensol.stats.naccept
 @test sol.stats.nf == rosensol.stats.nf
@@ -104,7 +109,7 @@ end
 f = ODEFunction(rober_mm, mass_matrix = [1 0 0; 0 1 0; 0 0 0])
 prob_rober_mm = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1e5), (0.04, 3e7, 1e4))
 sol = solve(prob_rober_mm)
-@test all(isequal(3), sol.alg_choice)
+@test all(isequal(4), sol.alg_choice)
 @test sol(0.5) isa Vector{Float64} # test dense output
 
 # test callback on ConstantCache (https://github.com/SciML/OrdinaryDiffEq.jl/issues/2287)

@@ -6,7 +6,8 @@ import SciMLBase
 import SciMLBase: init, solve, solve!, remake
 using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
                  NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem,
-                 update_coefficients!, get_tmp_cache, AbstractSciMLOperator, ReturnCode
+                 update_coefficients!, get_tmp_cache, AbstractSciMLOperator, ReturnCode,
+                 AbstractNonlinearProblem
 import DiffEqBase
 import PreallocationTools
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton

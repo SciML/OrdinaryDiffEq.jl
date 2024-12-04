@@ -18,7 +18,7 @@ SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 [compat]
 DiffEqBase = "6.152.2"
 DiffEqDevTools = "2.44.4"
-ExponentialUtilities = "1.26.1"
+ExponentialUtilities = "1.27"
 LinearAlgebra = "<0.0.1, 1"
 OrdinaryDiffEqCore = "1.1"
 OrdinaryDiffEqRosenbrock = "<0.0.1, 1"

@@ -178,14 +178,14 @@ struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
         new_W_γdt_cutoff::C2
         controller::Symbol
         step_limiter!::StepLimiter
-        min_stages::Int
-        max_stages::Int
+        min_order::Int
+        max_order::Int
         autodiff::AD
 end
 
 function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
      standardtag = Val{true}(), concrete_jac = nothing,
-     diff_type = Val{:forward}, min_stages = 3, max_stages = 7, 
+     diff_type = Val{:forward}, min_order = 5, max_order = 13, 
      linsolve = nothing, precs = DEFAULT_PRECS,
      extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
      new_W_γdt_cutoff = 1 // 5,
@@ -206,6 +206,6 @@ function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
      fast_convergence_cutoff,
      new_W_γdt_cutoff,
      controller,
-     step_limiter!, min_stages, max_stages, AD_choice)
+     step_limiter!, min_order, max_order, AD_choice)
 end
 
