@@ -950,8 +950,9 @@ An Order 2/3 L-Stable Rosenbrock-W method for stiff ODEs and DAEs in mass matrix
 """,
 "Rodas23W",
 references = """
-- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate for dense output and Julia implementation,
-  In progress.
+- Steinebach G., Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
+  Preprint 2024
+  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
 """,
 with_step_limiter = true) Rodas23W
 
@@ -1035,9 +1036,8 @@ references = """
 """,
 "Rodas3",
 references = """
-- Steinebach G. Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks
-  within the Julia Differential Equations package.
-  In: BIT Numerical Mathematics, 63(2), 2023
+- Sandu, Verwer, Van Loon, Carmichael, Potra, Dabdub, Seinfeld, Benchmarking stiff ode solvers for atmospheric chemistry problems-I. 
+    implicit vs explicit, Atmospheric Environment, 31(19), 3151-3166, 1997.
 """,
 with_step_limiter=true) Rodas3
 
@@ -1048,9 +1048,9 @@ and additional error test for interpolation. Keeps accuracy on discretizations o
 """,
 "Rodas3P",
 references = """
-- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate
-  for dense output and Julia implementation,
-  In progress.
+- Steinebach G., Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
+  Preprint 2024
+  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
 """,
 with_step_limiter=true) Rodas3P
 
@@ -1096,9 +1096,10 @@ lower if not corrected).
 """,
 "Rodas4P",
 references = """
-- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate
-  for dense output and Julia implementation,
-  In progress.
+- Steinebach, G., Rentrop, P., An adaptive method of lines approach for modelling flow and transport in rivers. 
+    Adaptive method of lines , Wouver, A. Vande, Sauces, Ph., Schiesser, W.E. (ed.),S. 181-205,Chapman & Hall/CRC, 2001,
+- Steinebach, G., Oder-reduction of ROW-methods for DAEs and method of lines  applications. 
+    Preprint-Nr. 1741, FB Mathematik, TH Darmstadt, 1995.
 """,
 with_step_limiter=true) Rodas4P
 
@@ -1110,9 +1111,8 @@ of Roadas4P and in case of inexact Jacobians a second order W method.
 """,
 "Rodas4P2",
 references = """
-- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate
-  for dense output and Julia implementation,
-  In progress.
+- Steinebach G., Improvement of Rosenbrock-Wanner Method RODASP, In: Reis T., Grundel S., Schöps S. (eds) 
+    Progress in Differential-Algebraic Equations II. Differential-Algebraic Equations Forum. Springer, Cham., 165-184, 2020.
 """,
 with_step_limiter=true) Rodas4P2
 
@@ -1143,8 +1143,7 @@ with_step_limiter=true) Rodas5P
 
 @doc rosenbrock_wolfbrandt_docstring(
 """
-A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
-Has improved stability in the adaptive time stepping embedding.
+Variant of Ropdas5P with additional residual control.
 """,
 "Rodas5Pr",
 references = """
@@ -1156,8 +1155,7 @@ with_step_limiter=true) Rodas5Pr
 
 @doc rosenbrock_wolfbrandt_docstring(
 """
-A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
-Has improved stability in the adaptive time stepping embedding.
+Variant of Ropdas5P with modified embedded scheme.
 """,
 "Rodas5Pe",
 references = """
