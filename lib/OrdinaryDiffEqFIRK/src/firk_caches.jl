@@ -518,18 +518,13 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     end
     num_stages = min_stages
 
-    tabs = [RadauIIATableau5(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau9(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau13(uToltype, constvalue(tTypeNoUnits))]
-    i = max(min_stages, 9)
-    while i <= max_stages
-        push!(tabs, RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i))
-        i += 2
-    end
+    tabs = [RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i) for i in min_stages:2:max_stages]
     cont = Vector{typeof(u)}(undef, max_stages)
     for i in 1:max_stages
         cont[i] = zero(u)
     end
 
-    index = min((min_stages - 1) ÷ 2, 4)
+    index = 1
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
@@ -602,14 +597,9 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     end
     num_stages = min_stages
 
-    tabs = [RadauIIATableau5(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau9(uToltype, constvalue(tTypeNoUnits)), RadauIIATableau13(uToltype, constvalue(tTypeNoUnits))]
-    i = max(min_stages, 9)
-    while i <= max_stages
-        push!(tabs, RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i))
-        i += 2
-    end
+    tabs = [RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i) for i in min_stages:2:max_stages]
 
-    index = min((min_stages - 1) ÷ 2, 4)
+    index = 1
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 
