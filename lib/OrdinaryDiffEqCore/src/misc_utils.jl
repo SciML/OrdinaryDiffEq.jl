@@ -140,11 +140,7 @@ end
 
 function _bool_to_ADType(::Val{false}, chunksize, diff_type)
     Base.depwarn("Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.", :_bool_to_ADType)
-    if diff_type isa Type
-        return AutoFiniteDiff(fdtype = diff_type())
-    else
-        return AutoFiniteDiff(fdtype = diff_type)
-    end
+    return AutoFiniteDiff(fdtype = diff_type())
 end
 
 # Functions to get ADType type from Bool or ADType object, or ADType type
@@ -153,6 +149,7 @@ _process_AD_choice(ad_alg::Bool, chunksize, diff_type) = _bool_to_ADType(Val(ad_
 function _process_AD_choice(ad_alg::AbstractADType, chunksize, diff_type) 
     # need a path for if just chunksize is specified in the Algorithm construction
     if !(chunksize === Val{0}())
+        @warn "The `chunksize` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `ForwardDiff` with the given `chunksize`."
         return _bool_to_ADType(Val{true}(), chunksize, diff_type)
     end
 
