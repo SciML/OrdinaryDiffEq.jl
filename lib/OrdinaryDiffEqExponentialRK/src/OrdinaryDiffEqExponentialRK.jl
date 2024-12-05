@@ -10,7 +10,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, ismultistep,
                            ExponentialAlgorithm, fsal_typeof, isdtchangeable,
                            calculate_residuals, calculate_residuals!,
                            full_cache, get_fsalfirstlast,
-                           generic_solver_docstring
+                           generic_solver_docstring, _bool_to_ADType, _process_AD_choice
 import OrdinaryDiffEqCore
 using RecursiveArrayTools
 using MuladdMacro, FastBroadcast
@@ -20,6 +20,7 @@ using ExponentialUtilities
 import RecursiveArrayTools: recursivecopy!
 using OrdinaryDiffEqDifferentiation: build_jac_config, UJacobianWrapper, UDerivativeWrapper,
                                      calc_J, calc_J!
+import ADTypes: AutoForwardDiff, AbstractADType
 
 using Reexport
 @reexport using DiffEqBase
