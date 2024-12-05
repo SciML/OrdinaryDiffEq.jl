@@ -1,5 +1,5 @@
 # stats.nf tests
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, ADTypes
 x = Ref(0)
 function f(u, p, t)
     x[] += 1
@@ -23,10 +23,10 @@ probip = ODEProblem(g, u0, tspan)
             @test x[] == sol.stats.nf
         end
         @testset "$alg" for alg in [Rodas5P, KenCarp4]
-            @testset "$kwargs" for kwargs in [(autodiff = true,), 
-                                              (autodiff = false, diff_type = Val{:forward}),
-                                              (autodiff = false, diff_type = Val{:central}),
-                                              (autodiff = false, diff_type = Val{:complex}),]
+            @testset "$kwargs" for kwargs in [(autodiff = AutoForwardDiff(),), 
+                                              (autodiff = AutoFiniteDiff(fdtype = Val{:forward}()),),
+                                              (autodiff = AutoFiniteDiff(fdtype = Val{:central}()),),
+                                              (autodiff = AutoFiniteDiff(fdtype = Val{:complex}()),)]
                 x[] = 0
                 sol = solve(prob, alg(;kwargs...))
                 @test x[] == sol.stats.nf
