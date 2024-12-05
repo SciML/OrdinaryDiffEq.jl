@@ -69,8 +69,7 @@ function DiffEqBase.__init(
         userdata = nothing,
         allow_extrapolation = alg_extrapolates(alg),
         initialize_integrator = true,
-        alias_u0 = false,
-        alias_du0 = false,
+        alias = ODEAliasSpecifier(alias_u0 = false, alias_du0 = false, alias_p = true, alias_f = true),
         initializealg = DefaultInit(),
         kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -158,19 +157,59 @@ function DiffEqBase.__init(
     else
         _alg = alg
     end
-    f = prob.f
-    p = prob.p
 
-    # Get the control variables
+    use_old_kwargs = haskey(kwargs,:alias_u0) || haskey(kwargs,:alias_du0)
 
-    if alias_u0
+    if use_old_kwargs
+        aliases = ODEAliasSpecifier()
+        if haskey(kwargs, :alias_u0)
+            Base.depwarn("alias_u0 keyword argument is deprecated, to set `alias_u0`,
+            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))", :alias_u0)
+            @reset aliases.alias_u0 = values(kwargs).alias_u0
+        else
+            @reset aliases.alias_u0 = false
+
+        end
+
+        if haskey(kwargs, :alias_du0)
+            Base.depwarn("alias_du0 keyword argument is deprecated, to set `alias_du0`,
+            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))", :alias_du0)
+            @reset aliases.alias_du0 = values(kwargs).alias_du0
+        else
+            @reset aliases.alias_du0 = false
+        end
+        
+        aliases 
+
+    else
+         # If alias isa Bool, all fields of ODEAliases set to alias
+        if alias isa Bool
+            aliases = ODEAliasSpecifier(alias = alias)
+        elseif alias isa ODEAliasSpecifier || isnothing(alias)
+            aliases = alias
+        end
+    end
+
+    if aliases.alias_f || isnothing(aliases.alias_f)
+        f = prob.f
+    else
+        f = deepcopy(prob.f)
+    end
+
+    if aliases.alias_p || isnothing(aliases.alias_f)
+        p = prob.p
+    else
+        p = recursivecopy(prob.p)
+    end
+
+    if aliases.alias_u0
         u = prob.u0
     else
         u = recursivecopy(prob.u0)
     end
 
     if _alg isa DAEAlgorithm
-        if alias_du0
+        if aliases.alias_du0
             du = prob.du0
         else
             du = recursivecopy(prob.du0)
