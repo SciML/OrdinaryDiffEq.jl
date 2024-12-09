@@ -69,7 +69,7 @@ end
 
 function ImplicitEulerExtrapolation(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}, linsolve = nothing,
+        diff_type = Val{:forward}(), linsolve = nothing,
         precs = DEFAULT_PRECS,
         max_order = 12, min_order = 3, init_order = 5,
         threading = false, sequence = :harmonic)
@@ -213,7 +213,7 @@ end
 function ImplicitDeuflhardExtrapolation(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         min_order = 1, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false)
 
@@ -366,7 +366,7 @@ function ImplicitHairerWannerExtrapolation(; chunk_size = Val{0}(), autodiff = A
         standardtag = Val{true}(),
         concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         min_order = 2, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false)
 
@@ -449,7 +449,7 @@ function ImplicitEulerBarycentricExtrapolation(; chunk_size = Val{0}(),
         standardtag = Val{true}(),
         concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         min_order = 3, init_order = 5,
         max_order = 12, sequence = :harmonic,
         threading = false, sequence_factor = 2)

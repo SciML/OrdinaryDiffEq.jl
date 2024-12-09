@@ -8,7 +8,7 @@ function SDIRK_docstring(description::String,
         autodiff = AutoForwardDiff(),
         standardtag = Val{true}(),
         concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing,
         precs = DEFAULT_PRECS,
         nlsolve = NLNewton(),
@@ -111,7 +111,7 @@ end
 
 function ImplicitEuler(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant,
         controller = :PI, step_limiter! = trivial_limiter!)
@@ -153,7 +153,7 @@ end
 
 function ImplicitMidpoint(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, step_limiter! = trivial_limiter!)
 
@@ -199,7 +199,7 @@ end
 
 function Trapezoid(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
@@ -255,7 +255,7 @@ struct TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
 end
 
 function TRBDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
@@ -305,7 +305,7 @@ struct SDIRK2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
 end
 
 function SDIRK2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
@@ -352,7 +352,7 @@ end
 
 function SDIRK22(;
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
@@ -409,7 +409,7 @@ end
 
 function SSPSDIRK2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :constant,
         controller = :PI)
@@ -458,7 +458,7 @@ struct Kvaerno3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
 end
 function Kvaerno3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
@@ -504,7 +504,7 @@ struct KenCarp3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
 end
 function KenCarp3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
@@ -544,7 +544,7 @@ struct CFNLIRK3{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 function CFNLIRK3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
@@ -594,7 +594,7 @@ struct Cash4{CS, AD, F, F2, P, FDT, ST, CJ} <:
     autodiff::AD
 end
 function Cash4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, embedding = 3)
@@ -641,7 +641,7 @@ struct SFSDIRK4{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 function SFSDIRK4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
@@ -684,7 +684,7 @@ end
 
 function SFSDIRK5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
@@ -727,7 +727,7 @@ end
 
 function SFSDIRK6(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
@@ -770,7 +770,7 @@ end
 
 function SFSDIRK7(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
@@ -813,7 +813,7 @@ end
 
 function SFSDIRK8(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
@@ -855,7 +855,7 @@ struct Hairer4{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 function Hairer4(;
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
@@ -895,7 +895,7 @@ struct Hairer42{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 function Hairer42(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
@@ -944,7 +944,7 @@ struct Kvaerno4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
 end
 function Kvaerno4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
@@ -993,7 +993,7 @@ struct Kvaerno5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
 end
 function Kvaerno5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
@@ -1039,7 +1039,7 @@ struct KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
 end
 function KenCarp4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
@@ -1087,7 +1087,7 @@ struct KenCarp47{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 function KenCarp47(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
@@ -1133,7 +1133,7 @@ struct KenCarp5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
 end
 function KenCarp5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
@@ -1179,7 +1179,7 @@ struct KenCarp58{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 function KenCarp58(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
@@ -1225,7 +1225,7 @@ struct ESDIRK54I8L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 function ESDIRK54I8L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
 
@@ -1269,7 +1269,7 @@ struct ESDIRK436L2SA2{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 function ESDIRK436L2SA2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
 
@@ -1312,7 +1312,7 @@ struct ESDIRK437L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 function ESDIRK437L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
 
@@ -1356,7 +1356,7 @@ struct ESDIRK547L2SA2{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 function ESDIRK547L2SA2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
 
@@ -1402,7 +1402,7 @@ struct ESDIRK659L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 function ESDIRK659L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
 

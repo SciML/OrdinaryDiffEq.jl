@@ -42,7 +42,7 @@ end
 
 function RadauIIA3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
@@ -91,7 +91,7 @@ end
 
 function RadauIIA5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
@@ -141,7 +141,7 @@ end
 
 function RadauIIA9(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
@@ -185,7 +185,7 @@ end
 
 function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
      standardtag = Val{true}(), concrete_jac = nothing,
-     diff_type = Val{:forward}, min_order = 5, max_order = 13, threading = false,
+     diff_type = Val{:forward}(), min_order = 5, max_order = 13, 
      linsolve = nothing, precs = DEFAULT_PRECS,
      extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
      new_W_γdt_cutoff = 1 // 5,
