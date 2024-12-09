@@ -17,15 +17,19 @@ struct IRKC{CS, AD, F, F2, P, FDT, ST, CJ, K, T, E} <:
     extrapolant::Symbol
     controller::Symbol
     eigen_est::E
+    autodiff::AD
 end
 
-function IRKC(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+function IRKC(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear, controller = :Standard, eigen_est = nothing)
-    IRKC{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve), typeof(nlsolve),
+
+    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+
+    IRKC{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(tol), typeof(eigen_est)}(linsolve, nlsolve, precs, κ, tol,
-        extrapolant, controller, eigen_est)
+        extrapolant, controller, eigen_est, AD_choice)
 end
