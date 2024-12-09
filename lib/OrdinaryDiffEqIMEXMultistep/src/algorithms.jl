@@ -30,7 +30,7 @@ struct CNAB2{CS, AD, F, F2, P, FDT, ST, CJ} <:
 end
 
 function CNAB2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
@@ -74,7 +74,7 @@ struct CNLF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     autodiff::AD
 end
 function CNLF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
 
