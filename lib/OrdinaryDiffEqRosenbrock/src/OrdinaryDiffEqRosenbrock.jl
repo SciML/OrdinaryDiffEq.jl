@@ -57,22 +57,21 @@ function rosenbrock_wolfbrandt_docstring(description::String,
     """ * extra_keyword_default
 
     keyword_default_description = """
-    - `chunk_size`: The chunk size used with ForwardDiff.jl. Defaults to `Val{0}()`
-        and thus uses the internal ForwardDiff.jl algorithm for the choice.
     - `standardtag`: Specifies whether to use package-specific tags instead of the
         ForwardDiff default function-specific tags. For more information, see
         [this blog post](https://www.stochasticlifestyle.com/improved-forwarddiff-jl-stacktraces-with-package-tags/).
         Defaults to `Val{true}()`.
-    - `autodiff`: Specifies whether to use automatic differentiation via
+    - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/) 
+        to specify whether to use automatic differentiation via
         [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) or finite
-        differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl).
-        Defaults to `Val{true}()` for automatic differentiation.
+        differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl). 
+        Defaults to `AutoForwardDiff()` for automatic differentiation, which by default uses
+        `chunksize = 0`, and thus uses the internal ForwardDiff.jl algorithm for the choice.
+        To use `FiniteDiff.jl`, the `AutoFiniteDiff()` ADType can be used, which has a keyword argument
+        `fdtype` with default value `Val{:forward}()`, and alternatives `Val{:central}()` and `Val{:complex}()`.
     - `concrete_jac`: Specifies whether a Jacobian should be constructed. Defaults to
         `nothing`, which means it will be chosen true/false depending on circumstances
         of the solver, such as whether a Krylov subspace method is used for `linsolve`.
-    - `diff_type`: The type of differentiation used in FiniteDiff.jl if `autodiff=false`.
-        Defaults to `Val{:forward}`, with alternatives of `Val{:central}` and
-        `Val{:complex}`.
     - `linsolve`: Any [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl) compatible linear solver.
       For example, to use [KLU.jl](https://github.com/JuliaSparse/KLU.jl), specify
       `$name(linsolve = KLUFactorization()`).
@@ -131,22 +130,21 @@ function rosenbrock_docstring(description::String,
         extra_keyword_default = "",
         with_step_limiter = false)
     keyword_default = """
-    - `chunk_size`: The chunk size used with ForwardDiff.jl. Defaults to `Val{0}()`
-        and thus uses the internal ForwardDiff.jl algorithm for the choice.
     - `standardtag`: Specifies whether to use package-specific tags instead of the
         ForwardDiff default function-specific tags. For more information, see
         [this blog post](https://www.stochasticlifestyle.com/improved-forwarddiff-jl-stacktraces-with-package-tags/).
         Defaults to `Val{true}()`.
-    - `autodiff`: Specifies whether to use automatic differentiation via
+    - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/) 
+        to specify whether to use automatic differentiation via
         [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) or finite
-        differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl).
-        Defaults to `Val{true}()` for automatic differentiation.
+        differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl). 
+        Defaults to `AutoForwardDiff()` for automatic differentiation, which by default uses
+        `chunksize = 0`, and thus uses the internal ForwardDiff.jl algorithm for the choice.
+        To use `FiniteDiff.jl`, the `AutoFiniteDiff()` ADType can be used, which has a keyword argument
+        `fdtype` with default value `Val{:forward}()`, and alternatives `Val{:central}()` and `Val{:complex}()`.
     - `concrete_jac`: Specifies whether a Jacobian should be constructed. Defaults to
         `nothing`, which means it will be chosen true/false depending on circumstances
         of the solver, such as whether a Krylov subspace method is used for `linsolve`.
-    - `diff_type`: The type of differentiation used in FiniteDiff.jl if `autodiff=false`.
-        Defaults to `Val{:forward}`, with alternatives of `Val{:central}` and
-        `Val{:complex}`.
     - `linsolve`: Any [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl) compatible linear solver.
       For example, to use [KLU.jl](https://github.com/JuliaSparse/KLU.jl), specify
       `$name(linsolve = KLUFactorization()`).
