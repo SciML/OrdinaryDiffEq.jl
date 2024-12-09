@@ -65,6 +65,4 @@ include("functional.jl")
 include("newton.jl")
 include("initialize_dae.jl")
 
-export BrownFullBasicInit, ShampineCollocationInit
-
 end
