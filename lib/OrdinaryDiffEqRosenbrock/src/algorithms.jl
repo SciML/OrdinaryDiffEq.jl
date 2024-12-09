@@ -114,7 +114,7 @@ for Alg in [
         end
         function $Alg(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
-                diff_type = Val{:forward}, linsolve = nothing,
+                diff_type = Val{:forward}(), linsolve = nothing,
                 precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
                 stage_limiter! = trivial_limiter!)
 
@@ -204,7 +204,7 @@ for Alg in [
         end
         function $Alg(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
-                diff_type = Val{:forward}, linsolve = nothing, precs = DEFAULT_PRECS)
+                diff_type = Val{:forward}(), linsolve = nothing, precs = DEFAULT_PRECS)
 
             AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 

@@ -8,7 +8,7 @@ function BDF_docstring(description::String,
         autodiff = AutoForwardDiff(),
         standardtag = Val{true}(),
         concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing,
         precs = DEFAULT_PRECS,
         """ * "\n" * extra_keyword_default
@@ -115,7 +115,7 @@ struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
     autodiff::AD
 end
 function ABDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         κ = nothing, tol = nothing, linsolve = nothing, precs = DEFAULT_PRECS,
         nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
@@ -175,7 +175,7 @@ struct SBDF{CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
 end
 
 function SBDF(order; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing, diff_type = Val{:forward},
+        standardtag = Val{true}(), concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear, ark = false)
@@ -197,7 +197,7 @@ end
 
 # All keyword form needed for remake
 function SBDF(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear,
@@ -304,7 +304,7 @@ struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
 end
 
 function QNDF1(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, kappa = -37 // 200,
         controller = :Standard, step_limiter! = trivial_limiter!)
@@ -364,7 +364,7 @@ struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
 end
 
 function QNDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, kappa = -1 // 9,
         controller = :Standard, step_limiter! = trivial_limiter!)
@@ -433,7 +433,7 @@ end
 
 function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         autodiff = AutoForwardDiff(), standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear, kappa = (
@@ -482,7 +482,7 @@ struct MEBDF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     autodiff::AD
 end
 function MEBDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant)
 
@@ -541,7 +541,7 @@ end
 
 function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         autodiff = AutoForwardDiff(), standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!) where {MO}
@@ -660,7 +660,7 @@ struct DImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ} <: DAEAlgorithm{CS, AD, FDT
 end
 function DImplicitEuler(;
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant,
         controller = :Standard)
@@ -702,7 +702,7 @@ struct DABDF2{CS, AD, F, F2, P, FDT, ST, CJ} <: DAEAlgorithm{CS, AD, FDT, ST, CJ
     autodiff::AD
 end
 function DABDF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant,
         controller = :Standard)
@@ -766,7 +766,7 @@ struct DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <: DAEAlgorithm{CS, AD, FD
 end
 function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         autodiff = AutoForwardDiff(), standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
+        diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear, controller = :Standard) where {MO}

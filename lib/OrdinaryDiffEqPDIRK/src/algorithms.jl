@@ -31,7 +31,7 @@ struct PDIRK44{CS, AD, F, F2, P, FDT, ST, CJ, TO} <:
     autodiff::AD
 end
 function PDIRK44(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant, threading = true)
 
