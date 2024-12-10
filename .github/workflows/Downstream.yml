@@ -48,14 +48,14 @@ jobs:
       # This is necessary since the tests are likely to fail otherwise, given that all
       # the libs haven't been registered yet.
       - name: "Develop the libraries since they haven't been registered yet"
+        shell: julia  --project=. {0}
         run: |
           import Pkg
           Pkg.Registry.update()
           # Install packages present in subdirectories
           dev_pks = Pkg.PackageSpec[]
-          Pkg.develop(map(path -> Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
+          Pkg.develop(map(path -> Pkg.PackageSpec.(;path="/lib/$(path)"), readdir("./lib")));
           Pkg.instantiate()
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=. {0}
       - name: Clone Downstream
         uses: actions/checkout@v4
         with:
