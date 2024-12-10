@@ -47,12 +47,6 @@ jobs:
       # Explicitly develop the libraries first before running the tests for now.
       # This is necessary since the tests are likely to fail otherwise, given that all
       # the libs haven't been registered yet.
-      - name: "Develop the libraries since they haven't been registered yet"
-        run: |
-          julia --project=. -e '
-              using Pkg;
-              Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
-          '
       - name: Clone Downstream
         uses: actions/checkout@v4
         with:
@@ -64,6 +58,7 @@ jobs:
           using Pkg
           try
             # force it to use this PR's version of the package
+            Pkg.develop(map(path ->Pkg.PackageSpec.(;path="lib/$(path)"), readdir("./lib")));
             Pkg.develop(PackageSpec(path="."))  # resolver may fail with main deps
             Pkg.update()
             Pkg.test(coverage=true)  # resolver may fail with test time deps
@@ -80,4 +75,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: lcov.info
-          fail_ci_if_error: true
+          fail_ci_if_error: false
