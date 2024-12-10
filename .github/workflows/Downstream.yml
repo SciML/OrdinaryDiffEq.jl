@@ -54,7 +54,7 @@ jobs:
           Pkg.Registry.update()
           # Install packages present in subdirectories
           dev_pks = Pkg.PackageSpec[]
-          Pkg.develop(map(path -> Pkg.PackageSpec.(;path="/lib/$(path)"), readdir("./lib")));
+          Pkg.develop(map(path -> Pkg.PackageSpec.(;path="lib/$(path)"), readdir("./lib")));
           Pkg.instantiate()
       - name: Clone Downstream
         uses: actions/checkout@v4
