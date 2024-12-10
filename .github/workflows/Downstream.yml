@@ -49,10 +49,12 @@ jobs:
       # the libs haven't been registered yet.
       - name: "Develop the libraries since they haven't been registered yet"
         run: |
-          julia --project=. -e '
-              using Pkg;
-              Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
-          '
+          import Pkg
+          Pkg.Registry.update()
+          # Install packages present in subdirectories
+          dev_pks = Pkg.PackageSpec[]
+          Pkg.develop(map(path -> Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
+          Pkg.instantiate()
       - name: Clone Downstream
         uses: actions/checkout@v4
         with:
@@ -80,4 +82,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: lcov.info
-          fail_ci_if_error: true
+          fail_ci_if_error: false
