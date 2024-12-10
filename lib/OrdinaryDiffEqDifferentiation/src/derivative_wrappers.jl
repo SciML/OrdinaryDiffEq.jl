@@ -80,7 +80,8 @@ function derivative!(df::AbstractArray{<:Number}, f,
         integrator, grad_config)
     alg = unwrap_alg(integrator, true)
     tmp = length(x) # We calculate derivative for all elements in gradient
-    if alg_autodiff(alg) isa AutoForwardDiff
+    autodiff_alg = alg_autodiff(alg) 
+    if autodiff_alg isa AutoForwardDiff
         T = if standardtag(alg)
             typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(df)))
         else
@@ -102,7 +103,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
 
         df .= first.(ForwardDiff.partials.(grad_config))
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    elseif alg_autodiff(alg) isa AutoFiniteDiff
+    elseif autodiff_alg isa AutoFiniteDiff
         FiniteDiff.finite_difference_gradient!(df, f, x, grad_config,
             dir = diffdir(integrator))
         fdtype = alg_difftype(alg)
@@ -124,7 +125,7 @@ function derivative(f, x::Union{Number, AbstractArray{<:Number}},
     local d
     tmp = length(x) # We calculate derivative for all elements in gradient
     alg = unwrap_alg(integrator, true)
-    if alg_autodiff(alg) isa AutoForwardDiff
+    if alg_autodiff(alg) isa AutoForwardDiff 
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         if integrator.iter == 1
             try
@@ -279,13 +280,16 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2) where {F1
         end
 
         sparsity, colorvec = sparsity_colorvec(f, u)
-
         if alg_autodiff(alg) isa AutoForwardDiff
             _chunksize = get_chunksize(alg) === Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
             T = if standardtag(alg)
                 typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u)))
             else
                 typeof(ForwardDiff.Tag(uf, eltype(u)))
+            end
+            
+            if _chunksize === Val{nothing}()
+                _chunksize = nothing
             end
             jac_config = ForwardColorJacCache(uf, uprev, _chunksize; colorvec = colorvec,
                 sparsity = sparsity, tag = T)

@@ -1,6 +1,6 @@
 module OrdinaryDiffEqDifferentiation
 
-import ADTypes: AutoFiniteDiff, AutoForwardDiff
+import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType
 
 import SparseDiffTools: SparseDiffTools, matrix_colors, forwarddiff_color_jacobian!,
                         forwarddiff_color_jacobian, ForwardColorJacCache,
@@ -27,7 +27,7 @@ import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, S
 using DiffEqBase: TimeGradientWrapper,
                   UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
-using SciMLBase: AbstractSciMLOperator
+using SciMLBase: AbstractSciMLOperator, constructorof
 import OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                           DAEAlgorithm,
@@ -44,7 +44,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
                           FastConvergence, Convergence, SlowConvergence,
                           VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue
 
-import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff
+import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff, _get_fwd_tag
 
 using FastBroadcast: @..
 

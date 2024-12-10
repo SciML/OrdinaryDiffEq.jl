@@ -16,7 +16,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            PredictiveController, alg_can_repeat_jac, NewtonAlgorithm,
                            fac_default_gamma,
                            get_current_adaptive_order, get_fsalfirstlast,
-                           isfirk, generic_solver_docstring
+                           isfirk, generic_solver_docstring, _bool_to_ADType,
+                           _process_AD_choice
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu
@@ -31,6 +32,7 @@ using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_conf
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, Convergence, FastConvergence, NLStatus,
                                     VerySlowConvergence,
                                     Divergence, get_new_W_γdt_cutoff
+import ADTypes: AutoForwardDiff, AbstractADType
 
 using Reexport
 @reexport using DiffEqBase
