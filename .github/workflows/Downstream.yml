@@ -47,15 +47,6 @@ jobs:
       # Explicitly develop the libraries first before running the tests for now.
       # This is necessary since the tests are likely to fail otherwise, given that all
       # the libs haven't been registered yet.
-      - name: "Develop the libraries since they haven't been registered yet"
-        shell: julia  --project=. {0}
-        run: |
-          import Pkg
-          Pkg.Registry.update()
-          # Install packages present in subdirectories
-          dev_pks = Pkg.PackageSpec[]
-          Pkg.develop(map(path -> Pkg.PackageSpec.(;path="lib/$(path)"), readdir("./lib")));
-          Pkg.instantiate()
       - name: Clone Downstream
         uses: actions/checkout@v4
         with:
@@ -67,6 +58,7 @@ jobs:
           using Pkg
           try
             # force it to use this PR's version of the package
+            Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
             Pkg.develop(PackageSpec(path="."))  # resolver may fail with main deps
             Pkg.update()
             Pkg.test(coverage=true)  # resolver may fail with test time deps
