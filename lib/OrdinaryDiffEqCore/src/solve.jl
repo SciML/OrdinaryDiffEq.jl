@@ -279,6 +279,12 @@ function DiffEqBase.__init(
         resType = typeof(res_prototype)
     end
 
+    if isnothing(aliases.alias_tstops) || aliases.alias_tstops
+        tstops = tstops
+    else
+        tstops = deepcopy(tstops)
+    end
+    
     if tstops isa AbstractArray || tstops isa Tuple || tstops isa Number
         _tstops = nothing
     else
