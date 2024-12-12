@@ -185,24 +185,24 @@ function DiffEqBase.__init(
          # If alias isa Bool, all fields of ODEAliases set to alias
         if alias isa Bool
             aliases = ODEAliasSpecifier(alias = alias)
-        elseif alias isa ODEAliasSpecifier || isnothing(alias)
+        elseif isnothing(alias) || alias isa ODEAliasSpecifier 
             aliases = alias
         end
     end
 
-    if aliases.alias_f || isnothing(aliases.alias_f)
+    if isnothing(aliases.alias_f) || aliases.alias_f 
         f = prob.f
     else
         f = deepcopy(prob.f)
     end
 
-    if aliases.alias_p || isnothing(aliases.alias_p)
+    if isnothing(aliases.alias_p) || aliases.alias_p 
         p = prob.p
     else
         p = recursivecopy(prob.p)
     end
 
-    if aliases.alias_u0
+    if !isnothing(aliases.alias_u0) && aliases.alias_u0
         u = prob.u0
     else
         u = recursivecopy(prob.u0)
