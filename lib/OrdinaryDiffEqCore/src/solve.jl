@@ -194,7 +194,7 @@ function DiffEqBase.__init(
         f = deepcopy(prob.f)
     end
 
-    if aliases.alias_p || isnothing(aliases.alias_f)
+    if aliases.alias_p || isnothing(aliases.alias_p)
         p = prob.p
     else
         p = recursivecopy(prob.p)
