@@ -67,7 +67,7 @@ function DiffEqBase.__init(
         userdata = nothing,
         allow_extrapolation = alg_extrapolates(alg),
         initialize_integrator = true,
-        alias = ODEAliasSpecifier(alias_u0 = false, alias_du0 = false, alias_p = true, alias_f = true),
+        alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
         kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -282,9 +282,9 @@ function DiffEqBase.__init(
     if isnothing(aliases.alias_tstops) || aliases.alias_tstops
         tstops = tstops
     else
-        tstops = deepcopy(tstops)
+        tstops = recursivecopy(tstops)
     end
-    
+
     if tstops isa AbstractArray || tstops isa Tuple || tstops isa Number
         _tstops = nothing
     else
