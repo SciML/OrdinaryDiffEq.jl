@@ -167,10 +167,9 @@ function DiffEqBase.__init(
             please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))"
             Base.depwarn(message, :init)
             Base.depwarn(message, :solve)
-            @reset aliases.alias_u0 = values(kwargs).alias_u0
+            aliases = ODEAliasSpecifier(alias_u0 = values(kwargs).alias_u0)
         else
-            @reset aliases.alias_u0 = false
-
+            aliases = ODEAliasSpecifier(alias_u0 = nothing)
         end
 
         if haskey(kwargs, :alias_du0)
@@ -178,9 +177,9 @@ function DiffEqBase.__init(
             please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))"
             Base.depwarn(message, :init)
             Base.depwarn(message, :solve)
-            @reset aliases.alias_du0 = values(kwargs).alias_du0
+            aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0)
         else
-            @reset aliases.alias_du0 = false
+            aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = nothing)
         end
         
         aliases 
