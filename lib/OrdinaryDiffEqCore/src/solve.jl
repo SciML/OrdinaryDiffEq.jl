@@ -161,8 +161,10 @@ function DiffEqBase.__init(
     if use_old_kwargs
         aliases = ODEAliasSpecifier()
         if haskey(kwargs, :alias_u0)
-            Base.depwarn("alias_u0 keyword argument is deprecated, to set `alias_u0`,
-            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))", :alias_u0)
+            message = "`alias_u0` keyword argument is deprecated, to set `alias_u0`,
+            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))"
+            Base.depwarn(message, :init)
+            Base.depwarn(message, :solve)
             @reset aliases.alias_u0 = values(kwargs).alias_u0
         else
             @reset aliases.alias_u0 = false
@@ -170,8 +172,10 @@ function DiffEqBase.__init(
         end
 
         if haskey(kwargs, :alias_du0)
-            Base.depwarn("alias_du0 keyword argument is deprecated, to set `alias_du0`,
-            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))", :alias_du0)
+            message = "`alias_du0` keyword argument is deprecated, to set `alias_du0`,
+            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))"
+            Base.depwarn(message, :init)
+            Base.depwarn(message, :solve)
             @reset aliases.alias_du0 = values(kwargs).alias_du0
         else
             @reset aliases.alias_du0 = false
