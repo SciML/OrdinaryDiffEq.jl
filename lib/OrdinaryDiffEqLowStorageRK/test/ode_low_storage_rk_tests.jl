@@ -101,13 +101,13 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -116,7 +116,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -146,13 +146,13 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -161,7 +161,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -191,13 +191,13 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -206,7 +206,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -236,13 +236,13 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -251,7 +251,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -281,13 +281,13 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -296,7 +296,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -326,13 +326,13 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -341,7 +341,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -371,13 +371,13 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -386,7 +386,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -416,13 +416,13 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -431,7 +431,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -461,13 +461,13 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -476,7 +476,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -499,7 +499,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -508,7 +508,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -531,7 +531,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -540,7 +540,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -593,7 +593,7 @@ test_problems_nonlinear_BigFloat = [prob_nonlinear_A, prob_nonlinear_B]
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -602,7 +602,7 @@ test_problems_nonlinear_BigFloat = [prob_nonlinear_A, prob_nonlinear_B]
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -628,7 +628,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -637,7 +637,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -663,7 +663,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -672,7 +672,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -698,7 +698,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -707,7 +707,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -733,7 +733,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -742,7 +742,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -768,7 +768,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -777,7 +777,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -803,7 +803,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -812,7 +812,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -838,7 +838,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -847,7 +847,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -873,7 +873,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -882,7 +882,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -908,7 +908,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -917,7 +917,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -943,7 +943,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -952,7 +952,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -978,7 +978,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -987,7 +987,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1013,7 +1013,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1022,7 +1022,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1048,7 +1048,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1057,7 +1057,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1083,7 +1083,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1092,7 +1092,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1118,7 +1118,7 @@ end
         save_end = false, save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 14
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 13
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1127,7 +1127,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1153,7 +1153,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1162,7 +1162,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1186,7 +1186,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1195,7 +1195,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1219,7 +1219,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1228,7 +1228,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1254,7 +1254,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1263,7 +1263,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1286,7 +1286,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1295,7 +1295,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1319,7 +1319,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1328,7 +1328,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1353,7 +1353,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1362,7 +1362,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1387,7 +1387,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1396,7 +1396,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1422,7 +1422,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1431,7 +1431,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1456,7 +1456,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1465,7 +1465,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1488,7 +1488,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1497,7 +1497,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1521,7 +1521,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1530,7 +1530,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1555,7 +1555,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1564,7 +1564,7 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1587,7 +1587,7 @@ end
         save_everystep = false)
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias_u0 = true)
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
     new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
@@ -1596,6 +1596,6 @@ end
         save_start = false)
     sol_new = solve(
         new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias_u0 = true)
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
     @test sol_old[end] ≈ sol_new[end]
 end
