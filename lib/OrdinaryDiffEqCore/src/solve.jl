@@ -188,7 +188,7 @@ function DiffEqBase.__init(
          # If alias isa Bool, all fields of ODEAliases set to alias
         if alias isa Bool
             aliases = ODEAliasSpecifier(alias = alias)
-        elseif isnothing(alias) || alias isa ODEAliasSpecifier 
+        elseif alias isa ODEAliasSpecifier 
             aliases = alias
         end
     end
