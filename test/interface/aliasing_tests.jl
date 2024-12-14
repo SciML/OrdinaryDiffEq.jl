@@ -1,7 +1,6 @@
 using OrdinaryDiffEq, Test
 
 import ODEProblemLibrary: prob_ode_2Dlinear
-import DAEProblemLibrary: prob_dae_transamp
 
 # Test that the old keyword works, and that the new AliasSpecier works.
 u0_old_alias_kwarg_sol = solve(prob_ode_linear, Tsit5(), alias_u0 = true)
