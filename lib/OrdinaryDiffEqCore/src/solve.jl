@@ -210,7 +210,7 @@ function DiffEqBase.__init(
     end
 
     if _alg isa DAEAlgorithm
-        if aliases.alias_du0
+        if !isnothing(aliases.alias_du0) && aliases.alias_du0
             du = prob.du0
         else
             du = recursivecopy(prob.du0)
