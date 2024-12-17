@@ -26,9 +26,7 @@ function DiffEqBase.__init(
                          saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
         callback = nothing,
-        dense = save_everystep &&
-                    !(alg isa DAEAlgorithm) && !(prob isa DiscreteProblem) &&
-                    isempty(saveat),
+        dense = save_everystep && isempty(saveat) && !default_linear_interpolation(prob, alg),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
                     (dense) || !isempty(saveat), # and no dense output
         dt = isdiscretealg(alg) && isempty(tstops) ?

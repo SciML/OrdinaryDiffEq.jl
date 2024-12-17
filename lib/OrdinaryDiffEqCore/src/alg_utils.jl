@@ -444,3 +444,6 @@ function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
     end
     print(io, ")")
 end
+
+# Defaults in the current system: currently opt out DAEAlgorithms until complete
+default_linear_interpolation(alg, prob) = alg isa DAEAlgorithm || prob isa DiscreteProblem
