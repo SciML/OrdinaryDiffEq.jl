@@ -199,9 +199,9 @@ end
 @muladd function perform_step!(integrator, cache::VerletLeapfrogConstantCache,
         repeat_step = false)
     @unpack t, dt, f, p = integrator
-    duprev, uprev, kduprev, kuprev = load_symp_state(integrator)
+    duprev, uprev, kduprev, _ = load_symp_state(integrator)
 
-    # kick-drift-kick scheme of the Verlet Leapfrog method:
+    # kick-drift-kick scheme of the Leapfrog method:
     # update velocity
     half = cache.half
     du = duprev + dt * half * kduprev
@@ -223,7 +223,7 @@ end
 
 @muladd function perform_step!(integrator, cache::VerletLeapfrogCache, repeat_step = false)
     @unpack t, dt, f, p = integrator
-    duprev, uprev, kduprev, kuprev = load_symp_state(integrator)
+    duprev, uprev, kduprev, _ = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
     # Kick-Drift-Kick scheme of the Verlet Leapfrog method:
@@ -233,8 +233,8 @@ end
 
     # update position
     tnew = t + half * dt
-    f.f2(ku, du, u, p, tnew)
-    @.. broadcast=false u=u + dt * ku
+    f.f2(ku, du, uprev, p, tnew)
+    @.. broadcast=false u=uprev + dt * ku
 
     # update velocity
     tnew = tnew + half * dt
