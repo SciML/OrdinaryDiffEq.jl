@@ -206,21 +206,25 @@ function build_nlsolver(
         if nlalg isa NonlinearSolveAlg
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
-            if isdae
-                nlf = (ztmp, z, p) -> begin
-                    tmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f = p
-                    _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f, z)[1]
-                end
-                nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+            prob = if __has_nlprob_data(f)
+                f.nlprob_data.nlprob
             else
-                nlf = (ztmp, z, p) -> begin
-                    tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f = p
-                    _compute_rhs!(
-                        tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
+                if isdae
+                    nlf = (ztmp, z, p) -> begin
+                        tmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f = p
+                        _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f, z)[1]
+                    end
+                    nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+                else
+                    nlf = (ztmp, z, p) -> begin
+                        tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f = p
+                        _compute_rhs!(
+                            tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
+                    end
+                    nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
-                nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
+                NonlinearProblem(NonlinearFunction(nlf), ztmp, nlp_params)
             end
-            prob = NonlinearProblem(NonlinearFunction(nlf), ztmp, nlp_params)
             cache = init(prob, nlalg.alg)
             nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
         else
@@ -291,20 +295,24 @@ function build_nlsolver(
         if nlalg isa NonlinearSolveAlg
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
-            if isdae
-                nlf = (z, p) -> begin
-                    tmp, α, tstep, invγdt, _p, dt, uprev, f = p
-                    _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
-                end
-                nlp_params = (tmp, α, tstep, invγdt, _p, dt, uprev, f)
+            prob = if __has_nlprob_data(f)
+                f.nlprob_data.nlprob
             else
-                nlf = (z, p) -> begin
-                    tmp, γ, α, tstep, invγdt, method, _p, dt, f = p
-                    _compute_rhs(tmp, γ, α, tstep, invγdt, method, _p, dt, f, z)[1]
+                if isdae
+                    nlf = (z, p) -> begin
+                        tmp, α, tstep, invγdt, _p, dt, uprev, f = p
+                        _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
+                    end
+                    nlp_params = (tmp, α, tstep, invγdt, _p, dt, uprev, f)
+                else
+                    nlf = (z, p) -> begin
+                        tmp, γ, α, tstep, invγdt, method, _p, dt, f = p
+                        _compute_rhs(tmp, γ, α, tstep, invγdt, method, _p, dt, f, z)[1]
+                    end
+                    nlp_params = (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
                 end
-                nlp_params = (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
+                NonlinearProblem(NonlinearFunction(nlf), copy(ztmp), nlp_params)
             end
-            prob = NonlinearProblem(NonlinearFunction(nlf), copy(ztmp), nlp_params)
             cache = init(prob, nlalg.alg)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache)
