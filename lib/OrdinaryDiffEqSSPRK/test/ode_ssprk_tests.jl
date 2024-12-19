@@ -80,7 +80,7 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
     save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-    save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 
 println("KYKSSPRK42")
@@ -134,7 +134,7 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
     save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-    save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 
 println("SSPRK53")
@@ -160,7 +160,7 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
     save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-    save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 println("SSPRK53_2N1")
@@ -186,7 +186,7 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
     save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-    save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 
 # for SSPRK53_2N2 to be in asymptotic range
@@ -214,7 +214,7 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
     save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-    save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 
 dts = 1 .// 2 .^ (9:-1:5)
@@ -241,7 +241,7 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
     save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-    save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 #reverting back to original dts
@@ -334,7 +334,7 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
     save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-    save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 
 println("SSPRK432")
@@ -368,7 +368,7 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
     save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-    save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 
 alg = SSPRKMSVS32()
@@ -423,7 +423,7 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
     save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-    save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 
 println("SSPRK54")
@@ -470,7 +470,7 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
     save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-    save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 
 println("KYK2014DGSSPRK_3S2")
