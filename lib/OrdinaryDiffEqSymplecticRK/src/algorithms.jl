@@ -30,6 +30,8 @@ struct VelocityVerlet <: OrdinaryDiffEqPartitionedAlgorithm end
     verlet1967, "", "")
 struct VerletLeapfrog <: OrdinaryDiffEqPartitionedAlgorithm end
 
+OrdinaryDiffEqCore.default_linear_interpolation(alg::VerletLeapfrog, prob) = true
+
 @doc generic_solver_docstring("2nd order explicit symplectic integrator.",
     "PseudoVerletLeapfrog",
     "Symplectic Runge-Kutta Methods",
