@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, ForwardDiff, Test
+using OrdinaryDiffEq, ForwardDiff, Test, ADTypes
 
 function d_alembert(du, u, p, t)
     du[1] = p[1] - p[2] * u[1] + p[3] * t
@@ -86,7 +86,7 @@ function rober(du, u, p, t)
     nothing
 end
 prob1 = ODEProblem(rober, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4, true))
-sol1 = solve(prob1, TRBDF2(chunk_size = chunksize))
+sol1 = solve(prob1, TRBDF2(autodiff = AutoForwardDiff(chunksize = chunksize)))
 prob = ODEProblem(rober, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4, false))
 sol = solve(prob, TRBDF2())
 @test sol.u[end] == sol1.u[end]
