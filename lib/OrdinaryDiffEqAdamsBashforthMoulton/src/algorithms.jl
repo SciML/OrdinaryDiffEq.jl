@@ -14,8 +14,8 @@ struct AB3{Thread} <: OrdinaryDiffEqAlgorithm
     thread::Thread
 end
 
-function AB3()
-    AB3(False())
+Base.@kwdef struct AB3{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread = False()
 end
 
 @doc generic_solver_docstring("The 4-step fourth order multistep method.
@@ -25,11 +25,8 @@ end
     reference,
     "",
     "")
-struct AB4{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread
-end
-function AB4()
-    AB4(False())
+Base.@kwdef struct AB4{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread = False()
 end
 
 @doc generic_solver_docstring("The 5-step fifth order multistep method.
@@ -39,11 +36,8 @@ end
     reference,
     "",
     "")
-struct AB5{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread
-end
-function AB5()
-    AB5(False())
+Base.@kwdef struct AB5{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread = False()
 end
 
 @doc generic_solver_docstring("It is third order method.
@@ -54,11 +48,8 @@ end
     reference,
     "",
     "")
-struct ABM32{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread
-end
-function ABM32()
-    ABM32(False())
+Base.@kwdef struct ABM32{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread = False()
 end
 
 @doc generic_solver_docstring("It is fourth order method.
@@ -69,11 +60,8 @@ end
     reference,
     "",
     "")
-struct ABM43{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread
-end
-function ABM43()
-    ABM43(False())
+Base.@kwdef struct ABM43{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread = False()
 end
 
 @doc generic_solver_docstring("It is fifth order method.
@@ -84,11 +72,8 @@ end
     reference,
     "",
     "")
-struct ABM54{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread
-end
-function ABM54()
-    ABM54(False())
+Base.@kwdef struct ABM54{Thread} <: OrdinaryDiffEqAlgorithm
+    thread::Thread = False()
 end
 
 # Variable Step Size Adams methods
@@ -100,11 +85,8 @@ end
     reference,
     "",
     "")
-struct VCAB3{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread
-end
-function VCAB3()
-    VCAB3(False())
+Base.@kwdef struct VCAB3{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread = False()
 end
 
 @doc generic_solver_docstring("The 4th order Adams method.
@@ -114,11 +96,8 @@ end
     reference,
     "",
     "")
-struct VCAB4{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread
-end
-function VCAB4()
-    VCAB4(False())
+Base.@kwdef struct VCAB4{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread = False()
 end
 
 @doc generic_solver_docstring("The 5th order Adams method.
@@ -128,11 +107,8 @@ end
     reference,
     "",
     "")
-struct VCAB5{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread
-end
-function VCAB5()
-    VCAB5(False())
+Base.@kwdef struct VCAB5{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread = False()
 end
 
 @doc generic_solver_docstring("The 3rd order Adams-Moulton method.
@@ -142,11 +118,8 @@ end
     reference,
     "",
     "")
-struct VCABM3{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread
-end
-function VCABM3()
-    VCABM3(False())
+Base.@kwdef struct VCABM3{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread = False()
 end
 
 @doc generic_solver_docstring("The 4th order Adams-Moulton method.
@@ -156,11 +129,8 @@ end
     reference,
     "",
     "")
-struct VCABM4{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread
-end
-function VCABM4()
-    VCABM4(False())
+Base.@kwdef struct VCABM4{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread = False()
 end
 
 @doc generic_solver_docstring("The 5th order Adams-Moulton method.
@@ -170,11 +140,8 @@ end
     reference,
     "",
     "")
-struct VCABM5{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread
-end
-function VCABM5()
-    VCABM5(False())
+Base.@kwdef struct VCABM5{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    thread::Thread = False()
 end
 
 # Variable Order and Variable Step Size Adams methods
@@ -186,9 +153,6 @@ end
     reference,
     "",
     "")
-struct VCABM{Thread} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
-    thread::Thread
-end
-function VCABM()
-    VCABM(False())
+Base.@kwdef struct VCABM{Thread} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
+    thread::Thread = False()
 end
