@@ -2,6 +2,7 @@ using Test
 using OrdinaryDiffEq
 using SparseArrays
 using LinearAlgebra
+using ADTypes
 
 ## in-place
 #https://github.com/JuliaDiffEq/SparseDiffTools.jl/blob/master/test/test_integration.jl
@@ -51,7 +52,7 @@ for f in [f_oop, f_ip]
     odefun_std = ODEFunction(f)
     prob_std = ODEProblem(odefun_std, u0, tspan)
 
-    for ad in [true, false]
+    for ad in [AutoForwardDiff(), AutoFiniteDiff()]
         for Solver in [Rodas5, Rosenbrock23, Trapezoid, KenCarp4]
             for tol in [nothing, 1e-10]
                 sol_std = solve(prob_std, Solver(autodiff = ad), reltol = tol, abstol = tol)
