@@ -3,17 +3,21 @@ reference = """E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differentia
             Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
             https://doi.org/10.1007/978-3-540-78862-1"""
 
+keyword_default_description = """
+- `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+"""
+
+keyword_default = """
+thread = OrdinaryDiffEq.False(),
+"""
+
 @doc generic_solver_docstring("The 3-step third order multistep method.
         Ralston's Second Order Method is used to calculate starting values.",
     "AB3",
     "Adams-Bashforth Explicit Method",
     reference,
-    "",
-    "")
-struct AB3{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread
-end
-
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct AB3{Thread} <: OrdinaryDiffEqAlgorithm
     thread::Thread = False()
 end
@@ -23,8 +27,8 @@ end
     "AB4",
     "Adams-Bashforth Explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct AB4{Thread} <: OrdinaryDiffEqAlgorithm
     thread::Thread = False()
 end
@@ -34,8 +38,8 @@ end
     "AB5",
     "Adams-Bashforth Explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct AB5{Thread} <: OrdinaryDiffEqAlgorithm
     thread::Thread = False()
 end
@@ -46,8 +50,8 @@ end
     "ABM32",
     "Adams-Bashforth Explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct ABM32{Thread} <: OrdinaryDiffEqAlgorithm
     thread::Thread = False()
 end
@@ -58,8 +62,8 @@ end
     "ABM43",
     "Adams-Bashforth Explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct ABM43{Thread} <: OrdinaryDiffEqAlgorithm
     thread::Thread = False()
 end
@@ -70,8 +74,8 @@ end
     "ABM54",
     "Adams-Bashforth Explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct ABM54{Thread} <: OrdinaryDiffEqAlgorithm
     thread::Thread = False()
 end
@@ -83,8 +87,8 @@ end
     "VCAB3",
     "Adams explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct VCAB3{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     thread::Thread = False()
 end
@@ -94,8 +98,8 @@ end
     "VCAB4",
     "Adams explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct VCAB4{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     thread::Thread = False()
 end
@@ -105,8 +109,8 @@ end
     "VCAB5",
     "Adams explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct VCAB5{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     thread::Thread = False()
 end
@@ -116,8 +120,8 @@ end
     "VCABM3",
     "Adams explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct VCABM3{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     thread::Thread = False()
 end
@@ -127,8 +131,8 @@ end
     "VCABM4",
     "Adams explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct VCABM4{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     thread::Thread = False()
 end
@@ -138,8 +142,8 @@ end
     "VCABM5",
     "Adams explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct VCABM5{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     thread::Thread = False()
 end
@@ -151,8 +155,8 @@ end
     "VCABM",
     "adaptive order Adams explicit Method",
     reference,
-    "",
-    "")
+    keyword_default_description,
+    keyword_default)
 Base.@kwdef struct VCABM{Thread} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
     thread::Thread = False()
 end
