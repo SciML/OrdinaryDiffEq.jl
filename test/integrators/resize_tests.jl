@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, ADTypes
 f(du, u, p, t) = du .= u
 prob = ODEProblem(f, [1.0], (0.0, 1.0))
 
@@ -38,7 +38,7 @@ resize!(i, 5)
 @test length(i.cache.nlsolver.cache.weight) == 5
 solve!(i)
 
-i = init(prob, ImplicitEuler(; autodiff = false))
+i = init(prob, ImplicitEuler(; autodiff = AutoFiniteDiff()))
 resize!(i, 5)
 @test length(i.cache.atmp) == 5
 @test length(i.cache.uprev) == 5
@@ -83,7 +83,7 @@ resize!(i, 5)
 @test length(i.cache.jac_config.p) == 5
 solve!(i)
 
-i = init(prob, Rosenbrock23(; autodiff = false))
+i = init(prob, Rosenbrock23(; autodiff = AutoFiniteDiff()))
 resize!(i, 5)
 @test length(i.cache.u) == 5
 @test length(i.cache.uprev) == 5
@@ -185,7 +185,7 @@ end
 runSim(BS3())
 
 runSim(Rosenbrock23())
-runSim(Rosenbrock23(autodiff = false))
+runSim(Rosenbrock23(autodiff = AutoFiniteDiff()))
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1990
 @testset "resize! with SplitODEProblem" begin

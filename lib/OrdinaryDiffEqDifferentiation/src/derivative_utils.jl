@@ -17,7 +17,8 @@ struct StaticWOperator{isinv, T, F} <: AbstractSciMLOperator{T}
         # when constructing W for the first time for the type
         # inv(W) can be singular
         _W = if isinv && callinv
-            inv(W)
+            # W may be sparse, needs to be dense to inv
+            inv(Matrix(W))
         else
             W
         end
@@ -39,7 +40,18 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
             else
                 tf.uprev = uprev
                 tf.p = p
-                derivative!(dT, tf, t, du2, integrator, cache.grad_config)
+                alg = unwrap_alg(integrator, true)
+                #derivative!(dT, tf, t, du2, integrator, cache.grad_config)
+                autodiff_alg = alg_autodiff(alg)
+
+                autodiff_alg = if autodiff_alg isa AutoSparse
+                    ADTypes.dense_ad(autodiff_alg)
+                else
+                    autodiff_alg
+                end
+
+                autodiff_alg = alg_autodiff(alg) isa AutoSparse ? ADTypes.dense_ad(alg_autodiff(alg)) : alg_autodiff(alg)
+                DI.derivative!(tf, linsolve_tmp, dT, cache.grad_config, autodiff_alg, t)
             end
         end
 
@@ -48,7 +60,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 end
 
 function calc_tderivative(integrator, cache)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack t, dt, uprev, u, f, p, alg = integrator
 
     # Time derivative
     if DiffEqBase.has_tgrad(f)
@@ -57,7 +69,15 @@ function calc_tderivative(integrator, cache)
         tf = cache.tf
         tf.u = uprev
         tf.p = p
-        dT = derivative(tf, t, integrator)
+
+        autodiff_alg = alg_autodiff(alg)
+        autodiff_alg = if autodiff_alg isa AutoSparse
+            autodiff_alg = ADTypes.dense_ad(autodiff_alg)
+        else
+            autodiff_alg
+        end
+
+        dT = DI.derivative(tf, autodiff_alg, t)
     end
     dT
 end
@@ -97,7 +117,6 @@ function calc_J(integrator, cache, next_step::Bool = false)
             uf.f = nlsolve_f(f, alg)
             uf.p = p
             uf.t = t
-
             J = jacobian(uf, uprev, integrator)
         end
 
@@ -144,7 +163,6 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             f.jac(J, uprev, p, t)
         else
             @unpack du1, uf, jac_config = cache
-
             uf.f = nlsolve_f(f, alg)
             uf.t = t
             if !(p isa DiffEqBase.NullParameters)
@@ -755,9 +773,10 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         elseif IIP
             similar(J)
         elseif J isa StaticMatrix
-            StaticWOperator(J, false)
+            StaticWOperator(J,false)
+            #alg.autodiff isa AutoSparse ? StaticWOperator(sparse(J), false) : StaticWOperator(J, false)
         else
-            ArrayInterface.lu_instance(J)
+            alg.autodiff isa AutoSparse ? ArrayInterface.lu_instance(sparse(J)) : ArrayInterface.lu_instance(J)
         end
     end
     return J, W
