@@ -11,6 +11,7 @@ using OrdinaryDiffEqBDF: FBDF
 import OrdinaryDiffEqCore
 
 import OrdinaryDiffEqCore: is_mass_matrix_alg, default_autoswitch, isdefaultalg
+import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType
 import LinearSolve
 using LinearAlgebra: I, isdiag
 using EnumX
@@ -29,7 +30,7 @@ PrecompileTools.@compile_workload begin
     prob_list = []
 
     default_ode = [
-        DefaultODEAlgorithm(autodiff = false)
+        DefaultODEAlgorithm(autodiff = AutoFiniteDiff())
     ]
 
     default_autodiff_ode = [

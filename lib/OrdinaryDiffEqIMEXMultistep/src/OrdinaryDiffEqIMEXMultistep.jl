@@ -5,13 +5,14 @@ import OrdinaryDiffEqCore: alg_order, issplit, OrdinaryDiffEqNewtonAlgorithm, _u
                            OrdinaryDiffEqMutableCache,
                            @cache, alg_cache, initialize!, perform_step!, @unpack,
                            full_cache, get_fsalfirstlast,
-                           generic_solver_docstring
+                           generic_solver_docstring, _bool_to_ADType, _process_AD_choice
 
 using FastBroadcast
 import OrdinaryDiffEqCore
 using OrdinaryDiffEqDifferentiation: dolinsolve
 using OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, markfirststage!, nlsolve!,
                                     nlsolvefail, du_alias_or_new
+import ADTypes: AutoForwardDiff, AbstractADType
 
 using Reexport
 @reexport using DiffEqBase

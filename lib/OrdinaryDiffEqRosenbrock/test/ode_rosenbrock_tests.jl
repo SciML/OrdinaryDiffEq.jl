@@ -1,4 +1,4 @@
-using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve
+using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes
 import ODEProblemLibrary: prob_ode_linear,
                           prob_ode_2Dlinear,
                           prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
@@ -510,11 +510,12 @@ import LinearSolve
     sol = solve(prob, Rodas4())
     @test length(sol) < 20
 
-    sim = test_convergence(dts, prob, Rodas4(autodiff = false), dense_errors = true)
+    sim = test_convergence(
+        dts, prob, Rodas4(autodiff = AutoFiniteDiff()), dense_errors = true)
     @test sim.𝒪est[:final]≈4 atol=testTol
     @test sim.𝒪est[:L2]≈4 atol=testTol
 
-    sol = solve(prob, Rodas4(autodiff = false))
+    sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff()))
     @test length(sol) < 20
 
     sim = test_convergence(dts, prob, Rodas42(), dense_errors = true)
@@ -549,29 +550,30 @@ import LinearSolve
 
     println("Rodas4 with finite diff")
 
-    sim = test_convergence(dts, prob, Rodas4(autodiff = false), dense_errors = true)
+    sim = test_convergence(
+        dts, prob, Rodas4(autodiff = AutoFiniteDiff()), dense_errors = true)
     @test sim.𝒪est[:final]≈4 atol=testTol
     @test sim.𝒪est[:L2]≈4 atol=testTol
 
-    sol = solve(prob, Rodas4(autodiff = false))
+    sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff()))
     @test length(sol) < 20
 
-    sim = test_convergence(dts, prob, Rodas4(autodiff = false,
-            diff_type = Val{:forward}),
+    sim = test_convergence(
+        dts, prob, Rodas4(autodiff = AutoFiniteDiff(fdtype = Val(:forward))),
         dense_errors = true)
     @test sim.𝒪est[:final]≈4 atol=testTol
     @test sim.𝒪est[:L2]≈4 atol=testTol
 
-    sol = solve(prob, Rodas4(autodiff = false, diff_type = Val{:forward}))
+    sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff(fdtype = Val(:forward))))
     @test length(sol) < 20
 
-    sim = test_convergence(dts, prob, Rodas4(autodiff = false,
-            diff_type = Val{:complex}),
+    sim = test_convergence(
+        dts, prob, Rodas4(autodiff = AutoFiniteDiff(fdtype = Val(:complex))),
         dense_errors = true)
     @test sim.𝒪est[:final]≈4 atol=testTol
     @test sim.𝒪est[:L2]≈4 atol=testTol
 
-    sol = solve(prob, Rodas4(autodiff = false, diff_type = Val{:complex}))
+    sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff(fdtype = Val(:forward))))
     @test length(sol) < 20
 
     sim = test_convergence(dts, prob, Rodas42(), dense_errors = true)
@@ -597,11 +599,12 @@ import LinearSolve
 
     println("Rodas4P2 with finite diff")
 
-    sim = test_convergence(dts, prob, Rodas4P2(autodiff = false), dense_errors = true)
+    sim = test_convergence(
+        dts, prob, Rodas4P2(autodiff = AutoFiniteDiff()), dense_errors = true)
     @test sim.𝒪est[:final]≈4 atol=testTol
     @test sim.𝒪est[:L2]≈4 atol=testTol
 
-    sol = solve(prob, Rodas4P2(autodiff = false))
+    sol = solve(prob, Rodas4P2(autodiff = AutoFiniteDiff()))
     @test length(sol) < 20
 
     ### Rodas5
@@ -687,7 +690,7 @@ import LinearSolve
     @test length(sol) < 20
 
     prob = ODEProblem((u, p, t) -> 0.9u, 0.1, (0.0, 1.0))
-    @test_nowarn solve(prob, Rosenbrock23(autodiff = false))
+    @test_nowarn solve(prob, Rosenbrock23(autodiff = AutoFiniteDiff()))
 end
 
 @testset "Convergence with time-dependent matrix-free Jacobian" begin

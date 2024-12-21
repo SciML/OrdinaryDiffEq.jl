@@ -2,7 +2,7 @@
 
 using Test
 using StaticArrays, LinearAlgebra
-using OrdinaryDiffEq, DiffEqBase
+using OrdinaryDiffEq, DiffEqBase, ADTypes
 
 H(t) = -im * (@SMatrix [t 1; 1 -t])
 
@@ -45,20 +45,20 @@ end
 @testset "Complex Tests on Implicit Finite Diff Methods. alg=$alg" for alg in implicit
     ψ0 = [1.0 + 0.0im; 0.0]
     prob = ODEProblem(fun_inplace, ψ0, (-T, T))
-    sol = solve(prob, alg(autodiff = false))
+    sol = solve(prob, alg(autodiff = AutoFiniteDiff()))
     @test norm(sol(T))≈1 atol=1e-2
 end
 
 @testset "Complex Tests on Implicit Finite Diff Out-of-place Methods. alg=$alg" for alg in implicit
     ψ0 = [1.0 + 0.0im; 0.0]
     prob = ODEProblem(fun, ψ0, (-T, T))
-    sol = solve(prob, alg(autodiff = false))
+    sol = solve(prob, alg(autodiff = AutoFiniteDiff()))
     @test norm(sol(T))≈1 atol=1e-2
 end
 
 @testset "Complex Tests on Implicit Finite Diff Out-of-place Methods SArray. alg=$alg" for alg in implicit
     ψ0 = @SArray [1.0 + 0.0im; 0.0]
     prob = ODEProblem(fun, ψ0, (-T, T))
-    sol = solve(prob, alg(autodiff = false))
+    sol = solve(prob, alg(autodiff = AutoFiniteDiff()))
     @test norm(sol(T))≈1 atol=1e-2
 end

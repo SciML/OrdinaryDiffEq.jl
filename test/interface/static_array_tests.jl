@@ -1,6 +1,6 @@
 using StaticArrays, Test
 using OrdinaryDiffEq, OrdinaryDiffEqCore, OrdinaryDiffEqNonlinearSolve
-using RecursiveArrayTools
+using RecursiveArrayTools, ADTypes
 
 u0 = VectorOfArray([fill(2, MVector{2, Float64}), ones(MVector{2, Float64})])
 g0(u, p, t) = SA[u[1] + u[2], u[1]]
@@ -58,7 +58,7 @@ end
 u0 = @SVector [1.0, 0.0, 0.0]
 tspan = (0.0, 100.0)
 prob = ODEProblem(lorenz_static, u0, tspan)
-solve(prob, dt = 0.1, Rosenbrock23(autodiff = false))
+solve(prob, dt = 0.1, Rosenbrock23(autodiff = AutoFiniteDiff()))
 
 # Check that ArrayPartitions of static vectors work
 #https://github.com/SciML/OrdinaryDiffEq.jl/issues/1308
@@ -94,8 +94,8 @@ function rober(u, p, t)
 end
 prob = ODEProblem{false}(rober, SA[1.0, 0.0, 0.0], (0.0, 1e5), SA[0.04, 3e7, 1e4])
 # Defaults to reltol=1e-3, abstol=1e-6
-@test_nowarn sol = solve(prob, Rosenbrock23(chunk_size = Val{3}()), save_everystep = false)
-@test_nowarn sol = solve(prob, Rodas4(chunk_size = Val{3}()), save_everystep = false)
+@test_nowarn sol = solve(prob, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 3)), save_everystep = false)
+@test_nowarn sol = solve(prob, Rodas4(autodiff = AutoForwardDiff(chunksize = 3)), save_everystep = false)
 
 function hires_4(u, p, t)
     y1, y2, y3, y4 = u
@@ -109,8 +109,8 @@ end
 u0 = SA[1, 0, 0, 0.0057]
 prob = ODEProblem(hires_4, u0, (0.0, 321.8122))
 # Defaults to reltol=1e-3, abstol=1e-6
-@test_nowarn sol = solve(prob, Rosenbrock23(chunk_size = Val{4}()), save_everystep = false)
-@test_nowarn sol = solve(prob, Rodas5(chunk_size = Val{4}()), save_everystep = false)
+@test_nowarn sol = solve(prob, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 4)), save_everystep = false)
+@test_nowarn sol = solve(prob, Rodas5(autodiff = AutoForwardDiff(chunksize = 4)), save_everystep = false)
 
 function hires_5(u, p, t)
     y1, y2, y3, y4, y5 = u
@@ -125,8 +125,8 @@ end
 u0 = SA[1, 0, 0, 0, 0.0057]
 prob = ODEProblem(hires_5, u0, (0.0, 321.8122))
 # Defaults to reltol=1e-3, abstol=1e-6
-@test_nowarn sol = solve(prob, Rosenbrock23(chunk_size = Val{5}()), save_everystep = false)
-@test_nowarn sol = solve(prob, Rodas4(chunk_size = Val{5}()), save_everystep = false)
+@test_nowarn sol = solve(prob, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 5)), save_everystep = false)
+@test_nowarn sol = solve(prob, Rodas4(autodiff = AutoForwardDiff(chunksize = 5)), save_everystep = false)
 
 function hires(u, p, t)
     y1, y2, y3, y4, y5, y6, y7, y8 = u
@@ -145,8 +145,8 @@ end
 u0 = SA[1, 0, 0, 0, 0, 0, 0, 0.0057]
 prob = ODEProblem(hires, u0, (0.0, 321.8122))
 # Defaults to reltol=1e-3, abstol=1e-6
-@test_nowarn sol = solve(prob, Rosenbrock23(chunk_size = Val{8}()), save_everystep = false)
-@test_nowarn sol = solve(prob, Rodas5(chunk_size = Val{8}()), save_everystep = false)
+@test_nowarn sol = solve(prob, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 8)), save_everystep = false)
+@test_nowarn sol = solve(prob, Rodas5(autodiff = AutoForwardDiff(chunksize = 8)), save_everystep = false)
 
 const k1 = 0.35e0
 const k2 = 0.266e2
@@ -235,8 +235,8 @@ u0[9] = 0.01
 u0[17] = 0.007
 u0 = SA[u0...]
 prob = ODEProblem(pollu, u0, (0.0, 60.0))
-@test_nowarn sol = solve(prob, Rosenbrock23(chunk_size = Val{8}()), save_everystep = false)
-@test_nowarn sol = solve(prob, Rodas5(chunk_size = Val{8}()), save_everystep = false)
+@test_nowarn sol = solve(prob, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 8)), save_everystep = false)
+@test_nowarn sol = solve(prob, Rodas5(autodiff = AutoForwardDiff(chunksize = 8)), save_everystep = false)
 
 # DFBDF
 g1(du, u, p, t) = du .^ 2 - conj.(u)
@@ -261,11 +261,11 @@ du0 = SA[-0.5051593302918506 - 0.87178524227302im,
     -0.5011616766671037 + 0.8651123244481334im,
     -0.5065728050401669 + 0.8738635859036186im]
 prob = DAEProblem(g1, du0, u0, (0.0, 10.0))
-sol1 = solve(prob, DFBDF(autodiff = false), reltol = 1e-8, abstol = 1e-8)
+sol1 = solve(prob, DFBDF(autodiff = AutoFiniteDiff()), reltol = 1e-8, abstol = 1e-8)
 
 g2(resid, du, u, p, t) = resid .= du .^ 2 - conj.(u)
 prob = DAEProblem(g2, Array(du0), Array(u0), (0.0, 10.0))
-sol2 = solve(prob, DFBDF(autodiff = false), reltol = 1e-8, abstol = 1e-8)
+sol2 = solve(prob, DFBDF(autodiff = AutoFiniteDiff()), reltol = 1e-8, abstol = 1e-8)
 
 @test all(iszero, sol1[:, 1] - sol2[:, 1])
 @test all(abs.(sol1[:, end] .- sol2[:, end]) .< 1.5e-6)
