@@ -16,11 +16,12 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
+ADTypes = "1.11"
 DiffEqBase = "6.152.2"
 DiffEqDevTools = "2.44.4"
 FastBroadcast = "0.3.5"
 MuladdMacro = "0.2.4"
-OrdinaryDiffEqCore = "1.11"
+OrdinaryDiffEqCore = "1.14"
 OrdinaryDiffEqDifferentiation = "<0.0.1, 1.2"
 OrdinaryDiffEqNonlinearSolve = "<0.0.1, 1"
 Polyester = "0.7.16"
