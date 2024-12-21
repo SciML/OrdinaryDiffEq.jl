@@ -15,7 +15,6 @@ import OrdinaryDiffEqLowOrderRK: BS3ConstantCache, BS3Cache, RK4ConstantCache, R
 import RecursiveArrayTools: recursivefill!
 using MuladdMacro, FastBroadcast
 import Static: False
-import ADTypes: AutoForwardDiff, AbstractADType
 import OrdinaryDiffEqCore
 
 using Reexport

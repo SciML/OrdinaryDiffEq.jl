@@ -13,10 +13,11 @@ OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [compat]
+ADTypes = "1.11"
 DiffEqBase = "6.152.2"
 DiffEqDevTools = "2.44.4"
 FastBroadcast = "0.3.5"
-OrdinaryDiffEqCore = "1.11"
+OrdinaryDiffEqCore = "1.14"
 OrdinaryDiffEqDifferentiation = "<0.0.1, 1.2"
 OrdinaryDiffEqNonlinearSolve = "<0.0.1, 1"
 Random = "<0.0.1, 1"
