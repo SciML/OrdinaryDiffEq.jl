@@ -61,7 +61,7 @@ function DiffEqBase.remake(
         kwargs...) where {CS, AD, FDT, ST, CJ}
     T = SciMLBase.remaker_of(thing)
     T(; SciMLBase.struct_as_namedtuple(thing)...,
-        chunk_size = Val{CS}(), autodiff = AD, standardtag = Val{ST}(),
+        chunk_size = Val{CS}(), autodiff = thing.autodiff, standardtag = Val{ST}(),
         concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
         kwargs...)
 end
