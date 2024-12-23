@@ -218,7 +218,7 @@ end
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
-    store_symp_state!(integrator, cache, kdu, ku)
+    store_symp_state!(integrator, cache, du, u, kdu, ku)
 end
 
 @muladd function perform_step!(integrator, cache::VerletLeapfrogCache, repeat_step = false)
