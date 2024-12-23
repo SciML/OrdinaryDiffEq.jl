@@ -77,8 +77,12 @@ end
 # f.f2(p, q, pa, t) = p which is the Newton/Lagrange equations
 # If called with different functions (which are possible in the Hamiltonian case)
 # an exception is thrown to avoid silently calculate wrong results.
-verify_f2(f, p, q, pa, t, ::Any, ::C) where {C <: HamiltonConstantCache} = f(p, q, pa, t)
-function verify_f2(f, res, p, q, pa, t, ::Any, ::C) where {C <: HamiltonMutableCache}
+function verify_f2(f, p, q, pa, t, ::Any,
+        ::C) where {C <: Union{HamiltonConstantCache, VerletLeapfrogConstantCache}}
+    f(p, q, pa, t)
+end
+function verify_f2(f, res, p, q, pa, t, ::Any,
+        ::C) where {C <: Union{HamiltonMutableCache, VerletLeapfrogCache}}
     f(res, p, q, pa, t)
 end
 
@@ -124,8 +128,8 @@ function store_symp_state!(integrator, ::OrdinaryDiffEqMutableCache, kdu, ku)
 end
 
 function initialize!(integrator,
-        cache::C) where {C <:
-                         Union{HamiltonMutableCache, VelocityVerletCache}}
+        cache::C) where {C <: Union{
+        HamiltonMutableCache, VelocityVerletCache, VerletLeapfrogCache}}
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -140,9 +144,8 @@ function initialize!(integrator,
 end
 
 function initialize!(integrator,
-        cache::C) where {
-        C <:
-        Union{HamiltonConstantCache, VelocityVerletConstantCache}}
+        cache::C) where {C <: Union{
+        HamiltonConstantCache, VelocityVerletConstantCache, VerletLeapfrogConstantCache}}
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -171,7 +174,7 @@ end
     # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
     du = duprev + dt * (half * ku + half * kdu)
 
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     store_symp_state!(integrator, cache, du, u, kdu, du)
 end
 
@@ -186,11 +189,61 @@ end
     half = cache.half
     @.. broadcast=false u=uprev + dt * duprev + dtsq * (half * ku)
     f.f1(kdu, duprev, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
     @.. broadcast=false du=duprev + dt * (half * ku + half * kdu)
 
     store_symp_state!(integrator, cache, kdu, du)
+end
+
+@muladd function perform_step!(integrator, cache::VerletLeapfrogConstantCache,
+        repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    duprev, uprev, kduprev, _ = load_symp_state(integrator)
+
+    # kick-drift-kick scheme of the Leapfrog method:
+    # update velocity
+    half = cache.half
+    du = duprev + dt * half * kduprev
+
+    # update position
+    tnew = t + half * dt
+    ku = f.f2(du, uprev, p, tnew)
+    u = uprev + dt * ku
+
+    # update velocity
+    tnew = tnew + half * dt
+    kdu = f.f1(du, u, p, tnew)
+    du = du + dt * half * kdu
+
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    store_symp_state!(integrator, cache, du, u, kdu, ku)
+end
+
+@muladd function perform_step!(integrator, cache::VerletLeapfrogCache, repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    duprev, uprev, kduprev, _ = load_symp_state(integrator)
+    du, u, kdu, ku = alloc_symp_state(integrator)
+
+    # Kick-Drift-Kick scheme of the Verlet Leapfrog method:
+    # update velocity
+    half = cache.half
+    @.. broadcast=false du=duprev + dt * half * kduprev
+
+    # update position
+    tnew = t + half * dt
+    f.f2(ku, du, uprev, p, tnew)
+    @.. broadcast=false u=uprev + dt * ku
+
+    # update velocity
+    tnew = tnew + half * dt
+    f.f1(kdu, du, u, p, tnew)
+    @.. broadcast=false du=du + dt * half * kdu
+
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    store_symp_state!(integrator, cache, kdu, ku)
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic2ConstantCache,
