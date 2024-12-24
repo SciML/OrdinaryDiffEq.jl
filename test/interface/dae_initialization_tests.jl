@@ -115,3 +115,38 @@ prob = ODEProblem(f, ones(3), (0.0, 1.0))
 integrator = init(prob, Rodas5P(),
     initializealg = ShampineCollocationInit(1.0, BrokenNLSolve()))
 @test all(isequal(reinterpret(Float64, 0xDEADBEEFDEADBEEF)), integrator.u)
+
+@testset "OverrideInit for DAEProblem" begin
+    function daerhs(du, u, p, t)
+        return [u[1] * t + p, u[1]^2 - u[2]^2]
+    end
+    # unknowns are u[2], p, D(u[1]), D(u[2]). Parameters are u[1], t
+    initprob = NonlinearProblem([1.0, 1.0, 1.0, 1.0], [1.0, 0.0]) do x, _p
+        u2, p, du1, du2 = x
+        u1, t = _p
+        return [u1^3 - u2^3, p^2 - 2p + 1, du1 - u1 * t - p, 2u1 * du1 - 2u2 * du2]
+    end
+
+    update_initializeprob! = function (iprob, integ)
+        iprob.p[1] = integ.u[1]
+        iprob.p[2] = integ.t
+    end
+    initprobmap = function (nlsol)
+        return [parameter_values(nlsol)[1], nlsol.u[1]]
+    end
+    initprobpmap = function (_, nlsol)
+        return nlsol.u[2]
+    end
+    initprob_du0map = function (nlsol)
+        return nlsol.u[3:4]
+    end
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, update_initializeprob!, initprobmap, initprobpmap, initprob_du0map)
+    fn = DAEFunction(daerhs; initialization_data)
+    prob = DAEProblem(fn, [0.0, 0.0], [2.0, 0.0], (0.0, 1.0), 0.0)
+    integ = init(prob, DImplicitEuler())
+    @test integ.du ≈ [1.0, 1.0]
+    @test integ.u ≈ [2.0, 2.0]
+    @test integ.p ≈ 1.0
+    @test integ.sol.retcode != SciMLBase.ReturnCode.InitialFailure
+end
