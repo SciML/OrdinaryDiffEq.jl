@@ -78,11 +78,13 @@ end
 # If called with different functions (which are possible in the Hamiltonian case)
 # an exception is thrown to avoid silently calculate wrong results.
 function verify_f2(f, p, q, pa, t, ::Any,
-        ::C) where {C <: Union{HamiltonConstantCache, VerletLeapfrogConstantCache}}
+        ::C) where {C <: Union{HamiltonConstantCache, VerletLeapfrogConstantCache,
+        LeapfrogDriftKickDriftConstantCache}}
     f(p, q, pa, t)
 end
 function verify_f2(f, res, p, q, pa, t, ::Any,
-        ::C) where {C <: Union{HamiltonMutableCache, VerletLeapfrogCache}}
+        ::C) where {C <: Union{HamiltonMutableCache, VerletLeapfrogCache,
+        LeapfrogDriftKickDriftCache}}
     f(res, p, q, pa, t)
 end
 
@@ -128,8 +130,8 @@ function store_symp_state!(integrator, ::OrdinaryDiffEqMutableCache, kdu, ku)
 end
 
 function initialize!(integrator,
-        cache::C) where {C <: Union{
-        HamiltonMutableCache, VelocityVerletCache, VerletLeapfrogCache}}
+        cache::C) where {C <: Union{HamiltonMutableCache, VelocityVerletCache,
+        VerletLeapfrogCache, LeapfrogDriftKickDriftCache}}
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -144,8 +146,8 @@ function initialize!(integrator,
 end
 
 function initialize!(integrator,
-        cache::C) where {C <: Union{
-        HamiltonConstantCache, VelocityVerletConstantCache, VerletLeapfrogConstantCache}}
+        cache::C) where {C <: Union{HamiltonConstantCache, VelocityVerletConstantCache,
+        VerletLeapfrogConstantCache, LeapfrogDriftKickDriftConstantCache}}
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -226,7 +228,7 @@ end
     duprev, uprev, kduprev, _ = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
-    # Kick-Drift-Kick scheme of the Verlet Leapfrog method:
+    # kick-drift-kick scheme of the Leapfrog method:
     # update velocity
     half = cache.half
     @.. broadcast=false du=duprev + dt * half * kduprev
@@ -243,6 +245,71 @@ end
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
+    store_symp_state!(integrator, cache, kdu, ku)
+end
+
+@muladd function perform_step!(integrator, cache::LeapfrogDriftKickDriftConstantCache,
+        repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    duprev, uprev, _, _ = load_symp_state(integrator)
+
+    # drift-kick-drift scheme of the Leapfrog method, allowing for f1 to depend on v:
+    # update position half step
+    half = cache.half
+    ku = f.f2(duprev, uprev, p, t)
+    u = uprev + dt * half * ku
+
+    # update velocity half step
+    kdu = f.f1(duprev, u, p, t)
+    du = duprev + dt * half * kdu
+
+    # full step
+    tnew = t + half * dt
+
+    # update velocity (add to previous full step velocity)
+    # note that this extra step is only necessary if f1 depends on v/du (or t)
+    kdu = f.f1(du, u, p, tnew)
+    du = duprev + dt * kdu
+
+    # update position (add to half step position)
+    ku = f.f2(du, u, p, tnew)
+    u = u + dt * half * ku
+
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
+    integrator.stats.nf2 += 2
+    store_symp_state!(integrator, cache, du, u, kdu, ku)
+end
+
+@muladd function perform_step!(integrator, cache::LeapfrogDriftKickDriftCache,
+        repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    duprev, uprev, _, _ = load_symp_state(integrator)
+    du, u, kdu, ku = alloc_symp_state(integrator)
+
+    # drift-kick-drift scheme of the Leapfrog method, allowing for f1 to depend on v:
+    # update position half step
+    half = cache.half
+    f.f2(ku, duprev, uprev, p, t)
+    @.. broadcast=false u=uprev + dt * half * ku
+
+    # update velocity half step
+    f.f1(kdu, duprev, u, p, t)
+    @.. broadcast=false du=duprev + dt * half * kdu
+
+    # full step
+    tnew = t + half * dt
+
+    # update velocity (add to previous full step velocity)
+    # note that this extra step is only necessary if f1 depends on v/du (or t)
+    f.f1(kdu, du, u, p, tnew)
+    @.. broadcast=false du=duprev + dt * kdu
+
+    # update position (add to half step position)
+    f.f2(ku, du, u, p, tnew)
+    @.. broadcast=false u=u + dt * half * ku
+
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
+    integrator.stats.nf2 += 2
     store_symp_state!(integrator, cache, kdu, ku)
 end
 
