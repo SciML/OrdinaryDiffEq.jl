@@ -24,13 +24,37 @@ publisher={APS}
     verlet1967, "", "")
 struct VelocityVerlet <: OrdinaryDiffEqPartitionedAlgorithm end
 
-@doc generic_solver_docstring("2nd order explicit symplectic integrator.",
+monaghan2005 = """
+@article{monaghan2005,
+	title = {Smoothed particle hydrodynamics},
+	author = {Monaghan, Joseph J.},
+	year = {2005},
+	journal = {Reports on Progress in Physics},
+	volume = {68},
+	number = {8},
+	pages = {1703--1759},
+	doi = {10.1088/0034-4885/68/8/R01},
+}
+"""
+
+@doc generic_solver_docstring(
+    "2nd order explicit symplectic integrator. Kick-drift-kick form. Requires only one evaluation of `f1` per step.",
     "VerletLeapfrog",
     "Symplectic Runge-Kutta Methods",
-    verlet1967, "", "")
+    monaghan2005, "", "")
 struct VerletLeapfrog <: OrdinaryDiffEqPartitionedAlgorithm end
 
 OrdinaryDiffEqCore.default_linear_interpolation(alg::VerletLeapfrog, prob) = true
+
+@doc generic_solver_docstring(
+    "2nd order explicit symplectic integrator. Drift-kick-drift form of `VerletLeapfrog`
+designed to work when `f1` depends on `v`. Requires two evaluation of `f1` per step.",
+    "LeapfrogDriftKickDrift",
+    "Symplectic Runge-Kutta Methods",
+    monaghan2005, "", "")
+struct LeapfrogDriftKickDrift <: OrdinaryDiffEqPartitionedAlgorithm end
+
+OrdinaryDiffEqCore.default_linear_interpolation(alg::LeapfrogDriftKickDrift, prob) = true
 
 @doc generic_solver_docstring("2nd order explicit symplectic integrator.",
     "PseudoVerletLeapfrog",

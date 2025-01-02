@@ -1,6 +1,7 @@
 alg_order(alg::SymplecticEuler) = 1
 alg_order(alg::VelocityVerlet) = 2
 alg_order(alg::VerletLeapfrog) = 2
+alg_order(alg::LeapfrogDriftKickDrift) = 2
 alg_order(alg::PseudoVerletLeapfrog) = 2
 alg_order(alg::McAte2) = 2
 alg_order(alg::Ruth3) = 3

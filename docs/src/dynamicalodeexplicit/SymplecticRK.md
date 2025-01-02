@@ -47,6 +47,7 @@ sol = solve(prob, KahanLi8(), dt = 1 / 10)
 SymplecticEuler
 VelocityVerlet
 VerletLeapfrog
+LeapfrogDriftKickDrift
 PseudoVerletLeapfrog
 McAte2
 Ruth3
