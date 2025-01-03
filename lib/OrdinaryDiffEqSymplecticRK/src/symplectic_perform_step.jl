@@ -260,7 +260,7 @@ end
     u = uprev + dt * half * ku
 
     # update velocity half step
-    kdu = f.f1(duprev, u, p, t)
+    kdu = f.f1(duprev, uprev, p, t)
     du = duprev + dt * half * kdu
 
     # full step
@@ -293,7 +293,7 @@ end
     @.. broadcast=false u=uprev + dt * half * ku
 
     # update velocity half step
-    f.f1(kdu, duprev, u, p, t)
+    f.f1(kdu, duprev, uprev, p, t)
     @.. broadcast=false du=duprev + dt * half * kdu
 
     # full step
