@@ -209,13 +209,11 @@ end
     du = duprev + dt * half * kduprev
 
     # update position
-    tnew = t + half * dt
-    ku = f.f2(du, uprev, p, tnew)
+    ku = f.f2(du, uprev, p, t + half * dt)
     u = uprev + dt * ku
 
     # update velocity
-    tnew = tnew + half * dt
-    kdu = f.f1(du, u, p, tnew)
+    kdu = f.f1(du, u, p, t + dt)
     du = du + dt * half * kdu
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -234,13 +232,11 @@ end
     @.. broadcast=false du=duprev + dt * half * kduprev
 
     # update position
-    tnew = t + half * dt
-    f.f2(ku, du, uprev, p, tnew)
+    f.f2(ku, du, uprev, p, t + half * dt)
     @.. broadcast=false u=uprev + dt * ku
 
     # update velocity
-    tnew = tnew + half * dt
-    f.f1(kdu, du, u, p, tnew)
+    f.f1(kdu, du, u, p, t + dt)
     @.. broadcast=false du=du + dt * half * kdu
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -263,16 +259,13 @@ end
     kdu = f.f1(duprev, uprev, p, t)
     du = duprev + dt * half * kdu
 
-    # full step
-    tnew = t + half * dt
-
     # update velocity (add to previous full step velocity)
     # note that this extra step is only necessary if f1 depends on v/du (or t)
-    kdu = f.f1(du, u, p, tnew)
+    kdu = f.f1(du, u, p, t + half * dt)
     du = duprev + dt * kdu
 
     # update position (add to half step position)
-    ku = f.f2(du, u, p, tnew)
+    ku = f.f2(du, u, p, t + dt)
     u = u + dt * half * ku
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
@@ -296,16 +289,13 @@ end
     f.f1(kdu, duprev, uprev, p, t)
     @.. broadcast=false du=duprev + dt * half * kdu
 
-    # full step
-    tnew = t + half * dt
-
     # update velocity (add to previous full step velocity)
     # note that this extra step is only necessary if f1 depends on v/du (or t)
-    f.f1(kdu, du, u, p, tnew)
+    f.f1(kdu, du, u, p, t + half * dt)
     @.. broadcast=false du=duprev + dt * kdu
 
     # update position (add to half step position)
-    f.f2(ku, du, u, p, tnew)
+    f.f2(ku, du, u, p, t + dt)
     @.. broadcast=false u=u + dt * half * ku
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
