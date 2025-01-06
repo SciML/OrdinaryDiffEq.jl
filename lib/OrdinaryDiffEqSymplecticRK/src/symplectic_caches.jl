@@ -57,6 +57,38 @@ function alg_cache(alg::VelocityVerlet, u, rate_prototype, ::Type{uEltypeNoUnits
     VelocityVerletConstantCache(uEltypeNoUnits(1 // 2))
 end
 
+@cache struct LeapfrogDriftKickDriftCache{uType, rateType, uEltypeNoUnits} <:
+              OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    tmp::uType
+    k::rateType
+    fsalfirst::rateType
+    half::uEltypeNoUnits
+end
+
+struct LeapfrogDriftKickDriftConstantCache{uEltypeNoUnits} <: HamiltonConstantCache
+    half::uEltypeNoUnits
+end
+
+function alg_cache(alg::LeapfrogDriftKickDrift, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp = zero(rate_prototype)
+    k = zero(rate_prototype)
+    fsalfirst = zero(rate_prototype)
+    half = uEltypeNoUnits(1 // 2)
+    LeapfrogDriftKickDriftCache(u, uprev, k, tmp, fsalfirst, half)
+end
+
+function alg_cache(alg::LeapfrogDriftKickDrift, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    LeapfrogDriftKickDriftConstantCache(uEltypeNoUnits(1 // 2))
+end
+
 @cache struct VerletLeapfrogCache{uType, rateType, uEltypeNoUnits} <:
               OrdinaryDiffEqMutableCache
     u::uType
@@ -436,6 +468,6 @@ end
 
 function get_fsalfirstlast(
         cache::Union{HamiltonMutableCache, VelocityVerletCache, VerletLeapfrogCache,
-            SymplecticEulerCache}, u)
+            SymplecticEulerCache, LeapfrogDriftKickDriftCache}, u)
     (cache.fsalfirst, cache.k)
 end
