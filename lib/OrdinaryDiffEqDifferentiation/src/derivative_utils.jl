@@ -39,7 +39,18 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
             else
                 tf.uprev = uprev
                 tf.p = p
-                derivative!(dT, tf, t, du2, integrator, cache.grad_config)
+                alg = unwrap_alg(integrator, true)
+                #derivative!(dT, tf, t, du2, integrator, cache.grad_config)
+                autodiff_alg = alg_autodiff(alg)
+
+                autodiff_alg = if autodiff_alg isa AutoSparse
+                    ADTypes.dense_ad(autodiff_alg)
+                else
+                    autodiff_alg
+                end
+
+                autodiff_alg = ADTypes.dense_ad(alg_autodiff(alg))
+                DI.derivative!(tf, linsolve_tmp, dT, cache.grad_config, autodiff_alg, t)
             end
         end
 
@@ -48,7 +59,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 end
 
 function calc_tderivative(integrator, cache)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack t, dt, uprev, u, f, p, alg = integrator
 
     # Time derivative
     if DiffEqBase.has_tgrad(f)
@@ -57,7 +68,15 @@ function calc_tderivative(integrator, cache)
         tf = cache.tf
         tf.u = uprev
         tf.p = p
-        dT = derivative(tf, t, integrator)
+
+        autodiff_alg = alg_autodiff(alg)
+        autodiff_alg = if autodiff_alg isa AutoSparse
+            autodiff_alg = ADTypes.dense_ad(autodiff_alg)
+        else
+            autodiff_alg
+        end
+
+        dT = DI.derivative(tf, autodiff_alg, t)
     end
     dT
 end
@@ -97,7 +116,6 @@ function calc_J(integrator, cache, next_step::Bool = false)
             uf.f = nlsolve_f(f, alg)
             uf.p = p
             uf.t = t
-
             J = jacobian(uf, uprev, integrator)
         end
 

@@ -1,12 +1,16 @@
 module OrdinaryDiffEqDifferentiation
 
-import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType
+import ADTypes
+import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse
 
 import SparseDiffTools: SparseDiffTools, matrix_colors, forwarddiff_color_jacobian!,
                         forwarddiff_color_jacobian, ForwardColorJacCache,
                         default_chunk_size, getsize, JacVec
 
-import ForwardDiff, FiniteDiff
+import SparseMatrixColorings: GreedyColoringAlgorithm
+import SparseConnectivityTracer: TracerSparsityDetector
+
+import ForwardDiff, FiniteDiff, Enzyme
 import ForwardDiff.Dual
 import LinearSolve
 import LinearSolve: OperatorAssumptions
@@ -45,6 +49,8 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
                           VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue
 
 import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff, _get_fwd_tag
+
+import DifferentiationInterface as DI
 
 using FastBroadcast: @..
 
