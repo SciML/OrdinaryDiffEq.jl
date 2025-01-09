@@ -10,6 +10,14 @@ function AutoSwitch(nonstiffalg, stiffalg;
         promote(nonstifftol, stifftol)..., dtfac, stiffalgfirst, switch_max)
 end
 
+#= TODO: possible improvements to stiffness detection:
+1. Cost of implicit solver goes up with length(u)^3 (or ~length(u)^2 with sparsity), factor this in
+2. Take into account order difference between nonstiff and stiff solver.
+    If nonstiff solver is higher order (which is common), the nonstiff solver can be stability constrained,
+    but switching to a stiff solver won't help since it will be order constrained to a smaller timestep
+3. Track how close dt is to dtmin to avoid aborting even if stiffness not found
+4. Track dt for stiff and nonstiff alg separetly and only use the stiff alg if it is maintaining higher dt
+=#
 function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
     eigen_est, dt = integrator.eigen_est, integrator.dt
     stiffness = abs(eigen_est * dt / alg_stability_size(alg)) # `abs` here is just for safety
