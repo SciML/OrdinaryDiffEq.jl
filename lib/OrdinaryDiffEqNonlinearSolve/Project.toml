@@ -52,9 +52,12 @@ julia = "1.10"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
+ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test"]
+test = ["DiffEqDevTools", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "Test"]
