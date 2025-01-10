@@ -1,4 +1,6 @@
+using OrdinaryDiffEqNonlinearSolve: NLNewton
 using OrdinaryDiffEqCore
+using OrdinaryDiffEqSDIRK
 using DiffEqDevTools
 using DiffEqBase
 using LineSearches
