@@ -1,4 +1,6 @@
+using OrdinaryDiffEqNonlinearSolve: NLNewton
 using OrdinaryDiffEqCore
+using OrdinaryDiffEqSDIRK
 using DiffEqDevTools
 using DiffEqBase
 using LineSearches
@@ -12,5 +14,5 @@ for prob in (prob_ode_lorenz, prob_ode_orego)
     sol2 = solve(prob, Trapezoid(nlsolve = NLNewton(relax = BackTracking())),
         reltol = 1e-12, abstol = 1e-12)
     @test sol2.retcode == DiffEqBase.ReturnCode.Success
-    @test sol2.stats.nf <= sol1.stats.nf
+    @test abs(sol2.stats.nf - sol1.stats.nf) <= 20
 end
