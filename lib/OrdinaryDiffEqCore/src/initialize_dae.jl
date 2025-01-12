@@ -44,53 +44,16 @@ end
 
 ## Default algorithms
 
-function _initialize_dae!(integrator, prob::ODEProblem,
-        alg::DefaultInit, x::Val{true})
+function _initialize_dae!(integrator, 
+        prob::Union{ODEProblem, DAEProblem}, 
+        alg::DefaultInit, 
+        x::Union{Val{true}, Val{false}})
     if SciMLBase.has_initializeprob(prob.f)
         _initialize_dae!(integrator, prob,
             OverrideInit(integrator.opts.abstol), x)
     else
         _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(integrator.opts.abstol), x)
-    end
-end
-
-function _initialize_dae!(integrator, prob::ODEProblem,
-        alg::DefaultInit, x::Val{false})
-    if SciMLBase.has_initializeprob(prob.f)
-        _initialize_dae!(integrator, prob,
-            OverrideInit(integrator.opts.abstol), x)
-    else
-        _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(integrator.opts.abstol), x)
-    end
-end
-
-function _initialize_dae!(integrator, prob::DAEProblem,
-        alg::DefaultInit, x::Val{false})
-    if SciMLBase.has_initializeprob(prob.f)
-        _initialize_dae!(integrator, prob,
-            OverrideInit(integrator.opts.abstol), x)
-    elseif prob.differential_vars === nothing
-        _initialize_dae!(integrator, prob,
-            ShampineCollocationInit(), x)
-    else
-        _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(integrator.opts.abstol), x)
-    end
-end
-
-function _initialize_dae!(integrator, prob::DAEProblem,
-        alg::DefaultInit, x::Val{true})
-    if SciMLBase.has_initializeprob(prob.f)
-        _initialize_dae!(integrator, prob,
-            OverrideInit(integrator.opts.abstol), x)
-    elseif prob.differential_vars === nothing
-        _initialize_dae!(integrator, prob,
-            ShampineCollocationInit(), x)
-    else
-        _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(integrator.opts.abstol), x)
+            CheckInit(), x)
     end
 end
 
