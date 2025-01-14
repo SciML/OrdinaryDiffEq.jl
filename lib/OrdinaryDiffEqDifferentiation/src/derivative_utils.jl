@@ -695,6 +695,7 @@ function update_W!(nlsolver::AbstractNLSolver,
     nothing
 end
 
+
 function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
     # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
@@ -726,10 +727,9 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
         # Jacobian is a bad idea and create a fully matrix-free solver. This can
         # be overridden with concrete_jac.
+        jac_op = JacobianOperator(f, u, p, t, jvp_autodiff = alg_autodiff(alg), skip_vjp = Val(true))
+        jacvec = StatefulJacobianOperator(jac_op, u, p, t)
 
-        _f = islin ? (isode ? f.f : f.f1.f) : f
-        jacvec = JacVec((du, u, p, t) -> _f(du, u, p, t), copy(u), p, t;
-            autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
     elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
@@ -746,13 +746,9 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         W = if J isa StaticMatrix
             StaticWOperator(J, false)
         else
-            __f = if IIP
-                (du, u, p, t) -> _f(du, u, p, t)
-            else
-                (u, p, t) -> _f(u, p, t)
-            end
-            jacvec = JacVec(__f, copy(u), p, t;
-                autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
+            jac_op = JacobianOperator(f, u, p, t, jvp_autodiff = alg_autodiff(alg), skip_vjp = Val(true))
+            jacvec = StatefulJacobianOperator(jac_op, u, p, t)
+
             WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
         end
     else
@@ -774,7 +770,11 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         elseif J isa StaticMatrix
             StaticWOperator(J, false)
         else
-            ArrayInterface.lu_instance(J)
+            if alg_autodiff(alg) isa AutoSparse
+                ArrayInterface.lu_instance(sparse(J))
+            else
+                ArrayInterface.lu_instance(J)
+            end
         end
     end
     return J, W
