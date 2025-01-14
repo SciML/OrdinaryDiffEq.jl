@@ -20,7 +20,7 @@ using DiffEqBase
 import LinearAlgebra
 import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!, lmul!, axpby!, opnorm, lu
 import LinearAlgebra: LowerTriangular, UpperTriangular
-import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros
+import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros, sparse
 import ArrayInterface
 
 import StaticArrayInterface
@@ -32,6 +32,7 @@ using DiffEqBase: TimeGradientWrapper,
                   UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
 using SciMLBase: AbstractSciMLOperator, constructorof
+using SciMLOperators
 import OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                           DAEAlgorithm,
@@ -48,12 +49,15 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
                           FastConvergence, Convergence, SlowConvergence,
                           VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue
 
-import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff,
-                           _get_fwd_tag
+import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff, _get_fwd_tag, @closure
+
+using ConstructionBase
 
 import DifferentiationInterface as DI
 
 using FastBroadcast: @..
+
+using ConcreteStructs: @concrete
 
 @static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
     import DiffEqBase: OrdinaryDiffEqTag
@@ -65,5 +69,6 @@ include("alg_utils.jl")
 include("linsolve_utils.jl")
 include("derivative_utils.jl")
 include("derivative_wrappers.jl")
+include("operators.jl")
 
 end
