@@ -630,6 +630,7 @@ end
             W = J
         else
             W = J - mass_matrix * inv(dtgamma)
+            alg_autodiff(integrator.alg) isa AutoSparse ? W = sparse(W) : W = W
             if !isa(W, Number)
                 W = DiffEqBase.default_factorize(W)
             end
