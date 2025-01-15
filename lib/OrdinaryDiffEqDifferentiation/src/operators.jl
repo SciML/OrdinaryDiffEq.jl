@@ -207,6 +207,8 @@ prepare_vjp(::Val{true}, args...; kwargs...) = nothing
 function prepare_vjp(
         ::Val{false}, f::DiffEqBase.AbstractDiffEqFunction, u, p, t, fu; autodiff = nothing)
     SciMLBase.has_vjp(f) && return f.vjp
+    
+    autodiff isa AutoSparse ? autodiff = ADTypes.dense_ad(autodiff) : autodiff = autodiff
 
     if isnothing(autodiff) && SciMLBase.has_jac(f)
         if SciMLBase.isinplace(f)
@@ -253,6 +255,8 @@ function prepare_jvp(
         ::Val{false}, f::DiffEqBase.AbstractDiffEqFunction, u, p, t, fu; autodiff = nothing)
 
     SciMLBase.has_jvp(f) && return f.jvp
+
+    autodiff isa AutoSparse ? autodiff = ADTypes.dense_ad(autodiff) : autodiff = autodiff
 
     if isnothing(autodiff) && SciMLBase.has_jac(f)
         if SciMLBase.isinplace(f)
