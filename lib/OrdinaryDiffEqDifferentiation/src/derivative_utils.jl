@@ -49,7 +49,6 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
                     autodiff_alg
                 end
 
-                autodiff_alg = ADTypes.dense_ad(alg_autodiff(alg))
                 DI.derivative!(tf, linsolve_tmp, dT, cache.grad_config, autodiff_alg, t)
             end
         end
