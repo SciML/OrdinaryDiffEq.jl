@@ -35,7 +35,7 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
         if alg_autodiff(_alg) isa AutoForwardDiff
             integrator.stats.nf += linres.iters
         elseif alg_autodiff(_alg) isa AutoFiniteDiff
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2) * linres.iters
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2 * linres.iters)
         else
             error("$alg_autodiff not yet supported in dolinsolve function")
         end
