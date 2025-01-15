@@ -171,7 +171,8 @@ function resize_grad_config!(grad_config::FiniteDiff.GradientCache, i)
 end
 
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
-    return DI.prepare_derivative(tf, du1, ADTypes.dense_ad(alg_autodiff(alg)), t)
+    alg_autodiff(alg) isa AutoSparse ? ad = ADTypes.dense_ad(alg_autodiff(alg)) : ad = alg_autodiff(alg)
+    return DI.prepare_derivative(tf, du1, ad, t)
 end
 
 function sparsity_colorvec(f, x)
