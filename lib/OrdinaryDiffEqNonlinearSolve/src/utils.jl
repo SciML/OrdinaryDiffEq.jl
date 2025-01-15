@@ -86,6 +86,12 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
     end
 end
 
+function SciMLBase.setproperties(wrap::DAEResidualJacobianWrapper, patch::NamedTuple)
+    for key in keys(patch)
+        setproperty!(wrap, key, patch[key])
+    end
+end
+
 is_autodiff(m::DAEResidualJacobianWrapper{isAD}) where {isAD} = isAD
 
 function (m::DAEResidualJacobianWrapper)(out, x)
