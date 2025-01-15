@@ -104,7 +104,7 @@ function JacobianOperator(f::DiffEqBase.AbstractDiffEqFunction, u, p, t, fu = no
 
     isnothing(fu) ? (fu = !SciMLBase.isinplace(f) ? f(u, p, t) : u) : fu
 
-    iip = SciMLBase.isinplace(prob)
+    iip = SciMLBase.isinplace(f)
     T = promote_type(eltype(u), eltype(fu))
 
     vjp_autodiff = vjp_autodiff
@@ -207,7 +207,7 @@ prepare_vjp(::Val{true}, args...; kwargs...) = nothing
 function prepare_vjp(
         ::Val{false}, f::DiffEqBase.AbstractDiffEqFunction, u, p, t, fu; autodiff = nothing)
     SciMLBase.has_vjp(f) && return f.vjp
-    
+
     autodiff isa AutoSparse ? autodiff = ADTypes.dense_ad(autodiff) : autodiff = autodiff
 
     if isnothing(autodiff) && SciMLBase.has_jac(f)
