@@ -71,6 +71,11 @@ function DiffEqBase.prepare_alg(
 
     autodiff = AutoSparse(autodiff, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg)
 
+    # if u0 is a StaticArray or Complex, don't use sparsity
+    if ((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex)) && autodiff isa AutoSparse
+        autodiff = ADTypes.dense_ad(autodiff)
+    end
+
     alg = remake(alg, autodiff = autodiff)
 
     return alg
