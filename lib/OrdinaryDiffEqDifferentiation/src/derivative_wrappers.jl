@@ -80,6 +80,12 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
     return DI.jacobian(f, alg_autodiff(alg), x)
 end
 
+function jacobian(f, x::StaticArray, integrator)
+    alg = unwrap_alg(integrator, true)
+    ad = alg_autodiff(alg) isa AutoSparse ? ADTypes.dense_ad(alg_autodiff(alg)) : alg_autodiff(alg) 
+    return DI.jacobian(f, ad, x)
+end
+
 # fallback for scalar x, is needed for calc_J to work
 function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
@@ -92,6 +98,12 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
     alg = unwrap_alg(integrator, true)
     DI.jacobian!(f, fx, J, jac_config, alg_autodiff(alg), x)
     nothing
+end
+
+function jacobian!(J::AbstractMatrix{<:Number}, f, x::StaticArray, fx::StaticArray, integrator::DiffEqBase.DEIntegrator, jac_config)
+    alg = unwrap_alg(integrator, true)
+    ad = alg_autodiff(alg) isa AutoSparse ? ADTypes.dense_ad(alg_autodiff(alg)) : alg_autodiff(alg) 
+    DI.jacobian!(f, fx, J, jac_config, ad, x)
 end
 
 function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
