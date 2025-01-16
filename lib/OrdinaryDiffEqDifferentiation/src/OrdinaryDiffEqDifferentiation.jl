@@ -59,6 +59,8 @@ using FastBroadcast: @..
 
 using ConcreteStructs: @concrete
 
+import SparseMatrixColorings
+
 @static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
     import DiffEqBase: OrdinaryDiffEqTag
 else
