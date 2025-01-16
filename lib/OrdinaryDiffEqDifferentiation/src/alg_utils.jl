@@ -57,7 +57,7 @@ function DiffEqBase.prepare_alg(
     sparsity = prob.f.sparsity
 
     if sparsity isa SparseMatrixCSC
-        if f.mass_matrix isa UniformScaling
+        if prob.f.mass_matrix isa UniformScaling
             idxs = diagind(sparsity)
             @. @view(sparsity[idxs]) = 1
         else
@@ -67,12 +67,12 @@ function DiffEqBase.prepare_alg(
     end
 
     sparsity_detector = isnothing(sparsity) ? TracerSparsityDetector() : ADTypes.KnownJacobianSparsityDetector(sparsity)
-    color_alg = DiffEqBase.has_colorvec(prob.f) ? ADTypes.ConstantColoringAlgorithm(sparsity, prob.f.colorvec) : GreedyColoringAlgorithm()
+    color_alg = DiffEqBase.has_colorvec(prob.f) ? SparseMatrixColorings.ConstantColoringAlgorithm(sparsity, prob.f.colorvec) : SparseMatrixColorings.GreedyColoringAlgorithm()
 
     autodiff = AutoSparse(autodiff, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg)
 
-    # if u0 is a StaticArray or Complex, don't use sparsity
-    if ((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) || eltype(u0) <: ForwardDiff.Dual) && autodiff isa AutoSparse
+    # if u0 is a StaticArray or Complex or Dual, don't use sparsity
+    if ((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) || eltype(u0) <: ForwardDiff.Dual || alg isa DAEAlgorithm) && autodiff isa AutoSparse
         autodiff = ADTypes.dense_ad(autodiff)
     end
 
