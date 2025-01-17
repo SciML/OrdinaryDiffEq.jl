@@ -19,7 +19,7 @@ using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: WOperator, calc_W, calc_W!, 
     integrator = init(ODEProblem(fun, u0, tspan), ImplicitEuler(); adaptive = false,
         dt = dt)
     W = calc_W(integrator, integrator.cache.nlsolver, dtgamma, false)
-    @test convert(AbstractMatrix, W) == concrete_W
+    @test Array(W.L * W.U ./ W.Rs) == concrete_W
     @test W \ u0 ≈ concrete_W \ u0
 
     # In-place
