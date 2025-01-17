@@ -27,7 +27,7 @@ end
 is_switching_fb(sol) = all(i -> count(isequal(i), sol.alg_choice[2:end]) > 5, (1, 2))
 for (i, prob) in enumerate(probArr)
     println(i)
-    sol = @test_nowarn solve(prob, AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff())),
+    sol = solve(prob, AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff())),
         maxiters = 1000)
     @test is_switching_fb(sol)
     alg = AutoTsit5(Rodas5(); maxstiffstep = 5, maxnonstiffstep = 5, stiffalgfirst = true)

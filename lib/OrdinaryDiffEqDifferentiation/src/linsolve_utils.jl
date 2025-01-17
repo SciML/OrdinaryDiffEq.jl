@@ -32,12 +32,10 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
        !LinearSolve.needs_concrete_A(_alg.linsolve) &&
        linsolve.A isa WOperator && linsolve.A.J isa AbstractSciMLOperator
-        if alg_autodiff(_alg) isa AutoForwardDiff
-            integrator.stats.nf += linres.iters
-        elseif alg_autodiff(_alg) isa AutoFiniteDiff
+        if alg_autodiff(_alg) isa AutoFiniteDiff || alg_autodiff(_alg) isa ADTypes.AutoFiniteDifferences
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2 * linres.iters)
         else
-            error("$alg_autodiff not yet supported in dolinsolve function")
+            integrator.stats.nf += linres.iters
         end
     end
 
