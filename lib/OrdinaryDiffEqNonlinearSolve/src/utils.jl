@@ -90,6 +90,7 @@ function SciMLBase.setproperties(wrap::DAEResidualJacobianWrapper, patch::NamedT
     for key in keys(patch)
         setproperty!(wrap, key, patch[key])
     end
+    return wrap
 end
 
 is_autodiff(m::DAEResidualJacobianWrapper{isAD}) where {isAD} = isAD
