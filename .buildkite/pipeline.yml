@@ -49,7 +49,6 @@ steps:
             '
       - JuliaCI/julia-test#v1:
           coverage: false
-          julia_args: "--threads=auto"
     agents:
       os: "linux"
       queue: "juliaecosystem"
