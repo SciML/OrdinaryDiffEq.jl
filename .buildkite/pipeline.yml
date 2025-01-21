@@ -49,6 +49,7 @@ steps:
             '
       - JuliaCI/julia-test#v1:
           coverage: false
+          command: 'export JULIA_NUM_THREADS=2'
     agents:
       os: "linux"
       queue: "juliaecosystem"
