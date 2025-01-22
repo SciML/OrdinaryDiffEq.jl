@@ -94,6 +94,14 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 end
 
+function _initialize_dae!(integrator, prob::DiscreteProblem,
+    alg::DefaultInit, x::Union{Val{true}, Val{false}})
+    if SciMLBase.has_initializeprob(prob.f)
+        # integrator.opts.abstol is `false` for `DiscreteProblem`.
+        _initialize_dae!(integrator, prob, OverrideInit(one(eltype(prob.u0)) * 1e-12), x)
+    end
+end
+
 ## Nonlinear Solver Defaulting
 
 ## If an alg is given use it
