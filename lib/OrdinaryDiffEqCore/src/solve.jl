@@ -26,9 +26,7 @@ function DiffEqBase.__init(
                          saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
         callback = nothing,
-        dense = save_everystep &&
-                    !(alg isa DAEAlgorithm) && !(prob isa DiscreteProblem) &&
-                    isempty(saveat),
+        dense = save_everystep && isempty(saveat) && !default_linear_interpolation(prob, alg),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
                     (dense) || !isempty(saveat), # and no dense output
         dt = isdiscretealg(alg) && isempty(tstops) ?
@@ -69,8 +67,7 @@ function DiffEqBase.__init(
         userdata = nothing,
         allow_extrapolation = alg_extrapolates(alg),
         initialize_integrator = true,
-        alias_u0 = false,
-        alias_du0 = false,
+        alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
         kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -158,19 +155,62 @@ function DiffEqBase.__init(
     else
         _alg = alg
     end
-    f = prob.f
-    p = prob.p
 
-    # Get the control variables
+    use_old_kwargs = haskey(kwargs,:alias_u0) || haskey(kwargs,:alias_du0)
 
-    if alias_u0
+    if use_old_kwargs
+        aliases = ODEAliasSpecifier()
+        if haskey(kwargs, :alias_u0)
+            message = "`alias_u0` keyword argument is deprecated, to set `alias_u0`,
+            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))"
+            Base.depwarn(message, :init)
+            Base.depwarn(message, :solve)
+            aliases = ODEAliasSpecifier(alias_u0 = values(kwargs).alias_u0)
+        else
+            aliases = ODEAliasSpecifier(alias_u0 = nothing)
+        end
+
+        if haskey(kwargs, :alias_du0)
+            message = "`alias_du0` keyword argument is deprecated, to set `alias_du0`,
+            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))"
+            Base.depwarn(message, :init)
+            Base.depwarn(message, :solve)
+            aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0)
+        else
+            aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = nothing)
+        end
+        
+        aliases 
+
+    else
+         # If alias isa Bool, all fields of ODEAliases set to alias
+        if alias isa Bool
+            aliases = ODEAliasSpecifier(alias = alias)
+        elseif alias isa ODEAliasSpecifier 
+            aliases = alias
+        end
+    end
+
+    if isnothing(aliases.alias_f) || aliases.alias_f 
+        f = prob.f
+    else
+        f = deepcopy(prob.f)
+    end
+
+    if isnothing(aliases.alias_p) || aliases.alias_p 
+        p = prob.p
+    else
+        p = recursivecopy(prob.p)
+    end
+
+    if !isnothing(aliases.alias_u0) && aliases.alias_u0
         u = prob.u0
     else
         u = recursivecopy(prob.u0)
     end
 
     if _alg isa DAEAlgorithm
-        if alias_du0
+        if !isnothing(aliases.alias_du0) && aliases.alias_du0
             du = prob.du0
         else
             du = recursivecopy(prob.du0)
@@ -240,6 +280,12 @@ function DiffEqBase.__init(
             res_prototype = one(u)
         end
         resType = typeof(res_prototype)
+    end
+
+    if isnothing(aliases.alias_tstops) || aliases.alias_tstops
+        tstops = tstops
+    else
+        tstops = recursivecopy(tstops)
     end
 
     if tstops isa AbstractArray || tstops isa Tuple || tstops isa Number

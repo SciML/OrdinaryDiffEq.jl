@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, RecursiveArrayTools, Unitful
-using LinearAlgebra, Test
+using LinearAlgebra, Test, ADTypes
 
 @testset "Algorithms" begin
     algs = [
@@ -55,10 +55,10 @@ end
             sol = solve(prob, alg)
         end
 
-        for alg in [AutoVern6(Rodas5(autodiff = false)),
-            AutoVern7(Rodas5(autodiff = false)),
-            AutoVern8(Rodas5(autodiff = false)),
-            AutoVern9(Rodas5(autodiff = false))]
+        for alg in [AutoVern6(Rodas5(autodiff = AutoFiniteDiff())),
+            AutoVern7(Rodas5(autodiff = AutoFiniteDiff())),
+            AutoVern8(Rodas5(autodiff = AutoFiniteDiff())),
+            AutoVern9(Rodas5(autodiff = AutoFiniteDiff()))]
             @show alg
             @test_broken sol = solve(prob, alg)
         end

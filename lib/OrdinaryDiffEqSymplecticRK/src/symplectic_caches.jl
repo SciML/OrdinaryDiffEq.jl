@@ -57,13 +57,18 @@ function alg_cache(alg::VelocityVerlet, u, rate_prototype, ::Type{uEltypeNoUnits
     VelocityVerletConstantCache(uEltypeNoUnits(1 // 2))
 end
 
-@cache struct Symplectic2Cache{uType, rateType, tableauType} <: HamiltonMutableCache
+@cache struct VerletLeapfrogCache{uType, rateType, uEltypeNoUnits} <:
+              OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
     k::rateType
     fsalfirst::rateType
-    tab::tableauType
+    half::uEltypeNoUnits
+end
+
+struct VerletLeapfrogConstantCache{uEltypeNoUnits} <: HamiltonConstantCache
+    half::uEltypeNoUnits
 end
 
 function alg_cache(alg::VerletLeapfrog, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -73,16 +78,24 @@ function alg_cache(alg::VerletLeapfrog, u, rate_prototype, ::Type{uEltypeNoUnits
     tmp = zero(u)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
-    tab = VerletLeapfrogConstantCache(constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits))
-    Symplectic2Cache(u, uprev, k, tmp, fsalfirst, tab)
+    half = uEltypeNoUnits(1 // 2)
+    VerletLeapfrogCache(u, uprev, k, tmp, fsalfirst, half)
 end
 
 function alg_cache(alg::VerletLeapfrog, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    VerletLeapfrogConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    VerletLeapfrogConstantCache(uEltypeNoUnits(1 // 2))
+end
+
+@cache struct Symplectic2Cache{uType, rateType, tableauType} <: HamiltonMutableCache
+    u::uType
+    uprev::uType
+    tmp::uType
+    k::rateType
+    fsalfirst::rateType
+    tab::tableauType
 end
 
 function alg_cache(alg::PseudoVerletLeapfrog, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -422,6 +435,7 @@ function alg_cache(alg::SofSpa10, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function get_fsalfirstlast(
-        cache::Union{HamiltonMutableCache, VelocityVerletCache, SymplecticEulerCache}, u)
+        cache::Union{HamiltonMutableCache, VelocityVerletCache, VerletLeapfrogCache,
+            SymplecticEulerCache}, u)
     (cache.fsalfirst, cache.k)
 end

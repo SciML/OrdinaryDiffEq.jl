@@ -60,7 +60,7 @@ using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., True, False
 
-using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val
+using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val, ODEAliasSpecifier
 
 import SciMLBase: AbstractNonlinearProblem, alg_order
 
@@ -71,7 +71,7 @@ import DiffEqBase: calculate_residuals,
 
 import Polyester
 using MacroTools, Adapt
-import ADTypes: AutoFiniteDiff, AutoForwardDiff
+import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType
 import Accessors: @reset
 
 using SciMLStructures: canonicalize, Tunable, isscimlstructure

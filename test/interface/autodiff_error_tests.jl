@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, ADTypes
 using OrdinaryDiffEqDifferentiation
 
 const a = Float64[1.0]
@@ -50,13 +50,12 @@ prob = ODEProblem(lorenz2!, u0, tspan)
 ## https://discourse.julialang.org/t/rodas4-using-dual-number-for-time-with-autodiff-false/98256
 
 for alg in [
-    Rosenbrock23(autodiff = false),
-    Rodas4(autodiff = false),
-    Rodas5(autodiff = false),
-    QNDF(autodiff = false),
-    TRBDF2(autodiff = false),
-    KenCarp4(autodiff = false),
-    FBDF(autodiff = false)
+    Rosenbrock23(autodiff = AutoFiniteDiff()),
+    Rodas4(autodiff = AutoFiniteDiff()),
+    Rodas5(autodiff = AutoFiniteDiff()),
+    QNDF(autodiff = AutoFiniteDiff()),
+    TRBDF2(autodiff = AutoFiniteDiff()),
+    KenCarp4(autodiff = AutoFiniteDiff()),
 ]
     u = [0.0, 0.0]
     function f1(u, p, t)

@@ -9,12 +9,12 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCac
                            constvalue, calculate_residuals, calculate_residuals!,
                            trivial_limiter!, get_fsalfirstlast,
                            generic_solver_docstring,
-                           full_cache
+                           full_cache,
+                           _bool_to_ADType
 import OrdinaryDiffEqLowOrderRK: BS3ConstantCache, BS3Cache, RK4ConstantCache, RK4Cache
 import RecursiveArrayTools: recursivefill!
 using MuladdMacro, FastBroadcast
 import Static: False
-import ADTypes: AutoForwardDiff
 import OrdinaryDiffEqCore
 
 using Reexport

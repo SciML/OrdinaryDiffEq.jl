@@ -171,26 +171,40 @@ end
 function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
-function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
-        OrdinaryDiffEqImplicitAlgorithm{CS},
-        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
-        DAEAlgorithm{CS},
-        CompositeAlgorithm{CS}}) where {CS}
-    Val(CS)
+
+_get_fwd_chunksize(::Type{AutoForwardDiff{CS, T}}) where {CS, T} = Val(CS)
+_get_fwd_chunksize_int(::Type{AutoForwardDiff{CS, T}}) where {CS, T} = CS
+_get_fwd_chunksize(AD) = Val(0)
+_get_fwd_chunksize_int(AD) = 0
+_get_fwd_tag(::AutoForwardDiff{CS,T}) where {CS,T} = T
+
+_get_fdtype(::AutoFiniteDiff{T1, T2, T3}) where {T1, T2, T3} = T1
+_get_fdtype(::Type{AutoFiniteDiff{T1,T2,T3}}) where {T1, T2, T3} = T1
+
+
+function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
+        OrdinaryDiffEqImplicitAlgorithm{CS, AD},
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD},
+        DAEAlgorithm{CS, AD},
+        CompositeAlgorithm{CS, AD}}) where {CS, AD}
+    _get_fwd_chunksize(AD)
 end
 
 function get_chunksize_int(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
-function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
+
+function get_chunksize_int(alg::Union{
+        OrdinaryDiffEqExponentialAlgorithm{CS},
         OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
-        OrdinaryDiffEqImplicitAlgorithm{CS},
-        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
-        DAEAlgorithm{CS},
-        CompositeAlgorithm{CS}}) where {CS}
-    CS
+        OrdinaryDiffEqImplicitAlgorithm{CS, AD},
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD},
+        DAEAlgorithm{CS, AD},
+        CompositeAlgorithm{CS, AD}}) where {CS, AD}
+    _get_fwd_chunksize_int(AD)
 end
+
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 function alg_autodiff end
@@ -223,6 +237,8 @@ function get_current_alg_autodiff(alg::CompositeAlgorithm, cache)
     _eval_index(alg_autodiff, alg.algs, cache.current)::Bool
 end
 
+
+
 function alg_difftype(alg::Union{
         OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ
         },
@@ -232,7 +248,7 @@ function alg_difftype(alg::Union{
             CJ},
         DAEAlgorithm{CS, AD, FDT, ST, CJ}}) where {CS, AD, FDT, ST,
         CJ}
-    FDT
+    _get_fdtype(AD)
 end
 
 function standardtag(alg::Union{
@@ -444,3 +460,6 @@ function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
     end
     print(io, ")")
 end
+
+# Defaults in the current system: currently opt out DAEAlgorithms until complete
+default_linear_interpolation(alg, prob) = alg isa DAEAlgorithm || prob isa DiscreteProblem

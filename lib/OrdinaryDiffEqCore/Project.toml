@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqCore"
 uuid = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.13.0"
+version = "1.14.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -70,7 +70,7 @@ Random = "<0.0.1, 1"
 RecursiveArrayTools = "2.36, 3"
 Reexport = "1.0"
 SafeTestsets = "0.1.0"
-SciMLBase = "2.62"
+SciMLBase = "2.68"
 SciMLOperators = "0.3"
 SciMLStructures = "1"
 SimpleUnPack = "1"
