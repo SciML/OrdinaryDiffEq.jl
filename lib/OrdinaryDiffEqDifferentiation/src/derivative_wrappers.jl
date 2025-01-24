@@ -77,12 +77,40 @@ end
 
 function jacobian(f, x::AbstractArray{<:Number}, integrator)
     alg = unwrap_alg(integrator, true)
-    return DI.jacobian(f, alg_autodiff(alg), x)
+    
+    # Update stats.nf
+
+    dense = alg_autodiff(alg) isa AutoSparse ? ADTypes.dense_ad(alg_autodiff(alg)) : alg_autodiff(alg)
+
+    if dense isa AutoForwardDiff
+        sparsity, colorvec = sparsity_colorvec(integrator.f, x)
+        maxcolor = maximum(colorvec)
+        chunk_size = get_chunksize(alg) == Val(0) ? nothing : get_chunksize(alg)
+        num_of_chunks = chunk_size === nothing ?
+                    Int(ceil(maxcolor / getsize(ForwardDiff.pickchunksize(maxcolor)))) :
+                    Int(ceil(maxcolor / _unwrap_val(chunk_size)))
+
+        integrator.stats.nf += num_of_chunks
+    elseif dense isa AutoFiniteDiff
+        sparsity, colorvec = sparsity_colorvec(integrator.f, x)
+        if dense.fdtype == Val(:forward) 
+            integrator.stats.nf += maximum(colorvec) + 1
+        elseif dense.fdtype == Val(:central) 
+            integrator.stats.nf += 2*maximum(colorvec)
+        elseif dense.fdtype == Val(:complex)
+            integrator.stats.nf += maximum(colorvec)
+        end
+    else 
+        integrator.stats.nf += 1
+    end
+
+    return DI.jacobian(f, integrator.cache.jac_config, alg_autodiff(alg), x)
 end
 
 # fallback for scalar x, is needed for calc_J to work
 function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
+    integrator.stats.nf += 1
     return DI.derivative(f, alg_autodiff(alg), x)
 end
 
@@ -90,6 +118,25 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator,
         jac_config)
     alg = unwrap_alg(integrator, true)
+
+    dense = alg_autodiff(alg) isa AutoSparse ? ADTypes.dense_ad(alg_autodiff(alg)) :
+            alg_autodiff(alg)
+
+    if dense isa AutoForwardDiff
+        integrator.stats.nf += maximum(SparseMatrixColorings.column_colors(jac_config.coloring_result))
+    elseif dense isa AutoFiniteDiff
+        sparsity, colorvec = sparsity_colorvec(integrator.f, x)
+        if dense.fdtype == Val(:forward)
+            integrator.stats.nf += maximum(colorvec) + 1
+        elseif dense.fdtype == Val(:central)
+            integrator.stats.nf += 2 * maximum(colorvec)
+        elseif dense.fdtype == Val(:complex)
+            integrator.stats.nf += maximum(colorvec)
+        end
+    else
+        integrator.stats.nf += 1
+    end
+
     DI.jacobian!(f, fx, J, jac_config, alg_autodiff(alg), x)
     nothing
 end
