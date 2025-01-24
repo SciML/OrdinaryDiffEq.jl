@@ -151,7 +151,7 @@ function RadauIIA9(; chunk_size = Val{0}(), autodiff = Val{true}(),
         step_limiter!)
 end
 
-struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
+struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, TO} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
  linsolve::F
  precs::P
@@ -165,11 +165,12 @@ struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
  step_limiter!::StepLimiter
  min_order::Int
  max_order::Int
+ threading::TO
 end
 
 function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = Val{true}(),
      standardtag = Val{true}(), concrete_jac = nothing,
-     diff_type = Val{:forward}, min_order = 5, max_order = 13, 
+     diff_type = Val{:forward}, min_order = 5, max_order = 13, threading = false,
      linsolve = nothing, precs = DEFAULT_PRECS,
      extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
      new_W_γdt_cutoff = 1 // 5,
@@ -178,7 +179,7 @@ function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = Val{true}(),
  AdaptiveRadau{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
      typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
      typeof(κ), typeof(fast_convergence_cutoff),
-     typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
+     typeof(new_W_γdt_cutoff), typeof(step_limiter!), typeof(threading)}(linsolve,
      precs,
      smooth_est,
      extrapolant,
@@ -187,6 +188,6 @@ function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = Val{true}(),
      fast_convergence_cutoff,
      new_W_γdt_cutoff,
      controller,
-     step_limiter!, min_order, max_order)
+     step_limiter!, min_order, max_order, threading)
 end
 
