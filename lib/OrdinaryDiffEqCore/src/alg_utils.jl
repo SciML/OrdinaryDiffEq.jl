@@ -172,15 +172,14 @@ function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
 
-_get_fwd_chunksize(::Type{AutoForwardDiff{CS, T}}) where {CS, T} = Val(CS)
-_get_fwd_chunksize_int(::Type{AutoForwardDiff{CS, T}}) where {CS, T} = CS
+_get_fwd_chunksize(::Type{<:AutoForwardDiff{CS}}) where {CS} = Val(CS)
+_get_fwd_chunksize_int(::Type{<:AutoForwardDiff{CS}}) where {CS} = CS
 _get_fwd_chunksize(AD) = Val(0)
 _get_fwd_chunksize_int(AD) = 0
-_get_fwd_tag(::AutoForwardDiff{CS,T}) where {CS,T} = T
+_get_fwd_tag(::AutoForwardDiff{CS, T}) where {CS, T} = T
 
-_get_fdtype(::AutoFiniteDiff{T1, T2, T3}) where {T1, T2, T3} = T1
-_get_fdtype(::Type{AutoFiniteDiff{T1,T2,T3}}) where {T1, T2, T3} = T1
-
+_get_fdtype(::AutoFiniteDiff{T1}) where {T1} = T1
+_get_fdtype(::Type{<:AutoFiniteDiff{T1}}) where {T1} = T1
 
 function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
         OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
@@ -236,8 +235,6 @@ get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 function get_current_alg_autodiff(alg::CompositeAlgorithm, cache)
     _eval_index(alg_autodiff, alg.algs, cache.current)::Bool
 end
-
-
 
 function alg_difftype(alg::Union{
         OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ
