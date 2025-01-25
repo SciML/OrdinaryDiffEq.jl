@@ -178,8 +178,9 @@ _get_fwd_chunksize(AD) = Val(0)
 _get_fwd_chunksize_int(AD) = 0
 _get_fwd_tag(::AutoForwardDiff{CS, T}) where {CS, T} = T
 
-_get_fdtype(::AutoFiniteDiff{T1}) where {T1} = T1
-_get_fdtype(::Type{<:AutoFiniteDiff{T1}}) where {T1} = T1
+_get_fdtype(::AutoFiniteDiff{T1, T2, T3}) where {T1, T2, T3} = T1
+_get_fdtype(::Type{AutoFiniteDiff{T1,T2,T3}}) where {T1, T2, T3} = T1
+
 
 function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
         OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
@@ -457,3 +458,6 @@ function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
     end
     print(io, ")")
 end
+
+# Defaults in the current system: currently opt out DAEAlgorithms until complete
+default_linear_interpolation(alg, prob) = alg isa DAEAlgorithm || prob isa DiscreteProblem
