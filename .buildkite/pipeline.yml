@@ -38,6 +38,7 @@ steps:
     env:
       BUILDKITE_PLUGIN_JULIA_VERSION: "{{matrix.version}}"
       GROUP: "{{matrix.group}}"
+      JULIA_NUM_THREADS: 2
     plugins:
       - JuliaCI/julia#v1
       - staticfloat/metahook:
@@ -49,7 +50,6 @@ steps:
             '
       - JuliaCI/julia-test#v1:
           coverage: false
-          julia_args: "--threads=auto"
     agents:
       os: "linux"
       queue: "juliaecosystem"

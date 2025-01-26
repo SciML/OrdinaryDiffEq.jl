@@ -1,6 +1,8 @@
 # Import packages
 using OrdinaryDiffEqExtrapolation, DiffEqDevTools, Test, Random
 
+println("Running on $(Threads.nthreads()) thread(s).")
+
 # Define test problems
 # Note that the time span in ODEProblemLibrary is given by
 # Float64 numbers

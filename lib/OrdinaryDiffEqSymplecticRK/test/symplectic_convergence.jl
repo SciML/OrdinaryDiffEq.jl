@@ -62,6 +62,9 @@ position_error = :final => [mean(sim[i].u[2].x[1] - sim[i].u_analytic[2].x[1])
 sim = test_convergence(dts, prob, VerletLeapfrog(), dense_errors = true)
 @test sim.𝒪est[:l2]≈2 rtol=1e-1
 @test sim.𝒪est[:L2]≈2 rtol=1e-1
+sim = test_convergence(dts, prob, LeapfrogDriftKickDrift(), dense_errors = true)
+@test sim.𝒪est[:l2]≈2 rtol=1e-1
+@test sim.𝒪est[:L2]≈2 rtol=1e-1
 sim = test_convergence(dts, prob, PseudoVerletLeapfrog(), dense_errors = true)
 @test sim.𝒪est[:l2]≈2 rtol=1e-1
 @test sim.𝒪est[:L2]≈2 rtol=1e-1
@@ -151,6 +154,9 @@ position_error = :final => [mean(sim[i].u[2].x[1] - sim[i].u_analytic[2].x[1])
 sim = test_convergence(dts, prob, VerletLeapfrog(), dense_errors = true)
 @test sim.𝒪est[:l2]≈2 rtol=1e-1
 @test sim.𝒪est[:L2]≈2 rtol=1e-1
+sim = test_convergence(dts, prob, LeapfrogDriftKickDrift(), dense_errors = true)
+@test sim.𝒪est[:l2]≈2 rtol=1e-1
+@test sim.𝒪est[:L2]≈2 rtol=1e-1
 sim = test_convergence(dts, prob, PseudoVerletLeapfrog(), dense_errors = true)
 @test sim.𝒪est[:l2]≈2 rtol=1e-1
 @test sim.𝒪est[:L2]≈2 rtol=1e-1
@@ -202,3 +208,28 @@ dts = 1.0 ./ 2.0 .^ (2:-1:-2)
 sim = test_convergence(dts, prob, SofSpa10(), dense_errors = true)
 @test sim.𝒪est[:l2]≈10 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
+
+################# f1 dependent on v
+
+println("f1 dependent on v")
+
+u0 = fill(0.0, 2)
+v0 = ones(2)
+function f1_v(dv, v, u, p, t)
+    dv .= v
+end
+function f2_v(du, v, u, p, t)
+    du .= v
+end
+function f_v_analytic(y0, p, x)
+    v0, u0 = y0.x
+    ArrayPartition(v0 * exp(x), v0 * exp(x) - v0 + u0)
+end
+ff_v = DynamicalODEFunction(f1_v, f2_v; analytic = f_v_analytic)
+prob = DynamicalODEProblem(ff_v, v0, u0, (0.0, 5.0))
+
+dts = 1 .// 2 .^ (6:-1:3)
+# LeapfrogDriftKickDrift
+sim = test_convergence(dts, prob, LeapfrogDriftKickDrift(), dense_errors = true)
+@test sim.𝒪est[:l2]≈2 rtol=1e-1
+@test sim.𝒪est[:L2]≈2 rtol=1e-1
