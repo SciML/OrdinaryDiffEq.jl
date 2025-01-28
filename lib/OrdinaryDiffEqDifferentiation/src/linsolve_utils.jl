@@ -58,4 +58,15 @@ function wrapprecs(_Pl, _Pr, weight, u)
     Pl, Pr
 end
 
+function wrapprecs(linsolver, W, weight)
+    if hasproperty(linsolver, :precs) && isnothing(linsolver.precs)
+        Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
+        Pr = Diagonal(_vec(weight))
+        precs = Returns((Pl, Pr))
+        return remake(linsolver; precs)
+    else
+        return linsolver
+    end
+end
+
 Base.resize!(p::LinearSolve.LinearCache, i) = p
