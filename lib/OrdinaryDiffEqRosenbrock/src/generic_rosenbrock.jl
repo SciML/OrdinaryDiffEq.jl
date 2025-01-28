@@ -247,10 +247,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tf = TimeGradientWrapper(f,uprev,p)
             uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
-            linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
-            linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                            Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-                            Pr = Diagonal(_vec(weight)))
+            linprob = LinearProblem(W,_vec(linsolve_tmp), (nothing, u, p, t); u0=_vec(tmp))
+            linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
             $cachename($(valsyms...))
@@ -1036,7 +1034,7 @@ references = """
 """,
 "Rodas3",
 references = """
-- Sandu, Verwer, Van Loon, Carmichael, Potra, Dabdub, Seinfeld, Benchmarking stiff ode solvers for atmospheric chemistry problems-I. 
+- Sandu, Verwer, Van Loon, Carmichael, Potra, Dabdub, Seinfeld, Benchmarking stiff ode solvers for atmospheric chemistry problems-I.
     implicit vs explicit, Atmospheric Environment, 31(19), 3151-3166, 1997.
 """,
 with_step_limiter=true) Rodas3
@@ -1096,9 +1094,9 @@ lower if not corrected).
 """,
 "Rodas4P",
 references = """
-- Steinebach, G., Rentrop, P., An adaptive method of lines approach for modelling flow and transport in rivers. 
+- Steinebach, G., Rentrop, P., An adaptive method of lines approach for modelling flow and transport in rivers.
     Adaptive method of lines , Wouver, A. Vande, Sauces, Ph., Schiesser, W.E. (ed.),S. 181-205,Chapman & Hall/CRC, 2001,
-- Steinebach, G., Oder-reduction of ROW-methods for DAEs and method of lines  applications. 
+- Steinebach, G., Oder-reduction of ROW-methods for DAEs and method of lines  applications.
     Preprint-Nr. 1741, FB Mathematik, TH Darmstadt, 1995.
 """,
 with_step_limiter=true) Rodas4P
@@ -1111,7 +1109,7 @@ of Roadas4P and in case of inexact Jacobians a second order W method.
 """,
 "Rodas4P2",
 references = """
-- Steinebach G., Improvement of Rosenbrock-Wanner Method RODASP, In: Reis T., Grundel S., Schöps S. (eds) 
+- Steinebach G., Improvement of Rosenbrock-Wanner Method RODASP, In: Reis T., Grundel S., Schöps S. (eds)
     Progress in Differential-Algebraic Equations II. Differential-Algebraic Equations Forum. Springer, Cham., 165-184, 2020.
 """,
 with_step_limiter=true) Rodas4P2
