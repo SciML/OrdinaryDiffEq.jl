@@ -20,7 +20,6 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
 
         mass_matrix = f.mass_matrix
         if uprev isa Number
-            #J = ForwardDiff.derivative(uf, uprev)
             J = DI.derivative(uf, cache.autodiff, uprev)
             W = neginvdtγ .+ J
         else
@@ -64,12 +63,6 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
         # Time derivative
         tf.u = uprev
 
-        #if cache.autodiff isa AutoForwardDiff
-        #    dT = ForwardDiff.derivative(tf, t)
-        #else
-        #    dT = FiniteDiff.finite_difference_derivative(tf, t, dir = sign(dt))
-        #end
-
         dT = DI.derivative(tf, cache.autodiff, t)
 
         # Jacobian
@@ -80,7 +73,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
             W = mass_matrix / dtgamma - J
         else
             #J = ForwardDiff.derivative(uf, uprev)
-            J = DI.jacobian(uf, cache.autodiff, uprev)
+            J = DI.derivative(uf, cache.autodiff, uprev)
             W = 1 / dtgamma - J
         end
 
