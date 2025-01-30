@@ -85,12 +85,13 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
     if dense isa AutoForwardDiff
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
         maxcolor = maximum(colorvec)
-        chunk_size = get_chunksize(alg) == Val(0) ? nothing : get_chunksize(alg)
+        chunk_size = (get_chunksize(alg) == Val(0) || get_chunksize(alg) == Val(nothing) ) ? nothing : get_chunksize(alg)
         num_of_chunks = chunk_size === nothing ?
-                    Int(ceil(maxcolor / getsize(ForwardDiff.pickchunksize(maxcolor)))) :
-                    Int(ceil(maxcolor / _unwrap_val(chunk_size)))
+                Int(ceil(maxcolor / getsize(ForwardDiff.pickchunksize(maxcolor)))) :
+                Int(ceil(maxcolor / _unwrap_val(chunk_size)))
 
         integrator.stats.nf += num_of_chunks
+
     elseif dense isa AutoFiniteDiff
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
         if dense.fdtype == Val(:forward) 
@@ -104,7 +105,7 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
         integrator.stats.nf += 1
     end
 
-    return DI.jacobian(f, integrator.cache.jac_config, alg_autodiff(alg), x)
+    return DI.jacobian(f, alg_autodiff(alg), x)
 end
 
 # fallback for scalar x, is needed for calc_J to work
@@ -123,7 +124,19 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
             alg_autodiff(alg)
 
     if dense isa AutoForwardDiff
-        integrator.stats.nf += maximum(SparseMatrixColorings.column_colors(jac_config.coloring_result))
+        if alg_autodiff(alg) isa AutoSparse
+            integrator.stats.nf += maximum(SparseMatrixColorings.column_colors(jac_config.coloring_result))
+        else
+            sparsity, colorvec = sparsity_colorvec(integrator.f, x)
+            maxcolor = maximum(colorvec)
+            chunk_size = (get_chunksize(alg) == Val(0) || get_chunksize(alg) == Val(nothing)) ? nothing : get_chunksize(alg)
+            num_of_chunks = chunk_size === nothing ?
+                            Int(ceil(maxcolor / getsize(ForwardDiff.pickchunksize(maxcolor)))) :
+                            Int(ceil(maxcolor / _unwrap_val(chunk_size)))
+
+            integrator.stats.nf += num_of_chunks
+        end
+        
     elseif dense isa AutoFiniteDiff
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
         if dense.fdtype == Val(:forward)
@@ -182,6 +195,11 @@ function get_chunksize(jac_config::ForwardDiff.JacobianConfig{
     Val(N)
 end # don't degrade compile time information to runtime information
 
+function resize_jac_config!(f, y, prep, backend, x)
+    DI.prepare!_jacobian(f, y, prep, backend, x)
+end
+
+
 function resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJacCache, i)
     resize!(jac_config.fx, i)
     resize!(jac_config.dx, i)
@@ -202,6 +220,10 @@ end
 function resize_grad_config!(grad_config::AbstractArray, i)
     resize!(grad_config, i)
     grad_config
+end
+
+function resize_grad_config!(f,y,prep,backend,x)
+    DI.prepare!_derivative(f,y,prep,backend,x)
 end
 
 function resize_grad_config!(grad_config::ForwardDiff.DerivativeConfig, i)
