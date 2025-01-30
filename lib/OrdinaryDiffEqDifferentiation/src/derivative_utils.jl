@@ -48,8 +48,8 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
                 else
                     autodiff_alg
                 end
-
                 DI.derivative!(tf, linsolve_tmp, dT, cache.grad_config, autodiff_alg, t)
+                OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             end
         end
 
@@ -76,6 +76,7 @@ function calc_tderivative(integrator, cache)
         end
 
         dT = DI.derivative(tf, autodiff_alg, t)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
     dT
 end
