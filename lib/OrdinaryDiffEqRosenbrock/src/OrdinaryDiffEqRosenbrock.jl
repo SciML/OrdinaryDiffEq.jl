@@ -23,7 +23,7 @@ import LinearSolve: UniformScaling
 import ForwardDiff
 using FiniteDiff
 using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm
-import ADTypes: AutoForwardDiff, AbstractADType
+using ADTypes
 import OrdinaryDiffEqCore
 
 using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
