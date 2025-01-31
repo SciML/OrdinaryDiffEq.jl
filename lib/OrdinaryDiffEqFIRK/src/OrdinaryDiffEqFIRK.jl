@@ -6,8 +6,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
                            OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                            OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
-                           alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-                           constvalue, _unwrap_val,
+                           alg_cache, _vec, _reshape, @cache, @threaded, isthreaded, PolyesterThreads, 
+                           isfsal, full_cache, constvalue, _unwrap_val,
                            differentiation_rk_docstring, trivial_limiter!,
                            _ode_interpolant!, _ode_addsteps!, AbstractController,
                            qmax_default, alg_adaptive_order, DEFAULT_PRECS,
@@ -18,7 +18,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            get_current_adaptive_order, get_fsalfirstlast,
                            isfirk, generic_solver_docstring, _bool_to_ADType,
                            _process_AD_choice
-using MuladdMacro, DiffEqBase, RecursiveArrayTools
+using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
+                           isfirk, generic_solver_docstring
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu
 import LinearSolve

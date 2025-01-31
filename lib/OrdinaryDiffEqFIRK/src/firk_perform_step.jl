@@ -1619,8 +1619,21 @@ end
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-            for i in 1 : (num_stages - 1) ÷ 2
-                W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] + J[II]
+        end
+        if !isthreaded(alg.threading)
+            @inbounds for II in CartesianIndices(J)
+                for i in 1 : (num_stages - 1) ÷ 2
+                    W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] + J[II]
+                end
+            end
+        else
+            let W1 = W1, W2 = W2, γdt = γdt, αdt = αdt, βdt = βdt, mass_matrix = mass_matrix,
+                num_stages = num_stages, J = J
+                @inbounds @threaded alg.threading for i in 1 : (num_stages - 1) ÷ 2 
+                    for II in CartesianIndices(J)
+                        W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] + J[II]
+                    end    
+                end
             end
         end
         integrator.stats.nw += 1
@@ -1706,16 +1719,30 @@ end
             cache.linsolve1 = dolinsolve(integrator, linsolve1; A = nothing, b = _vec(ubuff), linu = _vec(dw1)).cache
         end
 
-        for i in 1 :(num_stages - 1) ÷ 2
-            @.. cubuff[i]=complex(
-            fw[2 * i] - αdt[i] * Mw[2 * i] + βdt[i] * Mw[2 * i + 1], fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1])
-            if needfactor
-                cache.linsolve2[i] = dolinsolve(integrator, linsolve2[i]; A = W2[i], b = _vec(cubuff[i]), linu = _vec(dw2[i])).cache
-            else
-                cache.linsolve2[i] = dolinsolve(integrator, linsolve2[i]; A = nothing, b = _vec(cubuff[i]), linu = _vec(dw2[i])).cache
+        if !isthreaded(alg.threading)
+            for i in 1 :(num_stages - 1) ÷ 2
+                @.. cubuff[i]=complex(fw[2 * i] - αdt[i] * Mw[2 * i] + βdt[i] * Mw[2 * i + 1], fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1])
+                if needfactor
+                    cache.linsolve2[i] = dolinsolve(integrator, linsolve2[i]; A = W2[i], b = _vec(cubuff[i]), linu = _vec(dw2[i])).cache
+                else
+                    cache.linsolve2[i] = dolinsolve(integrator, linsolve2[i]; A = nothing, b = _vec(cubuff[i]), linu = _vec(dw2[i])).cache
+                end
+            end
+        else
+            let integrator = integrator, linsolve2 = linsolve2, fw = fw, αdt = αdt, βdt = βdt, Mw = Mw, W1 = W1, W2 = W2,
+                cubuff = cubuff,  dw2 = dw2, needfactor = needfactor
+                @threaded alg.threading for i in 1:(num_stages - 1) ÷ 2
+                    #@show i == Threads.threadid()
+                    @.. cubuff[i]=complex(fw[2 * i] - αdt[i] * Mw[2 * i] + βdt[i] * Mw[2 * i + 1], fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1])
+                    if needfactor
+                        cache.linsolve2[i] = dolinsolve(integrator, linsolve2[i]; A = W2[i], b = _vec(cubuff[i]), linu = _vec(dw2[i])).cache
+                    else
+                        cache.linsolve2[i] = dolinsolve(integrator, linsolve2[i]; A = nothing, b = _vec(cubuff[i]), linu = _vec(dw2[i])).cache
+                    end
+                end
             end
         end
-
+        
         integrator.stats.nsolve += (num_stages + 1) / 2
 
         for i in 1 : (num_stages - 1) ÷ 2
@@ -1850,3 +1877,4 @@ end
     integrator.stats.nf += 1
     return
 end
+
