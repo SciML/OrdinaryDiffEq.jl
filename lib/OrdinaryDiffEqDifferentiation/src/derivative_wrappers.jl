@@ -111,7 +111,24 @@ end
 # fallback for scalar x, is needed for calc_J to work
 function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
-    integrator.stats.nf += 1
+
+    dense = alg_autodiff(alg) isa AutoSparse ? ADTypes.dense_ad(alg_autodiff(alg)) :
+            alg_autodiff(alg)
+
+    if dense isa AutoForwardDiff
+        integrator.stats.nf += 1
+    elseif dense isa AutoFiniteDiff
+        if dense.fdtype == Val(:forward)
+            integrator.stats.nf += 2
+        elseif dense.fdtype == Val(:central)
+            integrator.stats.nf += 2
+        elseif dense.fdtype == Val(:complex)
+            integrator.stats.nf += 1
+        end
+    else
+        integrator.stats.nf += 1
+    end
+
     return DI.derivative(f, alg_autodiff(alg), x)
 end
 
