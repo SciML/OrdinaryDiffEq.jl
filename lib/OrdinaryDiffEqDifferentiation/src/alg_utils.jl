@@ -54,6 +54,8 @@ function DiffEqBase.prepare_alg(
 
     #sparsity preparation
 
+
+    jac_prototype = prob.f.jac_prototype
     sparsity = prob.f.sparsity
 
     if !isnothing(sparsity) && !(autodiff isa AutoSparse)
@@ -62,12 +64,22 @@ function DiffEqBase.prepare_alg(
             if prob.f.mass_matrix isa UniformScaling
                 idxs = diagind(sparsity)
                 @. @view(sparsity[idxs]) = 1
+
+                if !isnothing(jac_prototype)
+                    @. @view(jac_prototype[idxs]) = 1
+                end
             else
-                idxs = findall(!iszero, f.mass_matrix)
-                @. @view(sparsity[idxs]) = @view(f.mass_matrix[idxs])
+                idxs = findall(!iszero, prob.f.mass_matrix)
+                @. @view(sparsity[idxs]) = @view(prob.f.mass_matrix[idxs])
+
+                if !isnothing(jac_prototype)
+                    @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
+                end
+                
             end
         end
 
+        # KnownJacobianSparsityDetector needs an AbstractMatrix
         sparsity = sparsity isa MatrixOperator ? sparsity.A : sparsity
 
         color_alg = DiffEqBase.has_colorvec(prob.f) ?
@@ -80,10 +92,6 @@ function DiffEqBase.prepare_alg(
             autodiff, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg)
     end
 
-    # KnownJacobianSparsityDetector needs an AbstractMatrix
-
-
-    
 
 
     # if u0 is a StaticArray or Complex or Dual, don't use sparsity
