@@ -56,31 +56,39 @@ function DiffEqBase.prepare_alg(
 
     sparsity = prob.f.sparsity
 
-    if sparsity isa SparseMatrixCSC
-        if prob.f.mass_matrix isa UniformScaling
-            idxs = diagind(sparsity)
-            @. @view(sparsity[idxs]) = 1
-        else
-            idxs = findall(!iszero, f.mass_matrix)
-            @. @view(sparsity[idxs]) = @view(f.mass_matrix[idxs])
+    if !isnothing(sparsity) && !(autodiff isa AutoSparse)
+
+        if sparsity isa SparseMatrixCSC
+            if prob.f.mass_matrix isa UniformScaling
+                idxs = diagind(sparsity)
+                @. @view(sparsity[idxs]) = 1
+            else
+                idxs = findall(!iszero, f.mass_matrix)
+                @. @view(sparsity[idxs]) = @view(f.mass_matrix[idxs])
+            end
         end
+
+        sparsity = sparsity isa MatrixOperator ? sparsity.A : sparsity
+
+        color_alg = DiffEqBase.has_colorvec(prob.f) ?
+                    SparseMatrixColorings.ConstantColoringAlgorithm(
+            sparsity, prob.f.colorvec) : SparseMatrixColorings.GreedyColoringAlgorithm()
+
+        sparsity_detector = ADTypes.KnownJacobianSparsityDetector(sparsity)
+
+        autodiff = AutoSparse(
+            autodiff, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg)
     end
 
     # KnownJacobianSparsityDetector needs an AbstractMatrix
-    sparsity = sparsity isa MatrixOperator ? sparsity.A : sparsity
 
-    sparsity_detector = isnothing(sparsity) ? TracerSparsityDetector() : ADTypes.KnownJacobianSparsityDetector(sparsity)
 
-    if prob isa DAEProblem && sparsity_detector isa TracerSparsityDetector
-        sparsity_detector = DI.DenseSparsityDetector(AutoForwardDiff(), atol = 1e-5)
-    end
+    
 
-    color_alg = DiffEqBase.has_colorvec(prob.f) ? SparseMatrixColorings.ConstantColoringAlgorithm(sparsity, prob.f.colorvec) : SparseMatrixColorings.GreedyColoringAlgorithm()
-
-    autodiff = AutoSparse(autodiff, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg)
 
     # if u0 is a StaticArray or Complex or Dual, don't use sparsity
-    if ((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) || eltype(u0) <: ForwardDiff.Dual || (!(prob.f isa DAEFunction) && prob.f.mass_matrix isa MatrixOperator) && autodiff isa AutoSparse)
+    if (((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) || eltype(u0) <: ForwardDiff.Dual || (!(prob.f isa DAEFunction) && prob.f.mass_matrix isa MatrixOperator)) && autodiff isa AutoSparse)    
+        # should add a warning letting them know that their sparsity isn't respected
         autodiff = ADTypes.dense_ad(autodiff)
     end
 
