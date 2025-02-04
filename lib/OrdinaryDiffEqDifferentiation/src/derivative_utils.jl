@@ -48,6 +48,9 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
                 else
                     autodiff_alg
                 end
+
+                # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers 
+                t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT),t) : t
                 DI.derivative!(tf, linsolve_tmp, dT, cache.grad_config, autodiff_alg, t)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             end
