@@ -165,7 +165,7 @@ end
 Wrapper over a [`JacobianOperator`](@ref) which stores the input `u`, `p` and `t`, and defines
 `mul!` and `*` for computing VJPs and JVPs.
 """
-@concrete struct StatefulJacobianOperator{M <: AbstractMode, T} <:
+@concrete mutable struct StatefulJacobianOperator{M <: AbstractMode, T} <:
                  AbstractJacobianOperator{T}
     mode::M
     jac_op <: JacobianOperator
@@ -293,18 +293,9 @@ function prepare_jvp(
     end
 end
 
+function SciMLOperators.update_coefficients!(J::StatefulJacobianOperator, u, p, t) 
+    J.u = u
+    J.p = p
+    J.t = t
+end
 
-
-f(u, p, t) = 1.01 * u .^ 2
-u0 = [1.0, 1.0, 1.0]
-tspan = (0.0, 1.0)
-prob = ODEProblem(f, u0, tspan)
-beeg_f = prob.f
-
-beeg_f(u0, nothing, nothing)
-
-jac_op = JacobianOperator(beeg_f, u0, nothing, nothing, skip_vjp = Val(true), jvp_autodiff = AutoForwardDiff())
-
-state_jac_op = StatefulJacobianOperator(jac_op, u0, nothing, nothing)
-
-state_jac_op * [2.0,1.0,3.0]
