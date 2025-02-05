@@ -105,7 +105,17 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
         integrator.stats.nf += 1
     end
 
-    return DI.jacobian(f, alg_autodiff(alg), x)
+    if integrator.iter == 1
+            try
+                jac = DI.jacobian(f, alg_autodiff(alg), x)
+            catch e
+                throw(FirstAutodiffJacError(e))
+            end
+        else
+        jac = DI.jacobian(f, alg_autodiff(alg), x)
+        end
+
+    return jac
 end
 
 # fallback for scalar x, is needed for calc_J to work
@@ -167,7 +177,16 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         integrator.stats.nf += 1
     end
 
-    DI.jacobian!(f, fx, J, jac_config, alg_autodiff(alg), x)
+    if integrator.iter == 1
+        try
+            DI.jacobian!(f, fx, J, jac_config, alg_autodiff(alg), x)
+        catch e
+            throw(FirstAutodiffJacError(e))
+        end
+    else
+        DI.jacobian!(f, fx, J, jac_config, alg_autodiff(alg), x)
+    end
+
     nothing
 end
 
