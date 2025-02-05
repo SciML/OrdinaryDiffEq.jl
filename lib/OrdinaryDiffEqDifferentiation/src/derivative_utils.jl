@@ -89,8 +89,6 @@ function calc_tderivative(integrator, cache)
             autodiff_alg
         end
 
-        t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT), t) : t
-
         if integrator.iter == 1 
             try 
                 dT = DI.derivative(tf, autodiff_alg, t)
