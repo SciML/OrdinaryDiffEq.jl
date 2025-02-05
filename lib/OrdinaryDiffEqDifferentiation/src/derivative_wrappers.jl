@@ -113,7 +113,7 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
             end
         else
         jac = DI.jacobian(f, alg_autodiff(alg), x)
-        end
+    end
 
     return jac
 end
@@ -139,7 +139,18 @@ function jacobian(f, x, integrator)
         integrator.stats.nf += 1
     end
 
-    return DI.derivative(f, alg_autodiff(alg), x)
+
+    if integrator.iter == 1
+        try
+            jac = DI.jacobian(f, alg_autodiff(alg), x)
+        catch e
+            throw(FirstAutodiffJacError(e))
+        end
+    else
+        jac = DI.jacobian(f, alg_autodiff(alg), x)
+    end
+
+    return jac
 end
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
