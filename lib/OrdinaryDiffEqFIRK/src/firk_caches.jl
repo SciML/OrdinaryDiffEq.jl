@@ -10,7 +10,6 @@ mutable struct RadauIIA3ConstantCache{F, Tab, Tol, Dt, U, JType} <:
     iter::Int
     cont1::U
     cont2::U
-    cont3::U
     dtprev::Dt
     W_γdt::Dt
     status::NLStatus
@@ -28,7 +27,7 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
     κ = convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
-    RadauIIA3ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt,
+    RadauIIA3ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, dt, dt,
         Convergence, J)
 end
 
