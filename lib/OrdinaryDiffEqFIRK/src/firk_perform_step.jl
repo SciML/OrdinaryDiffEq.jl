@@ -26,9 +26,7 @@ function do_newW(integrator, nlsolver, new_jac, W_dt)::Bool # for FIRK
     return !smallstepchange
 end
 
-function initialize!(integrator,
-        cache::Union{RadauIIA3ConstantCache, RadauIIA5ConstantCache,
-            RadauIIA9ConstantCache, AdaptiveRadauConstantCache})
+function initialize!(integrator, cache::Union{RadauIIA3ConstantCache, RadauIIA5ConstantCache, RadauIIA9ConstantCache, AdaptiveRadauConstantCache})
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -99,16 +97,6 @@ function initialize!(integrator, cache::AdaptiveRadauCache)
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    if integrator.opts.adaptive
-        @unpack abstol, reltol = integrator.opts
-        if reltol isa Number
-            cache.rtol = reltol^((num_stages + 1) / (2 * num_stages)) / 10
-            cache.atol = cache.rtol * (abstol / reltol)
-        else
-            @.. broadcast=false cache.rtol=reltol^((num_stages + 1) / (2 * num_stages)) / 10
-            @.. broadcast=false cache.atol=cache.rtol * (abstol / reltol)
-        end
-    end
     nothing
 end
 
@@ -1622,6 +1610,17 @@ end
     for i in 1:((num_stages - 1) ÷ 2)
         αdt[i] = α[i] / dt
         βdt[i] = β[i] / dt
+    end
+
+    if integrator.opts.adaptive
+        @unpack abstol, reltol = integrator.opts
+        if reltol isa Number
+            cache.rtol = reltol^((num_stages + 1) / (2 * num_stages)) / 10
+            cache.atol = cache.rtol * (abstol / reltol)
+        else
+            @.. cache.rtol=reltol^((num_stages + 1) / (2 * num_stages)) / 10
+            @.. cache.atol=cache.rtol * (abstol / reltol)
+        end
     end
 
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
