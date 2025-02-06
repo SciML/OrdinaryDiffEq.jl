@@ -142,12 +142,12 @@ function jacobian(f, x, integrator)
 
     if integrator.iter == 1
         try
-            jac = DI.jacobian(f, alg_autodiff(alg), x)
+            jac = DI.derivative(f, alg_autodiff(alg), x)
         catch e
             throw(FirstAutodiffJacError(e))
         end
     else
-        jac = DI.jacobian(f, alg_autodiff(alg), x)
+        jac = DI.derivative(f, alg_autodiff(alg), x)
     end
 
     return jac
