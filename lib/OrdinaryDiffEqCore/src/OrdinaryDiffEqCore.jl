@@ -115,6 +115,12 @@ const TryAgain = SlowConvergence
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 isdiscretecache(cache) = false
 
+@static if isdefined(DiffEqBase, :unitfulvalue)
+   unitfulvalue(x)  = DiffEqBase.unitfulvalue(x)
+else
+   unitfulvalue(x)  = DiffEqBase.ForwardDiff.value(x)
+end
+
 include("doc_utils.jl")
 include("misc_utils.jl")
 
