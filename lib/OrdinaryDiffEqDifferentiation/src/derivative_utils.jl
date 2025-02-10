@@ -52,15 +52,21 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
                 # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers 
                 t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT),t) : t
 
+                grad_config = cache.grad_config
+
+                if autodiff_alg isa AutoFiniteDiff
+                    grad_config = SciMLBase.@set grad_config.dir = diffdir(integrator)
+                end
+
                 if integrator.iter == 1
                     try
                         DI.derivative!(
-                            tf, linsolve_tmp, dT, cache.grad_config, autodiff_alg, t)
+                            tf, linsolve_tmp, dT, grad_config, autodiff_alg, t)
                     catch e
                         throw(FirstAutodiffTgradError(e))
                     end
                 else
-                    DI.derivative!(tf, linsolve_tmp, dT, cache.grad_config, autodiff_alg, t)
+                    DI.derivative!(tf, linsolve_tmp, dT, grad_config, autodiff_alg, t)
                 end
                 
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -89,6 +95,10 @@ function calc_tderivative(integrator, cache)
             autodiff_alg
         end
 
+        if alg_autodiff isa AutoFiniteDiff
+            autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
+        end
+        
         if integrator.iter == 1 
             try 
                 dT = DI.derivative(tf, autodiff_alg, t)
