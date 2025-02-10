@@ -156,8 +156,10 @@ function jacobian(f, x, integrator)
         dense = SciMLBase.@set dense.dir = diffdir(integrator)
     end
 
-    if alg_autodiff(alg) isa AutoSparse
-        autodiff_alg = SciMLBase.@set alg_autodiff(alg).dense_ad = dense
+    autodiff_alg = alg_autodiff(alg)
+
+    if autodiff_alg isa AutoSparse
+        autodiff_alg = SciMLBase.@set autodiff_alg.dense_ad = dense
     else
         autodiff_alg = dense
     end
