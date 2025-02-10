@@ -42,4 +42,5 @@ function alg_cache(alg::ExplicitTaylor2, u, rate_prototype, ::Type{uEltypeNoUnit
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
         ExplicitTaylor2ConstantCache()
 end
-get_fsalfirstlast(cache::ExplicitTaylor2Cache, u) = (nothing, nothing)
+# FSAL currently not used, providing dummy implementation to satisfy the interface
+get_fsalfirstlast(cache::ExplicitTaylor2Cache, u) = (cache.k1, cache.k1)

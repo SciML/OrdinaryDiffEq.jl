@@ -18,7 +18,7 @@ end
 end
 
 function initialize!(integrator, cache::ExplicitTaylor2Cache)
-    integrator.kshortsize = 7
+    integrator.kshortsize = 3
     resize!(integrator.k, integrator.kshortsize)
     # Setup k pointers
     integrator.k[1] = cache.k1
@@ -30,10 +30,11 @@ end
 @muladd function perform_step!(integrator, cache::ExplicitTaylor2Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack k1, k2, k3, utilde, tmp = cache
-    
+
     f(k1, uprev, p, t)
     TaylorDiff.derivative!(k2, (_y, _u) -> f(_y, _u, p, t), tmp, uprev, k1, Val(1))
     TaylorDiff.derivative!(k3, (_y, _t) -> f(_y, uprev, p, _t), tmp, t, one(t), Val(1))
     @.. u = uprev + dt * k1 + dt^2 / 2 * (k2 + k3)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
+    return nothing
 end
