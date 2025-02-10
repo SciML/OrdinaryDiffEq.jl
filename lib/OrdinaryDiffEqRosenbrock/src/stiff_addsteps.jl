@@ -16,15 +16,21 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         #    dT = FiniteDiff.finite_difference_derivative(tf, t, dir = sign(dt))
         #end
 
-        dT = DI.derivative(tf, cache.autodiff)
+        autodiff_alg = cache.autodiff
+
+        if autodiff_alg isa AutoFiniteDiff
+            autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
+        end
+
+        dT = DI.derivative(tf, autodiff_alg)
 
         mass_matrix = f.mass_matrix
         if uprev isa Number
-            J = DI.derivative(uf, cache.autodiff, uprev)
+            J = DI.derivative(uf, autodiff_alg, uprev)
             W = neginvdtγ .+ J
         else
             #J = ForwardDiff.jacobian(uf, uprev)
-            J = DI.jacobian(uf, cache.autofiff, uprev)
+            J = DI.jacobian(uf, autodiff_alg, uprev)
             if mass_matrix isa UniformScaling
                 W = neginvdtγ * mass_matrix + J
             else
@@ -63,17 +69,23 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
         # Time derivative
         tf.u = uprev
 
-        dT = DI.derivative(tf, cache.autodiff, t)
+        autodiff_alg = cache.autodiff
+
+        if autodiff_alg isa AutoFiniteDiff
+            autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
+        end
+
+        dT = DI.derivative(tf, autodiff_alg, t)
 
         # Jacobian
         uf.t = t
         if uprev isa AbstractArray
             #J = ForwardDiff.jacobian(uf, uprev)
-            J = DI.jacobian(uf, cache.autodiff, uprev)
+            J = DI.jacobian(uf, autodiff_alg, uprev)
             W = mass_matrix / dtgamma - J
         else
             #J = ForwardDiff.derivative(uf, uprev)
-            J = DI.derivative(uf, cache.autodiff, uprev)
+            J = DI.derivative(uf, autodiff_alg, uprev)
             W = 1 / dtgamma - J
         end
 
