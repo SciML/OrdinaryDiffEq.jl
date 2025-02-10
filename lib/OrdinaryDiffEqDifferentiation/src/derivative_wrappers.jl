@@ -105,14 +105,27 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
         integrator.stats.nf += 1
     end
 
+
+    if dense isa AutoFiniteDiff
+        dense = SciMLBase.@set dense.dir = diffdir(integrator)
+    end
+
+    autodiff_alg = alg_autodiff(alg)
+
+    if alg_autodiff(alg) isa AutoSparse
+        autodiff_alg = SciMLBase.@set autodiff_alg.dense_ad = dense
+    else
+        autodiff_alg = dense
+    end
+
     if integrator.iter == 1
             try
-                jac = DI.jacobian(f, alg_autodiff(alg), x)
+                jac = DI.jacobian(f, autodiff_alg, x)
             catch e
                 throw(FirstAutodiffJacError(e))
             end
         else
-        jac = DI.jacobian(f, alg_autodiff(alg), x)
+        jac = DI.jacobian(f, autodiff_alg, x)
     end
 
     return jac
@@ -139,15 +152,24 @@ function jacobian(f, x, integrator)
         integrator.stats.nf += 1
     end
 
+    if dense isa AutoFiniteDiff
+        dense = SciMLBase.@set dense.dir = diffdir(integrator)
+    end
+
+    if alg_autodiff(alg) isa AutoSparse
+        autodiff_alg = SciMLBase.@set alg_autodiff(alg).dense_ad = dense
+    else
+        autodiff_alg = dense
+    end
 
     if integrator.iter == 1
         try
-            jac = DI.derivative(f, alg_autodiff(alg), x)
+            jac = DI.derivative(f, autodiff_alg, x)
         catch e
             throw(FirstAutodiffJacError(e))
         end
     else
-        jac = DI.derivative(f, alg_autodiff(alg), x)
+        jac = DI.derivative(f, autodiff_alg, x)
     end
 
     return jac
@@ -188,14 +210,24 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         integrator.stats.nf += 1
     end
 
+    config = jac_config
+
+    if dense isa AutoFiniteDiff
+        if alg_autodiff(alg) isa AutoSparse
+            config = SciMLBase.@set jac_config.pushforward_prep.dir = diffdir(integrator)
+        else
+            config = SciMLBase.@set jac_config.dir = diffdir(integrator)
+        end
+    end
+
     if integrator.iter == 1
         try
-            DI.jacobian!(f, fx, J, jac_config, alg_autodiff(alg), x)
+            DI.jacobian!(f, fx, J, config, alg_autodiff(alg), x)
         catch e
             throw(FirstAutodiffJacError(e))
         end
     else
-        DI.jacobian!(f, fx, J, jac_config, alg_autodiff(alg), x)
+        DI.jacobian!(f, fx, J, config, alg_autodiff(alg), x)
     end
 
     nothing
