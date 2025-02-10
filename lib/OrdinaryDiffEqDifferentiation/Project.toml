@@ -28,11 +28,11 @@ StaticArrayInterface = "0d7ed370-da01-4f52-bd93-41d350b8b718"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-ADTypes = "1.11"
+ADTypes = "1.13"
 ArrayInterface = "7"
 DiffEqBase = "6"
 DiffEqDevTools = "2.44.4"
-DifferentiationInterface = "0.6.23"
+DifferentiationInterface = "0.6.40"
 FastBroadcast = "0.3"
 FiniteDiff = "2"
 ForwardDiff = "0.10"
