@@ -517,7 +517,7 @@ function DiffEqBase.__init(
     do_error_check = true
     event_last_time = 0
     vector_event_last_time = 1
-    last_event_error = prob isa DiscreteProblem ? false : zero(uBottomEltypeNoUnits)
+    last_event_error = prob isa DiscreteProblem ? false : (Base.isbitstype(uBottomEltypeNoUnits) ? zero(uBottomEltypeNoUnits) : 0.0)
     dtchangeable = isdtchangeable(_alg)
     q11 = QT(1)
     success_iter = 0
