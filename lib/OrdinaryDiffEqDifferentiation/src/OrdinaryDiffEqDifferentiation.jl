@@ -10,7 +10,7 @@ import SparseDiffTools: SparseDiffTools, matrix_colors, forwarddiff_color_jacobi
 import SparseMatrixColorings: GreedyColoringAlgorithm
 import SparseConnectivityTracer: TracerSparsityDetector
 
-import ForwardDiff, FiniteDiff, Enzyme
+import ForwardDiff, FiniteDiff
 import ForwardDiff.Dual
 import LinearSolve
 import LinearSolve: OperatorAssumptions
