@@ -10,3 +10,11 @@ TruncatedStacktraces.@truncate_stacktrace ExplicitTaylor2 3
 function ExplicitTaylor2(stage_limiter!, step_limiter! = trivial_limiter!)
     ExplicitTaylor2(stage_limiter!, step_limiter!, False())
 end
+
+Base.@kwdef struct ExplicitTaylor{P, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    order::Val{P} = Val{1}()
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end

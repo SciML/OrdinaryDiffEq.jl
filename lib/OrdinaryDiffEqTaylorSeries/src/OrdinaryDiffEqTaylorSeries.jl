@@ -56,6 +56,6 @@ PrecompileTools.@compile_workload begin
     solver_list = nothing
 end
 
-export ExplicitTaylor2
+export ExplicitTaylor2, ExplicitTaylor
 
 end
