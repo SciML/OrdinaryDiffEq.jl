@@ -164,6 +164,13 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    # Update the Jacobian with the correct sparsity pattern if no sparsity was provided to the ODEFunction
+    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity)
+        J = sparsity_pattern(jac_config.coloring_result)
+        W.J = J
+    end
+     
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
@@ -210,6 +217,17 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    # If using automatic sparsity detection, the sparsity pattern is unknown when building J and W
+    # once we know the sparsity pattern, use it for J and W
+    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
+        sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
+        J = convert.(eltype(u), sp)
+        if W isa WOperator
+            W.J = J
+        end
+    end
+    
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
@@ -446,6 +464,17 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    # If using automatic sparsity detection, the sparsity pattern is unknown when building J and W
+    # once we know the sparsity pattern, use it for J and W
+    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
+        sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
+        J = convert.(eltype(u), sp)
+        if W isa WOperator
+            W.J = J
+        end
+    end
+
     Rosenbrock34Cache(u, uprev, du, du1, du2, k1, k2, k3, k4,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
@@ -640,6 +669,17 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    # If using automatic sparsity detection, the sparsity pattern is unknown when building J and W
+    # once we know the sparsity pattern, use it for J and W
+    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
+        sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
+        J = convert.(eltype(u), sp)
+        if W isa WOperator
+            W.J = J
+        end
+    end
+
     Rodas23WCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
@@ -685,6 +725,17 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    # If using automatic sparsity detection, the sparsity pattern is unknown when building J and W
+    # once we know the sparsity pattern, use it for J and W
+    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
+        sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
+        J = convert.(eltype(u), sp)
+        if W isa WOperator
+            W.J = J
+        end
+    end
+
     Rodas3PCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
@@ -798,6 +849,16 @@ function alg_cache(
 
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    # If using automatic sparsity detection, the sparsity pattern is unknown when building J and W
+    # once we know the sparsity pattern, use it for J and W
+    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
+        sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
+        J = convert.(eltype(u), sp)
+        if W isa WOperator
+            W.J = J
+        end
+    end
 
     # Return the cache struct with vectors
     RosenbrockCache(

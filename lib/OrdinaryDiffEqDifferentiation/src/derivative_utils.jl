@@ -774,7 +774,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         _f = islin ? (isode ? f.f : f.f1.f) : f
         J = if f.jac_prototype === nothing
             if alg_autodiff(alg) isa AutoSparse
-                f.sparsity
+                isnothing(f.sparsity) ? sparse(ArrayInterface.undefmatrix(u)) : f.sparsity
             else
                 ArrayInterface.undefmatrix(u)
             end
@@ -798,7 +798,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             end
         elseif f.jac_prototype === nothing
             if alg_autodiff(alg) isa AutoSparse
-                f.sparsity
+                isnothing(f.sparsity) ? sparse(ArrayInterface.undefmatrix(u)) : f.sparsity
             else
                 ArrayInterface.undefmatrix(u)
             end
