@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqAdamsBashforthMoulton"
 uuid = "89bda076-bce5-4f1c-845f-551c83cdda9a"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.1.0"
+version = "1.2.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
