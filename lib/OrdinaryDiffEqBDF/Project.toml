@@ -27,6 +27,7 @@ ADTypes = "1.11"
 ArrayInterface = "7.15.0"
 DiffEqBase = "6.152.2"
 DiffEqDevTools = "2.44.4"
+Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 FastBroadcast = "0.3.5"
 ForwardDiff = "0.10.36"
 LinearAlgebra = "<0.0.1, 1"
@@ -58,4 +59,4 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DiffEqDevTools", "ForwardDiff", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "StaticArrays"]
+test = ["DiffEqDevTools", "ForwardDiff", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "StaticArrays", "Enzyme"]
