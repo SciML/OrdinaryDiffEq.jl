@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqFIRK: AdaptiveRadau, RadauIIA9, RadauIIA5, RadauIIA3
 
 # define the counting variable
 const STEP_LIMITER_VAR = Ref(0)
