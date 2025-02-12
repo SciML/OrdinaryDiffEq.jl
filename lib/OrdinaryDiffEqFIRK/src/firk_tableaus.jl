@@ -327,9 +327,7 @@ function generateRadauTableau(T1, T2, num_stages::Int)
     end
     @views T[:, 1] .= real.(eigvec[:, num_stages])
     TI = inv(T)
-    # TODO: figure out why all the order conditions are the same
     A = c_powers'./(1:num_stages)
-    # TODO: figure out why these are the right b
     b = vcat(-(num_stages)^2, -.5, zeros(num_stages - 2))
     e = A \ b
     tab = RadauIIATableau{T1, T2}(T, TI, c2, γ, α, β, e)
