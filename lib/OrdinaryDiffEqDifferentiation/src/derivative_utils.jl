@@ -765,7 +765,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         jacvec = StatefulJacobianOperator(jac_op, u, p, t)
 
         J = jacvec
-        W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
+        W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
     elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
            concrete_jac(alg) !== nothing && concrete_jac(alg)
         # The linear solver does not need a concrete Jacobian, but the user has
@@ -787,7 +787,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             jac_op = JacobianOperator(f, u, p, t, jvp_autodiff = alg_autodiff(alg), skip_vjp = Val(true))
             jacvec = StatefulJacobianOperator(jac_op, u, p, t)
 
-            WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
+            WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
         end
     else
         J = if !IIP && DiffEqBase.has_jac(f)
