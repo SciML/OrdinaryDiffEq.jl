@@ -65,6 +65,7 @@ end
         @time @safetestset "Linear Solver Tests" include("interface/linear_solver_test.jl")
         @time @safetestset "Linear Solver Split ODE Tests" include("interface/linear_solver_split_ode_test.jl")
         @time @safetestset "Sparse Diff Tests" include("interface/sparsediff_tests.jl")
+        @time @safetestset "AutoSparse Detection Tests" include("interface/autosparse_detection_tests.jl")
         @time @safetestset "Enum Tests" include("interface/enums.jl")
         @time @safetestset "CheckInit Tests" include("interface/checkinit_tests.jl")
         @time @safetestset "Get du Tests" include("interface/get_du.jl")
