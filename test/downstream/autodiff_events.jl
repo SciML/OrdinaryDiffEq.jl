@@ -24,7 +24,7 @@ prob = ODEProblem(f, eltype(p).([1.0, 0.0]), eltype(p).((0.0, 1.0)), copy(p))
 function test_f(p)
     _prob = remake(prob, p = p)
     solve(_prob, Tsit5(), abstol = 1e-14, reltol = 1e-14, callback = cb,
-        save_everystep = false).u[end]
+    save_everystep = false).u[end]
 end
 findiff = Calculus.finite_difference_jacobian(test_f, p)
 findiff

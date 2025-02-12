@@ -80,7 +80,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
         integrator, grad_config)
     alg = unwrap_alg(integrator, true)
     tmp = length(x) # We calculate derivative for all elements in gradient
-    autodiff_alg = alg_autodiff(alg) 
+    autodiff_alg = alg_autodiff(alg)
     if autodiff_alg isa AutoForwardDiff
         T = if standardtag(alg)
             typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(df)))
@@ -125,7 +125,7 @@ function derivative(f, x::Union{Number, AbstractArray{<:Number}},
     local d
     tmp = length(x) # We calculate derivative for all elements in gradient
     alg = unwrap_alg(integrator, true)
-    if alg_autodiff(alg) isa AutoForwardDiff 
+    if alg_autodiff(alg) isa AutoForwardDiff
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         if integrator.iter == 1
             try
@@ -287,7 +287,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2) where {F1
             else
                 typeof(ForwardDiff.Tag(uf, eltype(u)))
             end
-            
+
             if _chunksize === Val{nothing}()
                 _chunksize = nothing
             end

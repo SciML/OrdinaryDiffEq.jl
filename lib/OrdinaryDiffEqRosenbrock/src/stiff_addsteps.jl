@@ -74,7 +74,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
             W = 1 / dtgamma - J
         end
 
-        num_stages = size(A,1)
+        num_stages = size(A, 1)
         du = f(u, p, t)
         linsolve_tmp = @.. du + dtd[1] * dT
         k1 = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
@@ -171,7 +171,6 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
                 cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
             @.. $(_vec(ks[stage])) = -linres.u
         end
-
 
         for j in 1:size(H, 1)
             copyat_or_push!(k, j, zero(du))

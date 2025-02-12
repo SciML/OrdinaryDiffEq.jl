@@ -11,7 +11,8 @@ using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
 import DiffEqBase
 import PreallocationTools
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
-using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson, step!
+using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
+                      step!
 using MuladdMacro, FastBroadcast
 import FastClosures: @closure
 using LinearAlgebra: UniformScaling, UpperTriangular

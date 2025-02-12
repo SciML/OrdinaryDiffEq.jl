@@ -30,11 +30,11 @@ struct PDIRK44{CS, AD, F, F2, P, FDT, ST, CJ, TO} <:
     threading::TO
     autodiff::AD
 end
-function PDIRK44(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
+function PDIRK44(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant, threading = true)
-
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     PDIRK44{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),

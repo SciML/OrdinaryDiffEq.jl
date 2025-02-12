@@ -45,7 +45,8 @@ function full_cache(c::RosenbrockCache)
         c.ks..., c.fsalfirst, c.fsallast, c.dT, c.tmp, c.atmp, c.weight, c.linsolve_tmp]
 end
 
-struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
+struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
+       RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -311,7 +312,24 @@ tabtype(::Rodas5Pr) = Rodas5PTableau
 tabtype(::Rodas5Pe) = Rodas5PTableau
 
 function alg_cache(
-        alg::Union{ROS3P, Rodas3, Rodas3P, Rodas23W, Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
+        alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
+        u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tf = TimeDerivativeWrapper(f, u, p)
+    uf = UDerivativeWrapper(f, t, p)
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
+    linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
+    linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    RosenbrockCombinedConstantCache(tf, uf,
+        tab, J, W, linsolve,
+        alg_autodiff(alg), size(tab.H, 1))
+end
+
+function alg_cache(
+        alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
         u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -351,21 +369,6 @@ function alg_cache(
                     dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
                     linsolve, jac_config, grad_config, reltol, alg, algebraic_vars,
                     alg.step_limiter!, alg.stage_limiter!, size(tab.H, 1))
-end
-
-function alg_cache(
-        alg::Union{ROS3P, Rodas3, Rodas3P, Rodas23W, Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
-        u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tf = TimeDerivativeWrapper(f, u, p)
-    uf = UDerivativeWrapper(f, t, p)
-    J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
-    linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
-    linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
-    tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    RosenbrockCombinedConstantCache(tf, uf, tab, J, W, linsolve, alg_autodiff(alg), size(tab.H, 1))
 end
 
 function get_fsalfirstlast(

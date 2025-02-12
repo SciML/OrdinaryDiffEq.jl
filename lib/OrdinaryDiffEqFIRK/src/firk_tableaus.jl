@@ -273,7 +273,7 @@ import LinearAlgebra: eigen
 import FastGaussQuadrature: gaussradau
 
 function RadauIIATableau{T1, T2}(tab::RadauIIATableau{T1, T2}) where {T1, T2}
-    RadauIIATableau{T1, T2}(tab.T, tab.TI, tab.c, tab.γ,tab.α, tab.β, tab.e)
+    RadauIIATableau{T1, T2}(tab.T, tab.TI, tab.c, tab.γ, tab.α, tab.β, tab.e)
 end
 
 function RadauIIATableau(T1, T2, num_stages::Int)
@@ -286,29 +286,29 @@ function RadauIIATableau(T1, T2, num_stages::Int)
 end
 
 function generateRadauTableau(T1, T2, num_stages::Int)
-    c = reverse!(1 .- gaussradau(num_stages, T1)[1])./2
+    c = reverse!(1 .- gaussradau(num_stages, T1)[1]) ./ 2
     if T1 == T2
         c2 = c
     else
-        c2 = reverse!(1 .- gaussradau(num_stages, T2)[1])./2
+        c2 = reverse!(1 .- gaussradau(num_stages, T2)[1]) ./ 2
     end
 
     c_powers = Matrix{T1}(undef, num_stages, num_stages)
-    for i in 1 : num_stages
+    for i in 1:num_stages
         c_powers[i, 1] = 1
-        for j in 2 : num_stages
-            c_powers[i,j] = c[i]*c_powers[i,j-1]
+        for j in 2:num_stages
+            c_powers[i, j] = c[i] * c_powers[i, j - 1]
         end
     end
     c_q = Matrix{T1}(undef, num_stages, num_stages)
-    for i in 1 : num_stages
-        for j in 1 : num_stages
-            c_q[i,j] = c_powers[i,j] * c[i] / j
+    for i in 1:num_stages
+        for j in 1:num_stages
+            c_q[i, j] = c_powers[i, j] * c[i] / j
         end
     end
     a = c_q / c_powers
 
-    local eigval, eigvec;
+    local eigval, eigvec
     try
         eigval, eigvec = eigen(a)
     catch
@@ -316,8 +316,8 @@ function generateRadauTableau(T1, T2, num_stages::Int)
     end
     # α, β, and γ come from eigvals(inv(a)) which are equal to inv.(eivals(a))
     eigval .= inv.(eigval)
-    α = [real(eigval[i]) for i in 1:2:num_stages-1]
-    β = [imag(eigval[i]) for i in 1:2:num_stages-1]
+    α = [real(eigval[i]) for i in 1:2:(num_stages - 1)]
+    β = [imag(eigval[i]) for i in 1:2:(num_stages - 1)]
     γ = real(eigval[num_stages])
 
     T = Matrix{T1}(undef, num_stages, num_stages)
@@ -328,14 +328,15 @@ function generateRadauTableau(T1, T2, num_stages::Int)
     @views T[:, 1] .= real.(eigvec[:, num_stages])
     TI = inv(T)
     # TODO: figure out why all the order conditions are the same
-    A = c_powers'./(1:num_stages)
+    A = c_powers' ./ (1:num_stages)
     # TODO: figure out why these are the right b
-    b = vcat(-(num_stages)^2, -.5, zeros(num_stages - 2))
+    b = vcat(-(num_stages)^2, -0.5, zeros(num_stages - 2))
     e = A \ b
     tab = RadauIIATableau{T1, T2}(T, TI, c2, γ, α, β, e)
 end
 
-const RadauIIATableauCache = Dict{Tuple{Type,Type,Int}, RadauIIATableau{T1, T2} where {T1, T2}}(
-    (Float64, Float64, 3)=>generateRadauTableau(Float64, Float64, 3),
-    (Float64, Float64, 5)=>generateRadauTableau(Float64, Float64, 5),
-    (Float64, Float64, 7)=>generateRadauTableau(Float64, Float64, 7),)
+const RadauIIATableauCache = Dict{
+    Tuple{Type, Type, Int}, RadauIIATableau{T1, T2} where {T1, T2}}(
+    (Float64, Float64, 3) => generateRadauTableau(Float64, Float64, 3),
+    (Float64, Float64, 5) => generateRadauTableau(Float64, Float64, 5),
+    (Float64, Float64, 7) => generateRadauTableau(Float64, Float64, 7))

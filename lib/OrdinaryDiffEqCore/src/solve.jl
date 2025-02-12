@@ -26,7 +26,8 @@ function DiffEqBase.__init(
                          saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
         callback = nothing,
-        dense = save_everystep && isempty(saveat) && !default_linear_interpolation(prob, alg),
+        dense = save_everystep && isempty(saveat) &&
+                    !default_linear_interpolation(prob, alg),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
                     (dense) || !isempty(saveat), # and no dense output
         dt = isdiscretealg(alg) && isempty(tstops) ?
@@ -156,7 +157,7 @@ function DiffEqBase.__init(
         _alg = alg
     end
 
-    use_old_kwargs = haskey(kwargs,:alias_u0) || haskey(kwargs,:alias_du0)
+    use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_du0)
 
     if use_old_kwargs
         aliases = ODEAliasSpecifier()
@@ -175,29 +176,30 @@ function DiffEqBase.__init(
             please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))"
             Base.depwarn(message, :init)
             Base.depwarn(message, :solve)
-            aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0)
+            aliases = ODEAliasSpecifier(
+                alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0)
         else
             aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = nothing)
         end
-        
-        aliases 
+
+        aliases
 
     else
-         # If alias isa Bool, all fields of ODEAliases set to alias
+        # If alias isa Bool, all fields of ODEAliases set to alias
         if alias isa Bool
             aliases = ODEAliasSpecifier(alias = alias)
-        elseif alias isa ODEAliasSpecifier 
+        elseif alias isa ODEAliasSpecifier
             aliases = alias
         end
     end
 
-    if isnothing(aliases.alias_f) || aliases.alias_f 
+    if isnothing(aliases.alias_f) || aliases.alias_f
         f = prob.f
     else
         f = deepcopy(prob.f)
     end
 
-    if isnothing(aliases.alias_p) || aliases.alias_p 
+    if isnothing(aliases.alias_p) || aliases.alias_p
         p = prob.p
     else
         p = recursivecopy(prob.p)
@@ -316,7 +318,8 @@ function DiffEqBase.__init(
     end
 
     ### Algorithm-specific defaults ###
-    save_idxs, saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(prob, save_idxs)
+    save_idxs, saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
+        prob, save_idxs)
 
     if save_idxs === nothing
         ksEltype = Vector{rateType}
@@ -517,7 +520,9 @@ function DiffEqBase.__init(
     do_error_check = true
     event_last_time = 0
     vector_event_last_time = 1
-    last_event_error = prob isa DiscreteProblem ? false : (Base.isbitstype(uBottomEltypeNoUnits) ? zero(uBottomEltypeNoUnits) : 0.0)
+    last_event_error = prob isa DiscreteProblem ? false :
+                       (Base.isbitstype(uBottomEltypeNoUnits) ? zero(uBottomEltypeNoUnits) :
+                        0.0)
     dtchangeable = isdtchangeable(_alg)
     q11 = QT(1)
     success_iter = 0

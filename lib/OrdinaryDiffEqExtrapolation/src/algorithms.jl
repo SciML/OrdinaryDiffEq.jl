@@ -73,7 +73,6 @@ function ImplicitEulerExtrapolation(; chunk_size = Val{0}(), autodiff = AutoForw
         precs = DEFAULT_PRECS,
         max_order = 12, min_order = 3, init_order = 5,
         threading = false, sequence = :harmonic)
-
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     linsolve = (linsolve === nothing &&
@@ -210,13 +209,13 @@ struct ImplicitDeuflhardExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
     threading::TO
     autodiff::AD
 end
-function ImplicitDeuflhardExtrapolation(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
+function ImplicitDeuflhardExtrapolation(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS,
         diff_type = Val{:forward}(),
         min_order = 1, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false)
-
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     # Enforce 1 <=  min_order <= init_order <= max_order:
@@ -362,7 +361,8 @@ struct ImplicitHairerWannerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
     autodiff::AD
 end
 
-function ImplicitHairerWannerExtrapolation(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
+function ImplicitHairerWannerExtrapolation(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(),
         concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS,
