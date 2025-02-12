@@ -106,7 +106,7 @@ function DiffEqBase.prepare_alg(
 end
 
 function prepare_ADType(autodiff_alg::AutoSparse, prob, u0, p, standardtag)
-    prepare_ADType(dense_ad(autodiff_alg), prob, u0, p, standardtag)
+    SciMLBase.@set autodiff_alg.dense_ad = prepare_ADType(ADTypes.dense_ad(autodiff_alg), prob, u0, p, standardtag)
 end
 
 function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
