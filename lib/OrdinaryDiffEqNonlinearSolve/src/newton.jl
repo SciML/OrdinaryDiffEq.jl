@@ -229,8 +229,9 @@ end
             reltol = reltol)
     end
 
-    if !SciMLBase.successful_retcode(linres.retcode) && linres.retcode != SciMLBase.ReturnCode.Default
-        return convert(eltype(atmp,),Inf)
+    if !SciMLBase.successful_retcode(linres.retcode) &&
+       linres.retcode != SciMLBase.ReturnCode.Default
+        return convert(eltype(atmp,), Inf)
     end
 
     cache.linsolve = linres.cache

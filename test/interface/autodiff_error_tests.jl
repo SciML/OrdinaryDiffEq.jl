@@ -55,7 +55,7 @@ for alg in [
     Rodas5(autodiff = AutoFiniteDiff()),
     QNDF(autodiff = AutoFiniteDiff()),
     TRBDF2(autodiff = AutoFiniteDiff()),
-    KenCarp4(autodiff = AutoFiniteDiff()),
+    KenCarp4(autodiff = AutoFiniteDiff())
 ]
     u = [0.0, 0.0]
     function f1(u, p, t)

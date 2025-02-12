@@ -2,7 +2,9 @@
 function _alg_autodiff(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have an autodifferentiation option defined.")
 end
-_alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
+function _alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD}
+    alg.autodiff
+end
 _alg_autodiff(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
 _alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
 _alg_autodiff(alg::CompositeAlgorithm) = _alg_autodiff(alg.algs[end])
@@ -16,12 +18,12 @@ end
 
 function alg_autodiff(alg)
     autodiff = _alg_autodiff(alg)
-    
+
     if autodiff == Val(true)
         return AutoForwardDiff()
     elseif autodiff == Val(false)
         return AutoFiniteDiff()
-    else 
+    else
         return autodiff
     end
 end
@@ -52,14 +54,17 @@ function DiffEqBase.prepare_alg(
     # If prob.f.f is a FunctionWrappersWrappers from ODEFunction, need to set chunksize to 1
 
     if alg_autodiff(alg) isa AutoForwardDiff && ((prob.f isa ODEFunction &&
-        prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) || (isbitstype(T) && sizeof(T) > 24))
-        return remake(alg, autodiff = AutoForwardDiff(chunksize = 1, tag = alg_autodiff(alg).tag))
+         prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) ||
+        (isbitstype(T) && sizeof(T) > 24))
+        return remake(
+            alg, autodiff = AutoForwardDiff(chunksize = 1, tag = alg_autodiff(alg).tag))
     end
 
     # If the autodiff alg is AutoFiniteDiff, prob.f.f isa FunctionWrappersWrapper,
     # and fdtype is complex, fdtype needs to change to something not complex
-    if alg_autodiff(alg) isa AutoFiniteDiff 
-        if alg_difftype(alg) == Val{:complex} && (prob.f isa ODEFunction && prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+    if alg_autodiff(alg) isa AutoFiniteDiff
+        if alg_difftype(alg) == Val{:complex} && (prob.f isa ODEFunction &&
+            prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
             @warn "AutoFiniteDiff fdtype complex is not compatible with this function"
             return remake(alg, autodiff = AutoFiniteDiff(fdtype = Val{:forward}()))
         end

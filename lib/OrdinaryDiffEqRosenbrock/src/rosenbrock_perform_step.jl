@@ -1206,15 +1206,16 @@ function initialize!(integrator, cache::RosenbrockCombinedConstantCache)
     integrator.kshortsize = size(cache.tab.H, 1)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     # Avoid undefined entries if k is an array of arrays
-    for i in 1:integrator.kshortsize
+    for i in 1:(integrator.kshortsize)
         integrator.k[i] = zero(integrator.u)
     end
 end
 
-@muladd function perform_step!(integrator, cache::RosenbrockCombinedConstantCache, repeat_step = false)
-    (;t, dt, uprev, u, f, p) = integrator
-    (;tf, uf) = cache
-    (;A, C, gamma, c, d, H) = cache.tab
+@muladd function perform_step!(
+        integrator, cache::RosenbrockCombinedConstantCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tf, uf) = cache
+    (; A, C, gamma, c, d, H) = cache.tab
 
     # Precalculations
     dtC = C ./ dt
@@ -1287,20 +1288,20 @@ end
             end
         end
         if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
-            (integrator.EEst < 1.0)
-             k2 = 0.5 * (uprev + u +
-                   0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
-             du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
-             du = f(k2, p, t + dt / 2)
-             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-             if mass_matrix === I
-                 du2 = du1 - du
-             else
-                 du2 = mass_matrix * du1 - du
-             end
-             EEst = norm(du2) / norm(integrator.opts.abstol .+ integrator.opts.reltol .* k2)
-             integrator.EEst = max(EEst, integrator.EEst)
-         end
+           (integrator.EEst < 1.0)
+            k2 = 0.5 * (uprev + u +
+                  0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
+            du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
+            du = f(k2, p, t + dt / 2)
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            if mass_matrix === I
+                du2 = du1 - du
+            else
+                du2 = mass_matrix * du1 - du
+            end
+            EEst = norm(du2) / norm(integrator.opts.abstol .+ integrator.opts.reltol .* k2)
+            integrator.EEst = max(EEst, integrator.EEst)
+        end
     end
 
     integrator.u = u
@@ -1310,7 +1311,7 @@ end
 function initialize!(integrator, cache::RosenbrockCache)
     integrator.kshortsize = size(cache.tab.H, 1)
     resize!(integrator.k, integrator.kshortsize)
-    for i in 1:integrator.kshortsize
+    for i in 1:(integrator.kshortsize)
         integrator.k[i] = cache.dense[i]
     end
 end
@@ -1389,9 +1390,9 @@ end
     if integrator.opts.adaptive
         if (integrator.alg isa Rodas5Pe)
             @.. du = 0.2606326497975715 * ks[1] - 0.005158627295444251 * ks[2] +
-                    1.3038988631109731 * ks[3] + 1.235000722062074 * ks[4] +
-                    -0.7931985603795049 * ks[5] - 1.005448461135913 * ks[6] -
-                    0.18044626132120234 * ks[7] + 0.17051519239113755 * ks[8]
+                     1.3038988631109731 * ks[3] + 1.235000722062074 * ks[4] +
+                     -0.7931985603795049 * ks[5] - 1.005448461135913 * ks[6] -
+                     0.18044626132120234 * ks[7] + 0.17051519239113755 * ks[8]
         end
         calculate_residuals!(atmp, ks[end], uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -1408,21 +1409,23 @@ end
             end
         end
         if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
-            (integrator.EEst < 1.0)
-             ks[2] = 0.5 * (uprev + u +
-                   0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
-             du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
-             f(du, ks[2], p, t + dt / 2)
-             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-             if mass_matrix === I
-                 @.. du2 = du1 - du
-             else
-                 mul!(_vec(du2), mass_matrix, _vec(du1))
-                 @.. du2 -= du
-             end
-             EEst = norm(du2) / norm(integrator.opts.abstol .+ integrator.opts.reltol .* ks[2])
-             integrator.EEst = max(EEst, integrator.EEst)
-         end
+           (integrator.EEst < 1.0)
+            ks[2] = 0.5 * (uprev + u +
+                     0.5 *
+                     (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
+            du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
+            f(du, ks[2], p, t + dt / 2)
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            if mass_matrix === I
+                @.. du2 = du1 - du
+            else
+                mul!(_vec(du2), mass_matrix, _vec(du1))
+                @.. du2 -= du
+            end
+            EEst = norm(du2) /
+                   norm(integrator.opts.abstol .+ integrator.opts.reltol .* ks[2])
+            integrator.EEst = max(EEst, integrator.EEst)
+        end
     end
     cache.linsolve = linres.cache
 end

@@ -23,12 +23,12 @@ probip = ODEProblem(g, u0, tspan)
             @test x[] == sol.stats.nf
         end
         @testset "$alg" for alg in [Rodas5P, KenCarp4]
-            @testset "$kwargs" for kwargs in [(autodiff = AutoForwardDiff(),), 
-                                              (autodiff = AutoFiniteDiff(fdtype = Val{:forward}()),),
-                                              (autodiff = AutoFiniteDiff(fdtype = Val{:central}()),),
-                                              (autodiff = AutoFiniteDiff(fdtype = Val{:complex}()),)]
+            @testset "$kwargs" for kwargs in [(autodiff = AutoForwardDiff(),),
+                (autodiff = AutoFiniteDiff(fdtype = Val{:forward}()),),
+                (autodiff = AutoFiniteDiff(fdtype = Val{:central}()),),
+                (autodiff = AutoFiniteDiff(fdtype = Val{:complex}()),)]
                 x[] = 0
-                sol = solve(prob, alg(;kwargs...))
+                sol = solve(prob, alg(; kwargs...))
                 @test x[] == sol.stats.nf
             end
         end

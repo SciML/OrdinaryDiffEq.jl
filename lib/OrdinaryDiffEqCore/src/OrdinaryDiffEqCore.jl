@@ -60,7 +60,8 @@ using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., True, False
 
-using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val, ODEAliasSpecifier
+using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
+                 ODEAliasSpecifier
 
 import SciMLBase: AbstractNonlinearProblem, alg_order
 
@@ -76,7 +77,8 @@ import Accessors: @reset
 
 using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
-using SymbolicIndexingInterface: state_values, parameter_values, is_variable, variable_index,
+using SymbolicIndexingInterface: state_values, parameter_values, is_variable,
+                                 variable_index,
                                  symbolic_type, NotSymbolic
 
 const CompiledFloats = Union{Float32, Float64}
@@ -116,9 +118,9 @@ DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothi
 isdiscretecache(cache) = false
 
 @static if isdefined(DiffEqBase, :unitfulvalue)
-   unitfulvalue(x)  = DiffEqBase.unitfulvalue(x)
+    unitfulvalue(x) = DiffEqBase.unitfulvalue(x)
 else
-   unitfulvalue(x)  = DiffEqBase.ForwardDiff.value(x)
+    unitfulvalue(x) = DiffEqBase.ForwardDiff.value(x)
 end
 
 include("doc_utils.jl")

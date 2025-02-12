@@ -571,9 +571,10 @@ function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
     n = length(u_prototype)
     T = eltype(u_prototype)
     u = zero(u_prototype)                         # stores the current state
-    W = similar(u_prototype, n, p+1)              # stores the w vectors                
-    P = similar(u_prototype, n, p+2)              # stores output from phiv!  
-    Ks = KrylovSubspace{T,T,typeof(similar(u_prototype,size(u_prototype,1),2))}(n, maxiter) # stores output from arnoldi!
+    W = similar(u_prototype, n, p + 1)              # stores the w vectors                
+    P = similar(u_prototype, n, p + 2)              # stores output from phiv!  
+    Ks = KrylovSubspace{T, T, typeof(similar(u_prototype, size(u_prototype, 1), 2))}(
+        n, maxiter) # stores output from arnoldi!
     phiv_cache = PhivCache(u_prototype, maxiter, p + 1) # cache used by phiv! (need +1 for error estimation)
     return u, W, P, Ks, phiv_cache
 end
@@ -591,7 +592,7 @@ function alg_cache(alg::LinearExponential, u, rate_prototype, ::Type{uEltypeNoUn
     if alg.krylov == :off
         KsCache = nothing
     elseif alg.krylov == :simple
-        Ks = KrylovSubspace{T,T,typeof(similar(u,size(u,1),2))}(n, m)
+        Ks = KrylovSubspace{T, T, typeof(similar(u, size(u, 1), 2))}(n, m)
         expv_cache = ExpvCache{T}(m)
         KsCache = (Ks, expv_cache)
     elseif alg.krylov == :adaptive

@@ -141,8 +141,8 @@ end
     if iszero(EEst)
         q = inv(qmax)
     else
-        q11 = FastPower.fastpower(EEst, convert(typeof(EEst),beta1))
-        q = q11 / FastPower.fastpower(qold, convert(typeof(EEst),beta2))
+        q11 = FastPower.fastpower(EEst, convert(typeof(EEst), beta1))
+        q = q11 / FastPower.fastpower(qold, convert(typeof(EEst), beta2))
         integrator.q11 = q11
         @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
     end
@@ -428,7 +428,7 @@ end
 
 function step_accept_controller!(integrator, controller::PredictiveController, alg, q)
     @unpack qmin, qmax, gamma, qsteady_min, qsteady_max = integrator.opts
- 
+
     EEst = DiffEqBase.value(integrator.EEst)
 
     if integrator.success_iter > 0
@@ -445,7 +445,7 @@ function step_accept_controller!(integrator, controller::PredictiveController, a
     end
     integrator.dtacc = integrator.dt
     integrator.erracc = max(1e-2, EEst)
-    
+
     return integrator.dt / qacc
 end
 
