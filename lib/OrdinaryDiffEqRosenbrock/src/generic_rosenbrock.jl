@@ -253,6 +253,14 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
                             Pr = Diagonal(_vec(weight)))
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+
+            if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
+                sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
+                J = convert.(eltype(u), sp)
+                if W isa WOperator
+                    W.J = J
+                end
+            end         
             $cachename($(valsyms...))
         end
     end
