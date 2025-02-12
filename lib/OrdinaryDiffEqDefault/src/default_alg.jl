@@ -41,11 +41,13 @@ end
 
 function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
     DiffEqBase.init(
-        prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()), args...; wrap = Val(false), kwargs...)
+        prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
+        args...; wrap = Val(false), kwargs...)
 end
 function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
     DiffEqBase.solve(
-        prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()), args...; wrap = Val(false), kwargs...)
+        prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
+        args...; wrap = Val(false), kwargs...)
 end
 
 function is_stiff(integrator, alg, ntol, stol, is_stiffalg, current)

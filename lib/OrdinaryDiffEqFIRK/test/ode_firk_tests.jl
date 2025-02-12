@@ -16,21 +16,26 @@ sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_2Dlinear, RadauIIA9())
 
 using GenericSchur
 
-prob_ode_linear_big = remake(prob_ode_linear, u0 = big.(prob_ode_linear.u0), tspan = big.(prob_ode_linear.tspan))
-prob_ode_2Dlinear_big = remake(prob_ode_2Dlinear, u0 = big.(prob_ode_2Dlinear.u0), tspan = big.(prob_ode_2Dlinear.tspan))
+prob_ode_linear_big = remake(
+    prob_ode_linear, u0 = big.(prob_ode_linear.u0), tspan = big.(prob_ode_linear.tspan))
+prob_ode_2Dlinear_big = remake(prob_ode_2Dlinear, u0 = big.(prob_ode_2Dlinear.u0),
+    tspan = big.(prob_ode_2Dlinear.tspan))
 
 #non-threaded tests
 for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
     dts = 1 ./ 2 .^ (4.25:-1:0.25)
     local sim21 = test_convergence(dts, prob, AdaptiveRadau(min_order = i, max_order = i))
-    @test sim21.𝒪est[:final]≈ i atol=testTol
+    @test sim21.𝒪est[:final]≈i atol=testTol
 end
 #threaded tests
 using OrdinaryDiffEqCore
 for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
     dts = 1 ./ 2 .^ (4.25:-1:0.25)
-    local sim21 = test_convergence(dts, prob, AdaptiveRadau(min_order = i, max_order = i, threading = OrdinaryDiffEqCore.PolyesterThreads()))
-    @test sim21.𝒪est[:final]≈ i atol=testTol
+    local sim21 = test_convergence(dts,
+        prob,
+        AdaptiveRadau(min_order = i, max_order = i,
+            threading = OrdinaryDiffEqCore.PolyesterThreads()))
+    @test sim21.𝒪est[:final]≈i atol=testTol
 end
 
 # test adaptivity

@@ -66,7 +66,7 @@ prob = ODEProblem((u, p, t) -> 1e20 * sin(1e20 * t), 0.1, (0, 1e-19))
 @test solve(prob, Tsit5()).retcode == ReturnCode.Success
 
 #test that we are robust to u0=0, t0!=0
-integ = init(ODEProblem(((u,p,t)->u), 0f0, (20f0, 0f0)), Tsit5())
+integ = init(ODEProblem(((u, p, t) -> u), 0.0f0, (20.0f0, 0.0f0)), Tsit5())
 @test abs(integ.dt) > eps(integ.t)
-integ = init(ODEProblem(((du,u,p,t)->du.=u), [0f0], (20f0, 0f0)), Tsit5())
+integ = init(ODEProblem(((du, u, p, t) -> du .= u), [0.0f0], (20.0f0, 0.0f0)), Tsit5())
 @test abs(integ.dt) > eps(integ.t)

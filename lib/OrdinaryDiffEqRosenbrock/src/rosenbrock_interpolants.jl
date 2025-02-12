@@ -49,7 +49,7 @@ end
         cache::Union{Rosenbrock23Cache, Rosenbrock32Cache},
         idxs::Nothing, T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
-    @inbounds @.. y₀+dt * (c1 * k[1] + c2 * k[2])
+    @inbounds @.. y₀ + dt * (c1 * k[1] + c2 * k[2])
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -57,7 +57,7 @@ end
             Rosenbrock32ConstantCache, Rosenbrock32Cache
         }, idxs, T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
-    @.. y₀[idxs]+dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
+    @.. y₀[idxs] + dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
@@ -66,7 +66,7 @@ end
             Rosenbrock32ConstantCache, Rosenbrock32Cache
         }, idxs::Nothing, T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
-    @inbounds @.. out=y₀ + dt * (c1 * k[1] + c2 * k[2])
+    @inbounds @.. out = y₀ + dt * (c1 * k[1] + c2 * k[2])
     out
 end
 
@@ -76,7 +76,7 @@ end
             Rosenbrock32ConstantCache, Rosenbrock32Cache
         }, idxs, T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
-    @views @.. out=y₀[idxs] + dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
+    @views @.. out = y₀[idxs] + dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
     out
 end
 
@@ -92,7 +92,7 @@ end
             Rosenbrock32ConstantCache, Rosenbrock32Cache
         }, idxs::Nothing, T::Type{Val{1}}, differential_vars)
     @rosenbrock2332pre1
-    @.. c1diff * k[1]+c2diff * k[2]
+    @.. c1diff * k[1] + c2diff * k[2]
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -100,7 +100,7 @@ end
             Rosenbrock32ConstantCache, Rosenbrock32Cache
         }, idxs, T::Type{Val{1}}, differential_vars)
     @rosenbrock2332pre1
-    @.. c1diff * k[1][idxs]+c2diff * k[2][idxs]
+    @.. c1diff * k[1][idxs] + c2diff * k[2][idxs]
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
@@ -109,7 +109,7 @@ end
             Rosenbrock32ConstantCache, Rosenbrock32Cache
         }, idxs::Nothing, T::Type{Val{1}}, differential_vars)
     @rosenbrock2332pre1
-    @.. out=c1diff * k[1] + c2diff * k[2]
+    @.. out = c1diff * k[1] + c2diff * k[2]
     out
 end
 
@@ -119,7 +119,7 @@ end
             Rosenbrock32ConstantCache, Rosenbrock32Cache
         }, idxs, T::Type{Val{1}}, differential_vars)
     @rosenbrock2332pre1
-    @views @.. out=c1diff * k[1][idxs] + c2diff * k[2][idxs]
+    @views @.. out = c1diff * k[1][idxs] + c2diff * k[2][idxs]
     out
 end
 
@@ -128,108 +128,132 @@ From MATLAB ODE Suite by Shampine
 """
 
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCombinedConstantCache, Rodas23WConstantCache, Rodas3PConstantCache, RosenbrockCache, Rodas23WCache, Rodas3PCache},
+        Θ, dt,
+        y₀,
+        y₁,
+        k,
+        cache::Union{RosenbrockCombinedConstantCache, Rodas23WConstantCache,
+            Rodas3PConstantCache, RosenbrockCache, Rodas23WCache, Rodas3PCache},
         idxs::Nothing, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     if !hasproperty(cache, :interp_order) || cache.interp_order == 2
-        @.. Θ1 * y₀+Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
+        @.. Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
     else
-        @.. Θ1 * y₀+Θ * (y₁ + Θ1 * (k[1] + Θ * (k[2] + Θ * k[3])))
+        @.. Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * (k[2] + Θ * k[3])))
     end
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
+        cache::Union{
+            RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
         idxs, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     if !hasproperty(cache, :interp_order) || cache.interp_order == 2
-        @views @.. Θ1 * y₀[idxs]+Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * k[2][idxs]))
+        @views @.. Θ1 * y₀[idxs] + Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * k[2][idxs]))
     else
-        @views @.. Θ1 * y₀[idxs]+Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * (k[2][idxs] + Θ * k[3][idxs])))
+        @views @.. Θ1 * y₀[idxs] +
+                   Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * (k[2][idxs] + Θ * k[3][idxs])))
     end
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
+        cache::Union{
+            RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
         idxs::Nothing, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     if !hasproperty(cache, :interp_order) || cache.interp_order == 2
-        @.. out=Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
+        @.. out = Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
     else
-        @.. out=Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * (k[2] + Θ * k[3])))
+        @.. out = Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * (k[2] + Θ * k[3])))
     end
     out
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
+        cache::Union{
+            RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
         idxs, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     if !hasproperty(cache, :interp_order) || cache.interp_order == 2
-        @views @.. out=Θ1 * y₀[idxs] + Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * k[2][idxs]))
+        @views @.. out = Θ1 * y₀[idxs] + Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * k[2][idxs]))
     else
-        @views @.. out=Θ1 * y₀[idxs]+Θ * (y₁[idxs] +
-            Θ1 * (k[1][idxs] + Θ * (k[2][idxs] + Θ * k[3][idxs])))
+        @views @.. out = Θ1 * y₀[idxs] +
+                         Θ * (y₁[idxs] +
+                          Θ1 * (k[1][idxs] + Θ * (k[2][idxs] + Θ * k[3][idxs])))
     end
     out
 end
 
 # First Derivative
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCache, Rodas23WCache, Rodas3PCache, RosenbrockCombinedConstantCache, Rodas23WConstantCache, Rodas3PConstantCache},
+        Θ, dt,
+        y₀,
+        y₁,
+        k,
+        cache::Union{
+            RosenbrockCache, Rodas23WCache, Rodas3PCache, RosenbrockCombinedConstantCache,
+            Rodas23WConstantCache, Rodas3PConstantCache},
         idxs::Nothing, T::Type{Val{1}}, differential_vars)
     if !hasproperty(cache, :interp_order) || cache.interp_order == 2
-        @.. (k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ + y₁)/dt
+        @.. (k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ + y₁) / dt
     else
-        @.. (k[1] +  Θ * (-2 * k[1] + 2 * k[2] +
-             Θ * (-3 * k[2] + 3 * k[3] - 4 * Θ * k[3])) -
-             y₀ + y₁)/dt
+        @.. (k[1] + Θ * (-2 * k[1] + 2 * k[2] +
+                         Θ * (-3 * k[2] + 3 * k[3] - 4 * Θ * k[3])) -
+             y₀ + y₁) / dt
     end
 end
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
+        cache::Union{
+            RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
         idxs, T::Type{Val{1}}, differential_vars)
     if !hasproperty(cache, :interp_order) || cache.interp_order == 2
-        @views @.. (k[1][idxs] + Θ * (-2 * k[1][idxs] + 2 * k[2][idxs] - 3 * k[2][idxs] * Θ) -
-                    y₀[idxs] + y₁[idxs])/dt
+        @views @.. (k[1][idxs] +
+                    Θ * (-2 * k[1][idxs] + 2 * k[2][idxs] - 3 * k[2][idxs] * Θ) -
+                    y₀[idxs] + y₁[idxs]) / dt
     else
-       @views  @.. (k[1][idxs] + Θ * (-2 * k[1][idxs] + 2 * k[2][idxs] +
-             Θ * (-3 * k[2][idxs] + 3 * k[3][idxs] - 4 * Θ * k[3][idxs])) - y₀[idxs] + y₁[idxs])/dt
+        @views @.. (k[1][idxs] +
+                    Θ * (-2 * k[1][idxs] + 2 * k[2][idxs] +
+                     Θ * (-3 * k[2][idxs] + 3 * k[3][idxs] - 4 * Θ * k[3][idxs])) -
+                    y₀[idxs] + y₁[idxs]) / dt
     end
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
+        cache::Union{
+            RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
         idxs::Nothing, T::Type{Val{1}}, differential_vars)
     if !hasproperty(cache, :interp_order) || cache.interp_order == 2
-        @.. out=(k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ + y₁) / dt
+        @.. out = (k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ + y₁) / dt
     else
-        @.. out=(k[1] + Θ * (-2 * k[1] + 2 * k[2] +
-                Θ * (-3 * k[2] + 3 * k[3] - 4 * Θ * k[3])) - y₀ + y₁) / dt
+        @.. out = (k[1] +
+                   Θ * (-2 * k[1] + 2 * k[2] +
+                        Θ * (-3 * k[2] + 3 * k[3] - 4 * Θ * k[3])) - y₀ + y₁) / dt
     end
     out
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
+        cache::Union{
+            RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
         idxs, T::Type{Val{1}}, differential_vars)
     if !hasproperty(cache, :interp_order) || cache.interp_order == 2
-        @views @.. out=(k[1][idxs] +
-                        Θ *
-                        (-2 * k[1][idxs] + 2 * k[2][idxs] -
-                         3 * k[2][idxs] * Θ) -
-                        y₀[idxs] + y₁[idxs]) / dt
+        @views @.. out = (k[1][idxs] +
+                          Θ *
+                          (-2 * k[1][idxs] + 2 * k[2][idxs] -
+                           3 * k[2][idxs] * Θ) -
+                          y₀[idxs] + y₁[idxs]) / dt
     else
         @views @.. broadcast=false out=(k[1][idxs] +
                                         Θ * (-2 * k[1][idxs] + 2 * k[2][idxs] +
                                          Θ *
-                                         (-3 * k[2][idxs] + 3 * k[3][idxs] - 4 * Θ * k[3][idxs])) -
+                                         (-3 * k[2][idxs] + 3 * k[3][idxs] -
+                                          4 * Θ * k[3][idxs])) -
                                         y₀[idxs] + y₁[idxs]) / dt
     end
     out

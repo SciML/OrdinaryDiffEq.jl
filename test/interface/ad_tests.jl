@@ -319,11 +319,9 @@ end
 K_ = [-1.0 0.0; 1.0 -1.0]
 @test isapprox(ForwardDiff.jacobian(f, K_)[2], 0.00226999, atol = 1e-6)
 
-
-implicit_algs = 
-[FBDF,
- Rosenbrock23,
- TRBDF2]
+implicit_algs = [FBDF,
+    Rosenbrock23,
+    TRBDF2]
 
 @testset "deprecated AD keyword arguments still work with $alg" for alg in implicit_algs
     f = (du, u, p, t) -> du .= -0.5 * u

@@ -43,7 +43,6 @@ end
 @testset "Default Solution Stripping" begin
     stripped_sol = SciMLBase.strip_solution(default_sol)
     @test isnothing(stripped_sol.interp.cache.args)
-
 end
 
 @test_throws SciMLBase.LazyInterpolationException SciMLBase.strip_solution(vern_sol)

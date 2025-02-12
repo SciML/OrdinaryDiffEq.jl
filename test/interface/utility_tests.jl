@@ -10,7 +10,7 @@ using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: WOperator, calc_W, calc_W!, 
     tspan = (0.0, 1.0)
     dt = 0.01
     dtgamma = 0.5dt
-    concrete_W = A - inv(dtgamma)*mm
+    concrete_W = A - inv(dtgamma) * mm
 
     # Out-of-place
     fun = ODEFunction((u, p, t) -> A * u;
