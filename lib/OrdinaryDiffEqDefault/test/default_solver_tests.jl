@@ -27,7 +27,7 @@ vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
 prob_ode_linear_fast = ODEProblem(
     ODEFunction(f_2dlinear, mass_matrix = 2 * I(2)), rand(2), (0.0, 1.0), 1.01)
 sol = solve(prob_ode_linear_fast)
-@test all(isequal(3), sol.alg_choice)
+@test all(isequal(4), sol.alg_choice)
 # for some reason the timestepping here is different from regular Rosenbrock23 (including the initial timestep)
 
 function rober(u, p, t)
