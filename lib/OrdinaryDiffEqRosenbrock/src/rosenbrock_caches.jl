@@ -140,7 +140,6 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
-    J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
@@ -151,6 +150,11 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
 
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
@@ -160,14 +164,6 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
 
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
-    # Update the Jacobian with the correct sparsity pattern if no sparsity was provided to the ODEFunction
-    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity)
-        J = sparsity_pattern(jac_config.coloring_result)
-        W.J = J
-    end
      
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
@@ -193,7 +189,6 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
-    J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
@@ -204,6 +199,12 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
+   
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
 
     Pl, Pr = wrapprecs(
@@ -213,19 +214,7 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
 
-    # If using automatic sparsity detection, the sparsity pattern is unknown when building J and W
-    # once we know the sparsity pattern, use it for J and W
-    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
-        sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
-        J = convert.(eltype(u), sp)
-        if W isa WOperator
-            W.J = J
-        end
-    end
-    
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
@@ -355,7 +344,6 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
-    J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
@@ -365,6 +353,11 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
+    
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
@@ -373,8 +366,7 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
     Rosenbrock33Cache(u, uprev, du, du1, du2, k1, k2, k3, k4,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
@@ -441,7 +433,6 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
-    J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
@@ -452,6 +443,12 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
+    
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
@@ -460,18 +457,6 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
-    # If using automatic sparsity detection, the sparsity pattern is unknown when building J and W
-    # once we know the sparsity pattern, use it for J and W
-    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
-        sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
-        J = convert.(eltype(u), sp)
-        if W isa WOperator
-            W.J = J
-        end
-    end
 
     Rosenbrock34Cache(u, uprev, du, du1, du2, k1, k2, k3, k4,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
@@ -646,7 +631,6 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
-    J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
@@ -657,6 +641,12 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
+
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
@@ -665,18 +655,6 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
-    # If using automatic sparsity detection, the sparsity pattern is unknown when building J and W
-    # once we know the sparsity pattern, use it for J and W
-    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
-        sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
-        J = convert.(eltype(u), sp)
-        if W isa WOperator
-            W.J = J
-        end
-    end
 
     Rodas23WCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
@@ -702,7 +680,6 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
-    J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
@@ -712,6 +689,12 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
+
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+
     linsolve_tmp = zero(rate_prototype)
     linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
     Pl, Pr = wrapprecs(
@@ -721,18 +704,6 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
-    # If using automatic sparsity detection, the sparsity pattern is unknown when building J and W
-    # once we know the sparsity pattern, use it for J and W
-    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
-        sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
-        J = convert.(eltype(u), sp)
-        if W isa WOperator
-            W.J = J
-        end
-    end
 
     Rodas3PCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
@@ -817,9 +788,6 @@ function alg_cache(
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
 
-    # Build J and W matrices
-    J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-
     # Temporary and helper variables
     tmp = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
@@ -829,31 +797,25 @@ function alg_cache(
 
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
-    linsolve_tmp = zero(rate_prototype)
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
+
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
             nothing)..., weight, tmp)
 
+    linsolve_tmp = zero(rate_prototype)
+    linprob = LinearProblem(W, _vec(linsolve_tmp); u0=_vec(tmp))
+
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true))
+        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A=true, alias_b=true),
+        Pl=Pl, Pr=Pr,
+        assumptions=LinearSolve.OperatorAssumptions(true))
 
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
-    # If using automatic sparsity detection, the sparsity pattern is unknown when building J and W
-    # once we know the sparsity pattern, use it for J and W
-    if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
-        sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
-        J = convert.(eltype(u), sp)
-        if W isa WOperator
-            W.J = J
-        end
-    end
-
+    
     # Return the cache struct with vectors
     RosenbrockCache(
         u, uprev, dense, du, du1, du2, ks, fsalfirst, fsallast,
