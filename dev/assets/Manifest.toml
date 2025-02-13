@@ -253,9 +253,9 @@ version = "1.11.0"
 
 [[deps.DiffEqBase]]
 deps = ["ArrayInterface", "ConcreteStructs", "DataStructures", "DocStringExtensions", "EnumX", "EnzymeCore", "FastBroadcast", "FastClosures", "FastPower", "FunctionWrappers", "FunctionWrappersWrappers", "LinearAlgebra", "Logging", "Markdown", "MuladdMacro", "Parameters", "PrecompileTools", "Printf", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "SciMLStructures", "Setfield", "Static", "StaticArraysCore", "Statistics", "TruncatedStacktraces"]
-git-tree-sha1 = "7df50fae7bef8d958a6d4c6ed5a7c3626e419543"
+git-tree-sha1 = "024cfd2a0549908f311da157416edb9cbfa7d1f4"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
-version = "6.162.2"
+version = "6.163.0"
 
     [deps.DiffEqBase.extensions]
     DiffEqBaseCUDAExt = "CUDA"
@@ -1212,15 +1212,17 @@ version = "0.2.2"
 
 [[deps.PreallocationTools]]
 deps = ["Adapt", "ArrayInterface", "ForwardDiff"]
-git-tree-sha1 = "6c62ce45f268f3f958821a1e5192cf91c75ae89c"
+git-tree-sha1 = "8765738bc5a6f1554cb61c5ddfae5bf279e8b110"
 uuid = "d236fae5-4411-538c-8e31-a6e3d9e00b46"
-version = "0.4.24"
+version = "0.4.25"
 
     [deps.PreallocationTools.extensions]
     PreallocationToolsReverseDiffExt = "ReverseDiff"
+    PreallocationToolsSparseConnectivityTracerExt = "SparseConnectivityTracer"
 
     [deps.PreallocationTools.weakdeps]
     ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
+    SparseConnectivityTracer = "9f842d2f-2579-4b1d-911e-f412cf18a3f5"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
@@ -1329,9 +1331,9 @@ version = "0.6.43"
 
 [[deps.SciMLBase]]
 deps = ["ADTypes", "Accessors", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "Expronicon", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "PrecompileTools", "Preferences", "Printf", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLOperators", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface"]
-git-tree-sha1 = "70243d458e69c82d3b928196c9feddb9af857c13"
+git-tree-sha1 = "ffed2507209da5b42c6881944ef41a340ab5449b"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "2.73.0"
+version = "2.74.1"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
@@ -1450,9 +1452,9 @@ version = "2.23.1"
 
 [[deps.SparseMatrixColorings]]
 deps = ["ADTypes", "DataStructures", "DocStringExtensions", "LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "45b5ef11e75839e174d5728fd1e73597e7593634"
+git-tree-sha1 = "97092c0a40d6033b7da27ea15bcf75fd5b446254"
 uuid = "0a514795-09f3-496d-8182-132a7b665d35"
-version = "0.4.12"
+version = "0.4.13"
 
     [deps.SparseMatrixColorings.extensions]
     SparseMatrixColoringsColorsExt = "Colors"
