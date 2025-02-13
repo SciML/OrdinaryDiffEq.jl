@@ -7,7 +7,7 @@ ad = AutoSparse(AutoForwardDiff(), sparsity_detector = TracerSparsityDetector(),
 
 prob = prob_ode_2Dlinear
 
-@test_no_warn solve(prob, Rodas5(autodiff = ad))
+@test_nowarn solve(prob, Rodas5(autodiff = ad))
 
-@test_no_warn solve(prob, Rodas5(autodiff = ad, linsolve = LinearSolve.KrylovJL()))
+@test_nowarn solve(prob, Rodas5(autodiff = ad, linsolve = LinearSolve.KrylovJL()))
 
