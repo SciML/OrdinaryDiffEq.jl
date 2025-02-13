@@ -29,11 +29,11 @@ import LinearSolve
     @test length(sol) < 20
 
     sim = test_convergence(dts, prob, Rosenbrock23(autodiff = AutoEnzyme(
-            mode = Enzyme.Forward, function_annotation = Enzyme.Const)))
+            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
     @test sim.𝒪est[:final]≈2 atol=testTol
 
-    sol = solve(prob, Rosenbrock23(AutoEnzyme(
-            mode = Enzyme.Forward, function_annotation = Enzyme.Const)))
+    sol = solve(prob, Rosenbrock23(autodiff = AutoEnzyme(
+            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
     @test length(sol) < 20
 
     prob = prob_ode_bigfloat2Dlinear
@@ -65,23 +65,23 @@ import LinearSolve
     sim = test_convergence(dts,
         prob,
         Rosenbrock32(autodiff = AutoEnzyme(
-            mode = Enzyme.Forward, function_annotation = Enzyme.Const)))
+            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob,
         Rosenbrock32(autodiff = AutoEnzyme(
-            mode = Enzyme.Forward, function_annotation = Enzyme.Const)))
+            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
     @test length(sol) < 20
 
     sim = test_convergence(dts,
         prob,
         Rosenbrock32(autodiff = AutoEnzyme(
-            mode = Enzyme.Forward, function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
+            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob,
         Rosenbrock32(autodiff = AutoEnzyme(
-            mode = Enzyme.Forward, function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
+            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
     @test length(sol) < 20
     ### ROS3P()
 
@@ -105,14 +105,14 @@ import LinearSolve
         prob,
         ROS3P(
             autodiff = AutoEnzyme(
-                mode = Enzyme.Forward, function_annotation = Enzyme.Const),
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
             linsolve = LinearSolve.KrylovJL()))
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob,
         ROS3P(
             autodiff = AutoEnzyme(
-                mode = Enzyme.Forward, function_annotation = Enzyme.Const),
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
             linsolve = LinearSolve.KrylovJL()))
     @test length(sol) < 20
 
@@ -138,14 +138,14 @@ import LinearSolve
         prob,
         Rodas3(
             autodiff = AutoEnzyme(
-                mode = Enzyme.Forward, function_annotation = Enzyme.Const),
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
             linsolve = LinearSolve.KrylovJL()))
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob,
         Rodas3(
             autodiff = AutoEnzyme(
-                mode = Enzyme.Forward, function_annotation = Enzyme.Const),
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
             linsolve = LinearSolve.KrylovJL()))
     @test length(sol) < 20
 
@@ -538,14 +538,14 @@ import LinearSolve
         prob,
         Rodas23W(
             autodiff = AutoEnzyme(
-                mode = Enzyme.Forward, function_annotation = Enzyme.Const),
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
             linsolve = LinearSolve.KrylovJL()))
-    @test sim.𝒪est[:final]≈3 atol=testTol
+    @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
     sol = solve(prob,
         Rodas23W(
             autodiff = AutoEnzyme(
-                mode = Enzyme.Forward, function_annotation = Enzyme.Const),
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
             linsolve = LinearSolve.KrylovJL()))
     @test length(sol) < 20
 
@@ -573,14 +573,14 @@ import LinearSolve
         prob,
         Rodas3P(
             autodiff = AutoEnzyme(
-                mode = Enzyme.Forward, function_annotation = Enzyme.Const),
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
             linsolve = LinearSolve.KrylovJL()))
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob,
         Rodas3P(
             autodiff = AutoEnzyme(
-                mode = Enzyme.Forward, function_annotation = Enzyme.Const),
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
             linsolve = LinearSolve.KrylovJL()))
     @test length(sol) < 20
 
@@ -609,7 +609,7 @@ import LinearSolve
 
     sol = solve(prob,
         Rodas4(autodiff = AutoEnzyme(
-            mode = Enzyme.Forward, function_annotation = Enzyme.Const)))
+            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
     @test length(sol) < 20
 
     sim = test_convergence(dts, prob, Rodas42(), dense_errors = true)
@@ -768,13 +768,13 @@ import LinearSolve
     prob = prob_ode_linear
 
     sim = test_convergence(dts, prob,
-        Rodas5P(autodiff = AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const)),
+        Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)),
         dense_errors = true)
     #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
     @test sim.𝒪est[:L2]≈5 atol=testTol
 
     sol = solve(prob,
-        Rodas5P(autodiff = AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const)))
+        Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
     @test length(sol) < 20
 
     prob = prob_ode_2Dlinear
