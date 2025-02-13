@@ -252,7 +252,7 @@ end
 resize_f!(f, i) = nothing
 
 function resize_f!(f::SplitFunction, i)
-    resize!(f.cache, i)
+    resize!(f._func_cache, i)
     return nothing
 end
 
