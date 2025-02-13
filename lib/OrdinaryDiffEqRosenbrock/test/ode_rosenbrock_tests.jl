@@ -698,14 +698,16 @@ import LinearSolve
 
     sim = test_convergence(dts, prob,
         Rodas5P(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const, linsolve = LinearSolve.KrylovJL())),
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+            linsolve = LinearSolve.KrylovJL()),
         dense_errors = true)
     #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
     @test sim.𝒪est[:L2]≈5 atol=testTol
 
     sim = test_convergence(dts, prob,
         Rodas5P(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const, linsolve = LinearSolve.KrylovJL_GMRES())),
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+            linsolve = LinearSolve.KrylovJL_GMRES()),
         dense_errors = true)
     #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
     @test sim.𝒪est[:L2]≈5 atol=testTol
