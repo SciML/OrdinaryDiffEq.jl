@@ -1,5 +1,5 @@
 # This definitely needs cleaning
-using OrdinaryDiffEqBDF, ODEProblemLibrary, DiffEqDevTools, ADTypes
+using OrdinaryDiffEqBDF, ODEProblemLibrary, DiffEqDevTools, ADTypes, Enzyme
 using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NonlinearSolveAlg
 using Test, Random
 Random.seed!(100)
