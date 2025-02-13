@@ -238,7 +238,6 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             fsalfirst = zero(rate_prototype)
             fsallast = zero(rate_prototype)
             dT = zero(rate_prototype)
-            J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
             tmp = zero(rate_prototype)
             atmp = similar(u, uEltypeNoUnits)
             weight = similar(u, uEltypeNoUnits)
@@ -247,20 +246,15 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tf = TimeGradientWrapper(f,uprev,p)
             uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
+            
+            grad_config = build_grad_config(alg,f,tf,du1,t)
+            jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+            J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+
             linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
             linsolve = init(linprob,alg.linsolve,alias = LinearAliasSpecifier(alias_A=true,alias_b=true),
                             Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-                            Pr = Diagonal(_vec(weight)))
-            grad_config = build_grad_config(alg,f,tf,du1,t)
-            jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-
-            if alg_autodiff(alg) isa AutoSparse && isnothing(f.sparsity) && !isnothing(jac_config)
-                sp = OrdinaryDiffEqDifferentiation.SparseMatrixColorings.sparsity_pattern(jac_config)
-                J = convert.(eltype(u), sp)
-                if W isa WOperator
-                    W.J = J
-                end
-            end         
+                            Pr = Diagonal(_vec(weight))) 
             $cachename($(valsyms...))
         end
     end
