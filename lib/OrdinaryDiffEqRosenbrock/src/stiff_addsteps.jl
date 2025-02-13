@@ -22,15 +22,15 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
             autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
         end
 
-        dT = DI.derivative(tf, autodiff_alg)
+        dT = OrdinaryDiffEqDifferentiation.DI.derivative(tf, autodiff_alg,t)
 
         mass_matrix = f.mass_matrix
         if uprev isa Number
-            J = DI.derivative(uf, autodiff_alg, uprev)
+            J = OrdinaryDiffEqDifferentiation.DI.derivative(uf, autodiff_alg, uprev)
             W = neginvdtγ .+ J
         else
             #J = ForwardDiff.jacobian(uf, uprev)
-            J = DI.jacobian(uf, autodiff_alg, uprev)
+            J = OrdinaryDiffEqDifferentiation.DI.jacobian(uf, autodiff_alg, uprev)
             if mass_matrix isa UniformScaling
                 W = neginvdtγ * mass_matrix + J
             else
@@ -75,7 +75,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
             autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
         end
 
-        dT = DI.derivative(tf, autodiff_alg, t)
+        dT = OrdinaryDiffEqDifferentiation.DI.derivative(tf, autodiff_alg, t)
 
         # Jacobian
         uf.t = t
@@ -85,7 +85,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
             W = mass_matrix / dtgamma - J
         else
             #J = ForwardDiff.derivative(uf, uprev)
-            J = DI.derivative(uf, autodiff_alg, uprev)
+            J = OrdinaryDiffEqDifferentiation.DI.derivative(uf, autodiff_alg, uprev)
             W = 1 / dtgamma - J
         end
 
