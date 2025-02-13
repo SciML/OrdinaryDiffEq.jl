@@ -818,6 +818,99 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
     return J, W
 end
 
+# Version that uses the jac_config to get the jacobian sparsity pattern, in the case of automatic sparsity detection
+function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUnits},
+        ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
+    # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
+    # TODO - if jvp given, make it SciMLOperators.FunctionOperator
+    # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
+    islin, isode = islinearfunction(f, alg)
+    if isdefined(f, :W_prototype) && (f.W_prototype isa AbstractSciMLOperator)
+        # We use W_prototype when it is provided as a SciMLOperator, and in this case we require jac_prototype to be a SciMLOperator too.
+        if !(f.jac_prototype isa AbstractSciMLOperator)
+            error("SciMLOperator for W_prototype only supported when jac_prototype is a SciMLOperator, but got $(typeof(f.jac_prototype))")
+        end
+        W = f.W_prototype
+        J = f.jac_prototype
+    elseif f.jac_prototype isa AbstractSciMLOperator
+        W = WOperator{IIP}(f, u, dt)
+        J = W.J
+    elseif islin
+        J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
+        W = WOperator{IIP}(f.mass_matrix, dt, J, u)
+    elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
+           (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))
+
+        # If factorization, then just use the jac_prototype
+        J = similar(f.jac_prototype)
+        W = similar(J)
+    elseif (IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
+            alg.linsolve !== nothing &&
+            !LinearSolve.needs_concrete_A(alg.linsolve))
+        # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
+        # Jacobian is a bad idea and create a fully matrix-free solver. This can
+        # be overridden with concrete_jac.
+        jac_op = JacobianOperator(
+            f, u, p, t, jvp_autodiff = alg_autodiff(alg), skip_vjp = Val(true))
+        jacvec = StatefulJacobianOperator(jac_op, u, p, t)
+
+        J = jacvec
+        W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
+    elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
+           concrete_jac(alg) !== nothing && concrete_jac(alg)
+        # The linear solver does not need a concrete Jacobian, but the user has
+        # asked for one. This will happen when the Jacobian is used in the preconditioner
+        # Thus setup JacVec and a concrete J, using sparsity when possible
+        _f = islin ? (isode ? f.f : f.f1.f) : f
+        J = if f.jac_prototype === nothing
+            if alg_autodiff(alg) isa AutoSparse
+                isnothing(f.sparsity) ?
+                convert.(eltype(u), sparsity_pattern(jac_config)) : f.sparsity
+            else
+                ArrayInterface.undefmatrix(u)
+            end
+        else
+            deepcopy(f.jac_prototype)
+        end
+        W = if J isa StaticMatrix
+            StaticWOperator(J, false)
+        else
+            jac_op = JacobianOperator(
+                f, u, p, t, jvp_autodiff = alg_autodiff(alg), skip_vjp = Val(true))
+            jacvec = StatefulJacobianOperator(jac_op, u, p, t)
+
+            WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
+        end
+    else
+        J = if !IIP && DiffEqBase.has_jac(f)
+            if f isa DAEFunction
+                f.jac(uprev, uprev, p, one(t), t)
+            else
+                f.jac(uprev, p, t)
+            end
+        elseif f.jac_prototype === nothing
+            if alg_autodiff(alg) isa AutoSparse
+                isnothing(f.sparsity) ?
+                convert.(eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config)) : f.sparsity
+            else
+                ArrayInterface.undefmatrix(u)
+            end
+        else
+            deepcopy(f.jac_prototype)
+        end
+        W = if alg isa DAEAlgorithm
+            J
+        elseif IIP
+            similar(J)
+        elseif J isa StaticMatrix
+            StaticWOperator(J, false)
+        else
+            ArrayInterface.lu_instance(J)
+        end
+    end
+    return J, W
+end
+
 build_uf(alg, nf, t, p, ::Val{true}) = UJacobianWrapper(nf, t, p)
 build_uf(alg, nf, t, p, ::Val{false}) = UDerivativeWrapper(nf, t, p)
 
