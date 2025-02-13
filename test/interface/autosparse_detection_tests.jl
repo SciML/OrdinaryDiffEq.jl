@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, LinearSolve, ADTypes, ForwardDiff, SparseConnectivityTracer, SparseMatrixColorings
+using Test, OrdinaryDiffEq, LinearSolve, ADTypes, ForwardDiff, SparseConnectivityTracer, SparseMatrixColorings
 import ODEProblemLibrary: prob_ode_2Dlinear
                     
 
