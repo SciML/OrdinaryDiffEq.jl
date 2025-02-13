@@ -19,7 +19,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         autodiff_alg = cache.autodiff
 
         if autodiff_alg isa AutoFiniteDiff
-            autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
+            autodiff_alg = SciMLBase.@set autodiff_alg.dir = sign(dt)
         end
 
         dT = OrdinaryDiffEqDifferentiation.DI.derivative(tf, autodiff_alg,t)
@@ -72,7 +72,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
         autodiff_alg = cache.autodiff
 
         if autodiff_alg isa AutoFiniteDiff
-            autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
+            autodiff_alg = SciMLBase.@set autodiff_alg.dir = sign(dt)
         end
 
         dT = OrdinaryDiffEqDifferentiation.DI.derivative(tf, autodiff_alg, t)
