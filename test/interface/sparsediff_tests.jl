@@ -2,6 +2,7 @@ using Test
 using OrdinaryDiffEq
 using SparseArrays
 using LinearAlgebra
+using LinearSolve
 using ADTypes
 using Enzyme
 
@@ -54,7 +55,7 @@ for f in [f_oop, f_ip]
     prob_std = ODEProblem(odefun_std, u0, tspan)
 
     for ad in [AutoForwardDiff(), AutoFiniteDiff(),
-        AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const)], linsolve in [nothing, KrylovJL_GMRES()]
+        AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const)], linsolve in [nothing, LinearSolve.KrylovJL_GMRES()]
         for Solver in [Rodas5, Rosenbrock23, Trapezoid, KenCarp4, FBDF]
             for tol in [nothing, 1e-10]
                 sol_std = solve(prob_std, Solver(autodiff = ad, linsolve = linsolve), reltol = tol, abstol = tol)
