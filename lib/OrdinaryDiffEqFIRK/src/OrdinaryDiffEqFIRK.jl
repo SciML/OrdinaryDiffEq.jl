@@ -27,6 +27,7 @@ import LinearSolve
 import FastBroadcast: @..
 import OrdinaryDiffEqCore
 import FastPower
+using SciMLBase: LinearAliasSpecifier
 
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_config,
                                      UDerivativeWrapper, calc_J!, dolinsolve, calc_J,

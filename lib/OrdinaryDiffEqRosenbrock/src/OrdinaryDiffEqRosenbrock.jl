@@ -36,6 +36,7 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
 
 using Reexport
 @reexport using DiffEqBase
+using SciMLBase: LinearAliasSpecifier
 
 import OrdinaryDiffEqCore: alg_autodiff
 import OrdinaryDiffEqCore
