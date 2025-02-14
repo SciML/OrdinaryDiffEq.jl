@@ -70,10 +70,14 @@ function DiffEqBase.prepare_alg(
                 end
             else
                 idxs = findall(!iszero, prob.f.mass_matrix)
-                @. @view(sparsity[idxs]) = @view(prob.f.mass_matrix[idxs])
+                for idx in idxs
+                    sparsity[idx] = prob.f.mass_matrix[idx]
+                end
 
                 if !isnothing(jac_prototype)
-                    @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
+                    for idx in idxs
+                        jac_prototype[idx] = f.mass_matrix[idx]
+                    end
                 end
                 
             end
