@@ -248,7 +248,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
             linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
-            linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+            linsolve = init(linprob,alg.linsolve,alias = LinearAliasSpecifier(alias_A=true,alias_b=true),
                             Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
                             Pr = Diagonal(_vec(weight)))
             grad_config = build_grad_config(alg,f,tf,du1,t)
