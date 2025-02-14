@@ -231,6 +231,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     if normresid > integrator.opts.abstol
         throw(CheckInitFailureError(normresid, integrator.opts.abstol))
     end
+end
+
 function _initialize_dae!(integrator, prob::AbstractDEProblem, alg::CheckInit,
         isinplace::Union{Val{true}, Val{false}})
     SciMLBase.get_initial_values(
