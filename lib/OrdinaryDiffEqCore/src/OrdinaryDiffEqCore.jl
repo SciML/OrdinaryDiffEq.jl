@@ -63,7 +63,7 @@ using FastBroadcast: @.., True, False
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
                  ODEAliasSpecifier
 
-import SciMLBase: AbstractNonlinearProblem, alg_order
+import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
 
 import DiffEqBase: calculate_residuals,
                    calculate_residuals!, unwrap_cache,
