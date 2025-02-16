@@ -1286,6 +1286,7 @@ struct ESDIRK437L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    autodiff::AD
 end
 function ESDIRK437L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
