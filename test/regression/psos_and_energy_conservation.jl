@@ -90,7 +90,7 @@ end
 
 # energy conserving callback:
 # important to use save = false, I don't want rescaling points
-cb = ManifoldProjection(ghh, abstol = 1e-13, save = false)
+cb = ManifoldProjection(ghh, abstol = 1e-13, save = false, autodiff = AutoForwardDiff())
 
 # Callback for Poincare surface of section
 function psos_callback(j, direction = +1, offset::Real = 0,
