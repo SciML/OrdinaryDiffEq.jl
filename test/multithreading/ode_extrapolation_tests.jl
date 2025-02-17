@@ -1,5 +1,5 @@
 # Import packages
-using OrdinaryDiffEqExtrapolation, DiffEqDevTools, Test, Random
+using OrdinaryDiffEqExtrapolation, RecursiveFactorization, DiffEqDevTools, Test, Random
 
 println("Running on $(Threads.nthreads()) thread(s).")
 
