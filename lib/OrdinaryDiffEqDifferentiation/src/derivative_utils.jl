@@ -784,8 +784,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         W = if J isa StaticMatrix
             StaticWOperator(J, false)
         else
-            jac_op = JacobianOperator(f, u, p, t, jvp_autodiff = alg_autodiff(alg), skip_vjp = Val(true))
-            jacvec = StatefulJacobianOperator(jac_op, u, p, t)
+            jacvec = JVPCache(f, u, p, t, autodiff = alg_autodiff(alg))
 
             WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
         end
@@ -850,9 +849,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
         # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
         # Jacobian is a bad idea and create a fully matrix-free solver. This can
         # be overridden with concrete_jac.
-        jac_op = JacobianOperator(
-            f, u, p, t, jvp_autodiff = alg_autodiff(alg), skip_vjp = Val(true))
-        jacvec = StatefulJacobianOperator(jac_op, u, p, t)
+        jacvec = JVPCache(f, u, p, t, autodiff = alg_autodiff(alg))
 
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
@@ -876,9 +873,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
         W = if J isa StaticMatrix
             StaticWOperator(J, false)
         else
-            jac_op = JacobianOperator(
-                f, u, p, t, jvp_autodiff = alg_autodiff(alg), skip_vjp = Val(true))
-            jacvec = StatefulJacobianOperator(jac_op, u, p, t)
+            jacvec = JVPCache(f, u, p, t, autodiff = alg_autodiff(alg))
 
             WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
         end
