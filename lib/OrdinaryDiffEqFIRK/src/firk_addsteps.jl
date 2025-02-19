@@ -363,28 +363,20 @@ end
 if fail_convergence
     integrator.force_stepfail = true
     integrator.stats.nnonlinconvfail += 1
-    return
+    error("This shouldn't happen. Report a bug please.")
 end
 cache.ηold = η
 cache.iter = iter
 
 u = @.. broadcast=false uprev+z3
 
-if integrator.EEst <= oneunit(integrator.EEst)
-    cache.dtprev = dt
-    if alg.extrapolant != :constant
-        cache.cont1 = @.. broadcast=false (z2 - z3)/c2m1
-        tmp = @.. broadcast=false (z1 - z2)/c1mc2
-        cache.cont2 = @.. broadcast=false (tmp - cache.cont1)/c1m1
-        cache.cont3 = @.. broadcast=false cache.cont2-(tmp - z1 / c1) / c2
-    end
+if alg.extrapolant != :constant
+    cache.cont1 = @.. broadcast=false (z2 - z3)/c2m1
+    tmp = @.. broadcast=false (z1 - z2)/c1mc2
+    cache.cont2 = @.. broadcast=false (tmp - cache.cont1)/c1m1
+    cache.cont3 = @.. broadcast=false cache.cont2-(tmp - z1 / c1) / c2
 end
-
-integrator.fsallast = f(u, p, t + dt)
 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-integrator.k[1] = integrator.fsalfirst
-integrator.k[2] = integrator.fsallast
-integrator.u = u
 return
 end
 
