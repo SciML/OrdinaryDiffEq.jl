@@ -390,7 +390,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     # TODO: add `isJcurrent` support for Rosenbrock solvers
     if !isnewton(nlsolver)
         isfreshJ = !(integrator.alg isa CompositeAlgorithm) &&
-                   (integrator.iter > 1 && errorfail && !integrator.u_modified)
+                   (!integrator.u_modified)
         return !isfreshJ, true
     end
     isfirstcall(nlsolver) && return true, true
@@ -683,9 +683,9 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
     # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
     islin, isode = islinearfunction(f, alg)
-    if isdefined(f, :W_prototype) && (f.W_prototype isa AbstractSciMLOperator)
-        # We use W_prototype when it is provided as a SciMLOperator, and in this case we require jac_prototype to be a SciMLOperator too.
-        if !(f.jac_prototype isa AbstractSciMLOperator)
+    if isdefined(f, :W_prototype) && !isnothing(f.W_prototype)
+        # If W_prototype is a SciMLOperator, we require jac_prototype to be a SciMLOperator too.
+        if f.W_prototype isa AbstractSciMLOperator && !(f.jac_prototype isa AbstractSciMLOperator)
             error("SciMLOperator for W_prototype only supported when jac_prototype is a SciMLOperator, but got $(typeof(f.jac_prototype))")
         end
         W = f.W_prototype
@@ -702,7 +702,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # If factorization, then just use the jac_prototype
         J = similar(f.jac_prototype)
         W = similar(J)
-    elseif (IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
+    elseif (IIP && (concrete_jac(alg) != true) &&
             alg.linsolve !== nothing &&
             !LinearSolve.needs_concrete_A(alg.linsolve))
         # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
@@ -715,10 +715,10 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
     elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
-           concrete_jac(alg) !== nothing && concrete_jac(alg)
+           concrete_jac(alg) == true
         # The linear solver does not need a concrete Jacobian, but the user has
         # asked for one. This will happen when the Jacobian is used in the preconditioner
-        # Thus setup JacVec and a concrete J, using sparsity when possible
+        # or when jvp computation is expensive. Therefore, use concrete J, and sparsity when possible
         _f = islin ? (isode ? f.f : f.f1.f) : f
         J = if f.jac_prototype === nothing
             ArrayInterface.undefmatrix(u)
@@ -733,9 +733,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             else
                 (u, p, t) -> _f(u, p, t)
             end
-            jacvec = JacVec(__f, copy(u), p, t;
-                autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
-            WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
+            WOperator{IIP}(f.mass_matrix, dt, J, u, nothing)
         end
     else
         J = if !IIP && DiffEqBase.has_jac(f)
