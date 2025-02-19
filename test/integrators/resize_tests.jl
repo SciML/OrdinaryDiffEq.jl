@@ -1,6 +1,8 @@
-using OrdinaryDiffEq, Test, ADTypes, SparseMatrixColorings
+using OrdinaryDiffEq, Test, ADTypes, SparseMatrixColorings, DiffEqBase, ForwardDiff, SciMLBase
+import DifferentiationInterface as DI
+
 f(du, u, p, t) = du .= u
-prob = ODEProblem(f, [1.0], (0.0, 1.0))
+prob = ODEProblem{true, SciMLBase.FullSpecialize}(f, [1.0], (0.0, 1.0))
 
 i = init(prob, Tsit5())
 resize!(i, 5)
@@ -31,11 +33,11 @@ resize!(i, 5)
 @test size(i.cache.nlsolver.cache.J) == (5, 5)
 @test size(i.cache.nlsolver.cache.W) == (5, 5)
 @test length(i.cache.nlsolver.cache.du1) == 5
-@test length(i.cache.nlsolver.cache.jac_config.pushforward_prep.xdual_tmp) == 5
-@test length(i.cache.nlsolver.cache.jac_config.pushforward_prep.ydual_tmp) == 5
-#@test length(i.cache.nlsolver.cache.jac_config.t) == 5
-#@test length(i.cache.nlsolver.cache.jac_config.p) == 5
 @test length(i.cache.nlsolver.cache.weight) == 5
+@test all(size(DI.jacobian(
+    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.nlsolver.cache.jac_config,
+    AutoForwardDiff(tag = ForwardDiff.Tag(DiffEqBase.OrdinaryDiffEqTag(), Float64)), rand(5))) .==
+          5)
 solve!(i)
 
 i = init(prob, ImplicitEuler(; autodiff = AutoFiniteDiff()))
@@ -54,9 +56,10 @@ resize!(i, 5)
 @test size(i.cache.nlsolver.cache.J) == (5, 5)
 @test size(i.cache.nlsolver.cache.W) == (5, 5)
 @test length(i.cache.nlsolver.cache.du1) == 5
-@test length(SparseMatrixColorings.column_colors(i.cache.nlsolver.cache.jac_config)) == 5
-
 @test length(i.cache.nlsolver.cache.weight) == 5
+@test all(size(DI.jacobian(
+    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.nlsolver.cache.jac_config,
+    AutoFiniteDiff(), rand(5))) .== 5)
 solve!(i)
 
 i = init(prob, Rosenbrock23())
@@ -76,7 +79,10 @@ resize!(i, 5)
 @test size(i.cache.J) == (5, 5)
 @test size(i.cache.W) == (5, 5)
 @test length(i.cache.linsolve_tmp) == 5
-@test length(SparseMatrixColorings.column_colors(i.cache.jac_config)) == 5
+@test all(size(DI.jacobian(
+    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.jac_config,
+    AutoForwardDiff(tag = ForwardDiff.Tag(DiffEqBase.OrdinaryDiffEqTag(), Float64)), rand(5))) .==
+          5)
 solve!(i)
 
 i = init(prob, Rosenbrock23(; autodiff = AutoFiniteDiff()))
@@ -96,7 +102,9 @@ resize!(i, 5)
 @test size(i.cache.J) == (5, 5)
 @test size(i.cache.W) == (5, 5)
 @test length(i.cache.linsolve_tmp) == 5
-@test length(SparseMatrixColorings.column_colors(i.cache.jac_config)) == 5
+@test all(size(DI.jacobian(
+    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.jac_config,
+    AutoFiniteDiff(), rand(5))) .== 5)
 solve!(i)
 
 function f(du, u, p, t)
