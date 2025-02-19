@@ -50,55 +50,16 @@ function DiffEqBase.prepare_alg(
         p, prob) where {AD, FDT, T}
 
 
-    autodiff = prepare_ADType(alg_autodiff(alg), prob, u0, p, standardtag(alg))
+    prepped_AD = prepare_ADType(alg_autodiff(alg), prob, u0, p, standardtag(alg))
 
-    #sparsity preparation
-
-    jac_prototype = prob.f.jac_prototype
-    sparsity = prob.f.sparsity
-
-    if !isnothing(sparsity) && !(autodiff isa AutoSparse)
-
-        if sparsity isa SparseMatrixCSC
-            if prob.f.mass_matrix isa UniformScaling
-                idxs = diagind(sparsity)
-                @. @view(sparsity[idxs]) = 1
-
-                if !isnothing(jac_prototype)
-                    @. @view(jac_prototype[idxs]) = 1
-                end
-            else
-                idxs = findall(!iszero, prob.f.mass_matrix)
-                for idx in idxs
-                    sparsity[idx] = prob.f.mass_matrix[idx]
-                end
-
-                if !isnothing(jac_prototype)
-                    for idx in idxs
-                        jac_prototype[idx] = f.mass_matrix[idx]
-                    end
-                end
-                
-            end
-        end
-
-        # KnownJacobianSparsityDetector needs an AbstractMatrix
-        sparsity = sparsity isa MatrixOperator ? sparsity.A : sparsity
-
-        color_alg = DiffEqBase.has_colorvec(prob.f) ?
-                    SparseMatrixColorings.ConstantColoringAlgorithm(
-            sparsity, prob.f.colorvec) : SparseMatrixColorings.GreedyColoringAlgorithm()
-
-        sparsity_detector = ADTypes.KnownJacobianSparsityDetector(sparsity)
-
-        autodiff = AutoSparse(
-            autodiff, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg)
-    end
+    sparse_prepped_AD = prepare_user_sparsity(prepped_AD, prob)
 
     # if u0 is a StaticArray or Complex or Dual etc. don't use sparsity
     if (((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) || eltype(u0) <: ForwardDiff.Dual || (!(prob.f isa DAEFunction) && prob.f.mass_matrix isa MatrixOperator)) && autodiff isa AutoSparse)    
         @warn "Input type or problem definition is incompatible with sparse automatic differentiation. Switching to using dense automatic differentiation."
-        autodiff = ADTypes.dense_ad(autodiff)
+        autodiff = ADTypes.dense_ad(sparse_prepped_AD)
+    else
+        autodiff = sparse_prepped_AD
     end
 
     return remake(alg, autodiff = autodiff)
@@ -134,6 +95,49 @@ function prepare_ADType(alg::AutoFiniteDiff, prob, u0, p, standardtag)
          return AutoFiniteDiff(fdtype = Val{:forward}())
     end
     return alg
+end
+
+function prepare_user_sparsity(ad_alg, prob)
+    jac_prototype = prob.f.jac_prototype
+    sparsity = prob.f.sparsity
+
+    if !isnothing(sparsity) && !(ad_alg isa AutoSparse)
+        if sparsity isa SparseMatrixCSC
+            if prob.f.mass_matrix isa UniformScaling
+                idxs = diagind(sparsity)
+                @. @view(sparsity[idxs]) = 1
+
+                if !isnothing(jac_prototype)
+                    @. @view(jac_prototype[idxs]) = 1
+                end
+            else
+                idxs = findall(!iszero, prob.f.mass_matrix)
+                for idx in idxs
+                    sparsity[idx] = prob.f.mass_matrix[idx]
+                end
+
+                if !isnothing(jac_prototype)
+                    for idx in idxs
+                        jac_prototype[idx] = f.mass_matrix[idx]
+                    end
+                end
+            end
+        end
+
+        # KnownJacobianSparsityDetector needs an AbstractMatrix
+        sparsity = sparsity isa MatrixOperator ? sparsity.A : sparsity
+
+        color_alg = DiffEqBase.has_colorvec(prob.f) ?
+                    SparseMatrixColorings.ConstantColoringAlgorithm(
+            sparsity, prob.f.colorvec) : SparseMatrixColorings.GreedyColoringAlgorithm()
+
+        sparsity_detector = ADTypes.KnownJacobianSparsityDetector(sparsity)
+
+        return AutoSparse(
+            ad_alg, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg)
+    else
+        return ad_alg
+    end
 end
 
 function prepare_ADType(alg::AbstractADType, prob, u0,p,standardtag)
