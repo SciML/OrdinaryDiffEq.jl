@@ -25,8 +25,8 @@ using LinearAlgebra: I, UniformScaling, mul!, lu
 import LinearSolve
 import FastBroadcast: @..
 import OrdinaryDiffEqCore
+import OrdinaryDiffEqCore: _ode_interpolant, _ode_interpolant!, has_stiff_interpolation
 import FastPower
-
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_config,
                                      UDerivativeWrapper, calc_J!, dolinsolve, calc_J,
                                      islinearfunction
@@ -44,6 +44,8 @@ include("controllers.jl")
 include("firk_caches.jl")
 include("firk_tableaus.jl")
 include("firk_perform_step.jl")
+include("firk_interpolants.jl")
+include("firk_addsteps.jl")
 include("integrator_interface.jl")
 
 export RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau

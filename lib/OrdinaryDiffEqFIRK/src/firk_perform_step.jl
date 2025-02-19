@@ -50,7 +50,7 @@ function initialize!(integrator, cache::RadauIIA3Cache)
 end
 
 function initialize!(integrator, cache::RadauIIA5Cache)
-    integrator.kshortsize = 2
+    integrator.kshortsize = 5 #2 for fsalfirst and fsallast and 3 for the collocation terms
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -758,6 +758,7 @@ end
         cache.dtprev = dt
         if alg.extrapolant != :constant
             @.. broadcast=false cache.cont1=(z2 - z3) / c2m1
+            k[3] = cont1
             @.. broadcast=false tmp=(z1 - z2) / c1mc2
             @.. broadcast=false cache.cont2=(tmp - cache.cont1) / c1m1
             @.. broadcast=false cache.cont3=cache.cont2 - (tmp - z1 / c1) / c2
