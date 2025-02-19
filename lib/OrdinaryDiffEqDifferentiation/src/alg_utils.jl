@@ -54,7 +54,6 @@ function DiffEqBase.prepare_alg(
 
     #sparsity preparation
 
-
     jac_prototype = prob.f.jac_prototype
     sparsity = prob.f.sparsity
 
@@ -96,17 +95,13 @@ function DiffEqBase.prepare_alg(
             autodiff, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg)
     end
 
-
-
-    # if u0 is a StaticArray or Complex or Dual, don't use sparsity
+    # if u0 is a StaticArray or Complex or Dual etc. don't use sparsity
     if (((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) || eltype(u0) <: ForwardDiff.Dual || (!(prob.f isa DAEFunction) && prob.f.mass_matrix isa MatrixOperator)) && autodiff isa AutoSparse)    
-        # should add a warning letting them know that their sparsity isn't respected
+        @warn "Input type or problem definition is incompatible with sparse automatic differentiation. Switching to using dense automatic differentiation."
         autodiff = ADTypes.dense_ad(autodiff)
     end
 
-    alg = remake(alg, autodiff = autodiff)
-
-    return alg
+    return remake(alg, autodiff = autodiff)
 end
 
 function prepare_ADType(autodiff_alg::AutoSparse, prob, u0, p, standardtag)
@@ -128,26 +123,6 @@ function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
         autodiff_alg = AutoForwardDiff(chunksize = 1, tag = tag)
     end
 
-    #L = StaticArrayInterface.known_length(typeof(u0))
-    #if L === nothing # dynamic sized
-        # If chunksize is zero, pick chunksize right at the start of solve and
-        # then do function barrier to infer the full solve
-    #    x = if prob.f.colorvec === nothing
-    #        length(u0)
-    #    else
-    #        maximum(prob.f.colorvec)
-    #    end
-
-    #    cs = ForwardDiff.pickchunksize(x)
-    #    return remake(alg,
-    #        autodiff = AutoForwardDiff(
-    #            chunksize = cs, tag = tag))
-    #else # statically sized
-    #    cs = pick_static_chunksize(Val{L}())
-    #    cs = SciMLBase._unwrap_val(cs)
-    #    return remake(
-    #        alg, autodiff = AutoForwardDiff(chunksize = cs, tag = tag))
-    #end
     autodiff_alg
 end
 
@@ -164,10 +139,6 @@ end
 function prepare_ADType(alg::AbstractADType, prob, u0,p,standardtag)
     return alg
 end
-
-#function prepare_ADType(alg::DiffEqAutoAD, prob, u0, p, standardtag)
-
-#end
 
 @generated function pick_static_chunksize(::Val{chunksize}) where {chunksize}
     x = ForwardDiff.pickchunksize(chunksize)
