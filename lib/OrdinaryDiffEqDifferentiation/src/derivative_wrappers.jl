@@ -187,7 +187,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
 
     if dense isa AutoForwardDiff
         if alg_autodiff(alg) isa AutoSparse
-            integrator.stats.nf += maximum(SparseMatrixColorings.column_colors(jac_config))
+            integrator.stats.nf += maximum(SparseMatrixColorings.ncolors(jac_config))
         else
             sparsity, colorvec = sparsity_colorvec(integrator.f, x)
             maxcolor = maximum(colorvec)
