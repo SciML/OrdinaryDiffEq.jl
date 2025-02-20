@@ -181,7 +181,7 @@ function build_nlsolver(
 
     if nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
-        J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
+        J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(true))
 
         # TODO: check if the solver is iterative
         weight = zero(u)
@@ -296,7 +296,7 @@ function build_nlsolver(
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
 
-        J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
+        J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
         if nlalg isa NonlinearSolveAlg
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
