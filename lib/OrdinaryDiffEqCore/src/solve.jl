@@ -89,7 +89,7 @@ function DiffEqBase.__init(
         if any(mm != I for mm in prob.f.mass_matrix)
             error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
         end
-    elseif !(prob isa DiscreteProblem) &&
+    elseif !(prob isa AbstractDiscreteProblem) &&
            !(prob isa DiffEqBase.AbstractDAEProblem) &&
            !is_mass_matrix_alg(alg) &&
            prob.f.mass_matrix != I
@@ -135,7 +135,7 @@ function DiffEqBase.__init(
         throw(ArgumentError("Fixed timestep methods can not be run with adaptive=true"))
     end
 
-    isdae = alg isa DAEAlgorithm || (!(prob isa DiscreteProblem) &&
+    isdae = alg isa DAEAlgorithm || (!(prob isa AbstractDiscreteProblem) &&
              prob.f.mass_matrix != I &&
              !(prob.f.mass_matrix isa Tuple) &&
              ArrayInterface.issingular(prob.f.mass_matrix))
@@ -230,7 +230,7 @@ function DiffEqBase.__init(
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(one(tType))
 
-    if prob isa DiscreteProblem
+    if prob isa AbstractDiscreteProblem
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -244,7 +244,7 @@ function DiffEqBase.__init(
         abstol_internal = real.(abstol)
     end
 
-    if prob isa DiscreteProblem
+    if prob isa AbstractDiscreteProblem
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -379,7 +379,7 @@ function DiffEqBase.__init(
 
     QT, EEstT = if tTypeNoUnits <: Integer
         typeof(qmin), typeof(qmin)
-    elseif prob isa DiscreteProblem
+    elseif prob isa AbstractDiscreteProblem
         # The QT fields are not used for DiscreteProblems
         constvalue(tTypeNoUnits), constvalue(tTypeNoUnits)
     else
@@ -520,7 +520,7 @@ function DiffEqBase.__init(
     do_error_check = true
     event_last_time = 0
     vector_event_last_time = 1
-    last_event_error = prob isa DiscreteProblem ? false :
+    last_event_error = prob isa AbstractDiscreteProblem ? false :
                        (Base.isbitstype(uBottomEltypeNoUnits) ? zero(uBottomEltypeNoUnits) :
                         0.0)
     dtchangeable = isdtchangeable(_alg)
