@@ -39,7 +39,37 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
             else
                 tf.uprev = uprev
                 tf.p = p
-                derivative!(dT, tf, t, du2, integrator, cache.grad_config)
+                alg = unwrap_alg(integrator, true)
+                #derivative!(dT, tf, t, du2, integrator, cache.grad_config)
+                autodiff_alg = alg_autodiff(alg)
+
+                autodiff_alg = if autodiff_alg isa AutoSparse
+                    ADTypes.dense_ad(autodiff_alg)
+                else
+                    autodiff_alg
+                end
+
+                # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers 
+                t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT),t) : t
+
+                grad_config = cache.grad_config
+
+                if autodiff_alg isa AutoFiniteDiff
+                    grad_config = SciMLBase.@set grad_config.dir = diffdir(integrator)
+                end
+
+                if integrator.iter == 1
+                    try
+                        DI.derivative!(
+                            tf, linsolve_tmp, dT, grad_config, autodiff_alg, t)
+                    catch e
+                        throw(FirstAutodiffTgradError(e))
+                    end
+                else
+                    DI.derivative!(tf, linsolve_tmp, dT, grad_config, autodiff_alg, t)
+                end
+                
+                OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             end
         end
 
@@ -48,7 +78,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 end
 
 function calc_tderivative(integrator, cache)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack t, dt, uprev, u, f, p, alg = integrator
 
     # Time derivative
     if DiffEqBase.has_tgrad(f)
@@ -57,7 +87,29 @@ function calc_tderivative(integrator, cache)
         tf = cache.tf
         tf.u = uprev
         tf.p = p
-        dT = derivative(tf, t, integrator)
+
+        autodiff_alg = alg_autodiff(alg)
+        autodiff_alg = if autodiff_alg isa AutoSparse
+            autodiff_alg = ADTypes.dense_ad(autodiff_alg)
+        else
+            autodiff_alg
+        end
+
+        if alg_autodiff isa AutoFiniteDiff
+            autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
+        end
+        
+        if integrator.iter == 1 
+            try 
+                dT = DI.derivative(tf, autodiff_alg, t)
+            catch e
+                throw(FirstAutodiffTgradError(e))
+            end
+        else
+            dT = DI.derivative(tf, autodiff_alg, t)
+        end
+           
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
     dT
 end
@@ -97,7 +149,6 @@ function calc_J(integrator, cache, next_step::Bool = false)
             uf.f = nlsolve_f(f, alg)
             uf.p = p
             uf.t = t
-
             J = jacobian(uf, uprev, integrator)
         end
 
@@ -613,6 +664,7 @@ end
             W = J
         else
             W = J - mass_matrix * inv(dtgamma)
+            alg_autodiff(integrator.alg) isa AutoSparse ? W = sparse(W) : W = W
             if !isa(W, Number)
                 W = DiffEqBase.default_factorize(W)
             end
@@ -677,7 +729,9 @@ function update_W!(nlsolver::AbstractNLSolver,
     nothing
 end
 
-function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
+
+# Version that uses the jac_config to get the jacobian sparsity pattern, in the case of automatic sparsity detection
+function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUnits},
         ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
     # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
@@ -708,12 +762,10 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
         # Jacobian is a bad idea and create a fully matrix-free solver. This can
         # be overridden with concrete_jac.
+        jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 
-        _f = islin ? (isode ? f.f : f.f1.f) : f
-        jacvec = JacVec((du, u, p, t) -> _f(du, u, p, t), copy(u), p, t;
-            autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         J = jacvec
-        W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
+        W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
     elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
            concrete_jac(alg) !== nothing && concrete_jac(alg)
         # The linear solver does not need a concrete Jacobian, but the user has
@@ -721,21 +773,22 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # Thus setup JacVec and a concrete J, using sparsity when possible
         _f = islin ? (isode ? f.f : f.f1.f) : f
         J = if f.jac_prototype === nothing
-            ArrayInterface.undefmatrix(u)
+            if alg_autodiff(alg) isa AutoSparse
+                isnothing(f.sparsity) ?
+                convert.(eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config)) :
+                (eltype(f.sparsity) == Bool) ? convert.(eltype(u), f.sparsity) : f.sparsity
+            else
+                ArrayInterface.undefmatrix(u)
+            end
         else
             deepcopy(f.jac_prototype)
         end
         W = if J isa StaticMatrix
             StaticWOperator(J, false)
         else
-            __f = if IIP
-                (du, u, p, t) -> _f(du, u, p, t)
-            else
-                (u, p, t) -> _f(u, p, t)
-            end
-            jacvec = JacVec(__f, copy(u), p, t;
-                autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
-            WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
+            jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
+
+            WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
         end
     else
         J = if !IIP && DiffEqBase.has_jac(f)
@@ -745,7 +798,13 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
                 f.jac(uprev, p, t)
             end
         elseif f.jac_prototype === nothing
-            ArrayInterface.undefmatrix(u)
+            if alg_autodiff(alg) isa AutoSparse
+                isnothing(f.sparsity) ?
+                convert.(eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config)) : 
+                (eltype(f.sparsity) == Bool) ? convert.(eltype(u), f.sparsity) : f.sparsity
+            else
+                ArrayInterface.undefmatrix(u)
+            end
         else
             deepcopy(f.jac_prototype)
         end
