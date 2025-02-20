@@ -49,7 +49,7 @@ using DifferentiationInterface.jl and multiply by `v`.
 
 See also [`VecJacOperator`](@ref) and [`JacVecOperator`](@ref).
 """
-@concrete struct JVPCache{T <: Real} <: SciMLOperators.AbstractSciMLOperator{T}
+@concrete mutable struct JVPCache{T <: Real} <: SciMLOperators.AbstractSciMLOperator{T}
     jvp_op
     f
     du
@@ -86,12 +86,12 @@ function (op::JVPCache)(Jv, v, u, p, t)
     return Jv
 end
 
-Base.:*(J::JVPCache, v::AbstractArray) = J.jac_op(v, J.u, J.p, J.t)
-Base.:*(J::JVPCache, v::Number) = J.jac_op(v, J.u, J.p, J.t)
+Base.:*(J::JVPCache, v::AbstractArray) = J.jvp_op(v, J.u, J.p, J.t)
+Base.:*(J::JVPCache, v::Number) = J.jvp_op(v, J.u, J.p, J.t)
 
 function LinearAlgebra.mul!(
         Jv::AbstractArray, J::JVPCache, v::AbstractArray)
-    J.jac_op(Jv, v, J.u, J.p, J.t)
+    J.jvp_op(Jv, v, J.u, J.p, J.t)
     return Jv
 end
 
@@ -104,8 +104,8 @@ function prepare_jvp(f::DiffEqBase.AbstractDiffEqFunction, du, u, p, t, autodiff
     @assert DI.check_inplace(autodiff) "AD backend $(autodiff) doesn't support in-place problems."
     di_prep = DI.prepare_pushforward(
         f, du, autodiff, u, (u,), DI.Constant(p), DI.Constant(t))
-    return (Jv, v, u, p, t) -> DI.pushforward!(f, du, (Jv,), di_prep,
-            autodiff, u, (v, ), DI.Constant(p), DI.Constant(t))
+    return (Jv, v, u, p, t) -> DI.pushforward!(f, du, (reshape(Jv, size(du)),), di_prep,
+            autodiff, u, (reshape(v,size(u)),), DI.Constant(p), DI.Constant(t))
 end
 
 function SciMLOperators.update_coefficients!(J::JVPCache, u, p, t) 
