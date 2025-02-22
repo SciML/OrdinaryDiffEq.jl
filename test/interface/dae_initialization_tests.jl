@@ -115,3 +115,30 @@ prob = ODEProblem(f, ones(3), (0.0, 1.0))
 integrator = init(prob, Rodas5P(),
     initializealg = ShampineCollocationInit(1.0, BrokenNLSolve()))
 @test all(isequal(reinterpret(Float64, 0xDEADBEEFDEADBEEF)), integrator.u)
+
+@testset "`reinit!` reruns initialization" begin
+    initializeprob = NonlinearProblem(1.0, [0.0]) do u, p
+        return u^2 - p[1]^2
+    end
+    initializeprobmap = function (nlsol)
+        return [nlsol.prob.p[1], nlsol.u]
+    end
+    update_initializeprob! = function (iprob, integ)
+        iprob.p[1] = integ.u[1]
+    end
+    initialization_data = SciMLBase.OverrideInitData(
+        initializeprob, update_initializeprob!, initializeprobmap, nothing)
+    fn = ODEFunction(; mass_matrix = [1 0; 0 0], initialization_data) do du, u, p, t
+        du[1] = u[1]
+        du[2] = u[1]^2 - u[2]^2
+    end
+    prob = ODEProblem(fn, [2.0, 0.0], (0.0, 1.0))
+    integ = init(prob, Rodas5P())
+    @test integ.u≈[2.0, 2.0] atol=1e-8
+    reinit!(integ)
+    @test integ.u≈[2.0, 2.0] atol=1e-8
+    @test_nowarn step!(integ, 0.01, true)
+    reinit!(integ, reinit_dae = false)
+    @test integ.u ≈ [2.0, 0.0]
+    @test_warn ["dt", "forced below floating point epsilon"] step!(integ, 0.01, true)
+end
