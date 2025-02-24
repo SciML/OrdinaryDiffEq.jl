@@ -729,8 +729,6 @@ function update_W!(nlsolver::AbstractNLSolver,
     nothing
 end
 
-
-# Version that uses the jac_config to get the jacobian sparsity pattern, in the case of automatic sparsity detection
 function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUnits},
         ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
     # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
