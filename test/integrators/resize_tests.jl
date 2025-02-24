@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, Test, ADTypes, SparseMatrixColorings, DiffEqBase, ForwardDiff, SciMLBase
-import DifferentiationInterface as DI
+import OrdinaryDiffEqDifferentiation.DI
 
 f(du, u, p, t) = du .= u
 prob = ODEProblem{true, SciMLBase.FullSpecialize}(f, [1.0], (0.0, 1.0))
