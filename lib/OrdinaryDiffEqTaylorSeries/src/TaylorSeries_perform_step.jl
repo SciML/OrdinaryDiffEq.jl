@@ -101,3 +101,29 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
     return nothing
 end
+
+# Differential Algebriac Equation Taylor Series
+function initialize!(integrator, cache::DAETSCache)
+    integrator.kshortsize = 3
+    resize!(integrator.k, integrator.kshortsize)
+    # Setup k pointers
+    integrator.k[1] = cache.k1
+    integrator.k[2] = cache.k2
+    integrator.k[3] = cache.k3
+    return nothing
+end
+
+@muladd function perform_step!(integrator, cache::DAETSCache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k1, k2, k3, utilde, tmp = cache
+
+    # The following code is written to be fully non-allocating
+    f(k1, uprev, p, t)
+    u1 = make_taylor(uprev, k1)
+    t1 = TaylorScalar{1}(t, one(t))
+    out1 = make_taylor(k1, k2)
+    f(out1, u1, p, t1)
+    @.. u = uprev + dt * k1 + dt^2 / 2 * k2
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
+    return nothing
+end

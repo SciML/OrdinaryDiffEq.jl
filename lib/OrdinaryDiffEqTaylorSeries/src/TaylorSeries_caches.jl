@@ -72,3 +72,30 @@ end
 
 # FSAL currently not used, providing dummy implementation to satisfy the interface
 get_fsalfirstlast(cache::ExplicitTaylorCache, u) = (cache.ks[1], cache.ks[1])
+
+
+# Differential Algebriac Equation Taylor Series
+
+@cache struct DAETSCache{
+    uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
+    Thread} <: OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    k1::rateType
+    k2::rateType
+    k3::rateType
+    utilde::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+get_fsalfirstlast(cache::DAETSCache, u) = (cache.k1, cache.k1)
+
+function alg_cache(alg::DAETS, u, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+    dt, reltol, p, calck,
+    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+ExplicitTaylor2ConstantCache()
+end

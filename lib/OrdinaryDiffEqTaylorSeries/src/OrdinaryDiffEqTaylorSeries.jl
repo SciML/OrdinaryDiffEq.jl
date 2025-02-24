@@ -24,6 +24,8 @@ import OrdinaryDiffEqCore
 using Reexport
 @reexport using DiffEqBase
 
+include("DAETS_utils.jl")
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("TaylorSeries_caches.jl")
@@ -56,6 +58,6 @@ PrecompileTools.@compile_workload begin
     solver_list = nothing
 end
 
-export ExplicitTaylor2, ExplicitTaylor
+export ExplicitTaylor2, ExplicitTaylor, DAETS
 
 end
