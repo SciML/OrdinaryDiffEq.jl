@@ -1,19 +1,29 @@
-using OrdinaryDiffEqTaylorSeries
+using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools
 using Test
 using Symbolics
 
-f(u, p, t) = cos(u)
-f!(du, u, p, t) = du .= cos.(u)
+@testset "Taylor2 Convergence Tests" begin
+    # Test convergence
+    dts = 2. .^ (-8:-4)
+    testTol = 0.2
+    sim = test_convergence(dts, prob_ode_linear, ExplicitTaylor2())
+    @test sim.𝒪est[:final]≈2 atol=testTol
+    sim = test_convergence(dts, prob_ode_2Dlinear, ExplicitTaylor2())
+    @test sim.𝒪est[:final]≈2 atol=testTol
+end
 
-u0 = 0.0
-u0! = [0.0]
-prob = ODEProblem{false, SciMLBase.NoSpecialize}(f, u0, (0.0, 10.0))
-prob! = ODEProblem{true, SciMLBase.NoSpecialize}(f!, u0!, (0.0, 10.0))
-sol = solve(prob, ExplicitTaylor2(), dt=0.01)
-sol! = solve(prob!, ExplicitTaylor2(), dt=0.01)
-# sol = solve(prob, DAETS(), dt=0.01)
-sol = solve(prob, ExplicitTaylor(order=Val(2)), dt=0.01)
-sol! = solve(prob!, ExplicitTaylor(order=Val(2)), dt=0.01)
+@testset "TaylorN Convergence Tests" begin
+    # Test convergence
+    dts = 2. .^ (-8:-4)
+    testTol = 0.2
+    for N in 3:4
+        alg = ExplicitTaylor(order=Val(N))
+        sim = test_convergence(dts, prob_ode_linear, alg)
+        @test sim.𝒪est[:final]≈N atol=testTol
+        sim = test_convergence(dts, prob_ode_2Dlinear, alg)
+        @test sim.𝒪est[:final]≈N atol=testTol
+    end
+end
 
 println("DONE with ODE tests")
 include(joinpath(@__DIR__, "../src/DAETS_utils.jl"))
