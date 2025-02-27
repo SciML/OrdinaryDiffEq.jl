@@ -17,8 +17,8 @@ vern_sol = solve(prob, Vern7())
 default_sol = solve(prob)
 @testset "Interpolation Stripping" begin
     @test isnothing(SciMLBase.strip_interpolation(rosenbrock_sol.interp).f)
-    @test isnothing(SciMLBase.strip_interpolation(rosenbrock_sol.interp).cache.jac_config)
-    @test isnothing(SciMLBase.strip_interpolation(rosenbrock_sol.interp).cache.grad_config)
+    @test isnothing(SciMLBase.strip_interpolation(rosenbrock_sol.interp).cache.jac_config[1])
+    @test isnothing(SciMLBase.strip_interpolation(rosenbrock_sol.interp).cache.grad_config[1])
 end
 
 @testset "Rosenbrock Solution Stripping" begin
@@ -26,8 +26,8 @@ end
     @test stripped_sol.prob isa NamedTuple
     @test isnothing(SciMLBase.strip_solution(rosenbrock_sol, strip_alg = true).alg)
     @test isnothing(stripped_sol.interp.f)
-    @test isnothing(stripped_sol.interp.cache.jac_config)
-    @test isnothing(stripped_sol.interp.cache.grad_config)
+    @test isnothing(stripped_sol.interp.cache.jac_config[1])
+    @test isnothing(stripped_sol.interp.cache.grad_config[1])
     @test isnothing(stripped_sol.interp.cache.uf)
     @test isnothing(stripped_sol.interp.cache.tf)
 end
