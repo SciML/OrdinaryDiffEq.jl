@@ -48,8 +48,8 @@ nojac = @allocated init(prob_ode_brusselator_2d,
     save_everystep = false)
 jac = @allocated init(prob_ode_brusselator_2d, TRBDF2(), save_everystep = false)
 @test jac / nojac > 50
-@test integ1.cache.nlsolver.cache.jac_config !== nothing
-@test integ2.cache.nlsolver.cache.jac_config === nothing
+@test integ1.cache.nlsolver.cache.jac_config !== (nothing, nothing)
+@test integ2.cache.nlsolver.cache.jac_config === (nothing, nothing)
 
 ## Test that no Jac Config is created
 
@@ -246,14 +246,14 @@ u0[17] = 0.007
 prob = ODEProblem(ODEFunction(pollu, jac = fjac), u0, (0.0, 60.0))
 
 integ = init(prob, Rosenbrock23(), abstol = 1e-6, reltol = 1e-6)
-@test integ.cache.jac_config === nothing
+@test integ.cache.jac_config === (nothing, nothing)
 integ = init(prob, Rosenbrock23(linsolve = SimpleLUFactorization()), abstol = 1e-6,
     reltol = 1e-6)
-@test integ.cache.jac_config === nothing
+@test integ.cache.jac_config === (nothing, nothing)
 integ = init(prob, Rosenbrock23(linsolve = GenericLUFactorization()), abstol = 1e-6,
     reltol = 1e-6)
-@test integ.cache.jac_config === nothing
+@test integ.cache.jac_config === (nothing, nothing)
 integ = init(prob,
     Rosenbrock23(linsolve = RFLUFactorization(), autodiff = AutoForwardDiff(chunksize = 3)),
     abstol = 1e-6, reltol = 1e-6)
-@test integ.cache.jac_config === nothing
+@test integ.cache.jac_config === (nothing, nothing)
