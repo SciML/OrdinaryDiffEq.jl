@@ -187,7 +187,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
 
     if dense isa AutoForwardDiff
         if alg_autodiff(alg) isa AutoSparse
-            integrator.stats.nf += maximum(SparseMatrixColorings.ncolors(jac_config))
+            integrator.stats.nf += maximum(SparseMatrixColorings.ncolors(jac_config[1]))
         else
             sparsity, colorvec = sparsity_colorvec(integrator.f, x)
             maxcolor = maximum(colorvec)
@@ -212,14 +212,10 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         integrator.stats.nf += 1
     end
 
-    config = jac_config
-
     if dense isa AutoFiniteDiff
-        if alg_autodiff(alg) isa AutoSparse
-            config = SciMLBase.@set jac_config.pushforward_prep.dir = diffdir(integrator)
-        else
-            config = SciMLBase.@set jac_config.dir = diffdir(integrator)
-        end
+        config = diffdir(integrator) > 0 ? jac_config[1] : jac_config[2]
+    else
+        config = jac_config[1]
     end
 
     if integrator.iter == 1
@@ -258,9 +254,33 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
             end
         end
         uf = SciMLBase.@set uf.f = SciMLBase.unwrapped_f(uf.f)
-        jac_config = DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
+
+        autodiff_alg = alg_autodiff(alg)
+        dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
+
+        if dense isa AutoFiniteDiff
+            dir_true = @set dense.dir = true
+            dir_false = @set dense.dir = false
+
+            if autodiff_alg isa AutoSparse
+                autodiff_alg_true = @set autodiff_alg.dense_ad = dir_true
+                autodiff_alg_false = @set autodiff_alg.dense_ad = dir_false
+            else
+                autodiff_alg_true = dir_true
+                autodiff_alg_false = dir_false
+            end
+
+            jac_config_true = DI.prepare_jacobian(uf, du1, autodiff_alg_true, u)
+            jac_config_false = DI.prepare_jacobian(uf, du1, autodiff_alg_false, u)
+
+            jac_config = (jac_config_true, jac_config_false)
+        else
+            jac_config1 = DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
+            jac_config = (jac_config1, jac_config1)
+        end
+
     else 
-        jac_config = nothing
+        jac_config = (nothing, nothing)
     end
 
     jac_config
@@ -322,7 +342,20 @@ end
 
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     alg_autodiff(alg) isa AutoSparse ? ad = ADTypes.dense_ad(alg_autodiff(alg)) : ad = alg_autodiff(alg)
-    return DI.prepare_derivative(tf, du1, ad, t)
+
+    if ad isa AutoFiniteDiff
+        dir_true = @set ad.dir = true
+        dir_false = @set ad.dir = false
+
+        grad_config_true = DI.prepare_derivative(tf, du1, dir_true, t)
+        grad_config_false = DI.prepare_derivative(tf, du1, dir_false, t)
+
+        grad_config = (grad_config_true, grad_config_false)
+    else
+        grad_config1 = DI.prepare_derivative(tf,du1,ad,t)
+        grad_config = (grad_config1, grad_config1)
+    end
+    return grad_config
 end
 
 function sparsity_colorvec(f, x)
