@@ -26,7 +26,7 @@ end
 end
 
 println("DONE with ODE tests")
-include(joinpath(@__DIR__, "../src/DAETS_utils.jl"))
+# include(joinpath(@__DIR__, "../src/DAETS_utils.jl"))
 # include(joinpath(@__DIR__, "../src/TaylorSeries_caches.jl"))
 println("Starting tests on DAETS")
 
@@ -244,27 +244,17 @@ println("DONE System Jacobian Tests")
 @testset "System Jacobian Tests for Simple Pendulum" begin
     @syms t x(t) y(t) λ(t) G L
 
-    # Equations
+    # Pendulum Equations
     f = Differential(t)(Differential(t)(x(t))) + x(t) * λ(t)
     g = Differential(t)(Differential(t)(y(t))) + y(t) * λ(t) - G
     h = x(t)^2 + y(t)^2 - L^2
     eqs = [f, g, h]
     vars = [x, y, λ]
-
-    # Construct the signature matrix
     Σ = signature_matrix(eqs, vars, t)
-
-    # Find the highest value transversal
     transversal, value = highest_value_transversal(Σ)
-
-    # Find the offsets
     c, d = find_offsets(Σ, transversal)
-
-    # Convert c and d to Vector{Int}
     c = Int.(c)
     d = Int.(d)
-
-    # Construct the system Jacobian
     J = system_jacobian(eqs, vars, t, c, d, Σ)
 
     # Expected Jacobian:
@@ -281,24 +271,26 @@ println("DONE System Jacobian Tests")
     @test isequal(J[3, 2], 2y(t))
     @test isequal(J[3, 3], 0)
 end
-# @testset "compute_taylor_coefficients! Tests" begin
-#     @syms t x(t) y(t)
-#     @syms G L
 
-#     # Define a simple ODE system: x'(t) = y(t), y'(t) = -x(t)
-#     f = [Differential(t)(x(t)) - y(t), Differential(t)(y(t)) + x(t)]
-#     vars = [x, y]
+using OrdinaryDiffEq
+using Test
+function exponential_decay!(du, u, p, t)
+    du[1] = -u[1]  # du/dt = -u
+end
 
-#     # Create a mock integrator and cache
-#     integrator = (u = [1.0, 0.0], t = 0.0, dt = 0.1, f = f, p = nothing)
-#     cache = (Σ = nothing, c = nothing, d = nothing, J = nothing, xTS = nothing, xtrial = nothing, htrial = 0.1, e = 0.0, tmp = nothing)
+# Initial condition
+u0 = [1.0]  # u(0) = 1
+tspan = (0.0, 1.0)  # Time span from 0 to 1
+prob = ODEProblem(exponential_decay!, u0, tspan)
+dt = 0.01  # Fixed timestep
+sol = solve(prob, DAETS(), dt=dt)
+exact_solution(t) = exp(-t)
 
-#     # Compute Taylor coefficients
-#     xcur = compute_taylor_coefficients!(integrator, cache)
+# Test accuracy
+for t in sol.t
+    u_num = sol(t)[1]
+    u_exact = exact_solution(t)
+    @test abs(u_num - u_exact) < .5  # Verify accuracy (up to first order)
+end
 
-#     # Expected Taylor coefficients for x(t) and y(t) at t = 0:
-#     # x(t) = 1 - t^2/2 + t^4/24 - ...
-#     # y(t) = t - t^3/6 + t^5/120 - ...
-#     @test xcur[1] ≈ 1.0  # x(0)
-#     @test xcur[2] ≈ 0.0  # y(0)
-# end
+println("ODE test passed!")

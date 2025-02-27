@@ -1,5 +1,13 @@
 module OrdinaryDiffEqTaylorSeries
 
+# Had to add this to make the tests work. There is probably a better way to do this.
+include("DAETS_utils.jl")
+using .DAETS_utils: signature_matrix, max_derivative_order, highest_value_transversal,
+                   find_offsets, system_jacobian
+
+export signature_matrix, max_derivative_order, highest_value_transversal,
+       find_offsets, system_jacobian
+
 import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
                            OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache,
                            alg_cache,
@@ -23,8 +31,6 @@ import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase
-
-include("DAETS_utils.jl")
 
 include("algorithms.jl")
 include("alg_utils.jl")
