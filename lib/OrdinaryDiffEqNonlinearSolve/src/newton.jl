@@ -529,8 +529,10 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
     resize!(nlcache.atmp, i)
     resize!(nlcache.dz, i)
     resize!(nlcache.du1, i)
-    if nlcache.jac_config !== nothing
-        resize_jac_config!(nlcache.jac_config, i)
+    if !isnothing(nlcache.jac_config) && !isnothing(nlcache.jac_config[1])
+        uf = nlcache.uf
+        uf = SciMLBase.@set uf.f = SciMLBase.unwrapped_f(uf.f)
+        nlcache.jac_config = ([resize_jac_config!(uf,nlcache.du1, config, alg_autodiff(integrator.alg), integrator.u) for config in nlcache.jac_config]...,)
     end
     resize!(nlcache.weight, i)
 
@@ -539,3 +541,4 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
 
     nothing
 end
+
