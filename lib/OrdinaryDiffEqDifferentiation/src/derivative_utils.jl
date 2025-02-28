@@ -876,13 +876,13 @@ function resize_J_W!(cache, integrator, i)
         islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
         if !islin
             if cache.J isa AbstractSciMLOperator
-                resize!(cache.J, i)
+                resize!(cache.J, f, cache.du1, integrator.u, integrator.p, integrator.t, alg_autodiff(integrator.alg))
             elseif f.jac_prototype !== nothing
                 J = similar(f.jac_prototype, i, i)
                 J = MatrixOperator(J; update_func! = f.jac)
             end
             if cache.W.jacvec isa AbstractSciMLOperator
-                resize!(cache.W.jacvec, i)
+                resize!(cache.W.jacvec, f, cache.du1, integrator.u, integrator.p, integrator.t, alg_autodiff(integrator.alg))
             end
             cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(f.mass_matrix,
                 integrator.dt,
