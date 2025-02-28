@@ -80,11 +80,9 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
         # Jacobian
         uf.t = t
         if uprev isa AbstractArray
-            #J = ForwardDiff.jacobian(uf, uprev)
-            J = DI.jacobian(uf, autodiff_alg, uprev)
+            J = OrdinaryDiffEqDifferentiation.DI.jacobian(uf, autodiff_alg, uprev)
             W = mass_matrix / dtgamma - J
         else
-            #J = ForwardDiff.derivative(uf, uprev)
             J = OrdinaryDiffEqDifferentiation.DI.derivative(uf, autodiff_alg, uprev)
             W = 1 / dtgamma - J
         end
