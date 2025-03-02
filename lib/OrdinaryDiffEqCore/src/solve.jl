@@ -26,7 +26,8 @@ function DiffEqBase.__init(
                          saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
         callback = nothing,
-        dense = save_everystep && isempty(saveat) && !default_linear_interpolation(prob, alg),
+        dense = save_everystep && isempty(saveat) &&
+                    !default_linear_interpolation(prob, alg),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
                     (dense) || !isempty(saveat), # and no dense output
         dt = isdiscretealg(alg) && isempty(tstops) ?
@@ -88,7 +89,7 @@ function DiffEqBase.__init(
         if any(mm != I for mm in prob.f.mass_matrix)
             error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
         end
-    elseif !(prob isa DiscreteProblem) &&
+    elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
            !(prob isa DiffEqBase.AbstractDAEProblem) &&
            !is_mass_matrix_alg(alg) &&
            prob.f.mass_matrix != I
@@ -134,7 +135,7 @@ function DiffEqBase.__init(
         throw(ArgumentError("Fixed timestep methods can not be run with adaptive=true"))
     end
 
-    isdae = alg isa DAEAlgorithm || (!(prob isa DiscreteProblem) &&
+    isdae = alg isa DAEAlgorithm || (!(prob isa SciMLBase.AbstractDiscreteProblem) &&
              prob.f.mass_matrix != I &&
              !(prob.f.mass_matrix isa Tuple) &&
              ArrayInterface.issingular(prob.f.mass_matrix))
@@ -156,7 +157,7 @@ function DiffEqBase.__init(
         _alg = alg
     end
 
-    use_old_kwargs = haskey(kwargs,:alias_u0) || haskey(kwargs,:alias_du0)
+    use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_du0)
 
     if use_old_kwargs
         aliases = ODEAliasSpecifier()
@@ -175,29 +176,30 @@ function DiffEqBase.__init(
             please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))"
             Base.depwarn(message, :init)
             Base.depwarn(message, :solve)
-            aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0)
+            aliases = ODEAliasSpecifier(
+                alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0)
         else
             aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = nothing)
         end
-        
-        aliases 
+
+        aliases
 
     else
-         # If alias isa Bool, all fields of ODEAliases set to alias
+        # If alias isa Bool, all fields of ODEAliases set to alias
         if alias isa Bool
             aliases = ODEAliasSpecifier(alias = alias)
-        elseif alias isa ODEAliasSpecifier 
+        elseif alias isa ODEAliasSpecifier
             aliases = alias
         end
     end
 
-    if isnothing(aliases.alias_f) || aliases.alias_f 
+    if isnothing(aliases.alias_f) || aliases.alias_f
         f = prob.f
     else
         f = deepcopy(prob.f)
     end
 
-    if isnothing(aliases.alias_p) || aliases.alias_p 
+    if isnothing(aliases.alias_p) || aliases.alias_p
         p = prob.p
     else
         p = recursivecopy(prob.p)
@@ -228,28 +230,28 @@ function DiffEqBase.__init(
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(one(tType))
 
-    if prob isa DiscreteProblem
+    if prob isa SciMLBase.AbstractDiscreteProblem
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            abstol_internal = DiffEqBase.ForwardDiff.value(real(convert(uBottomEltype,
+            abstol_internal = unitfulvalue(real(convert(uBottomEltype,
                 oneunit(uBottomEltype) *
                 1 // 10^6)))
         else
-            abstol_internal = DiffEqBase.ForwardDiff.value.(real.(oneunit.(u) .* 1 // 10^6))
+            abstol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
         end
     else
         abstol_internal = real.(abstol)
     end
 
-    if prob isa DiscreteProblem
+    if prob isa SciMLBase.AbstractDiscreteProblem
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            reltol_internal = DiffEqBase.ForwardDiff.value(real(convert(uBottomEltype,
+            reltol_internal = unitfulvalue(real(convert(uBottomEltype,
                 oneunit(uBottomEltype) * 1 // 10^3)))
         else
-            reltol_internal = DiffEqBase.ForwardDiff.value.(real.(oneunit.(u) .* 1 // 10^3))
+            reltol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
         end
     else
         reltol_internal = real.(reltol)
@@ -316,7 +318,8 @@ function DiffEqBase.__init(
     end
 
     ### Algorithm-specific defaults ###
-    save_idxs, saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(prob, save_idxs)
+    save_idxs, saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
+        prob, save_idxs)
 
     if save_idxs === nothing
         ksEltype = Vector{rateType}
@@ -376,7 +379,7 @@ function DiffEqBase.__init(
 
     QT, EEstT = if tTypeNoUnits <: Integer
         typeof(qmin), typeof(qmin)
-    elseif prob isa DiscreteProblem
+    elseif prob isa SciMLBase.AbstractDiscreteProblem
         # The QT fields are not used for DiscreteProblems
         constvalue(tTypeNoUnits), constvalue(tTypeNoUnits)
     else
@@ -517,7 +520,9 @@ function DiffEqBase.__init(
     do_error_check = true
     event_last_time = 0
     vector_event_last_time = 1
-    last_event_error = prob isa DiscreteProblem ? false : zero(uBottomEltypeNoUnits)
+    last_event_error = prob isa SciMLBase.AbstractDiscreteProblem ? false :
+                       (Base.isbitstype(uBottomEltypeNoUnits) ? zero(uBottomEltypeNoUnits) :
+                        0.0)
     dtchangeable = isdtchangeable(_alg)
     q11 = QT(1)
     success_iter = 0

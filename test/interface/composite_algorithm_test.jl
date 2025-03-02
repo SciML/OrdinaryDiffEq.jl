@@ -49,9 +49,9 @@ v = @inferred OrdinaryDiffEqCore.ode_extrapolant(
 
     @test_throws ArgumentError solve(prob_ode_linear, alg_mixed)
     sol2 = solve(prob_ode_linear, Tsit5())
-    sol3 = solve(prob_ode_linear, alg_mixed; dt = 0.05, adaptive=false)
-    sol4 = solve(prob_ode_linear, alg_mixed_r; dt = 0.05, adaptive=false)
-    sol5 = solve(prob_ode_linear, alg_mixed2; dt = 0.05, adaptive=false)
+    sol3 = solve(prob_ode_linear, alg_mixed; dt = 0.05, adaptive = false)
+    sol4 = solve(prob_ode_linear, alg_mixed_r; dt = 0.05, adaptive = false)
+    sol5 = solve(prob_ode_linear, alg_mixed2; dt = 0.05, adaptive = false)
     @test sol3.t == sol4.t && sol3.u == sol4.u
     @test sol3(0.8)≈sol2(0.8) atol=1e-4
     @test sol5(0.8)≈sol2(0.8) atol=1e-4

@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqDifferentiation"
 uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "1.3.0"
+version = "1.4.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -30,7 +30,7 @@ FiniteDiff = "2"
 ForwardDiff = "0.10"
 FunctionWrappersWrappers = "0.1"
 LinearAlgebra = "1.10"
-LinearSolve = "2"
+LinearSolve = "2, 3"
 OrdinaryDiffEqCore = "1.14"
 Random = "<0.0.1, 1"
 SafeTestsets = "0.1.0"

@@ -34,7 +34,8 @@ function stepsize_controller_internal!(integrator,
         integrator.opts.gamma = FastPower.fastpower(typeof(integrator.opts.gamma)(1 // 4),
             controller.beta1)
         # Compute new stepsize scaling
-        qtmp = FastPower.fastpower(integrator.EEst, controller.beta1) / integrator.opts.gamma
+        qtmp = FastPower.fastpower(integrator.EEst, controller.beta1) /
+               integrator.opts.gamma
         @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
     end
     integrator.cache.Q[integrator.cache.n_curr - alg.min_order + 1] = q
@@ -60,7 +61,8 @@ function stepsize_predictor!(integrator,
         integrator.opts.gamma = FastPower.fastpower(typeof(integrator.opts.gamma)(1 // 4),
             controller.beta1)
         # Compute new stepsize scaling
-        qtmp = EEst * FastPower.fastpower(FastPower.fastpower(tol, (1.0 - s_curr / s_new)),
+        qtmp = EEst *
+               FastPower.fastpower(FastPower.fastpower(tol, (1.0 - s_curr / s_new)),
             controller.beta1) / integrator.opts.gamma
         @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
     end

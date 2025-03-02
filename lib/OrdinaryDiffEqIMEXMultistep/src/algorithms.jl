@@ -29,11 +29,11 @@ struct CNAB2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     autodiff::AD
 end
 
-function CNAB2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
+function CNAB2(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
-
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     CNAB2{
@@ -73,11 +73,11 @@ struct CNLF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     extrapolant::Symbol
     autodiff::AD
 end
-function CNLF2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
+function CNLF2(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
-
     AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     CNLF2{

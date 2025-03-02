@@ -3,7 +3,7 @@
 # Hence, we need to have two separate functions.
 
 function _change_t_via_interpolation!(integrator, t,
-        modify_save_endpoint::Type{Val{T}}, reinitialize_alg=nothing) where {T}
+        modify_save_endpoint::Type{Val{T}}, reinitialize_alg = nothing) where {T}
     # Can get rid of an allocation here with a function
     # get_tmp_arr(integrator.cache) which gives a pointer to some
     # cache array which can be modified.
@@ -17,7 +17,8 @@ function _change_t_via_interpolation!(integrator, t,
         end
         integrator.t = t
         integrator.dt = integrator.t - integrator.tprev
-        DiffEqBase.reeval_internals_due_to_modification!(integrator; callback_initializealg=reinitialize_alg)
+        DiffEqBase.reeval_internals_due_to_modification!(
+            integrator; callback_initializealg = reinitialize_alg)
         if T
             solution_endpoint_match_cur_integrator!(integrator)
         end
@@ -28,7 +29,7 @@ function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
         t,
         modify_save_endpoint::Type{Val{T}} = Val{
             false,
-        }, reinitialize_alg=nothing) where {
+        }, reinitialize_alg = nothing) where {
         T,
 }
     _change_t_via_interpolation!(integrator, t, modify_save_endpoint, reinitialize_alg)
@@ -251,7 +252,7 @@ end
 resize_f!(f, i) = nothing
 
 function resize_f!(f::SplitFunction, i)
-    resize!(f.cache, i)
+    resize!(f._func_cache, i)
     return nothing
 end
 
@@ -330,6 +331,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.
         d_discontinuities = integrator.opts.d_discontinuities_cache,
         reset_dt = (integrator.dtcache == zero(integrator.dt)) &&
             integrator.opts.adaptive,
+        reinit_dae = true,
         reinit_callbacks = true, initialize_save = true,
         reinit_cache = true,
         reinit_retcode = true)
@@ -403,6 +405,12 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.
 
     if reset_dt
         auto_dt_reset!(integrator)
+    end
+
+    if reinit_dae &&
+       (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
+        DiffEqBase.initialize_dae!(integrator)
+        update_uprev!(integrator)
     end
 
     if reinit_callbacks

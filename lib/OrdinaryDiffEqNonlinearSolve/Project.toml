@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqNonlinearSolve"
 uuid = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "1.3.1"
+version = "1.5.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -33,10 +33,10 @@ FastBroadcast = "0.3.5"
 FastClosures = "0.3.2"
 ForwardDiff = "0.10.36"
 LinearAlgebra = "<0.0.1, 1"
-LinearSolve = "2.32.0"
+LinearSolve = "2.32.0, 3"
 MuladdMacro = "0.2.4"
 NonlinearSolve = "3.14.0, 4"
-OrdinaryDiffEqCore = "1.13"
+OrdinaryDiffEqCore = "1.18"
 OrdinaryDiffEqDifferentiation = "<0.0.1, 1"
 PreallocationTools = "0.4.23"
 Random = "<0.0.1, 1"

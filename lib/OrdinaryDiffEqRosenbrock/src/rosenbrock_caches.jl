@@ -48,7 +48,8 @@ function full_cache(c::RosenbrockCache)
         c.ks..., c.fsalfirst, c.fsallast, c.dT, c.tmp, c.atmp, c.weight, c.linsolve_tmp]
 end
 
-struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
+struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
+       RosenbrockConstantCache
     tf::TF
     uf::UF
     tab::Tab
@@ -154,7 +155,8 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
             nothing)..., weight, tmp)
-    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+    linsolve = init(
+        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
 
@@ -200,7 +202,8 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
             nothing)..., weight, tmp)
-    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+    linsolve = init(
+        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
@@ -348,7 +351,8 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
             nothing)..., weight, tmp)
-    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+    linsolve = init(
+        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
@@ -434,7 +438,8 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
             nothing)..., weight, tmp)
-    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+    linsolve = init(
+        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
@@ -627,7 +632,8 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
             nothing)..., weight, tmp)
-    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+    linsolve = init(
+        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
@@ -671,7 +677,8 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
             nothing)..., weight, tmp)
-    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+    linsolve = init(
+        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
@@ -723,7 +730,8 @@ tabtype(::Rodas5P) = Rodas5PTableau
 tabtype(::Rodas5Pr) = Rodas5PTableau
 tabtype(::Rodas5Pe) = Rodas5PTableau
 
-function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
+function alg_cache(
+        alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
         u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -739,12 +747,12 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5
         alg_autodiff(alg), size(tab.H, 1))
 end
 
-function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
+function alg_cache(
+        alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
         u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-
     tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     # Initialize vectors
     dense = [zero(rate_prototype) for _ in 1:size(tab.H, 1)]
@@ -777,7 +785,8 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5
         alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
             nothing)..., weight, tmp)
 
-    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+    linsolve = init(
+        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
 
@@ -791,7 +800,6 @@ function alg_cache(alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5
         linsolve, jac_config, grad_config, reltol, alg,
         alg.step_limiter!, alg.stage_limiter!, size(tab.H, 1))
 end
-
 
 function get_fsalfirstlast(
         cache::Union{Rosenbrock23Cache, Rosenbrock32Cache, Rosenbrock33Cache,

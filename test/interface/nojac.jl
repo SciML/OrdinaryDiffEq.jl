@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, LinearSolve, Test, ADTypes
+using OrdinaryDiffEq, RecursiveFactorization, LinearSolve, Test, ADTypes
 
 const N = 32
 const xyd_brusselator = range(0, stop = 1, length = N)
@@ -253,6 +253,7 @@ integ = init(prob, Rosenbrock23(linsolve = SimpleLUFactorization()), abstol = 1e
 integ = init(prob, Rosenbrock23(linsolve = GenericLUFactorization()), abstol = 1e-6,
     reltol = 1e-6)
 @test integ.cache.jac_config === nothing
-integ = init(prob, Rosenbrock23(linsolve = RFLUFactorization(), autodiff = AutoForwardDiff(chunksize = 3)),
+integ = init(prob,
+    Rosenbrock23(linsolve = RFLUFactorization(), autodiff = AutoForwardDiff(chunksize = 3)),
     abstol = 1e-6, reltol = 1e-6)
 @test integ.cache.jac_config === nothing

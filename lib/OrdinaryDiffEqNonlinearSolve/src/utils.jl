@@ -196,7 +196,8 @@ function build_nlsolver(
             alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                 nothing)...,
             weight, dz)
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve,
+            alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
             Pl = Pl, Pr = Pr,
             assumptions = LinearSolve.OperatorAssumptions(true))
 

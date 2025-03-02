@@ -6,7 +6,8 @@ module OrdinaryDiffEq
 using Reexport
 @reexport using DiffEqBase
 
-import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order,
+import OrdinaryDiffEqCore: OrdinaryDiffEqCore,
+                           trivial_limiter!, CompositeAlgorithm, alg_order,
                            ShampineCollocationInit, BrownFullBasicInit, NoInit,
                            set_new_W!, set_W_γdt!, get_W, isfirstcall, isfirststage,
                            isJcurrent, get_new_W_γdt_cutoff,

@@ -22,8 +22,10 @@ sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_2Dlinear, RadauIIA9(),
 
 using GenericSchur
 
-prob_ode_linear_big = remake(prob_ode_linear, u0 = big.(prob_ode_linear.u0), tspan = big.(prob_ode_linear.tspan))
-prob_ode_2Dlinear_big = remake(prob_ode_2Dlinear, u0 = big.(prob_ode_2Dlinear.u0), tspan = big.(prob_ode_2Dlinear.tspan))
+prob_ode_linear_big = remake(
+    prob_ode_linear, u0 = big.(prob_ode_linear.u0), tspan = big.(prob_ode_linear.tspan))
+prob_ode_2Dlinear_big = remake(prob_ode_2Dlinear, u0 = big.(prob_ode_2Dlinear.u0),
+    tspan = big.(prob_ode_2Dlinear.tspan))
 
 #non-threaded tests
 for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
@@ -182,4 +184,3 @@ affect!(integrator) = integrator.u[1] *= -1
 cb = ContinuousCallback(condition, affect!)
 sol = solve(prob, RadauIIA3(), callback = cb)
 plot(sol)
-
