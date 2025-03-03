@@ -114,7 +114,7 @@ function ImplicitEuler(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant,
         controller = :PI, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     ImplicitEuler{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -154,7 +154,7 @@ function ImplicitMidpoint(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     ImplicitMidpoint{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -200,7 +200,7 @@ function Trapezoid(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     Trapezoid{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -256,7 +256,7 @@ function TRBDF2(;
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     TRBDF2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -307,7 +307,7 @@ function SDIRK2(;
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     SDIRK2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -353,7 +353,7 @@ function SDIRK22(;
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     Trapezoid{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -409,7 +409,7 @@ function SSPSDIRK2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :constant,
         controller = :PI)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     SSPSDIRK2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -457,7 +457,7 @@ function Kvaerno3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     Kvaerno3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -502,7 +502,7 @@ function KenCarp3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     KenCarp3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -540,7 +540,7 @@ function CFNLIRK3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     CFNLIRK3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -591,7 +591,7 @@ function Cash4(;
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, embedding = 3)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     Cash4{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
@@ -636,7 +636,7 @@ function SFSDIRK4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     SFSDIRK4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -678,7 +678,7 @@ function SFSDIRK5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     SFSDIRK5{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -720,7 +720,7 @@ function SFSDIRK6(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     SFSDIRK6{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -762,7 +762,7 @@ function SFSDIRK7(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     SFSDIRK7{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -804,7 +804,7 @@ function SFSDIRK8(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     SFSDIRK8{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -846,7 +846,7 @@ function Hairer4(;
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     Hairer4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -885,7 +885,7 @@ function Hairer42(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     Hairer42{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -933,7 +933,7 @@ function Kvaerno4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     Kvaerno4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -981,7 +981,7 @@ function Kvaerno5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     Kvaerno5{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -1026,7 +1026,7 @@ function KenCarp4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     KenCarp4{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -1073,7 +1073,7 @@ function KenCarp47(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     KenCarp47{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -1118,7 +1118,7 @@ function KenCarp5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     KenCarp5{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -1163,7 +1163,7 @@ function KenCarp58(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     KenCarp58{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -1207,7 +1207,7 @@ function ESDIRK54I8L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     ESDIRK54I8L2SA{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -1250,7 +1250,7 @@ function ESDIRK436L2SA2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     ESDIRK436L2SA2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -1293,7 +1293,7 @@ function ESDIRK437L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     ESDIRK437L2SA{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -1336,7 +1336,7 @@ function ESDIRK547L2SA2(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     ESDIRK547L2SA2{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
@@ -1381,7 +1381,7 @@ function ESDIRK659L2SA(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     ESDIRK659L2SA{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),

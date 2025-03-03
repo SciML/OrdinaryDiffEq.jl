@@ -73,7 +73,7 @@ function ImplicitEulerExtrapolation(; chunk_size = Val{0}(), autodiff = AutoForw
         precs = DEFAULT_PRECS,
         max_order = 12, min_order = 3, init_order = 5,
         threading = false, sequence = :harmonic)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     linsolve = (linsolve === nothing &&
                 (threading == true || threading isa PolyesterThreads)) ?
@@ -216,7 +216,7 @@ function ImplicitDeuflhardExtrapolation(;
         diff_type = Val{:forward}(),
         min_order = 1, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     # Enforce 1 <=  min_order <= init_order <= max_order:
     min_order = max(1, min_order)
@@ -400,7 +400,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence = :harmonic
     end
 
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
     # Initialize algorithm
     ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), typeof(AD_choice),
         typeof(linsolve), typeof(precs), diff_type,
@@ -483,7 +483,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence = :harmonic
     end
 
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
     # Initialize algorithm
     ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), typeof(AD_choice),
         typeof(linsolve), typeof(precs), diff_type,
