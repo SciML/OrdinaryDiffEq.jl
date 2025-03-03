@@ -51,7 +51,7 @@ function rosenbrock_wolfbrandt_docstring(description::String,
     standardtag = Val{true}(),
     autodiff = AutoForwardDiff(),
     concrete_jac = nothing,
-    diff_type = Val{:central},
+    diff_type = Val{:forward}(),
     linsolve = nothing,
     precs = DEFAULT_PRECS,
     """ * extra_keyword_default
