@@ -757,7 +757,7 @@ end
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) === ad
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{3}()
 
-        alg = @test_logs (:warn,r"deprecated") @inferred(T(; autodiff = ad, chunk_size = Val{4}()))
+        alg = @test_logs (:warn,r"The `chunk_size` keyword is deprecated") match_mode=:any @inferred(T(; autodiff = ad, chunk_size = Val{4}()))
         @test alg isa RosenbrockAlgorithm{4,<:AutoForwardDiff{4},Val{:forward}()}
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) isa AutoForwardDiff{4}
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{4}()
@@ -768,7 +768,7 @@ end
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) === ad
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{0}()
 
-        alg = @test_logs (:warn,r"deprecated") @inferred(T(; autodiff = ad, diff_type = Val{:complex}()))
+        alg = @test_logs (:warn,r"The `diff_type` keyword is deprecated") match_mode=:any @inferred(T(; autodiff = ad, diff_type = Val{:complex}()))
         @test alg isa RosenbrockAlgorithm{0,<:AutoFiniteDiff{Val{:complex}},Val{:complex}()}
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) isa AutoFiniteDiff{Val{:complex}}
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{0}()
