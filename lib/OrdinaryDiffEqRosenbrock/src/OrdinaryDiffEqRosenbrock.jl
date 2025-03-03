@@ -18,6 +18,7 @@ using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import MacroTools
 using MacroTools: @capture
 using DiffEqBase: @def
+import DifferentiationInterface as DI
 import LinearSolve
 import LinearSolve: UniformScaling
 import ForwardDiff
