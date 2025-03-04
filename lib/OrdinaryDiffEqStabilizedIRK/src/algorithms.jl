@@ -26,7 +26,7 @@ function IRKC(;
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear, controller = :Standard, eigen_est = nothing)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     IRKC{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),

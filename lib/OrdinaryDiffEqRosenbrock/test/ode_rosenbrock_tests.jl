@@ -706,3 +706,96 @@ end
     sim = test_convergence(dts, prob, Rodas3(linsolve = LinearSolve.KrylovJL()))
     @test sim.𝒪est[:final]≈3 atol=testTol
 end
+
+@testset "ADTypes" begin
+    for T in [
+        Rosenbrock23,
+        Rosenbrock32,
+        RosShamp4,
+        Veldd4,
+        Velds4,
+        GRK4T,
+        GRK4A,
+        Ros4LStab,
+        ROS3P,
+        Rodas3,
+        Rodas23W,
+        Rodas3P,
+        Rodas4,
+        Rodas42,
+        Rodas4P,
+        Rodas4P2,
+        Rodas5,
+        Rodas5P,
+        Rodas5Pe,
+        Rodas5Pr,
+        RosenbrockW6S4OS,
+        ROS34PW1a,
+        ROS34PW1b,
+        ROS34PW2,
+        ROS34PW3,
+        ROS34PRw,
+        ROS3PRL,
+        ROS3PRL2,
+        ROK4a,
+        ROS2,
+        ROS2PR,
+        ROS2S,
+        ROS3,
+        ROS3PR,
+        Scholz4_7
+    ]
+        RosenbrockAlgorithm = if T <:
+                                 OrdinaryDiffEqRosenbrock.OrdinaryDiffEqRosenbrockAlgorithm
+            OrdinaryDiffEqRosenbrock.OrdinaryDiffEqRosenbrockAlgorithm
+        else
+            OrdinaryDiffEqRosenbrock.OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
+        end
+
+        ad = AutoForwardDiff(; chunksize = 3)
+        alg = @test_logs @inferred(T(; autodiff = ad))
+        @test alg isa RosenbrockAlgorithm{3, typeof(ad), Val{:forward}()}
+        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) === ad
+        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{3}()
+
+        alg = @test_logs (:warn, r"The `chunk_size` keyword is deprecated") match_mode=:any @inferred(T(;
+            autodiff = ad, chunk_size = Val{4}()))
+        @test alg isa RosenbrockAlgorithm{4, <:AutoForwardDiff{4}, Val{:forward}()}
+        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) isa
+              AutoForwardDiff{4}
+        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{4}()
+
+        ad = AutoFiniteDiff(; fdtype = Val{:central}())
+        alg = @test_logs @inferred(T(; autodiff = ad))
+        @test alg isa
+              RosenbrockAlgorithm{0, <:AutoFiniteDiff{Val{:central}}, Val{:central}()}
+        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) === ad
+        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{0}()
+
+        alg = @test_logs (:warn, r"The `diff_type` keyword is deprecated") match_mode=:any @inferred(T(;
+            autodiff = ad, diff_type = Val{:complex}()))
+        @test alg isa
+              RosenbrockAlgorithm{0, <:AutoFiniteDiff{Val{:complex}}, Val{:complex}()}
+        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) isa
+              AutoFiniteDiff{Val{:complex}}
+        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{0}()
+
+        # issue #2613
+        f(u, _, _) = -u
+        prob = ODEProblem(f, [1.0, 0.0], (0.0, 1.0))
+        alg = T(; autodiff = AutoForwardDiff(; chunksize = 1))
+        sol = if alg isa OrdinaryDiffEqRosenbrock.OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
+            @inferred(solve(prob, alg))
+        else
+            @inferred(solve(prob, alg; dt = 0.1))
+        end
+        @test sol.alg === alg
+        alg = T(; autodiff = AutoFiniteDiff(; fdtype = Val(:central)))
+        sol = if alg isa OrdinaryDiffEqRosenbrock.OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
+            @inferred(solve(prob, alg))
+        else
+            @inferred(solve(prob, alg; dt = 0.1))
+        end
+        @test sol.alg === alg
+    end
+end

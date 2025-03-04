@@ -48,7 +48,7 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10,
         step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     RadauIIA3{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
@@ -96,7 +96,7 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     RadauIIA5{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
@@ -145,7 +145,7 @@ function RadauIIA9(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     RadauIIA9{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
@@ -183,13 +183,13 @@ end
 
 function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}, min_order = 5, max_order = 13, threading = false,
+        diff_type = Val{:forward}(), min_order = 5, max_order = 13, threading = false,
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!)
-    AD_choice = _process_AD_choice(autodiff, chunk_size, diff_type)
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     AdaptiveRadau{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
