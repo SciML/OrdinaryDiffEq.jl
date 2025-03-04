@@ -41,13 +41,13 @@ end
 
 function DiffEqBase.prepare_alg(
         alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{0, AD,
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD,
                 FDT},
-            OrdinaryDiffEqImplicitAlgorithm{0, AD, FDT},
-            DAEAlgorithm{0, AD, FDT},
-            OrdinaryDiffEqExponentialAlgorithm{0, AD, FDT}},
+            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT},
+            DAEAlgorithm{CS, AD, FDT},
+            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT}},
         u0::AbstractArray{T},
-        p, prob) where {AD, FDT, T}
+        p, prob) where {CS, AD, FDT, T}
 
 
     prepped_AD = prepare_ADType(alg_autodiff(alg), prob, u0, p, standardtag(alg))
@@ -78,13 +78,15 @@ function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
 
     T = eltype(u0)
 
+    cs = OrdinaryDiffEqCore._get_fwd_chunksize_int(autodiff_alg)
+
     if ((prob.f isa ODEFunction &&
       prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) ||
-     (isbitstype(T) && sizeof(T) > 24))
-        autodiff_alg = AutoForwardDiff(chunksize = 1, tag = tag)
+     (isbitstype(T) && sizeof(T) > 24)) && (cs == 0 || isnothing(cs))
+        return AutoForwardDiff(chunksize = 1, tag = tag)
+    else 
+        return AutoForwardDiff(chunksize = (cs == 0 ? nothing : cs), tag = tag)
     end
-
-    autodiff_alg
 end
 
 function prepare_ADType(alg::AutoFiniteDiff, prob, u0, p, standardtag)
