@@ -300,45 +300,11 @@ function resize_jac_config!(f, y, prep, backend, x)
     DI.prepare!_jacobian(f, y, prep, backend, x)
 end
 
-
-function resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJacCache, i)
-    resize!(jac_config.fx, i)
-    resize!(jac_config.dx, i)
-    resize!(jac_config.t, i)
-    ps = SparseDiffTools.adapt.(DiffEqBase.parameterless_type(jac_config.dx),
-        SparseDiffTools.generate_chunked_partials(jac_config.dx,
-            1:length(jac_config.dx),
-            Val(ForwardDiff.npartials(jac_config.t[1]))))
-    resize!(jac_config.p, length(ps))
-    jac_config.p .= ps
-end
-
-function resize_jac_config!(jac_config::FiniteDiff.JacobianCache, i)
-    resize!(jac_config, i)
-    jac_config
-end
-
-function resize_grad_config!(grad_config::AbstractArray, i)
-    resize!(grad_config, i)
-    grad_config
-end
-
 function resize_grad_config!(f,y,prep,backend,x)
     DI.prepare!_derivative(f,y,prep,backend,x)
 end
 
-function resize_grad_config!(grad_config::ForwardDiff.DerivativeConfig, i)
-    resize!(grad_config.duals, i)
-    grad_config
-end
 
-function resize_grad_config!(grad_config::FiniteDiff.GradientCache, i)
-    @unpack fx, c1, c2 = grad_config
-    fx !== nothing && resize!(fx, i)
-    c1 !== nothing && resize!(c1, i)
-    c2 !== nothing && resize!(c2, i)
-    grad_config
-end
 
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     alg_autodiff(alg) isa AutoSparse ? ad = ADTypes.dense_ad(alg_autodiff(alg)) : ad = alg_autodiff(alg)
