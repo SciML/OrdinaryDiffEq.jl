@@ -158,7 +158,7 @@ end
 function _process_AD_choice(
         ad_alg::AutoForwardDiff{CS}, ::Val{CS2}, ::Val{FD}) where {CS, CS2, FD}
     # Non-default `chunk_size`
-    if CS2 != 0
+    if CS2 != 0 && ad_alg == AutoForwardDiff()
         @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
         return _bool_to_ADType(Val{true}(), Val{CS2}(), Val{FD}()), Val{CS2}(), Val{FD}()
     end
