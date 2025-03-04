@@ -39,7 +39,8 @@ for (Alg, Description, Ref) in [
             standardtag = Val{true}(), concrete_jac = nothing,
             chunk_size = Val{0}(),
             diff_type = Val{:forward}())
-        AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+        AD_choice, chunk_size, diff_type = _process_AD_choice(
+            autodiff, chunk_size, diff_type)
 
         $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
             diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(krylov,
@@ -83,7 +84,8 @@ for (Alg, Description, Ref) in [
             m = 30, iop = 0, autodiff = AutoForwardDiff(), standardtag = Val{true}(),
             concrete_jac = nothing, chunk_size = Val{0}(),
             diff_type = Val{:forward}())
-        AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+        AD_choice, chunk_size, diff_type = _process_AD_choice(
+            autodiff, chunk_size, diff_type)
 
         $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
             diff_type, _unwrap_val(standardtag),
@@ -145,7 +147,8 @@ for (Alg, Description, Ref) in [(:Exp4, "4th order EPIRK scheme.", REF3)
             adaptive_krylov = true, m = 30, iop = 0, autodiff = AutoForwardDiff(),
             standardtag = Val{true}(), concrete_jac = nothing,
             chunk_size = Val{0}(), diff_type = Val{:forward}())
-        AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+        AD_choice, chunk_size, diff_type = _process_AD_choice(
+            autodiff, chunk_size, diff_type)
 
         $Alg{_unwrap_val(chunk_size), typeof(AD_choice), diff_type,
             _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(adaptive_krylov,
