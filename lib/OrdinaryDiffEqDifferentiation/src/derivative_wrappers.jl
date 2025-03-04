@@ -259,8 +259,8 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
         dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
 
         if dense isa AutoFiniteDiff
-            dir_true = @set dense.dir = true
-            dir_false = @set dense.dir = false
+            dir_true = @set dense.dir = 1
+            dir_false = @set dense.dir = -1
 
             if autodiff_alg isa AutoSparse
                 autodiff_alg_true = @set autodiff_alg.dense_ad = dir_true
@@ -344,8 +344,8 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     alg_autodiff(alg) isa AutoSparse ? ad = ADTypes.dense_ad(alg_autodiff(alg)) : ad = alg_autodiff(alg)
 
     if ad isa AutoFiniteDiff
-        dir_true = @set ad.dir = true
-        dir_false = @set ad.dir = false
+        dir_true = @set ad.dir = 1
+        dir_false = @set ad.dir = -1
 
         grad_config_true = DI.prepare_derivative(tf, du1, dir_true, t)
         grad_config_false = DI.prepare_derivative(tf, du1, dir_false, t)
