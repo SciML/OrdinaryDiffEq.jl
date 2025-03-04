@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, Random, LinearAlgebra, SparseArrays
+using OrdinaryDiffEq, ADTypes, Test, Random, LinearAlgebra, SparseArrays
 
 # Parameters
 Nc = 22
