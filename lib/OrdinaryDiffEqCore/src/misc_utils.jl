@@ -147,11 +147,12 @@ function _bool_to_ADType(::Val{false}, _, ::Val{FD}) where {FD}
 end
 
 # Functions to get ADType type from Bool or ADType object, or ADType type
-function _process_AD_choice(ad_alg::Bool, ::Val{CS}, ::Val{FD}) where {CS,FD}
+function _process_AD_choice(ad_alg::Bool, ::Val{CS}, ::Val{FD}) where {CS, FD}
     return _bool_to_ADType(Val(ad_alg), Val{CS}(), Val{FD}()), Val{CS}(), Val{FD}()
 end
 
-function _process_AD_choice(ad_alg::AutoForwardDiff{CS}, ::Val{CS2}, ::Val{FD}) where {CS,CS2,FD}
+function _process_AD_choice(
+        ad_alg::AutoForwardDiff{CS}, ::Val{CS2}, ::Val{FD}) where {CS, CS2, FD}
     # Non-default `chunk_size`
     if CS2 != 0
         @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
@@ -161,7 +162,8 @@ function _process_AD_choice(ad_alg::AutoForwardDiff{CS}, ::Val{CS2}, ::Val{FD}) 
     return ad_alg, Val{_CS}(), Val{FD}()
 end
 
-function _process_AD_choice(ad_alg::AutoFiniteDiff{FD}, ::Val{CS}, ::Val{FD2}) where {FD,CS,FD2}
+function _process_AD_choice(
+        ad_alg::AutoFiniteDiff{FD}, ::Val{CS}, ::Val{FD2}) where {FD, CS, FD2}
     # Non-default `diff_type`
     if FD2 !== :forward
         @warn "The `diff_type` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoFiniteDiff` with `fdtype=Val{$FD2}()`."
