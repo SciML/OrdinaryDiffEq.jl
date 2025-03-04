@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, OrdinaryDiffEqCore, DiffEqBase, Test, ADTypes
-using Random, SparseDiffTools
+using Random
 using OrdinaryDiffEqDefault
 using ElasticArrays, LinearSolve
 Random.seed!(213)
