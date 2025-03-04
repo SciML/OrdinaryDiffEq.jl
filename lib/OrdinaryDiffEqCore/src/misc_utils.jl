@@ -186,3 +186,8 @@ function _process_AD_choice(
     end
     return ad_alg, Val{CS}(), ad_alg.fdtype
 end
+
+function _process_AD_choice(ad_alg::AutoSparse, cs2::Val{CS2}, fd::Val{FD}) where {CS2, FD}
+    _, cs, fd = _process_AD_choice(ad_alg.dense_ad, cs2, fd)
+    ad_alg, cs, fd
+end
