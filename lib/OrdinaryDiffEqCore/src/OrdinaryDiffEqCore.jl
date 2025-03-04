@@ -72,7 +72,7 @@ import DiffEqBase: calculate_residuals,
 
 import Polyester
 using MacroTools, Adapt
-import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType
+import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse
 import Accessors: @reset
 
 using SciMLStructures: canonicalize, Tunable, isscimlstructure
