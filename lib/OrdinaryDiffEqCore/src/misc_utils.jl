@@ -191,3 +191,7 @@ function _process_AD_choice(ad_alg::AutoSparse, cs2::Val{CS2}, fd::Val{FD}) wher
     _, cs, fd = _process_AD_choice(ad_alg.dense_ad, cs2, fd)
     ad_alg, cs, fd
 end
+
+function _process_AD_choice(ad_alg, cs2, fd)
+    ad_alg, cs2, fd
+end
