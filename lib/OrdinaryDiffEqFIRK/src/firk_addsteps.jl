@@ -108,7 +108,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
     @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
     @unpack c1, c2, α, β, e1, e2 = cache.tab
-    @unpack κ, cont1, cont2 = cache
+    @unpack κ = cache
     @unpack z1, z2, w1, w2,
     dw12, cubuff,
     k, k2, fw1, fw2,
@@ -127,14 +127,24 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
         integrator.stats.nw += 1
     end
 
-    #better initial guess
-    uzero = zero(eltype(z1))
-    @. z1 = uzero
-    @. z2 = uzero
-    @. w1 = uzero
-    @. w2 = uzero
-    @. cache.cont1 = uzero
-    @. cache.cont2 = uzero
+    c1m1 = c1 - 1
+    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+        cache.dtprev = one(cache.dtprev)
+        uzero = zero(eltype(u))
+        @.. broadcast=false z1=uzero
+        @.. broadcast=false z2=uzero
+        @.. broadcast=false w1=uzero
+        @.. broadcast=false w2=uzero
+        @.. broadcast=false integrator.k[3]=uzero
+        @.. broadcast=false integrator.k[4]=uzero
+    else
+        c2′ = dt / cache.dtprev
+        c1′ = c1 * c2′
+        @.. broadcast=false z1=c1′ * (k[3] + (c1′ - c1m1) * k[4])
+        @.. broadcast=false z2=c2′ * (k[3] + (c2′ - c1m1) * k[4])
+        @.. broadcast=false w1=TI11 * z1 + TI12 * z2
+        @.. broadcast=false w2=TI21 * z1 + TI22 * z2
+    end
 
     # Newton iteration
     local ndw
@@ -232,6 +242,14 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
 
     @. u = uprev + z2
     step_limiter!(u, integrator, p, t + dt)
+
+    if integrator.EEst <= oneunit(integrator.EEst)
+        cache.dtprev = dt
+        if alg.extrapolant != :constant
+            integrator.k[3] = (z1 - z2) / c1m1
+            integrator.k[4] = integrator.k[3] - (z1 / c1)
+        end
+    end
 
     f(fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -384,7 +402,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
 @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst, k = integrator
 @unpack T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33 = cache.tab
 @unpack c1, c2, γ, α, β, e1, e2, e3 = cache.tab
-@unpack κ, cont1, cont2, cont3 = cache
+@unpack κ = cache
 @unpack z1, z2, z3, w1, w2, w3,
 dw1, ubuff, dw23, cubuff,
 k, k2, k3, fw1, fw2, fw3,
@@ -396,8 +414,8 @@ alg = unwrap_alg(integrator, true)
 mass_matrix = integrator.f.mass_matrix
 
 # precalculations
-c1m1 = (c1 - 1)*dt
-c2m1 = (c2 - 1)*dt
+c1m1 = c1 - 1
+c2m1 = c2 - 1
 c1mc2 = c1 - c2
 γdt, αdt, βdt = γ / dt, α / dt, β / dt
 if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
@@ -422,7 +440,7 @@ if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
     @.. broadcast=false integrator.k[4] = uzero
     @.. broadcast=false integrator.k[5] = uzero
 else
-    c3′ = dt
+    c3′ = dt / cache.dtprev
     c1′ = c1 * c3′
     c2′ = c2 * c3′
     @.. broadcast=false z1=c1′ * (k[3] + (c1′ - c2m1) * (k[4] + (c1′ - c1m1) * k[5]))
@@ -565,8 +583,8 @@ step_limiter!(u, integrator, p, t + dt)
 if integrator.EEst <= oneunit(integrator.EEst)
     cache.dtprev = dt
     if alg.extrapolant != :constant
-        integrator.k[3] = (z2 - z3) / (dt * c2m1)
-        @.. tmp=(z1 - z2) / (dt * c1mc2)
+        integrator.k[3] = (z2 - z3) / c2m1
+        @.. tmp=(z1 - z2) / c1mc2
         integrator.k[4] = (tmp - integrator.k[3]) / c1m1
         integrator.k[5] = integrator.k[4] - (tmp - z1 / c1) / c2
     end
@@ -807,7 +825,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
 @unpack T11, T12, T13, T14, T15, T21, T22, T23, T24, T25, T31, T32, T33, T34, T35, T41, T42, T43, T44, T45, T51 = cache.tab #= T52 = 1, T53 = 0, T54 = 1, T55 = 0=#
 @unpack TI11, TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25, TI31, TI32, TI33, TI34, TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55 = cache.tab
 @unpack c1, c2, c3, c4, γ, α1, β1, α2, β2, e1, e2, e3, e4, e5 = cache.tab
-@unpack κ= cache
+@unpack κ = cache
 @unpack z1, z2, z3, z4, z5, w1, w2, w3, w4, w5 = cache
 @unpack dw1, ubuff, dw23, dw45, cubuff1, cubuff2 = cache
 @unpack k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5 = cache
