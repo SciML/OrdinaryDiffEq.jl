@@ -78,14 +78,16 @@ function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
 
     T = eltype(u0)
 
-    cs = OrdinaryDiffEqCore._get_fwd_chunksize_int(autodiff_alg)
+    fwd_cs = OrdinaryDiffEqCore._get_fwd_chunksize_int(autodiff_alg)
+
+    cs = fwd_cs == 0 ? nothing : fwd_cs
 
     if ((prob.f isa ODEFunction &&
       prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) ||
      (isbitstype(T) && sizeof(T) > 24)) && (cs == 0 || isnothing(cs))
-        return AutoForwardDiff(chunksize = 1, tag = tag)
+        return AutoForwardDiff{1}(tag)
     else 
-        return AutoForwardDiff(chunksize = (cs == 0 ? nothing : cs), tag = tag)
+        return AutoForwardDiff{cs}(tag)
     end
 end
 

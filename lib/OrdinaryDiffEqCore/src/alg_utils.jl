@@ -176,6 +176,7 @@ _get_fwd_chunksize(::Type{<:AutoForwardDiff{CS}}) where {CS} = Val(CS)
 _get_fwd_chunksize_int(::Type{<:AutoForwardDiff{CS}}) where {CS} = CS
 _get_fwd_chunksize(AD) = Val(0)
 _get_fwd_chunksize_int(AD) = 0
+_get_fwd_chunksize_int(::AutoForwardDiff{CS}) where {CS} = CS
 _get_fwd_tag(::AutoForwardDiff{CS, T}) where {CS, T} = T
 
 _get_fdtype(::AutoFiniteDiff{T1, T2, T3}) where {T1, T2, T3} = T1
