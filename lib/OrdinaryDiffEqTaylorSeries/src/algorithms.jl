@@ -17,7 +17,7 @@ end
     "An arbitrary-order explicit Taylor series method.",
     "ExplicitTaylor2")
 Base.@kwdef struct ExplicitTaylor{P, StageLimiter, StepLimiter, Thread} <:
-    OrdinaryDiffEqAlgorithm
+    OrdinaryDiffEqAdaptiveAlgorithm
     order::Val{P} = Val{1}()
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!

@@ -39,13 +39,16 @@ end
 get_fsalfirstlast(cache::ExplicitTaylor2Cache, u) = (cache.k1, cache.k1)
 
 @cache struct ExplicitTaylorCache{
-    P, uType, rateType, StageLimiter, StepLimiter,
+    P, uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
     Thread} <: OrdinaryDiffEqMutableCache
     order::Val{P}
     u::uType
     uprev::uType
     us::NTuple{P, uType}
     ks::NTuple{P, rateType}
+    utilde::uType
+    tmp::uType
+    atmp::uNoUnitsType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -59,7 +62,11 @@ function alg_cache(alg::ExplicitTaylor{P}, u, rate_prototype, ::Type{uEltypeNoUn
     ks = ntuple(i -> zero(rate_prototype), Val(P))
     # us: normalized derivatives for u, starting from 1
     us = ntuple(i -> zero(u), Val(P))
-    ExplicitTaylorCache(Val(P), u, uprev, us, ks, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+    utilde = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    tmp = zero(u)
+    ExplicitTaylorCache(Val(P), u, uprev, us, ks, utilde, tmp, atmp,alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
 struct ExplicitTaylorConstantCache{P} <: OrdinaryDiffEqConstantCache end

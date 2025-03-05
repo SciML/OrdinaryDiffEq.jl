@@ -23,3 +23,8 @@ end
         @test sim.𝒪est[:final]≈N atol=testTol
     end
 end
+
+@testset "TaylorN Adaptive Tests" begin
+    sol = solve(prob_ode_linear, ExplicitTaylor(order=Val(2)))
+    @test length(sol) < 20
+end
