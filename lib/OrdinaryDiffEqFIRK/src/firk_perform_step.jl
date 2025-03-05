@@ -40,6 +40,28 @@ function initialize!(integrator, cache::RadauIIA3ConstantCache)
     nothing
 end
 
+function initialize!(integrator, cache::RadauIIA3Cache)
+    integrator.kshortsize = 4 #2 for fsalfirst and fsallast and 3 for the collocation terms
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.k[3] = similar(integrator.fsallast)
+    integrator.k[4] = similar(integrator.fsallast)
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    if integrator.opts.adaptive
+        @unpack abstol, reltol = integrator.opts
+        if reltol isa Number
+            cache.rtol = reltol^(2 / 3) / 10
+            cache.atol = cache.rtol * (abstol / reltol)
+        else
+            @.. broadcast=false cache.rtol=reltol^(2 / 3) / 10
+            @.. broadcast=false cache.atol=cache.rtol * (abstol / reltol)
+        end
+    end
+    nothing
+end
+
 function initialize!(integrator, cache::RadauIIA5ConstantCache)
     integrator.kshortsize = 2 
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -78,6 +100,21 @@ function initialize!(integrator, cache::RadauIIA5Cache)
     nothing
 end
 
+function initialize!(integrator, cache::RadauIIA9ConstantCache)
+    integrator.kshortsize = 7 
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    nothing
+end
+
 function initialize!(integrator, cache::RadauIIA9Cache)
     integrator.kshortsize = 7
     resize!(integrator.k, integrator.kshortsize)
@@ -104,8 +141,7 @@ function initialize!(integrator, cache::RadauIIA9Cache)
 end
 
 function initialize!(integrator, cache::AdaptiveRadauCache)
-    @unpack max_order = cache
-    max_stages = (max_order - 1) ÷ 4 * 2 + 1
+    max_stages = (integrator.alg.max_order - 1) ÷ 4 * 2 + 1
     integrator.kshortsize = max_stages + 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -256,14 +292,24 @@ end
         integrator.stats.nw += 1
     end
 
-    #better initial guess
-    uzero = zero(eltype(z1))
-    @. z1 = uzero
-    @. z2 = uzero
-    @. w1 = uzero
-    @. w2 = uzero
-    integrator.k[3] = uzero
-    integrator.k[4] = uzero
+    c1m1 = c1 - 1
+    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+        cache.dtprev = one(cache.dtprev)
+        uzero = zero(eltype(u))
+        @.. broadcast=false z1=uzero
+        @.. broadcast=false z2=uzero
+        @.. broadcast=false w1=uzero
+        @.. broadcast=false w2=uzero
+        @.. broadcast=false integrator.k[3]=uzero
+        @.. broadcast=false integrator.k[4]=uzero
+    else
+        c2′ = dt / cache.dtprev
+        c1′ = c1 * c2′
+        @.. broadcast=false z1=c1′ * (k[3] + (c1′ - c1m1) * k[4])
+        @.. broadcast=false z2=c2′ * (k[3] + (c2′ - c1m1) * k[4])
+        @.. broadcast=false w1=TI11 * z1 + TI12 * z2
+        @.. broadcast=false w2=TI21 * z1 + TI22 * z2
+    end
 
     # Newton iteration
     local ndw
@@ -368,6 +414,15 @@ end
         calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
         integrator.EEst = internalnorm(atmp, t)
     end
+
+    if integrator.EEst <= oneunit(integrator.EEst)
+        cache.dtprev = dt
+        if alg.extrapolant != :constant
+            integrator.k[3] = (z1 - z2) / c1m1
+            integrator.k[4] = integrator.k[3] - (z1 / c1)
+        end
+    end
+
     f(fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return
@@ -565,8 +620,8 @@ end
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations
-    c1m1 = (c1 - 1)*dt
-    c2m1 = (c2 - 1)*dt
+    c1m1 = c1 - 1
+    c2m1 = c2 - 1
     c1mc2 = c1 - c2
     γdt, αdt, βdt = γ / dt, α / dt, β / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
@@ -593,7 +648,7 @@ end
         @.. broadcast=false integrator.k[4]=uzero
         @.. broadcast=false integrator.k[5]=uzero
     else
-        c3′ = dt
+        c3′ = dt / cache.dtprev
         c1′ = c1 * c3′
         c2′ = c2 * c3′
         @.. broadcast=false z1=c1′ * (k[3] + (c1′ - c2m1) * (k[4] + (c1′ - c1m1) * k[5]))
@@ -774,11 +829,10 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            integrator.k[3] = (z2 - z3) / (dt * c2m1) # (c2, z2) and (1, z3)
-            # cont1 ~= 
-            @.. broadcast=false tmp= (z1 - z2) / (dt * c1mc2)
-            integrator.k[4] =(tmp - integrator.k[3]) / c1m1
-            integrator.k[5] =integrator.k[4] - (tmp - z1 / c1) / c2
+            integrator.k[3] = (z2 - z3) / c2m1 # (c2, z2) and (1, z3)
+            @.. broadcast=false tmp= (z1 - z2) / c1mc2
+            integrator.k[4] = (tmp - integrator.k[3]) / c1m1
+            integrator.k[5] = integrator.k[4] - (tmp - z1 / c1) / c2
         end
     end
 
@@ -850,25 +904,6 @@ end
         c2′ = c2 * c5′
         c3′ = c3 * c5′
         c4′ = c4 * c5′
-        z1 = @.. c1′ * (cont1 +
-                  (c1′ - c4m1) * (cont2 +
-                   (c1′ - c3m1) * (cont3 +
-                                   (c1′ - c2m1) * (cont4 + (c1′ - c1m1) * cont5))))
-        z2 = @.. c2′ * (cont1 +
-                  (c2′ - c4m1) * (cont2 +
-                   (c2′ - c3m1) * (cont3 +
-                                   (c2′ - c2m1) * (cont4 + (c2′ - c1m1) * cont5))))
-        z3 = @.. c3′ * (cont1 +
-                  (c3′ - c4m1) * (cont2 +
-                   (c3′ - c3m1) * (cont3 +
-                                   (c3′ - c2m1) * (cont4 + (c3′ - c1m1) * cont5))))
-        z4 = @.. c4′ * (cont1 +
-                  (c4′ - c4m1) * (cont2 +
-                   (c4′ - c3m1) * (cont3 +
-                                   (c4′ - c2m1) * (cont4 + (c4′ - c1m1) * cont5))))
-        z5 = @.. c5′ * (cont1 +
-                  (c5′ - c4m1) * (cont2 +
-                   (c5′ - c3m1) * (cont3 + (c5′ - c2m1) * (cont4 + (c5′ - c1m1) * cont5))))
         z1 = @.. c1′ * (k[3] +
                                 (c1′-c4m1) * (k[4] +
                                                      (c1′ - c3m1) * (k[5] +
@@ -1119,30 +1154,6 @@ end
         c2′ = c2 * c5′
         c3′ = c3 * c5′
         c4′ = c4 * c5′
-        @.. z1 = c1′ * (cont1 +
-                  (c1′ - c4m1) * (cont2 +
-                   (c1′ - c3m1) * (cont3 +
-                                   (c1′ - c2m1) * (cont4 + (c1′ - c1m1) * cont5))))
-        @.. z2 = c2′ * (cont1 +
-                  (c2′ - c4m1) * (cont2 +
-                   (c2′ - c3m1) * (cont3 +
-                                   (c2′ - c2m1) * (cont4 + (c2′ - c1m1) * cont5))))
-        @.. z3 = c3′ * (cont1 +
-                  (c3′ - c4m1) * (cont2 +
-                   (c3′ - c3m1) * (cont3 +
-                                   (c3′ - c2m1) * (cont4 + (c3′ - c1m1) * cont5))))
-        @.. z4 = c4′ * (cont1 +
-                  (c4′ - c4m1) * (cont2 +
-                   (c4′ - c3m1) * (cont3 +
-                                   (c4′ - c2m1) * (cont4 + (c4′ - c1m1) * cont5))))
-        @.. z5 = c5′ * (cont1 +
-                  (c5′ - c4m1) * (cont2 +
-                   (c5′ - c3m1) * (cont3 + (c5′ - c2m1) * (cont4 + (c5′ - c1m1) * cont5))))
-        @.. w1 = TI11 * z1 + TI12 * z2 + TI13 * z3 + TI14 * z4 + TI15 * z5
-        @.. w2 = TI21 * z1 + TI22 * z2 + TI23 * z3 + TI24 * z4 + TI25 * z5
-        @.. w3 = TI31 * z1 + TI32 * z2 + TI33 * z3 + TI34 * z4 + TI35 * z5
-        @.. w4 = TI41 * z1 + TI42 * z2 + TI43 * z3 + TI44 * z4 + TI45 * z5
-        @.. w5 = TI51 * z1 + TI52 * z2 + TI53 * z3 + TI54 * z4 + TI55 * z5
         @.. z1 = c1′ * (k[3] +
                                 (c1′-c4m1) * (k[4] +
                                                      (c1′ - c3m1) * (k[5] +
@@ -1663,10 +1674,9 @@ end
     @unpack num_stages, tabs, index = cache
     tab = tabs[index]
     @unpack T, TI, γ, α, β, c, e = tab
-    @unpack κ, cont, derivatives, z, w, c_prime, αdt, βdt = cache
-    @unpack κ, derivatives, z, w, c_prime, αdt, βdt= cache
+    @unpack κ, derivatives, z, w, c_prime, αdt, βdt = cache
     @unpack dw1, ubuff, dw2, cubuff, dw = cache
-    @unpack ks, k, fw, J, W1, W2 = cache
+    @unpack ks, fw, J, W1, W2 = cache
     @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
@@ -1733,13 +1743,9 @@ end
             c_prime[i] = c[i] * c_prime[num_stages]
         end
         for i in 1:num_stages # collocation polynomial
-            @.. z[i] = cont[num_stages] * (c_prime[i] - c[1] + 1) + cont[num_stages - 1]
-        for i in 1 : num_stages # collocation polynomial
             @.. z[i] = k[num_stages + 2] * (c_prime[i] - c[1] + 1) + k[num_stages + 1]
             j = num_stages - 2
             while j > 0
-                @.. z[i] *= (c_prime[i] - c[num_stages - j] + 1)
-                @.. z[i] += cont[j]
                 @.. z[i] *= (c_prime[i] - c[num_stages - j] + 1) 
                 @.. z[i] += k[j + 2]
                 j = j - 1
@@ -1822,7 +1828,6 @@ end
             let integrator = integrator, linsolve2 = linsolve2, fw = fw, αdt = αdt,
                 βdt = βdt, Mw = Mw, W1 = W1, W2 = W2,
                 cubuff = cubuff, dw2 = dw2, needfactor = needfactor
-
                 @threaded alg.threading for i in 1:((num_stages - 1) ÷ 2)
                     #@show i == Threads.threadid()
                     @.. cubuff[i] = complex(
@@ -1968,8 +1973,6 @@ end
                 end
             end
             for i in 1:num_stages
-                @.. cache.cont[i] = derivatives[i, num_stages]
-            for i in 1 : num_stages
                 integrator.k[i + 2] = derivatives[i, num_stages]
             end
         end

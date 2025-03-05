@@ -41,8 +41,6 @@ mutable struct RadauIIA3Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Ty
     w2::uType
     dw12::cuType
     cubuff::cuType
-    cont1::uType
-    cont2::uType
     du1::rateType
     fsalfirst::rateType
     k::rateType
@@ -86,8 +84,6 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(dw12, false)
     cubuff = similar(u, Complex{eltype(u)})
     recursivefill!(cubuff, false)
-    cont1 = zero(u)
-    cont2 = zero(u)
 
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
@@ -118,7 +114,7 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     RadauIIA3Cache(u, uprev,
         z1, z2, w1, w2,
-        dw12, cubuff, cont1, cont2,
+        dw12, cubuff,
         du1, fsalfirst, k, k2, fw1, fw2,
         J, W1,
         uf, tab, κ, one(uToltype), 10000,
@@ -462,7 +458,7 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     RadauIIA9Cache(u, uprev,
         z1, z2, z3, z4, z5, w1, w2, w3, w4, w5,
-        dw1, ubuff, dw23, dw45, cubuff1, cubuff2, 
+        dw1, ubuff, dw23, dw45, cubuff1, cubuff2,
         du1, fsalfirst, k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5,
         J, W1, W2, W3,
         uf, tab, κ, one(uToltype), 10000,
