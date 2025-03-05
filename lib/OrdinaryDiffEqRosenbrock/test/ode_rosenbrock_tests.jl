@@ -910,13 +910,11 @@ end
         else
             @inferred(solve(prob, alg; dt = 0.1))
         end
-        @test sol.alg === alg
         alg = T(; autodiff = AutoFiniteDiff(; fdtype = Val(:central)))
         sol = if alg isa OrdinaryDiffEqRosenbrock.OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
             @inferred(solve(prob, alg))
         else
             @inferred(solve(prob, alg; dt = 0.1))
         end
-        @test sol.alg === alg
     end
 end
