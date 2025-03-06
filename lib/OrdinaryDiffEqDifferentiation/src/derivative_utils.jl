@@ -655,12 +655,7 @@ end
             W = J
         else
             W = J - mass_matrix * inv(dtgamma)
-
-            # Automatic sparsity detection was requested, W in the cache needs to be SparseMatrixCSC
-            if alg_autodiff(integrator.alg) isa AutoSparse && isnothing(f.sparsity)
-               W = sparse(W)
-            end
-
+            
             if !isa(W, Number)
                 W = DiffEqBase.default_factorize(W)
             end
