@@ -10,12 +10,6 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         dto2 = dt / 2
         tf.u = uprev
 
-        #if cache.autodiff isa AutoForwardDiff
-        #    dT = ForwardDiff.derivative(tf, t)
-        #else
-        #    dT = FiniteDiff.finite_difference_derivative(tf, t, dir = sign(dt))
-        #end
-
         autodiff_alg = cache.autodiff
 
         if autodiff_alg isa AutoFiniteDiff
@@ -29,7 +23,6 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
             J = DI.derivative(uf, autodiff_alg, uprev)
             W = neginvdtγ .+ J
         else
-            #J = ForwardDiff.jacobian(uf, uprev)
             J = DI.jacobian(uf, autodiff_alg, uprev)
             if mass_matrix isa UniformScaling
                 W = neginvdtγ * mass_matrix + J
