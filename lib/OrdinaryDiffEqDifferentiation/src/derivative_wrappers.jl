@@ -86,9 +86,9 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
         maxcolor = maximum(colorvec)
         chunk_size = (get_chunksize(alg) == Val(0) || get_chunksize(alg) == Val(nothing) ) ? nothing : get_chunksize(alg)
-        num_of_chunks = chunk_size === nothing ?
-                Int(ceil(maxcolor / getsize(ForwardDiff.pickchunksize(maxcolor)))) :
-                Int(ceil(maxcolor / _unwrap_val(chunk_size)))
+        num_of_chunks =  div(maxcolor, isnothing(chunk_size) ?
+                getsize(ForwardDiff.pickchunksize(maxcolor)) : _unwrap_val(chunk_size),
+                RoundUp)
 
         integrator.stats.nf += num_of_chunks
 
