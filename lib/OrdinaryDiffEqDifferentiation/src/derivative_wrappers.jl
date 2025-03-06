@@ -323,7 +323,7 @@ function resize_grad_config!(cache, integrator)
     if !isnothing(cache.grad_config) && !isnothing(cache.grad_config[1])
 
         # for correct FiniteDiff dirs
-        autodiff_alg = alg_autodiff(integrator.alg)
+        autodiff_alg = ADTypes.dense_ad(alg_autodiff(integrator.alg))
         if autodiff_alg isa AutoFiniteDiff
             ad_right = SciMLBase.@set autodiff_alg.dir = 1
             ad_left = SciMLBase.@set autodiff_alg.dir = -1

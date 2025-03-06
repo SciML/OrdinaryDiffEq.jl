@@ -115,9 +115,14 @@ function SciMLOperators.update_coefficients!(J::JVPCache, u, p, t)
 end
 
 
-function Base.resize!(J::JVPCache,f, du, u, p, t, autodiff)
+function resize_JVPCache!(J::JVPCache,f, du, u, p, t, autodiff)
     J.jvp_op = prepare_jvp(f, du, u, p, t, autodiff)
     J.du = du
     update_coefficients!(J, u, p, t)
 end
 
+function resize_JVPCache!(J::JVPCache, f, du, u, autodiff)
+    J.jvp_op = prepare_jvp(f, du, u, J.p, J.t, autodiff)
+    J.du = du
+    update_coefficients!(J,u,J.p, J.t)
+end
