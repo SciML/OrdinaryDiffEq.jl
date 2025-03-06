@@ -40,16 +40,10 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
                 tf.uprev = uprev
                 tf.p = p
                 alg = unwrap_alg(integrator, true)
-                #derivative!(dT, tf, t, du2, integrator, cache.grad_config)
-                autodiff_alg = alg_autodiff(alg)
 
-                autodiff_alg = if autodiff_alg isa AutoSparse
-                    ADTypes.dense_ad(autodiff_alg)
-                else
-                    autodiff_alg
-                end
+                autodiff_alg = ADTypes.dense_ad(alg_autodiff(alg))
 
-                # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers 
+                # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers work 
                 t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT),t) : t
 
                 grad_config_tup = cache.grad_config
@@ -90,12 +84,7 @@ function calc_tderivative(integrator, cache)
         tf.u = uprev
         tf.p = p
 
-        autodiff_alg = alg_autodiff(alg)
-        autodiff_alg = if autodiff_alg isa AutoSparse
-            ADTypes.dense_ad(autodiff_alg)
-        else
-            autodiff_alg
-        end
+        autodiff_alg = ADTypes.dense_ad(alg_autodiff(alg))
 
         if alg_autodiff isa AutoFiniteDiff
             autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)

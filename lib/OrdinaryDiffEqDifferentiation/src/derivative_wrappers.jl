@@ -80,7 +80,7 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
     
     # Update stats.nf
 
-    dense = alg_autodiff(alg) isa AutoSparse ? ADTypes.dense_ad(alg_autodiff(alg)) : alg_autodiff(alg)
+    dense = ADTypes.dense_ad(alg_autodiff(alg)) 
 
     if dense isa AutoForwardDiff
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
@@ -135,8 +135,7 @@ end
 function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
 
-    dense = alg_autodiff(alg) isa AutoSparse ? ADTypes.dense_ad(alg_autodiff(alg)) :
-            alg_autodiff(alg)
+    dense = ADTypes.dense_ad(alg_autodiff(alg))
 
     if dense isa AutoForwardDiff
         integrator.stats.nf += 1
@@ -162,7 +161,7 @@ function jacobian(f, x, integrator)
         autodiff_alg = SciMLBase.@set autodiff_alg.dense_ad = dense
     else
         autodiff_alg = dense
-    end
+    end 
 
     if integrator.iter == 1
         try
@@ -182,8 +181,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         jac_config)
     alg = unwrap_alg(integrator, true)
 
-    dense = alg_autodiff(alg) isa AutoSparse ? ADTypes.dense_ad(alg_autodiff(alg)) :
-            alg_autodiff(alg)
+    dense = ADTypes.dense_ad(alg_autodiff(alg)) 
 
     if dense isa AutoForwardDiff
         if alg_autodiff(alg) isa AutoSparse
@@ -346,7 +344,7 @@ end
 
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     if !DiffEqBase.has_tgrad(f)
-        alg_autodiff(alg) isa AutoSparse ? ad = ADTypes.dense_ad(alg_autodiff(alg)) : ad = alg_autodiff(alg)
+        ad = ADTypes.dense_ad(alg_autodiff(alg)) 
 
         if ad isa AutoFiniteDiff
             dir_true = @set ad.dir = 1
