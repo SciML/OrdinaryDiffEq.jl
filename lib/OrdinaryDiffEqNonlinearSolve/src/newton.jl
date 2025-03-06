@@ -529,22 +529,8 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
     resize!(nlcache.atmp, i)
     resize!(nlcache.dz, i)
     resize!(nlcache.du1, i)
-    if !isnothing(nlcache.jac_config) && !isnothing(nlcache.jac_config[1])
-        uf = nlcache.uf
-        uf = SciMLBase.@set uf.f = SciMLBase.unwrapped_f(uf.f)
 
-        # for correct FiniteDiff dirs
-        autodiff_alg = alg_autodiff(integrator.alg)
-        if autodiff_alg isa AutoFiniteDiff
-            ad_right = SciMLBase.@set autodiff_alg.dir = 1 
-            ad_left = SciMLBase.@set autodiff_alg.dir = -1
-        else
-            ad_right = autodiff_alg
-            ad_left = autodiff_alg
-        end
-
-        nlcache.jac_config = ([resize_jac_config!(uf,nlcache.du1, config, ad, integrator.u) for (ad, config) in zip((ad_right, ad_left), nlcache.jac_config)]...,)
-    end
+    resize_jac_config!(nlcache, integrator)
     resize!(nlcache.weight, i)
 
     # resize J and W (or rather create new ones of appropriate size and type)
