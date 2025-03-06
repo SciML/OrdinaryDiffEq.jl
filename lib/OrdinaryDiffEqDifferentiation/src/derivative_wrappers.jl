@@ -259,21 +259,21 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
         dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
 
         if dense isa AutoFiniteDiff
-            dir_true = @set dense.dir = 1
-            dir_false = @set dense.dir = -1
+            dir_forward = @set dense.dir = 1
+            dir_reverse = @set dense.dir = -1
 
             if autodiff_alg isa AutoSparse
-                autodiff_alg_true = @set autodiff_alg.dense_ad = dir_true
-                autodiff_alg_false = @set autodiff_alg.dense_ad = dir_false
+                autodiff_alg_forward = @set autodiff_alg.dense_ad = dir_forward
+                autodiff_alg_reverse = @set autodiff_alg.dense_ad = dir_reverse
             else
-                autodiff_alg_true = dir_true
-                autodiff_alg_false = dir_false
+                autodiff_alg_forward = dir_forward
+                autodiff_alg_reverse = dir_reverse
             end
 
-            jac_config_true = DI.prepare_jacobian(uf, du1, autodiff_alg_true, u)
-            jac_config_false = DI.prepare_jacobian(uf, du1, autodiff_alg_false, u)
+            jac_config_forward = DI.prepare_jacobian(uf, du1, autodiff_alg_forward, u)
+            jac_config_reverse = DI.prepare_jacobian(uf, du1, autodiff_alg_reverse, u)
 
-            jac_config = (jac_config_true, jac_config_false)
+            jac_config = (jac_config_forward, jac_config_reverse)
         else
             jac_config1 = DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
             jac_config = (jac_config1, jac_config1)
@@ -296,32 +296,74 @@ function get_chunksize(jac_config::ForwardDiff.JacobianConfig{
     Val(N)
 end # don't degrade compile time information to runtime information
 
-function resize_jac_config!(f, y, prep, backend, x)
-    DI.prepare!_jacobian(f, y, prep, backend, x)
+function resize_jac_config!(cache, integrator)
+    if !isnothing(cache.jac_config) && !isnothing(cache.jac_config[1])
+        uf = cache.uf
+        uf = SciMLBase.@set uf.f = SciMLBase.unwrapped_f(uf.f)
+
+        # for correct FiniteDiff dirs
+        autodiff_alg = alg_autodiff(integrator.alg)
+        if autodiff_alg isa AutoFiniteDiff
+            ad_right = SciMLBase.@set autodiff_alg.dir = 1
+            ad_left = SciMLBase.@set autodiff_alg.dir = -1
+        else
+            ad_right = autodiff_alg
+            ad_left = autodiff_alg
+        end
+
+        cache.jac_config = ([DI.prepare!_jacobian(
+                                   uf, cache.du1, config, ad, integrator.u)
+                               for (ad, config) in zip(
+            (ad_right, ad_left), cache.jac_config)]...,)
+    end
+    cache.jac_config
 end
 
-function resize_grad_config!(f,y,prep,backend,x)
-    DI.prepare!_derivative(f,y,prep,backend,x)
+function resize_grad_config!(cache, integrator)
+    if !isnothing(cache.grad_config) && !isnothing(cache.grad_config[1])
+
+        # for correct FiniteDiff dirs
+        autodiff_alg = alg_autodiff(integrator.alg)
+        if autodiff_alg isa AutoFiniteDiff
+            ad_right = SciMLBase.@set autodiff_alg.dir = 1
+            ad_left = SciMLBase.@set autodiff_alg.dir = -1
+        else
+            ad_right = autodiff_alg
+            ad_left = autodiff_alg
+        end
+
+        cache.grad_config = ([DI.prepare!_derivative(
+                                 cache.tf, cache.du1, config, ad, integrator.t)
+                             for (ad, config) in zip(
+            (ad_right, ad_left), cache.grad_config)]...,)
+    end
+    cache.grad_config
 end
+
+
 
 
 
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
-    alg_autodiff(alg) isa AutoSparse ? ad = ADTypes.dense_ad(alg_autodiff(alg)) : ad = alg_autodiff(alg)
+    if !DiffEqBase.has_tgrad(f)
+        alg_autodiff(alg) isa AutoSparse ? ad = ADTypes.dense_ad(alg_autodiff(alg)) : ad = alg_autodiff(alg)
 
-    if ad isa AutoFiniteDiff
-        dir_true = @set ad.dir = 1
-        dir_false = @set ad.dir = -1
+        if ad isa AutoFiniteDiff
+            dir_true = @set ad.dir = 1
+            dir_false = @set ad.dir = -1
 
-        grad_config_true = DI.prepare_derivative(tf, du1, dir_true, t)
-        grad_config_false = DI.prepare_derivative(tf, du1, dir_false, t)
+            grad_config_true = DI.prepare_derivative(tf, du1, dir_true, t)
+            grad_config_false = DI.prepare_derivative(tf, du1, dir_false, t)
 
-        grad_config = (grad_config_true, grad_config_false)
+            grad_config = (grad_config_true, grad_config_false)
+        else
+            grad_config1 = DI.prepare_derivative(tf,du1,ad,t)
+            grad_config = (grad_config1, grad_config1)
+        end
+        return grad_config
     else
-        grad_config1 = DI.prepare_derivative(tf,du1,ad,t)
-        grad_config = (grad_config1, grad_config1)
+        return (nothing, nothing)
     end
-    return grad_config
 end
 
 function sparsity_colorvec(f, x)
