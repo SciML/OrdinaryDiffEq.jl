@@ -92,7 +92,7 @@ function calc_tderivative(integrator, cache)
 
         autodiff_alg = alg_autodiff(alg)
         autodiff_alg = if autodiff_alg isa AutoSparse
-            autodiff_alg = ADTypes.dense_ad(autodiff_alg)
+            ADTypes.dense_ad(autodiff_alg)
         else
             autodiff_alg
         end
@@ -666,7 +666,12 @@ end
             W = J
         else
             W = J - mass_matrix * inv(dtgamma)
-            alg_autodiff(integrator.alg) isa AutoSparse ? W = sparse(W) : W = W
+
+            # Automatic sparsity detection was requested, W in the cache needs to be SparseMatrixCSC
+            if alg_autodiff(integrator.alg) isa AutoSparse && isnothing(f.sparsity)
+               W = sparse(W)
+            end
+
             if !isa(W, Number)
                 W = DiffEqBase.default_factorize(W)
             end
@@ -876,13 +881,13 @@ function resize_J_W!(cache, integrator, i)
         islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
         if !islin
             if cache.J isa AbstractSciMLOperator
-                resize!(cache.J, f, cache.du1, integrator.u, integrator.p, integrator.t, alg_autodiff(integrator.alg))
+                resize_JVPCache(cache.J, f, cache.du1, integrator.u, integrator.p, integrator.t, alg_autodiff(integrator.alg))
             elseif f.jac_prototype !== nothing
                 J = similar(f.jac_prototype, i, i)
                 J = MatrixOperator(J; update_func! = f.jac)
             end
             if cache.W.jacvec isa AbstractSciMLOperator
-                resize!(cache.W.jacvec, f, cache.du1, integrator.u, integrator.p, integrator.t, alg_autodiff(integrator.alg))
+                resize_JVPCache(cache.W.jacvec, f, cache.du1, integrator.u, integrator.p, integrator.t, alg_autodiff(integrator.alg))
             end
             cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(f.mass_matrix,
                 integrator.dt,
