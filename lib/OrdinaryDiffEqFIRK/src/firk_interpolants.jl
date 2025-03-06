@@ -7,7 +7,7 @@ FIRK_WITH_INTERPOLATIONS = Union{RadauIIA3ConstantCache, RadauIIA3Cache, RadauII
     @unpack cont1, cont2 = cache
     @unpack c1 = cache.tab
     c1m1 = c1 - 1
-    @..  y₀ + Θ * (cont1 + (Θ - c1m1) * cont2)
+    @.. y₁ - Θdt * (k[3] - (Θdt + c1m1) * k[4])
 end
 
 @muladd function _ode_interpolant!(
@@ -23,11 +23,10 @@ end
     Θ, dt, y₀, y₁, k, cache::Union{RadauIIA5ConstantCache, RadauIIA5Cache},
     idxs::Nothing, T::Type{Val{0}}, differential_vars)
     @unpack c1, c2 = cache.tab
-    @unpack cont1, cont2, cont3 = cache
     c1m1 = c1 - 1
     c2m1 = c2 - 1
     Θdt = 1-Θ
-    @.. y₁ - Θdt * (cont1 - (Θdt + c2m1) * (cont2 - (Θdt + c1m1) * cont3))
+    @.. y₁ - Θdt * (k[3] - (Θdt + c2m1) * (k[4] - (Θdt + c1m1) * k[5]))
 end
 
 @muladd function _ode_interpolant!(

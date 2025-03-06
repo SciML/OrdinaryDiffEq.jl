@@ -9,11 +9,7 @@ for prob in [prob_ode_linear, prob_ode_2Dlinear]
     @test sim21.𝒪est[:L2]≈4 atol=testTol
 end
 
-sim21 = test_convergence(1 .// 2 .^ (6:-1:3), prob_ode_2Dlinear, RadauIIA5(), dense_errors = true)
-@test sim21.𝒪est[:final]≈5 atol=testTol
-@test sim21.𝒪est[:L2]≈4 atol=testTol
-
-sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_linear, RadauIIA9(), dense_errors = true)
+sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob, RadauIIA9(), dense_errors = true)
 @test sim21.𝒪est[:final]≈8 atol=testTol
 @test sim21.𝒪est[:L2]≈6 atol=testTol
 
