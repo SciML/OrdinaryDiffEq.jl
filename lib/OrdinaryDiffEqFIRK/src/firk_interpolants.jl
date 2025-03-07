@@ -7,6 +7,7 @@ FIRK_WITH_INTERPOLATIONS = Union{RadauIIA3ConstantCache, RadauIIA3Cache, RadauII
     @unpack cont1, cont2 = cache
     @unpack c1 = cache.tab
     c1m1 = c1 - 1
+    Θdt = 1 - Θ
     @.. y₁ - Θdt * (k[3] - (Θdt + c1m1) * k[4])
 end
 
