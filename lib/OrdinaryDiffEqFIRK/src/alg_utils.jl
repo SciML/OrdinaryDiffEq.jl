@@ -16,3 +16,7 @@ alg_adaptive_order(alg::RadauIIA9) = 5
 
 get_current_alg_order(alg::AdaptiveRadau, cache) = cache.num_stages * 2 - 1
 get_current_adaptive_order(alg::AdaptiveRadau, cache) = cache.num_stages
+
+function has_stiff_interpolation(::Union{RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau})
+    true
+end

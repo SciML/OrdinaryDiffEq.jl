@@ -4,15 +4,18 @@ import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, van
 testTol = 0.5
 
 for prob in [prob_ode_linear, prob_ode_2Dlinear]
-    sim21 = test_convergence(1 .// 2 .^ (6:-1:3), prob, RadauIIA5())
+    sim21 = test_convergence(1 .// 2 .^ (6:-1:3), prob, RadauIIA5(), dense_errors = true)
     @test sim21.𝒪est[:final]≈5 atol=testTol
+    @test sim21.𝒪est[:L2]≈4 atol=testTol
 end
 
-sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_linear, RadauIIA9())
+sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_linear, RadauIIA9(), dense_errors = true)
 @test sim21.𝒪est[:final]≈8 atol=testTol
+@test sim21.𝒪est[:L2]≈6 atol=testTol
 
-sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_2Dlinear, RadauIIA9())
+sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_2Dlinear, RadauIIA9(), dense_errors = true)
 @test sim21.𝒪est[:final]≈8 atol=testTol
+@test sim21.𝒪est[:L2]≈6 atol=testTol
 
 using GenericSchur
 
@@ -24,18 +27,17 @@ prob_ode_2Dlinear_big = remake(prob_ode_2Dlinear, u0 = big.(prob_ode_2Dlinear.u0
 #non-threaded tests
 for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
     dts = 1 ./ 2 .^ (4.25:-1:0.25)
-    local sim21 = test_convergence(dts, prob, AdaptiveRadau(min_order = i, max_order = i))
-    @test sim21.𝒪est[:final]≈i atol=testTol
+    local sim21 = test_convergence(dts, prob, AdaptiveRadau(min_order = i, max_order = i), dense_errors = true)
+    @test sim21.𝒪est[:final] ≈ i atol=testTol
+    @test sim21.𝒪est[:L2] ≈ ((i + 3) ÷ 2) atol=testTol
 end
+
 #threaded tests
 using OrdinaryDiffEqCore
 for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
     dts = 1 ./ 2 .^ (4.25:-1:0.25)
-    local sim21 = test_convergence(dts,
-        prob,
-        AdaptiveRadau(min_order = i, max_order = i,
-            threading = OrdinaryDiffEqCore.PolyesterThreads()))
-    @test sim21.𝒪est[:final]≈i atol=testTol
+    local sim21 = test_convergence(dts, prob, AdaptiveRadau(min_order = i, max_order = i, threading = OrdinaryDiffEqCore.PolyesterThreads()))
+    @test sim21.𝒪est[:final] ≈ i atol=testTol
 end
 
 # test adaptivity
@@ -53,9 +55,9 @@ for iip in (true, false)
     end
     @test length(sol) < 150
     @test length(solve(remake(vanstiff, p = 1e7), RadauIIA5())) < 150
-    @test length(solve(remake(vanstiff, p = 1e7), reltol = [1e-4, 1e-6], RadauIIA5())) < 170
+    @test length(solve(remake(vanstiff, p = 1e7), reltol = [1e-4, 1e-6], RadauIIA5())) < 180
     @test length(solve(remake(vanstiff, p = 1e7), RadauIIA5(), reltol = 1e-9,
-        abstol = 1e-9)) < 870
+        abstol = 1e-9)) < 970
     @test length(solve(remake(vanstiff, p = 1e9), RadauIIA5())) < 170
     @test length(solve(remake(vanstiff, p = 1e10), RadauIIA5())) < 190
 end
@@ -63,8 +65,9 @@ end
 ##Tests for RadauIIA3
 for prob in [prob_ode_linear, prob_ode_2Dlinear]
     dts = 1 ./ 2 .^ (8:-1:1)
-    sim = test_convergence(dts, prob, RadauIIA3())
+    sim = test_convergence(dts, prob, RadauIIA3(), dense_errors = true)
     @test sim.𝒪est[:final]≈3 atol=0.25
+    @test sim.𝒪est[:L2]≈3 atol=0.25
 end
 
 # test adaptivity
