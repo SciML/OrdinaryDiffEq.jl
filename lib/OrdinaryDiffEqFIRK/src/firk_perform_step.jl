@@ -194,7 +194,7 @@ end
     c1m1 = c1 - 1
     if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
-        uzero = zero(eltype(u))
+        uzero = map(zero, u)
         z1 = @.. uzero
         z2 = @.. uzero
         w1 = @.. uzero
