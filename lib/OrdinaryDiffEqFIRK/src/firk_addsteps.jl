@@ -157,8 +157,8 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
     else
         c2′ = dt / cache.dtprev
         c1′ = c1 * c2′
-        @..  z1=c1′ * (k[3] + (c1′ - c1m1) * k[4])
-        @..  z2=c2′ * (k[3] + (c2′ - c1m1) * k[4])
+        @..  z1=c1′ * (integrator.k[3] + (c1′ - c1m1) * integrator.k[4])
+        @..  z2=c2′ * (integrator.k[3] + (c2′ - c1m1) * integrator.k[4])
         @..  w1=TI11 * z1 + TI12 * z2
         @..  w2=TI21 * z1 + TI22 * z2
     end
@@ -467,9 +467,9 @@ else
     c3′ = dt / cache.dtprev
     c1′ = c1 * c3′
     c2′ = c2 * c3′
-    @..  z1=c1′ * (k[3] + (c1′ - c2m1) * (k[4] + (c1′ - c1m1) * k[5]))
-    @..  z2=c2′ * (k[3] + (c2′ - c2m1) * (k[4] + (c2′ - c1m1) * k[5]))
-    @..  z3=c3′ * (k[3] + (c3′ - c2m1) * (k[4] + (c3′ - c1m1) * k[5]))
+    @..  z1=c1′ * (integrator.k[3] + (c1′ - c2m1) * (integrator.k[4] + (c1′ - c1m1) * integrator.k[5]))
+    @..  z1=c2′ * (integrator.k[3] + (c2′ - c2m1) * (integrator.k[4] + (c2′ - c1m1) * integrator.k[5]))
+    @..  z1=c3′ * (integrator.k[3] + (c3′ - c2m1) * (integrator.k[4] + (c3′ - c1m1) * integrator.k[5]))
     @..  w1=TI11 * z1 + TI12 * z2 + TI13 * z3
     @..  w2=TI21 * z1 + TI22 * z2 + TI23 * z3
     @..  w3=TI31 * z1 + TI32 * z2 + TI33 * z3
@@ -907,25 +907,25 @@ else
     c2′ = c2 * c5′
     c3′ = c3 * c5′
     c4′ = c4 * c5′
-    @.. z1 = c1′ * (k[3] +
-                            (c1′-c4m1) * (k[4] +
-                                                 (c1′ - c3m1) * (k[5] +
-                                                                        (c1′ - c2m1) * (k[6] + (c1′ - c1m1) * k[7]))))
-    @.. z2 = c2′ * (k[3] +
-                            (c2′-c4m1) * (k[4] +
-                                                 (c2′ - c3m1) * (k[5] +
-                                                                        (c2′ - c2m1) * (k[6] + (c2′ - c1m1) * k[7]))))
-    @.. z3 = c3′ * (k[3] +
-                            (c3′-c4m1) * (k[4] +
-                                                 (c3′ - c3m1) * (k[5] +
-                                                                        (c3′ - c2m1) * (k[6] + (c3′ - c1m1) * k[7]))))
-    @.. z4 = c4′ * (k[3] +
-                            (c4′-c4m1) * (k[4] +
-                                                 (c4′ - c3m1) * (k[5] +
-                                                                        (c4′ - c2m1) * (k[6] + (c4′ - c1m1) * k[7]))))
-    @.. z5 = c5′ * (k[3] +
-                            (c5′-c4m1) * (k[4] +
-                                                 (c5′ - c3m1) * (k[5] + (c5′ - c2m1) * (k[6] + (c5′ - c1m1) * k[7]))))
+    @.. z1 = c1′ * (integrator.k[3] +
+                            (c1′-c4m1) * (integrator.k[4] +
+                                                 (c1′ - c3m1) * (integrator.k[5] +
+                                                                        (c1′ - c2m1) * (integrator.k[6] + (c1′ - c1m1) * integrator.k[7]))))
+    @.. z2 = c2′ * (integrator.k[3] +
+                            (c2′-c4m1) * (integrator.k[4] +
+                                                 (c2′ - c3m1) * (integrator.k[5] +
+                                                                        (c2′ - c2m1) * (integrator.k[6] + (c2′ - c1m1) * integrator.k[7]))))
+    @.. z3 = c3′ * (integrator.k[3] +
+                            (c3′-c4m1) * (integrator.k[4] +
+                                                 (c3′ - c3m1) * (integrator.k[5] +
+                                                                        (c3′ - c2m1) * (integrator.k[6] + (c3′ - c1m1) * integrator.k[7]))))
+    @.. z4 = c4′ * (integrator.k[3] +
+                            (c4′-c4m1) * (integrator.k[4] +
+                                                 (c4′ - c3m1) * (integrator.k[5] +
+                                                                        (c4′ - c2m1) * (integrator.k[6] + (c4′ - c1m1) * integrator.k[7]))))
+    @.. z5 = c5′ * (integrator.k[3] +
+                            (c5′-c4m1) * (integrator.k[4] +
+                                                 (c5′ - c3m1) * (integrator.k[5] + (c5′ - c2m1) * (integrator.k[6] + (c5′ - c1m1) * integrator.k[7]))))
     @.. w1 = TI11*z1+TI12*z2+TI13*z3+TI14*z4+TI15*z5
     @.. w2 = TI21*z1+TI22*z2+TI23*z3+TI24*z4+TI25*z5
     @.. w3 = TI31*z1+TI32*z2+TI33*z3+TI34*z4+TI35*z5
