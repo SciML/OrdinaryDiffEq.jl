@@ -63,7 +63,7 @@ function initialize!(integrator, cache::RadauIIA3Cache)
 end
 
 function initialize!(integrator, cache::RadauIIA5ConstantCache)
-    integrator.kshortsize = 2 
+    integrator.kshortsize = 5 
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -72,8 +72,9 @@ function initialize!(integrator, cache::RadauIIA5ConstantCache)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.k[3] = zero(integrator.fsalfirst)
+    integrator.k[4] = zero(integrator.fsalfirst)
+    integrator.k[5] = zero(integrator.fsalfirst)
     nothing
 end
 
@@ -110,8 +111,11 @@ function initialize!(integrator, cache::RadauIIA9ConstantCache)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.k[3] = zero(integrator.fsalfirst)
+    integrator.k[4] = zero(integrator.fsalfirst)
+    integrator.k[5] = zero(integrator.fsalfirst)
+    integrator.k[6] = zero(integrator.fsalfirst)
+    integrator.k[7] = zero(integrator.fsalfirst)
     nothing
 end
 
@@ -136,6 +140,23 @@ function initialize!(integrator, cache::RadauIIA9Cache)
             @..  cache.rtol=reltol^(3 / 5) / 10
             @..  cache.atol=cache.rtol * (abstol / reltol)
         end
+    end
+    nothing
+end
+
+function initialize!(integrator, cache::AdaptiveRadauConstantCache)
+    max_stages = (integrator.alg.max_order - 1) ÷ 4 * 2 + 1
+    integrator.kshortsize = max_stages + 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    for i in 3 : max_stages + 2
+        integrator.k[i] = zero(integrator.fsallast)
     end
     nothing
 end
@@ -616,8 +637,8 @@ end
         if alg.extrapolant != :constant
             integrator.k[3] = (z2 - z3)/c2m1
             tmp = @.. (z1 - z2)/c1mc2
-            integrator.k[4] = (tmp - cache.cont1)/c1m1
-            integrator.k[5] = cache.cont2-(tmp - z1 / c1) / c2
+            integrator.k[4] = (tmp - integrator.k[3])/c1m1
+            integrator.k[5] = integrator.k[4]-(tmp - z1 / c1) / c2
         end
     end
 

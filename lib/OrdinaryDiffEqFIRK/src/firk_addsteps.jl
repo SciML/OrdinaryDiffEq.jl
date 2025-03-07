@@ -413,8 +413,8 @@ if integrator.EEst <= oneunit(integrator.EEst)
     if alg.extrapolant != :constant
         integrator.k[3] = (z2 - z3)/c2m1
         tmp = @.. (z1 - z2)/c1mc2
-        integrator.k[4] = (tmp - cache.cont1)/c1m1
-        integrator.k[5] = cache.cont2-(tmp - z1 / c1) / c2
+        integrator.k[4] = (tmp - integrator.k[3])/c1m1
+        integrator.k[5] = integrator.k[4]-(tmp - z1 / c1) / c2
     end
 end
 

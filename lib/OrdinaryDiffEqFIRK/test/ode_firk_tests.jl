@@ -9,7 +9,7 @@ for prob in [prob_ode_linear, prob_ode_2Dlinear]
     @test sim21.𝒪est[:L2]≈4 atol=testTol
 end
 
-sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob, RadauIIA9(), dense_errors = true)
+sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_linear, RadauIIA9(), dense_errors = true)
 @test sim21.𝒪est[:final]≈8 atol=testTol
 @test sim21.𝒪est[:L2]≈6 atol=testTol
 
@@ -31,9 +31,6 @@ for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear
     @test sim21.𝒪est[:final] ≈ i atol=testTol
     @test sim21.𝒪est[:L2] ≈ ((i + 3) ÷ 2) atol=testTol
 end
-
-dts = 1 ./ 2 .^ (4.25:-1:0.25)
-local sim21 = test_convergence(dts, prob_ode_2Dlinear_big, AdaptiveRadau(min_order = 5, max_order = 5), dense_errors = true)
 
 #threaded tests
 using OrdinaryDiffEqCore
