@@ -14,7 +14,7 @@ JVPCache construction builds a DifferentiationInterface "prep" object using `pre
 
 Computing the JVP is done with the DifferentiationInterface function `pushforward!`, which takes advantage of the preparation done upon construction. 
 """
-@concrete mutable struct JVPCache{T} <: SciMLOperators.AbstractSciMLOperator{T} where {T}
+@concrete mutable struct JVPCache{T} <: SciMLOperators.AbstractSciMLOperator{T}
     jvp_op
     f
     du
