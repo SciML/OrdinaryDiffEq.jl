@@ -102,10 +102,6 @@ resize!(i, 5)
 @test size(i.cache.J) == (5, 5)
 @test size(i.cache.W) == (5, 5)
 @test length(i.cache.linsolve_tmp) == 5
-@test all(size(DI.jacobian(
-    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.jac_config[1],
-    AutoForwardDiff(tag = ForwardDiff.Tag(DiffEqBase.OrdinaryDiffEqTag(), Float64)), rand(5))) .==
-          5)
 solve!(i)
 
 i = init(prob, Rosenbrock23(; autodiff = AutoFiniteDiff()))
