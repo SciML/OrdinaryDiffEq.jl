@@ -763,9 +763,16 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
         _f = islin ? (isode ? f.f : f.f1.f) : f
         J = if f.jac_prototype === nothing
             if alg_autodiff(alg) isa AutoSparse
-                isnothing(f.sparsity) ?
-                convert.(eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config[1])) :
-                (eltype(f.sparsity) == Bool) ? convert.(eltype(u), f.sparsity) : f.sparsity
+                if isnothing(f.sparsity)
+                    !isnothing(jac_config) ?
+                    convert.(
+                        eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config[1])) :
+                    sparse(ArrayInterface.undefmatrix(u))
+                elseif eltype(f.sparsity) == Bool
+                    convert.(eltype(u), f.sparsity)
+                else
+                    f.sparsity
+                end
             else
                 ArrayInterface.undefmatrix(u)
             end
@@ -787,10 +794,16 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
                 f.jac(uprev, p, t)
             end
         elseif f.jac_prototype === nothing
-            if alg_autodiff(alg) isa AutoSparse && !isnothing(jac_config)
-                isnothing(f.sparsity) ?
-                convert.(eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config[1])) : 
-                (eltype(f.sparsity) == Bool) ? convert.(eltype(u), f.sparsity) : f.sparsity
+            if alg_autodiff(alg) isa AutoSparse
+
+                if isnothing(f.sparsity)
+                    !isnothing(jac_config) ? convert.(eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config[1])) :
+                    sparse(ArrayInterface.undefmatrix(u))
+                elseif eltype(f.sparsity) == Bool
+                    convert.(eltype(u), f.sparsity)
+                else
+                    f.sparsity
+                end
             else
                 ArrayInterface.undefmatrix(u)
             end
