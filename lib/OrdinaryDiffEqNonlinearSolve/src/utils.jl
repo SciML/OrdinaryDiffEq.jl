@@ -72,7 +72,8 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
     uprev::uprevType
     t::tType
     function DAEResidualJacobianWrapper(alg, f, p, α, invγdt, tmp, uprev, t)
-        isautodiff = alg_autodiff(alg) isa AutoForwardDiff
+        ad = ADTypes.dense_ad(alg_autodiff(alg)) 
+        isautodiff = ad isa AutoForwardDiff 
         if isautodiff
             tmp_du = PreallocationTools.dualcache(uprev)
             tmp_u = PreallocationTools.dualcache(uprev)
@@ -84,6 +85,13 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
             typeof(invγdt), typeof(tmp), typeof(uprev), typeof(t)}(f, p, tmp_du, tmp_u, α,
             invγdt, tmp, uprev, t)
     end
+end
+
+function SciMLBase.setproperties(wrap::DAEResidualJacobianWrapper, patch::NamedTuple)
+    for key in keys(patch)
+        setproperty!(wrap, key, patch[key])
+    end
+    return wrap
 end
 
 is_autodiff(m::DAEResidualJacobianWrapper{isAD}) where {isAD} = isAD
@@ -173,7 +181,7 @@ function build_nlsolver(
 
     if nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
-        J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
+        J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(true))
 
         # TODO: check if the solver is iterative
         weight = zero(u)
@@ -288,7 +296,7 @@ function build_nlsolver(
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
 
-        J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
+        J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
         if nlalg isa NonlinearSolveAlg
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
