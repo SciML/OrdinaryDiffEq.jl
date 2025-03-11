@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, StaticArrays, Test
+using OrdinaryDiffEq, StaticArrays, Test, ADTypes
 
 function time_derivative(du, u, p, t)
     du[1] = -t
