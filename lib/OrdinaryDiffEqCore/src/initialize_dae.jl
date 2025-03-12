@@ -85,6 +85,21 @@ function _initialize_dae!(integrator, prob::DiscreteProblem,
     end
 end
 
+function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
+        alg::DefaultInit, x::Union{Val{true}, Val{false}})
+    atol = one(eltype(prob.u0)) * 1e-12
+    if SciMLBase.has_initializeprob(prob.f)
+        _initialize_dae!(integrator, prob,
+                         OverrideInit(atol), x)
+    elseif !applicable(_initialize_dae!, integrator, prob,
+        BrownFullBasicInit(atol), x)
+        error("`OrdinaryDiffEqNonlinearSolve` is not loaded, which is required for the default initialization algorithm (`BrownFullBasicInit` or `ShampineCollocationInit`). To solve this problem, either do `using OrdinaryDiffEqNonlinearSolve` or pass `initializealg = CheckInit()` to the `solve` function. This second option requires consistent `u0`.")
+    else
+        _initialize_dae!(integrator, prob,
+            BrownFullBasicInit(atol), x)
+    end
+end
+
 ## Nonlinear Solver Defaulting
 
 ## If an alg is given use it
