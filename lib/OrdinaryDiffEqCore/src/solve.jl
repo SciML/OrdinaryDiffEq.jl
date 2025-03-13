@@ -561,7 +561,7 @@ function DiffEqBase.__init(
         fsalfirst, fsallast)
 
     if initialize_integrator
-        if isdae || SciMLBase.has_initializeprob(prob.f)
+        if isdae || SciMLBase.has_initializeprob(prob.f) || prob isa SciMLBase.ImplicitDiscreteProblem
             DiffEqBase.initialize_dae!(integrator)
             update_uprev!(integrator)
         end
