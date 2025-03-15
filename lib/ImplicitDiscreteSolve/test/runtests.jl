@@ -1,6 +1,6 @@
 #runtests
 using Test
-using SimpleImplicitDiscreteSolve
+using ImplicitDiscreteSolve
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
 
