@@ -8,7 +8,6 @@ import SparseDiffTools: SparseDiffTools, matrix_colors, forwarddiff_color_jacobi
                         default_chunk_size, getsize, JacVec
 
 import SparseMatrixColorings: GreedyColoringAlgorithm
-import SparseConnectivityTracer: TracerSparsityDetector
 
 import ForwardDiff, FiniteDiff
 import ForwardDiff.Dual
