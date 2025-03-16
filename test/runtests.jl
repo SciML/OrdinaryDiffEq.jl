@@ -26,7 +26,7 @@ end
 #Start Test Script
 
 @time begin
-    if contains(GROUP, "OrdinaryDiffEq")
+    if contains(GROUP, "OrdinaryDiffEq") || GROUP == "ImplicitDiscreteSolve"
         Pkg.develop(path = "../lib/$GROUP")
         Pkg.test(GROUP)
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
