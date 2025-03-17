@@ -1002,8 +1002,7 @@ struct HSLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     function HSLDDRK64(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!;
             williamson_condition = true, thread = False())
         Base.depwarn("HSLDDRK64 is deprecated, use SHLDDRK64 instead.", :HSLDDRK64)
-        SHLDDRK64(stage_limiter!, step_limiter!, thread;
-            williamson_condition = williamson_condition)
+        SHLDDRK64(; stage_limiter!, step_limiter!, thread, williamson_condition)
     end
 end
 
