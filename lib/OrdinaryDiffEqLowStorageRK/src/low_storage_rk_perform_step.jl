@@ -966,6 +966,7 @@ end
     integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
     integrator.u = u
 end
 
@@ -1012,6 +1013,7 @@ end
     step_limiter!(u, integrator, p, t + dt)
 
     f(k, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
 end
 
 function initialize!(integrator, cache::SHLDDRK_2NConstantCache)
@@ -1053,7 +1055,7 @@ end
         # u5 = u
         tmp = α51 * tmp + dt * f(u, p, t + c51 * dt)
         u = u + β51 * tmp
-
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
     else
         cache.step += 1
         # u1
@@ -1073,11 +1075,13 @@ end
         u = u + β52 * tmp
         tmp = α62 * tmp + dt * f(u, p, t + c62 * dt)
         u = u + β62 * tmp
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
     end
 
     integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.u = u
 end
 
@@ -1089,6 +1093,7 @@ function initialize!(integrator, cache::SHLDDRK_2NCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::SHLDDRK_2NCache, repeat_step = false)
@@ -1128,6 +1133,7 @@ end
         step_limiter!(u, integrator, p, t + dt)
 
         f(k, u, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
     else
         # u1
         @.. thread=thread tmp=dt * fsalfirst
@@ -1161,5 +1167,6 @@ end
         step_limiter!(u, integrator, p, t + dt)
 
         f(k, u, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     end
 end
