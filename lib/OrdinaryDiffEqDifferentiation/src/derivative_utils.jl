@@ -774,7 +774,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
                     f.sparsity
                 end
             else
-                ArrayInterface.undefmatrix(u)
+                ArrayInterface.zeromatrix(u)
             end
         else
             deepcopy(f.jac_prototype)
