@@ -82,6 +82,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     f(k, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
 end
 
 function initialize!(integrator, cache::KYKSSPRK42ConstantCache)
@@ -113,6 +114,7 @@ end
 
     integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
     integrator.k[1] = integrator.fsalfirst
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
     integrator.u = u
 end
 
