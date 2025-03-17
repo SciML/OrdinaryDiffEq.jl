@@ -12,7 +12,7 @@ function perform_step!(integrator, cache::SimpleIDSolveCache, repeat_step = fals
 end
 
 function initialize!(integrator, cache::SimpleIDSolveCache)
-    cache.state.u .= integrator.u
+    integrator.u isa AbstractVector && (cache.state.u .= integrator.u)
     cache.state.p = integrator.p
     cache.state.t_next = integrator.t
     f = integrator.f
