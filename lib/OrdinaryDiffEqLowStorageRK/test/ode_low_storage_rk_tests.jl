@@ -165,6 +165,12 @@ end
     @test sol_old[end] ≈ sol_new[end]
 end
 
+@testset "HSLDDRK64" begin
+    # this method is deprecated
+    alg = HSLDDRK64()
+    @test alg isa SHLDDRK64
+end
+
 @testset "SHLDDRK64" begin
     alg = SHLDDRK64()
     alg2 = SHLDDRK64(; williamson_condition = true)
