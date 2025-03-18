@@ -67,7 +67,7 @@ function prepare_jvp(f::DiffEqBase.AbstractDiffEqFunction, du, u, p, t, autodiff
     autodiff = autodiff isa AutoSparse ?  ADTypes.dense_ad(autodiff) : autodiff
     @assert DI.check_inplace(autodiff) "AD backend $(autodiff) doesn't support in-place problems."
     di_prep = DI.prepare_pushforward(
-        (u) -> f(du,u,p,t), du, autodiff, u, (u,))
+        (du, u) -> f(du,u,p,t), du, autodiff, u, (u,))
     return (Jv, v, u, p, t) -> DI.pushforward!((du,x) -> f(du,x,p,t), du, (reshape(Jv, size(du)),), di_prep,
             autodiff, u, (reshape(v,size(u)),))
 end
