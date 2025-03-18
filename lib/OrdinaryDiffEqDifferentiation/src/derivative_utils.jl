@@ -798,7 +798,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
 
                 if isnothing(f.sparsity)
                     !isnothing(jac_config) ? convert.(eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config[1])) :
-                    sparse(ArrayInterface.zeromatrix(u))
+                    spzeros(length(u), length(u))
                 elseif eltype(f.sparsity) == Bool
                     convert.(eltype(u), f.sparsity)
                 else
