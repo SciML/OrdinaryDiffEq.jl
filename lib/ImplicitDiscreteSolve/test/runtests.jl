@@ -65,7 +65,17 @@ end
 
     for ts in 1:tsteps
         step!(integ)
-        @show integ.u
         @test integ.u[1]^2 + integ.u[2]^2 ≈ 16
     end
+end
+
+@testset "Handle nothing in u0" begin
+    function empty(u_next, u, p, t) 
+        nothing
+    end
+
+    tsteps = 5
+    u0 = nothing
+    idprob = ImplicitDiscreteProblem(empty, u0, (0, tsteps), [])
+    @test_nowarn integ = init(idprob, SimpleIDSolve())
 end
