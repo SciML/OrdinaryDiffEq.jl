@@ -12,7 +12,7 @@ function perform_step!(integrator, cache::SimpleIDSolveCache, repeat_step = fals
 end
 
 function initialize!(integrator, cache::SimpleIDSolveCache)
-    cache.state.u .= integrator.u
+    integrator.u isa AbstractVector && (cache.state.u .= integrator.u)
     cache.state.p = integrator.p
     cache.state.t_next = integrator.t
     f = integrator.f
@@ -33,6 +33,7 @@ end
 
 function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
         alg::DefaultInit, x::Union{Val{true}, Val{false}})
+    isnothing(prob.u0) && return
     atol = one(eltype(prob.u0)) * 1e-12
     if SciMLBase.has_initializeprob(prob.f)
         _initialize_dae!(integrator, prob,

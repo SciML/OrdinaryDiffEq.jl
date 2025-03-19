@@ -1,5 +1,5 @@
 mutable struct ImplicitDiscreteState{uType, pType, tType}
-    u::Vector{uType}
+    u::uType
     p::pType
     t_next::tType
 end
@@ -16,7 +16,7 @@ function alg_cache(alg::SimpleIDSolve, u, rate_prototype, ::Type{uEltypeNoUnits}
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
 
-    state = ImplicitDiscreteState(similar(u), p, t)
+    state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
     SimpleIDSolveCache(u, uprev, state, nothing)
 end
 
@@ -31,7 +31,7 @@ function alg_cache(alg::SimpleIDSolve, u, rate_prototype, ::Type{uEltypeNoUnits}
         dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
 
-    state = ImplicitDiscreteState(similar(u), p, t)
+    state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
     SimpleIDSolveCache(u, uprev, state, nothing)
 end
 
