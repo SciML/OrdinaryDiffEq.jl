@@ -24,14 +24,20 @@ Base.@kwdef struct ExplicitTaylor{P, StageLimiter, StepLimiter, Thread} <:
     thread::Thread = False()
 end
 
-Base.@kwdef struct DAETS{StageLimiter, StepLimiter, Thread} <:
-    OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter = trivial_limiter!
-    step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+struct DAETS{CS, AD, FDT, ST, CJ, StageLimiter, StepLimiter, Thread} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
+    order::CS
+    adaptive::AD
+    fdtype::FDT
+    calck::CJ
+    tableau::ST
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
-TruncatedStacktraces.@truncate_stacktrace DAETS 3
-# for backwards compatibility
-function DAETS(stage_limiter!, step_limiter! = trivial_limiter!)
-    DAETS(stage_limiter!, step_limiter!, False())
+
+function DAETS(; order = 5, adaptive = false, fdtype = Val(:central),
+               calck = Val(true), tableau = nothing,
+               stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+               thread = False())
+    DAETS(order, adaptive, fdtype, calck, tableau, stage_limiter!, step_limiter!, thread)
 end
