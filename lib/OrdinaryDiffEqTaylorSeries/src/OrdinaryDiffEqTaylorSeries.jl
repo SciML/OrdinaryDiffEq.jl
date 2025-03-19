@@ -8,6 +8,7 @@ import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
                            calculate_residuals!, _ode_interpolant, _ode_interpolant!,
                            CompiledFloats, @OnDemandTableauExtract, initialize!,
                            perform_step!, OrdinaryDiffEqAlgorithm,
+                           DAEAlgorithm,
                            CompositeAlgorithm, _ode_addsteps!, copyat_or_push!,
                            AutoAlgSwitch, get_fsalfirstlast,
                            full_cache, DerivativeOrderNotPossibleError
@@ -15,7 +16,7 @@ import Static: False
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
-import LinearAlgebra: norm
+import LinearAlgebra: norm, ldiv!, lu, cond
 using TruncatedStacktraces
 using TaylorDiff
 import DiffEqBase: @def
@@ -24,7 +25,7 @@ import OrdinaryDiffEqCore
 using Reexport
 @reexport using DiffEqBase
 
-include("DAETS_utils.jl")
+include("DAETS_symbolics.jl")
 
 include("algorithms.jl")
 include("alg_utils.jl")
@@ -32,6 +33,7 @@ include("TaylorSeries_caches.jl")
 include("interp_func.jl")
 # include("interpolants.jl")
 include("TaylorSeries_perform_step.jl")
+include("initialize_dae.jl")
 
 import PrecompileTools
 import Preferences
