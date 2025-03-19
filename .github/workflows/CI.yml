@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.group == 'Downstream' }}
     strategy:
-      fail-fast: false
       matrix:
         group:
           - InterfaceI
