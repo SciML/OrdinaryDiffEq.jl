@@ -1,7 +1,7 @@
 name = "ImplicitDiscreteSolve"
 uuid = "3263718b-31ed-49cf-8a0f-35a466e8af96"
 authors = ["vyudu <vincent.duyuan@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
