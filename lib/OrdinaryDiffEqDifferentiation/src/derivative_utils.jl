@@ -902,3 +902,6 @@ function resize_J_W!(cache, integrator, i)
 
     nothing
 end
+
+getsize(::Val{N}) where {N} = N
+getsize(N::Integer) = N
