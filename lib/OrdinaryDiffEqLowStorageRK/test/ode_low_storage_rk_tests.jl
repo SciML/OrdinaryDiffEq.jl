@@ -1625,6 +1625,16 @@ end
     ode = ODEProblem(rhs!, VectorOfArray(u), (0, 0.7))
     sol_SV = solve(ode, RDPK3SpFSAL35())
 
-    @test sol.SA ≈ sol_SV
+    @test sol_SA ≈ sol_SV
     @test sol_SV.stats.naccept == sol_SA.stats.naccept
+    
+    # Plain vector
+    u = [1.0, 2.0]
+    ode = ODEProblem(rhs!, u, (0, 0.7))
+    sol = solve(ode, RDPK3SpFSAL35())
+    @test sol.stats.naccept == sol_SA.stats.naccept
+    @test sol.t ≈ sol_SA.t
+    for i in eachindex(sol_SA.u), j in eachindex(u)
+        @test sol.u[i][j] ≈ sol_SA.u[i][j][1]
+    end
 end
