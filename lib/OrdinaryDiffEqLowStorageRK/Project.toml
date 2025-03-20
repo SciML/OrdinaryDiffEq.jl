@@ -34,6 +34,7 @@ Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 Static = "1.1.1"
 StaticArrays = "1.9.7"
+StructArrays = "0.6"
 Test = "<0.0.1, 1"
 julia = "1.10"
 
