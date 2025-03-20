@@ -3,8 +3,6 @@ module OrdinaryDiffEqDifferentiation
 import ADTypes
 import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse
 
-import SparseMatrixColorings: GreedyColoringAlgorithm
-
 import ForwardDiff, FiniteDiff
 import ForwardDiff.Dual
 import LinearSolve
@@ -28,6 +26,7 @@ using DiffEqBase: TimeGradientWrapper,
                   UDerivativeWrapper
 using SciMLBase: AbstractSciMLOperator, constructorof, @set
 using SciMLOperators
+import SparseMatrixColorings
 import OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                           DAEAlgorithm,
@@ -53,8 +52,6 @@ import DifferentiationInterface as DI
 using FastBroadcast: @..
 
 using ConcreteStructs: @concrete
-
-import SparseMatrixColorings: GreedyColoringAlgorithm, column_colors, ColoringProblem, coloring
 
 @static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
     import DiffEqBase: OrdinaryDiffEqTag
