@@ -511,6 +511,6 @@ sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient
     ode = ODEProblem(rhs!, VectorOfArray(u), (0, 0.7))
     sol_SV = solve(ode, SSPRK43())
 
-    @test sol.SA ≈ sol_SV
+    @test sol_SA ≈ sol_SV
     @test sol_SV.stats.naccept == sol_SA.stats.naccept
 end
