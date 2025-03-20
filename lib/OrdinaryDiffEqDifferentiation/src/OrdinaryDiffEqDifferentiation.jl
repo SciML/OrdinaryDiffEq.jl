@@ -3,10 +3,6 @@ module OrdinaryDiffEqDifferentiation
 import ADTypes
 import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse
 
-import SparseDiffTools: SparseDiffTools, matrix_colors, forwarddiff_color_jacobian!,
-                        forwarddiff_color_jacobian, ForwardColorJacCache,
-                        default_chunk_size, getsize, JacVec
-
 import SparseMatrixColorings: GreedyColoringAlgorithm
 
 import ForwardDiff, FiniteDiff
