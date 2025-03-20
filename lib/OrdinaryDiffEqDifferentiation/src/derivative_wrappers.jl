@@ -377,7 +377,9 @@ function sparsity_colorvec(f, x)
         end
     end
 
+    col_alg = GreedyColoringAlgorithm()
+    col_prob = ColoringProblem()
     colorvec = DiffEqBase.has_colorvec(f) ? f.colorvec :
-               (isnothing(sparsity) ? (1:length(x)) : matrix_colors(sparsity))
+               (isnothing(sparsity) ? (1:length(x)) : column_colors(coloring(sparsity, col_prob, col_alg)))
     sparsity, colorvec
 end

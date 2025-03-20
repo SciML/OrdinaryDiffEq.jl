@@ -54,7 +54,7 @@ using FastBroadcast: @..
 
 using ConcreteStructs: @concrete
 
-import SparseMatrixColorings
+import SparseMatrixColorings: GreedyColoringAlgorithm, column_colors, ColoringProblem, coloring
 
 @static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
     import DiffEqBase: OrdinaryDiffEqTag
