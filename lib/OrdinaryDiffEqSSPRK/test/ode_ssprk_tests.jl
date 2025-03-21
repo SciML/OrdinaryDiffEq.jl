@@ -491,3 +491,26 @@ end
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
+
+@testset "VectorOfArray/StructArray compatibility" begin
+    using RecursiveArrayTools, StaticArrays, StructArrays
+
+    function rhs!(du_voa, u_voa, p, t)
+        du = parent(du_voa)
+        u = parent(u_voa)
+        du .= u
+    end
+
+    # StructArray storage
+    u = StructArray{SVector{1, Float64}}(ntuple(_ -> [1.0, 2.0], 1))
+    ode = ODEProblem(rhs!, VectorOfArray(u), (0, 0.7))
+    sol_SA = solve(ode, SSPRK43())
+
+    # Vector{<:SVector} storage
+    u = SVector{1, Float64}.([1.0, 2.0])
+    ode = ODEProblem(rhs!, VectorOfArray(u), (0, 0.7))
+    sol_SV = solve(ode, SSPRK43())
+
+    @test sol_SA ≈ sol_SV
+    @test sol_SV.stats.naccept == sol_SA.stats.naccept
+end
