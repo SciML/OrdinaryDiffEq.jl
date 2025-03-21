@@ -544,8 +544,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
-    (; A, C, b, btilde, gamma, c, d, H) = cache.tab
+    (; du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
+    (; A, C, gamma, c, d, H) = cache.tab
 
     # Assignments
     sizeu = size(u)
@@ -553,8 +553,8 @@ end
     mass_matrix = integrator.f.mass_matrix
 
     # Precalculations
-    dtC = C .* inv(dt)
-    dtd = dt .* d
+    @. dtC = C * inv(dt)
+    @. dtd = dt * d
     dtgamma = dt * gamma
     utilde = du
 

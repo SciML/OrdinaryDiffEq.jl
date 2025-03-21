@@ -8,14 +8,21 @@ function get_fsalfirstlast(cache::GenericRosenbrockMutableCache, u)
     (cache.fsalfirst, cache.fsallast)
 end
 
-mutable struct RosenbrockCache{uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
+################################################################################
+
+# Shampine's Low-order Rosenbrocks
+
+mutable struct RosenbrockCache{uType, rateType, tabType, uNoUnitsType, JType, WType, TabType,
+    TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter} <:
+               RosenbrockMutableCache
     u::uType
     uprev::uType
     dense::Vector{rateType}
     du::rateType
     du1::rateType
     du2::rateType
+    dtC::Matrix{tabType}
+    dtd::Vector{tabType}
     ks::Vector{rateType}
     fsalfirst::rateType
     fsallast::rateType
@@ -761,6 +768,10 @@ function alg_cache(
     du2 = zero(rate_prototype)
     ks = [zero(rate_prototype) for _ in 1:size(tab.A, 1)]
 
+    dtC = similar(tab.C)
+    dtd = similar(tab.d)
+
+    # Initialize other variables
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -785,12 +796,13 @@ function alg_cache(
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    algebraic_vars = f.mass_matrix === I ? nothing :
-                     [all(iszero, x) for x in eachcol(f.mass_matrix)]
-    RosenbrockCache(u, uprev, dense, du, du1, du2, ks, fsalfirst, fsallast,
-                    dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-                    linsolve, jac_config, grad_config, reltol, alg, algebraic_vars,
-                    alg.step_limiter!, alg.stage_limiter!, size(tab.H, 1))
+
+    # Return the cache struct with vectors
+    RosenbrockCache(
+        u, uprev, dense, du, du1, du2, dtC, dtd, ks, fsalfirst, fsallast,
+        dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
+        linsolve, jac_config, grad_config, reltol, alg,
+        alg.step_limiter!, alg.stage_limiter!, size(tab.H, 1))
 end
 
 function get_fsalfirstlast(
