@@ -30,7 +30,7 @@ function update_func(A, u, p, t)
     A[2, 2] = 0
 end
 A0 = ones(2, 2)
-A = DiffEqArrayOperator(A0, update_func = update_func)
+A = MatrixOperator(A0, update_func = update_func)
 u0 = ones(2)
 tspan = (0.0, 30.0)
 prob = ODEProblem(A, u0, tspan)
