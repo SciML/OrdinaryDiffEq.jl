@@ -1,5 +1,5 @@
 # This definitely needs cleaning
-using OrdinaryDiffEqBDF, ODEProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEqBDF, ODEProblemLibrary, DiffEqDevTools, ADTypes, Enzyme, LinearSolve
 using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NonlinearSolveAlg
 using Test, Random
 Random.seed!(100)
@@ -35,6 +35,27 @@ dts3 = 1 .// 2 .^ (12:-1:7)
 
     # QNDF
     sim = test_convergence(dts, prob, QNDF1())
+    @test sim.𝒪est[:final]≈1 atol=testTol
+    @test sim.𝒪est[:l2]≈1 atol=testTol
+    @test sim.𝒪est[:l∞]≈1 atol=testTol
+
+    sim = test_convergence(dts, prob, QNDF1(autodiff = AutoFiniteDiff()))
+    @test sim.𝒪est[:final]≈1 atol=testTol
+    @test sim.𝒪est[:l2]≈1 atol=testTol
+    @test sim.𝒪est[:l∞]≈1 atol=testTol
+
+    sim = test_convergence(dts,
+        prob,
+        QNDF1(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
+            function_annotation = Enzyme.Const)))
+    @test sim.𝒪est[:final]≈1 atol=testTol
+    @test sim.𝒪est[:l2]≈1 atol=testTol
+    @test sim.𝒪est[:l∞]≈1 atol=testTol
+
+    sim = test_convergence(dts,
+        prob,
+        QNDF1(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
+            function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
     @test sim.𝒪est[:final]≈1 atol=testTol
     @test sim.𝒪est[:l2]≈1 atol=testTol
     @test sim.𝒪est[:l∞]≈1 atol=testTol

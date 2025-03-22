@@ -2,7 +2,9 @@ using Test
 using OrdinaryDiffEq
 using SparseArrays
 using LinearAlgebra
+using LinearSolve
 using ADTypes
+using Enzyme
 
 ## in-place
 #https://github.com/JuliaDiffEq/SparseDiffTools.jl/blob/master/test/test_integration.jl
@@ -52,10 +54,11 @@ for f in [f_oop, f_ip]
     odefun_std = ODEFunction(f)
     prob_std = ODEProblem(odefun_std, u0, tspan)
 
-    for ad in [AutoForwardDiff(), AutoFiniteDiff()]
-        for Solver in [Rodas5, Rosenbrock23, Trapezoid, KenCarp4]
+    for ad in [AutoForwardDiff(), AutoFiniteDiff(),
+        AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const)], linsolve in [nothing, LinearSolve.KrylovJL_GMRES()]
+        for Solver in [Rodas5, Rosenbrock23, Trapezoid, KenCarp4, FBDF]
             for tol in [nothing, 1e-10]
-                sol_std = solve(prob_std, Solver(autodiff = ad), reltol = tol, abstol = tol)
+                sol_std = solve(prob_std, Solver(autodiff = ad, linsolve = linsolve), reltol = tol, abstol = tol)
                 @test sol_std.retcode == ReturnCode.Success
                 for (i, prob) in enumerate(map(f -> ODEProblem(f, u0, tspan),
                     [
@@ -65,7 +68,7 @@ for f in [f_oop, f_ip]
                         ODEFunction(f, colorvec = colors,
                             sparsity = jac_sp)
                     ]))
-                    sol = solve(prob, Solver(autodiff = ad), reltol = tol, abstol = tol)
+                    sol = solve(prob, Solver(autodiff = ad, linsolve = linsolve), reltol = tol, abstol = tol)
                     @test sol.retcode == ReturnCode.Success
                     if tol != nothing
                         @test sol_std.u[end]≈sol.u[end] atol=tol
@@ -78,3 +81,4 @@ for f in [f_oop, f_ip]
         end
     end
 end
+
