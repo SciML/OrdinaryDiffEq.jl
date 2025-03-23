@@ -769,8 +769,8 @@ function alg_cache(
     ks = [zero(rate_prototype) for _ in 1:size(tab.A, 1)]
 
     # Promote t-type for AD
-    dtC = similar(tab.C) .* dt .* false
-    dtd = similar(tab.d) .* dt .* false
+    dtC = zero(tab.C) .* dt
+    dtd = zero(tab.d) .* dt
 
     # Initialize other variables
     fsalfirst = zero(rate_prototype)
