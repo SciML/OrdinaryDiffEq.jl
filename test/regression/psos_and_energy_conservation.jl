@@ -62,7 +62,7 @@ for i=2:Ntraj
 end
 =#
 
-using OrdinaryDiffEq, DiffEqCallbacks, Test
+using OrdinaryDiffEq, NonlinearSolve, DiffEqCallbacks, Test
 
 # Initial state
 u0 = [0, -0.25, 0.42081, 0]
@@ -84,13 +84,12 @@ end
 const E = Hhh(u0)
 
 function ghh(resid, u, p)
-    resid[1] = Hhh(u[1], u[2], u[3], u[4]) - E
-    resid[2:4] .= 0
+    resid[1] = -Hhh(u[1], u[2], u[3], u[4]) + E
 end
 
 # energy conserving callback:
 # important to use save = false, I don't want rescaling points
-cb = ManifoldProjection(ghh, abstol = 1e-13, save = false, autodiff = AutoForwardDiff())
+cb = ManifoldProjection(ghh, resid_prototype = ones(1), nlsolve = TrustRegion(), abstol = 1e-9, save = false, autodiff = AutoForwardDiff())
 
 # Callback for Poincare surface of section
 function psos_callback(j, direction = +1, offset::Real = 0,
@@ -113,7 +112,7 @@ totalcb = CallbackSet(poincarecb, cb)
 prob = ODEProblem(hheom!, u0, (0.0, 100.0), callback = totalcb)
 
 extra_kw = Dict(:save_start => false, :save_end => false)
-DEFAULT_DIFFEQ_KWARGS = Dict{Symbol, Any}(:abstol => 1e-9, :reltol => 1e-9)
+DEFAULT_DIFFEQ_KWARGS = Dict{Symbol, Any}(:abstol => 1e-10, :reltol => 1e-10)
 
 sol = solve(prob, Vern9(); extra_kw..., DEFAULT_DIFFEQ_KWARGS..., save_everystep = false)
 
