@@ -147,12 +147,27 @@ function _bool_to_ADType(::Val{false}, _, ::Val{FD}) where {FD}
 end
 
 # Functions to get ADType type from Bool or ADType object, or ADType type
+function _process_AD_choice(ad_alg::Bool, CS::Int, ::Val{FD}) where {FD}
+    return _bool_to_ADType(Val(ad_alg), Val{CS}(), Val{FD}()), Val{CS}(), Val{FD}()
+end
+
 function _process_AD_choice(ad_alg::Bool, ::Val{CS}, ::Val{FD}) where {CS, FD}
     return _bool_to_ADType(Val(ad_alg), Val{CS}(), Val{FD}()), Val{CS}(), Val{FD}()
 end
 
 function _process_AD_choice(
         ad_alg::AutoForwardDiff{CS}, ::Val{CS2}, ::Val{FD}) where {CS, CS2, FD}
+    # Non-default `chunk_size`
+    if CS2 != 0
+        @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
+        return _bool_to_ADType(Val{true}(), Val{CS2}(), Val{FD}()), Val{CS2}(), Val{FD}()
+    end
+    _CS = CS === nothing ? 0 : CS
+    return ad_alg, Val{_CS}(), Val{FD}()
+end
+
+function _process_AD_choice(
+        ad_alg::AutoForwardDiff{CS}, CS2::Int, ::Val{FD}) where {CS, FD}
     # Non-default `chunk_size`
     if CS2 != 0
         @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
