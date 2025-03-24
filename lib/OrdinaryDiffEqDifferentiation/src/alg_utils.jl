@@ -54,8 +54,8 @@ function DiffEqBase.prepare_alg(
 
     sparse_prepped_AD = prepare_user_sparsity(prepped_AD, prob)
 
-    # if u0 is a StaticArray or Complex or Dual etc. don't use sparsity
-    if (((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) || eltype(u0) <: ForwardDiff.Dual || (!(prob.f isa DAEFunction) && prob.f.mass_matrix isa MatrixOperator)) && sparse_prepped_AD isa AutoSparse)    
+    # if u0 is a StaticArray or eltype is Complex etc. don't use sparsity
+    if (((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) || (!(prob.f isa DAEFunction) && prob.f.mass_matrix isa MatrixOperator)) && sparse_prepped_AD isa AutoSparse)    
         @warn "Input type or problem definition is incompatible with sparse automatic differentiation. Switching to using dense automatic differentiation."
         autodiff = ADTypes.dense_ad(sparse_prepped_AD)
     else
