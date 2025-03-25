@@ -8,7 +8,8 @@ JVPCache provides a JVP operator wrapper for performing the DifferentiationInter
 ```julia
     JVPCache(f::DiffEqBase.AbstractDiffEqFunction, du, u, p, t; autodiff)
 ```
-JVPCache construction builds a DifferentiationInterface "prep" object using `prepare_pushforward!`. 
+JVPCache construction builds a DifferentiationInterface "prep" object using `prepare_pushforward!`. The "prep" object is used
+when applying the operator.
 
 ### Computing the JVP
 
