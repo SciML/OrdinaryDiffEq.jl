@@ -33,7 +33,7 @@ for (ff_time_derivative, u0) in (
         AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const))
         @info "autodiff=$(_autodiff)"
 
-        prec = !(_autodiff isa AutoFiniteDiff())
+        prec = !(_autodiff == AutoFiniteDiff())
 
         @show Rosenbrock23
         sol = solve(prob, Rosenbrock32(autodiff = _autodiff), reltol = 1e-9, abstol = 1e-9)
