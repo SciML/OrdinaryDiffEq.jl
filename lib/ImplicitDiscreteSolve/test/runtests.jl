@@ -20,7 +20,7 @@ using OrdinaryDiffEqSDIRK
     tspan = (0., 0.5)
 
     idprob = ImplicitDiscreteProblem(f!, u0, tspan, []; dt = 0.01)
-    idsol = solve(idprob, SimpleIDSolve())
+    idsol = solve(idprob, IDSolve())
 
     oprob = ODEProblem(lotkavolterra, u0, tspan)
     osol = solve(oprob, ImplicitEuler())
@@ -43,7 +43,7 @@ using OrdinaryDiffEqSDIRK
     tspan = (0, 0.2)
 
     idprob = ImplicitDiscreteProblem(g!, u0, tspan, []; dt = 0.01)
-    idsol = solve(idprob, SimpleIDSolve())
+    idsol = solve(idprob, IDSolve())
 
     oprob = ODEProblem(ff, u0, tspan)
     osol = solve(oprob, ImplicitEuler())
@@ -60,7 +60,7 @@ end
     tsteps = 15
     u0 = [1., 3.]
     idprob = ImplicitDiscreteProblem(periodic!, u0, (0, tsteps), [])
-    integ = init(idprob, SimpleIDSolve())
+    integ = init(idprob, IDSolve())
     @test integ.u[1]^2 + integ.u[2]^2 ≈ 16
 
     for ts in 1:tsteps
@@ -77,5 +77,31 @@ end
     tsteps = 5
     u0 = nothing
     idprob = ImplicitDiscreteProblem(empty, u0, (0, tsteps), [])
-    @test_nowarn integ = init(idprob, SimpleIDSolve())
+    @test_nowarn integ = init(idprob, IDSolve())
+end
+
+@testset "Create NonlinearLeastSquaresProblem" begin
+    function over(u_next, u, p, t) 
+        [u_next[1] - 1, u_next[2] - 1, u_next[1] - u_next[2]]
+    end
+
+    tsteps = 5
+    u0 = [1., 1.]
+    idprob = ImplicitDiscreteProblem(ImplicitDiscreteFunction(over, resid_prototype = zeros(3)), u0, (0, tsteps), [])
+    integ = init(idprob, IDSolve())
+    @test integ.cache.prob isa NonlinearLeastSquaresProblem
+
+    function under(u_next, u, p, t) 
+        [u_next[1] - u_next[2] - 1] 
+    end
+    idprob = ImplicitDiscreteProblem(ImplicitDiscreteFunction(under; resid_prototype = zeros(1)), u0, (0, tsteps), [])
+    integ = init(idprob, IDSolve())
+    @test integ.cache.prob isa NonlinearLeastSquaresProblem
+
+    function full(u_next, u, p, t) 
+        [u_next[1]^2 - 3, u_next[2] - u[1]] 
+    end
+    idprob = ImplicitDiscreteProblem(ImplicitDiscreteFunction(full; resid_prototype = zeros(2)), u0, (0, tsteps), [])
+    integ = init(idprob, IDSolve())
+    @test integ.cache.prob isa NonlinearProblem
 end
