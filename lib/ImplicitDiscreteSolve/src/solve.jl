@@ -22,7 +22,8 @@ function initialize!(integrator, cache::IDSolveCache)
     else
         (u_next, p) -> f(u_next, p.u, p.p, p.t_next)
     end
-    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) == length(integrator.u))
+    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != length(integrator.u))
+    @show nlls
 
     prob = if nlls
         NonlinearLeastSquaresProblem{isinplace(f)}(NonlinearFunction(_f; resid_prototype = f.resid_prototype), cache.state.u, cache.state)
@@ -49,7 +50,7 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
             (u_next, p) -> f(u_next, p.u, p.p, p.t_next)
         end
 
-        nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) == length(integrator.u))
+        nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != length(integrator.u))
         prob = if nlls
             NonlinearLeastSquaresProblem{isinplace(f)}(NonlinearFunction(_f; resid_prototype = f.resid_prototype), u, initstate)
         else
