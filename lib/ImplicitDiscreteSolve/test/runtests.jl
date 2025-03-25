@@ -3,6 +3,7 @@ using Test
 using ImplicitDiscreteSolve
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
+using SciMLBase
 
 # Test implicit Euler using ImplicitDiscreteProblem
 @testset "Implicit Euler" begin
@@ -104,4 +105,17 @@ end
     idprob = ImplicitDiscreteProblem(ImplicitDiscreteFunction(full; resid_prototype = zeros(2)), u0, (0, tsteps), [])
     integ = init(idprob, IDSolve())
     @test integ.cache.prob isa NonlinearProblem
+end
+
+@testset "InitialFailure thrown" begin
+    function bad(u_next, u, p, t) 
+        [u_next[1] - u_next[2], u_next[1] - 3, u_next[2] - 4]
+    end
+
+    u0 = [3., 4.]
+    idprob = ImplicitDiscreteProblem(bad, u0, (0, 0), [])
+    integ = init(idprob, IDSolve())
+    @test check_error(integ) == ReturnCode.InitialFailure
+    sol = solve(idprob, IDSolve())
+    @test length(sol.u) == 1
 end
