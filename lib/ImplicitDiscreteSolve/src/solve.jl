@@ -56,6 +56,10 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
             NonlinearProblem{isinplace(f)}(_f, u, initstate)
         end
         sol = solve(prob, SimpleNewtonRaphson())
-        integrator.u = sol
+        if sol.retcode == ReturnCode.Success
+            integrator.u = sol
+        else
+            integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.InitialFailure)
+        end
     end
 end
