@@ -51,9 +51,9 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
 
         nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) == length(integrator.u))
         prob = if nlls
-            NonlinearLeastSquaresProblem{isinplace(f)}(NonlinearFunction(_f; resid_prototype = f.resid_prototype), cache.state.u, cache.state)
+            NonlinearLeastSquaresProblem{isinplace(f)}(NonlinearFunction(_f; resid_prototype = f.resid_prototype), u, initstate)
         else
-            NonlinearProblem{isinplace(f)}(_f, cache.state.u, cache.state)
+            NonlinearProblem{isinplace(f)}(_f, u, initstate)
         end
         sol = solve(prob, SimpleNewtonRaphson())
         integrator.u = sol
