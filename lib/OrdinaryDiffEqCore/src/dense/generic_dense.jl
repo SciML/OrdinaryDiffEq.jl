@@ -575,7 +575,7 @@ function ode_interpolation(tvals, id::I, idxs, ::Type{deriv}, p,
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
         id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
-        i₋₊ref[] = (i₋, i₊)::Tuple{Int,Int}
+        i₋₊ref[] = (i₋, i₊)
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
         evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
