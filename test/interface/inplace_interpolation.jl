@@ -32,9 +32,9 @@ out_VMF = vecarrzero(ntt, size(prob_ode_2Dlinear.u0))   # Vector{Matrix{Float64}
         @test_throws MethodError sol_ODE_2D(out_VF, tt; idxs = 3:3)
         @inferred Vector{Float64} sol_ODE_2D(out_VF, tt; idxs = 3)
         @inferred Vector{Vector{Float64}} sol_ODE_2D(out_VVF_1, tt; idxs = 3)
-        @inferred Vector{Vector{Float64}}  sol_ODE_2D(out_VVF_1, tt; idxs = 3:3)
-        @inferred Vector{Vector{Float64}}  sol_ODE_2D(out_VVF_2, tt; idxs = 2:3)
-        @inferred Vector{Matrix{Float64}}  sol_ODE_2D(out_VMF, tt)
+        @inferred Vector{Vector{Float64}} sol_ODE_2D(out_VVF_1, tt; idxs = 3:3)
+        @inferred Vector{Vector{Float64}} sol_ODE_2D(out_VVF_2, tt; idxs = 2:3)
+        @inferred Vector{Matrix{Float64}} sol_ODE_2D(out_VMF, tt)
         @test sol_ODE_2D_interp.u ≈ out_VMF
     end
 end
