@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqRosenbrock"
 uuid = "43230ef6-c299-4910-a778-202eb28ce4ce"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.10.0"
+version = "1.10.1"
 
 [sources]
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
@@ -35,7 +35,7 @@ DifferentiationInterface = "0.6.48"
 Enzyme = "0.13"
 FastBroadcast = "0.3.5"
 FiniteDiff = "2.24.0"
-ForwardDiff = "0.10.36"
+ForwardDiff = "0.10.36, 1"
 LinearAlgebra = "<0.0.1, 1"
 LinearSolve = "2.32.0, 3"
 MacroTools = "0.5.13"
