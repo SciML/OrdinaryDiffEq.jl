@@ -553,7 +553,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tvals, id::I, idxs, deriv::Type{deriv}, p,
+function ode_interpolation(tvals, id::I, idxs, ::Type{deriv}, p,
         continuity::Symbol = :left) where {I, deriv}
     @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
