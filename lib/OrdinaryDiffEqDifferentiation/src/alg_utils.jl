@@ -57,7 +57,7 @@ function DiffEqBase.prepare_alg(
          prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) ||
         (isbitstype(T) && sizeof(T) > 24))
         return remake(
-            alg, autodiff = AutoForwardDiff(chunksize = 1, tag = alg_autodiff(alg).tag))
+            alg, autodiff = AutoForwardDiff{1}(alg_autodiff(alg).tag))
     end
 
     # If the autodiff alg is AutoFiniteDiff, prob.f.f isa FunctionWrappersWrapper,
@@ -83,13 +83,12 @@ function DiffEqBase.prepare_alg(
 
         cs = ForwardDiff.pickchunksize(x)
         return remake(alg,
-            autodiff = AutoForwardDiff(
-                chunksize = cs))
+            autodiff = AutoForwardDiff{cs}(nothing))
     else # statically sized
         cs = pick_static_chunksize(Val{L}())
         cs = SciMLBase._unwrap_val(cs)
         return remake(
-            alg, autodiff = AutoForwardDiff(chunksize = cs))
+            alg, autodiff = AutoForwardDiff{cs}(nothing))
     end
 end
 
