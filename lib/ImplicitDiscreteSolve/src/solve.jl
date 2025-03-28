@@ -22,7 +22,8 @@ function initialize!(integrator, cache::IDSolveCache)
     else
         (u_next, p) -> f(u_next, p.u, p.p, p.t_next)
     end
-    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != length(integrator.u))
+    u_len = isnothing(integrator.u) ? 0 : length(integrator.u)
+    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != u_len)
 
     prob = if nlls
         NonlinearLeastSquaresProblem{isinplace(f)}(NonlinearFunction(_f; resid_prototype = f.resid_prototype), cache.state.u, cache.state)
