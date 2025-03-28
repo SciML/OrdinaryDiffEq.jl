@@ -10,16 +10,16 @@ using Reexport
 @reexport using DiffEqBase
 
 """
-    SimpleIDSolve()
+    IDSolve()
 
 Simple solver for `ImplicitDiscreteSystems`. Uses `SimpleNewtonRaphson` to solve for the next state at every timestep.
 """
-struct SimpleIDSolve <: OrdinaryDiffEqAlgorithm end
+struct IDSolve <: OrdinaryDiffEqAlgorithm end
 
 include("cache.jl")
 include("solve.jl")
 include("alg_utils.jl")
 
-export SimpleIDSolve
+export IDSolve
 
 end
