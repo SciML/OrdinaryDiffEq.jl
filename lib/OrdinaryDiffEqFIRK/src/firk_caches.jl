@@ -91,16 +91,17 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
     fw1 = zero(rate_prototype)
     fw2 = zero(rate_prototype)
 
-    J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-    W1 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W1, false)
-
     du1 = zero(rate_prototype)
 
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
-    jac_config = jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
+
+    J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+    W1 = similar(J, Complex{eltype(W1)})
+    recursivefill!(W1, false)
+
 
     linprob = LinearProblem(W1, _vec(cubuff); u0 = _vec(dw12))
     linsolve = init(
@@ -228,19 +229,19 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
     fw2 = zero(rate_prototype)
     fw3 = zero(rate_prototype)
 
-    J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-    if J isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by RadauIIA5.")
-    end
-    W2 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W2, false)
-
     du1 = zero(rate_prototype)
 
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
+
+    J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+    if J isa AbstractSciMLOperator
+        error("Non-concrete Jacobian not yet supported by RadauIIA5.")
+    end
+    W2 = similar(J, Complex{eltype(W1)})
+    recursivefill!(W2, false)
 
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
@@ -409,15 +410,6 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
     fw4 = zero(rate_prototype)
     fw5 = zero(rate_prototype)
 
-    J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-    if J isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by RadauIIA5.")
-    end
-    W2 = similar(J, Complex{eltype(W1)})
-    W3 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W2, false)
-    recursivefill!(W3, false)
-
     du1 = zero(rate_prototype)
 
     tmp = zero(u)
@@ -433,6 +425,15 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
+
+    J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+    if J isa AbstractSciMLOperator
+        error("Non-concrete Jacobian not yet supported by RadauIIA5.")
+    end
+    W2 = similar(J, Complex{eltype(W1)})
+    W3 = similar(J, Complex{eltype(W1)})
+    recursivefill!(W2, false)
+    recursivefill!(W3, false)
 
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
@@ -623,14 +624,6 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
 
     k = ks[1]
 
-    J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
-    if J isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by AdaptiveRadau.")
-    end
-
-    W2 = [similar(J, Complex{eltype(W1)}) for _ in 1:((max_stages - 1) ÷ 2)]
-    recursivefill!.(W2, false)
-
     du1 = zero(rate_prototype)
 
     tmp = zero(u)
@@ -639,6 +632,14 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     recursivefill!(atmp, false)
 
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, zero(u), dw1)
+
+    J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+    if J isa AbstractSciMLOperator
+        error("Non-concrete Jacobian not yet supported by AdaptiveRadau.")
+    end
+
+    W2 = [similar(J, Complex{eltype(W1)}) for _ in 1:((max_stages - 1) ÷ 2)]
+    recursivefill!.(W2, false)
 
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(

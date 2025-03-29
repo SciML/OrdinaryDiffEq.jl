@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, StaticArrays, Test
+using OrdinaryDiffEq, StaticArrays, Test, ADTypes, Enzyme
 
 function time_derivative(du, u, p, t)
     du[1] = -t
@@ -29,26 +29,29 @@ for (ff_time_derivative, u0) in (
 
     prob = ODEProblem(ff_time_derivative, u0, tspan)
 
-    for _autodiff in (true, false)
+    for _autodiff in (AutoForwardDiff(), AutoFiniteDiff(),
+        AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const))
         @info "autodiff=$(_autodiff)"
+
+        prec = !(_autodiff == AutoFiniteDiff())
 
         @show Rosenbrock23
         sol = solve(prob, Rosenbrock32(autodiff = _autodiff), reltol = 1e-9, abstol = 1e-9)
-        @test sol.errors[:final] < 1e-5 * 10^(!_autodiff)
+        @test sol.errors[:final] < 1e-5 * 10^(!prec)
         sol = solve(prob, Rosenbrock23(autodiff = _autodiff), reltol = 1e-9, abstol = 1e-9)
-        @test sol.errors[:final] < 1e-10 * 10_000^(!_autodiff)
+        @test sol.errors[:final] < 1e-10 * 10_000^(!prec)
 
         @show Rodas4
         sol = solve(prob, Rodas4(autodiff = _autodiff), reltol = 1e-9, abstol = 1e-9)
-        @test sol.errors[:final] < 1e-10 * 100_000^(!_autodiff)
+        @test sol.errors[:final] < 1e-10 * 100_000^(!prec)
 
         @show Rodas5
         sol = solve(prob, Rodas5(autodiff = _autodiff), reltol = 1e-9, abstol = 1e-9)
-        @test sol.errors[:final] < 1e-10 * 1_000_000_000^(!_autodiff)
+        @test sol.errors[:final] < 1e-10 * 1_000_000_000^(!prec)
 
         @show Veldd4
         sol = solve(prob, Veldd4(autodiff = _autodiff), reltol = 1e-9, abstol = 1e-9)
-        @test sol.errors[:final] < 1e-10 * 100_000^(!_autodiff)
+        @test sol.errors[:final] < 1e-10 * 100_000^(!prec)
 
         @show KenCarp3
         sol = solve(prob, KenCarp3(autodiff = _autodiff), reltol = 1e-12, abstol = 1e-12)
