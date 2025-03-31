@@ -297,9 +297,9 @@ version = "1.15.1"
 
 [[deps.DifferentiationInterface]]
 deps = ["ADTypes", "LinearAlgebra"]
-git-tree-sha1 = "e31cedb046c74ddb1872b32c57e3a11e4ecc432a"
+git-tree-sha1 = "70e500f6d5d50091d87859251de7b8cd060c1cce"
 uuid = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
-version = "0.6.49"
+version = "0.6.50"
 
     [deps.DifferentiationInterface.extensions]
     DifferentiationInterfaceChainRulesCoreExt = "ChainRulesCore"
@@ -1050,7 +1050,7 @@ version = "1.3.0"
 deps = ["ADTypes", "ArrayInterface", "DiffEqBase", "FastBroadcast", "FastClosures", "ForwardDiff", "LinearAlgebra", "LinearSolve", "MuladdMacro", "NonlinearSolve", "OrdinaryDiffEqCore", "OrdinaryDiffEqDifferentiation", "PreallocationTools", "RecursiveArrayTools", "SciMLBase", "SciMLOperators", "SciMLStructures", "SimpleNonlinearSolve", "StaticArrays"]
 path = "../lib/OrdinaryDiffEqNonlinearSolve"
 uuid = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
-version = "1.5.0"
+version = "1.6.0"
 
 [[deps.OrdinaryDiffEqNordsieck]]
 deps = ["DiffEqBase", "FastBroadcast", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqTsit5", "Polyester", "RecursiveArrayTools", "Reexport", "Static"]
