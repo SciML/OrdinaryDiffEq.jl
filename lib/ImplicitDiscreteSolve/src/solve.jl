@@ -1,5 +1,5 @@
 # Remake the nonlinear problem, then update
-function perform_step!(integrator, cache::SimpleIDSolveCache, repeat_step = false)
+function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     @unpack alg, u, uprev, dt, t, f, p = integrator
     @unpack state, prob = cache
     state.u .= uprev
@@ -11,7 +11,7 @@ function perform_step!(integrator, cache::SimpleIDSolveCache, repeat_step = fals
     integrator.u = u
 end
 
-function initialize!(integrator, cache::SimpleIDSolveCache)
+function initialize!(integrator, cache::IDSolveCache)
     integrator.u isa AbstractVector && (cache.state.u .= integrator.u)
     cache.state.p = integrator.p
     cache.state.t_next = integrator.t
@@ -22,11 +22,13 @@ function initialize!(integrator, cache::SimpleIDSolveCache)
     else
         (u_next, p) -> f(u_next, p.u, p.p, p.t_next)
     end
+    u_len = isnothing(integrator.u) ? 0 : length(integrator.u)
+    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != u_len)
 
-    prob = if isinplace(f)
-        NonlinearProblem{true}(_f, cache.state.u, cache.state)
+    prob = if nlls
+        NonlinearLeastSquaresProblem{isinplace(f)}(NonlinearFunction(_f; resid_prototype = f.resid_prototype), cache.state.u, cache.state)
     else
-        NonlinearProblem{false}(_f, cache.state.u, cache.state)
+        NonlinearProblem{isinplace(f)}(_f, cache.state.u, cache.state)
     end
     cache.prob = prob
 end
@@ -47,8 +49,18 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
         else
             (u_next, p) -> f(u_next, p.u, p.p, p.t_next)
         end
-        prob = NonlinearProblem{isinplace(f)}(_f, u, initstate)
+
+        nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != length(integrator.u))
+        prob = if nlls
+            NonlinearLeastSquaresProblem{isinplace(f)}(NonlinearFunction(_f; resid_prototype = f.resid_prototype), u, initstate)
+        else
+            NonlinearProblem{isinplace(f)}(_f, u, initstate)
+        end
         sol = solve(prob, SimpleNewtonRaphson())
-        integrator.u = sol
+        if sol.retcode == ReturnCode.Success
+            integrator.u = sol
+        else
+            integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.InitialFailure)
+        end
     end
 end
