@@ -4,7 +4,7 @@ const FIRST_AUTODIFF_TGRAD_MESSAGE = """
                                with automatic differentiation. Methods to fix this include:
 
                                1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
-                                  Rosenbrock23(autodiff=false)). More details can be found at
+                                  Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at
                                   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
                                2. Improving the compatibility of `f` with ForwardDiff.jl automatic
                                   differentiation (using tools like PreallocationTools.jl). More details
@@ -46,7 +46,7 @@ const FIRST_AUTODIFF_JAC_MESSAGE = """
                                with automatic differentiation. Methods to fix this include:
 
                                1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
-                                  Rosenbrock23(autodiff=false)). More details can befound at
+                                  Rosenbrock23(autodiff = AutoFiniteDiff())). More details can befound at
                                   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
                                2. Improving the compatibility of `f` with ForwardDiff.jl automatic
                                   differentiation (using tools like PreallocationTools.jl). More details
@@ -75,198 +75,171 @@ function Base.showerror(io::IO, e::FirstAutodiffJacError)
     Base.showerror(io, e.e)
 end
 
-function derivative!(df::AbstractArray{<:Number}, f,
-        x::Union{Number, AbstractArray{<:Number}}, fx::AbstractArray{<:Number},
-        integrator, grad_config)
+function jacobian(f, x::AbstractArray{<:Number}, integrator)
     alg = unwrap_alg(integrator, true)
-    tmp = length(x) # We calculate derivative for all elements in gradient
+    
+    # Update stats.nf
+
+    dense = ADTypes.dense_ad(alg_autodiff(alg)) 
+
+    if dense isa AutoForwardDiff
+        sparsity, colorvec = sparsity_colorvec(integrator.f, x)
+        maxcolor = maximum(colorvec)
+        chunk_size = (get_chunksize(alg) == Val(0) || get_chunksize(alg) == Val(nothing) ) ? nothing : get_chunksize(alg)
+        num_of_chunks =  div(maxcolor, isnothing(chunk_size) ?
+                getsize(ForwardDiff.pickchunksize(maxcolor)) : _unwrap_val(chunk_size),
+                RoundUp)
+
+        integrator.stats.nf += num_of_chunks
+
+    elseif dense isa AutoFiniteDiff
+        sparsity, colorvec = sparsity_colorvec(integrator.f, x)
+        if dense.fdtype == Val(:forward) 
+            integrator.stats.nf += maximum(colorvec) + 1
+        elseif dense.fdtype == Val(:central) 
+            integrator.stats.nf += 2*maximum(colorvec)
+        elseif dense.fdtype == Val(:complex)
+            integrator.stats.nf += maximum(colorvec)
+        end
+    else 
+        integrator.stats.nf += 1
+    end
+
+
+    if dense isa AutoFiniteDiff
+        dense = SciMLBase.@set dense.dir = diffdir(integrator)
+    end
+
     autodiff_alg = alg_autodiff(alg)
-    if autodiff_alg isa AutoForwardDiff
-        T = if standardtag(alg)
-            typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(df)))
-        else
-            typeof(ForwardDiff.Tag(f, eltype(df)))
-        end
 
-        xdual = Dual{T, eltype(df), 1}(convert(eltype(df), x),
-            ForwardDiff.Partials((one(eltype(df)),)))
-
-        if integrator.iter == 1
-            try
-                f(grad_config, xdual)
-            catch e
-                throw(FirstAutodiffTgradError(e))
-            end
-        else
-            f(grad_config, xdual)
-        end
-
-        df .= first.(ForwardDiff.partials.(grad_config))
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    elseif autodiff_alg isa AutoFiniteDiff
-        FiniteDiff.finite_difference_gradient!(df, f, x, grad_config,
-            dir = diffdir(integrator))
-        fdtype = alg_difftype(alg)
-        if fdtype == Val{:forward} || fdtype == Val{:central}
-            tmp *= 2
-            if eltype(df) <: Complex
-                tmp *= 2
-            end
-        end
-        integrator.stats.nf += tmp
+    if alg_autodiff(alg) isa AutoSparse
+        autodiff_alg = SciMLBase.@set autodiff_alg.dense_ad = dense
     else
-        error("$alg_autodiff not yet supported in derivative! function")
+        autodiff_alg = dense
     end
-    nothing
-end
 
-function derivative(f, x::Union{Number, AbstractArray{<:Number}},
-        integrator)
-    local d
-    tmp = length(x) # We calculate derivative for all elements in gradient
-    alg = unwrap_alg(integrator, true)
-    if alg_autodiff(alg) isa AutoForwardDiff
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        if integrator.iter == 1
+    if integrator.iter == 1
             try
-                d = ForwardDiff.derivative(f, x)
-            catch e
-                throw(FirstAutodiffTgradError(e))
-            end
-        else
-            d = ForwardDiff.derivative(f, x)
-        end
-    elseif alg_autodiff(alg) isa AutoFiniteDiff
-        d = FiniteDiff.finite_difference_derivative(f, x, alg_difftype(alg),
-            dir = diffdir(integrator))
-        if alg_difftype(alg) === Val{:central} || alg_difftype(alg) === Val{:forward}
-            tmp *= 2
-        end
-        integrator.stats.nf += tmp
-        d
-    else
-        error("$alg_autodiff not yet supported in derivative function")
-    end
-end
-
-jacobian_autodiff(f, x, odefun, alg) = (ForwardDiff.derivative(f, x), 1, alg)
-function jacobian_autodiff(f, x::AbstractArray, odefun, alg)
-    jac_prototype = odefun.jac_prototype
-    sparsity, colorvec = sparsity_colorvec(odefun, x)
-    maxcolor = maximum(colorvec)
-    chunk_size = get_chunksize(alg) === Val(0) ? nothing : get_chunksize(alg)
-    num_of_chunks = chunk_size === nothing ?
-                    Int(ceil(maxcolor / getsize(ForwardDiff.pickchunksize(maxcolor)))) :
-                    Int(ceil(maxcolor / _unwrap_val(chunk_size)))
-    (
-        forwarddiff_color_jacobian(f, x, colorvec = colorvec, sparsity = sparsity,
-            jac_prototype = jac_prototype, chunksize = chunk_size),
-        num_of_chunks)
-end
-
-function _nfcount(N, ::Type{diff_type}) where {diff_type}
-    if diff_type === Val{:complex}
-        tmp = N
-    elseif diff_type === Val{:forward}
-        tmp = N + 1
-    else
-        tmp = 2N
-    end
-    tmp
-end
-
-function jacobian_finitediff(f, x, ::Type{diff_type}, dir, colorvec, sparsity,
-        jac_prototype) where {diff_type}
-    (FiniteDiff.finite_difference_derivative(f, x, diff_type, eltype(x), dir = dir), 2)
-end
-function jacobian_finitediff(f, x::AbstractArray, ::Type{diff_type}, dir, colorvec,
-        sparsity, jac_prototype) where {diff_type}
-    f_in = diff_type === Val{:forward} ? f(x) : similar(x)
-    ret_eltype = eltype(f_in)
-    J = FiniteDiff.finite_difference_jacobian(f, x, diff_type, ret_eltype, f_in,
-        dir = dir, colorvec = colorvec,
-        sparsity = sparsity,
-        jac_prototype = jac_prototype)
-    return J, _nfcount(maximum(colorvec), diff_type)
-end
-function jacobian(f, x, integrator)
-    alg = unwrap_alg(integrator, true)
-    local tmp
-    if alg_autodiff(alg) isa AutoForwardDiff
-        if integrator.iter == 1
-            try
-                J, tmp = jacobian_autodiff(f, x, integrator.f, alg)
+                jac = DI.jacobian(f, autodiff_alg, x)
             catch e
                 throw(FirstAutodiffJacError(e))
             end
         else
-            J, tmp = jacobian_autodiff(f, x, integrator.f, alg)
-        end
-    elseif alg_autodiff(alg) isa AutoFiniteDiff
-        jac_prototype = integrator.f.jac_prototype
-        sparsity, colorvec = sparsity_colorvec(integrator.f, x)
-        dir = diffdir(integrator)
-        J, tmp = jacobian_finitediff(f, x, alg_difftype(alg), dir, colorvec, sparsity,
-            jac_prototype)
-    else
-        bleh
+        jac = DI.jacobian(f, autodiff_alg, x)
     end
-    integrator.stats.nf += tmp
-    J
+
+    return jac
 end
 
-function jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache, integrator)
-    (FiniteDiff.finite_difference_jacobian!(J, f, x, jac_config, forwardcache,
-        dir = diffdir(integrator));
-    maximum(jac_config.colorvec))
-end
-function jacobian_finitediff!(J, f, x, jac_config, integrator)
-    (FiniteDiff.finite_difference_jacobian!(J, f, x, jac_config,
-        dir = diffdir(integrator));
-    2 * maximum(jac_config.colorvec))
+# fallback for scalar x, is needed for calc_J to work
+function jacobian(f, x, integrator)
+    alg = unwrap_alg(integrator, true)
+
+    dense = ADTypes.dense_ad(alg_autodiff(alg))
+
+    if dense isa AutoForwardDiff
+        integrator.stats.nf += 1
+    elseif dense isa AutoFiniteDiff
+        if dense.fdtype == Val(:forward)
+            integrator.stats.nf += 2
+        elseif dense.fdtype == Val(:central)
+            integrator.stats.nf += 2
+        elseif dense.fdtype == Val(:complex)
+            integrator.stats.nf += 1
+        end
+    else
+        integrator.stats.nf += 1
+    end
+
+    if dense isa AutoFiniteDiff
+        dense = SciMLBase.@set dense.dir = diffdir(integrator)
+    end
+
+    autodiff_alg = alg_autodiff(alg)
+
+    if autodiff_alg isa AutoSparse
+        autodiff_alg = SciMLBase.@set autodiff_alg.dense_ad = dense
+    else
+        autodiff_alg = dense
+    end 
+
+    if integrator.iter == 1
+        try
+            jac = DI.derivative(f, autodiff_alg, x)
+        catch e
+            throw(FirstAutodiffJacError(e))
+        end
+    else
+        jac = DI.derivative(f, autodiff_alg, x)
+    end
+
+    return jac
 end
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator,
         jac_config)
     alg = unwrap_alg(integrator, true)
-    if alg_autodiff(alg) isa AutoForwardDiff
-        if integrator.iter == 1
-            try
-                forwarddiff_color_jacobian!(J, f, x, jac_config)
-            catch e
-                throw(FirstAutodiffJacError(e))
-            end
+
+    dense = ADTypes.dense_ad(alg_autodiff(alg)) 
+
+    if dense isa AutoForwardDiff
+        if alg_autodiff(alg) isa AutoSparse
+            integrator.stats.nf += maximum(SparseMatrixColorings.ncolors(jac_config[1]))
         else
-            forwarddiff_color_jacobian!(J, f, x, jac_config)
+            sparsity, colorvec = sparsity_colorvec(integrator.f, x)
+            maxcolor = maximum(colorvec)
+            chunk_size = (get_chunksize(alg) == Val(0) || get_chunksize(alg) == Val(nothing)) ? nothing : get_chunksize(alg)
+            num_of_chunks = chunk_size === nothing ?
+                            Int(ceil(maxcolor / getsize(ForwardDiff.pickchunksize(maxcolor)))) :
+                            Int(ceil(maxcolor / _unwrap_val(chunk_size)))
+
+            integrator.stats.nf += num_of_chunks
         end
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, maximum(jac_config.colorvec))
-    elseif alg_autodiff(alg) isa AutoFiniteDiff
-        isforward = alg_difftype(alg) === Val{:forward}
-        if isforward
-            forwardcache = get_tmp_cache(integrator, alg, unwrap_cache(integrator, true))[2]
-            f(forwardcache, x)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            tmp = jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache,
-                integrator)
-        else # not forward difference
-            tmp = jacobian_finitediff!(J, f, x, jac_config, integrator)
+        
+    elseif dense isa AutoFiniteDiff
+        sparsity, colorvec = sparsity_colorvec(integrator.f, x)
+        if dense.fdtype == Val(:forward)
+            integrator.stats.nf += maximum(colorvec) + 1
+        elseif dense.fdtype == Val(:central)
+            integrator.stats.nf += 2 * maximum(colorvec)
+        elseif dense.fdtype == Val(:complex)
+            integrator.stats.nf += maximum(colorvec)
         end
-        integrator.stats.nf += tmp
     else
-        error("$alg_autodiff not yet supported in jacobian! function")
+        integrator.stats.nf += 1
     end
+
+    if dense isa AutoFiniteDiff
+        config = diffdir(integrator) > 0 ? jac_config[1] : jac_config[2]
+    else
+        config = jac_config[1]
+    end
+
+    if integrator.iter == 1
+        try
+            DI.jacobian!(f, fx, J, config, alg_autodiff(alg), x)
+        catch e
+            throw(FirstAutodiffJacError(e))
+        end
+    else
+        DI.jacobian!(f, fx, J, config, alg_autodiff(alg), x)
+    end
+
     nothing
 end
 
-function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2) where {F1, F2}
+function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
+     u, tmp, du2) where {F1, F2}
+
     haslinsolve = hasfield(typeof(alg), :linsolve)
 
-    if !DiffEqBase.has_jac(f) && # No Jacobian if has analytical solution
-       (!DiffEqBase.has_Wfact_t(f)) &&
-       ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve && # No Jacobian if linsolve doesn't want it
-           (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
-        (concrete_jac(alg) !== nothing && concrete_jac(alg))) # Jacobian if explicitly asked for
+    if !DiffEqBase.has_jac(f) &&
+        (!DiffEqBase.has_Wfact_t(f)) && 
+        ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve && 
+        (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
+        (concrete_jac(alg) !== nothing && concrete_jac(alg)))
+
         jac_prototype = f.jac_prototype
 
         if jac_prototype isa SparseMatrixCSC
@@ -278,39 +251,36 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2) where {F1
                 @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
             end
         end
+        uf = SciMLBase.@set uf.f = SciMLBase.unwrapped_f(uf.f)
 
-        sparsity, colorvec = sparsity_colorvec(f, u)
-        if alg_autodiff(alg) isa AutoForwardDiff
-            _chunksize = get_chunksize(alg) === Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
-            T = if standardtag(alg)
-                typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u)))
+        autodiff_alg = alg_autodiff(alg)
+        dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
+
+        if dense isa AutoFiniteDiff
+            dir_forward = @set dense.dir = 1
+            dir_reverse = @set dense.dir = -1
+
+            if autodiff_alg isa AutoSparse
+                autodiff_alg_forward = @set autodiff_alg.dense_ad = dir_forward
+                autodiff_alg_reverse = @set autodiff_alg.dense_ad = dir_reverse
             else
-                typeof(ForwardDiff.Tag(uf, eltype(u)))
+                autodiff_alg_forward = dir_forward
+                autodiff_alg_reverse = dir_reverse
             end
 
-            if _chunksize === Val{nothing}()
-                _chunksize = nothing
-            end
-            jac_config = ForwardColorJacCache(uf, uprev, _chunksize; colorvec = colorvec,
-                sparsity = sparsity, tag = T)
-        elseif alg_autodiff(alg) isa AutoFiniteDiff
-            if alg_difftype(alg) !== Val{:complex}
-                jac_config = FiniteDiff.JacobianCache(tmp, du1, du2, alg_difftype(alg),
-                    colorvec = colorvec,
-                    sparsity = sparsity)
-            else
-                jac_config = FiniteDiff.JacobianCache(Complex{eltype(tmp)}.(tmp),
-                    Complex{eltype(du1)}.(du1), nothing,
-                    alg_difftype(alg), eltype(u),
-                    colorvec = colorvec,
-                    sparsity = sparsity)
-            end
+            jac_config_forward = DI.prepare_jacobian(uf, du1, autodiff_alg_forward, u)
+            jac_config_reverse = DI.prepare_jacobian(uf, du1, autodiff_alg_reverse, u)
+
+            jac_config = (jac_config_forward, jac_config_reverse)
         else
-            error("$alg_autodiff not yet supported in build_jac_config function")
+            jac_config1 = DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
+            jac_config = (jac_config1, jac_config1)
         end
-    else
-        jac_config = nothing
+
+    else 
+        jac_config = (nothing, nothing)
     end
+
     jac_config
 end
 
@@ -324,74 +294,74 @@ function get_chunksize(jac_config::ForwardDiff.JacobianConfig{
     Val(N)
 end # don't degrade compile time information to runtime information
 
-function resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJacCache, i)
-    resize!(jac_config.fx, i)
-    resize!(jac_config.dx, i)
-    resize!(jac_config.t, i)
-    ps = SparseDiffTools.adapt.(DiffEqBase.parameterless_type(jac_config.dx),
-        SparseDiffTools.generate_chunked_partials(jac_config.dx,
-            1:length(jac_config.dx),
-            Val(ForwardDiff.npartials(jac_config.t[1]))))
-    resize!(jac_config.p, length(ps))
-    jac_config.p .= ps
+function resize_jac_config!(cache, integrator)
+    if !isnothing(cache.jac_config) && !isnothing(cache.jac_config[1])
+        uf = cache.uf
+        uf = SciMLBase.@set uf.f = SciMLBase.unwrapped_f(uf.f)
+
+        # for correct FiniteDiff dirs
+        autodiff_alg = alg_autodiff(integrator.alg)
+        if autodiff_alg isa AutoFiniteDiff
+            ad_right = SciMLBase.@set autodiff_alg.dir = 1
+            ad_left = SciMLBase.@set autodiff_alg.dir = -1
+        else
+            ad_right = autodiff_alg
+            ad_left = autodiff_alg
+        end
+
+        cache.jac_config = ([DI.prepare!_jacobian(
+                                   uf, cache.du1, config, ad, integrator.u)
+                               for (ad, config) in zip(
+            (ad_right, ad_left), cache.jac_config)]...,)
+    end
+    cache.jac_config
 end
 
-function resize_jac_config!(jac_config::FiniteDiff.JacobianCache, i)
-    resize!(jac_config, i)
-    jac_config
+function resize_grad_config!(cache, integrator)
+    if !isnothing(cache.grad_config) && !isnothing(cache.grad_config[1])
+
+        # for correct FiniteDiff dirs
+        autodiff_alg = ADTypes.dense_ad(alg_autodiff(integrator.alg))
+        if autodiff_alg isa AutoFiniteDiff
+            ad_right = SciMLBase.@set autodiff_alg.dir = 1
+            ad_left = SciMLBase.@set autodiff_alg.dir = -1
+        else
+            ad_right = autodiff_alg
+            ad_left = autodiff_alg
+        end
+
+        cache.grad_config = ([DI.prepare!_derivative(
+                                 cache.tf, cache.du1, config, ad, integrator.t)
+                             for (ad, config) in zip(
+            (ad_right, ad_left), cache.grad_config)]...,)
+    end
+    cache.grad_config
 end
 
-function resize_grad_config!(grad_config::AbstractArray, i)
-    resize!(grad_config, i)
-    grad_config
-end
 
-function resize_grad_config!(grad_config::ForwardDiff.DerivativeConfig, i)
-    resize!(grad_config.duals, i)
-    grad_config
-end
 
-function resize_grad_config!(grad_config::FiniteDiff.GradientCache, i)
-    @unpack fx, c1, c2 = grad_config
-    fx !== nothing && resize!(fx, i)
-    c1 !== nothing && resize!(c1, i)
-    c2 !== nothing && resize!(c2, i)
-    grad_config
-end
+
 
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     if !DiffEqBase.has_tgrad(f)
-        if alg_autodiff(alg) isa AutoForwardDiff
-            T = if standardtag(alg)
-                typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(du1)))
-            else
-                typeof(ForwardDiff.Tag(f, eltype(du1)))
-            end
+        ad = ADTypes.dense_ad(alg_autodiff(alg)) 
 
-            if du1 isa Array
-                dualt = Dual{T, eltype(du1), 1}(first(du1) * t,
-                    ForwardDiff.Partials((one(eltype(du1)),)))
-                grad_config = similar(du1, typeof(dualt))
-                fill!(grad_config, false)
-            else
-                grad_config = ArrayInterface.restructure(du1,
-                    Dual{
-                        T,
-                        eltype(du1),
-                        1
-                    }.(du1,
-                        (ForwardDiff.Partials((one(eltype(du1)),)),)) .*
-                    false)
-            end
-        elseif alg_autodiff(alg) isa AutoFiniteDiff
-            grad_config = FiniteDiff.GradientCache(du1, t, alg_difftype(alg))
+        if ad isa AutoFiniteDiff
+            dir_true = @set ad.dir = 1
+            dir_false = @set ad.dir = -1
+
+            grad_config_true = DI.prepare_derivative(tf, du1, dir_true, t)
+            grad_config_false = DI.prepare_derivative(tf, du1, dir_false, t)
+
+            grad_config = (grad_config_true, grad_config_false)
         else
-            error("$alg_autodiff not yet supported in build_grad_config function")
+            grad_config1 = DI.prepare_derivative(tf,du1,ad,t)
+            grad_config = (grad_config1, grad_config1)
         end
+        return grad_config
     else
-        grad_config = nothing
+        return (nothing, nothing)
     end
-    grad_config
 end
 
 function sparsity_colorvec(f, x)
@@ -407,7 +377,9 @@ function sparsity_colorvec(f, x)
         end
     end
 
+    col_alg = SparseMatrixColorings.GreedyColoringAlgorithm()
+    col_prob = SparseMatrixColorings.ColoringProblem()
     colorvec = DiffEqBase.has_colorvec(f) ? f.colorvec :
-               (isnothing(sparsity) ? (1:length(x)) : matrix_colors(sparsity))
+               (isnothing(sparsity) ? (1:length(x)) : SparseMatrixColorings.column_colors(SparseMatrixColorings.coloring(sparsity, col_prob, col_alg)))
     sparsity, colorvec
 end

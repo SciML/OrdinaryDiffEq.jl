@@ -158,10 +158,11 @@ end
 function _process_AD_choice(
         ad_alg::AutoForwardDiff{CS}, ::Val{CS2}, ::Val{FD}) where {CS, CS2, FD}
     # Non-default `chunk_size`
-    if CS2 != 0
+    if (CS2 != 0) && (isnothing(CS) || (CS2 !== CS))
         @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
         return _bool_to_ADType(Val{true}(), Val{CS2}(), Val{FD}()), Val{CS2}(), Val{FD}()
     end
+    
     _CS = CS === nothing ? 0 : CS
     return ad_alg, Val{_CS}(), Val{FD}()
 end
@@ -185,4 +186,13 @@ function _process_AD_choice(
         return _bool_to_ADType(Val{false}(), Val{CS}(), Val{FD2}()), Val{CS}(), Val{FD2}()
     end
     return ad_alg, Val{CS}(), ad_alg.fdtype
+end
+
+function _process_AD_choice(ad_alg::AutoSparse, cs2::Val{CS2}, fd::Val{FD}) where {CS2, FD}
+    _, cs, fd = _process_AD_choice(ad_alg.dense_ad, cs2, fd)
+    ad_alg, cs, fd
+end
+
+function _process_AD_choice(ad_alg, cs2, fd)
+    ad_alg, cs2, fd
 end

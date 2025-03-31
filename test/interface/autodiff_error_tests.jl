@@ -46,7 +46,7 @@ prob = ODEProblem(lorenz2!, u0, tspan)
 @test_throws OrdinaryDiffEqDifferentiation.FirstAutodiffTgradError solve(
     prob, Rosenbrock23())
 
-## Test that nothing is using duals when autodiff=false
+## Test that nothing is using duals when autodiff=AutoFiniteDiff()
 ## https://discourse.julialang.org/t/rodas4-using-dual-number-for-time-with-autodiff-false/98256
 
 for alg in [
