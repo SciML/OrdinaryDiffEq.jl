@@ -82,9 +82,7 @@ function DiffEqBase.prepare_alg(
         end
 
         cs = ForwardDiff.pickchunksize(x)
-        return remake(alg,
-            autodiff = AutoForwardDiff(
-                chunksize = cs))
+        return alg
     else # statically sized
         cs = pick_static_chunksize(Val{L}())
         cs = SciMLBase._unwrap_val(cs)
