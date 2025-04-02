@@ -64,6 +64,8 @@ for f in [f_oop, f_ip]
                     [
                         ODEFunction(f, colorvec = colors,
                             jac_prototype = jac_sp),
+                        ODEFunction(f, colorvec = colors,
+                            jac_prototype = jac_sp, mass_matrix = I(length(u0))),
                         ODEFunction(f, jac_prototype = jac_sp),
                         ODEFunction(f, colorvec = colors,
                             sparsity = jac_sp)
