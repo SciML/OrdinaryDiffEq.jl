@@ -122,7 +122,7 @@ function prepare_user_sparsity(ad_alg, prob)
 
                 if !isnothing(jac_prototype)
                     for idx in idxs
-                        jac_prototype[idx] = f.mass_matrix[idx]
+                        jac_prototype[idx] = prob.f.mass_matrix[idx]
                     end
                 end
             end
