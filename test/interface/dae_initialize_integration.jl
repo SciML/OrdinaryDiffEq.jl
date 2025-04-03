@@ -76,3 +76,20 @@ sol = solve(prob, Rodas5P(), dt = 1e-10)
 @test sol[1] == [1.0]
 @test sol[2] ≈ [0.9999999998]
 @test sol[end] ≈ [-1.0]
+
+@testset "`reinit!` updates initial parameters" begin
+    # https://github.com/SciML/ModelingToolkit.jl/issues/3451
+    # https://github.com/SciML/ModelingToolkit.jl/issues/3504
+    @variables x(t) y(t)
+    @parameters c1 c2
+    @mtkbuild sys = ODESystem([D(x) ~ -c1 * x + c2 * y, D(y) ~ c1 * x - c2 * y], t)
+    prob = ODEProblem(sys, [1.0, 2.0], (0.0, 1.0), [c1 => 1.0, c2 => 2.0])
+    @test prob.ps[Initial(x)] ≈ 1.0
+    @test prob.ps[Initial(y)] ≈ 2.0
+    integ = init(prob, Tsit5())
+    @test integ.ps[Initial(x)] ≈ 1.0
+    @test integ.ps[Initial(y)] ≈ 2.0
+    reinit!(integ, [2.0, 3.0])
+    @test integ.ps[Initial(x)] ≈ 2.0
+    @test integ.ps[Initial(y)] ≈ 3.0
+end
