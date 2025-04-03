@@ -46,6 +46,7 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "StaticArrays", "Test"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "StaticArrays", "Test", "JET"]
