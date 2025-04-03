@@ -27,6 +27,7 @@ julia = "1.10"
 [extras]
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 
 [targets]
-test = ["OrdinaryDiffEqSDIRK", "Test"]
+test = ["OrdinaryDiffEqSDIRK", "Test", "JET"]
