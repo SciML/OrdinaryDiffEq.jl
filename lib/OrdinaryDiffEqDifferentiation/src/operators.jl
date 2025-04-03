@@ -42,10 +42,6 @@ function JVPCache(f::DiffEqBase.AbstractDiffEqFunction, du, u, p, t; autodiff)
     return JVPCache{eltype(du)}(jvp_op, f, du, u, p, t)
 end
 
-function (op::JVPCache)(v, u, p, t)
-    return op.jvp_op(op.du, v, u, p, t) 
-end
-
 function (op::JVPCache)(Jv, v, u, p, t)
     op.jvp_op(Jv, v, u, p, t)
     return Jv
