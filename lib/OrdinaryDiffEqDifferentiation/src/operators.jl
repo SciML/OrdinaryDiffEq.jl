@@ -47,9 +47,6 @@ function (op::JVPCache)(Jv, v, u, p, t)
     return Jv
 end
 
-Base.:*(J::JVPCache, v::AbstractArray) = J.jvp_op(v, J.u, J.p, J.t)
-Base.:*(J::JVPCache, v::Number) = J.jvp_op(v, J.u, J.p, J.t)
-
 function LinearAlgebra.mul!(
         Jv::AbstractArray, J::JVPCache, v::AbstractArray)
     J.jvp_op(Jv, v, J.u, J.p, J.t)
