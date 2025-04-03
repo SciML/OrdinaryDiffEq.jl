@@ -3,6 +3,9 @@ using OrdinaryDiffEq
 using SparseArrays
 using LinearAlgebra
 using LinearSolve
+import DifferentiationInterface as DI
+using SparseConnectivityTracer
+using SparseMatrixColorings
 using ADTypes
 using Enzyme
 
@@ -81,4 +84,56 @@ for f in [f_oop, f_ip]
         end
     end
 end
+
+function sparse_f!(du, u, p, t)
+    du[1] = u[1] + u[2]
+    du[2] = u[3]^2
+    return du[3] = u[1]^2
+end
+
+backend_allow = AutoSparse(
+    AutoForwardDiff();
+    sparsity_detector = TracerSparsityDetector(),
+    coloring_algorithm = GreedyColoringAlgorithm(; allow_denser = true)
+)
+
+backend_no_allow = AutoSparse(
+    AutoForwardDiff();
+    sparsity_detector = TracerSparsityDetector(),
+    coloring_algorithm = GreedyColoringAlgorithm()
+)
+
+u = ones(3)
+du = zero(u)
+p = t = nothing
+
+prep_allow = DI.prepare_jacobian(
+    sparse_f!, du, backend_allow, u, DI.Constant(p), DI.Constant(t))
+prep_no_allow = DI.prepare_jacobian(
+    sparse_f!, du, backend_no_allow, u, DI.Constant(p), DI.Constant(t))
+# this is what the user may typically provide to the ODE problem
+
+function inplace_jac_allow!(J, u, p, t)
+    return DI.jacobian!(
+        sparse_f!, zeros(3), J, prep_allow, backend_allow, u, DI.Constant(p), DI.Constant(t))
+end
+
+function inplace_jac_no_allow!(J, u, p, t)
+    return DI.jacobian!(
+        sparse_f!, zeros(3), J, prep_no_allow, backend_no_allow, u, DI.Constant(p), DI.Constant(t))
+end
+
+jac_prototype = similar(sparsity_pattern(prep_allow), eltype(u))
+
+ode_f_allow = ODEFunction(
+    sparse_f!, jac = inplace_jac_allow!, jac_prototype = jac_prototype)
+prob_allow = ODEProblem(ode_f_allow, [1, 1, 1], (0.0, 1.0))
+
+ode_f_no_allow = ODEFunction(
+    sparse_f!, jac = inplace_jac_no_allow!, jac_prototype = jac_prototype)
+prob_no_allow = ODEProblem(ode_f_no_allow, [1, 1, 1], (0.0, 1.0))
+
+sol = solve(prob_allow, Rodas5())
+
+@test_throws DimensionMismatch sol=solve(prob_no_allow, Rodas5())
 
