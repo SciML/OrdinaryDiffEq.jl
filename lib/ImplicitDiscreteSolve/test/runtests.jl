@@ -4,6 +4,7 @@ using ImplicitDiscreteSolve
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
 using SciMLBase
+using JET
 
 # Test implicit Euler using ImplicitDiscreteProblem
 @testset "Implicit Euler" begin
@@ -118,4 +119,10 @@ end
     @test check_error(integ) == ReturnCode.InitialFailure
     sol = solve(idprob, IDSolve())
     @test length(sol.u) == 1
+end
+
+
+@testset "JET Tests" begin
+    test_package(test_package(
+        ImplicitDiscreteSolve, target_defined_modules = true, mode = :typo))
 end
