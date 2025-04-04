@@ -172,7 +172,18 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         if DiffEqBase.has_jac(f)
             duprev = integrator.duprev
             uf = cache.uf
-            f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
+            # need to do some jank here to account for sparsity pattern of W
+            # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653
+
+            # we need to set all nzval to a non-zero number
+            # otherwise in the following line any zero gets interpreted as a structural zero
+            integrator.f.jac_prototype.nzval .= 1.0
+            J .= 1.0 .* integrator.f.jac_prototype
+            J.nzval .= 0.0
+            f.jac(J, uprev, p, t)
+            MM = integrator.f.mass_matrix isa UniformScaling ?
+                 integrator.f.mass_matrix(length(integrator.u)) : integrator.f.mass_matrix
+            J .= J .+ MM
         else
             @unpack du1, uf, jac_config = cache
             # using `dz` as temporary array
@@ -183,7 +194,17 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         end
     else
         if DiffEqBase.has_jac(f)
+            # need to do some jank here to account for sparsity pattern of W
+            # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653
+
+            # we need to set all nzval to a non-zero number
+            # otherwise in the following line any zero gets interpreted as a structural zero
+            integrator.f.jac_prototype.nzval .= 1.0
+            J .= 1.0 .* integrator.f.jac_prototype
+            J.nzval .= 0.0
             f.jac(J, uprev, p, t)
+            MM = integrator.f.mass_matrix isa UniformScaling ? integrator.f.mass_matrix(length(integrator.u)) : integrator.f.mass_matrix
+            J .= J .+ MM
         else
             @unpack du1, uf, jac_config = cache
             uf.f = nlsolve_f(f, alg)
