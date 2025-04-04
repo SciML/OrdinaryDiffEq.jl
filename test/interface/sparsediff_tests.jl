@@ -87,35 +87,24 @@ end
 
 # test for https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653#issuecomment-2778430025
 
-function sparse_f!(du, u, p, t)
-    du[1] = u[1] + u[2]
-    du[2] = u[3]^2
-    return du[3] = u[1]^2
+using LinearAlgebra, SparseArrays
+using OrdinaryDiffEq
+
+function f(du, u, p, t)
+    du[1] = u[1]
+    return du
 end
 
-backend = AutoSparse(
-    AutoForwardDiff();
-    sparsity_detector = TracerSparsityDetector(),
-    coloring_algorithm = GreedyColoringAlgorithm()
-)
-
-u = ones(3)
-du = zero(u)
-p = t = nothing
-
-prep = DI.prepare_jacobian(
-    sparse_f!, du, backend, u, DI.Constant(p), DI.Constant(t))
-# this is what the user may typically provide to the ODE problem
-
-function inplace_jac!(J, u, p, t)
-    return DI.jacobian!(
-        sparse_f!, zeros(3), J, prep, backend, u, DI.Constant(p), DI.Constant(t))
+function jac(J::SparseMatrixCSC, u, p, t)
+    @assert nnz(J) == 1  # mirrors the strict behavior of SparseMatrixColorings
+    nonzeros(J)[1] = 1
+    return J
 end
 
-jac_prototype = similar(sparsity_pattern(prep), eltype(u))
+u0 = ones(10)
+jac_prototype = sparse(Diagonal(vcat(1, zeros(9))))
 
-ode_f = ODEFunction(sparse_f!, jac = inplace_jac!, jac_prototype = jac_prototype)
-prob = ODEProblem(ode_f, [1, 1, 1], (0.0, 1.0))
-
-@test_no_warn sol = solve(prob, Rodas5())
+fun = ODEFunction(f; jac, jac_prototype)
+prob = ODEProblem(fun, u0, (0.0, 1.0))
+@test_nowarn sol = solve(prob, Rodas4(); reltol = 1e-8, abstol = 1e-8)
 
