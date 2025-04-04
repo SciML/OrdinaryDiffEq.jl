@@ -205,9 +205,9 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             if !isnothing(integrator.f.jac_prototype) &&
                integrator.f.jac_prototype isa SparseMatrixCSC
                
-                integrator.f.jac_prototype.nzval .= 1.0
-                J .= 1.0 .* integrator.f.jac_prototype
-                J.nzval .= 0.0
+                integrator.f.jac_prototype.nzval .= true
+                J .= true .* integrator.f.jac_prototype
+                J.nzval .= false
                 f.jac(J, uprev, p, t)
             else 
                 f.jac(J, uprev, p, t)
