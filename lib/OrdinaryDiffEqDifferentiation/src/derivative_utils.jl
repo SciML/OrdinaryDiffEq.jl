@@ -177,7 +177,9 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
 
             # we need to set all nzval to a non-zero number
             # otherwise in the following line any zero gets interpreted as a structural zero
-            if !isnothing(integrator.f.jac_prototype)
+            if !isnothing(integrator.f.jac_prototype) && 
+                integrator.f.jac_prototype isa SparseMatrixCSC
+
                 integrator.f.jac_prototype.nzval .= 1.0
                 J .= 1.0 .* integrator.f.jac_prototype
                 J.nzval .= 0.0
@@ -200,7 +202,9 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
 
             # we need to set all nzval to a non-zero number
             # otherwise in the following line any zero gets interpreted as a structural zero
-            if !isnothing(integrator.f.jac_prototype)
+            if !isnothing(integrator.f.jac_prototype) &&
+               integrator.f.jac_prototype isa SparseMatrixCSC
+               
                 integrator.f.jac_prototype.nzval .= 1.0
                 J .= 1.0 .* integrator.f.jac_prototype
                 J.nzval .= 0.0
