@@ -3,6 +3,9 @@ using OrdinaryDiffEq
 using SparseArrays
 using LinearAlgebra
 using LinearSolve
+import DifferentiationInterface as DI
+using SparseConnectivityTracer
+using SparseMatrixColorings
 using ADTypes
 using Enzyme
 
@@ -83,4 +86,27 @@ for f in [f_oop, f_ip]
         end
     end
 end
+
+# test for https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653#issuecomment-2778430025
+
+using LinearAlgebra, SparseArrays
+using OrdinaryDiffEq
+
+function f(du, u, p, t)
+    du[1] = u[1]
+    return du
+end
+
+function jac(J::SparseMatrixCSC, u, p, t)
+    @assert nnz(J) == 1  # mirrors the strict behavior of SparseMatrixColorings
+    nonzeros(J)[1] = 1
+    return J
+end
+
+u0 = ones(10)
+jac_prototype = sparse(Diagonal(vcat(1, zeros(9))))
+
+fun = ODEFunction(f; jac, jac_prototype)
+prob = ODEProblem(fun, u0, (0.0, 1.0))
+@test_nowarn sol = solve(prob, Rodas4(); reltol = 1e-8, abstol = 1e-8)
 
