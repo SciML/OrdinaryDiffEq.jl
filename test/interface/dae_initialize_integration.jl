@@ -92,4 +92,6 @@ sol = solve(prob, Rodas5P(), dt = 1e-10)
     reinit!(integ, [2.0, 3.0])
     @test integ.ps[Initial(x)] ≈ 2.0
     @test integ.ps[Initial(y)] ≈ 3.0
+    @test integ[x] ≈ 2.0
+    @test integ[y] ≈ 3.0
 end
