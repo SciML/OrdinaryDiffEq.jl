@@ -1562,9 +1562,9 @@ version = "0.1.2"
 
 [[deps.SparseMatrixColorings]]
 deps = ["ADTypes", "DocStringExtensions", "LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "b7de46dc1cc6a12e4ba4c614f3754015f6fc63ef"
+git-tree-sha1 = "d59566cf03c67733edce6d80e0fb17e183ab31ba"
 uuid = "0a514795-09f3-496d-8182-132a7b665d35"
-version = "0.4.15"
+version = "0.4.16"
 
     [deps.SparseMatrixColorings.extensions]
     SparseMatrixColoringsCliqueTreesExt = "CliqueTrees"
@@ -1718,9 +1718,9 @@ version = "3.25.1"
 
 [[deps.Symbolics]]
 deps = ["ADTypes", "ArrayInterface", "Bijections", "CommonWorldInvalidations", "ConstructionBase", "DataStructures", "DiffRules", "Distributions", "DocStringExtensions", "DomainSets", "DynamicPolynomials", "LaTeXStrings", "Latexify", "Libdl", "LinearAlgebra", "LogExpFunctions", "MacroTools", "Markdown", "NaNMath", "OffsetArrays", "PrecompileTools", "Primes", "RecipesBase", "Reexport", "RuntimeGeneratedFunctions", "SciMLBase", "Setfield", "SparseArrays", "SpecialFunctions", "StaticArraysCore", "SymbolicIndexingInterface", "SymbolicLimits", "SymbolicUtils", "TermInterface"]
-git-tree-sha1 = "7a1909827eeae81d22057a7e2da9cdbdfdc62658"
+git-tree-sha1 = "12a14cf31a2b05acd548965c435d4b4e4884b4ad"
 uuid = "0c5d862f-8b57-4792-8d23-62f2024744c7"
-version = "6.37.0"
+version = "6.37.1"
 
     [deps.Symbolics.extensions]
     SymbolicsForwardDiffExt = "ForwardDiff"
