@@ -64,7 +64,6 @@ end
         @time @safetestset "Linear Nonlinear Solver Tests" include("interface/linear_nonlinear_tests.jl")
         @time @safetestset "Linear Solver Tests" include("interface/linear_solver_test.jl")
         @time @safetestset "Linear Solver Split ODE Tests" include("interface/linear_solver_split_ode_test.jl")
-        @time @safetestset "Sparse Diff Tests" include("interface/sparsediff_tests.jl")
         @time @safetestset "AutoSparse Detection Tests" include("interface/autosparse_detection_tests.jl")
         @time @safetestset "Enum Tests" include("interface/enums.jl")
         @time @safetestset "CheckInit Tests" include("interface/checkinit_tests.jl")
@@ -135,7 +134,6 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_II" || GROUP == "Regression")
         @time @safetestset "PSOS Energy Conservation Tests" include("regression/psos_and_energy_conservation.jl")
         @time @safetestset "Unrolled Tests" include("regression/ode_unrolled_comparison_tests.jl")
-        @time @safetestset "Time derivative Tests" include("regression/time_derivative_test.jl")
         @time @safetestset "IIP vs OOP Tests" include("regression/iipvsoop_tests.jl")
         @time @safetestset "Inference Tests" include("regression/inference.jl")
     end
@@ -150,6 +148,8 @@ end
 
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
+        @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")
+        @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
