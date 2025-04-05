@@ -149,7 +149,7 @@ end
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
         @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")
-        @time @safetestset "Time derivative Tests" include("regression/time_derivative_test.jl")
+        @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
