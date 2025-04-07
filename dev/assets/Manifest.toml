@@ -689,9 +689,9 @@ version = "1.4.0"
 
 [[deps.Latexify]]
 deps = ["Format", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdown", "OrderedCollections", "Requires"]
-git-tree-sha1 = "cd714447457c660382fe634710fb56eb255ee42e"
+git-tree-sha1 = "cd10d2cc78d34c0e2a3a36420ab607b611debfbb"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
-version = "0.16.6"
+version = "0.16.7"
 
     [deps.Latexify.extensions]
     DataFramesExt = "DataFrames"
