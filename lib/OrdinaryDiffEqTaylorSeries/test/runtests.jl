@@ -29,7 +29,4 @@ end
     @test length(sol) < 20
 end
 
-@testset "JET Tests" begin
-    test_package(test_package(
-        OrdinaryDiffEqPDIRK, target_defined_modules = true, mode = :typo))
-end
+include("jet.jl")
