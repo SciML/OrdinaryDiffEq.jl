@@ -2,6 +2,6 @@ import OrdinaryDiffEqTsit5
 using JET
 
 @testset "JET Tests" begin
-    test_package(test_package(
-        OrdinaryDiffEqTsit5, target_defined_modules = true, mode = :typo))
+    test_package(
+        OrdinaryDiffEqTsit5, target_defined_modules = true, mode = :typo)
 end

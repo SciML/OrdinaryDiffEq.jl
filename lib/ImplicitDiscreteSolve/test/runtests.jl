@@ -123,8 +123,8 @@ end
 
 
 @testset "JET Tests" begin
-    test_package(test_package(
-        ImplicitDiscreteSolve, target_defined_modules = true, mode = :typo))
+    test_package(
+        ImplicitDiscreteSolve, target_defined_modules = true, mode = :typo)
 end
 
 include("qa_tests.jl")
