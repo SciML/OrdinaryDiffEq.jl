@@ -4,3 +4,4 @@ using SafeTestsets
 @time @safetestset "OwrenZen Tests" include("owrenzen_tests.jl")
 @time @safetestset "Euler SSP Tests" include("euler_ssp.jl")
 @time @safetestset "JET Tests" include("jet.jl")
+@time @safetestset "Aqua" include("qa_tests.jl")

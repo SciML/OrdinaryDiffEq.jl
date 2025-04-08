@@ -30,3 +30,4 @@ end
 end
 
 include("jet.jl")
+include("qa_tests.jl")

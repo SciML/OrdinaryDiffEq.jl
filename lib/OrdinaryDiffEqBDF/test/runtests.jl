@@ -9,3 +9,4 @@ using SafeTestsets
 @time @safetestset "DAE Initialization Tests" include("dae_initialization_tests.jl")
 
 @time @safetestset "JET Tests" include("jet.jl")
+@time @safetestset "Aqua" include("qa_tests.jl")
