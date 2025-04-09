@@ -4,13 +4,19 @@ alg_stability_size(alg::ExplicitTaylor2) = 1
 alg_order(::ExplicitTaylor{P}) where {P} = P
 alg_stability_size(alg::ExplicitTaylor) = 1
 
-JET_CACHE = IdDict()
+alg_order(alg::ExplicitTaylorAdaptiveOrder) = alg.min_order
+get_current_adaptive_order(::ExplicitTaylorAdaptiveOrder, cache) = cache.current_order[]
+get_current_alg_order(::ExplicitTaylorAdaptiveOrder, cache) = cache.current_order[]
 
-function build_jet(f::ODEFunction{iip}, p, order, length = nothing) where {iip}
-    build_jet(f, Val{iip}(), p, order, length)
+TaylorScalar{T, P}(x::TaylorScalar{T, Q}) where {T, P, Q} = TaylorScalar{P}(x)
+
+const JET_CACHE = IdDict()
+
+function make_term(a)
+    term(TaylorScalar, Symbolics.unwrap(a.value), map(Symbolics.unwrap, a.partials))
 end
 
-function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, iip}
+function build_jet(f::ODEFunction{iip}, p, order::Val{P}, length = nothing) where {P, iip}
     if haskey(JET_CACHE, f)
         list = JET_CACHE[f]
         index = findfirst(x -> x[1] == order && x[2] == p, list)
@@ -37,7 +43,8 @@ function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, 
         d = get_coefficient(fu, index - 1) / index
         u = append_coefficient(u, d)
     end
-    jet = build_function(u, u0, t0; expression = Val(false), cse = true)
+    u_term = make_term.(u)
+    jet = build_function(u_term, u0, t0; expression = Val(false), cse = true)
     if !haskey(JET_CACHE, f)
         JET_CACHE[f] = []
     end

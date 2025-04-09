@@ -1,9 +1,13 @@
 module OrdinaryDiffEqTaylorSeries
 
-import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
+import OrdinaryDiffEqCore: alg_order, get_current_adaptive_order, get_current_alg_order,
+                           alg_stability_size, explicit_rk_docstring,
                            OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache,
                            alg_cache,
                            OrdinaryDiffEqConstantCache, @fold, trivial_limiter!,
+                           step_accept_controller!,
+                           stepsize_controller!,
+                           unwrap_alg,
                            constvalue, @unpack, perform_step!, calculate_residuals, @cache,
                            calculate_residuals!, _ode_interpolant, _ode_interpolant!,
                            CompiledFloats, @OnDemandTableauExtract, initialize!,
@@ -55,6 +59,6 @@ PrecompileTools.@compile_workload begin
     solver_list = nothing
 end
 
-export ExplicitTaylor2, ExplicitTaylor, DAETS
+export ExplicitTaylor2, ExplicitTaylor, ExplicitTaylorAdaptiveOrder
 
 end
