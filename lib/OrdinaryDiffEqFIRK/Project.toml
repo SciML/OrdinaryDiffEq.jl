@@ -45,7 +45,7 @@ SciMLOperators = "0.3.9"
 Test = "<0.0.1, 1"
 julia = "1.10"
 JET = "0.9.19"
-
+Aqua = "0.8.11"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
