@@ -11,7 +11,7 @@ using Test
     @test sim.𝒪est[:final]≈2 atol=testTol
 end
 
-@testset "TaylorN Convergence Tests" begin
+@testset "Taylor Convergence Tests" begin
     # Test convergence
     dts = 2. .^ (-8:-4)
     testTol = 0.2
@@ -24,7 +24,12 @@ end
     end
 end
 
-@testset "TaylorN Adaptive Tests" begin
-    sol = solve(prob_ode_linear, ExplicitTaylor(order=Val(2)))
+@testset "Taylor Adaptive time-step Tests" begin
+    sol = solve(prob_ode_linear, ExplicitTaylor(order=Val(4)))
+    @test length(sol) < 20
+end
+
+@testset "Taylor Adaptive time-step Adaptive order Tests" begin
+    sol = solve(prob_ode_linear, ExplicitTaylorAdaptiveOrder())
     @test length(sol) < 20
 end

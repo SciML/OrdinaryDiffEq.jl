@@ -60,7 +60,7 @@ end
     utaylor = jet(uprev, t)
     u = map(x -> evaluate_polynomial(x, dt), utaylor)
     if integrator.opts.adaptive
-        utilde = TaylorDiff.get_coefficient(utaylor, P) * dt^(P + 1)
+        utilde = TaylorDiff.get_coefficient(utaylor, P) * dt^P
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -90,11 +90,120 @@ end
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=TaylorDiff.get_coefficient(utaylor, P) *
-                                                 dt^(P + 1)
+                                                 dt^P
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, P + 1)
+    return nothing
+end
+
+function initialize!(integrator, cache::ExplicitTaylorAdaptiveOrderCache)
+    integrator.kshortsize = cache.max_order
+    resize!(integrator.k, cache.max_order)
+    # Setup k pointers
+    for i in 1:(cache.max_order)
+        integrator.k[i] = get_coefficient(cache.utaylor, i)
+    end
+    return nothing
+end
+
+@muladd function perform_step!(
+        integrator, cache::ExplicitTaylorAdaptiveOrderCache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    alg = unwrap_alg(integrator, false)
+    @unpack jets, current_order, min_order, max_order, utaylor, utilde, tmp, atmp, thread = cache
+
+    jet_index = current_order[] - min_order + 1
+    # compute one additional order for adaptive order
+    jet = jets[jet_index + 1]
+    jet(utaylor, uprev, t)
+    for i in eachindex(utaylor)
+        u[i] = @inline evaluate_polynomial(utaylor[i], dt)
+    end
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, current_order[] + 1)
+    if integrator.opts.adaptive
+        min_work = Inf
+        start_order = max(min_order, current_order[] - 1)
+        end_order = min(max_order, current_order[] + 1)
+        for i in start_order:end_order
+            A = i * i
+            @.. broadcast=false thread=thread utilde=TaylorDiff.get_coefficient(
+                utaylor, i) * dt^i
+            calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            EEst = integrator.opts.internalnorm(atmp, t)
+
+            # backup
+            e = integrator.EEst
+            qold = integrator.qold
+            # calculate dt
+            integrator.EEst = EEst
+            dtpropose = step_accept_controller!(integrator, alg,
+                stepsize_controller!(integrator, alg))
+            # restore
+            integrator.EEst = e
+            integrator.qold = qold
+
+            work = A / dtpropose
+            if work < min_work
+                cache.current_order[] = i
+                min_work = work
+                integrator.EEst = EEst
+            end
+        end
+    end
+    return nothing
+end
+
+function initialize!(integrator, cache::ExplicitTaylorAdaptiveOrderConstantCache)
+    integrator.kshortsize = cache.max_order
+    integrator.k = typeof(integrator.k)(undef, cache.max_order)
+    return nothing
+end
+
+@muladd function perform_step!(
+        integrator, cache::ExplicitTaylorAdaptiveOrderConstantCache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    alg = unwrap_alg(integrator, false)
+    @unpack jets, current_order, min_order, max_order = cache
+
+    jet_index = current_order[] - min_order + 1
+    # compute one additional order for adaptive order
+    jet = jets[jet_index + 1]
+    utaylor = jet(uprev, t)
+    u = map(x -> evaluate_polynomial(x, dt), utaylor)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, current_order[] + 1)
+    if integrator.opts.adaptive
+        min_work = Inf
+        start_order = max(min_order, current_order[] - 1)
+        end_order = min(max_order, current_order[] + 1)
+        for i in start_order:end_order
+            A = i * i
+            utilde = TaylorDiff.get_coefficient(utaylor, i) * dt^i
+            atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            EEst = integrator.opts.internalnorm(atmp, t)
+
+            # backup
+            e = integrator.EEst
+            qold = integrator.qold
+            # calculate dt
+            integrator.EEst = EEst
+            dtpropose = step_accept_controller!(integrator, alg,
+                stepsize_controller!(integrator, alg))
+            # restore
+            integrator.EEst = e
+            integrator.qold = qold
+
+            work = A / dtpropose
+            if work < min_work
+                cache.current_order[] = i
+                min_work = work
+                integrator.EEst = EEst
+            end
+        end
+    end
     return nothing
 end
