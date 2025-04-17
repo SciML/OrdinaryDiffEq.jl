@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "6.93.0"
+version = "6.93.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -86,7 +86,7 @@ FastBroadcast = "0.2, 0.3"
 FastClosures = "0.3"
 FillArrays = "1.9"
 FiniteDiff = "2"
-ForwardDiff = "0.10"
+ForwardDiff = "0.10, 1"
 FunctionWrappersWrappers = "0.1"
 InteractiveUtils = "1.9"
 LineSearches = "7"
