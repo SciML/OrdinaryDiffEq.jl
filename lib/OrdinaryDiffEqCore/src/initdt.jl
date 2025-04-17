@@ -127,8 +127,11 @@
     # Better than checking any(x->any(isnan, x), f₀)
     # because it also checks if partials are NaN
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
-    if integrator.opts.verbose && isnan(d₁)
-        @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
+    if isnan(d₁)
+        if integrator.opts.verbose
+            @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
+        end
+        
         return tdir * dtmin
     end
 
