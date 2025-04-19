@@ -7,3 +7,6 @@ using SafeTestsets
 @time @safetestset "DAE AD Tests" include("dae_ad_tests.jl")
 @time @safetestset "DAE Event Tests" include("dae_event.jl")
 @time @safetestset "DAE Initialization Tests" include("dae_initialization_tests.jl")
+
+@time @safetestset "JET Tests" include("jet.jl")
+@time @safetestset "Aqua" include("qa_tests.jl")
