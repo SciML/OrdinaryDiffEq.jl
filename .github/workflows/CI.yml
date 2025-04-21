@@ -57,6 +57,7 @@ jobs:
           - OrdinaryDiffEqVerner
 
           - ImplicitDiscreteSolve
+          - SimpleImplicitDiscreteSolve
 
         version:
           - 'lts'
