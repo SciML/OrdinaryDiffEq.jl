@@ -1,4 +1,3 @@
-#runtests
 using Test
 using SimpleImplicitDiscreteSolve
 using OrdinaryDiffEqSDIRK
