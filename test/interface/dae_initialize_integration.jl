@@ -1,5 +1,6 @@
 using ModelingToolkit, OrdinaryDiffEq, NonlinearSolve, Test
 using ModelingToolkit: D_nounits as D, t_nounits as t
+
 @parameters g e b
 @variables v(t) w(t) F(t)
 single_neuron_eqs = [
@@ -8,10 +9,10 @@ single_neuron_eqs = [
 ]
 n1 = ODESystem(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n1)
 n2 = ODESystem(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n2)
-@parameters D Dk
-connections = [0 ~ n1.F - D * Dk * max(n1.v - n2.v, 0)
-               0 ~ n2.F - D * max(n2.v - n1.v, 0)]
-connected = ODESystem(connections, t, [], [D, Dk], systems = [n1, n2], name = :connected)
+@parameters Di Dk
+connections = [0 ~ n1.F - Di * Dk * max(n1.v - n2.v, 0)
+               0 ~ n2.F - Di * max(n2.v - n1.v, 0)]
+connected = ODESystem(connections, t, [], [Di, Dk], systems = [n1, n2], name = :connected)
 connected = complete(connected)
 
 u0 = [
