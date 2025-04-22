@@ -11,6 +11,8 @@ prob = prob_ode_2Dlinear
 
 @test_nowarn solve(prob, Rodas5P(autodiff = ad, linsolve = LinearSolve.KrylovJL_GMRES()))
 
+@test_nowarn solve(prob, FBDF(autodiff = ad))
+
 # Test that no dense matrices are made sparse
 diag_prob = ODEProblem((du, u, p, t) -> du .= -1.0 .* u, rand(Int(1e7)), (0, 1.0))
 
