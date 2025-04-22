@@ -1,8 +1,7 @@
 using ModelingToolkit, OrdinaryDiffEq, NonlinearSolve, Test
-
-@parameters t g e b
+using ModelingToolkit: D_nounits as D, t_nounits as t
+@parameters g e b
 @variables v(t) w(t) F(t)
-@derivatives D' ~ t
 single_neuron_eqs = [
     D(v) ~ min(max(-2 - v, v), 2 - v) - w + F, # add the flux term
     D(w) ~ e * (v - g * w + b)
