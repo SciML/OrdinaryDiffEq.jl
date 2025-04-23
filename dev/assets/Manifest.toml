@@ -1728,10 +1728,10 @@ uuid = "19f23fe9-fdab-4a78-91af-e7b7767979c3"
 version = "0.2.2"
 
 [[deps.SymbolicUtils]]
-deps = ["AbstractTrees", "ArrayInterface", "Bijections", "ChainRulesCore", "Combinatorics", "ConstructionBase", "DataStructures", "DocStringExtensions", "DynamicPolynomials", "ExproniconLite", "LinearAlgebra", "MultivariatePolynomials", "NaNMath", "Setfield", "SparseArrays", "SpecialFunctions", "StaticArrays", "SymbolicIndexingInterface", "TaskLocalValues", "TermInterface", "TimerOutputs", "Unityper"]
-git-tree-sha1 = "2c9879cd67d1bb2f2989669e5849639bb4d3c792"
+deps = ["AbstractTrees", "ArrayInterface", "Bijections", "ChainRulesCore", "Combinatorics", "ConstructionBase", "DataStructures", "DocStringExtensions", "DynamicPolynomials", "ExproniconLite", "LinearAlgebra", "MultivariatePolynomials", "NaNMath", "Setfield", "SparseArrays", "SpecialFunctions", "StaticArrays", "SymbolicIndexingInterface", "TaskLocalValues", "TermInterface", "TimerOutputs", "Unityper", "WeakValueDicts"]
+git-tree-sha1 = "e893939e258de0de23dc233ec6a618a4b53554ff"
 uuid = "d1185830-fcd6-423d-90d6-eec64667417b"
-version = "3.26.1"
+version = "3.27.0"
 
     [deps.SymbolicUtils.extensions]
     SymbolicUtilsLabelledArraysExt = "LabelledArrays"
@@ -1864,6 +1864,11 @@ deps = ["ConstructionBase"]
 git-tree-sha1 = "25008b734a03736c41e2a7dc314ecb95bd6bbdb0"
 uuid = "a7c27f48-0311-42f6-a7f8-2c11e75eb415"
 version = "0.1.6"
+
+[[deps.WeakValueDicts]]
+git-tree-sha1 = "98528c2610a5479f091d470967a25becfd83edd0"
+uuid = "897b6980-f191-5a31-bcb0-bf3c4585e0c1"
+version = "0.1.0"
 
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
