@@ -616,15 +616,17 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 
     nlequation = @closure (x, _) -> begin
-        du = ifelse.(differential_vars, x, du)
-        u = ifelse.(differential_vars, u, x)
-        f(du, u, p, t)
+        du_ = ifelse.(differential_vars, x, du)
+        u_ = ifelse.(differential_vars, u, x)
+        f.f(du_, u_, p, t)
     end
 
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u))
 
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, nlprob, integrator.u)
+
+    @show nlsolve
 
     nlsol = solve(nlprob, nlsolve)
 
