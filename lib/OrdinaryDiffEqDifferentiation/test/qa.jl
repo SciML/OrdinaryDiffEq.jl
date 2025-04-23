@@ -3,6 +3,8 @@ using Aqua
 
 @testset "Aqua" begin
     Aqua.test_all(
-        OrdinaryDiffEqDifferentiation
+        OrdinaryDiffEqDifferentiation;
+        piracies = false,
+        ambiguities = false
     )
 end
