@@ -1,5 +1,5 @@
 using Test
-using OrdinaryDiffEq, Calculus, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes
+using OrdinaryDiffEq, Calculus, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes, DifferentiationInterface
 
 function f(du, u, p, t)
     du[1] = -p[1]
@@ -346,3 +346,11 @@ implicit_algs = [FBDF,
     @test OrdinaryDiffEq.alg_autodiff(alg7) == OrdinaryDiffEq.alg_autodiff(alg8)
     @test OrdinaryDiffEq.alg_autodiff(alg9) == OrdinaryDiffEq.alg_autodiff(alg10)
 end
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/2675
+x0 = [0.1]
+DifferentiationInterface.gradient(AutoForwardDiff(), x0) do x
+    prob = ODEProblem{true}((du, u, p, t) -> (du[1] = -u[1]), x, (0.0, 1.0),)
+    sol = solve(prob, DefaultODEAlgorithm(), reltol = 1e-6)
+    sum(sol)
+end ≈ [6.765310476296564]
