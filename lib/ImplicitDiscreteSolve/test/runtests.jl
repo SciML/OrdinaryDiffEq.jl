@@ -127,4 +127,4 @@ end
         ImplicitDiscreteSolve, target_defined_modules = true, mode = :typo)
 end
 
-include("qa_tests.jl")
+include("qa.jl")
