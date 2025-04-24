@@ -13,7 +13,7 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_or
                            OrdinaryDiffEqAdaptiveAlgorithm,
                            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                            alg_cache, CompiledFloats, @threaded, stepsize_controller!,
-                           DEFAULT_PRECS, full_cache,
+                           DEFAULT_PRECS, full_cache, qmin_default,
                            constvalue, PolyesterThreads, Sequential, BaseThreads,
                            _digest_beta1_beta2, timedepentdtmin, _unwrap_val,
                            _reshape, _vec, get_fsalfirstlast, generic_solver_docstring,
