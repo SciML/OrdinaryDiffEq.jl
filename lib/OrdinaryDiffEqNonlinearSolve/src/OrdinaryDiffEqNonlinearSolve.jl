@@ -15,7 +15,7 @@ using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, New
                       step!
 using MuladdMacro, FastBroadcast
 import FastClosures: @closure
-using LinearAlgebra: UniformScaling, UpperTriangular
+using LinearAlgebra: UniformScaling, UpperTriangular, givens, cond, dot, lmul!, axpy!
 import LinearAlgebra
 import ArrayInterface
 import LinearSolve
