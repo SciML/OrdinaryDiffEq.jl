@@ -9,4 +9,4 @@ using SafeTestsets
 @time @safetestset "BDF Regression Tests" include("bdf_regression_tests.jl")
 
 @time @safetestset "JET Tests" include("jet.jl")
-@time @safetestset "Aqua" include("qa_tests.jl")
+@time @safetestset "Aqua" include("qa.jl")
