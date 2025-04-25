@@ -28,7 +28,7 @@ SciMLBase = "2.48.1"
 SciMLOperators = "0.3.9"
 Test = "<0.0.1, 1"
 julia = "1.10"
-JET = "0.9.18"
+JET = "0.9.18, 0.10"
 Aqua = "0.8.11"
 
 [extras]
