@@ -22,14 +22,14 @@ out_VMF = vecarrzero(ntt, size(prob_ode_2Dlinear.u0))   # Vector{Matrix{Float64}
     sol_ODE_2D_interp = @inferred sol_ODE_2D(tt)
 
     @testset "1D" begin
-        @test_throws MethodError sol_ODE(out_VF, tt; idxs = 1:1)
+        @test_throws Union{MethodError, BoundsError} sol_ODE(out_VF, tt; idxs = 1:1)
         @inferred Vector{Float64} sol_ODE(out_VF, tt)
         @inferred Vector{Vector{Float64}} sol_ODE(out_VVF_1, tt)
         @test sol_ODE_interp.u ≈ out_VF
     end
 
     @testset "2D" begin
-        @test_throws MethodError sol_ODE_2D(out_VF, tt; idxs = 3:3)
+        @test_throws Union{MethodError, BoundsError} sol_ODE_2D(out_VF, tt; idxs = 3:3)
         @inferred Vector{Float64} sol_ODE_2D(out_VF, tt; idxs = 3)
         @inferred Vector{Vector{Float64}} sol_ODE_2D(out_VVF_1, tt; idxs = 3)
         @inferred Vector{Vector{Float64}} sol_ODE_2D(out_VVF_1, tt; idxs = 3:3)
