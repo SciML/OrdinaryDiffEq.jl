@@ -149,6 +149,8 @@ include("solve.jl")
 include("initdt.jl")
 include("interp_func.jl")
 
+include("verbosity.jl")
+
 include("precompilation_setup.jl")
 
 end

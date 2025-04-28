@@ -54,7 +54,7 @@ function DiffEqBase.__init(
         internalopnorm = LinearAlgebra.opnorm,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-        verbose = true,
+        verbose = ODEVerbosity(Verbosity.Default()),
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,

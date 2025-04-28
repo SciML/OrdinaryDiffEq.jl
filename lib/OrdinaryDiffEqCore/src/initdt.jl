@@ -127,8 +127,8 @@
     # Better than checking any(x->any(isnan, x), f₀)
     # because it also checks if partials are NaN
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
-    if integrator.opts.verbose && isnan(d₁)
-        @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
+    if isnan(d₁)
+        integrator.opts.verbose("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.", :thing5, :numerical)
         return tdir * dtmin
     end
 
@@ -154,6 +154,10 @@
 
     u₁ = zero(u0) # required by DEDataArray
 
+    integrator.opts.verbose(:thing1, :error_control) do 
+        "message is $(tdir * dt₀)"
+    end
+
     if u0 isa Array
         @inbounds @simd ivdep for i in eachindex(u0)
             u₁[i] = u0[i] + dt₀_tdir * f₀[i]
@@ -175,6 +179,14 @@
     # Avoids AD issues
     length(u0) > 0 && f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
 
+    integrator.opts.verbose(:thing3, :performance) do
+        if length(u0) > 0
+            "Length is greater than zero."
+        else 
+            "Length is zero."
+        end
+    end
+
     if u0 isa Array
         @inbounds @simd ivdep for i in eachindex(u0)
             tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
@@ -185,6 +197,10 @@
 
     d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
     # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
+
+    integrator.opts.verbose("Some serious numerical issue!", :thing5, :numerical)
+
+    integrator.opts.verbose("Some other numerical issue!", :thing6, :numerical)
 
     max_d₁d₂ = max(d₁, d₂)
     if max_d₁d₂ <= 1 // Int64(10)^(15)
