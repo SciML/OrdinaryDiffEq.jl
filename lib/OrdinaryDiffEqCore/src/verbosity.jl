@@ -123,7 +123,7 @@ end
 function (verbose::ODEVerbosity{false})(message, option, group)
 end
 
-function get_message_level(verbose::ODEVerbosity{true}, option, group)
+function message_level(verbose::ODEVerbosity{true}, option, group)
     group = getproperty(verbose, group)
     opt_level = getproperty(group, option)
 
@@ -174,3 +174,29 @@ function ODELogger(; info_repl = true, warn_repl = true, error_repl = true,
 end
 
 
+function emit_log(f::Function, verbose::ODEVerbosity{true}, option, group, file, line, _module)
+    level = message_level(verbose, option, group)
+
+    if !isnothing(level)
+        message = f()
+        Base.@logmsg level message _file = file _line = line _module = _module
+    end
+end
+
+function emit_log(message, verbose::ODEVerbosity{true}, option, group, file, line, _module)
+    level = message_level(verbose, option, group)
+
+    if !isnothing(level)
+        Base.@logmsg level message _file = file _line = line _module = _module
+    end
+end
+
+function emit_log(f, verbose::ODEVerbosity{false}, option, group, file, line, _module)
+end
+
+macro SciMLMessage(f, verb, toggle, group)
+    line = __source__.line
+    file = string(__source__.file)
+    _module = __module__
+    return :(emit_log($(esc(f)), $(esc(verb)), $toggle, $group, $file, $line, $_module))
+end

@@ -126,6 +126,8 @@ end
 include("doc_utils.jl")
 include("misc_utils.jl")
 
+include("verbosity.jl")
+
 include("algorithms.jl")
 include("composite_algs.jl")
 
@@ -148,8 +150,6 @@ include("iterator_interface.jl")
 include("solve.jl")
 include("initdt.jl")
 include("interp_func.jl")
-
-include("verbosity.jl")
 
 include("precompilation_setup.jl")
 
