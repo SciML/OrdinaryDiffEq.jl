@@ -80,7 +80,7 @@ PrecompileTools.@compile_workload begin
     solver_list = nothing
 end
 
-export Vern6, Vern7, Vern8, Vern9
-export AutoVern6, AutoVern7, AutoVern8, AutoVern9
+export Vern6, Vern7, Vern8, Vern9, RKV87
+export AutoVern6, AutoVern7, AutoVern8, AutoVern9, RKV87
 
 end
