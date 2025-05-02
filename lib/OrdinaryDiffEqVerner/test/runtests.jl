@@ -1,4 +1,4 @@
 using SafeTestsets
 
-@time @safetestset include("jet.jl")
+@time @safetestset "JET Tests" include("jet.jl")
 @time @safetestset "Aqua" include("qa.jl")
