@@ -27,7 +27,7 @@ SafeTestsets = "0.1.0"
 StaticArrays = "1.9.7"
 Test = "<0.0.1, 1"
 julia = "1.10"
-JET = "0.9.18, 0.10"
+JET = "0.9.18, 0.10.4"
 Aqua = "0.8.11"
 
 [extras]
