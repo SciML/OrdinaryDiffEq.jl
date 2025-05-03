@@ -124,3 +124,12 @@ schrod_eq(state, time, s) = -im * time * H(s) * state
 prob_complex = ODEProblem(schrod_eq, complex([1, -1] / sqrt(2)), (0, 1), 100)
 complex_sol = solve(prob_complex)
 @test complex_sol.retcode == ReturnCode.Success
+
+# Make sure callback doesn't recurse init, which would cause iniitalize to be hit twice
+counter = Ref{Int}(0)
+cb = DiscreteCallback((u,t,integ)->false, (integ)->nothing;
+    initialize = (c,u,t,integ)->counter[]+=1)
+
+prob = ODEProblem((u,p,t)->[0.0], [0.0], (0.0,1.0))
+sol = solve(prob, callback=cb)
+@test counter[] == 1
