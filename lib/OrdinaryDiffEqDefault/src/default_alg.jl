@@ -40,12 +40,12 @@ function isdefaultalg(alg::CompositeAlgorithm{
 end
 
 function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.init(
+    DiffEqBase.__init(
         prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
         args...; wrap = Val(false), kwargs...)
 end
 function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.solve(
+    DiffEqBase.__solve(
         prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
         args...; wrap = Val(false), kwargs...)
 end
