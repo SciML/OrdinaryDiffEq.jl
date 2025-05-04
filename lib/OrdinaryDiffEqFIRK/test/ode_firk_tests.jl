@@ -1,5 +1,5 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
-import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, van
+import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol
 
 testTol = 0.5
 
@@ -40,26 +40,23 @@ for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear
     @test sim21.𝒪est[:final] ≈ i atol=testTol
 end
 
+sys = prob_ode_vanderpol.f.sys
+
 # test adaptivity
 for iip in (true, false)
-    if iip
-        vanstiff = ODEProblem{iip}(van, [0; sqrt(3)], (0.0, 1.0), 1e6)
-    else
-        vanstiff = ODEProblem{false}((u, p, t) -> van(u, p, t), [0; sqrt(3)], (0.0, 1.0),
-            1e6)
-    end
+    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3)], (0.0, 1.0), [sys.μ => 1e6])
     sol = solve(vanstiff, RadauIIA5())
     if iip
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
         @test sol.stats.njacs < sol.stats.nw # W reuse
     end
     @test length(sol) < 150
-    @test length(solve(remake(vanstiff, p = 1e7), RadauIIA5())) < 150
-    @test length(solve(remake(vanstiff, p = 1e7), reltol = [1e-4, 1e-6], RadauIIA5())) < 180
-    @test length(solve(remake(vanstiff, p = 1e7), RadauIIA5(), reltol = 1e-9,
+    @test length(solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5())) < 150
+    @test length(solve(remake(vanstiff, p = [sys.μ => 1e7]), reltol = [1e-4, 1e-6], RadauIIA5())) < 180
+    @test length(solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5(), reltol = 1e-9,
         abstol = 1e-9)) < 970
-    @test length(solve(remake(vanstiff, p = 1e9), RadauIIA5())) < 170
-    @test length(solve(remake(vanstiff, p = 1e10), RadauIIA5())) < 190
+    @test length(solve(remake(vanstiff, p = [sys.μ => 1e9]), RadauIIA5())) < 170
+    @test length(solve(remake(vanstiff, p = [sys.μ => 1e10]), RadauIIA5())) < 190
 end
 
 ##Tests for RadauIIA3
@@ -72,12 +69,7 @@ end
 
 # test adaptivity
 for iip in (true, false)
-    if iip
-        vanstiff = ODEProblem{iip}(van, [0; sqrt(3)], (0.0, 1.0), 1e6)
-    else
-        vanstiff = ODEProblem{false}((u, p, t) -> van(u, p, t), [0; sqrt(3)], (0.0, 1.0),
-            1e6)
-    end
+    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3)], (0.0, 1.0), [sys.μ => 1e6])
     sol = solve(vanstiff, RadauIIA3())
     if iip
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
