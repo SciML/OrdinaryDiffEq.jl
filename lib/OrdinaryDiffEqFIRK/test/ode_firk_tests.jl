@@ -52,7 +52,7 @@ for iip in (true, false)
     end
     @test length(sol) < 150
     @test length(solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5())) < 150
-    @test length(solve(remake(vanstiff, p = [sys.μ => 1e7]), reltol = [1e-4, 1e-6], RadauIIA5())) < 180
+    @test length(solve(remake(vanstiff, p = [sys.μ => 1e7]), reltol = [1e-6, 1e-4], RadauIIA5())) < 180
     @test length(solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5(), reltol = 1e-9,
         abstol = 1e-9)) < 970
     @test length(solve(remake(vanstiff, p = [sys.μ => 1e9]), RadauIIA5())) < 170
