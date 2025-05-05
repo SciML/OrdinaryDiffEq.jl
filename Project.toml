@@ -3,6 +3,38 @@ uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 version = "6.95.1"
 
+[sources]
+OrdinaryDiffEqAdamsBashforthMoulton = {path = "lib/OrdinaryDiffEqAdamsBashforthMoulton"}
+OrdinaryDiffEqBDF = {path = "lib/OrdinaryDiffEqBDF"}
+OrdinaryDiffEqCore = {path = "lib/OrdinaryDiffEqCore"}
+OrdinaryDiffEqDefault = {path = "lib/OrdinaryDiffEqDefault"}
+OrdinaryDiffEqDifferentiation = {path = "lib/OrdinaryDiffEqDifferentiation"}
+OrdinaryDiffEqExplicitRK = {path = "lib/OrdinaryDiffEqExplicitRK"}
+OrdinaryDiffEqExponentialRK = {path = "lib/OrdinaryDiffEqExponentialRK"}
+OrdinaryDiffEqExtrapolation = {path = "lib/OrdinaryDiffEqExtrapolation"}
+OrdinaryDiffEqFIRK = {path = "lib/OrdinaryDiffEqFIRK"}
+OrdinaryDiffEqFeagin = {path = "lib/OrdinaryDiffEqFeagin"}
+OrdinaryDiffEqFunctionMap = {path = "lib/OrdinaryDiffEqFunctionMap"}
+OrdinaryDiffEqHighOrderRK = {path = "lib/OrdinaryDiffEqHighOrderRK"}
+OrdinaryDiffEqIMEXMultistep = {path = "lib/OrdinaryDiffEqIMEXMultistep"}
+OrdinaryDiffEqLinear = {path = "lib/OrdinaryDiffEqLinear"}
+OrdinaryDiffEqLowOrderRK = {path = "lib/OrdinaryDiffEqLowOrderRK"}
+OrdinaryDiffEqLowStorageRK = {path = "lib/OrdinaryDiffEqLowStorageRK"}
+OrdinaryDiffEqNonlinearSolve = {path = "lib/OrdinaryDiffEqNonlinearSolve"}
+OrdinaryDiffEqNordsieck = {path = "lib/OrdinaryDiffEqNordsieck"}
+OrdinaryDiffEqPDIRK = {path = "lib/OrdinaryDiffEqPDIRK"}
+OrdinaryDiffEqPRK = {path = "lib/OrdinaryDiffEqPRK"}
+OrdinaryDiffEqQPRK = {path = "lib/OrdinaryDiffEqQPRK"}
+OrdinaryDiffEqRKN = {path = "lib/OrdinaryDiffEqRKN"}
+OrdinaryDiffEqRosenbrock = {path = "lib/OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqSDIRK = {path = "lib/OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqSSPRK = {path = "lib/OrdinaryDiffEqSSPRK"}
+OrdinaryDiffEqStabilizedIRK = {path = "lib/OrdinaryDiffEqStabilizedIRK"}
+OrdinaryDiffEqStabilizedRK = {path = "lib/OrdinaryDiffEqStabilizedRK"}
+OrdinaryDiffEqSymplecticRK = {path = "lib/OrdinaryDiffEqSymplecticRK"}
+OrdinaryDiffEqTsit5 = {path = "lib/OrdinaryDiffEqTsit5"}
+OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
+
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
