@@ -1,7 +1,7 @@
-import OrdinaryDiffEqQRPK
+import OrdinaryDiffEqQPRK
 using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqQRPK, target_defined_modules = true, mode = :typo)
+        OrdinaryDiffEqQPRK, target_defined_modules = true, mode = :typo)
 end
