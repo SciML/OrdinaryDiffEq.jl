@@ -5,7 +5,7 @@ version = "1.2.0"
 
 [sources]
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
-OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
+OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
