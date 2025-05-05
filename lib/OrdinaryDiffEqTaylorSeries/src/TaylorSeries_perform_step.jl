@@ -100,13 +100,6 @@ end
 end
 
 function initialize!(integrator, cache::ExplicitTaylorAdaptiveOrderCache)
-    integrator.kshortsize = cache.max_order
-    resize!(integrator.k, cache.max_order)
-    # Setup k pointers
-    for i in 1:(cache.max_order)
-        integrator.k[i] = get_coefficient(cache.utaylor, i)
-    end
-    return nothing
 end
 
 @muladd function perform_step!(
@@ -115,7 +108,9 @@ end
     alg = unwrap_alg(integrator, false)
     @unpack jets, current_order, min_order, max_order, utaylor, utilde, tmp, atmp, thread = cache
 
-    jet_index = current_order[] - min_order + 1
+    min_order_value = get_value(min_order)
+    max_order_value = get_value(max_order)
+    jet_index = current_order[] - min_order_value + 1
     # compute one additional order for adaptive order
     jet = jets[jet_index + 1]
     jet(utaylor, uprev, t)
@@ -125,8 +120,8 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, current_order[] + 1)
     if integrator.opts.adaptive
         min_work = Inf
-        start_order = max(min_order, current_order[] - 1)
-        end_order = min(max_order, current_order[] + 1)
+        start_order = max(min_order_value, current_order[] - 1)
+        end_order = min(max_order_value - 1, current_order[] + 1)
         for i in start_order:end_order
             A = i * i
             @.. broadcast=false thread=thread utilde=TaylorDiff.get_coefficient(
@@ -158,8 +153,9 @@ end
 end
 
 function initialize!(integrator, cache::ExplicitTaylorAdaptiveOrderConstantCache)
-    integrator.kshortsize = cache.max_order
-    integrator.k = typeof(integrator.k)(undef, cache.max_order)
+    max_order_value = get_value(cache.max_order)
+    integrator.kshortsize = max_order_value
+    integrator.k = typeof(integrator.k)(undef, max_order_value)
     return nothing
 end
 
@@ -169,7 +165,9 @@ end
     alg = unwrap_alg(integrator, false)
     @unpack jets, current_order, min_order, max_order = cache
 
-    jet_index = current_order[] - min_order + 1
+    min_order_value = get_value(min_order)
+    max_order_value = get_value(max_order)
+    jet_index = current_order[] - min_order_value + 1
     # compute one additional order for adaptive order
     jet = jets[jet_index + 1]
     utaylor = jet(uprev, t)
@@ -177,8 +175,8 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, current_order[] + 1)
     if integrator.opts.adaptive
         min_work = Inf
-        start_order = max(min_order, current_order[] - 1)
-        end_order = min(max_order, current_order[] + 1)
+        start_order = max(min_order_value, current_order[] - 1)
+        end_order = min(max_order_value, current_order[] + 1)
         for i in start_order:end_order
             A = i * i
             utilde = TaylorDiff.get_coefficient(utaylor, i) * dt^i
