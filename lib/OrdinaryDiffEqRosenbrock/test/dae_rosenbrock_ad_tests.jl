@@ -1,5 +1,6 @@
 using OrdinaryDiffEqRosenbrock, LinearAlgebra, ForwardDiff, Test
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
+using ADTypes: AutoForwardDiff, AutoFiniteDiff
 
 function rober(du, u, p, t)
     y₁, y₂, y₃ = u
@@ -19,22 +20,23 @@ end
 M = [1.0 0 0
      0 1.0 0
      0 0 0]
-roberf = ODEFunction(rober, mass_matrix = M)
-roberf_oop = ODEFunction{false}(rober, mass_matrix = M)
+# M = Diagonal([1.0, 1.0, 0.0])
+roberf = ODEFunction{true, SciMLBase.AutoSpecialize}(rober, mass_matrix = M)
+roberf_oop = ODEFunction{false, SciMLBase.AutoSpecialize}(rober, mass_matrix = M)
 prob_mm = ODEProblem(roberf, [1.0, 0.0, 0.2], (0.0, 1e5), (0.04, 3e7, 1e4))
 prob_mm_oop = ODEProblem(roberf_oop, [1.0, 0.0, 0.2], (0.0, 1e5), (0.04, 3e7, 1e4))
-sol = solve(prob_mm, Rodas5P(), reltol = 1e-8, abstol = 1e-8)
-sol = solve(prob_mm_oop, Rodas5P(), reltol = 1e-8, abstol = 1e-8)
+sol = @inferred solve(prob_mm, Rodas5P(), reltol = 1e-8, abstol = 1e-8)
+sol = @inferred solve(prob_mm_oop, Rodas5P(), reltol = 1e-8, abstol = 1e-8)
 
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
 @testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [
         prob_mm, prob_mm_oop],
-    initalg in [BrownFullBasicInit(), ShampineCollocationInit()], autodiff in [true, false]
+    initalg in [BrownFullBasicInit(), ShampineCollocationInit()], autodiff in [AutoForwardDiff(chunksize=3), AutoFiniteDiff()]
 
     alg = Rodas5P(; autodiff)
     function f(p)
-        sol = solve(remake(_prob, p = p), alg, abstol = 1e-14,
+        sol = @inferred solve(remake(_prob, p = p), alg, abstol = 1e-14,
             reltol = 1e-14, initializealg = initalg)
         sum(sol)
     end
