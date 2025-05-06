@@ -103,12 +103,15 @@ macro fold(arg)
     end
 end
 
+struct DifferentialVarsUndefined end
+
 """
     get_differential_vars(f, idxs, timeseries::uType)
 
-Returns an array of booleans, for which `true` refers to a differential variable and `false`
-to an algebraic variable. If the function has no mass matrix, returns `nothing` (implying 
-all variables are differential). 
+Returns an array of booleans for which values are the differential variables
+vs algebraic variables. Returns `nothing` for the cases where all variables
+are differential variables. Returns `DifferentialVarsUndefined` if it cannot
+be determined (i.e. the mass matrix is not diagonal).
 """
 function get_differential_vars(f, u)
     if hasproperty(f, :mass_matrix)
@@ -122,7 +125,7 @@ function get_differential_vars(f, u)
         elseif !(mm isa SciMLOperators.AbstractSciMLOperator) && isdiag(mm)
             return reshape(diag(mm) .!= 0, size(u))
         else
-            return reshape(.~all(iszero, mm, dims=1) .!= 0, size(u))
+            return DifferentialVarsUndefined()
         end
     else
         return nothing
