@@ -990,16 +990,6 @@ function interpolation_differential_vars(differential_vars, y₀, idxs)
         else
             return Trues(size(idxs))
         end
-    elseif differential_vars isa DifferentialVarsUndefined #for non diagonal mass matrices, use linear interpolation.
-        if y₀ isa Number
-            return false
-        elseif idxs === nothing
-            return Falses(size(y₀))
-        elseif idxs isa Number
-            return false
-        else
-            return Falses(size(idxs))
-        end
     elseif idxs isa Number
         return return differential_vars[idxs]
     elseif idxs === nothing
