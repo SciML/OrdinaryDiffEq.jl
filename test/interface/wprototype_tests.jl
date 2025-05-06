@@ -17,10 +17,8 @@ for prob in (prob_ode_vanderpol_stiff,)
             update_func = (old_val, u, p, t; dtgamma) -> dtgamma,
             accepted_kwargs = (:dtgamma,))
         transform_op = ScalarOperator(0.0;
-            update_func = (old_op, u, p, t; dtgamma, transform) -> transform ?
-                                                                   inv(dtgamma) :
-                                                                   one(dtgamma),
-            accepted_kwargs = (:dtgamma, :transform))
+            update_func = (old_op, u, p, t; dtgamma) -> inv(dtgamma),
+            accepted_kwargs = (:dtgamma,))
         W_op = -(I - gamma_op * J_op) * transform_op
 
         # Make problem with custom MatrixOperator jac_prototype
@@ -51,6 +49,12 @@ for prob in (prob_ode_vanderpol_stiff,)
         sol_W = solve(prob_W, alg)
 
         rtol = 1e-2
+        
+        @test prob_J.f.sparsity.A == prob_W.f.sparsity.A
+
+        @test all(isapprox.(sol_J.t, sol_W.t; rtol))
+        @test all(isapprox.(sol_J.u, sol_W.u; rtol))
+
         @test all(isapprox.(sol_J.t, sol.t; rtol))
         @test all(isapprox.(sol_J.u, sol.u; rtol))
         @test all(isapprox.(sol_W.t, sol.t; rtol))

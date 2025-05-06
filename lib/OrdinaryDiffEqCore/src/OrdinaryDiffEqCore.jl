@@ -19,6 +19,8 @@ using PrecompileTools
 
 import FillArrays: Trues, Falses
 
+import FastPower
+
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive
 
@@ -58,9 +60,10 @@ using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., True, False
 
-using SciMLBase: NoInit, _unwrap_val
+using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
+                 ODEAliasSpecifier
 
-import SciMLBase: alg_order
+import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
 
 import DiffEqBase: calculate_residuals,
                    calculate_residuals!, unwrap_cache,
@@ -69,9 +72,14 @@ import DiffEqBase: calculate_residuals,
 
 import Polyester
 using MacroTools, Adapt
-import ADTypes: AutoFiniteDiff, AutoForwardDiff
+import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse
+import Accessors: @reset
 
 using SciMLStructures: canonicalize, Tunable, isscimlstructure
+
+using SymbolicIndexingInterface: state_values, parameter_values, is_variable,
+                                 variable_index,
+                                 symbolic_type, NotSymbolic
 
 const CompiledFloats = Union{Float32, Float64}
 import Preferences
@@ -108,6 +116,12 @@ const TryAgain = SlowConvergence
 
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 isdiscretecache(cache) = false
+
+@static if isdefined(DiffEqBase, :unitfulvalue)
+    unitfulvalue(x) = DiffEqBase.unitfulvalue(x)
+else
+    unitfulvalue(x) = DiffEqBase.ForwardDiff.value(x)
+end
 
 include("doc_utils.jl")
 include("misc_utils.jl")

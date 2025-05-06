@@ -100,7 +100,7 @@ function NLSolver{iip, tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence
         tmp,
         tmp2,
         ztmp,
-        γ,
+        float(γ),
         convert(tType, c),
         convert(tType, α),
         alg,

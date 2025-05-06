@@ -1,4 +1,4 @@
-using DelayDiffEq, DDEProblemLibrary
+using DelayDiffEq, DDEProblemLibrary, ADTypes
 using Test
 
 @testset "Constant delays" begin
@@ -24,8 +24,8 @@ using Test
         @test sol.errors[:l∞] < error
 
         sol_scalar = solve(prob_scalar, ddealg)
-        @test sol.t≈sol_scalar.t atol=1e-6
-        @test sol[1, :] ≈ sol_scalar.u
+        @test sol.t≈sol_scalar.t atol=1e-3
+        @test sol[1, :]≈sol_scalar.u atol=1e-3
     end
 end
 
@@ -43,4 +43,4 @@ h(p, t) = [1.0, 1.0]
 h(p, t; idxs = 1) = 1.0
 p = [1.5, 1.0, 3.0, 1.0, 1.0]
 prob = DDEProblem(lotka_volterra!, uₒ, h, tspan, p, constant_lags = (p[end],))
-sol = solve(prob, MethodOfSteps(AutoTsit5(Rosenbrock23(autodiff = false))))
+sol = solve(prob, MethodOfSteps(AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff()))))

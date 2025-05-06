@@ -6,7 +6,8 @@ module OrdinaryDiffEq
 using Reexport
 @reexport using DiffEqBase
 
-import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order,
+import OrdinaryDiffEqCore: OrdinaryDiffEqCore,
+                           trivial_limiter!, CompositeAlgorithm, alg_order,
                            ShampineCollocationInit, BrownFullBasicInit, NoInit,
                            set_new_W!, set_W_γdt!, get_W, isfirstcall, isfirststage,
                            isJcurrent, get_new_W_γdt_cutoff,
@@ -58,7 +59,8 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order,
                            _change_t_via_interpolation!, ODEIntegrator, _ode_interpolant!,
                            current_interpolant, resize_nlsolver!, _ode_interpolant,
                            handle_tstop!, _postamble!, update_uprev!, resize_J_W!,
-                           DAEAlgorithm, get_fsalfirstlast, strip_cache
+                           DAEAlgorithm, get_fsalfirstlast, strip_cache,
+                           Sequential, BaseThreads, PolyesterThreads
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
 AutoSwitch
@@ -112,8 +114,8 @@ using OrdinaryDiffEqFeagin
 export Feagin10, Feagin12, Feagin14
 
 using OrdinaryDiffEqSymplecticRK
-export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
-       McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
+export SymplecticEuler, VelocityVerlet, VerletLeapfrog, LeapfrogDriftKickDrift,
+       PseudoVerletLeapfrog, McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
        CalvoSanz4, Yoshida6, KahanLi6, McAte8, KahanLi8, SofSpa10
 
 using OrdinaryDiffEqRKN

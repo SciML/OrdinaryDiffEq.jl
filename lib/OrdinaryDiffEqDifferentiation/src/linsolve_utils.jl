@@ -28,16 +28,16 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
 
     linres = solve!(linsolve; reltol)
 
+    ad = alg_autodiff(_alg) isa ADTypes.AutoSparse ? ADTypes.dense_ad(alg_autodiff(_alg)) : alg_autodiff(_alg)
+
     # TODO: this ignores the add of the `f` count for add_steps!
     if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
        !LinearSolve.needs_concrete_A(_alg.linsolve) &&
        linsolve.A isa WOperator && linsolve.A.J isa AbstractSciMLOperator
-        if alg_autodiff(_alg) isa AutoForwardDiff
-            integrator.stats.nf += linres.iters
-        elseif alg_autodiff(_alg) isa AutoFiniteDiff
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2) * linres.iters
+        if ad isa ADTypes.AutoFiniteDiff || ad isa ADTypes.AutoFiniteDifferences
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2 * linres.iters)
         else
-            error("$alg_autodiff not yet supported in dolinsolve function")
+            integrator.stats.nf += linres.iters 
         end
     end
 

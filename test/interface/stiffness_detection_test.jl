@@ -1,8 +1,9 @@
-using OrdinaryDiffEq, Test
-import ODEProblemLibrary: van
+using OrdinaryDiffEq, Test, ADTypes
+import ODEProblemLibrary: prob_ode_vanderpol
 using ForwardDiff: Dual
 
-prob1 = ODEProblem(van, [0, 2.0], (0.0, 6), inv(0.003))
+sys = prob_ode_vanderpol.f.sys
+prob1 = ODEProblem(sys, [sys.y => 0, sys.x => 2.0], (0.0, 6), [sys.μ => inv(0.003)])
 function __van(du, u, p, t)
     μ = p[1]
     du[1] = μ * ((1 - u[2]^2) * u[1] - u[2])
@@ -20,14 +21,14 @@ probArr = [prob1, prob2, prob3]
 
 for prob in [prob2, prob3], u0 in [prob.u0, Dual.(prob.u0, prob.u0)]
     prob′ = remake(prob3, u0 = u0)
-    @test_nowarn solve(prob′, AutoTsit5(Rosenbrock23(autodiff = false)))
+    @test_nowarn solve(prob′, AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff())))
 end
 
 # Test if switching back and forth
 is_switching_fb(sol) = all(i -> count(isequal(i), sol.alg_choice[2:end]) > 5, (1, 2))
 for (i, prob) in enumerate(probArr)
     println(i)
-    sol = @test_nowarn solve(prob, AutoTsit5(Rosenbrock23(autodiff = false)),
+    sol = solve(prob, AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff())),
         maxiters = 1000)
     @test is_switching_fb(sol)
     alg = AutoTsit5(Rodas5(); maxstiffstep = 5, maxnonstiffstep = 5, stiffalgfirst = true)
@@ -61,7 +62,7 @@ for (i, prob) in enumerate(probArr)
     @test length(sol.t) < 570
     @test is_switching_fb(sol)
     sol = solve(prob,
-        AutoVern9(KenCarp3(autodiff = false); maxstiffstep = 4,
+        AutoVern9(KenCarp3(autodiff = AutoFiniteDiff()); maxstiffstep = 4,
             maxnonstiffstep = 1), maxiters = 1000)
     @test length(sol.t) < 570
     @test is_switching_fb(sol)

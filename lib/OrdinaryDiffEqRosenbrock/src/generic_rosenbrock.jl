@@ -176,7 +176,7 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
         end
     end
     cacheexpr=quote
-        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: GenericRosenbrockMutableCache
             u::uType
             uprev::uType
             du::rateType
@@ -227,7 +227,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
             tf = TimeDerivativeWrapper(f,u,p)
             uf = UDerivativeWrapper(f,t,p)
-            J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
+            J,W = build_J_W(alg,u,uprev,p,t,dt,f, nothing, uEltypeNoUnits,Val(false))
             $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,nothing)
         end
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -238,7 +238,6 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             fsalfirst = zero(rate_prototype)
             fsallast = zero(rate_prototype)
             dT = zero(rate_prototype)
-            J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
             tmp = zero(rate_prototype)
             atmp = similar(u, uEltypeNoUnits)
             weight = similar(u, uEltypeNoUnits)
@@ -247,12 +246,15 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tf = TimeGradientWrapper(f,uprev,p)
             uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
-            linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
-            linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                            Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-                            Pr = Diagonal(_vec(weight)))
+            
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+            J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+
+            linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+            linsolve = init(linprob,alg.linsolve,alias = LinearAliasSpecifier(alias_A=true,alias_b=true),
+                            Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                            Pr = Diagonal(_vec(weight))) 
             $cachename($(valsyms...))
         end
     end
@@ -358,9 +360,9 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
 
             # Time derivative
             tf.u = uprev
-            dT = ForwardDiff.derivative(tf, t)
+            dT = calc_tderivative(integrator, cache)
 
-            W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+            W = calc_W(integrator, cache, dtgamma, repeat_step)
             linsolve_tmp = integrator.fsalfirst + dtd1*dT #calc_rosenbrock_differentiation!
 
             $(iterexprs...)
@@ -476,7 +478,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                                  integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
-            calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+            calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
 
             linsolve = cache.linsolve
 
@@ -911,7 +913,7 @@ function ROS2Tableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 An Order 2/3 L-Stable Rosenbrock-W method which is good for very stiff equations with oscillations at low tolerances. 2nd order stiff-aware interpolation.
 """,
@@ -922,7 +924,7 @@ Scientific Computing, 18 (1), pp. 1-22.
 """,
 with_step_limiter = true) Rosenbrock23
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 An Order 3/2 A-Stable Rosenbrock-W method which is good for mildly stiff equations without oscillations at low tolerances. Note that this method is prone to instability in the presence of oscillations, so use with caution. 2nd order stiff-aware interpolation.
 """,
@@ -944,18 +946,19 @@ references = """
 """,
 with_step_limiter = true) ROS3P
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 An Order 2/3 L-Stable Rosenbrock-W method for stiff ODEs and DAEs in mass matrix form. 2nd order stiff-aware interpolation and additional error test for interpolation.
 """,
 "Rodas23W",
 references = """
-- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate for dense output and Julia implementation,
-  In progress.
+- Steinebach G., Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
+  Preprint 2024
+  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
 """,
 with_step_limiter = true) Rodas23W
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order L-stable Rosenbrock-W method.
 """,
@@ -971,7 +974,7 @@ references = """
   publisher={Springer}}
 """) ROS34PW1a
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order L-stable Rosenbrock-W method.
 """,
@@ -987,7 +990,7 @@ references = """
   publisher={Springer}}
 """) ROS34PW1b
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order stiffy accurate Rosenbrock-W method for PDAEs.
 """,
@@ -1003,7 +1006,7 @@ references = """
   publisher={Springer}}
 """) ROS34PW2
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order strongly A-stable (Rinf~0.63) Rosenbrock-W method.
 """,
@@ -1035,9 +1038,8 @@ references = """
 """,
 "Rodas3",
 references = """
-- Steinebach G. Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks
-  within the Julia Differential Equations package.
-  In: BIT Numerical Mathematics, 63(2), 2023
+- Sandu, Verwer, Van Loon, Carmichael, Potra, Dabdub, Seinfeld, Benchmarking stiff ode solvers for atmospheric chemistry problems-I. 
+    implicit vs explicit, Atmospheric Environment, 31(19), 3151-3166, 1997.
 """,
 with_step_limiter=true) Rodas3
 
@@ -1048,9 +1050,9 @@ and additional error test for interpolation. Keeps accuracy on discretizations o
 """,
 "Rodas3P",
 references = """
-- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate
-  for dense output and Julia implementation,
-  In progress.
+- Steinebach G., Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
+  Preprint 2024
+  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
 """,
 with_step_limiter=true) Rodas3P
 
@@ -1088,7 +1090,7 @@ references = """
 """,
 with_step_limiter=true) Rodas42
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_docstring(
 """
 4th order A-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant. 4th order
 on linear parabolic problems and 3rd order accurate on nonlinear parabolic problems (as opposed to
@@ -1096,13 +1098,14 @@ lower if not corrected).
 """,
 "Rodas4P",
 references = """
-- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate
-  for dense output and Julia implementation,
-  In progress.
+- Steinebach, G., Rentrop, P., An adaptive method of lines approach for modelling flow and transport in rivers. 
+    Adaptive method of lines , Wouver, A. Vande, Sauces, Ph., Schiesser, W.E. (ed.),S. 181-205,Chapman & Hall/CRC, 2001,
+- Steinebach, G., Oder-reduction of ROW-methods for DAEs and method of lines  applications. 
+    Preprint-Nr. 1741, FB Mathematik, TH Darmstadt, 1995.
 """,
 with_step_limiter=true) Rodas4P
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order L-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant. 4th order
 on linear parabolic problems and 3rd order accurate on nonlinear parabolic problems. It is an improvement
@@ -1110,9 +1113,8 @@ of Roadas4P and in case of inexact Jacobians a second order W method.
 """,
 "Rodas4P2",
 references = """
-- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate
-  for dense output and Julia implementation,
-  In progress.
+- Steinebach G., Improvement of Rosenbrock-Wanner Method RODASP, In: Reis T., Grundel S., Schöps S. (eds) 
+    Progress in Differential-Algebraic Equations II. Differential-Algebraic Equations Forum. Springer, Cham., 165-184, 2020.
 """,
 with_step_limiter=true) Rodas4P2
 
@@ -1128,7 +1130,7 @@ references = """
 """,
 with_step_limiter=true) Rodas5
 
-@doc rosenbrock_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
 Has improved stability in the adaptive time stepping embedding.
@@ -1141,10 +1143,9 @@ references = """
 """,
 with_step_limiter=true) Rodas5P
 
-@doc rosenbrock_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
-A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
-Has improved stability in the adaptive time stepping embedding.
+Variant of Ropdas5P with additional residual control.
 """,
 "Rodas5Pr",
 references = """
@@ -1154,10 +1155,9 @@ references = """
 """,
 with_step_limiter=true) Rodas5Pr
 
-@doc rosenbrock_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
-A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
-Has improved stability in the adaptive time stepping embedding.
+Variant of Ropdas5P with modified embedded scheme.
 """,
 "Rodas5Pe",
 references = """
@@ -1200,7 +1200,7 @@ references = """
 """,
 with_step_limiter=true) Veldd4
 
-@doc rosenbrock_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 A 4th order A-stable Rosenbrock method.
 """,
@@ -1324,7 +1324,7 @@ function ROS2STableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 2nd order stiffly accurate Rosenbrock-Wanner W-method with 3 internal stages with B_PR consistent of order 2 with (Rinf=0).
 """,
@@ -1619,7 +1619,7 @@ function ROS34PRwTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 3rd order stiffly accurate Rosenbrock-Wanner W-method with 4 internal stages,
 B_PR consistent of order 2.
@@ -1736,7 +1736,7 @@ function ROK4aTableau() # 4rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_wolfbrandt_docstring(
 """
 4rd order L-stable Rosenbrock-Krylov method with 4 internal stages,
 with a 3rd order embedded method which is strongly A-stable with Rinf~=0.55. (when using exact Jacobians)

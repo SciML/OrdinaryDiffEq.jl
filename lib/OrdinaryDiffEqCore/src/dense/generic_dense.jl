@@ -168,10 +168,12 @@ function default_ode_interpolant(
         return ode_interpolant(Θ, integrator.dt, integrator.uprev,
             integrator.u, integrator.k, cache.cache5, idxs,
             deriv, integrator.differential_vars)
-    else # alg_choice == 6
+    elseif alg_choice == 6
         return ode_interpolant(Θ, integrator.dt, integrator.uprev,
             integrator.u, integrator.k, cache.cache6, idxs,
             deriv, integrator.differential_vars)
+    else
+        error("DefaultCache invalid alg_choice. File an issue.")
     end
 end
 
@@ -227,6 +229,8 @@ end
             ode_interpolant!(val, Θ, integrator.dt, integrator.uprev, integrator.u,
                 integrator.k, integrator.cache.cache6,
                 idxs, deriv, integrator.differential_vars)
+        else
+            error("DefaultCache invalid alg_choice. File an issue.")
         end
     else
         ode_interpolant!(val, Θ, integrator.dt, integrator.uprev, integrator.u,
@@ -256,10 +260,12 @@ function default_ode_interpolant!(
         return ode_interpolant!(val, Θ, integrator.dt, integrator.uprev,
             integrator.u, integrator.k, cache.cache5, idxs,
             deriv, integrator.differential_vars)
-    else # alg_choice == 6
+    elseif alg_choice == 6
         return ode_interpolant!(val, Θ, integrator.dt, integrator.uprev,
             integrator.u, integrator.k, cache.cache6, idxs,
             deriv, integrator.differential_vars)
+    else
+        error("DefaultCache invalid alg_choice. File an issue.")
     end
 end
 
@@ -380,6 +386,8 @@ function default_ode_extrapolant!(
         ode_interpolant!(val, Θ, integrator.t - integrator.tprev,
             integrator.uprev2, integrator.uprev,
             integrator.k, cache.cache6, idxs, deriv, integrator.differential_vars)
+    else
+        error("DefaultCache invalid alg_choice. File an issue.")
     end
 end
 
@@ -444,6 +452,8 @@ function default_ode_extrapolant(
         ode_interpolant(Θ, integrator.t - integrator.tprev,
             integrator.uprev2, integrator.uprev,
             integrator.k, cache.cache6, idxs, deriv, integrator.differential_vars)
+    else
+        error("DefaultCache invalid alg_choice. File an issue.")
     end
 end
 
@@ -543,8 +553,8 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
-        continuity::Symbol = :left) where {I, D}
+function ode_interpolation(tvals, id::I, idxs, ::Type{deriv}, p,
+        continuity::Symbol = :left) where {I, deriv}
     @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
@@ -581,8 +591,8 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
-        continuity::Symbol = :left) where {I, D}
+function ode_interpolation!(vals, tvals, id::I, idxs, ::Type{deriv}, p,
+        continuity::Symbol = :left) where {I, deriv}
     @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
@@ -746,8 +756,8 @@ ode_interpolation(tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
-        continuity::Symbol = :left) where {I, D}
+function ode_interpolation(tval::Number, id::I, idxs, ::Type{deriv}, p,
+        continuity::Symbol = :left) where {I, deriv}
     @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
 
@@ -810,6 +820,8 @@ function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
                     cache.cache6) # update the kcurrent
                 val = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                     cache.cache6, idxs, deriv, differential_vars)
+            else
+                error("DefaultCache invalid alg_choice. File an issue.")
             end
         else
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
@@ -828,8 +840,8 @@ ode_interpolation!(out,tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
-        continuity::Symbol = :left) where {I, D}
+function ode_interpolation!(out, tval::Number, id::I, idxs, ::Type{deriv}, p,
+        continuity::Symbol = :left) where {I, deriv}
     @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
 
@@ -892,6 +904,8 @@ function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
                     cache.cache6) # update the kcurrent
                 ode_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                     cache.cache6, idxs, deriv, differential_vars)
+            else
+                error("DefaultCache invalid alg_choice. File an issue.")
             end
         else
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,

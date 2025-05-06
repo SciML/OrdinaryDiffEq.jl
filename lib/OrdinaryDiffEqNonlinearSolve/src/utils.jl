@@ -72,7 +72,8 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
     uprev::uprevType
     t::tType
     function DAEResidualJacobianWrapper(alg, f, p, α, invγdt, tmp, uprev, t)
-        isautodiff = alg_autodiff(alg) isa AutoForwardDiff
+        ad = ADTypes.dense_ad(alg_autodiff(alg)) 
+        isautodiff = ad isa AutoForwardDiff 
         if isautodiff
             tmp_du = PreallocationTools.dualcache(uprev)
             tmp_u = PreallocationTools.dualcache(uprev)
@@ -84,6 +85,13 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
             typeof(invγdt), typeof(tmp), typeof(uprev), typeof(t)}(f, p, tmp_du, tmp_u, α,
             invγdt, tmp, uprev, t)
     end
+end
+
+function SciMLBase.setproperties(wrap::DAEResidualJacobianWrapper, patch::NamedTuple)
+    for key in keys(patch)
+        setproperty!(wrap, key, patch[key])
+    end
+    return wrap
 end
 
 is_autodiff(m::DAEResidualJacobianWrapper{isAD}) where {isAD} = isAD
@@ -173,7 +181,6 @@ function build_nlsolver(
 
     if nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
-        J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
 
         # TODO: check if the solver is iterative
         weight = zero(u)
@@ -191,12 +198,14 @@ function build_nlsolver(
             end
             jac_config = build_jac_config(alg, nf, uf, du1, uprev, u, ztmp, dz)
         end
+        J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
         linprob = LinearProblem(W, _vec(k); u0 = _vec(dz))
         Pl, Pr = wrapprecs(
             alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                 nothing)...,
             weight, dz)
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve,
+            alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
             Pl = Pl, Pr = Pr,
             assumptions = LinearSolve.OperatorAssumptions(true))
 
@@ -287,7 +296,7 @@ function build_nlsolver(
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
 
-        J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
+        J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
         if nlalg isa NonlinearSolveAlg
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)

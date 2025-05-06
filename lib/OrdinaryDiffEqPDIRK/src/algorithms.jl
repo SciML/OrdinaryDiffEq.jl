@@ -28,13 +28,17 @@ struct PDIRK44{CS, AD, F, F2, P, FDT, ST, CJ, TO} <:
     precs::P
     extrapolant::Symbol
     threading::TO
+    autodiff::AD
 end
-function PDIRK44(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward},
+function PDIRK44(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
+        concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant, threading = true)
-    PDIRK44{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+
+    PDIRK44{_unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(threading)}(linsolve, nlsolve, precs,
-        extrapolant, threading)
+        extrapolant, threading, AD_choice)
 end

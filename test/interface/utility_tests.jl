@@ -10,7 +10,7 @@ using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: WOperator, calc_W, calc_W!, 
     tspan = (0.0, 1.0)
     dt = 0.01
     dtgamma = 0.5dt
-    concrete_W = -mm + dtgamma * A
+    concrete_W = A - inv(dtgamma) * mm
 
     # Out-of-place
     fun = ODEFunction((u, p, t) -> A * u;
@@ -39,7 +39,7 @@ using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: WOperator, calc_W, calc_W!, 
 
     # But jacobian2W! will update the cache
     jacobian2W!(integrator.cache.nlsolver.cache.W._concrete_form, mm,
-        dtgamma, integrator.cache.nlsolver.cache.W.J.A, false)
+        dtgamma, integrator.cache.nlsolver.cache.W.J.A)
     @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) == concrete_W
     ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0)
     @test tmp == concrete_W \ u0

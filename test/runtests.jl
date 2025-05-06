@@ -26,7 +26,7 @@ end
 #Start Test Script
 
 @time begin
-    if contains(GROUP, "OrdinaryDiffEq")
+    if contains(GROUP, "OrdinaryDiffEq") || GROUP == "ImplicitDiscreteSolve" || GROUP == "SimpleImplicitDiscreteSolve"
         Pkg.develop(path = "../lib/$GROUP")
         Pkg.test(GROUP)
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
@@ -55,8 +55,8 @@ end
         @time @safetestset "Controller Tests" include("interface/controllers.jl")
         @time @safetestset "Inplace Interpolation Tests" include("interface/inplace_interpolation.jl")
         @time @safetestset "Algebraic Interpolation Tests" include("interface/algebraic_interpolation.jl")
-        @time @safetestset "Default Solver Tests" include("interface/default_solver_tests.jl")
         @time @safetestset "Interpolation and Cache Stripping Tests" include("interface/ode_strip_test.jl")
+        @time @safetestset "Aliasing Tests" include("interface/aliasing_tests.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
@@ -64,8 +64,10 @@ end
         @time @safetestset "Linear Nonlinear Solver Tests" include("interface/linear_nonlinear_tests.jl")
         @time @safetestset "Linear Solver Tests" include("interface/linear_solver_test.jl")
         @time @safetestset "Linear Solver Split ODE Tests" include("interface/linear_solver_split_ode_test.jl")
-        @time @safetestset "Sparse Diff Tests" include("interface/sparsediff_tests.jl")
+        @time @safetestset "AutoSparse Detection Tests" include("interface/autosparse_detection_tests.jl")
         @time @safetestset "Enum Tests" include("interface/enums.jl")
+        @time @safetestset "CheckInit Tests" include("interface/checkinit_tests.jl")
+        @time @safetestset "Get du Tests" include("interface/get_du.jl")
         @time @safetestset "Mass Matrix Tests" include("interface/mass_matrix_tests.jl")
         @time @safetestset "W-Operator prototype tests" include("interface/wprototype_tests.jl")
     end
@@ -84,6 +86,7 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIV" || GROUP == "Interface")
         @time @safetestset "Autodiff Error Tests" include("interface/autodiff_error_tests.jl")
         @time @safetestset "Ambiguity Tests" include("interface/ambiguity_tests.jl")
+        @time @safetestset "Precision Mixing Tests" include("interface/precision_mixing.jl")
         @time @safetestset "Sized Matrix Tests" include("interface/sized_matrix_tests.jl")
         @time @safetestset "Second Order with First Order Solver Tests" include("interface/second_order_with_first_order_solvers.jl")
     end
@@ -131,7 +134,6 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_II" || GROUP == "Regression")
         @time @safetestset "PSOS Energy Conservation Tests" include("regression/psos_and_energy_conservation.jl")
         @time @safetestset "Unrolled Tests" include("regression/ode_unrolled_comparison_tests.jl")
-        @time @safetestset "Time derivative Tests" include("regression/time_derivative_test.jl")
         @time @safetestset "IIP vs OOP Tests" include("regression/iipvsoop_tests.jl")
         @time @safetestset "Inference Tests" include("regression/inference.jl")
     end
@@ -146,6 +148,8 @@ end
 
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
+        @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")
+        @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
@@ -170,6 +174,7 @@ end
         end
         @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
         @time @safetestset "Linear LSRK GPU" include("gpu/linear_lsrk.jl")
+        @time @safetestset "Linear Exponential GPU" include("gpu/linear_exp.jl")
         @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
         @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
     end

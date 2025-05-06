@@ -1,11 +1,13 @@
 name = "OrdinaryDiffEqExtrapolation"
 uuid = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "1.1.0"
+version = "1.5.0"
 
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
+FastPower = "a4df4552-cc26-4903-aec0-212e50a0e84b"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
@@ -15,13 +17,15 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [compat]
+ADTypes = "1.11"
 DiffEqBase = "6.152.2"
 DiffEqDevTools = "2.44.4"
 FastBroadcast = "0.3.5"
-LinearSolve = "2.32.0"
+FastPower = "1"
+LinearSolve = "2.32.0, 3"
 MuladdMacro = "0.2.4"
-OrdinaryDiffEqCore = "1.1"
-OrdinaryDiffEqDifferentiation = "<0.0.1, 1"
+OrdinaryDiffEqCore = "1.19"
+OrdinaryDiffEqDifferentiation = "<0.0.1, 1.2"
 Polyester = "0.7.16"
 Random = "<0.0.1, 1"
 RecursiveArrayTools = "3.27.0"

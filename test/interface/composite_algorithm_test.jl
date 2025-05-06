@@ -1,6 +1,6 @@
 using OrdinaryDiffEq, OrdinaryDiffEqCore, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
-using DiffEqDevTools
+using DiffEqDevTools, ADTypes
 
 prob = prob_ode_2Dlinear
 choice_function(integrator) = (Int(integrator.t < 0.5) + 1)
@@ -47,11 +47,11 @@ v = @inferred OrdinaryDiffEqCore.ode_extrapolant(
     alg_mixed_r = CompositeAlgorithm((ABM54(), Tsit5()), reverse_choice)
     alg_mixed2 = CompositeAlgorithm((Tsit5(), ABM54()), reverse_choice)
 
-    @test_throws ErrorException solve(prob_ode_linear, alg_mixed)
+    @test_throws ArgumentError solve(prob_ode_linear, alg_mixed)
     sol2 = solve(prob_ode_linear, Tsit5())
-    sol3 = solve(prob_ode_linear, alg_mixed; dt = 0.05)
-    sol4 = solve(prob_ode_linear, alg_mixed_r; dt = 0.05)
-    sol5 = solve(prob_ode_linear, alg_mixed2; dt = 0.05)
+    sol3 = solve(prob_ode_linear, alg_mixed; dt = 0.05, adaptive = false)
+    sol4 = solve(prob_ode_linear, alg_mixed_r; dt = 0.05, adaptive = false)
+    sol5 = solve(prob_ode_linear, alg_mixed2; dt = 0.05, adaptive = false)
     @test sol3.t == sol4.t && sol3.u == sol4.u
     @test sol3(0.8)≈sol2(0.8) atol=1e-4
     @test sol5(0.8)≈sol2(0.8) atol=1e-4
@@ -78,5 +78,23 @@ sol = solve(prob,
 @test sol.t[end] == 1000.0
 
 prob = remake(prob_ode_2Dlinear, u0 = rand(ComplexF64, 2, 2))
-sol = solve(prob, AutoTsit5(Rosenbrock23(autodiff = false))) # Complex and AD don't mix
+sol = solve(prob, AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff()))) # Complex and AD don't mix
 @test sol.retcode == ReturnCode.Success
+
+# https://github.com/SciML/ModelingToolkit.jl/issues/3043
+function rober(du, u, p, t)
+    y₁, y₂, y₃ = u
+    k₁, k₂, k₃ = p
+    du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+    du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+    du[3] = y₁ + y₂ + y₃ - 1
+    nothing
+end
+M = [1.0 0 0
+     0 1.0 0
+     0 0 0]
+f = ODEFunction(rober, mass_matrix = M)
+prob_mm = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4))
+cb = DiscreteCallback(
+    (u, t, integrator) -> true, (integrator) -> u_modified!(integrator, true))
+sol = solve(prob_mm, DefaultODEAlgorithm(), callback = cb)

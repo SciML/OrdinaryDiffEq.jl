@@ -67,9 +67,16 @@ function DiffEqBase.remake(
             },
             DAEAlgorithm{CS, AD, FDT, ST, CJ}};
         kwargs...) where {CS, AD, FDT, ST, CJ}
+
+    if haskey(kwargs, :autodiff) && kwargs[:autodiff] isa AutoForwardDiff
+        chunk_size = _get_fwd_chunksize(kwargs[:autodiff])
+    else
+        chunk_size = Val{CS}()
+    end
+
     T = SciMLBase.remaker_of(thing)
     T(; SciMLBase.struct_as_namedtuple(thing)...,
-        chunk_size = Val{CS}(), autodiff = Val{AD}(), standardtag = Val{ST}(),
+        chunk_size = chunk_size, autodiff = thing.autodiff, standardtag = Val{ST}(),
         concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
         kwargs...)
 end
@@ -96,7 +103,7 @@ struct CompositeAlgorithm{CS, T, F} <: OrdinaryDiffEqCompositeAlgorithm
     algs::T
     choice_function::F
     function CompositeAlgorithm(algs::T, choice_function::F) where {T, F}
-        CS = mapreduce(alg -> has_chunksize(alg) ? get_chunksize_int(alg) : 0, max, algs)
+        CS = mapreduce(alg -> 0, max, algs)
         new{CS, T, F}(algs, choice_function)
     end
 end

@@ -1,62 +1,28 @@
-default_nlsolve(alg, isinplace, u, initprob, autodiff = false) = alg
-
 function default_nlsolve(
-        ::Nothing, isinplace, u::Nothing, ::NonlinearProblem, autodiff = false)
-    nothing
-end
-function default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
+        ::Nothing, isinplace::Val{true}, u, ::AbstractNonlinearProblem, autodiff = false)
     FastShortcutNonlinearPolyalg(;
         autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
-function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
-        ::NonlinearProblem, autodiff = false)
-    SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-end
-
 function default_nlsolve(
-        ::Nothing, isinplace, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
-    nothing
-end
-function default_nlsolve(
-        ::Nothing, isinplace, u, ::NonlinearLeastSquaresProblem, autodiff = false)
+        ::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem, autodiff = false)
     FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+end
+function default_nlsolve(
+        ::Nothing, isinplace::Val{false}, u, ::AbstractNonlinearProblem, autodiff = false)
+    FastShortcutNonlinearPolyalg(;
+        autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+end
+function default_nlsolve(
+        ::Nothing, isinplace::Val{false}, u, ::NonlinearLeastSquaresProblem, autodiff = false)
+    FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+end
+function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
+        ::AbstractNonlinearProblem, autodiff = false)
+    SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
 function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
         ::NonlinearLeastSquaresProblem, autodiff = false)
     SimpleGaussNewton(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
-end
-
-## OverrideInit
-
-function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
-        alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
-    initializeprob = prob.f.initializeprob
-
-    # If it doesn't have autodiff, assume it comes from symbolic system like ModelingToolkit
-    # Since then it's the case of not a DAE but has initializeprob
-    # In which case, it should be differentiable
-    isAD = if initializeprob.u0 === nothing
-        AutoForwardDiff
-    elseif has_autodiff(integrator.alg)
-        alg_autodiff(integrator.alg) isa AutoForwardDiff
-    else
-        true
-    end
-
-    alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, initializeprob, isAD)
-    nlsol = solve(initializeprob, alg)
-    if isinplace === Val{true}()
-        integrator.u .= prob.f.initializeprobmap(nlsol)
-    elseif isinplace === Val{false}()
-        integrator.u = prob.f.initializeprobmap(nlsol)
-    else
-        error("Unreachable reached. Report this error.")
-    end
-
-    if nlsol.retcode != ReturnCode.Success
-        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
-            ReturnCode.InitialFailure)
-    end
 end
 
 ## ShampineCollocationInit
@@ -650,15 +616,17 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 
     nlequation = @closure (x, _) -> begin
-        du = ifelse.(differential_vars, x, du)
-        u = ifelse.(differential_vars, u, x)
-        f(du, u, p, t)
+        du_ = ifelse.(differential_vars, x, du)
+        u_ = ifelse.(differential_vars, u, x)
+        f.f(du_, u_, p, t)
     end
 
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u))
 
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, nlprob, integrator.u)
+
+    @show nlsolve
 
     nlsol = solve(nlprob, nlsolve)
 

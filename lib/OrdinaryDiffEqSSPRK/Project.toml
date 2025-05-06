@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSSPRK"
 uuid = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.2.0"
+version = "1.3.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -33,6 +33,7 @@ Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 Static = "1.1.1"
 StaticArrays = "1.9.7"
+StructArrays = "0.6"
 Test = "<0.0.1, 1"
 julia = "1.10"
 
@@ -42,7 +43,8 @@ ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 OrdinaryDiffEqLowStorageRK = "b0944070-b475-4768-8dec-fb6eb410534d"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "OrdinaryDiffEqLowStorageRK"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "StructArrays", "Test", "ODEProblemLibrary", "OrdinaryDiffEqLowStorageRK"]

@@ -39,7 +39,33 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
             else
                 tf.uprev = uprev
                 tf.p = p
-                derivative!(dT, tf, t, du2, integrator, cache.grad_config)
+                alg = unwrap_alg(integrator, true)
+
+                autodiff_alg = ADTypes.dense_ad(alg_autodiff(alg))
+
+                # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers work 
+                t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT),t) : t
+
+                grad_config_tup = cache.grad_config
+
+                if autodiff_alg isa AutoFiniteDiff
+                    grad_config = diffdir(integrator) > 0 ? grad_config_tup[1] : grad_config_tup[2]
+                else
+                    grad_config = grad_config_tup[1]
+                end
+
+                if integrator.iter == 1
+                    try
+                        DI.derivative!(
+                            tf, linsolve_tmp, dT, grad_config, autodiff_alg, t)
+                    catch e
+                        throw(FirstAutodiffTgradError(e))
+                    end
+                else
+                    DI.derivative!(tf, linsolve_tmp, dT, grad_config, autodiff_alg, t)
+                end
+                
+                OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             end
         end
 
@@ -48,7 +74,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 end
 
 function calc_tderivative(integrator, cache)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack t, dt, uprev, u, f, p, alg = integrator
 
     # Time derivative
     if DiffEqBase.has_tgrad(f)
@@ -57,7 +83,24 @@ function calc_tderivative(integrator, cache)
         tf = cache.tf
         tf.u = uprev
         tf.p = p
-        dT = derivative(tf, t, integrator)
+
+        autodiff_alg = ADTypes.dense_ad(alg_autodiff(alg))
+
+        if alg_autodiff isa AutoFiniteDiff
+            autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
+        end
+        
+        if integrator.iter == 1 
+            try 
+                dT = DI.derivative(tf, autodiff_alg, t)
+            catch e
+                throw(FirstAutodiffTgradError(e))
+            end
+        else
+            dT = DI.derivative(tf, autodiff_alg, t)
+        end
+           
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
     dT
 end
@@ -97,7 +140,6 @@ function calc_J(integrator, cache, next_step::Bool = false)
             uf.f = nlsolve_f(f, alg)
             uf.p = p
             uf.t = t
-
             J = jacobian(uf, uprev, integrator)
         end
 
@@ -130,7 +172,21 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         if DiffEqBase.has_jac(f)
             duprev = integrator.duprev
             uf = cache.uf
-            f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
+            # need to do some jank here to account for sparsity pattern of W
+            # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653
+
+            # we need to set all nzval to a non-zero number
+            # otherwise in the following line any zero gets interpreted as a structural zero
+            if !isnothing(integrator.f.jac_prototype) && 
+                integrator.f.jac_prototype isa SparseMatrixCSC
+
+                integrator.f.jac_prototype.nzval .= true
+                J .= true .* integrator.f.jac_prototype
+                J.nzval .= false
+                f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
+            else
+                f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
+            end
         else
             @unpack du1, uf, jac_config = cache
             # using `dz` as temporary array
@@ -141,10 +197,23 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         end
     else
         if DiffEqBase.has_jac(f)
-            f.jac(J, uprev, p, t)
+            # need to do some jank here to account for sparsity pattern of W
+            # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653
+
+            # we need to set all nzval to a non-zero number
+            # otherwise in the following line any zero gets interpreted as a structural zero
+            if !isnothing(integrator.f.jac_prototype) &&
+               integrator.f.jac_prototype isa SparseMatrixCSC
+               
+                integrator.f.jac_prototype.nzval .= true
+                J .= true .* integrator.f.jac_prototype
+                J.nzval .= false
+                f.jac(J, uprev, p, t)
+            else 
+                f.jac(J, uprev, p, t)
+            end
         else
             @unpack du1, uf, jac_config = cache
-
             uf.f = nlsolve_f(f, alg)
             uf.t = t
             if !(p isa DiffEqBase.NullParameters)
@@ -163,15 +232,9 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
 end
 
 """
-    WOperator(mass_matrix,gamma,J[;transform=false])
+    WOperator(mass_matrix,gamma,J)
 
 A linear operator that represents the W matrix of an ODEProblem, defined as
-
-```math
-W = MM - \\gamma J
-```
-
-or, if `transform=true`:
 
 ```math
 W = \\frac{1}{\\gamma}MM - J
@@ -182,7 +245,7 @@ where `MM` is the mass matrix (a regular `AbstractMatrix` or a `UniformScaling`)
 operator (must be a `AbstractSciMLOperator`). A `WOperator` can also be
 constructed using a `*DEFunction` directly as
 
-    WOperator(f,gamma[;transform=false])
+    WOperator(f,gamma)
 
 `f` needs to have a jacobian and `jac_prototype`, but the prototype does not need
 to be a diffeq operator --- it will automatically be converted to one.
@@ -201,21 +264,15 @@ mutable struct WOperator{IIP, T,
     mass_matrix::MType
     gamma::GType
     J::JType
-    transform::Bool          # true => W = mm/gamma - J; false => W = mm - gamma*J
     _func_cache::F           # cache used in `mul!`
     _concrete_form::C        # non-lazy form (matrix/number) of the operator
     jacvec::JV
 
-    function WOperator{IIP}(mass_matrix, gamma, J, u, jacvec = nothing;
-            transform = false) where {IIP}
+    function WOperator{IIP}(mass_matrix, gamma, J, u, jacvec = nothing) where {IIP}
         # TODO: there is definitely a missing interface.
         # Tentative interface: `has_concrete` and `concertize(A)`
         if J isa Union{Number, ScalarOperator}
-            if transform
-                _concrete_form = -mass_matrix / gamma + convert(Number, J)
-            else
-                _concrete_form = -mass_matrix + gamma * convert(Number, J)
-            end
+            _concrete_form = -mass_matrix / gamma + convert(Number, J)
             _func_cache = nothing
         else
             AJ = J isa MatrixOperator ? convert(AbstractMatrix, J) : J
@@ -242,25 +299,13 @@ mutable struct WOperator{IIP, T,
                         @assert all(!isequal(x), AJn)
 
                         fill!(AJn, rand())
-                        if transform
-                            _concrete_form = -mm / one(gamma) + AJ
-                        else
-                            _concrete_form = -mm + one(gamma) * AJ
-                        end
+                        _concrete_form = -mm / one(gamma) + AJ
                         fill!(_concrete_form, false) # safety measure, throw singular error if not filled
                     else
-                        if transform
-                            _concrete_form = -mm / gamma + AJ
-                        else
-                            _concrete_form = -mm + gamma * AJ
-                        end
+                        _concrete_form = -mm / gamma + AJ
                     end
                 else
-                    if transform
-                        _concrete_form = -mm / gamma + AJ
-                    else
-                        _concrete_form = -mm + gamma * AJ
-                    end
+                    _concrete_form = -mm / gamma + AJ
                 end
 
             else
@@ -275,12 +320,12 @@ mutable struct WOperator{IIP, T,
         F = typeof(_func_cache)
         C = typeof(_concrete_form)
         JV = typeof(jacvec)
-        return new{IIP, T, MType, GType, JType, F, C, JV}(mass_matrix, gamma, J, transform,
+        return new{IIP, T, MType, GType, JType, F, C, JV}(mass_matrix, gamma, J,
             _func_cache, _concrete_form,
             jacvec)
     end
 end
-function WOperator{IIP}(f, u, gamma; transform = false) where {IIP}
+function WOperator{IIP}(f, u, gamma) where {IIP}
     if isa(f, Union{SplitFunction, DynamicalODEFunction})
         error("WOperator does not support $(typeof(f)) yet")
     end
@@ -295,27 +340,25 @@ function WOperator{IIP}(f, u, gamma; transform = false) where {IIP}
         @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
         J = MatrixOperator(J; update_func! = f.jac)
     end
-    return WOperator{IIP}(mass_matrix, gamma, J, u; transform = transform)
+    return WOperator{IIP}(mass_matrix, gamma, J, u)
 end
 
 SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
-# In WOperator update_coefficients!, accept both missing u/p/t and missing dtgamma/transform and don't update them in that case.
+# In WOperator update_coefficients!, accept both missing u/p/t and missing dtgamma and don't update them in that case.
 # This helps support partial updating logic used with Newton solvers.
 function SciMLOperators.update_coefficients!(W::WOperator,
         u = nothing,
         p = nothing,
         t = nothing;
-        dtgamma = nothing,
-        transform = nothing)
+        dtgamma = nothing)
     if (u !== nothing) && (p !== nothing) && (t !== nothing)
         update_coefficients!(W.J, u, p, t)
         update_coefficients!(W.mass_matrix, u, p, t)
         !isnothing(W.jacvec) && update_coefficients!(W.jacvec, u, p, t)
     end
     dtgamma !== nothing && (W.gamma = dtgamma)
-    transform !== nothing && (W.transform = transform)
     W
 end
 
@@ -327,55 +370,31 @@ end
 function Base.convert(::Type{AbstractMatrix}, W::WOperator{IIP}) where {IIP}
     if !IIP
         # Allocating
-        if W.transform
-            W._concrete_form = -W.mass_matrix / W.gamma + convert(AbstractMatrix, W.J)
-        else
-            W._concrete_form = -W.mass_matrix + W.gamma * convert(AbstractMatrix, W.J)
-        end
+        W._concrete_form = -W.mass_matrix / W.gamma + convert(AbstractMatrix, W.J)
     else
         # Non-allocating already updated
         #_W = W._concrete_form
-        #jacobian2W!(_W, W.mass_matrix, W.gamma, W.J, W.transform)
+        #jacobian2W!(_W, W.mass_matrix, W.gamma, W.J)
     end
     return W._concrete_form
 end
 function Base.convert(::Type{Number}, W::WOperator)
-    if W.transform
-        W._concrete_form = -W.mass_matrix / W.gamma + convert(Number, W.J)
-    else
-        W._concrete_form = -W.mass_matrix + W.gamma * convert(Number, W.J)
-    end
+    W._concrete_form = -W.mass_matrix / W.gamma + convert(Number, W.J)
     return W._concrete_form
 end
 Base.size(W::WOperator) = size(W.J)
 Base.size(W::WOperator, d::Integer) = d <= 2 ? size(W)[d] : 1
 function Base.getindex(W::WOperator, i::Int)
-    if W.transform
-        -W.mass_matrix[i] / W.gamma + W.J[i]
-    else
-        -W.mass_matrix[i] + W.gamma * W.J[i]
-    end
+    -W.mass_matrix[i] / W.gamma + W.J[i]
 end
 function Base.getindex(W::WOperator, I::Vararg{Int, N}) where {N}
-    if W.transform
-        -W.mass_matrix[I...] / W.gamma + W.J[I...]
-    else
-        -W.mass_matrix[I...] + W.gamma * W.J[I...]
-    end
+    -W.mass_matrix[I...] / W.gamma + W.J[I...]
 end
 function Base.:*(W::WOperator, x::AbstractVecOrMat)
-    if W.transform
-        (W.mass_matrix * x) / -W.gamma + W.J * x
-    else
-        -W.mass_matrix * x + W.gamma * (W.J * x)
-    end
+    (W.mass_matrix * x) / -W.gamma + W.J * x
 end
 function Base.:*(W::WOperator, x::Number)
-    if W.transform
-        (W.mass_matrix * x) / -W.gamma + W.J * x
-    else
-        -W.mass_matrix * x + W.gamma * (W.J * x)
-    end
+    (W.mass_matrix * x) / -W.gamma + W.J * x
 end
 function Base.:\(W::WOperator, x::AbstractVecOrMat)
     if size(W) == () # scalar operator
@@ -393,40 +412,21 @@ function Base.:\(W::WOperator, x::Number)
 end
 
 function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrMat)
-    if W.transform
-        # Compute mass_matrix * B
-        if isa(W.mass_matrix, UniformScaling)
-            a = -W.mass_matrix.λ / W.gamma
-            @.. broadcast=false Y=a * B
-        else
-            mul!(_vec(Y), W.mass_matrix, _vec(B))
-            lmul!(-1 / W.gamma, Y)
-        end
-        # Compute J * B and add
-        if W.jacvec !== nothing
-            mul!(_vec(W._func_cache), W.jacvec, _vec(B))
-        else
-            mul!(_vec(W._func_cache), W.J, _vec(B))
-        end
-        _vec(Y) .+= _vec(W._func_cache)
+    # Compute mass_matrix * B
+    if isa(W.mass_matrix, UniformScaling)
+        a = -W.mass_matrix.λ / W.gamma
+        @.. broadcast=false Y=a * B
     else
-        # Compute mass_matrix * B
-        if isa(W.mass_matrix, UniformScaling)
-            vY = _vec(Y)
-            vB = _vec(B)
-            @.. broadcast=false vY=W.mass_matrix.λ * vB
-        else
-            mul!(_vec(Y), W.mass_matrix, _vec(B))
-        end
-        # Compute J * B
-        if W.jacvec !== nothing
-            mul!(_vec(W._func_cache), W.jacvec, _vec(B))
-        else
-            mul!(_vec(W._func_cache), W.J, _vec(B))
-        end
-        # Add result
-        axpby!(W.gamma, _vec(W._func_cache), -one(W.gamma), _vec(Y))
+        mul!(_vec(Y), W.mass_matrix, _vec(B))
+        lmul!(-inv(W.gamma), Y)
     end
+    # Compute J * B and add
+    if W.jacvec !== nothing
+        mul!(_vec(W._func_cache), W.jacvec, _vec(B))
+    else
+        mul!(_vec(W._func_cache), W.J, _vec(B))
+    end
+    _vec(Y) .+= _vec(W._func_cache)
 end
 
 """
@@ -491,14 +491,13 @@ end
 end
 
 function jacobian2W!(
-        W::AbstractMatrix, mass_matrix, dtgamma::Number, J::AbstractMatrix,
-        W_transform::Bool)::Nothing
+        W::AbstractMatrix, mass_matrix, dtgamma::Number, J::AbstractMatrix)::Nothing
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
     mass_matrix isa UniformScaling ||
         @boundscheck axes(mass_matrix) == axes(W) || _throwWMerror(W, mass_matrix)
-    @inbounds if W_transform
+    @inbounds begin
         invdtgamma = inv(dtgamma)
         if mass_matrix isa UniformScaling
             copyto!(W, J)
@@ -515,72 +514,17 @@ function jacobian2W!(
         else
             @.. broadcast=false W=muladd(-mass_matrix, invdtgamma, J)
         end
-    else
-        if mass_matrix isa UniformScaling
-            λ = -mass_matrix.λ
-            if W isa SparseMatrixCSC
-                #=
-                using LinearAlgebra, SparseArrays, FastBroadcast
-                J = sparse(Diagonal(ones(4)))
-                W = sparse(Diagonal(ones(4)));
-                J[4,4] = 0
-                gamma = 1.0
-                W .= gamma .* J
-
-                4×4 SparseMatrixCSC{Float64, Int64} with 3 stored entries:
-                1.0   ⋅    ⋅   ⋅
-                ⋅   1.0   ⋅    ⋅
-                ⋅    ⋅   1.0   ⋅
-                ⋅    ⋅    ⋅     ⋅
-
-                Thus broadcast cannot be used.
-
-                Instead, check the sparsity pattern is correct and directly broadcast the nzval
-                =#
-                @assert J.colptr == W.colptr
-                @assert J.rowval == W.rowval
-                @.. broadcast=false W.nzval=dtgamma * J.nzval
-                idxs = diagind(W)
-                @.. broadcast=false @view(W[idxs])=@view(W[idxs]) + λ
-            elseif W isa AbstractSparseMatrix
-                # This is specifically to catch the GPU sparse matrix cases
-                # Which do not support diagonal indexing
-                # https://github.com/JuliaGPU/CUDA.jl/issues/1395
-
-                Wn = nonzeros(W)
-                Jn = nonzeros(J)
-
-                # I would hope to check this generically, but `CuSparseMatrixCSC` has `colPtr`
-                # and `rowVal` while SparseMatrixCSC is colptr and rowval, and there is no
-                # standard for checking sparsity patterns in general. So for now, write it for
-                # the convention of CUDA.jl and handle the case of some other convention when
-                # it comes up.
-
-                @assert J.colPtr == W.colPtr
-                @assert J.rowVal == W.rowVal
-
-                @.. broadcast=false Wn=dtgamma * Jn
-                W .= W + λ * I
-            else # Anything not a sparse matrix
-                @.. broadcast=false W=dtgamma * J
-                idxs = diagind(W)
-                @.. broadcast=false @view(W[idxs])=@view(W[idxs]) + λ
-            end
-        else
-            @.. broadcast=false W=muladd(dtgamma, J, -mass_matrix)
-        end
     end
     return nothing
 end
 
-function jacobian2W!(W::Matrix, mass_matrix, dtgamma::Number, J::Matrix,
-        W_transform::Bool)::Nothing
+function jacobian2W!(W::Matrix, mass_matrix, dtgamma::Number, J::Matrix)::Nothing
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
     mass_matrix isa UniformScaling ||
         @boundscheck axes(mass_matrix) == axes(W) || _throwWMerror(W, mass_matrix)
-    @inbounds if W_transform
+    @inbounds begin
         invdtgamma = inv(dtgamma)
         if mass_matrix isa UniformScaling
             copyto!(W, J)
@@ -594,44 +538,21 @@ function jacobian2W!(W::Matrix, mass_matrix, dtgamma::Number, J::Matrix,
                 W[i] = muladd(-mass_matrix[i], invdtgamma, J[i])
             end
         end
-    else
-        if mass_matrix isa UniformScaling
-            idxs = diagind(W)
-            @inbounds @simd ivdep for i in eachindex(W)
-                W[i] = dtgamma * J[i]
-            end
-            λ = -mass_matrix.λ
-            @inbounds for i in idxs
-                W[i] = W[i] + λ
-            end
-        else
-            @inbounds @simd ivdep for i in eachindex(W)
-                W[i] = muladd(dtgamma, J[i], -mass_matrix[i])
-            end
-        end
     end
     return nothing
 end
 
-function jacobian2W(mass_matrix, dtgamma::Number, J::AbstractMatrix,
-        W_transform::Bool)
+function jacobian2W(mass_matrix, dtgamma::Number, J::AbstractMatrix)
     # check size and dimension
     mass_matrix isa UniformScaling ||
         @boundscheck axes(mass_matrix) == axes(J) || _throwJMerror(J, mass_matrix)
-    @inbounds if W_transform
+    @inbounds begin
         invdtgamma = inv(dtgamma)
         if mass_matrix isa UniformScaling
             λ = -mass_matrix.λ
             W = J + (λ * invdtgamma) * I
         else
             W = muladd(-mass_matrix, invdtgamma, J)
-        end
-    else
-        if mass_matrix isa UniformScaling
-            λ = -mass_matrix.λ
-            W = dtgamma * J + λ * I
-        else
-            W = muladd(dtgamma, J, -mass_matrix)
         end
     end
     return W
@@ -640,7 +561,7 @@ end
 is_always_new(alg) = isdefined(alg, :always_new) ? alg.always_new : false
 
 function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
-        repeat_step, W_transform = false, newJW = nothing)
+        repeat_step, newJW = nothing)
     @unpack t, dt, uprev, u, f, p = integrator
     lcache = nlsolver === nothing ? cache : nlsolver.cache
     next_step = is_always_new(nlsolver)
@@ -658,21 +579,13 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     is_compos = integrator.alg isa CompositeAlgorithm
 
     # handle Wfact
-    if W_transform && DiffEqBase.has_Wfact_t(f)
+    if DiffEqBase.has_Wfact_t(f)
         f.Wfact_t(W, u, p, dtgamma, t)
         isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
         is_compos && (integrator.eigen_est = constvalue(opnorm(LowerTriangular(W), Inf)) +
                                 inv(dtgamma)) # TODO: better estimate
         # It's equivalent with evaluating a new Jacobian, but not a new W,
         # because we won't call `lu!`, and the iteration matrix is fresh.
-        return (true, false)
-    elseif !W_transform && DiffEqBase.has_Wfact(f)
-        f.Wfact(W, u, p, dtgamma, t)
-        isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
-        if is_compos
-            opn = opnorm(LowerTriangular(W), Inf)
-            integrator.eigen_est = (constvalue(opn) + one(opn)) / dtgamma # TODO: better estimate
-        end
         return (true, false)
     end
 
@@ -696,24 +609,24 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     if W isa WOperator
         if isnewton(nlsolver)
             # we will call `update_coefficients!` for u/p/t in NLNewton
-            update_coefficients!(W; transform = W_transform, dtgamma)
+            update_coefficients!(W; dtgamma)
         else
-            update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
+            update_coefficients!(W, uprev, p, t; dtgamma)
         end
         if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
             (new_jac && (calc_J!(W.J, integrator, lcache, next_step)))
             new_W && !isdae &&
-                jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J, W_transform)
+                jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J)
         end
     elseif W isa AbstractSciMLOperator && !(W isa StaticWOperator)
-        update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
+        update_coefficients!(W, uprev, p, t; dtgamma)
     else # concrete W using jacobian from `calc_J!`
         islin, isode = islinearfunction(integrator)
         islin ? (J = isode ? f.f : f.f1.f) :
         (new_jac && (calc_J!(J, integrator, lcache, next_step)))
-        new_W && !isdae && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+        new_W && !isdae && jacobian2W!(W, mass_matrix, dtgamma, J)
     end
     if isnewton(nlsolver)
         set_new_W!(nlsolver, new_W)
@@ -728,7 +641,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     return new_jac, new_W
 end
 
-@noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step, W_transform = false)
+@noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step)
     @unpack t, uprev, p, f = integrator
 
     next_step = is_always_new(nlsolver)
@@ -752,8 +665,7 @@ end
     if cache.W isa StaticWOperator
         integrator.stats.nw += 1
         J = calc_J(integrator, cache, next_step)
-        W = StaticWOperator(W_transform ? J - mass_matrix * inv(dtgamma) :
-                            dtgamma * J - mass_matrix)
+        W = StaticWOperator(J - mass_matrix * inv(dtgamma))
     elseif cache.W isa WOperator
         integrator.stats.nw += 1
         J = if islin
@@ -761,18 +673,17 @@ end
         else
             calc_J(integrator, cache, next_step)
         end
-        W = WOperator{false}(
-            mass_matrix, dtgamma, J, uprev, cache.W.jacvec; transform = W_transform)
+        W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec)
     elseif cache.W isa AbstractSciMLOperator
-        W = update_coefficients(cache.W, uprev, p, t; dtgamma, transform = W_transform)
+        W = update_coefficients(cache.W, uprev, p, t; dtgamma)
     else
         integrator.stats.nw += 1
         J = islin ? isode ? f.f : f.f1.f : calc_J(integrator, cache, next_step)
         if isdae
             W = J
         else
-            W = W_transform ? J - mass_matrix * inv(dtgamma) :
-                dtgamma * J - mass_matrix
+            W = J - mass_matrix * inv(dtgamma)
+            
             if !isa(W, Number)
                 W = DiffEqBase.default_factorize(W)
             end
@@ -783,15 +694,13 @@ end
     return W
 end
 
-function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step,
-        W_transform)
+function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
     nlsolver = nothing
     # we need to skip calculating `J` and `W` when a step is repeated
     new_jac = new_W = false
     if !repeat_step
         new_jac, new_W = calc_W!(
-            cache.W, integrator, nlsolver, cache, dtgamma, repeat_step,
-            W_transform)
+            cache.W, integrator, nlsolver, cache, dtgamma, repeat_step)
     end
     # If the Jacobian is not updated, we won't have to update ∂/∂t either.
     calc_tderivative!(integrator, cache, dtd1, repeat_step || !new_jac)
@@ -807,7 +716,7 @@ function update_W!(nlsolver::AbstractNLSolver,
         integrator::SciMLBase.DEIntegrator{<:Any, true}, cache, dtgamma,
         repeat_step::Bool, newJW = nothing)
     if isnewton(nlsolver)
-        calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step, true,
+        calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step,
             newJW)
     end
     nothing
@@ -826,7 +735,7 @@ function update_W!(nlsolver::AbstractNLSolver,
             lcache.uf.tmp = @. nlsolver.tmp
             lcache.uf.uprev = @. integrator.uprev
         end
-        nlsolver.cache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step, true)
+        nlsolver.cache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step)
         #TODO: jacobian reuse for oop
         new_jac && (nlsolver.cache.J_t = integrator.t)
         set_new_W!(nlsolver, new_W)
@@ -839,7 +748,7 @@ function update_W!(nlsolver::AbstractNLSolver,
     nothing
 end
 
-function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
+function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUnits},
         ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
     # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
@@ -870,12 +779,10 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
         # Jacobian is a bad idea and create a fully matrix-free solver. This can
         # be overridden with concrete_jac.
+        jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 
-        _f = islin ? (isode ? f.f : f.f1.f) : f
-        jacvec = JacVec((du, u, p, t) -> _f(du, u, p, t), copy(u), p, t;
-            autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         J = jacvec
-        W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
+        W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
     elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
            concrete_jac(alg) !== nothing && concrete_jac(alg)
         # The linear solver does not need a concrete Jacobian, but the user has
@@ -883,21 +790,29 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # Thus setup JacVec and a concrete J, using sparsity when possible
         _f = islin ? (isode ? f.f : f.f1.f) : f
         J = if f.jac_prototype === nothing
-            ArrayInterface.undefmatrix(u)
+            if alg_autodiff(alg) isa AutoSparse
+                if isnothing(f.sparsity)
+                    !isnothing(jac_config) ?
+                    convert.(
+                        eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config[1])) :
+                    spzeros(eltype(u), length(u), length(u))
+                elseif eltype(f.sparsity) == Bool
+                    convert.(eltype(u), f.sparsity)
+                else
+                    f.sparsity
+                end
+            else
+                ArrayInterface.zeromatrix(u)
+            end
         else
             deepcopy(f.jac_prototype)
         end
         W = if J isa StaticMatrix
             StaticWOperator(J, false)
         else
-            __f = if IIP
-                (du, u, p, t) -> _f(du, u, p, t)
-            else
-                (u, p, t) -> _f(u, p, t)
-            end
-            jacvec = JacVec(__f, copy(u), p, t;
-                autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
-            WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
+            jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
+
+            WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
         end
     else
         J = if !IIP && DiffEqBase.has_jac(f)
@@ -907,7 +822,19 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
                 f.jac(uprev, p, t)
             end
         elseif f.jac_prototype === nothing
-            ArrayInterface.undefmatrix(u)
+            if alg_autodiff(alg) isa AutoSparse
+
+                if isnothing(f.sparsity)
+                    !isnothing(jac_config) ? convert.(eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config[1])) :
+                    spzeros(eltype(u), length(u), length(u))
+                elseif eltype(f.sparsity) == Bool
+                    convert.(eltype(u), f.sparsity)
+                else
+                    f.sparsity
+                end
+            else
+                ArrayInterface.zeromatrix(u)
+            end
         else
             deepcopy(f.jac_prototype)
         end
@@ -979,20 +906,19 @@ function resize_J_W!(cache, integrator, i)
         islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
         if !islin
             if cache.J isa AbstractSciMLOperator
-                resize!(cache.J, i)
+                resize_JVPCache!(cache.J, f, cache.du1, integrator.u, alg_autodiff(integrator.alg))
             elseif f.jac_prototype !== nothing
                 J = similar(f.jac_prototype, i, i)
                 J = MatrixOperator(J; update_func! = f.jac)
             end
             if cache.W.jacvec isa AbstractSciMLOperator
-                resize!(cache.W.jacvec, i)
+                resize_JVPCache!(cache.W.jacvec, f, cache.du1, integrator.u, alg_autodiff(integrator.alg))
             end
             cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(f.mass_matrix,
                 integrator.dt,
                 cache.J,
                 integrator.u,
-                cache.W.jacvec;
-                transform = cache.W.transform)
+                cache.W.jacvec)
             cache.J = cache.W.J
         end
     else
@@ -1004,3 +930,6 @@ function resize_J_W!(cache, integrator, i)
 
     nothing
 end
+
+getsize(::Val{N}) where {N} = N
+getsize(N::Integer) = N

@@ -1,3 +1,3 @@
 using SafeTestsets
 
-@time @safetestset "Newton Tests" include("interface/newton_tests.jl")
+@time @safetestset "Newton Tests" include("newton_tests.jl")

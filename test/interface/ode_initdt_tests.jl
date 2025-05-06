@@ -10,7 +10,7 @@ sol = solve(prob, ExplicitRK(tableau = constructBogakiShampine3()))
 dt₀ = sol.t[2]
 
 @test 1e-7 < dt₀ < 0.1
-@test_throws ErrorException local sol = solve(prob, Euler())
+@test_throws ArgumentError local sol = solve(prob, Euler())
 #dt₀ = sol.t[2]
 
 sol3 = solve(prob, ExplicitRK(tableau = constructDormandPrince8_64bit()))
@@ -64,3 +64,9 @@ sol = solve(prob, Rodas5())
 # test that dtmin is set based on timespan
 prob = ODEProblem((u, p, t) -> 1e20 * sin(1e20 * t), 0.1, (0, 1e-19))
 @test solve(prob, Tsit5()).retcode == ReturnCode.Success
+
+#test that we are robust to u0=0, t0!=0
+integ = init(ODEProblem(((u, p, t) -> u), 0.0f0, (20.0f0, 0.0f0)), Tsit5())
+@test abs(integ.dt) > eps(integ.t)
+integ = init(ODEProblem(((du, u, p, t) -> du .= u), [0.0f0], (20.0f0, 0.0f0)), Tsit5())
+@test abs(integ.dt) > eps(integ.t)

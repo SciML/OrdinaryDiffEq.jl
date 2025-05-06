@@ -56,7 +56,7 @@ prob = ODEProblem(fun, h0, tspan)
 
 #Should be functionally equivalent to above, explicit_fun does nothing
 sfun = SplitFunction(fun, explicit_fun, jac_prototype = jac_proto)
-sprob = ODEProblem(sfun, h0, tspan)
+sprob = SplitODEProblem(sfun, h0, tspan)
 
 #CFNLIRK3 has same erroneous FSAL logic as KenCarp solvers
 #Can't efficiently test with stiff problem (to cause dtmin issue) because it requires constant dt

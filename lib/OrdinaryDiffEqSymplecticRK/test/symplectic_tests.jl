@@ -7,6 +7,7 @@ using OrdinaryDiffEqRKN
 const ALGOS = ((SymplecticEuler, true, 1),
     (VelocityVerlet, false, 2),
     (VerletLeapfrog, true, 2),
+    (LeapfrogDriftKickDrift, true, 2),
     (PseudoVerletLeapfrog, true, 2),
     (McAte2, true, 2),
     (Ruth3, true, 3),

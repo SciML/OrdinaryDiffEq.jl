@@ -1,6 +1,8 @@
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, ADTypes, SparseMatrixColorings, DiffEqBase, ForwardDiff, SciMLBase, LinearSolve
+import OrdinaryDiffEqDifferentiation.DI
+
 f(du, u, p, t) = du .= u
-prob = ODEProblem(f, [1.0], (0.0, 1.0))
+prob = ODEProblem{true, SciMLBase.FullSpecialize}(f, [1.0], (0.0, 1.0))
 
 i = init(prob, Tsit5())
 resize!(i, 5)
@@ -31,14 +33,14 @@ resize!(i, 5)
 @test size(i.cache.nlsolver.cache.J) == (5, 5)
 @test size(i.cache.nlsolver.cache.W) == (5, 5)
 @test length(i.cache.nlsolver.cache.du1) == 5
-@test length(i.cache.nlsolver.cache.jac_config.fx) == 5
-@test length(i.cache.nlsolver.cache.jac_config.dx) == 5
-@test length(i.cache.nlsolver.cache.jac_config.t) == 5
-@test length(i.cache.nlsolver.cache.jac_config.p) == 5
 @test length(i.cache.nlsolver.cache.weight) == 5
+@test all(size(DI.jacobian(
+    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.nlsolver.cache.jac_config[1],
+    AutoForwardDiff(tag = ForwardDiff.Tag(DiffEqBase.OrdinaryDiffEqTag(), Float64)), rand(5))) .==
+          5)
 solve!(i)
 
-i = init(prob, ImplicitEuler(; autodiff = false))
+i = init(prob, ImplicitEuler(; autodiff = AutoFiniteDiff()))
 resize!(i, 5)
 @test length(i.cache.atmp) == 5
 @test length(i.cache.uprev) == 5
@@ -54,10 +56,10 @@ resize!(i, 5)
 @test size(i.cache.nlsolver.cache.J) == (5, 5)
 @test size(i.cache.nlsolver.cache.W) == (5, 5)
 @test length(i.cache.nlsolver.cache.du1) == 5
-@test length(i.cache.nlsolver.cache.jac_config.x1) == 5
-@test length(i.cache.nlsolver.cache.jac_config.fx) == 5
-@test length(i.cache.nlsolver.cache.jac_config.fx1) == 5
 @test length(i.cache.nlsolver.cache.weight) == 5
+@test all(size(DI.jacobian(
+    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.nlsolver.cache.jac_config[1],
+    AutoFiniteDiff(), rand(5))) .== 5)
 solve!(i)
 
 i = init(prob, Rosenbrock23())
@@ -77,13 +79,13 @@ resize!(i, 5)
 @test size(i.cache.J) == (5, 5)
 @test size(i.cache.W) == (5, 5)
 @test length(i.cache.linsolve_tmp) == 5
-@test length(i.cache.jac_config.fx) == 5
-@test length(i.cache.jac_config.dx) == 5
-@test length(i.cache.jac_config.t) == 5
-@test length(i.cache.jac_config.p) == 5
+@test all(size(DI.jacobian(
+    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.jac_config[1],
+    AutoForwardDiff(tag = ForwardDiff.Tag(DiffEqBase.OrdinaryDiffEqTag(), Float64)), rand(5))) .==
+          5)
 solve!(i)
 
-i = init(prob, Rosenbrock23(; autodiff = false))
+i = init(prob, Rosenbrock23(autodiff = AutoForwardDiff(), linsolve = KrylovJL_GMRES()))
 resize!(i, 5)
 @test length(i.cache.u) == 5
 @test length(i.cache.uprev) == 5
@@ -100,9 +102,28 @@ resize!(i, 5)
 @test size(i.cache.J) == (5, 5)
 @test size(i.cache.W) == (5, 5)
 @test length(i.cache.linsolve_tmp) == 5
-@test length(i.cache.jac_config.x1) == 5
-@test length(i.cache.jac_config.fx) == 5
-@test length(i.cache.jac_config.fx1) == 5
+solve!(i)
+
+i = init(prob, Rosenbrock23(; autodiff = AutoFiniteDiff()))
+resize!(i, 5)
+@test length(i.cache.u) == 5
+@test length(i.cache.uprev) == 5
+@test length(i.cache.k₁) == 5
+@test length(i.cache.k₂) == 5
+@test length(i.cache.k₃) == 5
+@test length(i.cache.du1) == 5
+@test length(i.cache.du2) == 5
+@test length(i.cache.f₁) == 5
+@test length(i.cache.fsalfirst) == 5
+@test length(i.cache.fsallast) == 5
+@test length(i.cache.dT) == 5
+@test length(i.cache.tmp) == 5
+@test size(i.cache.J) == (5, 5)
+@test size(i.cache.W) == (5, 5)
+@test length(i.cache.linsolve_tmp) == 5
+@test all(size(DI.jacobian(
+    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.jac_config[1],
+    AutoFiniteDiff(), rand(5))) .== 5)
 solve!(i)
 
 function f(du, u, p, t)
@@ -185,7 +206,7 @@ end
 runSim(BS3())
 
 runSim(Rosenbrock23())
-runSim(Rosenbrock23(autodiff = false))
+runSim(Rosenbrock23(autodiff = AutoFiniteDiff()))
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1990
 @testset "resize! with SplitODEProblem" begin

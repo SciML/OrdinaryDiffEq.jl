@@ -43,8 +43,8 @@ struct RadauIIA5Tableau{T, T2}
     T22::T
     T23::T
     T31::T
-    #T32::T = 1
-    #T33::T = 0
+    #T32::T
+    #T33::T
     TI11::T
     TI12::T
     TI13::T
@@ -56,7 +56,7 @@ struct RadauIIA5Tableau{T, T2}
     TI33::T
     c1::T2
     c2::T2
-    #c3::T2 = 1
+    #c3::T2
     γ::T
     α::T
     β::T
@@ -258,3 +258,83 @@ function RadauIIA9Tableau(T, T2)
         γ, α1, β1, α2, β2,
         e1, e2, e3, e4, e5)
 end
+
+struct RadauIIATableau{T1, T2}
+    T::Matrix{T1}
+    TI::Matrix{T1}
+    c::Vector{T2}
+    γ::T1
+    α::Vector{T1}
+    β::Vector{T1}
+    e::Vector{T1}
+end
+
+import LinearAlgebra: eigen
+import FastGaussQuadrature: gaussradau
+
+function RadauIIATableau{T1, T2}(tab::RadauIIATableau{T1, T2}) where {T1, T2}
+    RadauIIATableau{T1, T2}(tab.T, tab.TI, tab.c, tab.γ, tab.α, tab.β, tab.e)
+end
+
+function RadauIIATableau(T1, T2, num_stages::Int)
+    tab = get(RadauIIATableauCache, (T1, T2, num_stages)) do
+        tab = generateRadauTableau(T1, T2, num_stages)
+        RadauIIATableauCache[T1, T2, num_stages] = tab
+        tab
+    end
+    return RadauIIATableau{T1, T2}(tab)
+end
+
+function generateRadauTableau(T1, T2, num_stages::Int)
+    c = reverse!(1 .- gaussradau(num_stages, T1)[1]) ./ 2
+    if T1 == T2
+        c2 = c
+    else
+        c2 = reverse!(1 .- gaussradau(num_stages, T2)[1]) ./ 2
+    end
+
+    c_powers = Matrix{T1}(undef, num_stages, num_stages)
+    for i in 1:num_stages
+        c_powers[i, 1] = 1
+        for j in 2:num_stages
+            c_powers[i, j] = c[i] * c_powers[i, j - 1]
+        end
+    end
+    c_q = Matrix{T1}(undef, num_stages, num_stages)
+    for i in 1:num_stages
+        for j in 1:num_stages
+            c_q[i, j] = c_powers[i, j] * c[i] / j
+        end
+    end
+    a = c_q / c_powers
+
+    local eigval, eigvec
+    try
+        eigval, eigvec = eigen(a)
+    catch
+        throw(ArgumentError("Solving ODEs with AdaptiveRadau with $T1 eltype and max_order >=17 requires loading GenericSchur.jl"))
+    end
+    # α, β, and γ come from eigvals(inv(a)) which are equal to inv.(eivals(a))
+    eigval .= inv.(eigval)
+    α = [real(eigval[i]) for i in 1:2:(num_stages - 1)]
+    β = [imag(eigval[i]) for i in 1:2:(num_stages - 1)]
+    γ = real(eigval[num_stages])
+
+    T = Matrix{T1}(undef, num_stages, num_stages)
+    @views for i in 2:2:num_stages
+        T[:, i] .= real.(eigvec[:, i] ./ eigvec[num_stages, i])
+        T[:, i + 1] .= imag.(eigvec[:, i] ./ eigvec[num_stages, i])
+    end
+    @views T[:, 1] .= real.(eigvec[:, num_stages])
+    TI = inv(T)
+    A = c_powers'./(1:num_stages)
+    b = vcat(-(num_stages)^2, -.5, zeros(num_stages - 2))
+    e = A \ b
+    tab = RadauIIATableau{T1, T2}(T, TI, c2, γ, α, β, e)
+end
+
+const RadauIIATableauCache = Dict{
+    Tuple{Type, Type, Int}, RadauIIATableau{T1, T2} where {T1, T2}}(
+    (Float64, Float64, 3) => generateRadauTableau(Float64, Float64, 3),
+    (Float64, Float64, 5) => generateRadauTableau(Float64, Float64, 5),
+    (Float64, Float64, 7) => generateRadauTableau(Float64, Float64, 7))

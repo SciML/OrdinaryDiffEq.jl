@@ -12,18 +12,20 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _un
                            constvalue, only_diagonal_mass_matrix,
                            calculate_residuals, has_stiff_interpolation, ODEIntegrator,
                            resize_non_user_cache!, _ode_addsteps!, full_cache,
-                           DerivativeOrderNotPossibleError
+                           DerivativeOrderNotPossibleError, _bool_to_ADType,
+                           _process_AD_choice, LinearAliasSpecifier
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import MacroTools
 using MacroTools: @capture
 using DiffEqBase: @def
+import DifferentiationInterface as DI
 import LinearSolve
 import LinearSolve: UniformScaling
 import ForwardDiff
 using FiniteDiff
 using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm
-import ADTypes: AutoForwardDiff
-import OrdinaryDiffEqCore
+using ADTypes
+import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
 using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
                                      UDerivativeWrapper, UJacobianWrapper,
@@ -31,9 +33,7 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
                                      build_jac_config, issuccess_W, jacobian2W!,
                                      resize_jac_config!, resize_grad_config!,
                                      calc_W, calc_rosenbrock_differentiation!, build_J_W,
-                                     UJacobianWrapper, dolinsolve
-
-import OrdinaryDiffEqNonlinearSolve # Required for DAE initialization
+                                     UJacobianWrapper, dolinsolve, WOperator, resize_J_W!
 
 using Reexport
 @reexport using DiffEqBase
@@ -41,7 +41,7 @@ using Reexport
 import OrdinaryDiffEqCore: alg_autodiff
 import OrdinaryDiffEqCore
 
-function rosenbrock_wanner_docstring(description::String,
+function rosenbrock_wolfbrandt_docstring(description::String,
         name::String;
         references::String = "",
         extra_keyword_description = "",
@@ -50,30 +50,29 @@ function rosenbrock_wanner_docstring(description::String,
     keyword_default = """
     chunk_size = Val{0}(),
     standardtag = Val{true}(),
-    autodiff = Val{true}(),
+    autodiff = AutoForwardDiff(),
     concrete_jac = nothing,
-    diff_type = Val{:central},
+    diff_type = Val{:forward}(),
     linsolve = nothing,
     precs = DEFAULT_PRECS,
     """ * extra_keyword_default
 
     keyword_default_description = """
-    - `chunk_size`: The chunk size used with ForwardDiff.jl. Defaults to `Val{0}()`
-        and thus uses the internal ForwardDiff.jl algorithm for the choice.
     - `standardtag`: Specifies whether to use package-specific tags instead of the
         ForwardDiff default function-specific tags. For more information, see
         [this blog post](https://www.stochasticlifestyle.com/improved-forwarddiff-jl-stacktraces-with-package-tags/).
         Defaults to `Val{true}()`.
-    - `autodiff`: Specifies whether to use automatic differentiation via
+    - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/) 
+        to specify whether to use automatic differentiation via
         [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) or finite
-        differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl).
-        Defaults to `Val{true}()` for automatic differentiation.
+        differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl). 
+        Defaults to `AutoForwardDiff()` for automatic differentiation, which by default uses
+        `chunksize = 0`, and thus uses the internal ForwardDiff.jl algorithm for the choice.
+        To use `FiniteDiff.jl`, the `AutoFiniteDiff()` ADType can be used, which has a keyword argument
+        `fdtype` with default value `Val{:forward}()`, and alternatives `Val{:central}()` and `Val{:complex}()`.
     - `concrete_jac`: Specifies whether a Jacobian should be constructed. Defaults to
         `nothing`, which means it will be chosen true/false depending on circumstances
         of the solver, such as whether a Krylov subspace method is used for `linsolve`.
-    - `diff_type`: The type of differentiation used in FiniteDiff.jl if `autodiff=false`.
-        Defaults to `Val{:forward}`, with alternatives of `Val{:central}` and
-        `Val{:complex}`.
     - `linsolve`: Any [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl) compatible linear solver.
       For example, to use [KLU.jl](https://github.com/JuliaSparse/KLU.jl), specify
       `$name(linsolve = KLUFactorization()`).
@@ -120,7 +119,7 @@ function rosenbrock_wanner_docstring(description::String,
     end
 
     generic_solver_docstring(
-        description, name, "Rosenbrock-Wanner Method. ", references,
+        description, name, "Rosenbrock-Wanner-W(olfbrandt) Method. ", references,
         keyword_default_description, keyword_default
     )
 end
@@ -132,22 +131,21 @@ function rosenbrock_docstring(description::String,
         extra_keyword_default = "",
         with_step_limiter = false)
     keyword_default = """
-    - `chunk_size`: The chunk size used with ForwardDiff.jl. Defaults to `Val{0}()`
-        and thus uses the internal ForwardDiff.jl algorithm for the choice.
     - `standardtag`: Specifies whether to use package-specific tags instead of the
         ForwardDiff default function-specific tags. For more information, see
         [this blog post](https://www.stochasticlifestyle.com/improved-forwarddiff-jl-stacktraces-with-package-tags/).
         Defaults to `Val{true}()`.
-    - `autodiff`: Specifies whether to use automatic differentiation via
+    - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/) 
+        to specify whether to use automatic differentiation via
         [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) or finite
-        differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl).
-        Defaults to `Val{true}()` for automatic differentiation.
+        differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl). 
+        Defaults to `AutoForwardDiff()` for automatic differentiation, which by default uses
+        `chunksize = 0`, and thus uses the internal ForwardDiff.jl algorithm for the choice.
+        To use `FiniteDiff.jl`, the `AutoFiniteDiff()` ADType can be used, which has a keyword argument
+        `fdtype` with default value `Val{:forward}()`, and alternatives `Val{:central}()` and `Val{:complex}()`.
     - `concrete_jac`: Specifies whether a Jacobian should be constructed. Defaults to
         `nothing`, which means it will be chosen true/false depending on circumstances
         of the solver, such as whether a Krylov subspace method is used for `linsolve`.
-    - `diff_type`: The type of differentiation used in FiniteDiff.jl if `autodiff=false`.
-        Defaults to `Val{:forward}`, with alternatives of `Val{:central}` and
-        `Val{:complex}`.
     - `linsolve`: Any [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl) compatible linear solver.
       For example, to use [KLU.jl](https://github.com/JuliaSparse/KLU.jl), specify
       `$name(linsolve = KLUFactorization()`).
@@ -204,7 +202,7 @@ function rosenbrock_docstring(description::String,
     end
 
     generic_solver_docstring(
-        description, name, "Rosenbrock Method. ", references,
+        description, name, "Rosenbrock-Wanner Method. ", references,
         keyword_default_description, keyword_default
     )
 end

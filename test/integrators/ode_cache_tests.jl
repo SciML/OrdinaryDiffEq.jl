@@ -1,5 +1,5 @@
-using OrdinaryDiffEq, OrdinaryDiffEqCore, DiffEqBase, Test
-using Random, SparseDiffTools
+using OrdinaryDiffEq, OrdinaryDiffEqCore, DiffEqBase, Test, ADTypes
+using Random
 using OrdinaryDiffEqDefault
 using ElasticArrays, LinearSolve
 Random.seed!(213)
@@ -79,9 +79,11 @@ for alg in broken_CACHE_TEST_ALGS
     @test_broken length(solve(prob, alg, callback = callback, dt = 1 / 2)[end]) > 1
 end
 
-sol = solve(prob, Rodas4(chunk_size = 1), callback = callback, dt = 1 / 2)
+sol = solve(prob, Rodas4(autodiff = AutoForwardDiff(chunksize = 1)),
+    callback = callback, dt = 1 / 2)
 @test length(sol[end]) > 1
-sol = solve(prob, Rodas5(chunk_size = 1), callback = callback, dt = 1 / 2)
+sol = solve(prob, Rodas5(autodiff = AutoForwardDiff(chunksize = 1)),
+    callback = callback, dt = 1 / 2)
 @test length(sol[end]) > 1
 
 # cache tests resizing multidimensional arrays

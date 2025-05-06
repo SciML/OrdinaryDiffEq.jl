@@ -1,9 +1,10 @@
 name = "OrdinaryDiffEqExponentialRK"
 uuid = "e0540318-69ee-4070-8777-9e2de6de23de"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.1.0"
+version = "1.4.0"
 
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 ExponentialUtilities = "d4d017d3-3776-5f7e-afef-a10c40355c18"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -18,15 +19,16 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [compat]
+ADTypes = "1.11"
 DiffEqBase = "6.152.2"
 DiffEqDevTools = "2.44.4"
 ExponentialUtilities = "1.26.1"
 FastBroadcast = "0.3.5"
 LinearAlgebra = "<0.0.1, 1"
-LinearSolve = "2.32.0"
+LinearSolve = "2.32.0, 3"
 MuladdMacro = "0.2.4"
-OrdinaryDiffEqCore = "1.1"
-OrdinaryDiffEqDifferentiation = "<0.0.1, 1"
+OrdinaryDiffEqCore = "1.19"
+OrdinaryDiffEqDifferentiation = "<0.0.1, 1.2"
 OrdinaryDiffEqSDIRK = "<0.0.1, 1"
 OrdinaryDiffEqTsit5 = "<0.0.1, 1"
 OrdinaryDiffEqVerner = "<0.0.1, 1"

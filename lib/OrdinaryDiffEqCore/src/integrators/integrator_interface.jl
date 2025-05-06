@@ -3,7 +3,7 @@
 # Hence, we need to have two separate functions.
 
 function _change_t_via_interpolation!(integrator, t,
-        modify_save_endpoint::Type{Val{T}}) where {T}
+        modify_save_endpoint::Type{Val{T}}, reinitialize_alg = nothing) where {T}
     # Can get rid of an allocation here with a function
     # get_tmp_arr(integrator.cache) which gives a pointer to some
     # cache array which can be modified.
@@ -17,7 +17,8 @@ function _change_t_via_interpolation!(integrator, t,
         end
         integrator.t = t
         integrator.dt = integrator.t - integrator.tprev
-        DiffEqBase.reeval_internals_due_to_modification!(integrator)
+        DiffEqBase.reeval_internals_due_to_modification!(
+            integrator; callback_initializealg = reinitialize_alg)
         if T
             solution_endpoint_match_cur_integrator!(integrator)
         end
@@ -28,24 +29,27 @@ function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
         t,
         modify_save_endpoint::Type{Val{T}} = Val{
             false,
-        }) where {
+        }, reinitialize_alg = nothing) where {
         T,
 }
-    _change_t_via_interpolation!(integrator, t, modify_save_endpoint)
+    _change_t_via_interpolation!(integrator, t, modify_save_endpoint, reinitialize_alg)
     return nothing
 end
 
 function DiffEqBase.reeval_internals_due_to_modification!(
-        integrator::ODEIntegrator, continuous_modification = true)
+        integrator::ODEIntegrator, continuous_modification = true;
+        callback_initializealg = nothing)
     if integrator.isdae
-        DiffEqBase.initialize_dae!(integrator)
+        DiffEqBase.initialize_dae!(integrator,
+            isnothing(callback_initializealg) ? integrator.initializealg :
+            callback_initializealg)
         update_uprev!(integrator)
     end
 
     if continuous_modification && integrator.opts.calck
         resize!(integrator.k, integrator.kshortsize) # Reset k for next step!
         alg = unwrap_alg(integrator, false)
-        if has_lazy_interpolation(alg)
+        if SciMLBase.has_lazy_interpolation(alg)
             ode_addsteps!(integrator, integrator.f, true, false, !alg.lazy)
         else
             ode_addsteps!(integrator, integrator.f, true, false)
@@ -59,7 +63,7 @@ end
 @inline function DiffEqBase.get_du(integrator::ODEIntegrator)
     isdiscretecache(integrator.cache) &&
         error("Derivatives are not defined for this stepper.")
-    return if isdefined(integrator, :fsallast)
+    return if isfsal(integrator.alg)
         integrator.fsallast
     else
         integrator(integrator.t, Val{1})
@@ -72,7 +76,7 @@ end
     if isdiscretecache(integrator.cache)
         out .= integrator.cache.tmp
     else
-        return if isdefined(integrator, :fsallast) &&
+        return if isfsal(integrator.alg) &&
                   !has_stiff_interpolation(integrator.alg)
             # Special stiff interpolations do not store the
             # right value in fsallast
@@ -221,8 +225,8 @@ function resize!(integrator::ODEIntegrator, i::Int)
         # may be required for things like units
         c !== nothing && resize!(c, i)
     end
-    resize!(integrator.fsalfirst, i)
-    resize!(integrator.fsallast, i)
+    !isnothing(integrator.fsalfirst) && resize!(integrator.fsalfirst, i)
+    !isnothing(integrator.fsallast) && resize!(integrator.fsallast, i)
     resize_f!(integrator.f, i)
     resize_nlsolver!(integrator, i)
     resize_J_W!(cache, integrator, i)
@@ -235,8 +239,8 @@ function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
     for c in full_cache(cache)
         resize!(c, i)
     end
-    resize!(integrator.fsalfirst, i)
-    resize!(integrator.fsallast, i)
+    !isnothing(integrator.fsalfirst) && resize!(integrator.fsalfirst, i)
+    !isnothing(integrator.fsallast) && resize!(integrator.fsallast, i)
     resize_f!(integrator.f, i)
     # TODO the parts below need to be adapted for implicit methods
     isdefined(integrator.cache, :nlsolver) && resize_nlsolver!(integrator, i)
@@ -248,7 +252,7 @@ end
 resize_f!(f, i) = nothing
 
 function resize_f!(f::SplitFunction, i)
-    resize!(f.cache, i)
+    resize!(f._func_cache, i)
     return nothing
 end
 
@@ -317,6 +321,8 @@ function terminate!(integrator::ODEIntegrator, retcode = ReturnCode.Terminated)
     integrator.opts.tstops.valtree = typeof(integrator.opts.tstops.valtree)()
 end
 
+const EMPTY_ARRAY_OF_PAIRS = Pair[]
+
 DiffEqBase.has_reinit(integrator::ODEIntegrator) = true
 function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.u0;
         t0 = integrator.sol.prob.tspan[1],
@@ -327,9 +333,27 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.
         d_discontinuities = integrator.opts.d_discontinuities_cache,
         reset_dt = (integrator.dtcache == zero(integrator.dt)) &&
             integrator.opts.adaptive,
+        reinit_dae = true,
         reinit_callbacks = true, initialize_save = true,
         reinit_cache = true,
         reinit_retcode = true)
+    if reinit_dae && SciMLBase.has_initializeprob(integrator.sol.prob.f)
+        # This is `remake` infrastructure. `reinit!` is somewhat like `remake` for
+        # integrators, so we reuse some of the same pieces. If we pass `integrator.p`
+        # for `p`, it means we don't want to change it. If we pass `missing`, this
+        # function may (correctly) assume `newp` aliases `prob.p` and copy it, which we
+        # want to avoid. So we pass an empty array of pairs to make it think this is
+        # a symbolic `remake` and it can modify `newp` inplace. The array of pairs is a
+        # const global to avoid allocating every time this function is called.
+        u0, newp = SciMLBase.late_binding_update_u0_p(integrator.sol.prob, u0,
+            EMPTY_ARRAY_OF_PAIRS, t0, u0, integrator.p)
+        if newp !== integrator.p
+            integrator.p = newp
+            sol = integrator.sol
+            @reset sol.prob.p = newp
+            integrator.sol = sol
+        end
+    end
     if isinplace(integrator.sol.prob)
         recursivecopy!(integrator.u, u0)
         recursivecopy!(integrator.uprev, integrator.u)
@@ -400,6 +424,12 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.
 
     if reset_dt
         auto_dt_reset!(integrator)
+    end
+
+    if reinit_dae &&
+       (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
+        DiffEqBase.initialize_dae!(integrator)
+        update_uprev!(integrator)
     end
 
     if reinit_callbacks

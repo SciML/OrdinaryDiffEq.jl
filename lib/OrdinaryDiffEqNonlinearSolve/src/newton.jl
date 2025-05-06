@@ -229,6 +229,11 @@ end
             reltol = reltol)
     end
 
+    if !SciMLBase.successful_retcode(linres.retcode) &&
+       linres.retcode != SciMLBase.ReturnCode.Default
+        return convert(eltype(atmp,), Inf)
+    end
+
     cache.linsolve = linres.cache
 
     if DiffEqBase.has_stats(integrator)
@@ -524,9 +529,8 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
     resize!(nlcache.atmp, i)
     resize!(nlcache.dz, i)
     resize!(nlcache.du1, i)
-    if nlcache.jac_config !== nothing
-        resize_jac_config!(nlcache.jac_config, i)
-    end
+
+    resize_jac_config!(nlcache, integrator)
     resize!(nlcache.weight, i)
 
     # resize J and W (or rather create new ones of appropriate size and type)
@@ -534,3 +538,4 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
 
     nothing
 end
+

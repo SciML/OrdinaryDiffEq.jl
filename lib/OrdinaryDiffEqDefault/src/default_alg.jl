@@ -40,10 +40,14 @@ function isdefaultalg(alg::CompositeAlgorithm{
 end
 
 function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.init(prob, DefaultODEAlgorithm(autodiff = false), args...; kwargs...)
+    DiffEqBase.__init(
+        prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
+        args...; wrap = Val(false), kwargs...)
 end
 function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.solve(prob, DefaultODEAlgorithm(autodiff = false), args...; kwargs...)
+    DiffEqBase.__solve(
+        prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
+        args...; wrap = Val(false), kwargs...)
 end
 
 function is_stiff(integrator, alg, ntol, stol, is_stiffalg, current)
@@ -81,7 +85,7 @@ function stiffchoice(reltol, len, mass_matrix)
     elseif len > SMALLSIZE
         DefaultSolverChoice.FBDF
     else
-        if reltol < LOW_TOL || !isdiag(mass_matrix)
+        if reltol < LOW_TOL || mass_matrix != I
             DefaultSolverChoice.Rodas5P
         else
             DefaultSolverChoice.Rosenbrock23

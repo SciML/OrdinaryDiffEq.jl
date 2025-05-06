@@ -32,16 +32,21 @@ for (Alg, Description, Ref) in [
             krylov::Bool
             m::Int
             iop::Int
+            autodiff::AD
         end
     end
-    @eval function $Alg(; krylov = false, m = 30, iop = 0, autodiff = true,
+    @eval function $Alg(; krylov = false, m = 30, iop = 0, autodiff = AutoForwardDiff(),
             standardtag = Val{true}(), concrete_jac = nothing,
             chunk_size = Val{0}(),
-            diff_type = Val{:forward})
-        $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff),
+            diff_type = Val{:forward}())
+        AD_choice, chunk_size, diff_type = _process_AD_choice(
+            autodiff, chunk_size, diff_type)
+
+        $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
             diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(krylov,
             m,
-            iop)
+            iop,
+            AD_choice)
     end
 end
 
@@ -72,15 +77,21 @@ for (Alg, Description, Ref) in [
                OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD, FDT, ST, CJ}
             m::Int
             iop::Int
+            autodiff::AD
         end
     end
-    @eval function $Alg(; m = 30, iop = 0, autodiff = true, standardtag = Val{true}(),
+    @eval function $Alg(;
+            m = 30, iop = 0, autodiff = AutoForwardDiff(), standardtag = Val{true}(),
             concrete_jac = nothing, chunk_size = Val{0}(),
-            diff_type = Val{:forward})
-        $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff),
+            diff_type = Val{:forward}())
+        AD_choice, chunk_size, diff_type = _process_AD_choice(
+            autodiff, chunk_size, diff_type)
+
+        $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
             diff_type, _unwrap_val(standardtag),
             _unwrap_val(concrete_jac)}(m,
-            iop)
+            iop,
+            AD_choice)
     end
 end
 
@@ -123,20 +134,27 @@ for (Alg, Description, Ref) in [(:Exp4, "4th order EPIRK scheme.", REF3)
             m = 30,
             iop = 0,
             """)
+
         struct $Alg{CS, AD, FDT, ST, CJ} <:
                OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ}
             adaptive_krylov::Bool
             m::Int
             iop::Int
+            autodiff::AD
         end
     end
-    @eval function $Alg(; adaptive_krylov = true, m = 30, iop = 0, autodiff = true,
+    @eval function $Alg(;
+            adaptive_krylov = true, m = 30, iop = 0, autodiff = AutoForwardDiff(),
             standardtag = Val{true}(), concrete_jac = nothing,
-            chunk_size = Val{0}(), diff_type = Val{:forward})
-        $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff), diff_type,
+            chunk_size = Val{0}(), diff_type = Val{:forward}())
+        AD_choice, chunk_size, diff_type = _process_AD_choice(
+            autodiff, chunk_size, diff_type)
+
+        $Alg{_unwrap_val(chunk_size), typeof(AD_choice), diff_type,
             _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(adaptive_krylov,
             m,
-            iop)
+            iop,
+            AD_choice)
     end
 end
 

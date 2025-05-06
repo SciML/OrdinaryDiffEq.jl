@@ -130,3 +130,69 @@ function get_differential_vars(f, u)
 end
 
 isnewton(::Any) = false
+
+function _bool_to_ADType(::Val{true}, ::Val{CS}, _) where {CS}
+    Base.depwarn(
+        "Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.",
+        :_bool_to_ADType)
+    _CS = CS === 0 ? nothing : CS
+    return AutoForwardDiff{_CS}(nothing)
+end
+
+function _bool_to_ADType(::Val{false}, _, ::Val{FD}) where {FD}
+    Base.depwarn(
+        "Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.",
+        :_bool_to_ADType)
+    return AutoFiniteDiff(; fdtype = Val{FD}())
+end
+
+# Functions to get ADType type from Bool or ADType object, or ADType type
+function _process_AD_choice(ad_alg::Bool, CS::Int, ::Val{FD}) where {FD}
+    return _bool_to_ADType(Val(ad_alg), Val{CS}(), Val{FD}()), Val{CS}(), Val{FD}()
+end
+
+function _process_AD_choice(ad_alg::Bool, ::Val{CS}, ::Val{FD}) where {CS, FD}
+    return _bool_to_ADType(Val(ad_alg), Val{CS}(), Val{FD}()), Val{CS}(), Val{FD}()
+end
+
+function _process_AD_choice(
+        ad_alg::AutoForwardDiff{CS}, ::Val{CS2}, ::Val{FD}) where {CS, CS2, FD}
+    # Non-default `chunk_size`
+    if (CS2 != 0) && (isnothing(CS) || (CS2 !== CS))
+        @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
+        return _bool_to_ADType(Val{true}(), Val{CS2}(), Val{FD}()), Val{CS2}(), Val{FD}()
+    end
+    
+    _CS = CS === nothing ? 0 : CS
+    return ad_alg, Val{_CS}(), Val{FD}()
+end
+
+function _process_AD_choice(
+        ad_alg::AutoForwardDiff{CS}, CS2::Int, ::Val{FD}) where {CS, FD}
+    # Non-default `chunk_size`
+    if CS2 != 0
+        @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
+        return _bool_to_ADType(Val{true}(), Val{CS2}(), Val{FD}()), Val{CS2}(), Val{FD}()
+    end
+    _CS = CS === nothing ? 0 : CS
+    return ad_alg, Val{_CS}(), Val{FD}()
+end
+
+function _process_AD_choice(
+        ad_alg::AutoFiniteDiff{FD}, ::Val{CS}, ::Val{FD2}) where {FD, CS, FD2}
+    # Non-default `diff_type`
+    if FD2 !== :forward
+        @warn "The `diff_type` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoFiniteDiff` with `fdtype=Val{$FD2}()`."
+        return _bool_to_ADType(Val{false}(), Val{CS}(), Val{FD2}()), Val{CS}(), Val{FD2}()
+    end
+    return ad_alg, Val{CS}(), ad_alg.fdtype
+end
+
+function _process_AD_choice(ad_alg::AutoSparse, cs2::Val{CS2}, fd::Val{FD}) where {CS2, FD}
+    _, cs, fd = _process_AD_choice(ad_alg.dense_ad, cs2, fd)
+    ad_alg, cs, fd
+end
+
+function _process_AD_choice(ad_alg, cs2, fd)
+    ad_alg, cs2, fd
+end

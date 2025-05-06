@@ -1,16 +1,18 @@
 module OrdinaryDiffEqNonlinearSolve
 
-import ADTypes: AutoFiniteDiff, AutoForwardDiff
+using ADTypes
 
 import SciMLBase
-import SciMLBase: init, solve, solve!
+import SciMLBase: init, solve, solve!, remake
 using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
                  NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem,
-                 update_coefficients!, get_tmp_cache, AbstractSciMLOperator, ReturnCode
+                 update_coefficients!, get_tmp_cache, AbstractSciMLOperator, ReturnCode,
+                 AbstractNonlinearProblem, LinearAliasSpecifier
 import DiffEqBase
 import PreallocationTools
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
-using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson
+using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
+                      step!
 using MuladdMacro, FastBroadcast
 import FastClosures: @closure
 using LinearAlgebra: UniformScaling, UpperTriangular
@@ -27,11 +29,15 @@ import OrdinaryDiffEqCore
 import SciMLOperators: islinear
 import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
 
+@static if isdefined(OrdinaryDiffEqCore, :default_nlsolve)
+    import OrdinaryDiffEqCore: default_nlsolve
+end
+
 using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
                           AbstractNLSolverAlgorithm, AbstractNLSolverCache,
                           AbstractNLSolver, NewtonAlgorithm, @unpack,
-                          OverrideInit, ShampineCollocationInit, BrownFullBasicInit, _vec,
-                          _unwrap_val, DAEAlgorithm,
+                          OverrideInit, ShampineCollocationInit, BrownFullBasicInit,
+                          _vec, _unwrap_val, DAEAlgorithm,
                           _reshape, calculate_residuals, calculate_residuals!,
                           has_special_newton_error, isadaptive,
                           TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM,
@@ -58,5 +64,7 @@ include("nlsolve.jl")
 include("functional.jl")
 include("newton.jl")
 include("initialize_dae.jl")
+
+export BrownFullBasicInit, ShampineCollocationInit
 
 end

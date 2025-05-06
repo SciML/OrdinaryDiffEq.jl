@@ -2,7 +2,7 @@
 CollapsedDocStrings = true
 ```
 
-# OrdinaryDiffEqStabalizedIRK
+# OrdinaryDiffEqStabilizedIRK
 
 Stabilized Explicit Runge-Kutta methods,
 like Runge-Kutta-Chebyshev methods and ROCK methods
@@ -25,11 +25,11 @@ Users can supply an upper bound by specifying the keyword argument `eigen_est`, 
 
 ## Installation
 
-To be able to access the solvers in `OrdinaryDiffEqStabalizedIRK`, you must first install them use the Julia package manager:
+To be able to access the solvers in `OrdinaryDiffEqStabilizedIRK`, you must first install them use the Julia package manager:
 
 ```julia
 using Pkg
-Pkg.add("OrdinaryDiffEqStabalizedIRK")
+Pkg.add("OrdinaryDiffEqStabilizedIRK")
 ```
 
 This will only install the solvers listed at the bottom of this page.

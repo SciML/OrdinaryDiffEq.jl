@@ -21,14 +21,6 @@ function McAte2ConstantCache(T, T2)
     Symplectic2ConstantCache{T, T2}(a1, a2, b1, b2)
 end
 
-function VerletLeapfrogConstantCache(T, T2)
-    a1 = convert(T, 1 // 2)
-    a2 = convert(T, 1 // 2)
-    b1 = convert(T, 0)
-    b2 = convert(T, 1)
-    Symplectic2ConstantCache{T, T2}(a1, a2, b1, b2)
-end
-
 struct Symplectic3ConstantCache{T, T2} <: HamiltonConstantCache
     a1::T
     a2::T

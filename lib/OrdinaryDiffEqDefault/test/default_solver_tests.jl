@@ -1,4 +1,6 @@
-using OrdinaryDiffEq, Test, LinearSolve, LinearAlgebra, SparseArrays
+using OrdinaryDiffEqDefault, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
+      OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF, ADTypes
+using Test, LinearSolve, LinearAlgebra, SparseArrays, StaticArrays
 
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
 
@@ -25,7 +27,7 @@ vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
 prob_ode_linear_fast = ODEProblem(
     ODEFunction(f_2dlinear, mass_matrix = 2 * I(2)), rand(2), (0.0, 1.0), 1.01)
 sol = solve(prob_ode_linear_fast)
-@test all(isequal(3), sol.alg_choice)
+@test all(isequal(4), sol.alg_choice)
 # for some reason the timestepping here is different from regular Rosenbrock23 (including the initial timestep)
 
 function rober(u, p, t)
@@ -37,7 +39,9 @@ function rober(u, p, t)
 end
 prob_rober = ODEProblem(rober, [1.0, 0.0, 0.0], (0.0, 1e3), (0.04, 3e7, 1e4))
 sol = solve(prob_rober)
-rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23(autodiff = false)))
+rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff())))
+#test that cache is type stable
+@test typeof(sol.interp.cache.cache3) == typeof(rosensol.interp.cache.caches[2])
 # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
 @test sol.stats.naccept == rosensol.stats.naccept
 @test sol.stats.nf == rosensol.stats.nf
@@ -47,7 +51,9 @@ rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23(autodiff = false)))
 
 sol = solve(prob_rober, reltol = 1e-7, abstol = 1e-7)
 rosensol = solve(
-    prob_rober, AutoVern7(Rodas5P(autodiff = false)), reltol = 1e-7, abstol = 1e-7)
+    prob_rober, AutoVern7(Rodas5P(autodiff = AutoFiniteDiff())), reltol = 1e-7, abstol = 1e-7)
+#test that cache is type stable
+@test typeof(sol.interp.cache.cache4) == typeof(rosensol.interp.cache.caches[2])
 # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
 @test sol.stats.naccept == rosensol.stats.naccept
 @test sol.stats.nf == rosensol.stats.nf
@@ -72,8 +78,8 @@ for n in (100, 600)
 
     prob_ex_rober = ODEProblem(ODEFunction(exrober; jac_prototype),
         vcat([1.0, 0.0, 0.0], ones(n)), (0.0, 100.0), (0.04, 3e7, 1e4))
-    sol = solve(prob_ex_rober)
-    fsol = solve(prob_ex_rober, AutoTsit5(FBDF(; autodiff = false, linsolve)))
+    global sol = solve(prob_ex_rober)
+    fsol = solve(prob_ex_rober, AutoTsit5(FBDF(; autodiff = AutoFiniteDiff(), linsolve)))
     # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
     @test sol.stats.naccept == fsol.stats.naccept
     @test sol.stats.nf == fsol.stats.nf
@@ -102,7 +108,7 @@ end
 f = ODEFunction(rober_mm, mass_matrix = [1 0 0; 0 1 0; 0 0 0])
 prob_rober_mm = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1e5), (0.04, 3e7, 1e4))
 sol = solve(prob_rober_mm)
-@test all(isequal(3), sol.alg_choice)
+@test all(isequal(4), sol.alg_choice)
 @test sol(0.5) isa Vector{Float64} # test dense output
 
 # test callback on ConstantCache (https://github.com/SciML/OrdinaryDiffEq.jl/issues/2287)
@@ -118,3 +124,12 @@ schrod_eq(state, time, s) = -im * time * H(s) * state
 prob_complex = ODEProblem(schrod_eq, complex([1, -1] / sqrt(2)), (0, 1), 100)
 complex_sol = solve(prob_complex)
 @test complex_sol.retcode == ReturnCode.Success
+
+# Make sure callback doesn't recurse init, which would cause iniitalize to be hit twice
+counter = Ref{Int}(0)
+cb = DiscreteCallback((u,t,integ)->false, (integ)->nothing;
+    initialize = (c,u,t,integ)->counter[]+=1)
+
+prob = ODEProblem((u,p,t)->[0.0], [0.0], (0.0,1.0))
+sol = solve(prob, callback=cb)
+@test counter[] == 1

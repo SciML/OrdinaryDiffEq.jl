@@ -247,7 +247,7 @@ end
 function _norm_dsol2(alg, prob, prob2; kwargs...)
     sol = solve(prob, alg; kwargs...)
     sol2 = solve(prob2, alg; kwargs...)
-    norm(sol[end] .- sol2[end])
+    norm(sol.u[end] .- sol2.u[end])
 end
 @testset "Dependent Mass Matrix Tests" for mm in (dependent_M1, dependent_M2)
     # test each method for exactness

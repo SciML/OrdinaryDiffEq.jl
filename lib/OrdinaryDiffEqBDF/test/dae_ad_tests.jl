@@ -19,10 +19,11 @@ differential_vars = [true, true, false]
 prob = DAEProblem(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
 prob_oop = DAEProblem{false}(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
 sol1 = solve(prob, DFBDF(), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
+sol2 = solve(prob_oop, DFBDF(), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
 
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
-@testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [
+ @testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [
         prob, prob_oop],
     initalg in [BrownFullBasicInit(), ShampineCollocationInit()], autodiff in [true, false]
 
