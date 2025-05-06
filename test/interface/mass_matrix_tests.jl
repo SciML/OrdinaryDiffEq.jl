@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NLNewton
+using LinearAlgebra: Diagonal
 
 # create mass matrix problems
 function make_mm_probs(mm_A, ::Val{iip}) where {iip}
@@ -194,11 +195,10 @@ end
     u0 = [0.0, 1.0]
     tspan = (0.0, 1.0)
 
-    M = fill(0.0, 2, 2)
-    M[1, 1] = 1.0
+    M = Diagonal([1.0, 0.0])
 
     m_ode_prob = ODEProblem(ODEFunction(f!; mass_matrix = M), u0, tspan)
-    @test_nowarn sol = solve(m_ode_prob, Rosenbrock23())
+    @test_nowarn sol = @inferred solve(m_ode_prob, Rosenbrock23())
 
     M = [0.637947 0.637947
          0.637947 0.637947]
@@ -323,14 +323,14 @@ function dynamics(u, p, t)
 end
 
 x0 = zeros(n, n)
-M = zeros(n * n) |> Diagonal |> Matrix
+M = zeros(n * n) |> Diagonal
 M[1, 1] = true # zero mass matrix breaks rosenbrock
-f = ODEFunction(dynamics!, mass_matrix = M)
+f = ODEFunction{true, SciMLBase.AutoSpecialize}(dynamics!, mass_matrix = M)
 tspan = (0, 10.0)
 prob = ODEProblem(f, x0, tspan)
-foop = ODEFunction(dynamics, mass_matrix = M)
+foop = ODEFunction{false, SciMLBase.AutoSpecialize}(dynamics, mass_matrix = M)
 proboop = ODEProblem(f, x0, tspan)
-sol = solve(prob, Rosenbrock23())
-sol = solve(prob, Rodas4(), initializealg = ShampineCollocationInit())
-sol = solve(proboop, Rodas5())
-sol = solve(proboop, Rodas4(), initializealg = ShampineCollocationInit())
+sol = @inferred solve(prob, Rosenbrock23())
+sol = @inferred solve(prob, Rodas4(), initializealg = ShampineCollocationInit())
+sol = @inferred solve(proboop, Rodas5())
+sol = @inferred solve(proboop, Rodas4(), initializealg = ShampineCollocationInit())
