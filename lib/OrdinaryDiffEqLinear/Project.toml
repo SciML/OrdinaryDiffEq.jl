@@ -20,6 +20,8 @@ ExponentialUtilities = "1.27"
 LinearAlgebra = "<0.0.1, 1"
 OrdinaryDiffEqCore = "1.1"
 OrdinaryDiffEqRosenbrock = "<0.0.1, 1"
+OrdinaryDiffEqVerner = "<0.0.1, 1"
+OrdinaryDiffEqTsit5 = "<0.0.1, 1"
 Random = "<0.0.1, 1"
 RecursiveArrayTools = "3.27.0"
 Reexport = "1.2.2"
@@ -34,6 +36,8 @@ Aqua = "0.8.11"
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -41,4 +45,4 @@ JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "OrdinaryDiffEqRosenbrock", "SafeTestsets", "Test", "JET", "Aqua"]
+test = ["DiffEqDevTools", "Random", "OrdinaryDiffEqRosenbrock", "SafeTestsets", "Test", "JET", "Aqua", "OrdinaryDiffEqVerner", "OrdinaryDiffEqTsit5"]
