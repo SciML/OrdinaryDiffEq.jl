@@ -1,5 +1,8 @@
 using OrdinaryDiffEqBDF, LinearAlgebra, ForwardDiff, Test
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
+using ADTypes: AutoForwardDiff, AutoFiniteDiff
+
+afd_cs3 = AutoForwardDiff(chunksize=3)
 
 function f(out, du, u, p, t)
     out[1] = -p[1] * u[1] + p[3] * u[2] * u[3] - du[1]
@@ -16,20 +19,24 @@ u₀ = [1.0, 0, 0]
 du₀ = [-0.04, 0.04, 0.0]
 tspan = (0.0, 100000.0)
 differential_vars = [true, true, false]
+M = Diagonal([1.0, 1.0, 0.0])
 prob = DAEProblem(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
 prob_oop = DAEProblem{false}(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
-sol1 = @inferred solve(prob, DFBDF(), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
-sol2 = @inferred solve(prob_oop, DFBDF(), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
+f_mm = ODEFunction{true, SciMLBase.AutoSpecialize}(f, mass_matrix = M)
+prob_mm = ODEProblem(f_mm, u₀, tspan, p)
+@test_broken sol1 = @inferred solve(prob, DFBDF(autodiff=afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
+@test_broken sol2 = @inferred solve(prob_oop, DFBDF(autodiff=afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
+@test_broken sol3 = @inferred solve(prob_mm, FBDF(autodiff=afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
 
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
  @testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [
-        prob, prob_oop],
-    initalg in [BrownFullBasicInit(), ShampineCollocationInit()], autodiff in [true, false]
+        prob, prob_oop, prob_mm],
+    initalg in [BrownFullBasicInit(), ShampineCollocationInit()], autodiff in [afd_cs3, AutoFiniteDiff()]
 
-    alg = DFBDF(; autodiff)
+    alg = _prob isa DAEProblem ? DFBDF(; autodiff) : FBDF(; autodiff)
     function f(p)
-        @inferred sol = solve(remake(_prob, p = p), alg, abstol = 1e-14,
+        sol = solve(remake(_prob, p = p), alg, abstol = 1e-14,
             reltol = 1e-14, initializealg = initalg)
         sum(sol)
     end

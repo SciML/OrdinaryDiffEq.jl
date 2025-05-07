@@ -2,6 +2,7 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NLNewton
 using LinearAlgebra: Diagonal
+using ADTypes: AutoForwardDiff
 
 # create mass matrix problems
 function make_mm_probs(mm_A, ::Val{iip}) where {iip}
@@ -198,7 +199,7 @@ end
     M = Diagonal([1.0, 0.0])
 
     m_ode_prob = ODEProblem(ODEFunction(f!; mass_matrix = M), u0, tspan)
-    @test_nowarn sol = @inferred solve(m_ode_prob, Rosenbrock23())
+    @test_nowarn sol = @inferred solve(m_ode_prob, Rosenbrock23(autodiff=AutoForwardDiff(chunksize=2)))
 
     M = [0.637947 0.637947
          0.637947 0.637947]
