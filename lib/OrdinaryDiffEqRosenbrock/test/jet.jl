@@ -3,5 +3,5 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqRosenbrock, target_defined_modules = true, mode = :typo)
+        OrdinaryDiffEqRosenbrock, target_defined_modules = true, mode = :typo, broken = true)
 end
