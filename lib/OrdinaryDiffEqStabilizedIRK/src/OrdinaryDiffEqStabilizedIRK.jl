@@ -16,6 +16,9 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
 using OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
 using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver,
                                     markfirststage!, du_alias_or_new, get_W
+
+using OrdinaryDiffEqStabilizedRK: ESERK4, ESERK5, RKC, SERK2
+
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import OrdinaryDiffEqCore

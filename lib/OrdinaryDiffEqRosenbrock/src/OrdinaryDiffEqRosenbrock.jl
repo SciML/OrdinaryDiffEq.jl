@@ -23,7 +23,7 @@ import LinearSolve
 import LinearSolve: UniformScaling
 import ForwardDiff
 using FiniteDiff
-using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm
+using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm, lu!
 using ADTypes
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 

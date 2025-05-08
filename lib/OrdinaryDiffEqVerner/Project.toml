@@ -35,12 +35,16 @@ Static = "1.1.1"
 Test = "<0.0.1, 1"
 TruncatedStacktraces = "1.4.0"
 julia = "1.10"
+JET = "0.9.18, 0.10.4"
+Aqua = "0.8.11"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua"]

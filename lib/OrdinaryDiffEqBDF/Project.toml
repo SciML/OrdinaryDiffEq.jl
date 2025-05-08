@@ -27,9 +27,11 @@ ADTypes = "1.11"
 ArrayInterface = "7.15.0"
 DiffEqBase = "6.152.2"
 DiffEqDevTools = "2.44.4"
+Enzyme = "0.13"
 FastBroadcast = "0.3.5"
 ForwardDiff = "0.10.36"
 LinearAlgebra = "<0.0.1, 1"
+LinearSolve = "2.32, 3"
 MacroTools = "0.5.13"
 MuladdMacro = "0.2.4"
 ODEProblemLibrary = "0.1.8"
@@ -47,6 +49,8 @@ StaticArrays = "1.9.7"
 Test = "<0.0.1, 1"
 TruncatedStacktraces = "1.4.0"
 julia = "1.10"
+JET = "0.9.18, 0.10.4"
+Aqua = "0.8.11"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
@@ -58,6 +62,8 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 
 [targets]
-test = ["DiffEqDevTools", "ForwardDiff", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "StaticArrays", "Enzyme", "LinearSolve"]
+test = ["DiffEqDevTools", "ForwardDiff", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "StaticArrays", "Enzyme", "LinearSolve", "JET", "Aqua"]
