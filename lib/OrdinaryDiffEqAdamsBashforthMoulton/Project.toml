@@ -3,6 +3,10 @@ uuid = "89bda076-bce5-4f1c-845f-551c83cdda9a"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "1.2.0"
 
+[sources]
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
+
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"

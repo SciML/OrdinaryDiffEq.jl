@@ -3,6 +3,10 @@ uuid = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 version = "1.5.0"
 
+[sources]
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
+
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
