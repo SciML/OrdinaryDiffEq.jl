@@ -117,6 +117,9 @@ cb = ContinuousCallback((u, t, integrator) -> t - 1, (integrator) -> nothing)
 SA_ode_problem = ODEProblem((u, p, t) -> zero(u), SA[0], 2)
 @test solve(SA_ode_problem; callback = cb).retcode == ReturnCode.Success
 
+# Regression test callback doubling, https://github.com/SciML/ModelingToolkit.jl/issues/3327
+@test length(init(SA_ode_problem; callback = cb).opts.callback.continuous_callbacks) == 1
+
 # test Complex numbers
 H(s) = (1 - s) * complex([0 1; 1 0]) + s * complex([1 0; 0 -1])
 schrod_eq(state, time, s) = -im * time * H(s) * state
