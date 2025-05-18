@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqDifferentiation"
 uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "1.8.0"
+version = "1.9.0"
 
 [sources]
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
@@ -45,7 +45,7 @@ OrdinaryDiffEqCore = "1.21"
 Random = "<0.0.1, 1"
 SafeTestsets = "0.1.0"
 SciMLBase = "2"
-SciMLOperators = "0.3.13, 0.4"
+SciMLOperators = "0.3.13, 0.4, 1"
 SparseArrays = "1"
 SparseMatrixColorings = "0.4.14"
 StaticArrayInterface = "1"
