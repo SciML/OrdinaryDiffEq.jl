@@ -1,8 +1,12 @@
-using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes, Enzyme
+using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes
 import ODEProblemLibrary: prob_ode_linear,
                           prob_ode_2Dlinear,
                           prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 import LinearSolve
+
+if isempty(VERSION.prerelease)
+    using Enzyme
+end
 
 @testset "Rosenbrock Tests" begin
     ## Breakout these since no other test of their adaptivity
@@ -28,13 +32,15 @@ import LinearSolve
     sol = solve(prob, Rosenbrock23())
     @test length(sol) < 20
 
-    sim = test_convergence(dts, prob, Rosenbrock23(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test sim.𝒪est[:final]≈2 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts, prob, Rosenbrock23(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test sim.𝒪est[:final]≈2 atol=testTol
 
-    sol = solve(prob, Rosenbrock23(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test length(sol) < 20
+        sol = solve(prob, Rosenbrock23(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test length(sol) < 20
+    end
 
     prob = prob_ode_bigfloat2Dlinear
 
@@ -767,51 +773,53 @@ import LinearSolve
 
     prob = prob_ode_linear
 
-    sim = test_convergence(dts, prob,
-        Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)),
-        dense_errors = true)
-    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
-    @test sim.𝒪est[:L2]≈5 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts, prob,
+            Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)),
+            dense_errors = true)
+        #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+        @test sim.𝒪est[:L2]≈5 atol=testTol
 
-    sol = solve(prob,
-        Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test length(sol) < 20
+        sol = solve(prob,
+            Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test length(sol) < 20
 
-    prob = prob_ode_2Dlinear
+        prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob,
-        Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)),
-        dense_errors = true)
-    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
-    @test sim.𝒪est[:L2]≈5 atol=testTol
+        sim = test_convergence(dts, prob,
+            Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)),
+            dense_errors = true)
+        #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+        @test sim.𝒪est[:L2]≈5 atol=testTol
 
-    sim = test_convergence(dts, prob,
-        Rodas5P(autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()),
-        dense_errors = true)
-    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
-    @test sim.𝒪est[:L2]≈5 atol=testTol
+        sim = test_convergence(dts, prob,
+            Rodas5P(autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()),
+            dense_errors = true)
+        #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+        @test sim.𝒪est[:L2]≈5 atol=testTol
 
-    sim = test_convergence(dts, prob,
-        Rodas5P(autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL_GMRES()),
-        dense_errors = true)
-    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
-    @test sim.𝒪est[:L2]≈5 atol=testTol
+        sim = test_convergence(dts, prob,
+            Rodas5P(autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL_GMRES()),
+            dense_errors = true)
+        #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+        @test sim.𝒪est[:L2]≈5 atol=testTol
 
-    sol = solve(prob,
-        Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
-            function_annotation = Enzyme.Const)))
-    @test length(sol) < 20
+        sol = solve(prob,
+            Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
+                function_annotation = Enzyme.Const)))
+        @test length(sol) < 20
 
 
-    prob = ODEProblem((u, p, t) -> 0.9u, 0.1, (0.0, 1.0))
-    @test_nowarn solve(prob, Rosenbrock23(autodiff = AutoFiniteDiff()))
-    @test_nowarn solve(prob,
-        Rosenbrock23(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
-            function_annotation = Enzyme.Const)))
+        prob = ODEProblem((u, p, t) -> 0.9u, 0.1, (0.0, 1.0))
+        @test_nowarn solve(prob, Rosenbrock23(autodiff = AutoFiniteDiff()))
+        @test_nowarn solve(prob,
+            Rosenbrock23(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
+                function_annotation = Enzyme.Const)))
+    end
 end
 
 @testset "Convergence with time-dependent matrix-free Jacobian" begin
