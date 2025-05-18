@@ -7,7 +7,10 @@ import DifferentiationInterface as DI
 using SparseConnectivityTracer
 using SparseMatrixColorings
 using ADTypes
-using Enzyme
+
+if isempty(VERSION.prerelease)
+    using Enzyme
+end
 
 ## in-place
 #https://github.com/JuliaDiffEq/SparseDiffTools.jl/blob/master/test/test_integration.jl
@@ -53,12 +56,18 @@ colors = repeat(1:3, 10)[1:10]
 u0 = [1.0, 2.0, 3, 4, 5, 5, 4, 3, 2, 1]
 tspan = (0.0, 10.0)
 
+adchoices = if isempty(VERSION.prerelease)
+    [AutoForwardDiff(), AutoFiniteDiff(),
+        AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const)]
+else
+    [AutoForwardDiff(), AutoFiniteDiff()]
+end
+
 for f in [f_oop, f_ip]
     odefun_std = ODEFunction(f)
     prob_std = ODEProblem(odefun_std, u0, tspan)
 
-    for ad in [AutoForwardDiff(), AutoFiniteDiff(),
-        AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const)], linsolve in [nothing, LinearSolve.KrylovJL_GMRES()]
+    for ad in adchoices, linsolve in [nothing, LinearSolve.KrylovJL_GMRES()]
         for Solver in [Rodas5, Rosenbrock23, Trapezoid, KenCarp4, FBDF]
             for tol in [nothing, 1e-10]
                 sol_std = solve(prob_std, Solver(autodiff = ad, linsolve = linsolve), reltol = tol, abstol = tol)

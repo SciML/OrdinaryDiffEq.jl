@@ -23,6 +23,12 @@ function activate_odeinterface_env()
     Pkg.instantiate()
 end
 
+function activate_enzyme_env()
+    Pkg.activate("enzyme")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -148,14 +154,20 @@ end
 
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
+        @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
+        @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
         @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")
         @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
-        @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
-        @time @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
-        @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
+    # Don't run Enzyme tests on prerelease
+    if !is_APPVEYOR && GROUP == "Enzyme" && isempty(VERSION.prerelease)
+        activate_enzyme_env()
+        @time @safetestset "Autodiff Events Tests" include("enzyme/autodiff_events.jl")
+    end
+
+    # Don't run ODEInterface tests on prerelease
+    if !is_APPVEYOR && GROUP == "ODEInterfaceRegression" && isempty(VERSION.prerelease)
         activate_odeinterface_env()
         @time @safetestset "Init dt vs dorpri tests" include("odeinterface/init_dt_vs_dopri_tests.jl")
         @time @safetestset "ODEInterface Regression Tests" include("odeinterface/odeinterface_regression.jl")
