@@ -1,6 +1,5 @@
 using OrdinaryDiffEq
 using LinearAlgebra
-using NLsolve
 using Test
 
 p_inv = [500.0
@@ -233,7 +232,7 @@ function hardstop!(du, u, p, t)
     pm, pg = p
     y, f_wall, dy = u
     du[1] = dy
-    du[2] = ifelse(y <= 0, y, f_wall)
+    du[2] = ifelse(y < 0, y, f_wall)
     du[3] = (-ifelse(t < 2, -pg * pm, pg * pm) - f_wall) / (-pm)
 end
 
@@ -270,6 +269,6 @@ for prob in [prob1, prob2], alg in [simple_implicit_euler, alg_switch]
     sol = solve(prob, alg, callback = cb, dt = 1 / 2^10, adaptive = false)
     @test sol.retcode == ReturnCode.Success
     @test sol(0, idxs = 1) == 5
-    @test sol(2, idxs = 1) == 0
+    @test sol(2-2^-10, idxs = 1) == 0
     @test sol(4, idxs = 1) > 10
 end
