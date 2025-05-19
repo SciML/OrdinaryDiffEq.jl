@@ -1,5 +1,6 @@
 using OrdinaryDiffEq
 using LinearAlgebra
+using NLsolve
 using Test
 
 p_inv = [500.0
