@@ -58,8 +58,8 @@ jobs:
           using Pkg
           try
             # force it to use this PR's version of the package
-            Pkg.develop(map(path ->Pkg.PackageSpec.(;path="lib/$(path)"), readdir("./lib")));
-            Pkg.develop(PackageSpec(path="."))  # resolver may fail with main deps
+            VERSION < v"1.11" && Pkg.develop(map(path ->Pkg.PackageSpec.(;path="lib/$(path)"), readdir("./lib")));
+            VERSION < v"1.11" && Pkg.develop(PackageSpec(path="."))  # resolver may fail with main deps
             Pkg.update()
             Pkg.test(coverage=true)  # resolver may fail with test time deps
           catch err
