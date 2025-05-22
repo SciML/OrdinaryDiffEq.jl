@@ -305,7 +305,7 @@ function build_nlsolver(
                     tmp, α, tstep, invγdt, _p, dt, uprev, f = p
                     _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
                 end
-                nlp_params = (tmp, α, tstep, invγdt, _p, dt, uprev, f)
+                nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, f)
             else
                 nlf = (z, p) -> begin
                     tmp, γ, α, tstep, invγdt, method, _p, dt, f = p
