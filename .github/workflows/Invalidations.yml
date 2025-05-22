@@ -20,15 +20,6 @@ jobs:
       with:
         version: '1'
     - uses: actions/checkout@v4
-    # Explicitly develop the libraries first before running the tests for now.
-    # This is necessary since the tests are likely to fail otherwise, given that all
-    # the libs haven't been registered yet.
-    - name: "Develop the libraries since they haven't been registered yet"
-      run: |
-        julia --project=. -e '
-            using Pkg;
-            VERSION < v"1.11" && Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
-        '
     - uses: julia-actions/julia-invalidations@v1
       id: invs_pr
 
