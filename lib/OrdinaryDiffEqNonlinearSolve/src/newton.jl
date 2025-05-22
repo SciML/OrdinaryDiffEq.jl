@@ -427,7 +427,7 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
 
         @unpack uprev, t, p, dt, opts, isdae = integrator
         @unpack z, tmp, ztmp, γ, iter, α, cache, method = nlsolver
-        @unpack ustep, atmp, tstep, k, invγdt, tstep, k, invγdt = cache
+        @unpack ustep, atmp, tstep, k, invγdt = cache
         function resid(z)
             # recompute residual (rhs)
             if isdae
@@ -484,7 +484,8 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         linesearch = linesearch
 
         @unpack uprev, t, p, dt, opts = integrator
-        @unpack z, tmp, ztmp, γ, iter, cache = nlsolver
+        @unpack z, tmp, ztmp, γ, iter, cache, method = nlsolver
+        @unpack ustep, atmp, tstep, k, invγdt = cache
         function resid(z)
             # recompute residual (rhs)
             if f isa DAEFunction
