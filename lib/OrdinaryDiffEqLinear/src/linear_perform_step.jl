@@ -4,7 +4,7 @@ function initialize!(integrator, cache::MagnusMidpointCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -35,7 +35,7 @@ function initialize!(integrator, cache::LieRK4Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -87,7 +87,7 @@ function initialize!(integrator, cache::RKMK4Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -130,7 +130,7 @@ function initialize!(integrator, cache::RKMK2Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -163,7 +163,7 @@ function initialize!(integrator, cache::CG3Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -198,7 +198,7 @@ function initialize!(integrator, cache::CG2Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -226,7 +226,7 @@ function initialize!(integrator, cache::CG4aCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -273,7 +273,7 @@ function initialize!(integrator, cache::MagnusAdapt4Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -341,7 +341,7 @@ function initialize!(integrator, cache::MagnusNC8Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -416,7 +416,7 @@ function initialize!(integrator, cache::MagnusGL4Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -451,7 +451,7 @@ function initialize!(integrator, cache::MagnusGL8Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -518,7 +518,7 @@ function initialize!(integrator, cache::MagnusNC6Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -565,7 +565,7 @@ function initialize!(integrator, cache::MagnusGL6Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -608,7 +608,7 @@ function initialize!(integrator, cache::MagnusGauss4Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -645,7 +645,7 @@ function initialize!(integrator, cache::LieEulerCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -676,7 +676,7 @@ function initialize!(integrator, cache::MagnusLeapfrogCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
@@ -759,7 +759,7 @@ end
 function initialize!(integrator, cache::LinearExponentialCache)
     # Pre-start fsal
     integrator.fsalfirst = zero(cache.rtmp)
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = zero(integrator.fsalfirst)
 
@@ -845,7 +845,7 @@ function initialize!(integrator, cache::CayleyEulerCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
