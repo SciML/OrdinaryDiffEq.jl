@@ -433,8 +433,8 @@ end
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        @test_broken sol_i.t ≈ sol_o.t
-        @test_broken sol_i.u ≈ sol_o.u
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
     end
 
     @testset "DPRKN8" begin
@@ -453,8 +453,8 @@ end
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        @test_broken sol_i.t ≈ sol_o.t
-        @test_broken sol_i.u ≈ sol_o.u
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
     end
 
     @testset "DPRKN12" begin
