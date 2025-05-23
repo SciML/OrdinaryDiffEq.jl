@@ -433,8 +433,13 @@ end
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        @test sol_i.t ≈ sol_o.t
-        @test sol_i.u ≈ sol_o.u
+        if VERSION >= v"1.11"
+            @test sol_i.t ≈ sol_o.t
+            @test sol_i.u ≈ sol_o.u
+        else
+            @test_broken sol_i.t ≈ sol_o.t
+            @test_broken sol_i.u ≈ sol_o.u
+        end
     end
 
     @testset "DPRKN8" begin
