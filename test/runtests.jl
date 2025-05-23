@@ -33,7 +33,7 @@ end
 
 @time begin
     if contains(GROUP, "OrdinaryDiffEq") || GROUP == "ImplicitDiscreteSolve" || GROUP == "SimpleImplicitDiscreteSolve"
-        VERSION < v"1.11" && Pkg.develop(path = "../lib/$GROUP")
+       Pkg.develop(path = joinpath(dirname(@__DIR__), "lib/$GROUP"))
         Pkg.test(GROUP)
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
