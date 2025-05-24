@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqDifferentiation"
 uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "1.9.0"
+version = "1.9.1"
 
 [sources]
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
@@ -37,7 +37,7 @@ DiffEqDevTools = "2.44.4"
 DifferentiationInterface = "0.6.48"
 FastBroadcast = "0.3"
 FiniteDiff = "2"
-ForwardDiff = "0.10"
+ForwardDiff = "0.10, 1"
 FunctionWrappersWrappers = "0.1"
 LinearAlgebra = "1.10"
 LinearSolve = "2, 3"
