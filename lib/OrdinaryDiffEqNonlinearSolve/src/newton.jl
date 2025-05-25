@@ -411,6 +411,9 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) 
     relax(dz, nlsolver, integrator, f, relax(nlsolver))
 end
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
+        r::Nothing) where {TF}
+end
+function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         r::Number) where {TF}
     if !iszero(r)
         rmul!(dz, 1 - r)
