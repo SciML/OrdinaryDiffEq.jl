@@ -478,6 +478,12 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
     return dz
 end
 
+
+function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
+        r::Nothing) where {TF}
+    return dz
+end
+
 function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         linesearch) where {TF}
     let dz = dz,
