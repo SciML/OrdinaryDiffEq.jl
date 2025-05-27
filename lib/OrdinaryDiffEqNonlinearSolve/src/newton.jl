@@ -412,12 +412,14 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) 
 end
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         r::Nothing) where {TF}
+        dz
 end
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         r::Number) where {TF}
     if !iszero(r)
         rmul!(dz, 1 - r)
     end
+    dz
 end
 
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
@@ -477,7 +479,6 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
     end
     return dz
 end
-
 
 function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         r::Nothing) where {TF}
