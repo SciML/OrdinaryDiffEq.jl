@@ -229,7 +229,7 @@ function build_nlsolver(
                 end
                 nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
             end
-            prob = NonlinearProblem(NonlinearFunction(nlf), ztmp, nlp_params)
+            prob = NonlinearProblem(NonlinearFunction{true}(nlf), ztmp, nlp_params)
             cache = init(prob, nlalg.alg)
             nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
         else
@@ -313,7 +313,7 @@ function build_nlsolver(
                 end
                 nlp_params = (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
-            prob = NonlinearProblem(NonlinearFunction(nlf), copy(ztmp), nlp_params)
+            prob = NonlinearProblem(NonlinearFunction{false}(nlf), copy(ztmp), nlp_params)
             cache = init(prob, nlalg.alg)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache)
