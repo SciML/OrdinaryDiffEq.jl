@@ -5,6 +5,7 @@ using SafeTestsets
 @time @safetestset "DAE Event Tests" include("dae_event.jl")
 @time @safetestset "DAE Initialization Tests" include("dae_initialization_tests.jl")
 
+@time @safetestset "BDF Inference Tests" include("inference_tests.jl")
 @time @safetestset "BDF Convergence Tests" include("bdf_convergence_tests.jl")
 @time @safetestset "BDF Regression Tests" include("bdf_regression_tests.jl")
 
