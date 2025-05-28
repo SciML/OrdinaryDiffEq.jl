@@ -65,7 +65,7 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
         # check divergence (not in initial step)
         if iter > 1
             θ = prev_θ = has_prev_θ ? max(0.3 * prev_θ, ndz / ndzprev) : ndz / ndzprev
-
+            
             # When one Newton iteration basically does nothing, it's likely that we
             # are at the precision limit of floating point number. Thus, we just call
             # it convergence/divergence according to `ndz` directly.
@@ -105,7 +105,7 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
         # don't trust θ for non-adaptive on first iter because the solver doesn't provide feedback
         # for us to know whether our previous nlsolve converged sufficiently well
         check_η_convergance = (iter > 1 ||
-                               (isnewton(nlsolver) && isadaptive(integrator.alg)))
+                               ((isnewton(nlsolver) || isnonlinearsolve(nlsolver)) && isadaptive(integrator.alg)))
         if (iter == 1 && ndz < 1e-5) ||
            (check_η_convergance && η >= zero(η) && η * ndz < κ)
             nlsolver.status = Convergence
@@ -114,7 +114,7 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
         end
     end
 
-    if isnewton(nlsolver) && nlsolver.status == Divergence &&
+    if (isnewton(nlsolver) || isnonlinearsolve(nlsolver)) && nlsolver.status == Divergence &&
        !isJcurrent(nlsolver, integrator)
         nlsolver.status = TryAgain
         nlsolver.nfails += 1

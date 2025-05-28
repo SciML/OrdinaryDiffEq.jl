@@ -81,7 +81,14 @@ end
     @unpack tstep, invγdt = cache
 
     nlcache = nlsolver.cache.cache
-    step!(nlcache)
+
+    if is_always_new(nlsolver) || new_jac || new_W
+        recompute_jacobian = true
+    else
+        recompute_jacobian = false
+    end
+
+    step!(nlcache; recompute_jacobian)
     nlsolver.ztmp = nlcache.u
 
     ustep = compute_ustep(tmp, γ, z, method)
@@ -103,7 +110,15 @@ end
     @unpack tstep, invγdt, atmp, ustep = cache
 
     nlcache = nlsolver.cache.cache
-    step!(nlcache)
+    new_jac, new_W = do_newJW(integrator, integrator.alg, nlsolver, false)
+
+    if is_always_new(nlsolver) || new_jac || new_W
+        recompute_jacobian = true
+    else
+        recompute_jacobian = false
+    end
+
+    step!(nlcache; recompute_jacobian)
     @.. broadcast=false ztmp=nlcache.u
 
     ustep = compute_ustep!(ustep, tmp, γ, z, method)
