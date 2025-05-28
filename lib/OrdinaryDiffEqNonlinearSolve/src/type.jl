@@ -218,4 +218,5 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C} <:
     invγdt::tType2
     prob::P
     cache::C
+    new_W::Bool
 end
