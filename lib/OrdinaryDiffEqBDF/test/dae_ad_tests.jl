@@ -40,7 +40,7 @@ prob_mm = ODEProblem(f_mm, u₀, tspan, p)
             reltol = 1e-14, initializealg = initalg)
         sum(sol)
     end
-    if _prob isa DAEProblem
+    if _prob isa DAEProblem || (isinplace(_prob) && !(initalg isa BrownFullBasicInit) && autodiff == AutoFiniteDiff())
         @test ForwardDiff.gradient(f, [0.04, 3e7, 1e4])≈[0, 0, 0] atol=1e-8
     else
         @test_broken ForwardDiff.gradient(f, [0.04, 3e7, 1e4])≈[0, 0, 0] atol=1e-8
