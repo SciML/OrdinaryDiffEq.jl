@@ -32,7 +32,8 @@ import OrdinaryDiffEqCore
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
                                     nlsolve!, nlsolvefail, isnewton, markfirststage!,
-                                    set_new_W!, DIRK, compute_step!, COEFFICIENT_MULTISTEP
+                                    set_new_W!, DIRK, compute_step!, COEFFICIENT_MULTISTEP,
+                                    NonlinearSolveAlg
 import ADTypes
 import ADTypes: AutoForwardDiff, AutoFiniteDiff, AbstractADType
 

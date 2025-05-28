@@ -153,6 +153,17 @@ function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip)
 end
 
+function daenlf(ztmp, z, p)
+    tmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f = p
+    _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f, z)[1]
+end
+
+function odenlf(ztmp, z, p)
+    tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f = p
+    _compute_rhs!(
+    tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
+end
+
 function build_nlsolver(
         alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
         u, uprev, p, t, dt,
@@ -215,19 +226,11 @@ function build_nlsolver(
         if nlalg isa NonlinearSolveAlg
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
-            if isdae
-                nlf = (ztmp, z, p) -> begin
-                    tmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f = p
-                    _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f, z)[1]
-                end
-                nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+            nlf = isdae ? daenlf : odenlf
+            nlp_params = if isdae
+                (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
             else
-                nlf = (ztmp, z, p) -> begin
-                    tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f = p
-                    _compute_rhs!(
-                        tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
-                end
-                nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
+                (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
             end
             prob = NonlinearProblem(NonlinearFunction{true}(nlf), ztmp, nlp_params)
             cache = init(prob, nlalg.alg)
@@ -260,6 +263,16 @@ function build_nlsolver(
     NLSolver{true, tTypeNoUnits}(z, tmp, ztmp, γ, c, α, nlalg, nlalg.κ,
         nlalg.fast_convergence_cutoff, ηold, 0, nlalg.max_iter,
         Divergence, nlcache)
+end
+
+function oopdaenlf(z, p)
+    tmp, α, tstep, invγdt, _p, dt, uprev, f = p
+    _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
+end
+
+function oopodenlf(z, p)
+    tmp, γ, α, tstep, invγdt, method, _p, dt, f = p
+    _compute_rhs(tmp, γ, α, tstep, invγdt, method, _p, dt, f, z)[1]
 end
 
 function build_nlsolver(
@@ -300,18 +313,11 @@ function build_nlsolver(
         if nlalg isa NonlinearSolveAlg
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
-            if isdae
-                nlf = (z, p) -> begin
-                    tmp, α, tstep, invγdt, _p, dt, uprev, f = p
-                    _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
-                end
-                nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, f)
+            nlf = isdae ? oopdaenlf : oopodenlf
+            nlp_params = if isdae
+                (tmp, α, tstep, invγdt, p, dt, uprev, f)
             else
-                nlf = (z, p) -> begin
-                    tmp, γ, α, tstep, invγdt, method, _p, dt, f = p
-                    _compute_rhs(tmp, γ, α, tstep, invγdt, method, _p, dt, f, z)[1]
-                end
-                nlp_params = (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
+                (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
             prob = NonlinearProblem(NonlinearFunction{false}(nlf), copy(ztmp), nlp_params)
             cache = init(prob, nlalg.alg)
