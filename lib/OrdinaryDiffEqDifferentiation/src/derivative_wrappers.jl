@@ -268,12 +268,12 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
                 autodiff_alg_reverse = dir_reverse
             end
 
-            jac_config_forward = DI.prepare_jacobian(uf, du1, autodiff_alg_forward, u)
-            jac_config_reverse = DI.prepare_jacobian(uf, du1, autodiff_alg_reverse, u)
+            jac_config_forward = DI.prepare_jacobian(uf, du1, autodiff_alg_forward, u, strict=Val(false))
+            jac_config_reverse = DI.prepare_jacobian(uf, du1, autodiff_alg_reverse, u, strict=Val(false))
 
             jac_config = (jac_config_forward, jac_config_reverse)
         else
-            jac_config1 = DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
+            jac_config1 = DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u, strict=Val(false))
             jac_config = (jac_config1, jac_config1)
         end
 
@@ -310,7 +310,7 @@ function resize_jac_config!(cache, integrator)
         end
 
         cache.jac_config = ([DI.prepare!_jacobian(
-                                   uf, cache.du1, config, ad, integrator.u)
+                                   uf, cache.du1, config, ad, integrator.u, strict=Val(false))
                                for (ad, config) in zip(
             (ad_right, ad_left), cache.jac_config)]...,)
     end
@@ -331,7 +331,7 @@ function resize_grad_config!(cache, integrator)
         end
 
         cache.grad_config = ([DI.prepare!_derivative(
-                                 cache.tf, cache.du1, config, ad, integrator.t)
+                                 cache.tf, cache.du1, config, ad, integrator.t, strict=Val(false))
                              for (ad, config) in zip(
             (ad_right, ad_left), cache.grad_config)]...,)
     end
@@ -350,12 +350,12 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
             dir_true = @set ad.dir = 1
             dir_false = @set ad.dir = -1
 
-            grad_config_true = DI.prepare_derivative(tf, du1, dir_true, t)
-            grad_config_false = DI.prepare_derivative(tf, du1, dir_false, t)
+            grad_config_true = DI.prepare_derivative(tf, du1, dir_true, t, strict=Val(false))
+            grad_config_false = DI.prepare_derivative(tf, du1, dir_false, t, strict=Val(false))
 
             grad_config = (grad_config_true, grad_config_false)
         else
-            grad_config1 = DI.prepare_derivative(tf,du1,ad,t)
+            grad_config1 = DI.prepare_derivative(tf,du1,ad,t, strict=Val(false))
             grad_config = (grad_config1, grad_config1)
         end
         return grad_config
