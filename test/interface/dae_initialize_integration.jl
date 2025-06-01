@@ -35,7 +35,7 @@ p0 = [
     Dk => 1
 ]
 
-prob = ODEProblem(connected, u0, tspan, p0)
+prob = ODEProblem(connected, [u0; p0], tspan)
 sol = solve(prob, Rodas5(), initializealg = BrownFullBasicInit())
 @test prob.u0 == sol[1]
 sol = solve(prob, Rodas5(), initializealg = ShampineCollocationInit())
