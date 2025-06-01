@@ -7,12 +7,12 @@ single_neuron_eqs = [
     D(v) ~ min(max(-2 - v, v), 2 - v) - w + F, # add the flux term
     D(w) ~ e * (v - g * w + b)
 ]
-n1 = ODESystem(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n1)
-n2 = ODESystem(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n2)
+n1 = System(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n1)
+n2 = System(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n2)
 @parameters Di Dk
 connections = [0 ~ n1.F - Di * Dk * max(n1.v - n2.v, 0)
                0 ~ n2.F - Di * max(n2.v - n1.v, 0)]
-connected = ODESystem(connections, t, [], [Di, Dk], systems = [n1, n2], name = :connected)
+connected = System(connections, t, [], [Di, Dk], systems = [n1, n2], name = :connected)
 connected = complete(connected)
 
 u0 = [
@@ -35,7 +35,7 @@ p0 = [
     Dk => 1
 ]
 
-prob = ODEProblem(connected, u0, tspan, p0)
+prob = ODEProblem(connected, [u0; p0], tspan)
 sol = solve(prob, Rodas5(), initializealg = BrownFullBasicInit())
 @test prob.u0 == sol[1]
 sol = solve(prob, Rodas5(), initializealg = ShampineCollocationInit())
