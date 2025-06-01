@@ -309,7 +309,7 @@ function resize_jac_config!(cache, integrator)
             ad_left = autodiff_alg
         end
 
-        cache.jac_config = ([DI.prepare!_jacobian(
+        SciMLBase.@reset cache.jac_config = ([DI.prepare!_jacobian(
                                    uf, cache.du1, config, ad, integrator.u, strict=Val(false))
                                for (ad, config) in zip(
             (ad_right, ad_left), cache.jac_config)]...,)
