@@ -14,6 +14,11 @@ function f(du, u, p, t)
         +p[1] * u[1] - p[2] * u[2]^2 - p[3] * u[2] * u[3] - du[2],
         u[1] + u[2] + u[3] - 1.0]
 end
+function f_ode(du, u, p, t)
+    du .= [-p[1] * u[1] + p[3] * u[2] * u[3] - du[1],
+        +p[1] * u[1] - p[2] * u[2]^2 - p[3] * u[2] * u[3] - du[2],
+        u[1] + u[2] + u[3] - 1.0]
+end
 p = [0.04, 3e7, 1e4]
 u₀ = [1.0, 0, 0]
 du₀ = [-0.04, 0.04, 0.0]
@@ -22,7 +27,7 @@ differential_vars = [true, true, false]
 M = Diagonal([1.0, 1.0, 0.0])
 prob = DAEProblem(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
 prob_oop = DAEProblem{false}(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
-f_mm = ODEFunction{true, SciMLBase.AutoSpecialize}(f, mass_matrix = M)
+f_mm = ODEFunction{true}(f_ode, mass_matrix = M)
 prob_mm = ODEProblem(f_mm, u₀, tspan, p)
 @test_broken sol1 = @inferred solve(prob, DFBDF(autodiff=afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
 @test_broken sol2 = @inferred solve(prob_oop, DFBDF(autodiff=afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
@@ -40,9 +45,5 @@ prob_mm = ODEProblem(f_mm, u₀, tspan, p)
             reltol = 1e-14, initializealg = initalg)
         sum(sol)
     end
-    if _prob isa DAEProblem || (_prob isa ODEProblem && isinplace(_prob) && autodiff == AutoFiniteDiff())
-        @test ForwardDiff.gradient(f, [0.04, 3e7, 1e4])≈[0, 0, 0] atol=1e-8
-    else
-        @test_broken ForwardDiff.gradient(f, [0.04, 3e7, 1e4])≈[0, 0, 0] atol=1e-8
-    end
+    @test ForwardDiff.gradient(f, [0.04, 3e7, 1e4])≈[0, 0, 0] atol=1e-8
 end
