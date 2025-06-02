@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, Test
+using OrdinaryDiffEqBDF, ForwardDiff, Test
 
 foop = (u, p, t) -> u * p
 proboop = ODEProblem(foop, ones(2), (0.0, 1000.0), 1.0)
