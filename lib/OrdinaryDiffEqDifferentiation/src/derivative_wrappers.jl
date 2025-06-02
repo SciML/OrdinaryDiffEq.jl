@@ -272,7 +272,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
 
             jac_config = (jac_config_forward, jac_config_reverse)
         else
-            jac_config1 = DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
+            jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u)
             jac_config = (jac_config1, jac_config1)
         end
 
