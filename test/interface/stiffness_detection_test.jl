@@ -3,7 +3,7 @@ import ODEProblemLibrary: prob_ode_vanderpol
 using ForwardDiff: Dual
 
 sys = prob_ode_vanderpol.f.sys
-prob1 = ODEProblem(sys, [sys.y => 0, sys.x => 2.0], (0.0, 6), [sys.μ => inv(0.003)])
+prob1 = ODEProblem(sys, [sys.y => 0, sys.x => 2.0, sys.μ => inv(0.003)], (0.0, 6))
 function __van(du, u, p, t)
     μ = p[1]
     du[1] = μ * ((1 - u[2]^2) * u[1] - u[2])
