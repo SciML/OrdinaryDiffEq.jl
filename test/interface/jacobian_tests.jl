@@ -56,7 +56,7 @@ end
 
 prob = ODEProblem(lotka, [1.0, 1.0], (0.0, 1.0), [1.5, 1.0, 3.0, 1.0])
 de = ModelingToolkit.modelingtoolkitize(prob) |> complete
-prob2 = ODEProblem(de; jac = true)
+prob2 = ODEProblem(de, [], prob.tspan; jac = true)
 
 sol = solve(prob, TRBDF2())
 

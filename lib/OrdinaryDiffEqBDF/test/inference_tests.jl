@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, NonlinearSolve, Test
+using OrdinaryDiffEqBDF, Test
 
 prob = ODEProblem((du,u,p,t) -> du .= u, zeros(1), (0.0,1.0))
 nlalg = FBDF(autodiff=false, nlsolve = OrdinaryDiffEqBDF.NonlinearSolveAlg(TrustRegion(autodiff = AutoFiniteDiff())))

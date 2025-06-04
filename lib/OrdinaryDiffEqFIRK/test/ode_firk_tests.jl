@@ -44,7 +44,7 @@ sys = prob_ode_vanderpol.f.sys
 
 # test adaptivity
 for iip in (true, false)
-    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3)], (0.0, 1.0), [sys.μ => 1e6])
+    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (0.0, 1.0))
     sol = solve(vanstiff, RadauIIA5())
     if iip
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
@@ -69,7 +69,7 @@ end
 
 # test adaptivity
 for iip in (true, false)
-    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3)], (0.0, 1.0), [sys.μ => 1e6])
+    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (0.0, 1.0))
     sol = solve(vanstiff, RadauIIA3())
     if iip
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
