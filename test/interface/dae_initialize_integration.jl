@@ -7,12 +7,12 @@ single_neuron_eqs = [
     D(v) ~ min(max(-2 - v, v), 2 - v) - w + F, # add the flux term
     D(w) ~ e * (v - g * w + b)
 ]
-n1 = ODESystem(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n1)
-n2 = ODESystem(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n2)
+n1 = System(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n1)
+n2 = System(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n2)
 @parameters Di Dk
 connections = [0 ~ n1.F - Di * Dk * max(n1.v - n2.v, 0)
                0 ~ n2.F - Di * max(n2.v - n1.v, 0)]
-connected = ODESystem(connections, t, [], [Di, Dk], systems = [n1, n2], name = :connected)
+connected = System(connections, t, [], [Di, Dk], systems = [n1, n2], name = :connected)
 connected = complete(connected)
 
 u0 = [
@@ -82,7 +82,7 @@ sol = solve(prob, Rodas5P(), dt = 1e-10)
     # https://github.com/SciML/ModelingToolkit.jl/issues/3504
     @variables x(t) y(t)
     @parameters c1 c2
-    @mtkbuild sys = ODESystem([D(x) ~ -c1 * x + c2 * y, D(y) ~ c1 * x - c2 * y], t)
+    @mtkbuild sys = System([D(x) ~ -c1 * x + c2 * y, D(y) ~ c1 * x - c2 * y], t)
     prob = ODEProblem(sys, [1.0, 2.0], (0.0, 1.0), [c1 => 1.0, c2 => 2.0])
     @test prob.ps[Initial(x)] ≈ 1.0
     @test prob.ps[Initial(y)] ≈ 2.0
