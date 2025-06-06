@@ -337,10 +337,6 @@ function resize_grad_config!(cache, integrator)
     cache.grad_config
 end
 
-
-
-
-
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     if !DiffEqBase.has_tgrad(f)
         ad = ADTypes.dense_ad(alg_autodiff(alg)) 
@@ -353,6 +349,9 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
             grad_config_false = DI.prepare_derivative(tf, du1, dir_false, t)
 
             grad_config = (grad_config_true, grad_config_false)
+        elseif ad isa AutoForwardDiff
+            grad_config1 = DI.prepare_derivative(tf,du1,ad,convert(eltype(du1),t))
+            grad_config = (grad_config1, grad_config1)
         else
             grad_config1 = DI.prepare_derivative(tf,du1,ad,t)
             grad_config = (grad_config1, grad_config1)
