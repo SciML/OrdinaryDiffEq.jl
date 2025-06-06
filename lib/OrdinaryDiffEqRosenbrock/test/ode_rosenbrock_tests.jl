@@ -898,7 +898,7 @@ end
         alg = @test_logs @inferred(T(; autodiff = ad))
         @test alg isa
               RosenbrockAlgorithm{0, <:AutoFiniteDiff{Val{:central}}, Val{:central}()}
-        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) === ad
+        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) isa AutoFiniteDiff{Val{:central}}
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{0}()
 
         alg = @test_logs (:warn, r"The `diff_type` keyword is deprecated") match_mode=:any @inferred(T(;
