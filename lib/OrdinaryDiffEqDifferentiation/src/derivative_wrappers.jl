@@ -251,7 +251,6 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
                 @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
             end
         end
-        uf = SciMLBase.@set uf.f = SciMLBase.unwrapped_f(uf.f)
 
         autodiff_alg = alg_autodiff(alg)
         dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
@@ -273,7 +272,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
 
             jac_config = (jac_config_forward, jac_config_reverse)
         else
-            jac_config1 = DI.prepare_jacobian(uf, du1, alg_autodiff(alg), u)
+            jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u)
             jac_config = (jac_config1, jac_config1)
         end
 
@@ -309,7 +308,7 @@ function resize_jac_config!(cache, integrator)
             ad_left = autodiff_alg
         end
 
-        cache.jac_config = ([DI.prepare!_jacobian(
+        SciMLBase.@reset cache.jac_config = ([DI.prepare!_jacobian(
                                    uf, cache.du1, config, ad, integrator.u)
                                for (ad, config) in zip(
             (ad_right, ad_left), cache.jac_config)]...,)
@@ -338,10 +337,6 @@ function resize_grad_config!(cache, integrator)
     cache.grad_config
 end
 
-
-
-
-
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     if !DiffEqBase.has_tgrad(f)
         ad = ADTypes.dense_ad(alg_autodiff(alg)) 
@@ -354,6 +349,9 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
             grad_config_false = DI.prepare_derivative(tf, du1, dir_false, t)
 
             grad_config = (grad_config_true, grad_config_false)
+        elseif ad isa AutoForwardDiff
+            grad_config1 = DI.prepare_derivative(tf,du1,ad,convert(eltype(du1),t))
+            grad_config = (grad_config1, grad_config1)
         else
             grad_config1 = DI.prepare_derivative(tf,du1,ad,t)
             grad_config = (grad_config1, grad_config1)

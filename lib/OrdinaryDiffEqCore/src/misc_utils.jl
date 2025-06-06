@@ -146,7 +146,7 @@ function _bool_to_ADType(::Val{false}, _, ::Val{FD}) where {FD}
     Base.depwarn(
         "Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.",
         :_bool_to_ADType)
-    return AutoFiniteDiff(; fdtype = Val{FD}())
+    return AutoFiniteDiff(; fdtype = Val{FD}(), dir=1)
 end
 
 # Functions to get ADType type from Bool or ADType object, or ADType type
@@ -187,6 +187,9 @@ function _process_AD_choice(
     if FD2 !== :forward
         @warn "The `diff_type` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoFiniteDiff` with `fdtype=Val{$FD2}()`."
         return _bool_to_ADType(Val{false}(), Val{CS}(), Val{FD2}()), Val{CS}(), Val{FD2}()
+    end
+    if ad_alg.dir isa Bool # default dir of true makes integration non-reversable
+        @reset ad_alg.dir = Int(ad_alg.dir)
     end
     return ad_alg, Val{CS}(), ad_alg.fdtype
 end
