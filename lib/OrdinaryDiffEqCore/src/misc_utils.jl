@@ -146,7 +146,7 @@ function _bool_to_ADType(::Val{false}, _, ::Val{FD}) where {FD}
     Base.depwarn(
         "Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.",
         :_bool_to_ADType)
-    return AutoFiniteDiff(; fdtype = Val{FD}())
+    return AutoFiniteDiff(; fdtype = Val{FD}(), dir=1)
 end
 
 # Functions to get ADType type from Bool or ADType object, or ADType type
