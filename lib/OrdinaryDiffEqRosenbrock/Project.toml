@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqRosenbrock"
 uuid = "43230ef6-c299-4910-a778-202eb28ce4ce"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.10.1"
+version = "1.11.0"
 
 [sources]
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
