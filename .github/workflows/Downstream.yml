@@ -49,11 +49,12 @@ jobs:
         with:
           repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
           path: downstream
-        name: Load this and run the downstream tests
+      - name: Load this and run the downstream tests
         shell: julia --color=yes --project=downstream {0}
         run: |
           using Pkg
           try
+            Pkg.develop(map(path ->Pkg.PackageSpec.(;path="lib/$(path)"), readdir("./lib")));
             Pkg.test(coverage=true)  # resolver may fail with test time depsAdd commentMore actions
           catch err
             err isa Pkg.Resolve.ResolverError || rethrow()
