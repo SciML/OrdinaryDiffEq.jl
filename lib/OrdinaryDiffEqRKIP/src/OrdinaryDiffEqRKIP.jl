@@ -14,7 +14,7 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveExponentialAlgorithm, alg_adapt
                            has_dtnew_modification, calculate_residuals,
                            calculate_residuals!, increment_nf!,
                            OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache,
-                           dtnew_modification
+                           dtnew_modification, generic_solver_docstring
 
 include("rkip_cache.jl")
 include("algorithms.jl")
