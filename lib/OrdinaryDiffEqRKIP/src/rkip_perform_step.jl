@@ -1,21 +1,24 @@
 """
-Helper function for the (nonlinear) part of the problem maybe in place. 
+Helper function for the (nonlinear) part of the problem maybe in place.
 Overwrite compute f(u, p, t) and if possible, overwrite u with the result.
 Same principle of operation as `matvec_prod_mip` for mutability/in-place handling.
 """
-function nl_part_mip(tmp::uType, f!, u::uType, p, t::tType, ::Val{true}) where {tType,uType}
+function nl_part_mip(
+        tmp::uType, f!, u::uType, p, t::tType, ::Val{true}) where {tType, uType}
     f!(tmp, u, p, t)
     copyto!(u, tmp)
     return u
 end
-nl_part_mip(_::uType, f, u::uType, p, t::tType, ::Val{false}) where {tType,uType} = f(u, p, t)
-
+function nl_part_mip(_::uType, f, u::uType, p, t::tType, ::Val{false}) where {tType, uType}
+    f(u, p, t)
+end
 
 """
 Helper function to compute Au + f(u, p, t) and if in place, store the result in res.
 Retunr res if in place, otherwise return Au + f(u, p, t)
 """
-function f_mip!(res::uType, tmp::uType, A::opType, f, u::uType, p, t::tType, ::Val{true}) where {tType,uType,opType}
+function f_mip!(res::uType, tmp::uType, A::opType, f, u::uType, p,
+        t::tType, ::Val{true}) where {tType, uType, opType}
     res .= u
     res = matvec_prod_mip(tmp, A, res, Val(true))
     f(tmp, u, p, t)
@@ -23,19 +26,28 @@ function f_mip!(res::uType, tmp::uType, A::opType, f, u::uType, p, t::tType, ::V
     return res
 end
 
-f_mip!(_::uType, tmp::uType, A::opType, f, u::uType, p, t::tType, ::Val{false}) where {tType,uType,opType} = matvec_prod_mip(tmp, A, u, Val(false)) + f(u, p, t)
+function f_mip!(_::uType, tmp::uType, A::opType, f, u::uType, p,
+        t::tType, ::Val{false}) where {tType, uType, opType}
+    matvec_prod_mip(tmp, A, u, Val(false)) + f(u, p, t)
+end
 
 """
-Helper function for the residual maybe in place. 
+Helper function for the residual maybe in place.
 Same principle of operation as `_safe_matvec_prod` for mutability/in-place handling.
 """
-function calculate_residuals_mip(tmp::uType, utilde::uType, uprev::uType, u::uType, abstol, reltol, internalnorm, t, ::Val{true}) where {uType}
+function calculate_residuals_mip(tmp::uType, utilde::uType, uprev::uType, u::uType, abstol,
+        reltol, internalnorm, t, ::Val{true}) where {uType}
     calculate_residuals!(tmp, utilde, uprev, u, abstol, reltol, internalnorm, t)
     return tmp
 end
-calculate_residuals_mip(_::uType, utilde::uType, uprev::uType, u::uType, abstol, reltol, internalnorm, t, ::Val{false}) where {uType} = calculate_residuals(utilde, uprev, u, abstol, reltol, internalnorm, t)
+function calculate_residuals_mip(_::uType, utilde::uType, uprev::uType, u::uType, abstol,
+        reltol, internalnorm, t, ::Val{false}) where {uType}
+    calculate_residuals(utilde, uprev, u, abstol, reltol, internalnorm, t)
+end
 
-@fastmath function perform_step!(integrator, cache::RKIPCache{expOpType,cacheType,tType,opType,uType,iip}) where {expOpType,cacheType,tType,opType,uType,iip}
+@fastmath function perform_step!(integrator,
+        cache::RKIPCache{expOpType, cacheType, tType, opType, uType, iip}) where {
+        expOpType, cacheType, tType, opType, uType, iip}
     @unpack t, dt, uprev, u, f, p, fsalfirst, fsallast, alg = integrator
     @unpack c, α, αEEst, stages, A = alg.tableau
     @unpack kk, utilde, tmp = cache
@@ -47,10 +59,10 @@ calculate_residuals_mip(_::uType, utilde::uType, uprev::uType, u::uType, abstol,
 
     @bb u .= uprev
 
-    @inbounds for i in 1:(stages)
+     for i in 1:(stages)
         @bb kk[i] .= uprev
 
-        @inbounds for j in 1:(i-1)
+        for j in 1:(i - 1)
             g = A[i, j] * dt
             kk[i] = axpy_mip(g, kk[j], kk[i], iip) # kk_i += dt*A[i, j] * kk_j
         end
@@ -59,7 +71,6 @@ calculate_residuals_mip(_::uType, utilde::uType, uprev::uType, u::uType, abstol,
         kk[i] = expmv_rkip_mip(cache, kk[i], dt, i) # kᵢ = exp(Â * [dt * cᵢ])*kᵢ ➡ Change from interaction picture to "true" coordinate
 
         kk[i] = nl_part_mip(cache.tmp, f.f2, kk[i], p, t + c[i] * dt, iip) # kᵢ = f(u + Σⱼ dt*(Aᵢⱼ kⱼ), t + dt*cᵢ)
-
 
         kk[i] = expmv_rkip_mip(cache, kk[i], -dt, i) # kᵢ = exp(-Â * [dt * cᵢ])*kᵢ ➡ Going back in interaction picture
 
@@ -81,7 +92,8 @@ calculate_residuals_mip(_::uType, utilde::uType, uprev::uType, u::uType, abstol,
 
     if adaptive
         utilde = expmv_rkip_mip(cache, utilde, dt) # stepping forward into the interaction ũ = exp(Â dt)*ũ
-        tmp = calculate_residuals_mip(tmp, utilde, uprev, u, abstol, reltol, internalnorm, t, iip) # error computation maybe in place
+        tmp = calculate_residuals_mip(
+            tmp, utilde, uprev, u, abstol, reltol, internalnorm, t, iip) # error computation maybe in place
         integrator.EEst = internalnorm(tmp, t)
     end
 
@@ -94,12 +106,13 @@ calculate_residuals_mip(_::uType, utilde::uType, uprev::uType, u::uType, abstol,
     @bb copyto!(integrator.k[2], fsallast)
 end
 
-
-function initialize!(integrator, cache::RKIPCache{expOpType,cacheType,tType,opType,uType,iip}) where {expOpType,cacheType,tType,opType,uType,iip}
+function initialize!(integrator,
+        cache::RKIPCache{expOpType, cacheType, tType, opType, uType, iip}) where {
+        expOpType, cacheType, tType, opType, uType, iip}
     @unpack f, u, p, t, fsalfirst, fsallast = integrator
 
     kshortsize = 2
-    k = [zero(u) for _ ∈ 1:kshortsize]
+    k = [zero(u) for _ in 1:kshortsize]
 
     fsalfirst = f_mip!(fsalfirst, cache.tmp, f.f1.f, f.f2, u, p, t, iip) # first derivative for interpolation computation, maybe in place
     integrator.stats.nf += 1

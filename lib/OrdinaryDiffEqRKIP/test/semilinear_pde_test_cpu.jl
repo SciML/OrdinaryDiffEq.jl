@@ -3,7 +3,6 @@ using LinearAlgebra: norm
 
 include("semilinear_fft.jl")
 
-
 @testset "Lugiato-Lefever equation test - Float64" begin
     @test !isnothing(lle_scan_test())
 end
@@ -11,7 +10,6 @@ end
 @testset "Lugiato-Lefever equation test - Float32" begin
     @test !isnothing(lle_scan_test(Float32))
 end
-
 
 @testset "NLSE test - Float64" begin
     sol = nlse_test()
