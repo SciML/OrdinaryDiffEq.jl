@@ -9,9 +9,12 @@ using DiffEqBase: ExplicitRKTableau
 using DiffEqDevTools: constructDormandPrince6
 
 import OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveExponentialAlgorithm, alg_adaptive_order,
-    alg_order, alg_cache, @cache, SplitFunction, get_fsalfirstlast, initialize!, perform_step!,
-    has_dtnew_modification, calculate_residuals, calculate_residuals!, increment_nf!, OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache, dtnew_modification
-
+                           alg_order, alg_cache, @cache, SplitFunction, get_fsalfirstlast,
+                           initialize!, perform_step!,
+                           has_dtnew_modification, calculate_residuals,
+                           calculate_residuals!, increment_nf!,
+                           OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache,
+                           dtnew_modification
 
 include("rkip_cache.jl")
 include("algorithms.jl")
