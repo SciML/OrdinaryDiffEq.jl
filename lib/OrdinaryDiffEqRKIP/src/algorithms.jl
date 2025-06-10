@@ -13,9 +13,11 @@ where A is possibly stiff time-independent linear operator whose scaled exponent
 The problem is first transformed in a non-stiff variant (interaction picture)
 
 ```math
-u_I(t) = \exp(-At) u(t)
-\frac{du_I}{dt} =  f_I(u_I,p,t)
-f_I(u_I,p,t) = f(exp(-At)u_I, p, t)
+\begin{aligned}
+u_I(t) &= \exp(-At) u(t) \\
+\frac{du_I}{dt} &=  f_I(u_I,p,t) \\
+f_I(u_I,p,t) &= f(exp(-At)u_I, p, t) \\
+\end{aligned}
 ```
 and is then solved with an explicit (adaptive) Runge-Kutta method.
 
