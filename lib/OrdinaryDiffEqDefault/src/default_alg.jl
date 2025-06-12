@@ -135,3 +135,12 @@ function is_mass_matrix_alg(alg::CompositeAlgorithm{
         <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}})
     true
 end
+
+function DefaultImplicitODEAlgorithm(; lazy = true, stol = Inf, ntol = 0, kwargs...)
+    nonstiff = (Tsit5(), Vern7(lazy = lazy))
+    stiff = (Rosenbrock23(; kwargs...), Rodas5P(; kwargs...),
+        FBDF(; kwargs...),
+        FBDF(; linsolve = LinearSolve.KrylovJL_GMRES(), kwargs...))
+    AutoAlgSwitch(
+        nonstiff, stiff; stiffalgfirst = true, stifftol = stol, nonstifftol = ntol)
+end
