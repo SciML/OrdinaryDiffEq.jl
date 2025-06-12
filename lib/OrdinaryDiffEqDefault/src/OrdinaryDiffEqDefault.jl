@@ -84,6 +84,6 @@ PrecompileTools.@compile_workload begin
     solver_list = nothing
 end
 
-export DefaultODEAlgorithm
+export DefaultODEAlgorithm, DefaultImplicitODEAlgorithm
 
 end # module OrdinaryDiffEqDefault
