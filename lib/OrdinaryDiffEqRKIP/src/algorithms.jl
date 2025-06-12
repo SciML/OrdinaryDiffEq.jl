@@ -58,7 +58,7 @@ REFERENCE = """Zhongxi Zhang, Liang Chen, and Xiaoyi Bao, "A fourth-order Runge-
 
 KEYWORD_DESCRIPTION = """
 - `nb_of_cache_step::Integer`: the number of steps. Default is `100`.
-- `tableau::ExplicitRKTableau`: the Runge-Kutta Tableau to use. Default is `constructDormandPrince6()`.
+- `tableau::ExplicitRKTableau`: the Runge-Kutta Tableau to use. Default is `_`. (TO BE DETERMINED)
 - `clamp_lower_dt::Bool`: whether to clamp proposed step to the smallest cached step in order to force the use of cached exponential, improving performance.
 	This may prevent reaching the desired tolerance. Default is `false`.
 - `clamp_higher_dt::Bool`: whether to clamp proposed step to the largest cached step in order to force the use of cached exponential, improving performance.
@@ -81,7 +81,7 @@ mutable struct RKIP{
 end
 
 function RKIP(dtmin::T = 1e-3, dtmax::T = 1.0; nb_of_cache_step::Int = 100,
-        tableau = constructDormandPrince6(T), clamp_lower_dt::Bool = false,
+        tableau = constructVerner6(T), clamp_lower_dt::Bool = false,
         clamp_higher_dt::Bool = true, use_ldiv = false) where {T}
     RKIP{
         typeof(tableau), T, Vector{T}}(
@@ -93,7 +93,6 @@ function RKIP(dtmin::T = 1e-3, dtmax::T = 1.0; nb_of_cache_step::Int = 100,
         nothing
     )
 end
-
 
 alg_order(alg::RKIP) = alg.tableau.order
 alg_adaptive_order(alg::RKIP) = alg.tableau.adaptiveorder
@@ -114,7 +113,6 @@ function dtnew_modification(alg::RKIP{tableauType, elType, dtType},
 end
 
 dtnew_modification(_, alg::RKIP, dtnew) = dtnew_modification(alg, dtnew)
-
 
 function alg_cache(
         alg::RKIP, u::uType, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
@@ -165,13 +163,13 @@ function alg_cache(
         alg.cache = RKIPCache{
             expOpType, typeof(alg.cache.exp_cache), tTypeNoUnits, opType, uType, iip}(
             alg.cache.exp_cache,
-            alg.last_step,
-            alg.cache.is_cached,
+            alg.cache.last_step,
+            alg.cache.cached,
             tmp,
             utilde,
             kk,
             alg.cache.c_unique,
-            alg.cache.c_index
+            alg.cache.c_mapping
         )
     end
     return alg.cache
