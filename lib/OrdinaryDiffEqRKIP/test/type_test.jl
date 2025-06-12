@@ -12,8 +12,9 @@ LinearAlgebra.exp(d::ScalarOperator, t) = ScalarOperator(exp(t * d.val)) # Tempo
 LinearAlgebra.exp(d::MatrixOperator, t) = MatrixOperator(exp(t * d.A))
 
 function test(A_prototype, u_prototype, iip; use_ldiv = false)
-    for reltol in [1e-3, 1e-6, 1e-8] # fail for 1e-9, probably due to floating point error
-        μ = 1.05
+    for reltol in [1e-3, 1e-6, 1e-8, 1e-10, 1e-12],
+        μ in 1.05
+
         analytic = (u0, _, t) -> u0 .* exp(2μ * t)
 
         for μₐ in [2μ, μ, 0.0]
@@ -29,8 +30,11 @@ function test(A_prototype, u_prototype, iip; use_ldiv = false)
 
             splfc = SplitFunction{iip}(Â, f; analytic = analytic)
             spltode = SplitODEProblem(splfc, u0, t)
-            sol = solve(spltode, RKIP(; use_ldiv = use_ldiv); reltol = reltol)
-            @test isapprox(sol(t[end]), splfc.analytic(u0, nothing, t[end]); rtol = reltol)
+            sol = solve(
+                spltode, RKIP(; use_ldiv = use_ldiv); reltol = reltol, abstol = 1e-10)
+
+            @test isapprox(sol(t[end]), splfc.analytic(u0, nothing, t[end]);
+                rtol = 1e2 * reltol, atol = 1e-8)
         end
     end
 end

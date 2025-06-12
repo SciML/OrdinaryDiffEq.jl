@@ -6,7 +6,7 @@ using UnPack: @pack!, @unpack
 using MaybeInplace: @bb
 using SciMLBase: isinplace
 using DiffEqBase: ExplicitRKTableau
-using DiffEqDevTools: constructDormandPrince6
+using DiffEqDevTools: constructVerner6
 
 import OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveExponentialAlgorithm, alg_adaptive_order,
                            alg_order, alg_cache, @cache, SplitFunction, get_fsalfirstlast,
