@@ -20,7 +20,7 @@ Retunr res if in place, otherwise return Au + f(u, p, t)
 function f_mip!(res::uType, tmp::uType, A::opType, f, u::uType, p,
         t::tType, ::Val{true}) where {tType, uType, opType}
     res .= u
-    res = matvec_prod_mip(tmp, A, res, Val(true))
+    res = matvec_prod_mip(tmp, A, res, Val(true), p, t)
     f(tmp, u, p, t)
     res .+= tmp
     return res
@@ -28,7 +28,7 @@ end
 
 function f_mip!(_::uType, tmp::uType, A::opType, f, u::uType, p,
         t::tType, ::Val{false}) where {tType, uType, opType}
-    matvec_prod_mip(tmp, A, u, Val(false)) + f(u, p, t)
+    matvec_prod_mip(tmp, A, u, Val(false), p, t) + f(u, p, t)
 end
 
 """
@@ -59,7 +59,7 @@ end
 
     @bb u .= uprev
 
-     for i in 1:(stages)
+    for i in 1:(stages)
         @bb kk[i] .= uprev
 
         for j in 1:(i - 1)
@@ -67,12 +67,14 @@ end
             kk[i] = axpy_mip(g, kk[j], kk[i], iip) # kk_i += dt*A[i, j] * kk_j
         end
 
+        t_ = t + c[i] * dt
+
         # if mutable/heaps type, assignment does nothing as the function is in-place,
-        kk[i] = expmv_rkip_mip(cache, kk[i], dt, i) # kᵢ = exp(Â * [dt * cᵢ])*kᵢ ➡ Change from interaction picture to "true" coordinate
+        kk[i] = expmv_rkip_mip(cache, kk[i], dt, i, p, t_) # kᵢ = exp(Â * [dt * cᵢ])*kᵢ ➡ Change from interaction picture to "true" coordinate
 
-        kk[i] = nl_part_mip(cache.tmp, f.f2, kk[i], p, t + c[i] * dt, iip) # kᵢ = f(u + Σⱼ dt*(Aᵢⱼ kⱼ), t + dt*cᵢ)
+        kk[i] = nl_part_mip(cache.tmp, f.f2, kk[i], p, t_, iip) # kᵢ = f(u + Σⱼ dt*(Aᵢⱼ kⱼ), t + dt*cᵢ)
 
-        kk[i] = expmv_rkip_mip(cache, kk[i], -dt, i) # kᵢ = exp(-Â * [dt * cᵢ])*kᵢ ➡ Going back in interaction picture
+        kk[i] = expmv_rkip_mip(cache, kk[i], -dt, i, p, t_) # kᵢ = exp(-Â * [dt * cᵢ])*kᵢ ➡ Going back in interaction picture
 
         integrator.stats.nf += 2 # two exp vec product
         integrator.stats.nf2 += 1 # one function evaluation
@@ -88,10 +90,10 @@ end
         end
     end
 
-    u = expmv_rkip_mip(cache, u, dt) # stepping forward into the interaction u = exp(Â dt)*u
+    u = expmv_rkip_mip(cache, u, dt, p, t) # stepping forward into the interaction u = exp(Â dt)*u
 
     if adaptive
-        utilde = expmv_rkip_mip(cache, utilde, dt) # stepping forward into the interaction ũ = exp(Â dt)*ũ
+        utilde = expmv_rkip_mip(cache, utilde, dt, p, t) # stepping forward into the interaction ũ = exp(Â dt)*ũ
         tmp = calculate_residuals_mip(
             tmp, utilde, uprev, u, abstol, reltol, internalnorm, t, iip) # error computation maybe in place
         integrator.EEst = internalnorm(tmp, t)
