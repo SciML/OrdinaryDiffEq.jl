@@ -15,10 +15,22 @@ end
 
 @doc explicit_rk_docstring(
     "An arbitrary-order explicit Taylor series method.",
-    "ExplicitTaylor2")
+    "ExplicitTaylor")
 Base.@kwdef struct ExplicitTaylor{P, StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
     order::Val{P} = Val{1}()
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+
+@doc explicit_rk_docstring(
+    "An adaptive order explicit Taylor series method.",
+    "ExplicitTaylorAdaptiveOrder")
+Base.@kwdef struct ExplicitTaylorAdaptiveOrder{P, Q, StageLimiter, StepLimiter, Thread} <:
+                   OrdinaryDiffEqAdaptiveAlgorithm
+    min_order::Val{P} = Val{1}()
+    max_order::Val{Q} = Val{10}()
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
