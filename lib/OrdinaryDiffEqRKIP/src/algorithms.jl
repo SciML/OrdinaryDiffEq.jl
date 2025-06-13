@@ -58,7 +58,7 @@ REFERENCE = """Zhongxi Zhang, Liang Chen, and Xiaoyi Bao, "A fourth-order Runge-
 
 KEYWORD_DESCRIPTION = """
 - `nb_of_cache_step::Integer`: the number of steps. Default is `100`.
-- `tableau::ExplicitRKTableau`: the Runge-Kutta Tableau to use. Default is `_`. (TO BE DETERMINED)
+- `tableau::ExplicitRKTableau`: the Runge-Kutta Tableau to use. Default is `constructVerner6()`.
 - `clamp_lower_dt::Bool`: whether to clamp proposed step to the smallest cached step in order to force the use of cached exponential, improving performance.
 	This may prevent reaching the desired tolerance. Default is `false`.
 - `clamp_higher_dt::Bool`: whether to clamp proposed step to the largest cached step in order to force the use of cached exponential, improving performance.
