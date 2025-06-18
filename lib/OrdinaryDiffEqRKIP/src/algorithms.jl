@@ -42,7 +42,7 @@ The fixed steps will follow a geometric progression.
 Time stepping can still happen outside the bounds (for the end step for e.g) but no cache will occur (`exp(A*dt)` getting computed each step) degrading the performances.
 The time step can be forcibly clamped within the cache range through the keywords `clamp_lower_dt` and `clamp_higher_dt`.
 
-The cached operator exponentials are also directly stored in the alorithm such that:
+The cached operator exponentials are also directly stored in the algorithm such that:
 
 ```julia
 rkip = RKIP()
