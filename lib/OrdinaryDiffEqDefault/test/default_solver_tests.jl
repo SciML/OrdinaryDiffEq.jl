@@ -16,6 +16,10 @@ tsitsol = solve(prob_ode_2Dlinear, Tsit5())
 x = [zeros(4, 2) for _ in 1:5]
 @test sol(x, 0:0.1:0.4) == tsitsol(x, 0:0.1:0.4)
 
+sol_implicit = @inferred solve(prob_ode_2Dlinear, DefaultImplicitODEAlgorithm())
+@test all(isequal(3), sol_implicit.alg_choice)
+@test sol(0.5) ≈ sol_implicit(0.5) rtol=1e-3 atol=1e-6
+
 sol = solve(prob_ode_2Dlinear, reltol = 1e-10)
 vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
 # test that default is the same as Vern7 (we expect it to use Vern7 for this).
@@ -24,11 +28,18 @@ vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
 @test all(isequal(2), sol.alg_choice)
 @test sol(0.5) == only(sol([0.5]).u) == vernsol(0.5)
 
+sol_implicit = @inferred solve(prob_ode_2Dlinear, DefaultImplicitODEAlgorithm(), reltol = 1e-10)
+@test all(isequal(4), sol_implicit.alg_choice)
+@test sol(0.5) ≈ sol_implicit(0.5) rtol=1e-10 atol=1e-6
+
 prob_ode_linear_fast = ODEProblem(
     ODEFunction(f_2dlinear, mass_matrix = 2 * I(2)), rand(2), (0.0, 1.0), 1.01)
 sol = solve(prob_ode_linear_fast)
 @test all(isequal(4), sol.alg_choice)
 # for some reason the timestepping here is different from regular Rosenbrock23 (including the initial timestep)
+
+sol_implicit = @inferred solve(prob_ode_linear_fast, DefaultImplicitODEAlgorithm(), reltol = 1e-10)
+@test all(isequal(4), sol_implicit.alg_choice)
 
 function rober(u, p, t)
     y₁, y₂, y₃ = u
