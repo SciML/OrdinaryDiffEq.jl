@@ -18,7 +18,7 @@ x = [zeros(4, 2) for _ in 1:5]
 
 sol_implicit = @inferred solve(prob_ode_2Dlinear, DefaultImplicitODEAlgorithm())
 @test all(isequal(3), sol_implicit.alg_choice)
-@test sol(0.5) ≈ sol_implicit(0.5) reltol=1e-3, abstol=1e-6
+@test sol(0.5) ≈ sol_implicit(0.5) reltol=1e-3 abstol=1e-6
 
 sol = solve(prob_ode_2Dlinear, reltol = 1e-10)
 vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
