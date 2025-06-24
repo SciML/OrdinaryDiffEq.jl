@@ -139,9 +139,9 @@ version = "0.2.6"
 
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra"]
-git-tree-sha1 = "1713c74e00545bfe14605d2a2be1712de8fbcb58"
+git-tree-sha1 = "06ee8d1aa558d2833aa799f6f0b31b30cada405f"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.25.1"
+version = "1.25.2"
 weakdeps = ["SparseArrays"]
 
     [deps.ChainRulesCore.extensions]
@@ -432,15 +432,16 @@ uuid = "442a2c76-b920-505d-bb47-c5924d526838"
 version = "1.0.2"
 
 [[deps.FastPower]]
-git-tree-sha1 = "df32f07f373f06260cd6af5371385b5ef85dd762"
+git-tree-sha1 = "5f7afd4b1a3969dc34d692da2ed856047325b06e"
 uuid = "a4df4552-cc26-4903-aec0-212e50a0e84b"
-version = "1.1.2"
+version = "1.1.3"
 
     [deps.FastPower.extensions]
     FastPowerEnzymeExt = "Enzyme"
     FastPowerForwardDiffExt = "ForwardDiff"
     FastPowerMeasurementsExt = "Measurements"
     FastPowerMonteCarloMeasurementsExt = "MonteCarloMeasurements"
+    FastPowerMooncakeExt = "Mooncake"
     FastPowerReverseDiffExt = "ReverseDiff"
     FastPowerTrackerExt = "Tracker"
 
@@ -449,6 +450,7 @@ version = "1.1.2"
     ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
     Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
     MonteCarloMeasurements = "0987c9cc-fe09-11e8-30f0-b96dd679fdca"
+    Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
     ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
     Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 
@@ -536,9 +538,9 @@ version = "1.4.0"
 
 [[deps.Git_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "LibCURL_jll", "Libdl", "Libiconv_jll", "OpenSSL_jll", "PCRE2_jll", "Zlib_jll"]
-git-tree-sha1 = "2f6d6f7e6d6de361865d4394b802c02fc944fc7c"
+git-tree-sha1 = "b981ed24de5855f20fce5b8cb767c179f93e4268"
 uuid = "f8c6e375-362e-5223-8a59-34ff63f689eb"
-version = "2.49.0+0"
+version = "2.50.0+0"
 
 [[deps.IOCapture]]
 deps = ["Logging", "Random"]
@@ -703,9 +705,9 @@ version = "1.11.0"
 
 [[deps.LinearSolve]]
 deps = ["ArrayInterface", "ChainRulesCore", "ConcreteStructs", "DocStringExtensions", "EnumX", "GPUArraysCore", "InteractiveUtils", "Krylov", "LazyArrays", "Libdl", "LinearAlgebra", "MKL_jll", "Markdown", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "Setfield", "StaticArraysCore", "UnPack"]
-git-tree-sha1 = "8e3338feeba33eb287e5b86a99666289542e382e"
+git-tree-sha1 = "062c11f1d84ffc80d00fddaa515f7e37e8e9f9d5"
 uuid = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-version = "3.18.0"
+version = "3.18.2"
 
     [deps.LinearSolve.extensions]
     LinearSolveBandedMatricesExt = "BandedMatrices"
@@ -1300,9 +1302,9 @@ version = "0.1.0"
 
 [[deps.SciMLBase]]
 deps = ["ADTypes", "Accessors", "Adapt", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "Moshi", "PrecompileTools", "Preferences", "Printf", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLOperators", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface"]
-git-tree-sha1 = "a3fa02bf0ac97856e2f9129f5fb33a4b9ba0bae1"
+git-tree-sha1 = "31587e20cdea9fba3a689033313e658dfc9aae78"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "2.102.0"
+version = "2.102.1"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
