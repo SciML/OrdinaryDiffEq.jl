@@ -8,19 +8,19 @@ function loopheader!(integrator)
 
     # Accept or reject the step
     if integrator.iter > 0
-        if ((integrator.opts.adaptive && integrator.accept_step) ||
-            !integrator.opts.adaptive) && !integrator.force_stepfail
-            integrator.success_iter += 1
-            apply_step!(integrator)
-        elseif integrator.opts.adaptive && !integrator.accept_step
+        if (integrator.opts.adaptive && !integrator.accept_step) || integrator.force_stepfail
             if integrator.isout
                 integrator.dt = integrator.dt * integrator.opts.qmin
             elseif !integrator.force_stepfail
                 step_reject_controller!(integrator, integrator.alg)
             end
+        else
+            integrator.success_iter += 1
+            apply_step!(integrator)
         end
     elseif integrator.u_modified # && integrator.iter == 0
         update_uprev!(integrator)
+        update_fsal!(integrator)
     end
 
     integrator.iter += 1
@@ -29,6 +29,43 @@ function loopheader!(integrator)
     modify_dt_for_tstops!(integrator)
     integrator.force_stepfail = false
     return nothing
+end
+
+
+function apply_step!(integrator)
+    update_uprev!(integrator)
+
+    #Update dt if adaptive or if fixed and the dt is allowed to change
+    if integrator.opts.adaptive || integrator.dtchangeable
+        integrator.dt = integrator.dtpropose
+    elseif integrator.dt != integrator.dtpropose && !integrator.dtchangeable
+        error("The current setup does not allow for changing dt.")
+    end
+
+    update_fsal!(integrator)
+    return nothing
+end
+
+function update_fsal!(integrator)
+    if has_discontinuity(integrator) &&
+       first_discontinuity(integrator) == integrator.tdir * integrator.t
+        handle_discontinuities!(integrator)
+        get_current_isfsal(integrator.alg, integrator.cache) && reset_fsal!(integrator)
+    elseif all_fsal(integrator.alg, integrator.cache) ||
+           get_current_isfsal(integrator.alg, integrator.cache)
+        if integrator.reeval_fsal || integrator.u_modified ||
+           (isdp8(integrator.alg) && !integrator.opts.calck) ||
+           (only_diagonal_mass_matrix(integrator.alg) &&
+            !integrator.opts.adaptive)
+            reset_fsal!(integrator)
+        else # Do not reeval_fsal, instead copyto! over
+            if isinplace(integrator.sol.prob)
+                recursivecopy!(integrator.fsalfirst, integrator.fsallast)
+            else
+                integrator.fsalfirst = integrator.fsallast
+            end
+        end
+    end
 end
 
 function last_step_failed(integrator::ODEIntegrator)
@@ -384,39 +421,6 @@ function update_uprev!(integrator)
         end
     end
     nothing
-end
-
-function apply_step!(integrator)
-    update_uprev!(integrator)
-
-    #Update dt if adaptive or if fixed and the dt is allowed to change
-    if integrator.opts.adaptive || integrator.dtchangeable
-        integrator.dt = integrator.dtpropose
-    elseif integrator.dt != integrator.dtpropose && !integrator.dtchangeable
-        error("The current setup does not allow for changing dt.")
-    end
-
-    # Update fsal if needed
-    if has_discontinuity(integrator) &&
-       first_discontinuity(integrator) == integrator.tdir * integrator.t
-        handle_discontinuities!(integrator)
-        get_current_isfsal(integrator.alg, integrator.cache) && reset_fsal!(integrator)
-    elseif all_fsal(integrator.alg, integrator.cache) ||
-           get_current_isfsal(integrator.alg, integrator.cache)
-        if integrator.reeval_fsal || integrator.u_modified ||
-           (isdp8(integrator.alg) && !integrator.opts.calck) ||
-           (only_diagonal_mass_matrix(integrator.alg) &&
-            !integrator.opts.adaptive)
-            reset_fsal!(integrator)
-        else # Do not reeval_fsal, instead copyto! over
-            if isinplace(integrator.sol.prob)
-                recursivecopy!(integrator.fsalfirst, integrator.fsallast)
-            else
-                integrator.fsalfirst = integrator.fsallast
-            end
-        end
-    end
-    return nothing
 end
 
 handle_discontinuities!(integrator) = pop_discontinuity!(integrator)
