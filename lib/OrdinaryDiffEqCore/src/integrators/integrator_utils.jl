@@ -158,13 +158,17 @@ function _postamble!(integrator)
         resize!(integrator.sol.k, integrator.saveiter_dense)
     end
     if integrator.opts.progress
-        @logmsg(LogLevel(-1),
-            integrator.opts.progress_name,
-            _id=integrator.opts.progress_id,
-            message=integrator.opts.progress_message(integrator.dt, integrator.u,
-                integrator.p, integrator.t),
-            progress="done")
+
     end
+end
+
+function final_progress(integrator)
+    @logmsg(LogLevel(-1),
+    integrator.opts.progress_name,
+    _id=integrator.opts.progress_id,
+    message=integrator.opts.progress_message(integrator.dt, integrator.u,
+        integrator.p, integrator.t),
+    progress="done")
 end
 
 function solution_endpoint_match_cur_integrator!(integrator)
