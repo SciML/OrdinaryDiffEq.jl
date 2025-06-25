@@ -156,6 +156,9 @@ end
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
+        if VERSION >= v"1.11"
+            @time @safetestset "Mooncake Tests" include("downstream/mooncake.jl")
+        end
         @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")
         @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
     end
