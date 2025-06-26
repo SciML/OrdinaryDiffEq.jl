@@ -22,4 +22,4 @@ jobs:
           julia_version: ${{ matrix.version }}
           script: "benchmark/benchmarks.jl"
           annotate_pr: true
-          extra-pkgs: "BenchmarkTools,StaticArrays,LinearAlgebra,SparseArrays,DiffEqBase"
+          extra-pkgs: "StableRNGs,StaticArrays,LinearAlgebra,SparseArrays,DiffEqBase"
