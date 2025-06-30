@@ -1013,6 +1013,18 @@ end
     end
 end
 
+# ------------------------------------------------------------------
+#  RKV87-IIa wrappers
+# ------------------------------------------------------------------
+
+initialize!(integrator, cache::RKV87ConstantCache) = nothing
+
+# The tableau we built is an ExplicitRKTableau with 13 stages
+perform_step!(integrator,
+              cache::RKV87ConstantCache,
+              tab::ExplicitRKTableau{13}) =
+    verner_lowstorage_step!(integrator, cache, tab)
+    
 function initialize!(integrator, cache::Vern9Cache)
     @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16 = cache
     @unpack k = integrator
