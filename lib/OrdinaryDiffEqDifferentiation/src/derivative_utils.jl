@@ -458,7 +458,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
         return true, true
     end
     # TODO: add `isJcurrent` support for Rosenbrock solvers
-    if !isnewton(nlsolver)
+    if !isnewton(nlsolver) && !isnonlinearsolve(nlsolver)
         isfreshJ = !(integrator.alg isa CompositeAlgorithm) &&
                    (integrator.iter > 1 && errorfail && !integrator.u_modified)
         return !isfreshJ, true
