@@ -52,8 +52,12 @@ function (AS::AutoSwitchCache)(integrator)
     if (!AS.is_stiffalg && AS.count > AS.maxstiffstep)
         integrator.dt = dt * AS.dtfac
         AS.is_stiffalg = true
+        SciMLBase.@SciMLMessage("Algorithm was switched to $(nameof(typeof(integrator.alg.algs[Int(AS.current) + 1]))) at t = $(integrator.t).",
+            integrator.opts.verbose, :alg_switch, :performance)
     elseif (AS.is_stiffalg && AS.count < -AS.maxnonstiffstep)
         integrator.dt = dt / AS.dtfac
+        SciMLBase.@SciMLMessage("Algorithm was switched to $(nameof(typeof(integrator.alg.algs[1]))) at t = $(integrator.t).",
+            integrator.opts.verbose, :alg_switch, :performance)
         AS.is_stiffalg = false
     end
     AS.current = Int(AS.is_stiffalg) + 1
