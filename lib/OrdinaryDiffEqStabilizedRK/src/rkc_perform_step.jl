@@ -313,6 +313,7 @@ end
     @.. broadcast=false uᵢ₋₁=uprev + (dt * recf[ccache.start]) * fsalfirst
     ccache.mdeg < 2 && (@.. broadcast=false u=uᵢ₋₁)
     # for the second to the ccache.mdeg th stages
+    @show ccache.mdeg
     for i in 2:(ccache.mdeg)
         μ, κ = recf[ccache.start + (i - 2) * 2 + 1], recf[ccache.start + (i - 2) * 2 + 2]
         ν = -1 - κ
