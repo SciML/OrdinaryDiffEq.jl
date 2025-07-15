@@ -35,6 +35,7 @@ end
         μ, κ = recf[cache.start + (i - 2) * 2 + 1], recf[cache.start + (i - 2) * 2 + 2]
         ν = -1 - κ
         u = f(uᵢ₋₁, p, tᵢ₋₁)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = dt * μ - ν * tᵢ₋₂ - κ * tᵢ₋₃
         u = (dt * μ) * u - ν * uᵢ₋₁ - κ * uᵢ₋₂
         i < cache.mdeg && (uᵢ₋₂ = uᵢ₋₁;
@@ -110,6 +111,7 @@ end
         μ, κ = recf[ccache.start + (i - 2) * 2 + 1], recf[ccache.start + (i - 2) * 2 + 2]
         ν = -1 - κ
         f(k, uᵢ₋₁, p, tᵢ₋₁)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = dt * μ - ν * tᵢ₋₂ - κ * tᵢ₋₃
         @.. broadcast=false u=(dt * μ) * k - ν * uᵢ₋₁ - κ * uᵢ₋₂
         if i < ccache.mdeg
@@ -192,6 +194,7 @@ end
         μ, κ = recf[cache.start + (i - 2) * 2 + 1], recf[cache.start + (i - 2) * 2 + 2]
         ν = -1 - κ
         u = f(uᵢ₋₁, p, tᵢ₋₁)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = dt * μ - ν * tᵢ₋₂ - κ * tᵢ₋₃
         u = (dt * μ) * u - ν * uᵢ₋₁ - κ * uᵢ₋₂
         i < cache.mdeg && (uᵢ₋₂ = uᵢ₋₁;
@@ -314,6 +317,7 @@ end
         μ, κ = recf[ccache.start + (i - 2) * 2 + 1], recf[ccache.start + (i - 2) * 2 + 2]
         ν = -1 - κ
         f(k, uᵢ₋₁, p, tᵢ₋₁)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = (dt * μ) - ν * tᵢ₋₂ - κ * tᵢ₋₃
         @.. broadcast=false u=(dt * μ) * k - ν * uᵢ₋₁ - κ * uᵢ₋₂
         if i < ccache.mdeg
