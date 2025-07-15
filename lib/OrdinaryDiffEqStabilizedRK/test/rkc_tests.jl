@@ -73,25 +73,25 @@ end
     end
 end
 
-@testset "Numer of function evaluations" begin
+@testset "Number of function evaluations" begin
     x = Ref(0)
     u0 = [1.0, 1.0]
     tspan = (0.0, 1.0)
     probop = ODEProblem(u0, tspan) do u, p, t
         x[] += 1
-        return -5 * u
+        return -500 * u
     end
     probip = ODEProblem(u0, tspan) do du, u, p, t
         x[] += 1
-        @. du = -5 * u
+        @. du = -500 * u
         return nothing
     end
 
     @testset "$prob" for prob in [probop, probip]
-        eigen_est = (integrator) -> integrator.eigen_est = 5
+        eigen_est = (integrator) -> integrator.eigen_est = 500
         algs = [ROCK2(), ROCK2(eigen_est = eigen_est),
                 ROCK4(), ROCK4(eigen_est = eigen_est),
-                RKC(),  RKC(eigen_est = eigen_est),
+                RKC(), RKC(eigen_est = eigen_est),
                 SERK2(), SERK2(eigen_est = eigen_est),
                 ESERK4(), ESERK4(eigen_est = eigen_est),
                 ESERK5(), ESERK5(eigen_est = eigen_est)]
