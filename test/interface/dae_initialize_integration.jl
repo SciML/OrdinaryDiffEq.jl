@@ -62,20 +62,20 @@ _f = ODEFunction(testsys; initializeprob = nlprob, initializeprobmap = initprobm
 prob = ODEProblem(_f, [0.0], (0.0, 1.0))
 sol = solve(prob, Tsit5())
 @test SciMLBase.successful_retcode(sol)
-@test sol[1] == [1.0]
+@test sol.u[1] == [1.0]
 
 prob = ODEProblem(_f, [0.0], (0.0, 1.0))
 sol = solve(prob, Tsit5(), dt = 1e-10)
 @test SciMLBase.successful_retcode(sol)
-@test sol[1] == [1.0]
-@test sol[2] ≈ [0.9999999998]
-@test sol[end] ≈ [-1.0]
+@test sol.u[1] == [1.0]
+@test sol.u[2] ≈ [0.9999999998]
+@test sol.u[end] ≈ [-1.0]
 
 sol = solve(prob, Rodas5P(), dt = 1e-10)
 @test SciMLBase.successful_retcode(sol)
-@test sol[1] == [1.0]
-@test sol[2] ≈ [0.9999999998]
-@test sol[end] ≈ [-1.0]
+@test sol.u[1] == [1.0]
+@test sol.u[2] ≈ [0.9999999998]
+@test sol.u[end] ≈ [-1.0]
 
 @testset "`reinit!` updates initial parameters" begin
     # https://github.com/SciML/ModelingToolkit.jl/issues/3451
