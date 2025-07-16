@@ -18,7 +18,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
-    mdeg = Int(floor(sqrt((1.5 + abs(dt) * integrator.eigen_est) / 0.811) + 1))
+    mdeg = floor(Int, sqrt((1.5 + abs(dt) * integrator.eigen_est) / 0.811)) + 1
     mdeg = min(max(mdeg, cache.min_stage), cache.max_stage)
     cache.mdeg = max(mdeg, 3) - 2
     choosedeg!(cache)
@@ -38,8 +38,10 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = dt * μ - ν * tᵢ₋₂ - κ * tᵢ₋₃
         u = (dt * μ) * u - ν * uᵢ₋₁ - κ * uᵢ₋₂
-        i < cache.mdeg && (uᵢ₋₂ = uᵢ₋₁;
-        uᵢ₋₁ = u)
+        if i < cache.mdeg
+            uᵢ₋₂ = uᵢ₋₁
+            uᵢ₋₁ = u
+        end
         tᵢ₋₃ = tᵢ₋₂
         tᵢ₋₂ = tᵢ₋₁
     end # end if
@@ -94,7 +96,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
-    mdeg = Int(floor(sqrt((1.5 + abs(dt) * integrator.eigen_est) / 0.811) + 1))
+    mdeg = floor(Int, sqrt((1.5 + abs(dt) * integrator.eigen_est) / 0.811)) + 1
     mdeg = min(max(mdeg, ccache.min_stage), ccache.max_stage)
     ccache.mdeg = max(mdeg, 3) - 2
     choosedeg!(cache)
@@ -154,7 +156,6 @@ end
     f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
 end
 
 function initialize!(integrator, cache::ROCK4ConstantCache)
@@ -177,7 +178,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
-    mdeg = Int(floor(sqrt((3 + abs(dt) * integrator.eigen_est) / 0.353) + 1))
+    mdeg = floor(Int, sqrt((3 + abs(dt) * integrator.eigen_est) / 0.353)) + 1
     mdeg = min(max(mdeg, cache.min_stage), cache.max_stage)
     cache.mdeg = max(mdeg, 5) - 4
     choosedeg!(cache)
@@ -188,7 +189,9 @@ end
     tᵢ₋₃ = t
     uᵢ₋₂ = copy(uprev)
     uᵢ₋₁ = uprev + (dt * recf[cache.start]) * fsalfirst
-    cache.mdeg < 2 && (u = uᵢ₋₁)
+    if cache.mdeg < 2
+        u = uᵢ₋₁
+    end
     # for the second to the cache.mdeg th stages
     for i in 2:(cache.mdeg)
         μ, κ = recf[cache.start + (i - 2) * 2 + 1], recf[cache.start + (i - 2) * 2 + 2]
@@ -197,8 +200,10 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = dt * μ - ν * tᵢ₋₂ - κ * tᵢ₋₃
         u = (dt * μ) * u - ν * uᵢ₋₁ - κ * uᵢ₋₂
-        i < cache.mdeg && (uᵢ₋₂ = uᵢ₋₁;
-        uᵢ₋₁ = u)
+        if i < cache.mdeg
+            uᵢ₋₂ = uᵢ₋₁
+            uᵢ₋₁ = u
+        end
         tᵢ₋₃ = tᵢ₋₂
         tᵢ₋₂ = tᵢ₋₁
     end
@@ -228,7 +233,9 @@ end
     uᵢ₋₂ = u + a₃₁ * uᵢ₋₁
     uᵢ₋₃ = u + a₄₁ * uᵢ₋₁
     u += B₁ * uᵢ₋₁
-    integrator.opts.adaptive && (tmp = B̂₁ * uᵢ₋₁)
+    if integrator.opts.adaptive
+        tmp = B̂₁ * uᵢ₋₁
+    end
     uᵢ₋₁ = u + (a₂₁ - B₁) * uᵢ₋₁
 
     # Stage-2
@@ -240,7 +247,9 @@ end
     uᵢ₋₂ += a₃₂ * uᵢ₋₁
     uᵢ₋₃ += a₄₂ * uᵢ₋₁
     u += B₂ * uᵢ₋₁
-    integrator.opts.adaptive && (tmp += B̂₂ * uᵢ₋₁)
+    if integrator.opts.adaptive
+        tmp += B̂₂ * uᵢ₋₁
+    end
 
     # Stage-3
     c₃ = a₃₁ + a₃₂
@@ -250,7 +259,9 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     uᵢ₋₃ += a₄₃ * uᵢ₋₂
     u += B₃ * uᵢ₋₂
-    integrator.opts.adaptive && (tmp += B̂₃ * uᵢ₋₂)
+    if integrator.opts.adaptive
+        tmp += B̂₃ * uᵢ₋₂
+    end
 
     #Stage-4
     c₄ = a₄₁ + a₄₂ + a₄₃
@@ -259,7 +270,9 @@ end
     uᵢ₋₃ = f(uᵢ₋₃, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     u += B₄ * uᵢ₋₃
-    integrator.opts.adaptive && (tmp += B̂₄ * uᵢ₋₃)
+    if integrator.opts.adaptive
+        tmp += B̂₄ * uᵢ₋₃
+    end
 
     uᵢ₋₁ = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -300,7 +313,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
-    mdeg = Int(floor(sqrt((3 + abs(dt) * integrator.eigen_est) / 0.353) + 1))
+    mdeg = floor(Int, sqrt((3 + abs(dt) * integrator.eigen_est) / 0.353)) + 1
     mdeg = min(max(mdeg, ccache.min_stage), ccache.max_stage)
     ccache.mdeg = max(mdeg, 5) - 4
     choosedeg!(cache)
@@ -311,7 +324,9 @@ end
     tᵢ₋₃ = t
     @.. broadcast=false uᵢ₋₂=uprev
     @.. broadcast=false uᵢ₋₁=uprev + (dt * recf[ccache.start]) * fsalfirst
-    ccache.mdeg < 2 && (@.. broadcast=false u=uᵢ₋₁)
+    if ccache.mdeg < 2
+        @.. broadcast=false u=uᵢ₋₁
+    end
     # for the second to the ccache.mdeg th stages
     for i in 2:(ccache.mdeg)
         μ, κ = recf[ccache.start + (i - 2) * 2 + 1], recf[ccache.start + (i - 2) * 2 + 2]
@@ -348,14 +363,15 @@ end
 
     # 4-stage finishing procedure.
     # Stage-1
-
     f(k, u, p, tᵢ₋₁)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast=false uᵢ₋₂=u + a₃₁ * k
     @.. broadcast=false uᵢ₋₃=u + a₄₁ * k
     @.. broadcast=false uᵢ₋₁=u + a₂₁ * k
     @.. broadcast=false u+=B₁ * k
-    integrator.opts.adaptive && (@.. broadcast=false tmp=B̂₁ * k)
+    if integrator.opts.adaptive
+        @.. broadcast=false tmp=B̂₁ * k
+    end
 
     # Stage-2
     c₂ = a₂₁
@@ -366,7 +382,9 @@ end
     @.. broadcast=false uᵢ₋₂+=a₃₂ * k
     @.. broadcast=false uᵢ₋₃+=a₄₂ * k
     @.. broadcast=false u+=B₂ * k
-    integrator.opts.adaptive && (@.. broadcast=false tmp+=B̂₂ * k)
+    if integrator.opts.adaptive
+        @.. broadcast=false tmp+=B̂₂ * k
+    end
 
     # Stage-3
     c₃ = a₃₁ + a₃₂
@@ -376,7 +394,9 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast=false uᵢ₋₃+=a₄₃ * k
     @.. broadcast=false u+=B₃ * k
-    integrator.opts.adaptive && (@.. broadcast=false tmp+=B̂₃ * k)
+    if integrator.opts.adaptive
+        @.. broadcast=false tmp+=B̂₃ * k
+    end
 
     #Stage-4
     c₄ = a₄₁ + a₄₂ + a₄₃
@@ -385,14 +405,16 @@ end
     f(k, uᵢ₋₃, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast=false u+=B₄ * k
-    integrator.opts.adaptive && (tmp += B̂₄ * k)
+    if integrator.opts.adaptive
+        @.. broadcast=false tmp += B̂₄ * k
+    end
 
     f(k, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     #Error estimate (embedded method of order 3)
     if integrator.opts.adaptive
-        tmp += B̂₅ * k
+        @.. broadcast=false tmp += B̂₅ * k
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
