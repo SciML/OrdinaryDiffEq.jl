@@ -19,17 +19,17 @@ has_dtnew_modification(alg::Union{ROCK2, ROCK4, SERK2, ESERK4, ESERK5}) = true
 
 function dtnew_modification(integrator, alg::ROCK2, dtnew)
     min(dtnew,
-        typeof(dtnew)((((min(integrator.alg.max_stages, 200)^2.0) * 0.811 -
+        typeof(dtnew)((((min(integrator.alg.max_stages, 200)^2) * 0.811 -
                         1.5) / integrator.eigen_est)))
 end
 function dtnew_modification(integrator, alg::ROCK4, dtnew)
     min(dtnew,
-        typeof(dtnew)((((min(integrator.alg.max_stages, 152)^2.0) * 0.353 - 3) /
+        typeof(dtnew)((((min(integrator.alg.max_stages, 152)^2) * 0.353 - 3) /
                        integrator.eigen_est)))
 end
 function dtnew_modification(integrator, alg::SERK2, dtnew)
     min(dtnew,
-        typeof(dtnew)((0.8 * 250 * 250 / (integrator.eigen_est + 1.0))))
+        typeof(dtnew)((0.8 * 250 * 250 / (integrator.eigen_est + 1))))
 end
 function dtnew_modification(integrator, alg::ESERK4, dtnew)
     min(dtnew, typeof(dtnew)((0.98 * 4000 * 4000 / integrator.eigen_est)))
