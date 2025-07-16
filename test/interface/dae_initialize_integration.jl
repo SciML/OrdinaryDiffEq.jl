@@ -82,8 +82,8 @@ sol = solve(prob, Rodas5P(), dt = 1e-10)
     # https://github.com/SciML/ModelingToolkit.jl/issues/3504
     @variables x(t) y(t)
     @parameters c1 c2
-    @mtkbuild sys = System([D(x) ~ -c1 * x + c2 * y, D(y) ~ c1 * x - c2 * y], t)
-    prob = ODEProblem(sys, [x => 1.0, y => 2.0], (0.0, 1.0), [c1 => 1.0, c2 => 2.0])
+    @mtkcompile sys = System([D(x) ~ -c1 * x + c2 * y, D(y) ~ c1 * x - c2 * y], t)
+    prob = ODEProblem(sys, [x => 1.0, y => 2.0, c1 => 1.0, c2 => 2.0], (0.0, 1.0))
     @test prob.ps[Initial(x)] ≈ 1.0
     @test prob.ps[Initial(y)] ≈ 2.0
     integ = init(prob, Tsit5())
