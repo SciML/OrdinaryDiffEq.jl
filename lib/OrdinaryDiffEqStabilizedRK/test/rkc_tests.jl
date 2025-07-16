@@ -102,3 +102,29 @@ end
         end
     end
 end
+
+@testset "Allocations" begin
+    u0 = [1.0, 1.0]
+    tspan = (0.0, 1.0)
+    prob = ODEProblem(u0, tspan) do du, u, p, t
+        @. du = -500 * u
+        return nothing
+    end
+
+    eigen_est = (integrator) -> integrator.eigen_est = 500
+    algs = [ROCK2(), ROCK2(eigen_est = eigen_est),
+            ROCK4(), ROCK4(eigen_est = eigen_est),
+            RKC(), RKC(eigen_est = eigen_est),
+            SERK2(), SERK2(eigen_est = eigen_est),
+            ESERK4(), ESERK4(eigen_est = eigen_est),
+            ESERK5(), ESERK5(eigen_est = eigen_est)]
+    @testset "$alg" for alg in algs
+        # compile once
+        integrator = init(prob, alg; save_everystep = false)
+        solve!(integrator)
+        # check allocations
+        integrator = init(prob, alg; save_everystep = false)
+        allocs = @allocations solve!(integrator)
+        @test allocs <= 3
+    end
+end
