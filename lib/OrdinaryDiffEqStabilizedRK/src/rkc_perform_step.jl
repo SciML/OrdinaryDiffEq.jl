@@ -18,7 +18,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
-    mdeg = Int(floor(sqrt((1.5 + abs(dt) * integrator.eigen_est) / 0.811) + 1))
+    mdeg = floor(Int, sqrt((1.5 + abs(dt) * integrator.eigen_est) / 0.811)) + 1
     mdeg = min(max(mdeg, cache.min_stage), cache.max_stage)
     cache.mdeg = max(mdeg, 3) - 2
     choosedeg!(cache)
@@ -38,8 +38,10 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = dt * μ - ν * tᵢ₋₂ - κ * tᵢ₋₃
         u = (dt * μ) * u - ν * uᵢ₋₁ - κ * uᵢ₋₂
-        i < cache.mdeg && (uᵢ₋₂ = uᵢ₋₁;
-        uᵢ₋₁ = u)
+        if i < cache.mdeg
+            uᵢ₋₂ = uᵢ₋₁
+            uᵢ₋₁ = u
+        end
         tᵢ₋₃ = tᵢ₋₂
         tᵢ₋₂ = tᵢ₋₁
     end # end if
@@ -94,7 +96,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
-    mdeg = Int(floor(sqrt((1.5 + abs(dt) * integrator.eigen_est) / 0.811) + 1))
+    mdeg = floor(Int, sqrt((1.5 + abs(dt) * integrator.eigen_est) / 0.811)) + 1
     mdeg = min(max(mdeg, ccache.min_stage), ccache.max_stage)
     ccache.mdeg = max(mdeg, 3) - 2
     choosedeg!(cache)
@@ -154,7 +156,6 @@ end
     f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
 end
 
 function initialize!(integrator, cache::ROCK4ConstantCache)
