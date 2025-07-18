@@ -76,15 +76,14 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, zero(z))
         end
         nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
-        cache.cache = init(nlstep_data.nlprob, alg.alg)
+        SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p=nlstep_data.nlprob.p)
     else
         if f isa DAEFunction
             nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
         else
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
-        new_prob = remake(cache.prob, p = nlp_params, u0 = z)
-        cache.cache = init(new_prob, alg.alg)
+        SciMLBase.reinit!(cache.cache, z, p=nlp_params)
     end
     nothing
 end

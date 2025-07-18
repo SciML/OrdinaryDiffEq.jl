@@ -10,7 +10,7 @@ using Test
 eqs = [D(y₁) ~ -k₁ * y₁ + k₃ * y₂ * y₃,
     D(y₂) ~ k₁ * y₁ - k₂ * y₂^2 - k₃ * y₂ * y₃,
     D(y₃) ~ k₂ * y₂^2]
-@mtkbuild rober = ODESystem(eqs, t)
+@mtkcompile rober = ODESystem(eqs, t)
 prob = ODEProblem(rober, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3e7, 1e4)], (0.0, 1e5), jac = true)
 prob2 = ODEProblem(rober, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3e7, 1e4)], (0.0, 1e5), jac = true, nlstep = true)
 
@@ -29,7 +29,7 @@ sol1 = solve(prob, TRBDF2(autodiff=AutoFiniteDiff(), nlsolve = nlalg));
 sol2 = solve(prob2, TRBDF2(autodiff=AutoFiniteDiff(), nlsolve = nlalg));
 
 @test sol1.t != sol2.t
-@test sol1 != sol2
+@test sol1.u != sol2.u
 @test sol1(sol1.t) ≈ sol2(sol1.t) atol=1e-3
 
 testprob = ODEProblem(rober, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3e7, 1e4)], (0.0, 1.0), nlstep = true)
@@ -60,7 +60,7 @@ sim = analyticless_test_convergence(dts, testprob, FBDF(autodiff=AutoFiniteDiff(
 eqs_nonaut = [D(y₁) ~ -k₁ * y₁ + (t+1) * k₃ * y₂ * y₃,
     D(y₂) ~ k₁ * y₁ - (t+1) * k₂ * y₂^2 - (t+1) * k₃ * y₂ * y₃,
     D(y₃) ~ (t+1) * k₂ * y₂^2]
-@mtkbuild rober_nonaut = ODESystem(eqs_nonaut, t)
+@mtkcompile rober_nonaut = ODESystem(eqs_nonaut, t)
 prob = ODEProblem(rober_nonaut, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3e7, 1e4)], (0.0, 1e5), jac = true)
 prob2 = ODEProblem(rober_nonaut, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3e7, 1e4)], (0.0, 1e5), jac = true, nlstep = true)
 
@@ -68,7 +68,7 @@ sol1 = solve(prob, FBDF(autodiff=AutoFiniteDiff(), nlsolve = nlalg));
 sol2 = solve(prob2, FBDF(autodiff=AutoFiniteDiff(), nlsolve = nlalg));
 
 @test sol1.t != sol2.t
-@test sol1 != sol2
+@test sol1.u != sol2.u
 @test sol1(sol1.t) ≈ sol2(sol1.t) atol=1e-3
 
 sol1 = solve(prob, TRBDF2(autodiff=AutoFiniteDiff(), nlsolve = nlalg));
