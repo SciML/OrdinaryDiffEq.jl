@@ -43,7 +43,6 @@ end
         @time @safetestset "Linear Tests" include("interface/ode_twodimlinear_tests.jl")
         @time @safetestset "Differentiation Trait Tests" include("interface/differentiation_traits_tests.jl")
         @time @safetestset "Inf Tests" include("interface/inf_handling.jl")
-        @time @safetestset "Jacobian Tests" include("interface/jacobian_tests.jl")
         @time @safetestset "saveat Tests" include("interface/ode_saveat_tests.jl")
         @time @safetestset "save_idxs Tests" include("interface/ode_saveidxs_tests.jl")
         @time @safetestset "Scalar Handling Tests" include("interface/scalar_handling_tests.jl")
@@ -84,7 +83,6 @@ end
         @time @safetestset "No Index Tests" include("interface/noindex_tests.jl")
         @time @safetestset "Events + DAE addsteps Tests" include("interface/event_dae_addsteps.jl")
         @time @safetestset "No Jac Tests" include("interface/nojac.jl")
-        @time @safetestset "Preconditioner Tests" include("interface/preconditioners.jl")
         @time @safetestset "Units Tests" include("interface/units_tests.jl")
         @time @safetestset "Non-Full Diagonal Sparsity Tests" include("interface/nonfulldiagonal_sparse.jl")
     end
@@ -100,7 +98,6 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "AD Tests" include("interface/ad_tests.jl")
-        @time @safetestset "DAE Initialize Integration" include("interface/dae_initialize_integration.jl")
         @time @safetestset "DAE Initialization Tests" include("interface/dae_initialization_tests.jl")
     end
 
@@ -150,6 +147,13 @@ end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_III"
         @time @safetestset "Split Methods Tests" include("algconvergence/split_methods_tests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "ModelingToolkit"
+        @time @safetestset "NLStep Tests" include("modelingtoolkit/nlstep_tests.jl")
+        @time @safetestset "Jacobian Tests" include("modelingtoolkit/jacobian_tests.jl")
+        @time @safetestset "Preconditioner Tests" include("modelingtoolkit/preconditioners.jl")
+        @time @safetestset "DAE Initialize Integration" include("modelingtoolkit/dae_initialize_integration.jl")
     end
 
     if !is_APPVEYOR && GROUP == "Downstream"
