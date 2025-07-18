@@ -150,7 +150,7 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "ModelingToolkit"
-        @time @safetestset "NLStep Tests" include("modelingtoolkit/nlstep.jl")
+        @time @safetestset "NLStep Tests" include("modelingtoolkit/nlstep_tests.jl")
         @time @safetestset "Jacobian Tests" include("modelingtoolkit/jacobian_tests.jl")
         @time @safetestset "Preconditioner Tests" include("modelingtoolkit/preconditioners.jl")
         @time @safetestset "DAE Initialize Integration" include("modelingtoolkit/dae_initialize_integration.jl")
