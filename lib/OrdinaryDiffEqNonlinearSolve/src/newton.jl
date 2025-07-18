@@ -102,14 +102,32 @@ end
     @unpack z, tmp, ztmp, γ, α, cache, method = nlsolver
     @unpack tstep, invγdt, atmp, ustep = cache
 
+    nlstep_data = integrator.f.nlstep_data
+
+    if method === COEFFICIENT_MULTISTEP
+        nlstep_data.set_γ_c(nlstep_data.nlprob, (one(t), one(t), α * invγdt, tstep))
+        nlstep_data.set_inner_tmp(nlstep_data.nlprob, zero(z))
+        nlstep_data.set_outer_tmp(nlstep_data.nlprob, tmp)
+    else
+        nlstep_data.set_γ_c(nlstep_data.nlprob, (dt, γ, one(t)))
+        nlstep_data.set_inner_tmp(nlstep_data.nlprob, tmp)
+        nlstep_data.set_outer_tmp(nlstep_data.nlprob, zero(z))
+    end
+    nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
+    nlstepsol = solve(nlstep_data.nlprob, NewtonRaphson())
+    ztmp2 = nlstep_data.nlprobmap(nlstepsol)
+
+    ustep = compute_ustep!(ustep, tmp, γ, z, method)
     nlcache = nlsolver.cache.cache
     step!(nlcache)
     @.. broadcast=false ztmp=nlcache.u
 
-    ustep = compute_ustep!(ustep, tmp, γ, z, method)
     calculate_residuals!(atmp, nlcache.fu, uprev, ustep, opts.abstol, opts.reltol,
         opts.internalnorm, t)
     ndz = opts.internalnorm(atmp, t)
+
+    @.. broadcast=false ztmp=ztmp2
+
     #ndz = opts.internalnorm(nlcache.fu, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
@@ -306,7 +324,7 @@ function _compute_rhs(tmp, γ, α, tstep, invγdt, method::MethodType, p, dt, f,
         if mass_matrix === I
             ztmp = tmp .+ f(z, p, tstep) .- (α * invγdt) .* z
         else
-            update_coefficients!(mass_matrix, ustep, p, tstep)
+            update_coefficients!(mass_matrix, z, p, tstep)
             ztmp = tmp .+ f(z, p, tstep) .- (mass_matrix * z) .* (α * invγdt)
         end
     else
