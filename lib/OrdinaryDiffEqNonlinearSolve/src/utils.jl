@@ -188,6 +188,7 @@ function build_nlsolver(
     tstep = zero(t)
     k = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
+    atmp .= false
     dz = zero(u)
 
     if nlalg isa Union{NLNewton, NonlinearSolveAlg}
@@ -226,13 +227,17 @@ function build_nlsolver(
         if nlalg isa NonlinearSolveAlg
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
-            nlf = isdae ? daenlf : odenlf
-            nlp_params = if isdae
-                (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+            prob = if f.nlstep_data !== nothing
+                prob = f.nlstep_data.nlprob
             else
-                (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
+                nlf = isdae ? daenlf : odenlf
+                nlp_params = if isdae
+                    (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+                else
+                    (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
+                end
+                NonlinearProblem(NonlinearFunction{true}(nlf), ztmp, nlp_params)
             end
-            prob = NonlinearProblem(NonlinearFunction{true}(nlf), ztmp, nlp_params)
             cache = init(prob, nlalg.alg)
             nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
         else

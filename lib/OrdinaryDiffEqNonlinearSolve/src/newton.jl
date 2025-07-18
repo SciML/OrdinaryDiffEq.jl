@@ -63,13 +63,29 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
         integrator.stats.nnonliniter += cache.cache.stats.nsteps
         integrator.stats.njacs += cache.cache.stats.njacs
     end
-    if f isa DAEFunction
-        nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+
+    nlstep_data = f.nlstep_data
+    if nlstep_data !== nothing
+        if method === COEFFICIENT_MULTISTEP
+            nlstep_data.set_γ_c(nlstep_data.nlprob, (one(t), one(t), α * invγdt, tstep))
+            nlstep_data.set_inner_tmp(nlstep_data.nlprob, zero(z))
+            nlstep_data.set_outer_tmp(nlstep_data.nlprob, tmp)
+        else
+            nlstep_data.set_γ_c(nlstep_data.nlprob, (dt, γ, one(t)))
+            nlstep_data.set_inner_tmp(nlstep_data.nlprob, tmp)
+            nlstep_data.set_outer_tmp(nlstep_data.nlprob, zero(z))
+        end
+        nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
+        cache.cache = init(nlstep_data.nlprob, alg.alg)
     else
-        nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
+        if f isa DAEFunction
+            nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+        else
+            nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
+        end
+        new_prob = remake(cache.prob, p = nlp_params, u0 = z)
+        cache.cache = init(new_prob, alg.alg)
     end
-    new_prob = remake(cache.prob, p = nlp_params, u0 = z)
-    cache.cache = init(new_prob, alg.alg)
     nothing
 end
 
@@ -103,30 +119,28 @@ end
     @unpack tstep, invγdt, atmp, ustep = cache
 
     nlstep_data = integrator.f.nlstep_data
-
-    if method === COEFFICIENT_MULTISTEP
-        nlstep_data.set_γ_c(nlstep_data.nlprob, (one(t), one(t), α * invγdt, tstep))
-        nlstep_data.set_inner_tmp(nlstep_data.nlprob, zero(z))
-        nlstep_data.set_outer_tmp(nlstep_data.nlprob, tmp)
-    else
-        nlstep_data.set_γ_c(nlstep_data.nlprob, (dt, γ, one(t)))
-        nlstep_data.set_inner_tmp(nlstep_data.nlprob, tmp)
-        nlstep_data.set_outer_tmp(nlstep_data.nlprob, zero(z))
-    end
-    nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
-    nlstepsol = solve(nlstep_data.nlprob, NewtonRaphson())
-    ztmp2 = nlstep_data.nlprobmap(nlstepsol)
-
-    ustep = compute_ustep!(ustep, tmp, γ, z, method)
     nlcache = nlsolver.cache.cache
     step!(nlcache)
-    @.. broadcast=false ztmp=nlcache.u
 
-    calculate_residuals!(atmp, nlcache.fu, uprev, ustep, opts.abstol, opts.reltol,
-        opts.internalnorm, t)
-    ndz = opts.internalnorm(atmp, t)
-
-    @.. broadcast=false ztmp=ztmp2
+    if nlstep_data !== nothing
+        nlstepsol = SciMLBase.build_solution(
+            nlcache.prob, nlcache.alg, nlcache.u, nlcache.fu;
+            nlcache.retcode, nlcache.stats, nlcache.trace
+        )
+        ztmp .= nlstep_data.nlprobmap(nlstepsol)
+        ustep = compute_ustep!(ustep, tmp, γ, z, method)
+        calculate_residuals!(@view(atmp[nlstep_data.u0perm]), nlcache.fu, 
+                             @view(uprev[nlstep_data.u0perm]), 
+                             @view(ustep[nlstep_data.u0perm]), opts.abstol, 
+                             opts.reltol, opts.internalnorm, t)
+        ndz = opts.internalnorm(atmp, t)
+    else
+        @.. broadcast=false ztmp=nlcache.u
+        ustep = compute_ustep!(ustep, tmp, γ, z, method)
+        calculate_residuals!(atmp, nlcache.fu, uprev, ustep, opts.abstol, opts.reltol,
+                                opts.internalnorm, t)
+        ndz = opts.internalnorm(atmp, t)
+    end
 
     #ndz = opts.internalnorm(nlcache.fu, t)
     # NDF and BDF are special because the truncation error is directly
