@@ -71,7 +71,7 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
             nlstep_data.set_inner_tmp(nlstep_data.nlprob, zero(z))
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, tmp)
         else
-            nlstep_data.set_γ_c(nlstep_data.nlprob, (dt, γ, one(t)))
+            nlstep_data.set_γ_c(nlstep_data.nlprob, (dt, γ, one(t), tstep))
             nlstep_data.set_inner_tmp(nlstep_data.nlprob, tmp)
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, zero(z))
         end
