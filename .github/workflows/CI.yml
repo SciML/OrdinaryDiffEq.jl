@@ -21,6 +21,7 @@ jobs:
           - AlgConvergence_I
           - AlgConvergence_II
           - AlgConvergence_III
+          - ModelingToolkit
           - Downstream
           - ODEInterfaceRegression
           - Multithreading
