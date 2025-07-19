@@ -267,12 +267,12 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
                 autodiff_alg_reverse = dir_reverse
             end
 
-            jac_config_forward = DI.prepare_jacobian(uf, du1, autodiff_alg_forward, u)
-            jac_config_reverse = DI.prepare_jacobian(uf, du1, autodiff_alg_reverse, u)
+            jac_config_forward = DI.prepare_jacobian(uf, du1, autodiff_alg_forward, u, strict = Val(false))
+            jac_config_reverse = DI.prepare_jacobian(uf, du1, autodiff_alg_reverse, u, strict = Val(false))
 
             jac_config = (jac_config_forward, jac_config_reverse)
         else
-            jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u)
+            jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u, strict = Val(false))
             jac_config = (jac_config1, jac_config1)
         end
 
