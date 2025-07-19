@@ -36,6 +36,7 @@ for (i, prob) in enumerate(probArr)
     sol2 = solve(prob, alg, maxiters = 1000)
     @test sol.t == sol2.t # test reinitialization
     @test length(sol.t) < 280
+    @test SciMLBase.successful_retcode(sol)
     @test alg.algs[sol.alg_choice[1]] isa Rodas5
     i == 1 || @test is_switching_fb(sol) # fails due to eigenvalue estimate of J
     sol = solve(prob,
@@ -43,27 +44,33 @@ for (i, prob) in enumerate(probArr)
             stifftol = 11 // 10, nonstifftol = 9 / 10),
         reltol = 1e-5, abstol = 1e-5, maxiters = 1000)
     @test length(sol.t) < 625
+    @test SciMLBase.successful_retcode(sol)
     @test is_switching_fb(sol)
 
     sol = solve(prob, AutoVern6(Kvaerno3(); maxstiffstep = 4, maxnonstiffstep = 2),
         maxiters = 1000)
     @test length(sol.t) < 700
+    @test SciMLBase.successful_retcode(sol)
     @test is_switching_fb(sol)
     sol = solve(prob, AutoVern7(Hairer42(); maxstiffstep = 4, maxnonstiffstep = 2),
         maxiters = 1000)
     @test length(sol.t) < 610
+    @test SciMLBase.successful_retcode(sol)
     @test is_switching_fb(sol)
     sol = solve(prob, AutoVern8(Rosenbrock23(); maxstiffstep = 4, maxnonstiffstep = 4),
         maxiters = 1000)
     @test length(sol.t) < 910
+    @test SciMLBase.successful_retcode(sol)
     @test is_switching_fb(sol)
     sol = solve(prob, AutoVern9(KenCarp3(); maxstiffstep = 4, maxnonstiffstep = 1),
         maxiters = 1000)
     @test length(sol.t) < 570
+    @test SciMLBase.successful_retcode(sol)
     @test is_switching_fb(sol)
     sol = solve(prob,
         AutoVern9(KenCarp3(autodiff = AutoFiniteDiff()); maxstiffstep = 4,
             maxnonstiffstep = 1), maxiters = 1000)
     @test length(sol.t) < 570
+    @test SciMLBase.successful_retcode(sol)
     @test is_switching_fb(sol)
 end

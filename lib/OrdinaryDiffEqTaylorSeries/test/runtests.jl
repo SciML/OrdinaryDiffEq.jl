@@ -27,6 +27,7 @@ end
 @testset "TaylorN Adaptive Tests" begin
     sol = solve(prob_ode_linear, ExplicitTaylor(order=Val(2)))
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 end
 
 include("jet.jl")
