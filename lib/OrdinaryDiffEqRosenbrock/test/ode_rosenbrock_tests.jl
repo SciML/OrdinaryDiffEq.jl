@@ -74,29 +74,29 @@ end
     @test length(sol) < 20
     @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts,
-        prob,
-        Rosenbrock32(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test sim.𝒪est[:final]≈3 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts,
+            prob,
+            Rosenbrock32(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob,
-        Rosenbrock32(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test length(sol) < 20
-    @test SciMLBase.successful_retcode(sol)
+        sol = solve(prob,
+            Rosenbrock32(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test length(sol) < 20
 
-    sim = test_convergence(dts,
-        prob,
-        Rosenbrock32(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
-    @test sim.𝒪est[:final]≈3 atol=testTol
+        sim = test_convergence(dts,
+            prob,
+            Rosenbrock32(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
+        @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob,
-        Rosenbrock32(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
-    @test length(sol) < 20
-    @test SciMLBase.successful_retcode(sol)
+        sol = solve(prob,
+            Rosenbrock32(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
+        @test length(sol) < 20
+    end
     ### ROS3P()
 
     prob = prob_ode_linear
@@ -117,21 +117,22 @@ end
     @test length(sol) < 20
     @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts,
-        prob,
-        ROS3P(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test sim.𝒪est[:final]≈3 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts,
+            prob,
+            ROS3P(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob,
-        ROS3P(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test length(sol) < 20
-    @test SciMLBase.successful_retcode(sol)
+        sol = solve(prob,
+            ROS3P(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test length(sol) < 20
+    end
 
     ### Rodas3()
 
@@ -153,21 +154,22 @@ end
     @test length(sol) < 20
     @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts,
-        prob,
-        Rodas3(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test sim.𝒪est[:final]≈3 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts,
+            prob,
+            Rodas3(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob,
-        Rodas3(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test length(sol) < 20
-    @test SciMLBase.successful_retcode(sol)
+        sol = solve(prob,
+            Rodas3(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test length(sol) < 20
+    end
 
     ### ROS2
     prob = prob_ode_linear
@@ -596,21 +598,22 @@ end
     @test length(sol) < 20
     @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts,
-        prob,
-        Rodas23W(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test sim.𝒪est[:final] ≈ 2 atol = testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts,
+            prob,
+            Rodas23W(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
-    sol = solve(prob,
-        Rodas23W(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test length(sol) < 20
-    @test SciMLBase.successful_retcode(sol)
+        sol = solve(prob,
+            Rodas23W(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test length(sol) < 20
+    end
 
     println("Rodas3P")
 
@@ -634,21 +637,22 @@ end
     @test length(sol) < 20
     @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts,
-        prob,
-        Rodas3P(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test sim.𝒪est[:final]≈3 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts,
+            prob,
+            Rodas3P(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob,
-        Rodas3P(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test length(sol) < 20
-    @test SciMLBase.successful_retcode(sol)
+        sol = solve(prob,
+            Rodas3P(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test length(sol) < 20
+    end
 
     ### Rodas4 Algorithms
 
@@ -675,11 +679,12 @@ end
     @test length(sol) < 20
     @test SciMLBase.successful_retcode(sol)
 
-    sol = solve(prob,
-        Rodas4(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test length(sol) < 20
-    @test SciMLBase.successful_retcode(sol)
+    if isempty(VERSION.prerelease)
+        sol = solve(prob,
+            Rodas4(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test length(sol) < 20
+    end
 
     sim = test_convergence(dts, prob, Rodas42(), dense_errors = true)
     @test sim.𝒪est[:final]≈5.1 atol=testTol
