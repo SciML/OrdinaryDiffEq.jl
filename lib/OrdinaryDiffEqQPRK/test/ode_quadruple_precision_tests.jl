@@ -50,6 +50,7 @@ for prob in test_problems_only_time
     sol = solve(prob, alg, adaptive = true, save_everystep = true)
     sol_exact = prob.f.analytic(prob.u0, prob.p, sol.t[end])
     @test length(sol) < 7
+    @test SciMLBase.successful_retcode(sol)
     @test minimum(abs.(sol.u[end] .- sol_exact) .< 1e-12)
 end
 
@@ -60,6 +61,7 @@ for prob in test_problems_linear
     sol = solve(prob, alg, adaptive = true, save_everystep = true)
     sol_exact = prob.f.analytic(prob.u0, prob.p, sol.t[end])
     @test length(sol) < 5
+    @test SciMLBase.successful_retcode(sol)
     @test minimum(abs.(sol.u[end] .- sol_exact) .< 1e-8)
 end
 
@@ -70,5 +72,6 @@ for prob in test_problems_nonlinear
     sol = solve(prob, alg, adaptive = true, save_everystep = true)
     sol_exact = prob.f.analytic(prob.u0, prob.p, sol.t[end])
     @test length(sol) < 5
+    @test SciMLBase.successful_retcode(sol)
     @test minimum(abs.(sol.u[end] .- sol_exact) .< 1e-11)
 end

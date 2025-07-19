@@ -9,10 +9,13 @@ testTol = 0.2
 prob = prob_ode_linear
 sol = solve(prob, OwrenZen3())
 @test length(sol) < 20
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, OwrenZen4())
 @test length(sol) < 20
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, OwrenZen5())
 @test length(sol) < 20
+@test SciMLBase.successful_retcode(sol)
 
 sim = test_convergence(dts, prob, OwrenZen3(), dense_errors = true)
 @test sim.𝒪est[:final]≈3 atol=testTol
@@ -27,10 +30,13 @@ sim = test_convergence(dts, prob, OwrenZen5(), dense_errors = true)
 prob = prob_ode_2Dlinear
 sol = solve(prob, OwrenZen3())
 @test length(sol) < 20
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, OwrenZen4())
 @test length(sol) < 20
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, OwrenZen5())
 @test length(sol) < 20
+@test SciMLBase.successful_retcode(sol)
 
 sim = test_convergence(dts, prob, OwrenZen3(), dense_errors = true)
 @test sim.𝒪est[:final]≈3 atol=testTol

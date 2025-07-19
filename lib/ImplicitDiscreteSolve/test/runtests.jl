@@ -119,6 +119,7 @@ end
     @test check_error(integ) == ReturnCode.InitialFailure
     sol = solve(idprob, IDSolve())
     @test length(sol.u) == 1
+    @test SciMLBase.successful_retcode(sol)
 end
 
 
