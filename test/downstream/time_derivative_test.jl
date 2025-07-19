@@ -66,26 +66,31 @@ for (ff_time_derivative, u0) in (
         @show KenCarp3
         sol = solve(prob, KenCarp3(autodiff = _autodiff), reltol = 1e-12, abstol = 1e-12)
         @test length(sol) > 2
+        @test SciMLBase.successful_retcode(sol)
         @test sol.errors[:final] < 1e-10
 
         @show KenCarp4
         sol = solve(prob, KenCarp4(autodiff = _autodiff), reltol = 1e-12, abstol = 1e-12)
         @test length(sol) > 2
+        @test SciMLBase.successful_retcode(sol)
         @test sol.errors[:final] < 1e-10
 
         @show KenCarp47
         sol = solve(prob, KenCarp47(autodiff = _autodiff), reltol = 1e-12, abstol = 1e-12)
         @test length(sol) > 2
+        @test SciMLBase.successful_retcode(sol)
         @test sol.errors[:final] < 1e-10
 
         @show KenCarp5
         sol = solve(prob, KenCarp5(autodiff = _autodiff), reltol = 1e-12, abstol = 1e-12)
         @test length(sol) > 2
+        @test SciMLBase.successful_retcode(sol)
         @test sol.errors[:final] < 1e-10
 
         @show KenCarp58
         sol = solve(prob, KenCarp58(autodiff = _autodiff), reltol = 1e-12, abstol = 1e-12)
         @test length(sol) > 2
+        @test SciMLBase.successful_retcode(sol)
         @test sol.errors[:final] < 1e-10
 
         @show TRBDF2
