@@ -14,7 +14,8 @@ import LinearAlgebra
 import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!, lmul!, axpby!, opnorm, lu
 import LinearAlgebra: LowerTriangular, UpperTriangular
 import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros, sparse, spzeros
-import ArrayInterface: fast_scalar_indexing, zeromatrix, lu_instance, can_setindex, restructure
+import ArrayInterface
+import ArrayInterface: fast_scalar_indexing, zeromatrix, lu_instance
 
 # StaticArrayInterface imported but not used
 # import StaticArrayInterface
@@ -48,6 +49,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
 import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff,
                            _get_fwd_tag
 
+import ConstructionBase
 using ConstructionBase: constructorof
 
 import DifferentiationInterface as DI
