@@ -186,6 +186,7 @@ DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 ElasticArrays = "fdbdab4c-e67f-52f5-8c3f-e7b388dad3d4"
+ExplicitImports = "7876af07-990d-54b4-ab0e-23690620f79a"
 IncompleteLU = "40713840-3770-5561-ab4c-a76e7d0d7895"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
@@ -210,4 +211,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Calculus", "ComponentArrays", "Symbolics", "AlgebraicMultigrid", "IncompleteLU", "DiffEqCallbacks", "DifferentiationInterface", "DiffEqDevTools", "ODEProblemLibrary", "ElasticArrays", "InteractiveUtils", "ParameterizedFunctions", "JLArrays", "PoissonRandom", "Printf", "Random", "ReverseDiff", "SafeTestsets", "SparseArrays", "Statistics", "StructArrays", "Test", "Unitful", "ModelingToolkit", "Pkg", "NLsolve", "RecursiveFactorization", "SparseConnectivityTracer", "SparseMatrixColorings"]
+test = ["Calculus", "ComponentArrays", "Symbolics", "AlgebraicMultigrid", "IncompleteLU", "DiffEqCallbacks", "DifferentiationInterface", "DiffEqDevTools", "ODEProblemLibrary", "ElasticArrays", "ExplicitImports", "InteractiveUtils", "ParameterizedFunctions", "JLArrays", "PoissonRandom", "Printf", "Random", "ReverseDiff", "SafeTestsets", "SparseArrays", "Statistics", "StructArrays", "Test", "Unitful", "ModelingToolkit", "Pkg", "NLsolve", "RecursiveFactorization", "SparseConnectivityTracer", "SparseMatrixColorings"]

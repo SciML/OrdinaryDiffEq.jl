@@ -11,15 +11,15 @@ using Reexport
 
 using Logging
 
-using MuladdMacro, FastClosures
+using MuladdMacro: @muladd
 
-using LinearAlgebra
+using LinearAlgebra: opnorm
 
 using PrecompileTools
 
 import FillArrays: Trues, Falses
 
-import FastPower
+import FastPower: fastpower
 
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive
@@ -38,9 +38,12 @@ using DiffEqBase: DEIntegrator
 
 import RecursiveArrayTools: chain, recursivecopy!
 
-using SimpleUnPack, RecursiveArrayTools, DataStructures, ArrayInterface
+using SimpleUnPack: @unpack
+using RecursiveArrayTools
+using DataStructures: BinaryHeap
+using ArrayInterface: issingular
 
-import TruncatedStacktraces
+import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
 import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
                          StaticMatrix
@@ -71,15 +74,15 @@ import DiffEqBase: calculate_residuals,
                    islinear, timedepentdtmin
 
 import Polyester
-using MacroTools, Adapt
+# MacroTools and Adapt imported but not directly used in OrdinaryDiffEqCore
+# using MacroTools, Adapt
 import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse
 import Accessors: @reset
 
-using SciMLStructures: canonicalize, Tunable, isscimlstructure
+# SciMLStructures symbols imported but not directly used in OrdinaryDiffEqCore
+# using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
-using SymbolicIndexingInterface: state_values, parameter_values, is_variable,
-                                 variable_index,
-                                 symbolic_type, NotSymbolic
+using SymbolicIndexingInterface: state_values, parameter_values
 
 const CompiledFloats = Union{Float32, Float64}
 import Preferences
