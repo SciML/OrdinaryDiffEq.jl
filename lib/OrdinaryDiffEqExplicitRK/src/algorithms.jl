@@ -37,6 +37,18 @@ Sets the default tableau for the ODE solver. Currently Dormand-Prince 4/5.
 """
 const ODE_DEFAULT_TABLEAU = constructDormandPrince()
 
+@doc raw"""
+    ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU)
+
+A generic explicit Runge-Kutta method that allows you to define a custom tableau.
+The default tableau is Dormand-Prince 4/5. This solver is primarily for research
+purposes or when you need a specific tableau not already implemented.
+
+# Parameters
+- `tableau`: A `DiffEqBase.ExplicitRKTableau` object defining the Runge-Kutta tableau.
+
+For most applications, prefer the named methods like `DP5()`, `Tsit5()`, etc.
+"""
 struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
     tableau::TabType
 end
