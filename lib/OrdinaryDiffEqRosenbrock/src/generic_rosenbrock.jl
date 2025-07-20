@@ -1058,7 +1058,7 @@ with_step_limiter=true) Rodas3P
 
 @doc rosenbrock_docstring(
 """
-A 4th order L-stable Rosenbrock method.
+A 4th order A-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant
 """,
 "Rodas4",
 references = """

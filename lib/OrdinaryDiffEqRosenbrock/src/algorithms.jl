@@ -127,6 +127,17 @@ for Alg in [
         end
     end
 end
+
+@doc rosenbrock_docstring(
+    "An Order 2/3 L-Stable Rosenbrock-W method which is good for very stiff equations with oscillations at low tolerances. 2nd order stiff-aware interpolation. Strong stability for highly stiff systems. Good at high tolerances (>1e-2) for stiff problems. Recommended for highly stiff problems, systems with significant oscillations, low tolerance requirements.",
+    "Rosenbrock23", with_step_limiter = true)
+Rosenbrock23
+
+@doc rosenbrock_docstring(
+    "Efficient for medium tolerance stiff problems. A 5th order A-stable and stiffly stable embedded Rosenbrock method for differential-algebraic problems.",
+    "Rodas5P", with_step_limiter = true)
+Rodas5P
+
 struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
        OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, Val{:forward}, ST, CJ}
     tableau::TabType

@@ -1,5 +1,5 @@
 @doc explicit_rk_docstring(
-    "Verner's “Most Efficient” 6/5 Runge-Kutta method. (lazy 6th order interpolant).",
+    "Verner's most efficient 6/5 method (lazy 6th order interpolant).",
     "Vern6",
     references = "@article{verner2010numerically,
     title={Numerically optimal Runge--Kutta pairs with interpolants},
@@ -28,7 +28,7 @@ function Vern6(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
 end
 
 @doc explicit_rk_docstring(
-    "Verner's “Most Efficient” 7/6 Runge-Kutta method. (lazy 7th order interpolant).",
+    "Verner's most efficient 7/6 method (lazy 7th order interpolant). Good for problems requiring high accuracy. Slightly more computationally expensive than Tsit5. Performance best when parameter vector remains unchanged. Recommended for high-accuracy non-stiff problems.",
     "Vern7",
     references = "@article{verner2010numerically,
     title={Numerically optimal Runge--Kutta pairs with interpolants},
@@ -57,7 +57,7 @@ function Vern7(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
 end
 
 @doc explicit_rk_docstring(
-    "Verner's “Most Efficient” 8/7 Runge-Kutta method. (lazy 8th order interpolant).",
+    "Verner's most efficient 8/7 method (lazy 8th order interpolant).",
     "Vern8",
     references = "@article{verner2010numerically,
     title={Numerically optimal Runge--Kutta pairs with interpolants},
@@ -86,7 +86,7 @@ function Vern8(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
 end
 
 @doc explicit_rk_docstring(
-    "Verner's “Most Efficient” 9/8 Runge-Kutta method. (lazy9th order interpolant).",
+    "Verner's most efficient 9/8 method (lazy 9th order interpolant).",
     "Vern9",
     references = "@article{verner2010numerically,
     title={Numerically optimal Runge--Kutta pairs with interpolants},

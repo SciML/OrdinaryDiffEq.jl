@@ -1,6 +1,5 @@
 @doc explicit_rk_docstring(
-    "A fifth-order explicit Runge-Kutta method with embedded error
-    estimator of Tsitouras. Free 4th order interpolant.",
+    "Tsitouras 5/4 Runge-Kutta method. (free 4th order interpolant). Recommended for most non-stiff problems. Good default choice for unknown stiffness. Highly efficient and generic. Very good performance for most non-stiff ODEs. Recommended as default method for unknown stiffness problems.",
     "Tsit5",
     references = "@article{tsitouras2011runge,
     title={Runge--Kutta pairs of order 5 (4) satisfying only the first column simplifying assumption},
