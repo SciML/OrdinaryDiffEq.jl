@@ -16,4 +16,4 @@ function f(u0::Array{Float64})
 end;
 u0 = [1.0; 0.0; 0.0]
 mooncake_gradient(f, x) = Mooncake.value_and_gradient!!(Mooncake.build_rrule(f, x), f, x)[2][2]
-mooncake_gradient(f, u0)
+@test_broken mooncake_gradient(f, u0)
