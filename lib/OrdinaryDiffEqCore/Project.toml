@@ -46,7 +46,7 @@ OrdinaryDiffEqCoreEnzymeCoreExt = "EnzymeCore"
 OrdinaryDiffEqCoreMooncakeExt = "Mooncake"
 
 [compat]
-ADTypes = "0.2, 1"
+ADTypes = "1.13"
 Accessors = "0.1.36"
 Adapt = "3.0, 4"
 ArrayInterface = "7"
