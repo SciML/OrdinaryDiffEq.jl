@@ -255,7 +255,7 @@ function TRBDF2(;
         smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
-TruncatedStacktraces.@truncate_stacktrace TRBDF2
+@truncate_stacktrace TRBDF2
 
 @doc SDIRK_docstring("SDIRK2: SDIRK Method An A-B-L stable 2nd order SDIRK method",
     "SDIRK2";
@@ -1025,7 +1025,7 @@ function KenCarp4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
-TruncatedStacktraces.@truncate_stacktrace KenCarp4
+@truncate_stacktrace KenCarp4
 
 @doc SDIRK_docstring(
     "An A-L stable stiffly-accurate 4th order seven-stage ESDIRK method with splitting.",

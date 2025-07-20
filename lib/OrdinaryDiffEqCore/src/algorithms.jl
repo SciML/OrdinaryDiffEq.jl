@@ -113,7 +113,7 @@ struct CompositeAlgorithm{CS, T, F} <: OrdinaryDiffEqCompositeAlgorithm
     end
 end
 
-TruncatedStacktraces.@truncate_stacktrace CompositeAlgorithm 1
+@truncate_stacktrace CompositeAlgorithm 1
 
 if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeAlgorithm)
