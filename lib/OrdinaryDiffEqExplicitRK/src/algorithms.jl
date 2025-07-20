@@ -54,4 +54,4 @@ struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
-TruncatedStacktraces.@truncate_stacktrace ExplicitRK
+@truncate_stacktrace ExplicitRK
