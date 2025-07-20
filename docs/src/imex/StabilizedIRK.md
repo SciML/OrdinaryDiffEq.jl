@@ -82,31 +82,9 @@ Consider these alternatives:
 - **Explicit stabilized methods** (ROCK, RKC) if complex eigenvalues are small
 - **Standard IMEX methods** for natural explicit/implicit splitting
 
-## Installation
-
-To be able to access the solvers in `OrdinaryDiffEqStabilizedIRK`, you must first install them use the Julia package manager:
-
-```julia
-using Pkg
-Pkg.add("OrdinaryDiffEqStabilizedIRK")
-```
-
-This will only install the solvers listed at the bottom of this page.
-If you want to explore other solvers for your problem,
-you will need to install some of the other libraries listed in the navigation bar on the left.
-
-## Example usage
-
-```julia
-using OrdinaryDiffEqStabilizedIRK
-A = randn(20, 20)
-B = randn(20, 20)
-f1 = (u, p, t) -> A * u
-f2 = (u, p, t) -> B * u
-u0 = randn(20, 1)
-tspan = (0.0, 1.0)
-prob = SplitODEProblem(f1, f2, u0, tspan)
-sol = solve(prob, IRKC())
+```@eval
+first_steps = evalfile("./common_first_steps.jl")
+first_steps("OrdinaryDiffEqStabilizedIRK", "IRKC")
 ```
 
 ## Full list of solvers
