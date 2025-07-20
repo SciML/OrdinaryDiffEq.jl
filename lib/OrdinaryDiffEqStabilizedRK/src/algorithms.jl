@@ -1,6 +1,6 @@
 
 @doc generic_solver_docstring(
-    """Second order method. Exhibits high stability for real eigenvalues
+    """High stability for real eigenvalues. Second order method. Exhibits high stability for real eigenvalues
 and is smoothened to allow for moderate sized complex eigenvalues.""",
     "ROCK2",
     "Stabilized Explicit Method.",
@@ -29,7 +29,7 @@ function ROCK2(; min_stages = 0, max_stages = 200, eigen_est = nothing)
 end
 
 @doc generic_solver_docstring(
-    """Fourth order method. Exhibits high stability for real eigenvalues
+    """High stability for real eigenvalues. Fourth order method. Exhibits high stability for real eigenvalues
 and is smoothened to allow for moderate sized complex eigenvalues.""",
     "ROCK4",
     "Stabilized Explicit Method.",

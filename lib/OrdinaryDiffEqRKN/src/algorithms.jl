@@ -10,10 +10,7 @@ Second order ODE should not depend on the first derivative.",
 struct IRKN3 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 @doc generic_solver_docstring(
-    "A 4th order explicit method which can be applied directly on second order ODEs.
-Can only be used with fixed time steps.
-In case the ODE Problem is not dependent on the first derivative consider using
-[`Nystrom4VelocityIndependent`](@ref) to increase performance.",
+    "4th order explicit Runge-Kutta-Nyström method. Allows acceleration to depend on velocity.",
     "Nystrom4",
     "Improved Runge-Kutta-Nyström method",
     "E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.

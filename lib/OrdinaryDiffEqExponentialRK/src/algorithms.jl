@@ -3,11 +3,11 @@ Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
   Numerica 19 (2010): 209–286. doi:10.1017/S0962492910000048.
 """
 for (Alg, Description, Ref) in [
-    (:LawsonEuler, "First order exponential Euler scheme.", REF1),
+    (:LawsonEuler, "First order exponential Euler scheme (fixed timestepping)", REF1),
     (:NorsettEuler, "First order exponential-RK scheme. Alias: `ETD1`", REF1),
     (:ETDRK2, "2nd order exponential-RK scheme.", REF1),
     (:ETDRK3, "3rd order exponential-RK scheme.", REF1),
-    (:ETDRK4, "4th order exponential-RK scheme", REF1),
+    (:ETDRK4, "4th order exponential-RK scheme (fixed timestepping)", REF1),
     (:HochOst4, "4th order exponential-RK scheme with stiff order 4.", REF1)
 ]
     @eval begin

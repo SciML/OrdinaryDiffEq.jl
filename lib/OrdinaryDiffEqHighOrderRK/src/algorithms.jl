@@ -1,5 +1,5 @@
 @doc explicit_rk_docstring(
-    "Tanaka-Yamashita 7 Runge-Kutta method. (7th order interpolant).",
+    "Tanaka-Yamashita 7 Runge-Kutta method.",
     "TanYam7",
     references = "Tanaka M., Muramatsu S., Yamashita S., (1992), On the Optimization of Some Nine-Stage
     Seventh-order Runge-Kutta Method, Information Processing Society of Japan,
@@ -37,7 +37,7 @@ function TsitPap8(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "Hairer's 8/5/3 adaption of the Dormand-Prince Runge-Kutta method. (7th order interpolant).",
+    "Hairer's 8/5/3 adaption of the Dormand-Prince Runge-Kutta method.",
     "DP8",
     references = "E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
     Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
