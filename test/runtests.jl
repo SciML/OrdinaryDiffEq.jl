@@ -197,4 +197,8 @@ end
         @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
         @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
     end
+
+    if !is_APPVEYOR && GROUP == "QA"
+        @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
+    end
 end # @time

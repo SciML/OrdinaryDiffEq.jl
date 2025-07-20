@@ -16,7 +16,7 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import LinearAlgebra: norm
-using TruncatedStacktraces
+using TruncatedStacktraces: @truncate_stacktrace
 import DiffEqBase: @def
 import OrdinaryDiffEqCore
 
