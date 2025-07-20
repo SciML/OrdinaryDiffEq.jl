@@ -51,12 +51,23 @@ for iip in (true, false)
         @test sol.stats.njacs < sol.stats.nw # W reuse
     end
     @test length(sol) < 150
-    @test length(solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5())) < 150
-    @test length(solve(remake(vanstiff, p = [sys.μ => 1e7]), reltol = [1e-6, 1e-4], RadauIIA5())) < 180
-    @test length(solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5(), reltol = 1e-9,
-        abstol = 1e-9)) < 970
-    @test length(solve(remake(vanstiff, p = [sys.μ => 1e9]), RadauIIA5())) < 170
-    @test length(solve(remake(vanstiff, p = [sys.μ => 1e10]), RadauIIA5())) < 190
+    @test SciMLBase.successful_retcode(sol)
+    sol_temp = solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5())
+    @test length(sol_temp) < 150
+    @test SciMLBase.successful_retcode(sol_temp)
+    sol_temp2 = solve(remake(vanstiff, p = [sys.μ => 1e7]), reltol = [1e-6, 1e-4], RadauIIA5())
+    @test length(sol_temp2) < 180
+    @test SciMLBase.successful_retcode(sol_temp2)
+    sol_temp3 = solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5(), reltol = 1e-9,
+        abstol = 1e-9)
+    @test length(sol_temp3) < 970
+    @test SciMLBase.successful_retcode(sol_temp3)
+    sol_temp4 = solve(remake(vanstiff, p = [sys.μ => 1e9]), RadauIIA5())
+    @test length(sol_temp4) < 170
+    @test SciMLBase.successful_retcode(sol_temp4)
+    sol_temp5 = solve(remake(vanstiff, p = [sys.μ => 1e10]), RadauIIA5())
+    @test length(sol_temp5) < 190
+    @test SciMLBase.successful_retcode(sol_temp5)
 end
 
 ##Tests for RadauIIA3
@@ -76,4 +87,5 @@ for iip in (true, false)
         @test sol.stats.njacs < sol.stats.nw # W reuse
     end
     @test length(sol) < 5000 # the error estimate is not very good
+    @test SciMLBase.successful_retcode(sol)
 end

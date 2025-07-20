@@ -28,18 +28,21 @@ sol = solve(prob, Vern9(), abstol = 1e-14, reltol = 1e-14,
     save_everystep = false, save_start = false, save_end = false, maxiters = 1e6)
 
 @test length(sol) > 100
+@test SciMLBase.successful_retcode(sol)
 
 prob = ODEProblem(ż, z0, (0, 400.0), (A = 1, B = 0.55, D = 0.4), callback = cbf(3))
 sol = solve(prob, Vern9(), abstol = 1e-14, reltol = 1e-14, save_everystep = false,
     save_start = false, save_end = false, maxiters = 2e4)
 
 @test length(sol) > 100
+@test SciMLBase.successful_retcode(sol)
 
 prob = ODEProblem(ż, z0, (0, 5000.0), (A = 1, B = 0.55, D = 0.4), callback = cbf(3))
 sol = solve(prob, Vern9(), abstol = 1e-14, reltol = 1e-14, save_everystep = false,
     save_start = false, save_end = false, maxiters = 1e6)
 
 @test length(sol) > 1500
+@test SciMLBase.successful_retcode(sol)
 
 @info "Bouncing Ball"
 
