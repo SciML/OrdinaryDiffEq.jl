@@ -55,6 +55,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "explicit/Feagin.md",
             "explicit/PRK.md",
             "explicit/QPRK.md",
+            "explicit/TaylorSeries.md",
             "explicit/Extrapolation.md"
         ],
         "Semi-Implicit Solvers" => [
