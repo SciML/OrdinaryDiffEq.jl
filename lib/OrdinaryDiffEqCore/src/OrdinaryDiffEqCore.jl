@@ -13,7 +13,7 @@ using Logging
 
 using MuladdMacro: @muladd
 
-using LinearAlgebra: opnorm
+using LinearAlgebra: opnorm, I
 
 using PrecompileTools
 
@@ -41,6 +41,7 @@ import RecursiveArrayTools: chain, recursivecopy!
 using SimpleUnPack: @unpack
 using RecursiveArrayTools
 using DataStructures: BinaryHeap
+import DataStructures
 using ArrayInterface: issingular
 
 import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
