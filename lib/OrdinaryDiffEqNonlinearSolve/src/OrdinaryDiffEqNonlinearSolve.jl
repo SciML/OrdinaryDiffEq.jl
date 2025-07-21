@@ -20,6 +20,7 @@ using LinearAlgebra: UniformScaling, UpperTriangular, givens, cond, dot, lmul!, 
 import LinearAlgebra
 import ArrayInterface: ismutable, restructure
 import LinearSolve: OperatorAssumptions
+import LinearSolve
 import ForwardDiff: pickchunksize
 using ForwardDiff: Dual
 using LinearSolve: I, rmul!, norm, mul!, ldiv!
