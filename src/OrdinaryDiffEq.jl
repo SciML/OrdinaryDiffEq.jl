@@ -96,7 +96,7 @@ export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
        IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7,
        RKN4
 
-using OrdinaryDiffEqVerner: Vern6, Vern7, Vern8, Vern9
+using OrdinaryDiffEqVerner: Vern6, Vern7, Vern8, Vern9, AutoVern6, AutoVern7, AutoVern8, AutoVern9
 export Vern6, Vern7, Vern8, Vern9
 
 using OrdinaryDiffEqSDIRK: ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
@@ -209,8 +209,7 @@ export constructDormandPrince
 
 export CompositeAlgorithm
 
-export AutoSwitch, AutoTsit5, AutoDP5,
-       AutoVern6, AutoVern7, AutoVern8, AutoVern9
+export AutoSwitch, AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
 import OrdinaryDiffEqCore: IController, PIController, PIDController
 export IController, PIController, PIDController
