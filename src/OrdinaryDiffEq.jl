@@ -11,65 +11,22 @@ using Reexport: @reexport
 import DiffEqBase: DiffEqBase, init, solve, solve!, step!, addsteps!, savevalues!, terminate!
 
 import OrdinaryDiffEqCore: OrdinaryDiffEqCore,
-                           trivial_limiter!, CompositeAlgorithm, alg_order,
+                           CompositeAlgorithm,
                            ShampineCollocationInit, BrownFullBasicInit, NoInit,
-                           set_new_W!, set_W_γdt!, get_W, isfirstcall, isfirststage,
-                           isJcurrent, get_new_W_γdt_cutoff,
-                           handle_discontinuities!, copyat_or_push!,
+                           copyat_or_push!,
                            du_cache, full_cache, isfsal, ode_interpolant, u_cache,
-                           AutoSwitch, has_discontinuity,
-                           first_discontinuity, pop_discontinuity!, _vec, loopfooter!,
-                           _reshape, perform_step!,
-                           _ode_addsteps!, get_current_alg_autodiff, default_controller,
-                           isstandard,
-                           ispredictive, beta2_default, beta1_default, gamma_default,
-                           qmin_default,
-                           qmax_default, qsteady_min_default, qsteady_max_default,
-                           stepsize_controller!,
-                           accept_step_controller, step_accept_controller!,
-                           step_reject_controller!,
-                           issplit, calculate_residuals,
-                           calculate_residuals!,
-                           nlsolve_f, unwrap_cache, ode_addsteps!, get_chunksize,
-                           handle_callback_modifiers!,
-                           unwrap_alg, apply_step!, initialize_tstops, uses_uprev,
-                           initialize_saveat,
-                           isimplicit, initialize_d_discontinuities, isdtchangeable,
-                           _searchsortedfirst,
-                           _searchsortedlast,
-                           @unpack, ismultistep, isautoswitch,
-                           get_chunksize_int,
-                           _unwrap_val, alg_autodiff, concrete_jac, alg_difftype,
-                           standardtag,
-                           alg_extrapolates, alg_maximum_order, alg_adaptive_order,
-                           initialize_callbacks!,
-                           get_differential_vars, alg_cache,
-                           @cache, fsal_typeof,
-                           handle_dt!,
-                           ode_determine_initdt,
-                           loopheader!, _loopfooter!,
-                           isadaptive,
-                           current_interpolant!,
-                           is_mass_matrix_alg,
-                           _savevalues!, postamble!, recursivefill!,
-                           _change_t_via_interpolation!, _ode_interpolant!,
-                           current_interpolant, resize_nlsolver!, _ode_interpolant,
-                           handle_tstop!, _postamble!, update_uprev!, resize_J_W!,
-                           get_fsalfirstlast, strip_cache
+                           AutoSwitch,
+                           @unpack,
+                           @cache
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit,
        AutoSwitch
 
 import OrdinaryDiffEqDifferentiation
-using OrdinaryDiffEqDifferentiation: resize_grad_config!, dolinsolve,
-                                     wrapprecs, build_jac_config,
-                                     calc_J!, calc_W!,
-                                     calc_J, calc_W, jacobian2W!, isnewton
+using OrdinaryDiffEqDifferentiation: OrdinaryDiffEqDifferentiation
 
-using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, nlsolvefail,
-                                    initial_η, NonlinearSolveAlg, compute_step!,
-                                    nlsolve!, resize_jac_config!, anderson!, build_nlsolver,
-                                    markfirststage!, anderson
+using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional,
+                                    NonlinearSolveAlg
 export NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
 using OrdinaryDiffEqExtrapolation: AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner,
@@ -168,8 +125,7 @@ using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, V
                                 Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr,
                                 RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL,
                                 ROS3PRL2, ROK4a,
-                                ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7,
-                                RosenbrockMutableCache
+                                ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
 export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
        Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
        Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr,
