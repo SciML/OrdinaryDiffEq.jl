@@ -51,7 +51,7 @@ function DiffEqBase.__init(
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
         internalnorm = ODE_DEFAULT_NORM,
-        internalopnorm = LinearAlgebra.opnorm,
+        internalopnorm = opnorm,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
         verbose = true,
