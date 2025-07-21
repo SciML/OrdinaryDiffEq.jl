@@ -13,7 +13,7 @@ using Logging
 
 using MuladdMacro: @muladd
 
-using LinearAlgebra: opnorm, I
+using LinearAlgebra: opnorm, I, UniformScaling
 
 using PrecompileTools
 
