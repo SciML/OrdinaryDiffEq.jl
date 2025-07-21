@@ -1043,7 +1043,7 @@ version = "1.1.1"
 deps = ["DiffEqBase", "FastBroadcast", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "Reexport", "Static"]
 path = "../lib/OrdinaryDiffEqHighOrderRK"
 uuid = "d28bc4f8-55e1-4f49-af69-84c1a99f0f58"
-version = "1.1.0"
+version = "1.2.0"
 
 [[deps.OrdinaryDiffEqIMEXMultistep]]
 deps = ["ADTypes", "DiffEqBase", "FastBroadcast", "OrdinaryDiffEqCore", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqNonlinearSolve", "Reexport"]
