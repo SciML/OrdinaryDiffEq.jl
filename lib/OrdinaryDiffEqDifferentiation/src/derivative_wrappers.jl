@@ -185,7 +185,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
 
     if dense isa AutoForwardDiff
         if alg_autodiff(alg) isa AutoSparse
-            integrator.stats.nf += maximum(SparseMatrixColorings.ncolors(jac_config[1]))
+            integrator.stats.nf += maximum(ncolors(jac_config[1]))
         else
             sparsity, colorvec = sparsity_colorvec(integrator.f, x)
             maxcolor = maximum(colorvec)
@@ -375,9 +375,9 @@ function sparsity_colorvec(f, x)
         end
     end
 
-    col_alg = SparseMatrixColorings.GreedyColoringAlgorithm()
-    col_prob = SparseMatrixColorings.ColoringProblem()
+    col_alg = GreedyColoringAlgorithm()
+    col_prob = ColoringProblem()
     colorvec = DiffEqBase.has_colorvec(f) ? f.colorvec :
-               (isnothing(sparsity) ? (1:length(x)) : SparseMatrixColorings.column_colors(SparseMatrixColorings.coloring(sparsity, col_prob, col_alg)))
+               (isnothing(sparsity) ? (1:length(x)) : column_colors(coloring(sparsity, col_prob, col_alg)))
     sparsity, colorvec
 end
