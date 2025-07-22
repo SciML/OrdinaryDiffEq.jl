@@ -138,6 +138,46 @@ Rosenbrock23
     "Rodas5P", with_step_limiter = true)
 Rodas5P
 
+@doc rosenbrock_docstring(
+    "A 3/2-order L-stable Rosenbrock-W method optimized for stiff problems. Good balance of accuracy and computational efficiency.",
+    "Rosenbrock32", with_step_limiter = true)
+Rosenbrock32
+
+@doc rosenbrock_docstring(
+    "A 3rd-order accurate L-stable Rosenbrock method designed for parabolic problems. Particularly effective for reaction-diffusion equations.",
+    "ROS3P", with_step_limiter = true)
+ROS3P
+
+@doc rosenbrock_docstring(
+    "A 3rd-order accurate L-stable Rosenbrock method from Hairer and Wanner. Good general-purpose stiff ODE solver with moderate computational cost.",
+    "Rodas3", with_step_limiter = true)
+Rodas3
+
+@doc rosenbrock_docstring(
+    "A 4th-order accurate L-stable Rosenbrock method. Well-suited for moderately stiff problems with good efficiency.",
+    "Rodas4", with_step_limiter = true)
+Rodas4
+
+@doc rosenbrock_docstring(
+    "A 4th-order accurate L-stable Rosenbrock method with improved error estimation. Enhanced version of Rodas4 for better step size control.",
+    "Rodas42", with_step_limiter = true)
+Rodas42
+
+@doc rosenbrock_docstring(
+    "A 4th-order accurate L-stable Rosenbrock method designed for differential-algebraic equations (DAEs). Optimized for index-1 DAE problems.",
+    "Rodas4P", with_step_limiter = true)
+Rodas4P
+
+@doc rosenbrock_docstring(
+    "An improved 4th-order accurate L-stable Rosenbrock method for DAEs with enhanced stability properties.",
+    "Rodas4P2", with_step_limiter = true)
+Rodas4P2
+
+@doc rosenbrock_docstring(
+    "A 5th-order accurate L-stable Rosenbrock method for differential-algebraic problems. Higher accuracy but increased computational cost.",
+    "Rodas5", with_step_limiter = true)
+Rodas5
+
 struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
        OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, Val{:forward}, ST, CJ}
     tableau::TabType
@@ -225,3 +265,68 @@ for Alg in [
         end
     end
 end
+
+@doc rosenbrock_docstring(
+    "A 2nd-order accurate L-stable Rosenbrock method. Simple and robust for moderately stiff problems with lower accuracy requirements.",
+    "ROS2")
+ROS2
+
+@doc rosenbrock_docstring(
+    "A 2nd-order accurate L-stable Rosenbrock method optimized for the Prothero-Robinson test problem. Good for oscillatory stiff problems.",
+    "ROS2PR")
+ROS2PR
+
+@doc rosenbrock_docstring(
+    "A 2nd-order accurate L-stable Rosenbrock method with enhanced stability properties. Variant of ROS2 with improved behavior.",
+    "ROS2S")
+ROS2S
+
+@doc rosenbrock_docstring(
+    "A 3rd-order accurate L-stable Rosenbrock method from Hairer and Wanner. Well-established method for general stiff ODEs.",
+    "ROS3")
+ROS3
+
+@doc rosenbrock_docstring(
+    "A 3rd-order accurate L-stable Rosenbrock method optimized for the Prothero-Robinson test problem. Good for stiff oscillatory systems.",
+    "ROS3PR")
+ROS3PR
+
+@doc rosenbrock_docstring(
+    "A 4th-order accurate L-stable Rosenbrock method with optimized stability function. Enhanced performance for certain stiff problem classes.",
+    "Scholz4_7")
+Scholz4_7
+
+@doc rosenbrock_docstring(
+    "A 4th-order accurate L-stable Rosenbrock method with improved embedded error estimator. Part of the ROS34PW family of methods.",
+    "ROS34PW1a")
+ROS34PW1a
+
+@doc rosenbrock_docstring(
+    "A 4th-order accurate L-stable Rosenbrock method with alternative embedded error estimator. Variant in the ROS34PW family.",
+    "ROS34PW1b")
+ROS34PW1b
+
+@doc rosenbrock_docstring(
+    "A 4th-order accurate L-stable Rosenbrock method with enhanced embedded error estimation. Second variant in the ROS34PW family.",
+    "ROS34PW2")
+ROS34PW2
+
+@doc rosenbrock_docstring(
+    "A 4th-order accurate L-stable Rosenbrock method with optimized embedded error estimator. Third variant in the ROS34PW family.",
+    "ROS34PW3")
+ROS34PW3
+
+@doc rosenbrock_docstring(
+    "A 4th-order accurate L-stable Rosenbrock method designed for improved traditional Rosenbrock-Wanner methods for stiff ODEs and DAEs.",
+    "ROS34PRw")
+ROS34PRw
+
+@doc rosenbrock_docstring(
+    "A 4th-order accurate L-stable Rosenbrock method implemented by Shampine. Classical implementation of a 4th-order Rosenbrock method.",
+    "RosShamp4")
+RosShamp4
+
+@doc rosenbrock_docstring(
+    "A 4th-order accurate L-stable Rosenbrock method optimized for L-stability. Enhanced stability properties from Hairer and Wanner.",
+    "Ros4LStab")
+Ros4LStab
