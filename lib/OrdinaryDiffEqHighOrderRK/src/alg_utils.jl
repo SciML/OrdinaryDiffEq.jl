@@ -2,6 +2,7 @@ alg_order(alg::TanYam7) = 7
 alg_order(alg::DP8) = 8
 alg_order(alg::TsitPap8) = 8
 alg_order(alg::PFRK87) = 8
+alg_order(alg::FW15Stage10) = 10
 
 qmin_default(alg::DP8) = 1 // 3
 

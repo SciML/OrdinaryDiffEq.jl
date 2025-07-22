@@ -60,6 +60,247 @@ struct TanYam7ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     btilde10::T
 end
 
+struct FW15Stage10ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    c1::T2
+    c2::T2
+    c3::T2
+    c4::T2
+    c5::T2
+    c6::T2
+    c7::T2
+    c8::T2
+    c9::T2
+    c10::T2
+    c11::T2
+    c12::T2
+    c13::T2
+    c14::T2
+    c15::T2
+    a21::T
+    a32::T
+    a41::T
+    a43::T
+    a51::T
+    a53::T
+    a54::T
+    a61::T
+    a63::T
+    a64::T
+    a65::T
+    a71::T
+    a74::T
+    a75::T
+    a76::T
+    a81::T
+    a84::T
+    a85::T
+    a86::T
+    a87::T
+    a91::T
+    a94::T
+    a95::T
+    a96::T
+    a97::T
+    a98::T
+    a101::T
+    a104::T
+    a105::T
+    a106::T
+    a107::T
+    a108::T
+    a109::T
+    a111::T
+    a114::T
+    a115::T
+    a116::T
+    a117::T
+    a118::T
+    a119::T
+    a1110::T
+    a121::T
+    a124::T
+    a125::T
+    a126::T
+    a127::T
+    a128::T
+    a129::T
+    a1210::T
+    a1211::T
+    a131::T
+    a134::T
+    a135::T
+    a136::T
+    a137::T
+    a138::T
+    a139::T
+    a1310::T
+    a1311::T
+    a1312::T
+    a141::T
+    a144::T
+    a145::T
+    a146::T
+    a147::T
+    a148::T
+    a149::T
+    a1410::T
+    a1411::T
+    a1412::T
+    a1413::T
+    a151::T
+    a154::T
+    a155::T
+    a156::T
+    a157::T
+    a158::T
+    a159::T
+    a1510::T
+    a1511::T
+    a1512::T
+    a1513::T
+    a1514::T
+    b1::T
+    b9::T
+    b10::T
+    b11::T
+    b12::T
+    b13::T
+    b14::T
+    b15::T
+end
+
+"""
+15-stage Runge-Kutta method of order 10 from F. White et al., 2025.
+"""
+function FW15Stage10ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+    c1 = convert(T2, 0.0)
+    c2 = convert(T2, 0.13333333333333333)
+    c3 = convert(T2, 0.26666666666666666)
+    c4 = convert(T2, 0.4)
+    c5 = convert(T2, 0.5714285714285714)
+    c6 = convert(T2, 0.7787407615362918)
+    c7 = convert(T2, 0.6426157582403226)
+    c8 = convert(T2, 0.8825276619647323)
+    c9 = convert(T2, 0.11747233803526766)
+    c10 = convert(T2, 0.11747233803526766)
+    c11 = convert(T2, 0.3573842417596775)
+    c12 = convert(T2, 0.3573842417596775)
+    c13 = convert(T2, 0.6426157582403226)
+    c14 = convert(T2, 0.8825276619647323)
+    c15 = convert(T2, 1.0)
+    a21 = convert(T, 0.13333333333333333)
+    a32 = convert(T, 0.26666666666666666)
+    a41 = convert(T, 0.1)
+    a43 = convert(T, 0.3)
+    a51 = convert(T, 0.13411078717201166)
+    a53 = convert(T, 0.08746355685131195)
+    a54 = convert(T, 0.3498542274052478)
+    a61 = convert(T, 0.32865893899779125)
+    a63 = convert(T, -0.8431230447116361)
+    a64 = convert(T, 1.2303830647211609)
+    a65 = convert(T, 0.0628218025289758)
+    a71 = convert(T, 0.13018699084453347)
+    a74 = convert(T, 0.5807389729173741)
+    a75 = convert(T, -0.13206101704292822)
+    a76 = convert(T, 0.06375081152134318)
+    a81 = convert(T, 0.11696914466403235)
+    a84 = convert(T, 0.804791321585223)
+    a85 = convert(T, -1.0324424073033935)
+    a86 = convert(T, 0.14123750757742515)
+    a87 = convert(T, 0.8519720954414453)
+    a91 = convert(T, 0.07230137681531805)
+    a94 = convert(T, 0.27844935379385793)
+    a95 = convert(T, -0.7203557425293995)
+    a96 = convert(T, 0.07147830972300757)
+    a97 = convert(T, 0.48054612710039024)
+    a98 = convert(T, -0.06494708686790669)
+    a101 = convert(T, -0.0336045800754256)
+    a104 = convert(T, -0.8576693886686749)
+    a105 = convert(T, 2.054105395119576)
+    a106 = convert(T, -0.20990904266184918)
+    a107 = convert(T, -1.3339722359516115)
+    a108 = convert(T, 0.18080634838458134)
+    a109 = convert(T, 0.31771584188867136)
+    a111 = convert(T, 0.03781005386193373)
+    a114 = convert(T, 0.04559155864157964)
+    a115 = convert(T, 0.37485824729474737)
+    a116 = convert(T, -0.018981904165238088)
+    a117 = convert(T, -0.3360388626375594)
+    a118 = convert(T, 0.04220771637555915)
+    a119 = convert(T, 0.05190036098369083)
+    a1110 = convert(T, 0.1600370714049642)
+    a121 = convert(T, 0.025378474265434523)
+    a124 = convert(T, 0.3623063275434741)
+    a125 = convert(T, -2.13002206625995)
+    a126 = convert(T, 0.1672715948594377)
+    a127 = convert(T, 1.5827509418646633)
+    a128 = convert(T, -0.20472018513908158)
+    a129 = convert(T, 0.3192653281448061)
+    a1210 = convert(T, -0.19948525625469693)
+    a1211 = convert(T, 0.43463908273559)
+    a131 = convert(T, 0.02102955512349265)
+    a134 = convert(T, -0.20853138834469356)
+    a135 = convert(T, 0.32686349865476766)
+    a136 = convert(T, -0.04029159506346634)
+    a137 = convert(T, -0.06216857011008511)
+    a138 = convert(T, 0.019401511635634607)
+    a139 = convert(T, 0.0336189343221497)
+    a1310 = convert(T, 0.184057539066669)
+    a1311 = convert(T, 0.12671904245006307)
+    a1312 = convert(T, 0.2419172305057909)
+    a141 = convert(T, 0.05901543960114423)
+    a144 = convert(T, 0.34675352940043946)
+    a145 = convert(T, -0.5435204392509414)
+    a146 = convert(T, 0.06699832051343939)
+    a147 = convert(T, -0.2091059262738907)
+    a148 = convert(T, 0.03419681921537739)
+    a149 = convert(T, 0.656808691640117)
+    a1410 = convert(T, -0.5300230864912716)
+    a1411 = convert(T, 0.6823707136215755)
+    a1412 = convert(T, -0.5243167946491541)
+    a1413 = convert(T, 0.8433503946378972)
+    a151 = convert(T, -0.04044086632866268)
+    a154 = convert(T, -0.9361744121603922)
+    a155 = convert(T, 1.4674109549590162)
+    a156 = convert(T, -0.18088384977898705)
+    a157 = convert(T, 1.1675891022744105)
+    a158 = convert(T, -0.28011360481035336)
+    a159 = convert(T, -1.8716683763485165)
+    a1510 = convert(T, 2.2415881161250515)
+    a1511 = convert(T, -1.5725720826914185)
+    a1512 = convert(T, 2.151700399601059)
+    a1513 = convert(T, -1.8133404509027644)
+    a1514 = convert(T, 0.6669050700615575)
+    b1 = convert(T, 0.03333333333333333)
+    b9 = convert(T, 0.13516962724923107)
+    b10 = convert(T, 0.054067850899692425)
+    b11 = convert(T, 0.21577825773602247)
+    b12 = convert(T, 0.06165093078172071)
+    b13 = convert(T, 0.2774291885177432)
+    b14 = convert(T, 0.1892374781489235)
+    b15 = convert(T, 0.03333333333333333)
+
+    FW15Stage10ConstantCache(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15,
+                            a21, a32, a41, a43, a51,
+                            a53, a54, a61, a63, a64,
+                            a65, a71, a74, a75, a76,
+                            a81, a84, a85, a86, a87,
+                            a91, a94, a95, a96, a97,
+                            a98, a101, a104, a105, a106,
+                            a107, a108, a109, a111, a114,
+                            a115, a116, a117, a118, a119,
+                            a1110, a121, a124, a125, a126,
+                            a127, a128, a129, a1210, a1211,
+                            a131, a134, a135, a136, a137,
+                            a138, a139, a1310, a1311, a1312,
+                            a141, a144, a145, a146, a147,
+                            a148, a149, a1410, a1411, a1412,
+                            a1413, a151, a154, a155, a156,
+                            a157, a158, a159, a1510, a1511,
+                            a1512, a1513, a1514,
+                            b1, b9, b10, b11, b12, b13, b14, b15)
+end
+
 """
 On the Optimization of Some Nine-Stage Seventh-order Runge-Kutta Method, by M. Tanaka, S. Muramatsu and S. Yamashita,
 Information Processing Society of Japan, Vol. 33, No. 12 (1992) pages 1512-1526.

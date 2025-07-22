@@ -32,6 +32,6 @@ include("interpolants.jl")
 include("high_order_rk_addsteps.jl")
 include("high_order_rk_perform_step.jl")
 
-export TanYam7, DP8, PFRK87, TsitPap8
+export TanYam7, DP8, PFRK87, TsitPap8, FW15Stage10
 
 end

@@ -12,4 +12,9 @@ testTol = 0.2
 
     sim3 = test_convergence(dts5, prob, PFRK87())
     @test sim3.𝒪est[:l∞]≈8.4 atol=0.2
+    
+    # Test for FW15Stage10 (10th order method)
+    dts10 = 1 .// 2 .^ (2:-1:0)  # Fewer steps needed for higher order
+    sim4 = test_convergence(dts10, prob, FW15Stage10())
+    @test sim4.𝒪est[:l∞]≈10.0 atol=1.0  # Order 10 method
 end
