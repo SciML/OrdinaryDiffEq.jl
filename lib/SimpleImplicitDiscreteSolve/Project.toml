@@ -11,6 +11,7 @@ SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
 
 [compat]
 DiffEqBase = "6.164.1"
+JET = "0.9.18, 0.10.4"
 OrdinaryDiffEqSDIRK = "1.2.0"
 Reexport = "1.2.2"
 SciMLBase = "2.74.1"
@@ -19,8 +20,9 @@ Test = "1.10"
 julia = "1.10"
 
 [extras]
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["OrdinaryDiffEqSDIRK", "Test"]
+test = ["JET", "OrdinaryDiffEqSDIRK", "Test"]
