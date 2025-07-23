@@ -69,4 +69,6 @@ end
     end
 end
 
-include("jet.jl")
+if isempty(VERSION.prerelease)
+    include("jet.jl")
+end
