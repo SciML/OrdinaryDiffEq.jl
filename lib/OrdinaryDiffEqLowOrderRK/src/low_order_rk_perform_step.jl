@@ -694,6 +694,98 @@ end
     return nothing
 end
 
+@muladd function perform_step!(integrator, cache::CashKarp5ConstantCache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, btilde1, btilde3, btilde4, btilde5, btilde6, c1, c2, c3, c4, c5 = cache
+    k1 = integrator.fsalfirst
+    a = dt * a21
+    k2 = f(uprev + a * k1, p, t + c1 * dt)
+    k3 = f(uprev + dt * (a31 * k1 + a32 * k2), p, t + c2 * dt)
+    k4 = f(uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3), p, t + c3 * dt)
+    k5 = f(uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4), p, t + c4 * dt)
+    k6 = f(uprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5), p, t + c5 * dt)
+    
+    # 5th order solution (b coefficients)
+    u = uprev + dt * (37//378 * k1 + 250//621 * k3 + 125//594 * k4 + 512//1771 * k6)
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
+    
+    if integrator.opts.adaptive
+        utilde = dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6)
+        atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::CashKarp5ConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+end
+
+function initialize!(integrator, cache::CashKarp5Cache)
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = cache.k1
+    integrator.k[2] = cache.k2 # Not needed but for consistency
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+end
+
+@muladd function perform_step!(integrator, cache::CashKarp5Cache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
+    tab = CashKarp5ConstantCache(T, T2)
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, btilde1, btilde3, btilde4, btilde5, btilde6, c1, c2, c3, c4, c5 = tab
+    @unpack k1, k2, k3, k4, k5, k6, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
+    
+    a = dt * a21
+    @.. broadcast=false thread=thread tmp=uprev + a * k1
+    stage_limiter!(tmp, integrator, p, t + c1 * dt)
+    f(k2, tmp, p, t + c1 * dt)
+    
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    stage_limiter!(tmp, integrator, p, t + c2 * dt)
+    f(k3, tmp, p, t + c2 * dt)
+    
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    stage_limiter!(tmp, integrator, p, t + c3 * dt)
+    f(k4, tmp, p, t + c3 * dt)
+    
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+    stage_limiter!(tmp, integrator, p, t + c4 * dt)
+    f(k5, tmp, p, t + c4 * dt)
+    
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
+    stage_limiter!(tmp, integrator, p, t + c5 * dt)
+    f(k6, tmp, p, t + c5 * dt)
+    
+    # 5th order solution
+    @.. broadcast=false thread=thread u=uprev + dt * (37//378 * k1 + 250//621 * k3 + 125//594 * k4 + 512//1771 * k6)
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
+    
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
+    
+    if integrator.opts.adaptive
+        @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6)
+        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+    return nothing
+end
+
 function initialize!(integrator, cache::RKO65ConstantCache)
     integrator.kshortsize = 6
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)

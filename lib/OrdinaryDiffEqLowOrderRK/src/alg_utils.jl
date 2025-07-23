@@ -9,6 +9,7 @@ alg_order(alg::BS5) = 5
 alg_order(alg::OwrenZen4) = 4
 alg_order(alg::OwrenZen5) = 5
 alg_order(alg::DP5) = 5
+alg_order(alg::CashKarp5) = 5
 alg_order(alg::Anas5) = 5
 alg_order(alg::RKO65) = 5
 alg_order(alg::FRK65) = 6

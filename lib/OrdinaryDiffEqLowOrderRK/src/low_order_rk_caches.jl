@@ -482,6 +482,57 @@ function alg_cache(alg::DP5, u, rate_prototype, ::Type{uEltypeNoUnits},
     cache
 end
 
+@cache struct CashKarp5Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
+    Thread} <: OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    k1::rateType
+    k2::rateType
+    k3::rateType
+    k4::rateType
+    k5::rateType
+    k6::rateType
+    utilde::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function alg_cache(alg::CashKarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    k1 = zero(rate_prototype)
+    k2 = zero(rate_prototype)
+    k3 = zero(rate_prototype)
+    k4 = zero(rate_prototype)
+    k5 = zero(rate_prototype)
+    k6 = zero(rate_prototype)
+
+    tmp = zero(u)
+    utilde = tmp
+
+    if eltype(u) != uEltypeNoUnits || calck
+        atmp = similar(u, uEltypeNoUnits)
+        recursivefill!(atmp, false)
+    else
+        atmp = zero(u, uEltypeNoUnits)
+    end
+
+    cache = CashKarp5Cache(u, uprev, k1, k2, k3, k4, k5, k6, utilde, tmp, atmp,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread)
+    cache
+end
+
+function alg_cache(alg::CashKarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    CashKarp5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
 function alg_cache(alg::DP5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,

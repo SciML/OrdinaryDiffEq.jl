@@ -79,4 +79,7 @@ prob_ode_nonlinear = ODEProblem(
 
     sim160 = test_convergence(dts, prob, Anas5(w = 2))
     @test sim160.𝒪est[:l2]≈4 atol=2 * testTol
+    
+    sim_ck5 = test_convergence(dts2, prob, CashKarp5())
+    @test sim_ck5.𝒪est[:l∞]≈5 atol=testTol
 end

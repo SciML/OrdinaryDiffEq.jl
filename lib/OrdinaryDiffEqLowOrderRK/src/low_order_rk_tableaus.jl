@@ -1175,6 +1175,109 @@ end
     return d1, d3, d4, d5, d6, d7
 end
 
+struct CashKarp5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    a61::T
+    a62::T
+    a63::T
+    a64::T
+    a65::T
+    btilde1::T
+    btilde3::T
+    btilde4::T
+    btilde5::T
+    btilde6::T
+    c1::T2
+    c2::T2
+    c3::T2
+    c4::T2
+    c5::T2
+end
+
+function CashKarp5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+    # c coefficients
+    c1 = convert(T2, 0.2)
+    c2 = convert(T2, 0.3)
+    c3 = convert(T2, 0.6)
+    c4 = convert(T2, 1.0)
+    c5 = convert(T2, 0.875)
+    
+    # a coefficients
+    a21 = convert(T, 0.2)
+    a31 = convert(T, 0.075)
+    a32 = convert(T, 0.225)
+    a41 = convert(T, 0.3)
+    a42 = convert(T, -0.9)
+    a43 = convert(T, 1.2)
+    a51 = convert(T, -11.0/54.0)
+    a52 = convert(T, 2.5)
+    a53 = convert(T, -70.0/27.0)
+    a54 = convert(T, 35.0/27.0)
+    a61 = convert(T, 1631.0/55296.0)
+    a62 = convert(T, 175.0/512.0)
+    a63 = convert(T, 575.0/13824.0)
+    a64 = convert(T, 44275.0/110592.0)
+    a65 = convert(T, 253.0/4096.0)
+    
+    # btilde coefficients (difference between 5th and 4th order solutions)
+    # btilde = b5 - b4
+    btilde1 = convert(T, 37.0/378.0 - 2825.0/27648.0)
+    btilde3 = convert(T, 250.0/621.0 - 18575.0/48384.0)
+    btilde4 = convert(T, 125.0/594.0 - 13525.0/55296.0)
+    btilde5 = convert(T, 0.0 - 277.0/14336.0)
+    btilde6 = convert(T, 512.0/1771.0 - 0.25)
+    
+    CashKarp5ConstantCache(a21, a31, a32, a41, a42, a43, a51, a52, a53, a54,
+        a61, a62, a63, a64, a65, btilde1, btilde3, btilde4, btilde5, btilde6,
+        c1, c2, c3, c4, c5)
+end
+
+function CashKarp5ConstantCache(T::Type, T2::Type)
+    # c coefficients
+    c1 = convert(T2, 1//5)
+    c2 = convert(T2, 3//10)
+    c3 = convert(T2, 3//5)
+    c4 = convert(T2, 1//1)
+    c5 = convert(T2, 7//8)
+    
+    # a coefficients
+    a21 = convert(T, 1//5)
+    a31 = convert(T, 3//40)
+    a32 = convert(T, 9//40)
+    a41 = convert(T, 3//10)
+    a42 = convert(T, -9//10)
+    a43 = convert(T, 6//5)
+    a51 = convert(T, -11//54)
+    a52 = convert(T, 5//2)
+    a53 = convert(T, -70//27)
+    a54 = convert(T, 35//27)
+    a61 = convert(T, 1631//55296)
+    a62 = convert(T, 175//512)
+    a63 = convert(T, 575//13824)
+    a64 = convert(T, 44275//110592)
+    a65 = convert(T, 253//4096)
+    
+    # btilde coefficients (difference between 5th and 4th order solutions)
+    btilde1 = convert(T, 37//378 - 2825//27648)
+    btilde3 = convert(T, 250//621 - 18575//48384)
+    btilde4 = convert(T, 125//594 - 13525//55296)
+    btilde5 = convert(T, 0//1 - 277//14336)
+    btilde6 = convert(T, 512//1771 - 1//4)
+    
+    CashKarp5ConstantCache(a21, a31, a32, a41, a42, a43, a51, a52, a53, a54,
+        a61, a62, a63, a64, a65, btilde1, btilde3, btilde4, btilde5, btilde6,
+        c1, c2, c3, c4, c5)
+end
+
 #=
 function DP5_dense_bs(T)
   b1  = convert(T,5179//57600)
