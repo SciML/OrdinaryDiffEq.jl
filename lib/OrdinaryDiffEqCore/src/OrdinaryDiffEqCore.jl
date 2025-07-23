@@ -61,7 +61,7 @@ using DiffEqBase: check_error!, @def, _vec, _reshape
 using FastBroadcast: @.., True, False
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
-                 ODEAliasSpecifier
+                 ODEAliasSpecifier, @SciMLMessage, ODEVerbosity, Verbosity
 
 import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
 

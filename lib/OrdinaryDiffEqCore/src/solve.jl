@@ -54,7 +54,7 @@ function DiffEqBase.__init(
         internalopnorm = LinearAlgebra.opnorm,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-        verbose = true,
+        verbose = ODEVerbosity(Verbosity.Default()),
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,
@@ -102,8 +102,9 @@ function DiffEqBase.__init(
        prob.f.mass_matrix isa AbstractMatrix &&
        all(isequal(0), prob.f.mass_matrix)
         # technically this should also warn for zero operators but those are hard to check for
-        if (dense || !isempty(saveat)) && verbose
-            @warn("Rosenbrock methods on equations without differential states do not bound the error on interpolations.")
+        if (dense || !isempty(saveat))
+            @SciMLMessage("Rosenbrock methods on equations without differential states do not bound the error on interpolations.",
+            verbose, :rosenbrock_no_differential_states, :error_control)
         end
     end
 
@@ -114,7 +115,8 @@ function DiffEqBase.__init(
     end
 
     if !isempty(saveat) && dense
-        @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
+        @SciMLMessage("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.",
+        verbose, :dense_output_saveat, :error_control)
     end
 
     progress && @logmsg(LogLevel(-1), progress_name, _id=progress_id, progress=0)
@@ -650,9 +652,8 @@ function handle_dt!(integrator)
             error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
         end
         if isnan(integrator.dt)
-            if integrator.opts.verbose
-                @warn("Automatic dt set the starting dt as NaN, causing instability. Exiting.")
-            end
+            @SciMLMessage("Automatic dt set the starting dt as NaN, causing instability. Exiting.",
+            integrator.opts.verbose, :dt_NaN, :error_control)b 
         end
     elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
            integrator.tdir < 0
