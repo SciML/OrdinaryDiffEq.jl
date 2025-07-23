@@ -1,4 +1,19 @@
 @doc generic_solver_docstring(
+    "Numerov's method for second-order ODEs of the form y'' = f(x,y). 
+This is a fourth-order method that is particularly effective for oscillatory problems.
+Fixed time steps only. The second order ODE should not depend on the first derivative.",
+    "Numerov",
+    "Numerov's method",
+    "@article{numerov1927,
+    title={A method of extrapolation of perturbations},
+    author={Numerov, Boris Vasil'evich},
+    journal={Monthly Notices of the Royal Astronomical Society},
+    volume={84},
+    pages={592--601},
+    year={1924}}", "", "")
+struct Numerov <: OrdinaryDiffEqPartitionedAlgorithm end
+
+@doc generic_solver_docstring(
     "Method of order three, which minimizes the amount of evaluated functions in each step. Fixed time steps only.
 Second order ODE should not depend on the first derivative.",
     "IRKN3",

@@ -28,7 +28,7 @@ include("interp_func.jl")
 include("interpolants.jl")
 include("rkn_perform_step.jl")
 
-export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
+export Numerov, Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
        Nystrom5VelocityIndependent,
        IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7,
        RKN4
