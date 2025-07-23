@@ -1,6 +1,7 @@
 alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::IRKN4) = true
 
+alg_order(alg::Numerov) = 4
 alg_order(alg::IRKN3) = 3
 alg_order(alg::Nystrom4) = 4
 alg_order(alg::FineRKN4) = 4

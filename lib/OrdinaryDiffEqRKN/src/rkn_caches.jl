@@ -1,6 +1,42 @@
 abstract type NystromMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::NystromMutableCache, u) = (cache.fsalfirst, cache.k)
 
+@cache struct NumerovCache{uType, rateType, reducedRateType} <: NystromMutableCache
+    u::uType
+    uprev::uType
+    uprev2::uType
+    fsalfirst::rateType
+    k_prev::reducedRateType
+    k::rateType
+    tmp::uType
+end
+
+function alg_cache(alg::Numerov, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    reduced_rate_prototype = rate_prototype.x[2]
+    k₁ = zero(rate_prototype)
+    k_prev = zero(reduced_rate_prototype)
+    k = zero(rate_prototype)
+    tmp = zero(u)
+    NumerovCache(u, uprev, uprev2, k₁, k_prev, k, tmp)
+end
+
+struct NumerovConstantCache{uType, reducedRateType} <: NystromConstantCache
+    uprev2::uType
+    k_prev::reducedRateType
+end
+
+function alg_cache(alg::Numerov, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    reduced_rate_prototype = rate_prototype.x[2]
+    k_prev = zero(reduced_rate_prototype)
+    NumerovConstantCache(uprev2, k_prev)
+end
+
 @cache struct Nystrom4Cache{uType, rateType, reducedRateType} <: NystromMutableCache
     u::uType
     uprev::uType

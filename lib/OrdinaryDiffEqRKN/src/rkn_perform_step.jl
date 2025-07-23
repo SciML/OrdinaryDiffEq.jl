@@ -4,7 +4,7 @@
 ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
 ## y'₁ = y'₀ + h∑bᵢk'ᵢ
 
-const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache, FineRKN4ConstantCache,
+const NystromCCDefaultInitialization = Union{NumerovConstantCache, Nystrom4ConstantCache, FineRKN4ConstantCache,
     FineRKN5ConstantCache,
     Nystrom4VelocityIndependentConstantCache,
     Nystrom5VelocityIndependentConstantCache,
@@ -26,7 +26,7 @@ function initialize!(integrator, cache::NystromCCDefaultInitialization)
     integrator.fsalfirst = ArrayPartition((kdu, ku))
 end
 
-const NystromDefaultInitialization = Union{Nystrom4Cache, FineRKN4Cache, FineRKN5Cache,
+const NystromDefaultInitialization = Union{NumerovCache, Nystrom4Cache, FineRKN4Cache, FineRKN5Cache,
     Nystrom4VelocityIndependentCache,
     Nystrom5VelocityIndependentCache,
     IRKN3Cache, IRKN4Cache,
@@ -1898,5 +1898,152 @@ end
     f.f2(k.x[2], du, u, p, t + dt)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
+    integrator.stats.nf2 += 1
+end
+
+# Numerov's method specific initialization - needs special handling for the first step
+function initialize!(integrator, cache::NumerovCache)
+    @unpack fsalfirst, k = cache
+    duprev, uprev = integrator.uprev.x
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f.f1(integrator.k[1].x[1], duprev, uprev, integrator.p, integrator.t)
+    integrator.f.f2(integrator.k[1].x[2], duprev, uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    
+    # For Numerov, we need to store the initial acceleration
+    duprev, uprev = integrator.uprev.x
+    cache.k_prev .= integrator.k[1].x[1] # Initial acceleration
+end
+
+function initialize!(integrator, cache::NumerovConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+    duprev, uprev = integrator.uprev.x
+    kdu = integrator.f.f1(duprev, uprev, integrator.p, integrator.t)
+    ku = integrator.f.f2(duprev, uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    integrator.fsalfirst = ArrayPartition((kdu, ku))
+end
+
+@muladd function perform_step!(integrator, cache::NumerovConstantCache, repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    @unpack k_prev = cache
+    duprev, uprev = integrator.uprev.x
+    uprev2 = cache.uprev2.x[2]  # Position from two steps ago
+    
+    dtsq = dt^2
+    twelfth = dtsq / 12
+    
+    # Numerov formula: u_{n+1} = 2u_n - u_{n-1} + h²/12 * (f_{n+1} + 10f_n + f_{n-1})
+    # For the first step, use standard RK4 step instead
+    if integrator.iter == 1
+        # Use a standard RK4 step for the first iteration
+        k₁ = integrator.fsalfirst.x[1]
+        halfdt = dt / 2
+        dtsq = dt^2
+        eightdtsq = dtsq / 8
+        sixthdtsq = dtsq / 6
+        sixthdt = dt / 6
+        ttmp = t + halfdt
+        
+        ku = uprev + halfdt * duprev + eightdtsq * k₁
+        kdu = duprev + halfdt * k₁
+        k₂ = f.f1(kdu, ku, p, ttmp)
+        
+        ku = uprev + dt * duprev + dtsq/2 * k₂
+        kdu = duprev + dt * k₂
+        k₃ = f.f1(kdu, ku, p, t + dt)
+        
+        u = uprev + sixthdtsq * (k₁ + 2 * k₂) + dt * duprev
+        du = duprev + sixthdt * (k₁ + 4 * k₂ + k₃)
+        
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
+        integrator.stats.nf2 += 1
+    else
+        # Numerov method
+        k_curr = integrator.fsalfirst.x[1] # Current acceleration f(t_n, u_n)
+        
+        # Estimate f_{n+1} using current state and step
+        u_est = uprev + dt * duprev + 0.5 * dtsq * k_curr
+        du_est = duprev + dt * k_curr
+        k_next = f.f1(du_est, u_est, p, t + dt)
+        
+        # Apply Numerov formula
+        u = 2 * uprev - uprev2 + twelfth * (k_next + 10 * k_curr + k_prev)
+        du = (u - uprev) / dt  # Simple approximation for velocity
+        
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        integrator.stats.nf2 += 1
+    end
+    
+    integrator.u = ArrayPartition((du, u))
+    integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::NumerovCache, repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    @unpack tmp, fsalfirst, k_prev, k = cache
+    duprev, uprev = integrator.uprev.x
+    du, u = integrator.u.x
+    uprev2 = cache.uprev2.x[2]  # Position from two steps ago
+    
+    dtsq = dt^2
+    twelfth = dtsq / 12
+    
+    # For the first step, use standard RK4 step instead
+    if integrator.iter == 1
+        k₁ = integrator.fsalfirst.x[1]
+        halfdt = dt / 2
+        eightdtsq = dtsq / 8
+        sixthdtsq = dtsq / 6
+        sixthdt = dt / 6
+        ttmp = t + halfdt
+        
+        @.. broadcast=false tmp.x[2] = uprev + halfdt * duprev + eightdtsq * k₁
+        @.. broadcast=false tmp.x[1] = duprev + halfdt * k₁
+        
+        f.f1(k_prev, tmp.x[1], tmp.x[2], p, ttmp) # Using k_prev as temporary storage
+        
+        @.. broadcast=false tmp.x[2] = uprev + dt * duprev + dtsq/2 * k_prev
+        @.. broadcast=false tmp.x[1] = duprev + dt * k_prev
+        
+        f.f1(k.x[1], tmp.x[1], tmp.x[2], p, t + dt)
+        
+        @.. broadcast=false u = uprev + sixthdtsq * (k₁ + 2 * k_prev) + dt * duprev
+        @.. broadcast=false du = duprev + sixthdt * (k₁ + 4 * k_prev + k.x[1])
+        
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
+        integrator.stats.nf2 += 1
+    else
+        # Numerov method
+        k_curr = integrator.fsalfirst.x[1] # Current acceleration f(t_n, u_n)
+        
+        # Estimate f_{n+1} using current state and step
+        @.. broadcast=false tmp.x[2] = uprev + dt * duprev + 0.5 * dtsq * k_curr
+        @.. broadcast=false tmp.x[1] = duprev + dt * k_curr
+        f.f1(k.x[1], tmp.x[1], tmp.x[2], p, t + dt)
+        
+        # Apply Numerov formula
+        @.. broadcast=false u = 2 * uprev - uprev2 + twelfth * (k.x[1] + 10 * k_curr + k_prev)
+        @.. broadcast=false du = (u - uprev) / dt  # Simple approximation for velocity
+        
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        integrator.stats.nf2 += 1
+    end
+    
+    f.f1(k.x[1], du, u, p, t + dt)
+    f.f2(k.x[2], du, u, p, t + dt)
+    
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
 end
