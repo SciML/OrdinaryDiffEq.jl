@@ -234,6 +234,29 @@ end
 
 AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
 
+@doc explicit_rk_docstring(
+    "Cash-Karp's 5/4 Runge-Kutta method. Uses embedded 4th order method for adaptivity.",
+    "CashKarp5",
+    references = "@article{cash1990variable,
+    title={A variable order Runge-Kutta method for initial value problems with rapidly varying right-hand sides},
+    author={Cash, JR and Karp, AH},
+    journal={ACM Transactions on Mathematical Software (TOMS)},
+    volume={16},
+    number={2},
+    pages={201--222},
+    year={1990},
+    publisher={ACM}
+    }")
+Base.@kwdef struct CashKarp5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function CashKarp5(stage_limiter!, step_limiter! = trivial_limiter!)
+    CashKarp5(stage_limiter!, step_limiter!, False())
+end
+
 @doc explicit_rk_docstring("4th order Runge-Kutta method designed for periodic problems.",
     "Anas5",
     extra_keyword_description = """- `w`: a periodicity estimate, which when accurate the method becomes 5th order

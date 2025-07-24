@@ -9,6 +9,7 @@ alg_order(alg::BS5) = 5
 alg_order(alg::OwrenZen4) = 4
 alg_order(alg::OwrenZen5) = 5
 alg_order(alg::DP5) = 5
+alg_order(alg::CashKarp5) = 5
 alg_order(alg::Anas5) = 5
 alg_order(alg::RKO65) = 5
 alg_order(alg::FRK65) = 6
@@ -32,6 +33,7 @@ isfsal(alg::RKO65) = false
 isfsal(alg::PSRK3p5q4) = false
 isfsal(alg::PSRK3p6q5) = false
 isfsal(alg::PSRK4p7q6) = false
+isfsal(alg::CashKarp5) = false
 
 beta2_default(alg::DP5) = 4 // 100
 
