@@ -132,8 +132,8 @@ function prepare_user_sparsity(ad_alg, prob)
         sparsity = sparsity isa MatrixOperator ? sparsity.A : sparsity
 
         color_alg = DiffEqBase.has_colorvec(prob.f) ?
-                    SparseMatrixColorings.ConstantColoringAlgorithm(
-            sparsity, prob.f.colorvec) : SparseMatrixColorings.GreedyColoringAlgorithm()
+                    ConstantColoringAlgorithm(
+            sparsity, prob.f.colorvec) : GreedyColoringAlgorithm()
 
         sparsity_detector = ADTypes.KnownJacobianSparsityDetector(sparsity)
 

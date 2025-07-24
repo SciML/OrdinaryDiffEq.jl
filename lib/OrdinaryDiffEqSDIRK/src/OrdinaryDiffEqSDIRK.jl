@@ -15,7 +15,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            isesdirk, issplit,
                            ssp_coefficient, get_fsalfirstlast, generic_solver_docstring,
                            _bool_to_ADType, _process_AD_choice, current_extrapolant!
-using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
+using TruncatedStacktraces: @truncate_stacktrace
+using MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction
 using LinearAlgebra: mul!, I
 import OrdinaryDiffEqCore

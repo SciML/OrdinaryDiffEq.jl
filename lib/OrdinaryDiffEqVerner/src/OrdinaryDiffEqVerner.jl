@@ -17,7 +17,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 using Static: False
-using TruncatedStacktraces
+using TruncatedStacktraces: @truncate_stacktrace
 using LinearAlgebra: norm
 import OrdinaryDiffEqCore
 using Reexport

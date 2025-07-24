@@ -21,7 +21,7 @@ Base.@kwdef struct Vern6{StageLimiter, StepLimiter, Thread} <:
     thread::Thread = False()
     lazy::Bool = true
 end
-TruncatedStacktraces.@truncate_stacktrace Vern6 3
+@truncate_stacktrace Vern6 3
 # for backwards compatibility
 function Vern6(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
     Vern6(stage_limiter!, step_limiter!, False(), lazy)
@@ -50,7 +50,7 @@ Base.@kwdef struct Vern7{StageLimiter, StepLimiter, Thread} <:
     thread::Thread = False()
     lazy::Bool = true
 end
-TruncatedStacktraces.@truncate_stacktrace Vern7 3
+@truncate_stacktrace Vern7 3
 # for backwards compatibility
 function Vern7(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
     Vern7(stage_limiter!, step_limiter!, False(), lazy)
@@ -79,7 +79,7 @@ Base.@kwdef struct Vern8{StageLimiter, StepLimiter, Thread} <:
     thread::Thread = False()
     lazy::Bool = true
 end
-TruncatedStacktraces.@truncate_stacktrace Vern8 3
+@truncate_stacktrace Vern8 3
 # for backwards compatibility
 function Vern8(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
     Vern8(stage_limiter!, step_limiter!, False(), lazy)
@@ -107,7 +107,7 @@ Base.@kwdef struct Vern9{StageLimiter, StepLimiter, Thread} <:
     thread::Thread = False()
     lazy::Bool = true
 end
-TruncatedStacktraces.@truncate_stacktrace Vern9 3
+@truncate_stacktrace Vern9 3
 # for backwards compatibility
 function Vern9(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
     Vern9(stage_limiter!, step_limiter!, False(), lazy)
