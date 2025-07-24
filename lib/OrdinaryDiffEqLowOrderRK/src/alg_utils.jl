@@ -33,6 +33,7 @@ isfsal(alg::RKO65) = false
 isfsal(alg::PSRK3p5q4) = false
 isfsal(alg::PSRK3p6q5) = false
 isfsal(alg::PSRK4p7q6) = false
+isfsal(alg::CashKarp5) = false
 
 beta2_default(alg::DP5) = 4 // 100
 
