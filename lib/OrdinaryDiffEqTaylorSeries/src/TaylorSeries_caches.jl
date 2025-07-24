@@ -39,10 +39,10 @@ end
 get_fsalfirstlast(cache::ExplicitTaylor2Cache, u) = (cache.k1, cache.k1)
 
 @cache struct ExplicitTaylorCache{
-    P, jetType, uType, taylorType, uNoUnitsType, StageLimiter, StepLimiter,
+    P, tType, uType, taylorType, uNoUnitsType, StageLimiter, StepLimiter,
     Thread} <: OrdinaryDiffEqMutableCache
     order::Val{P}
-    jet::jetType
+    jet::FunctionWrapper{Nothing, Tuple{taylorType, uType, tType}}
     u::uType
     uprev::uType
     utaylor::taylorType
@@ -58,31 +58,105 @@ function alg_cache(alg::ExplicitTaylor{P}, u, rate_prototype, ::Type{uEltypeNoUn
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {P, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    _, jet_iip = build_jet(f, p, Val(P), length(u))
-    utaylor = TaylorDiff.make_seed(u, zero(u), Val(P))
+    _, jet_iip = build_jet(f, p, P, length(u))
+    utaylor = TaylorDiff.make_seed(u, zero(u), alg.order)
+    jet_wrapped = FunctionWrapper{Nothing, Tuple{typeof(utaylor), typeof(u), typeof(t)}}(jet_iip)
     utilde = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
-    ExplicitTaylorCache(Val(P), jet_iip, u, uprev, utaylor, utilde, tmp, atmp,
+    ExplicitTaylorCache(alg.order, jet_wrapped, u, uprev, utaylor, utilde, tmp, atmp,
         alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
-struct ExplicitTaylorConstantCache{P, jetType} <: OrdinaryDiffEqConstantCache
+get_fsalfirstlast(cache::ExplicitTaylorCache, u) = (cache.u, cache.u)
+
+struct ExplicitTaylorConstantCache{P, taylorType, uType, tType} <:
+       OrdinaryDiffEqConstantCache
     order::Val{P}
-    jet::jetType
+    jet::FunctionWrapper{taylorType, Tuple{uType, tType}}
 end
-function alg_cache(::ExplicitTaylor{P}, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::ExplicitTaylor{P}, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{false}) where {P, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     if u isa AbstractArray
-        jet, _ = build_jet(f, p, Val(P), length(u))
+        jet, _ = build_jet(f, p, P, length(u))
     else
-        jet = build_jet(f, p, Val(P))
+        jet = build_jet(f, p, P)
     end
-    ExplicitTaylorConstantCache(Val(P), jet)
+    utaylor = TaylorDiff.make_seed(u, zero(u), alg.order) # not used, but needed for type
+    jet_wrapped = FunctionWrapper{typeof(utaylor), Tuple{typeof(u), typeof(t)}}(jet)
+    ExplicitTaylorConstantCache(alg.order, jet_wrapped)
 end
 
-# FSAL currently not used, providing dummy implementation to satisfy the interface
-get_fsalfirstlast(cache::ExplicitTaylorCache, u) = (cache.u, cache.u)
+@cache struct ExplicitTaylorAdaptiveOrderCache{P, Q,
+    tType, uType, taylorType, uNoUnitsType, StageLimiter, StepLimiter,
+    Thread} <: OrdinaryDiffEqMutableCache
+    min_order::Val{P}
+    max_order::Val{Q}
+    current_order::Base.RefValue{Int}
+    jets::Vector{FunctionWrapper{Nothing, Tuple{taylorType, uType, tType}}}
+    u::uType
+    uprev::uType
+    utaylor::taylorType
+    utilde::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+function alg_cache(
+        alg::ExplicitTaylorAdaptiveOrder, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    utaylor = TaylorDiff.make_seed(u, zero(u), alg.max_order)
+    jets = FunctionWrapper{Nothing, Tuple{typeof(utaylor), typeof(u), typeof(t)}}[]
+    min_order_value = get_value(alg.min_order)
+    max_order_value = get_value(alg.max_order)
+    for order in min_order_value:max_order_value
+        jet_iip = build_jet(f, p, order, length(u))[2]
+        push!(jets, jet_iip)
+    end
+    utilde = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    tmp = zero(u)
+    current_order = Ref(min_order_value)
+    ExplicitTaylorAdaptiveOrderCache(alg.min_order, alg.max_order, current_order,
+        jets, u, uprev, utaylor, utilde, tmp, atmp,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread)
+end
+
+get_fsalfirstlast(cache::ExplicitTaylorAdaptiveOrderCache, u) = (cache.u, cache.u)
+
+struct ExplicitTaylorAdaptiveOrderConstantCache{P, Q, taylorType, uType, tType} <:
+       OrdinaryDiffEqConstantCache
+    min_order::Val{P}
+    max_order::Val{Q}
+    current_order::Base.RefValue{Int}
+    jets::Vector{FunctionWrapper{taylorType, Tuple{uType, tType}}}
+end
+function alg_cache(
+        alg::ExplicitTaylorAdaptiveOrder, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    utaylor = TaylorDiff.make_seed(u, zero(u), alg.max_order) # not used, but needed for type
+    jets = FunctionWrapper{typeof(utaylor), Tuple{typeof(u), typeof(t)}}[]
+    min_order_value = get_value(alg.min_order)
+    max_order_value = get_value(alg.max_order)
+    for order in min_order_value:max_order_value
+        if u isa AbstractArray
+            jet, _ = build_jet(f, p, order, length(u))
+        else
+            jet = build_jet(f, p, order)
+        end
+        push!(jets, jet)
+    end
+    current_order = Ref(min_order_value)
+    ExplicitTaylorAdaptiveOrderConstantCache(
+        alg.min_order, alg.max_order, current_order, jets)
+end
