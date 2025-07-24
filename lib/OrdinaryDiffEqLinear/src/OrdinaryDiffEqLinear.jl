@@ -10,7 +10,7 @@ import OrdinaryDiffEqCore: alg_order, alg_extrapolates, dt_required,
                            calculate_residuals!, get_fsalfirstlast,
                            _vec, isdtchangeable, full_cache,
                            generic_solver_docstring
-using LinearAlgebra: mul!, I
+using LinearAlgebra: mul!, I, inv
 using SciMLOperators: AbstractSciMLOperator
 using ExponentialUtilities
 using RecursiveArrayTools

@@ -13,7 +13,7 @@ using Logging
 
 using MuladdMacro: @muladd
 
-using LinearAlgebra: opnorm, I, UniformScaling
+using LinearAlgebra: opnorm, I, UniformScaling, diag, inv, rank, isdiag
 
 using PrecompileTools
 
@@ -40,7 +40,7 @@ import RecursiveArrayTools: chain, recursivecopy!
 
 using SimpleUnPack: @unpack
 using RecursiveArrayTools
-using DataStructures: BinaryHeap
+using DataStructures: BinaryHeap, FasterForward
 import DataStructures
 using ArrayInterface: issingular
 
