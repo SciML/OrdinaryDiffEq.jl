@@ -786,6 +786,8 @@ end
     return nothing
 end
 
+get_fsalfirstlast(cache::CashKarp5Cache, u) = (cache.k1, cache.k6)
+
 function initialize!(integrator, cache::RKO65ConstantCache)
     integrator.kshortsize = 6
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
