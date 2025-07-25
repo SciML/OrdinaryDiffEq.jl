@@ -85,7 +85,7 @@ University of Geneva, Switzerland.
  Preprint 2024
  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
 
- #### Rodas56
+ #### Rodas6P
 - Steinebach G.   Construction of Rosenbrock–Wanner method Rodas6P , to prepare
 
 =#
