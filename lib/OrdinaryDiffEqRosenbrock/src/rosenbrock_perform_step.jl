@@ -1244,7 +1244,7 @@ end
     ks = ntuple(Returns(k1), 19)
     # Loop for stages
     for stage in 2:num_stages
-        u .= uprev
+        u = uprev
         for i in 1:(stage - 1)
             u = @.. u + A[stage, i] * ks[i]
         end
@@ -1270,15 +1270,15 @@ end
         integrator.stats.nsolve += 1
     end
     if (integrator.alg isa Rodas6P)
-      du .= ks[16]
-      u .= uprev
+      du = ks[16]
+      u = uprev
       for i in 1:15
          u = @.. u + A[16, i] * ks[i]
       end
-      u .+= ks[16]
+      u = @.. u + ks[16]
     else
-      du .= ks[end]
-      u .+= ks[end]
+      du = ks[end]
+      u = @.. u + ks[end]
     end
 
     if integrator.opts.adaptive
