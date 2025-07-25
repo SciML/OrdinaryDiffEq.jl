@@ -143,7 +143,7 @@ Rosenbrock23
 Rodas5P
 
 @doc rosenbrock_docstring(
-    "Efficient for medium and high tolerance stiff problems. A 6th order A-stable and stiffly stable embedded Rosenbrock method for differential-algebraic problems.",
+    "Efficient for medium and strict tolerance stiff problems. A 6th order A-stable and stiffly stable embedded Rosenbrock method for differential-algebraic problems.",
     "Rodas6P", with_step_limiter = true)
 Rodas6P
 
