@@ -85,6 +85,9 @@ University of Geneva, Switzerland.
  Preprint 2024
  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
 
+ #### Rodas56
+- Steinebach G.   Construction of Rosenbrock–Wanner method Rodas6P , to prepare
+
 =#
 
 # for Rosenbrock methods with step_limiter
@@ -102,7 +105,8 @@ for Alg in [
     :Rodas5,
     :Rodas5P,
     :Rodas5Pe,
-    :Rodas5Pr]
+    :Rodas5Pr,
+    :Rodas6P]
     @eval begin
         struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -137,6 +141,11 @@ Rosenbrock23
     "Efficient for medium tolerance stiff problems. A 5th order A-stable and stiffly stable embedded Rosenbrock method for differential-algebraic problems.",
     "Rodas5P", with_step_limiter = true)
 Rodas5P
+
+@doc rosenbrock_docstring(
+    "Efficient for medium and high tolerance stiff problems. A 6th order A-stable and stiffly stable embedded Rosenbrock method for differential-algebraic problems.",
+    "Rodas6P", with_step_limiter = true)
+Rodas6P
 
 @doc rosenbrock_docstring(
     "A 3/2-order L-stable Rosenbrock-W method optimized for stiff problems. Good balance of accuracy and computational efficiency.",
