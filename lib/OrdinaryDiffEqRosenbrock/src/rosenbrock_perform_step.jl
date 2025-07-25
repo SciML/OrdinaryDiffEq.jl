@@ -460,10 +460,10 @@ end
     linsolve_tmp = @.. du + dtd[1] * dT
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     # constant number for type stability make sure this is greater than num_stages
-    ks = ntuple(Returns(k1), 10)
+    ks = ntuple(Returns(k1), 19)
     # Loop for stages
     for stage in 2:num_stages
-        u = uprev
+        u .= uprev
         for i in 1:(stage - 1)
             u = @.. u + A[stage, i] * ks[i]
         end
@@ -488,17 +488,20 @@ end
         ks = Base.setindex(ks, _reshape(W \ -_vec(linsolve_tmp), axes(uprev)), stage)
         integrator.stats.nsolve += 1
     end
-    u = uprev
-    for i in 1:num_stages
-        u = @.. u + b[i] * ks[i]
+    if (integrator.alg isa Rodas6P)
+      du .= ks[16]
+      u .= uprev
+      for i in 1:15
+         u = @.. u + A[16, i] * ks[i]
+      end
+      u .+= ks[16]
+    else
+      du .= ks[end]
+      u .+= ks[end]
     end
 
     if integrator.opts.adaptive
-        utilde = zero(u)
-        for i in 1:num_stages
-            utilde = @.. utilde + btilde[i] * ks[i]
-        end
-        atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+        atmp = calculate_residuals(du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
@@ -604,9 +607,16 @@ end
         @.. $(_vec(ks[stage])) = -linres.u
         integrator.stats.nsolve += 1
     end
-    u .= uprev
-    for i in 1:num_stages
-        @.. u += b[i] * ks[i]
+    if (integrator.alg isa Rodas6P)
+      du .= ks[16]
+      u .= uprev
+      for i in 1:15
+          @.. u += A[16, i] * ks[i]
+      end
+      u .+= ks[16]
+    else
+      du .= ks[end]
+      u .+= ks[end]
     end
 
     step_limiter!(u, integrator, p, t + dt)
@@ -622,7 +632,7 @@ end
                      -0.7931985603795049 * ks[5] - 1.005448461135913 * ks[6] -
                      0.18044626132120234 * ks[7] + 0.17051519239113755 * ks[8]
         end
-        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
+        calculate_residuals!(atmp, du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end

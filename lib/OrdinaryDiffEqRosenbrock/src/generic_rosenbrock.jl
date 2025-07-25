@@ -915,6 +915,147 @@ end
 
 
 
+@doc rosenbrock_docstring(
+"""
+A 4th order A-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant
+""",
+"Rodas42",
+references = """
+- E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
+  differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
+""",
+with_step_limiter=true) Rodas42
+
+@doc rosenbrock_docstring(
+"""
+4th order A-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant. 4th order
+on linear parabolic problems and 3rd order accurate on nonlinear parabolic problems (as opposed to
+lower if not corrected).
+""",
+"Rodas4P",
+references = """
+- Steinebach, G., Rentrop, P., An adaptive method of lines approach for modelling flow and transport in rivers. 
+    Adaptive method of lines , Wouver, A. Vande, Sauces, Ph., Schiesser, W.E. (ed.),S. 181-205,Chapman & Hall/CRC, 2001,
+- Steinebach, G., Oder-reduction of ROW-methods for DAEs and method of lines  applications. 
+    Preprint-Nr. 1741, FB Mathematik, TH Darmstadt, 1995.
+""",
+with_step_limiter=true) Rodas4P
+
+@doc rosenbrock_wolfbrandt_docstring(
+"""
+A 4th order L-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant. 4th order
+on linear parabolic problems and 3rd order accurate on nonlinear parabolic problems. It is an improvement
+of Roadas4P and in case of inexact Jacobians a second order W method.
+""",
+"Rodas4P2",
+references = """
+- Steinebach G., Improvement of Rosenbrock-Wanner Method RODASP, In: Reis T., Grundel S., Schöps S. (eds) 
+    Progress in Differential-Algebraic Equations II. Differential-Algebraic Equations Forum. Springer, Cham., 165-184, 2020.
+""",
+with_step_limiter=true) Rodas4P2
+
+@doc rosenbrock_docstring(
+"""
+A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
+""",
+"Rodas5",
+references = """
+- Di Marzo G. RODAS5(4) – Méthodes de Rosenbrock d’ordre 5(4) adaptées aux problemes
+  différentiels-algébriques. MSc mathematics thesis, Faculty of Science,
+  University of Geneva, Switzerland.
+""",
+with_step_limiter=true) Rodas5
+
+@doc rosenbrock_wolfbrandt_docstring(
+"""
+A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
+Has improved stability in the adaptive time stepping embedding.
+""",
+"Rodas5P",
+references = """
+- Steinebach G. Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks
+  within the Julia Differential Equations package.
+  In: BIT Numerical Mathematics, 63(2), 2023
+""",
+with_step_limiter=true) Rodas5P
+
+@doc rosenbrock_wolfbrandt_docstring(
+"""
+Variant of Ropdas5P with additional residual control.
+""",
+"Rodas5Pr",
+references = """
+- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
+  Preprint 2024
+  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
+""",
+with_step_limiter=true) Rodas5Pr
+
+@doc rosenbrock_wolfbrandt_docstring(
+"""
+Variant of Ropdas5P with modified embedded scheme.
+""",
+"Rodas5Pe",
+references = """
+- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
+  Preprint 2024
+  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
+""",
+with_step_limiter=true) Rodas5Pe
+
+@doc rosenbrock_wolfbrandt_docstring(
+"""
+A 6th order A-stable stiffly stable Rosenbrock method with a stiff-aware 5th order interpolant.
+""",
+"Rodas6P",
+references = """
+- Steinebach G. Construction of Rosenbrock–Wanner method Rodas6P, to prepare
+""",
+with_step_limiter=true) Rodas6P
+
+@doc rosenbrock_docstring(
+"""
+An efficient 4th order Rosenbrock method.
+""",
+"GRK4T",
+references = """
+- Kaps, P. & Rentrop, Generalized Runge-Kutta methods of order four with stepsize control
+  for stiff ordinary differential equations. P. Numer. Math. (1979) 33: 55. doi:10.1007/BF01396495
+""",
+with_step_limiter=true) GRK4T
+
+@doc rosenbrock_docstring(
+"""
+An A-stable 4th order Rosenbrock method. Essentially "anti-L-stable" but efficient.
+""",
+"GRK4A",
+references = """
+- Kaps, P. & Rentrop, Generalized Runge-Kutta methods of order four with stepsize control
+  for stiff ordinary differential equations. P. Numer. Math. (1979) 33: 55. doi:10.1007/BF01396495
+""",
+with_step_limiter=true) GRK4A
+
+@doc rosenbrock_docstring(
+"""
+A 4th order D-stable Rosenbrock method.
+""",
+"Veldd4",
+references = """
+- van Veldhuizen, D-stability and Kaps-Rentrop-methods, M. Computing (1984) 32: 229.
+  doi:10.1007/BF02243574
+""",
+with_step_limiter=true) Veldd4
+
+@doc rosenbrock_wolfbrandt_docstring(
+"""
+A 4th order A-stable Rosenbrock method.
+""",
+"Velds4",
+references = """
+- van Veldhuizen, D-stability and Kaps-Rentrop-methods, M. Computing (1984) 32: 229.
+  doi:10.1007/BF02243574
+""",
+with_step_limiter=true) Velds4
 
 """
     @ROS2(part)

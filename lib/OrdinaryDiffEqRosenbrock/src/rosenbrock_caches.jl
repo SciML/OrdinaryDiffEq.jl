@@ -759,9 +759,10 @@ tabtype(::Rodas5) = Rodas5Tableau
 tabtype(::Rodas5P) = Rodas5PTableau
 tabtype(::Rodas5Pr) = Rodas5PTableau
 tabtype(::Rodas5Pe) = Rodas5PTableau
+tabtype(::Rodas6P) = Rodas6PTableau
 
 function alg_cache(
-        alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
+        alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P},
         u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -778,7 +779,7 @@ function alg_cache(
 end
 
 function alg_cache(
-        alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr},
+        alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P},
         u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
