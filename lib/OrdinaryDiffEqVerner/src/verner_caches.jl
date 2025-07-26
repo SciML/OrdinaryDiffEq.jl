@@ -263,9 +263,12 @@ struct Vern9ConstantCache <: OrdinaryDiffEqConstantCache
     lazy::Bool
 end
 
-function alg_cache(alg::Vern9, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    Vern9ConstantCache(alg.lazy)
+# ------------------------------------------------------------------
+#  Cache for Verner RKV87-IIa  (13 stage values + 1 work vector)
+# ------------------------------------------------------------------
+@cache RKV87ConstantCache begin
+    k1::K ; k2::K ; k3::K ; k4::K ; k5::K ; k6::K ; k7::K
+    k8::K ; k9::K ; k10::K ; k11::K ; k12::K ; k13::K
+    tmp::K                     # work vector for low-storage kernel
 end
+
