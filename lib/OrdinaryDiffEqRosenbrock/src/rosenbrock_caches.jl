@@ -12,7 +12,8 @@ end
 
 # Shampine's Low-order Rosenbrocks
 
-mutable struct RosenbrockCache{uType, rateType, tabType, uNoUnitsType, JType, WType, TabType,
+mutable struct RosenbrockCache{
+    uType, rateType, tabType, uNoUnitsType, JType, WType, TabType,
     TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter} <:
                RosenbrockMutableCache
     u::uType
@@ -172,7 +173,6 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
 
-     
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
@@ -207,7 +207,7 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
-   
+
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
 
@@ -361,7 +361,7 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
-    
+
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
@@ -451,7 +451,7 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
-    
+
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
 
@@ -819,14 +819,13 @@ function alg_cache(
             nothing)..., weight, tmp)
 
     linsolve_tmp = zero(rate_prototype)
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0=_vec(tmp))
+    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
 
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A=true, alias_b=true),
-        Pl=Pl, Pr=Pr,
-        assumptions=LinearSolve.OperatorAssumptions(true))
+        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        Pl = Pl, Pr = Pr,
+        assumptions = LinearSolve.OperatorAssumptions(true))
 
-    
     # Return the cache struct with vectors
     RosenbrockCache(
         u, uprev, dense, du, du1, du2, dtC, dtd, ks, fsalfirst, fsallast,
