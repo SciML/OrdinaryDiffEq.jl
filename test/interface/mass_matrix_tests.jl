@@ -199,7 +199,8 @@ end
     M = Diagonal([1.0, 0.0])
 
     m_ode_prob = ODEProblem(ODEFunction(f!; mass_matrix = M), u0, tspan)
-    @test_nowarn sol = @inferred solve(m_ode_prob, Rosenbrock23(autodiff=AutoForwardDiff(chunksize=2)))
+    @test_nowarn sol = @inferred solve(
+        m_ode_prob, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 2)))
 
     M = [0.637947 0.637947
          0.637947 0.637947]
@@ -328,11 +329,13 @@ M = zeros(n * n) |> Diagonal
 M[1, 1] = true # zero mass matrix breaks rosenbrock
 f = ODEFunction{true, SciMLBase.AutoSpecialize}(dynamics!, mass_matrix = M)
 tspan = (0, 10.0)
-adalg = AutoForwardDiff(chunksize=n)
+adalg = AutoForwardDiff(chunksize = n)
 prob = ODEProblem(f, x0, tspan)
 foop = ODEFunction{false, SciMLBase.AutoSpecialize}(dynamics, mass_matrix = M)
 proboop = ODEProblem(f, x0, tspan)
-@test_broken sol = @inferred solve(prob, Rosenbrock23(autodiff=adalg))
-@test_broken sol = @inferred solve(prob, Rodas4(autodiff=adalg), initializealg = ShampineCollocationInit())
+@test_broken sol = @inferred solve(prob, Rosenbrock23(autodiff = adalg))
+@test_broken sol = @inferred solve(
+    prob, Rodas4(autodiff = adalg), initializealg = ShampineCollocationInit())
 @test_broken sol = @inferred solve(proboop, Rodas5())
-@test_broken sol = @inferred solve(proboop, Rodas4(), initializealg = ShampineCollocationInit())
+@test_broken sol = @inferred solve(
+    proboop, Rodas4(), initializealg = ShampineCollocationInit())

@@ -1627,7 +1627,7 @@ end
 
     @test sol_SA ≈ sol_SV
     @test sol_SV.stats.naccept == sol_SA.stats.naccept
-    
+
     # Plain vector
     u = [1.0, 2.0]
     ode = ODEProblem(rhs!, u, (0, 0.7))
