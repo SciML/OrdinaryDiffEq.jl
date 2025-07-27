@@ -14,23 +14,21 @@ p_giesekus = [η0, τ, α]
 
 prob_giesekus = ODEProblem(dudt!, σ0, (0.0, 2.0), p_giesekus)
 
-if VERSION >= v"1.9"
-    solve_giesekus = solve(prob_giesekus, Rodas4(), saveat = 0.2, abstol = 1e-14,
-        reltol = 1e-14)
-    for alg in [
-        Rosenbrock23(),
-        Rodas4(),
-        Rodas4P(),
-        Rodas5(),
-        Rodas5P(),
-        Tsit5(),
-        Vern6(),
-        Vern7(),
-        Vern8(),
-        Vern9(),
-        DP5()
-    ]
-        sol = solve(prob_giesekus, alg, saveat = 0.2, abstol = 1e-14, reltol = 1e-14)
-        @test Array(sol) ≈ Array(solve_giesekus)
-    end
+solve_giesekus = solve(prob_giesekus, Rodas4(), saveat = 0.2, abstol = 1e-14,
+    reltol = 1e-14)
+for alg in [
+    Rosenbrock23(),
+    Rodas4(),
+    Rodas4P(),
+    Rodas5(),
+    Rodas5P(),
+    Tsit5(),
+    Vern6(),
+    Vern7(),
+    Vern8(),
+    Vern9(),
+    DP5()
+]
+    sol = solve(prob_giesekus, alg, saveat = 0.2, abstol = 1e-14, reltol = 1e-14)
+    @test Array(sol) ≈ Array(solve_giesekus)
 end
