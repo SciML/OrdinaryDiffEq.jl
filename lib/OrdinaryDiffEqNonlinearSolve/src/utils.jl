@@ -72,8 +72,8 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
     uprev::uprevType
     t::tType
     function DAEResidualJacobianWrapper(alg, f, p, α, invγdt, tmp, uprev, t)
-        ad = ADTypes.dense_ad(alg_autodiff(alg)) 
-        isautodiff = ad isa AutoForwardDiff 
+        ad = ADTypes.dense_ad(alg_autodiff(alg))
+        isautodiff = ad isa AutoForwardDiff
         if isautodiff
             tmp_du = PreallocationTools.dualcache(uprev)
             tmp_u = PreallocationTools.dualcache(uprev)
@@ -161,7 +161,7 @@ end
 function odenlf(ztmp, z, p)
     tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f = p
     _compute_rhs!(
-    tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
+        tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
 end
 
 function build_nlsolver(

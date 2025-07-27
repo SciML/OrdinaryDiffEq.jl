@@ -126,7 +126,8 @@ end
 
 interpd_idxs = sol(0:(1 // 2^(4)):1, idxs = 1:2:5)
 
-@test minimum([isapprox(interpd_idxs[i], interpd[i][1:2:5], rtol=1e-14) for i in 1:length(interpd)])
+@test minimum([isapprox(interpd_idxs[i], interpd[i][1:2:5], rtol = 1e-14)
+               for i in 1:length(interpd)])
 
 interpd_single = sol(0:(1 // 2^(4)):1, idxs = 1)
 

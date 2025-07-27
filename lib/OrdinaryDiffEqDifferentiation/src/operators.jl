@@ -6,22 +6,23 @@ JVPCache provides a JVP operator wrapper for performing the DifferentiationInter
 ### Constructor
 
 ```julia
-    JVPCache(f::DiffEqBase.AbstractDiffEqFunction, du, u, p, t; autodiff)
+JVPCache(f::DiffEqBase.AbstractDiffEqFunction, du, u, p, t; autodiff)
 ```
+
 JVPCache construction builds a DifferentiationInterface "prep" object using `prepare_pushforward!`. The "prep" object is used
 when applying the operator.
 
 ### Computing the JVP
 
-Computing the JVP is done with the DifferentiationInterface function `pushforward!`, which takes advantage of the preparation done upon construction. 
+Computing the JVP is done with the DifferentiationInterface function `pushforward!`, which takes advantage of the preparation done upon construction.
 """
 @concrete mutable struct JVPCache{T} <: SciMLOperators.AbstractSciMLOperator{T}
-    jvp_op
-    f
-    du
-    u
-    p
-    t
+    jvp_op::Any
+    f::Any
+    du::Any
+    u::Any
+    p::Any
+    t::Any
 end
 
 SciMLBase.isinplace(::JVPCache) = true
@@ -57,20 +58,22 @@ end
 
 function prepare_jvp(f::DiffEqBase.AbstractDiffEqFunction, du, u, p, t, autodiff)
     SciMLBase.has_jvp(f) && return f.jvp
-    autodiff = autodiff isa AutoSparse ?  ADTypes.dense_ad(autodiff) : autodiff
+    autodiff = autodiff isa AutoSparse ? ADTypes.dense_ad(autodiff) : autodiff
     @assert DI.check_inplace(autodiff) "AD backend $(autodiff) doesn't support in-place problems."
-    di_prep = DI.prepare_pushforward(f, du, autodiff, u, (u,), DI.ConstantOrCache(p), DI.Constant(t))
-    return (Jv, v, u, p, t) -> DI.pushforward!(f, du, (reshape(Jv, size(du)),), di_prep, autodiff, u, (reshape(v,size(u)),), DI.ConstantOrCache(p), DI.Constant(t))
+    di_prep = DI.prepare_pushforward(
+        f, du, autodiff, u, (u,), DI.ConstantOrCache(p), DI.Constant(t))
+    return (Jv, v, u, p, t) -> DI.pushforward!(
+        f, du, (reshape(Jv, size(du)),), di_prep, autodiff, u,
+        (reshape(v, size(u)),), DI.ConstantOrCache(p), DI.Constant(t))
 end
 
-function SciMLOperators.update_coefficients!(J::JVPCache, u, p, t) 
+function SciMLOperators.update_coefficients!(J::JVPCache, u, p, t)
     J.u = u
     J.p = p
     J.t = t
 end
 
-
-function resize_JVPCache!(J::JVPCache,f, du, u, p, t, autodiff)
+function resize_JVPCache!(J::JVPCache, f, du, u, p, t, autodiff)
     J.jvp_op = prepare_jvp(f, du, u, p, t, autodiff)
     J.du = du
     update_coefficients!(J, u, p, t)
@@ -79,5 +82,5 @@ end
 function resize_JVPCache!(J::JVPCache, f, du, u, autodiff)
     J.jvp_op = prepare_jvp(f, du, u, J.p, J.t, autodiff)
     J.du = du
-    update_coefficients!(J,u,J.p, J.t)
+    update_coefficients!(J, u, J.p, J.t)
 end
