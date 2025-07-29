@@ -158,7 +158,7 @@ using OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
 
 using OrdinaryDiffEqFIRK
-export RadauIIA3, RadauIIA5, RadauIIA9
+export RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau
 
 using OrdinaryDiffEqQPRK
 export QPRK98
