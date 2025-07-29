@@ -270,6 +270,6 @@ for prob in [prob1, prob2], alg in [simple_implicit_euler, alg_switch]
     sol = solve(prob, alg, callback = cb, dt = 1 / 2^10, adaptive = false)
     @test sol.retcode == ReturnCode.Success
     @test sol(0, idxs = 1) == 5
-    @test abs(sol(2-2^-10, idxs = 1)) <= 1e-10
+    @test abs(sol(2 - 2^-10, idxs = 1)) <= 1e-10
     @test sol(4, idxs = 1) > 10
 end

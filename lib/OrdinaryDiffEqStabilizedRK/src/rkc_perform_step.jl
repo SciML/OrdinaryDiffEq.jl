@@ -406,7 +406,7 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast=false u+=B₄ * k
     if integrator.opts.adaptive
-        @.. broadcast=false tmp += B̂₄ * k
+        @.. broadcast=false tmp+=B̂₄ * k
     end
 
     f(k, u, p, t + dt)
@@ -414,7 +414,7 @@ end
 
     #Error estimate (embedded method of order 3)
     if integrator.opts.adaptive
-        @.. broadcast=false tmp += B̂₅ * k
+        @.. broadcast=false tmp+=B̂₅ * k
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)

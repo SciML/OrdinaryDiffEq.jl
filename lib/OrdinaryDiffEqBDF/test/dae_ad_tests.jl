@@ -2,7 +2,7 @@ using OrdinaryDiffEqBDF, LinearAlgebra, ForwardDiff, Test
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
 
-afd_cs3 = AutoForwardDiff(chunksize=3)
+afd_cs3 = AutoForwardDiff(chunksize = 3)
 
 function f(out, du, u, p, t)
     out[1] = -p[1] * u[1] + p[3] * u[2] * u[3] - du[1]
@@ -36,15 +36,19 @@ f_mm = ODEFunction{true}(f_ode, mass_matrix = M)
 prob_mm = ODEProblem(f_mm, u₀, tspan, p)
 f_mm_oop = ODEFunction{false}(f_ode, mass_matrix = M)
 prob_mm_oop = ODEProblem(f_mm_oop, u₀, tspan, p)
-@test_broken sol1 = @inferred solve(prob, DFBDF(autodiff=afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
-@test_broken sol2 = @inferred solve(prob_oop, DFBDF(autodiff=afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
-@test_broken sol3 = @inferred solve(prob_mm, FBDF(autodiff=afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
+@test_broken sol1 = @inferred solve(
+    prob, DFBDF(autodiff = afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
+@test_broken sol2 = @inferred solve(
+    prob_oop, DFBDF(autodiff = afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
+@test_broken sol3 = @inferred solve(
+    prob_mm, FBDF(autodiff = afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
 
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
 @testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [
         prob, prob_oop, prob_mm, prob_mm_oop],
-    initalg in [BrownFullBasicInit(), ShampineCollocationInit()], autodiff in [afd_cs3, AutoFiniteDiff()]
+    initalg in [BrownFullBasicInit(), ShampineCollocationInit()],
+    autodiff in [afd_cs3, AutoFiniteDiff()]
 
     alg = (_prob isa DAEProblem) ? DFBDF(; autodiff) : FBDF(; autodiff)
     function f(p)

@@ -28,12 +28,10 @@ t4 = @elapsed sol4 = solve(lorenzprob2, Rosenbrock23(autodiff = AutoFiniteDiff()
 @test sol3.retcode === ReturnCode.Success
 @test sol4.retcode === ReturnCode.Success
 
-if VERSION >= v"1.8"
-    @test t1 < t3
-    @test t2 < t4
-    integ = init(lorenzprob, Rosenbrock23())
-    @test integ.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
-end
+@test t1 < t3
+@test t2 < t4
+integ = init(lorenzprob, Rosenbrock23())
+@test integ.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
 
 solve(prob, EPIRK4s3A(), dt = 1e-1)
 

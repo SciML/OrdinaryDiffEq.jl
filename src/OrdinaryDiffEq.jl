@@ -136,7 +136,7 @@ export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
 using OrdinaryDiffEqDefault: DefaultODEAlgorithm
 export DefaultODEAlgorithm
 
-using OrdinaryDiffEqFIRK: RadauIIA3, RadauIIA5, RadauIIA9
+using OrdinaryDiffEqFIRK: RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau
 export RadauIIA3, RadauIIA5, RadauIIA9
 
 using OrdinaryDiffEqQPRK: QPRK98

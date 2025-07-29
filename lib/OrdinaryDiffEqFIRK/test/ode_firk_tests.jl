@@ -9,11 +9,13 @@ for prob in [prob_ode_linear, prob_ode_2Dlinear]
     @test sim21.𝒪est[:L2]≈4 atol=testTol
 end
 
-sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_linear, RadauIIA9(), dense_errors = true)
+sim21 = test_convergence(
+    1 ./ 2 .^ (2.5:-1:0.5), prob_ode_linear, RadauIIA9(), dense_errors = true)
 @test sim21.𝒪est[:final]≈8 atol=testTol
 @test sim21.𝒪est[:L2]≈6 atol=testTol
 
-sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_2Dlinear, RadauIIA9(), dense_errors = true)
+sim21 = test_convergence(
+    1 ./ 2 .^ (2.5:-1:0.5), prob_ode_2Dlinear, RadauIIA9(), dense_errors = true)
 @test sim21.𝒪est[:final]≈8 atol=testTol
 @test sim21.𝒪est[:L2]≈6 atol=testTol
 
@@ -27,24 +29,29 @@ prob_ode_2Dlinear_big = remake(prob_ode_2Dlinear, u0 = big.(prob_ode_2Dlinear.u0
 #non-threaded tests
 for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
     dts = 1 ./ 2 .^ (4.25:-1:0.25)
-    local sim21 = test_convergence(dts, prob, AdaptiveRadau(min_order = i, max_order = i), dense_errors = true)
-    @test sim21.𝒪est[:final] ≈ i atol=testTol
-    @test sim21.𝒪est[:L2] ≈ ((i + 3) ÷ 2) atol=testTol
+    local sim21 = test_convergence(
+        dts, prob, AdaptiveRadau(min_order = i, max_order = i), dense_errors = true)
+    @test sim21.𝒪est[:final]≈i atol=testTol
+    @test sim21.𝒪est[:L2]≈((i + 3) ÷ 2) atol=testTol
 end
 
 #threaded tests
 using OrdinaryDiffEqCore
 for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
     dts = 1 ./ 2 .^ (4.25:-1:0.25)
-    local sim21 = test_convergence(dts, prob, AdaptiveRadau(min_order = i, max_order = i, threading = OrdinaryDiffEqCore.PolyesterThreads()))
-    @test sim21.𝒪est[:final] ≈ i atol=testTol
+    local sim21 = test_convergence(dts,
+        prob,
+        AdaptiveRadau(min_order = i, max_order = i,
+            threading = OrdinaryDiffEqCore.PolyesterThreads()))
+    @test sim21.𝒪est[:final]≈i atol=testTol
 end
 
 sys = prob_ode_vanderpol.f.sys
 
 # test adaptivity
 for iip in (true, false)
-    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (0.0, 1.0))
+    vanstiff = ODEProblem{iip}(
+        sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (0.0, 1.0))
     sol = solve(vanstiff, RadauIIA5())
     if iip
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
@@ -55,7 +62,8 @@ for iip in (true, false)
     sol_temp = solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5())
     @test length(sol_temp) < 150
     @test SciMLBase.successful_retcode(sol_temp)
-    sol_temp2 = solve(remake(vanstiff, p = [sys.μ => 1e7]), reltol = [1e-6, 1e-4], RadauIIA5())
+    sol_temp2 = solve(
+        remake(vanstiff, p = [sys.μ => 1e7]), reltol = [1e-6, 1e-4], RadauIIA5())
     @test length(sol_temp2) < 180
     @test SciMLBase.successful_retcode(sol_temp2)
     sol_temp3 = solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5(), reltol = 1e-9,
@@ -80,7 +88,8 @@ end
 
 # test adaptivity
 for iip in (true, false)
-    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (0.0, 1.0))
+    vanstiff = ODEProblem{iip}(
+        sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (0.0, 1.0))
     sol = solve(vanstiff, RadauIIA3())
     if iip
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
