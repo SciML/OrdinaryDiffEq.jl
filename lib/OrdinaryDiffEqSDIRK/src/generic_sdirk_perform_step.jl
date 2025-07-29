@@ -92,7 +92,7 @@ end
     integrator.u = u
 end
 
-@muladd function perform_step!(integrator, cache::SDIRK2Cache, repeat_step=false)
+@muladd function generic_sdirk_perform_step!(integrator, cache::SDIRKMutableCache, repeat_step=false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack z₁, z₂, atmp, nlsolver, tab, step_limiter! = cache
     @unpack tmp = nlsolver
@@ -150,6 +150,133 @@ end
     end
     
     @.. broadcast=false integrator.fsallast = z₂ / dt
+end
+
+@muladd function generic_additive_sdirk_perform_step!(integrator, cache::SDIRKConstantCache, repeat_step=false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tab, nlsolver = cache
+    alg = unwrap_alg(integrator, true)
+    
+    if integrator.f isa SplitFunction
+        f_impl = integrator.f.f1
+        f_expl = integrator.f.f2
+    else
+        f_impl = integrator.f
+    end
+    
+    markfirststage!(nlsolver)
+    
+    s = size(tab.A, 1)
+    γ = tab.γ
+    A = tab.A
+    b = tab.b
+    c = tab.c
+    b_embed = tab.b_embed
+    
+    A_explicit = tab.A_explicit
+    b_explicit = tab.b_explicit
+    
+    if integrator.f isa SplitFunction && !repeat_step && !integrator.last_stepfail
+        z₁ = dt * f_impl(uprev, p, t)
+    else
+        z₁ = dt * integrator.fsalfirst
+    end
+    
+    if s == 4  # 4-stage methods like KenCarp3, Kvaerno3
+        z₂ = z₁
+        nlsolver.z = z₂
+        tmp = uprev + γ * z₁
+        
+        if integrator.f isa SplitFunction
+            k1 = dt * integrator.fsalfirst - z₁
+            tmp += A_explicit[2,1] * k1
+        end
+        
+        nlsolver.tmp = tmp
+        nlsolver.c = 2γ
+        z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+        nlsolvefail(nlsolver) && return
+        
+        if integrator.f isa SplitFunction
+            z₃ = z₂
+            u = nlsolver.tmp + γ * z₂
+            k2 = dt * f_expl(u, p, t + 2γ * dt)
+            integrator.stats.nf2 += 1
+            tmp = uprev + A[3,1] * z₁ + A[3,2] * z₂ + A_explicit[3,1] * k1 + A_explicit[3,2] * k2
+        else
+            θ = c[3] / c[2]
+            α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c[2]) * γ)
+            α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c[2]) * γ)
+            z₃ = α31 * z₁ + α32 * z₂
+            tmp = uprev + A[3,1] * z₁ + A[3,2] * z₂
+        end
+        
+        nlsolver.z = z₃
+        nlsolver.tmp = tmp
+        nlsolver.c = c[3]
+        z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+        nlsolvefail(nlsolver) && return
+        
+        # Step 4
+        if integrator.f isa SplitFunction
+            z₄ = z₂
+            u = nlsolver.tmp + γ * z₃
+            k3 = dt * f_expl(u, p, t + c[3] * dt)
+            integrator.stats.nf2 += 1
+            tmp = uprev + A[4,1] * z₁ + A[4,2] * z₂ + A[4,3] * z₃ + A_explicit[4,1] * k1 + A_explicit[4,2] * k2 + A_explicit[4,3] * k3
+        else
+            z₄ = z₁ 
+            tmp = uprev + A[4,1] * z₁ + A[4,2] * z₂ + A[4,3] * z₃
+        end
+        
+        nlsolver.z = z₄
+        nlsolver.tmp = tmp
+        nlsolver.c = 1
+        z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+        nlsolvefail(nlsolver) && return
+        
+        u = nlsolver.tmp + γ * z₄
+        if integrator.f isa SplitFunction
+            k4 = dt * f_expl(u, p, t + dt)
+            integrator.stats.nf2 += 1
+            u = uprev + A[4,1] * z₁ + A[4,2] * z₂ + A[4,3] * z₃ + γ * z₄ + 
+                b_explicit[1] * k1 + b_explicit[2] * k2 + b_explicit[3] * k3 + b_explicit[4] * k4
+        end
+        
+        # Error estimation
+        if integrator.opts.adaptive && b_embed !== nothing
+            if integrator.f isa SplitFunction
+                tmp = b_embed[1] * z₁ + b_embed[2] * z₂ + b_embed[3] * z₃ + b_embed[4] * z₄
+            else
+                tmp = b_embed[1] * z₁ + b_embed[2] * z₂ + b_embed[3] * z₃ + b_embed[4] * z₄
+            end
+            
+            if isnewton(nlsolver) && alg.smooth_est
+                integrator.stats.nsolve += 1
+                est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
+            else
+                est = tmp
+            end
+            
+            atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        end
+        
+        if integrator.f isa SplitFunction
+            integrator.k[1] = integrator.fsalfirst
+            integrator.fsallast = integrator.f(u, p, t + dt)
+            integrator.k[2] = integrator.fsallast
+        else
+            integrator.fsallast = z₄ ./ dt
+            integrator.k[1] = integrator.fsalfirst
+            integrator.k[2] = integrator.fsallast
+        end
+        integrator.u = u
+        
+    else
+        generic_sdirk_perform_step!(integrator, cache, repeat_step)
+    end
 end
 
 # Specialized dispatcher for each method that uses the generic implementation
@@ -390,4 +517,85 @@ end
     @.. broadcast=false integrator.fsallast = z / dt
 end
 
+# Hairer4 methods
+@muladd function perform_step!(integrator, cache::Hairer4ConstantCache, repeat_step=false)
+    generic_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::Hairer4Cache, repeat_step=false)
+    generic_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+# KenCarp/Kvaerno methods
+@muladd function perform_step!(integrator, cache::Kvaerno3ConstantCache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::Kvaerno3Cache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::KenCarp3ConstantCache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::KenCarp3Cache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::CFNLIRK3ConstantCache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::CFNLIRK3Cache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::Kvaerno4ConstantCache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::Kvaerno4Cache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::KenCarp4ConstantCache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::KenCarp4Cache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::Kvaerno5ConstantCache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::Kvaerno5Cache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::KenCarp5ConstantCache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::KenCarp5Cache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::KenCarp47ConstantCache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::KenCarp47Cache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::KenCarp58ConstantCache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::KenCarp58Cache, repeat_step=false)
+    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+end
 
