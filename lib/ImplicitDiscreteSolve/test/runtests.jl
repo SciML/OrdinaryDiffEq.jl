@@ -27,7 +27,7 @@ using JET
     oprob = ODEProblem(lotkavolterra, u0, tspan)
     osol = solve(oprob, ImplicitEuler())
 
-    @test isapprox(idsol[end], osol[end], atol = 0.1)
+    @test isapprox(idsol.u[end], osol.u[end], atol = 0.1)
 
     ### free-fall
     # y, dy
@@ -50,7 +50,7 @@ using JET
     oprob = ODEProblem(ff, u0, tspan)
     osol = solve(oprob, ImplicitEuler())
 
-    @test isapprox(idsol[end], osol[end], atol = 0.1)
+    @test isapprox(idsol.u[end], osol.u[end], atol = 0.1)
 end
 
 @testset "Solver initializes" begin

@@ -171,7 +171,7 @@ end
         sol2 = solve(prob2, ImplicitEuler(nlsolve = NLAnderson()), dt = 1 / 10,
             adaptive = false)
         @test norm(sol .- sol2)≈0 atol=1e-7
-        @test norm(sol[end] .- sol2[end])≈0 atol=1e-7
+        @test norm(sol.u[end] .- sol2.u[end])≈0 atol=1e-7
 
         sol = solve(
             prob, ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
@@ -180,7 +180,7 @@ end
             ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
             dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
         @test norm(sol .- sol2)≈0 atol=1e-7
-        @test norm(sol[end] .- sol2[end])≈0 atol=1e-7
+        @test norm(sol.u[end] .- sol2.u[end])≈0 atol=1e-7
     end
 end
 
@@ -232,18 +232,18 @@ end
     sol12 = @test_nowarn solve(m_ode_prob, QBDF(), reltol = 1e-10, abstol = 1e-10)
     sol13 = @test_nowarn solve(m_ode_prob, QNDF(), reltol = 1e-10, abstol = 1e-10)
 
-    @test sol1[end]≈sol2[end] atol=1e-9
-    @test sol1[end]≈sol3[end] atol=1e-9
-    @test sol1[end]≈sol4[end] atol=1e-9
-    @test sol1[end]≈sol5[end] atol=1e-9
-    @test sol1[end]≈sol6[end] atol=1e-9
-    @test sol1[end]≈sol7[end] atol=1e-9
-    @test sol1[end]≈sol8[end] atol=1e-9
-    @test sol1[end]≈sol9[end] atol=1e-9
-    @test sol1[end]≈sol10[end] atol=1e-9
-    @test sol1[end]≈sol11[end] atol=1e-9
-    @test sol1[end]≈sol12[end] atol=1e-9
-    @test sol1[end]≈sol13[end] atol=1e-9
+    @test sol1.u[end]≈sol2.u[end] atol=1e-9
+    @test sol1.u[end]≈sol3.u[end] atol=1e-9
+    @test sol1.u[end]≈sol4.u[end] atol=1e-9
+    @test sol1.u[end]≈sol5.u[end] atol=1e-9
+    @test sol1.u[end]≈sol6.u[end] atol=1e-9
+    @test sol1.u[end]≈sol7.u[end] atol=1e-9
+    @test sol1.u[end]≈sol8.u[end] atol=1e-9
+    @test sol1.u[end]≈sol9.u[end] atol=1e-9
+    @test sol1.u[end]≈sol10.u[end] atol=1e-9
+    @test sol1.u[end]≈sol11.u[end] atol=1e-9
+    @test sol1.u[end]≈sol12.u[end] atol=1e-9
+    @test sol1.u[end]≈sol13.u[end] atol=1e-9
 end
 
 function _norm_dsol2(alg, prob, prob2; kwargs...)
@@ -298,7 +298,7 @@ end
         sol2 = solve(prob2, ImplicitEuler(nlsolve = NLAnderson()), dt = 1 / 10,
             adaptive = false)
         @test norm(sol .- sol2)≈0 atol=1e-7
-        @test norm(sol[end] .- sol2[end])≈0 atol=1e-7
+        @test norm(sol.u[end] .- sol2.u[end])≈0 atol=1e-7
 
         sol = solve(
             prob, ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
@@ -307,7 +307,7 @@ end
             ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
             dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
         @test norm(sol .- sol2)≈0 atol=1e-7
-        @test norm(sol[end] .- sol2[end])≈0 atol=1e-7
+        @test norm(sol.u[end] .- sol2.u[end])≈0 atol=1e-7
     end
 end
 
