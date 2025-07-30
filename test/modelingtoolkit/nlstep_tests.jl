@@ -10,7 +10,7 @@ using Test
 eqs = [D(y₁) ~ -k₁ * y₁ + k₃ * y₂ * y₃,
     D(y₂) ~ k₁ * y₁ - k₂ * y₂^2 - k₃ * y₂ * y₃,
     D(y₃) ~ k₂ * y₂^2]
-@mtkbuild rober = ODESystem(eqs, t)
+@mtkcompile rober = System(eqs, t)
 prob = ODEProblem(
     rober, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3e7, 1e4)],
     (0.0, 1e5), jac = true)
@@ -72,7 +72,7 @@ sim = analyticless_test_convergence(
 eqs_nonaut = [D(y₁) ~ -k₁ * y₁ + (t + 1) * k₃ * y₂ * y₃,
     D(y₂) ~ k₁ * y₁ - (t + 1) * k₂ * y₂^2 - (t + 1) * k₃ * y₂ * y₃,
     D(y₃) ~ (t + 1) * k₂ * y₂^2]
-@mtkbuild rober_nonaut = ODESystem(eqs_nonaut, t)
+@mtkcompile rober_nonaut = System(eqs_nonaut, t)
 prob = ODEProblem(
     rober_nonaut, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3e7, 1e4)],
     (0.0, 1e5), jac = true)
