@@ -27,8 +27,8 @@ println("📦 Setting up test environment...")
 # Test with main project dependencies first (interface tests)
 println("🧪 Running Interface Tests...")
 try
-    Pkg.activate(".")
-    include("test/interface/gpu_autodiff_interface_tests.jl")
+    Pkg.activate("..")
+    include("../test/interface/gpu_autodiff_interface_tests.jl")
     println("✅ Interface tests passed!")
 catch e
     println("❌ Interface tests failed: ", e)
@@ -39,9 +39,9 @@ println()
 # Test with GPU-specific environment 
 println("🔧 Activating GPU test environment...")
 try
-    Pkg.activate("test/gpu")
+    Pkg.activate("../test/gpu")
     Pkg.instantiate()
-    Pkg.develop(path=pwd())
+    Pkg.develop(path="..")
     println("✅ GPU test environment ready")
 catch e
     println("❌ Failed to setup GPU environment: ", e)
@@ -51,7 +51,7 @@ end
 println()
 println("🧪 Running GPU-Specific Tests...")
 try
-    include("test/gpu/gpu_autodiff_conceptual_test.jl")
+    include("../test/gpu/gpu_autodiff_conceptual_test.jl")
     println("✅ GPU-specific tests passed!")
 catch e
     println("❌ GPU-specific tests failed: ", e)
