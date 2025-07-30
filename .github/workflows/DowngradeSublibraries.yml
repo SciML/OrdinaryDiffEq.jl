@@ -19,7 +19,6 @@ jobs:
         downgrade_mode: ['alldeps']
         julia-version: ['1.10']
         project:
-          - '.'
           - 'lib/ImplicitDiscreteSolve'
           - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'
           - 'lib/OrdinaryDiffEqBDF'
