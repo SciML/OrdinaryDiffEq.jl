@@ -89,6 +89,8 @@ import Accessors: @reset
 # SciMLStructures symbols imported but not directly used in OrdinaryDiffEqCore
 # using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
+using SciMLVerbosity: Verbosity, @SciMLMessage
+
 using SymbolicIndexingInterface: state_values, parameter_values
 
 const CompiledFloats = Union{Float32, Float64}
