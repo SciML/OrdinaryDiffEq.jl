@@ -665,8 +665,7 @@ function DImplicitEuler(;
         nlsolve, precs, extrapolant, controller, AD_choice)
 end
 
-@doc BDF_docstring(
-    "2nd order A-L stable adaptive BDF method. Fully implicit implementation of BDF2.",
+@doc BDF_docstring("2nd order A-L stable adaptive BDF method. Fully implicit implementation of BDF2.",
     "DABDF2",
     references = """@article{celaya2014implementation,
     title={Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s},
@@ -722,8 +721,7 @@ DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concr
      linsolve,nlsolve,precs,extrapolant)
 =#
 
-@doc BDF_docstring(
-    "Fixed-leading coefficient adaptive-order adaptive-time BDF method. Fully implicit implementation of FBDF based on Shampine's",
+@doc BDF_docstring("Fixed-leading coefficient adaptive-order adaptive-time BDF method. Fully implicit implementation of FBDF based on Shampine's",
     "DFBDF",
     references = """@article{shampine2002solving,
     title={Solving 0= F (t, y (t), y′(t)) in Matlab},

@@ -26,9 +26,7 @@ function initialize!(integrator, cache::IDSolveCache)
     nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != u_len)
 
     prob = if nlls
-        NonlinearLeastSquaresProblem{isinplace(f)}(
-            NonlinearFunction(_f; resid_prototype = f.resid_prototype),
-            cache.state.u, cache.state)
+        NonlinearLeastSquaresProblem{isinplace(f)}(NonlinearFunction(_f; resid_prototype = f.resid_prototype), cache.state.u, cache.state)
     else
         NonlinearProblem{isinplace(f)}(_f, cache.state.u, cache.state)
     end
@@ -41,7 +39,7 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
     atol = one(eltype(prob.u0)) * 1e-12
     if SciMLBase.has_initializeprob(prob.f)
         _initialize_dae!(integrator, prob,
-            OverrideInit(atol), x)
+                         OverrideInit(atol), x)
     else
         @unpack u, p, t, f = integrator
         initstate = ImplicitDiscreteState(u, p, t)
@@ -52,11 +50,9 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
             (u_next, p) -> f(u_next, p.u, p.p, p.t_next)
         end
 
-        nlls = !isnothing(f.resid_prototype) &&
-               (length(f.resid_prototype) != length(integrator.u))
+        nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != length(integrator.u))
         prob = if nlls
-            NonlinearLeastSquaresProblem{isinplace(f)}(
-                NonlinearFunction(_f; resid_prototype = f.resid_prototype), u, initstate)
+            NonlinearLeastSquaresProblem{isinplace(f)}(NonlinearFunction(_f; resid_prototype = f.resid_prototype), u, initstate)
         else
             NonlinearProblem{isinplace(f)}(_f, u, initstate)
         end
@@ -64,8 +60,7 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
         if sol.retcode == ReturnCode.Success
             integrator.u = sol
         else
-            integrator.sol = SciMLBase.solution_new_retcode(
-                integrator.sol, ReturnCode.InitialFailure)
+            integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.InitialFailure)
         end
     end
 end

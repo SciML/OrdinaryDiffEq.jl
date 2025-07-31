@@ -10,23 +10,23 @@ Rosenbrock methods for mass matrix differential-algebraic equations (DAEs) and s
 
 Mass matrix Rosenbrock methods provide:
 
-  - **DAE capability** for index-1 differential-algebraic equations
-  - **W-method efficiency** using approximate Jacobians for computational savings
-  - **Mass matrix support** for singular and non-diagonal mass matrices
-  - **Moderate to high order accuracy** (2nd to 6th order available)
-  - **Good stability properties** with stiffly accurate behavior
-  - **Embedded error estimation** for adaptive timestepping
+- **DAE capability** for index-1 differential-algebraic equations
+- **W-method efficiency** using approximate Jacobians for computational savings
+- **Mass matrix support** for singular and non-diagonal mass matrices
+- **Moderate to high order accuracy** (2nd to 6th order available)
+- **Good stability properties** with stiffly accurate behavior
+- **Embedded error estimation** for adaptive timestepping
 
 ## When to Use Mass Matrix Rosenbrock Methods
 
 These methods are recommended for:
 
-  - **Index-1 DAE systems** with moderate stiffness
-  - **Small to medium constrained systems** (< 1000 equations)
-  - **Semi-explicit DAEs** arising from discretized PDEs
-  - **Problems requiring good accuracy** with moderate computational cost
-  - **DAEs with moderate nonlinearity** where W-methods are efficient
-  - **Electrical circuits** and **mechanical systems** with constraints
+- **Index-1 DAE systems** with moderate stiffness
+- **Small to medium constrained systems** (< 1000 equations)
+- **Semi-explicit DAEs** arising from discretized PDEs
+- **Problems requiring good accuracy** with moderate computational cost
+- **DAEs with moderate nonlinearity** where W-methods are efficient
+- **Electrical circuits** and **mechanical systems** with constraints
 
 !!! warn
     
@@ -48,56 +48,49 @@ where J is the Jacobian of f and γ is a method parameter.
 ## Solver Selection Guide
 
 ### Recommended Methods by Tolerance
-
-  - **High tolerances** (>1e-2): **`Rosenbrock23`** - efficient low-order method
-  - **Medium tolerances** (1e-8 to 1e-2): **`Rodas5P`** - most efficient choice, or **`Rodas4P`** for higher reliability
-  - **Low tolerances** (<1e-8): **`Rodas5Pe`** or higher-order alternatives
+- **High tolerances** (>1e-2): **`Rosenbrock23`** - efficient low-order method
+- **Medium tolerances** (1e-8 to 1e-2): **`Rodas5P`** - most efficient choice, or **`Rodas4P`** for higher reliability
+- **Low tolerances** (<1e-8): **`Rodas5Pe`** or higher-order alternatives
 
 ### Method families
-
-  - **`Rodas5P`**: **Recommended** - Most efficient 5th-order method for general use
-  - **`Rodas4P`**: More reliable 4th-order alternative
-  - **`Rosenbrock23`**: Good for high tolerance problems
-  - **`Rodas5`**: Standard 5th-order method without embedded pair optimization
+- **`Rodas5P`**: **Recommended** - Most efficient 5th-order method for general use
+- **`Rodas4P`**: More reliable 4th-order alternative
+- **`Rosenbrock23`**: Good for high tolerance problems
+- **`Rodas5`**: Standard 5th-order method without embedded pair optimization
 
 ## Performance Guidelines
 
 ### When mass matrix Rosenbrock methods excel
-
-  - **Small to medium DAE systems** (< 1000 equations)
-  - **Moderately stiff problems** where full BDF methods are overkill
-  - **Problems with efficient Jacobian computation** or finite difference approximation
-  - **Index-1 DAEs with well-conditioned mass matrices**
-  - **Semi-explicit index-1 problems** from spatial discretizations
+- **Small to medium DAE systems** (< 1000 equations)
+- **Moderately stiff problems** where full BDF methods are overkill
+- **Problems with efficient Jacobian computation** or finite difference approximation
+- **Index-1 DAEs with well-conditioned mass matrices**
+- **Semi-explicit index-1 problems** from spatial discretizations
 
 ### System size considerations
-
-  - **Small systems** (< 100): Rosenbrock methods often outperform multistep methods
-  - **Medium systems** (100-1000): Good performance with proper linear algebra
-  - **Large systems** (> 1000): Consider BDF methods instead
+- **Small systems** (< 100): Rosenbrock methods often outperform multistep methods
+- **Medium systems** (100-1000): Good performance with proper linear algebra
+- **Large systems** (> 1000): Consider BDF methods instead
 
 ## Important DAE Considerations
 
 ### Initial conditions
-
-  - **Must be consistent** with algebraic constraints
-  - **Consistent initialization** may require nonlinear solver
-  - **Index-1 assumption** for reliable performance
+- **Must be consistent** with algebraic constraints
+- **Consistent initialization** may require nonlinear solver
+- **Index-1 assumption** for reliable performance
 
 ### Mass matrix requirements
-
-  - **Index-1 DAE structure** for optimal performance
-  - **Non-singular leading submatrix** for differential variables
-  - **Well-conditioned constraint equations**
+- **Index-1 DAE structure** for optimal performance
+- **Non-singular leading submatrix** for differential variables
+- **Well-conditioned constraint equations**
 
 ## Alternative Approaches
 
 Consider these alternatives:
-
-  - **Mass matrix BDF methods** for larger or highly stiff DAE systems
-  - **Implicit Runge-Kutta methods** for higher accuracy requirements
-  - **Standard Rosenbrock methods** for regular ODEs without constraints
-  - **IMEX methods** if natural explicit/implicit splitting exists
+- **Mass matrix BDF methods** for larger or highly stiff DAE systems
+- **Implicit Runge-Kutta methods** for higher accuracy requirements
+- **Standard Rosenbrock methods** for regular ODEs without constraints
+- **IMEX methods** if natural explicit/implicit splitting exists
 
 ## Example Usage
 
