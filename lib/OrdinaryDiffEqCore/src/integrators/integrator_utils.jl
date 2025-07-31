@@ -8,8 +8,7 @@ function loopheader!(integrator)
 
     # Accept or reject the step
     if integrator.iter > 0
-        if (integrator.opts.adaptive && !integrator.accept_step) ||
-           integrator.force_stepfail
+        if (integrator.opts.adaptive && !integrator.accept_step) || integrator.force_stepfail
             if integrator.isout
                 integrator.dt = integrator.dt * integrator.opts.qmin
             elseif !integrator.force_stepfail
@@ -31,6 +30,7 @@ function loopheader!(integrator)
     integrator.force_stepfail = false
     return nothing
 end
+
 
 function apply_step!(integrator)
     update_uprev!(integrator)
@@ -195,16 +195,17 @@ function _postamble!(integrator)
         resize!(integrator.sol.k, integrator.saveiter_dense)
     end
     if integrator.opts.progress
+
     end
 end
 
 function final_progress(integrator)
     @logmsg(LogLevel(-1),
-        integrator.opts.progress_name,
-        _id=integrator.opts.progress_id,
-        message=integrator.opts.progress_message(integrator.dt, integrator.u,
-            integrator.p, integrator.t),
-        progress="done")
+    integrator.opts.progress_name,
+    _id=integrator.opts.progress_id,
+    message=integrator.opts.progress_message(integrator.dt, integrator.u,
+        integrator.p, integrator.t),
+    progress="done")
 end
 
 function solution_endpoint_match_cur_integrator!(integrator)

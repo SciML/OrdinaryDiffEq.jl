@@ -131,7 +131,7 @@
         if integrator.opts.verbose
             @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
         end
-
+        
         return tdir * dtmin
     end
 

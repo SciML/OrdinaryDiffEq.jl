@@ -129,16 +129,16 @@ end
         )
         ztmp .= nlstep_data.nlprobmap(nlstepsol)
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
-        calculate_residuals!(@view(atmp[nlstep_data.u0perm]), nlcache.fu,
-            @view(uprev[nlstep_data.u0perm]),
-            @view(ustep[nlstep_data.u0perm]), opts.abstol,
-            opts.reltol, opts.internalnorm, t)
+        calculate_residuals!(@view(atmp[nlstep_data.u0perm]), nlcache.fu, 
+                             @view(uprev[nlstep_data.u0perm]), 
+                             @view(ustep[nlstep_data.u0perm]), opts.abstol, 
+                             opts.reltol, opts.internalnorm, t)
         ndz = opts.internalnorm(atmp, t)
     else
         @.. broadcast=false ztmp=nlcache.u
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
         calculate_residuals!(atmp, nlcache.fu, uprev, ustep, opts.abstol, opts.reltol,
-            opts.internalnorm, t)
+                                opts.internalnorm, t)
         ndz = opts.internalnorm(atmp, t)
     end
 
@@ -444,7 +444,7 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) 
 end
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         r::Nothing) where {TF}
-    dz
+        dz
 end
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         r::Number) where {TF}
@@ -581,3 +581,4 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
 
     nothing
 end
+
