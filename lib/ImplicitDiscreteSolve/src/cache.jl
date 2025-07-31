@@ -15,14 +15,13 @@ function alg_cache(alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-
     state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
     IDSolveCache(u, uprev, state, nothing)
 end
 
 isdiscretecache(cache::IDSolveCache) = true
 
-struct IDSolveConstantCache <: OrdinaryDiffEqConstantCache 
+struct IDSolveConstantCache <: OrdinaryDiffEqConstantCache
     prob::Union{Nothing, SciMLBase.AbstractNonlinearProblem}
 end
 
@@ -30,7 +29,6 @@ function alg_cache(alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-
     state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
     IDSolveCache(u, uprev, state, nothing)
 end

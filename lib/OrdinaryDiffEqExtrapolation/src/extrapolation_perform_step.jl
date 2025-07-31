@@ -25,11 +25,11 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
         for i in 1:max_order
             dt_temp = dt / (2^(i - 1))
             # Solve using Euler method
-            @muladd @.. broadcast=false u=uprev + dt_temp * fsalfirst
+            @muladd @.. broadcast=false u=uprev+dt_temp*fsalfirst
             f(k, u, p, t + dt_temp)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            for j in 2:(2^(i - 1))
-                @muladd @.. broadcast=false u=u + dt_temp * k
+            for j in 2:(2 ^ (i - 1))
+                @muladd @.. broadcast=false u=u+dt_temp*k
                 f(k, u, p, t + j * dt_temp)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             end
@@ -37,8 +37,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
         end
     else
         let max_order = max_order, uprev = uprev, dt = dt, fsalfirst = fsalfirst, p = p,
-            t = t,
-            u_tmps = u_tmps, k_tmps = k_tmps, T = T
+            t = t, u_tmps = u_tmps, k_tmps = k_tmps, T = T
             # Balance workload of threads by computing T[1,1] with T[max_order,1] on
             # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
             # first column of T matrix
@@ -48,15 +47,15 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
                 for index in startIndex:endIndex
                     dt_temp = dt / (2^(index - 1))
                     # Solve using Euler method
-                    @muladd @.. broadcast=false u_tmps[Threads.threadid()]=uprev +
-                                                                           dt_temp *
-                                                                           fsalfirst
+                    @muladd @.. broadcast=false u_tmps[Threads.threadid()]=uprev+
+                    dt_temp*
+                    fsalfirst
                     f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p,
                         t + dt_temp)
-                    for j in 2:(2^(index - 1))
-                        @muladd @.. broadcast=false u_tmps[Threads.threadid()]=u_tmps[Threads.threadid()] +
-                                                                               dt_temp *
-                                                                               k_tmps[Threads.threadid()]
+                    for j in 2:(2 ^ (index - 1))
+                        @muladd @.. broadcast=false u_tmps[Threads.threadid()]=u_tmps[Threads.threadid()]+
+                        dt_temp*
+                        k_tmps[Threads.threadid()]
                         f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p,
                             t + j * dt_temp)
                     end
@@ -72,7 +71,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
     for j in 2:max_order
         tmp *= 2
         for i in j:max_order
-            @.. broadcast=false T[i, j]=(tmp * T[i, j - 1] - T[i - 1, j - 1]) / (tmp - 1)
+            @.. broadcast=false T[i, j]=(tmp*T[i, j - 1]-T[i - 1, j - 1])/(tmp-1)
         end
     end
 
@@ -86,7 +85,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
 
         for i in range_start:max_order
             A = 2^(i - 1)
-            @.. broadcast=false utilde=T[i, i] - T[i, i - 1]
+            @.. broadcast=false utilde=T[i, i]-T[i, i - 1]
             atmp = calculate_residuals(utilde, uprev, T[i, i], integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t)
@@ -154,7 +153,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
             k = f(u, p, t + dt_temp)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-            for j in 2:(2^(i - 1))
+            for j in 2:(2 ^ (i - 1))
                 @muladd u = @.. broadcast=false u+dt_temp * k
                 k = f(u, p, t + j * dt_temp)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -175,7 +174,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
                     dt_temp = dt / 2^(index - 1)
                     @muladd u = @.. broadcast=false uprev+dt_temp * integrator.fsalfirst
                     k_temp = f(u, p, t + dt_temp)
-                    for j in 2:(2^(index - 1))
+                    for j in 2:(2 ^ (index - 1))
                         @muladd u = @.. broadcast=false u+dt_temp * k_temp
                         k_temp = f(u, p, t + j * dt_temp)
                     end
@@ -312,11 +311,11 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
                 integrator.stats.nsolve += 1
                 @.. broadcast=false u_tmps2[1]=u_tmps[1]
-                @.. broadcast=false u_tmps[1]=u_tmps[1] - k_tmps[1]
+                @.. broadcast=false u_tmps[1]=u_tmps[1]-k_tmps[1]
                 if index <= 2 && j >= 2
                     # Deuflhard Stability check for initial two sequences
-                    @.. broadcast=false diff2[1]=u_tmps[1] - u_tmps2[1]
-                    @.. broadcast=false diff2[1]=0.5 * (diff2[1] - diff1[1])
+                    @.. broadcast=false diff2[1]=u_tmps[1]-u_tmps2[1]
+                    @.. broadcast=false diff2[1]=0.5*(diff2[1]-diff1[1])
                     if integrator.opts.internalnorm(diff1[1], t) <
                        integrator.opts.internalnorm(diff2[1], t)
                         # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -324,7 +323,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                         return
                     end
                 end
-                @.. broadcast=false diff1[1]=u_tmps[1] - u_tmps2[1]
+                @.. broadcast=false diff1[1]=u_tmps[1]-u_tmps2[1]
 
                 f(k_tmps[1], u_tmps[1], p, t + j * dt_temp)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -366,15 +365,15 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                         cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast=false u_tmps2[Threads.threadid()]=u_tmps[Threads.threadid()]
-                        @.. broadcast=false u_tmps[Threads.threadid()]=u_tmps[Threads.threadid()] -
-                                                                       k_tmps[Threads.threadid()]
+                        @.. broadcast=false u_tmps[Threads.threadid()]=u_tmps[Threads.threadid()]-
+                        k_tmps[Threads.threadid()]
                         if index <= 2 && j >= 2
                             # Deuflhard Stability check for initial two sequences
-                            @.. broadcast=false diff2[Threads.threadid()]=u_tmps[Threads.threadid()] -
-                                                                          u_tmps2[Threads.threadid()]
-                            @.. broadcast=false diff2[Threads.threadid()]=0.5 *
-                                                                          (diff2[Threads.threadid()] -
-                                                                           diff1[Threads.threadid()])
+                            @.. broadcast=false diff2[Threads.threadid()]=u_tmps[Threads.threadid()]-
+                            u_tmps2[Threads.threadid()]
+                            @.. broadcast=false diff2[Threads.threadid()]=0.5*
+                            (diff2[Threads.threadid()]-
+                            diff1[Threads.threadid()])
                             if integrator.opts.internalnorm(diff1[Threads.threadid()], t) <
                                integrator.opts.internalnorm(diff2[Threads.threadid()], t)
                                 # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -382,8 +381,8 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                                 return
                             end
                         end
-                        @.. broadcast=false diff1[Threads.threadid()]=u_tmps[Threads.threadid()] -
-                                                                      u_tmps2[Threads.threadid()]
+                        @.. broadcast=false diff1[Threads.threadid()]=u_tmps[Threads.threadid()]-
+                        u_tmps2[Threads.threadid()]
                         f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p,
                             t + j * dt_temp)
                     end
@@ -407,9 +406,10 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
     # Polynomial extrapolation
     for j in 2:(n_curr + 1)
         for i in j:(n_curr + 1)
-            @.. broadcast=false T[i, j]=((sequence[i] / sequence[i - j + 1]) * T[i, j - 1] -
-                                         T[i - 1, j - 1]) /
-                                        ((sequence[i] / sequence[i - j + 1]) - 1)
+            @.. broadcast=false T[i, j]=((sequence[i]/sequence[i - j + 1])*T[
+                i, j - 1]-
+            T[i - 1, j - 1])/
+            ((sequence[i]/sequence[i - j + 1])-1)
         end
     end
 
@@ -466,7 +466,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                     cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
-                    @.. broadcast=false u_tmps[1]=u_tmps[1] - k_tmps[1]
+                    @.. broadcast=false u_tmps[1]=u_tmps[1]-k_tmps[1]
                     f(k_tmps[1], u_tmps[1], p, t + j * dt_temp)
                     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
                 end
@@ -475,10 +475,10 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
                 for j in 2:(n_curr + 1)
                     for i in j:(n_curr + 1)
-                        @.. broadcast=false T[i, j]=((sequence[i] / sequence[i - j + 1]) *
-                                                     T[i, j - 1] - T[i - 1, j - 1]) /
-                                                    ((sequence[i] / sequence[i - j + 1]) -
-                                                     1)
+                        @.. broadcast=false T[i, j]=((sequence[i]/sequence[i - j + 1])*
+                        T[i, j - 1]-T[i - 1, j - 1])/
+                        ((sequence[i]/sequence[i - j + 1])-
+                        1)
                     end
                 end
 
@@ -572,8 +572,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
     else
         J = calc_J(integrator, cache) # Store the calculated jac as it won't change in internal discretisation
         let n_curr = n_curr, dt = dt, integrator = integrator, cache = cache,
-            repeat_step = repeat_step,
-            uprev = uprev, T = T
+            repeat_step = repeat_step, uprev = uprev, T = T
 
             @threaded alg.threading for i in 1:2
                 startIndex = (i == 1) ? 1 : n_curr + 1
@@ -757,11 +756,11 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
             j_int = sequence_factor * subdividing_sequence[i + 1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             @.. broadcast=false u_temp2=uprev
-            @.. broadcast=false u_temp1=u_temp2 + dt_int * fsalfirst # Euler starting step
+            @.. broadcast=false u_temp1=u_temp2+dt_int*fsalfirst # Euler starting step
             for j in 2:j_int
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                @.. broadcast=false T[i + 1]=u_temp2 + 2 * dt_int * k # Explicit Midpoint rule
+                @.. broadcast=false T[i + 1]=u_temp2+2*dt_int*k # Explicit Midpoint rule
                 @.. broadcast=false u_temp2=u_temp1
                 @.. broadcast=false u_temp1=T[i + 1]
             end
@@ -774,8 +773,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp3 = u_temp3,
-                u_temp4 = u_temp4, k_tmps = k_tmps, p = p, t = t, T = T
+                dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
+                t = t, T = T
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -784,16 +783,16 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         @.. broadcast=false u_temp4[Threads.threadid()]=uprev
-                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] +
-                                                                        dt_int_temp *
-                                                                        fsalfirst # Euler starting step
+                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()]+
+                        dt_int_temp*
+                        fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()],
                                 cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
-                            @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()] +
-                                                             2 * dt_int_temp *
-                                                             k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                            @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()]+
+                            2*dt_int_temp*
+                            k_tmps[Threads.threadid()] # Explicit Midpoint rule
                             @.. broadcast=false u_temp4[Threads.threadid()]=u_temp3[Threads.threadid()]
                             @.. broadcast=false u_temp3[Threads.threadid()]=T[index + 1]
                         end
@@ -802,8 +801,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp3 = u_temp3,
-                u_temp4 = u_temp4, k_tmps = k_tmps, p = p, t = t, T = T
+                dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
+                t = t, T = T
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = (i, n_curr - i)
@@ -811,15 +810,15 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         @.. broadcast=false u_temp4[Threads.threadid()]=uprev
-                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] +
-                                                                        dt_int_temp *
-                                                                        fsalfirst # Euler starting step
+                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()]+
+                        dt_int_temp*
+                        fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()], u_temp3[Threads.threadid()], p,
                                 t + (j - 1) * dt_int_temp)
-                            @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()] +
-                                                             2 * dt_int_temp *
-                                                             k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                            @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()]+
+                            2*dt_int_temp*
+                            k_tmps[Threads.threadid()] # Explicit Midpoint rule
                             @.. broadcast=false u_temp4[Threads.threadid()]=u_temp3[Threads.threadid()]
                             @.. broadcast=false u_temp3[Threads.threadid()]=T[index + 1]
                         end
@@ -849,8 +848,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
             for j in 2:(i + 1)
                 @.. broadcast=false u_temp2+=cache.T[j] * extrapolation_weights_2[j - 1, i]
             end
-            @.. broadcast=false integrator.u=extrapolation_scalars[i + 1] * u_temp1
-            @.. broadcast=false cache.utilde=extrapolation_scalars_2[i] * u_temp2
+            @.. broadcast=false integrator.u=extrapolation_scalars[i + 1]*u_temp1
+            @.. broadcast=false cache.utilde=extrapolation_scalars_2[i]*u_temp2
 
             calculate_residuals!(cache.res, integrator.u, cache.utilde,
                 integrator.opts.abstol, integrator.opts.reltol,
@@ -877,11 +876,11 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                 j_int = sequence_factor * subdividing_sequence[n_curr + 1]
                 dt_int = dt / j_int # Stepsize of the new internal discretisation
                 @.. broadcast=false u_temp2=uprev
-                @.. broadcast=false u_temp1=u_temp2 + dt_int * fsalfirst # Euler starting step
+                @.. broadcast=false u_temp1=u_temp2+dt_int*fsalfirst # Euler starting step
                 for j in 2:j_int
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                    @.. broadcast=false T[n_curr + 1]=u_temp2 + 2 * dt_int * k
+                    @.. broadcast=false T[n_curr + 1]=u_temp2+2*dt_int*k
                     @.. broadcast=false u_temp2=u_temp1
                     @.. broadcast=false u_temp1=T[n_curr + 1]
                 end
@@ -900,8 +899,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                     @.. broadcast=false u_temp2+=cache.T[j] *
                                                  extrapolation_weights_2[j - 1, n_curr]
                 end
-                @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1] * u_temp1
-                @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr] * u_temp2
+                @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1]*u_temp1
+                @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr]*u_temp2
 
                 calculate_residuals!(cache.res, integrator.u, cache.utilde,
                     integrator.opts.abstol, integrator.opts.reltol,
@@ -920,7 +919,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
         for j in 1:(n_curr + 1)
             @.. broadcast=false u_temp1+=cache.T[j] * extrapolation_weights[j, (n_curr + 1)]
         end
-        @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1] * u_temp1
+        @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1]*u_temp1
     end
 
     f(cache.k, integrator.u, p, t + dt) # Update FSAL
@@ -994,8 +993,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt,
-                integrator = integrator, p = p, t = t, T = T
+                dt = dt, integrator = integrator, p = p, t = t, T = T
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -1017,8 +1015,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, dt = dt,
-                uprev = uprev,
-                p = p, t = t, T = T
+                uprev = uprev, p = p, t = t, T = T
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = (i, n_curr - i)
@@ -1186,12 +1183,12 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
             cache.linsolve[1] = linres.cache
 
             integrator.stats.nsolve += 1
-            @.. broadcast=false u_temp1=u_temp2 - k # Euler starting step
-            @.. broadcast=false diff1[1]=u_temp1 - u_temp2
+            @.. broadcast=false u_temp1=u_temp2-k # Euler starting step
+            @.. broadcast=false diff1[1]=u_temp1-u_temp2
             for j in 2:j_int
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                @.. broadcast=false linsolve_tmps[1]=k - (u_temp1 - u_temp2) / dt_int
+                @.. broadcast=false linsolve_tmps[1]=k-(u_temp1-u_temp2)/dt_int
 
                 linsolve = cache.linsolve[1]
 
@@ -1205,12 +1202,12 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                 cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
-                @.. broadcast=false T[i + 1]=2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
+                @.. broadcast=false T[i + 1]=2*u_temp1-u_temp2-2*k # Explicit Midpoint rule
                 @.. broadcast=false u_temp2=u_temp1
                 @.. broadcast=false u_temp1=T[i + 1]
                 if (i <= 1)
                     # Deuflhard Stability check for initial two sequences
-                    @.. broadcast=false diff2[1]=u_temp1 - u_temp2
+                    @.. broadcast=false diff2[1]=u_temp1-u_temp2
                     if (integrator.opts.internalnorm(diff1[1], t) <
                         integrator.opts.internalnorm(0.5 * (diff2[1] - diff1[1]), t))
                         # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -1228,8 +1225,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp3 = u_temp3,
-                u_temp4 = u_temp4, k_tmps = k_tmps, p = p, t = t, T = T
+                dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
+                t = t, T = T
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -1258,18 +1255,18 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                         cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast=false k_tmps[Threads.threadid()]=-k_tmps[Threads.threadid()]
-                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] +
-                                                                        k_tmps[Threads.threadid()] # Euler starting step
-                        @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                      u_temp4[Threads.threadid()]
+                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()]+
+                        k_tmps[Threads.threadid()] # Euler starting step
+                        @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                        u_temp4[Threads.threadid()]
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()],
                                 cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
-                            @.. broadcast=false linsolve_tmps[Threads.threadid()]=k_tmps[Threads.threadid()] -
-                                                                                  (u_temp3[Threads.threadid()] -
-                                                                                   u_temp4[Threads.threadid()]) /
-                                                                                  dt_int_temp
+                            @.. broadcast=false linsolve_tmps[Threads.threadid()]=k_tmps[Threads.threadid()]-
+                            (u_temp3[Threads.threadid()]-
+                            u_temp4[Threads.threadid()])/
+                            dt_int_temp
 
                             linsolve = cache.linsolve[Threads.threadid()]
 
@@ -1285,19 +1282,19 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
-                            @.. broadcast=false T[index + 1]=2 *
-                                                             u_temp3[Threads.threadid()] -
-                                                             u_temp4[Threads.threadid()] -
-                                                             2 * k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                            @.. broadcast=false T[index + 1]=2*
+                            u_temp3[Threads.threadid()]-
+                            u_temp4[Threads.threadid()]-
+                            2*k_tmps[Threads.threadid()] # Explicit Midpoint rule
                             @.. broadcast=false u_temp4[Threads.threadid()]=u_temp3[Threads.threadid()]
                             @.. broadcast=false u_temp3[Threads.threadid()]=T[index + 1]
                             if (index <= 1)
                                 # Deuflhard Stability check for initial two sequences
-                                @.. broadcast=false diff2[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                              u_temp4[Threads.threadid()]
-                                @.. broadcast=false diff2[Threads.threadid()]=0.5 *
-                                                                              (diff2[Threads.threadid()] -
-                                                                               diff1[Threads.threadid()])
+                                @.. broadcast=false diff2[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                                u_temp4[Threads.threadid()]
+                                @.. broadcast=false diff2[Threads.threadid()]=0.5*
+                                (diff2[Threads.threadid()]-
+                                diff1[Threads.threadid()])
                                 if (integrator.opts.internalnorm(diff1[Threads.threadid()],
                                     t) <
                                     integrator.opts.internalnorm(diff2[Threads.threadid()],
@@ -1314,8 +1311,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp3 = u_temp3,
-                u_temp4 = u_temp4, k_tmps = k_tmps, p = p, t = t, T = T
+                dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
+                t = t, T = T
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i) #Use flag to avoid union
@@ -1343,18 +1340,18 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                         cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast=false k_tmps[Threads.threadid()]=-k_tmps[Threads.threadid()]
-                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] +
-                                                                        k_tmps[Threads.threadid()] # Euler starting step
-                        @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                      u_temp4[Threads.threadid()]
+                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()]+
+                        k_tmps[Threads.threadid()] # Euler starting step
+                        @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                        u_temp4[Threads.threadid()]
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()],
                                 cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
-                            @.. broadcast=false linsolve_tmps[Threads.threadid()]=k_tmps[Threads.threadid()] -
-                                                                                  (u_temp3[Threads.threadid()] -
-                                                                                   u_temp4[Threads.threadid()]) /
-                                                                                  dt_int_temp
+                            @.. broadcast=false linsolve_tmps[Threads.threadid()]=k_tmps[Threads.threadid()]-
+                            (u_temp3[Threads.threadid()]-
+                            u_temp4[Threads.threadid()])/
+                            dt_int_temp
 
                             linsolve = cache.linsolve[Threads.threadid()]
 
@@ -1370,19 +1367,19 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
-                            @.. broadcast=false T[index + 1]=2 *
-                                                             u_temp3[Threads.threadid()] -
-                                                             u_temp4[Threads.threadid()] -
-                                                             2 * k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                            @.. broadcast=false T[index + 1]=2*
+                            u_temp3[Threads.threadid()]-
+                            u_temp4[Threads.threadid()]-
+                            2*k_tmps[Threads.threadid()] # Explicit Midpoint rule
                             @.. broadcast=false u_temp4[Threads.threadid()]=u_temp3[Threads.threadid()]
                             @.. broadcast=false u_temp3[Threads.threadid()]=T[index + 1]
                             if (index <= 1)
                                 # Deuflhard Stability check for initial two sequences
-                                @.. broadcast=false diff2[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                              u_temp4[Threads.threadid()]
-                                @.. broadcast=false diff2[Threads.threadid()]=0.5 *
-                                                                              (diff2[Threads.threadid()] -
-                                                                               diff1[Threads.threadid()])
+                                @.. broadcast=false diff2[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                                u_temp4[Threads.threadid()]
+                                @.. broadcast=false diff2[Threads.threadid()]=0.5*
+                                (diff2[Threads.threadid()]-
+                                diff1[Threads.threadid()])
                                 if (integrator.opts.internalnorm(diff1[Threads.threadid()],
                                     t) <
                                     integrator.opts.internalnorm(diff2[Threads.threadid()],
@@ -1419,8 +1416,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
             for j in 2:(i + 1)
                 @.. broadcast=false u_temp2+=cache.T[j] * extrapolation_weights_2[j - 1, i]
             end
-            @.. broadcast=false integrator.u=extrapolation_scalars[i + 1] * u_temp1
-            @.. broadcast=false cache.utilde=extrapolation_scalars_2[i] * u_temp2
+            @.. broadcast=false integrator.u=extrapolation_scalars[i + 1]*u_temp1
+            @.. broadcast=false cache.utilde=extrapolation_scalars_2[i]*u_temp2
 
             calculate_residuals!(cache.res, integrator.u, cache.utilde,
                 integrator.opts.abstol, integrator.opts.reltol,
@@ -1459,11 +1456,11 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                 cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
-                @.. broadcast=false u_temp1=u_temp2 - k # Euler starting step
+                @.. broadcast=false u_temp1=u_temp2-k # Euler starting step
                 for j in 2:j_int
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                    @.. broadcast=false linsolve_tmps[1]=dt_int * k - (u_temp1 - u_temp2)
+                    @.. broadcast=false linsolve_tmps[1]=dt_int*k-(u_temp1-u_temp2)
 
                     linsolve = cache.linsolve[1]
                     linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]),
@@ -1471,7 +1468,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                     cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
-                    @.. broadcast=false T[n_curr + 1]=2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
+                    @.. broadcast=false T[n_curr + 1]=2*u_temp1-u_temp2-2*k # Explicit Midpoint rule
                     @.. broadcast=false u_temp2=u_temp1
                     @.. broadcast=false u_temp1=T[n_curr + 1]
                 end
@@ -1490,8 +1487,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                     @.. broadcast=false u_temp2+=cache.T[j] *
                                                  extrapolation_weights_2[j - 1, n_curr]
                 end
-                @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1] * u_temp1
-                @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr] * u_temp2
+                @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1]*u_temp1
+                @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr]*u_temp2
 
                 calculate_residuals!(cache.res, integrator.u, cache.utilde,
                     integrator.opts.abstol, integrator.opts.reltol,
@@ -1510,7 +1507,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
         for j in 1:(n_curr + 1)
             @.. broadcast=false u_temp1+=cache.T[j] * extrapolation_weights[j, (n_curr + 1)]
         end
-        @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1] * u_temp1
+        @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1]*u_temp1
     end
 
     f(cache.k, integrator.u, p, t + dt) # Update FSAL
@@ -1602,8 +1599,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp2 = u_temp2,
-                u_temp2 = u_temp2, p = p, t = t, T = T
+                dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -1649,8 +1645,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt,
-                integrator = integrator, p = p, t = t, T = T
+                dt = dt, integrator = integrator, p = p, t = t, T = T
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -1833,11 +1828,11 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
             j_int = sequence_factor * subdividing_sequence[i + 1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             @.. broadcast=false u_temp2=uprev
-            @.. broadcast=false u_temp1=u_temp2 + dt_int * fsalfirst # Euler starting step
+            @.. broadcast=false u_temp1=u_temp2+dt_int*fsalfirst # Euler starting step
             for j in 2:j_int
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                @.. broadcast=false T[i + 1]=u_temp2 + 2 * dt_int * k # Explicit Midpoint rule
+                @.. broadcast=false T[i + 1]=u_temp2+2*dt_int*k # Explicit Midpoint rule
                 @.. broadcast=false u_temp2=u_temp1
                 @.. broadcast=false u_temp1=T[i + 1]
             end
@@ -1850,8 +1845,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp3 = u_temp3,
-                u_temp4 = u_temp4, k_tmps = k_tmps, p = p, t = t, T = T
+                dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
+                t = t, T = T
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -1861,16 +1856,16 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         @.. broadcast=false u_temp4[Threads.threadid()]=uprev
-                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] +
-                                                                        dt_int_temp *
-                                                                        fsalfirst # Euler starting step
+                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()]+
+                        dt_int_temp*
+                        fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()],
                                 cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
-                            @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()] +
-                                                             2 * dt_int_temp *
-                                                             k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                            @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()]+
+                            2*dt_int_temp*
+                            k_tmps[Threads.threadid()] # Explicit Midpoint rule
                             @.. broadcast=false u_temp4[Threads.threadid()]=u_temp3[Threads.threadid()]
                             @.. broadcast=false u_temp3[Threads.threadid()]=T[index + 1]
                         end
@@ -1879,8 +1874,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp3 = u_temp3,
-                u_temp4 = u_temp4, k_tmps = k_tmps, p = p, t = t, T = T
+                dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
+                t = t, T = T
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -1889,16 +1884,16 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         @.. broadcast=false u_temp4[Threads.threadid()]=uprev
-                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] +
-                                                                        dt_int_temp *
-                                                                        fsalfirst # Euler starting step
+                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()]+
+                        dt_int_temp*
+                        fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()],
                                 cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
-                            @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()] +
-                                                             2 * dt_int_temp *
-                                                             k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                            @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()]+
+                            2*dt_int_temp*
+                            k_tmps[Threads.threadid()] # Explicit Midpoint rule
                             @.. broadcast=false u_temp4[Threads.threadid()]=u_temp3[Threads.threadid()]
                             @.. broadcast=false u_temp3[Threads.threadid()]=T[index + 1]
                         end
@@ -1925,8 +1920,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
             for j in 2:(i + 1)
                 @.. broadcast=false u_temp2+=cache.T[j] * extrapolation_weights_2[j - 1, i]
             end
-            @.. broadcast=false integrator.u=extrapolation_scalars[i + 1] * u_temp1
-            @.. broadcast=false cache.utilde=extrapolation_scalars_2[i] * u_temp2
+            @.. broadcast=false integrator.u=extrapolation_scalars[i + 1]*u_temp1
+            @.. broadcast=false cache.utilde=extrapolation_scalars_2[i]*u_temp2
 
             calculate_residuals!(cache.res, integrator.u, cache.utilde,
                 integrator.opts.abstol, integrator.opts.reltol,
@@ -1955,11 +1950,11 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                 j_int = sequence_factor * subdividing_sequence[n_curr + 1]
                 dt_int = dt / j_int # Stepsize of the new internal discretisation
                 @.. broadcast=false u_temp2=uprev
-                @.. broadcast=false u_temp1=u_temp2 + dt_int * fsalfirst # Euler starting step
+                @.. broadcast=false u_temp1=u_temp2+dt_int*fsalfirst # Euler starting step
                 for j in 2:j_int
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                    @.. broadcast=false T[n_curr + 1]=u_temp2 + 2 * dt_int * k
+                    @.. broadcast=false T[n_curr + 1]=u_temp2+2*dt_int*k
                     @.. broadcast=false u_temp2=u_temp1
                     @.. broadcast=false u_temp1=T[n_curr + 1]
                 end
@@ -1978,8 +1973,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                     @.. broadcast=false u_temp2+=cache.T[j] *
                                                  extrapolation_weights_2[j - 1, n_curr]
                 end
-                @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1] * u_temp1
-                @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr] * u_temp2
+                @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1]*u_temp1
+                @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr]*u_temp2
 
                 calculate_residuals!(cache.res, integrator.u, cache.utilde,
                     integrator.opts.abstol, integrator.opts.reltol,
@@ -1998,7 +1993,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
         for j in 1:(n_curr + 1)
             @.. broadcast=false u_temp1+=cache.T[j] * extrapolation_weights[j, (n_curr + 1)]
         end
-        @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1] * u_temp1
+        @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1]*u_temp1
     end
 
     f(cache.k, integrator.u, p, t + dt) # Update FSAL
@@ -2074,8 +2069,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, dt = dt,
-                uprev = uprev,
-                integrator = integrator, T = T, p = p, t = t
+                uprev = uprev, integrator = integrator, T = T, p = p, t = t
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -2097,8 +2091,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, dt = dt,
-                uprev = uprev,
-                integrator = integrator, T = T, p = p, t = t
+                uprev = uprev, integrator = integrator, T = T, p = p, t = t
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -2293,8 +2286,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp2 = u_temp2,
-                u_temp2 = u_temp2, p = p, t = t, T = T
+                dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -2342,8 +2334,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt,
-                integrator = integrator, p = p, t = t, T = T
+                dt = dt, integrator = integrator, p = p, t = t, T = T
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -2550,12 +2541,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             cache.linsolve[1] = linres.cache
 
             integrator.stats.nsolve += 1
-            @.. broadcast=false u_temp1=u_temp2 - k # Euler starting step
-            @.. broadcast=false diff1[1]=u_temp1 - u_temp2
+            @.. broadcast=false u_temp1=u_temp2-k # Euler starting step
+            @.. broadcast=false diff1[1]=u_temp1-u_temp2
             for j in 2:(j_int + 1)
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                @.. broadcast=false linsolve_tmps[1]=k - (u_temp1 - u_temp2) / dt_int
+                @.. broadcast=false linsolve_tmps[1]=k-(u_temp1-u_temp2)/dt_int
 
                 linsolve = cache.linsolve[1]
 
@@ -2569,16 +2560,16 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                 cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
-                @.. broadcast=false T[i + 1]=2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
+                @.. broadcast=false T[i + 1]=2*u_temp1-u_temp2-2*k # Explicit Midpoint rule
                 if (j == j_int + 1)
-                    @.. broadcast=false T[i + 1]=0.5(T[i + 1] + u_temp2)
+                    @.. broadcast=false T[i + 1]=0.5(T[i + 1]+u_temp2)
                 end
                 @.. broadcast=false u_temp2=u_temp1
                 @.. broadcast=false u_temp1=T[i + 1]
                 if (i <= 1)
                     # Deuflhard Stability check for initial two sequences
-                    @.. broadcast=false diff2[1]=u_temp1 - u_temp2
-                    @.. broadcast=false diff2[1]=0.5 * (diff2[1] - diff1[1])
+                    @.. broadcast=false diff2[1]=u_temp1-u_temp2
+                    @.. broadcast=false diff2[1]=0.5*(diff2[1]-diff1[1])
                     if (integrator.opts.internalnorm(diff1[1], t) <
                         integrator.opts.internalnorm(diff2[1], t))
                         # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -2586,7 +2577,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                         return
                     end
                 end
-                @.. broadcast=false diff1[1]=u_temp1 - u_temp2
+                @.. broadcast=false diff1[1]=u_temp1-u_temp2
             end
         end
     else
@@ -2597,8 +2588,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp3 = u_temp3,
-                u_temp4 = u_temp4, k_tmps = k_tmps, p = p, t = t, T = T
+                dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
+                t = t, T = T
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -2626,18 +2617,18 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                         end
                         cache.linsolve[Threads.threadid()] = linres.cache
 
-                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] -
-                                                                        k_tmps[Threads.threadid()] # Euler starting step
-                        @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                      u_temp4[Threads.threadid()]
+                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()]-
+                        k_tmps[Threads.threadid()] # Euler starting step
+                        @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                        u_temp4[Threads.threadid()]
                         for j in 2:(j_int_temp + 1)
                             f(k_tmps[Threads.threadid()],
                                 cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
-                            @.. broadcast=false linsolve_tmps[Threads.threadid()]=k_tmps[Threads.threadid()] -
-                                                                                  (u_temp3[Threads.threadid()] -
-                                                                                   u_temp4[Threads.threadid()]) /
-                                                                                  dt_int_temp
+                            @.. broadcast=false linsolve_tmps[Threads.threadid()]=k_tmps[Threads.threadid()]-
+                            (u_temp3[Threads.threadid()]-
+                            u_temp4[Threads.threadid()])/
+                            dt_int_temp
 
                             linsolve = cache.linsolve[Threads.threadid()]
                             if !repeat_step && j == 1
@@ -2652,23 +2643,23 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
-                            @.. broadcast=false T[index + 1]=2 *
-                                                             u_temp3[Threads.threadid()] -
-                                                             u_temp4[Threads.threadid()] -
-                                                             2 * k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                            @.. broadcast=false T[index + 1]=2*
+                            u_temp3[Threads.threadid()]-
+                            u_temp4[Threads.threadid()]-
+                            2*k_tmps[Threads.threadid()] # Explicit Midpoint rule
                             if (j == j_int_temp + 1)
-                                @.. broadcast=false T[index + 1]=0.5(T[index + 1] +
-                                                                     u_temp4[Threads.threadid()])
+                                @.. broadcast=false T[index + 1]=0.5(T[index + 1]+
+                                u_temp4[Threads.threadid()])
                             end
                             @.. broadcast=false u_temp4[Threads.threadid()]=u_temp3[Threads.threadid()]
                             @.. broadcast=false u_temp3[Threads.threadid()]=T[index + 1]
                             if (index <= 1)
                                 # Deuflhard Stability check for initial two sequences
-                                @.. broadcast=false diff2[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                              u_temp4[Threads.threadid()]
-                                @.. broadcast=false diff2[Threads.threadid()]=0.5 *
-                                                                              (diff2[Threads.threadid()] -
-                                                                               diff1[Threads.threadid()])
+                                @.. broadcast=false diff2[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                                u_temp4[Threads.threadid()]
+                                @.. broadcast=false diff2[Threads.threadid()]=0.5*
+                                (diff2[Threads.threadid()]-
+                                diff1[Threads.threadid()])
                                 if (integrator.opts.internalnorm(diff1[Threads.threadid()],
                                     t) <
                                     integrator.opts.internalnorm(diff2[Threads.threadid()],
@@ -2678,8 +2669,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                                     return
                                 end
                             end
-                            @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                          u_temp4[Threads.threadid()]
+                            @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                            u_temp4[Threads.threadid()]
                         end
                     end
                     integrator.force_stepfail ? break : continue
@@ -2687,8 +2678,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp3 = u_temp3,
-                u_temp4 = u_temp4, k_tmps = k_tmps, p = p, t = t, T = T
+                dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
+                t = t, T = T
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     tid = Threads.threadid()
@@ -2713,13 +2704,13 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                         end
                         cache.linsolve[tid] = linres.cache
 
-                        @.. broadcast=false u_temp3[tid]=u_temp4[tid] - ktmp # Euler starting step
-                        @.. broadcast=false diff1[tid]=u_temp3[tid] - u_temp4[tid]
+                        @.. broadcast=false u_temp3[tid]=u_temp4[tid]-ktmp # Euler starting step
+                        @.. broadcast=false diff1[tid]=u_temp3[tid]-u_temp4[tid]
                         for j in 2:(j_int_temp + 1)
                             f(ktmp, cache.u_temp3[tid], p, t + (j - 1) * dt_int_temp)
-                            @.. broadcast=false linsolvetmp=ktmp -
-                                                            (u_temp3[tid] - u_temp4[tid]) /
-                                                            dt_int_temp
+                            @.. broadcast=false linsolvetmp=ktmp-
+                            (u_temp3[tid]-u_temp4[tid])/
+                            dt_int_temp
 
                             linsolve = cache.linsolve[tid]
 
@@ -2734,19 +2725,19 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                             end
                             cache.linsolve[tid] = linres.cache
 
-                            @.. broadcast=false T[index + 1]=2 * u_temp3[tid] -
-                                                             u_temp4[tid] - 2 * ktmp # Explicit Midpoint rule
+                            @.. broadcast=false T[index + 1]=2*u_temp3[tid]-
+                            u_temp4[tid]-2*ktmp # Explicit Midpoint rule
                             if (j == j_int_temp + 1)
-                                @.. broadcast=false T[index + 1]=0.5(T[index + 1] +
-                                                                     u_temp4[tid])
+                                @.. broadcast=false T[index + 1]=0.5(T[index + 1]+
+                                u_temp4[tid])
                             end
                             @.. broadcast=false u_temp4[tid]=u_temp3[tid]
                             @.. broadcast=false u_temp3[tid]=T[index + 1]
                             if (index <= 1)
                                 # Deuflhard Stability check for initial two sequences
-                                @.. broadcast=false diff2[tid]=u_temp3[tid] - u_temp4[tid]
-                                @.. broadcast=false diff2[tid]=0.5 *
-                                                               (diff2[tid] - diff1[tid])
+                                @.. broadcast=false diff2[tid]=u_temp3[tid]-u_temp4[tid]
+                                @.. broadcast=false diff2[tid]=0.5*
+                                (diff2[tid]-diff1[tid])
                                 if (integrator.opts.internalnorm(diff1[tid], t) <
                                     integrator.opts.internalnorm(diff2[tid], t))
                                     # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -2754,7 +2745,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                                     return
                                 end
                             end
-                            @.. broadcast=false diff1[tid]=u_temp3[tid] - u_temp4[tid]
+                            @.. broadcast=false diff1[tid]=u_temp3[tid]-u_temp4[tid]
                         end
                     end
                     integrator.force_stepfail ? break : continue
@@ -2782,8 +2773,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             for j in 2:(i + 1)
                 @.. broadcast=false u_temp2+=cache.T[j] * extrapolation_weights_2[j - 1, i]
             end
-            @.. broadcast=false integrator.u=extrapolation_scalars[i + 1] * u_temp1
-            @.. broadcast=false cache.utilde=extrapolation_scalars_2[i] * u_temp2
+            @.. broadcast=false integrator.u=extrapolation_scalars[i + 1]*u_temp1
+            @.. broadcast=false cache.utilde=extrapolation_scalars_2[i]*u_temp2
 
             calculate_residuals!(cache.res, integrator.u, cache.utilde,
                 integrator.opts.abstol, integrator.opts.reltol,
@@ -2830,11 +2821,11 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                 cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
-                @.. broadcast=false u_temp1=u_temp2 - k # Euler starting step
+                @.. broadcast=false u_temp1=u_temp2-k # Euler starting step
                 for j in 2:(j_int + 1)
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                    @.. broadcast=false linsolve_tmps[1]=k - (u_temp1 - u_temp2) / dt_int
+                    @.. broadcast=false linsolve_tmps[1]=k-(u_temp1-u_temp2)/dt_int
 
                     linsolve = cache.linsolve[1]
 
@@ -2848,9 +2839,9 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                     cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
-                    @.. broadcast=false T[n_curr + 1]=2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
+                    @.. broadcast=false T[n_curr + 1]=2*u_temp1-u_temp2-2*k # Explicit Midpoint rule
                     if (j == j_int + 1)
-                        @.. broadcast=false T[n_curr + 1]=0.5(T[n_curr + 1] + u_temp2)
+                        @.. broadcast=false T[n_curr + 1]=0.5(T[n_curr + 1]+u_temp2)
                     end
                     @.. broadcast=false u_temp2=u_temp1
                     @.. broadcast=false u_temp1=T[n_curr + 1]
@@ -2870,8 +2861,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                     @.. broadcast=false u_temp2+=cache.T[j] *
                                                  extrapolation_weights_2[j - 1, n_curr]
                 end
-                @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1] * u_temp1
-                @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr] * u_temp2
+                @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1]*u_temp1
+                @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr]*u_temp2
 
                 calculate_residuals!(cache.res, integrator.u, cache.utilde,
                     integrator.opts.abstol, integrator.opts.reltol,
@@ -2890,7 +2881,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         for j in 1:(n_curr + 1)
             @.. broadcast=false u_temp1+=cache.T[j] * extrapolation_weights[j, (n_curr + 1)]
         end
-        @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1] * u_temp1
+        @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1]*u_temp1
     end
 
     f(cache.k, integrator.u, p, t + dt) # Update FSAL
@@ -2989,8 +2980,7 @@ function perform_step!(integrator,
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp2 = u_temp2,
-                u_temp2 = u_temp2, p = p, t = t, T = T
+                dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -3036,8 +3026,7 @@ function perform_step!(integrator,
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt,
-                integrator = integrator, p = p, t = t, T = T
+                dt = dt, integrator = integrator, p = p, t = t, T = T
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -3242,8 +3231,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             cache.linsolve[1] = linres.cache
 
             integrator.stats.nsolve += 1
-            @.. broadcast=false u_temp1=u_temp2 - k # Euler starting step
-            @.. broadcast=false diff1[1]=u_temp1 - u_temp2
+            @.. broadcast=false u_temp1=u_temp2-k # Euler starting step
+            @.. broadcast=false diff1[1]=u_temp1-u_temp2
             for j in 2:(j_int + 1)
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -3260,16 +3249,16 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                 cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
-                @.. broadcast=false T[i + 1]=u_temp1 - k
+                @.. broadcast=false T[i + 1]=u_temp1-k
                 if (j == j_int + 1)
-                    @.. broadcast=false T[i + 1]=0.25(T[i + 1] + 2 * u_temp1 + u_temp2)
+                    @.. broadcast=false T[i + 1]=0.25(T[i + 1]+2*u_temp1+u_temp2)
                 end
                 @.. broadcast=false u_temp2=u_temp1
                 @.. broadcast=false u_temp1=T[i + 1]
                 if (i <= 1)
                     # Deuflhard Stability check for initial two sequences
-                    @.. broadcast=false diff2[1]=u_temp1 - u_temp2
-                    @.. broadcast=false diff2[1]=0.5 * (diff2[1] - diff1[1])
+                    @.. broadcast=false diff2[1]=u_temp1-u_temp2
+                    @.. broadcast=false diff2[1]=0.5*(diff2[1]-diff1[1])
                     if (integrator.opts.internalnorm(diff1[1], t) <
                         integrator.opts.internalnorm(diff2[1], t))
                         # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -3277,7 +3266,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                         return
                     end
                 end
-                @.. broadcast=false diff1[1]=u_temp1 - u_temp2
+                @.. broadcast=false diff1[1]=u_temp1-u_temp2
             end
         end
     else
@@ -3288,8 +3277,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp3 = u_temp3,
-                u_temp4 = u_temp4, k_tmps = k_tmps, p = p, t = t, T = T
+                dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
+                t = t, T = T
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -3318,10 +3307,10 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                         cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast=false k_tmps[Threads.threadid()]=-k_tmps[Threads.threadid()]
-                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] -
-                                                                        k_tmps[Threads.threadid()] # Euler starting step
-                        @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                      u_temp4[Threads.threadid()]
+                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()]-
+                        k_tmps[Threads.threadid()] # Euler starting step
+                        @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                        u_temp4[Threads.threadid()]
                         for j in 2:(j_int_temp + 1)
                             f(k_tmps[Threads.threadid()],
                                 cache.u_temp3[Threads.threadid()],
@@ -3342,23 +3331,23 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
-                            @.. broadcast=false T[index + 1]=u_temp3[Threads.threadid()] -
-                                                             k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                            @.. broadcast=false T[index + 1]=u_temp3[Threads.threadid()]-
+                            k_tmps[Threads.threadid()] # Explicit Midpoint rule
                             if (j == j_int_temp + 1)
-                                @.. broadcast=false T[index + 1]=0.25(T[index + 1] +
-                                                                      2 *
-                                                                      u_temp3[Threads.threadid()] +
+                                @.. broadcast=false T[index + 1]=0.25(T[index + 1]+
+                                                                      2*
+                                u_temp3[Threads.threadid()]+
                                                                       u_temp4[Threads.threadid()])
                             end
                             @.. broadcast=false u_temp4[Threads.threadid()]=u_temp3[Threads.threadid()]
                             @.. broadcast=false u_temp3[Threads.threadid()]=T[index + 1]
                             if (index <= 1)
                                 # Deuflhard Stability check for initial two sequences
-                                @.. broadcast=false diff2[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                              u_temp4[Threads.threadid()]
-                                @.. broadcast=false diff2[Threads.threadid()]=0.5 *
-                                                                              (diff2[Threads.threadid()] -
-                                                                               diff1[Threads.threadid()])
+                                @.. broadcast=false diff2[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                                u_temp4[Threads.threadid()]
+                                @.. broadcast=false diff2[Threads.threadid()]=0.5*
+                                (diff2[Threads.threadid()]-
+                                diff1[Threads.threadid()])
                                 if (integrator.opts.internalnorm(diff1[Threads.threadid()],
                                     t) <
                                     integrator.opts.internalnorm(diff2[Threads.threadid()],
@@ -3368,8 +3357,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                                     return
                                 end
                             end
-                            @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                          u_temp4[Threads.threadid()]
+                            @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                            u_temp4[Threads.threadid()]
                         end
                     end
                     integrator.force_stepfail ? break : continue
@@ -3377,8 +3366,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                dt = dt, u_temp3 = u_temp3,
-                u_temp4 = u_temp4, k_tmps = k_tmps, p = p, t = t, T = T
+                dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
+                t = t, T = T
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -3405,10 +3394,10 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                         end
                         cache.linsolve[Threads.threadid()] = linres.cache
 
-                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()] -
-                                                                        k_tmps[Threads.threadid()] # Euler starting step
-                        @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                      u_temp4[Threads.threadid()]
+                        @.. broadcast=false u_temp3[Threads.threadid()]=u_temp4[Threads.threadid()]-
+                        k_tmps[Threads.threadid()] # Euler starting step
+                        @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                        u_temp4[Threads.threadid()]
                         for j in 2:(j_int_temp + 1)
                             f(k_tmps[Threads.threadid()],
                                 cache.u_temp3[Threads.threadid()],
@@ -3429,23 +3418,23 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
-                            @.. broadcast=false T[index + 1]=u_temp3[Threads.threadid()] -
-                                                             k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                            @.. broadcast=false T[index + 1]=u_temp3[Threads.threadid()]-
+                            k_tmps[Threads.threadid()] # Explicit Midpoint rule
                             if (j == j_int_temp + 1)
-                                @.. broadcast=false T[index + 1]=0.25(T[index + 1] +
-                                                                      2 *
-                                                                      u_temp3[Threads.threadid()] +
+                                @.. broadcast=false T[index + 1]=0.25(T[index + 1]+
+                                                                      2*
+                                u_temp3[Threads.threadid()]+
                                                                       u_temp4[Threads.threadid()])
                             end
                             @.. broadcast=false u_temp4[Threads.threadid()]=u_temp3[Threads.threadid()]
                             @.. broadcast=false u_temp3[Threads.threadid()]=T[index + 1]
                             if (index <= 1)
                                 # Deuflhard Stability check for initial two sequences
-                                @.. broadcast=false diff2[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                              u_temp4[Threads.threadid()]
-                                @.. broadcast=false diff2[Threads.threadid()]=0.5 *
-                                                                              (diff2[Threads.threadid()] -
-                                                                               diff1[Threads.threadid()])
+                                @.. broadcast=false diff2[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                                u_temp4[Threads.threadid()]
+                                @.. broadcast=false diff2[Threads.threadid()]=0.5*
+                                (diff2[Threads.threadid()]-
+                                diff1[Threads.threadid()])
                                 if (integrator.opts.internalnorm(diff1[Threads.threadid()],
                                     t) <
                                     integrator.opts.internalnorm(diff2[Threads.threadid()],
@@ -3455,8 +3444,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                                     return
                                 end
                             end
-                            @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
-                                                                          u_temp4[Threads.threadid()]
+                            @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()]-
+                            u_temp4[Threads.threadid()]
                         end
                     end
                     integrator.force_stepfail ? break : continue
@@ -3484,8 +3473,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             for j in 2:(i + 1)
                 @.. broadcast=false u_temp2+=cache.T[j] * extrapolation_weights_2[j - 1, i]
             end
-            @.. broadcast=false integrator.u=extrapolation_scalars[i + 1] * u_temp1
-            @.. broadcast=false cache.utilde=extrapolation_scalars_2[i] * u_temp2
+            @.. broadcast=false integrator.u=extrapolation_scalars[i + 1]*u_temp1
+            @.. broadcast=false cache.utilde=extrapolation_scalars_2[i]*u_temp2
 
             calculate_residuals!(cache.res, integrator.u, cache.utilde,
                 integrator.opts.abstol, integrator.opts.reltol,
@@ -3535,7 +3524,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
                 integrator.stats.nsolve += 1
                 @.. broadcast=false k=-k
-                @.. broadcast=false u_temp1=u_temp2 + k # Euler starting step
+                @.. broadcast=false u_temp1=u_temp2+k # Euler starting step
                 for j in 2:(j_int + 1)
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -3547,9 +3536,9 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                     cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
-                    @.. broadcast=false T[n_curr + 1]=u_temp1 - k # Explicit Midpoint rule
+                    @.. broadcast=false T[n_curr + 1]=u_temp1-k # Explicit Midpoint rule
                     if (j == j_int + 1)
-                        @.. broadcast=false T[n_curr + 1]=0.25(T[n_curr + 1] + 2 * u_temp1 +
+                        @.. broadcast=false T[n_curr + 1]=0.25(T[n_curr + 1]+2*u_temp1+
                                                                u_temp2)
                     end
                     @.. broadcast=false u_temp2=u_temp1
@@ -3570,8 +3559,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                     @.. broadcast=false u_temp2+=cache.T[j] *
                                                  extrapolation_weights_2[j - 1, n_curr]
                 end
-                @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1] * u_temp1
-                @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr] * u_temp2
+                @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1]*u_temp1
+                @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr]*u_temp2
 
                 calculate_residuals!(cache.res, integrator.u, cache.utilde,
                     integrator.opts.abstol, integrator.opts.reltol,
@@ -3590,7 +3579,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         for j in 1:(n_curr + 1)
             @.. broadcast=false u_temp1+=cache.T[j] * extrapolation_weights[j, (n_curr + 1)]
         end
-        @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1] * u_temp1
+        @.. broadcast=false integrator.u=extrapolation_scalars[n_curr + 1]*u_temp1
     end
 
     f(cache.k, integrator.u, p, t + dt) # Update FSAL

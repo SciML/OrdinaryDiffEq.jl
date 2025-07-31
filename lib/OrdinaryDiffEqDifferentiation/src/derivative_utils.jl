@@ -41,15 +41,16 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
                 tf.p = p
                 alg = unwrap_alg(integrator, true)
 
-                autodiff_alg = ADTypes.dense_ad(gpu_safe_autodiff(alg_autodiff(alg),u))
+                autodiff_alg = ADTypes.dense_ad(gpu_safe_autodiff(alg_autodiff(alg), u))
 
                 # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers work 
-                t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT),t) : t
+                t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT), t) : t
 
                 grad_config_tup = cache.grad_config
 
                 if autodiff_alg isa AutoFiniteDiff
-                    grad_config = diffdir(integrator) > 0 ? grad_config_tup[1] : grad_config_tup[2]
+                    grad_config = diffdir(integrator) > 0 ? grad_config_tup[1] :
+                                  grad_config_tup[2]
                 else
                     grad_config = grad_config_tup[1]
                 end
@@ -64,12 +65,12 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
                 else
                     DI.derivative!(tf, linsolve_tmp, dT, grad_config, autodiff_alg, t)
                 end
-                
+
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             end
         end
 
-        @.. broadcast=false linsolve_tmp=fsalfirst + dtd1 * dT
+        @.. broadcast=false linsolve_tmp=fsalfirst+dtd1*dT
     end
 end
 
@@ -84,14 +85,14 @@ function calc_tderivative(integrator, cache)
         tf.u = uprev
         tf.p = p
 
-        autodiff_alg = ADTypes.dense_ad(gpu_safe_autodiff(alg_autodiff(alg),u))
+        autodiff_alg = ADTypes.dense_ad(gpu_safe_autodiff(alg_autodiff(alg), u))
 
         if alg_autodiff isa AutoFiniteDiff
             autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
         end
-        
-        if integrator.iter == 1 
-            try 
+
+        if integrator.iter == 1
+            try
                 dT = DI.derivative(tf, autodiff_alg, t)
             catch e
                 throw(FirstAutodiffTgradError(e))
@@ -99,7 +100,7 @@ function calc_tderivative(integrator, cache)
         else
             dT = DI.derivative(tf, autodiff_alg, t)
         end
-           
+
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
     dT
@@ -177,9 +178,8 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
 
             # we need to set all nzval to a non-zero number
             # otherwise in the following line any zero gets interpreted as a structural zero
-            if !isnothing(integrator.f.jac_prototype) && 
-                integrator.f.jac_prototype isa SparseMatrixCSC
-
+            if !isnothing(integrator.f.jac_prototype) &&
+               integrator.f.jac_prototype isa SparseMatrixCSC
                 integrator.f.jac_prototype.nzval .= true
                 J .= true .* integrator.f.jac_prototype
                 J.nzval .= false
@@ -204,12 +204,11 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             # otherwise in the following line any zero gets interpreted as a structural zero
             if !isnothing(integrator.f.jac_prototype) &&
                integrator.f.jac_prototype isa SparseMatrixCSC
-               
                 integrator.f.jac_prototype.nzval .= true
                 J .= true .* integrator.f.jac_prototype
                 J.nzval .= false
                 f.jac(J, uprev, p, t)
-            else 
+            else
                 f.jac(J, uprev, p, t)
             end
         else
@@ -415,7 +414,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
         a = -W.mass_matrix.λ / W.gamma
-        @.. broadcast=false Y=a * B
+        @.. broadcast=false Y=a*B
     else
         mul!(_vec(Y), W.mass_matrix, _vec(B))
         lmul!(-inv(W.gamma), Y)
@@ -683,7 +682,7 @@ end
             W = J
         else
             W = J - mass_matrix * inv(dtgamma)
-            
+
             if !isa(W, Number)
                 W = DiffEqBase.default_factorize(W)
             end
@@ -823,9 +822,9 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
             end
         elseif f.jac_prototype === nothing
             if alg_autodiff(alg) isa AutoSparse
-
                 if isnothing(f.sparsity)
-                    !isnothing(jac_config) ? convert.(eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config[1])) :
+                    !isnothing(jac_config) ?
+                    convert.(eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config[1])) :
                     spzeros(eltype(u), length(u), length(u))
                 elseif eltype(f.sparsity) == Bool
                     convert.(eltype(u), f.sparsity)
@@ -906,13 +905,15 @@ function resize_J_W!(cache, integrator, i)
         islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
         if !islin
             if cache.J isa AbstractSciMLOperator
-                resize_JVPCache!(cache.J, f, cache.du1, integrator.u, alg_autodiff(integrator.alg))
+                resize_JVPCache!(
+                    cache.J, f, cache.du1, integrator.u, alg_autodiff(integrator.alg))
             elseif f.jac_prototype !== nothing
                 J = similar(f.jac_prototype, i, i)
                 J = MatrixOperator(J; update_func! = f.jac)
             end
             if cache.W.jacvec isa AbstractSciMLOperator
-                resize_JVPCache!(cache.W.jacvec, f, cache.du1, integrator.u, alg_autodiff(integrator.alg))
+                resize_JVPCache!(cache.W.jacvec, f, cache.du1, integrator.u,
+                    alg_autodiff(integrator.alg))
             end
             cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(f.mass_matrix,
                 integrator.dt,

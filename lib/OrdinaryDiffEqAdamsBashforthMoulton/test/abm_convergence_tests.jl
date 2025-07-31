@@ -8,7 +8,9 @@ dts1 = 1 .// 2 .^ (9:-1:5)
 dts = 1 .// 2 .^ (8:-1:4)
 testTol = 0.2
 
-@testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
+@testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in
+                                                                                      1:2
+
     prob = (ODEProblemLibrary.prob_ode_linear,
         ODEProblemLibrary.prob_ode_2Dlinear)[i]
 
@@ -38,7 +40,9 @@ testTol = 0.2
     @test sim106.𝒪est[:l2]≈5 atol=testTol
 end
 
-@testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i])) - threaded " for i in 1:2
+@testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i])) - threaded " for i in
+                                                                                                  1:2
+
     prob = (ODEProblemLibrary.prob_ode_linear,
         ODEProblemLibrary.prob_ode_2Dlinear)[i]
 
