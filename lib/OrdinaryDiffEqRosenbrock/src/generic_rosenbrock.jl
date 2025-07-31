@@ -1167,6 +1167,16 @@ references = """
 """,
 with_step_limiter=true) Rodas5Pe
 
+@doc rosenbrock_wolfbrandt_docstring(
+"""
+A 6th order A-stable stiffly stable Rosenbrock method with a stiff-aware 5th order interpolant.
+""",
+"Rodas6P",
+references = """
+- Steinebach G. Construction of Rosenbrock–Wanner method Rodas6P, to prepare
+""",
+with_step_limiter=true) Rodas6P
+
 @doc rosenbrock_docstring(
 """
 An efficient 4th order Rosenbrock method.
