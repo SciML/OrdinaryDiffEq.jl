@@ -23,7 +23,7 @@
                 sk[i] = abstol + internalnorm(u0[i], t) * reltol
             end
         else
-            @.. broadcast=false sk=abstol + internalnorm(u0, t) * reltol
+            @.. broadcast=false sk=abstol+internalnorm(u0, t)*reltol
         end
     else
         if u0 isa Array && abstol isa Number && reltol isa Number
@@ -119,7 +119,7 @@
             tmp[i] = f₀[i] / sk[i] * oneunit_tType
         end
     else
-        @.. broadcast=false tmp=f₀ / sk * oneunit_tType
+        @.. broadcast=false tmp=f₀/sk*oneunit_tType
     end
 
     d₁ = internalnorm(tmp, t)
@@ -131,7 +131,7 @@
         if integrator.opts.verbose
             @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
         end
-        
+
         return tdir * dtmin
     end
 
@@ -162,7 +162,7 @@
             u₁[i] = u0[i] + dt₀_tdir * f₀[i]
         end
     else
-        @.. broadcast=false u₁=u0 + dt₀_tdir * f₀
+        @.. broadcast=false u₁=u0+dt₀_tdir*f₀
     end
     f₁ = zero(f₀)
     f(f₁, u₁, p, t + dt₀_tdir)
@@ -183,7 +183,7 @@
             tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
         end
     else
-        @.. broadcast=false tmp=(f₁ - f₀) / sk * oneunit_tType
+        @.. broadcast=false tmp=(f₁-f₀)/sk*oneunit_tType
     end
 
     d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType

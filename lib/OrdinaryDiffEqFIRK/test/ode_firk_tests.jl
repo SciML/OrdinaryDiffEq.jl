@@ -26,6 +26,7 @@ prob_ode_2Dlinear_big = remake(prob_ode_2Dlinear, u0 = big.(prob_ode_2Dlinear.u0
 
 #non-threaded tests
 for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
+
     dts = 1 ./ 2 .^ (4.25:-1:0.25)
     local sim21 = test_convergence(dts, prob, AdaptiveRadau(min_order = i, max_order = i), dense_errors = true)
     @test sim21.𝒪est[:final] ≈ i atol=testTol
@@ -35,8 +36,11 @@ end
 #threaded tests
 using OrdinaryDiffEqCore
 for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
+
     dts = 1 ./ 2 .^ (4.25:-1:0.25)
-    local sim21 = test_convergence(dts, prob, AdaptiveRadau(min_order = i, max_order = i, threading = OrdinaryDiffEqCore.PolyesterThreads()))
+    local sim21 = test_convergence(dts,
+        prob,
+        AdaptiveRadau(min_order = i, max_order = i, threading = OrdinaryDiffEqCore.PolyesterThreads()))
     @test sim21.𝒪est[:final] ≈ i atol=testTol
 end
 
@@ -44,7 +48,8 @@ sys = prob_ode_vanderpol.f.sys
 
 # test adaptivity
 for iip in (true, false)
-    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (0.0, 1.0))
+    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (
+        0.0, 1.0))
     sol = solve(vanstiff, RadauIIA5())
     if iip
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
@@ -80,7 +85,8 @@ end
 
 # test adaptivity
 for iip in (true, false)
-    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (0.0, 1.0))
+    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (
+        0.0, 1.0))
     sol = solve(vanstiff, RadauIIA3())
     if iip
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse

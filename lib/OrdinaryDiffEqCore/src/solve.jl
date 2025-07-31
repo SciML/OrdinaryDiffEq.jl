@@ -23,13 +23,13 @@ function DiffEqBase.__init(
         save_everystep = isempty(saveat),
         save_on = true,
         save_start = save_everystep || isempty(saveat) ||
-                         saveat isa Number || prob.tspan[1] in saveat,
+                     saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
         callback = nothing,
         dense = save_everystep && isempty(saveat) &&
-                    !default_linear_interpolation(prob, alg),
+                !default_linear_interpolation(prob, alg),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
-                    (dense) || !isempty(saveat), # and no dense output
+                (dense) || !isempty(saveat), # and no dense output
         dt = isdiscretealg(alg) && isempty(tstops) ?
              eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
         dtmin = eltype(prob.tspan)(0),
@@ -318,7 +318,8 @@ function DiffEqBase.__init(
     end
 
     ### Algorithm-specific defaults ###
-    save_idxs, saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
+    save_idxs,
+    saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
         prob, save_idxs)
 
     if save_idxs === nothing
@@ -561,7 +562,8 @@ function DiffEqBase.__init(
         fsalfirst, fsallast)
 
     if initialize_integrator
-        if isdae || SciMLBase.has_initializeprob(prob.f) || prob isa SciMLBase.ImplicitDiscreteProblem
+        if isdae || SciMLBase.has_initializeprob(prob.f) ||
+           prob isa SciMLBase.ImplicitDiscreteProblem
             DiffEqBase.initialize_dae!(integrator)
             !isnothing(integrator.u) && update_uprev!(integrator)
         end

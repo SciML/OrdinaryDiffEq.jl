@@ -222,7 +222,10 @@ function alg_cache(alg::NorsettEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz = (zero(u) for i in 1:2)                # uType caches
     rtmp, G, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
     plist = (1,)
-    uf, jac_config, J, phihA, KsCache = alg_cache_expRK(
+    uf, jac_config,
+    J,
+    phihA,
+    KsCache = alg_cache_expRK(
         alg, u, uEltypeNoUnits, uprev, f, t,
         dt, p, du1, tmp, dz, plist) # other caches
     NorsettEulerCache(u, uprev, tmp, dz, rtmp, G, du1, jac_config, uf, J, phihA, KsCache)
@@ -251,7 +254,10 @@ function alg_cache(alg::ETDRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz = (zero(u) for i in 1:2)                 # uType caches
     rtmp, F2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
     plist = (2, 2)
-    uf, jac_config, J, ops, KsCache = alg_cache_expRK(alg, u, uEltypeNoUnits, uprev, f, t,
+    uf, jac_config,
+    J,
+    ops,
+    KsCache = alg_cache_expRK(alg, u, uEltypeNoUnits, uprev, f, t,
         dt, p, du1, tmp, dz, plist) # other caches
     ETDRK2Cache(u, uprev, tmp, dz, rtmp, F2, du1, jac_config, uf, J, ops, KsCache)
 end
@@ -281,7 +287,10 @@ function alg_cache(alg::ETDRK3, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz = (zero(u) for i in 1:2)                         # uType caches
     rtmp, Au, F2, F3, du1 = (zero(rate_prototype) for i in 1:5) # rateType caches
     plist = (1, 3, 3, 3)
-    uf, jac_config, J, ops, KsCache = alg_cache_expRK(alg, u, uEltypeNoUnits, uprev, f, t,
+    uf, jac_config,
+    J,
+    ops,
+    KsCache = alg_cache_expRK(alg, u, uEltypeNoUnits, uprev, f, t,
         dt, p, du1, tmp, dz, plist) # other caches
     ETDRK3Cache(u, uprev, tmp, dz, rtmp, Au, F2, F3, du1, jac_config, uf, J, ops, KsCache)
 end
@@ -312,7 +321,10 @@ function alg_cache(alg::ETDRK4, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz = (zero(u) for i in 1:2)                             # uType caches
     rtmp, Au, F2, F3, F4, du1 = (zero(rate_prototype) for i in 1:6) # rateType caches
     plist = (1, 1, 3, 3, 3, 3)
-    uf, jac_config, J, ops, KsCache = alg_cache_expRK(alg, u, uEltypeNoUnits, uprev, f, t,
+    uf, jac_config,
+    J,
+    ops,
+    KsCache = alg_cache_expRK(alg, u, uEltypeNoUnits, uprev, f, t,
         dt, p, du1, tmp, dz, plist) # other caches
     ETDRK4Cache(u, uprev, tmp, dz, rtmp, Au, F2, F3, F4, du1, jac_config, uf, J, ops,
         KsCache)
@@ -346,7 +358,10 @@ function alg_cache(alg::HochOst4, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz = (zero(u) for i in 1:2)                                        # uType caches
     rtmp, rtmp2, Au, F2, F3, F4, F5, du1 = (zero(rate_prototype) for i in 1:8) # rateType caches
     plist = (3, 3, 3, 3, 3, 3, 3, 3, 3)
-    uf, jac_config, J, ops, KsCache = alg_cache_expRK(alg, u, uEltypeNoUnits, uprev, f, t,
+    uf, jac_config,
+    J,
+    ops,
+    KsCache = alg_cache_expRK(alg, u, uEltypeNoUnits, uprev, f, t,
         dt, p, du1, tmp, dz, plist) # other caches
     HochOst4Cache(u, uprev, tmp, dz, rtmp, rtmp2, Au, F2, F3, F4, F5, du1, jac_config, uf,
         J, ops, KsCache)
@@ -797,7 +812,9 @@ function alg_cache(alg::Exprb32, u, rate_prototype, ::Type{uEltypeNoUnits},
     utilde, tmp, dz = (zero(u) for i in 1:3)         # uType caches
     rtmp, F2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
     plist = (3, 3)
-    uf, jac_config, J, KsCache = alg_cache_exprb(alg, u, uEltypeNoUnits, uprev, f, t, p,
+    uf, jac_config,
+    J,
+    KsCache = alg_cache_exprb(alg, u, uEltypeNoUnits, uprev, f, t, p,
         du1, tmp, dz, plist) # other caches
     Exprb32Cache(u, uprev, utilde, tmp, dz, rtmp, F2, du1, jac_config, uf, J, KsCache)
 end
@@ -825,7 +842,9 @@ function alg_cache(alg::Exprb43, u, rate_prototype, ::Type{uEltypeNoUnits},
     utilde, tmp, dz = (zero(u) for i in 1:3)                 # uType caches
     rtmp, Au, F2, F3, du1 = (zero(rate_prototype) for i in 1:5) # rateType caches
     plist = (1, 4, 4, 4)
-    uf, jac_config, J, KsCache = alg_cache_exprb(alg, u, uEltypeNoUnits, uprev, f, t, p,
+    uf, jac_config,
+    J,
+    KsCache = alg_cache_exprb(alg, u, uEltypeNoUnits, uprev, f, t, p,
         du1, tmp, dz, plist) # other caches
     Exprb43Cache(u, uprev, utilde, tmp, dz, rtmp, Au, F2, F3, du1, jac_config, uf, J,
         KsCache)
