@@ -113,7 +113,7 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
     # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
     dense = gpu_safe_autodiff(dense, x)
     
-    autodiff_alg = alg_autodiff(alg)
+    autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg), x)
 
     if alg_autodiff(alg) isa AutoSparse
         autodiff_alg = SciMLBase.@set autodiff_alg.dense_ad = dense
@@ -161,7 +161,7 @@ function jacobian(f, x, integrator)
     # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
     dense = gpu_safe_autodiff(dense, x)
 
-    autodiff_alg = alg_autodiff(alg)
+    autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg), x)
 
     if autodiff_alg isa AutoSparse
         autodiff_alg = SciMLBase.@set autodiff_alg.dense_ad = dense
@@ -224,12 +224,12 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
 
     if integrator.iter == 1
         try
-            DI.jacobian!(f, fx, J, config, alg_autodiff(alg), x)
+            DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
         catch e
             throw(FirstAutodiffJacError(e))
         end
     else
-        DI.jacobian!(f, fx, J, config, alg_autodiff(alg), x)
+        DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
     end
 
     nothing
@@ -258,11 +258,8 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
             end
         end
 
-        autodiff_alg = alg_autodiff(alg)
+        autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg),u)
         dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
-        
-        # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
-        dense = gpu_safe_autodiff(dense, u)
 
         if dense isa AutoFiniteDiff
             dir_forward = @set dense.dir = 1
