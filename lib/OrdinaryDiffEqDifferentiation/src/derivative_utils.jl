@@ -41,7 +41,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
                 tf.p = p
                 alg = unwrap_alg(integrator, true)
 
-                autodiff_alg = ADTypes.dense_ad(alg_autodiff(alg))
+                autodiff_alg = ADTypes.dense_ad(gpu_safe_autodiff(alg_autodiff(alg),u))
 
                 # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers work 
                 t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT),t) : t
@@ -84,7 +84,7 @@ function calc_tderivative(integrator, cache)
         tf.u = uprev
         tf.p = p
 
-        autodiff_alg = ADTypes.dense_ad(alg_autodiff(alg))
+        autodiff_alg = ADTypes.dense_ad(gpu_safe_autodiff(alg_autodiff(alg),u))
 
         if alg_autodiff isa AutoFiniteDiff
             autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)

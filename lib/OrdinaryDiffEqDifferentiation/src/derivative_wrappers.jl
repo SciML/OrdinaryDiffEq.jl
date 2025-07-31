@@ -110,7 +110,10 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
         dense = SciMLBase.@set dense.dir = diffdir(integrator)
     end
 
-    autodiff_alg = alg_autodiff(alg)
+    # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
+    dense = gpu_safe_autodiff(dense, x)
+    
+    autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg), x)
 
     if alg_autodiff(alg) isa AutoSparse
         autodiff_alg = SciMLBase.@set autodiff_alg.dense_ad = dense
@@ -155,7 +158,10 @@ function jacobian(f, x, integrator)
         dense = SciMLBase.@set dense.dir = diffdir(integrator)
     end
 
-    autodiff_alg = alg_autodiff(alg)
+    # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
+    dense = gpu_safe_autodiff(dense, x)
+
+    autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg), x)
 
     if autodiff_alg isa AutoSparse
         autodiff_alg = SciMLBase.@set autodiff_alg.dense_ad = dense
@@ -218,12 +224,12 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
 
     if integrator.iter == 1
         try
-            DI.jacobian!(f, fx, J, config, alg_autodiff(alg), x)
+            DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
         catch e
             throw(FirstAutodiffJacError(e))
         end
     else
-        DI.jacobian!(f, fx, J, config, alg_autodiff(alg), x)
+        DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
     end
 
     nothing
@@ -252,7 +258,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
             end
         end
 
-        autodiff_alg = alg_autodiff(alg)
+        autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg),u)
         dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
 
         if dense isa AutoFiniteDiff
@@ -337,9 +343,31 @@ function resize_grad_config!(cache, integrator)
     cache.grad_config
 end
 
+"""
+    gpu_safe_autodiff(backend, u)
+
+Automatically wrap AutoForwardDiff with AutoForwardFromPrimitive for GPU arrays
+that don't support fast scalar indexing (e.g., GPU arrays).
+"""
+function gpu_safe_autodiff(backend::AutoForwardDiff, u)
+    if ArrayInterface.fast_scalar_indexing(u)
+        # CPU arrays with fast scalar indexing - use original backend
+        return backend
+    else
+        # GPU arrays or arrays without fast scalar indexing - use primitive wrapper
+        return DI.AutoForwardFromPrimitive(backend)
+    end
+end
+
+# Fallback for other AD backends
+gpu_safe_autodiff(backend, u) = backend
+
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     if !DiffEqBase.has_tgrad(f)
-        ad = ADTypes.dense_ad(alg_autodiff(alg)) 
+        ad = ADTypes.dense_ad(alg_autodiff(alg))
+        
+        # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
+        ad = gpu_safe_autodiff(ad, du1)
 
         if ad isa AutoFiniteDiff
             dir_true = @set ad.dir = 1
