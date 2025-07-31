@@ -92,6 +92,7 @@ PrecompileTools.@compile_workload begin
     end
 
     for prob in prob_list, solver in solver_list
+
         solve(prob, solver)(5.0)
     end
 
