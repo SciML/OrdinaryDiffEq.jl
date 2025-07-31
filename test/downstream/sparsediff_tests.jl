@@ -70,8 +70,7 @@ for f in [f_oop, f_ip]
     for ad in adchoices, linsolve in [nothing, LinearSolve.KrylovJL_GMRES()]
         for Solver in [Rodas5, Rosenbrock23, Trapezoid, KenCarp4, FBDF]
             for tol in [nothing, 1e-10]
-                sol_std = solve(prob_std, Solver(autodiff = ad, linsolve = linsolve),
-                    reltol = tol, abstol = tol)
+                sol_std = solve(prob_std, Solver(autodiff = ad, linsolve = linsolve), reltol = tol, abstol = tol)
                 @test sol_std.retcode == ReturnCode.Success
                 for (i, prob) in enumerate(map(f -> ODEProblem(f, u0, tspan),
                     [
@@ -83,8 +82,7 @@ for f in [f_oop, f_ip]
                         ODEFunction(f, colorvec = colors,
                             sparsity = jac_sp)
                     ]))
-                    sol = solve(prob, Solver(autodiff = ad, linsolve = linsolve),
-                        reltol = tol, abstol = tol)
+                    sol = solve(prob, Solver(autodiff = ad, linsolve = linsolve), reltol = tol, abstol = tol)
                     @test sol.retcode == ReturnCode.Success
                     if tol != nothing
                         @test sol_std.u[end]≈sol.u[end] atol=tol
@@ -120,3 +118,4 @@ jac_prototype = sparse(Diagonal(vcat(1, zeros(9))))
 fun = ODEFunction(f; jac, jac_prototype)
 prob = ODEProblem(fun, u0, (0.0, 1.0))
 @test_nowarn sol = solve(prob, Rodas4(); reltol = 1e-8, abstol = 1e-8)
+
