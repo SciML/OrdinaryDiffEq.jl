@@ -87,24 +87,44 @@ University of Geneva, Switzerland.
 
 =#
 
+# Documentation for Rosenbrock methods with step_limiter
+const ROSENBROCK_STEPL_DOCS = Dict(
+    :Rosenbrock23 => "An Order 2/3 L-Stable Rosenbrock-W method which is good for very stiff equations with oscillations at low tolerances. 2nd order stiff-aware interpolation. Strong stability for highly stiff systems. Good at high tolerances (>1e-2) for stiff problems. Recommended for highly stiff problems, systems with significant oscillations, low tolerance requirements.",
+    :Rosenbrock32 => "A 3/2-order L-stable Rosenbrock-W method optimized for stiff problems. Good balance of accuracy and computational efficiency.",
+    :ROS3P => "A 3rd-order accurate L-stable Rosenbrock method designed for parabolic problems. Particularly effective for reaction-diffusion equations.",
+    :Rodas3 => "A 3rd-order accurate L-stable Rosenbrock method from Hairer and Wanner. Good general-purpose stiff ODE solver with moderate computational cost.",
+    :Rodas23W => "A 2nd/3rd-order accurate L-stable Rosenbrock-Wanner method with enhanced error estimation. Good for stiff problems with discontinuities.",
+    :Rodas3P => "A 3rd-order accurate L-stable Rosenbrock method optimized for DAE problems. Enhanced version of Rodas3 for differential-algebraic equations.",
+    :Rodas4 => "A 4th-order accurate L-stable Rosenbrock method. Well-suited for moderately stiff problems with good efficiency.",
+    :Rodas42 => "A 4th-order accurate L-stable Rosenbrock method with improved error estimation. Enhanced version of Rodas4 for better step size control.",
+    :Rodas4P => "A 4th-order accurate L-stable Rosenbrock method designed for differential-algebraic equations (DAEs). Optimized for index-1 DAE problems.",
+    :Rodas4P2 => "An improved 4th-order accurate L-stable Rosenbrock method for DAEs with enhanced stability properties.",
+    :Rodas5 => "A 5th-order accurate L-stable Rosenbrock method for differential-algebraic problems. Higher accuracy but increased computational cost.",
+    :Rodas5P => "Efficient for medium tolerance stiff problems. A 5th order A-stable and stiffly stable embedded Rosenbrock method for differential-algebraic problems.",
+    :Rodas5Pe => "A 5th-order accurate L-stable Rosenbrock method with enhanced error estimation. Variant of Rodas5P with improved error control.",
+    :Rodas5Pr => "A 5th-order accurate L-stable Rosenbrock method with relaxed error estimation. Variant of Rodas5P for less stringent error control."
+)
+
 # for Rosenbrock methods with step_limiter
-for Alg in [
-    :Rosenbrock23,
-    :Rosenbrock32,
-    :ROS3P,
-    :Rodas3,
-    :Rodas23W,
-    :Rodas3P,
-    :Rodas4,
-    :Rodas42,
-    :Rodas4P,
-    :Rodas4P2,
-    :Rodas5,
-    :Rodas5P,
-    :Rodas5Pe,
-    :Rodas5Pr]
+for (Alg, desc) in [
+    (:Rosenbrock23, ROSENBROCK_STEPL_DOCS[:Rosenbrock23]),
+    (:Rosenbrock32, ROSENBROCK_STEPL_DOCS[:Rosenbrock32]),
+    (:ROS3P, ROSENBROCK_STEPL_DOCS[:ROS3P]),
+    (:Rodas3, ROSENBROCK_STEPL_DOCS[:Rodas3]),
+    (:Rodas23W, ROSENBROCK_STEPL_DOCS[:Rodas23W]),
+    (:Rodas3P, ROSENBROCK_STEPL_DOCS[:Rodas3P]),
+    (:Rodas4, ROSENBROCK_STEPL_DOCS[:Rodas4]),
+    (:Rodas42, ROSENBROCK_STEPL_DOCS[:Rodas42]),
+    (:Rodas4P, ROSENBROCK_STEPL_DOCS[:Rodas4P]),
+    (:Rodas4P2, ROSENBROCK_STEPL_DOCS[:Rodas4P2]),
+    (:Rodas5, ROSENBROCK_STEPL_DOCS[:Rodas5]),
+    (:Rodas5P, ROSENBROCK_STEPL_DOCS[:Rodas5P]),
+    (:Rodas5Pe, ROSENBROCK_STEPL_DOCS[:Rodas5Pe]),
+    (:Rodas5Pr, ROSENBROCK_STEPL_DOCS[:Rodas5Pr])
+]
     @eval begin
-        struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
+        """$($desc)"""
+        Base.@__doc__ struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
             linsolve::F
             precs::P
@@ -128,56 +148,6 @@ for Alg in [
     end
 end
 
-@doc rosenbrock_docstring(
-    "An Order 2/3 L-Stable Rosenbrock-W method which is good for very stiff equations with oscillations at low tolerances. 2nd order stiff-aware interpolation. Strong stability for highly stiff systems. Good at high tolerances (>1e-2) for stiff problems. Recommended for highly stiff problems, systems with significant oscillations, low tolerance requirements.",
-    "Rosenbrock23", with_step_limiter = true)
-Rosenbrock23
-
-@doc rosenbrock_docstring(
-    "Efficient for medium tolerance stiff problems. A 5th order A-stable and stiffly stable embedded Rosenbrock method for differential-algebraic problems.",
-    "Rodas5P", with_step_limiter = true)
-Rodas5P
-
-@doc rosenbrock_docstring(
-    "A 3/2-order L-stable Rosenbrock-W method optimized for stiff problems. Good balance of accuracy and computational efficiency.",
-    "Rosenbrock32", with_step_limiter = true)
-Rosenbrock32
-
-@doc rosenbrock_docstring(
-    "A 3rd-order accurate L-stable Rosenbrock method designed for parabolic problems. Particularly effective for reaction-diffusion equations.",
-    "ROS3P", with_step_limiter = true)
-ROS3P
-
-@doc rosenbrock_docstring(
-    "A 3rd-order accurate L-stable Rosenbrock method from Hairer and Wanner. Good general-purpose stiff ODE solver with moderate computational cost.",
-    "Rodas3", with_step_limiter = true)
-Rodas3
-
-@doc rosenbrock_docstring(
-    "A 4th-order accurate L-stable Rosenbrock method. Well-suited for moderately stiff problems with good efficiency.",
-    "Rodas4", with_step_limiter = true)
-Rodas4
-
-@doc rosenbrock_docstring(
-    "A 4th-order accurate L-stable Rosenbrock method with improved error estimation. Enhanced version of Rodas4 for better step size control.",
-    "Rodas42", with_step_limiter = true)
-Rodas42
-
-@doc rosenbrock_docstring(
-    "A 4th-order accurate L-stable Rosenbrock method designed for differential-algebraic equations (DAEs). Optimized for index-1 DAE problems.",
-    "Rodas4P", with_step_limiter = true)
-Rodas4P
-
-@doc rosenbrock_docstring(
-    "An improved 4th-order accurate L-stable Rosenbrock method for DAEs with enhanced stability properties.",
-    "Rodas4P2", with_step_limiter = true)
-Rodas4P2
-
-@doc rosenbrock_docstring(
-    "A 5th-order accurate L-stable Rosenbrock method for differential-algebraic problems. Higher accuracy but increased computational cost.",
-    "Rodas5", with_step_limiter = true)
-Rodas5
-
 struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
        OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, Val{:forward}, ST, CJ}
     tableau::TabType
@@ -197,14 +167,16 @@ function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = AutoForwardDiff()
         factorization, AD_choice)
 end
 
-@doc rosenbrock_wolfbrandt_docstring(
+"""
+$(rosenbrock_wolfbrandt_docstring(
     """
     A 4th order L-stable Rosenbrock-W method (fixed step only).
     """,
     "RosenbrockW6S4OS",
     references = """
     https://doi.org/10.1016/j.cam.2009.09.017
-    """)
+    """))
+"""
 struct RosenbrockW6S4OS{CS, AD, F, P, FDT, ST, CJ} <:
        OrdinaryDiffEqRosenbrockAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
@@ -224,29 +196,55 @@ function RosenbrockW6S4OS(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         precs, AD_choice)
 end
 
-for Alg in [
-    :ROS2,
-    :ROS2PR,
-    :ROS2S,
-    :ROS3,
-    :ROS3PR,
-    :Scholz4_7,
-    :ROS34PW1a,
-    :ROS34PW1b,
-    :ROS34PW2,
-    :ROS34PW3,
-    :ROS34PRw,
-    :ROS3PRL,
-    :ROS3PRL2,
-    :ROK4a,
-    :RosShamp4,
-    :Veldd4,
-    :Velds4,
-    :GRK4T,
-    :GRK4A,
-    :Ros4LStab]
+# Documentation for Rosenbrock methods without step_limiter
+const ROSENBROCK_DOCS = Dict(
+    :ROS2 => "A 2nd-order accurate L-stable Rosenbrock method. Simple and robust for moderately stiff problems with lower accuracy requirements.",
+    :ROS2PR => "A 2nd-order accurate L-stable Rosenbrock method optimized for the Prothero-Robinson test problem. Good for oscillatory stiff problems.",
+    :ROS2S => "A 2nd-order accurate L-stable Rosenbrock method with enhanced stability properties. Variant of ROS2 with improved behavior.",
+    :ROS3 => "A 3rd-order accurate L-stable Rosenbrock method from Hairer and Wanner. Well-established method for general stiff ODEs.",
+    :ROS3PR => "A 3rd-order accurate L-stable Rosenbrock method optimized for the Prothero-Robinson test problem. Good for stiff oscillatory systems.",
+    :Scholz4_7 => "A 4th-order accurate L-stable Rosenbrock method with optimized stability function. Enhanced performance for certain stiff problem classes.",
+    :ROS34PW1a => "A 4th-order accurate L-stable Rosenbrock method with improved embedded error estimator. Part of the ROS34PW family of methods.",
+    :ROS34PW1b => "A 4th-order accurate L-stable Rosenbrock method with alternative embedded error estimator. Variant in the ROS34PW family.",
+    :ROS34PW2 => "A 4th-order accurate L-stable Rosenbrock method with enhanced embedded error estimation. Second variant in the ROS34PW family.",
+    :ROS34PW3 => "A 4th-order accurate L-stable Rosenbrock method with optimized embedded error estimator. Third variant in the ROS34PW family.",
+    :ROS34PRw => "A 4th-order accurate L-stable Rosenbrock method designed for improved traditional Rosenbrock-Wanner methods for stiff ODEs and DAEs.",
+    :ROS3PRL => "A 3rd-order accurate L-stable Rosenbrock method optimized for the Prothero-Robinson test with additional local error control.",
+    :ROS3PRL2 => "A 3rd-order accurate L-stable Rosenbrock method. Second variant optimized for the Prothero-Robinson test with enhanced local error control.",
+    :ROK4a => "A 4th-order accurate L-stable Rosenbrock-Krylov method for large systems of differential equations. Combines Rosenbrock methods with Krylov subspace techniques.",
+    :RosShamp4 => "A 4th-order accurate L-stable Rosenbrock method implemented by Shampine. Classical implementation of a 4th-order Rosenbrock method.",
+    :Veldd4 => "A 4th-order accurate L-stable Rosenbrock method by van Veldhuizen. Optimized for D-stability properties.",
+    :Velds4 => "A 4th-order accurate L-stable Rosenbrock method by van Veldhuizen. Variant with enhanced stability for stiff problems.",
+    :GRK4T => "A 4th-order accurate generalized Runge-Kutta method with time-derivative. Part of the GRK family by Kaps and Rentrop.",
+    :GRK4A => "A 4th-order accurate generalized Runge-Kutta method with enhanced accuracy. Part of the GRK family by Kaps and Rentrop.",
+    :Ros4LStab => "A 4th-order accurate L-stable Rosenbrock method optimized for L-stability. Enhanced stability properties from Hairer and Wanner."
+)
+
+for (Alg, desc) in [
+    (:ROS2, ROSENBROCK_DOCS[:ROS2]),
+    (:ROS2PR, ROSENBROCK_DOCS[:ROS2PR]),
+    (:ROS2S, ROSENBROCK_DOCS[:ROS2S]),
+    (:ROS3, ROSENBROCK_DOCS[:ROS3]),
+    (:ROS3PR, ROSENBROCK_DOCS[:ROS3PR]),
+    (:Scholz4_7, ROSENBROCK_DOCS[:Scholz4_7]),
+    (:ROS34PW1a, ROSENBROCK_DOCS[:ROS34PW1a]),
+    (:ROS34PW1b, ROSENBROCK_DOCS[:ROS34PW1b]),
+    (:ROS34PW2, ROSENBROCK_DOCS[:ROS34PW2]),
+    (:ROS34PW3, ROSENBROCK_DOCS[:ROS34PW3]),
+    (:ROS34PRw, ROSENBROCK_DOCS[:ROS34PRw]),
+    (:ROS3PRL, ROSENBROCK_DOCS[:ROS3PRL]),
+    (:ROS3PRL2, ROSENBROCK_DOCS[:ROS3PRL2]),
+    (:ROK4a, ROSENBROCK_DOCS[:ROK4a]),
+    (:RosShamp4, ROSENBROCK_DOCS[:RosShamp4]),
+    (:Veldd4, ROSENBROCK_DOCS[:Veldd4]),
+    (:Velds4, ROSENBROCK_DOCS[:Velds4]),
+    (:GRK4T, ROSENBROCK_DOCS[:GRK4T]),
+    (:GRK4A, ROSENBROCK_DOCS[:GRK4A]),
+    (:Ros4LStab, ROSENBROCK_DOCS[:Ros4LStab])
+]
     @eval begin
-        struct $Alg{CS, AD, F, P, FDT, ST, CJ} <:
+        """$($desc)"""
+        Base.@__doc__ struct $Alg{CS, AD, F, P, FDT, ST, CJ} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
             linsolve::F
             precs::P
@@ -266,67 +264,3 @@ for Alg in [
     end
 end
 
-@doc rosenbrock_docstring(
-    "A 2nd-order accurate L-stable Rosenbrock method. Simple and robust for moderately stiff problems with lower accuracy requirements.",
-    "ROS2")
-ROS2
-
-@doc rosenbrock_docstring(
-    "A 2nd-order accurate L-stable Rosenbrock method optimized for the Prothero-Robinson test problem. Good for oscillatory stiff problems.",
-    "ROS2PR")
-ROS2PR
-
-@doc rosenbrock_docstring(
-    "A 2nd-order accurate L-stable Rosenbrock method with enhanced stability properties. Variant of ROS2 with improved behavior.",
-    "ROS2S")
-ROS2S
-
-@doc rosenbrock_docstring(
-    "A 3rd-order accurate L-stable Rosenbrock method from Hairer and Wanner. Well-established method for general stiff ODEs.",
-    "ROS3")
-ROS3
-
-@doc rosenbrock_docstring(
-    "A 3rd-order accurate L-stable Rosenbrock method optimized for the Prothero-Robinson test problem. Good for stiff oscillatory systems.",
-    "ROS3PR")
-ROS3PR
-
-@doc rosenbrock_docstring(
-    "A 4th-order accurate L-stable Rosenbrock method with optimized stability function. Enhanced performance for certain stiff problem classes.",
-    "Scholz4_7")
-Scholz4_7
-
-@doc rosenbrock_docstring(
-    "A 4th-order accurate L-stable Rosenbrock method with improved embedded error estimator. Part of the ROS34PW family of methods.",
-    "ROS34PW1a")
-ROS34PW1a
-
-@doc rosenbrock_docstring(
-    "A 4th-order accurate L-stable Rosenbrock method with alternative embedded error estimator. Variant in the ROS34PW family.",
-    "ROS34PW1b")
-ROS34PW1b
-
-@doc rosenbrock_docstring(
-    "A 4th-order accurate L-stable Rosenbrock method with enhanced embedded error estimation. Second variant in the ROS34PW family.",
-    "ROS34PW2")
-ROS34PW2
-
-@doc rosenbrock_docstring(
-    "A 4th-order accurate L-stable Rosenbrock method with optimized embedded error estimator. Third variant in the ROS34PW family.",
-    "ROS34PW3")
-ROS34PW3
-
-@doc rosenbrock_docstring(
-    "A 4th-order accurate L-stable Rosenbrock method designed for improved traditional Rosenbrock-Wanner methods for stiff ODEs and DAEs.",
-    "ROS34PRw")
-ROS34PRw
-
-@doc rosenbrock_docstring(
-    "A 4th-order accurate L-stable Rosenbrock method implemented by Shampine. Classical implementation of a 4th-order Rosenbrock method.",
-    "RosShamp4")
-RosShamp4
-
-@doc rosenbrock_docstring(
-    "A 4th-order accurate L-stable Rosenbrock method optimized for L-stability. Enhanced stability properties from Hairer and Wanner.",
-    "Ros4LStab")
-Ros4LStab
