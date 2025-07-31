@@ -99,8 +99,8 @@ function ODENumericalVerbosity(verbose::Verbosity.Type)
 end
 
 struct ODEVerbosity{T} <: AbstractVerbositySpecifier{T}
-    linear_verbosity::LinearVerbosity
-    nonlinear_verbosity::NonlinearVerbosity
+    linear_verbosity
+    nonlinear_verbosity
 
     error_control::ODEErrorControlVerbosity
     performance::ODEPerformanceVerbosity
@@ -157,22 +157,6 @@ function ODEVerbosity(;
         numerical_verbosity = ODENumericalVerbosity(numerical)
     else
         numerical_verbosity = numerical
-    end
-
-    if linear_verbosity isa Verbosity.Type
-        linear = LinearVerbosity(linear_verbosity)
-    elseif linear_verbosity isa NamedTuple
-        linear = LinearVerbosity(linear)
-    else
-        linear = linear_verbosity
-    end
-
-    if nonlinear_verbosity isa Verbosity.Type
-        nonlinear = NonlinearVerbosity(nonlinear_verbosity)
-    elseif nonlinear_verbosity isa NamedTuple
-        nonlinear = NonlinearVerbosity(nonlinear_verbosity)
-    else
-        nonlinear = nonlinear_verbosity
     end
 
     if !isempty(kwargs)
