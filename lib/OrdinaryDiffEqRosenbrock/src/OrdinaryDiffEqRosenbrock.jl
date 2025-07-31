@@ -114,7 +114,7 @@ function rosenbrock_wolfbrandt_docstring(description::String,
     """ * extra_keyword_description
 
     if with_step_limiter
-        keyword_default *= "step_limiter! = OrdinaryDiffEq.trivial_limiter!,\n"
+        keyword_default *= "step_limiter! = trivial_limiter!,\n"
         keyword_default_description *= "- `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`\n"
     end
 
@@ -131,6 +131,18 @@ function rosenbrock_docstring(description::String,
         extra_keyword_default = "",
         with_step_limiter = false)
     keyword_default = """
+    chunk_size = Val{0}(),
+    autodiff = AutoForwardDiff(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    """ * extra_keyword_default
+
+    keyword_default_description = """
+    - `chunk_size`: the chunk size used with ForwardDiff.jl. Defaults to Val{0}() and thus uses the 
+        ForwardDiff.jl algorithm for the choice. Val{1}() through Val{12}() are also available.
     - `standardtag`: Specifies whether to use package-specific tags instead of the
         ForwardDiff default function-specific tags. For more information, see
         [this blog post](https://www.stochasticlifestyle.com/improved-forwarddiff-jl-stacktraces-with-package-tags/).
@@ -146,9 +158,11 @@ function rosenbrock_docstring(description::String,
     - `concrete_jac`: Specifies whether a Jacobian should be constructed. Defaults to
         `nothing`, which means it will be chosen true/false depending on circumstances
         of the solver, such as whether a Krylov subspace method is used for `linsolve`.
+    - `diff_type`: the method used by FiniteDiff.jl if `autodiff=false`. Defaults to `Val{:forward}()`,
+        with alternatives of `Val{:central}()` and `Val{:complex}()`.
     - `linsolve`: Any [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl) compatible linear solver.
       For example, to use [KLU.jl](https://github.com/JuliaSparse/KLU.jl), specify
-      `$name(linsolve = KLUFactorization()`).
+      `$name(linsolve = KLUFactorization())`).
        When `nothing` is passed, uses `DefaultLinearSolver`.
     - `precs`: Any [LinearSolve.jl-compatible preconditioner](https://docs.sciml.ai/LinearSolve/stable/basics/Preconditioners/)
       can be used as a left or right preconditioner.
@@ -184,20 +198,10 @@ function rosenbrock_docstring(description::String,
       ```julia
       DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
       ```
-    """ * extra_keyword_default
-
-    keyword_default_description = """
-    - `chunk_size`: TBD
-    - `standardtag`: TBD
-    - `autodiff`: boolean to control if the Jacobian should be computed via AD or not
-    - `concrete_jac`: function of the form `jac!(J, u, p, t)`
-    - `diff_type`: TBD
-    - `linsolve`: custom solver for the inner linear systems
-    - `precs`: custom preconditioner for the inner linear solver
     """ * extra_keyword_description
 
     if with_step_limiter
-        keyword_default *= "step_limiter! = OrdinaryDiffEq.trivial_limiter!,\n"
+        keyword_default *= "step_limiter! = trivial_limiter!,\n"
         keyword_default_description *= "- `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`\n"
     end
 
