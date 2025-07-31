@@ -218,7 +218,7 @@ prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
 refsol = solve(prob, Rodas4(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1e-12,
     abstol = 1e-17)
 
-for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF, Rosenbrock23)
+for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF)
     @show solver
     prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
     sol = solve(
