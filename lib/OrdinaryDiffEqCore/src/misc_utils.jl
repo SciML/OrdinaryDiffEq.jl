@@ -118,7 +118,7 @@ function get_differential_vars(f, u)
         mm = f.mass_matrix
         mm = mm isa MatrixOperator ? mm.A : mm
 
-        if mm isa UniformScaling 
+        if mm isa UniformScaling
             return nothing
         elseif all(!iszero, mm)
             return trues(size(mm, 1))
@@ -146,7 +146,7 @@ function _bool_to_ADType(::Val{false}, _, ::Val{FD}) where {FD}
     Base.depwarn(
         "Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.",
         :_bool_to_ADType)
-    return AutoFiniteDiff(; fdtype = Val{FD}(), dir=1)
+    return AutoFiniteDiff(; fdtype = Val{FD}(), dir = 1)
 end
 
 # Functions to get ADType type from Bool or ADType object, or ADType type
@@ -165,7 +165,7 @@ function _process_AD_choice(
         @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
         return _bool_to_ADType(Val{true}(), Val{CS2}(), Val{FD}()), Val{CS2}(), Val{FD}()
     end
-    
+
     _CS = CS === nothing ? 0 : CS
     return ad_alg, Val{_CS}(), Val{FD}()
 end

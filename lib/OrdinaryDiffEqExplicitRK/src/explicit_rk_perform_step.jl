@@ -85,13 +85,13 @@ end
 @generated function accumulate_explicit_stages!(out, A, uprev, kk, dt, ::Val{s},
         ::Val{r} = Val(s)) where {s, r}
     if s == 1
-        return :(@muladd @.. broadcast=false out=uprev + dt * kk[1])
+        return :(@muladd @.. broadcast=false out=uprev+dt*kk[1])
     elseif s == 2
         # Note that `A` is transposed
-        return :(@muladd @.. broadcast=false out=uprev + dt * (A[1, $r] * kk[1]))
+        return :(@muladd @.. broadcast=false out=uprev+dt*(A[1, $r]*kk[1]))
     else
-        expr = :(@muladd @.. broadcast=false out=uprev +
-                                                 dt * (A[1, $r] * kk[1] + A[2, $r] * kk[2]))
+        expr = :(@muladd @.. broadcast=false out=uprev+
+        dt*(A[1, $r]*kk[1]+A[2, $r]*kk[2]))
         acc = expr.args[end].args[end].args[end].args[end].args[end].args
         for i in 3:(s - 1)
             push!(acc, :(A[$i, $r] * kk[$i]))
@@ -102,9 +102,9 @@ end
 
 @generated function accumulate_EEst!(out, αEEst, kk, dt, ::Val{s}) where {s}
     if s == 1
-        return :(@muladd @.. broadcast=false out=dt * (αEEst[1] * kk[1]))
+        return :(@muladd @.. broadcast=false out=dt*(αEEst[1]*kk[1]))
     else
-        expr = :(@muladd @.. broadcast=false out=dt * (αEEst[1] * kk[1] + αEEst[2] * kk[2]))
+        expr = :(@muladd @.. broadcast=false out=dt*(αEEst[1]*kk[1]+αEEst[2]*kk[2]))
         acc = expr.args[end].args[end].args[end].args[end].args
         for i in 3:s
             push!(acc, :(αEEst[$i] * kk[$i]))
@@ -114,11 +114,11 @@ end
 end
 
 function accumulate_EEst!(out, αEEst, utilde, kk, dt, stages)
-    @.. broadcast=false utilde=αEEst[1] * kk[1]
+    @.. broadcast=false utilde=αEEst[1]*kk[1]
     for i in 2:stages
-        @.. broadcast=false utilde=utilde + αEEst[i] * kk[i]
+        @.. broadcast=false utilde=utilde+αEEst[i]*kk[i]
     end
-    @.. broadcast=false out=dt * utilde
+    @.. broadcast=false out=dt*utilde
 end
 
 @muladd function compute_stages!(f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt,
@@ -127,18 +127,18 @@ end
     for i in 2:(stages - 1)
         @.. broadcast=false utilde=zero(kk[1][1])
         for j in 1:(i - 1)
-            @.. broadcast=false utilde=utilde + A[j, i] * kk[j]
+            @.. broadcast=false utilde=utilde+A[j, i]*kk[j]
         end
-        @.. broadcast=false tmp=uprev + dt * utilde
+        @.. broadcast=false tmp=uprev+dt*utilde
         f(kk[i], tmp, p, t + c[i] * dt)
     end
 
     #Last
     @.. broadcast=false utilde=zero(kk[1][1])
     for j in 1:(stages - 1)
-        @.. broadcast=false utilde=utilde + A[j, end] * kk[j]
+        @.. broadcast=false utilde=utilde+A[j, end]*kk[j]
     end
-    @.. broadcast=false u=uprev + dt * utilde
+    @.. broadcast=false u=uprev+dt*utilde
     f(kk[end], u, p, t + c[end] * dt) #fsallast is tmp even if not fsal
     return nothing
 end
@@ -174,11 +174,11 @@ function runtime_split_stages!(f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt,
 end
 
 function accumulate_fsal!(u, α, utilde, uprev, kk, dt, stages)
-    @.. broadcast=false utilde=α[1] * kk[1]
+    @.. broadcast=false utilde=α[1]*kk[1]
     for i in 2:stages
-        @.. broadcast=false utilde=utilde + α[i] * kk[i]
+        @.. broadcast=false utilde=utilde+α[i]*kk[i]
     end
-    @.. broadcast=false u=uprev + dt * utilde
+    @.. broadcast=false u=uprev+dt*utilde
 end
 
 function runtime_split_fsal!(out, A, utilde, uprev, kk, dt, stages)
@@ -219,7 +219,7 @@ end
 
     if integrator.alg isa CompositeAlgorithm
         # Hairer II, page 22 modified to use Inf norm
-        @.. broadcast=false utilde=abs((kk[end] - kk[end - 1]) / (u - tmp))
+        @.. broadcast=false utilde=abs((kk[end]-kk[end - 1])/(u-tmp))
         integrator.eigen_est = integrator.opts.internalnorm(norm(utilde, Inf), t)
     end
 

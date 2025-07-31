@@ -17,7 +17,8 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
 
     _alg = unwrap_alg(integrator, true)
 
-    _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
+    _Pl,
+    _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
         solverdata)
     if (_Pl !== nothing || _Pr !== nothing)
         __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pl
@@ -28,7 +29,8 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
 
     linres = solve!(linsolve; reltol)
 
-    ad = alg_autodiff(_alg) isa ADTypes.AutoSparse ? ADTypes.dense_ad(alg_autodiff(_alg)) : alg_autodiff(_alg)
+    ad = alg_autodiff(_alg) isa ADTypes.AutoSparse ? ADTypes.dense_ad(alg_autodiff(_alg)) :
+         alg_autodiff(_alg)
 
     # TODO: this ignores the add of the `f` count for add_steps!
     if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
@@ -37,7 +39,7 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
         if ad isa ADTypes.AutoFiniteDiff || ad isa ADTypes.AutoFiniteDifferences
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2 * linres.iters)
         else
-            integrator.stats.nf += linres.iters 
+            integrator.stats.nf += linres.iters
         end
     end
 

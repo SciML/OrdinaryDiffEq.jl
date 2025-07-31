@@ -18,7 +18,7 @@ x = [zeros(4, 2) for _ in 1:5]
 
 sol_implicit = @inferred solve(prob_ode_2Dlinear, DefaultImplicitODEAlgorithm())
 @test all(isequal(3), sol_implicit.alg_choice)
-@test sol(0.5) ≈ sol_implicit(0.5) rtol=1e-3 atol=1e-6
+@test sol(0.5)≈sol_implicit(0.5) rtol=1e-3 atol=1e-6
 
 sol = solve(prob_ode_2Dlinear, reltol = 1e-10)
 vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
@@ -30,7 +30,7 @@ vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
 
 sol_implicit = @inferred solve(prob_ode_2Dlinear, DefaultImplicitODEAlgorithm(), reltol = 1e-10)
 @test all(isequal(4), sol_implicit.alg_choice)
-@test sol(0.5) ≈ sol_implicit(0.5) rtol=1e-10 atol=1e-6
+@test sol(0.5)≈sol_implicit(0.5) rtol=1e-10 atol=1e-6
 
 prob_ode_linear_fast = ODEProblem(
     ODEFunction(f_2dlinear, mass_matrix = 2 * I(2)), rand(2), (0.0, 1.0), 1.01)
@@ -141,9 +141,9 @@ complex_sol = solve(prob_complex)
 
 # Make sure callback doesn't recurse init, which would cause iniitalize to be hit twice
 counter = Ref{Int}(0)
-cb = DiscreteCallback((u,t,integ)->false, (integ)->nothing;
-    initialize = (c,u,t,integ)->counter[]+=1)
+cb = DiscreteCallback((u, t, integ)->false, (integ)->nothing;
+    initialize = (c, u, t, integ)->counter[]+=1)
 
-prob = ODEProblem((u,p,t)->[0.0], [0.0], (0.0,1.0))
-sol = solve(prob, callback=cb)
+prob = ODEProblem((u, p, t)->[0.0], [0.0], (0.0, 1.0))
+sol = solve(prob, callback = cb)
 @test counter[] == 1

@@ -12,7 +12,9 @@ if isempty(VERSION.prerelease)
     using Enzyme
 end
 
-@testset "Implicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
+@testset "Implicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in
+                                                                                      1:2
+
     prob = (ODEProblemLibrary.prob_ode_linear,
         ODEProblemLibrary.prob_ode_2Dlinear)[i]
 
@@ -59,8 +61,10 @@ end
 
         sim = test_convergence(dts,
             prob,
-            QNDF1(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
-                function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
+            QNDF1(
+                autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
+                    function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
         @test sim.𝒪est[:final]≈1 atol=testTol
         @test sim.𝒪est[:l2]≈1 atol=testTol
         @test sim.𝒪est[:l∞]≈1 atol=testTol

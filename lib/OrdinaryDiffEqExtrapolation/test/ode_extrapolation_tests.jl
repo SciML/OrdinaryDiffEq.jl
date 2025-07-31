@@ -48,7 +48,7 @@ testTol = 0.2
                     AitkenNeville(max_order = 9, min_order = 1,
                         init_order = 9, threading = false), reltol = 1e-3)
                 @test length(sol.u) < 15
-            @test SciMLBase.successful_retcode(sol)
+                @test SciMLBase.successful_retcode(sol)
                 @test SciMLBase.successful_retcode(sol)
                 sol = solve(prob,
                     AitkenNeville(max_order = 9, min_order = 1,
@@ -193,7 +193,7 @@ testTol = 0.2
                     threading = false)
                 sol = solve(prob, alg, reltol = 1e-3)
                 @test length(sol.u) < 10
-            @test SciMLBase.successful_retcode(sol)
+                @test SciMLBase.successful_retcode(sol)
             end
         end
     end # ExtrapolationMidpointDeuflhard
@@ -223,7 +223,7 @@ testTol = 0.2
                     threading = false)
                 sol = solve(prob, alg, reltol = 1e-3)
                 @test length(sol.u) < 10
-            @test SciMLBase.successful_retcode(sol)
+                @test SciMLBase.successful_retcode(sol)
             end
         end
     end # ExtrapolationMidpointHairerWanner
