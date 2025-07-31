@@ -42,7 +42,7 @@ using SimpleUnPack: @unpack
 using RecursiveArrayTools
 using DataStructures: BinaryHeap, FasterForward
 import DataStructures
-using ArrayInterface: issingular
+using ArrayInterface: ArrayInterface, issingular
 
 import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
