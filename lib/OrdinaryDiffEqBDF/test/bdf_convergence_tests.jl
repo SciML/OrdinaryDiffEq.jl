@@ -59,10 +59,8 @@ end
 
         sim = test_convergence(dts,
             prob,
-            QNDF1(
-                autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
-                    function_annotation = Enzyme.Const),
-                linsolve = LinearSolve.KrylovJL()))
+            QNDF1(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
+                function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
         @test sim.𝒪est[:final]≈1 atol=testTol
         @test sim.𝒪est[:l2]≈1 atol=testTol
         @test sim.𝒪est[:l∞]≈1 atol=testTol

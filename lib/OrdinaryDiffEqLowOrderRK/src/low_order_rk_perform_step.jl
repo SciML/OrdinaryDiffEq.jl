@@ -1553,10 +1553,10 @@ function perform_step!(integrator, cache::Stepanov5ConstantCache, repeat_step = 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
 
     if integrator.opts.adaptive
-        utilde = dt * (btilde1 * k1 + btilde2 * k2 +
-                  btilde3 * k3 + btilde4 * k4 +
-                  btilde5 * k5 + btilde6 * k6 +
-                  btilde7 * k7)
+        utilde=dt * (btilde1 * k1 + btilde2 * k2 +
+                                    btilde3 * k3 + btilde4 * k4 +
+                                    btilde5 * k5 + btilde6 * k6 +
+                                    btilde7 * k7)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)

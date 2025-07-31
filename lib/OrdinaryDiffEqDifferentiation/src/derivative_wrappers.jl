@@ -77,41 +77,43 @@ end
 
 function jacobian(f, x::AbstractArray{<:Number}, integrator)
     alg = unwrap_alg(integrator, true)
-
+    
     # Update stats.nf
 
-    dense = ADTypes.dense_ad(alg_autodiff(alg))
+    dense = ADTypes.dense_ad(alg_autodiff(alg)) 
 
     if dense isa AutoForwardDiff
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
         maxcolor = maximum(colorvec)
-        chunk_size = (get_chunksize(alg) == Val(0) || get_chunksize(alg) == Val(nothing)) ?
-                     nothing : get_chunksize(alg)
-        num_of_chunks = div(maxcolor,
-            isnothing(chunk_size) ?
-            getsize(ForwardDiff.pickchunksize(maxcolor)) : _unwrap_val(chunk_size),
-            RoundUp)
+        chunk_size = (get_chunksize(alg) == Val(0) || get_chunksize(alg) == Val(nothing) ) ? nothing : get_chunksize(alg)
+        num_of_chunks =  div(maxcolor, isnothing(chunk_size) ?
+                getsize(ForwardDiff.pickchunksize(maxcolor)) : _unwrap_val(chunk_size),
+                RoundUp)
 
         integrator.stats.nf += num_of_chunks
 
     elseif dense isa AutoFiniteDiff
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
-        if dense.fdtype == Val(:forward)
+        if dense.fdtype == Val(:forward) 
             integrator.stats.nf += maximum(colorvec) + 1
-        elseif dense.fdtype == Val(:central)
-            integrator.stats.nf += 2 * maximum(colorvec)
+        elseif dense.fdtype == Val(:central) 
+            integrator.stats.nf += 2*maximum(colorvec)
         elseif dense.fdtype == Val(:complex)
             integrator.stats.nf += maximum(colorvec)
         end
-    else
+    else 
         integrator.stats.nf += 1
     end
+
 
     if dense isa AutoFiniteDiff
         dense = SciMLBase.@set dense.dir = diffdir(integrator)
     end
 
-    autodiff_alg = alg_autodiff(alg)
+    # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
+    dense = gpu_safe_autodiff(dense, x)
+    
+    autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg), x)
 
     if alg_autodiff(alg) isa AutoSparse
         autodiff_alg = SciMLBase.@set autodiff_alg.dense_ad = dense
@@ -120,12 +122,12 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
     end
 
     if integrator.iter == 1
-        try
-            jac = DI.jacobian(f, autodiff_alg, x)
-        catch e
-            throw(FirstAutodiffJacError(e))
-        end
-    else
+            try
+                jac = DI.jacobian(f, autodiff_alg, x)
+            catch e
+                throw(FirstAutodiffJacError(e))
+            end
+        else
         jac = DI.jacobian(f, autodiff_alg, x)
     end
 
@@ -156,13 +158,16 @@ function jacobian(f, x, integrator)
         dense = SciMLBase.@set dense.dir = diffdir(integrator)
     end
 
-    autodiff_alg = alg_autodiff(alg)
+    # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
+    dense = gpu_safe_autodiff(dense, x)
+
+    autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg), x)
 
     if autodiff_alg isa AutoSparse
         autodiff_alg = SciMLBase.@set autodiff_alg.dense_ad = dense
     else
         autodiff_alg = dense
-    end
+    end 
 
     if integrator.iter == 1
         try
@@ -182,7 +187,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         jac_config)
     alg = unwrap_alg(integrator, true)
 
-    dense = ADTypes.dense_ad(alg_autodiff(alg))
+    dense = ADTypes.dense_ad(alg_autodiff(alg)) 
 
     if dense isa AutoForwardDiff
         if alg_autodiff(alg) isa AutoSparse
@@ -190,16 +195,14 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         else
             sparsity, colorvec = sparsity_colorvec(integrator.f, x)
             maxcolor = maximum(colorvec)
-            chunk_size = (get_chunksize(alg) == Val(0) ||
-                          get_chunksize(alg) == Val(nothing)) ? nothing : get_chunksize(alg)
+            chunk_size = (get_chunksize(alg) == Val(0) || get_chunksize(alg) == Val(nothing)) ? nothing : get_chunksize(alg)
             num_of_chunks = chunk_size === nothing ?
-                            Int(ceil(maxcolor /
-                                     getsize(ForwardDiff.pickchunksize(maxcolor)))) :
+                            Int(ceil(maxcolor / getsize(ForwardDiff.pickchunksize(maxcolor)))) :
                             Int(ceil(maxcolor / _unwrap_val(chunk_size)))
 
             integrator.stats.nf += num_of_chunks
         end
-
+        
     elseif dense isa AutoFiniteDiff
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
         if dense.fdtype == Val(:forward)
@@ -221,26 +224,28 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
 
     if integrator.iter == 1
         try
-            DI.jacobian!(f, fx, J, config, alg_autodiff(alg), x)
+            DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
         catch e
             throw(FirstAutodiffJacError(e))
         end
     else
-        DI.jacobian!(f, fx, J, config, alg_autodiff(alg), x)
+        DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
     end
 
     nothing
 end
 
 function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
-        u, tmp, du2) where {F1, F2}
+     u, tmp, du2) where {F1, F2}
+
     haslinsolve = hasfield(typeof(alg), :linsolve)
 
     if !DiffEqBase.has_jac(f) &&
-       (!DiffEqBase.has_Wfact_t(f)) &&
-       ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve &&
-           (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
+        (!DiffEqBase.has_Wfact_t(f)) && 
+        ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve && 
+        (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
         (concrete_jac(alg) !== nothing && concrete_jac(alg)))
+
         jac_prototype = f.jac_prototype
 
         if jac_prototype isa SparseMatrixCSC
@@ -253,7 +258,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
             end
         end
 
-        autodiff_alg = alg_autodiff(alg)
+        autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg),u)
         dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
 
         if dense isa AutoFiniteDiff
@@ -268,10 +273,8 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
                 autodiff_alg_reverse = dir_reverse
             end
 
-            jac_config_forward = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_forward, u, strict = Val(false))
-            jac_config_reverse = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_reverse, u, strict = Val(false))
+            jac_config_forward = DI.prepare_jacobian(uf, du1, autodiff_alg_forward, u, strict = Val(false))
+            jac_config_reverse = DI.prepare_jacobian(uf, du1, autodiff_alg_reverse, u, strict = Val(false))
 
             jac_config = (jac_config_forward, jac_config_reverse)
         else
@@ -279,7 +282,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
             jac_config = (jac_config1, jac_config1)
         end
 
-    else
+    else 
         jac_config = (nothing, nothing)
     end
 
@@ -312,8 +315,8 @@ function resize_jac_config!(cache, integrator)
         end
 
         SciMLBase.@reset cache.jac_config = ([DI.prepare!_jacobian(
-                                                  uf, cache.du1, config, ad, integrator.u)
-                                              for (ad, config) in zip(
+                                   uf, cache.du1, config, ad, integrator.u)
+                               for (ad, config) in zip(
             (ad_right, ad_left), cache.jac_config)]...,)
     end
     cache.jac_config
@@ -333,16 +336,38 @@ function resize_grad_config!(cache, integrator)
         end
 
         cache.grad_config = ([DI.prepare!_derivative(
-                                  cache.tf, cache.du1, config, ad, integrator.t)
-                              for (ad, config) in zip(
+                                 cache.tf, cache.du1, config, ad, integrator.t)
+                             for (ad, config) in zip(
             (ad_right, ad_left), cache.grad_config)]...,)
     end
     cache.grad_config
 end
 
+"""
+    gpu_safe_autodiff(backend, u)
+
+Automatically wrap AutoForwardDiff with AutoForwardFromPrimitive for GPU arrays
+that don't support fast scalar indexing (e.g., GPU arrays).
+"""
+function gpu_safe_autodiff(backend::AutoForwardDiff, u)
+    if ArrayInterface.fast_scalar_indexing(u)
+        # CPU arrays with fast scalar indexing - use original backend
+        return backend
+    else
+        # GPU arrays or arrays without fast scalar indexing - use primitive wrapper
+        return DI.AutoForwardFromPrimitive(backend)
+    end
+end
+
+# Fallback for other AD backends
+gpu_safe_autodiff(backend, u) = backend
+
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     if !DiffEqBase.has_tgrad(f)
         ad = ADTypes.dense_ad(alg_autodiff(alg))
+        
+        # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
+        ad = gpu_safe_autodiff(ad, du1)
 
         if ad isa AutoFiniteDiff
             dir_true = @set ad.dir = 1
@@ -353,10 +378,10 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
 
             grad_config = (grad_config_true, grad_config_false)
         elseif ad isa AutoForwardDiff
-            grad_config1 = DI.prepare_derivative(tf, du1, ad, convert(eltype(du1), t))
+            grad_config1 = DI.prepare_derivative(tf,du1,ad,convert(eltype(du1),t))
             grad_config = (grad_config1, grad_config1)
         else
-            grad_config1 = DI.prepare_derivative(tf, du1, ad, t)
+            grad_config1 = DI.prepare_derivative(tf,du1,ad,t)
             grad_config = (grad_config1, grad_config1)
         end
         return grad_config

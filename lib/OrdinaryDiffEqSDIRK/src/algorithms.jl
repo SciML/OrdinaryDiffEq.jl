@@ -77,8 +77,7 @@ function SDIRK_docstring(description::String,
     )
 end
 
-@doc SDIRK_docstring(
-    "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
+@doc SDIRK_docstring("A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
     "ImplicitEuler";
     references = "@book{wanner1996solving,
     title={Solving ordinary differential equations II},
@@ -121,8 +120,7 @@ function ImplicitEuler(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         nlsolve, precs, extrapolant, controller, step_limiter!, AD_choice)
 end
 
-@doc SDIRK_docstring(
-    "A second order A-stable symplectic and symmetric implicit solver. Excellent for Hamiltonian systems and highly stiff equations.",
+@doc SDIRK_docstring("A second order A-stable symplectic and symmetric implicit solver. Excellent for Hamiltonian systems and highly stiff equations.",
     "ImplicitMidpoint";
     references = "@book{wanner1996solving,
     title={Solving ordinary differential equations II},
@@ -208,8 +206,7 @@ function Trapezoid(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         AD_choice)
 end
 
-@doc SDIRK_docstring(
-    "A second order A-B-L-S-stable one-step ESDIRK method. Includes stiffness-robust error estimates for accurate adaptive timestepping, smoothed derivatives for highly stiff and oscillatory problems. Good for high tolerances (>1e-2) on stiff problems.",
+@doc SDIRK_docstring("A second order A-B-L-S-stable one-step ESDIRK method. Includes stiffness-robust error estimates for accurate adaptive timestepping, smoothed derivatives for highly stiff and oscillatory problems. Good for high tolerances (>1e-2) on stiff problems.",
     "TRBDF2";
     references = "@article{hosea1996analysis,
     title={Analysis and implementation of TR-BDF2},

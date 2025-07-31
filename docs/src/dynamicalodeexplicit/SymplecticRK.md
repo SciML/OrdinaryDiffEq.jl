@@ -10,23 +10,23 @@ Symplectic integrators are specialized methods for solving Hamiltonian systems a
 
 Symplectic integrators provide:
 
-  - **Exact conservation of symplectic structure** in phase space
-  - **Bounded energy error** over long time periods
-  - **Excellent long-time stability** without secular drift
-  - **Preservation of periodic orbits** and other geometric structures
-  - **Linear energy drift** instead of quadratic (much better than standard methods)
+- **Exact conservation of symplectic structure** in phase space
+- **Bounded energy error** over long time periods
+- **Excellent long-time stability** without secular drift
+- **Preservation of periodic orbits** and other geometric structures
+- **Linear energy drift** instead of quadratic (much better than standard methods)
 
 ## When to Use Symplectic Methods
 
 Symplectic integrators are essential for:
 
-  - **Hamiltonian systems** and conservative mechanical problems
-  - **Molecular dynamics** and N-body simulations
-  - **Celestial mechanics** and orbital computations
-  - **Plasma physics** and charged particle dynamics
-  - **Long-time integration** where energy conservation is critical
-  - **Oscillatory problems** requiring preservation of periodic structure
-  - **Classical mechanics problems** with known analytical properties
+- **Hamiltonian systems** and conservative mechanical problems
+- **Molecular dynamics** and N-body simulations
+- **Celestial mechanics** and orbital computations
+- **Plasma physics** and charged particle dynamics
+- **Long-time integration** where energy conservation is critical
+- **Oscillatory problems** requiring preservation of periodic structure
+- **Classical mechanics problems** with known analytical properties
 
 ## Mathematical Background
 
@@ -35,44 +35,39 @@ For a Hamiltonian system with energy `H(p,q)`, symplectic integrators preserve t
 ## Solver Selection Guide
 
 ### First-order methods
-
-  - **`SymplecticEuler`**: First-order, simplest symplectic method. Only recommended when the dynamics function `f` is not differentiable.
+- **`SymplecticEuler`**: First-order, simplest symplectic method. Only recommended when the dynamics function `f` is not differentiable.
 
 ### Second-order methods
-
-  - **`McAte2`**: Optimized second-order McLachlan-Atela method, **recommended for most applications**
-  - **`VelocityVerlet`**: Second-order, common choice for molecular dynamics but less efficient in terms of accuracy than McAte2
-  - **`VerletLeapfrog`**: Second-order, kick-drift-kick formulation
-  - **`LeapfrogDriftKickDrift`**: Alternative second-order leapfrog
-  - **`PseudoVerletLeapfrog`**: Modified Verlet scheme
+- **`McAte2`**: Optimized second-order McLachlan-Atela method, **recommended for most applications**
+- **`VelocityVerlet`**: Second-order, common choice for molecular dynamics but less efficient in terms of accuracy than McAte2
+- **`VerletLeapfrog`**: Second-order, kick-drift-kick formulation
+- **`LeapfrogDriftKickDrift`**: Alternative second-order leapfrog
+- **`PseudoVerletLeapfrog`**: Modified Verlet scheme
 
 ### Third-order methods
-
-  - **`Ruth3`**: Third-order method
-  - **`McAte3`**: Optimized third-order McLachlan-Atela method
+- **`Ruth3`**: Third-order method
+- **`McAte3`**: Optimized third-order McLachlan-Atela method
 
 ### Fourth-order methods
-
-  - **`CandyRoz4`**: Fourth-order method
-  - **`McAte4`**: Fourth-order McLachlan-Atela (requires quadratic kinetic energy)
-  - **`CalvoSanz4`**: Optimized fourth-order method
-  - **`McAte42`**: Alternative fourth-order method (BROKEN)
+- **`CandyRoz4`**: Fourth-order method
+- **`McAte4`**: Fourth-order McLachlan-Atela (requires quadratic kinetic energy)
+- **`CalvoSanz4`**: Optimized fourth-order method
+- **`McAte42`**: Alternative fourth-order method (BROKEN)
 
 ### Higher-order methods
-
-  - **`McAte5`**: Fifth-order McLachlan-Atela method
-  - **`Yoshida6`**: Sixth-order method
-  - **`KahanLi6`**: Optimized sixth-order method
-  - **`McAte8`**: Eighth-order McLachlan-Atela method
-  - **`KahanLi8`**: Optimized eighth-order method
-  - **`SofSpa10`**: Tenth-order method for highest precision
+- **`McAte5`**: Fifth-order McLachlan-Atela method
+- **`Yoshida6`**: Sixth-order method
+- **`KahanLi6`**: Optimized sixth-order method
+- **`McAte8`**: Eighth-order McLachlan-Atela method
+- **`KahanLi8`**: Optimized eighth-order method
+- **`SofSpa10`**: Tenth-order method for highest precision
 
 ## Method Selection Guidelines
 
-  - **For most applications**: `McAte2` (second-order, optimal efficiency)
-  - **For molecular dynamics (common choice)**: `VelocityVerlet` (less efficient than McAte2 but widely used)
-  - **For non-differentiable dynamics**: `SymplecticEuler` (first-order, only when necessary)
-  - **For computational efficiency**: `McAte2` or `McAte3`
+- **For most applications**: `McAte2` (second-order, optimal efficiency)
+- **For molecular dynamics (common choice)**: `VelocityVerlet` (less efficient than McAte2 but widely used)
+- **For non-differentiable dynamics**: `SymplecticEuler` (first-order, only when necessary)
+- **For computational efficiency**: `McAte2` or `McAte3`
 
 ### Important Note on Chaotic Systems
 

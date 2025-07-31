@@ -1,0 +1,70 @@
+name: Downgrade Sublibraries
+on:
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        downgrade_mode: ['alldeps']
+        julia-version: ['1.10']
+        project:
+          - 'lib/ImplicitDiscreteSolve'
+          - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'
+          - 'lib/OrdinaryDiffEqBDF'
+          - 'lib/OrdinaryDiffEqCore'
+          - 'lib/OrdinaryDiffEqDefault'
+          - 'lib/OrdinaryDiffEqDifferentiation'
+          - 'lib/OrdinaryDiffEqExplicitRK'
+          - 'lib/OrdinaryDiffEqExponentialRK'
+          - 'lib/OrdinaryDiffEqExtrapolation'
+          - 'lib/OrdinaryDiffEqFIRK'
+          - 'lib/OrdinaryDiffEqFeagin'
+          - 'lib/OrdinaryDiffEqFunctionMap'
+          - 'lib/OrdinaryDiffEqHighOrderRK'
+          - 'lib/OrdinaryDiffEqIMEXMultistep'
+          - 'lib/OrdinaryDiffEqLinear'
+          - 'lib/OrdinaryDiffEqLowOrderRK'
+          - 'lib/OrdinaryDiffEqLowStorageRK'
+          - 'lib/OrdinaryDiffEqNonlinearSolve'
+          - 'lib/OrdinaryDiffEqNordsieck'
+          - 'lib/OrdinaryDiffEqPDIRK'
+          - 'lib/OrdinaryDiffEqPRK'
+          - 'lib/OrdinaryDiffEqQPRK'
+          - 'lib/OrdinaryDiffEqRKN'
+          - 'lib/OrdinaryDiffEqRosenbrock'
+          - 'lib/OrdinaryDiffEqSDIRK'
+          - 'lib/OrdinaryDiffEqSSPRK'
+          - 'lib/OrdinaryDiffEqStabilizedIRK'
+          - 'lib/OrdinaryDiffEqStabilizedRK'
+          - 'lib/OrdinaryDiffEqSymplecticRK'
+          - 'lib/OrdinaryDiffEqTaylorSeries'
+          - 'lib/OrdinaryDiffEqTsit5'
+          - 'lib/OrdinaryDiffEqVerner'
+          - 'lib/SimpleImplicitDiscreteSolve'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.julia-version }}
+      - uses: julia-actions/julia-downgrade-compat@v2
+        with:
+          project: ${{ matrix.project }}
+          skip: Pkg,TOML
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: ${{ matrix.project }}
+      - uses: julia-actions/julia-runtest@v1
+        with:
+          project: ${{ matrix.project }}
+          ALLOW_RERESOLVE: false
