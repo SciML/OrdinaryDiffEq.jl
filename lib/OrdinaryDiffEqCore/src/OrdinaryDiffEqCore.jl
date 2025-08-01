@@ -5,17 +5,18 @@ if isdefined(Base, :Experimental) &&
     @eval Base.Experimental.@max_methods 1
 end
 
-using DocStringExtensions
-using Reexport
+import DocStringExtensions
+import Reexport: @reexport
+using Reexport: @reexport
 @reexport using DiffEqBase
 
-using Logging
+import Logging: @logmsg
 
 using MuladdMacro: @muladd
 
 using LinearAlgebra: opnorm, I, UniformScaling, diag, rank, isdiag
 
-using PrecompileTools
+import PrecompileTools
 
 import FillArrays: Trues, Falses
 
@@ -36,10 +37,10 @@ import SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator,
 
 using DiffEqBase: DEIntegrator
 
-import RecursiveArrayTools: chain, recursivecopy!
+import RecursiveArrayTools: chain, recursivecopy!, recursivecopy
 
 using SimpleUnPack: @unpack
-using RecursiveArrayTools
+import RecursiveArrayTools
 using DataStructures: BinaryHeap, FasterForward
 import DataStructures
 using ArrayInterface: ArrayInterface, issingular
