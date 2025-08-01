@@ -174,8 +174,7 @@ function pollution!(dy, y, p, t)
     r24 = k24*y[19]*y[1]
     r25 = k25*y[20]
 
-    dy[1] = -r1-r10-r14-r23-r24 +
-            r2 + r3 + r9 + r11 + r12 + r22 + r25
+    dy[1] = -r1-r10-r14-r23-r24 + r2 + r3 + r9 + r11 + r12 + r22 + r25
     dy[2] = -r2-r3-r9-r12+r1+r21
     dy[3] = -r15+r1+r17+r19+r22
     dy[4] = -r2-r16-r17-r23+r15
@@ -253,15 +252,10 @@ function brusselator_2d!(du, u, p, t)
         jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N), limit(j - 1, N)
 
         # u equation: ∂u/∂t = 1 + u²v - 4.4u + α∇²u + f(x,y,t)
-        du[i, j, 1] = α * (u[im1, j, 1] + u[ip1, j, 1] + u[i, jp1, 1] + u[i, jm1, 1] -
-                       4*u[i, j, 1]) +
-                      B + u[i, j, 1]^2 * u[i, j, 2] - (A + 1) * u[i, j, 1] +
-                      brusselator_f(x, y, t)
+        du[i, j, 1] = α * (u[im1, j, 1] + u[ip1, j, 1] + u[i, jp1, 1] + u[i, jm1, 1] - 4*u[i, j, 1]) + B + u[i, j, 1]^2 * u[i, j, 2] - (A + 1) * u[i, j, 1] + brusselator_f(x, y, t)
 
         # v equation: ∂v/∂t = 3.4u - u²v + α∇²v  
-        du[i, j, 2] = α * (u[im1, j, 2] + u[ip1, j, 2] + u[i, jp1, 2] + u[i, jm1, 2] -
-                       4*u[i, j, 2]) +
-                      A * u[i, j, 1] - u[i, j, 1]^2 * u[i, j, 2]
+        du[i, j, 2] = α * (u[im1, j, 2] + u[ip1, j, 2] + u[i, jp1, 2] + u[i, jm1, 2] - 4*u[i, j, 2]) + A * u[i, j, 1] - u[i, j, 1]^2 * u[i, j, 2]
     end
     nothing
 end
