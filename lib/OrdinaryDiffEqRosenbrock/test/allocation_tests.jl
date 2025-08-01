@@ -1,10 +1,11 @@
 using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqCore
+using AllocCheck
 using Test
 using Printf
 
 """
-Allocation tests for OrdinaryDiffEqRosenbrock solvers.
+Allocation tests for OrdinaryDiffEqRosenbrock solvers using AllocCheck.jl.
 These tests verify that the step! operation should not allocate during stepping.
 Currently, Rosenbrock solvers are allocating and marked with @test_broken.
 """
@@ -21,40 +22,23 @@ Currently, Rosenbrock solvers are allocating and marked with @test_broken.
     vector_prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 1.0))
     
     # Test known allocating Rosenbrock solvers with @test_broken
-    allocating_solvers = []
-    
-    # Try to add available Rosenbrock solvers that are currently allocating
-    try
-        push!(allocating_solvers, Rodas4())
-    catch
-        # Rodas4 may not be available
-    end
-    
-    try
-        push!(allocating_solvers, Rodas5())
-    catch
-        # Rodas5 may not be available
-    end
-    
-    try
-        push!(allocating_solvers, Rosenbrock23())
-    catch
-        # Rosenbrock23 may not be available
-    end
+    allocating_solvers = [Rodas4(), Rodas5(), Rosenbrock23()]
     
     @testset "Currently Allocating Rosenbrock Solvers (@test_broken)" begin
         for solver in allocating_solvers
-            @testset "$(typeof(solver)) allocation test (broken)" begin
+            @testset "$(typeof(solver)) allocation check (broken)" begin
                 integrator = init(linear_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                 step!(integrator)  # Setup step may allocate
                 
-                # These tests are expected to fail until allocation issues are resolved
-                for i in 2:6
-                    if integrator.t >= integrator.sol.prob.tspan[2]
-                        break
+                # Use AllocCheck for accurate allocation detection
+                allocs = check_allocs(step!, (typeof(integrator),))
+                @test_broken length(allocs) == 0  # Should eventually be allocation-free
+                
+                if length(allocs) > 0
+                    println("AllocCheck found $(length(allocs)) allocation sites in $(typeof(solver)) step!:")
+                    for (i, alloc) in enumerate(allocs[1:min(3, end)])  # Show first 3
+                        println("  $i. $alloc")
                     end
-                    alloc = @allocated step!(integrator)
-                    @test_broken alloc == 0
                 end
             end
         end
