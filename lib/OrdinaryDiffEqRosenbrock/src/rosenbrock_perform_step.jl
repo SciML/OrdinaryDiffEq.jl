@@ -384,8 +384,7 @@ end
 
         if mass_matrix !== I
             invatol = inv(integrator.opts.abstol)
-            atmp = ifelse(integrator.differential_vars, false, integrator.fsallast) .*
-                   invatol
+            atmp = ifelse(integrator.differential_vars, false, integrator.fsallast) .* invatol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end

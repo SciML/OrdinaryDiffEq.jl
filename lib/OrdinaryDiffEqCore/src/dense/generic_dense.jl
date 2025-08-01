@@ -1305,10 +1305,7 @@ end
                       Θ * (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] -
                        12 * y₁[idxs]) + 6 * y₁[idxs]) / (dt * dt)
     else
-        @views out = differential_vars .*
-                     (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] +
-                      Θ * (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] -
-                       12 * y₁[idxs]) + 6 * y₁[idxs]) / (dt * dt)
+        @views out = differential_vars .* (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] + Θ * (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] - 12 * y₁[idxs]) + 6 * y₁[idxs]) / (dt * dt)
     end
     out
 end
@@ -1410,10 +1407,7 @@ end
                       12 * y₁[idxs]) /
                      (dt * dt * dt)
     else
-        @views out = differential_vars .*
-                     (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] -
-                      12 * y₁[idxs]) /
-                     (dt * dt * dt)
+        @views out = differential_vars .* (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] - 12 * y₁[idxs]) / (dt * dt * dt)
     end
     out
 end
