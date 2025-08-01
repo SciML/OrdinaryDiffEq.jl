@@ -20,34 +20,34 @@ import ArrayInterface: fast_scalar_indexing, zeromatrix, lu_instance
 # import StaticArrayInterface
 import StaticArrays
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA,
-    StaticMatrix
+                     StaticMatrix
 
 using DiffEqBase: TimeGradientWrapper,
-    UJacobianWrapper, TimeDerivativeWrapper,
-    UDerivativeWrapper
+                  UJacobianWrapper, TimeDerivativeWrapper,
+                  UDerivativeWrapper
 import SciMLBase: SciMLBase, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction, DAEFunction, islinear, remake, solve!, isconstant
 using SciMLBase: @set, @reset
 import SciMLOperators: SciMLOperators, IdentityOperator, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator, ScalarOperator
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
-    ncolors, column_colors, coloring, sparsity_pattern
+                               ncolors, column_colors, coloring, sparsity_pattern
 import OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-    DAEAlgorithm,
-    OrdinaryDiffEqImplicitAlgorithm, CompositeAlgorithm,
-    OrdinaryDiffEqExponentialAlgorithm,
-    OrdinaryDiffEqAdaptiveExponentialAlgorithm,
-    AbstractNLSolver, nlsolve_f, issplit,
-    concrete_jac, unwrap_alg, OrdinaryDiffEqCache, _vec, standardtag,
-    isnewton, _unwrap_val,
-    set_new_W!, set_W_γdt!, alg_difftype, unwrap_cache, diffdir,
-    get_W, isfirstcall, isfirststage, isJcurrent,
-    get_new_W_γdt_cutoff,
-    TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM,
-    FastConvergence, Convergence, SlowConvergence,
-    VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue
+                          DAEAlgorithm,
+                          OrdinaryDiffEqImplicitAlgorithm, CompositeAlgorithm,
+                          OrdinaryDiffEqExponentialAlgorithm,
+                          OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+                          AbstractNLSolver, nlsolve_f, issplit,
+                          concrete_jac, unwrap_alg, OrdinaryDiffEqCache, _vec, standardtag,
+                          isnewton, _unwrap_val,
+                          set_new_W!, set_W_γdt!, alg_difftype, unwrap_cache, diffdir,
+                          get_W, isfirstcall, isfirststage, isJcurrent,
+                          get_new_W_γdt_cutoff,
+                          TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM,
+                          FastConvergence, Convergence, SlowConvergence,
+                          VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue, @SciMLMessage
 
 import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff,
-    _get_fwd_tag
+                           _get_fwd_tag
 
 import ConstructionBase
 using ConstructionBase: constructorof
