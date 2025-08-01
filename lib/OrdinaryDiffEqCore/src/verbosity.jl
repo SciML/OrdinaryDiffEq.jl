@@ -4,13 +4,13 @@ ode_defaults = Dict(
     :rosenbrock_no_differential_states => Verbosity.Warn(),
     :dense_output_saveat => Verbosity.Warn(),
     :alg_switch => Verbosity.Warn(),
-    :mismatched_input_output_type => Verbosity.Warn()
+    :mismatched_input_output_type => Verbosity.Warn(),
+    :shampine_dt => Verbosity.Warn()
 )
 
 mutable struct ODEErrorControlVerbosity
     dt_NaN::Verbosity.Type
     init_NaN::Verbosity.Type
-    rosenbrock_no_differential_states::Verbosity.Type
     dense_output_saveat::Verbosity.Type
 
     function ODEErrorControlVerbosity(;
@@ -73,6 +73,9 @@ function ODEPerformanceVerbosity(verbose::Verbosity.Type)
 end
 
 mutable struct ODENumericalVerbosity
+    rosenbrock_no_differential_states::Verbosity.Type
+    shampine_dt::Verbosity.Type
+    unlimited_dt::Verbosity.Type
     @add_kwonly function ODENumericalVerbosity()
         new()
     end
