@@ -3,38 +3,6 @@ uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 version = "6.101.0"
 
-[sources]
-OrdinaryDiffEqAdamsBashforthMoulton = {path = "lib/OrdinaryDiffEqAdamsBashforthMoulton"}
-OrdinaryDiffEqBDF = {path = "lib/OrdinaryDiffEqBDF"}
-OrdinaryDiffEqCore = {path = "lib/OrdinaryDiffEqCore"}
-OrdinaryDiffEqDefault = {path = "lib/OrdinaryDiffEqDefault"}
-OrdinaryDiffEqDifferentiation = {path = "lib/OrdinaryDiffEqDifferentiation"}
-OrdinaryDiffEqExplicitRK = {path = "lib/OrdinaryDiffEqExplicitRK"}
-OrdinaryDiffEqExponentialRK = {path = "lib/OrdinaryDiffEqExponentialRK"}
-OrdinaryDiffEqExtrapolation = {path = "lib/OrdinaryDiffEqExtrapolation"}
-OrdinaryDiffEqFIRK = {path = "lib/OrdinaryDiffEqFIRK"}
-OrdinaryDiffEqFeagin = {path = "lib/OrdinaryDiffEqFeagin"}
-OrdinaryDiffEqFunctionMap = {path = "lib/OrdinaryDiffEqFunctionMap"}
-OrdinaryDiffEqHighOrderRK = {path = "lib/OrdinaryDiffEqHighOrderRK"}
-OrdinaryDiffEqIMEXMultistep = {path = "lib/OrdinaryDiffEqIMEXMultistep"}
-OrdinaryDiffEqLinear = {path = "lib/OrdinaryDiffEqLinear"}
-OrdinaryDiffEqLowOrderRK = {path = "lib/OrdinaryDiffEqLowOrderRK"}
-OrdinaryDiffEqLowStorageRK = {path = "lib/OrdinaryDiffEqLowStorageRK"}
-OrdinaryDiffEqNonlinearSolve = {path = "lib/OrdinaryDiffEqNonlinearSolve"}
-OrdinaryDiffEqNordsieck = {path = "lib/OrdinaryDiffEqNordsieck"}
-OrdinaryDiffEqPDIRK = {path = "lib/OrdinaryDiffEqPDIRK"}
-OrdinaryDiffEqPRK = {path = "lib/OrdinaryDiffEqPRK"}
-OrdinaryDiffEqQPRK = {path = "lib/OrdinaryDiffEqQPRK"}
-OrdinaryDiffEqRKN = {path = "lib/OrdinaryDiffEqRKN"}
-OrdinaryDiffEqRosenbrock = {path = "lib/OrdinaryDiffEqRosenbrock"}
-OrdinaryDiffEqSDIRK = {path = "lib/OrdinaryDiffEqSDIRK"}
-OrdinaryDiffEqSSPRK = {path = "lib/OrdinaryDiffEqSSPRK"}
-OrdinaryDiffEqStabilizedIRK = {path = "lib/OrdinaryDiffEqStabilizedIRK"}
-OrdinaryDiffEqStabilizedRK = {path = "lib/OrdinaryDiffEqStabilizedRK"}
-OrdinaryDiffEqSymplecticRK = {path = "lib/OrdinaryDiffEqSymplecticRK"}
-OrdinaryDiffEqTsit5 = {path = "lib/OrdinaryDiffEqTsit5"}
-OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
-
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -44,6 +12,7 @@ DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 ExponentialUtilities = "d4d017d3-3776-5f7e-afef-a10c40355c18"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 FastClosures = "9aa1b823-49e4-5ca5-8b0f-3971ec8bab6a"
@@ -106,6 +75,38 @@ StaticArrayInterface = "0d7ed370-da01-4f52-bd93-41d350b8b718"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 
+[sources]
+OrdinaryDiffEqAdamsBashforthMoulton = {path = "lib/OrdinaryDiffEqAdamsBashforthMoulton"}
+OrdinaryDiffEqBDF = {path = "lib/OrdinaryDiffEqBDF"}
+OrdinaryDiffEqCore = {path = "lib/OrdinaryDiffEqCore"}
+OrdinaryDiffEqDefault = {path = "lib/OrdinaryDiffEqDefault"}
+OrdinaryDiffEqDifferentiation = {path = "lib/OrdinaryDiffEqDifferentiation"}
+OrdinaryDiffEqExplicitRK = {path = "lib/OrdinaryDiffEqExplicitRK"}
+OrdinaryDiffEqExponentialRK = {path = "lib/OrdinaryDiffEqExponentialRK"}
+OrdinaryDiffEqExtrapolation = {path = "lib/OrdinaryDiffEqExtrapolation"}
+OrdinaryDiffEqFIRK = {path = "lib/OrdinaryDiffEqFIRK"}
+OrdinaryDiffEqFeagin = {path = "lib/OrdinaryDiffEqFeagin"}
+OrdinaryDiffEqFunctionMap = {path = "lib/OrdinaryDiffEqFunctionMap"}
+OrdinaryDiffEqHighOrderRK = {path = "lib/OrdinaryDiffEqHighOrderRK"}
+OrdinaryDiffEqIMEXMultistep = {path = "lib/OrdinaryDiffEqIMEXMultistep"}
+OrdinaryDiffEqLinear = {path = "lib/OrdinaryDiffEqLinear"}
+OrdinaryDiffEqLowOrderRK = {path = "lib/OrdinaryDiffEqLowOrderRK"}
+OrdinaryDiffEqLowStorageRK = {path = "lib/OrdinaryDiffEqLowStorageRK"}
+OrdinaryDiffEqNonlinearSolve = {path = "lib/OrdinaryDiffEqNonlinearSolve"}
+OrdinaryDiffEqNordsieck = {path = "lib/OrdinaryDiffEqNordsieck"}
+OrdinaryDiffEqPDIRK = {path = "lib/OrdinaryDiffEqPDIRK"}
+OrdinaryDiffEqPRK = {path = "lib/OrdinaryDiffEqPRK"}
+OrdinaryDiffEqQPRK = {path = "lib/OrdinaryDiffEqQPRK"}
+OrdinaryDiffEqRKN = {path = "lib/OrdinaryDiffEqRKN"}
+OrdinaryDiffEqRosenbrock = {path = "lib/OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqSDIRK = {path = "lib/OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqSSPRK = {path = "lib/OrdinaryDiffEqSSPRK"}
+OrdinaryDiffEqStabilizedIRK = {path = "lib/OrdinaryDiffEqStabilizedIRK"}
+OrdinaryDiffEqStabilizedRK = {path = "lib/OrdinaryDiffEqStabilizedRK"}
+OrdinaryDiffEqSymplecticRK = {path = "lib/OrdinaryDiffEqSymplecticRK"}
+OrdinaryDiffEqTsit5 = {path = "lib/OrdinaryDiffEqTsit5"}
+OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
+
 [compat]
 ADTypes = "1.16"
 Adapt = "3.0, 4"
@@ -115,6 +116,7 @@ DataStructures = "0.18, 0.19"
 DiffEqBase = "6.169.1"
 DocStringExtensions = "0.9"
 EnumX = "1"
+ExplicitImports = "1.13.1"
 ExponentialUtilities = "1"
 FastBroadcast = "0.2, 0.3"
 FastClosures = "0.3"
