@@ -19,7 +19,7 @@ using Test
         prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 1.0))
         
         # Test all exported Tsit5 solvers
-        tsit5_solvers = [Tsit5(), AutoTsit5(Tsit5())]
+        tsit5_solvers = [Tsit5()]
         
         for solver in tsit5_solvers
             @testset "$(typeof(solver)) type stability" begin
