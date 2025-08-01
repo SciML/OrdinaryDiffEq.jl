@@ -26,9 +26,11 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "<0.0.1, 1"
 FastBroadcast = "0.3"
 Random = "<0.0.1, 1"
-DiffEqDevTools = "2.44.4"
-MuladdMacro = "0.2"
-LinearAlgebra = "1.10"
+RecursiveArrayTools = "3"
+Reexport = "1.2.2"
+SafeTestsets = "0.1.0"
+AllocCheck = "0.2.2"
+Test = "<0.0.1, 1"
 TruncatedStacktraces = "1"
 SciMLBase = "2"
 OrdinaryDiffEqCore = "1"
@@ -40,8 +42,17 @@ DiffEqBase = "6"
 SafeTestsets = "0.1.0"
 Reexport = "1.2.2"
 
+[extras]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua"]
+test = ["AllocCheck", "Aqua", "DiffEqDevTools", "JET", "Random", "SafeTestsets", "Test"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
