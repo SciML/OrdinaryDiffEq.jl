@@ -17,8 +17,8 @@ These tests verify that the step! operation does not allocate during stepping.
     end
     prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 1.0))
     
-    # Test explicit RK solvers for allocation-free behavior
-    explicit_rk_solvers = [RK4(), BS3(), DP5()]
+    # Test all exported ExplicitRK solvers for allocation-free behavior
+    explicit_rk_solvers = [ExplicitRK()]
     
     @testset "ExplicitRK Solver Allocation Analysis" begin
         for solver in explicit_rk_solvers

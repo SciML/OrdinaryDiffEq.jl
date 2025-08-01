@@ -17,8 +17,8 @@ These tests verify that the step! operation does not allocate during stepping.
     end
     prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 1.0))
     
-    # Test high-order RK solvers for allocation-free behavior
-    high_order_solvers = [Vern6(), Vern7(), Vern8(), Vern9()]
+    # Test all exported HighOrderRK solvers for allocation-free behavior
+    high_order_solvers = [TanYam7(), DP8(), PFRK87(), TsitPap8()]
     
     @testset "HighOrderRK Solver Allocation Analysis" begin
         for solver in high_order_solvers
