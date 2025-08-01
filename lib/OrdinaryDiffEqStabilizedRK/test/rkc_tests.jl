@@ -90,11 +90,11 @@ end
     @testset "$prob" for prob in [probop, probip]
         eigen_est = (integrator) -> integrator.eigen_est = 500
         algs = [ROCK2(), ROCK2(eigen_est = eigen_est),
-            ROCK4(), ROCK4(eigen_est = eigen_est),
-            RKC(), RKC(eigen_est = eigen_est),
-            SERK2(), SERK2(eigen_est = eigen_est),
-            ESERK4(), ESERK4(eigen_est = eigen_est),
-            ESERK5(), ESERK5(eigen_est = eigen_est)]
+                ROCK4(), ROCK4(eigen_est = eigen_est),
+                RKC(), RKC(eigen_est = eigen_est),
+                SERK2(), SERK2(eigen_est = eigen_est),
+                ESERK4(), ESERK4(eigen_est = eigen_est),
+                ESERK5(), ESERK5(eigen_est = eigen_est)]
         @testset "$alg" for alg in algs
             x[] = 0
             sol = solve(prob, alg)
@@ -113,11 +113,11 @@ end
 
     eigen_est = (integrator) -> integrator.eigen_est = 500
     algs = [ROCK2(), ROCK2(eigen_est = eigen_est),
-        ROCK4(), ROCK4(eigen_est = eigen_est),
-        RKC(), RKC(eigen_est = eigen_est),
-        SERK2(), SERK2(eigen_est = eigen_est),
-        ESERK4(), ESERK4(eigen_est = eigen_est),
-        ESERK5(), ESERK5(eigen_est = eigen_est)]
+            ROCK4(), ROCK4(eigen_est = eigen_est),
+            RKC(), RKC(eigen_est = eigen_est),
+            SERK2(), SERK2(eigen_est = eigen_est),
+            ESERK4(), ESERK4(eigen_est = eigen_est),
+            ESERK5(), ESERK5(eigen_est = eigen_est)]
     @testset "$alg" for alg in algs
         # compile once
         integrator = init(prob, alg; save_everystep = false)
@@ -125,6 +125,8 @@ end
         # check allocations
         integrator = init(prob, alg; save_everystep = false)
         allocs = @allocations solve!(integrator)
-        @test allocs <= 3
+        # Julia 1.11 has an extra allocation in these algorithms
+        expected_allocs = VERSION >= v"1.11" ? 4 : 3
+        @test allocs <= expected_allocs
     end
 end

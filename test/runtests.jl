@@ -32,13 +32,9 @@ end
 #Start Test Script
 
 @time begin
-    if contains(GROUP, "OrdinaryDiffEq") || GROUP == "ImplicitDiscreteSolve" ||
-       GROUP == "SimpleImplicitDiscreteSolve"
+    if contains(GROUP, "OrdinaryDiffEq") || GROUP == "ImplicitDiscreteSolve" || GROUP == "SimpleImplicitDiscreteSolve"
         Pkg.activate(joinpath(dirname(@__DIR__), "lib", GROUP))
-        Pkg.test(GROUP,
-            julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"],
-            force_latest_compatible_version = false,
-            allow_reresolve = true)
+        Pkg.test(GROUP, julia_args=["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version=false, allow_reresolve=true)
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
         @time @safetestset "Tstops Tests" include("interface/ode_tstops_tests.jl")
@@ -102,6 +98,7 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "AD Tests" include("interface/ad_tests.jl")
+        @time @safetestset "GPU AutoDiff Interface Tests" include("interface/gpu_autodiff_interface_tests.jl")
         @time @safetestset "DAE Initialization Tests" include("interface/dae_initialization_tests.jl")
     end
 
@@ -164,7 +161,7 @@ end
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
-        if VERSION >= v"1.11"
+        if VERSION >= v"1.11" && isempty(VERSION.prerelease)
             @time @safetestset "Mooncake Tests" include("downstream/mooncake.jl")
         end
         @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")

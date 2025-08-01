@@ -323,7 +323,7 @@ function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, ts
     @logmsg(LogLevel(-1), progress_name,
         _id=progress_id,
         message=progress_message(dt, u, p, t),
-        progress=(t - t1) / (t2 - t1))
+        progress=(t-t1)/(t2-t1))
 end
 
 function fixed_t_for_floatingpoint_error!(integrator, ttmp)
@@ -375,13 +375,18 @@ function handle_callbacks!(integrator)
     discrete_modified = false
     saved_in_cb = false
     if !(continuous_callbacks isa Tuple{})
-        time, upcrossing, event_occurred, event_idx, idx, counter = DiffEqBase.find_first_continuous_callback(
+        time, upcrossing,
+        event_occurred,
+        event_idx,
+        idx,
+        counter = DiffEqBase.find_first_continuous_callback(
             integrator,
             continuous_callbacks...)
         if event_occurred
             integrator.event_last_time = idx
             integrator.vector_event_last_time = event_idx
-            continuous_modified, saved_in_cb = apply_ith_callback!(integrator,
+            continuous_modified,
+            saved_in_cb = apply_ith_callback!(integrator,
                 time, upcrossing,
                 event_idx,
                 idx,
@@ -392,7 +397,8 @@ function handle_callbacks!(integrator)
         end
     end
     if !integrator.force_stepfail && !(discrete_callbacks isa Tuple{})
-        discrete_modified, saved_in_cb = DiffEqBase.apply_discrete_callback!(integrator,
+        discrete_modified,
+        saved_in_cb = DiffEqBase.apply_discrete_callback!(integrator,
             discrete_callbacks...)
     end
     if !saved_in_cb

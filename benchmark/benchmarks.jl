@@ -13,8 +13,8 @@ SUITE["nonstiff"] = BenchmarkGroup()
 function lotka_volterra!(du, u, p, t)
     α, β, γ, δ = p
     x, y = u
-    du[1] = α * x - β * x * y  # dx/dt
-    du[2] = δ * x * y - γ * y  # dy/dt
+    du[1] = α*x - β*x*y  # dx/dt
+    du[2] = δ*x*y - γ*y  # dy/dt
     nothing
 end
 
@@ -69,8 +69,8 @@ end
 function fitzhugh_nagumo!(du, u, p, t)
     a, b, c = p
     v, w = u
-    du[1] = c * (v - v^3 / 3 + w)    # dv/dt
-    du[2] = -(v - a + b * w) / c     # dw/dt
+    du[1] = c * (v - v^3/3 + w)    # dv/dt
+    du[2] = -(v - a + b*w) / c     # dw/dt
     nothing
 end
 
@@ -91,9 +91,9 @@ SUITE["stiff"] = BenchmarkGroup()
 function rober!(du, u, p, t)
     k1, k2, k3 = p
     y1, y2, y3 = u
-    du[1] = -k1 * y1 + k3 * y2 * y3         # dy1/dt
-    du[2] = k1 * y1 - k2 * y2^2 - k3 * y2 * y3   # dy2/dt
-    du[3] = k2 * y2^2                   # dy3/dt
+    du[1] = -k1*y1 + k3*y2*y3         # dy1/dt
+    du[2] = k1*y1 - k2*y2^2 - k3*y2*y3   # dy2/dt
+    du[3] = k2*y2^2                   # dy3/dt
     nothing
 end
 
@@ -109,7 +109,7 @@ function van_der_pol!(du, u, p, t)
     μ = p[1]
     x, y = u
     du[1] = y                      # dx/dt
-    du[2] = μ * ((1 - x^2) * y - x)  # dy/dt
+    du[2] = μ * ((1 - x^2)*y - x)  # dy/dt
     nothing
 end
 
@@ -121,31 +121,31 @@ function van_der_pol_prob()
 end
 
 # Pollution Problem (atmospheric chemistry, 20D stiff system)
-const k1 = .35e0
-const k2 = .266e2
-const k3 = .123e5
-const k4 = .86e-3
-const k5 = .82e-3
-const k6 = .15e5
-const k7 = .13e-3
-const k8 = .24e5
-const k9 = .165e5
-const k10 = .9e4
-const k11 = .22e-1
-const k12 = .12e5
-const k13 = .188e1
-const k14 = .163e5
-const k15 = .48e7
-const k16 = .35e-3
-const k17 = .175e-1
-const k18 = .1e9
-const k19 = .444e12
-const k20 = .124e4
-const k21 = .21e1
-const k22 = .578e1
-const k23 = .474e-1
-const k24 = .178e4
-const k25 = .312e1
+const k1=.35e0
+const k2=.266e2
+const k3=.123e5
+const k4=.86e-3
+const k5=.82e-3
+const k6=.15e5
+const k7=.13e-3
+const k8=.24e5
+const k9=.165e5
+const k10=.9e4
+const k11=.22e-1
+const k12=.12e5
+const k13=.188e1
+const k14=.163e5
+const k15=.48e7
+const k16=.35e-3
+const k17=.175e-1
+const k18=.1e9
+const k19=.444e12
+const k20=.124e4
+const k21=.21e1
+const k22=.578e1
+const k23=.474e-1
+const k24=.178e4
+const k25=.312e1
 
 function pollution!(dy, y, p, t)
     r1 = k1 * y[1]
@@ -157,44 +157,43 @@ function pollution!(dy, y, p, t)
     r7 = k7 * y[9]
     r8 = k8 * y[9] * y[6]
     r9 = k9 * y[11] * y[2]
-    r10 = k10 * y[11] * y[1]
-    r11 = k11 * y[13]
-    r12 = k12 * y[10] * y[2]
-    r13 = k13 * y[14]
-    r14 = k14 * y[1] * y[6]
-    r15 = k15 * y[3]
-    r16 = k16 * y[4]
-    r17 = k17 * y[4]
-    r18 = k18 * y[16]
-    r19 = k19 * y[16]
-    r20 = k20 * y[17] * y[6]
-    r21 = k21 * y[19]
-    r22 = k22 * y[19]
-    r23 = k23 * y[1] * y[4]
-    r24 = k24 * y[19] * y[1]
-    r25 = k25 * y[20]
+    r10 = k10*y[11]*y[1]
+    r11 = k11*y[13]
+    r12 = k12*y[10]*y[2]
+    r13 = k13*y[14]
+    r14 = k14*y[1]*y[6]
+    r15 = k15*y[3]
+    r16 = k16*y[4]
+    r17 = k17*y[4]
+    r18 = k18*y[16]
+    r19 = k19*y[16]
+    r20 = k20*y[17]*y[6]
+    r21 = k21*y[19]
+    r22 = k22*y[19]
+    r23 = k23*y[1]*y[4]
+    r24 = k24*y[19]*y[1]
+    r25 = k25*y[20]
 
-    dy[1] = -r1 - r10 - r14 - r23 - r24 +
-            r2 + r3 + r9 + r11 + r12 + r22 + r25
-    dy[2] = -r2 - r3 - r9 - r12 + r1 + r21
-    dy[3] = -r15 + r1 + r17 + r19 + r22
-    dy[4] = -r2 - r16 - r17 - r23 + r15
-    dy[5] = -r3 + r4 + r4 + r6 + r7 + r13 + r20
-    dy[6] = -r6 - r8 - r14 - r20 + r3 + r18 + r18
-    dy[7] = -r4 - r5 - r6 + r13
-    dy[8] = r4 + r5 + r6 + r7
-    dy[9] = -r7 - r8
-    dy[10] = -r12 + r7 + r9
-    dy[11] = -r9 - r10 + r8 + r11
+    dy[1] = -r1-r10-r14-r23-r24 + r2 + r3 + r9 + r11 + r12 + r22 + r25
+    dy[2] = -r2-r3-r9-r12+r1+r21
+    dy[3] = -r15+r1+r17+r19+r22
+    dy[4] = -r2-r16-r17-r23+r15
+    dy[5] = -r3+r4+r4+r6+r7+r13+r20
+    dy[6] = -r6-r8-r14-r20+r3+r18+r18
+    dy[7] = -r4-r5-r6+r13
+    dy[8] = r4+r5+r6+r7
+    dy[9] = -r7-r8
+    dy[10] = -r12+r7+r9
+    dy[11] = -r9-r10+r8+r11
     dy[12] = r9
-    dy[13] = -r11 + r10
-    dy[14] = -r13 + r12
+    dy[13] = -r11+r10
+    dy[14] = -r13+r12
     dy[15] = r14
-    dy[16] = -r18 - r19 + r16
+    dy[16] = -r18-r19+r16
     dy[17] = -r20
     dy[18] = r20
-    dy[19] = -r21 - r22 - r24 + r23 + r25
-    dy[20] = -r25 + r24
+    dy[19] = -r21-r22-r24+r23+r25
+    dy[20] = -r25+r24
     nothing
 end
 
@@ -249,19 +248,14 @@ function brusselator_2d!(du, u, p, t)
     @inbounds for I in CartesianIndices((N, N))
         i, j = Tuple(I)
         x, y = xyd[i], xyd[j]
-        ip1, im1, jp1, jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N),
-        limit(j - 1, N)
+        ip1, im1, jp1,
+        jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N), limit(j - 1, N)
 
         # u equation: ∂u/∂t = 1 + u²v - 4.4u + α∇²u + f(x,y,t)
-        du[i, j, 1] = α * (u[im1, j, 1] + u[ip1, j, 1] + u[i, jp1, 1] + u[i, jm1, 1] -
-                       4 * u[i, j, 1]) +
-                      B + u[i, j, 1]^2 * u[i, j, 2] - (A + 1) * u[i, j, 1] +
-                      brusselator_f(x, y, t)
+        du[i, j, 1] = α * (u[im1, j, 1] + u[ip1, j, 1] + u[i, jp1, 1] + u[i, jm1, 1] - 4*u[i, j, 1]) + B + u[i, j, 1]^2 * u[i, j, 2] - (A + 1) * u[i, j, 1] + brusselator_f(x, y, t)
 
         # v equation: ∂v/∂t = 3.4u - u²v + α∇²v  
-        du[i, j, 2] = α * (u[im1, j, 2] + u[ip1, j, 2] + u[i, jp1, 2] + u[i, jm1, 2] -
-                       4 * u[i, j, 2]) +
-                      A * u[i, j, 1] - u[i, j, 1]^2 * u[i, j, 2]
+        du[i, j, 2] = α * (u[im1, j, 2] + u[ip1, j, 2] + u[i, jp1, 2] + u[i, jm1, 2] - 4*u[i, j, 2]) + A * u[i, j, 1] - u[i, j, 1]^2 * u[i, j, 2]
     end
     nothing
 end
@@ -272,8 +266,8 @@ function init_brusselator_2d(N::Int)
     for I in CartesianIndices((N, N))
         x = xyd[I[1]]
         y = xyd[I[2]]
-        u[I, 1] = 22 * (y * (1 - y))^(3 / 2)  # u initial condition
-        u[I, 2] = 27 * (x * (1 - x))^(3 / 2)  # v initial condition  
+        u[I, 1] = 22 * (y * (1 - y))^(3/2)  # u initial condition
+        u[I, 2] = 27 * (x * (1 - x))^(3/2)  # v initial condition  
     end
     u
 end
@@ -342,8 +336,7 @@ SUITE["scaling"]["brusselator_2d"] = BenchmarkGroup()
 # Linear ODE scaling (different problem sizes)
 for N in [10, 50, 100]
     prob = create_linear_prob(N)
-    SUITE["scaling"]["linear"]["N$N"] = @benchmarkable solve(
-        $prob, Tsit5(), reltol = 1e-6, abstol = 1e-8)
+    SUITE["scaling"]["linear"]["N$N"] = @benchmarkable solve($prob, Tsit5(), reltol = 1e-6, abstol = 1e-8)
 end
 
 # Brusselator 2D scaling (different grid sizes)

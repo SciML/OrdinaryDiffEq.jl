@@ -27,7 +27,7 @@ end
     @unpack c1, c2 = cache.tab
     c1m1 = c1 - 1
     c2m1 = c2 - 1
-    Θdt = 1 - Θ
+    Θdt = 1-Θ
     @.. y₁ - Θdt * (k[3] - (Θdt + c2m1) * (k[4] - (Θdt + c1m1) * k[5]))
 end
 

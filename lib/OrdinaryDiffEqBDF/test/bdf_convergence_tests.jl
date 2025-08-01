@@ -12,7 +12,9 @@ if isempty(VERSION.prerelease)
     using Enzyme
 end
 
-@testset "Implicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
+@testset "Implicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in
+                                                                                      1:2
+
     prob = (ODEProblemLibrary.prob_ode_linear,
         ODEProblemLibrary.prob_ode_2Dlinear)[i]
 

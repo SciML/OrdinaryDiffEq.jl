@@ -26,7 +26,7 @@ function backward_diff!(cache::OrdinaryDiffEqMutableCache, D, D2, k, flag = true
     flag && copyto!(D[1], D2[1, 1])
     for i in 2:k
         for j in 1:(k - i + 1)
-            @.. broadcast=false D2[i, j]=D2[i - 1, j] - D2[i - 1, j + 1]
+            @.. broadcast=false D2[i, j]=D2[i - 1, j]-D2[i - 1, j + 1]
         end
         flag && copyto!(D[i], D2[i, 1])
     end
@@ -82,10 +82,10 @@ end
 
 function update_D!(D, dd, k)
     dd = _vec(dd)
-    @views @.. broadcast=false D[:, k + 2]=dd - D[:, k + 1]
+    @views @.. broadcast=false D[:, k + 2]=dd-D[:, k + 1]
     @views @.. broadcast=false D[:, k + 1]=dd
     for i in k:-1:1
-        @views @.. broadcast=false D[:, i]=D[:, i] + D[:, i + 1]
+        @views @.. broadcast=false D[:, i]=D[:, i]+D[:, i + 1]
     end
     return nothing
 end
@@ -195,7 +195,8 @@ end
 
 function reinitFBDF!(integrator, cache)
     # This function is used for initialize weights and arrays that store past history information. It will be used in the first-time step advancing and event handling.
-    @unpack weights, consfailcnt, ts, u_history, u_corrector, iters_from_event, order = cache
+    @unpack weights, consfailcnt, ts, u_history, u_corrector, iters_from_event,
+    order = cache
     @unpack t, dt, uprev = integrator
 
     if integrator.u_modified
@@ -237,7 +238,7 @@ function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order
     @unpack ts_tmp, terk_tmp, u_history = cache
     @unpack t, dt, u = integrator
     fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 1, Val(max_order))
-    @.. broadcast=false terk_tmp=fd_weights[1, k] * u
+    @.. broadcast=false terk_tmp=fd_weights[1, k]*u
     vc = _vec(terk_tmp)
     for i in 2:k
         @.. broadcast=false @views vc += fd_weights[i, k] * u_history[:, i - 1]

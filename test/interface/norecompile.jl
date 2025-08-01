@@ -54,12 +54,12 @@ lorenzprob = ODEProblem(lorenz_oop, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
 # This is problem-dependent, so it is hard to deduce a priori
 @test_broken t1 = @elapsed sol = solve(lorenzprob, Rosenbrock23())
 
-t2 = @elapsed sol = solve(lorenzprob, Rosenbrock23(autodiff = false))
+t2 = @elapsed sol = solve(lorenzprob, Rosenbrock23(autodiff = AutoFiniteDiff()))
 
 lorenzprob2 = ODEProblem{false, SciMLBase.FullSpecialize}(lorenz_oop, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
 
 t3 = @elapsed sol = solve(lorenzprob2, Rosenbrock23())
-t4 = @elapsed sol = solve(lorenzprob2, Rosenbrock23(autodiff = false))
+t4 = @elapsed sol = solve(lorenzprob2, Rosenbrock23(autodiff = AutoFiniteDiff()))
 
 #@test 5t1 < t3
 #@test t2 < t4

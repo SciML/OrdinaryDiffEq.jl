@@ -148,7 +148,8 @@ function _initialize_dae!(integrator, prob::AbstractDEProblem,
 
     nlsolve_alg = default_nlsolve(alg.nlsolve, isinplace, iu0, initializeprob, isAD)
 
-    u0, p, success = SciMLBase.get_initial_values(
+    u0, p,
+    success = SciMLBase.get_initial_values(
         prob, integrator, prob.f, alg, isinplace; nlsolve_alg,
         abstol = integrator.opts.abstol, reltol = integrator.opts.reltol)
 

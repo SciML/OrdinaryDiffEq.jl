@@ -64,8 +64,7 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
         if sol.retcode == ReturnCode.Success
             integrator.u = sol
         else
-            integrator.sol = SciMLBase.solution_new_retcode(
-                integrator.sol, ReturnCode.InitialFailure)
+            integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.InitialFailure)
         end
     end
 end

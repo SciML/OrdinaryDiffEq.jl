@@ -614,6 +614,7 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
 
     derivatives = Matrix{typeof(u)}(undef, max_stages, max_stages)
     for i in 1:max_stages, j in 1:max_stages
+
         derivatives[i, j] = zero(u)
     end
 

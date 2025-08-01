@@ -62,8 +62,11 @@ function prepare_jvp(f::DiffEqBase.AbstractDiffEqFunction, du, u, p, t, autodiff
     @assert DI.check_inplace(autodiff) "AD backend $(autodiff) doesn't support in-place problems."
     di_prep = DI.prepare_pushforward(
         f, du, autodiff, u, (u,), DI.ConstantOrCache(p), DI.Constant(t))
-    return (Jv, v, u, p, t) -> DI.pushforward!(
-        f, du, (reshape(Jv, size(du)),), di_prep, autodiff, u,
+    return (Jv,
+        v,
+        u,
+        p,
+        t) -> DI.pushforward!(f, du, (reshape(Jv, size(du)),), di_prep, autodiff, u,
         (reshape(v, size(u)),), DI.ConstantOrCache(p), DI.Constant(t))
 end
 

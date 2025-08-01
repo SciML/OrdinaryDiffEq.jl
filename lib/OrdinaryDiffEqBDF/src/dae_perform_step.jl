@@ -66,8 +66,8 @@ end
     nlsolver.γ = 1
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    @.. broadcast=false u=uprev + z
-    @.. broadcast=false du=z * inv(dt)
+    @.. broadcast=false u=uprev+z
+    @.. broadcast=false du=z*inv(dt)
 
     if integrator.opts.adaptive && integrator.success_iter > 0
         # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -82,9 +82,9 @@ end
         c = 7 / 12 # default correction factor in SPICE (LTE overestimated by DD)
         r = c * dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-        @.. broadcast=false tmp=r * integrator.opts.internalnorm(
-            (u - uprev) / dt1 -
-            (uprev - uprev2) / dt2, t)
+        @.. broadcast=false tmp=r*integrator.opts.internalnorm(
+            (u-uprev)/dt1-
+            (uprev-uprev2)/dt2, t)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -177,7 +177,7 @@ end
     if integrator.iter == 1 && !integrator.u_modified
         cache.dtₙ₋₁ = dtₙ
         perform_step!(integrator, cache.eulercache, repeat_step)
-        @.. broadcast=false integrator.fsalfirst=(uₙ - uₙ₋₁) / dt
+        @.. broadcast=false integrator.fsalfirst=(uₙ-uₙ₋₁)/dt
         cache.fsalfirstprev .= integrator.fsalfirst
         return
     end
@@ -188,13 +188,13 @@ end
 
     nlsolver.γ = (1 + ρ) / (1 + 2ρ)
     nlsolver.α = 1 // 1
-    @.. broadcast=false nlsolver.tmp=-c1 * uₙ₋₁ + c1 * uₙ₋₂
+    @.. broadcast=false nlsolver.tmp=-c1*uₙ₋₁+c1*uₙ₋₂
     nlsolver.z .= zero(eltype(z))
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
-    @.. broadcast=false uₙ=uₙ₋₁ + z
-    @.. broadcast=false du=(nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt)
+    @.. broadcast=false uₙ=uₙ₋₁+z
+    @.. broadcast=false du=(nlsolver.α*z+nlsolver.tmp)*inv(nlsolver.γ*dt)
 
     @.. broadcast=false integrator.fsallast=du
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -202,9 +202,9 @@ end
         btilde0 = (dtₙ₋₁ + dtₙ) * 1 // 6
         btilde1 = 1 + ρ
         btilde2 = ρ
-        @.. broadcast=false tmp=btilde0 *
-                                (integrator.fsallast - btilde1 * integrator.fsalfirst +
-                                 btilde2 * cache.fsalfirstprev)
+        @.. broadcast=false tmp=btilde0*
+        (integrator.fsallast-btilde1*integrator.fsalfirst+
+        btilde2*cache.fsalfirstprev)
         calculate_residuals!(atmp, tmp, uₙ₋₁, uₙ, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -238,7 +238,8 @@ end
 
 function perform_step!(integrator, cache::DFBDFConstantCache{max_order},
         repeat_step = false) where {max_order}
-    @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, ts_tmp, iters_from_event, nconsteps = cache
+    @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
+    weights, ts_tmp, iters_from_event, nconsteps = cache
     @unpack t, dt, u, f, p, uprev = integrator
 
     k = order
@@ -273,7 +274,7 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order},
                 ts,
                 u_history,
                 u_corrector[:,
-                    i])
+                i])
         end
         tmp = uprev * bdf_coeffs[k, 2]
         vc = _vec(tmp)
@@ -369,7 +370,8 @@ end
 
 function perform_step!(integrator, cache::DFBDFCache{max_order},
         repeat_step = false) where {max_order}
-    @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, terk_tmp, terkp1_tmp, atmp, tmp, equi_ts, u₀, ts_tmp = cache
+    @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights,
+    terk_tmp, terkp1_tmp, atmp, tmp, equi_ts, u₀, ts_tmp = cache
     @unpack t, dt, u, f, p, uprev = integrator
 
     reinitFBDF!(integrator, cache)
@@ -392,19 +394,19 @@ function perform_step!(integrator, cache::DFBDFCache{max_order},
             u_corrector[:, i])
     end
 
-    @.. broadcast=false tmp=uprev * bdf_coeffs[k, 2]
+    @.. broadcast=false tmp=uprev*bdf_coeffs[k, 2]
     vc = _vec(tmp)
     for i in 1:(k - 1)
         @.. broadcast=false @views vc += u_corrector[:, i] * bdf_coeffs[k, i + 2]
     end
 
-    @.. broadcast=false nlsolver.tmp=tmp + u₀
+    @.. broadcast=false nlsolver.tmp=tmp+u₀
     @.. broadcast=false nlsolver.z=zero(eltype(nlsolver.z))
     nlsolver.γ = bdf_coeffs[k, 1]
     nlsolver.α = 1 // 1
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    @.. broadcast=false u=z + u₀
+    @.. broadcast=false u=z+u₀
 
     for j in 2:k
         r[j] = (1 - j)
@@ -422,7 +424,7 @@ function perform_step!(integrator, cache::DFBDFCache{max_order},
     for j in 2:k
         lte -= (bdf_coeffs[k, j] // bdf_coeffs[k, 1]) * r[j]
     end
-    @.. broadcast=false terk_tmp=lte * terkp1_tmp
+    @.. broadcast=false terk_tmp=lte*terkp1_tmp
     if integrator.opts.adaptive
         @unpack abstol, reltol, internalnorm = integrator.opts
         for i in 1:(k + 1)
@@ -460,7 +462,7 @@ function perform_step!(integrator, cache::DFBDFCache{max_order},
             cache.terkp1 = zero(cache.terkp1)
         end
     end
-    @.. broadcast=false integrator.fsallast=integrator.du = (nlsolver.α * z +
-                                                             nlsolver.tmp) *
-                                                            inv(nlsolver.γ * dt) #TODO Lorenz plot seems not smooth
+    @.. broadcast=false integrator.fsallast=integrator.du=(nlsolver.α*z+
+    nlsolver.tmp)*
+    inv(nlsolver.γ*dt) #TODO Lorenz plot seems not smooth
 end
