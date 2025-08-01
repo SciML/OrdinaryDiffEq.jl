@@ -418,7 +418,7 @@ end
     step_limiter!::StepLimiter
 end
 
-TruncatedStacktraces.@truncate_stacktrace QNDFCache 1
+@truncate_stacktrace QNDFCache 1
 
 function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -609,7 +609,7 @@ end
     step_limiter!::StepLimiter
 end
 
-TruncatedStacktraces.@truncate_stacktrace FBDFCache 1
+@truncate_stacktrace FBDFCache 1
 
 function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,

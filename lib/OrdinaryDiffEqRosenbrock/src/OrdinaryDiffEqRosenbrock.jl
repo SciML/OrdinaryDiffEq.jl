@@ -8,7 +8,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _un
                            _vec, _reshape, perform_step!, trivial_limiter!,
                            OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
                            OrdinaryDiffEqRosenbrockAlgorithm, generic_solver_docstring,
-                           namify, initialize!, perform_step!, get_fsalfirstlast,
+                           initialize!, perform_step!, get_fsalfirstlast,
                            constvalue, only_diagonal_mass_matrix,
                            calculate_residuals, has_stiff_interpolation, ODEIntegrator,
                            resize_non_user_cache!, _ode_addsteps!, full_cache,
@@ -16,7 +16,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _un
                            _process_AD_choice, LinearAliasSpecifier
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import MacroTools
-using MacroTools: @capture
+using MacroTools: @capture, namify
 using DiffEqBase: @def
 import DifferentiationInterface as DI
 import LinearSolve
