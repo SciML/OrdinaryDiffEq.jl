@@ -131,27 +131,53 @@ end
 
 ## Running the Tests
 
-### Individual Sublibrary Tests
+### Automatic CI Integration
+Tests automatically run as part of each sublibrary's test suite:
 ```bash
-# Test Tsit5 allocations
+# Will automatically include allocation tests on stable Julia versions
 cd lib/OrdinaryDiffEqTsit5
-julia --project=../.. -e 'include("test/allocation_tests.jl")'
-
-# Test Tsit5 type stability  
-julia --project=../.. -e 'include("test/jet_tests.jl")'
+julia --project test/runtests.jl
 ```
 
-### Comprehensive Testing
-Run the comprehensive test script to analyze all solvers:
+### Individual Test Files
 ```bash
-julia --project test_comprehensive_qa.jl
+# Test specific allocation behavior
+julia --project -e 'include("lib/OrdinaryDiffEqTsit5/test/allocation_tests.jl")'
+
+# Test type stability
+julia --project -e 'include("lib/OrdinaryDiffEqTsit5/test/jet_tests.jl")'
 ```
 
-## Key Dependencies Added
+### Version Gating
+Tests only run on stable Julia versions:
+```julia
+if isempty(VERSION.prerelease)
+    @time @safetestset "Allocation Tests" include("allocation_tests.jl")
+end
+```
 
-The following testing dependencies have been added to Project.toml:
-- `AllocCheck.jl`: Static analysis for allocation-free code verification
-- `JET.jl`: Static analysis for type stability verification
+## Dependencies and Integration
+
+### Sublibrary Dependencies Added
+Each sublibrary with allocation tests now includes:
+- `AllocCheck.jl` v0.2.2: Static analysis for allocation-free code verification
+- `JET.jl` v0.9.19: Static analysis for type stability verification (where not already present)
+
+### Integrated Sublibraries
+The following 8 sublibraries have been updated with allocation tests:
+- ✅ `OrdinaryDiffEqTsit5` - allocation + JET tests
+- ✅ `OrdinaryDiffEqExplicitRK` - allocation tests  
+- ✅ `OrdinaryDiffEqHighOrderRK` - allocation tests
+- ✅ `OrdinaryDiffEqLowOrderRK` - allocation tests
+- ✅ `OrdinaryDiffEqSSPRK` - allocation tests
+- ✅ `OrdinaryDiffEqBDF` - allocation tests (@test_broken)
+- ✅ `OrdinaryDiffEqRosenbrock` - allocation tests (@test_broken)
+- ✅ `OrdinaryDiffEqVerner` - allocation tests
+
+### Main Package Dependencies
+The main `Project.toml` also includes:
+- `AllocCheck.jl`: For comprehensive testing scripts
+- `JET.jl`: For comprehensive testing scripts
 
 ## Usage for Development
 
@@ -181,13 +207,15 @@ The following testing dependencies have been added to Project.toml:
 - **Implicit/stiff solvers**: Use scalar linear problems or stiff ODEs
 - **Fixed timestep methods**: Specify `dt` parameter and set `adaptive=false`
 
-## Integration with CI
+## CI Integration
 
-These tests can be integrated into the existing CI pipeline:
+✅ **Fully Integrated**: Tests are now part of the existing CI pipeline:
 
-1. Add to sublibrary `runtests.jl` files
-2. Run during PR testing to catch regressions
-3. Track progress on allocation-free and type-stable solver development
+1. ✅ **Automatic execution**: Tests run as part of each sublibrary's `runtests.jl`
+2. ✅ **PR testing**: Catches allocation regressions in pull requests  
+3. ✅ **Version gating**: Only runs on stable Julia versions to avoid pre-release issues
+4. ✅ **Progress tracking**: Clear visibility into allocation-free solver development
+5. ✅ **Dependency management**: Proper test dependencies added to each sublibrary
 
 ## Future Extensions
 
