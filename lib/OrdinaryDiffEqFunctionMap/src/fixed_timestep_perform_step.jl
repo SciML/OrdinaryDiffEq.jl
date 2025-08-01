@@ -7,9 +7,9 @@ function perform_step!(integrator, cache::FunctionMapCache, repeat_step = false)
     @unpack u, uprev, dt, t, f, p = integrator
     alg = unwrap_alg(integrator, nothing)
     @unpack tmp = cache
-    if integrator.f != DiffEqBase.DISCRETE_INPLACE_DEFAULT &&
-       !(integrator.f isa DiffEqBase.EvalFunc &&
-         integrator.f.f === DiffEqBase.DISCRETE_INPLACE_DEFAULT)
+    if integrator.f != SciMLBase.DISCRETE_INPLACE_DEFAULT &&
+       !(integrator.f isa SciMLBase.EvalFunc &&
+         integrator.f.f === SciMLBase.DISCRETE_INPLACE_DEFAULT)
         if FunctionMap_scale_by_time(alg)
             f(tmp, uprev, p, t + dt)
             @muladd @.. broadcast=false u=uprev + dt * tmp
@@ -23,9 +23,9 @@ end
 function perform_step!(integrator, cache::FunctionMapConstantCache, repeat_step = false)
     @unpack uprev, dt, t, f, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    if integrator.f != DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT &&
-       !(integrator.f isa DiffEqBase.EvalFunc &&
-         integrator.f.f === DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT)
+    if integrator.f != SciMLBase.DISCRETE_OUTOFPLACE_DEFAULT &&
+       !(integrator.f isa SciMLBase.EvalFunc &&
+         integrator.f.f === SciMLBase.DISCRETE_OUTOFPLACE_DEFAULT)
         if FunctionMap_scale_by_time(alg)
             tmp = f(uprev, p, t + dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)

@@ -29,15 +29,15 @@ end
 # Nest one layer of value in order to get rid of possible Dual{Complex} or Complex{Dual} issues
 # value should recurse for anything else.
 function constvalue(::Type{T}) where {T}
-    _T = DiffEqBase.value(T)
-    return _T <: Complex ? DiffEqBase.value(real(_T)) : DiffEqBase.value(_T)
+    _T = SciMLBase.value(T)
+    return _T <: Complex ? SciMLBase.value(real(_T)) : SciMLBase.value(_T)
 end
 function constvalue(x)
-    _x = DiffEqBase.value(x)
-    return _x isa Complex ? DiffEqBase.value(real(_x)) : DiffEqBase.value(_x)
+    _x = SciMLBase.value(x)
+    return _x isa Complex ? SciMLBase.value(real(_x)) : SciMLBase.value(_x)
 end
 
-function diffdir(integrator::DiffEqBase.DEIntegrator)
+function diffdir(integrator::SciMLBase.DEIntegrator)
     difference = maximum(abs, integrator.uprev) * sqrt(eps(typeof(integrator.t)))
     dir = integrator.tdir > zero(integrator.tdir) ?
           integrator.t > integrator.sol.prob.tspan[2] - difference ? -1 : 1 :

@@ -17,11 +17,11 @@ import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import LinearAlgebra: norm
 using TruncatedStacktraces: @truncate_stacktrace
-import DiffEqBase: @def
+import SciMLBase: @def
 import OrdinaryDiffEqCore
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

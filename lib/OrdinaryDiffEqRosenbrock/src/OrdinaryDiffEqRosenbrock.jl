@@ -36,7 +36,7 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
                                      UJacobianWrapper, dolinsolve, WOperator, resize_J_W!
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 import OrdinaryDiffEqCore: alg_autodiff
 import OrdinaryDiffEqCore

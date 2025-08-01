@@ -28,7 +28,7 @@ function alg_autodiff(alg)
     end
 end
 
-Base.@pure function determine_chunksize(u, alg::DiffEqBase.DEAlgorithm)
+Base.@pure function determine_chunksize(u, alg::SciMLBase.DEAlgorithm)
     determine_chunksize(u, get_chunksize(alg))
 end
 Base.@pure function determine_chunksize(u, CS)
@@ -133,7 +133,7 @@ function prepare_user_sparsity(ad_alg, prob)
         # KnownJacobianSparsityDetector needs an AbstractMatrix
         sparsity = sparsity isa MatrixOperator ? sparsity.A : sparsity
 
-        color_alg = DiffEqBase.has_colorvec(prob.f) ?
+        color_alg = SciMLBase.has_colorvec(prob.f) ?
                     ConstantColoringAlgorithm(
             sparsity, prob.f.colorvec) : GreedyColoringAlgorithm()
 

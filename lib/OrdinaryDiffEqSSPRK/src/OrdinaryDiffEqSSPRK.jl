@@ -19,7 +19,7 @@ using Static: False
 import OrdinaryDiffEqCore
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 

@@ -184,7 +184,7 @@ function jacobian(f, x, integrator)
 end
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
-        fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator,
+        fx::AbstractArray{<:Number}, integrator::SciMLBase.DEIntegrator,
         jac_config)
     alg = unwrap_alg(integrator, true)
 
@@ -242,8 +242,8 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
         u, tmp, du2) where {F1, F2}
     haslinsolve = hasfield(typeof(alg), :linsolve)
 
-    if !DiffEqBase.has_jac(f) &&
-       (!DiffEqBase.has_Wfact_t(f)) &&
+    if !SciMLBase.has_jac(f) &&
+       (!SciMLBase.has_Wfact_t(f)) &&
        ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve &&
            (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
         (concrete_jac(alg) !== nothing && concrete_jac(alg)))
@@ -366,7 +366,7 @@ end
 gpu_safe_autodiff(backend, u) = backend
 
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
-    if !DiffEqBase.has_tgrad(f)
+    if !SciMLBase.has_tgrad(f)
         ad = ADTypes.dense_ad(alg_autodiff(alg))
 
         # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
@@ -408,7 +408,7 @@ function sparsity_colorvec(f, x)
 
     col_alg = GreedyColoringAlgorithm()
     col_prob = ColoringProblem()
-    colorvec = DiffEqBase.has_colorvec(f) ? f.colorvec :
-               (isnothing(sparsity) ? (1:length(x)) : column_colors(coloring(sparsity, col_prob, col_alg)))
+    colorvec = SciMLBase.has_colorvec(f) ? f.colorvec :
+              (isnothing(sparsity) ? (1:length(x)) : column_colors(coloring(sparsity, col_prob, col_alg)))
     sparsity, colorvec
 end

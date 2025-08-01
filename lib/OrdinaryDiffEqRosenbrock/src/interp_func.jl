@@ -1,4 +1,4 @@
-function DiffEqBase.interp_summary(::Type{cacheType},
+function SciMLBase.interp_summary(::Type{cacheType},
         dense::Bool) where {
         cacheType <:
         Union{Rosenbrock23ConstantCache,
@@ -8,7 +8,7 @@ function DiffEqBase.interp_summary(::Type{cacheType},
     dense ? "specialized 2nd order \"free\" stiffness-aware interpolation" :
     "1st order linear"
 end
-function DiffEqBase.interp_summary(::Type{cacheType},
+function SciMLBase.interp_summary(::Type{cacheType},
         dense::Bool) where {
         cacheType <:
         Union{RosenbrockCombinedConstantCache, Rodas23WConstantCache, Rodas3PConstantCache,
@@ -17,7 +17,7 @@ function DiffEqBase.interp_summary(::Type{cacheType},
     "1st order linear"
 end
 
-function DiffEqBase.interp_summary(::Type{cacheType},
+function SciMLBase.interp_summary(::Type{cacheType},
         dense::Bool) where {
         cacheType <:
         Union{RosenbrockCombinedConstantCache,

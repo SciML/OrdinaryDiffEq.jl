@@ -5,20 +5,15 @@ module OrdinaryDiffEq
 
 import Reexport: Reexport, @reexport
 using Reexport: @reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 # Explicit imports for functions that are re-exported
-import DiffEqBase: DiffEqBase
 import CommonSolve: init, solve, solve!, step!
 import SciMLBase: SciMLBase, addsteps!, savevalues!, terminate!
-
-# Export DiffEqBase since we re-export it
-export DiffEqBase
 
 import OrdinaryDiffEqCore: OrdinaryDiffEqCore,
                            CompositeAlgorithm,
                            ShampineCollocationInit, BrownFullBasicInit, NoInit,
-                           copyat_or_push!,
                            du_cache, full_cache, isfsal, ode_interpolant, u_cache,
                            AutoSwitch,
                            @unpack,
@@ -273,7 +268,7 @@ const DEPRECATED_ADDSTEPS = true
 export solve, solve!, init, step!
 
 #Callback Necessary
-export addsteps!, ode_interpolant, terminate!, savevalues!, copyat_or_push!, isfsal
+export addsteps!, ode_interpolant, terminate!, savevalues!, isfsal
 
 export constructDormandPrince
 

@@ -60,8 +60,8 @@ using FastBroadcast: @..
 
 using ConcreteStructs: @concrete
 
-@static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
-    import DiffEqBase: OrdinaryDiffEqTag
+@static if isdefined(SciMLBase, :OrdinaryDiffEqTag)
+    import SciMLBase: OrdinaryDiffEqTag
 else
     struct OrdinaryDiffEqTag end
 end
