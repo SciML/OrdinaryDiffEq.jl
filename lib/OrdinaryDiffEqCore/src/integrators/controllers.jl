@@ -370,8 +370,7 @@ the following logic is applied:
 ```julia
 if integrator.success_iter > 0
     expo = 1 / (alg_adaptive_order(integrator.alg) + 1)
-    qgus = (integrator.dtacc / integrator.dt) *
-           (((integrator.EEst^2) / integrator.erracc)^expo)
+    qgus = (integrator.dtacc / integrator.dt) * (((integrator.EEst^2) / integrator.erracc)^expo)
     qgus = max(inv(integrator.opts.qmax),
         min(inv(integrator.opts.qmin), qgus / integrator.opts.gamma))
     qacc = max(q, qgus)
@@ -433,8 +432,7 @@ function step_accept_controller!(integrator, controller::PredictiveController, a
 
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qgus = (integrator.dtacc / integrator.dt) *
-               FastPower.fastpower((EEst^2) / integrator.erracc, expo)
+        qgus = (integrator.dtacc / integrator.dt) * FastPower.fastpower((EEst^2) / integrator.erracc, expo)
         qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
         qacc = max(q, qgus)
     else
