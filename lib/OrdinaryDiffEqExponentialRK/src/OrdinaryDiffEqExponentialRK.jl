@@ -9,7 +9,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, ismultistep,
                            OrdinaryDiffEqAdaptiveExponentialAlgorithm, CompositeAlgorithm,
                            ExponentialAlgorithm, fsal_typeof, isdtchangeable,
                            calculate_residuals, calculate_residuals!,
-                           full_cache, get_fsalfirstlast,
+                           full_cache, get_fsalfirstlast, @SciMLMessage,
                            generic_solver_docstring, _bool_to_ADType, _process_AD_choice
 import OrdinaryDiffEqCore
 using RecursiveArrayTools

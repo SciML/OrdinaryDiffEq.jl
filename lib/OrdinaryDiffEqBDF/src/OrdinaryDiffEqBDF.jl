@@ -21,7 +21,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            step_reject_controller!, post_newton_controller!,
                            u_modified!, DAEAlgorithm, _unwrap_val, DummyController,
                            get_fsalfirstlast, generic_solver_docstring, _bool_to_ADType,
-                           _process_AD_choice
+                           _process_AD_choice, @SciMLMessage
 using OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache
 
 using TruncatedStacktraces: @truncate_stacktrace

@@ -12,7 +12,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            constvalue, _unwrap_val, _ode_interpolant,
                            get_fsalfirstlast,
                            trivial_limiter!, _ode_interpolant!, _ode_addsteps!,
-                           generic_solver_docstring
+                           generic_solver_docstring, @SciMLMessage
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 import OrdinaryDiffEqCore

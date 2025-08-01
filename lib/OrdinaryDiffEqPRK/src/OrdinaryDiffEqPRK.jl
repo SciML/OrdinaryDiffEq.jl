@@ -4,7 +4,7 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_order, OrdinaryDiffEqMut
                            OrdinaryDiffEqConstantCache, constvalue, @cache,
                            alg_cache, get_fsalfirstlast,
                            unwrap_alg, perform_step!, @threaded, initialize!, isthreaded,
-                           full_cache, generic_solver_docstring
+                           full_cache, generic_solver_docstring, @SciMLMessage
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 using Polyester

@@ -7,7 +7,7 @@ import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
                            constvalue, perform_step!, calculate_residuals, @cache,
                            calculate_residuals!, _ode_interpolant, _ode_interpolant!,
                            CompiledFloats, @OnDemandTableauExtract, initialize!,
-                           perform_step!,
+                           perform_step!, @SciMLMessage
                            CompositeAlgorithm, _ode_addsteps!, copyat_or_push!,
                            AutoAlgSwitch, get_fsalfirstlast,
                            full_cache, DerivativeOrderNotPossibleError
