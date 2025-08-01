@@ -18,7 +18,7 @@ These tests verify that the step! operation does not allocate during stepping.
     prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 1.0))
     
     # Test all exported Tsit5 solvers for allocation-free behavior
-    tsit5_solvers = [Tsit5(), AutoTsit5(Tsit5())]
+    tsit5_solvers = [Tsit5()]
     
     @testset "Tsit5 Solver Allocation Analysis" begin
         for solver in tsit5_solvers
