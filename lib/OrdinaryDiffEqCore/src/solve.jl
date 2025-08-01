@@ -59,7 +59,7 @@ function SciMLBase.__init(
         internalopnorm = opnorm,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-        verbose = true,
+        verbose = ODEVerbosity(),
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,
@@ -476,6 +476,16 @@ function SciMLBase.__init(
 
     if controller === nothing
         controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
+    end
+
+    if verbose isa Bool
+        if verbose
+            verbose = ODEVerbosity()
+        else
+            verbose = ODEVerbosity(Verbosity.None())
+        end
+    elseif verbose isa Verbosity.Type
+        verbose = ODEVerbosity(verbose)
     end
 
     save_end_user = save_end
