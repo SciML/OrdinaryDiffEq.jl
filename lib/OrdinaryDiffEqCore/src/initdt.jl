@@ -134,10 +134,8 @@
     # because it also checks if partials are NaN
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
     if isnan(d₁)
-        if integrator.opts.verbose
-            @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
-        end
-
+        @SciMLMessage("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN, :error_control)
         return tdir * dtmin
     end
 
@@ -275,8 +273,10 @@ end
     d₀ = internalnorm(u0 ./ sk, t)
 
     f₀ = f(u0, p, t)
-    if integrator.opts.verbose && any(x -> any(isnan, x), f₀)
-        @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
+
+    if any(x -> any(isnan, x),  f₀)
+        @SciMLMessage("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN, :error_control)
     end
 
     inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))

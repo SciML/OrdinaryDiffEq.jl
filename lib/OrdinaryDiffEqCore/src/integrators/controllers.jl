@@ -301,7 +301,9 @@ end
     k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
     dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
     if isnan(dt_factor)
-        @warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k
+        @SciMLMessage("unlimited dt_factor", 
+            integrator.opts.verbose, :unlimited_dt, :numerical)
+        #@warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k
     end
     dt_factor = controller.limiter(dt_factor)
 
