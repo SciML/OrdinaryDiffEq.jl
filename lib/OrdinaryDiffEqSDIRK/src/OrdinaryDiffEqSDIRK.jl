@@ -14,7 +14,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            trivial_limiter!, _ode_interpolant!,
                            isesdirk, issplit,
                            ssp_coefficient, get_fsalfirstlast, generic_solver_docstring,
-                           _bool_to_ADType, _process_AD_choice, current_extrapolant!
+                           _bool_to_ADType, _process_AD_choice, current_extrapolant!, @SciMLMessage
 using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction

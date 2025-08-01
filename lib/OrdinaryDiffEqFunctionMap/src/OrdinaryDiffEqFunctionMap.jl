@@ -6,7 +6,7 @@ import OrdinaryDiffEqCore: isfsal, beta2_default, beta1_default, OrdinaryDiffEqA
                            alg_cache, @cache, _ode_addsteps!, _ode_interpolant!,
                            _ode_interpolant, get_fsalfirstlast,
                            alg_order, OrdinaryDiffEqConstantCache, dt_required,
-                           isdiscretecache, isdiscretealg, full_cache
+                           isdiscretecache, isdiscretealg, full_cache, @SciMLMessage
 using DiffEqBase
 import RecursiveArrayTools: recursivecopy!
 import FastBroadcast: @..
