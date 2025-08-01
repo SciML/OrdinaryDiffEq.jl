@@ -12,7 +12,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            constvalue, _unwrap_val,
                            explicit_rk_docstring, trivial_limiter!,
                            _ode_interpolant, _ode_interpolant!,
-                           _ode_addsteps!, get_fsalfirstlast, copyat_or_push!
+                           _ode_addsteps!, get_fsalfirstlast, @SciMLMessage, copyat_or_push!
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def
 using Static: False
