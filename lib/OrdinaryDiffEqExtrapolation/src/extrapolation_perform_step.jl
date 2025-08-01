@@ -41,7 +41,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
             # Balance workload of threads by computing T[1,1] with T[max_order,1] on
             # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
             # first column of T matrix
-            @threaded alg.threading for i in 1:2
+            @threads :static for i in 1:2
                 startIndex = (i == 1) ? 1 : max_order
                 endIndex = (i == 1) ? max_order - 1 : max_order
                 for index in startIndex:endIndex
@@ -166,7 +166,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
             # Balance workload of threads by computing T[1,1] with T[max_order,1] on
             # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
             # first column of T matrix
-            @threaded alg.threading for i in 1:2
+            @threads :static for i in 1:2
                 startIndex = (i == 1) ? 1 : max_order
                 endIndex = (i == 1) ? max_order - 1 : max_order
 
@@ -338,7 +338,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
             k_tmps = k_tmps, u_tmps = u_tmps, u_tmps2 = u_tmps2, diff1 = diff1,
             diff2 = diff2
 
-            @threaded alg.threading for i in 1:2
+            @threads :static for i in 1:2
                 startIndex = (i == 1) ? 1 : n_curr + 1
                 endIndex = (i == 1) ? n_curr : n_curr + 1
                 for index in startIndex:endIndex
@@ -574,7 +574,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
         let n_curr = n_curr, dt = dt, integrator = integrator, cache = cache,
             repeat_step = repeat_step, uprev = uprev, T = T
 
-            @threaded alg.threading for i in 1:2
+            @threads :static for i in 1:2
                 startIndex = (i == 1) ? 1 : n_curr + 1
                 endIndex = (i == 1) ? n_curr : n_curr + 1
                 for index in startIndex:endIndex
@@ -776,7 +776,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                 dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                 t = t, T = T
 
-                @threaded alg.threading for i in 1:2
+                @threads :static for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
                     for index in startIndex:endIndex
@@ -804,7 +804,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                 dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                 t = t, T = T
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threads :static for i in 0:(n_curr ÷ 2)
                     indices = (i, n_curr - i)
                     for index in indices
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
@@ -995,7 +995,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                 dt = dt, integrator = integrator, p = p, t = t, T = T
 
-                @threaded alg.threading for i in 1:2
+                @threads :static for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
                     for index in startIndex:endIndex
@@ -1017,7 +1017,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, dt = dt,
                 uprev = uprev, p = p, t = t, T = T
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threads :static for i in 0:(n_curr ÷ 2)
                     indices = (i, n_curr - i)
                     for index in indices
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
@@ -1228,7 +1228,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                 dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                 t = t, T = T
 
-                @threaded alg.threading for i in 1:2
+                @threads :static for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -1314,7 +1314,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                 dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                 t = t, T = T
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threads :static for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i) #Use flag to avoid union
                     for index in indices
                         index == -1 && continue
@@ -1601,7 +1601,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                 dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
 
-                @threaded alg.threading for i in 1:2
+                @threads :static for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -1647,7 +1647,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                 dt = dt, integrator = integrator, p = p, t = t, T = T
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threads :static for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
                     for index in indices
                         index == -1 && continue
@@ -1848,7 +1848,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                 dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                 t = t, T = T
 
-                @threaded alg.threading for i in 1:2
+                @threads :static for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -1877,7 +1877,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                 dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                 t = t, T = T
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threads :static for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
                     for index in indices
                         index == -1 && continue
@@ -2071,7 +2071,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, dt = dt,
                 uprev = uprev, integrator = integrator, T = T, p = p, t = t
 
-                @threaded alg.threading for i in 1:2
+                @threads :static for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
                     for index in startIndex:endIndex
@@ -2093,7 +2093,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, dt = dt,
                 uprev = uprev, integrator = integrator, T = T, p = p, t = t
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threads :static for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
                     for index in indices
                         index == -1 && continue
@@ -2288,7 +2288,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                 dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
 
-                @threaded alg.threading for i in 1:2
+                @threads :static for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -2336,7 +2336,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                 dt = dt, integrator = integrator, p = p, t = t, T = T
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threads :static for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
                     for index in indices
                         index == -1 && continue
@@ -2591,7 +2591,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                 dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                 t = t, T = T
 
-                @threaded alg.threading for i in 1:2
+                @threads :static for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -2681,7 +2681,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                 dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                 t = t, T = T
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threads :static for i in 0:(n_curr ÷ 2)
                     tid = Threads.threadid()
                     linsolvetmp = linsolve_tmps[tid]
                     ktmp = k_tmps[tid]
@@ -2982,7 +2982,7 @@ function perform_step!(integrator,
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                 dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
 
-                @threaded alg.threading for i in 1:2
+                @threads :static for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -3028,7 +3028,7 @@ function perform_step!(integrator,
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                 dt = dt, integrator = integrator, p = p, t = t, T = T
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threads :static for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
                     for index in indices
                         index == -1 && continue
@@ -3280,7 +3280,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                 dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                 t = t, T = T
 
-                @threaded alg.threading for i in 1:2
+                @threads :static for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -3369,7 +3369,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                 dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                 t = t, T = T
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threads :static for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
                     for index in indices
                         index == -1 && continue
