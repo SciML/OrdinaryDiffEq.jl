@@ -37,7 +37,7 @@ import SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator,
 
 using DiffEqBase: DEIntegrator
 
-import RecursiveArrayTools: chain, recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype
+import RecursiveArrayTools: chain, recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype
 
 using SimpleUnPack: @unpack
 import RecursiveArrayTools
