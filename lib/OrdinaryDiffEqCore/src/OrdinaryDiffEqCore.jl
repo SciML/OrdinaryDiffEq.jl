@@ -8,7 +8,8 @@ end
 import DocStringExtensions
 import Reexport: @reexport
 using Reexport: @reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
+import DiffEqBase
 
 import Logging: @logmsg
 
@@ -23,7 +24,8 @@ import FillArrays: Trues, Falses
 import FastPower: fastpower
 
 # Interfaces
-import DiffEqBase: solve!, step!, initialize!, isadaptive
+import SciMLBase: solve!, step!, isadaptive
+import DiffEqBase: initialize!
 
 # Internal utils
 import DiffEqBase: ODE_DEFAULT_NORM,
@@ -51,15 +53,15 @@ import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
                          StaticMatrix
 
 # Integrator Interface
-import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
+import SciMLBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
                    resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
                    terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
                    u_modified!, savevalues!,
                    add_tstop!, has_tstop, first_tstop, pop_tstop!,
                    add_saveat!, set_reltol!,
                    set_abstol!, postamble!, last_step_failed,
-                   isautodifferentiable,
-                   get_tstops, get_tstops_array, get_tstops_max
+                   isautodifferentiable
+import DiffEqBase: get_tstops, get_tstops_array, get_tstops_max
 
 using DiffEqBase: check_error!, @def, _vec, _reshape
 
@@ -70,10 +72,11 @@ using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val
 
 import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
 
+import SciMLBase: unwrap_cache,
+                   islinear
 import DiffEqBase: calculate_residuals,
-                   calculate_residuals!, unwrap_cache,
-                   @tight_loop_macros,
-                   islinear, timedepentdtmin
+                   calculate_residuals!, @tight_loop_macros,
+                   timedepentdtmin
 
 import Polyester
 # MacroTools and Adapt imported but not directly used in OrdinaryDiffEqCore

@@ -105,7 +105,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
         saved = true
         curt = integrator.tdir * pop!(saveat)
         if curt != integrator.t # If <t, interpolate
-            DiffEqBase.addsteps!(integrator)
+            SciMLBase.addsteps!(integrator)
             Θ = (curt - integrator.tprev) / integrator.dt
             val = ode_interpolant(Θ, integrator, integrator.opts.save_idxs, Val{0}) # out of place, but no force copy later
             copyat_or_push!(integrator.sol.t, integrator.saveiter, curt)
@@ -187,7 +187,7 @@ end
 postamble!(integrator::ODEIntegrator) = _postamble!(integrator)
 
 function _postamble!(integrator)
-    DiffEqBase.finalize!(integrator.opts.callback, integrator.u, integrator.t, integrator)
+    SciMLBase.finalize!(integrator.opts.callback, integrator.u, integrator.t, integrator)
     solution_endpoint_match_cur_integrator!(integrator)
     resize!(integrator.sol.t, integrator.saveiter)
     resize!(integrator.sol.u, integrator.saveiter)
@@ -273,7 +273,7 @@ function _loopfooter!(integrator)
         if integrator.accept_step # Accept
             increment_accept!(integrator.stats)
             integrator.last_stepfail = false
-            dtnew = DiffEqBase.value(step_accept_controller!(integrator,
+            dtnew = SciMLBase.value(step_accept_controller!(integrator,
                 integrator.alg,
                 q)) *
                     oneunit(integrator.dt)
@@ -302,7 +302,7 @@ function _loopfooter!(integrator)
     # Take value because if t is dual then maxeig can be dual
     if integrator.cache isa CompositeCache
         cur_eigen_est = integrator.opts.internalnorm(
-            DiffEqBase.value(integrator.eigen_est),
+            SciMLBase.value(integrator.eigen_est),
             integrator.t)
         cur_eigen_est > integrator.stats.maxeig &&
             (integrator.stats.maxeig = cur_eigen_est)
@@ -356,7 +356,7 @@ end
         # This seemingly isn't the case with just if (return) end (rest of expression)
         ex = quote
             if (cb_idx == $i)
-                return DiffEqBase.apply_callback!(integrator, callbacks[$i], time,
+                return SciMLBase.apply_callback!(integrator, callbacks[$i], time,
                     upcrossing, event_idx)
             else
                 $ex
@@ -379,7 +379,7 @@ function handle_callbacks!(integrator)
         event_occurred,
         event_idx,
         idx,
-        counter = DiffEqBase.find_first_continuous_callback(
+        counter = SciMLBase.find_first_continuous_callback(
             integrator,
             continuous_callbacks...)
         if event_occurred
@@ -398,7 +398,7 @@ function handle_callbacks!(integrator)
     end
     if !integrator.force_stepfail && !(discrete_callbacks isa Tuple{})
         discrete_modified,
-        saved_in_cb = DiffEqBase.apply_discrete_callback!(integrator,
+        saved_in_cb = SciMLBase.apply_discrete_callback!(integrator,
             discrete_callbacks...)
     end
     if !saved_in_cb
@@ -474,7 +474,7 @@ function handle_tstop!(integrator)
             integrator.just_hit_tstop = true
         elseif tdir_t > tdir_tstop
             if !integrator.dtchangeable
-                DiffEqBase.change_t_via_interpolation!(integrator,
+                SciMLBase.change_t_via_interpolation!(integrator,
                     integrator.tdir *
                     pop_tstop!(integrator), Val{true})
                 integrator.just_hit_tstop = true

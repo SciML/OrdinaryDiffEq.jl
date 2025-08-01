@@ -28,7 +28,7 @@ using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlso
 import ADTypes: AutoForwardDiff
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

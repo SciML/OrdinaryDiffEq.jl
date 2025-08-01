@@ -237,7 +237,7 @@ prob = ODEProblem(
             ])),
     ArrayPartition([0.0], [1.0]), # du0, u0
     (0.0, 10.0), # tspan
-    DiffEqBase.NullParameters(), # p
+    SciMLBase.NullParameters(), # p
     SecondOrderODEProblem{false}())
 
 dts = 1.0 ./ 2.0 .^ (5:-1:0)
@@ -276,7 +276,7 @@ prob = ODEProblem(
             ])),
     ArrayPartition([0.0], [1.0]), # du0, u0
     (0.0, 10.0), # tspan
-    DiffEqBase.NullParameters(), # p
+    SciMLBase.NullParameters(), # p
     SecondOrderODEProblem{false}())
 
 dts = 1.0 ./ 2.0 .^ (5:-1:0)

@@ -18,7 +18,7 @@ import Static: False
 import OrdinaryDiffEqCore
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")
