@@ -14,11 +14,11 @@ import OrdinaryDiffEqCore: alg_order, isfsal, beta2_default, beta1_default,
                            OrdinaryDiffEqMutableCache, uses_uprev,
                            OrdinaryDiffEqConstantCache, @fold,
                            @cache, CompiledFloats, alg_cache, CompositeAlgorithm,
-                           copyat_or_push!,
                            AutoAlgSwitch, _ode_interpolant, _ode_interpolant!, full_cache,
                            accept_step_controller, DerivativeOrderNotPossibleError,
                            du_cache, u_cache, get_fsalfirstlast
 using SciMLBase
+import SciMLBase: prepare_alg
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 import LinearAlgebra: norm

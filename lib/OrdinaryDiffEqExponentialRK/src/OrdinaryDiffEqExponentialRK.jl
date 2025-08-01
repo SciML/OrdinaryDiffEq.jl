@@ -16,6 +16,7 @@ using RecursiveArrayTools
 using MuladdMacro, FastBroadcast
 using LinearAlgebra: axpy!, mul!
 using SciMLBase
+import SciMLBase: prepare_alg
 using ExponentialUtilities
 import RecursiveArrayTools: recursivecopy!
 using OrdinaryDiffEqDifferentiation: build_jac_config, UJacobianWrapper, UDerivativeWrapper,
