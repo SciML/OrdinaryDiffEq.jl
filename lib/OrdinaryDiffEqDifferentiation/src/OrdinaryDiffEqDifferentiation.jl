@@ -8,7 +8,7 @@ import ForwardDiff.Dual
 import LinearSolve
 import LinearSolve: OperatorAssumptions
 import FunctionWrappersWrappers
-using DiffEqBase
+import DiffEqBase
 
 import LinearAlgebra
 import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!, lmul!, axpby!, opnorm, lu
@@ -26,7 +26,9 @@ import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, S
 using DiffEqBase: TimeGradientWrapper,
                   UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
-using SciMLBase: AbstractSciMLOperator, constructorof, @set
+import SciMLBase: SciMLBase, AbstractSciMLOperator, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator
+using SciMLBase: @set, @reset
+import SciMLOperators: SciMLOperators, IdentityOperator, update_coefficients!
 using SciMLOperators: IdentityOperator, update_coefficients!
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
                                ncolors, column_colors, coloring, sparsity_pattern
