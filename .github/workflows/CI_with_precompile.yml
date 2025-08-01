@@ -1,0 +1,237 @@
+name: CI with Precompilation
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+
+permissions:
+  actions: write  # needed to delete old caches
+  contents: read
+
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  precompile:
+    name: Precompile OrdinaryDiffEq
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+        with:
+          cache-name: 'precompile-cache'
+      - name: Install dependencies
+        run: julia --project -e 'using Pkg; Pkg.instantiate()'
+      - name: Run precompilation workload
+        run: |
+          echo "Running precompilation workload..."
+          julia --project precompile_workload.jl
+      - name: Verify cache creation
+        run: |
+          echo "Julia depot contents:"
+          ls -la ~/.julia/compiled/
+          echo "Precompilation completed successfully"
+
+  test-interface:
+    name: Interface Tests
+    needs: precompile
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GROUP: 'InterfaceI'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+        with:
+          cache-name: 'precompile-cache'
+      - name: Run interface tests
+        run: julia --project -e 'using Pkg; Pkg.test()'
+        env:
+          JULIA_NUM_THREADS: 2
+
+  test-integrators:
+    name: Integrator Tests  
+    needs: precompile
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GROUP: 'Integrators'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+        with:
+          cache-name: 'precompile-cache'
+      - name: Run integrator tests
+        run: julia --project -e 'using Pkg; Pkg.test()'
+        env:
+          JULIA_NUM_THREADS: 2
+
+  test-algorithms:
+    name: Algorithm Tests
+    needs: precompile
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [
+          'AlgorithmConvergence1',
+          'AlgorithmConvergence2', 
+          'AlgorithmConvergence3',
+          'AlgorithmConvergence4'
+        ]
+    env:
+      GROUP: ${{ matrix.group }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+        with:
+          cache-name: 'precompile-cache'
+      - name: Run algorithm tests
+        run: julia --project -e 'using Pkg; Pkg.test()'
+        env:
+          JULIA_NUM_THREADS: 2
+
+  test-subpackages:
+    name: Sub-package Tests
+    needs: precompile
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [
+          'OrdinaryDiffEqTsit5',
+          'OrdinaryDiffEqBDF',
+          'OrdinaryDiffEqRosenbrock',
+          'OrdinaryDiffEqVerner',
+          'OrdinaryDiffEqCore'
+        ]
+    env:
+      GROUP: ${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+        with:
+          cache-name: 'precompile-cache'
+      - name: Run sub-package tests
+        run: julia --project -e 'using Pkg; Pkg.test()'
+        env:
+          JULIA_NUM_THREADS: 2
+
+  test-performance:
+    name: Performance Tests
+    needs: precompile
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GROUP: 'Performance'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+        with:
+          cache-name: 'precompile-cache'
+      - name: Run performance tests
+        run: julia --project -e 'using Pkg; Pkg.test()'
+        env:
+          JULIA_NUM_THREADS: 2
+
+  test-multithreading:
+    name: Multithreading Tests
+    needs: precompile
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GROUP: 'Multithreading'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+        with:
+          cache-name: 'precompile-cache'
+      - name: Run multithreading tests
+        run: julia --project -e 'using Pkg; Pkg.test()'
+        env:
+          JULIA_NUM_THREADS: 4
+
+  coverage:
+    name: Coverage
+    needs: [test-interface, test-integrators, test-algorithms, test-performance]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+        with:
+          cache-name: 'precompile-cache'
+      - name: Run coverage tests
+        run: julia --project -e 'using Pkg; Pkg.test(coverage=true)'
+        env:
+          JULIA_NUM_THREADS: 2
+      - uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  # Optional: Cross-platform testing with shared precompilation
+  test-cross-platform:
+    name: Cross-platform Tests
+    needs: precompile
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+        version: ['1.10']
+    env:
+      GROUP: 'InterfaceI'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v2
+        with:
+          cache-name: 'precompile-cache-${{ matrix.os }}'
+      - name: Install and precompile (platform-specific)
+        run: |
+          julia --project -e 'using Pkg; Pkg.instantiate()'
+          julia --project precompile_workload.jl
+      - name: Run cross-platform tests
+        run: julia --project -e 'using Pkg; Pkg.test()'
+        env:
+          JULIA_NUM_THREADS: 2
