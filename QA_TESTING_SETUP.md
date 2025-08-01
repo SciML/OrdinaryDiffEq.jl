@@ -149,9 +149,12 @@ julia --project -e 'include("lib/OrdinaryDiffEqTsit5/test/jet_tests.jl")'
 ```
 
 ### Version Gating
-Tests only run on stable Julia versions:
+All QA tests (JET, Aqua, AllocCheck) only run on stable Julia versions:
 ```julia
+# Only run QA and allocation tests on stable Julia versions
 if isempty(VERSION.prerelease)
+    @time @safetestset "JET Tests" include("jet.jl")
+    @time @safetestset "Aqua" include("qa.jl")
     @time @safetestset "Allocation Tests" include("allocation_tests.jl")
 end
 ```
@@ -213,9 +216,10 @@ The main `Project.toml` also includes:
 
 1. ✅ **Automatic execution**: Tests run as part of each sublibrary's `runtests.jl`
 2. ✅ **PR testing**: Catches allocation regressions in pull requests  
-3. ✅ **Version gating**: Only runs on stable Julia versions to avoid pre-release issues
-4. ✅ **Progress tracking**: Clear visibility into allocation-free solver development
-5. ✅ **Dependency management**: Proper test dependencies added to each sublibrary
+3. ✅ **Comprehensive version gating**: All QA tests (JET, Aqua, AllocCheck) only run on stable Julia versions
+4. ✅ **Unified QA framework**: Existing JET and Aqua tests moved into the same version gate as allocation tests
+5. ✅ **Progress tracking**: Clear visibility into allocation-free solver development
+6. ✅ **Dependency management**: Proper test dependencies added to each sublibrary
 
 ## Future Extensions
 
