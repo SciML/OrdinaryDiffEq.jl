@@ -17,6 +17,7 @@ import OrdinaryDiffEqCore: alg_order, isfsal, beta2_default, beta1_default,
                            AutoAlgSwitch, _ode_interpolant, _ode_interpolant!, full_cache,
                            accept_step_controller, DerivativeOrderNotPossibleError,
                            du_cache, u_cache, get_fsalfirstlast, copyat_or_push!
+                           du_cache, u_cache, get_fsalfirstlast, @SciMLMessage
 using SciMLBase
 import MuladdMacro: @muladd
 import FastBroadcast: @..
