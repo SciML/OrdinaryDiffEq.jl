@@ -5,7 +5,8 @@ ode_defaults = Dict(
     :dense_output_saveat => Verbosity.Warn(),
     :alg_switch => Verbosity.Warn(),
     :mismatched_input_output_type => Verbosity.Warn(),
-    :shampine_dt => Verbosity.Warn()
+    :shampine_dt => Verbosity.Warn(),
+    :unlimited_dt => Verbosity.Warn()
 )
 
 mutable struct ODEErrorControlVerbosity
@@ -14,31 +15,35 @@ mutable struct ODEErrorControlVerbosity
     dense_output_saveat::Verbosity.Type
 
     function ODEErrorControlVerbosity(;
-            dt_NaN = defaults[:dt_NaN], init_NaN = defaults[:init_NaN],
-            rosenbrock_no_differential_states = defaults[:rosenbrock_no_differential_states], dense_output_saveat = defaults[:dense_output_saveat])
-        new(dt_NaN, init_NaN, rosenbrock_no_differential_states, dense_output_saveat)
+            dt_NaN = ode_defaults[:dt_NaN], init_NaN = ode_defaults[:init_NaN], dense_output_saveat = ode_defaults[:dense_output_saveat])
+            @info "here"
+        new(dt_NaN, init_NaN, dense_output_saveat)
     end
 end
 
 function ODEErrorControlVerbosity(verbose::Verbosity.Type)
     @match verbose begin
-        Verbosity.None() => ODEErrorControlVerbosity(fill(
-            Verbosity.None(), length(fieldnames(ODEErrorControlVerbosity)))...)
-
-        Verbosity.Info() => ODEErrorControlVerbosity(fill(
-            Verbosity.Info(), length(fieldnames(ODEErrorControlVerbosity)))...)
-
-        Verbosity.Warn() => ODEErrorControlVerbosity(fill(
-            Verbosity.Warn(), length(fieldnames(ODEErrorControlVerbosity)))...)
-
-        Verbosity.Error() => ODEErrorControlVerbosity(fill(
-            Verbosity.Error(), length(fieldnames(ODEErrorControlVerbosity)))...)
-
         Verbosity.Default() => ODEErrorControlVerbosity()
+
+        Verbosity.None() => ODEErrorControlVerbosity(;NamedTuple{fieldnames(ODEErrorControlVerbosity)}(fill(
+            Verbosity.None(),
+            length(fieldnames(ODEErrorControlVerbosity))))...)
+
+        Verbosity.Info() => ODEErrorControlVerbosity(;NamedTuple{fieldnames(ODEErrorControlVerbosity)}(fill(
+            Verbosity.Info(),
+            length(fieldnames(ODEErrorControlVerbosity))))...)
+
+        Verbosity.Warn() => ODEErrorControlVerbosity(;NamedTuple{fieldnames(ODEErrorControlVerbosity)}(fill(
+            Verbosity.Warn(),
+            length(fieldnames(ODEErrorControlVerbosity))))...)
+
+        Verbosity.Error() => ODEErrorControlVerbosity(;NamedTuple{fieldnames(ODEErrorControlVerbosity)}(fill(
+            Verbosity.Error(),
+            length(fieldnames(ODEErrorControlVerbosity))))...)
 
         Verbosity.Edge() => ODEErrorControlVerbosity()
 
-        _ => @error "Not a valid choice for verbosity."
+        _ => @error "$verbose is not a valid choice for verbosity."
     end
 end
 
@@ -46,25 +51,33 @@ mutable struct ODEPerformanceVerbosity
     alg_switch::Verbosity.Type
     mismatched_input_output_type::Verbosity.Type
 
-    function ODEPerformanceVerbosity(; alg_switch = defaults[:alg_switch],
-            mismatched_input_output_type = defaults[:mismatched_input_output_type])
+    function ODEPerformanceVerbosity(;alg_switch = ode_defaults[:alg_switch],
+            mismatched_input_output_type = ode_defaults[:mismatched_input_output_type])
         new(alg_switch, mismatched_input_output_type)
     end
 end
 
 function ODEPerformanceVerbosity(verbose::Verbosity.Type)
     @match verbose begin
-        Verbosity.None() => ODEPerformanceVerbosity(fill(
-            Verbosity.None(), length(fieldnames(ODEPerformanceVerbosity)))...)
+        Verbosity.None() => ODEPerformanceVerbosity(;
+            NamedTuple{fieldnames(ODEPerformanceVerbosity)}(fill(
+                Verbosity.None(),
+                length(fieldnames(ODEPerformanceVerbosity))))...)
 
-        Verbosity.Info() => ODEPerformanceVerbosity(fill(
-            Verbosity.Info(), length(fieldnames(ODEPerformanceVerbosity)))...)
+        Verbosity.Info() => ODEPerformanceVerbosity(;
+            NamedTuple{fieldnames(ODEPerformanceVerbosity)}(fill(
+                Verbosity.Info(),
+                length(fieldnames(ODEPerformanceVerbosity))))...)
 
-        Verbosity.Warn() => ODEPerformanceVerbosity(fill(
-            Verbosity.Warn(), length(fieldnames(ODEPerformanceVerbosity)))...)
+        Verbosity.Warn() => ODEPerformanceVerbosity(;
+            NamedTuple{fieldnames(ODEPerformanceVerbosity)}(fill(
+                Verbosity.Warn(),
+                length(fieldnames(ODEPerformanceVerbosity))))...)
 
-        Verbosity.Error() => ODEPerformanceVerbosity(fill(
-            Verbosity.Error(), length(fieldnames(ODEPerformanceVerbosity)))...)
+        Verbosity.Error() => ODEPerformanceVerbosity(;
+            NamedTuple{fieldnames(ODEPerformanceVerbosity)}(fill(
+                Verbosity.Error(),
+                length(fieldnames(ODEPerformanceVerbosity))))...)
 
         Verbosity.Default() => ODEPerformanceVerbosity()
 
@@ -76,24 +89,35 @@ mutable struct ODENumericalVerbosity
     rosenbrock_no_differential_states::Verbosity.Type
     shampine_dt::Verbosity.Type
     unlimited_dt::Verbosity.Type
-    @add_kwonly function ODENumericalVerbosity()
-        new()
+    function ODENumericalVerbosity(;
+            rosenbrock_no_differential_states = ode_defaults[:rosenbrock_no_differential_states],
+            shampine_dt = ode_defaults[:shampine_dt],
+            unlimited_dt = ode_defaults[:unlimited_dt])
+        new(rosenbrock_no_differential_states, shampine_dt, unlimited_dt)
     end
 end
 
 function ODENumericalVerbosity(verbose::Verbosity.Type)
     @match verbose begin
-        Verbosity.None() => ODENumericalVerbosity(fill(
-            Verbosity.None(), length(fieldnames(ODENumericalVerbosity)))...)
+        Verbosity.None() => ODENumericalVerbosity(;
+            NamedTuple{fieldnames(ODENumericalVerbosity)}(fill(
+                Verbosity.None(),
+                length(fieldnames(ODENumericalVerbosity))))...)
 
-        Verbosity.Info() => ODENumericalVerbosity(fill(
-            Verbosity.None(), length(fieldnames(ODENumericalVerbosity)))...)
+        Verbosity.Info() => OODENumericalVerbosity(;
+            NamedTuple{fieldnames(ODENumericalVerbosity)}(fill(
+                Verbosity.Info(),
+                length(fieldnames(ODENumericalVerbosity))))...)
 
-        Verbosity.Warn() => ODENumericalVerbosity(fill(
-            Verbosity.Warn(), length(fieldnames(ODENumericalVerbosity)))...)
+        Verbosity.Warn() => ODENumericalVerbosity(;
+            NamedTuple{fieldnames(ODENumericalVerbosity)}(fill(
+                Verbosity.Warn(),
+                length(fieldnames(ODENumericalVerbosity))))...)
 
-        Verbosity.Error() => ODENumericalVerbosity(fill(
-            Verbosity.Error(), length(fieldnames(ODENumericalVerbosity)))...)
+        Verbosity.Error() => ODENumericalVerbosity(;
+            NamedTuple{fieldnames(ODENumericalVerbosity)}(fill(
+                Verbosity.Error(),
+                length(fieldnames(ODENumericalVerbosity))))...)
 
         Verbosity.Default() => ODENumericalVerbosity()
 
@@ -101,9 +125,9 @@ function ODENumericalVerbosity(verbose::Verbosity.Type)
     end
 end
 
-struct ODEVerbosity{T} <: AbstractVerbositySpecifier{T}
-    linear_verbosity
-    nonlinear_verbosity
+struct ODEVerbosity{T}
+    linear_verbosity::Any
+    nonlinear_verbosity::Any
 
     error_control::ODEErrorControlVerbosity
     performance::ODEPerformanceVerbosity
@@ -113,24 +137,24 @@ end
 function ODEVerbosity(verbose::Verbosity.Type)
     @match verbose begin
         Verbosity.Default() => ODEVerbosity{true}(
-            LinearVerbosity(Verbosity.Default()),
-            NonlinearVerbosity(Verbosity.Default()),
+            Verbosity.Default(),
+            Verbosity.Default(),
             ODEErrorControlVerbosity(Verbosity.Default()),
             ODEPerformanceVerbosity(Verbosity.Default()),
             ODENumericalVerbosity(Verbosity.Default())
         )
 
         Verbosity.None() => ODEVerbosity{false}(
-            LinearVerbosity(Verbosity.None()),
-            NonlinearVerbosity(Verbosity.None()),
+            Verbosity.None(),
+            Verbosity.None(),
             ODEErrorControlVerbosity(Verbosity.None()),
             ODEPerformanceVerbosity(Verbosity.None()),
             ODENumericalVerbosity(Verbosity.None())
         )
 
         Verbosity.All() => ODEVerbosity{true}(
-            LinearVerbosity(Verbosity.All()),
-            NonlinearVerbosity(Verbosity.All()),
+            Verbosity.Default(),
+            Verbosity.Default(),
             ODEErrorControlVerbosity(Verbosity.Info()),
             ODEPerformanceVerbosity(Verbosity.Info()),
             ODENumericalVerbosity(Verbosity.Info())
@@ -176,6 +200,6 @@ function ODEVerbosity(;
         end
     end
 
-    ODEVerbosity{true}(linear, nonlinear, error_control_verbosity,
+    ODEVerbosity{true}(linear_verbosity, nonlinear_verbosity, error_control_verbosity,
         performance_verbosity, numerical_verbosity)
 end
