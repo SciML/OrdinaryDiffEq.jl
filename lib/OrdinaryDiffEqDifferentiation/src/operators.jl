@@ -6,7 +6,7 @@ JVPCache provides a JVP operator wrapper for performing the DifferentiationInter
 ### Constructor
 
 ```julia
-JVPCache(f::DiffEqBase.AbstractDiffEqFunction, du, u, p, t; autodiff)
+JVPCache(f::SciMLBase.AbstractDiffEqFunction, du, u, p, t; autodiff)
 ```
 
 JVPCache construction builds a DifferentiationInterface "prep" object using `prepare_pushforward!`. The "prep" object is used
@@ -38,7 +38,7 @@ end
 
 Base.size(J::JVPCache) = (length(J.u), length(J.u))
 
-function JVPCache(f::DiffEqBase.AbstractDiffEqFunction, du, u, p, t; autodiff)
+function JVPCache(f::SciMLBase.AbstractDiffEqFunction, du, u, p, t; autodiff)
     jvp_op = prepare_jvp(f, du, u, p, t, autodiff)
     return JVPCache{eltype(du)}(jvp_op, f, du, u, p, t)
 end
@@ -56,7 +56,7 @@ end
 
 # helper functions
 
-function prepare_jvp(f::DiffEqBase.AbstractDiffEqFunction, du, u, p, t, autodiff)
+function prepare_jvp(f::SciMLBase.AbstractDiffEqFunction, du, u, p, t, autodiff)
     SciMLBase.has_jvp(f) && return f.jvp
     autodiff = autodiff isa AutoSparse ? ADTypes.dense_ad(autodiff) : autodiff
     @assert DI.check_inplace(autodiff) "AD backend $(autodiff) doesn't support in-place problems."

@@ -1,5 +1,5 @@
 @muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-        prob::DiffEqBase.AbstractODEProblem{uType, tType, true
+        prob::SciMLBase.AbstractODEProblem{uType, tType, true
         },
         integrator) where {tType, uType}
     _tType = eltype(tType)
@@ -138,7 +138,7 @@
     dt₀ = ifelse((d₀ < 1 // 10^(5)) |
                  (d₁ < 1 // 10^(5)), smalldt,
         convert(_tType,
-            oneunit_tType * DiffEqBase.value((d₀ / d₁) /
+            oneunit_tType * SciMLBase.value((d₀ / d₁) /
                                              100)))
     # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     #   dt₀ = smalldt
@@ -195,7 +195,7 @@
     else
         dt₁ = convert(_tType,
             oneunit_tType *
-            DiffEqBase.value(10.0^(-(2 + log10(max_d₁d₂)) /
+            SciMLBase.value(10.0^(-(2 + log10(max_d₁d₂)) /
                                    get_current_alg_order(integrator.alg,
                 integrator.cache))))
     end
@@ -229,7 +229,7 @@ function Base.showerror(io::IO, e::TypeNotConstantError)
 end
 
 @muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-        prob::DiffEqBase.AbstractODEProblem{uType, tType,
+        prob::SciMLBase.AbstractODEProblem{uType, tType,
             false},
         integrator) where {uType, tType}
     _tType = eltype(tType)
@@ -263,7 +263,7 @@ end
     if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
         dt₀ = smalldt
     else
-        dt₀ = convert(_tType, oneunit_tType * DiffEqBase.value((d₀ / d₁) / 100))
+        dt₀ = convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
     end
     dt₀ = min(dt₀, dtmax_tdir)
     dt₀_tdir = tdir * dt₀
@@ -283,7 +283,7 @@ end
         dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
     else
         dt₁ = _tType(oneunit_tType *
-                     DiffEqBase.value(10^(-(2 + log10(max_d₁d₂)) /
+                     SciMLBase.value(10^(-(2 + log10(max_d₁d₂)) /
                                           get_current_alg_order(integrator.alg,
             integrator.cache))))
     end
@@ -291,7 +291,7 @@ end
 end
 
 @inline function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-        prob::DiffEqBase.AbstractDAEProblem{duType, uType,
+        prob::SciMLBase.AbstractDAEProblem{duType, uType,
             tType},
         integrator) where {duType, uType, tType}
     _tType = eltype(tType)

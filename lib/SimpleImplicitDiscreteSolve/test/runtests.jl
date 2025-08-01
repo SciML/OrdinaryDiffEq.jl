@@ -58,7 +58,7 @@ end
     tsteps = 15
     u0 = [1.0, 3.0]
     idprob = ImplicitDiscreteProblem(periodic!, u0, (0, tsteps), [])
-    initsol, initfail = DiffEqBase.__init(idprob, SimpleIDSolve())
+    initsol, initfail = SciMLBase.__init(idprob, SimpleIDSolve())
     @test initsol.u[1]^2 + initsol.u[2]^2 ≈ 16
 
     idsol = solve(idprob, SimpleIDSolve())

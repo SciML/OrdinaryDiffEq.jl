@@ -23,7 +23,7 @@ alg_order(alg::Exprb43) = 4
 alg_adaptive_order(alg::Exprb32) = 2
 alg_adaptive_order(alg::Exprb43) = 4
 
-function DiffEqBase.prepare_alg(
+function SciMLBase.prepare_alg(
         alg::ETD2,
         u0::AbstractArray,
         p, prob)

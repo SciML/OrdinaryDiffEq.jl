@@ -359,7 +359,7 @@ qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6 // 5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 // 1 : 0
 #TODO
-#DiffEqBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2
+#SciMLBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2
 
 # SSP coefficients
 
