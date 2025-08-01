@@ -138,6 +138,7 @@ end
 
 include("doc_utils.jl")
 include("misc_utils.jl")
+include("verbosity.jl")
 
 include("algorithms.jl")
 include("composite_algs.jl")
