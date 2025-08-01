@@ -26,7 +26,7 @@ import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, S
 using DiffEqBase: TimeGradientWrapper,
                   UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
-import SciMLBase: SciMLBase, AbstractSciMLOperator, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction, islinear
+import SciMLBase: SciMLBase, AbstractSciMLOperator, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction, DAEFunction, islinear
 using SciMLBase: @set, @reset
 import SciMLOperators: SciMLOperators, IdentityOperator, update_coefficients!
 using SciMLOperators: IdentityOperator, update_coefficients!
