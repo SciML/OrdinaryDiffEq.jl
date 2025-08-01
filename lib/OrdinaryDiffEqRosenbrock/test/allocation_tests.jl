@@ -21,32 +21,34 @@ Currently, Rosenbrock solvers are allocating and marked with @test_broken.
     end
     vector_prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 1.0))
     
-    # Test known allocating Rosenbrock solvers with @test_broken
-    allocating_solvers = [Rodas4(), Rodas5(), Rosenbrock23()]
+    # Test all exported Rosenbrock solvers for allocation-free behavior  
+    rosenbrock_solvers = [Rosenbrock23(), Rosenbrock32(), RosShamp4(), Veldd4(), Velds4(), GRK4T(), GRK4A(),
+                          Rodas3(), Rodas23W(), Rodas3P(), Rodas4(), Rodas42(), Rodas4P(), Rodas4P2(), Rodas5(),
+                          Rodas5P(), Rodas5Pe(), Rodas5Pr(), AutoRodas4(), AutoRodas4P(), AutoRodas5(),
+                          AutoRodas5P(), AutoRodas5Pe(), AutoRodas5Pr()]
     
-    @testset "Currently Allocating Rosenbrock Solvers (@test_broken)" begin
-        for solver in allocating_solvers
-            @testset "$(typeof(solver)) allocation check (broken)" begin
+    @testset "Rosenbrock Solver Allocation Analysis" begin
+        for solver in rosenbrock_solvers
+            @testset "$(typeof(solver)) allocation check" begin
                 integrator = init(linear_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                 step!(integrator)  # Setup step may allocate
                 
                 # Use AllocCheck for accurate allocation detection
                 allocs = check_allocs(step!, (typeof(integrator),))
-                @test_broken length(allocs) == 0  # Should eventually be allocation-free
+                
+                # These solvers should be allocation-free, but mark as broken for now
+                # to verify with AllocCheck (more accurate than @allocated)
+                @test_broken length(allocs) == 0
                 
                 if length(allocs) > 0
                     println("AllocCheck found $(length(allocs)) allocation sites in $(typeof(solver)) step!:")
                     for (i, alloc) in enumerate(allocs[1:min(3, end)])  # Show first 3
                         println("  $i. $alloc")
                     end
+                else
+                    println("✓ $(typeof(solver)) appears allocation-free with AllocCheck")
                 end
             end
         end
-    end
-    
-    # Placeholder for future allocation-free Rosenbrock solvers
-    @testset "Future Allocation-Free Rosenbrock Solvers" begin
-        # When Rosenbrock solvers are made allocation-free, move them here from @test_broken
-        @test_skip "No allocation-free Rosenbrock solvers yet - all currently allocating"
     end
 end

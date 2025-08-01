@@ -21,32 +21,33 @@ Currently, many BDF solvers are allocating and marked with @test_broken.
     end
     vector_prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 1.0))
     
-    # Test known allocating BDF solvers with @test_broken
-    allocating_solvers = [QNDF(), ABDF2()]
+    # Test all exported BDF solvers for allocation-free behavior
+    bdf_solvers = [ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(),
+                   SBDF(), SBDF2(), SBDF3(), SBDF4(), MEBDF2(), IMEXEuler(), IMEXEulerARK(),
+                   DABDF2(), DImplicitEuler(), DFBDF()]
     
-    @testset "Currently Allocating BDF Solvers (@test_broken)" begin
-        for solver in allocating_solvers
-            @testset "$(typeof(solver)) allocation check (broken)" begin
+    @testset "BDF Solver Allocation Analysis" begin
+        for solver in bdf_solvers
+            @testset "$(typeof(solver)) allocation check" begin
                 integrator = init(linear_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                 step!(integrator)  # Setup step may allocate
                 
                 # Use AllocCheck for accurate allocation detection
                 allocs = check_allocs(step!, (typeof(integrator),))
-                @test_broken length(allocs) == 0  # Should eventually be allocation-free
+                
+                # These solvers should be allocation-free, but mark as broken for now
+                # to verify with AllocCheck (more accurate than @allocated)
+                @test_broken length(allocs) == 0
                 
                 if length(allocs) > 0
                     println("AllocCheck found $(length(allocs)) allocation sites in $(typeof(solver)) step!:")
                     for (i, alloc) in enumerate(allocs[1:min(3, end)])  # Show first 3
                         println("  $i. $alloc")
                     end
+                else
+                    println("✓ $(typeof(solver)) appears allocation-free with AllocCheck")
                 end
             end
         end
-    end
-    
-    # Placeholder for future allocation-free BDF solvers
-    @testset "Future Allocation-Free BDF Solvers" begin
-        # When BDF solvers are made allocation-free, move them here from @test_broken
-        @test_skip "No allocation-free BDF solvers yet - all currently allocating"
     end
 end

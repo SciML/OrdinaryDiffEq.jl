@@ -17,8 +17,10 @@ These tests verify that the step! operation does not allocate during stepping.
     end
     prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 1.0))
     
-    # Test SSPRK solvers for allocation-free behavior
-    ssprk_solvers = [SSPRK22(), SSPRK33(), SSPRK43()]
+    # Test all exported SSPRK solvers for allocation-free behavior
+    ssprk_solvers = [SSPRK53_2N2(), SSPRK22(), SSPRK53(), SSPRK63(), SSPRK83(), SSPRK43(), SSPRK432(), SSPRKMSVS32(),
+                     SSPRK54(), SSPRK53_2N1(), SSPRK104(), SSPRK932(), SSPRKMSVS43(), SSPRK73(), SSPRK53_H(),
+                     SSPRK33(), KYKSSPRK42(), KYK2014DGSSPRK_3S2()]
     
     @testset "SSPRK Solver Allocation Analysis" begin
         for solver in ssprk_solvers

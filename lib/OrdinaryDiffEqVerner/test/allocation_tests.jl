@@ -17,9 +17,9 @@ These tests verify that the step! operation does not allocate during stepping.
     end
     prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 1.0))
     
-    # Test Verner solvers for allocation-free behavior  
-    # Note: This package may have different Verner solvers than HighOrderRK
-    verner_solvers = [Vern6(), Vern7(), Vern8(), Vern9()]
+    # Test all exported Verner solvers for allocation-free behavior
+    verner_solvers = [Vern6(), Vern7(), Vern8(), Vern9(),
+                      AutoVern6(Vern6()), AutoVern7(Vern7()), AutoVern8(Vern8()), AutoVern9(Vern9())]
     
     @testset "Verner Solver Allocation Analysis" begin
         for solver in verner_solvers
