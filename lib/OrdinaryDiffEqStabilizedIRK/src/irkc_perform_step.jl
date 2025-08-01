@@ -84,9 +84,7 @@ function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false
         f2ⱼ₋₁ = f2(gprev, p, t + Cⱼ₋₁ * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         integrator.stats.nf2 += 1
-        nlsolver.tmp = (1 - μ - ν) * uprev + μ * gprev + ν * gprev2 + dt * μs * f2ⱼ₋₁ +
-                       dt * νs * du₂ + (νs - (1 - μ - ν) * μs₁) * dt * du₁ -
-                       ν * μs₁ * dt * f1ⱼ₋₂
+        nlsolver.tmp = (1 - μ - ν) * uprev + μ * gprev + ν * gprev2 + dt * μs * f2ⱼ₋₁ + dt * νs * du₂ + (νs - (1 - μ - ν) * μs₁) * dt * du₁ - ν * μs₁ * dt * f1ⱼ₋₂
         nlsolver.z = dt * f1ⱼ₋₁
         nlsolver.c = Cⱼ
         z = nlsolve!(nlsolver, integrator, cache, false)
@@ -216,10 +214,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
         f2(f2ⱼ₋₁, gprev, p, t + Cⱼ₋₁ * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         integrator.stats.nf2 += 1
-        @.. broadcast=false nlsolver.tmp=(1 - μ - ν) * uprev + μ * gprev + ν * gprev2 +
-                                         dt * μs * f2ⱼ₋₁ + dt * νs * du₂ +
-                                         (νs - (1 - μ - ν) * μs₁) * dt * du₁ -
-                                         ν * μs₁ * dt * f1ⱼ₋₂
+        @.. broadcast=false nlsolver.tmp=(1 - μ - ν) * uprev + μ * gprev + ν * gprev2 + dt * μs * f2ⱼ₋₁ + dt * νs * du₂ + (νs - (1 - μ - ν) * μs₁) * dt * du₁ - ν * μs₁ * dt * f1ⱼ₋₂
         @.. broadcast=false nlsolver.z=dt * f1ⱼ₋₁
         nlsolver.c = Cⱼ
 
@@ -252,8 +247,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
     # error estimate
     if isnewton(nlsolver) && integrator.opts.adaptive
         update_W!(integrator, cache, dt, false)
-        @.. broadcast=false gprev=dt * 0.5 * (du₂ - f2ⱼ₋₁) +
-                                  dt * (0.5 - μs₁) * (du₁ - f1ⱼ₋₁)
+        @.. broadcast=false gprev=dt * 0.5 * (du₂ - f2ⱼ₋₁) + dt * (0.5 - μs₁) * (du₁ - f1ⱼ₋₁)
 
         linsolve = nlsolver.cache.linsolve
         linres = dolinsolve(integrator, linsolve; b = _vec(gprev), linu = _vec(tmp))
