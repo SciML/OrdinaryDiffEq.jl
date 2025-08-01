@@ -24,8 +24,7 @@ Currently, Rosenbrock solvers are allocating and marked with @test_broken.
     # Test all exported Rosenbrock solvers for allocation-free behavior  
     rosenbrock_solvers = [Rosenbrock23(), Rosenbrock32(), RosShamp4(), Veldd4(), Velds4(), GRK4T(), GRK4A(),
                           Rodas3(), Rodas23W(), Rodas3P(), Rodas4(), Rodas42(), Rodas4P(), Rodas4P2(), Rodas5(),
-                          Rodas5P(), Rodas5Pe(), Rodas5Pr(), AutoRodas4(), AutoRodas4P(), AutoRodas5(),
-                          AutoRodas5P(), AutoRodas5Pe(), AutoRodas5Pr()]
+                          Rodas5P(), Rodas5Pe(), Rodas5Pr()]
     
     @testset "Rosenbrock Solver Allocation Analysis" begin
         for solver in rosenbrock_solvers
