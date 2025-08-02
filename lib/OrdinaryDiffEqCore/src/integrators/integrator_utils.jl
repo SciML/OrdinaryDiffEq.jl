@@ -187,7 +187,7 @@ end
 postamble!(integrator::ODEIntegrator) = _postamble!(integrator)
 
 function _postamble!(integrator)
-    SciMLBase.finalize!(integrator.opts.callback, integrator.u, integrator.t, integrator)
+    DiffEqBase.finalize!(integrator.opts.callback, integrator.u, integrator.t, integrator)
     solution_endpoint_match_cur_integrator!(integrator)
     resize!(integrator.sol.t, integrator.saveiter)
     resize!(integrator.sol.u, integrator.saveiter)
@@ -273,7 +273,7 @@ function _loopfooter!(integrator)
         if integrator.accept_step # Accept
             increment_accept!(integrator.stats)
             integrator.last_stepfail = false
-            dtnew = SciMLBase.value(step_accept_controller!(integrator,
+            dtnew = DiffEqBase.value(step_accept_controller!(integrator,
                 integrator.alg,
                 q)) *
                     oneunit(integrator.dt)
@@ -302,7 +302,7 @@ function _loopfooter!(integrator)
     # Take value because if t is dual then maxeig can be dual
     if integrator.cache isa CompositeCache
         cur_eigen_est = integrator.opts.internalnorm(
-            SciMLBase.value(integrator.eigen_est),
+            DiffEqBase.value(integrator.eigen_est),
             integrator.t)
         cur_eigen_est > integrator.stats.maxeig &&
             (integrator.stats.maxeig = cur_eigen_est)

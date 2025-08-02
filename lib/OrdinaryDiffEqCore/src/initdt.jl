@@ -138,7 +138,7 @@
     dt₀ = ifelse((d₀ < 1 // 10^(5)) |
                  (d₁ < 1 // 10^(5)), smalldt,
         convert(_tType,
-            oneunit_tType * SciMLBase.value((d₀ / d₁) /
+            oneunit_tType * DiffEqBase.value((d₀ / d₁) /
                                              100)))
     # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     #   dt₀ = smalldt
@@ -195,7 +195,7 @@
     else
         dt₁ = convert(_tType,
             oneunit_tType *
-            SciMLBase.value(10.0^(-(2 + log10(max_d₁d₂)) /
+            DiffEqBase.value(10.0^(-(2 + log10(max_d₁d₂)) /
                                    get_current_alg_order(integrator.alg,
                 integrator.cache))))
     end
@@ -263,7 +263,7 @@ end
     if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
         dt₀ = smalldt
     else
-        dt₀ = convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
+        dt₀ = convert(_tType, oneunit_tType * DiffEqBase.value((d₀ / d₁) / 100))
     end
     dt₀ = min(dt₀, dtmax_tdir)
     dt₀_tdir = tdir * dt₀
@@ -283,7 +283,7 @@ end
         dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
     else
         dt₁ = _tType(oneunit_tType *
-                     SciMLBase.value(10^(-(2 + log10(max_d₁d₂)) /
+                     DiffEqBase.value(10^(-(2 + log10(max_d₁d₂)) /
                                           get_current_alg_order(integrator.alg,
             integrator.cache))))
     end
