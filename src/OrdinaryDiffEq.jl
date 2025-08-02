@@ -4,7 +4,6 @@ $(DocStringExtensions.README)
 module OrdinaryDiffEq
 
 import Reexport: Reexport, @reexport
-using Reexport: @reexport
 @reexport using SciMLBase
 
 # Explicit imports for functions that are re-exported
