@@ -39,13 +39,13 @@ function isdefaultalg(alg::CompositeAlgorithm{
     true
 end
 
-function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.__init(
+function SciMLBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    SciMLBase.__init(
         prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
         args...; wrap = Val(false), kwargs...)
 end
-function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.__solve(
+function SciMLBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    SciMLBase.__solve(
         prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
         args...; wrap = Val(false), kwargs...)
 end

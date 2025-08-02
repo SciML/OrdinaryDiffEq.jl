@@ -11,7 +11,7 @@ dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
-function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
+function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
         cache = nothing, repeat_step = false) where {NL <: AbstractNLSolver}
     always_new = is_always_new(nlsolver)
     check_div′ = check_div(nlsolver)
@@ -101,7 +101,7 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
         apply_step!(nlsolver, integrator)
 
         # check for convergence
-        η = DiffEqBase.value(θ / (1 - θ))
+        η = SciMLBase.value(θ / (1 - θ))
         # don't trust θ for non-adaptive on first iter because the solver doesn't provide feedback
         # for us to know whether our previous nlsolve converged sufficiently well
         check_η_convergance = (iter > 1 ||
@@ -127,14 +127,14 @@ end
 
 ## default implementations
 
-initialize!(::AbstractNLSolver, integrator::DiffEqBase.DEIntegrator) = nothing
+initialize!(::AbstractNLSolver, integrator::SciMLBase.DEIntegrator) = nothing
 
 function initial_η(nlsolver::NLSolver, integrator)
     max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
 end
 
 function apply_step!(nlsolver::NLSolver{algType, iip},
-        integrator::DiffEqBase.DEIntegrator) where {algType, iip}
+        integrator::SciMLBase.DEIntegrator) where {algType, iip}
     if iip
         @.. broadcast=false nlsolver.z=nlsolver.ztmp
     else
@@ -144,8 +144,8 @@ function apply_step!(nlsolver::NLSolver{algType, iip},
     nothing
 end
 
-function postamble!(nlsolver::NLSolver, integrator::DiffEqBase.DEIntegrator)
-    if DiffEqBase.has_stats(integrator)
+function postamble!(nlsolver::NLSolver, integrator::SciMLBase.DEIntegrator)
+    if SciMLBase.has_stats(integrator)
         integrator.stats.nnonliniter += nlsolver.iter
 
         if nlsolvefail(nlsolver)

@@ -159,7 +159,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dtpropose = zero(dt)
     #cur_order = max(alg.init_order, alg.min_order)
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
     Q = fill(zero(QType), alg.max_order + 1)
     n_curr = alg.init_order
     n_old = alg.init_order
@@ -236,7 +236,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else
@@ -903,7 +903,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard, u, rate_prototype,
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
 
     Q = fill(zero(QType), alg.max_order - alg.min_order + 1)
     n_curr = alg.init_order
@@ -1053,7 +1053,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
 
     Q = fill(zero(QType), alg.max_order - alg.min_order + 1)
     n_curr = alg.init_order
@@ -1126,7 +1126,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else
@@ -1208,7 +1208,7 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner, u, rate_prototype,
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
 
     Q = fill(zero(QType), alg.max_order + 1)
     n_curr = alg.init_order
@@ -1329,7 +1329,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
 
     Q = fill(zero(QType), alg.max_order + 1)
     n_curr = alg.init_order
@@ -1455,7 +1455,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else
@@ -1544,7 +1544,7 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
 
     Q = fill(zero(QType), alg.max_order + 1)
     n_curr = alg.init_order
@@ -1653,7 +1653,7 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else

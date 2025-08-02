@@ -444,7 +444,7 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         extrapolant, kappa, controller, step_limiter!, AD_choice)
 end
 
-TruncatedStacktraces.@truncate_stacktrace QNDF
+@truncate_stacktrace QNDF
 
 @doc BDF_docstring("The second order Modified Extended BDF method,
     which has improved stability properties over the standard BDF.
@@ -549,7 +549,7 @@ function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         controller, step_limiter!, AD_choice)
 end
 
-TruncatedStacktraces.@truncate_stacktrace FBDF
+@truncate_stacktrace FBDF
 
 """
 QBDF1: Multistep Method
@@ -773,4 +773,4 @@ function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         controller, AD_choice)
 end
 
-TruncatedStacktraces.@truncate_stacktrace DFBDF
+@truncate_stacktrace DFBDF

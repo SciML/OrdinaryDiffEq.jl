@@ -16,14 +16,14 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import LinearAlgebra: norm
-using TruncatedStacktraces
+using TruncatedStacktraces: @truncate_stacktrace
 using TaylorDiff, Symbolics
 using TaylorDiff: make_seed, get_coefficient, append_coefficient, flatten
-import DiffEqBase: @def
+import SciMLBase: @def
 import OrdinaryDiffEqCore
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

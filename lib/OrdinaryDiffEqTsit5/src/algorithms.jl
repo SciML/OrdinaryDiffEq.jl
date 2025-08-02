@@ -17,7 +17,7 @@ Base.@kwdef struct Tsit5{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
-TruncatedStacktraces.@truncate_stacktrace Tsit5 3
+@truncate_stacktrace Tsit5 3
 # for backwards compatibility
 function Tsit5(stage_limiter!, step_limiter! = trivial_limiter!)
     Tsit5(stage_limiter!, step_limiter!, False())

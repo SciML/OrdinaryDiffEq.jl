@@ -87,7 +87,7 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
                 convert(AbstractMatrix, f.f1.f)
             ops = expRK_operators(alg, dt, A)
         end
-        if isa(f, SplitFunction) || DiffEqBase.has_jac(f)
+        if isa(f, SplitFunction) || SciMLBase.has_jac(f)
             uf = nothing
         else
             uf = UDerivativeWrapper(f, t, p)
@@ -110,7 +110,7 @@ function alg_cache_expRK(
     n = length(u)
     T = eltype(u)
     # Allocate cache for ForwardDiff
-    if isa(f, SplitFunction) || DiffEqBase.has_jac(f)
+    if isa(f, SplitFunction) || SciMLBase.has_jac(f)
         uf = nothing
         jac_config = nothing
     else
@@ -120,7 +120,7 @@ function alg_cache_expRK(
     # Allocate cache for the Jacobian
     if isa(f, SplitFunction)
         J = nothing
-    elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    elseif SciMLBase.has_jac(f) && f.jac_prototype !== nothing
         J = deepcopy(f.jac_prototype)
     else
         J = fill(zero(uEltypeNoUnits), n, n)
@@ -170,7 +170,7 @@ function alg_cache(alg::LawsonEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
     n = length(u)
     T = eltype(u)
     # Allocate caches for ForwardDiff
-    if isa(f, SplitFunction) || DiffEqBase.has_jac(f)
+    if isa(f, SplitFunction) || SciMLBase.has_jac(f)
         uf = nothing
         jac_config = nothing
     else
@@ -180,7 +180,7 @@ function alg_cache(alg::LawsonEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
     # Allocate cache for the Jacobian
     if isa(f, SplitFunction)
         J = nothing
-    elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    elseif SciMLBase.has_jac(f) && f.jac_prototype !== nothing
         J = deepcopy(f.jac_prototype)
     else
         J = fill(zero(uEltypeNoUnits), n, n)
@@ -396,7 +396,7 @@ for (Alg, Cache) in [(:Exp4, :Exp4ConstantCache),
             uprev2, f, t, dt, reltol, p, calck,
             ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits,
             tTypeNoUnits}
-        if DiffEqBase.has_jac(f)
+        if SciMLBase.has_jac(f)
             uf = nothing
         else
             uf = UDerivativeWrapper(f, t, p)
@@ -428,14 +428,14 @@ function alg_cache(alg::Exp4, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz = (zero(u) for i in 1:2)                    # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
     # Allocate jacobian and caches for ForwardDiff
-    if DiffEqBase.has_jac(f)
+    if SciMLBase.has_jac(f)
         uf = nothing
         jac_config = nothing
     else
         uf = UJacobianWrapper(f, t, p)
         jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dz)
     end
-    if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && f.jac_prototype !== nothing
         J = deepcopy(f.jac_prototype)
     else
         J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -475,14 +475,14 @@ function alg_cache(alg::EPIRK4s3A, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz = (zero(u) for i in 1:2)                    # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
     # Allocate jacobian and caches for ForwardDiff
-    if DiffEqBase.has_jac(f)
+    if SciMLBase.has_jac(f)
         uf = nothing
         jac_config = nothing
     else
         uf = UJacobianWrapper(f, t, p)
         jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dz)
     end
-    if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && f.jac_prototype !== nothing
         J = deepcopy(f.jac_prototype)
     else
         J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -521,14 +521,14 @@ function alg_cache(alg::EPIRK4s3B, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz = (zero(u) for i in 1:2)                    # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
     # Allocate jacobian and caches for ForwardDiff
-    if DiffEqBase.has_jac(f)
+    if SciMLBase.has_jac(f)
         uf = nothing
         jac_config = nothing
     else
         uf = UJacobianWrapper(f, t, p)
         jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dz)
     end
-    if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && f.jac_prototype !== nothing
         J = deepcopy(f.jac_prototype)
     else
         J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -567,14 +567,14 @@ function alg_cache(alg::EPIRK5s3, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz, k = (zero(u) for i in 1:3)                 # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
     # Allocate jacobian and caches for ForwardDiff
-    if DiffEqBase.has_jac(f)
+    if SciMLBase.has_jac(f)
         uf = nothing
         jac_config = nothing
     else
         uf = UJacobianWrapper(f, t, p)
         jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dz)
     end
-    if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && f.jac_prototype !== nothing
         J = deepcopy(f.jac_prototype)
     else
         J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -612,14 +612,14 @@ function alg_cache(alg::EXPRB53s3, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz = (zero(u) for i in 1:2)                    # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
     # Allocate jacobian and caches for ForwardDiff
-    if DiffEqBase.has_jac(f)
+    if SciMLBase.has_jac(f)
         uf = nothing
         jac_config = nothing
     else
         uf = UJacobianWrapper(f, t, p)
         jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dz)
     end
-    if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && f.jac_prototype !== nothing
         J = deepcopy(f.jac_prototype)
     else
         J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -658,14 +658,14 @@ function alg_cache(alg::EPIRK5P1, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz = (zero(u) for i in 1:2)                    # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
     # Allocate jacobian and caches for ForwardDiff
-    if DiffEqBase.has_jac(f)
+    if SciMLBase.has_jac(f)
         uf = nothing
         jac_config = nothing
     else
         uf = UJacobianWrapper(f, t, p)
         jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dz)
     end
-    if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && f.jac_prototype !== nothing
         J = deepcopy(f.jac_prototype)
     else
         J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -705,14 +705,14 @@ function alg_cache(alg::EPIRK5P2, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp, dz = (zero(u) for i in 1:2)                        # uType caches
     rtmp, rtmp2, dR, du1 = (zero(rate_prototype) for i in 1:4) # rateType caches
     # Allocate jacobian and caches for ForwardDiff
-    if DiffEqBase.has_jac(f)
+    if SciMLBase.has_jac(f)
         uf = nothing
         jac_config = nothing
     else
         uf = UJacobianWrapper(f, t, p)
         jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dz)
     end
-    if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && f.jac_prototype !== nothing
         J = deepcopy(f.jac_prototype)
     else
         J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -742,7 +742,7 @@ for (Alg, Cache) in [(:Exprb32, :Exprb32ConstantCache),
             uprev2, f, t, dt, reltol, p, calck,
             ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits,
             tTypeNoUnits}
-        if DiffEqBase.has_jac(f)
+        if SciMLBase.has_jac(f)
             uf = nothing
         else
             uf = UDerivativeWrapper(f, t, p)
@@ -769,7 +769,7 @@ function alg_cache_exprb(alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm, u,
     n = length(u)
     T = eltype(u)
     # Allocate cache for ForwardDiff
-    if DiffEqBase.has_jac(f)
+    if SciMLBase.has_jac(f)
         uf = nothing
         jac_config = nothing
     else
@@ -777,7 +777,7 @@ function alg_cache_exprb(alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm, u,
         jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dz)
     end
     # Allocate cache for the Jacobian
-    if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && f.jac_prototype !== nothing
         J = deepcopy(f.jac_prototype)
     else
         J = fill(zero(uEltypeNoUnits), n, n)

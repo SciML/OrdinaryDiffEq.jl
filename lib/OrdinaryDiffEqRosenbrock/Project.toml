@@ -8,6 +8,8 @@ OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
 
 [deps]
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
@@ -53,6 +55,7 @@ Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 Static = "1.1.1"
 Test = "<0.0.1, 1"
+SciMLBase = "2"
 julia = "1.10"
 JET = "0.9.18, 0.10.4"
 Aqua = "0.8.11"

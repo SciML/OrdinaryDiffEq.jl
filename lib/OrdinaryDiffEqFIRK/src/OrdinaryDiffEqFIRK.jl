@@ -37,7 +37,7 @@ using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, Convergence, FastConvergenc
 import ADTypes: AutoForwardDiff, AbstractADType
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

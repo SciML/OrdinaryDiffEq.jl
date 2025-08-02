@@ -17,7 +17,7 @@ using LinearAlgebra: I, isdiag
 using EnumX
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("default_alg.jl")
 

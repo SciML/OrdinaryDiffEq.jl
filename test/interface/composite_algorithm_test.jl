@@ -27,7 +27,7 @@ solve!(integrator2)
 @test integrator1.sol.t == integrator2.sol.t
 
 sol = solve(prob, alg_switch)
-@inferred DiffEqBase.__init(prob, alg_switch)
+@inferred SciMLBase.__init(prob, alg_switch)
 v = @inferred OrdinaryDiffEqCore.ode_interpolant(
     1.0, integrator1, integrator1.opts.save_idxs,
     Val{0})

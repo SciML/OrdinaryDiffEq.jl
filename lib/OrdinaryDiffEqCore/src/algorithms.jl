@@ -1,4 +1,4 @@
-abstract type OrdinaryDiffEqAlgorithm <: DiffEqBase.AbstractODEAlgorithm end
+abstract type OrdinaryDiffEqAlgorithm <: SciMLBase.AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
@@ -38,7 +38,7 @@ const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 # DAE Specific Algorithms
-abstract type DAEAlgorithm{CS, AD, FDT, ST, CJ} <: DiffEqBase.AbstractDAEAlgorithm end
+abstract type DAEAlgorithm{CS, AD, FDT, ST, CJ} <: SciMLBase.AbstractDAEAlgorithm end
 
 # Partitioned ODE Specific Algorithms
 abstract type OrdinaryDiffEqPartitionedAlgorithm <: OrdinaryDiffEqAlgorithm end
@@ -46,12 +46,12 @@ abstract type OrdinaryDiffEqAdaptivePartitionedAlgorithm <: OrdinaryDiffEqAdapti
 const PartitionedAlgorithm = Union{OrdinaryDiffEqPartitionedAlgorithm,
     OrdinaryDiffEqAdaptivePartitionedAlgorithm}
 
-function DiffEqBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
+function SciMLBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
     T = SciMLBase.remaker_of(thing)
     T(; SciMLBase.struct_as_namedtuple(thing)..., kwargs...)
 end
 
-function DiffEqBase.remake(
+function SciMLBase.remake(
         thing::Union{
             OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT,
                 ST, CJ},
@@ -113,7 +113,7 @@ struct CompositeAlgorithm{CS, T, F} <: OrdinaryDiffEqCompositeAlgorithm
     end
 end
 
-TruncatedStacktraces.@truncate_stacktrace CompositeAlgorithm 1
+@truncate_stacktrace CompositeAlgorithm 1
 
 if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeAlgorithm)

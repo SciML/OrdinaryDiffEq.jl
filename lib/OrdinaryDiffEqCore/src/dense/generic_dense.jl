@@ -127,12 +127,12 @@ end
     end
     return nothing
 end
-@inline function DiffEqBase.addsteps!(integrator::ODEIntegrator, args...)
+@inline function SciMLBase.addsteps!(integrator::ODEIntegrator, args...)
     ode_addsteps!(integrator, args...)
 end
 
-@inline function ode_interpolant(Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
-    DiffEqBase.addsteps!(integrator)
+@inline function ode_interpolant(Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
+    SciMLBase.addsteps!(integrator)
     if integrator.cache isa CompositeCache
         val = composite_ode_interpolant(Θ, integrator, integrator.cache.caches,
             integrator.cache.current, idxs, deriv)
@@ -197,8 +197,8 @@ end
     return expr
 end
 
-@inline function ode_interpolant!(val, Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
-    DiffEqBase.addsteps!(integrator)
+@inline function ode_interpolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
+    SciMLBase.addsteps!(integrator)
     if integrator.cache isa CompositeCache
         ode_interpolant!(val, Θ, integrator.dt, integrator.uprev, integrator.u,
             integrator.k, integrator.cache.caches[integrator.cache.current],
@@ -290,30 +290,30 @@ end
     return expr
 end
 
-@inline function current_interpolant(t::Number, integrator::DiffEqBase.DEIntegrator, idxs,
+@inline function current_interpolant(t::Number, integrator::SciMLBase.DEIntegrator, idxs,
         deriv)
     Θ = (t - integrator.tprev) / integrator.dt
     ode_interpolant(Θ, integrator, idxs, deriv)
 end
 
-@inline function current_interpolant(t, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
+@inline function current_interpolant(t, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     Θ = (t .- integrator.tprev) ./ integrator.dt
     [ode_interpolant(ϕ, integrator, idxs, deriv) for ϕ in Θ]
 end
 
-@inline function current_interpolant!(val, t::Number, integrator::DiffEqBase.DEIntegrator,
+@inline function current_interpolant!(val, t::Number, integrator::SciMLBase.DEIntegrator,
         idxs, deriv)
     Θ = (t - integrator.tprev) / integrator.dt
     ode_interpolant!(val, Θ, integrator, idxs, deriv)
 end
 
-@inline function current_interpolant!(val, t, integrator::DiffEqBase.DEIntegrator, idxs,
+@inline function current_interpolant!(val, t, integrator::SciMLBase.DEIntegrator, idxs,
         deriv)
     Θ = (t .- integrator.tprev) ./ integrator.dt
     [ode_interpolant!(val, ϕ, integrator, idxs, deriv) for ϕ in Θ]
 end
 
-@inline function current_interpolant!(val, t::Array, integrator::DiffEqBase.DEIntegrator,
+@inline function current_interpolant!(val, t::Array, integrator::SciMLBase.DEIntegrator,
         idxs, deriv)
     Θ = similar(t)
     @inbounds @simd ivdep for i in eachindex(t)
@@ -322,32 +322,32 @@ end
     [ode_interpolant!(val, ϕ, integrator, idxs, deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant(t::Number, integrator::DiffEqBase.DEIntegrator,
+@inline function current_extrapolant(t::Number, integrator::SciMLBase.DEIntegrator,
         idxs = nothing, deriv = Val{0})
     Θ = (t - integrator.tprev) / (integrator.t - integrator.tprev)
     ode_extrapolant(Θ, integrator, idxs, deriv)
 end
 
-@inline function current_extrapolant!(val, t::Number, integrator::DiffEqBase.DEIntegrator,
+@inline function current_extrapolant!(val, t::Number, integrator::SciMLBase.DEIntegrator,
         idxs = nothing, deriv = Val{0})
     Θ = (t - integrator.tprev) / (integrator.t - integrator.tprev)
     ode_extrapolant!(val, Θ, integrator, idxs, deriv)
 end
 
-@inline function current_extrapolant(t::AbstractArray, integrator::DiffEqBase.DEIntegrator,
+@inline function current_extrapolant(t::AbstractArray, integrator::SciMLBase.DEIntegrator,
         idxs = nothing, deriv = Val{0})
     Θ = (t .- integrator.tprev) ./ (integrator.t - integrator.tprev)
     [ode_extrapolant(ϕ, integrator, idxs, deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant!(val, t, integrator::DiffEqBase.DEIntegrator,
+@inline function current_extrapolant!(val, t, integrator::SciMLBase.DEIntegrator,
         idxs = nothing, deriv = Val{0})
     Θ = (t .- integrator.tprev) ./ (integrator.t - integrator.tprev)
     [ode_extrapolant!(val, ϕ, integrator, idxs, deriv) for ϕ in Θ]
 end
 
-@inline function ode_extrapolant!(val, Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
-    DiffEqBase.addsteps!(integrator)
+@inline function ode_extrapolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
+    SciMLBase.addsteps!(integrator)
     if integrator.cache isa CompositeCache
         composite_ode_extrapolant!(val, Θ, integrator, integrator.cache.caches,
             integrator.cache.current, idxs, deriv)
@@ -412,8 +412,8 @@ end
     return expr
 end
 
-@inline function ode_extrapolant(Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
-    DiffEqBase.addsteps!(integrator)
+@inline function ode_extrapolant(Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
+    SciMLBase.addsteps!(integrator)
     if integrator.cache isa CompositeCache
         composite_ode_extrapolant(Θ, integrator, integrator.cache.caches,
             integrator.cache.current, idxs, deriv)

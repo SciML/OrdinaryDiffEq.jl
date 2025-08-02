@@ -11,7 +11,7 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_cache, OrdinaryDiffEqMut
                            _initialize_dae!, DefaultInit, BrownFullBasicInit, OverrideInit
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 """
     IDSolve()

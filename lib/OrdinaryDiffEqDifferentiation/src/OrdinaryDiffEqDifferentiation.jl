@@ -8,15 +8,17 @@ import ForwardDiff.Dual
 import LinearSolve
 import LinearSolve: OperatorAssumptions
 import FunctionWrappersWrappers
-using DiffEqBase
+import DiffEqBase
 
 import LinearAlgebra
 import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!, lmul!, axpby!, opnorm, lu
 import LinearAlgebra: LowerTriangular, UpperTriangular
 import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros, sparse, spzeros
 import ArrayInterface
+import ArrayInterface: fast_scalar_indexing, zeromatrix, lu_instance
 
-import StaticArrayInterface
+# StaticArrayInterface imported but not used
+# import StaticArrayInterface
 import StaticArrays
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA,
                      StaticMatrix
@@ -24,9 +26,12 @@ import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, S
 using DiffEqBase: TimeGradientWrapper,
                   UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
-using SciMLBase: AbstractSciMLOperator, constructorof, @set
-using SciMLOperators
-import SparseMatrixColorings
+import SciMLBase: SciMLBase, AbstractSciMLOperator, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction, DAEFunction, islinear, remake
+using SciMLBase: @set, @reset
+import SciMLOperators: SciMLOperators, IdentityOperator, update_coefficients!, MatrixOperator
+using SciMLOperators: IdentityOperator, update_coefficients!
+import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
+                               ncolors, column_colors, coloring, sparsity_pattern
 import OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                           DAEAlgorithm,
@@ -46,7 +51,8 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
 import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff,
                            _get_fwd_tag
 
-using ConstructionBase
+import ConstructionBase
+using ConstructionBase: constructorof
 
 import DifferentiationInterface as DI
 
@@ -54,8 +60,8 @@ using FastBroadcast: @..
 
 using ConcreteStructs: @concrete
 
-@static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
-    import DiffEqBase: OrdinaryDiffEqTag
+@static if isdefined(SciMLBase, :OrdinaryDiffEqTag)
+    import SciMLBase: OrdinaryDiffEqTag
 else
     struct OrdinaryDiffEqTag end
 end

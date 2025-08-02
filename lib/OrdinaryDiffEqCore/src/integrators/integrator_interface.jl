@@ -17,7 +17,7 @@ function _change_t_via_interpolation!(integrator, t,
         end
         integrator.t = t
         integrator.dt = integrator.t - integrator.tprev
-        DiffEqBase.reeval_internals_due_to_modification!(
+        SciMLBase.reeval_internals_due_to_modification!(
             integrator; callback_initializealg = reinitialize_alg)
         if T
             solution_endpoint_match_cur_integrator!(integrator)
@@ -25,7 +25,7 @@ function _change_t_via_interpolation!(integrator, t,
     end
     return nothing
 end
-function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
+function SciMLBase.change_t_via_interpolation!(integrator::ODEIntegrator,
         t,
         modify_save_endpoint::Type{Val{T}} = Val{
             false,
@@ -36,7 +36,7 @@ function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
     return nothing
 end
 
-function DiffEqBase.reeval_internals_due_to_modification!(
+function SciMLBase.reeval_internals_due_to_modification!(
         integrator::ODEIntegrator, continuous_modification = true;
         callback_initializealg = nothing)
     if integrator.isdae
@@ -60,7 +60,7 @@ function DiffEqBase.reeval_internals_due_to_modification!(
     integrator.reeval_fsal = true
 end
 
-@inline function DiffEqBase.get_du(integrator::ODEIntegrator)
+@inline function SciMLBase.get_du(integrator::ODEIntegrator)
     isdiscretecache(integrator.cache) &&
         error("Derivatives are not defined for this stepper.")
     return if isfsal(integrator.alg)
@@ -70,7 +70,7 @@ end
     end
 end
 
-@inline function DiffEqBase.get_du!(out, integrator::ODEIntegrator)
+@inline function SciMLBase.get_du!(out, integrator::ODEIntegrator)
     isdiscretecache(integrator.cache) &&
         error("Derivatives are not defined for this stepper.")
     if isdiscretecache(integrator.cache)
@@ -107,54 +107,54 @@ function set_proposed_dt!(integrator::ODEIntegrator, integrator2::ODEIntegrator)
 end
 
 #TODO: Bigger caches for most algorithms
-@inline function DiffEqBase.get_tmp_cache(integrator::ODEIntegrator)
+@inline function SciMLBase.get_tmp_cache(integrator::ODEIntegrator)
     get_tmp_cache(integrator::ODEIntegrator, integrator.alg, integrator.cache)
 end
 
 # the ordering of the cache arrays is important!!!
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
+@inline function SciMLBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
         cache::OrdinaryDiffEqConstantCache)
     nothing
 end
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
+@inline function SciMLBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.tmp, cache.atmp)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqNewtonAlgorithm,
+@inline function SciMLBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqNewtonAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.tmp, cache.nlsolver.z)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.linsolve_tmp)
 end
 
-@inline function DiffEqBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.utilde)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqExponentialAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.dz)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqLinearExponentialAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
+@inline function SciMLBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
         cache::CompositeCache)
     get_tmp_cache(integrator, alg.algs[1], cache.caches[1])
 end
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
+@inline function SciMLBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
         cache::DefaultCache)
     init_ith_default_cache(cache, alg.algs, cache.current)
     if cache.current == 1
@@ -173,7 +173,7 @@ end
     end
 end
 
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::DAEAlgorithm,
+@inline function SciMLBase.get_tmp_cache(integrator, alg::DAEAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.cache.dz, cache.atmp)
 end
@@ -201,17 +201,17 @@ function full_cache(cache::DefaultCache)
     Iterators.flatten(full_cache(c) for c in caches)
 end
 
-function DiffEqBase.add_tstop!(integrator::ODEIntegrator, t)
+function SciMLBase.add_tstop!(integrator::ODEIntegrator, t)
     integrator.tdir * (t - integrator.t) < zero(integrator.t) &&
         error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
     push!(integrator.opts.tstops, integrator.tdir * t)
 end
 
-DiffEqBase.has_tstop(integrator::ODEIntegrator) = !isempty(integrator.opts.tstops)
-DiffEqBase.first_tstop(integrator::ODEIntegrator) = first(integrator.opts.tstops)
-DiffEqBase.pop_tstop!(integrator::ODEIntegrator) = pop!(integrator.opts.tstops)
+SciMLBase.has_tstop(integrator::ODEIntegrator) = !isempty(integrator.opts.tstops)
+SciMLBase.first_tstop(integrator::ODEIntegrator) = first(integrator.opts.tstops)
+SciMLBase.pop_tstop!(integrator::ODEIntegrator) = pop!(integrator.opts.tstops)
 
-function DiffEqBase.add_saveat!(integrator::ODEIntegrator, t)
+function SciMLBase.add_saveat!(integrator::ODEIntegrator, t)
     integrator.tdir * (t - integrator.t) < zero(integrator.t) &&
         error("Tried to add a saveat that is behind the current time. This is strictly forbidden")
     push!(integrator.opts.saveat, integrator.tdir * t)
@@ -317,14 +317,14 @@ function addat!(integrator::ODEIntegrator, idxs)
 end
 
 function terminate!(integrator::ODEIntegrator, retcode = ReturnCode.Terminated)
-    integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, retcode)
+    integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, retcode)
     integrator.opts.tstops.valtree = typeof(integrator.opts.tstops.valtree)()
 end
 
 const EMPTY_ARRAY_OF_PAIRS = Pair[]
 
-DiffEqBase.has_reinit(integrator::ODEIntegrator) = true
-function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.u0;
+SciMLBase.has_reinit(integrator::ODEIntegrator) = true
+function SciMLBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.u0;
         t0 = integrator.sol.prob.tspan[1],
         tf = integrator.sol.prob.tspan[2],
         erase_sol = true,
@@ -447,7 +447,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.
     return nothing
 end
 
-function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
+function SciMLBase.auto_dt_reset!(integrator::ODEIntegrator)
     integrator.dt = ode_determine_initdt(integrator.u, integrator.t,
         integrator.tdir, integrator.opts.dtmax,
         integrator.opts.abstol, integrator.opts.reltol,
@@ -461,7 +461,7 @@ function increment_nf!(stats, amt = 1)
     stats.nf += amt
 end
 
-function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
+function SciMLBase.set_t!(integrator::ODEIntegrator, t::Real)
     if integrator.opts.save_everystep
         error("Integrator time cannot be reset unless it is initialized",
             " with save_everystep=false")
@@ -477,7 +477,7 @@ function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
     end
 end
 
-function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
+function SciMLBase.set_u!(integrator::ODEIntegrator, u)
     if integrator.opts.save_everystep
         error("Integrator state cannot be reset unless it is initialized",
             " with save_everystep=false")
@@ -486,7 +486,7 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
     u_modified!(integrator, true)
 end
 
-DiffEqBase.has_stats(i::ODEIntegrator) = true
+SciMLBase.has_stats(i::ODEIntegrator) = true
 
 DiffEqBase.get_tstops(integ::ODEIntegrator) = integ.opts.tstops
 DiffEqBase.get_tstops_array(integ::ODEIntegrator) = get_tstops(integ).valtree

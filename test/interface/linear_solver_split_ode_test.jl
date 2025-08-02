@@ -26,8 +26,8 @@ for algname in (:SBDF2,
         kwargs = (dt = dt,)
 
         solve(prob, alg0; kwargs...)
-        @test DiffEqBase.__solve(prob, alg0; kwargs...).retcode == ReturnCode.Success
-        @test DiffEqBase.__solve(prob, alg1; kwargs...).retcode == ReturnCode.Success
+        @test SciMLBase.__solve(prob, alg0; kwargs...).retcode == ReturnCode.Success
+        @test SciMLBase.__solve(prob, alg1; kwargs...).retcode == ReturnCode.Success
     end
 end
 
@@ -44,7 +44,7 @@ for algname in (:SBDF2,
         kwargs = (dt = dt,)
 
         solve(prob, alg0; kwargs...)
-        @test DiffEqBase.__solve(prob, alg0; kwargs...).retcode == ReturnCode.Success
+        @test SciMLBase.__solve(prob, alg0; kwargs...).retcode == ReturnCode.Success
     end
 end
 

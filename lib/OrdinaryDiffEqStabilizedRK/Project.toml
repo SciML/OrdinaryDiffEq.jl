@@ -7,6 +7,7 @@ version = "1.2.0"
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 
 [deps]
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
@@ -29,6 +30,7 @@ Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 StaticArrays = "1.9.7"
 Test = "<0.0.1, 1"
+SciMLBase = "2"
 julia = "1.10"
 JET = "0.9.18, 0.10.4"
 Aqua = "0.8.11"

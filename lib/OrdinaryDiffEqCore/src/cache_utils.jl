@@ -5,7 +5,7 @@ function is_constant_cache(::DefaultCache{Cache1}) where {Cache1}
     Cache1 <: OrdinaryDiffEqConstantCache
 end
 
-function DiffEqBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
+function SciMLBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
     alg = integrator.alg
     cache = integrator.cache
     iscomp = alg isa CompositeAlgorithm
