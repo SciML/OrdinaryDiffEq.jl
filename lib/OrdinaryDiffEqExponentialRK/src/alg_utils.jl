@@ -23,12 +23,6 @@ alg_order(alg::Exprb43) = 4
 alg_adaptive_order(alg::Exprb32) = 2
 alg_adaptive_order(alg::Exprb43) = 4
 
-function SciMLBase.prepare_alg(
-        alg::ETD2,
-        u0::AbstractArray,
-        p, prob)
-    alg
-end
 
 fsal_typeof(alg::ETD2, rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
 
