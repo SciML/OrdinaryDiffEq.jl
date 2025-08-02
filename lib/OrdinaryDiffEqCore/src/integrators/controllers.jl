@@ -62,16 +62,16 @@ end
 
 @inline function stepsize_controller!(integrator, controller::IController, alg)
     @unpack qmin, qmax, gamma = integrator.opts
-    EEst = SciMLBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(integrator.EEst)
 
     if iszero(EEst)
         q = inv(qmax)
     else
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qtmp = fastpower(EEst, expo) / gamma
-        @fastmath q = SciMLBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
+        @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
-        integrator.qold = SciMLBase.value(integrator.dt) / q
+        integrator.qold = DiffEqBase.value(integrator.dt) / q
     end
     q
 end
@@ -136,7 +136,7 @@ end
     @unpack qold = integrator
     @unpack qmin, qmax, gamma = integrator.opts
     @unpack beta1, beta2 = controller
-    EEst = SciMLBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(integrator.EEst)
 
     if iszero(EEst)
         q = inv(qmax)
@@ -151,7 +151,7 @@ end
 
 function step_accept_controller!(integrator, controller::PIController, alg, q)
     @unpack qsteady_min, qsteady_max, qoldinit = integrator.opts
-    EEst = SciMLBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(integrator.EEst)
 
     if qsteady_min <= q <= qsteady_max
         q = one(q)
@@ -271,7 +271,7 @@ end
     @unpack qmax = integrator.opts
     beta1, beta2, beta3 = controller.beta
 
-    EEst = SciMLBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(integrator.EEst)
 
     # If the error estimate is zero, we can increase the step size as much as
     # desired. This additional check fixes problems of the code below when the
@@ -402,7 +402,7 @@ end
 
 @inline function stepsize_controller!(integrator, controller::PredictiveController, alg)
     @unpack qmin, qmax, gamma = integrator.opts
-    EEst = SciMLBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(integrator.EEst)
     if iszero(EEst)
         q = inv(qmax)
     else
@@ -419,7 +419,7 @@ end
         end
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qtmp = fastpower(EEst, expo) / fac
-        @fastmath q = SciMLBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
+        @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         integrator.qold = q
     end
     q
@@ -428,7 +428,7 @@ end
 function step_accept_controller!(integrator, controller::PredictiveController, alg, q)
     @unpack qmin, qmax, gamma, qsteady_min, qsteady_max = integrator.opts
 
-    EEst = SciMLBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(integrator.EEst)
 
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
