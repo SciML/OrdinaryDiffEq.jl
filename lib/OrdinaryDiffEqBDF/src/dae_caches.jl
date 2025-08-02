@@ -63,8 +63,8 @@ function alg_cache(alg::DABDF2, du, u, res_prototype, rate_prototype,
         ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 1, 1
-    α = 1 // 1
+    γ, c = Int64(1) // 1, 1
+    α = Int64(1) // 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, Val(false))
     eulercache = DImplicitEulerConstantCache(nlsolver)
@@ -92,8 +92,8 @@ function alg_cache(alg::DABDF2, du, u, res_prototype, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 1, 1
-    α = 1 // 1
+    γ, c = Int64(1) // 1, 1
+    α = Int64(1) // 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, Val(true))
     fsalfirst = zero(rate_prototype)

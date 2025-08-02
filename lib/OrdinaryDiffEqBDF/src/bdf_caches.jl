@@ -15,7 +15,7 @@ function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 2 // 3, 1
+    γ, c = Int64(2) // 3, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
     eulercache = ImplicitEulerConstantCache(nlsolver)
@@ -45,7 +45,7 @@ function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 2 // 3, 1
+    γ, c = Int64(2) // 3, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
@@ -104,7 +104,7 @@ function alg_cache(alg::SBDF, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 1, 1
+    γ, c = Int64(1) // 1, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
@@ -127,7 +127,7 @@ function alg_cache(alg::SBDF, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 1, 1
+    γ, c = Int64(1) // 1, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
@@ -380,7 +380,7 @@ function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
     end
     U = SArray(U)
 
-    γₖ = SVector(ntuple(k -> sum(tTypeNoUnits(1 // j) for j in 1:k), Val(max_order)))
+    γₖ = SVector(ntuple(k -> sum(tTypeNoUnits(Int64(1) // j) for j in 1:k), Val(max_order)))
 
     QNDFConstantCache(nlsolver, U, D, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1,
         EEst2, γₖ)
@@ -459,7 +459,7 @@ function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
     U = SArray(U)
 
     RU = Matrix(U)
-    γₖ = SVector(ntuple(k -> sum(tTypeNoUnits(1 // j) for j in 1:k), Val(max_order)))
+    γₖ = SVector(ntuple(k -> sum(tTypeNoUnits(Int64(1) // j) for j in 1:k), Val(max_order)))
 
     QNDFCache(fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, RU, D, Dtmp,
         tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,

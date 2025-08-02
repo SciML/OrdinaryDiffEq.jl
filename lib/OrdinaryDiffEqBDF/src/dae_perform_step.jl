@@ -122,7 +122,7 @@ end
     c1 = ρ^2 / (1 + 2ρ)
 
     nlsolver.γ = (1 + ρ) / (1 + 2ρ)
-    nlsolver.α = 1 // 1
+    nlsolver.α = Int64(1) // 1
 
     nlsolver.z = zero(uₙ)
 
@@ -187,7 +187,7 @@ end
     c1 = ρ^2 / (1 + 2ρ)
 
     nlsolver.γ = (1 + ρ) / (1 + 2ρ)
-    nlsolver.α = 1 // 1
+    nlsolver.α = Int64(1) // 1
     @.. broadcast=false nlsolver.tmp=-c1 * uₙ₋₁ + c1 * uₙ₋₂
     nlsolver.z .= zero(eltype(z))
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
@@ -199,7 +199,7 @@ end
     @.. broadcast=false integrator.fsallast=du
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     if integrator.opts.adaptive
-        btilde0 = (dtₙ₋₁ + dtₙ) * 1 // 6
+        btilde0 = (dtₙ₋₁ + dtₙ) * Int64(1) // 6
         btilde1 = 1 + ρ
         btilde2 = ρ
         @.. broadcast=false tmp=btilde0 *
@@ -286,7 +286,7 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order},
     nlsolver.tmp = tmp + cache.u₀
     nlsolver.z = zero(nlsolver.z)
     nlsolver.γ = bdf_coeffs[k, 1]
-    nlsolver.α = 1 // 1
+    nlsolver.α = Int64(1) // 1
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     u = z + cache.u₀
@@ -401,7 +401,7 @@ function perform_step!(integrator, cache::DFBDFCache{max_order},
     @.. broadcast=false nlsolver.tmp=tmp + u₀
     @.. broadcast=false nlsolver.z=zero(eltype(nlsolver.z))
     nlsolver.γ = bdf_coeffs[k, 1]
-    nlsolver.α = 1 // 1
+    nlsolver.α = Int64(1) // 1
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     @.. broadcast=false u=z + u₀
