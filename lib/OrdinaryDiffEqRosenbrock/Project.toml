@@ -52,12 +52,14 @@ RecursiveArrayTools = "3.27.0"
 Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 Static = "1.1.1"
+AllocCheck = "0.2.2"
 Test = "<0.0.1, 1"
 julia = "1.10"
 JET = "0.9.18, 0.10.4"
 Aqua = "0.8.11"
 
 [extras]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -72,4 +74,4 @@ JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "OrdinaryDiffEqNonlinearSolve", "SafeTestsets", "Test", "LinearAlgebra", "LinearSolve", "ForwardDiff", "ODEProblemLibrary", "Enzyme", "JET", "Aqua"]
+test = ["AllocCheck", "Aqua", "DiffEqDevTools", "Enzyme", "ForwardDiff", "JET", "LinearAlgebra", "LinearSolve", "ODEProblemLibrary", "OrdinaryDiffEqNonlinearSolve", "Random", "SafeTestsets", "Test"]
