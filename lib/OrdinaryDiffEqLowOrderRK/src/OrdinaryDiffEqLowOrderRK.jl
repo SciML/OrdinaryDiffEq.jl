@@ -18,7 +18,6 @@ import OrdinaryDiffEqCore: alg_order, isfsal, beta2_default, beta1_default,
                            accept_step_controller, DerivativeOrderNotPossibleError,
                            du_cache, u_cache, get_fsalfirstlast, copyat_or_push!
 using SciMLBase
-import SciMLBase: prepare_alg
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 import LinearAlgebra: norm
