@@ -101,7 +101,7 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
         apply_step!(nlsolver, integrator)
 
         # check for convergence
-        η = SciMLBase.value(θ / (1 - θ))
+        η = DiffEqBase.value(θ / (1 - θ))
         # don't trust θ for non-adaptive on first iter because the solver doesn't provide feedback
         # for us to know whether our previous nlsolve converged sufficiently well
         check_η_convergance = (iter > 1 ||

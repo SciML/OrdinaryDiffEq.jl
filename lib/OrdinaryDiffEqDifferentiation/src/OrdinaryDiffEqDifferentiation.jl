@@ -26,7 +26,7 @@ import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, S
 using DiffEqBase: TimeGradientWrapper,
                   UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
-import SciMLBase: SciMLBase, AbstractSciMLOperator, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction, DAEFunction, islinear, remake
+import SciMLBase: SciMLBase, AbstractSciMLOperator, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction, DAEFunction, islinear, remake, solve!, isconstant
 using SciMLBase: @set, @reset
 import SciMLOperators: SciMLOperators, IdentityOperator, update_coefficients!, MatrixOperator
 using SciMLOperators: IdentityOperator, update_coefficients!
@@ -62,6 +62,8 @@ using ConcreteStructs: @concrete
 
 @static if isdefined(SciMLBase, :OrdinaryDiffEqTag)
     import SciMLBase: OrdinaryDiffEqTag
+elseif isdefined(DiffEqBase, :OrdinaryDiffEqTag)
+    import DiffEqBase: OrdinaryDiffEqTag
 else
     struct OrdinaryDiffEqTag end
 end
