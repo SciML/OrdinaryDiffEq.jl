@@ -50,11 +50,8 @@ Static = "1.1.1"
 Aqua = "0.8.11"
 Preferences = "1.4.3"
 julia = "1.10"
-JET = "0.9.18, 0.10.4"
-RecursiveArrayTools = "3.27.0"
-DiffEqBase = "6.152.2"
-Reexport = "1.2.2"
-SafeTestsets = "0.1.0"
+JET = "0.9.18"
+Aqua = "0.8.11"
 
 [extras]
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"

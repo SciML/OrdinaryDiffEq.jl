@@ -57,6 +57,10 @@ DiffEqBase = "6.152.2"
 Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 SciMLOperators = "0.3.9, 0.4, 1"
+Test = "<0.0.1, 1"
+julia = "1.10"
+JET = "0.9.18"
+Aqua = "0.8.11"
 
 [targets]
 test = ["DiffEqDevTools", "GenericSchur", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "JET", "Aqua"]
