@@ -19,6 +19,7 @@ linearization = "linearization"
 parameterized = "parameterized"
 discretized = "discretized"
 vectorized = "vectorized"
+extrapolant = "extrapolant"
 
 # Common variable patterns in Julia/SciML
 ists = "ists"
