@@ -684,7 +684,7 @@ end
             W = J - mass_matrix * inv(dtgamma)
 
             if !isa(W, Number)
-                W = SciMLBase.default_factorize(W)
+                W = DiffEqBase.default_factorize(W)
             end
         end
     end

@@ -78,7 +78,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         # _u0 should be non-dual since NonlinearSolve does not differentiate the solver
         # These non-dual values are thus used to make the caches
         #_du = SciMLBase.value.(du)
-        _u0 = SciMLBase.value.(u0)
+        _u0 = DiffEqBase.value.(u0)
 
         # If not doing auto-diff of the solver, save an allocation
         if typeof(u0) === typeof(_u0)
@@ -240,7 +240,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     # _du and _u should be non-dual since NonlinearSolve does not differentiate the solver
     # These non-dual values are thus used to make the caches
     #_du = SciMLBase.value.(du)
-    _u0 = SciMLBase.value.(u0)
+    _u0 = DiffEqBase.value.(u0)
 
     # If not doing auto-diff of the solver, save an allocation
     if typeof(u0) === typeof(_u0)
@@ -385,11 +385,11 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     alg_u = @view u[algebraic_vars]
 
     # These non-dual values are thus used to make the caches
-    _u = SciMLBase.value.(u)
+    _u = DiffEqBase.value.(u)
 
     # If auto-diff of the solver, should be non-dual since NonlinearSolve does not differentiate the solver
     if typeof(u) !== typeof(_u)
-        tmp = SciMLBase.value.(tmp)
+        tmp = DiffEqBase.value.(tmp)
     end
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
@@ -523,8 +523,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     # _du and _u should be non-dual since NonlinearSolve does not differentiate the solver
     # These non-dual values are thus used to make the caches
-    _du = SciMLBase.value.(du)
-    _u = SciMLBase.value.(u)
+    _du = DiffEqBase.value.(du)
+    _u = DiffEqBase.value.(u)
 
     # If not doing auto-diff of the solver, save an allocation
     if typeof(u) === typeof(_u)
