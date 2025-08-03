@@ -2,21 +2,26 @@ using OrdinaryDiffEq, Test, ADTypes
 import ODEProblemLibrary: prob_ode_vanderpol
 using ForwardDiff: Dual
 
-sys = prob_ode_vanderpol.f.sys
-prob1 = ODEProblem(sys, [sys.y => 0, sys.x => 2.0, sys.μ => inv(0.003)], (0.0, 6))
+# Create Van der Pol problem with same structure as the new ODEProblemLibrary implementation
+# New implementation uses: u[1] = x, u[2] = y, p[1] = μ
+# Van der Pol equations: dx/dt = y, dy/dt = μ * ((1 - x^2) * y - x)
+# Initial conditions: [x, y] = [2.0, 0] (matching the original [sys.x => 2.0, sys.y => 0])
 function __van(du, u, p, t)
+    x, y = u[1], u[2]
     μ = p[1]
-    du[1] = μ * ((1 - u[2]^2) * u[1] - u[2])
-    du[2] = 1 * u[1]
+    du[1] = y                           # dx/dt = y
+    du[2] = μ * ((1 - x^2) * y - x)     # dy/dt = μ * ((1 - x^2) * y - x)
 end
-prob2 = ODEProblem(__van, [0, 2.0], (0.0, 6), inv(0.003))
+prob1 = ODEProblem(__van, [2.0, 0.0], (0.0, 6), [inv(0.003)])
+prob2 = ODEProblem(__van, [2.0, 0.0], (0.0, 6), [inv(0.003)])
 # out-of-place test
 function _van(u, p, t)
+    x, y = u[1], u[2]
     μ = p[1]
-    [μ * ((1 - u[2]^2) * u[1] - u[2]),
-        1 * u[1]]
+    [y,                           # dx/dt = y
+     μ * ((1 - x^2) * y - x)]     # dy/dt = μ * ((1 - x^2) * y - x)
 end
-prob3 = ODEProblem(_van, [0, 2.0], (0.0, 6), inv(0.003))
+prob3 = ODEProblem(_van, [2.0, 0.0], (0.0, 6), [inv(0.003)])
 probArr = [prob1, prob2, prob3]
 
 for prob in [prob2, prob3], u0 in [prob.u0, Dual.(prob.u0, prob.u0)]
