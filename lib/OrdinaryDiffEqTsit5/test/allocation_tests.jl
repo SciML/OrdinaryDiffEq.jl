@@ -2,7 +2,6 @@ using OrdinaryDiffEqTsit5
 using OrdinaryDiffEqCore
 using AllocCheck
 using Test
-using Printf
 
 """
 Allocation tests for OrdinaryDiffEqTsit5 solvers using AllocCheck.jl.

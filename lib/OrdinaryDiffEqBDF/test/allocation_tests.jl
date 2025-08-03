@@ -2,7 +2,6 @@ using OrdinaryDiffEqBDF
 using OrdinaryDiffEqCore
 using AllocCheck
 using Test
-using Printf
 
 """
 Allocation tests for OrdinaryDiffEqBDF solvers using AllocCheck.jl.
