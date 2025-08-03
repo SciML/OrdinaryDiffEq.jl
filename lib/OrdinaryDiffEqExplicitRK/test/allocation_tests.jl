@@ -2,7 +2,6 @@ using OrdinaryDiffEqExplicitRK
 using OrdinaryDiffEqCore
 using AllocCheck
 using Test
-using Printf
 
 """
 Allocation tests for OrdinaryDiffEqExplicitRK solvers using AllocCheck.jl.

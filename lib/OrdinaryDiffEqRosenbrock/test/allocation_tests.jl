@@ -2,7 +2,6 @@ using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqCore
 using AllocCheck
 using Test
-using Printf
 
 """
 Allocation tests for OrdinaryDiffEqRosenbrock solvers using AllocCheck.jl.
