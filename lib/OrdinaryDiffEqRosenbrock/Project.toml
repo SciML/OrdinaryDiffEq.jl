@@ -9,14 +9,11 @@ OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
-AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
