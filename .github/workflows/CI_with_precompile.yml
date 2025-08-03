@@ -61,7 +61,7 @@ jobs:
       - name: Run precompilation workload  
         run: |
           echo "Running precompilation workload with complete test environment..."
-          julia --project --check-bounds=auto --compiled-modules=yes --depwarn=yes -e '
+          julia --project --check-bounds=yes --compiled-modules=yes --depwarn=yes -e '
             # Now we have access to all test dependencies, just like Pkg.test()
             using SafeTestsets, Test
             # Load OrdinaryDiffEq to trigger @compile_workload blocks with test environment active
