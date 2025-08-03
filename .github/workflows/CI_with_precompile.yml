@@ -36,13 +36,15 @@ jobs:
         run: julia --project -e 'using Pkg; Pkg.instantiate()'
       - name: Run precompilation workload
         run: |
-          echo "Running precompilation workload..."
-          julia --project precompile_workload.jl
+          echo "Running precompilation workload with exact test environment settings..."
+          julia --project --check-bounds=yes --startup-file=no -e 'using OrdinaryDiffEq; println("Precompilation completed successfully")'
       - name: Verify cache creation
         run: |
-          echo "Julia depot contents:"
-          ls -la ~/.julia/compiled/
-          echo "Precompilation completed successfully"
+          echo "Julia depot structure (compiled artifacts):"
+          find ~/.julia -name "*.ji" | head -10 || echo "No .ji files found"
+          echo "Julia depot structure (shared libraries):"
+          find ~/.julia -name "*.so" | head -5 || echo "No .so files found"
+          echo "Cache verification completed"
 
   test-interface:
     name: Interface Tests
