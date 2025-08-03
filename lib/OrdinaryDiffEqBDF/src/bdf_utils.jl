@@ -90,7 +90,7 @@ function update_D!(D, dd, k)
     return nothing
 end
 
-const γₖ = @SVector[sum(1 // j for j in 1:k) for k in 1:6]
+const γₖ = @SVector[sum(Int64(1) // j for j in 1:k) for k in 1:6]
 
 function error_constant(integrator, alg::QNDF, k)
     @unpack γₖ = integrator.cache
