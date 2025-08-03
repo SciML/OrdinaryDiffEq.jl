@@ -44,6 +44,12 @@ ODEProblemLibrary = "0.1.8"
 DiffEqBase = "6.152.2"
 Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
+Static = "1.1.1"
+Test = "<0.0.1, 1"
+SciMLBase = "2"
+julia = "1.10"
+JET = "0.9.18"
+Aqua = "0.8.11"
 
 [targets]
 test = ["DiffEqDevTools", "ODEProblemLibrary", "Random", "SafeTestsets", "Test", "DiffEqBase", "JET", "Aqua"]

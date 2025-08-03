@@ -44,13 +44,8 @@ Aqua = "0.8.11"
 Preferences = "1.4.3"
 StaticArrays = "1.9.7"
 julia = "1.10"
-JET = "0.9.18, 0.10.4"
-RecursiveArrayTools = "3.27.0"
-ODEProblemLibrary = "0.1.8"
-DiffEqBase = "6.152.2"
-Reexport = "1.2.2"
-Adapt = "4.0.4"
-SafeTestsets = "0.1.0"
+JET = "0.9.18"
+Aqua = "0.8.11"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "StructArrays", "Test", "ODEProblemLibrary", "JET", "Aqua"]
