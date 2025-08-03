@@ -36,8 +36,13 @@ jobs:
         run: julia --project -e 'using Pkg; Pkg.instantiate()'
       - name: Run precompilation workload
         run: |
-          echo "Running precompilation workload with exact test environment settings..."
-          julia --project --check-bounds=yes --startup-file=no -e 'using OrdinaryDiffEq; println("Precompilation completed successfully")'
+          echo "Running precompilation workload with test environment dependencies..."
+          julia --project --check-bounds=auto --compiled-modules=yes --depwarn=yes -e '
+            using Pkg, SafeTestsets, Test
+            # Load OrdinaryDiffEq to trigger @compile_workload blocks with test environment active
+            using OrdinaryDiffEq
+            println("Precompilation completed successfully with test environment")
+          '
       - name: Verify cache creation
         run: |
           echo "Julia depot structure (compiled artifacts):"
