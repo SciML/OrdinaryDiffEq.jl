@@ -34,14 +34,39 @@ jobs:
           cache-name: 'precompile-cache'
       - name: Install dependencies
         run: julia --project -e 'using Pkg; Pkg.instantiate()'
-      - name: Run precompilation workload
+      - name: Setup test environment for precompilation
         run: |
-          echo "Running precompilation workload with test environment dependencies..."
+          julia --project -e '
+            using Pkg, TOML
+            
+            # Read Project.toml to get test dependencies like Pkg.test() does
+            project = TOML.parsefile("Project.toml")
+            extras = get(project, "extras", Dict())
+            test_targets = get(get(project, "targets", Dict()), "test", String[])
+            
+            println("Setting up test environment with $(length(test_targets)) test dependencies...")
+            
+            # Add test dependencies to current environment (easier for CI)
+            for dep in test_targets
+                if haskey(extras, dep)
+                    println("Adding test dependency: $dep")
+                    Pkg.add(PackageSpec(name=dep, uuid=extras[dep]))
+                else
+                    println("Warning: $dep not found in extras")
+                end
+            end
+            
+            println("Test environment setup complete")
+          '
+      - name: Run precompilation workload  
+        run: |
+          echo "Running precompilation workload with complete test environment..."
           julia --project --check-bounds=auto --compiled-modules=yes --depwarn=yes -e '
-            using Pkg, SafeTestsets, Test
+            # Now we have access to all test dependencies, just like Pkg.test()
+            using SafeTestsets, Test
             # Load OrdinaryDiffEq to trigger @compile_workload blocks with test environment active
             using OrdinaryDiffEq
-            println("Precompilation completed successfully with test environment")
+            println("Precompilation completed successfully with full test environment")
           '
       - name: Verify cache creation
         run: |
