@@ -356,7 +356,7 @@ end
         # This seemingly isn't the case with just if (return) end (rest of expression)
         ex = quote
             if (cb_idx == $i)
-                return SciMLBase.apply_callback!(integrator, callbacks[$i], time,
+                return DiffEqBase.apply_callback!(integrator, callbacks[$i], time,
                     upcrossing, event_idx)
             else
                 $ex
@@ -379,7 +379,7 @@ function handle_callbacks!(integrator)
         event_occurred,
         event_idx,
         idx,
-        counter = SciMLBase.find_first_continuous_callback(
+        counter = DiffEqBase.find_first_continuous_callback(
             integrator,
             continuous_callbacks...)
         if event_occurred
@@ -398,7 +398,7 @@ function handle_callbacks!(integrator)
     end
     if !integrator.force_stepfail && !(discrete_callbacks isa Tuple{})
         discrete_modified,
-        saved_in_cb = SciMLBase.apply_discrete_callback!(integrator,
+        saved_in_cb = DiffEqBase.apply_discrete_callback!(integrator,
             discrete_callbacks...)
     end
     if !saved_in_cb
