@@ -46,11 +46,12 @@ jobs:
             
             println("Setting up test environment with $(length(test_targets)) test dependencies...")
             
-            # Add test dependencies to current environment (easier for CI)
+            # Add test dependencies to current environment
+            # Suppress precompilation output to reduce CI log noise
             for dep in test_targets
                 if haskey(extras, dep)
                     println("Adding test dependency: $dep")
-                    Pkg.add(PackageSpec(name=dep, uuid=extras[dep]))
+                    Pkg.add(PackageSpec(name=dep, uuid=extras[dep]); io=devnull)
                 else
                     println("Warning: $dep not found in extras")
                 end
@@ -60,13 +61,13 @@ jobs:
           '
       - name: Run precompilation workload  
         run: |
-          echo "Running precompilation workload with complete test environment..."
-          julia --project --check-bounds=yes --compiled-modules=yes --depwarn=yes -e '
+          echo "Running precompilation workload with complete test environment and coverage..."
+          julia --project --check-bounds=yes --compiled-modules=yes --depwarn=yes --code-coverage=user -e '
             # Now we have access to all test dependencies, just like Pkg.test()
             using SafeTestsets, Test
             # Load OrdinaryDiffEq to trigger @compile_workload blocks with test environment active
             using OrdinaryDiffEq
-            println("Precompilation completed successfully with full test environment")
+            println("Precompilation completed successfully with full test environment and coverage")
           '
       - name: Verify cache creation
         run: |
