@@ -95,7 +95,8 @@ jobs:
       - name: Run interface tests
         run: julia --project -e 'using Pkg; Pkg.test()'
         env:
-          JULIA_NUM_THREADS: 2
+          JULIA_PKG_PRECOMPILE_AUTO: '0'
+          
 
   test-integrators:
     name: Integrator Tests  
@@ -115,7 +116,7 @@ jobs:
       - name: Run integrator tests
         run: julia --project -e 'using Pkg; Pkg.test()'
         env:
-          JULIA_NUM_THREADS: 2
+          JULIA_PKG_PRECOMPILE_AUTO: '0'
 
   test-algorithms:
     name: Algorithm Tests
@@ -144,7 +145,7 @@ jobs:
       - name: Run algorithm tests
         run: julia --project -e 'using Pkg; Pkg.test()'
         env:
-          JULIA_NUM_THREADS: 2
+          JULIA_PKG_PRECOMPILE_AUTO: '0'
 
   test-subpackages:
     name: Sub-package Tests
@@ -174,4 +175,4 @@ jobs:
       - name: Run sub-package tests
         run: julia --project -e 'using Pkg; Pkg.test()'
         env:
-          JULIA_NUM_THREADS: 2
+          JULIA_PKG_PRECOMPILE_AUTO: '0'
