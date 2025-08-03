@@ -44,12 +44,19 @@ for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear
     @test sim21.𝒪est[:final] ≈ i atol=testTol
 end
 
-sys = prob_ode_vanderpol.f.sys
+# Create Van der Pol stiff problem using the same ordering as ODEProblemLibrary
+# New implementation: u[1] = x, u[2] = y, p[1] = μ
+# Initial conditions: [x, y] = [sqrt(3), 0] (matching original [sys.x => sqrt(3), sys.y => 0])
+function vanderpol_firk(du, u, p, t)
+    x, y = u[1], u[2]
+    μ = p[1]
+    du[1] = y                           # dx/dt = y
+    du[2] = μ * ((1 - x^2) * y - x)     # dy/dt = μ * ((1 - x^2) * y - x)
+end
 
 # test adaptivity
 for iip in (true, false)
-    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (
-        0.0, 1.0))
+    vanstiff = ODEProblem{iip}(vanderpol_firk, [sqrt(3), 0.0], (0.0, 1.0), [1e6])
     sol = solve(vanstiff, RadauIIA5())
     if iip
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
