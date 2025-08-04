@@ -113,7 +113,7 @@ struct McAte3 <: OrdinaryDiffEqPartitionedAlgorithm end
     umber={1},
     ages={230--256},
     ear={1991},
-    ublisher={Elsevier}}""", "", "")
+    publisher={Elsevier}}""", "", "")
 struct CandyRoz4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 @doc generic_solver_docstring(
