@@ -279,139 +279,25 @@ end
     end
 end
 
-# Specialized dispatcher for each method that uses the generic implementation
-# These just need to ensure the cache has the correct tableau
-
-# Basic SDIRK methods
-@muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ImplicitEulerCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ImplicitMidpointCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::TrapezoidConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::TrapezoidCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SDIRK2ConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SDIRK22ConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SDIRK22Cache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::Cash4ConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::Cash4Cache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SSPSDIRK2ConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SSPSDIRK2Cache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SFSDIRK4ConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SFSDIRK4Cache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SFSDIRK5ConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SFSDIRK5Cache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SFSDIRK6ConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SFSDIRK6Cache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SFSDIRK7ConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SFSDIRK7Cache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SFSDIRK8ConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SFSDIRK8Cache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ESDIRK54I8L2SAConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ESDIRK54I8L2SACache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ESDIRK436L2SA2ConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ESDIRK436L2SA2Cache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ESDIRK437L2SAConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ESDIRK437L2SACache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ESDIRK547L2SA2ConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ESDIRK547L2SA2Cache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ESDIRK659L2SAConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::ESDIRK659L2SACache, repeat_step=false)
+@muladd function perform_step!(integrator, cache::Union{
+    ImplicitEulerConstantCache, ImplicitEulerCache,
+    ImplicitMidpointConstantCache, ImplicitMidpointCache,
+    TrapezoidConstantCache, TrapezoidCache,
+    SDIRK2ConstantCache, SDIRK2Cache,
+    SDIRK22ConstantCache, SDIRK22Cache,
+    Cash4ConstantCache, Cash4Cache,
+    SSPSDIRK2ConstantCache, SSPSDIRK2Cache,
+    SFSDIRK4ConstantCache, SFSDIRK4Cache,
+    SFSDIRK5ConstantCache, SFSDIRK5Cache,
+    SFSDIRK6ConstantCache, SFSDIRK6Cache,
+    SFSDIRK7ConstantCache, SFSDIRK7Cache,
+    SFSDIRK8ConstantCache, SFSDIRK8Cache,
+    ESDIRK54I8L2SAConstantCache, ESDIRK54I8L2SACache,
+    ESDIRK436L2SA2ConstantCache, ESDIRK436L2SA2Cache,
+    ESDIRK437L2SAConstantCache, ESDIRK437L2SACache,
+    ESDIRK547L2SA2ConstantCache, ESDIRK547L2SA2Cache,
+    ESDIRK659L2SAConstantCache, ESDIRK659L2SACache
+}, repeat_step=false)
     generic_sdirk_perform_step!(integrator, cache, repeat_step)
 end
 
@@ -517,85 +403,23 @@ end
     @.. broadcast=false integrator.fsallast = z / dt
 end
 
-# Hairer4 methods
-@muladd function perform_step!(integrator, cache::Hairer4ConstantCache, repeat_step=false)
+# Hairer4 method
+@muladd function perform_step!(integrator, cache::Union{Hairer4ConstantCache, Hairer4Cache}, repeat_step=false)
     generic_sdirk_perform_step!(integrator, cache, repeat_step)
 end
 
-@muladd function perform_step!(integrator, cache::Hairer4Cache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-# KenCarp/Kvaerno methods
-@muladd function perform_step!(integrator, cache::Kvaerno3ConstantCache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::Kvaerno3Cache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::KenCarp3ConstantCache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::KenCarp3Cache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::CFNLIRK3ConstantCache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::CFNLIRK3Cache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::Kvaerno4ConstantCache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::Kvaerno4Cache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::KenCarp4ConstantCache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::KenCarp4Cache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::Kvaerno5ConstantCache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::Kvaerno5Cache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::KenCarp5ConstantCache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::KenCarp5Cache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::KenCarp47ConstantCache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::KenCarp47Cache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::KenCarp58ConstantCache, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::KenCarp58Cache, repeat_step=false)
+# KenCarp/Kvaerno method
+@muladd function perform_step!(integrator, cache::Union{
+    Kvaerno3ConstantCache, Kvaerno3Cache,
+    Kvaerno4ConstantCache, Kvaerno4Cache, 
+    Kvaerno5ConstantCache, Kvaerno5Cache,
+    KenCarp3ConstantCache, KenCarp3Cache,
+    KenCarp4ConstantCache, KenCarp4Cache,
+    KenCarp5ConstantCache, KenCarp5Cache,
+    KenCarp47ConstantCache, KenCarp47Cache,
+    KenCarp58ConstantCache, KenCarp58Cache,
+    CFNLIRK3ConstantCache, CFNLIRK3Cache
+}, repeat_step=false)
     generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
 end
 
