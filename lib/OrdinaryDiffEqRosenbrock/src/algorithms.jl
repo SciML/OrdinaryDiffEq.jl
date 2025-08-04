@@ -57,7 +57,7 @@ Scientific Computing, 18 (1), pp. 1-22.
   Differential-Algebraic Equations Forum. Springer, Cham. https://doi.org/10.1007/978-3-030-53905-4_6
 
 #### Rodas5
-- Di Marzo G. RODAS5(4) – Méthodes de Rosenbrock d’ordre 5(4) adaptées aux problemes
+- Di Marzo G. RODAS5(4) – Méthodes de Rosenbrock d'ordre 5(4) adaptées aux problèmes
 différentiels-algébriques. MSc mathematics thesis, Faculty of Science,
 University of Geneva, Switzerland.
 

@@ -1124,7 +1124,7 @@ A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th ord
 """,
 "Rodas5",
 references = """
-- Di Marzo G. RODAS5(4) – Méthodes de Rosenbrock d’ordre 5(4) adaptées aux problemes
+- Di Marzo G. RODAS5(4) – Méthodes de Rosenbrock d'ordre 5(4) adaptées aux problèmes
   différentiels-algébriques. MSc mathematics thesis, Faculty of Science,
   University of Geneva, Switzerland.
 """,
