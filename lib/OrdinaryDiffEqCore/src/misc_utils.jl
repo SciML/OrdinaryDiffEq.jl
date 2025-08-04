@@ -188,7 +188,7 @@ function _process_AD_choice(
         @warn "The `diff_type` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoFiniteDiff` with `fdtype=Val{$FD2}()`."
         return _bool_to_ADType(Val{false}(), Val{CS}(), Val{FD2}()), Val{CS}(), Val{FD2}()
     end
-    if ad_alg.dir isa Bool # default dir of true makes integration non-reversable
+    if ad_alg.dir isa Bool # default dir of true makes integration non-reversible
         @reset ad_alg.dir = Int(ad_alg.dir)
     end
     return ad_alg, Val{CS}(), ad_alg.fdtype
