@@ -23,15 +23,10 @@ using Test
         
         for solver in tsit5_solvers
             @testset "$(typeof(solver)) type stability" begin
-                # Skip JET type stability tests for now due to known instabilities
-                # TODO: Re-enable when type instabilities are resolved
-                @test_broken false # JET tests disabled - known type instabilities
-                
-                # Verify solver can at least initialize and step
                 try
+                    @test_broken @test_opt init(prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                     integrator = init(prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
-                    step!(integrator)
-                    @test true # Basic functionality works
+                    @test_broken @test_opt step!(integrator)
                 catch e
                     @test_broken false # Mark as broken if solver fails to initialize
                     println("$(typeof(solver)) failed with: $e")

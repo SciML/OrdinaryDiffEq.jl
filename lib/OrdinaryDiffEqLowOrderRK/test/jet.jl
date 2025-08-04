@@ -27,20 +27,16 @@ using Test
         
         for solver in low_order_solvers
             @testset "$(typeof(solver)) type stability" begin
-                # Skip JET type stability tests for now due to known instabilities
-                # TODO: Re-enable when type instabilities are resolved
-                @test_broken false # JET tests disabled - known type instabilities
-                
-                # Verify solver can at least initialize and step
                 try
                     # Some solvers need fixed timestep
                     if solver isa Euler || solver isa SplitEuler || solver isa Midpoint || solver isa Heun
+                        @test_broken @test_opt init(prob, solver, dt=0.01, save_everystep=false, adaptive=false)
                         integrator = init(prob, solver, dt=0.01, save_everystep=false, adaptive=false)
                     else
+                        @test_broken @test_opt init(prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                         integrator = init(prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                     end
-                    step!(integrator)
-                    @test true # Basic functionality works
+                    @test_broken @test_opt step!(integrator)
                 catch e
                     @test_broken false # Mark as broken if solver fails to initialize
                     println("$(typeof(solver)) failed with: $e")
