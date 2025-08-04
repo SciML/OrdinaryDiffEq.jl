@@ -6,8 +6,8 @@ using Test
 
 @testset "JET Tests" begin
     # Test package for typos (mark as broken for now)
-    @test_broken test_package(
-        OrdinaryDiffEqSSPRK, target_defined_modules = true, mode = :typo)
+    test_package(
+        OrdinaryDiffEqSSPRK, target_defined_modules = true, mode = :typo, broken = true)
     
     # Test individual solver type stability
     @testset "Solver Type Stability Tests" begin
