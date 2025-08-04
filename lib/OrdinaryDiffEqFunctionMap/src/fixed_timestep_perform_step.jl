@@ -7,9 +7,9 @@ function perform_step!(integrator, cache::FunctionMapCache, repeat_step = false)
     @unpack u, uprev, dt, t, f, p = integrator
     alg = unwrap_alg(integrator, nothing)
     @unpack tmp = cache
-    if integrator.f != SciMLBase.DISCRETE_INPLACE_DEFAULT &&
-       !(integrator.f isa SciMLBase.EvalFunc &&
-         integrator.f.f === SciMLBase.DISCRETE_INPLACE_DEFAULT)
+    if integrator.f != DiffEqBase.DISCRETE_INPLACE_DEFAULT &&
+       !(integrator.f isa DiffEqBase.EvalFunc &&
+         integrator.f.f === DiffEqBase.DISCRETE_INPLACE_DEFAULT)
         if FunctionMap_scale_by_time(alg)
             f(tmp, uprev, p, t + dt)
             @muladd @.. broadcast=false u=uprev + dt * tmp
