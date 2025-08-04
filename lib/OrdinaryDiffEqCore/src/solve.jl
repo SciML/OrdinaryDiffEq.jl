@@ -307,10 +307,10 @@ function SciMLBase.__init(
     if max_len_cb !== nothing
         uBottomEltypeReal = real(uBottomEltype)
         if isinplace(prob)
-            callback_cache = SciMLBase.CallbackCache(u, max_len_cb, uBottomEltypeReal,
+            callback_cache = DiffEqBase.CallbackCache(u, max_len_cb, uBottomEltypeReal,
                 uBottomEltypeReal)
         else
-            callback_cache = SciMLBase.CallbackCache(max_len_cb, uBottomEltypeReal,
+            callback_cache = DiffEqBase.CallbackCache(max_len_cb, uBottomEltypeReal,
                 uBottomEltypeReal)
         end
     else
