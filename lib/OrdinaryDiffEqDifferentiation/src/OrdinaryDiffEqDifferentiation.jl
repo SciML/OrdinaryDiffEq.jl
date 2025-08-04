@@ -28,7 +28,7 @@ using DiffEqBase: TimeGradientWrapper,
                   UDerivativeWrapper
 import SciMLBase: SciMLBase, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction, DAEFunction, islinear, remake, solve!, isconstant
 using SciMLBase: @set, @reset
-import SciMLOperators: SciMLOperators, IdentityOperator, update_coefficients!, MatrixOperator, AbstractSciMLOperator
+import SciMLOperators: SciMLOperators, IdentityOperator, update_coefficients!, MatrixOperator, AbstractSciMLOperator, ScalarOperator
 using SciMLOperators: IdentityOperator, update_coefficients!
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
                                ncolors, column_colors, coloring, sparsity_pattern
