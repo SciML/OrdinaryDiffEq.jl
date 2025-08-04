@@ -1,7 +1,7 @@
 import OrdinaryDiffEqBDF
 using OrdinaryDiffEqBDF
 using OrdinaryDiffEqCore
-using DiffEqBase: SplitODEProblem
+using DiffEqBase: SplitODEProblem, DAEProblem
 using JET
 using Test
 
@@ -18,24 +18,43 @@ using Test
         # Split problem for SBDF solvers (which require SplitODEProblem)
         split_prob = SplitODEProblem((u, p, t) -> -u, (u, p, t) -> 0.0, 1.0, (0.0, 1.0))
         
-        # Test regular BDF solvers
+        # DAE problem for DAE solvers
+        function simple_dae!(du, u, p, t)
+            du[1] = -u[1]
+        end
+        u0 = [1.0]
+        du0 = [-1.0]
+        dae_prob = DAEProblem(simple_dae!, du0, u0, (0.0, 1.0))
+        
+        # Regular BDF solvers (ODEProblem)
         regular_bdf_solvers = [ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(),
-                              MEBDF2(), IMEXEuler(), IMEXEulerARK(), DABDF2(), DImplicitEuler(), DFBDF()]
+                              MEBDF2(), IMEXEuler(), IMEXEulerARK()]
+        
+        # DAE solvers (DAEProblem)
+        dae_solvers = [DABDF2(), DImplicitEuler(), DFBDF()]
         
         # Test SBDF solvers separately with required order parameter and SplitODEProblem
         sbdf_solvers = [SBDF(order=2), SBDF(order=3), SBDF(order=4), SBDF2(), SBDF3(), SBDF4()]
         
         for solver in regular_bdf_solvers
             @testset "$(typeof(solver)) type stability" begin
-                # Skip JET type stability tests for now due to known instabilities
-                # TODO: Re-enable when type instabilities are resolved
-                @test_broken false # JET tests disabled - known type instabilities
-                
-                # Verify solver can at least initialize and step
                 try
+                    @test_broken @test_opt init(linear_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                     integrator = init(linear_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
-                    step!(integrator)
-                    @test true # Basic functionality works
+                    @test_broken @test_opt step!(integrator)
+                catch e
+                    @test_broken false # Mark as broken if solver fails to initialize
+                    println("$(typeof(solver)) failed with: $e")
+                end
+            end
+        end
+        
+        for solver in dae_solvers
+            @testset "$(typeof(solver)) DAE type stability" begin
+                try
+                    @test_broken @test_opt init(dae_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
+                    integrator = init(dae_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
+                    @test_broken @test_opt step!(integrator)
                 catch e
                     @test_broken false # Mark as broken if solver fails to initialize
                     println("$(typeof(solver)) failed with: $e")
@@ -45,15 +64,10 @@ using Test
         
         for solver in sbdf_solvers
             @testset "$(typeof(solver)) type stability" begin
-                # Skip JET type stability tests for now due to known instabilities
-                # TODO: Re-enable when type instabilities are resolved
-                @test_broken false # JET tests disabled - known type instabilities
-                
-                # Verify solver can at least initialize and step
                 try
+                    @test_broken @test_opt init(split_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                     integrator = init(split_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
-                    step!(integrator)
-                    @test true # Basic functionality works
+                    @test_broken @test_opt step!(integrator)
                 catch e
                     @test_broken false # Mark as broken if solver fails to initialize
                     println("$(typeof(solver)) failed with: $e")
