@@ -27,7 +27,7 @@ end
 
     fₙ₋₁ = integrator.fsalfirst
     ρ = dtₙ / dtₙ₋₁
-    β₀ = 2 // 3
+    β₀ = Int64(2) // 3
     β₁ = -(ρ - 1) / 3
     α₀ = 1
     α̂ = ρ^2 / 3
@@ -113,7 +113,7 @@ end
 
     fₙ₋₁ = integrator.fsalfirst
     ρ = dtₙ / dtₙ₋₁
-    β₀ = 2 // 3
+    β₀ = Int64(2) // 3
     β₁ = -(ρ - 1) / 3
     α₀ = 1
     α̂ = ρ^2 / 3
@@ -152,7 +152,7 @@ end
     f(integrator.fsallast, uₙ, p, t + dtₙ)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     if integrator.opts.adaptive
-        btilde0 = (dtₙ₋₁ + dtₙ) * 1 // 6
+        btilde0 = (dtₙ₋₁ + dtₙ) * Int64(1) // 6
         btilde1 = 1 + dtₙ / dtₙ₋₁
         btilde2 = dtₙ / dtₙ₋₁
         @.. broadcast=false tmp=btilde0*
@@ -207,12 +207,12 @@ function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false
     if cnt == 1
         tmp = uprev + dt * du₂
     elseif cnt == 2
-        tmp = γ * (2 * uprev - 1 // 2 * uprev2 + dt * (2 * du₂ - k₁))
+        tmp = γ * (2 * uprev - Int64(1) // 2 * uprev2 + dt * (2 * du₂ - k₁))
     elseif cnt == 3
         tmp = γ *
-              (3 * uprev - 3 // 2 * uprev2 + 1 // 3 * uprev3 + dt * (3 * (du₂ - k₁) + k₂))
+              (3 * uprev - Int64(3) // 2 * uprev2 + Int64(1) // 3 * uprev3 + dt * (3 * (du₂ - k₁) + k₂))
     else
-        tmp = γ * (4 * uprev - 3 * uprev2 + 4 // 3 * uprev3 - 1 // 4 * uprev4 +
+        tmp = γ * (4 * uprev - 3 * uprev2 + Int64(4) // 3 * uprev3 - Int64(1) // 4 * uprev4 +
                dt * (4 * du₂ - 6 * k₁ + 4 * k₂ - k₃))
     end
     nlsolver.tmp = tmp
@@ -513,12 +513,12 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     k = 2
     if cnt == 1 || cnt == 2
         κ = zero(alg.kappa)
-        γ₁ = 1 // 1
-        γ₂ = 1 // 1
+        γ₁ = Int64(1) // 1
+        γ₂ = Int64(1) // 1
     elseif dtₙ₋₁ != dtₙ₋₂
         κ = alg.kappa
-        γ₁ = 1 // 1
-        γ₂ = 1 // 1 + 1 // 2
+        γ₁ = Int64(1) // 1
+        γ₂ = Int64(1) // 1 + Int64(1) // 2
         ρ₁ = dt / dtₙ₋₁
         ρ₂ = dt / dtₙ₋₂
         D[1] = uprev - uprev2
@@ -526,8 +526,8 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
         D[2] = D[1] - ((uprev2 - uprev3) * ρ₂)
     else
         κ = alg.kappa
-        γ₁ = 1 // 1
-        γ₂ = 1 // 1 + 1 // 2
+        γ₁ = Int64(1) // 1
+        γ₂ = Int64(1) // 1 + Int64(1) // 2
         ρ = dt / dtₙ₋₁
         # backward diff
         D[1] = uprev - uprev2
@@ -623,12 +623,12 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     k = 2
     if cnt == 1 || cnt == 2
         κ = zero(alg.kappa)
-        γ₁ = 1 // 1
-        γ₂ = 1 // 1
+        γ₁ = Int64(1) // 1
+        γ₂ = Int64(1) // 1
     elseif dtₙ₋₁ != dtₙ₋₂
         κ = alg.kappa
-        γ₁ = 1 // 1
-        γ₂ = 1 // 1 + 1 // 2
+        γ₁ = Int64(1) // 1
+        γ₂ = Int64(1) // 1 + Int64(1) // 2
         ρ₁ = dt / dtₙ₋₁
         ρ₂ = dt / dtₙ₋₂
         @.. broadcast=false D[1]=uprev-uprev2
@@ -636,8 +636,8 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
         @.. broadcast=false D[2]=D[1]-((uprev2-uprev3)*ρ₂)
     else
         κ = alg.kappa
-        γ₁ = 1 // 1
-        γ₂ = 1 // 1 + 1 // 2
+        γ₁ = Int64(1) // 1
+        γ₂ = Int64(1) // 1 + Int64(1) // 2
         ρ = dt / dtₙ₋₁
         # backward diff
         @.. broadcast=false D[1]=uprev-uprev2
