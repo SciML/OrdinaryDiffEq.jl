@@ -1100,7 +1100,7 @@ lower if not corrected).
 references = """
 - Steinebach, G., Rentrop, P., An adaptive method of lines approach for modelling flow and transport in rivers. 
     Adaptive method of lines , Wouver, A. Vande, Sauces, Ph., Schiesser, W.E. (ed.),S. 181-205,Chapman & Hall/CRC, 2001,
-- Steinebach, G., Oder-reduction of ROW-methods for DAEs and method of lines  applications. 
+- Steinebach, G., Order-reduction of ROW-methods for DAEs and method of lines  applications. 
     Preprint-Nr. 1741, FB Mathematik, TH Darmstadt, 1995.
 """,
 with_step_limiter=true) Rodas4P
