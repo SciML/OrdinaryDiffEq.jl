@@ -22,6 +22,9 @@ callback = ContinuousCallback(condition, affect!)
 sol = solve(prob, Tsit5(), callback = callback)
 @test length(sol) < 20
 
+# Force integrator to step on event
+sol = solve(prob, Tsit5(), callback = callback, tstops = [-2.95])
+
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
     out[1] = -t - 2.95
 end
@@ -35,6 +38,9 @@ end
 callback = VectorContinuousCallback(condition, affect!, 1)
 
 sol = solve(prob, Tsit5(), callback = callback)
+
+# Force integrator to step on event
+sol = solve(prob, Tsit5(), callback = callback, tstops = [-2.95])
 
 f = function (du, u, p, t)
     du[1] = -u[1] + sin(t)
@@ -54,6 +60,9 @@ callback = ContinuousCallback(condition, affect!)
 
 sol = solve(prob, Tsit5(), callback = callback, abstol = 1e-8, reltol = 1e-6)
 
+# Force integrator to step on event
+sol = solve(prob, Tsit5(), callback = callback, abstol = 1e-8, reltol = 1e-6, tstops = [2.95])
+
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
     out[1] = t - 2.95
 end
@@ -67,6 +76,9 @@ end
 callback = VectorContinuousCallback(condition, affect!, 1)
 
 sol = solve(prob, Tsit5(), callback = callback, abstol = 1e-8, reltol = 1e-6)
+
+# Force integrator to step on event
+sol = solve(prob, Tsit5(), callback = callback, abstol = 1e-8, reltol = 1e-6, tstops = [2.95])
 
 f = function (du, u, p, t)
     du[1] = u[2]
