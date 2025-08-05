@@ -375,7 +375,7 @@ end
 
     # Stage-2
     c₂ = a₂₁
-    _c₂ = DiffEqBase.value(sign(c₂)) * integrator.opts.internalnorm(c₂, t)
+    _c₂ = value(sign(c₂)) * integrator.opts.internalnorm(c₂, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₂
     f(k, uᵢ₋₁, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
