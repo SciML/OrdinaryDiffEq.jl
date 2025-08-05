@@ -18,7 +18,7 @@ using FastBroadcast: @..
 import FastClosures: @closure
 using LinearAlgebra: UniformScaling, UpperTriangular, givens, cond, dot, lmul!, axpy!
 import LinearAlgebra
-import ArrayInterface: ismutable, restructure
+import ArrayInterface: ArrayInterface, ismutable, restructure
 import LinearSolve: OperatorAssumptions
 import LinearSolve
 import ForwardDiff: pickchunksize
