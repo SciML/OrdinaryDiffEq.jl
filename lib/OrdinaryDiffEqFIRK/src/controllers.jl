@@ -4,7 +4,7 @@ function step_accept_controller!(
     @unpack cache = integrator
     @unpack num_stages, step, iter, hist_iter, index = cache
 
-    EEst = SciMLBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(integrator.EEst)
 
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
