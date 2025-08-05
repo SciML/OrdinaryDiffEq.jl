@@ -75,8 +75,8 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
         ad = ADTypes.dense_ad(alg_autodiff(alg)) 
         isautodiff = ad isa AutoForwardDiff 
         if isautodiff
-            tmp_du = PreallocationTools.dualcache(uprev)
-            tmp_u = PreallocationTools.dualcache(uprev)
+            tmp_du = dualcache(uprev)
+            tmp_u = dualcache(uprev)
         else
             tmp_du = similar(uprev)
             tmp_u = similar(uprev)
@@ -98,8 +98,8 @@ is_autodiff(m::DAEResidualJacobianWrapper{isAD}) where {isAD} = isAD
 
 function (m::DAEResidualJacobianWrapper)(out, x)
     if is_autodiff(m)
-        tmp_du = PreallocationTools.get_tmp(m.tmp_du, x)
-        tmp_u = PreallocationTools.get_tmp(m.tmp_u, x)
+        tmp_du = get_tmp(m.tmp_du, x)
+        tmp_u = get_tmp(m.tmp_u, x)
     else
         tmp_du = m.tmp_du
         tmp_u = m.tmp_u

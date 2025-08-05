@@ -91,7 +91,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
                typeof(u0) !== typeof(_u0)
         if isAD
             chunk = ForwardDiff.pickchunksize(length(tmp))
-            _tmp = PreallocationTools.dualcache(tmp, chunk)
+            _tmp = dualcache(tmp, chunk)
         else
             _tmp = tmp
         end
@@ -105,7 +105,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
             end
             update_coefficients!(M, u, p, t)
             # f(u,p,t) + M * (u0 - u)/dt
-            tmp = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
+            tmp = isAD ? get_tmp(_tmp, T) : _tmp
             @. tmp = (_u0 - u) / dt
             mul!(_vec(out), M, _vec(tmp))
             f(tmp, u, p, t)
@@ -252,7 +252,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u0) !== typeof(_u0)
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
-        _tmp = PreallocationTools.dualcache(tmp, chunk)
+        _tmp = dualcache(tmp, chunk)
     else
         _tmp = tmp
     end
@@ -264,7 +264,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         else
             T = eltype(u)
         end
-        tmp = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
+        tmp = isAD ? get_tmp(_tmp, T) : _tmp
         #M * (u-u0)/dt - f(u,p,t)
         @. tmp = (u - _u0) / dt
         f(out, tmp, u, p, t)
@@ -403,8 +403,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
             end
         end
         chunk = ForwardDiff.pickchunksize(csize)
-        _tmp = PreallocationTools.dualcache(tmp, chunk)
-        _du_tmp = PreallocationTools.dualcache(similar(tmp), chunk)
+        _tmp = dualcache(tmp, chunk)
+        _du_tmp = dualcache(similar(tmp), chunk)
     else
         _tmp, _du_tmp = tmp, similar(tmp)
     end
@@ -416,8 +416,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
         else
             T = eltype(x)
         end
-        uu = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
-        du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, T) : _du_tmp
+        uu = isAD ? get_tmp(_tmp, T) : _tmp
+        du_tmp = isAD ? get_tmp(_du_tmp, T) : _du_tmp
         copyto!(uu, _u)
         alg_uu = @view uu[algebraic_vars]
         alg_uu .= x
@@ -465,7 +465,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
     if isAD
         chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
-        _tmp = PreallocationTools.dualcache(similar(u0), chunk)
+        _tmp = dualcache(similar(u0), chunk)
     else
         _tmp = similar(u0)
     end
@@ -478,7 +478,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 
     nlequation = @closure (x, _) -> begin
-        uu = isAD ? PreallocationTools.get_tmp(_tmp, x) : _tmp
+        uu = isAD ? get_tmp(_tmp, x) : _tmp
         copyto!(uu, integrator.u)
         alg_u = @view uu[algebraic_vars]
         alg_u .= x
@@ -548,8 +548,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
-        _tmp = PreallocationTools.dualcache(tmp, chunk)
-        _du_tmp = PreallocationTools.dualcache(du_tmp, chunk)
+        _tmp = dualcache(tmp, chunk)
+        _du_tmp = dualcache(du_tmp, chunk)
     else
         _tmp, _du_tmp = tmp, du_tmp
     end
@@ -561,8 +561,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         else
             T = eltype(x)
         end
-        du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, T) : _du_tmp
-        uu = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
+        du_tmp = isAD ? get_tmp(_du_tmp, T) : _du_tmp
+        uu = isAD ? get_tmp(_tmp, T) : _tmp
 
         @. du_tmp = ifelse(differential_vars, x, _du)
         @. uu = ifelse(differential_vars, _u, x)
