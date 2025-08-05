@@ -21,7 +21,7 @@ import LinearAlgebra
 import ArrayInterface: ArrayInterface, ismutable, restructure
 import LinearSolve: OperatorAssumptions
 import LinearSolve
-import ForwardDiff: pickchunksize
+import ForwardDiff: ForwardDiff, pickchunksize
 using ForwardDiff: Dual
 using LinearSolve: I, rmul!, norm, mul!, ldiv!
 using RecursiveArrayTools: recursivecopy!
