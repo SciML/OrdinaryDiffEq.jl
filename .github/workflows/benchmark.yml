@@ -21,4 +21,5 @@ jobs:
         with:
           julia_version: ${{ matrix.version }}
           script: "benchmark/benchmarks.jl"
+          annotate_pr: true
           extra-pkgs: "StableRNGs,StaticArrays,LinearAlgebra,SparseArrays,DiffEqBase"
