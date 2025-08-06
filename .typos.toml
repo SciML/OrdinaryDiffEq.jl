@@ -20,6 +20,15 @@ parameterized = "parameterized"
 discretized = "discretized"
 vectorized = "vectorized"
 extrapolant = "extrapolant"
+# Person names in citations - these are correct spellings
+Sigal = "Sigal"  # Sigal Gottlieb is a real person/author
+
+# Common journal abbreviations 
+Numer = "Numer"  # As in "P. Numer. Math." (Periodica Numerica Mathematica)
+
+# Technical variable names
+dorder = "dorder"  # Parameter for delta order / order change
+
 
 # Common variable patterns in Julia/SciML
 ists = "ists"
