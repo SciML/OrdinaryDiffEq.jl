@@ -15,6 +15,7 @@ import OrdinaryDiffEqCore
 using RecursiveArrayTools
 using MuladdMacro, FastBroadcast
 using LinearAlgebra: axpy!, mul!
+import DiffEqBase
 import DiffEqBase: prepare_alg
 using ExponentialUtilities
 import RecursiveArrayTools: recursivecopy!
