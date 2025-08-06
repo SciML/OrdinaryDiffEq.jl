@@ -54,7 +54,7 @@ ArrayInterface = "7"
 StaticArrays = "1"
 SparseMatrixColorings = "0.4.14"
 julia = "1.10"
-JET = "0.9.18"
+JET = "0.9.18, 0.10.4"
 Aqua = "0.8.11"
 
 [targets]

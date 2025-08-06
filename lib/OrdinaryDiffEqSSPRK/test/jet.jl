@@ -25,9 +25,9 @@ using Test
         for solver in ssprk_solvers
             @testset "$(typeof(solver)) type stability" begin
                 try
-                    @test_broken @test_opt init(prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
+                    @test_opt broken=true init(prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                     integrator = init(prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
-                    @test_broken @test_opt step!(integrator)
+                    @test_opt broken=true step!(integrator)
                 catch e
                     @test_broken false # Mark as broken if solver fails to initialize
                     println("$(typeof(solver)) failed with: $e")
