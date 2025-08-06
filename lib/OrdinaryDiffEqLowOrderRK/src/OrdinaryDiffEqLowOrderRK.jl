@@ -23,7 +23,7 @@ import FastBroadcast: @..
 import LinearAlgebra: norm
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import Static: False
-using DiffEqBase: @def, @tight_loop_macros
+using DiffEqBase: @def, @tight_loop_macros, prepare_alg
 import OrdinaryDiffEqCore
 
 using Reexport
