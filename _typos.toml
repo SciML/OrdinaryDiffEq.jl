@@ -1,9 +1,0 @@
-[default.extend-words]
-# Person names in citations - these are correct spellings
-Sigal = "Sigal"  # Sigal Gottlieb is a real person/author
-
-# Common journal abbreviations 
-Numer = "Numer"  # As in "P. Numer. Math." (Periodica Numerica Mathematica)
-
-# Technical variable names
-dorder = "dorder"  # Parameter for delta order / order change
