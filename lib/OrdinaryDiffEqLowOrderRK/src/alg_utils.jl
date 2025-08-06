@@ -41,3 +41,9 @@ alg_stability_size(alg::DP5) = 3.3066
 
 ssp_coefficient(alg::Euler) = 1
 
+function prepare_alg(
+        alg::SplitEuler,
+        u0::AbstractArray,
+        p, prob)
+    alg
+end
