@@ -14,7 +14,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import OrdinaryDiffEqCore
-using DiffEqBase: value
+using DiffEqBase: DiffEqBase, value
 
 using Reexport
 @reexport using SciMLBase
