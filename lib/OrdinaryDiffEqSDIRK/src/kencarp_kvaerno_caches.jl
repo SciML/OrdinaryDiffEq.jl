@@ -60,7 +60,7 @@ function alg_cache(alg::KenCarp3, u, rate_prototype, ::Type{uEltypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:KenCarp3, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
@@ -92,7 +92,7 @@ function alg_cache(alg::KenCarp3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:KenCarp3, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
@@ -131,7 +131,7 @@ function alg_cache(alg::CFNLIRK3, u, rate_prototype, ::Type{uEltypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:CFNLIRK3, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
@@ -161,7 +161,7 @@ function alg_cache(alg::CFNLIRK3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:CFNLIRK3, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
@@ -191,7 +191,7 @@ function alg_cache(alg::Kvaerno4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:Kvaerno4, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
     Kvaerno4ConstantCache(nlsolver, tab)
@@ -218,7 +218,7 @@ function alg_cache(alg::Kvaerno4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:Kvaerno4, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
@@ -245,7 +245,7 @@ function alg_cache(alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:KenCarp4, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
     KenCarp4ConstantCache(nlsolver, tab)
@@ -282,7 +282,7 @@ function alg_cache(alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:KenCarp4, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
@@ -328,7 +328,7 @@ function alg_cache(alg::Kvaerno5, u, rate_prototype, ::Type{uEltypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:Kvaerno5, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
@@ -358,7 +358,7 @@ function alg_cache(alg::Kvaerno5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:Kvaerno5, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
@@ -387,7 +387,7 @@ function alg_cache(alg::KenCarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:KenCarp5, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
@@ -427,7 +427,7 @@ function alg_cache(alg::KenCarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:KenCarp5, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
@@ -477,7 +477,7 @@ function alg_cache(alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:KenCarp47, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
@@ -514,7 +514,7 @@ function alg_cache(alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:KenCarp47, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
@@ -561,7 +561,7 @@ function alg_cache(alg::KenCarp58, u, rate_prototype, ::Type{uEltypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:KenCarp58, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
@@ -601,7 +601,7 @@ function alg_cache(alg::KenCarp58, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = get_sdirk_tableau(:KenCarp58, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.c[3]
+    γ, c = tab.γ, tab.c3
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)

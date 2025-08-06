@@ -74,7 +74,8 @@ end
             tmp += b_embed[i] * z[i]
         end
         
-        if isnewton(nlsolver) && alg.smooth_est
+        has_smooth_est = hasfield(typeof(alg), :smooth_est)
+        if isnewton(nlsolver) && has_smooth_est && alg.smooth_est
             integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
@@ -135,7 +136,8 @@ end
     if integrator.opts.adaptive && b_embed !== nothing
         @.. broadcast=false tmp = b_embed[1] * z₁ + b_embed[2] * z₂
         
-        if alg.smooth_est && isnewton(nlsolver)
+        has_smooth_est = hasfield(typeof(alg), :smooth_est)
+        if has_smooth_est && alg.smooth_est && isnewton(nlsolver)
             est = atmp
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                 linu = _vec(est))
@@ -251,7 +253,8 @@ end
                 tmp = b_embed[1] * z₁ + b_embed[2] * z₂ + b_embed[3] * z₃ + b_embed[4] * z₄
             end
             
-            if isnewton(nlsolver) && alg.smooth_est
+            has_smooth_est = hasfield(typeof(alg), :smooth_est)
+            if isnewton(nlsolver) && has_smooth_est && alg.smooth_est
                 integrator.stats.nsolve += 1
                 est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
             else
@@ -280,13 +283,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Union{
-    ImplicitEulerConstantCache, ImplicitEulerCache,
-    ImplicitMidpointConstantCache, ImplicitMidpointCache,
-    TrapezoidConstantCache, TrapezoidCache,
     SDIRK2ConstantCache, SDIRK2Cache,
-    SDIRK22ConstantCache, SDIRK22Cache,
-    Cash4ConstantCache, Cash4Cache,
-    SSPSDIRK2ConstantCache, SSPSDIRK2Cache,
     SFSDIRK4ConstantCache, SFSDIRK4Cache,
     SFSDIRK5ConstantCache, SFSDIRK5Cache,
     SFSDIRK6ConstantCache, SFSDIRK6Cache,
@@ -335,7 +332,8 @@ end
 
     if integrator.opts.adaptive
         tmp = btilde1 * zprev + btilde2 * zγ + btilde3 * z
-        if isnewton(nlsolver) && alg.smooth_est
+        has_smooth_est = hasfield(typeof(alg), :smooth_est)
+        if isnewton(nlsolver) && has_smooth_est && alg.smooth_est
             integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
@@ -354,7 +352,7 @@ end
 
 @muladd function perform_step!(integrator, cache::TRBDF2Cache, repeat_step=false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack zprev, zγ, atmp, nlsolver, step_limiter! = cache
+    @unpack zprev, zᵧ, atmp, nlsolver, step_limiter! = cache
     @unpack z, tmp = nlsolver
     tab = cache.tab
     γ = tab.c[2]
@@ -368,15 +366,15 @@ end
     @.. broadcast=false zprev = dt * integrator.fsalfirst
     markfirststage!(nlsolver)
 
-    @.. broadcast=false zγ = zprev
-    z .= zγ
+    @.. broadcast=false zᵧ = zprev
+    z .= zᵧ
     @.. broadcast=false tmp = uprev + d * zprev
     nlsolver.c = γ
-    zγ .= nlsolve!(nlsolver, integrator, cache, repeat_step)
+    zᵧ .= nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
-    @.. broadcast=false z = α1 * zprev + α2 * zγ
-    @.. broadcast=false tmp = uprev + ω * zprev + ω * zγ
+    @.. broadcast=false z = α1 * zprev + α2 * zᵧ
+    @.. broadcast=false tmp = uprev + ω * zprev + ω * zᵧ
     nlsolver.c = 1
     isnewton(nlsolver) && set_new_W!(nlsolver, false)
     nlsolve!(nlsolver, integrator, cache, repeat_step)
@@ -386,8 +384,9 @@ end
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
-        @.. broadcast=false tmp = btilde1 * zprev + btilde2 * zγ + btilde3 * z
-        if alg.smooth_est && isnewton(nlsolver)
+        @.. broadcast=false tmp = btilde1 * zprev + btilde2 * zᵧ + btilde3 * z
+        has_smooth_est = hasfield(typeof(alg), :smooth_est)
+        if has_smooth_est && alg.smooth_est && isnewton(nlsolver)
             est = nlsolver.cache.dz
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                 linu = _vec(est))
@@ -408,18 +407,47 @@ end
     generic_sdirk_perform_step!(integrator, cache, repeat_step)
 end
 
-# KenCarp/Kvaerno method
-@muladd function perform_step!(integrator, cache::Union{
-    Kvaerno3ConstantCache, Kvaerno3Cache,
-    Kvaerno4ConstantCache, Kvaerno4Cache, 
-    Kvaerno5ConstantCache, Kvaerno5Cache,
-    KenCarp3ConstantCache, KenCarp3Cache,
-    KenCarp4ConstantCache, KenCarp4Cache,
-    KenCarp5ConstantCache, KenCarp5Cache,
-    KenCarp47ConstantCache, KenCarp47Cache,
-    KenCarp58ConstantCache, KenCarp58Cache,
-    CFNLIRK3ConstantCache, CFNLIRK3Cache
-}, repeat_step=false)
-    generic_additive_sdirk_perform_step!(integrator, cache, repeat_step)
+@muladd function perform_step!(integrator, cache::Union{ImplicitEulerConstantCache, ImplicitEulerCache}, repeat_step=false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack nlsolver, tab = cache
+    alg = unwrap_alg(integrator, true)
+    
+    markfirststage!(nlsolver)
+    
+    γ = tab.A[1,1]
+    
+    if alg.extrapolant == :linear
+        nlsolver.z = dt * integrator.fsalfirst
+    else
+        nlsolver.z = zero(uprev)
+    end
+    
+    nlsolver.tmp = uprev
+    nlsolver.c = γ
+    nlsolver.γ = γ
+    
+    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    
+    integrator.u = uprev + z
+    integrator.fsallast = z ./ dt
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::Union{ImplicitMidpointConstantCache, ImplicitMidpointCache}, repeat_step=false)
+    generic_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::Union{TrapezoidConstantCache, TrapezoidCache}, repeat_step=false)
+    generic_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::Union{SDIRK22ConstantCache, SDIRK22Cache}, repeat_step=false)
+    generic_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::Union{SSPSDIRK2ConstantCache, SSPSDIRK2Cache}, repeat_step=false)
+    generic_sdirk_perform_step!(integrator, cache, repeat_step)
 end
 

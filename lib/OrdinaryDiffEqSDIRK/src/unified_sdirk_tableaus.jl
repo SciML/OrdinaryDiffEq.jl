@@ -106,43 +106,6 @@ function SDIRK2Tableau(T=Float64, T2=Float64)
                  predictor_type=:default)
 end
 
-function SDIRK22Tableau(T=Float64, T2=Float64)
-    γ = T(2 - sqrt(2))
-    A = @SMatrix [γ     0;
-                  1-γ   γ]
-    b = @SVector [1-γ, γ]
-    c = @SVector [γ, 1]
-    
-    b_embed = @SVector [0.5, 0.5]
-    
-    SDIRKTableau(A, b, c, γ, 2;
-                 b_embed=b_embed, embedded_order=1,
-                 is_fsal=false, is_stiffly_accurate=true,
-                 is_A_stable=true, is_L_stable=false,
-                 predictor_type=:default)
-end
-
-function Cash4Tableau(T=Float64, T2=Float64)
-    γ = T(0.435866521508459)
-    
-    A = @SMatrix [γ                        0                        0                        0                      0;
-                  T(0.0)                   γ                        0                        0                      0;
-                  T(0.56671495351937)      T(-0.06715442679697)     γ                        0                      0;
-                  T(0.28301171695151)      T(-0.18059181385515)     T(0.33282813473554)      γ                      0;
-                  T(0.30139077148519)      T(-0.32788229268974)     T(0.5897326439168)       T(0.00765545386853796) γ]
-    
-    b = @SVector [T(0.30139077148519), T(-0.32788229268974), T(0.5897326439168), T(0.00765545386853796), γ]
-    c = @SVector [γ, γ, T2(0.93494690618199), T2(0.4699756284326), T2(1)]
-    
-    b_embed = A[5, :]
-    
-    SDIRKTableau(A, b, c, γ, 4;
-                 b_embed=b_embed, embedded_order=3,
-                 is_fsal=false, is_stiffly_accurate=true,
-                 is_A_stable=true, is_L_stable=false,
-                 predictor_type=:hermite)
-end
-
 function SSPSDIRK2Tableau(T=Float64, T2=Float64)
     γ = T(1 - 1/sqrt(2))
     A = @SMatrix [γ      0;
@@ -668,29 +631,29 @@ function get_sdirk_tableau(alg::Symbol, T=Float64, T2=Float64)
     elseif alg == :SDIRK2
         return SDIRK2Tableau(T, T2)
     elseif alg == :SDIRK22
-        return SDIRK22Tableau(T, T2)
+        return SDIRK22Tableau(T)
     elseif alg == :SSPSDIRK2
         return SSPSDIRK2Tableau(T, T2)
     elseif alg == :Cash4
         return Cash4Tableau(T, T2)
     elseif alg == :Kvaerno3
-        return Kvaerno3Tableau_unified(T, T2)
+        return Kvaerno3Tableau(T, T2)
     elseif alg == :KenCarp3
-        return KenCarp3Tableau_unified(T, T2)
+        return KenCarp3Tableau(T, T2)
     elseif alg == :CFNLIRK3
-        return CFNLIRK3Tableau_unified(T, T2)
+        return CFNLIRK3Tableau(T, T2)
     elseif alg == :Kvaerno4
-        return Kvaerno4Tableau_unified(T, T2)
+        return Kvaerno4Tableau(T, T2)
     elseif alg == :Kvaerno5
-        return Kvaerno5Tableau_unified(T, T2)
+        return Kvaerno5Tableau(T, T2)
     elseif alg == :KenCarp4
-        return KenCarp4Tableau_unified(T, T2)
+        return KenCarp4Tableau(T, T2)
     elseif alg == :KenCarp47
-        return KenCarp47Tableau_unified(T, T2)
+        return KenCarp47Tableau(T, T2)
     elseif alg == :KenCarp5
-        return KenCarp5Tableau_unified(T, T2)
+        return KenCarp5Tableau(T, T2)
     elseif alg == :KenCarp58
-        return KenCarp58Tableau_unified(T, T2)
+        return KenCarp58Tableau(T, T2)
     elseif alg == :SFSDIRK4
         return SFSDIRK4Tableau_unified(T, T2)
     elseif alg == :SFSDIRK5
