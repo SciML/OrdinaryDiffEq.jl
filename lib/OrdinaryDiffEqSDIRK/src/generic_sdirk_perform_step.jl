@@ -95,7 +95,7 @@ end
 
 @muladd function generic_sdirk_perform_step!(integrator, cache::SDIRKMutableCache, repeat_step=false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack z₁, z₂, atmp, nlsolver, tab, step_limiter! = cache
+    @unpack z₁, atmp, nlsolver, tab, step_limiter! = cache
     @unpack tmp = nlsolver
     alg = unwrap_alg(integrator, true)
     
@@ -103,7 +103,7 @@ end
     b = tab.b
     c = tab.c
     b_embed = tab.b_embed
-    
+    s = size(A, 1)
     markfirststage!(nlsolver)
     
     if alg.extrapolant == :linear
@@ -114,27 +114,47 @@ end
     
     nlsolver.z = z₁
     @.. broadcast=false nlsolver.tmp = uprev
-            nlsolver.c = typeof(nlsolver.c)(c[1])
-        nlsolver.γ = typeof(nlsolver.γ)(A[1,1])
+    nlsolver.c = typeof(nlsolver.c)(c[1])
+    nlsolver.γ = typeof(nlsolver.γ)(A[1,1])
     
     z₁ .= nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     
-    @.. broadcast=false z₂ = zero(eltype(u))
-    nlsolver.z = z₂
-    @.. broadcast=false nlsolver.tmp = uprev + A[2,1] * z₁
+    # handle additional stages if present
+    z₂ = nothing
+    if s >= 2
+        if hasfield(typeof(cache), :z₂)
+            z₂ = getfield(cache, :z₂)
+            @.. broadcast=false z₂ = zero(eltype(u))
+            nlsolver.z = z₂
+            @.. broadcast=false nlsolver.tmp = uprev + A[2,1] * z₁
             nlsolver.c = typeof(nlsolver.c)(c[2])
-        nlsolver.γ = typeof(nlsolver.γ)(A[2,2])
+            nlsolver.γ = typeof(nlsolver.γ)(A[2,2])
+            
+            isnewton(nlsolver) && set_new_W!(nlsolver, false)
+            z₂ .= nlsolve!(nlsolver, integrator, cache, repeat_step)
+            nlsolvefail(nlsolver) && return
+        end
+    end
     
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
-    z₂ .= nlsolve!(nlsolver, integrator, cache, repeat_step)
-    nlsolvefail(nlsolver) && return
+    # computes final solution
+    if s == 1
+        @.. broadcast=false u = uprev + b[1] * z₁
+    elseif s == 2 && z₂ !== nothing
+        @.. broadcast=false u = uprev + b[1] * z₁ + b[2] * z₂
+    else
+        error("Unsupported number of stages: $s")
+    end
     
-    @.. broadcast=false u = uprev + b[1] * z₁ + b[2] * z₂
     step_limiter!(u, integrator, p, t + dt)
     
+    # error estimation for adaptive methods
     if integrator.opts.adaptive && b_embed !== nothing
-        @.. broadcast=false tmp = b_embed[1] * z₁ + b_embed[2] * z₂
+        if s == 1
+            @.. broadcast=false tmp = b_embed[1] * z₁
+        elseif s == 2 && z₂ !== nothing
+            @.. broadcast=false tmp = b_embed[1] * z₁ + b_embed[2] * z₂
+        end
         
         has_smooth_est = hasfield(typeof(alg), :smooth_est)
         if has_smooth_est && alg.smooth_est && isnewton(nlsolver)
@@ -151,7 +171,12 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     
-    @.. broadcast=false integrator.fsallast = z₂ / dt
+    # set fsallast based on last stage
+    if s == 1
+        @.. broadcast=false integrator.fsallast = z₁ / dt
+    elseif s == 2 && z₂ !== nothing
+        @.. broadcast=false integrator.fsallast = z₂ / dt
+    end
 end
 
 @muladd function generic_additive_sdirk_perform_step!(integrator, cache::SDIRKConstantCache, repeat_step=false)

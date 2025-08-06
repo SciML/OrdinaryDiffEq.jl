@@ -71,11 +71,13 @@ function alg_cache(alg::ImplicitMidpoint, u, rate_prototype, ::Type{uEltypeNoUni
     ImplicitMidpointConstantCache(nlsolver, tab)
 end
 
-@cache mutable struct ImplicitMidpointCache{uType, rateType, N, Tab, StepLimiter} <:
+@cache mutable struct ImplicitMidpointCache{uType, rateType, uNoUnitsType, N, Tab, StepLimiter} <:
                       SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
+    z₁::uType
+    atmp::uNoUnitsType
     nlsolver::N
     tab::Tab
     step_limiter!::StepLimiter
@@ -90,9 +92,13 @@ function alg_cache(alg::ImplicitMidpoint, u, rate_prototype, ::Type{uEltypeNoUni
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
     
+    z₁ = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    
     tab = get_sdirk_tableau(:ImplicitMidpoint, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     
-    ImplicitMidpointCache(u, uprev, fsalfirst, nlsolver, tab, alg.step_limiter!)
+    ImplicitMidpointCache(u, uprev, fsalfirst, z₁, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
 mutable struct TrapezoidConstantCache{uType, tType, N, Tab} <: SDIRKConstantCache
@@ -125,6 +131,8 @@ end
     uprev::uType
     uprev2::uType
     fsalfirst::rateType
+    z₁::uType
+    z₂::uType
     atmp::uNoUnitsType
     uprev3::uType
     tprev2::tType
@@ -142,6 +150,8 @@ function alg_cache(alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
+    z₁ = zero(u)
+    z₂ = zero(u)
     uprev3 = zero(u)
     tprev2 = t
     atmp = similar(u, uEltypeNoUnits)
@@ -150,7 +160,7 @@ function alg_cache(alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = get_sdirk_tableau(:Trapezoid, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 
     TrapezoidCache(
-        u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, tab, alg.step_limiter!)
+        u, uprev, uprev2, fsalfirst, z₁, z₂, atmp, uprev3, tprev2, nlsolver, tab, alg.step_limiter!)
 end
 
 mutable struct TRBDF2ConstantCache{Tab, N} <: SDIRKConstantCache
@@ -319,14 +329,16 @@ function alg_cache(alg::SSPSDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPSDIRK2ConstantCache(nlsolver, tab)
 end
 
-@cache mutable struct SSPSDIRK2Cache{uType, rateType, N, Tab} <: SDIRKMutableCache
+@cache mutable struct SSPSDIRK2Cache{uType, rateType, uNoUnitsType, N, Tab, StepLimiter} <: SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
     z₁::uType
     z₂::uType
+    atmp::uNoUnitsType
     nlsolver::N
     tab::Tab
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::SSPSDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -344,7 +356,7 @@ function alg_cache(alg::SSPSDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
 
     tab = get_sdirk_tableau(:SSPSDIRK2, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    SSPSDIRK2Cache(u, uprev, fsalfirst, z₁, z₂, nlsolver, tab)
+    SSPSDIRK2Cache(u, uprev, fsalfirst, z₁, z₂, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
 mutable struct Cash4ConstantCache{N, Tab} <: SDIRKConstantCache

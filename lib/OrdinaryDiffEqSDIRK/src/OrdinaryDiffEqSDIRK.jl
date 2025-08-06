@@ -12,7 +12,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                            constvalue, _unwrap_val, _ode_interpolant,
                            trivial_limiter!, _ode_interpolant!,
-                           isesdirk, issplit,
+                           isesdirk, issplit, recursivefill!,
                            ssp_coefficient, get_fsalfirstlast, generic_solver_docstring,
                            _bool_to_ADType, _process_AD_choice, current_extrapolant!
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
