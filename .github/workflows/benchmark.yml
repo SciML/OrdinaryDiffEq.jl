@@ -19,6 +19,6 @@ jobs:
     steps:
       - uses: MilesCranmer/AirspeedVelocity.jl@action-v1
         with:
-          julia-version: ${{ matrix.version }}
+          julia_version: ${{ matrix.version }}
           script: "benchmark/benchmarks.jl"
           extra-pkgs: "StableRNGs,StaticArrays,LinearAlgebra,SparseArrays,DiffEqBase"
