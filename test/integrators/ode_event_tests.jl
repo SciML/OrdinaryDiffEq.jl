@@ -24,6 +24,7 @@ sol = solve(prob, Tsit5(), callback = callback)
 
 # Force integrator to step on event
 sol = solve(prob, Tsit5(), callback = callback, tstops = [-2.95])
+@test sol(-2.95, continuity = :right) ≈ sol(-2.95, continuity = :left) + 2
 
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
     out[1] = -t - 2.95
@@ -41,6 +42,7 @@ sol = solve(prob, Tsit5(), callback = callback)
 
 # Force integrator to step on event
 sol = solve(prob, Tsit5(), callback = callback, tstops = [-2.95])
+@test sol(-2.95, continuity = :right) ≈ sol(-2.95, continuity = :left) + 2
 
 f = function (du, u, p, t)
     du[1] = -u[1] + sin(t)
@@ -62,6 +64,7 @@ sol = solve(prob, Tsit5(), callback = callback, abstol = 1e-8, reltol = 1e-6)
 
 # Force integrator to step on event
 sol = solve(prob, Tsit5(), callback = callback, abstol = 1e-8, reltol = 1e-6, tstops = [2.95])
+@test sol(2.95, continuity = :right)[1] ≈ sol(2.95, continuity = :left)[1] + 2
 
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
     out[1] = t - 2.95
@@ -79,6 +82,7 @@ sol = solve(prob, Tsit5(), callback = callback, abstol = 1e-8, reltol = 1e-6)
 
 # Force integrator to step on event
 sol = solve(prob, Tsit5(), callback = callback, abstol = 1e-8, reltol = 1e-6, tstops = [2.95])
+@test sol(2.95, continuity = :right)[1] ≈ sol(2.95, continuity = :left)[1] + 2
 
 f = function (du, u, p, t)
     du[1] = u[2]
