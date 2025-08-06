@@ -39,9 +39,9 @@ using Test
         for solver in regular_bdf_solvers
             @testset "$(typeof(solver)) type stability" begin
                 try
-                    @test_broken @test_opt init(linear_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
+                    @test_opt broken=true init(linear_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                     integrator = init(linear_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
-                    @test_broken @test_opt step!(integrator)
+                    @test_opt broken=true step!(integrator)
                 catch e
                     @test_broken false # Mark as broken if solver fails to initialize
                     println("$(typeof(solver)) failed with: $e")
@@ -52,9 +52,9 @@ using Test
         for solver in dae_solvers
             @testset "$(typeof(solver)) DAE type stability" begin
                 try
-                    @test_broken @test_opt init(dae_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
+                    @test_opt broken=true init(dae_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                     integrator = init(dae_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
-                    @test_broken @test_opt step!(integrator)
+                    @test_opt broken=true step!(integrator)
                 catch e
                     @test_broken false # Mark as broken if solver fails to initialize
                     println("$(typeof(solver)) failed with: $e")
@@ -65,9 +65,9 @@ using Test
         for solver in sbdf_solvers
             @testset "$(typeof(solver)) type stability" begin
                 try
-                    @test_broken @test_opt init(split_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
+                    @test_opt broken=true init(split_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
                     integrator = init(split_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
-                    @test_broken @test_opt step!(integrator)
+                    @test_opt broken=true step!(integrator)
                 catch e
                     @test_broken false # Mark as broken if solver fails to initialize
                     println("$(typeof(solver)) failed with: $e")
