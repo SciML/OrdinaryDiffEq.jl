@@ -1,6 +1,6 @@
 module OrdinaryDiffEqNonlinearSolve
 
-using ADTypes
+using ADTypes: ADTypes, dense_ad, AutoForwardDiff, AutoFiniteDiff
 
 import SciMLBase
 import SciMLBase: init, solve, solve!, remake
@@ -9,17 +9,19 @@ using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
                  update_coefficients!, get_tmp_cache, AbstractSciMLOperator, ReturnCode,
                  AbstractNonlinearProblem, LinearAliasSpecifier
 import DiffEqBase
-import PreallocationTools
+import PreallocationTools: dualcache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
 using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
                       step!
-using MuladdMacro, FastBroadcast
+using MuladdMacro: @muladd
+using FastBroadcast: @..
 import FastClosures: @closure
 using LinearAlgebra: UniformScaling, UpperTriangular, givens, cond, dot, lmul!, axpy!
 import LinearAlgebra
-import ArrayInterface
+import ArrayInterface: ArrayInterface, ismutable, restructure
+import LinearSolve: OperatorAssumptions
 import LinearSolve
-import ForwardDiff
+import ForwardDiff: ForwardDiff, pickchunksize
 using ForwardDiff: Dual
 using LinearSolve: I, rmul!, norm, mul!, ldiv!
 using RecursiveArrayTools: recursivecopy!

@@ -3,46 +3,16 @@ uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 version = "6.101.0"
 
-[sources]
-OrdinaryDiffEqAdamsBashforthMoulton = {path = "lib/OrdinaryDiffEqAdamsBashforthMoulton"}
-OrdinaryDiffEqBDF = {path = "lib/OrdinaryDiffEqBDF"}
-OrdinaryDiffEqCore = {path = "lib/OrdinaryDiffEqCore"}
-OrdinaryDiffEqDefault = {path = "lib/OrdinaryDiffEqDefault"}
-OrdinaryDiffEqDifferentiation = {path = "lib/OrdinaryDiffEqDifferentiation"}
-OrdinaryDiffEqExplicitRK = {path = "lib/OrdinaryDiffEqExplicitRK"}
-OrdinaryDiffEqExponentialRK = {path = "lib/OrdinaryDiffEqExponentialRK"}
-OrdinaryDiffEqExtrapolation = {path = "lib/OrdinaryDiffEqExtrapolation"}
-OrdinaryDiffEqFIRK = {path = "lib/OrdinaryDiffEqFIRK"}
-OrdinaryDiffEqFeagin = {path = "lib/OrdinaryDiffEqFeagin"}
-OrdinaryDiffEqFunctionMap = {path = "lib/OrdinaryDiffEqFunctionMap"}
-OrdinaryDiffEqHighOrderRK = {path = "lib/OrdinaryDiffEqHighOrderRK"}
-OrdinaryDiffEqIMEXMultistep = {path = "lib/OrdinaryDiffEqIMEXMultistep"}
-OrdinaryDiffEqLinear = {path = "lib/OrdinaryDiffEqLinear"}
-OrdinaryDiffEqLowOrderRK = {path = "lib/OrdinaryDiffEqLowOrderRK"}
-OrdinaryDiffEqLowStorageRK = {path = "lib/OrdinaryDiffEqLowStorageRK"}
-OrdinaryDiffEqNonlinearSolve = {path = "lib/OrdinaryDiffEqNonlinearSolve"}
-OrdinaryDiffEqNordsieck = {path = "lib/OrdinaryDiffEqNordsieck"}
-OrdinaryDiffEqPDIRK = {path = "lib/OrdinaryDiffEqPDIRK"}
-OrdinaryDiffEqPRK = {path = "lib/OrdinaryDiffEqPRK"}
-OrdinaryDiffEqQPRK = {path = "lib/OrdinaryDiffEqQPRK"}
-OrdinaryDiffEqRKN = {path = "lib/OrdinaryDiffEqRKN"}
-OrdinaryDiffEqRosenbrock = {path = "lib/OrdinaryDiffEqRosenbrock"}
-OrdinaryDiffEqSDIRK = {path = "lib/OrdinaryDiffEqSDIRK"}
-OrdinaryDiffEqSSPRK = {path = "lib/OrdinaryDiffEqSSPRK"}
-OrdinaryDiffEqStabilizedIRK = {path = "lib/OrdinaryDiffEqStabilizedIRK"}
-OrdinaryDiffEqStabilizedRK = {path = "lib/OrdinaryDiffEqStabilizedRK"}
-OrdinaryDiffEqSymplecticRK = {path = "lib/OrdinaryDiffEqSymplecticRK"}
-OrdinaryDiffEqTsit5 = {path = "lib/OrdinaryDiffEqTsit5"}
-OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
-
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
+CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 ExponentialUtilities = "d4d017d3-3776-5f7e-afef-a10c40355c18"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 FastClosures = "9aa1b823-49e4-5ca5-8b0f-3971ec8bab6a"
@@ -105,14 +75,48 @@ StaticArrayInterface = "0d7ed370-da01-4f52-bd93-41d350b8b718"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 
+[sources]
+OrdinaryDiffEqAdamsBashforthMoulton = {path = "lib/OrdinaryDiffEqAdamsBashforthMoulton"}
+OrdinaryDiffEqBDF = {path = "lib/OrdinaryDiffEqBDF"}
+OrdinaryDiffEqCore = {path = "lib/OrdinaryDiffEqCore"}
+OrdinaryDiffEqDefault = {path = "lib/OrdinaryDiffEqDefault"}
+OrdinaryDiffEqDifferentiation = {path = "lib/OrdinaryDiffEqDifferentiation"}
+OrdinaryDiffEqExplicitRK = {path = "lib/OrdinaryDiffEqExplicitRK"}
+OrdinaryDiffEqExponentialRK = {path = "lib/OrdinaryDiffEqExponentialRK"}
+OrdinaryDiffEqExtrapolation = {path = "lib/OrdinaryDiffEqExtrapolation"}
+OrdinaryDiffEqFIRK = {path = "lib/OrdinaryDiffEqFIRK"}
+OrdinaryDiffEqFeagin = {path = "lib/OrdinaryDiffEqFeagin"}
+OrdinaryDiffEqFunctionMap = {path = "lib/OrdinaryDiffEqFunctionMap"}
+OrdinaryDiffEqHighOrderRK = {path = "lib/OrdinaryDiffEqHighOrderRK"}
+OrdinaryDiffEqIMEXMultistep = {path = "lib/OrdinaryDiffEqIMEXMultistep"}
+OrdinaryDiffEqLinear = {path = "lib/OrdinaryDiffEqLinear"}
+OrdinaryDiffEqLowOrderRK = {path = "lib/OrdinaryDiffEqLowOrderRK"}
+OrdinaryDiffEqLowStorageRK = {path = "lib/OrdinaryDiffEqLowStorageRK"}
+OrdinaryDiffEqNonlinearSolve = {path = "lib/OrdinaryDiffEqNonlinearSolve"}
+OrdinaryDiffEqNordsieck = {path = "lib/OrdinaryDiffEqNordsieck"}
+OrdinaryDiffEqPDIRK = {path = "lib/OrdinaryDiffEqPDIRK"}
+OrdinaryDiffEqPRK = {path = "lib/OrdinaryDiffEqPRK"}
+OrdinaryDiffEqQPRK = {path = "lib/OrdinaryDiffEqQPRK"}
+OrdinaryDiffEqRKN = {path = "lib/OrdinaryDiffEqRKN"}
+OrdinaryDiffEqRosenbrock = {path = "lib/OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqSDIRK = {path = "lib/OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqSSPRK = {path = "lib/OrdinaryDiffEqSSPRK"}
+OrdinaryDiffEqStabilizedIRK = {path = "lib/OrdinaryDiffEqStabilizedIRK"}
+OrdinaryDiffEqStabilizedRK = {path = "lib/OrdinaryDiffEqStabilizedRK"}
+OrdinaryDiffEqSymplecticRK = {path = "lib/OrdinaryDiffEqSymplecticRK"}
+OrdinaryDiffEqTsit5 = {path = "lib/OrdinaryDiffEqTsit5"}
+OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
+
 [compat]
 ADTypes = "1.16"
 Adapt = "3.0, 4"
 ArrayInterface = "7.15"
+CommonSolve = "0.2"
 DataStructures = "0.18, 0.19"
 DiffEqBase = "6.169.1"
 DocStringExtensions = "0.9"
 EnumX = "1"
+ExplicitImports = "1.13.1"
 ExponentialUtilities = "1"
 FastBroadcast = "0.2, 0.3"
 FastClosures = "0.3"
@@ -186,6 +190,7 @@ DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 ElasticArrays = "fdbdab4c-e67f-52f5-8c3f-e7b388dad3d4"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 IncompleteLU = "40713840-3770-5561-ab4c-a76e7d0d7895"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
@@ -210,4 +215,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Calculus", "ComponentArrays", "Symbolics", "AlgebraicMultigrid", "IncompleteLU", "DiffEqCallbacks", "DifferentiationInterface", "DiffEqDevTools", "ODEProblemLibrary", "ElasticArrays", "InteractiveUtils", "ParameterizedFunctions", "JLArrays", "PoissonRandom", "Printf", "Random", "ReverseDiff", "SafeTestsets", "SparseArrays", "Statistics", "StructArrays", "Test", "Unitful", "ModelingToolkit", "Pkg", "NLsolve", "RecursiveFactorization", "SparseConnectivityTracer", "SparseMatrixColorings"]
+test = ["Calculus", "ComponentArrays", "Symbolics", "AlgebraicMultigrid", "IncompleteLU", "DiffEqCallbacks", "DifferentiationInterface", "DiffEqDevTools", "ODEProblemLibrary", "ElasticArrays", "ExplicitImports", "InteractiveUtils", "ParameterizedFunctions", "JLArrays", "PoissonRandom", "Printf", "Random", "ReverseDiff", "SafeTestsets", "SparseArrays", "Statistics", "StructArrays", "Test", "Unitful", "ModelingToolkit", "Pkg", "NLsolve", "RecursiveFactorization", "SparseConnectivityTracer", "SparseMatrixColorings"]

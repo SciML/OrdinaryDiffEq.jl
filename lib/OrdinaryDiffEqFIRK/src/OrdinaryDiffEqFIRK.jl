@@ -27,7 +27,7 @@ import LinearSolve
 import FastBroadcast: @..
 import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: _ode_interpolant, _ode_interpolant!, has_stiff_interpolation
-import FastPower
+import FastPower: fastpower
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_config,
                                      UDerivativeWrapper, calc_J!, dolinsolve, calc_J,
                                      islinearfunction
@@ -37,7 +37,7 @@ using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, Convergence, FastConvergenc
 import ADTypes: AutoForwardDiff, AbstractADType
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

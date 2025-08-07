@@ -1,5 +1,5 @@
 abstract type OrdinaryDiffEqInterpolation{cacheType} <:
-              DiffEqBase.AbstractDiffEqInterpolation end
+              SciMLBase.AbstractDiffEqInterpolation end
 
 struct InterpolationData{
     F, uType, tType, kType, algType <: Union{Nothing, Vector{Int}}, cacheType, DV} <:
@@ -23,23 +23,23 @@ end
     end
 end
 
-function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{
+function SciMLBase.interp_summary(interp::OrdinaryDiffEqInterpolation{
         cacheType,
 }) where {
         cacheType,
 }
-    DiffEqBase.interp_summary(cacheType, interp.dense)
+    SciMLBase.interp_summary(cacheType, interp.dense)
 end
-function DiffEqBase.interp_summary(::Type{cacheType}, dense::Bool) where {cacheType}
+function SciMLBase.interp_summary(::Type{cacheType}, dense::Bool) where {cacheType}
     dense ? "3rd order Hermite" : "1st order linear"
 end
-function DiffEqBase.interp_summary(::Type{cacheType},
+function SciMLBase.interp_summary(::Type{cacheType},
         dense::Bool) where {cacheType <: CompositeCache}
     if !dense
         return "1st order linear"
     end
     caches = fieldtype(cacheType, :caches)
-    join([DiffEqBase.interp_summary(ct, dense) for ct in fieldtypes(caches)], ", ")
+    join([SciMLBase.interp_summary(ct, dense) for ct in fieldtypes(caches)], ", ")
 end
 
 function (interp::InterpolationData)(tvals, idxs, deriv, p, continuity::Symbol = :left)

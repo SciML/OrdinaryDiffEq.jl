@@ -34,7 +34,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 
         # Time derivative
         if !repeat_step # skip calculation if step is repeated
-            if DiffEqBase.has_tgrad(f)
+            if SciMLBase.has_tgrad(f)
                 f.tgrad(dT, uprev, p, t)
             else
                 tf.uprev = uprev
@@ -78,7 +78,7 @@ function calc_tderivative(integrator, cache)
     @unpack t, dt, uprev, u, f, p, alg = integrator
 
     # Time derivative
-    if DiffEqBase.has_tgrad(f)
+    if SciMLBase.has_tgrad(f)
         dT = f.tgrad(uprev, p, t)
     else
         tf = cache.tf
@@ -123,7 +123,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
     end
 
     if alg isa DAEAlgorithm
-        if DiffEqBase.has_jac(f)
+        if SciMLBase.has_jac(f)
             duprev = integrator.duprev
             uf = cache.uf
             J = f.jac(duprev, uprev, p, uf.α * uf.invγdt, t)
@@ -133,7 +133,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
             J = jacobian(uf, x, integrator)
         end
     else
-        if DiffEqBase.has_jac(f)
+        if SciMLBase.has_jac(f)
             J = f.jac(uprev, p, t)
         else
             @unpack uf = cache
@@ -170,7 +170,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
     end
 
     if alg isa DAEAlgorithm
-        if DiffEqBase.has_jac(f)
+        if SciMLBase.has_jac(f)
             duprev = integrator.duprev
             uf = cache.uf
             # need to do some jank here to account for sparsity pattern of W
@@ -196,7 +196,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             jacobian!(J, uf, x, du1, integrator, jac_config)
         end
     else
-        if DiffEqBase.has_jac(f)
+        if SciMLBase.has_jac(f)
             # need to do some jank here to account for sparsity pattern of W
             # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653
 
@@ -215,7 +215,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             @unpack du1, uf, jac_config = cache
             uf.f = nlsolve_f(f, alg)
             uf.t = t
-            if !(p isa DiffEqBase.NullParameters)
+            if !(p isa SciMLBase.NullParameters)
                 uf.p = p
             end
             jacobian!(J, uf, uprev, du1, integrator, jac_config)
@@ -336,7 +336,7 @@ function WOperator{IIP}(f, u, gamma) where {IIP}
     # Convert jacobian, if needed
     J = deepcopy(f.jac_prototype)
     if J isa AbstractMatrix
-        @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
+        @assert SciMLBase.has_jac(f) "f needs to have an associated jacobian"
         J = MatrixOperator(J; update_func! = f.jac)
     end
     return WOperator{IIP}(mass_matrix, gamma, J, u)
@@ -578,7 +578,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     is_compos = integrator.alg isa CompositeAlgorithm
 
     # handle Wfact
-    if DiffEqBase.has_Wfact_t(f)
+    if SciMLBase.has_Wfact_t(f)
         f.Wfact_t(W, u, p, dtgamma, t)
         isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
         is_compos && (integrator.eigen_est = constvalue(opnorm(LowerTriangular(W), Inf)) +
@@ -793,7 +793,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
                 if isnothing(f.sparsity)
                     !isnothing(jac_config) ?
                     convert.(
-                        eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config[1])) :
+                        eltype(u), sparsity_pattern(jac_config[1])) :
                     spzeros(eltype(u), length(u), length(u))
                 elseif eltype(f.sparsity) == Bool
                     convert.(eltype(u), f.sparsity)
@@ -814,7 +814,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
             WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
         end
     else
-        J = if !IIP && DiffEqBase.has_jac(f)
+        J = if !IIP && SciMLBase.has_jac(f)
             if f isa DAEFunction
                 f.jac(uprev, uprev, p, one(t), t)
             else
@@ -823,8 +823,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
         elseif f.jac_prototype === nothing
             if alg_autodiff(alg) isa AutoSparse
                 if isnothing(f.sparsity)
-                    !isnothing(jac_config) ?
-                    convert.(eltype(u), SparseMatrixColorings.sparsity_pattern(jac_config[1])) :
+                    !isnothing(jac_config) ? convert.(eltype(u), sparsity_pattern(jac_config[1])) :
                     spzeros(eltype(u), length(u), length(u))
                 elseif eltype(f.sparsity) == Bool
                     convert.(eltype(u), f.sparsity)
@@ -915,7 +914,7 @@ function resize_J_W!(cache, integrator, i)
                 resize_JVPCache!(cache.W.jacvec, f, cache.du1, integrator.u,
                     alg_autodiff(integrator.alg))
             end
-            cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(f.mass_matrix,
+            cache.W = WOperator{SciMLBase.isinplace(integrator.sol.prob)}(f.mass_matrix,
                 integrator.dt,
                 cache.J,
                 integrator.u,

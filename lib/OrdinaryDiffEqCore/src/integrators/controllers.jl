@@ -21,7 +21,7 @@ end
 
 reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
 
-DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
+SciMLBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
 
 # Standard integral (I) step size controller
 """
@@ -68,7 +68,7 @@ end
         q = inv(qmax)
     else
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qtmp = FastPower.fastpower(EEst, expo) / gamma
+        qtmp = fastpower(EEst, expo) / gamma
         @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
         integrator.qold = DiffEqBase.value(integrator.dt) / q
@@ -141,8 +141,8 @@ end
     if iszero(EEst)
         q = inv(qmax)
     else
-        q11 = FastPower.fastpower(EEst, convert(typeof(EEst), beta1))
-        q = q11 / FastPower.fastpower(qold, convert(typeof(EEst), beta2))
+        q11 = fastpower(EEst, convert(typeof(EEst), beta1))
+        q = q11 / fastpower(qold, convert(typeof(EEst), beta2))
         integrator.q11 = q11
         @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
     end
@@ -418,7 +418,7 @@ end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qtmp = FastPower.fastpower(EEst, expo) / fac
+        qtmp = fastpower(EEst, expo) / fac
         @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         integrator.qold = q
     end
@@ -432,7 +432,8 @@ function step_accept_controller!(integrator, controller::PredictiveController, a
 
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qgus = (integrator.dtacc / integrator.dt) * FastPower.fastpower((EEst^2) / integrator.erracc, expo)
+        qgus = (integrator.dtacc / integrator.dt) *
+               fastpower((EEst^2) / integrator.erracc, expo)
         qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
         qacc = max(q, qgus)
     else
