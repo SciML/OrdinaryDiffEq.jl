@@ -99,7 +99,7 @@ end
 
 # test adaptivity
 for iip in (true, false)
-    vanstiff = ODEProblem{iip}(sys, [sqrt(3), 0], (0.0, 1.0), [1e6])
+    vanstiff = ODEProblem{iip}(vanderpol_firk, [sqrt(3), 0], (0.0, 1.0), [1e6])
     sol = solve(vanstiff, RadauIIA3())
     if iip
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
