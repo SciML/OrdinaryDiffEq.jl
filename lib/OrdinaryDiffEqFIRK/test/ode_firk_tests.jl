@@ -58,7 +58,7 @@ function vanderpol_firk(u, p, t)
     x, y = u[1], u[2]
     μ = p[1]
     [y,                           # dx/dt = y
-    du[2] = μ * ((1 - x^2) * y - x)]     # dy/dt = μ * ((1 - x^2) * y - x)
+    μ * ((1 - x^2) * y - x)]     # dy/dt = μ * ((1 - x^2) * y - x)
 end
 
 # test adaptivity
