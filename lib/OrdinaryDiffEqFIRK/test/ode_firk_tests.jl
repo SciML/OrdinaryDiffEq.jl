@@ -54,6 +54,13 @@ function vanderpol_firk(du, u, p, t)
     du[2] = μ * ((1 - x^2) * y - x)     # dy/dt = μ * ((1 - x^2) * y - x)
 end
 
+function vanderpol_firk(u, p, t)
+    x, y = u[1], u[2]
+    μ = p[1]
+    [y,                           # dx/dt = y
+    μ * ((1 - x^2) * y - x)]     # dy/dt = μ * ((1 - x^2) * y - x)
+end
+
 # test adaptivity
 for iip in (true, false)
     vanstiff = ODEProblem{iip}(vanderpol_firk, [sqrt(3), 0.0], (0.0, 1.0), [1e6])
@@ -64,20 +71,20 @@ for iip in (true, false)
     end
     @test length(sol) < 150
     @test SciMLBase.successful_retcode(sol)
-    sol_temp = solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5())
+    sol_temp = solve(remake(vanstiff, p = [1e7]), RadauIIA5())
     @test length(sol_temp) < 150
     @test SciMLBase.successful_retcode(sol_temp)
-    sol_temp2 = solve(remake(vanstiff, p = [sys.μ => 1e7]), reltol = [1e-6, 1e-4], RadauIIA5())
+    sol_temp2 = solve(remake(vanstiff, p = [1e7]), reltol = [1e-6, 1e-4], RadauIIA5())
     @test length(sol_temp2) < 180
     @test SciMLBase.successful_retcode(sol_temp2)
-    sol_temp3 = solve(remake(vanstiff, p = [sys.μ => 1e7]), RadauIIA5(), reltol = 1e-9,
+    sol_temp3 = solve(remake(vanstiff, p = [1e7]), RadauIIA5(), reltol = 1e-9,
         abstol = 1e-9)
     @test length(sol_temp3) < 970
     @test SciMLBase.successful_retcode(sol_temp3)
-    sol_temp4 = solve(remake(vanstiff, p = [sys.μ => 1e9]), RadauIIA5())
+    sol_temp4 = solve(remake(vanstiff, p = [1e9]), RadauIIA5())
     @test length(sol_temp4) < 170
     @test SciMLBase.successful_retcode(sol_temp4)
-    sol_temp5 = solve(remake(vanstiff, p = [sys.μ => 1e10]), RadauIIA5())
+    sol_temp5 = solve(remake(vanstiff, p = [1e10]), RadauIIA5())
     @test length(sol_temp5) < 190
     @test SciMLBase.successful_retcode(sol_temp5)
 end
@@ -92,8 +99,7 @@ end
 
 # test adaptivity
 for iip in (true, false)
-    vanstiff = ODEProblem{iip}(sys, [sys.y => 0, sys.x => sqrt(3), sys.μ => 1e6], (
-        0.0, 1.0))
+    vanstiff = ODEProblem{iip}(vanderpol_firk, [sqrt(3), 0], (0.0, 1.0), [1e6])
     sol = solve(vanstiff, RadauIIA3())
     if iip
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
