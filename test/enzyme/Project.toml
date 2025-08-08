@@ -8,5 +8,6 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 Enzyme = "0.13"
 OrdinaryDiffEq = "6"
+SciMLSensitivity = "7"
 StaticArrays = "1"
 Zygote = "0.6.61, 0.7"
