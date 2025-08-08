@@ -13,7 +13,7 @@ import FastBroadcast: @..
 using Polyester
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 using OrdinaryDiffEqDifferentiation: dolinsolve
 using OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, nlsolve!, nlsolvefail,

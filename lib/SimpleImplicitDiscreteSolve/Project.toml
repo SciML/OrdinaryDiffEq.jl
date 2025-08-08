@@ -1,7 +1,7 @@
 name = "SimpleImplicitDiscreteSolve"
 uuid = "8b67ef88-54bd-43ff-aca0-8be02588656a"
 authors = ["vyudu <vincent.duyuan@gmail.com>"]
-version = "0.1.0"
+version = "1.0.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -9,20 +9,20 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
 
-[compat]
-DiffEqBase = "6.164.1"
-JET = "0.9.18, 0.10.4"
-OrdinaryDiffEqSDIRK = "1.2.0"
-Reexport = "1.2.2"
-SciMLBase = "2.74.1"
-SimpleNonlinearSolve = "2.1.0"
-Test = "1.10"
-julia = "1.10"
-
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+JET = "0.9.18, 0.10.4"
+julia = "1.10"
+OrdinaryDiffEqSDIRK = "1.2.0"
+Test = "1.10"
+DiffEqBase = "6.164.1"
+Reexport = "1.2.2"
+SciMLBase = "2.74.1"
+SimpleNonlinearSolve = "2.1.0"
 
 [targets]
 test = ["JET", "OrdinaryDiffEqSDIRK", "Test"]

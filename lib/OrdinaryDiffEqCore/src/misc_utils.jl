@@ -37,7 +37,7 @@ function constvalue(x)
     return _x isa Complex ? DiffEqBase.value(real(_x)) : DiffEqBase.value(_x)
 end
 
-function diffdir(integrator::DiffEqBase.DEIntegrator)
+function diffdir(integrator::SciMLBase.DEIntegrator)
     difference = maximum(abs, integrator.uprev) * sqrt(eps(typeof(integrator.t)))
     dir = integrator.tdir > zero(integrator.tdir) ?
           integrator.t > integrator.sol.prob.tspan[2] - difference ? -1 : 1 :

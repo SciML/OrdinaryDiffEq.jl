@@ -35,10 +35,10 @@ sol_op = solve(prob_op, FBDF(), reltol = 1e-8, abstol = 1e-8)
 
 # make sure interpolation changes don't accidentally break this test suite
 # the intention is that ref uses a stiffness-aware interpolation, while sol uses hermite
-@test DiffEqBase.interp_summary(sol_ip) == "3rd order Hermite"
-@test DiffEqBase.interp_summary(sol_op) == "3rd order Hermite"
-@test occursin("stiffness-aware", DiffEqBase.interp_summary(ref_ip))
-@test occursin("stiffness-aware", DiffEqBase.interp_summary(ref_op))
+@test SciMLBase.interp_summary(sol_ip) == "3rd order Hermite"
+@test SciMLBase.interp_summary(sol_op) == "3rd order Hermite"
+@test occursin("stiffness-aware", SciMLBase.interp_summary(ref_ip))
+@test occursin("stiffness-aware", SciMLBase.interp_summary(ref_op))
 
 reltol = 1e-4
 abstol = 1e-4

@@ -75,8 +75,8 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
         ad = ADTypes.dense_ad(alg_autodiff(alg)) 
         isautodiff = ad isa AutoForwardDiff 
         if isautodiff
-            tmp_du = PreallocationTools.dualcache(uprev)
-            tmp_u = PreallocationTools.dualcache(uprev)
+            tmp_du = dualcache(uprev)
+            tmp_u = dualcache(uprev)
         else
             tmp_du = similar(uprev)
             tmp_u = similar(uprev)
@@ -98,8 +98,8 @@ is_autodiff(m::DAEResidualJacobianWrapper{isAD}) where {isAD} = isAD
 
 function (m::DAEResidualJacobianWrapper)(out, x)
     if is_autodiff(m)
-        tmp_du = PreallocationTools.get_tmp(m.tmp_du, x)
-        tmp_u = PreallocationTools.get_tmp(m.tmp_u, x)
+        tmp_du = get_tmp(m.tmp_du, x)
+        tmp_u = get_tmp(m.tmp_u, x)
     else
         tmp_du = m.tmp_du
         tmp_u = m.tmp_u
@@ -126,13 +126,13 @@ function (m::DAEResidualDerivativeWrapper)(x)
     m.f(tmp_du, tmp_u, m.p, m.t)
 end
 
-DiffEqBase.has_jac(f::DAEResidualJacobianWrapper) = DiffEqBase.has_jac(f.f)
-DiffEqBase.has_Wfact(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact(f.f)
-DiffEqBase.has_Wfact_t(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact_t(f.f)
+SciMLBase.has_jac(f::DAEResidualJacobianWrapper) = SciMLBase.has_jac(f.f)
+SciMLBase.has_Wfact(f::DAEResidualJacobianWrapper) = SciMLBase.has_Wfact(f.f)
+SciMLBase.has_Wfact_t(f::DAEResidualJacobianWrapper) = SciMLBase.has_Wfact_t(f.f)
 
-DiffEqBase.has_jac(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_jac(f.f)
-DiffEqBase.has_Wfact(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact(f.f)
-DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t(f.f)
+SciMLBase.has_jac(f::DAEResidualDerivativeWrapper) = SciMLBase.has_jac(f.f)
+SciMLBase.has_Wfact(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact(f.f)
+SciMLBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact_t(f.f)
 
 function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},
@@ -173,7 +173,7 @@ function build_nlsolver(
         ::Val{true}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits}
     #TODO
-    #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
+    #nlalg = SciMLBase.handle_defaults(alg, nlalg)
     # define unitless type
     uTolType = real(uBottomEltypeNoUnits)
     isdae = alg isa DAEAlgorithm
@@ -290,7 +290,7 @@ function build_nlsolver(
         ::Val{false}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits}
     #TODO
-    #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
+    #nlalg = SciMLBase.handle_defaults(alg, nlalg)
     # define unitless type
     uTolType = real(uBottomEltypeNoUnits)
     isdae = alg isa DAEAlgorithm
@@ -494,7 +494,7 @@ end
 
 ## resize
 
-function resize_nlsolver!(integrator::DiffEqBase.DEIntegrator, i::Int)
+function resize_nlsolver!(integrator::SciMLBase.DEIntegrator, i::Int)
     isdefined(integrator.cache, :nlsolver) || return
 
     @unpack nlsolver = integrator.cache

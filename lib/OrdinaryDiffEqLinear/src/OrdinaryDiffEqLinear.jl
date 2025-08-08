@@ -15,9 +15,10 @@ using SciMLOperators: AbstractSciMLOperator
 using ExponentialUtilities
 using RecursiveArrayTools
 import OrdinaryDiffEqCore
+import DiffEqBase
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

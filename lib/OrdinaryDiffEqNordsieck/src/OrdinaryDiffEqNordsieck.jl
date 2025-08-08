@@ -19,7 +19,7 @@ using OrdinaryDiffEqTsit5: Tsit5ConstantCache, Tsit5Cache
 import OrdinaryDiffEqCore
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("controllers.jl")

@@ -15,7 +15,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            isesdirk, issplit, recursivefill!,
                            ssp_coefficient, get_fsalfirstlast, generic_solver_docstring,
                            _bool_to_ADType, _process_AD_choice, current_extrapolant!
-using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
+using TruncatedStacktraces: @truncate_stacktrace
+using MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction
 using LinearAlgebra: mul!, I
 using StaticArrays
@@ -28,7 +29,7 @@ using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlso
 import ADTypes: AutoForwardDiff
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

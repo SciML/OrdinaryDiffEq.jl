@@ -105,7 +105,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
         saved = true
         curt = integrator.tdir * pop!(saveat)
         if curt != integrator.t # If <t, interpolate
-            DiffEqBase.addsteps!(integrator)
+            SciMLBase.addsteps!(integrator)
             Θ = (curt - integrator.tprev) / integrator.dt
             val = ode_interpolant(Θ, integrator, integrator.opts.save_idxs, Val{0}) # out of place, but no force copy later
             copyat_or_push!(integrator.sol.t, integrator.saveiter, curt)
@@ -474,7 +474,7 @@ function handle_tstop!(integrator)
             integrator.just_hit_tstop = true
         elseif tdir_t > tdir_tstop
             if !integrator.dtchangeable
-                DiffEqBase.change_t_via_interpolation!(integrator,
+                SciMLBase.change_t_via_interpolation!(integrator,
                     integrator.tdir *
                     pop_tstop!(integrator), Val{true})
                 integrator.just_hit_tstop = true

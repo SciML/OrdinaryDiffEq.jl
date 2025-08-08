@@ -11,7 +11,7 @@ const _saveat =  SA[0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0]
 function f(u0::Array{Float64})
     tspan = (0.0, 3.0)
     prob = ODEProblem{true, SciMLBase.FullSpecialize}(lorenz!, u0, tspan)
-    sol = DiffEqBase.solve(prob, Tsit5(), saveat = _saveat, sensealg = DiffEqBase.SensitivityADPassThrough())
+    sol = SciMLBase.solve(prob, Tsit5(), saveat = _saveat, sensealg = SciMLBase.SensitivityADPassThrough())
     sum(sol)
 end;
 u0 = [1.0; 0.0; 0.0]

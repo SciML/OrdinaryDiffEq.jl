@@ -1,6 +1,6 @@
-struct DefaultInit <: DiffEqBase.DAEInitializationAlgorithm end
+struct DefaultInit <: SciMLBase.DAEInitializationAlgorithm end
 
-struct ShampineCollocationInit{T, F} <: DiffEqBase.DAEInitializationAlgorithm
+struct ShampineCollocationInit{T, F} <: SciMLBase.DAEInitializationAlgorithm
     initdt::T
     nlsolve::F
 end
@@ -11,7 +11,7 @@ function ShampineCollocationInit(initdt)
     ShampineCollocationInit(; initdt = initdt, nlsolve = nothing)
 end
 
-struct BrownFullBasicInit{T, F} <: DiffEqBase.DAEInitializationAlgorithm
+struct BrownFullBasicInit{T, F} <: SciMLBase.DAEInitializationAlgorithm
     abstol::T
     nlsolve::F
 end
@@ -39,7 +39,7 @@ function DiffEqBase.initialize_dae!(integrator::ODEIntegrator,
         initializealg = integrator.initializealg)
     _initialize_dae!(integrator, integrator.sol.prob,
         initializealg,
-        Val(DiffEqBase.isinplace(integrator.sol.prob)))
+        Val(SciMLBase.isinplace(integrator.sol.prob)))
 end
 
 ## Default algorithms

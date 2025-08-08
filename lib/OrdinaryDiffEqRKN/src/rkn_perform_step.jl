@@ -425,7 +425,7 @@ end
     @unpack t, dt, k, tprev, f, p = integrator
     duprev, uprev = integrator.uprev.x
     duprev2, uprev2 = integrator.uprev2.x
-    @unpack bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2 = cache
+    @unpack bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2, k₂ = cache
     k₁ = integrator.fsalfirst
     # if there's a discontinuity or the solver is in the first step
     if integrator.iter < 2 && !integrator.u_modified

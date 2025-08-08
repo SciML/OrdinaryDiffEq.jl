@@ -7,7 +7,7 @@ Base.@kwdef struct ExplicitTaylor2{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
-TruncatedStacktraces.@truncate_stacktrace ExplicitTaylor2 3
+@truncate_stacktrace ExplicitTaylor2 3
 # for backwards compatibility
 function ExplicitTaylor2(stage_limiter!, step_limiter! = trivial_limiter!)
     ExplicitTaylor2(stage_limiter!, step_limiter!, False())
