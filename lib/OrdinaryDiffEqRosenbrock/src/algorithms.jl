@@ -148,25 +148,6 @@ for (Alg, desc) in [
     end
 end
 
-struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
-       OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, Val{:forward}, ST, CJ}
-    tableau::TabType
-    factorization::F
-    autodiff::AD
-end
-
-function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        factorization = lu!, tableau = ROSENBROCK_DEFAULT_TABLEAU)
-    AD_choice, chunk_size, diff_type = _process_AD_choice(
-        autodiff, chunk_size, Val{:forward}())
-
-    GeneralRosenbrock{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(factorization),
-        _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(tableau)}(tableau,
-        factorization, AD_choice)
-end
-
 """
 $(rosenbrock_wolfbrandt_docstring(
     """
