@@ -56,7 +56,7 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
 
-    @unpack ustep, tstep, k, invγdt = cache
+    @unpack ustep, atmp, tstep, k, invγdt = cache
 
     if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
@@ -80,7 +80,7 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
         SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p=nlstep_data.nlprob.p)
     else
         if f isa DAEFunction
-            nlp_params = (tmp, atmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+            nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
         else
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
