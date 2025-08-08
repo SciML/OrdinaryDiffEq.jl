@@ -59,7 +59,7 @@ jobs:
           version: ${{ matrix.julia-version }}
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
-          projects: ${{ matrix.project }}
+          project: ${{ matrix.project }}
           skip: Pkg,TOML
       - uses: julia-actions/julia-buildpkg@v1
         with:
