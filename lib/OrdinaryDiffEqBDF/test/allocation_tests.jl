@@ -29,9 +29,9 @@ Currently, many BDF solvers are allocating and marked with @test_broken.
     split_prob = SplitODEProblem(f1!, f2!, [1.0, 1.0], (0.0, 1.0))
     
     # DAE problem for DAE solvers
-    function dae_f!(du, u, p, t)
-        du[1] = -0.5 * u[1] + u[2]
-        du[2] = u[1] - u[2]
+    function dae_f!(resid, du, u, p, t)
+        resid[1] = -0.5 * u[1] + u[2] - du[1]
+        resid[2] = u[1] - u[2] - du[2]
     end
     du0 = zeros(2)
     differential_vars = [true, false]
