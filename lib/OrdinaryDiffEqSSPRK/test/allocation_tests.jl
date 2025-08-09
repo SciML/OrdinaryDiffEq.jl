@@ -24,7 +24,7 @@ These tests verify that the step! operation does not allocate during stepping.
     @testset "SSPRK Solver Allocation Analysis" begin
         for solver in ssprk_solvers
             @testset "$(typeof(solver)) allocation check" begin
-                integrator = init(prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
+                integrator = init(prob, solver, dt=0.1, save_everystep=false, abstol=1e-6, reltol=1e-6)
                 step!(integrator)  # Setup step may allocate
                 
                 # Use AllocCheck to verify step! is allocation-free

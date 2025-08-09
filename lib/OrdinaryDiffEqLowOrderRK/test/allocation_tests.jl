@@ -28,9 +28,9 @@ These tests verify that the step! operation does not allocate during stepping.
             @testset "$(typeof(solver)) allocation check" begin
                 # Some solvers need fixed timestep
                 if solver isa Euler || solver isa Midpoint || solver isa Heun
-                    integrator = init(prob, solver, dt=0.01, save_everystep=false, adaptive=false)
+                    integrator = init(prob, solver, dt=0.1, save_everystep=false, adaptive=false)
                 else
-                    integrator = init(prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
+                    integrator = init(prob, solver, dt=0.1, save_everystep=false, abstol=1e-6, reltol=1e-6)
                 end
                 step!(integrator)  # Setup step may allocate
                 
