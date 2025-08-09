@@ -12,8 +12,8 @@ LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 FastClosures = "9aa1b823-49e4-5ca5-8b0f-3971ec8bab6a"
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
@@ -33,6 +33,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
@@ -61,13 +62,14 @@ ADTypes = "1.7.1"
 RecursiveArrayTools = "3.27.0"
 ODEProblemLibrary = "0.1.8"
 PreallocationTools = "0.4.23"
+AllocCheck = "0.2"
 DiffEqBase = "6.152.2"
 SafeTestsets = "0.1.0"
 SciMLOperators = "0.3.9, 0.4, 1"
 SciMLStructures = "1.4.2"
 
 [targets]
-test = ["DiffEqDevTools", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "Test", "JET", "Aqua"]
+test = ["DiffEqDevTools", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "Test", "JET", "Aqua", "AllocCheck"]
 
 [sources.OrdinaryDiffEqDifferentiation]
 path = "../OrdinaryDiffEqDifferentiation"
