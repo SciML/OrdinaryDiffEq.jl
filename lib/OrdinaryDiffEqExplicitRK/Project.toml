@@ -12,12 +12,13 @@ MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 
 [extras]
-JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+AllocCheck = "9b6a8646-10ed-4c81-ac63-a83d87ebca79"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 Test = "<0.0.1, 1"
