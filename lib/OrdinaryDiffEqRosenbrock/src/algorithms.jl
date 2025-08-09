@@ -123,8 +123,7 @@ for (Alg, desc) in [
     (:Rodas5Pr, ROSENBROCK_STEPL_DOCS[:Rodas5Pr])
 ]
     @eval begin
-        """$($desc)"""
-        Base.@__doc__ struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
+        @doc $desc struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
             linsolve::F
             precs::P
@@ -243,8 +242,7 @@ for (Alg, desc) in [
     (:Ros4LStab, ROSENBROCK_DOCS[:Ros4LStab])
 ]
     @eval begin
-        """$($desc)"""
-        Base.@__doc__ struct $Alg{CS, AD, F, P, FDT, ST, CJ} <:
+        @doc $desc struct $Alg{CS, AD, F, P, FDT, ST, CJ} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
             linsolve::F
             precs::P
