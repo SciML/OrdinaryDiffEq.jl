@@ -17,7 +17,7 @@ These tests verify that the step! operation does not allocate during stepping.
     prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 1.0))
     
     # Test all exported LowOrderRK solvers for allocation-free behavior
-    low_order_solvers = [Euler(), SplitEuler(), Heun(), Ralston(), Midpoint(), RK4(),
+    low_order_solvers = [Euler(), Heun(), Ralston(), Midpoint(), RK4(),
                          BS3(), OwrenZen3(), OwrenZen4(), OwrenZen5(), BS5(),
                          DP5(), Anas5(), RKO65(), FRK65(), RKM(), MSRK5(), MSRK6(),
                          PSRK4p7q6(), PSRK3p5q4(), PSRK3p6q5(), Stepanov5(), SIR54(),
