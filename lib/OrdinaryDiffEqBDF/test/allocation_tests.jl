@@ -39,11 +39,10 @@ Currently, many BDF solvers are allocating and marked with @test_broken.
     
     # Test all exported BDF solvers for allocation-free behavior
     # Standard ODE BDF methods
-    bdf_solvers = [ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(),
-                   SBDF(order=2), SBDF2(), SBDF3(), SBDF4(), MEBDF2()]
+    bdf_solvers = [ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(), MEBDF2()]
     
-    # IMEX methods need SplitODEProblem
-    imex_solvers = [IMEXEuler(), IMEXEulerARK()]
+    # IMEX/Split methods need SplitODEProblem
+    imex_solvers = [SBDF(order=2), SBDF2(), SBDF3(), SBDF4(), IMEXEuler(), IMEXEulerARK()]
     
     # DAE methods need DAEProblem
     dae_solvers = [DABDF2(), DImplicitEuler(), DFBDF()]
