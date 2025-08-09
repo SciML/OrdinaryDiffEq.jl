@@ -15,7 +15,7 @@ function SciMLBase.__init(
         timeseries_init = (),
         ts_init = (),
         ks_init = (),
-        recompile::Type{Val{recompile_flag}} = Val{true};
+        # recompile parameter removed - no longer needed
         saveat = (),
         tstops = (),
         d_discontinuities = (),
@@ -487,20 +487,9 @@ function SciMLBase.__init(
         dense = dense, k = ks, interp = id, alg_choice = alg_choice,
         calculate_error = false, stats = stats, saved_subsystem = saved_subsystem)
 
-    if recompile_flag == true
-        FType = typeof(f)
-        SolType = typeof(sol)
-        cacheType = typeof(cache)
-    else
-        FType = Function
-        if _alg isa OrdinaryDiffEqAlgorithm
-            SolType = SciMLBase.AbstractODESolution
-            cacheType = OrdinaryDiffEqCache
-        else
-            SolType = SciMLBase.AbstractDAESolution
-            cacheType = DAECache
-        end
-    end
+    FType = typeof(f)
+    SolType = typeof(sol)
+    cacheType = typeof(cache)
 
     # rate/state = (state/time)/state = 1/t units, internalnorm drops units
     # we don't want to differentiate through eigenvalue estimation
