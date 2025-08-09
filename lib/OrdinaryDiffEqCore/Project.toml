@@ -37,6 +37,9 @@ FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
+[weakdeps]
+EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
+
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
