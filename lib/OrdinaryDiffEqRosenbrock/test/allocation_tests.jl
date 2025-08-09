@@ -28,7 +28,7 @@ Currently, Rosenbrock solvers are allocating and marked with @test_broken.
     @testset "Rosenbrock Solver Allocation Analysis" begin
         for solver in rosenbrock_solvers
             @testset "$(typeof(solver)) allocation check" begin
-                integrator = init(linear_prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
+                integrator = init(linear_prob, solver, dt=0.1, save_everystep=false, abstol=1e-6, reltol=1e-6)
                 step!(integrator)  # Setup step may allocate
                 
                 # Use AllocCheck for accurate allocation detection

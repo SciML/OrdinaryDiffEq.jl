@@ -24,8 +24,8 @@ using Test
         for solver in explicit_rk_solvers
             @testset "$(typeof(solver)) type stability" begin
                 try
-                    @test_opt broken=true init(prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
-                    integrator = init(prob, solver, save_everystep=false, abstol=1e-6, reltol=1e-6)
+                    @test_opt broken=true init(prob, solver, dt=0.1, save_everystep=false, abstol=1e-6, reltol=1e-6)
+                    integrator = init(prob, solver, dt=0.1, save_everystep=false, abstol=1e-6, reltol=1e-6)
                     @test_opt broken=true step!(integrator)
                 catch e
                     @test_broken false # Mark as broken if solver fails to initialize
