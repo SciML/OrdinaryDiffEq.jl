@@ -2,7 +2,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3ConstantCache)
     @unpack t, dt, uprev, u, f, p, k = integrator
     @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
     @unpack c1, c2, α, β, e1, e2 = cache.tab
-    @unpack κ, cont1, cont2 = cache
+    @unpack κ, cont1, cont2, J = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -279,7 +279,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5ConstantCache,
     @unpack T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13,
     TI21, TI22, TI23, TI31, TI32, TI33 = cache.tab
     @unpack c1, c2, γ, α, β, e1, e2, e3 = cache.tab
-    @unpack κ, cont1, cont2, cont3 = cache
+    @unpack κ, cont1, cont2, cont3, J = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -633,7 +633,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA9ConstantCache,
     TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25, TI31, TI32, TI33, TI34,
     TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55 = cache.tab
     @unpack c1, c2, c3, c4, γ, α1, β1, α2, β2, e1, e2, e3, e4, e5 = cache.tab
-    @unpack κ = cache
+    @unpack κ, J = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -1150,7 +1150,7 @@ end
 
 function _ode_addstep!(integrator, cache::AdaptiveRadauConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, k = integrator
-    @unpack tabs, num_stages, index = cache
+    @unpack tabs, num_stages, index, J = cache
     tab = tabs[index]
     @unpack T, TI, γ, α, β, c, e = tab
     @unpack κ = cache
