@@ -21,10 +21,10 @@ julia = "1.10"
 OrdinaryDiffEqSDIRK = "1.2.0"
 Test = "1.10"
 AllocCheck = "0.2"
-DiffEqBase = "6.164.1"
-Reexport = "1.2.2"
-SciMLBase = "2.74.1"
-SimpleNonlinearSolve = "2.1.0"
+DiffEqBase = "6.176"
+Reexport = "1.2"
+SciMLBase = "2.99"
+SimpleNonlinearSolve = "2.7"
 
 [targets]
 test = ["JET", "OrdinaryDiffEqSDIRK", "Test", "AllocCheck"]
