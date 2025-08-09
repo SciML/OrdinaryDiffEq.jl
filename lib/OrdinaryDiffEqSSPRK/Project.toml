@@ -19,6 +19,7 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
+AllocCheck = "9b6a8646-10ed-4c81-ac63-a83d87ebca79"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"

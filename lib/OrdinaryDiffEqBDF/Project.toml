@@ -23,6 +23,7 @@ OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
+AllocCheck = "9b6a8646-10ed-4c81-ac63-a83d87ebca79"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

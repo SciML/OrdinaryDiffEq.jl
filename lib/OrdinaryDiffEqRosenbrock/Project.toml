@@ -25,6 +25,7 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
+AllocCheck = "9b6a8646-10ed-4c81-ac63-a83d87ebca79"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
