@@ -40,7 +40,7 @@ Aqua = "0.8.11"
 Preferences = "1.4.3"
 julia = "1.10"
 
-AllocCheck = "9b6a8646-10ed-4c81-ac63-a83d87ebca79"
+AllocCheck = "0.2"
 
 [targets]
 test = ["AllocCheck", "Aqua", "DiffEqDevTools", "JET", "Random", "SafeTestsets", "Test"]

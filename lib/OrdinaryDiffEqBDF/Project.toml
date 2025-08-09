@@ -58,7 +58,7 @@ TruncatedStacktraces = "1.4.0"
 SciMLBase = "2"
 julia = "1.10"
 
-AllocCheck = "9b6a8646-10ed-4c81-ac63-a83d87ebca79"
+AllocCheck = "0.2"
 
 [targets]
 test = ["AllocCheck", "Aqua", "DiffEqDevTools", "Enzyme", "ForwardDiff", "JET", "LinearSolve", "NonlinearSolve", "ODEProblemLibrary", "Random", "SafeTestsets", "StaticArrays", "Test"]

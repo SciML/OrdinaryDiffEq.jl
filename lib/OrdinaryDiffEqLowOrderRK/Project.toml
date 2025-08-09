@@ -31,7 +31,7 @@ OrdinaryDiffEqCore = "1.1"
 Static = "1.1.1"
 julia = "1.10"
 
-AllocCheck = "9b6a8646-10ed-4c81-ac63-a83d87ebca79"
+AllocCheck = "0.2"
 
 [targets]
 test = ["AllocCheck", "Aqua", "DiffEqDevTools", "JET", "ODEProblemLibrary", "Random", "SafeTestsets", "Test"]
