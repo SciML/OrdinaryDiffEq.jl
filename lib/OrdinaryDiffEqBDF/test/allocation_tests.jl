@@ -22,7 +22,7 @@ Currently, many BDF solvers are allocating and marked with @test_broken.
     
     # Test all exported BDF solvers for allocation-free behavior
     bdf_solvers = [ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(),
-                   SBDF(), SBDF2(), SBDF3(), SBDF4(), MEBDF2(), IMEXEuler(), IMEXEulerARK(),
+                   SBDF(order=2), SBDF2(), SBDF3(), SBDF4(), MEBDF2(), IMEXEuler(), IMEXEulerARK(),
                    DABDF2(), DImplicitEuler(), DFBDF()]
     
     @testset "BDF Solver Allocation Analysis" begin

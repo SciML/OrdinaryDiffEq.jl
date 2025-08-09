@@ -39,7 +39,7 @@ These tests verify that the step! operation does not allocate during stepping.
                 
                 # These solvers should be allocation-free, but mark as broken for now
                 # to verify with AllocCheck (more accurate than @allocated)
-                @test_broken length(allocs) == 0
+                @test length(allocs) == 0 broken=true
                 
                 if length(allocs) > 0
                     println("AllocCheck found $(length(allocs)) allocation sites in $(typeof(solver)) step!:")
