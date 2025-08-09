@@ -14,8 +14,7 @@ function SciMLBase.__init(
         alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
         timeseries_init = (),
         ts_init = (),
-        ks_init = (),
-        # recompile parameter removed - no longer needed
+        ks_init = ();
         saveat = (),
         tstops = (),
         d_discontinuities = (),
