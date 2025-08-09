@@ -19,8 +19,8 @@ using Test
         split_prob = SplitODEProblem((u, p, t) -> -u, (u, p, t) -> 0.0, 1.0, (0.0, 1.0))
         
         # DAE problem for DAE solvers
-        function simple_dae!(du, u, p, t)
-            du[1] = -u[1]
+        function simple_dae!(resid, du, u, p, t)
+            resid[1] = -u[1] - du[1]
         end
         u0 = [1.0]
         du0 = [-1.0]
