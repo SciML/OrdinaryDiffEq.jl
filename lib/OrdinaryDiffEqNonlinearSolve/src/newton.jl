@@ -246,10 +246,10 @@ end
         update_coefficients!(W, ustep, p, tstep; dtgamma = γW, transform = true)
     end
 
-    if integrator.opts.adaptive
-        reltol = integrator.opts.reltol
-    else
+    if !integrator.opts.adaptive && !(integrator.opts.reltol isa AbstractArray)
         reltol = eps(eltype(dz))
+    else
+        reltol = integrator.opts.reltol
     end
 
     if is_always_new(nlsolver) || (iter == 1 && new_W)
