@@ -1,4 +1,4 @@
-module OrdinaryDiffEqSIMDRungeKutta
+module OrdinaryDiffEqSIMDRK
 
 using MuladdMacro, UnPack, Static
 using OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCache,

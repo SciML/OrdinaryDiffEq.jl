@@ -151,9 +151,9 @@ export OrdinaryDiffEqSDIRK, ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, 
        SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8,
        ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
 
-import OrdinaryDiffEqSIMDRungeKutta: OrdinaryDiffEqSIMDRungeKutta
-using OrdinaryDiffEqSIMDRungeKutta: MER5v2, MER6v2, RK6v4
-export OrdinaryDiffEqSIMDRungeKutta, MER5v2, MER6v2, RK6v4
+import OrdinaryDiffEqSIMDRK: OrdinaryDiffEqSIMDRK
+using OrdinaryDiffEqSIMDRK: MER5v2, MER6v2, RK6v4
+export OrdinaryDiffEqSIMDRK, MER5v2, MER6v2, RK6v4
 
 import OrdinaryDiffEqBDF: OrdinaryDiffEqBDF
 using OrdinaryDiffEqBDF: ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
