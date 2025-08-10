@@ -25,6 +25,17 @@ include("interpolants.jl")
 include("functionmap_perform_step.jl")
 include("fixed_timestep_perform_step.jl")
 
+# Default algorithm for DiscreteProblem
+function SciMLBase.__solve(prob::SciMLBase.DiscreteProblem, ::Nothing, args...;
+                           kwargs...)
+    SciMLBase.__solve(prob, FunctionMap(), args...; kwargs...)
+end
+
+function SciMLBase.__init(prob::SciMLBase.DiscreteProblem, ::Nothing, args...;
+                          kwargs...)
+    SciMLBase.__init(prob, FunctionMap(), args...; kwargs...)
+end
+
 export FunctionMap
 
 end
