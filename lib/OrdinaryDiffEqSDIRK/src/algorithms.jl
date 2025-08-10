@@ -360,7 +360,7 @@ end
 @doc SDIRK_docstring(
     """SSPSDIRK is an SSP-optimized SDIRK method,
 so it's an implicit SDIRK method for handling stiffness but if the `dt` is below the SSP `coefficient * dt`,
-then the SSP property of the SSP integrators (the other page) is satisified.
+then the SSP property of the SSP integrators (the other page) is satisfied.
 As such this is a method which is expected to be good on advection-dominated cases where an explicit SSP integrator would be used,
 but where reaction equations are sufficient stiff to justify implicit integration.""",
     "SSPSDIRK2";

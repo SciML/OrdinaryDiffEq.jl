@@ -116,7 +116,7 @@ end
 
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     sigma::Rational{Int} # Parameter for order selection
     res::uNoUnitsType # Storage for the scaled residual of u and utilde
 
@@ -303,7 +303,7 @@ struct extrapolation_coefficients{T1, T2, T3}
     # This structure is used by the caches of the algorithms
     # ExtrapolationMidpointDeuflhard() and  ExtrapolationMidpointHairerWanner().
     # It contains the constant coefficients used to extrapolate the internal discretisations
-    # in their perfom_step! function and some additional constant data.
+    # in their perform_step! function and some additional constant data.
 
     subdividing_sequence::T1  # subdividing_sequence[n] is used for the (n -1)th internal discretisation
 
@@ -891,7 +891,7 @@ end
     # Values that are mutated
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
@@ -945,7 +945,7 @@ end
     # Constant values
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     coefficients::extrapolation_coefficients
     stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.min_order - 1)
 end
@@ -996,7 +996,7 @@ end
     # Values that are mutated
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
@@ -1029,7 +1029,7 @@ end
     # Constant values
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     coefficients::extrapolation_coefficients
     stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.min_order - 1)
 
@@ -1191,7 +1191,7 @@ end
     # Values that are mutated
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
@@ -1254,7 +1254,7 @@ end
     # Constant values
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     coefficients::extrapolation_coefficients
     stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
     sigma::Rational{Int} # Parameter for order selection
@@ -1309,7 +1309,7 @@ end
     # Values that are mutated
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
@@ -1397,7 +1397,7 @@ end
     # Constant values
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     coefficients::extrapolation_coefficients
     stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
     sigma::Rational{Int} # Parameter for order selection
@@ -1524,7 +1524,7 @@ end
     # Values that are mutated
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
@@ -1596,7 +1596,7 @@ end
     # Constant values
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     coefficients::extrapolation_coefficients
     stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
     sigma::Rational{Int} # Parameter for order selection

@@ -57,7 +57,7 @@ Scientific Computing, 18 (1), pp. 1-22.
   Differential-Algebraic Equations Forum. Springer, Cham. https://doi.org/10.1007/978-3-030-53905-4_6
 
 #### Rodas5
-- Di Marzo G. RODAS5(4) – Méthodes de Rosenbrock d’ordre 5(4) adaptées aux problemes
+- Di Marzo G. RODAS5(4) – Méthodes de Rosenbrock d'ordre 5(4) adaptées aux problèmes
 différentiels-algébriques. MSc mathematics thesis, Faculty of Science,
 University of Geneva, Switzerland.
 
@@ -123,8 +123,7 @@ for (Alg, desc) in [
     (:Rodas5Pr, ROSENBROCK_STEPL_DOCS[:Rodas5Pr])
 ]
     @eval begin
-        """$($desc)"""
-        Base.@__doc__ struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
+        @doc $desc struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
             linsolve::F
             precs::P
@@ -146,25 +145,6 @@ for (Alg, desc) in [
                 stage_limiter!, AD_choice)
         end
     end
-end
-
-struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
-       OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, Val{:forward}, ST, CJ}
-    tableau::TabType
-    factorization::F
-    autodiff::AD
-end
-
-function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        factorization = lu!, tableau = ROSENBROCK_DEFAULT_TABLEAU)
-    AD_choice, chunk_size, diff_type = _process_AD_choice(
-        autodiff, chunk_size, Val{:forward}())
-
-    GeneralRosenbrock{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(factorization),
-        _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(tableau)}(tableau,
-        factorization, AD_choice)
 end
 
 """
@@ -243,8 +223,7 @@ for (Alg, desc) in [
     (:Ros4LStab, ROSENBROCK_DOCS[:Ros4LStab])
 ]
     @eval begin
-        """$($desc)"""
-        Base.@__doc__ struct $Alg{CS, AD, F, P, FDT, ST, CJ} <:
+        @doc $desc struct $Alg{CS, AD, F, P, FDT, ST, CJ} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
             linsolve::F
             precs::P

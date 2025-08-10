@@ -12,6 +12,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3ConstantCache)
     rtol = @. reltol^(3 / 4) / 10
     atol = @. rtol * (abstol / reltol)
     αdt, βdt = α / dt, β / dt
+    J = calc_J(integrator, cache)
 
     c1m1 = c1 - 1
     if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
@@ -137,6 +138,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
     mass_matrix = integrator.f.mass_matrix
     # precalculations
     αdt, βdt = α / dt, β / dt
+    new_jac = false
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
         @inbounds for II in CartesianIndices(J)
             W1[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
@@ -292,6 +294,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5ConstantCache,
     c2m1 = c2 - 1
     c1mc2 = c1 - c2
     γdt, αdt, βdt = γ / dt, α / dt, β / dt
+    J = calc_J(integrator, cache)
     if u isa Number
         LU1 = -γdt * mass_matrix + J
         LU2 = -(αdt + βdt * im) * mass_matrix + J
@@ -444,6 +447,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
     c2m1 = c2 - 1
     c1mc2 = c1 - c2
     γdt, αdt, βdt = γ / dt, α / dt, β / dt
+    new_jac = false
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
@@ -654,6 +658,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA9ConstantCache,
     c3mc4 = c3 - c4
 
     γdt, α1dt, β1dt, α2dt, β2dt = γ / dt, α1 / dt, β1 / dt, α2 / dt, β2 / dt
+    J = calc_J(integrator, cache)
     if u isa Number
         LU1 = -γdt * mass_matrix + J
         LU2 = -(α1dt + β1dt * im) * mass_matrix + J
@@ -884,6 +889,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
     c3mc4 = c3 - c4
 
     γdt, α1dt, β1dt, α2dt, β2dt = γ / dt, α1 / dt, β1 / dt, α2 / dt, β2 / dt
+    new_jac = false
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
@@ -1164,6 +1170,7 @@ function _ode_addstep!(integrator, cache::AdaptiveRadauConstantCache, repeat_ste
     atol = @.. rtol*(abstol / reltol)
 
     γdt, αdt, βdt = γ / dt, α ./ dt, β ./ dt
+    J = calc_J(integrator, cache)
 
     if u isa Number
         LU1 = -γdt * mass_matrix + J
@@ -1394,6 +1401,7 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
     end
 
     #no new J
+    new_jac = false
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]

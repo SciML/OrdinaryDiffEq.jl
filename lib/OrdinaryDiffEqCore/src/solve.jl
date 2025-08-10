@@ -14,8 +14,7 @@ function SciMLBase.__init(
         alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
         timeseries_init = (),
         ts_init = (),
-        ks_init = (),
-        recompile::Type{Val{recompile_flag}} = Val{true};
+        ks_init = ();
         saveat = (),
         tstops = (),
         d_discontinuities = (),
@@ -70,7 +69,7 @@ function SciMLBase.__init(
         initialize_integrator = true,
         alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
-        kwargs...) where {recompile_flag}
+        kwargs...)
     if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")
     end
@@ -487,20 +486,9 @@ function SciMLBase.__init(
         dense = dense, k = ks, interp = id, alg_choice = alg_choice,
         calculate_error = false, stats = stats, saved_subsystem = saved_subsystem)
 
-    if recompile_flag == true
-        FType = typeof(f)
-        SolType = typeof(sol)
-        cacheType = typeof(cache)
-    else
-        FType = Function
-        if _alg isa OrdinaryDiffEqAlgorithm
-            SolType = SciMLBase.AbstractODESolution
-            cacheType = OrdinaryDiffEqCache
-        else
-            SolType = SciMLBase.AbstractDAESolution
-            cacheType = DAECache
-        end
-    end
+    FType = typeof(f)
+    SolType = typeof(sol)
+    cacheType = typeof(cache)
 
     # rate/state = (state/time)/state = 1/t units, internalnorm drops units
     # we don't want to differentiate through eigenvalue estimation
