@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqExtrapolation"
 uuid = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "1.6.0"
+version = "1.7.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -29,24 +29,24 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
 Test = "<0.0.1, 1"
-FastBroadcast = "0.3.5"
+FastBroadcast = "0.3"
 Random = "<0.0.1, 1"
 DiffEqDevTools = "2.44.4"
-MuladdMacro = "0.2.4"
-LinearSolve = "2.32.0, 3"
-Polyester = "0.7.16"
+MuladdMacro = "0.2"
+LinearSolve = "3.26"
+Polyester = "0.7"
 OrdinaryDiffEqDifferentiation = "<0.0.1, 1.2"
-SciMLBase = "2"
+SciMLBase = "2.99"
 OrdinaryDiffEqCore = "1.19"
 Aqua = "0.8.11"
 julia = "1.10"
 JET = "0.9.18, 0.10.4"
-ADTypes = "1.11"
-RecursiveArrayTools = "3.27.0"
-FastPower = "1"
+ADTypes = "1.16"
+RecursiveArrayTools = "3.36"
+FastPower = "1.1"
 AllocCheck = "0.2"
-DiffEqBase = "6.152.2"
-Reexport = "1.2.2"
+DiffEqBase = "6.176"
+Reexport = "1.2"
 SafeTestsets = "0.1.0"
 
 [targets]
