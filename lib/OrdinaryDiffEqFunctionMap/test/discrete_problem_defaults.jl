@@ -12,13 +12,13 @@ using SciMLBase
         # Test solve without explicit algorithm
         sol = solve(prob_scalar)
         @test typeof(sol.alg).name.name == :FunctionMap
-        @test sol.alg == FunctionMap(scale_by_time=false)
+        @test sol.alg == FunctionMap()
         @test length(sol.u) > 1
         
         # Test init without explicit algorithm
         integrator = init(prob_scalar)
         @test typeof(integrator.alg).name.name == :FunctionMap
-        @test integrator.alg == FunctionMap(scale_by_time=false)
+        @test integrator.alg == FunctionMap()
     end
     
     # Test array DiscreteProblem
@@ -32,13 +32,13 @@ using SciMLBase
         # Test solve without explicit algorithm
         sol = solve(prob_array)
         @test typeof(sol.alg).name.name == :FunctionMap
-        @test sol.alg == FunctionMap(scale_by_time=false)
+        @test sol.alg == FunctionMap()
         @test length(sol.u) > 1
         
         # Test init without explicit algorithm
         integrator = init(prob_array)
         @test typeof(integrator.alg).name.name == :FunctionMap
-        @test integrator.alg == FunctionMap(scale_by_time=false)
+        @test integrator.alg == FunctionMap()
     end
     
     # Test that explicit algorithm specification still works
