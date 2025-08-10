@@ -36,7 +36,7 @@ resize!(i, 5)
 @test length(i.cache.nlsolver.cache.weight) == 5
 @test all(size(DI.jacobian(
     (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.nlsolver.cache.jac_config[1],
-    AutoForwardDiff(tag = ForwardDiff.Tag(SciMLBase.OrdinaryDiffEqTag(), Float64)), rand(5))) .==
+    AutoForwardDiff(tag = ForwardDiff.Tag(DiffEqBase.OrdinaryDiffEqTag(), Float64)), rand(5))) .==
           5)
 solve!(i)
 
@@ -81,7 +81,7 @@ resize!(i, 5)
 @test length(i.cache.linsolve_tmp) == 5
 @test all(size(DI.jacobian(
     (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.jac_config[1],
-    AutoForwardDiff(tag = ForwardDiff.Tag(SciMLBase.OrdinaryDiffEqTag(), Float64)), rand(5))) .==
+    AutoForwardDiff(tag = ForwardDiff.Tag(DiffEqBase.OrdinaryDiffEqTag(), Float64)), rand(5))) .==
           5)
 solve!(i)
 

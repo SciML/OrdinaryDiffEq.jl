@@ -1,5 +1,5 @@
 using Test
-using OrdinaryDiffEq, Calculus, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes, DifferentiationInterface
+using OrdinaryDiffEq, OrdinaryDiffEqCore, Calculus, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes, DifferentiationInterface
 
 function f(du, u, p, t)
     du[1] = -p[1]
@@ -340,11 +340,11 @@ implicit_algs = [FBDF,
     alg9 = alg(autodiff = AutoForwardDiff(chunksize = 1))
     alg10 = alg(chunk_size = 1)
 
-    @test OrdinaryDiffEq.alg_autodiff(alg1) == OrdinaryDiffEq.alg_autodiff(alg2)
-    @test OrdinaryDiffEq.alg_autodiff(alg3) == OrdinaryDiffEq.alg_autodiff(alg4)
-    @test OrdinaryDiffEq.alg_autodiff(alg5) == OrdinaryDiffEq.alg_autodiff(alg6)
-    @test OrdinaryDiffEq.alg_autodiff(alg7) == OrdinaryDiffEq.alg_autodiff(alg8)
-    @test OrdinaryDiffEq.alg_autodiff(alg9) == OrdinaryDiffEq.alg_autodiff(alg10)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg1) == OrdinaryDiffEqCore.alg_autodiff(alg2)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg3) == OrdinaryDiffEqCore.alg_autodiff(alg4)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg5) == OrdinaryDiffEqCore.alg_autodiff(alg6)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg7) == OrdinaryDiffEqCore.alg_autodiff(alg8)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg9) == OrdinaryDiffEqCore.alg_autodiff(alg10)
 end
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2675
