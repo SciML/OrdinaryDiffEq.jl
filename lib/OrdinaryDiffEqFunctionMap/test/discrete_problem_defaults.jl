@@ -1,7 +1,19 @@
-using OrdinaryDiffEqFunctionMap
-using OrdinaryDiffEqCore
+import OrdinaryDiffEqFunctionMap
+import OrdinaryDiffEqCore
 using Test
 using SciMLBase
+using SciMLBase: solve, init, DiscreteProblem
+
+const FunctionMap = OrdinaryDiffEqFunctionMap.FunctionMap
+
+# Helper functions to check algorithm properties regardless of module context
+is_functionmap(alg) = typeof(alg).name.name == :FunctionMap
+function get_scale_by_time(alg)
+    # Access the type parameter directly since it's FunctionMap{scale_by_time}
+    T = typeof(alg)
+    # The parameter is stored as a type parameter
+    return T.parameters[1]
+end
 
 @testset "DiscreteProblem Default Algorithm" begin
     # Test scalar DiscreteProblem
@@ -11,14 +23,14 @@ using SciMLBase
     @testset "Scalar DiscreteProblem" begin
         # Test solve without explicit algorithm
         sol = solve(prob_scalar)
-        @test typeof(sol.alg).name.name == :FunctionMap
-        @test sol.alg == FunctionMap()
+        @test is_functionmap(sol.alg)
+        @test get_scale_by_time(sol.alg) == false
         @test length(sol.u) > 1
         
         # Test init without explicit algorithm
         integrator = init(prob_scalar)
-        @test typeof(integrator.alg).name.name == :FunctionMap
-        @test integrator.alg == FunctionMap()
+        @test is_functionmap(integrator.alg)
+        @test get_scale_by_time(integrator.alg) == false
     end
     
     # Test array DiscreteProblem
@@ -31,29 +43,33 @@ using SciMLBase
     @testset "Array DiscreteProblem" begin
         # Test solve without explicit algorithm
         sol = solve(prob_array)
-        @test typeof(sol.alg).name.name == :FunctionMap
-        @test sol.alg == FunctionMap()
+        @test is_functionmap(sol.alg)
+        @test get_scale_by_time(sol.alg) == false
         @test length(sol.u) > 1
         
         # Test init without explicit algorithm
         integrator = init(prob_array)
-        @test typeof(integrator.alg).name.name == :FunctionMap
-        @test integrator.alg == FunctionMap()
+        @test is_functionmap(integrator.alg)
+        @test get_scale_by_time(integrator.alg) == false
     end
     
     # Test that explicit algorithm specification still works
     @testset "Explicit FunctionMap specification" begin
         sol1 = solve(prob_scalar, FunctionMap())
-        @test sol1.alg == FunctionMap(scale_by_time=false)
+        @test is_functionmap(sol1.alg)
+        @test get_scale_by_time(sol1.alg) == false
         
         sol2 = solve(prob_scalar, FunctionMap(scale_by_time=true), dt=0.1)
-        @test sol2.alg == FunctionMap(scale_by_time=true)
+        @test is_functionmap(sol2.alg)
+        @test get_scale_by_time(sol2.alg) == true
         
         integrator1 = init(prob_scalar, FunctionMap())
-        @test integrator1.alg == FunctionMap(scale_by_time=false)
+        @test is_functionmap(integrator1.alg)
+        @test get_scale_by_time(integrator1.alg) == false
         
         integrator2 = init(prob_scalar, FunctionMap(scale_by_time=true), dt=0.1)
-        @test integrator2.alg == FunctionMap(scale_by_time=true)
+        @test is_functionmap(integrator2.alg)
+        @test get_scale_by_time(integrator2.alg) == true
     end
     
     # Test that the default behaves correctly with different problem types
@@ -66,10 +82,10 @@ using SciMLBase
         prob_int = DiscreteProblem(henon_map!, [0.5, 0.5], (0, 10))
         
         sol = solve(prob_int)
-        @test typeof(sol.alg).name.name == :FunctionMap
+        @test is_functionmap(sol.alg)
         @test eltype(sol.t) <: Integer
         
         integrator = init(prob_int)
-        @test typeof(integrator.alg).name.name == :FunctionMap
+        @test is_functionmap(integrator.alg)
     end
 end
