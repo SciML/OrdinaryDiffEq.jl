@@ -43,7 +43,7 @@ RecursiveArrayTools = "3.36"
 AllocCheck = "0.2"
 OrdinaryDiffEqRosenbrock = "<0.0.1, 1"
 DiffEqBase = "6.176"
-SciMLOperators = "0.4"
+SciMLOperators = "1.4"
 Reexport = "1.2"
 
 [targets]
