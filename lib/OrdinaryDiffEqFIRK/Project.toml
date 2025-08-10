@@ -58,7 +58,7 @@ AllocCheck = "0.2"
 DiffEqBase = "6.176"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
-SciMLOperators = "0.4"
+SciMLOperators = "1.4"
 
 [targets]
 test = ["DiffEqDevTools", "GenericSchur", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "JET", "Aqua", "AllocCheck"]
