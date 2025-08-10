@@ -69,7 +69,7 @@ function SciMLBase.__init(
         initialize_integrator = true,
         alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
-        kwargs...) where {recompile_flag}
+        kwargs...)
     if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")
     end
