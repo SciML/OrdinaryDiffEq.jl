@@ -217,8 +217,17 @@ end
         z₁ = dt * integrator.fsalfirst
     end
     
-    if s == 4  # 4-stage methods like KenCarp3, Kvaerno3
-        z₂ = z₁
+    if s >= 2 && hasfield(typeof(cache), :z₂)
+        if hasproperty(tab, :α_pred) && tab.α_pred !== nothing
+            z₂ = getfield(cache, :z₂)
+            @.. broadcast=false z₂ = zero(eltype(u))
+            for j in 1:1
+                @.. broadcast=false z₂ += tab.α_pred[2, j] * (j == 1 ? z₁ : zero(z₁))
+            end
+        else
+            # Fallback: copy previous stage
+            z₂ = z₁
+        end
         nlsolver.z = z₂
         tmp = uprev + γ * z₁
         
@@ -239,10 +248,14 @@ end
             integrator.stats.nf2 += 1
             tmp = uprev + A[3,1] * z₁ + A[3,2] * z₂ + A_explicit[3,1] * k1 + A_explicit[3,2] * k2
         else
-            θ = c[3] / c[2]
-            α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c[2]) * γ)
-            α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c[2]) * γ)
-            z₃ = α31 * z₁ + α32 * z₂
+            if hasproperty(tab, :α_pred) && tab.α_pred !== nothing
+                z₃ = tab.α_pred[3,1] * z₁ + tab.α_pred[3,2] * z₂
+            else
+                θ = c[3] / c[2]
+                α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c[2]) * γ)
+                α32 = ((-2θ + 3θ^2)) + (6θ * (1 - θ) / c[2]) * γ
+                z₃ = α31 * z₁ + α32 * z₂
+            end
             tmp = uprev + A[3,1] * z₁ + A[3,2] * z₂
         end
         
@@ -260,7 +273,11 @@ end
             integrator.stats.nf2 += 1
             tmp = uprev + A[4,1] * z₁ + A[4,2] * z₂ + A[4,3] * z₃ + A_explicit[4,1] * k1 + A_explicit[4,2] * k2 + A_explicit[4,3] * k3
         else
-            z₄ = z₁ 
+            if hasproperty(tab, :α_pred) && tab.α_pred !== nothing
+                z₄ = tab.α_pred[4,1] * z₁ + tab.α_pred[4,2] * z₂ + tab.α_pred[4,3] * z₃
+            else
+                z₄ = z₁
+            end
             tmp = uprev + A[4,1] * z₁ + A[4,2] * z₂ + A[4,3] * z₃
         end
         

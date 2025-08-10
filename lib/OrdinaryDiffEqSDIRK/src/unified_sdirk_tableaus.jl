@@ -19,6 +19,7 @@ struct SDIRKTableau{T, T2, S, hasEmbedded} <: AbstractTableau{T}
     A_explicit::Union{SMatrix{S, S, T}, Nothing}
     b_explicit::Union{SVector{S, T}, Nothing}
     c_explicit::Union{SVector{S, T2}, Nothing}
+    α_pred::Union{SMatrix{S, S, T2}, Nothing}
 end
 
 function SDIRKTableau(A::SMatrix{S, S, T}, b::SVector{S, T}, c::SVector{S, T2}, γ::T,
@@ -26,13 +27,14 @@ function SDIRKTableau(A::SMatrix{S, S, T}, b::SVector{S, T}, c::SVector{S, T2}, 
                       is_fsal=false, is_stiffly_accurate=false,
                       is_A_stable=true, is_L_stable=false,
                       predictor_type=:default, has_additive_splitting=false,
-                      A_explicit=nothing, b_explicit=nothing, c_explicit=nothing) where {S, T, T2}
+                      A_explicit=nothing, b_explicit=nothing, c_explicit=nothing,
+                      α_pred=nothing) where {S, T, T2}
     
     hasEmbedded = b_embed !== nothing
     SDIRKTableau{T, T2, S, hasEmbedded}(A, b, c, b_embed, γ, order, embedded_order,
                                          is_fsal, is_stiffly_accurate, is_A_stable,
                                          is_L_stable, predictor_type, has_additive_splitting,
-                                         A_explicit, b_explicit, c_explicit)
+                                         A_explicit, b_explicit, c_explicit, α_pred)
 end
 
 function TRBDF2Tableau_unified(T=Float64, T2=Float64)
