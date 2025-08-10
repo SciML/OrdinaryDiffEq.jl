@@ -1,0 +1,32 @@
+name = "OrdinaryDiffEqSIMDRungeKutta"
+uuid = "dc97f408-7a72-40e4-9b0d-228a53b292f8"
+authors = ["Yingbo Ma <mayingbo5@gmail.com>", "Chris Elrod <elrodc@gmail.com>"]
+version = "1.0.0"
+
+[deps]
+MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SLEEFPirates = "476501e8-09a2-5ece-8869-fb82de89a1fa"
+Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
+UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+VectorizationBase = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
+
+[compat]
+MuladdMacro = "0.2"
+OrdinaryDiffEqCore = "1"
+Reexport = "1"
+SLEEFPirates = "0.6"
+Static = "0.7, 0.8, 1"
+UnPack = "1"
+VectorizationBase = "0.21"
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
+
+[sources.OrdinaryDiffEqCore]
+path = "../OrdinaryDiffEqCore"

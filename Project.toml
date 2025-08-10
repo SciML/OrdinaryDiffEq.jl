@@ -61,6 +61,7 @@ OrdinaryDiffEqStabilizedIRK = "e3e12d00-db14-5390-b879-ac3dd2ef6296"
 LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 Polyester = "f517fe37-dbe3-4b94-8317-1923a5111588"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+OrdinaryDiffEqSIMDRungeKutta = "dc97f408-7a72-40e4-9b0d-228a53b292f8"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
 SimpleUnPack = "ce78b400-467f-4804-87d8-8f486da07d0a"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
@@ -169,6 +170,7 @@ OrdinaryDiffEqStabilizedIRK = "1"
 LineSearches = "7.4"
 Polyester = "0.7.18"
 OrdinaryDiffEqSDIRK = "1"
+OrdinaryDiffEqSIMDRungeKutta = "1"
 OrdinaryDiffEqDifferentiation = "1"
 SimpleUnPack = "1.1"
 SciMLBase = "2.108"
@@ -226,6 +228,9 @@ path = "lib/OrdinaryDiffEqFunctionMap"
 
 [sources.OrdinaryDiffEqSDIRK]
 path = "lib/OrdinaryDiffEqSDIRK"
+
+[sources.OrdinaryDiffEqSIMDRungeKutta]
+path = "lib/OrdinaryDiffEqSIMDRungeKutta"
 
 [sources.OrdinaryDiffEqDifferentiation]
 path = "lib/OrdinaryDiffEqDifferentiation"
