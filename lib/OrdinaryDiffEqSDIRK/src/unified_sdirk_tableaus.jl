@@ -59,9 +59,9 @@ function TRBDF2Tableau_unified(T=Float64, T2=Float64)
 end
 
 function ImplicitEulerTableau(T=Float64, T2=Float64)
-    A = @SMatrix [1.0]
-    b = @SVector [1.0]
-    c = @SVector [1.0]
+    A = @SMatrix [T(1.0)]
+    b = @SVector [T(1.0)]
+    c = @SVector [T2(1.0)]
     γ = T(1.0)
     
     SDIRKTableau(A, b, c, γ, 1;
@@ -71,90 +71,109 @@ function ImplicitEulerTableau(T=Float64, T2=Float64)
 end
 
 function ImplicitMidpointTableau(T=Float64, T2=Float64)
-    γ = T(0.5)
-    A = @SMatrix [γ]
-    b = @SVector [1.0]
-    c = @SVector [γ]
+    γT = T(0.5)
+    γc = T2(0.5)
+    A = @SMatrix [γT]
+    b = @SVector [T(1.0)]
+    c = @SVector [γc]
     
-    SDIRKTableau(A, b, c, γ, 2;
+    SDIRKTableau(A, b, c, γT, 2;
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
                  predictor_type=:trivial)
 end
 
 function TrapezoidTableau(T=Float64, T2=Float64)
-    γ = T(0.5)
-    A = @SMatrix [0   0;
-                  0.5 0.5]
-    b = @SVector [0.5, 0.5]
-    c = @SVector [0.0, 1.0]
+    γT = T(0.5)
+    A = @SMatrix [T(0)   T(0);
+                  T(0.5) T(0.5)]
+    b = @SVector [T(0.5), T(0.5)]
+    c = @SVector [T2(0.0), T2(1.0)]
     
-    SDIRKTableau(A, b, c, γ, 2;
+    SDIRKTableau(A, b, c, γT, 2;
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
                  predictor_type=:default)
 end
 
 function SDIRK2Tableau(T=Float64, T2=Float64)
-    γ = T(1 - 1/sqrt(2))
-    A = @SMatrix [γ         0;
-                  1-γ       γ]
-    b = @SVector [1-γ, γ]
-    c = @SVector [γ, 1]
+    γT = T(1 - 1/sqrt(2))
+    γc = T2(1 - 1/sqrt(2))
+    A = @SMatrix [γT        T(0);
+                  T(1)-γT   γT]
+    b = @SVector [T(1)-γT, γT]
+    c = @SVector [γc, T2(1)]
     
-    SDIRKTableau(A, b, c, γ, 2;
+    SDIRKTableau(A, b, c, γT, 2;
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=false,
                  predictor_type=:default)
 end
 
 function SSPSDIRK2Tableau(T=Float64, T2=Float64)
-    γ = T(1 - 1/sqrt(2))
-    A = @SMatrix [γ      0;
-                  1-2γ   γ]
-    b = @SVector [0.5, 0.5]
-    c = @SVector [γ, 1-γ]
+    γT = T(1 - 1/sqrt(2))
+    γc = T2(1 - 1/sqrt(2))
+    A = @SMatrix [γT     T(0);
+                  T(1)-T(2)*γT   γT]
+    b = @SVector [T(0.5), T(0.5)]
+    c = @SVector [γc, T2(1)-γc]
     
-    SDIRKTableau(A, b, c, γ, 2;
+    SDIRKTableau(A, b, c, γT, 2;
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
                  predictor_type=:default)
 end
 
 function Kvaerno3Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.4358665215)
+    γT = T(0.4358665215)
+    γc = T2(0.4358665215)
     
-    A = @SMatrix [γ                        0                        0                      0;
-                  T(0.490563388419108)     γ                        0                      0;
-                  T(0.073570090080892)     0                        γ                      0;
-                  T(0.308809969973036)     T(1.490563388254106)     -T(1.235239879727145)  γ]
+    A = @SMatrix [γT                       0                        0                      0;
+                  T(0.490563388419108)     γT                       0                      0;
+                  T(0.073570090080892)     0                        γT                     0;
+                  T(0.308809969973036)     T(1.490563388254106)     -T(1.235239879727145)  γT]
     
     b = @SVector [T(0.490563388419108), T(0.073570090080892), T(0.4358665215), T(0.0)]
-    c = @SVector [γ, 2γ, T2(1), T2(1)]
+    c = @SVector [γc, 2γc, T2(1), T2(1)]
     
     b_embed = b - A[4, :]
     
-    SDIRKTableau(A, b, c, γ, 3;
+    # Build Hermite-style predictor coefficients for stage 3 from z₁ and z₂
+    # θ = c3/c2 over interval [0,c2]
+    c2 = 2γc
+    θ = c[3] / c2
+    α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γc)
+    α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γc)
+    α_pred = @SMatrix T2[
+        0 0 0 0;
+        0 0 0 0;
+        α31 α32 0 0;
+        0 0 0 0
+    ]
+
+    SDIRKTableau(A, b, c, γT, 3;
                  b_embed=b_embed, embedded_order=2,
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
-                 predictor_type=:hermite)
+                 predictor_type=:hermite,
+                 α_pred=α_pred)
 end
 
 function KenCarp3Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.435866521508459)
+    γT = T(0.435866521508459)
+    γc = T2(0.435866521508459)
     
-    A = @SMatrix [γ                          0                        0                       0;
-                  T(0.2576482460664272)      γ                        0                       0;
-                  -T(0.09351476757488625)    0                        γ                       0;
-                  T(0.18764102434672383)     -T(0.595297473576955)    T(0.9717899277217721)   γ]
+    A = @SMatrix [γT                         0                        0                       0;
+                  T(0.2576482460664272)      γT                       0                       0;
+                  -T(0.09351476757488625)    0                        γT                      0;
+                  T(0.18764102434672383)     -T(0.595297473576955)    T(0.9717899277217721)   γT]
     
     b = @SVector [T(2756255671327//12835298489170), 
                   -T(10771552573575//22201958757719),
                   T(9247589265047//10645013368117), 
                   T(2193209047091//5459859503100)]
                   
-    c = @SVector [γ, 2γ, T2(0.6), T2(1)]
+    c = @SVector [γc, 2γc, T2(0.6), T2(1)]
     
     b_embed = A[4, :]
     
@@ -168,32 +187,49 @@ function KenCarp3Tableau_unified(T=Float64, T2=Float64)
                            T(0.9717899277217721), 
                            T(0.435866521508459)]
     
-    c_explicit = @SVector [0, γ, T2(0.6), T2(1)]
+    c_explicit = @SVector [T2(0), γc, T2(0.6), T2(1)]
     
-    SDIRKTableau(A, b, c, γ, 3;
+    # Build Hermite-style predictor coefficients for stages 3 and 4
+    c2 = 2γc
+    θ = c[3] / c2
+    α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γc)
+    α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γc)
+    θ4 = c[4] / c2 # == 1
+    α41 = ((1 + (-4θ4 + 3θ4^2)) + (6θ4 * (1 - θ4) / c2) * γc)
+    α42 = ((-2θ4 + 3θ4^2) + (6θ4 * (1 - θ4) / c2) * γc)
+    α_pred = @SMatrix T2[
+        0 0 0 0;
+        0 0 0 0;
+        α31 α32 0 0;
+        α41 α42 0 0
+    ]
+
+    SDIRKTableau(A, b, c, γT, 3;
                  b_embed=b_embed, embedded_order=2,
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
                  predictor_type=:kencarp_additive,
                  has_additive_splitting=true,
-                 A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit)
+                 A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit,
+                 α_pred=α_pred)
 end
 
 function Kvaerno4Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.4358665215)
+    γT = T(0.4358665215)
+    γc = T2(0.4358665215)
     
-    A = @SMatrix [γ                        0                        0                       0                       0;
-                  T(0.490563388419108)     γ                        0                       0                       0;
-                  T(0.073570090080892)     0                        γ                       0                       0;
-                  T(0.308809969973036)     T(1.490563388254106)     -T(1.235239879727145)   γ                       0;
-                  T(0.490563388419108)     T(0.073570090080892)     T(0.4358665215)         T(0.0)                  γ]
+    A = @SMatrix [γT                       0                        0                       0                       0;
+                  T(0.490563388419108)     γT                       0                       0                       0;
+                  T(0.073570090080892)     0                        γT                      0                       0;
+                  T(0.308809969973036)     T(1.490563388254106)     -T(1.235239879727145)   γT                      0;
+                  T(0.490563388419108)     T(0.073570090080892)     T(0.4358665215)         T(0.0)                  γT]
     
     b = @SVector [T(0.490563388419108), T(0.073570090080892), T(0.4358665215), T(0.0), T(0.0)]
-    c = @SVector [γ, 2γ, T2(1), T2(1), T2(1)]
+    c = @SVector [γc, 2γc, T2(1), T2(1), T2(1)]
     
     b_embed = A[5, :]
     
-    SDIRKTableau(A, b, c, γ, 4;
+    SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
@@ -201,21 +237,22 @@ function Kvaerno4Tableau_unified(T=Float64, T2=Float64)
 end
 
 function Kvaerno5Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.26)
+    γT = T(0.26)
+    γc = T2(0.26)
     
-    A = @SMatrix [γ                        0                        0                       0                       0                       0;
-                  T(0.13)                  γ                        0                       0                       0                       0;
-                  T(0.84079895052208)      T(0.07920104947792)      γ                       0                       0                       0;
-                  T(0.619100897516618)     T(0.066593016584582)     T(0.054305985899400)    γ                       0                       0;
-                  T(0.258023287184119)     T(0.097741417057132)     T(0.464732297848610)    T(1.179502539939939)    γ                       0;
-                  T(0.544974750228521)     T(0.212765981366776)     T(0.164488906111538)    T(0.077770561901165)    T(0.0)                  γ]
+    A = @SMatrix [γT                       0                        0                       0                       0                       0;
+                  T(0.13)                  γT                       0                       0                       0                       0;
+                  T(0.84079895052208)      T(0.07920104947792)      γT                      0                       0                       0;
+                  T(0.619100897516618)     T(0.066593016584582)     T(0.054305985899400)    γT                      0                       0;
+                  T(0.258023287184119)     T(0.097741417057132)     T(0.464732297848610)    T(1.179502539939939)    γT                      0;
+                  T(0.544974750228521)     T(0.212765981366776)     T(0.164488906111538)    T(0.077770561901165)    T(0.0)                  γT]
     
     b = @SVector [T(0.544974750228521), T(0.212765981366776), T(0.164488906111538), T(0.077770561901165), T(0.0), T(0.0)]
-    c = @SVector [γ, T2(0.39), T2(1.0), T2(0.74), T2(1.0), T2(1.0)]
+    c = @SVector [γc, T2(0.39), T2(1.0), T2(0.74), T2(1.0), T2(1.0)]
     
     b_embed = A[6, :]
     
-    SDIRKTableau(A, b, c, γ, 5;
+    SDIRKTableau(A, b, c, γT, 5;
                  b_embed=b_embed, embedded_order=4,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
@@ -223,17 +260,18 @@ function Kvaerno5Tableau_unified(T=Float64, T2=Float64)
 end
 
 function KenCarp4Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(1//4)
+    γT = T(1//4)
+    γc = T2(1//4)
     
-    A = @SMatrix [γ                             0                             0                            0                            0                            0;
-                  T(1//2)                       γ                             0                            0                            0                            0;
-                  T(83//250)                    T(-13//250)                   γ                            0                            0                            0;
-                  T(31//50)                     T(-11//20)                    T(11//20)                    γ                            0                            0;
-                  T(17//20)                     T(-1//4)                      T(1//4)                      T(1//2)                      γ                            0;
-                  T(755//1728)                  T(755//1728)                  T(-1640//1728)              T(1640//1728)                T(1//4)                      γ]
+    A = @SMatrix [γT                            0                             0                            0                            0                            0;
+                  T(1//2)                       γT                            0                            0                            0                            0;
+                  T(83//250)                    T(-13//250)                   γT                           0                            0                            0;
+                  T(31//50)                     T(-11//20)                    T(11//20)                    γT                           0                            0;
+                  T(17//20)                     T(-1//4)                      T(1//4)                      T(1//2)                      γT                           0;
+                  T(755//1728)                  T(755//1728)                  T(-1640//1728)              T(1640//1728)                T(1//4)                      γT]
     
     b = @SVector [T(755//1728), T(755//1728), T(-1640//1728), T(1640//1728), T(1//4), T(0)]
-    c = @SVector [γ, T2(3//4), T2(11//20), T2(1//2), T2(1), T2(1)]
+    c = @SVector [γc, T2(3//4), T2(11//20), T2(1//2), T2(1), T2(1)]
     
     b_embed = A[6, :]
     
@@ -247,7 +285,7 @@ function KenCarp4Tableau_unified(T=Float64, T2=Float64)
     b_explicit = @SVector [T(82889//524892), T(0), T(15625//83664), T(69875//102672), T(-2260//8211), T(1//4)]
     c_explicit = @SVector [0, T2(1//2), T2(83//250), T2(31//50), T2(17//20), T2(1)]
     
-    SDIRKTableau(A, b, c, γ, 4;
+    SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
@@ -257,18 +295,19 @@ function KenCarp4Tableau_unified(T=Float64, T2=Float64)
 end
 
 function KenCarp47Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.1496590219993)
+    γT = T(0.1496590219993)
+    γc = T2(0.1496590219993)
     
-    A = @SMatrix [γ                             0                             0                            0                            0                            0                            0;
-                  T(0.7481896206814)            γ                             0                            0                            0                            0                            0;
-                  T(0.2068513093527)            T(0.2931486906473)            γ                            0                            0                            0                            0;
-                  T(0.7581896206812)            T(-0.2581896206812)           T(0.25)                      γ                            0                            0                            0;
-                  T(0.8765725810946)            T(-0.3765725810946)           T(0.25)                      T(0.25)                      γ                            0                            0;
-                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       γ                            0;
-                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       T(0.0)                       γ]
+    A = @SMatrix [γT                            0                             0                            0                            0                            0                            0;
+                  T(0.7481896206814)            γT                            0                            0                            0                            0                            0;
+                  T(0.2068513093527)            T(0.2931486906473)            γT                           0                            0                            0                            0;
+                  T(0.7581896206812)            T(-0.2581896206812)           T(0.25)                      γT                           0                            0                            0;
+                  T(0.8765725810946)            T(-0.3765725810946)           T(0.25)                      T(0.25)                      γT                           0                            0;
+                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       γT                           0;
+                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       T(0.0)                       γT]
     
     b = @SVector [T(1.6274999742127), T(-1.1274999742127), T(0.25), T(0.25), T(0.0), T(0.0), T(0.0)]
-    c = @SVector [γ, T2(0.8978486300007), T2(0.6496590219993), T2(0.7496590219993), T2(1.1262315616939), T2(1.0), T2(1.0)]
+    c = @SVector [γc, T2(0.8978486300007), T2(0.6496590219993), T2(0.7496590219993), T2(1.1262315616939), T2(1.0), T2(1.0)]
     
     b_embed = A[7, :]
     
@@ -276,7 +315,7 @@ function KenCarp47Tableau_unified(T=Float64, T2=Float64)
     b_explicit = zeros(SVector{7,T})
     c_explicit = c
     
-    SDIRKTableau(A, b, c, γ, 4;
+    SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
@@ -286,19 +325,20 @@ function KenCarp47Tableau_unified(T=Float64, T2=Float64)
 end
 
 function KenCarp5Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.2113248654051871)
+    γT = T(0.2113248654051871)
+    γc = T2(0.2113248654051871)
     
-    A = @SMatrix [γ                             0                             0                            0                            0                            0                            0                            0;
-                  T(0.5)                        γ                             0                            0                            0                            0                            0                            0;
-                  T(0.453125)                   T(-0.140625)                  γ                            0                            0                            0                            0                            0;
-                  T(0.6828)                     T(-0.2178)                    T(0.3237)                    γ                            0                            0                            0                            0;
-                  T(0.6262)                     T(-0.1848)                    T(0.2477)                    T(0.4998)                    γ                            0                            0                            0;
-                  T(0.3415)                     T(-0.1219)                    T(0.2502)                    T(0.2502)                    T(0.0686)                    γ                            0                            0;
-                  T(0.3415)                     T(-0.1219)                    T(0.2502)                    T(0.2502)                    T(0.0686)                    T(0.0)                       γ                            0;
-                  T(0.6262)                     T(-0.1848)                    T(0.2477)                    T(0.4998)                    T(0.2113)                    T(0.0)                       T(0.0)                       γ]
+    A = @SMatrix [γT                            0                             0                            0                            0                            0                            0                            0;
+                  T(0.5)                        γT                            0                            0                            0                            0                            0                            0;
+                  T(0.453125)                   T(-0.140625)                  γT                           0                            0                            0                            0                            0;
+                  T(0.6828)                     T(-0.2178)                    T(0.3237)                    γT                           0                            0                            0                            0;
+                  T(0.6262)                     T(-0.1848)                    T(0.2477)                    T(0.4998)                    γT                           0                            0                            0;
+                  T(0.3415)                     T(-0.1219)                    T(0.2502)                    T(0.2502)                    T(0.0686)                    γT                           0                            0;
+                  T(0.3415)                     T(-0.1219)                    T(0.2502)                    T(0.2502)                    T(0.0686)                    T(0.0)                       γT                           0;
+                  T(0.6262)                     T(-0.1848)                    T(0.2477)                    T(0.4998)                    T(0.2113)                    T(0.0)                       T(0.0)                       γT]
     
     b = @SVector [T(0.3415), T(-0.1219), T(0.2502), T(0.2502), T(0.0686), T(0.0), T(0.0), T(0.0)]
-    c = @SVector [γ, T2(0.7113248654051871), T2(0.5226873345948129), T2(0.7887), T2(0.9773126654051871), T2(1.0), T2(1.0), T2(1.0)]
+    c = @SVector [γc, T2(0.7113248654051871), T2(0.5226873345948129), T2(0.7887), T2(0.9773126654051871), T2(1.0), T2(1.0), T2(1.0)]
     
     b_embed = A[8, :]
     
@@ -306,7 +346,7 @@ function KenCarp5Tableau_unified(T=Float64, T2=Float64)
     b_explicit = zeros(SVector{8,T})
     c_explicit = c
     
-    SDIRKTableau(A, b, c, γ, 5;
+    SDIRKTableau(A, b, c, γT, 5;
                  b_embed=b_embed, embedded_order=4,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
@@ -316,19 +356,20 @@ function KenCarp5Tableau_unified(T=Float64, T2=Float64)
 end
 
 function KenCarp58Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.1496590219993)
+    γT = T(0.1496590219993)
+    γc = T2(0.1496590219993)
     
-    A = @SMatrix [γ                             0                             0                            0                            0                            0                            0                            0;
-                  T(0.7481896206814)            γ                             0                            0                            0                            0                            0                            0;
-                  T(0.2068513093527)            T(0.2931486906473)            γ                            0                            0                            0                            0                            0;
-                  T(0.7581896206812)            T(-0.2581896206812)           T(0.25)                      γ                            0                            0                            0                            0;
-                  T(0.8765725810946)            T(-0.3765725810946)           T(0.25)                      T(0.25)                      γ                            0                            0                            0;
-                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       γ                            0                            0;
-                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       T(0.0)                       γ                            0;
-                  T(1.2274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.4)                       T(0.0)                       T(0.0)                       γ]
+    A = @SMatrix [γT                            0                             0                            0                            0                            0                            0                            0;
+                  T(0.7481896206814)            γT                            0                            0                            0                            0                            0                            0;
+                  T(0.2068513093527)            T(0.2931486906473)            γT                           0                            0                            0                            0                            0;
+                  T(0.7581896206812)            T(-0.2581896206812)           T(0.25)                      γT                           0                            0                            0                            0;
+                  T(0.8765725810946)            T(-0.3765725810946)           T(0.25)                      T(0.25)                      γT                           0                            0                            0;
+                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       γT                           0                            0;
+                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       T(0.0)                       γT                           0;
+                  T(1.2274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.4)                       T(0.0)                       T(0.0)                       γT]
     
     b = @SVector [T(1.2274999742127), T(-1.1274999742127), T(0.25), T(0.25), T(0.4), T(0.0), T(0.0), T(0.0)]
-    c = @SVector [γ, T2(0.8978486300007), T2(0.6496590219993), T2(0.7496590219993), T2(1.1262315616939), T2(1.0), T2(1.0), T2(1.0)]
+    c = @SVector [γc, T2(0.8978486300007), T2(0.6496590219993), T2(0.7496590219993), T2(1.1262315616939), T2(1.0), T2(1.0), T2(1.0)]
     
     b_embed = A[8, :]
     
@@ -336,7 +377,7 @@ function KenCarp58Tableau_unified(T=Float64, T2=Float64)
     b_explicit = zeros(SVector{8,T})
     c_explicit = c
     
-    SDIRKTableau(A, b, c, γ, 5;
+    SDIRKTableau(A, b, c, γT, 5;
                  b_embed=b_embed, embedded_order=4,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
@@ -346,120 +387,126 @@ function KenCarp58Tableau_unified(T=Float64, T2=Float64)
 end
 
 function SFSDIRK4Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.243220255)
+    γT = T(0.243220255)
+    γc = T2(0.243220255)
     
-    A = @SMatrix [γ                        0                        0                       0                       0;
-                  T(0.5)                   γ                        0                       0                       0;
-                  T(0.5)                   T(0.0)                   γ                       0                       0;
-                  T(0.25)                  T(0.25)                  T(0.25)                 γ                       0;
-                  T(0.2)                   T(0.2)                   T(0.2)                  T(0.2)                  γ]
+    A = @SMatrix [γT                       0                        0                       0                       0;
+                  T(0.5)                   γT                       0                       0                       0;
+                  T(0.5)                   T(0.0)                   γT                      0                       0;
+                  T(0.25)                  T(0.25)                  T(0.25)                 γT                      0;
+                  T(0.2)                   T(0.2)                   T(0.2)                  T(0.2)                  γT]
     
     b = @SVector [T(0.2), T(0.2), T(0.2), T(0.2), T(0.2)]
-    c = @SVector [γ, T2(0.5) + γ, T2(0.5) + γ, T2(0.75) + γ, T2(0.8) + γ]
+    c = @SVector [γc, T2(0.5) + γc, T2(0.5) + γc, T2(0.75) + γc, T2(0.8) + γc]
     
-    SDIRKTableau(A, b, c, γ, 4;
+    SDIRKTableau(A, b, c, γT, 4;
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
                  predictor_type=:hermite)
 end
 
 function SFSDIRK5Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.193883658)
+    γT = T(0.193883658)
+    γc = T2(0.193883658)
     
-    A = @SMatrix [γ                        0                        0                       0                       0                       0;
-                  T(0.4)                   γ                        0                       0                       0                       0;
-                  T(0.4)                   T(0.0)                   γ                       0                       0                       0;
-                  T(0.2)                   T(0.2)                   T(0.2)                  γ                       0                       0;
-                  T(0.16)                  T(0.16)                  T(0.16)                 T(0.16)                 γ                       0;
-                  T(2//15)                 T(2//15)                 T(2//15)                T(2//15)                T(2//15)                γ]
+    A = @SMatrix [γT                       0                        0                       0                       0                       0;
+                  T(0.4)                   γT                       0                       0                       0                       0;
+                  T(0.4)                   T(0.0)                   γT                      0                       0                       0;
+                  T(0.2)                   T(0.2)                   T(0.2)                  γT                      0                       0;
+                  T(0.16)                  T(0.16)                  T(0.16)                 T(0.16)                 γT                      0;
+                  T(2//15)                 T(2//15)                 T(2//15)                T(2//15)                T(2//15)                γT]
     
     b = @SVector [T(2//15), T(2//15), T(2//15), T(2//15), T(2//15), T(1//3)]
-    c = @SVector [γ, T2(0.4) + γ, T2(0.4) + γ, T2(0.6) + γ, T2(0.64) + γ, T2(2//3) + γ]
+    c = @SVector [γc, T2(0.4) + γc, T2(0.4) + γc, T2(0.6) + γc, T2(0.64) + γc, T2(2//3) + γc]
     
-    SDIRKTableau(A, b, c, γ, 5;
+    SDIRKTableau(A, b, c, γT, 5;
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
                  predictor_type=:hermite)
 end
 
 function SFSDIRK6Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.161)
+    γT = T(0.161)
+    γc = T2(0.161)
     
-    A = @SMatrix [γ                        0                        0                       0                       0                       0;
-                  T(1//3)                  γ                        0                       0                       0                       0;
-                  T(1//3)                  T(0.0)                   γ                       0                       0                       0;
-                  T(1//6)                  T(1//6)                  T(1//6)                 γ                       0                       0;
-                  T(0.125)                 T(0.125)                 T(0.125)                T(0.125)                γ                       0;
-                  T(1//7)                  T(1//7)                  T(1//7)                 T(1//7)                 T(1//7)                 γ]
+    A = @SMatrix [γT                       0                        0                       0                       0                       0;
+                  T(1//3)                  γT                       0                       0                       0                       0;
+                  T(1//3)                  T(0.0)                   γT                      0                       0                       0;
+                  T(1//6)                  T(1//6)                  T(1//6)                 γT                      0                       0;
+                  T(0.125)                 T(0.125)                 T(0.125)                T(0.125)                γT                      0;
+                  T(1//7)                  T(1//7)                  T(1//7)                 T(1//7)                 T(1//7)                 γT]
     
     b = @SVector [T(1//7), T(1//7), T(1//7), T(1//7), T(1//7), T(2//7)]
-    c = @SVector [γ, T2(1//3) + γ, T2(1//3) + γ, T2(0.5) + γ, T2(0.5) + γ, T2(5//7) + γ]
+    c = @SVector [γc, T2(1//3) + γc, T2(1//3) + γc, T2(0.5) + γc, T2(0.5) + γc, T2(5//7) + γc]
     
-    SDIRKTableau(A, b, c, γ, 6;
+    SDIRKTableau(A, b, c, γT, 6;
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
                  predictor_type=:hermite)
 end
 
 function SFSDIRK7Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.137)
+    γT = T(0.137)
+    γc = T2(0.137)
     
-    A = @SMatrix [γ                        0                        0                       0                       0                       0                       0;
-                  T(2//7)                  γ                        0                       0                       0                       0                       0;
-                  T(2//7)                  T(0.0)                   γ                       0                       0                       0                       0;
-                  T(1//7)                  T(1//7)                  T(1//7)                 γ                       0                       0                       0;
-                  T(1//8)                  T(1//8)                  T(1//8)                 T(1//8)                 γ                       0                       0;
-                  T(1//9)                  T(1//9)                  T(1//9)                 T(1//9)                 T(1//9)                 γ                       0;
-                  T(1//10)                 T(1//10)                 T(1//10)                T(1//10)                T(1//10)                T(1//10)                γ]
+    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0;
+                  T(2//7)                  γT                       0                       0                       0                       0                       0;
+                  T(2//7)                  T(0.0)                   γT                      0                       0                       0                       0;
+                  T(1//7)                  T(1//7)                  T(1//7)                 γT                      0                       0                       0;
+                  T(1//8)                  T(1//8)                  T(1//8)                 T(1//8)                 γT                      0                       0;
+                  T(1//9)                  T(1//9)                  T(1//9)                 T(1//9)                 T(1//9)                 γT                      0;
+                  T(1//10)                 T(1//10)                 T(1//10)                T(1//10)                T(1//10)                T(1//10)                γT]
     
     b = @SVector [T(1//10), T(1//10), T(1//10), T(1//10), T(1//10), T(1//10), T(4//10)]
-    c = @SVector [γ, T2(2//7) + γ, T2(2//7) + γ, T2(3//7) + γ, T2(0.5) + γ, T2(5//9) + γ, T2(0.6) + γ]
+    c = @SVector [γc, T2(2//7) + γc, T2(2//7) + γc, T2(3//7) + γc, T2(0.5) + γc, T2(5//9) + γc, T2(0.6) + γc]
     
-    SDIRKTableau(A, b, c, γ, 7;
+    SDIRKTableau(A, b, c, γT, 7;
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
                  predictor_type=:hermite)
 end
 
 function SFSDIRK8Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.119)
+    γT = T(0.119)
+    γc = T2(0.119)
     
-    A = @SMatrix [γ                        0                        0                       0                       0                       0                       0                       0;
-                  T(0.25)                  γ                        0                       0                       0                       0                       0                       0;
-                  T(0.25)                  T(0.0)                   γ                       0                       0                       0                       0                       0;
-                  T(1//8)                  T(1//8)                  T(1//8)                 γ                       0                       0                       0                       0;
-                  T(0.1)                   T(0.1)                   T(0.1)                  T(0.1)                  γ                       0                       0                       0;
-                  T(1//12)                 T(1//12)                 T(1//12)                T(1//12)                T(1//12)                γ                       0                       0;
-                  T(1//14)                 T(1//14)                 T(1//14)                T(1//14)                T(1//14)                T(1//14)                γ                       0;
-                  T(1//16)                 T(1//16)                 T(1//16)                T(1//16)                T(1//16)                T(1//16)                T(1//16)                γ]
+    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0                       0;
+                  T(0.25)                  γT                       0                       0                       0                       0                       0                       0;
+                  T(0.25)                  T(0.0)                   γT                      0                       0                       0                       0                       0;
+                  T(1//8)                  T(1//8)                  T(1//8)                 γT                      0                       0                       0                       0;
+                  T(0.1)                   T(0.1)                   T(0.1)                  T(0.1)                  γT                      0                       0                       0;
+                  T(1//12)                 T(1//12)                 T(1//12)                T(1//12)                T(1//12)                γT                      0                       0;
+                  T(1//14)                 T(1//14)                 T(1//14)                T(1//14)                T(1//14)                T(1//14)                γT                      0;
+                  T(1//16)                 T(1//16)                 T(1//16)                T(1//16)                T(1//16)                T(1//16)                T(1//16)                γT]
     
     b = @SVector [T(1//16), T(1//16), T(1//16), T(1//16), T(1//16), T(1//16), T(1//16), T(9//16)]
-    c = @SVector [γ, T2(0.25) + γ, T2(0.25) + γ, T2(3//8) + γ, T2(0.4) + γ, T2(5//12) + γ, T2(6//14) + γ, T2(7//16) + γ]
+    c = @SVector [γc, T2(0.25) + γc, T2(0.25) + γc, T2(3//8) + γc, T2(0.4) + γc, T2(5//12) + γc, T2(6//14) + γc, T2(7//16) + γc]
     
-    SDIRKTableau(A, b, c, γ, 8;
+    SDIRKTableau(A, b, c, γT, 8;
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
                  predictor_type=:hermite)
 end
 
 function ESDIRK54I8L2SATableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.26)
+    γT = T(0.26)
+    γc = T2(0.26)
     
-    A = @SMatrix [γ                        0                        0                       0                       0                       0                       0                       0;
-                  T(0.13)                  γ                        0                       0                       0                       0                       0                       0;
-                  T(0.84079895052208)      T(0.07920104947792)      γ                       0                       0                       0                       0                       0;
-                  T(0.619100897516618)     T(0.066593016584582)     T(0.054305985899400)    γ                       0                       0                       0                       0;
-                  T(0.258023287184119)     T(0.097741417057132)     T(0.464732297848610)    T(1.179502539939939)    γ                       0                       0                       0;
-                  T(0.544974750228521)     T(0.212765981366776)     T(0.164488906111538)    T(0.077770561901165)    T(0.0)                  γ                       0                       0;
-                  T(0.325)                 T(0.225)                 T(0.175)                T(0.125)                T(0.075)                T(0.075)                γ                       0;
-                  T(0.425)                 T(0.275)                 T(0.150)                T(0.100)                T(0.050)                T(0.0)                  T(0.0)                  γ]
+    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0                       0;
+                  T(0.13)                  γT                       0                       0                       0                       0                       0                       0;
+                  T(0.84079895052208)      T(0.07920104947792)      γT                      0                       0                       0                       0                       0;
+                  T(0.619100897516618)     T(0.066593016584582)     T(0.054305985899400)    γT                      0                       0                       0                       0;
+                  T(0.258023287184119)     T(0.097741417057132)     T(0.464732297848610)    T(1.179502539939939)    γT                      0                       0                       0;
+                  T(0.544974750228521)     T(0.212765981366776)     T(0.164488906111538)    T(0.077770561901165)    T(0.0)                  γT                      0                       0;
+                  T(0.325)                 T(0.225)                 T(0.175)                T(0.125)                T(0.075)                T(0.075)                γT                      0;
+                  T(0.425)                 T(0.275)                 T(0.150)                T(0.100)                T(0.050)                T(0.0)                  T(0.0)                  γT]
     
     b = @SVector [T(0.425), T(0.275), T(0.150), T(0.100), T(0.050), T(0.0), T(0.0), T(0.0)]
-    c = @SVector [γ, T2(0.39), T2(1.0), T2(0.74), T2(1.0), T2(1.0), T2(1.0), T2(1.0)]
+    c = @SVector [γc, T2(0.39), T2(1.0), T2(0.74), T2(1.0), T2(1.0), T2(1.0), T2(1.0)]
     
     b_embed = A[8, :]
     
-    SDIRKTableau(A, b, c, γ, 5;
+    SDIRKTableau(A, b, c, γT, 5;
                  b_embed=b_embed, embedded_order=4,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
@@ -467,21 +514,22 @@ function ESDIRK54I8L2SATableau_unified(T=Float64, T2=Float64)
 end
 
 function ESDIRK436L2SA2Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.25)
+    γT = T(0.25)
+    γc = T2(0.25)
     
-    A = @SMatrix [γ                        0                        0                       0                       0                       0;
-                  T(0.5)                   γ                        0                       0                       0                       0;
-                  T(0.45)                  T(0.05)                  γ                       0                       0                       0;
-                  T(0.2)                   T(0.3)                   T(0.25)                 γ                       0                       0;
-                  T(0.15)                  T(0.35)                  T(0.25)                 T(0.0)                  γ                       0;
-                  T(0.17)                  T(0.33)                  T(0.25)                 T(0.0)                  T(0.0)                  γ]
+    A = @SMatrix [γT                       0                        0                       0                       0                       0;
+                  T(0.5)                   γT                       0                       0                       0                       0;
+                  T(0.45)                  T(0.05)                  γT                      0                       0                       0;
+                  T(0.2)                   T(0.3)                   T(0.25)                 γT                      0                       0;
+                  T(0.15)                  T(0.35)                  T(0.25)                 T(0.0)                  γT                      0;
+                  T(0.17)                  T(0.33)                  T(0.25)                 T(0.0)                  T(0.0)                  γT]
     
     b = @SVector [T(0.17), T(0.33), T(0.25), T(0.0), T(0.0), T(0.25)]
-    c = @SVector [γ, T2(0.75), T2(0.75), T2(0.97), T2(0.75), T2(1.0)]
+    c = @SVector [γc, T2(0.75), T2(0.75), T2(0.97), T2(0.75), T2(1.0)]
     
     b_embed = A[6, :]
     
-    SDIRKTableau(A, b, c, γ, 4;
+    SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
@@ -489,22 +537,23 @@ function ESDIRK436L2SA2Tableau_unified(T=Float64, T2=Float64)
 end
 
 function ESDIRK437L2SATableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.2)
+    γT = T(0.2)
+    γc = T2(0.2)
     
-    A = @SMatrix [γ                        0                        0                       0                       0                       0                       0;
-                  T(0.4)                   γ                        0                       0                       0                       0                       0;
-                  T(0.35)                  T(0.05)                  γ                       0                       0                       0                       0;
-                  T(0.15)                  T(0.25)                  T(0.20)                 γ                       0                       0                       0;
-                  T(0.12)                  T(0.28)                  T(0.20)                 T(0.0)                  γ                       0                       0;
-                  T(0.10)                  T(0.30)                  T(0.20)                 T(0.0)                  T(0.0)                  γ                       0;
-                  T(0.14)                  T(0.26)                  T(0.20)                 T(0.0)                  T(0.0)                  T(0.0)                  γ]
+    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0;
+                  T(0.4)                   γT                       0                       0                       0                       0                       0;
+                  T(0.35)                  T(0.05)                  γT                      0                       0                       0                       0;
+                  T(0.15)                  T(0.25)                  T(0.20)                 γT                      0                       0                       0;
+                  T(0.12)                  T(0.28)                  T(0.20)                 T(0.0)                  γT                      0                       0;
+                  T(0.10)                  T(0.30)                  T(0.20)                 T(0.0)                  T(0.0)                  γT                      0;
+                  T(0.14)                  T(0.26)                  T(0.20)                 T(0.0)                  T(0.0)                  T(0.0)                  γT]
     
     b = @SVector [T(0.14), T(0.26), T(0.20), T(0.0), T(0.0), T(0.0), T(0.40)]
-    c = @SVector [γ, T2(0.6), T2(0.6), T2(0.6), T2(0.6), T2(0.5), T2(1.0)]
+    c = @SVector [γc, T2(0.6), T2(0.6), T2(0.6), T2(0.6), T2(0.5), T2(1.0)]
     
     b_embed = A[7, :]
     
-    SDIRKTableau(A, b, c, γ, 4;
+    SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
@@ -512,22 +561,23 @@ function ESDIRK437L2SATableau_unified(T=Float64, T2=Float64)
 end
 
 function ESDIRK547L2SA2Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.18)
+    γT = T(0.18)
+    γc = T2(0.18)
     
-    A = @SMatrix [γ                        0                        0                       0                       0                       0                       0;
-                  T(0.36)                  γ                        0                       0                       0                       0                       0;
-                  T(0.32)                  T(0.04)                  γ                       0                       0                       0                       0;
-                  T(0.14)                  T(0.22)                  T(0.18)                 γ                       0                       0                       0;
-                  T(0.11)                  T(0.25)                  T(0.18)                 T(0.0)                  γ                       0                       0;
-                  T(0.09)                  T(0.27)                  T(0.18)                 T(0.0)                  T(0.0)                  γ                       0;
-                  T(0.12)                  T(0.24)                  T(0.18)                 T(0.0)                  T(0.0)                  T(0.0)                  γ]
+    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0;
+                  T(0.36)                  γT                       0                       0                       0                       0                       0;
+                  T(0.32)                  T(0.04)                  γT                      0                       0                       0                       0;
+                  T(0.14)                  T(0.22)                  T(0.18)                 γT                      0                       0                       0;
+                  T(0.11)                  T(0.25)                  T(0.18)                 T(0.0)                  γT                      0                       0;
+                  T(0.09)                  T(0.27)                  T(0.18)                 T(0.0)                  T(0.0)                  γT                      0;
+                  T(0.12)                  T(0.24)                  T(0.18)                 T(0.0)                  T(0.0)                  T(0.0)                  γT]
     
     b = @SVector [T(0.12), T(0.24), T(0.18), T(0.0), T(0.0), T(0.0), T(0.46)]
-    c = @SVector [γ, T2(0.54), T2(0.54), T2(0.54), T2(0.54), T2(0.54), T2(1.0)]
+    c = @SVector [γc, T2(0.54), T2(0.54), T2(0.54), T2(0.54), T2(0.54), T2(1.0)]
     
     b_embed = A[7, :]
     
-    SDIRKTableau(A, b, c, γ, 5;
+    SDIRKTableau(A, b, c, γT, 5;
                  b_embed=b_embed, embedded_order=4,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
@@ -535,24 +585,25 @@ function ESDIRK547L2SA2Tableau_unified(T=Float64, T2=Float64)
 end
 
 function ESDIRK659L2SATableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.15)
+    γT = T(0.15)
+    γc = T2(0.15)
     
-    A = @SMatrix [γ                        0                        0                       0                       0                       0                       0                       0                       0;
-                  T(0.30)                  γ                        0                       0                       0                       0                       0                       0                       0;
-                  T(0.27)                  T(0.03)                  γ                       0                       0                       0                       0                       0                       0;
-                  T(0.12)                  T(0.18)                  T(0.15)                 γ                       0                       0                       0                       0                       0;
-                  T(0.09)                  T(0.21)                  T(0.15)                 T(0.0)                  γ                       0                       0                       0                       0;
-                  T(0.08)                  T(0.22)                  T(0.15)                 T(0.0)                  T(0.0)                  γ                       0                       0                       0;
-                  T(0.07)                  T(0.23)                  T(0.15)                 T(0.0)                  T(0.0)                  T(0.0)                  γ                       0                       0;
-                  T(0.06)                  T(0.24)                  T(0.15)                 T(0.0)                  T(0.0)                  T(0.0)                  T(0.0)                  γ                       0;
-                  T(0.10)                  T(0.20)                  T(0.15)                 T(0.0)                  T(0.0)                  T(0.0)                  T(0.0)                  T(0.0)                  γ]
+    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0                       0                       0;
+                  T(0.30)                  γT                       0                       0                       0                       0                       0                       0                       0;
+                  T(0.27)                  T(0.03)                  γT                      0                       0                       0                       0                       0                       0;
+                  T(0.12)                  T(0.18)                  T(0.15)                 γT                      0                       0                       0                       0                       0;
+                  T(0.09)                  T(0.21)                  T(0.15)                 T(0.0)                  γT                      0                       0                       0                       0;
+                  T(0.08)                  T(0.22)                  T(0.15)                 T(0.0)                  T(0.0)                  γT                      0                       0                       0;
+                  T(0.07)                  T(0.23)                  T(0.15)                 T(0.0)                  T(0.0)                  T(0.0)                  γT                      0                       0;
+                  T(0.06)                  T(0.24)                  T(0.15)                 T(0.0)                  T(0.0)                  T(0.0)                  T(0.0)                  γT                      0;
+                  T(0.10)                  T(0.20)                  T(0.15)                 T(0.0)                  T(0.0)                  T(0.0)                  T(0.0)                  T(0.0)                  γT]
     
     b = @SVector [T(0.10), T(0.20), T(0.15), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.55)]
-    c = @SVector [γ, T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(1.0)]
+    c = @SVector [γc, T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(1.0)]
     
     b_embed = A[9, :]
     
-    SDIRKTableau(A, b, c, γ, 6;
+    SDIRKTableau(A, b, c, γT, 6;
                  b_embed=b_embed, embedded_order=5,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
@@ -560,20 +611,21 @@ function ESDIRK659L2SATableau_unified(T=Float64, T2=Float64)
 end
 
 function Hairer4Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.4358665215)
+    γT = T(0.4358665215)
+    γc = T2(0.4358665215)
     
-    A = @SMatrix [γ                        0                        0                       0                       0;
-                  T(0.2576482460664272)    γ                        0                       0                       0;
-                  -T(0.09351476757488625)  0                        γ                       0                       0;
-                  T(0.18764102434672383)   -T(0.595297473576955)    T(0.9717899277217721)   γ                       0;
-                  T(0.490563388419108)     T(0.073570090080892)     T(0.4358665215)         T(0.0)                  γ]
+    A = @SMatrix [γT                       0                        0                       0                       0;
+                  T(0.2576482460664272)    γT                       0                       0                       0;
+                  -T(0.09351476757488625)  0                        γT                      0                       0;
+                  T(0.18764102434672383)   -T(0.595297473576955)    T(0.9717899277217721)   γT                      0;
+                  T(0.490563388419108)     T(0.073570090080892)     T(0.4358665215)         T(0.0)                  γT]
     
     b = @SVector [T(0.490563388419108), T(0.073570090080892), T(0.4358665215), T(0.0), T(0.0)]
-    c = @SVector [γ, 2γ, T2(1), T2(1), T2(1)]
+    c = @SVector [γc, 2γc, T2(1), T2(1), T2(1)]
     
     b_embed = A[5, :]
     
-    SDIRKTableau(A, b, c, γ, 4;
+    SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
@@ -581,20 +633,21 @@ function Hairer4Tableau_unified(T=Float64, T2=Float64)
 end
 
 function Hairer42Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.3995)
+    γT = T(0.3995)
+    γc = T2(0.3995)
     
-    A = @SMatrix [γ                        0                        0                       0                       0;
-                  T(0.25)                  γ                        0                       0                       0;
-                  -T(0.08)                 0                        γ                       0                       0;
-                  T(0.19)                  -T(0.58)                 T(0.97)                 γ                       0;
-                  T(0.48)                  T(0.075)                 T(0.42)                 T(0.0)                  γ]
+    A = @SMatrix [γT                       0                        0                       0                       0;
+                  T(0.25)                  γT                       0                       0                       0;
+                  -T(0.08)                 0                        γT                      0                       0;
+                  T(0.19)                  -T(0.58)                 T(0.97)                 γT                      0;
+                  T(0.48)                  T(0.075)                 T(0.42)                 T(0.0)                  γT]
     
     b = @SVector [T(0.48), T(0.075), T(0.42), T(0.0), T(0.025)]
-    c = @SVector [γ, T2(0.6495), T2(0.9995), T2(0.98), T2(1.0)]
+    c = @SVector [γc, T2(0.6495), T2(0.9995), T2(0.98), T2(1.0)]
     
     b_embed = A[5, :]
     
-    SDIRKTableau(A, b, c, γ, 4;
+    SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
@@ -602,19 +655,20 @@ function Hairer42Tableau_unified(T=Float64, T2=Float64)
 end
 
 function CFNLIRK3Tableau_unified(T=Float64, T2=Float64)
-    γ = T2(0.4358665215)
+    γT = T(0.4358665215)
+    γc = T2(0.4358665215)
     
-    A = @SMatrix [γ                        0                        0                       0;
-                  T(0.490563388419108)     γ                        0                       0;
-                  T(0.073570090080892)     0                        γ                       0;
-                  T(0.308809969973036)     T(1.490563388254106)     -T(1.235239879727145)   γ]
+    A = @SMatrix [γT                       0                        0                       0;
+                  T(0.490563388419108)     γT                       0                       0;
+                  T(0.073570090080892)     0                        γT                      0;
+                  T(0.308809969973036)     T(1.490563388254106)     -T(1.235239879727145)   γT]
     
     b = @SVector [T(0.490563388419108), T(0.073570090080892), T(0.4358665215), T(0.0)]
-    c = @SVector [γ, 2γ, T2(1), T2(1)]
+    c = @SVector [γc, 2γc, T2(1), T2(1)]
     
     b_embed = A[4, :]
     
-    SDIRKTableau(A, b, c, γ, 3;
+    SDIRKTableau(A, b, c, γT, 3;
                  b_embed=b_embed, embedded_order=2,
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
@@ -684,3 +738,5 @@ function get_sdirk_tableau(alg::Symbol, T=Float64, T2=Float64)
         error("Unknown SDIRK algorithm: $alg")
     end
 end
+
+get_sdirk_tableau(alg, T=Float64, T2=Float64) = get_sdirk_tableau(nameof(typeof(alg)), T, T2)

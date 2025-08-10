@@ -7,6 +7,8 @@ using LinearAlgebra: I, mul!
 using FastBroadcast: @..
 using MuladdMacro: @muladd
 
+@inline _get_step_limiter(alg, cache) = hasproperty(alg, :step_limiter!) ? alg.step_limiter! : trivial_limiter!
+
 function initialize!(integrator, cache::SDIRKConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -47,9 +49,14 @@ end
         for j in 1:i-1
             stage_sum += A[i,j] * z[j]
         end
-        
-        if i == 1 && alg.extrapolant == :linear
-            z_guess = dt * integrator.fsalfirst
+
+        if i == 1
+            z_guess = (alg.extrapolant == :linear) ? dt * integrator.fsalfirst : zero(u)
+        elseif i > 1 && hasproperty(tab, :α_pred) && tab.α_pred !== nothing
+            z_guess = zero(u)
+            @inbounds for j in 1:i-1
+                z_guess += tab.α_pred[i,j] * z[j]
+            end
         else
             z_guess = zero(u)
         end
@@ -99,9 +106,10 @@ end
 
 @muladd function generic_sdirk_perform_step!(integrator, cache::SDIRKMutableCache, repeat_step=false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack z₁, atmp, nlsolver, tab, step_limiter! = cache
+    @unpack z₁, atmp, nlsolver, tab = cache
     @unpack tmp = nlsolver
     alg = unwrap_alg(integrator, true)
+    step_limiter! = _get_step_limiter(alg, cache)
     
     A = tab.A
     b = tab.b
@@ -360,6 +368,7 @@ end
     
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
+    step_limiter! = _get_step_limiter(alg, cache)
     markfirststage!(nlsolver)
 
     zprev = dt * integrator.fsalfirst
@@ -379,7 +388,7 @@ end
     nlsolvefail(nlsolver) && return
 
     u = nlsolver.tmp + d * z
-    alg.step_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         tmp = btilde1 * zprev + btilde2 * zγ + btilde3 * z
@@ -395,7 +404,8 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
-    integrator.fsallast = z ./ dt
+    # TRBDF2 is stiffly accurate; use fresh f at t+dt for FSAL
+    integrator.fsallast = integrator.f(u, p, t + dt)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -450,7 +460,9 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
-    @.. broadcast=false integrator.fsallast = z / dt
+    integrator.fsallast = integrator.f(u, p, t + dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
 end
 
 # Hairer4 method
@@ -567,6 +579,10 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Union{SSPSDIRK2ConstantCache, SSPSDIRK2Cache}, repeat_step=false)
+    generic_sdirk_perform_step!(integrator, cache, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::Union{Cash4ConstantCache, Cash4Cache}, repeat_step=false)
     generic_sdirk_perform_step!(integrator, cache, repeat_step)
 end
 
