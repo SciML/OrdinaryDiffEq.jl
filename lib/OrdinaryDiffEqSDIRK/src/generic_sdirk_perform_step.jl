@@ -67,6 +67,10 @@ end
     for i in 1:s
         u += b[i] * z[i]
     end
+    # apply step limiter if available on algorithm
+    if hasproperty(alg, :step_limiter!)
+        alg.step_limiter!(u, integrator, p, t + dt)
+    end
     
     if integrator.opts.adaptive && b_embed !== nothing
         tmp = zero(u)
@@ -171,12 +175,16 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     
-    # set fsallast based on last stage
+    # set fsallast based on last stage and update integrator state
     if s == 1
         @.. broadcast=false integrator.fsallast = z₁ / dt
     elseif s == 2 && z₂ !== nothing
         @.. broadcast=false integrator.fsallast = z₂ / dt
     end
+    # keep k array consistent with FSAL bookkeeping
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
 end
 
 @muladd function generic_additive_sdirk_perform_step!(integrator, cache::SDIRKConstantCache, repeat_step=false)
@@ -354,6 +362,7 @@ end
     nlsolvefail(nlsolver) && return
 
     u = nlsolver.tmp + d * z
+    alg.step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         tmp = btilde1 * zprev + btilde2 * zγ + btilde3 * z
@@ -455,13 +464,81 @@ end
     nlsolvefail(nlsolver) && return
     
     integrator.u = uprev + z
+    # step limiter
+    alg.step_limiter!(integrator.u, integrator, p, t + dt)
     integrator.fsallast = z ./ dt
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator, cache::Union{ImplicitMidpointConstantCache, ImplicitMidpointCache}, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
+@muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache, repeat_step=false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack nlsolver, tab = cache
+    alg = unwrap_alg(integrator, true)
+
+    markfirststage!(nlsolver)
+
+    γ = tab.A[1,1]
+    c = tab.c[1]
+    b1 = tab.b[1]
+
+    if alg.extrapolant == :linear
+        nlsolver.z = dt * integrator.fsalfirst
+    else
+        nlsolver.z = zero(uprev)
+    end
+
+    nlsolver.tmp = uprev
+    nlsolver.c = c
+    nlsolver.γ = γ
+
+    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    u = uprev + b1 * z
+    if hasproperty(alg, :step_limiter!)
+        alg.step_limiter!(u, integrator, p, t + dt)
+    end
+
+    integrator.fsallast = z ./ dt
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::ImplicitMidpointCache, repeat_step=false)
+    @unpack t, dt, uprev, u, p = integrator
+    @unpack z₁, nlsolver, tab, step_limiter! = cache
+    @unpack tmp = nlsolver
+    alg = unwrap_alg(integrator, true)
+
+    γ = tab.A[1,1]
+    c = tab.c[1]
+    b1 = tab.b[1]
+
+    markfirststage!(nlsolver)
+
+    if alg.extrapolant == :linear
+        @.. broadcast=false z₁ = dt * integrator.fsalfirst
+    else
+        fill!(z₁, zero(eltype(u)))
+    end
+
+    nlsolver.z = z₁
+    @.. broadcast=false nlsolver.tmp = uprev
+    nlsolver.c = typeof(nlsolver.c)(c)
+    nlsolver.γ = typeof(nlsolver.γ)(γ)
+
+    z₁ .= nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    @.. broadcast=false u = uprev + b1 * z₁
+    step_limiter!(u, integrator, p, t + dt)
+
+    @.. broadcast=false integrator.fsallast = z₁ / dt
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
 end
 
 @muladd function perform_step!(integrator, cache::Union{TrapezoidConstantCache, TrapezoidCache}, repeat_step=false)

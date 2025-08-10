@@ -20,6 +20,7 @@ using MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction
 using LinearAlgebra: mul!, I
 using StaticArrays
+import RecursiveArrayTools: recursivefill!
 import OrdinaryDiffEqCore
 
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, dolinsolve
