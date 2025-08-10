@@ -913,54 +913,8 @@ function ROS2Tableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-Rosenbrock23
-
-Rosenbrock32
-
-ROS3P
-
-Rodas23W
-
-ROS34PW1a
-
-ROS34PW1b
-
-ROS34PW2
-
-ROS34PW3
-
-RosShamp4
-
-Rodas3
-
-Rodas3P
-
-Rodas4
-
-Ros4LStab
 
 
-Rodas42
-
-Rodas4P
-
-Rodas4P2
-
-Rodas5
-
-Rodas5P
-
-Rodas5Pr
-
-Rodas5Pe
-
-GRK4T
-
-GRK4A
-
-Veldd4
-
-Velds4
 
 """
     @ROS2(part)
@@ -1001,7 +955,6 @@ macro ROS2(part)
     end
 end
 
-ROS2
 
 # 3 step ROS Methods
 """
@@ -1028,7 +981,6 @@ function ROS2PRTableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-ROS2PR
 
 
 
@@ -1055,7 +1007,6 @@ function ROS2STableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-ROS2S
 
 
 """
@@ -1079,7 +1030,6 @@ function ROS3Tableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-ROS3
 
 
 """
@@ -1104,7 +1054,6 @@ function ROS3PRTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-ROS3PR
 
 
 
@@ -1131,7 +1080,6 @@ function Scholz4_7Tableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-Scholz4_7
 
 
 """
@@ -1312,7 +1260,6 @@ function ROS34PRwTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-ROS34PRw
 
 """
     ROS3PRLTableau()
@@ -1340,7 +1287,6 @@ function ROS3PRLTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-ROS3PRL
 
 
 """
@@ -1369,7 +1315,6 @@ function ROS3PRL2Tableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-ROS3PRL2
 
 
 """
@@ -1396,7 +1341,6 @@ function ROK4aTableau() # 4rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-ROK4a
 
 """
     @ROS34PW(part)
