@@ -60,7 +60,7 @@ JET = "0.9.18, 0.10.4"
 AllocCheck = "0.2"
 DiffEqBase = "6.176"
 SafeTestsets = "0.1.0"
-SciMLOperators = "0.4"
+SciMLOperators = "1.4"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua", "AllocCheck"]
