@@ -36,7 +36,6 @@ Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
