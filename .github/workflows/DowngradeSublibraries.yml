@@ -61,6 +61,7 @@ jobs:
         with:
           projects: ${{ matrix.project }}
           skip: Pkg,TOML
+          version: ${{ matrix.julia-version }}
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ matrix.project }}
