@@ -61,12 +61,11 @@ jobs:
         with:
           projects: ${{ matrix.project }}
           skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils
-          version: ${{ matrix.julia-version }}
+          julia_version: ${{ matrix.julia-version }}
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ matrix.project }}
       - uses: julia-actions/julia-runtest@v1
         with:
           project: ${{ matrix.project }}
-          version: ${{ matrix.julia-version }}
           ALLOW_RERESOLVE: false

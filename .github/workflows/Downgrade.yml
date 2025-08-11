@@ -26,11 +26,10 @@ jobs:
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
           skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils
-          version: ${{ matrix.julia-version }}
+          julia_version: ${{ matrix.julia-version }}
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
-          version: ${{ matrix.julia-version }}
           ALLOW_RERESOLVE: false
         env:
           GROUP: ${{ matrix.group }}
