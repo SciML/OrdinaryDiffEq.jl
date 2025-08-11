@@ -396,9 +396,9 @@ version = "2.6.5+0"
 
 [[deps.ExplicitImports]]
 deps = ["Markdown", "Pkg", "PrecompileTools", "TOML"]
-git-tree-sha1 = "f5a09582d6d963fd3f26db89a12970ab510fb3fb"
+git-tree-sha1 = "fde76669757deacce495be6018d17ffe9d70f214"
 uuid = "7d51a73a-1435-4ff3-83d9-f097790105c7"
-version = "1.13.1"
+version = "1.13.2"
 
 [[deps.ExponentialUtilities]]
 deps = ["Adapt", "ArrayInterface", "GPUArraysCore", "GenericSchur", "LinearAlgebra", "PrecompileTools", "Printf", "SparseArrays", "libblastrampoline_jll"]
@@ -1260,10 +1260,10 @@ uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 version = "1.3.4"
 
 [[deps.RecursiveArrayTools]]
-deps = ["Adapt", "ArrayInterface", "DocStringExtensions", "GPUArraysCore", "IteratorInterfaceExtensions", "LinearAlgebra", "RecipesBase", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "Tables"]
-git-tree-sha1 = "f8726bd5a8b7f5f5d3f6c0ce4793454a599b5243"
+deps = ["Adapt", "ArrayInterface", "DocStringExtensions", "GPUArraysCore", "LinearAlgebra", "RecipesBase", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface"]
+git-tree-sha1 = "7c7ac305885b1e0292585d087ecd60331a705965"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
-version = "3.36.0"
+version = "3.37.0"
 
     [deps.RecursiveArrayTools.extensions]
     RecursiveArrayToolsFastBroadcastExt = "FastBroadcast"
@@ -1274,6 +1274,7 @@ version = "3.36.0"
     RecursiveArrayToolsReverseDiffExt = ["ReverseDiff", "Zygote"]
     RecursiveArrayToolsSparseArraysExt = ["SparseArrays"]
     RecursiveArrayToolsStructArraysExt = "StructArrays"
+    RecursiveArrayToolsTablesExt = ["Tables"]
     RecursiveArrayToolsTrackerExt = "Tracker"
     RecursiveArrayToolsZygoteExt = "Zygote"
 
@@ -1286,6 +1287,7 @@ version = "3.36.0"
     ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
     SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
     StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
+    Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
     Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
     Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
