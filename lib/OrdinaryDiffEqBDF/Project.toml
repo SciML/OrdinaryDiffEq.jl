@@ -40,7 +40,7 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
 NonlinearSolve = "4.10"
-ForwardDiff = "0.10.38"
+ForwardDiff = "0.10.38, 1"
 Test = "<0.0.1, 1"
 FastBroadcast = "0.3"
 Random = "<0.0.1, 1"
