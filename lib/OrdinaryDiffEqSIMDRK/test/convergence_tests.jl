@@ -1,4 +1,4 @@
-using SIMDRungeKutta, DiffEqDevTools, Test
+using OrdinaryDiffEqSIMDRK, DiffEqDevTools, Test
 
 function nonauto1(u, p, t)
     x, _ = u
