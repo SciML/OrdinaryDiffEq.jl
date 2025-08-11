@@ -18,7 +18,7 @@ AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 [compat]
 JET = "0.9.18, 0.10.4"
 julia = "1.10"
-OrdinaryDiffEqSDIRK = "1.7.0"
+OrdinaryDiffEqSDIRK = "1.6.0"
 Test = "1.10"
 AllocCheck = "0.2"
 DiffEqBase = "6.176"
