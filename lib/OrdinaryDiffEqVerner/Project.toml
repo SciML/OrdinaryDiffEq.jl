@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqVerner"
 uuid = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.5.0"
+version = "1.6.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -38,7 +38,7 @@ Polyester = "0.7"
 LinearAlgebra = "1.10"
 TruncatedStacktraces = "1.4"
 SciMLBase = "2.99"
-OrdinaryDiffEqCore = "1.1"
+OrdinaryDiffEqCore = "1.30.0"
 Static = "1.2"
 Aqua = "0.8.11"
 Preferences = "1.4"

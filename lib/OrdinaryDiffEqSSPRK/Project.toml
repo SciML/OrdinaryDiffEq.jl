@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSSPRK"
 uuid = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.5.0"
+version = "1.6.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -39,7 +39,7 @@ MuladdMacro = "0.2"
 PrecompileTools = "1.2"
 Polyester = "0.7"
 SciMLBase = "2.99"
-OrdinaryDiffEqCore = "1.1"
+OrdinaryDiffEqCore = "1.30.0"
 Static = "1.2"
 Aqua = "0.8.11"
 Preferences = "1.4"
@@ -50,7 +50,7 @@ RecursiveArrayTools = "3.36"
 ODEProblemLibrary = "0.1.8"
 AllocCheck = "0.2"
 DiffEqBase = "6.176"
-OrdinaryDiffEqLowStorageRK = "<0.0.1, 1"
+OrdinaryDiffEqLowStorageRK = "1.6.0"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
 
