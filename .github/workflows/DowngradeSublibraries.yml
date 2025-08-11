@@ -68,4 +68,5 @@ jobs:
       - uses: julia-actions/julia-runtest@v1
         with:
           project: ${{ matrix.project }}
+          version: ${{ matrix.julia-version }}
           ALLOW_RERESOLVE: false
