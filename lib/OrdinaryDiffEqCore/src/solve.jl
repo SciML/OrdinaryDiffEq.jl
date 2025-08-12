@@ -29,8 +29,7 @@ function SciMLBase.__init(
                 !default_linear_interpolation(prob, alg),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
                 (dense) || !isempty(saveat), # and no dense output
-        dt = isdiscretealg(alg) && isempty(tstops) ?
-             eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
+        dt = nothing,
         dtmin = eltype(prob.tspan)(0),
         dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
         force_dtmin = false,
@@ -127,7 +126,7 @@ function SciMLBase.__init(
     if (((!(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
           !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
           !(alg isa DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
-        dt == tType(0) && isempty(tstops)) && dt_required(alg)
+        isnothing(dt) && isempty(tstops)) && dt_required(alg)
         throw(ArgumentError("Fixed timestep methods require a choice of dt or choosing the tstops"))
     end
     if !isadaptive(alg) && adaptive
@@ -343,7 +342,7 @@ function SciMLBase.__init(
     alg_choice = _alg isa CompositeAlgorithm ? Int[] : nothing
 
     if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
-        if dt == 0
+        if isnothing(dt)
             steps = length(tstops)
         else
             # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
@@ -400,14 +399,16 @@ function SciMLBase.__init(
     else
         uprev2 = uprev
     end
-
+    
+    _dt = isdiscretealg(alg) && isempty(tstops) ?
+             eltype(prob.tspan)(1) : eltype(prob.tspan)(0)
     if prob isa DAEProblem
         cache = alg_cache(_alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
+            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, _dt,
             reltol_internal, p, calck, Val(isinplace(prob)))
     else
         cache = alg_cache(_alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-            tTypeNoUnits, uprev, uprev2, f, t, dt, reltol_internal, p, calck,
+            tTypeNoUnits, uprev, uprev2, f, t, _dt, reltol_internal, p, calck,
             Val(isinplace(prob)))
     end
 
@@ -494,8 +495,8 @@ function SciMLBase.__init(
     # we don't want to differentiate through eigenvalue estimation
     eigen_est = inv(one(tType))
     tprev = t
-    dtcache = tType(dt)
-    dtpropose = tType(dt)
+    dtcache = tType(_dt)
+    dtpropose = tType(_dt)
     iter = 0
     kshortsize = 0
     reeval_fsal = false
@@ -530,7 +531,7 @@ function SciMLBase.__init(
         typeof(opts), typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),
         typeof(initializealg), typeof(differential_vars)}(
-        sol, u, du, k, t, tType(dt), f, p,
+        sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
         dtpropose, tdir, eigen_est, EEst,
@@ -596,7 +597,7 @@ function SciMLBase.__init(
         end
     end
 
-    handle_dt!(integrator)
+    handle_dt!(integrator, dt)
     integrator
 end
 
@@ -632,8 +633,8 @@ end
 
 # Helpers
 
-function handle_dt!(integrator)
-    if iszero(integrator.dt) && integrator.opts.adaptive
+function handle_dt!(integrator, dt)
+    if isnothing(dt) && integrator.opts.adaptive
         auto_dt_reset!(integrator)
         if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
            !isnan(integrator.dt)
