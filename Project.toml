@@ -184,7 +184,6 @@ julia = "1.10"
 
 [extras]
 AlgebraicMultigrid = "2169fc97-5a83-5252-b627-83903c6c433c"
-Calculus = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
@@ -198,8 +197,6 @@ ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-PoissonRandom = "e409e4f3-bfea-5376-8464-e040bb5c01ab"
-Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecursiveFactorization = "f2c3362d-daeb-58d1-803e-2bc74f2840b4"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
@@ -214,4 +211,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Calculus", "ComponentArrays", "Symbolics", "AlgebraicMultigrid", "IncompleteLU", "DiffEqCallbacks", "DifferentiationInterface", "DiffEqDevTools", "ODEProblemLibrary", "ElasticArrays", "ExplicitImports", "InteractiveUtils", "JLArrays", "PoissonRandom", "Printf", "Random", "ReverseDiff", "SafeTestsets", "SparseArrays", "Statistics", "StructArrays", "Test", "Unitful", "ModelingToolkit", "Pkg", "NLsolve", "RecursiveFactorization", "SparseConnectivityTracer", "SparseMatrixColorings"]
+test = ["ComponentArrays", "Symbolics", "AlgebraicMultigrid", "IncompleteLU", "DiffEqCallbacks", "DifferentiationInterface", "DiffEqDevTools", "ODEProblemLibrary", "ElasticArrays", "ExplicitImports", "InteractiveUtils", "JLArrays", "Random", "ReverseDiff", "SafeTestsets", "SparseArrays", "Statistics", "StructArrays", "Test", "Unitful", "ModelingToolkit", "Pkg", "NLsolve", "RecursiveFactorization", "SparseConnectivityTracer", "SparseMatrixColorings"]

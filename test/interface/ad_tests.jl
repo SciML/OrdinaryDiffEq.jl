@@ -1,5 +1,5 @@
 using Test
-using OrdinaryDiffEq, OrdinaryDiffEqCore, Calculus, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes, DifferentiationInterface
+using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes, DifferentiationInterface
 
 function f(du, u, p, t)
     du[1] = -p[1]
@@ -21,7 +21,7 @@ for x in 0:0.001:5
     end
     p = [2.0, x]
     called = false
-    findiff = Calculus.finite_difference_jacobian(test_f, p)
+    findiff = FiniteDiff.finite_difference_jacobian(test_f, p)
     @test called
     called = false
     fordiff = ForwardDiff.jacobian(test_f, p)
@@ -48,7 +48,7 @@ for x in 2.1:0.001:5
         solve!(integrator).u[end]
     end
     p = [2.0, x]
-    findiff = Calculus.finite_difference_jacobian(test_f2, p)
+    findiff = FiniteDiff.finite_difference_jacobian(test_f2, p)
     @test called
     called = false
     fordiff = ForwardDiff.jacobian(test_f2, p)
@@ -70,7 +70,7 @@ function test_f2(p)
 end
 
 p = [2.0, x]
-findiff = Calculus.finite_difference_jacobian(test_f2,p)
+findiff = FiniteDiff.finite_difference_jacobian(test_f2,p)
 @test called
 called = false
 fordiff = ForwardDiff.jacobian(test_f2,p)
@@ -106,7 +106,7 @@ for x in 1.0:0.001:2.5
         solve!(integrator).u[end]
     end
 
-    findiff = Calculus.finite_difference_jacobian(test_lotka, p)
+    findiff = FiniteDiff.finite_difference_jacobian(test_lotka, p)
     @test called
     called = false
     fordiff = ForwardDiff.jacobian(test_lotka, p)
