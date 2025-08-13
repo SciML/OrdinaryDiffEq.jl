@@ -136,7 +136,7 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
 end
 
 # fallback for scalar x, is needed for calc_J to work
-function jacobian(f::UJacobianWrapper, x, integrator)
+function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
 
     dense = ADTypes.dense_ad(alg_autodiff(alg))
@@ -183,7 +183,7 @@ function jacobian(f::UJacobianWrapper, x, integrator)
     return jac
 end
 
-function jacobian!(J::AbstractMatrix{<:Number}, f::UJacobianWrapper, x::AbstractArray{<:Number},
+function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::SciMLBase.DEIntegrator,
         jac_config)
     alg = unwrap_alg(integrator, true)
