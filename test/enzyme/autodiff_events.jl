@@ -1,5 +1,5 @@
 using SciMLSensitivity
-using OrdinaryDiffEq, OrdinaryDiffEqCore, Calculus, Test
+using OrdinaryDiffEq, OrdinaryDiffEqCore, FiniteDiff, Test
 using Zygote
 
 function f(du, u, p, t)
@@ -26,7 +26,7 @@ function test_f(p)
     solve(_prob, Tsit5(), abstol = 1e-14, reltol = 1e-14, callback = cb,
     save_everystep = false).u[end]
 end
-findiff = Calculus.finite_difference_jacobian(test_f, p)
+findiff = FiniteDiff.finite_difference_jacobian(test_f, p)
 findiff
 
 using ForwardDiff
