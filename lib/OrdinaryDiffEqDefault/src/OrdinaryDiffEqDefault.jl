@@ -17,7 +17,7 @@ using LinearAlgebra: I, isdiag
 using EnumX
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("default_alg.jl")
 
@@ -77,6 +77,7 @@ PrecompileTools.@compile_workload begin
     end
 
     for prob in prob_list, solver in solver_list
+
         solve(prob, solver)(5.0)
     end
 

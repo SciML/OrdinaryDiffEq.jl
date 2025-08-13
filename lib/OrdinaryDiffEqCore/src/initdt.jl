@@ -1,5 +1,5 @@
 @muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-        prob::DiffEqBase.AbstractODEProblem{uType, tType, true
+        prob::SciMLBase.AbstractODEProblem{uType, tType, true
         },
         integrator) where {tType, uType}
     _tType = eltype(tType)
@@ -23,7 +23,7 @@
                 sk[i] = abstol + internalnorm(u0[i], t) * reltol
             end
         else
-            @.. broadcast=false sk=abstol + internalnorm(u0, t) * reltol
+            @.. broadcast=false sk=abstol+internalnorm(u0, t)*reltol
         end
     else
         if u0 isa Array && abstol isa Number && reltol isa Number
@@ -119,7 +119,7 @@
             tmp[i] = f₀[i] / sk[i] * oneunit_tType
         end
     else
-        @.. broadcast=false tmp=f₀ / sk * oneunit_tType
+        @.. broadcast=false tmp=f₀/sk*oneunit_tType
     end
 
     d₁ = internalnorm(tmp, t)
@@ -131,7 +131,7 @@
         if integrator.opts.verbose
             @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
         end
-        
+
         return tdir * dtmin
     end
 
@@ -162,7 +162,7 @@
             u₁[i] = u0[i] + dt₀_tdir * f₀[i]
         end
     else
-        @.. broadcast=false u₁=u0 + dt₀_tdir * f₀
+        @.. broadcast=false u₁=u0+dt₀_tdir*f₀
     end
     f₁ = zero(f₀)
     f(f₁, u₁, p, t + dt₀_tdir)
@@ -183,7 +183,7 @@
             tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
         end
     else
-        @.. broadcast=false tmp=(f₁ - f₀) / sk * oneunit_tType
+        @.. broadcast=false tmp=(f₁-f₀)/sk*oneunit_tType
     end
 
     d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
@@ -229,7 +229,7 @@ function Base.showerror(io::IO, e::TypeNotConstantError)
 end
 
 @muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-        prob::DiffEqBase.AbstractODEProblem{uType, tType,
+        prob::SciMLBase.AbstractODEProblem{uType, tType,
             false},
         integrator) where {uType, tType}
     _tType = eltype(tType)
@@ -291,7 +291,7 @@ end
 end
 
 @inline function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-        prob::DiffEqBase.AbstractDAEProblem{duType, uType,
+        prob::SciMLBase.AbstractDAEProblem{duType, uType,
             tType},
         integrator) where {duType, uType, tType}
     _tType = eltype(tType)

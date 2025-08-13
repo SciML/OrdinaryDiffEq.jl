@@ -25,6 +25,7 @@ jobs:
           - Downstream
           - ODEInterfaceRegression
           - Multithreading
+          - QA
 
           - OrdinaryDiffEqAdamsBashforthMoulton
           - OrdinaryDiffEqBDF
@@ -50,6 +51,7 @@ jobs:
           - OrdinaryDiffEqRKN
           - OrdinaryDiffEqRosenbrock
           - OrdinaryDiffEqSDIRK
+          - OrdinaryDiffEqSIMDRK
           - OrdinaryDiffEqSSPRK
           - OrdinaryDiffEqStabilizedIRK
           - OrdinaryDiffEqStabilizedRK

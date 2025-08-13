@@ -3,8 +3,7 @@
 function initialize!(integrator, cache::CNAB2ConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-    integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.p, integrator.t) +
-                           integrator.f.f2(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.p, integrator.t) + integrator.f.f2(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
 
@@ -103,8 +102,7 @@ end
 function initialize!(integrator, cache::CNLF2ConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-    integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.p, integrator.t) +
-                           integrator.f.f2(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.p, integrator.t) + integrator.f.f2(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
 

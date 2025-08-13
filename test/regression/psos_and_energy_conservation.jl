@@ -100,7 +100,7 @@ function psos_callback(j, direction = +1, offset::Real = 0,
     cond = (u, t, integrator) -> s * (u - offset)
     affect! = (integrator) -> nothing
 
-    cb = DiffEqBase.ContinuousCallback(cond, nothing, affect!; callback_kwargs...,
+    cb = SciMLBase.ContinuousCallback(cond, nothing, affect!; callback_kwargs...,
         save_positions = (true, false), idxs = j)
 end
 

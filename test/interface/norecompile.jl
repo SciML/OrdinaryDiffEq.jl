@@ -28,12 +28,10 @@ t4 = @elapsed sol4 = solve(lorenzprob2, Rosenbrock23(autodiff = AutoFiniteDiff()
 @test sol3.retcode === ReturnCode.Success
 @test sol4.retcode === ReturnCode.Success
 
-if VERSION >= v"1.8"
-    @test t1 < t3
-    @test t2 < t4
-    integ = init(lorenzprob, Rosenbrock23())
-    @test integ.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
-end
+@test t1 < t3
+@test t2 < t4
+integ = init(lorenzprob, Rosenbrock23())
+@test integ.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
 
 solve(prob, EPIRK4s3A(), dt = 1e-1)
 
@@ -56,12 +54,12 @@ lorenzprob = ODEProblem(lorenz_oop, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
 # This is problem-dependent, so it is hard to deduce a priori
 @test_broken t1 = @elapsed sol = solve(lorenzprob, Rosenbrock23())
 
-t2 = @elapsed sol = solve(lorenzprob, Rosenbrock23(autodiff = false))
+t2 = @elapsed sol = solve(lorenzprob, Rosenbrock23(autodiff = AutoFiniteDiff()))
 
 lorenzprob2 = ODEProblem{false, SciMLBase.FullSpecialize}(lorenz_oop, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
 
 t3 = @elapsed sol = solve(lorenzprob2, Rosenbrock23())
-t4 = @elapsed sol = solve(lorenzprob2, Rosenbrock23(autodiff = false))
+t4 = @elapsed sol = solve(lorenzprob2, Rosenbrock23(autodiff = AutoFiniteDiff()))
 
 #@test 5t1 < t3
 #@test t2 < t4

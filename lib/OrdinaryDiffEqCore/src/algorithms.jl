@@ -1,4 +1,4 @@
-abstract type OrdinaryDiffEqAlgorithm <: DiffEqBase.AbstractODEAlgorithm end
+abstract type OrdinaryDiffEqAlgorithm <: SciMLBase.AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
@@ -38,7 +38,7 @@ const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 # DAE Specific Algorithms
-abstract type DAEAlgorithm{CS, AD, FDT, ST, CJ} <: DiffEqBase.AbstractDAEAlgorithm end
+abstract type DAEAlgorithm{CS, AD, FDT, ST, CJ} <: SciMLBase.AbstractDAEAlgorithm end
 
 # Partitioned ODE Specific Algorithms
 abstract type OrdinaryDiffEqPartitionedAlgorithm <: OrdinaryDiffEqAlgorithm end
@@ -46,12 +46,12 @@ abstract type OrdinaryDiffEqAdaptivePartitionedAlgorithm <: OrdinaryDiffEqAdapti
 const PartitionedAlgorithm = Union{OrdinaryDiffEqPartitionedAlgorithm,
     OrdinaryDiffEqAdaptivePartitionedAlgorithm}
 
-function DiffEqBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
+function SciMLBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
     T = SciMLBase.remaker_of(thing)
     T(; SciMLBase.struct_as_namedtuple(thing)..., kwargs...)
 end
 
-function DiffEqBase.remake(
+function SciMLBase.remake(
         thing::Union{
             OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT,
                 ST, CJ},
@@ -59,7 +59,6 @@ function DiffEqBase.remake(
             },
             DAEAlgorithm{CS, AD, FDT, ST, CJ}};
         kwargs...) where {CS, AD, FDT, ST, CJ}
-
     if haskey(kwargs, :autodiff) && kwargs[:autodiff] isa AutoForwardDiff
         chunk_size = _get_fwd_chunksize(kwargs[:autodiff])
     else
@@ -98,8 +97,9 @@ A composite algorithm that chooses between multiple ODE solvers based on a user-
 This allows for adaptive algorithm switching based on problem characteristics or performance metrics.
 
 # Arguments
-- `algs`: Tuple or array of ODE algorithms to choose from
-- `choice_function`: Function that determines which algorithm to use at each step
+
+  - `algs`: Tuple or array of ODE algorithms to choose from
+  - `choice_function`: Function that determines which algorithm to use at each step
 
 The choice function receives the integrator and should return an index indicating which algorithm to use.
 This enables sophisticated algorithm switching strategies based on solution behavior, step size, or other criteria.
@@ -113,7 +113,7 @@ struct CompositeAlgorithm{CS, T, F} <: OrdinaryDiffEqCompositeAlgorithm
     end
 end
 
-TruncatedStacktraces.@truncate_stacktrace CompositeAlgorithm 1
+@truncate_stacktrace CompositeAlgorithm 1
 
 if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeAlgorithm)
@@ -170,17 +170,19 @@ based on the problem's stiffness detection. This provides robust performance acr
 without requiring the user to know the problem's stiffness characteristics a priori.
 
 # Arguments
-- `nonstiffalg`: Algorithm to use for nonstiff regions (default: Tsit5())
-- `stiffalg`: Algorithm to use for stiff regions (default: Rodas5P())
+
+  - `nonstiffalg`: Algorithm to use for nonstiff regions (default: Tsit5())
+  - `stiffalg`: Algorithm to use for stiff regions (default: Rodas5P())
 
 # Keywords
-- `maxstiffstep`: Maximum number of consecutive steps before switching from nonstiff to stiff (default: 10)
-- `maxnonstiffstep`: Maximum number of consecutive steps before switching from stiff to nonstiff (default: 3)
-- `nonstifftol`: Tolerance for detecting nonstiff behavior (default: 3//4)
-- `stifftol`: Tolerance for detecting stiff behavior (default: 9//10)
-- `dtfac`: Factor for step size adjustment during switches (default: 2.0)
-- `stiffalgfirst`: Whether to start with the stiff algorithm (default: false)
-- `switch_max`: Maximum number of algorithm switches allowed (default: 10)
+
+  - `maxstiffstep`: Maximum number of consecutive steps before switching from nonstiff to stiff (default: 10)
+  - `maxnonstiffstep`: Maximum number of consecutive steps before switching from stiff to nonstiff (default: 3)
+  - `nonstifftol`: Tolerance for detecting nonstiff behavior (default: 3//4)
+  - `stifftol`: Tolerance for detecting stiff behavior (default: 9//10)
+  - `dtfac`: Factor for step size adjustment during switches (default: 2.0)
+  - `stiffalgfirst`: Whether to start with the stiff algorithm (default: false)
+  - `switch_max`: Maximum number of algorithm switches allowed (default: 10)
 
 The switching decision is based on step size rejections and stability estimates.
 """

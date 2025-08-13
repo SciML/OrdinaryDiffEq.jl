@@ -98,6 +98,7 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "AD Tests" include("interface/ad_tests.jl")
+        @time @safetestset "GPU AutoDiff Interface Tests" include("interface/gpu_autodiff_interface_tests.jl")
         @time @safetestset "DAE Initialization Tests" include("interface/dae_initialization_tests.jl")
     end
 
@@ -160,7 +161,7 @@ end
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
-        if VERSION >= v"1.11"
+        if VERSION >= v"1.11" && isempty(VERSION.prerelease)
             @time @safetestset "Mooncake Tests" include("downstream/mooncake.jl")
         end
         @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")
@@ -196,5 +197,9 @@ end
         @time @safetestset "Linear Exponential GPU" include("gpu/linear_exp.jl")
         @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
         @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "QA"
+        @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
     end
 end # @time

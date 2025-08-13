@@ -104,9 +104,11 @@ function RadauIIA5Tableau(T, T2)
     e1 = convert(T, -(13 + 7 * sqrt6) / 3)
     e2 = convert(T, (-13 + 7 * sqrt6) / 3)
     e3 = convert(T, -1 / 3)
-    RadauIIA5Tableau{T, T2}(T11, T12, T13, T21, T22, T23, T31, #= T33 = 0 =#
+    RadauIIA5Tableau{T, T2}(T11, T12, T13, T21, T22, T23, T31,
+        #= T33 = 0 =#
         TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33,
-        c1, c2, #= c3 = 1 =#
+        c1, c2,
+        #= c3 = 1 =#
         γ, α, β,
         e1, e2, e3)
 end
@@ -233,8 +235,7 @@ function RadauIIA9Tableau(T, T2)
     c1 = convert(T2, 5.710419611451768219312e-2)
     c2 = convert(T2, 2.768430136381238276800e-1)
     c3 = convert(T2, 5.835904323689168200567e-1)
-    c4 = convert(T2, 8.602401356562194478479e-1)
-    #= c5 = convert(T2, 1) =#
+    c4 = convert(T2, 8.602401356562194478479e-1)#= c5 = convert(T2, 1) =#
 
     γ = convert(T, 6.286704751729276645173e0)
     α1 = convert(T, 3.655694325463572258243e0)
@@ -250,11 +251,13 @@ function RadauIIA9Tableau(T, T2)
 
     RadauIIA9Tableau{T, T2}(T11, T12, T13, T14, T15,
         T21, T22, T23, T24, T25, T31, T32, T33, T34, T35,
-        T41, T42, T43, T44, T45, T51, #=T52, T53, T54, T55=#
+        T41, T42, T43, T44, T45, T51,
+        #=T52, T53, T54, T55=#
         TI11, TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25,
         TI31, TI32, TI33, TI34, TI35, TI41, TI42, TI43, TI44, TI45,
         TI51, TI52, TI53, TI54, TI55,
-        c1, c2, c3, c4, #= c5 = 1 =#
+        c1, c2, c3, c4,
+        #= c5 = 1 =#
         γ, α1, β1, α2, β2,
         e1, e2, e3, e4, e5)
 end
@@ -327,8 +330,8 @@ function generateRadauTableau(T1, T2, num_stages::Int)
     end
     @views T[:, 1] .= real.(eigvec[:, num_stages])
     TI = inv(T)
-    A = c_powers'./(1:num_stages)
-    b = vcat(-(num_stages)^2, -.5, zeros(num_stages - 2))
+    A = c_powers' ./ (1:num_stages)
+    b = vcat(-(num_stages)^2, -0.5, zeros(num_stages - 2))
     e = A \ b
     tab = RadauIIATableau{T1, T2}(T, TI, c2, γ, α, β, e)
 end

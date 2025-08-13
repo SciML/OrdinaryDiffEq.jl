@@ -116,7 +116,7 @@ end
 
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     sigma::Rational{Int} # Parameter for order selection
     res::uNoUnitsType # Storage for the scaled residual of u and utilde
 
@@ -159,7 +159,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dtpropose = zero(dt)
     #cur_order = max(alg.init_order, alg.min_order)
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
     Q = fill(zero(QType), alg.max_order + 1)
     n_curr = alg.init_order
     n_old = alg.init_order
@@ -236,7 +236,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else
@@ -303,7 +303,7 @@ struct extrapolation_coefficients{T1, T2, T3}
     # This structure is used by the caches of the algorithms
     # ExtrapolationMidpointDeuflhard() and  ExtrapolationMidpointHairerWanner().
     # It contains the constant coefficients used to extrapolate the internal discretisations
-    # in their perfom_step! function and some additional constant data.
+    # in their perform_step! function and some additional constant data.
 
     subdividing_sequence::T1  # subdividing_sequence[n] is used for the (n -1)th internal discretisation
 
@@ -518,19 +518,19 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 4.0870096435546874e17 9.80882314453125e19;
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 -1.7293822569102705e19]
         extrapolation_scalars = T[-1.0, 0.5, -0.16666666666666666, 0.041666666666666664,
-            -0.008333333333333333, 0.001388888888888889,
-            -0.0001984126984126984, 2.48015873015873e-5,
-            -2.7557319223985893e-6, 2.755731922398589e-7,
-            -2.505210838544172e-8, 2.08767569878681e-9,
-            -1.6059043836821613e-10, 1.1470745597729725e-11,
-            -7.647163731819816e-13, 4.779477332387385e-14]
+        -0.008333333333333333, 0.001388888888888889,
+        -0.0001984126984126984, 2.48015873015873e-5,
+        -2.7557319223985893e-6, 2.755731922398589e-7,
+        -2.505210838544172e-8, 2.08767569878681e-9,
+        -1.6059043836821613e-10, 1.1470745597729725e-11,
+        -7.647163731819816e-13, 4.779477332387385e-14]
         extrapolation_scalars_2 = T[-0.5, 0.16666666666666666, -0.041666666666666664,
-            0.008333333333333333, -0.001388888888888889,
-            0.0001984126984126984, -2.48015873015873e-5,
-            2.7557319223985893e-6, -2.755731922398589e-7,
-            2.505210838544172e-8, -2.08767569878681e-9,
-            1.6059043836821613e-10, -1.1470745597729725e-11,
-            7.647163731819816e-13, -4.779477332387385e-14]
+        0.008333333333333333, -0.001388888888888889,
+        0.0001984126984126984, -2.48015873015873e-5,
+        2.7557319223985893e-6, -2.755731922398589e-7,
+        2.505210838544172e-8, -2.08767569878681e-9,
+        1.6059043836821613e-10, -1.1470745597729725e-11,
+        7.647163731819816e-13, -4.779477332387385e-14]
     elseif sequence == :romberg
         subdividing_sequence = [
             1,
@@ -582,18 +582,18 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.4044854458583944e32 4.602217908988787e36;
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 -4.602498823223603e36]
         extrapolation_scalars = T[-1.0, 0.5, -0.125, 0.015625, -0.0009765625,
-            3.0517578125e-5, -4.76837158203125e-7,
-            3.725290298461914e-9, -1.4551915228366852e-11,
-            2.842170943040401e-14, -2.7755575615628914e-17,
-            1.3552527156068805e-20, -3.308722450212111e-24,
-            4.0389678347315804e-28, -2.465190328815662e-32,
-            7.52316384526264e-37]
+        3.0517578125e-5, -4.76837158203125e-7,
+        3.725290298461914e-9, -1.4551915228366852e-11,
+        2.842170943040401e-14, -2.7755575615628914e-17,
+        1.3552527156068805e-20, -3.308722450212111e-24,
+        4.0389678347315804e-28, -2.465190328815662e-32,
+        7.52316384526264e-37]
         extrapolation_scalars_2 = T[-0.5, 0.125, -0.015625, 0.0009765625, -3.0517578125e-5,
-            4.76837158203125e-7, -3.725290298461914e-9,
-            1.4551915228366852e-11, -2.842170943040401e-14,
-            2.7755575615628914e-17, -1.3552527156068805e-20,
-            3.308722450212111e-24, -4.0389678347315804e-28,
-            2.465190328815662e-32, -7.52316384526264e-37]
+        4.76837158203125e-7, -3.725290298461914e-9,
+        1.4551915228366852e-11, -2.842170943040401e-14,
+        2.7755575615628914e-17, -1.3552527156068805e-20,
+        3.308722450212111e-24, -4.0389678347315804e-28,
+        2.465190328815662e-32, -7.52316384526264e-37]
     else # sequence == :bulirsch
         subdividing_sequence = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256]
         extrapolation_weights = T[-1.0 -2.0 -3.0 -4.0 -4.8 -5.485714285714286 -5.984415584415585 -6.383376623376623 -6.660914737436476 -6.875782954773137 -7.022076209130012 -7.13353773625906 -7.20862760716705 -7.265388454467578 -7.3034271374752615 -7.332068028210459;
@@ -628,19 +628,19 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 2.662517163307765e19 2.0448131814203635e22;
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 -1.0231987972010274e22]
         extrapolation_scalars = T[-1.0, 0.5, -0.16666666666666666, 0.041666666666666664,
-            -0.006944444444444444, 0.0008680555555555555,
-            -7.233796296296296e-5, 4.521122685185185e-6,
-            -1.8838011188271604e-7, 5.886878496334876e-9,
-            -1.226433020069766e-10, 1.9163015938590095e-12,
-            -1.9961474936031345e-14, 1.5594902293774489e-16,
-            -8.122344944674213e-19, 3.1727909940133645e-21]
+        -0.006944444444444444, 0.0008680555555555555,
+        -7.233796296296296e-5, 4.521122685185185e-6,
+        -1.8838011188271604e-7, 5.886878496334876e-9,
+        -1.226433020069766e-10, 1.9163015938590095e-12,
+        -1.9961474936031345e-14, 1.5594902293774489e-16,
+        -8.122344944674213e-19, 3.1727909940133645e-21]
         extrapolation_scalars_2 = T[-0.5, 0.16666666666666666, -0.041666666666666664,
-            0.006944444444444444, -0.0008680555555555555,
-            7.233796296296296e-5, -4.521122685185185e-6,
-            1.8838011188271604e-7, -5.886878496334876e-9,
-            1.226433020069766e-10, -1.9163015938590095e-12,
-            1.9961474936031345e-14, -1.5594902293774489e-16,
-            8.122344944674213e-19, -3.1727909940133645e-21]
+        0.006944444444444444, -0.0008680555555555555,
+        7.233796296296296e-5, -4.521122685185185e-6,
+        1.8838011188271604e-7, -5.886878496334876e-9,
+        1.226433020069766e-10, -1.9163015938590095e-12,
+        1.9961474936031345e-14, -1.5594902293774489e-16,
+        8.122344944674213e-19, -3.1727909940133645e-21]
     end
     extrapolation_coefficients(subdividing_sequence,
         extrapolation_weights, extrapolation_scalars,
@@ -716,19 +716,19 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 2.461344563824385e27 4.57333699600918e30;
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 -1.1278129999388386e30]
         extrapolation_scalars = T[-1.0, 0.25, -0.027777777777777776, 0.001736111111111111,
-            -6.944444444444444e-5, 1.9290123456790124e-6,
-            -3.936759889140842e-8, 6.151187326782565e-10,
-            -7.594058428126624e-12, 7.594058428126623e-14,
-            -6.276081345559193e-16, 4.358389823304995e-18,
-            -2.5789288895295828e-20, 1.3157800456783586e-22,
-            -5.8479113141260385e-25, 2.2843403570804838e-27]
+        -6.944444444444444e-5, 1.9290123456790124e-6,
+        -3.936759889140842e-8, 6.151187326782565e-10,
+        -7.594058428126624e-12, 7.594058428126623e-14,
+        -6.276081345559193e-16, 4.358389823304995e-18,
+        -2.5789288895295828e-20, 1.3157800456783586e-22,
+        -5.8479113141260385e-25, 2.2843403570804838e-27]
         extrapolation_scalars_2 = T[-0.25, 0.027777777777777776, -0.001736111111111111,
-            6.944444444444444e-5, -1.9290123456790124e-6,
-            3.936759889140842e-8, -6.151187326782565e-10,
-            7.594058428126624e-12, -7.594058428126623e-14,
-            6.276081345559193e-16, -4.358389823304995e-18,
-            2.5789288895295828e-20, -1.3157800456783586e-22,
-            5.8479113141260385e-25, -2.2843403570804838e-27]
+        6.944444444444444e-5, -1.9290123456790124e-6,
+        3.936759889140842e-8, -6.151187326782565e-10,
+        7.594058428126624e-12, -7.594058428126623e-14,
+        6.276081345559193e-16, -4.358389823304995e-18,
+        2.5789288895295828e-20, -1.3157800456783586e-22,
+        5.8479113141260385e-25, -2.2843403570804838e-27]
     elseif sequence == :romberg
         subdividing_sequence = [
             1,
@@ -780,19 +780,19 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 2.3898545256223295e63 8.553622524787915e71;
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 -2.5660867669957927e72]
         extrapolation_scalars = T[-1.0, 0.25, -0.015625, 0.000244140625,
-            -9.5367431640625e-7, 9.313225746154785e-10,
-            -2.2737367544323206e-13, 1.3877787807814457e-17,
-            -2.117582368135751e-22, 8.077935669463161e-28,
-            -7.703719777548943e-34, 1.8367099231598242e-40,
-            -1.0947644252537633e-47, 1.6313261169996311e-55,
-            -6.077163357286271e-64, 5.659799424266695e-73]
+        -9.5367431640625e-7, 9.313225746154785e-10,
+        -2.2737367544323206e-13, 1.3877787807814457e-17,
+        -2.117582368135751e-22, 8.077935669463161e-28,
+        -7.703719777548943e-34, 1.8367099231598242e-40,
+        -1.0947644252537633e-47, 1.6313261169996311e-55,
+        -6.077163357286271e-64, 5.659799424266695e-73]
         extrapolation_scalars_2 = T[-0.25, 0.015625, -0.000244140625, 9.5367431640625e-7,
-            -9.313225746154785e-10, 2.2737367544323206e-13,
-            -1.3877787807814457e-17, 2.117582368135751e-22,
-            -8.077935669463161e-28, 7.703719777548943e-34,
-            -1.8367099231598242e-40, 1.0947644252537633e-47,
-            -1.6313261169996311e-55, 6.077163357286271e-64,
-            -5.659799424266695e-73]
+        -9.313225746154785e-10, 2.2737367544323206e-13,
+        -1.3877787807814457e-17, 2.117582368135751e-22,
+        -8.077935669463161e-28, 7.703719777548943e-34,
+        -1.8367099231598242e-40, 1.0947644252537633e-47,
+        -1.6313261169996311e-55, 6.077163357286271e-64,
+        -5.659799424266695e-73]
     else # sequence == :bulirsch
         subdividing_sequence = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256]
         extrapolation_weights = T[-1.0 -1.3333333333333333 -1.5 -1.6 -1.6457142857142857 -1.6718367346938776 -1.6835279006707577 -1.6901299708694666 -1.693069327340544 -1.6947243315705933 -1.6954602083971546 -1.695874240194077 -1.6960582742950205 -1.6961617997954963 -1.6962078123772122 -1.6962336948493626;
@@ -827,19 +827,19 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 4.627542501479674e36 3.8991937548467816e41;
                                     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 -4.023929415318473e41]
         extrapolation_scalars = T[-1.0, 0.25, -0.027777777777777776, 0.001736111111111111,
-            -4.8225308641975306e-5, 7.535204475308642e-7,
-            -5.232780885631001e-9, 2.0440550334496098e-11,
-            -3.548706655294462e-14, 3.465533843060998e-17,
-            -1.5041379527174468e-20, 3.672211798626579e-24,
-            -3.9846048162180767e-28, 2.4320097755237285e-32,
-            -6.597248740027475e-37, 1.0066602691692314e-41]
+        -4.8225308641975306e-5, 7.535204475308642e-7,
+        -5.232780885631001e-9, 2.0440550334496098e-11,
+        -3.548706655294462e-14, 3.465533843060998e-17,
+        -1.5041379527174468e-20, 3.672211798626579e-24,
+        -3.9846048162180767e-28, 2.4320097755237285e-32,
+        -6.597248740027475e-37, 1.0066602691692314e-41]
         extrapolation_scalars_2 = T[-0.25, 0.027777777777777776, -0.001736111111111111,
-            4.8225308641975306e-5, -7.535204475308642e-7,
-            5.232780885631001e-9, -2.0440550334496098e-11,
-            3.548706655294462e-14, -3.465533843060998e-17,
-            1.5041379527174468e-20, -3.672211798626579e-24,
-            3.9846048162180767e-28, -2.4320097755237285e-32,
-            6.597248740027475e-37, -1.0066602691692314e-41]
+        4.8225308641975306e-5, -7.535204475308642e-7,
+        5.232780885631001e-9, -2.0440550334496098e-11,
+        3.548706655294462e-14, -3.465533843060998e-17,
+        1.5041379527174468e-20, -3.672211798626579e-24,
+        3.9846048162180767e-28, -2.4320097755237285e-32,
+        6.597248740027475e-37, -1.0066602691692314e-41]
     end
     extrapolation_coefficients(subdividing_sequence,
         extrapolation_weights, extrapolation_scalars,
@@ -891,7 +891,7 @@ end
     # Values that are mutated
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
@@ -903,7 +903,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard, u, rate_prototype,
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
 
     Q = fill(zero(QType), alg.max_order - alg.min_order + 1)
     n_curr = alg.init_order
@@ -945,7 +945,7 @@ end
     # Constant values
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     coefficients::extrapolation_coefficients
     stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.min_order - 1)
 end
@@ -996,7 +996,7 @@ end
     # Values that are mutated
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
@@ -1029,7 +1029,7 @@ end
     # Constant values
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     coefficients::extrapolation_coefficients
     stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.min_order - 1)
 
@@ -1053,7 +1053,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
 
     Q = fill(zero(QType), alg.max_order - alg.min_order + 1)
     n_curr = alg.init_order
@@ -1126,7 +1126,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else
@@ -1191,7 +1191,7 @@ end
     # Values that are mutated
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
@@ -1208,7 +1208,7 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner, u, rate_prototype,
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
 
     Q = fill(zero(QType), alg.max_order + 1)
     n_curr = alg.init_order
@@ -1254,7 +1254,7 @@ end
     # Constant values
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     coefficients::extrapolation_coefficients
     stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
     sigma::Rational{Int} # Parameter for order selection
@@ -1309,7 +1309,7 @@ end
     # Values that are mutated
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
@@ -1329,7 +1329,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
 
     Q = fill(zero(QType), alg.max_order + 1)
     n_curr = alg.init_order
@@ -1397,7 +1397,7 @@ end
     # Constant values
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     coefficients::extrapolation_coefficients
     stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
     sigma::Rational{Int} # Parameter for order selection
@@ -1455,7 +1455,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else
@@ -1524,7 +1524,7 @@ end
     # Values that are mutated
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
@@ -1544,7 +1544,7 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+    QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. SciMLBase.__init in solve.jl
 
     Q = fill(zero(QType), alg.max_order + 1)
     n_curr = alg.init_order
@@ -1596,7 +1596,7 @@ end
     # Constant values
     Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
     n_curr::Int # Storage for the current extrapolation order
-    n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+    n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     coefficients::extrapolation_coefficients
     stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
     sigma::Rational{Int} # Parameter for order selection
@@ -1653,7 +1653,7 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else

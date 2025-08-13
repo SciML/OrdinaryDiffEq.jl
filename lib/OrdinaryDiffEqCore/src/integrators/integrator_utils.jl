@@ -8,7 +8,8 @@ function loopheader!(integrator)
 
     # Accept or reject the step
     if integrator.iter > 0
-        if (integrator.opts.adaptive && !integrator.accept_step) || integrator.force_stepfail
+        if (integrator.opts.adaptive && !integrator.accept_step) ||
+           integrator.force_stepfail
             if integrator.isout
                 integrator.dt = integrator.dt * integrator.opts.qmin
             elseif !integrator.force_stepfail
@@ -30,7 +31,6 @@ function loopheader!(integrator)
     integrator.force_stepfail = false
     return nothing
 end
-
 
 function apply_step!(integrator)
     update_uprev!(integrator)
@@ -105,7 +105,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
         saved = true
         curt = integrator.tdir * pop!(saveat)
         if curt != integrator.t # If <t, interpolate
-            DiffEqBase.addsteps!(integrator)
+            SciMLBase.addsteps!(integrator)
             Θ = (curt - integrator.tprev) / integrator.dt
             val = ode_interpolant(Θ, integrator, integrator.opts.save_idxs, Val{0}) # out of place, but no force copy later
             copyat_or_push!(integrator.sol.t, integrator.saveiter, curt)
@@ -195,17 +195,16 @@ function _postamble!(integrator)
         resize!(integrator.sol.k, integrator.saveiter_dense)
     end
     if integrator.opts.progress
-
     end
 end
 
 function final_progress(integrator)
     @logmsg(LogLevel(-1),
-    integrator.opts.progress_name,
-    _id=integrator.opts.progress_id,
-    message=integrator.opts.progress_message(integrator.dt, integrator.u,
-        integrator.p, integrator.t),
-    progress="done")
+        integrator.opts.progress_name,
+        _id=integrator.opts.progress_id,
+        message=integrator.opts.progress_message(integrator.dt, integrator.u,
+            integrator.p, integrator.t),
+        progress="done")
 end
 
 function solution_endpoint_match_cur_integrator!(integrator)
@@ -324,7 +323,7 @@ function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, ts
     @logmsg(LogLevel(-1), progress_name,
         _id=progress_id,
         message=progress_message(dt, u, p, t),
-        progress=(t - t1) / (t2 - t1))
+        progress=(t-t1)/(t2-t1))
 end
 
 function fixed_t_for_floatingpoint_error!(integrator, ttmp)
@@ -376,13 +375,18 @@ function handle_callbacks!(integrator)
     discrete_modified = false
     saved_in_cb = false
     if !(continuous_callbacks isa Tuple{})
-        time, upcrossing, event_occurred, event_idx, idx, counter = DiffEqBase.find_first_continuous_callback(
+        time, upcrossing,
+        event_occurred,
+        event_idx,
+        idx,
+        counter = DiffEqBase.find_first_continuous_callback(
             integrator,
             continuous_callbacks...)
         if event_occurred
             integrator.event_last_time = idx
             integrator.vector_event_last_time = event_idx
-            continuous_modified, saved_in_cb = apply_ith_callback!(integrator,
+            continuous_modified,
+            saved_in_cb = apply_ith_callback!(integrator,
                 time, upcrossing,
                 event_idx,
                 idx,
@@ -393,7 +397,8 @@ function handle_callbacks!(integrator)
         end
     end
     if !integrator.force_stepfail && !(discrete_callbacks isa Tuple{})
-        discrete_modified, saved_in_cb = DiffEqBase.apply_discrete_callback!(integrator,
+        discrete_modified,
+        saved_in_cb = DiffEqBase.apply_discrete_callback!(integrator,
             discrete_callbacks...)
     end
     if !saved_in_cb
@@ -469,7 +474,7 @@ function handle_tstop!(integrator)
             integrator.just_hit_tstop = true
         elseif tdir_t > tdir_tstop
             if !integrator.dtchangeable
-                DiffEqBase.change_t_via_interpolation!(integrator,
+                SciMLBase.change_t_via_interpolation!(integrator,
                     integrator.tdir *
                     pop_tstop!(integrator), Val{true})
                 integrator.just_hit_tstop = true

@@ -13,15 +13,15 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            _ode_interpolant!, _ode_addsteps!, @fold,
                            @OnDemandTableauExtract, AutoAlgSwitch,
                            DerivativeOrderNotPossibleError,
-                           get_fsalfirstlast
+                           get_fsalfirstlast, copyat_or_push!
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 using Static: False
-using TruncatedStacktraces
+using TruncatedStacktraces: @truncate_stacktrace
 using LinearAlgebra: norm
 import OrdinaryDiffEqCore
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

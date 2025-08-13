@@ -14,7 +14,7 @@ end
             ImplicitDeuflhardExtrapolation})
     # Dummy function
     # ExtrapolationMidpointDeuflhard's stepsize scaling is stored in the cache;
-    # it is computed by  stepsize_controller_internal! (in perfom_step!) resp. stepsize_predictor!
+    # it is computed by  stepsize_controller_internal! (in perform_step!) resp. stepsize_predictor!
     # (in step_accept_controller! and step_reject_controller!)
     zero(typeof(integrator.opts.qmax))
 end
@@ -90,7 +90,7 @@ function step_accept_controller!(integrator,
     n_new = argmin(work) + min_order - 1
 
     # Check if n_new may be increased
-    if n_new == n_curr < min(max_order, n_old + 1) # cf. win_max in perfom_step! of the last step
+    if n_new == n_curr < min(max_order, n_old + 1) # cf. win_max in perform_step! of the last step
         # Predict stepsize scaling for order (n_new + 1)
         stepsize_predictor!(integrator, alg, n_new + 1) # Update cache.Q
 
@@ -131,7 +131,7 @@ end
             ImplicitEulerBarycentricExtrapolation})
     # Dummy function
     # ExtrapolationMidpointHairerWanner's stepsize scaling is stored in the cache;
-    # it is computed by  stepsize_controller_internal! (in perfom_step!), step_accept_controller! or step_reject_controller!
+    # it is computed by  stepsize_controller_internal! (in perform_step!), step_accept_controller! or step_reject_controller!
     zero(typeof(integrator.opts.qmax))
 end
 
@@ -202,12 +202,12 @@ function step_accept_controller!(integrator,
     s = integrator.cache.stage_number
 
     # Compute new order based on available quantities
-    win_min_old = min(n_old, n_curr) - 1 # cf. win_min in perfom_step! of the last step
+    win_min_old = min(n_old, n_curr) - 1 # cf. win_min in perform_step! of the last step
     tmp = win_min_old:(max(n_curr, n_old) + 1) # Index range for the new order
     fill!(dt_new, zero(eltype(dt_new)))
-    @.. broadcast=false Q=integrator.dt / Q
+    @.. broadcast=false Q=integrator.dt/Q
     copyto!(dt_new, win_min_old, Q, win_min_old, (max(n_curr, n_old) + 1) - win_min_old + 1)
-    @.. broadcast=false Q=integrator.dt / Q
+    @.. broadcast=false Q=integrator.dt/Q
     dtmin = timedepentdtmin(integrator)
     fill!(work, zero(eltype(work))) # work[n] is the work for order (n-1)
     for i in tmp

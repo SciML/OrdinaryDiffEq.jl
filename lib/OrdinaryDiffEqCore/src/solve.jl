@@ -1,21 +1,20 @@
-function DiffEqBase.__solve(
-        prob::Union{DiffEqBase.AbstractODEProblem,
-            DiffEqBase.AbstractDAEProblem},
+function SciMLBase.__solve(
+        prob::Union{SciMLBase.AbstractODEProblem,
+            SciMLBase.AbstractDAEProblem},
         alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, args...;
         kwargs...)
-    integrator = DiffEqBase.__init(prob, alg, args...; kwargs...)
+    integrator = SciMLBase.__init(prob, alg, args...; kwargs...)
     solve!(integrator)
     integrator.sol
 end
 
-function DiffEqBase.__init(
-        prob::Union{DiffEqBase.AbstractODEProblem,
-            DiffEqBase.AbstractDAEProblem},
+function SciMLBase.__init(
+        prob::Union{SciMLBase.AbstractODEProblem,
+            SciMLBase.AbstractDAEProblem},
         alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
         timeseries_init = (),
         ts_init = (),
-        ks_init = (),
-        recompile::Type{Val{recompile_flag}} = Val{true};
+        ks_init = ();
         saveat = (),
         tstops = (),
         d_discontinuities = (),
@@ -23,13 +22,13 @@ function DiffEqBase.__init(
         save_everystep = isempty(saveat),
         save_on = true,
         save_start = save_everystep || isempty(saveat) ||
-                         saveat isa Number || prob.tspan[1] in saveat,
+                     saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
         callback = nothing,
         dense = save_everystep && isempty(saveat) &&
-                    !default_linear_interpolation(prob, alg),
+                !default_linear_interpolation(prob, alg),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
-                    (dense) || !isempty(saveat), # and no dense output
+                (dense) || !isempty(saveat), # and no dense output
         dt = isdiscretealg(alg) && isempty(tstops) ?
              eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
         dtmin = eltype(prob.tspan)(0),
@@ -51,7 +50,7 @@ function DiffEqBase.__init(
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
         internalnorm = ODE_DEFAULT_NORM,
-        internalopnorm = LinearAlgebra.opnorm,
+        internalopnorm = opnorm,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
         verbose = true,
@@ -70,17 +69,17 @@ function DiffEqBase.__init(
         initialize_integrator = true,
         alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
-        kwargs...) where {recompile_flag}
-    if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
+        kwargs...)
+    if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")
     end
 
-    if prob isa DiffEqBase.AbstractODEProblem && alg isa DAEAlgorithm
+    if prob isa SciMLBase.AbstractODEProblem && alg isa DAEAlgorithm
         error("You cannot use an DAE Algorithm with a ODEProblem")
     end
 
-    if prob isa DiffEqBase.ODEProblem
-        if !(prob.f isa DiffEqBase.DynamicalODEFunction) && alg isa PartitionedAlgorithm
+    if prob isa SciMLBase.ODEProblem
+        if !(prob.f isa SciMLBase.DynamicalODEFunction) && alg isa PartitionedAlgorithm
             error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
         end
     end
@@ -90,7 +89,7 @@ function DiffEqBase.__init(
             error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
         end
     elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
-           !(prob isa DiffEqBase.AbstractDAEProblem) &&
+           !(prob isa SciMLBase.AbstractDAEProblem) &&
            !is_mass_matrix_alg(alg) &&
            prob.f.mass_matrix != I
         error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
@@ -318,7 +317,8 @@ function DiffEqBase.__init(
     end
 
     ### Algorithm-specific defaults ###
-    save_idxs, saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
+    save_idxs,
+    saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
         prob, save_idxs)
 
     if save_idxs === nothing
@@ -482,24 +482,13 @@ function DiffEqBase.__init(
 
     id = InterpolationData(
         f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
-    sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
+    sol = SciMLBase.build_solution(prob, _alg, ts, timeseries,
         dense = dense, k = ks, interp = id, alg_choice = alg_choice,
         calculate_error = false, stats = stats, saved_subsystem = saved_subsystem)
 
-    if recompile_flag == true
-        FType = typeof(f)
-        SolType = typeof(sol)
-        cacheType = typeof(cache)
-    else
-        FType = Function
-        if _alg isa OrdinaryDiffEqAlgorithm
-            SolType = DiffEqBase.AbstractODESolution
-            cacheType = OrdinaryDiffEqCache
-        else
-            SolType = DiffEqBase.AbstractDAESolution
-            cacheType = DAECache
-        end
-    end
+    FType = typeof(f)
+    SolType = typeof(sol)
+    cacheType = typeof(cache)
 
     # rate/state = (state/time)/state = 1/t units, internalnorm drops units
     # we don't want to differentiate through eigenvalue estimation
@@ -561,7 +550,8 @@ function DiffEqBase.__init(
         fsalfirst, fsallast)
 
     if initialize_integrator
-        if isdae || SciMLBase.has_initializeprob(prob.f) || prob isa SciMLBase.ImplicitDiscreteProblem
+        if isdae || SciMLBase.has_initializeprob(prob.f) ||
+           prob isa SciMLBase.ImplicitDiscreteProblem
             DiffEqBase.initialize_dae!(integrator)
             !isnothing(integrator.u) && update_uprev!(integrator)
         end
@@ -610,7 +600,7 @@ function DiffEqBase.__init(
     integrator
 end
 
-function DiffEqBase.solve!(integrator::ODEIntegrator)
+function SciMLBase.solve!(integrator::ODEIntegrator)
     @inbounds while !isempty(integrator.opts.tstops)
         while integrator.tdir * integrator.t < first(integrator.opts.tstops)
             loopheader!(integrator)
@@ -629,15 +619,15 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
 
     f = integrator.sol.prob.f
 
-    if DiffEqBase.has_analytic(f)
-        DiffEqBase.calculate_solution_errors!(integrator.sol;
+    if SciMLBase.has_analytic(f)
+        SciMLBase.calculate_solution_errors!(integrator.sol;
             timeseries_errors = integrator.opts.timeseries_errors,
             dense_errors = integrator.opts.dense_errors)
     end
     if integrator.sol.retcode != ReturnCode.Default
         return integrator.sol
     end
-    integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
+    integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
 end
 
 # Helpers

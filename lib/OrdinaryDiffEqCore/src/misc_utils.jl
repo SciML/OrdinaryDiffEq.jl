@@ -37,7 +37,7 @@ function constvalue(x)
     return _x isa Complex ? DiffEqBase.value(real(_x)) : DiffEqBase.value(_x)
 end
 
-function diffdir(integrator::DiffEqBase.DEIntegrator)
+function diffdir(integrator::SciMLBase.DEIntegrator)
     difference = maximum(abs, integrator.uprev) * sqrt(eps(typeof(integrator.t)))
     dir = integrator.tdir > zero(integrator.tdir) ?
           integrator.t > integrator.sol.prob.tspan[2] - difference ? -1 : 1 :
@@ -118,7 +118,7 @@ function get_differential_vars(f, u)
         mm = f.mass_matrix
         mm = mm isa MatrixOperator ? mm.A : mm
 
-        if mm isa UniformScaling 
+        if mm isa UniformScaling
             return nothing
         elseif all(!iszero, mm)
             return trues(size(mm, 1))
@@ -146,7 +146,7 @@ function _bool_to_ADType(::Val{false}, _, ::Val{FD}) where {FD}
     Base.depwarn(
         "Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.",
         :_bool_to_ADType)
-    return AutoFiniteDiff(; fdtype = Val{FD}(), dir=1)
+    return AutoFiniteDiff(; fdtype = Val{FD}(), dir = 1)
 end
 
 # Functions to get ADType type from Bool or ADType object, or ADType type
@@ -165,7 +165,7 @@ function _process_AD_choice(
         @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
         return _bool_to_ADType(Val{true}(), Val{CS2}(), Val{FD}()), Val{CS2}(), Val{FD}()
     end
-    
+
     _CS = CS === nothing ? 0 : CS
     return ad_alg, Val{_CS}(), Val{FD}()
 end
@@ -188,7 +188,7 @@ function _process_AD_choice(
         @warn "The `diff_type` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoFiniteDiff` with `fdtype=Val{$FD2}()`."
         return _bool_to_ADType(Val{false}(), Val{CS}(), Val{FD2}()), Val{CS}(), Val{FD2}()
     end
-    if ad_alg.dir isa Bool # default dir of true makes integration non-reversable
+    if ad_alg.dir isa Bool # default dir of true makes integration non-reversible
         @reset ad_alg.dir = Int(ad_alg.dir)
     end
     return ad_alg, Val{CS}(), ad_alg.fdtype

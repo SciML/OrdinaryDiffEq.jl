@@ -24,21 +24,25 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            _process_AD_choice
 using OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache
 
-using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
+using TruncatedStacktraces: @truncate_stacktrace
+using MuladdMacro: @muladd
+using MacroTools: @capture
+using FastBroadcast: @..
+using RecursiveArrayTools: recursivefill!
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 using LinearAlgebra: mul!, I
-using ArrayInterface
+import ArrayInterface
+using ArrayInterface: ismutable
 import OrdinaryDiffEqCore
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
                                     nlsolve!, nlsolvefail, isnewton, markfirststage!,
                                     set_new_W!, DIRK, compute_step!, COEFFICIENT_MULTISTEP,
                                     NonlinearSolveAlg
-import ADTypes
 import ADTypes: AutoForwardDiff, AutoFiniteDiff, AbstractADType
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")
@@ -89,6 +93,7 @@ PrecompileTools.@compile_workload begin
     end
 
     for prob in prob_list, solver in solver_list
+
         solve(prob, solver)(5.0)
     end
 

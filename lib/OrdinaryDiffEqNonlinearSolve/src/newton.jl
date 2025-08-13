@@ -1,7 +1,7 @@
 ## initialize!
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, false},
-        integrator::DiffEqBase.DEIntegrator)
+        integrator::SciMLBase.DEIntegrator)
     @unpack dt = integrator
     @unpack cache = nlsolver
 
@@ -12,7 +12,7 @@
 end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, true},
-        integrator::DiffEqBase.DEIntegrator)
+        integrator::SciMLBase.DEIntegrator)
     @unpack u, uprev, t, dt, opts = integrator
     @unpack cache = nlsolver
     @unpack weight = cache
@@ -26,14 +26,14 @@ end
 end
 
 function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, false},
-        integrator::DiffEqBase.DEIntegrator)
+        integrator::SciMLBase.DEIntegrator)
     @unpack uprev, t, p, dt, opts, f = integrator
     @unpack z, tmp, ztmp, γ, α, iter, cache, method, alg = nlsolver
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
 
     @unpack ustep, tstep, k, invγdt = cache
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
         integrator.stats.nnonliniter += cache.cache.stats.nsteps
         integrator.stats.njacs += cache.cache.stats.njacs
@@ -49,7 +49,7 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, false},
 end
 
 function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
-        integrator::DiffEqBase.DEIntegrator)
+        integrator::SciMLBase.DEIntegrator)
     @unpack uprev, t, p, dt, opts, f = integrator
     @unpack z, tmp, ztmp, γ, α, iter, cache, method, alg = nlsolver
 
@@ -58,7 +58,7 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
 
     @unpack ustep, tstep, k, invγdt = cache
 
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
         integrator.stats.nnonliniter += cache.cache.stats.nsteps
         integrator.stats.njacs += cache.cache.stats.njacs
@@ -187,7 +187,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
         ztmp, ustep = _compute_rhs(tmp, γ, α, tstep, invγdt, method, p, dt, f, z)
     end
 
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
@@ -199,7 +199,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
     dz = _reshape(W \ _vec(ztmp), axes(ztmp))
     dz = relax(dz, nlsolver, integrator, f)
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         integrator.stats.nsolve += 1
     end
 
@@ -226,7 +226,7 @@ end
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
 
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
@@ -268,7 +268,7 @@ end
 
     cache.linsolve = linres.cache
 
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         integrator.stats.nsolve += 1
     end
 

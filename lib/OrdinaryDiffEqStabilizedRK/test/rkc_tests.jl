@@ -125,6 +125,8 @@ end
         # check allocations
         integrator = init(prob, alg; save_everystep = false)
         allocs = @allocations solve!(integrator)
-        @test allocs <= 3
+        # Julia 1.11 has an extra allocation in these algorithms
+        expected_allocs = VERSION >= v"1.11" ? 4 : 3
+        @test allocs <= expected_allocs
     end
 end
