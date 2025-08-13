@@ -1,4 +1,16 @@
-using OrdinaryDiffEq, PoissonRandom
+using OrdinaryDiffEq, Random
+
+# Simple Poisson random number generator using Knuth's algorithm
+function pois_rand(λ::Float64)
+    L = exp(-λ)
+    k = 0
+    p = 1.0
+    while p > L
+        k += 1
+        p *= rand()
+    end
+    return k - 1
+end
 
 function rate_to_proportion(r::Float64, t::Float64)
     1 - exp(-r * t)
