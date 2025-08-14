@@ -861,6 +861,30 @@ end
     @test length(sol) < 20
     @test SciMLBase.successful_retcode(sol)
 
+    println("Rodas6P")
+
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, Rodas6P(), dense_errors = true)
+    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+    @test sim.𝒪est[:L2]≈5 atol=testTol
+
+    sol = solve(prob, Rodas6P())
+    @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, Rodas6P(), dense_errors = true)
+    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+    @test sim.𝒪est[:L2]≈5 atol=testTol
+
+    sol = solve(prob, Rodas6P())
+    @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
+
+
+
     println("Rodas5P Enzyme Forward")
 
     prob = prob_ode_linear
@@ -952,6 +976,7 @@ end
         Rodas5P,
         Rodas5Pe,
         Rodas5Pr,
+        Rodas6P,
         RosenbrockW6S4OS,
         ROS34PW1a,
         ROS34PW1b,
