@@ -460,7 +460,7 @@ end
     linsolve_tmp = @.. du + dtd[1] * dT
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     # constant number for type stability make sure this is greater than num_stages
-    ks = ntuple(Returns(k1), 19)
+    ks = ntuple(Returns(k1), 20)
     # Loop for stages
     for stage in 2:num_stages
         u = uprev
@@ -494,13 +494,19 @@ end
       for i in 1:15
          u = @.. u + A[16, i] * ks[i]
       end
-      u = @.. u + ks[16]
+      u = u .+ ks[16]
     else
-      du = ks[end]
-      u = @.. u + ks[end]
+      du = ks[num_stages]
+      u = u .+ ks[num_stages]
     end
 
     if integrator.opts.adaptive
+        if (integrator.alg isa Rodas5Pe)
+            du = 0.2606326497975715 * ks[1] - 0.005158627295444251 * ks[2] +
+                 1.3038988631109731 * ks[3] + 1.235000722062074 * ks[4] +
+                -0.7931985603795049 * ks[5] - 1.005448461135913 * ks[6] -
+                0.18044626132120234 * ks[7] + 0.17051519239113755 * ks[8]
+        end
         atmp = calculate_residuals(du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
