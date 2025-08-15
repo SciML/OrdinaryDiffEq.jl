@@ -867,7 +867,7 @@ end
 
     sim = test_convergence(dts, prob, Rodas6P(), dense_errors = true)
     #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
-    @test sim.𝒪est[:L2]≈5 atol=testTol
+    @test sim.𝒪est[:L2]≈6 atol=testTol
 
     sol = solve(prob, Rodas6P())
     @test length(sol) < 20
@@ -877,7 +877,7 @@ end
 
     sim = test_convergence(dts, prob, Rodas6P(), dense_errors = true)
     #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
-    @test sim.𝒪est[:L2]≈5 atol=testTol
+    @test sim.𝒪est[:L2]≈6 atol=testTol
 
     sol = solve(prob, Rodas6P())
     @test length(sol) < 20
