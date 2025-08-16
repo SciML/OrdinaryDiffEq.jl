@@ -29,6 +29,12 @@ function activate_enzyme_env()
     Pkg.instantiate()
 end
 
+function activate_modelingtoolkit_env()
+    Pkg.activate("modelingtoolkit")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -151,6 +157,7 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "ModelingToolkit"
+        activate_modelingtoolkit_env()
         @time @safetestset "NLStep Tests" include("modelingtoolkit/nlstep_tests.jl")
         @time @safetestset "Jacobian Tests" include("modelingtoolkit/jacobian_tests.jl")
         @time @safetestset "Preconditioner Tests" include("modelingtoolkit/preconditioners.jl")
