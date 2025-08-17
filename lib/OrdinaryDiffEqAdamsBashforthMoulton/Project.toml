@@ -1,17 +1,17 @@
 name = "OrdinaryDiffEqAdamsBashforthMoulton"
 uuid = "89bda076-bce5-4f1c-845f-551c83cdda9a"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.4.0"
+version = "1.5.0"
 
 [deps]
-DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Polyester = "f517fe37-dbe3-4b94-8317-1923a5111588"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 
@@ -23,7 +23,6 @@ DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
-DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
@@ -34,9 +33,9 @@ DiffEqDevTools = "2.44.4"
 MuladdMacro = "0.2"
 Polyester = "0.7"
 SciMLBase = "2.99"
-OrdinaryDiffEqCore = "1.1"
+OrdinaryDiffEqCore = "1.29.0"
 Static = "1.2"
-OrdinaryDiffEqLowOrderRK = "<0.0.1, 1"
+OrdinaryDiffEqLowOrderRK = "1.5.0"
 Aqua = "0.8.11"
 julia = "1.10"
 JET = "0.9.18, 0.10.4"
@@ -48,7 +47,7 @@ Reexport = "1.2"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = ["DiffEqDevTools", "ODEProblemLibrary", "Random", "SafeTestsets", "Test", "DiffEqBase", "JET", "Aqua", "AllocCheck"]
+test = ["DiffEqDevTools", "ODEProblemLibrary", "Random", "SafeTestsets", "Test", "JET", "Aqua", "AllocCheck"]
 
 [sources.OrdinaryDiffEqLowOrderRK]
 path = "../OrdinaryDiffEqLowOrderRK"

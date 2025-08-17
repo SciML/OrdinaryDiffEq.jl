@@ -1,5 +1,5 @@
 using Test
-using OrdinaryDiffEq, Calculus, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes, DifferentiationInterface
+using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes, DifferentiationInterface
 
 function f(du, u, p, t)
     du[1] = -p[1]
@@ -21,7 +21,7 @@ for x in 0:0.001:5
     end
     p = [2.0, x]
     called = false
-    findiff = Calculus.finite_difference_jacobian(test_f, p)
+    findiff = FiniteDiff.finite_difference_jacobian(test_f, p)
     @test called
     called = false
     fordiff = ForwardDiff.jacobian(test_f, p)
@@ -48,7 +48,7 @@ for x in 2.1:0.001:5
         solve!(integrator).u[end]
     end
     p = [2.0, x]
-    findiff = Calculus.finite_difference_jacobian(test_f2, p)
+    findiff = FiniteDiff.finite_difference_jacobian(test_f2, p)
     @test called
     called = false
     fordiff = ForwardDiff.jacobian(test_f2, p)
@@ -70,7 +70,7 @@ function test_f2(p)
 end
 
 p = [2.0, x]
-findiff = Calculus.finite_difference_jacobian(test_f2,p)
+findiff = FiniteDiff.finite_difference_jacobian(test_f2,p)
 @test called
 called = false
 fordiff = ForwardDiff.jacobian(test_f2,p)
@@ -106,7 +106,7 @@ for x in 1.0:0.001:2.5
         solve!(integrator).u[end]
     end
 
-    findiff = Calculus.finite_difference_jacobian(test_lotka, p)
+    findiff = FiniteDiff.finite_difference_jacobian(test_lotka, p)
     @test called
     called = false
     fordiff = ForwardDiff.jacobian(test_lotka, p)
@@ -340,11 +340,11 @@ implicit_algs = [FBDF,
     alg9 = alg(autodiff = AutoForwardDiff(chunksize = 1))
     alg10 = alg(chunk_size = 1)
 
-    @test OrdinaryDiffEq.alg_autodiff(alg1) == OrdinaryDiffEq.alg_autodiff(alg2)
-    @test OrdinaryDiffEq.alg_autodiff(alg3) == OrdinaryDiffEq.alg_autodiff(alg4)
-    @test OrdinaryDiffEq.alg_autodiff(alg5) == OrdinaryDiffEq.alg_autodiff(alg6)
-    @test OrdinaryDiffEq.alg_autodiff(alg7) == OrdinaryDiffEq.alg_autodiff(alg8)
-    @test OrdinaryDiffEq.alg_autodiff(alg9) == OrdinaryDiffEq.alg_autodiff(alg10)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg1) == OrdinaryDiffEqCore.alg_autodiff(alg2)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg3) == OrdinaryDiffEqCore.alg_autodiff(alg4)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg5) == OrdinaryDiffEqCore.alg_autodiff(alg6)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg7) == OrdinaryDiffEqCore.alg_autodiff(alg8)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg9) == OrdinaryDiffEqCore.alg_autodiff(alg10)
 end
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2675

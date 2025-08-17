@@ -1,6 +1,6 @@
 using OrdinaryDiffEq, Test, DiffEqBase
 using OrdinaryDiffEqCore
-using ForwardDiff, Printf
+using ForwardDiff
 import ODEProblemLibrary: prob_ode_linear,
                           prob_ode_2Dlinear,
                           prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
@@ -8,7 +8,7 @@ import ODEProblemLibrary: prob_ode_linear,
 const PRINT_TESTS = false
 print_results(x) =
     if PRINT_TESTS
-        @printf("%s \n", x)
+        println(x)
     end
 
 # points and storage arrays used in the interpolation tests
