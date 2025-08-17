@@ -25,6 +25,7 @@ DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [extras]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -63,7 +64,7 @@ SafeTestsets = "0.1.0"
 SciMLOperators = "1.4"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua"]
+test = ["AllocCheck", "DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

@@ -1,12 +1,6 @@
 name = "OrdinaryDiffEqCore"
 uuid = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.27.0"
-
-[deps]
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
-Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-SciMLStructures = "53ae85a6-f571-4167-b2af-e1d143709226"
 version = "1.30.0"
 
 [deps]
@@ -38,11 +32,13 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 FastPower = "a4df4552-cc26-4903-aec0-212e50a0e84b"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 SciMLStructures = "53ae85a6-f571-4167-b2af-e1d143709226"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -90,7 +86,6 @@ Logging = "1.10"
 Mooncake = "0.4"
 DiffEqBase = "6.177.2"
 AllocCheck = "0.2"
-DiffEqBase = "6.176"
 FillArrays = "1.13"
 Adapt = "4.3"
 Reexport = "1.2"
@@ -100,7 +95,7 @@ Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua"]
+test = ["AllocCheck", "DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua"]
 
 [extensions]
 OrdinaryDiffEqCoreEnzymeCoreExt = "EnzymeCore"
