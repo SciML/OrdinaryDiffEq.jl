@@ -15,7 +15,6 @@ ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
-SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
@@ -23,6 +22,12 @@ SparseMatrixColorings = "0a514795-09f3-496d-8182-132a7b665d35"
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
+
+[weakdeps]
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[extensions]
+OrdinaryDiffEqDifferentiationSparseArraysExt = "SparseArrays"
 
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
@@ -32,6 +37,7 @@ DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
 ForwardDiff = "0.10.38, 1"
@@ -48,8 +54,8 @@ ConstructionBase = "1.5.8"
 LinearAlgebra = "1.10"
 SciMLBase = "2.99"
 OrdinaryDiffEqCore = "1.29.0"
-SparseArrays = "1.10"
 ConcreteStructs = "0.2"
+SparseArrays = "1.10"
 Aqua = "0.8.11"
 ArrayInterface = "7.19"
 StaticArrays = "1.9"
@@ -63,7 +69,7 @@ SafeTestsets = "0.1.0"
 SciMLOperators = "1.4"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua", "AllocCheck"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua", "AllocCheck", "SparseArrays"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
