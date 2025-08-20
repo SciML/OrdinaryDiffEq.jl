@@ -179,10 +179,10 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             # we need to set all nzval to a non-zero number
             # otherwise in the following line any zero gets interpreted as a structural zero
             if !isnothing(integrator.f.jac_prototype) &&
-               integrator.f.jac_prototype isa SparseMatrixCSC
-                integrator.f.jac_prototype.nzval .= true
+               is_sparse_csc(integrator.f.jac_prototype)
+                set_all_nzval!(integrator.f.jac_prototype, true)
                 J .= true .* integrator.f.jac_prototype
-                J.nzval .= false
+                set_all_nzval!(J, false)
                 f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
             else
                 f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
@@ -203,10 +203,10 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             # we need to set all nzval to a non-zero number
             # otherwise in the following line any zero gets interpreted as a structural zero
             if !isnothing(integrator.f.jac_prototype) &&
-               integrator.f.jac_prototype isa SparseMatrixCSC
-                integrator.f.jac_prototype.nzval .= true
+               is_sparse_csc(integrator.f.jac_prototype)
+                set_all_nzval!(integrator.f.jac_prototype, true)
                 J .= true .* integrator.f.jac_prototype
-                J.nzval .= false
+                set_all_nzval!(J, false)
                 f.jac(J, uprev, p, t)
             else
                 f.jac(J, uprev, p, t)
@@ -278,7 +278,7 @@ mutable struct WOperator{IIP, T,
             if AJ isa AbstractMatrix
                 mm = mass_matrix isa MatrixOperator ?
                      convert(AbstractMatrix, mass_matrix) : mass_matrix
-                if AJ isa AbstractSparseMatrix
+                if is_sparse(AJ)
 
                     # If gamma is zero, then it's just an initialization and we want to make sure
                     # we get the right sparsity pattern. If gamma is not zero, then it's a case where
