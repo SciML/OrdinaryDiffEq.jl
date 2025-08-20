@@ -108,7 +108,7 @@ function prepare_user_sparsity(ad_alg, prob)
     sparsity = prob.f.sparsity
 
     if !isnothing(sparsity) && !(ad_alg isa AutoSparse)
-        if sparsity isa SparseMatrixCSC && !SciMLBase.has_jac(prob.f)
+        if is_sparse_csc(sparsity) && !SciMLBase.has_jac(prob.f)
             if prob.f.mass_matrix isa UniformScaling
                 idxs = diagind(sparsity)
                 @. @view(sparsity[idxs]) = 1
