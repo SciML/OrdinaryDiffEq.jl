@@ -75,7 +75,7 @@ function Base.showerror(io::IO, e::FirstAutodiffJacError)
     Base.showerror(io, e.e)
 end
 
-function jacobian(f, x::AbstractArray{<:Number}, integrator)
+function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where F
     alg = unwrap_alg(integrator, true)
 
     # Update stats.nf
@@ -183,9 +183,9 @@ function jacobian(f, x, integrator)
     return jac
 end
 
-function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
+function jacobian!(J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::SciMLBase.DEIntegrator,
-        jac_config)
+        jac_config) where F
     alg = unwrap_alg(integrator, true)
 
     dense = ADTypes.dense_ad(alg_autodiff(alg))
