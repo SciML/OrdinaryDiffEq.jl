@@ -66,22 +66,21 @@ else
     struct OrdinaryDiffEqTag end
 end
 
-# Stub types and functions that will be defined by the SparseArrays extension
-# These are needed for type stability and method dispatch
-# Use a mutable placeholder that can be set by the extension
-SparseMatrixCSC = Any
-AbstractSparseMatrix = Any
+# Functions for sparse array handling - will be overloaded by extension
+# Default implementations return false/error for non-sparse types
+is_sparse(::Any) = false
+is_sparse_csc(::Any) = false
 
-# Stub functions that will be overridden by the extension
+# These will error if called without the extension, but should never be called
+# on non-sparse types due to the is_sparse checks
 function nonzeros end
 function spzeros end
-function is_sparse_type end
 function get_nzval end
 function set_all_nzval! end
 
-# Default implementations for non-sparse types
-is_sparse_type(::Type) = false
-is_sparse_type(::Any) = false
+# Provide error messages if these are called without extension
+nonzeros(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+spzeros(args...) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 get_nzval(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 set_all_nzval!(A, val) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 
