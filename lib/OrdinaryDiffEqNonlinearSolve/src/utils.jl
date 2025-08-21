@@ -71,7 +71,7 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
     tmp::tmpType
     uprev::uprevType
     t::tType
-    function DAEResidualJacobianWrapper(alg, f, p, α, invγdt, tmp, uprev, t)
+    function DAEResidualJacobianWrapper(alg, f::F, p, α, invγdt, tmp, uprev, t) where F
         ad = ADTypes.dense_ad(alg_autodiff(alg)) 
         isautodiff = ad isa AutoForwardDiff 
         if isautodiff

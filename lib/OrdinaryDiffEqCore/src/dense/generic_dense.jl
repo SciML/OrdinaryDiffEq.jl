@@ -477,17 +477,17 @@ end
     return expr
 end
 
-function _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
+function _evaluate_interpolant(f::F, Θ, dt, timeseries, i₋, i₊,
         cache, idxs,
-        deriv, ks, ts, p, differential_vars)
+        deriv, ks, ts, p, differential_vars) where F
     _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
         cache) # update the kcurrent
     return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
         cache, idxs, deriv, differential_vars)
 end
-function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
+function evaluate_composite_cache(f::F, Θ, dt, timeseries, i₋, i₊,
         caches::Tuple{C1, C2, Vararg}, idxs,
-        deriv, ks, ts, p, cacheid, differential_vars) where {C1, C2}
+        deriv, ks, ts, p, cacheid, differential_vars) where {F, C1, C2}
     if (cacheid -= 1) != 0
         return evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊, Base.tail(caches),
             idxs,
@@ -497,16 +497,16 @@ function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
         first(caches), idxs,
         deriv, ks, ts, p, differential_vars)
 end
-function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
+function evaluate_composite_cache(f::F, Θ, dt, timeseries, i₋, i₊,
         caches::Tuple{C}, idxs,
-        deriv, ks, ts, p, _, differential_vars) where {C}
+        deriv, ks, ts, p, _, differential_vars) where {F, C}
     _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
         only(caches), idxs,
         deriv, ks, ts, p, differential_vars)
 end
 
-function evaluate_default_cache(f, Θ, dt, timeseries, i₋, i₊,
-        cache::DefaultCache, idxs, deriv, ks, ts, p, cacheid, differential_vars)
+function evaluate_default_cache(f::F, Θ, dt, timeseries, i₋, i₊,
+        cache::DefaultCache, idxs, deriv, ks, ts, p, cacheid, differential_vars) where F
     if cacheid == 1
         return _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
             cache.cache1, idxs, deriv, ks, ts, p, differential_vars)
@@ -528,8 +528,8 @@ function evaluate_default_cache(f, Θ, dt, timeseries, i₋, i₊,
     end
 end
 
-function evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
-        deriv, ks, ts, id, p, differential_vars)
+function evaluate_interpolant(f::F, Θ, dt, timeseries, i₋, i₊, cache, idxs,
+        deriv, ks, ts, id, p, differential_vars) where F
     if isdiscretecache(cache)
         return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
             deriv, differential_vars)
