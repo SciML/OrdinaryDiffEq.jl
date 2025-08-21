@@ -330,7 +330,7 @@ function compute_ustep!(ustep, tmp, γ, z, method)
     ustep
 end
 
-function _compute_rhs(tmp, γ, α, tstep, invγdt, method::MethodType, p, dt, f, z)
+function _compute_rhs(tmp, γ, α, tstep, invγdt, method::MethodType, p, dt, f::F, z) where F
     mass_matrix = f.mass_matrix
     ustep = compute_ustep(tmp, γ, z, method)
     if method === COEFFICIENT_MULTISTEP

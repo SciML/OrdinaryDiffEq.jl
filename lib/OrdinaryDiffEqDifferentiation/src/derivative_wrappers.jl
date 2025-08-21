@@ -136,7 +136,7 @@ function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where F
 end
 
 # fallback for scalar x, is needed for calc_J to work
-function jacobian(f, x, integrator)
+function jacobian(f::F, x, integrator) where F
     alg = unwrap_alg(integrator, true)
 
     dense = ADTypes.dense_ad(alg_autodiff(alg))
@@ -393,7 +393,7 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     end
 end
 
-function sparsity_colorvec(f, x)
+function sparsity_colorvec(f::F, x) where F
     sparsity = f.sparsity
 
     if is_sparse_csc(sparsity)
