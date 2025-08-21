@@ -324,7 +324,7 @@ mutable struct WOperator{IIP, T,
             jacvec)
     end
 end
-function WOperator{IIP}(f, u, gamma) where {IIP}
+function WOperator{IIP}(f::F, u, gamma) where {IIP, F}
     if isa(f, Union{SplitFunction, DynamicalODEFunction})
         error("WOperator does not support $(typeof(f)) yet")
     end
@@ -440,7 +440,7 @@ islinearfunction(integrator) = islinearfunction(integrator.f, integrator.alg)
 
 return the tuple `(is_linear_wrt_odealg, islinearodefunction)`.
 """
-function islinearfunction(f, alg)::Tuple{Bool, Bool}
+function islinearfunction(f::F, alg)::Tuple{Bool, Bool} where F
     isode = f isa ODEFunction && islinear(f.f)
     islin = isode || (issplit(alg) && f isa SplitFunction && islinear(f.f1.f))
     return islin, isode
