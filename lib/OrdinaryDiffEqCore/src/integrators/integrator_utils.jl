@@ -240,6 +240,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
             copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
                 integrator.cache.current)
         end
+        SciMLBase.save_final_discretes!(integrator, integrator.opts.callback)
     end
 end
 

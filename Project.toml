@@ -106,6 +106,8 @@ OrdinaryDiffEqStabilizedRK = {path = "lib/OrdinaryDiffEqStabilizedRK"}
 OrdinaryDiffEqSymplecticRK = {path = "lib/OrdinaryDiffEqSymplecticRK"}
 OrdinaryDiffEqTsit5 = {path = "lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
+DiffEqBase = { url = "https://github.com/AayushSabharwal/DiffEqBase.jl", rev = "as/better-disc-save" }
+SciMLBase = { url = "https://github.com/AayushSabharwal/SciMLBase.jl", rev = "as/callback-save" }
 
 [compat]
 ADTypes = "1.16"
