@@ -12,4 +12,10 @@ alg_stability_size(alg::Vern7) = 4.6400
 alg_stability_size(alg::Vern8) = 5.8641
 alg_stability_size(alg::Vern9) = 4.4762
 
+# ── Verner RKV87-IIa traits ────────────────────────────────────────
+alg_order(::RKV87)       = 8        # primary solution order
+embedded_order(::RKV87)  = 7        # will matter once adaptivity is added
+isfsal(::RKV87)          = false    # pair is NOT FSAL
+has_dense_output(::RKV87)= false    # we haven’t wired the interpolant yet
+
 SciMLBase.has_lazy_interpolation(alg::Union{Vern6, Vern7, Vern8, Vern9}) = true
