@@ -1,6 +1,12 @@
 abstract type ExtrapolationMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::ExtrapolationMutableCache, u) = (cache.fsalfirst, cache.k)
 
+# Helper function to determine appropriate thread count for array allocation
+# Uses maxthreadid() when threading is enabled, otherwise just 1 for maximum memory efficiency
+@inline function get_thread_count(alg)
+    return isthreaded(alg.threading) ? Threads.maxthreadid() : 1
+end
+
 @cache mutable struct AitkenNevilleCache{
     uType,
     rateType,
@@ -48,11 +54,11 @@ function alg_cache(alg::AitkenNeville, u, rate_prototype, ::Type{uEltypeNoUnits}
     T = Array{typeof(u), 2}(undef, alg.max_order, alg.max_order)
     # Array of arrays of length equal to number of threads to store intermediate
     # values of u and k. [Thread Safety]
-    u_tmps = Array{typeof(u), 1}(undef, Threads.nthreads())
-    k_tmps = Array{typeof(k), 1}(undef, Threads.nthreads())
+    u_tmps = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    k_tmps = Array{typeof(k), 1}(undef, get_thread_count(alg))
     # Initialize each element of u_tmps and k_tmps to different instance of
     # zeros array similar to u and k respectively
-    for i in 1:Threads.nthreads()
+    for i in 1:get_thread_count(alg)
         u_tmps[i] = zero(u)
         k_tmps[i] = zero(rate_prototype)
     end
@@ -196,26 +202,26 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     u_tmp = zero(u)
-    u_tmps = Array{typeof(u_tmp), 1}(undef, Threads.nthreads())
+    u_tmps = Array{typeof(u_tmp), 1}(undef, get_thread_count(alg))
 
     u_tmps[1] = u_tmp
-    for i in 2:Threads.nthreads()
+    for i in 2:get_thread_count(alg)
         u_tmps[i] = zero(u_tmp)
     end
 
-    u_tmps2 = Array{typeof(u_tmp), 1}(undef, Threads.nthreads())
+    u_tmps2 = Array{typeof(u_tmp), 1}(undef, get_thread_count(alg))
 
-    for i in 1:Threads.nthreads()
+    for i in 1:get_thread_count(alg)
         u_tmps2[i] = zero(u_tmp)
     end
 
     utilde = zero(u)
     tmp = zero(u)
     k_tmp = zero(rate_prototype)
-    k_tmps = Array{typeof(k_tmp), 1}(undef, Threads.nthreads())
+    k_tmps = Array{typeof(k_tmp), 1}(undef, get_thread_count(alg))
 
     k_tmps[1] = k_tmp
-    for i in 2:Threads.nthreads()
+    for i in 2:get_thread_count(alg)
         k_tmps[i] = zero(rate_prototype)
     end
 
@@ -244,9 +250,9 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
         W_el = zero(J)
     end
 
-    W = Array{typeof(W_el), 1}(undef, Threads.nthreads())
+    W = Array{typeof(W_el), 1}(undef, get_thread_count(alg))
     W[1] = W_el
-    for i in 2:Threads.nthreads()
+    for i in 2:get_thread_count(alg)
         if W_el isa WOperator
             W[i] = WOperator(f, dt, true)
         else
@@ -257,9 +263,9 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
-    linsolve_tmps = Array{typeof(linsolve_tmp), 1}(undef, Threads.nthreads())
+    linsolve_tmps = Array{typeof(linsolve_tmp), 1}(undef, get_thread_count(alg))
 
-    for i in 1:Threads.nthreads()
+    for i in 1:get_thread_count(alg)
         linsolve_tmps[i] = zero(rate_prototype)
     end
 
@@ -269,9 +275,9 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 
-    linsolve = Array{typeof(linsolve1), 1}(undef, Threads.nthreads())
+    linsolve = Array{typeof(linsolve1), 1}(undef, get_thread_count(alg))
     linsolve[1] = linsolve1
-    for i in 2:Threads.nthreads()
+    for i in 2:get_thread_count(alg)
         linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]); u0 = _vec(k_tmps[i]))
         linsolve[i] = init(linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true))
@@ -285,9 +291,9 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
     sequence = generate_sequence(constvalue(uBottomEltypeNoUnits), alg)
     cc = alg_cache(alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false))
-    diff1 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    diff2 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    for i in 1:Threads.nthreads()
+    diff1 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    diff2 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    for i in 1:get_thread_count(alg)
         diff1[i] = zero(u)
         diff2[i] = zero(u)
     end
@@ -958,10 +964,10 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard, u, rate_prototype,
     utilde = zero(u)
     u_temp1 = zero(u)
     u_temp2 = zero(u)
-    u_temp3 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    u_temp4 = Array{typeof(u), 1}(undef, Threads.nthreads())
+    u_temp3 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    u_temp4 = Array{typeof(u), 1}(undef, get_thread_count(alg))
 
-    for i in 1:Threads.nthreads()
+    for i in 1:get_thread_count(alg)
         u_temp3[i] = zero(u)
         u_temp4[i] = zero(u)
     end
@@ -975,8 +981,8 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard, u, rate_prototype,
 
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    k_tmps = Array{typeof(k), 1}(undef, Threads.nthreads())
-    for i in 1:Threads.nthreads()
+    k_tmps = Array{typeof(k), 1}(undef, get_thread_count(alg))
+    for i in 1:get_thread_count(alg)
         k_tmps[i] = zero(rate_prototype)
     end
 
@@ -1097,10 +1103,10 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
     utilde = zero(u)
     u_temp1 = zero(u)
     u_temp2 = zero(u)
-    u_temp3 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    u_temp4 = Array{typeof(u), 1}(undef, Threads.nthreads())
+    u_temp3 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    u_temp4 = Array{typeof(u), 1}(undef, get_thread_count(alg))
 
-    for i in 1:Threads.nthreads()
+    for i in 1:get_thread_count(alg)
         u_temp3[i] = zero(u)
         u_temp4[i] = zero(u)
     end
@@ -1114,8 +1120,8 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
 
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    k_tmps = Array{typeof(k), 1}(undef, Threads.nthreads())
-    for i in 1:Threads.nthreads()
+    k_tmps = Array{typeof(k), 1}(undef, get_thread_count(alg))
+    for i in 1:get_thread_count(alg)
         k_tmps[i] = zero(rate_prototype)
     end
 
@@ -1134,9 +1140,9 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
         W_el = zero(J)
     end
 
-    W = Array{typeof(W_el), 1}(undef, Threads.nthreads())
+    W = Array{typeof(W_el), 1}(undef, get_thread_count(alg))
     W[1] = W_el
-    for i in 2:Threads.nthreads()
+    for i in 2:get_thread_count(alg)
         if W_el isa WOperator
             W[i] = WOperator(f, dt, true)
         else
@@ -1146,9 +1152,9 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
-    linsolve_tmps = Array{typeof(linsolve_tmp), 1}(undef, Threads.nthreads())
+    linsolve_tmps = Array{typeof(linsolve_tmp), 1}(undef, get_thread_count(alg))
 
-    for i in 1:Threads.nthreads()
+    for i in 1:get_thread_count(alg)
         linsolve_tmps[i] = zero(rate_prototype)
     end
 
@@ -1158,9 +1164,9 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 
-    linsolve = Array{typeof(linsolve1), 1}(undef, Threads.nthreads())
+    linsolve = Array{typeof(linsolve1), 1}(undef, get_thread_count(alg))
     linsolve[1] = linsolve1
-    for i in 2:Threads.nthreads()
+    for i in 2:get_thread_count(alg)
         linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]); u0 = _vec(k_tmps[i]))
         linsolve[i] = init(linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true))
@@ -1170,9 +1176,9 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, du1, du2)
 
-    diff1 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    diff2 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    for i in 1:Threads.nthreads()
+    diff1 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    diff2 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    for i in 1:get_thread_count(alg)
         diff1[i] = zero(u)
         diff2[i] = zero(u)
     end
@@ -1272,10 +1278,10 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner, u, rate_prototype,
     utilde = zero(u)
     u_temp1 = zero(u)
     u_temp2 = zero(u)
-    u_temp3 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    u_temp4 = Array{typeof(u), 1}(undef, Threads.nthreads())
+    u_temp3 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    u_temp4 = Array{typeof(u), 1}(undef, get_thread_count(alg))
 
-    for i in 1:Threads.nthreads()
+    for i in 1:get_thread_count(alg)
         u_temp3[i] = zero(u)
         u_temp4[i] = zero(u)
     end
@@ -1287,8 +1293,8 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner, u, rate_prototype,
     res = uEltypeNoUnits.(zero(u))
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    k_tmps = Array{typeof(k), 1}(undef, Threads.nthreads())
-    for i in 1:Threads.nthreads()
+    k_tmps = Array{typeof(k), 1}(undef, get_thread_count(alg))
+    for i in 1:get_thread_count(alg)
         k_tmps[i] = zero(rate_prototype)
     end
 
@@ -1429,10 +1435,10 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
     utilde = zero(u)
     u_temp1 = zero(u)
     u_temp2 = zero(u)
-    u_temp3 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    u_temp4 = Array{typeof(u), 1}(undef, Threads.nthreads())
+    u_temp3 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    u_temp4 = Array{typeof(u), 1}(undef, get_thread_count(alg))
 
-    for i in 1:Threads.nthreads()
+    for i in 1:get_thread_count(alg)
         u_temp3[i] = zero(u)
         u_temp4[i] = zero(u)
     end
@@ -1444,8 +1450,8 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
     res = uEltypeNoUnits.(zero(u))
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    k_tmps = Array{typeof(k), 1}(undef, Threads.nthreads())
-    for i in 1:Threads.nthreads()
+    k_tmps = Array{typeof(k), 1}(undef, get_thread_count(alg))
+    for i in 1:get_thread_count(alg)
         k_tmps[i] = zero(rate_prototype)
     end
 
@@ -1463,9 +1469,9 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
         W_el = zero(J)
     end
 
-    W = Array{typeof(W_el), 1}(undef, Threads.nthreads())
+    W = Array{typeof(W_el), 1}(undef, get_thread_count(alg))
     W[1] = W_el
-    for i in 2:Threads.nthreads()
+    for i in 2:get_thread_count(alg)
         if W_el isa WOperator
             W[i] = WOperator(f, dt, true)
         else
@@ -1476,9 +1482,9 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
-    linsolve_tmps = Array{typeof(linsolve_tmp), 1}(undef, Threads.nthreads())
+    linsolve_tmps = Array{typeof(linsolve_tmp), 1}(undef, get_thread_count(alg))
 
-    for i in 1:Threads.nthreads()
+    for i in 1:get_thread_count(alg)
         linsolve_tmps[i] = zero(rate_prototype)
     end
 
@@ -1488,9 +1494,9 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 
-    linsolve = Array{typeof(linsolve1), 1}(undef, Threads.nthreads())
+    linsolve = Array{typeof(linsolve1), 1}(undef, get_thread_count(alg))
     linsolve[1] = linsolve1
-    for i in 2:Threads.nthreads()
+    for i in 2:get_thread_count(alg)
         linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]); u0 = _vec(k_tmps[i]))
         linsolve[i] = init(linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true))
@@ -1500,9 +1506,9 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, du1, du2)
 
-    diff1 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    diff2 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    for i in 1:Threads.nthreads()
+    diff1 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    diff2 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    for i in 1:get_thread_count(alg)
         diff1[i] = zero(u)
         diff2[i] = zero(u)
     end
@@ -1627,10 +1633,10 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
     utilde = zero(u)
     u_temp1 = zero(u)
     u_temp2 = zero(u)
-    u_temp3 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    u_temp4 = Array{typeof(u), 1}(undef, Threads.nthreads())
+    u_temp3 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    u_temp4 = Array{typeof(u), 1}(undef, get_thread_count(alg))
 
-    for i in 1:Threads.nthreads()
+    for i in 1:get_thread_count(alg)
         u_temp3[i] = zero(u)
         u_temp4[i] = zero(u)
     end
@@ -1642,8 +1648,8 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
     res = uEltypeNoUnits.(zero(u))
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    k_tmps = Array{typeof(k), 1}(undef, Threads.nthreads())
-    for i in 1:Threads.nthreads()
+    k_tmps = Array{typeof(k), 1}(undef, get_thread_count(alg))
+    for i in 1:get_thread_count(alg)
         k_tmps[i] = zero(rate_prototype)
     end
 
@@ -1661,9 +1667,9 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
         W_el = zero(J)
     end
 
-    W = Array{typeof(W_el), 1}(undef, Threads.nthreads())
+    W = Array{typeof(W_el), 1}(undef, get_thread_count(alg))
     W[1] = W_el
-    for i in 2:Threads.nthreads()
+    for i in 2:get_thread_count(alg)
         if W_el isa WOperator
             W[i] = WOperator(f, dt, true)
         else
@@ -1674,9 +1680,9 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
-    linsolve_tmps = Array{typeof(linsolve_tmp), 1}(undef, Threads.nthreads())
+    linsolve_tmps = Array{typeof(linsolve_tmp), 1}(undef, get_thread_count(alg))
 
-    for i in 1:Threads.nthreads()
+    for i in 1:get_thread_count(alg)
         linsolve_tmps[i] = zero(rate_prototype)
     end
 
@@ -1686,9 +1692,9 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 
-    linsolve = Array{typeof(linsolve1), 1}(undef, Threads.nthreads())
+    linsolve = Array{typeof(linsolve1), 1}(undef, get_thread_count(alg))
     linsolve[1] = linsolve1
-    for i in 2:Threads.nthreads()
+    for i in 2:get_thread_count(alg)
         linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]); u0 = _vec(k_tmps[i]))
         linsolve[i] = init(linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true))
@@ -1698,9 +1704,9 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, du1, du2)
 
-    diff1 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    diff2 = Array{typeof(u), 1}(undef, Threads.nthreads())
-    for i in 1:Threads.nthreads()
+    diff1 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    diff2 = Array{typeof(u), 1}(undef, get_thread_count(alg))
+    for i in 1:get_thread_count(alg)
         diff1[i] = zero(u)
         diff2[i] = zero(u)
     end

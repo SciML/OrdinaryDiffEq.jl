@@ -1887,7 +1887,6 @@ end
                 needfactor = needfactor
 
                 @threaded alg.threading for i in 1:((num_stages - 1) ÷ 2)
-                    #@show i == Threads.threadid()
                     @.. cubuff[i] = complex(
                         fw[2 * i] - αdt[i] * Mw[2 * i] + βdt[i] * Mw[2 * i + 1],
                         fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1])
