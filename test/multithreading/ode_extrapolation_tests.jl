@@ -443,7 +443,7 @@ testTol = 0.2
             sol = solve(simple_prob, 
                 ExtrapolationMidpointDeuflhard(threading = true),
                 reltol = 1e-3)
-            @test sol.retcode == :Success
+            @test SciMLBase.successful_retcode(sol)
             @test length(sol) > 0
         end
         
@@ -451,7 +451,7 @@ testTol = 0.2
             sol = solve(simple_prob,
                 ImplicitEulerExtrapolation(threading = true),
                 reltol = 1e-3)
-            @test sol.retcode == :Success  
+            @test SciMLBase.successful_retcode(sol)
             @test length(sol) > 0
         end
         
@@ -459,7 +459,7 @@ testTol = 0.2
             sol = solve(simple_prob,
                 ImplicitDeuflhardExtrapolation(threading = true),
                 reltol = 1e-3)
-            @test sol.retcode == :Success
+            @test SciMLBase.successful_retcode(sol)
             @test length(sol) > 0
         end
     end
