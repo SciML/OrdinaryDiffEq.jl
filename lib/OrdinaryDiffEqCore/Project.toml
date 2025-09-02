@@ -36,6 +36,7 @@ DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SciMLStructures = "53ae85a6-f571-4167-b2af-e1d143709226"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
+PreallocationTools = "d236fae5-4411-538c-8e31-a6e3d9e00b46"
 
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
@@ -89,6 +90,7 @@ DiffEqBase = "6.176"
 FillArrays = "1.13"
 Adapt = "4.3"
 Reexport = "1.2"
+PreallocationTools = "0.4.34"
 
 [weakdeps]
 Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"

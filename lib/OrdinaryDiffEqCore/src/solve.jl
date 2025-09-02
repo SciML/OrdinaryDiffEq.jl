@@ -574,6 +574,18 @@ function SciMLBase.__init(
         end
 
         initialize_callbacks!(integrator, initialize_save)
+        
+        # Zero out cache for SplitFunction to avoid uninitialized memory issues
+        if integrator.f isa DiffEqBase.SplitFunction && !isnothing(integrator.f._func_cache)
+            cache = integrator.f._func_cache
+            # Use fill! to zero the cache if it's available
+            if applicable(fill!, cache, 0)
+                fill!(cache, 0)
+            elseif applicable(fill!, cache, 0.0)
+                fill!(cache, 0.0)
+            end
+        end
+        
         initialize!(integrator, integrator.cache)
 
         if _alg isa OrdinaryDiffEqCompositeAlgorithm
