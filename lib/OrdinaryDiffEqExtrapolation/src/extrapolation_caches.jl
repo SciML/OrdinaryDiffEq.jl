@@ -2,9 +2,9 @@ abstract type ExtrapolationMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::ExtrapolationMutableCache, u) = (cache.fsalfirst, cache.k)
 
 # Helper function to determine appropriate thread count for array allocation
-# Uses maxthreadid() only when threading is enabled, otherwise uses nthreads() for memory efficiency
+# Uses maxthreadid() when threading is enabled, otherwise just 1 for maximum memory efficiency
 @inline function get_thread_count(alg)
-    return isthreaded(alg.threading) ? Threads.maxthreadid() : Threads.nthreads()
+    return isthreaded(alg.threading) ? Threads.maxthreadid() : 1
 end
 
 @cache mutable struct AitkenNevilleCache{
