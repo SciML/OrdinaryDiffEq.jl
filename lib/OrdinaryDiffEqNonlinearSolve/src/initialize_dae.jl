@@ -1,9 +1,10 @@
-# Optimized tolerance checking that avoids allocations for scalar abstol
+# Optimized tolerance checking that avoids allocations
 @inline function check_dae_tolerance(integrator, err, abstol, t)
     if abstol isa Number
         return integrator.opts.internalnorm(err, t) / abstol <= 1
     else
-        return integrator.opts.internalnorm(err ./ abstol, t) <= 1
+        @. err = err / abstol
+        return integrator.opts.internalnorm(err, t) <= 1
     end
 end
 
@@ -66,13 +67,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     f(tmp, u0, p, t)
     tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
 
-    # Zero-allocation tolerance check reusing tmp
-    if integrator.opts.abstol isa Number
-        integrator.opts.internalnorm(tmp, t) / integrator.opts.abstol <= 1 && return
-    else
-        @. tmp = tmp / integrator.opts.abstol
-        integrator.opts.internalnorm(tmp, t) <= 1 && return
-    end
+    check_dae_tolerance(integrator, tmp, integrator.opts.abstol, t) && return
 
     if isdefined(integrator.cache, :nlsolver) && !isnothing(alg.nlsolve)
         # backward Euler
@@ -400,13 +395,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
 
-    # Zero-allocation tolerance check reusing tmp
-    if alg.abstol isa Number
-        integrator.opts.internalnorm(tmp, t) / alg.abstol <= 1 && return
-    else
-        @. tmp = tmp / alg.abstol
-        integrator.opts.internalnorm(tmp, t) <= 1 && return
-    end
+    check_dae_tolerance(integrator, tmp, alg.abstol, t) && return
     alg_u = @view u[algebraic_vars]
 
     # These non-dual values are thus used to make the caches
