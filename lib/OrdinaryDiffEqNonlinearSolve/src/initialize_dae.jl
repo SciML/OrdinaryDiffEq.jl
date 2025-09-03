@@ -1,10 +1,18 @@
 # Optimized tolerance checking that avoids allocations
-@inline function check_dae_tolerance(integrator, err, abstol, t)
+@inline function check_dae_tolerance(integrator, err, abstol, t, ::Val{true})
     if abstol isa Number
         return integrator.opts.internalnorm(err, t) / abstol <= 1
     else
-        @. err = err / abstol
+        @. err = err / abstol  # Safe for in-place functions
         return integrator.opts.internalnorm(err, t) <= 1
+    end
+end
+
+@inline function check_dae_tolerance(integrator, err, abstol, t, ::Val{false})
+    if abstol isa Number
+        return integrator.opts.internalnorm(err, t) / abstol <= 1
+    else
+        return integrator.opts.internalnorm(err ./ abstol, t) <= 1  # Allocates for out-of-place
     end
 end
 
@@ -67,7 +75,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     f(tmp, u0, p, t)
     tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
 
-    check_dae_tolerance(integrator, tmp, integrator.opts.abstol, t) && return
+    check_dae_tolerance(integrator, tmp, integrator.opts.abstol, t, isinplace) && return
 
     if isdefined(integrator.cache, :nlsolver) && !isnothing(alg.nlsolve)
         # backward Euler
@@ -181,7 +189,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     du = f(u0, p, t)
     resid = _vec(du)[algebraic_eqs]
 
-    check_dae_tolerance(integrator, resid, integrator.opts.abstol, t) && return
+    check_dae_tolerance(integrator, resid, integrator.opts.abstol, t, isinplace) && return
 
     if isdefined(integrator.cache, :nlsolver) && !isnothing(alg.nlsolve)
         # backward Euler
@@ -249,7 +257,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     dt = t != 0 ? min(t / 1000, dtmax / 10) : dtmax / 10 # Haven't implemented norm reduction
 
     f(resid, integrator.du, u0, p, t)
-    check_dae_tolerance(integrator, resid, integrator.opts.abstol, t) && return
+    check_dae_tolerance(integrator, resid, integrator.opts.abstol, t, isinplace) && return
 
     # _du and _u should be non-dual since NonlinearSolve does not differentiate the solver
     # These non-dual values are thus used to make the caches
@@ -330,7 +338,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     nlequation = (u, _) -> nlequation_oop(u)
 
     resid = f(integrator.du, u0, p, t)
-    check_dae_tolerance(integrator, resid, integrator.opts.abstol, t) && return
+    check_dae_tolerance(integrator, resid, integrator.opts.abstol, t, isinplace) && return
 
     jac = if isnothing(f.jac)
         f.jac
@@ -395,7 +403,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
 
-    check_dae_tolerance(integrator, tmp, alg.abstol, t) && return
+    check_dae_tolerance(integrator, tmp, alg.abstol, t, isinplace) && return
     alg_u = @view u[algebraic_vars]
 
     # These non-dual values are thus used to make the caches
@@ -474,7 +482,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     du = f(u0, p, t)
     resid = _vec(du)[algebraic_eqs]
 
-    check_dae_tolerance(integrator, resid, alg.abstol, t) && return
+    check_dae_tolerance(integrator, resid, alg.abstol, t, isinplace) && return
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
     if isAD
@@ -553,7 +561,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     normtmp = get_tmp_cache(integrator)[1]
     f(normtmp, du, u, p, t)
 
-    if check_dae_tolerance(integrator, normtmp, alg.abstol, t)
+    if check_dae_tolerance(integrator, normtmp, alg.abstol, t, isinplace)
         return
     elseif differential_vars === nothing
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
@@ -614,7 +622,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
 
-    if check_dae_tolerance(integrator, f(integrator.du, integrator.u, p, t), alg.abstol, t)
+    if check_dae_tolerance(
+        integrator, f(integrator.du, integrator.u, p, t), alg.abstol, t, isinplace)
         return
     elseif differential_vars === nothing
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
