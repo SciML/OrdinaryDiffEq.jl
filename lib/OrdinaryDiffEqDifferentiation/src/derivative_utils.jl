@@ -323,6 +323,17 @@ mutable struct WOperator{IIP, T,
             _func_cache, _concrete_form,
             jacvec)
     end
+    
+    function Base.copy(W::WOperator{IIP, T, MType, GType, JType, F, C, JV}) where {IIP, T, MType, GType, JType, F, C, JV}
+        return new{IIP, T, MType, GType, JType, F, C, JV}(
+            W.mass_matrix, 
+            W.gamma, 
+            W.J, 
+            W._func_cache === nothing ? nothing : copy(W._func_cache),
+            W._concrete_form === nothing ? nothing : copy(W._concrete_form),
+            W.jacvec
+        )
+    end
 end
 function WOperator{IIP}(f::F, u, gamma) where {IIP, F}
     if isa(f, Union{SplitFunction, DynamicalODEFunction})
