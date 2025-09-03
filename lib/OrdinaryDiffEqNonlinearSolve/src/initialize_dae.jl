@@ -57,22 +57,24 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     f(tmp, u0, p, t)
     tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
 
-    integrator.opts.internalnorm(tmp, t) <= integrator.opts.abstol && return
+    integrator.opts.internalnorm(tmp ./ integrator.opts.abstol, t) <= 1 && return
 
     if isdefined(integrator.cache, :nlsolver) && !isnothing(alg.nlsolve)
         # backward Euler
         nlsolver = integrator.cache.nlsolver
-        oldγ, oldc, oldmethod, olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
+        oldγ, oldc, oldmethod,
+        olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
         integrator.dt
         nlsolver.tmp .= integrator.uprev
         nlsolver.γ, nlsolver.c = 1, 1
         nlsolver.method = DIRK
         integrator.dt = dt
         z = nlsolve!(nlsolver, integrator, integrator.cache)
-        nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod,
+        nlsolver.γ, nlsolver.c, nlsolver.method,
+        integrator.dt = oldγ, oldc, oldmethod,
         olddt
         failed = nlsolvefail(nlsolver)
-        @.. broadcast=false integrator.u=integrator.uprev + z
+        @.. broadcast=false integrator.u=integrator.uprev+z
     else
 
         # _u0 should be non-dual since NonlinearSolve does not differentiate the solver
@@ -169,22 +171,24 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     du = f(u0, p, t)
     resid = _vec(du)[algebraic_eqs]
 
-    integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
+    integrator.opts.internalnorm(resid ./ integrator.opts.abstol, t) <= 1 && return
 
     if isdefined(integrator.cache, :nlsolver) && !isnothing(alg.nlsolve)
         # backward Euler
         nlsolver = integrator.cache.nlsolver
-        oldγ, oldc, oldmethod, olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
+        oldγ, oldc, oldmethod,
+        olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
         integrator.dt
         nlsolver.tmp .= integrator.uprev
         nlsolver.γ, nlsolver.c = 1, 1
         nlsolver.method = DIRK
         integrator.dt = dt
         z = nlsolve!(nlsolver, integrator, integrator.cache)
-        nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod,
+        nlsolver.γ, nlsolver.c, nlsolver.method,
+        integrator.dt = oldγ, oldc, oldmethod,
         olddt
         failed = nlsolvefail(nlsolver)
-        @.. broadcast=false integrator.u=integrator.uprev + z
+        @.. broadcast=false integrator.u=integrator.uprev+z
     else
         nlequation_oop = @closure (u, _) -> begin
             update_coefficients!(M, u, p, t)
@@ -235,7 +239,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     dt = t != 0 ? min(t / 1000, dtmax / 10) : dtmax / 10 # Haven't implemented norm reduction
 
     f(resid, integrator.du, u0, p, t)
-    integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
+    integrator.opts.internalnorm(resid ./ integrator.opts.abstol, t) <= 1 && return
 
     # _du and _u should be non-dual since NonlinearSolve does not differentiate the solver
     # These non-dual values are thus used to make the caches
@@ -316,7 +320,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     nlequation = (u, _) -> nlequation_oop(u)
 
     resid = f(integrator.du, u0, p, t)
-    integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
+    integrator.opts.internalnorm(resid ./ integrator.opts.abstol, t) <= 1 && return
 
     jac = if isnothing(f.jac)
         f.jac
@@ -381,7 +385,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
 
-    integrator.opts.internalnorm(tmp, t) <= alg.abstol && return
+    integrator.opts.internalnorm(tmp ./ alg.abstol, t) <= 1 && return
     alg_u = @view u[algebraic_vars]
 
     # These non-dual values are thus used to make the caches
@@ -460,7 +464,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     du = f(u0, p, t)
     resid = _vec(du)[algebraic_eqs]
 
-    integrator.opts.internalnorm(resid, t) <= alg.abstol && return
+    integrator.opts.internalnorm(resid ./ alg.abstol, t) <= 1 && return
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
     if isAD
@@ -539,7 +543,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     normtmp = get_tmp_cache(integrator)[1]
     f(normtmp, du, u, p, t)
 
-    if integrator.opts.internalnorm(normtmp, t) <= alg.abstol
+    if integrator.opts.internalnorm(normtmp ./ alg.abstol, t) <= 1
         return
     elseif differential_vars === nothing
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
@@ -600,7 +604,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
 
-    if integrator.opts.internalnorm(f(integrator.du, integrator.u, p, t), t) <= alg.abstol
+    if integrator.opts.internalnorm(f(integrator.du, integrator.u, p, t) ./ alg.abstol, t) <=
+       1
         return
     elseif differential_vars === nothing
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
