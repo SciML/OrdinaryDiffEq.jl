@@ -323,6 +323,17 @@ mutable struct WOperator{IIP, T,
             _func_cache, _concrete_form,
             jacvec)
     end
+    
+    function Base.copy(W::WOperator{IIP, T, MType, GType, JType, F, C, JV}) where {IIP, T, MType, GType, JType, F, C, JV}
+        return new{IIP, T, MType, GType, JType, F, C, JV}(
+            W.mass_matrix, 
+            W.gamma, 
+            W.J, 
+            W._func_cache === nothing ? nothing : copy(W._func_cache),
+            W._concrete_form === nothing ? nothing : copy(W._concrete_form),
+            W.jacvec
+        )
+    end
 end
 function WOperator{IIP}(f::F, u, gamma) where {IIP, F}
     if isa(f, Union{SplitFunction, DynamicalODEFunction})
@@ -344,34 +355,6 @@ end
 
 SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
-function Base.copy(W::WOperator{IIP}) where {IIP}
-    # Create a dummy u vector for the constructor by using the same size as the func cache
-    if W._func_cache !== nothing
-        u = similar(W._func_cache)
-    else
-        # Fallback: try to infer size from J or mass_matrix
-        if hasmethod(size, (typeof(W.J),))
-            n = size(W.J, 1)
-            u = zeros(n)
-        else
-            # If we can't determine size, use a minimal vector
-            u = [0.0]
-        end
-    end
-    
-    # Create new WOperator using the public constructor
-    W_new = WOperator{IIP}(W.mass_matrix, W.gamma, W.J, u, W.jacvec)
-    
-    # Manually copy the internal fields that might have been computed differently
-    if W._func_cache !== nothing
-        W_new._func_cache .= W._func_cache
-    end
-    if W._concrete_form !== nothing
-        copyto!(W_new._concrete_form, W._concrete_form)
-    end
-    
-    return W_new
-end
 
 # In WOperator update_coefficients!, accept both missing u/p/t and missing dtgamma and don't update them in that case.
 # This helps support partial updating logic used with Newton solvers.
