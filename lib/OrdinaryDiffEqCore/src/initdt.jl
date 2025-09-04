@@ -103,8 +103,8 @@
     still works for matrix-free definitions of the mass matrix.
     =#
 
-    if prob.f.mass_matrix != I && (!(prob.f isa DynamicalODEFunction) ||
-        any(mm != I for mm in prob.f.mass_matrix))
+    if prob.f.mass_matrix !== I && (!(prob.f isa DynamicalODEFunction) ||
+        any(mm !== I for mm in prob.f.mass_matrix))
         ftmp = zero(f₀)
         try
             integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
