@@ -693,23 +693,23 @@ function get_sdirk_tableau(alg::Symbol, T=Float64, T2=Float64)
     elseif alg == :Cash4
         return Cash4Tableau(T, T2)
     elseif alg == :Kvaerno3
-        return Kvaerno3Tableau(T, T2)
+        return Kvaerno3Tableau_unified(T, T2)
     elseif alg == :KenCarp3
-        return KenCarp3Tableau(T, T2)
+        return KenCarp3Tableau_unified(T, T2)
     elseif alg == :CFNLIRK3
-        return CFNLIRK3Tableau(T, T2)
+        return CFNLIRK3Tableau_unified(T, T2)
     elseif alg == :Kvaerno4
-        return Kvaerno4Tableau(T, T2)
+        return Kvaerno4Tableau_unified(T, T2)
     elseif alg == :Kvaerno5
-        return Kvaerno5Tableau(T, T2)
+        return Kvaerno5Tableau_unified(T, T2)
     elseif alg == :KenCarp4
-        return KenCarp4Tableau(T, T2)
+        return KenCarp4Tableau_unified(T, T2)
     elseif alg == :KenCarp47
-        return KenCarp47Tableau(T, T2)
+        return KenCarp47Tableau_unified(T, T2)
     elseif alg == :KenCarp5
-        return KenCarp5Tableau(T, T2)
+        return KenCarp5Tableau_unified(T, T2)
     elseif alg == :KenCarp58
-        return KenCarp58Tableau(T, T2)
+        return KenCarp58Tableau_unified(T, T2)
     elseif alg == :SFSDIRK4
         return SFSDIRK4Tableau_unified(T, T2)
     elseif alg == :SFSDIRK5
