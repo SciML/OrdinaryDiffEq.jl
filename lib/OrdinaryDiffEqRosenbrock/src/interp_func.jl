@@ -22,6 +22,6 @@ function SciMLBase.interp_summary(::Type{cacheType},
         cacheType <:
         Union{RosenbrockCombinedConstantCache,
         RosenbrockCache}}
-    dense ? "specialized 4rd order \"free\" stiffness-aware interpolation" :
+    dense ? "specialized 4th (Rodas6P = 5th) order \"free\" stiffness-aware interpolation" :
     "1st order linear"
 end

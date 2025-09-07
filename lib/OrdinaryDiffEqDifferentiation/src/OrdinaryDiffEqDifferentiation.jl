@@ -13,7 +13,6 @@ import DiffEqBase
 import LinearAlgebra
 import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!, lmul!, axpby!, opnorm, lu
 import LinearAlgebra: LowerTriangular, UpperTriangular
-import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros, sparse, spzeros
 import ArrayInterface
 import ArrayInterface: fast_scalar_indexing, zeromatrix, lu_instance
 
@@ -66,6 +65,24 @@ elseif isdefined(DiffEqBase, :OrdinaryDiffEqTag)
 else
     struct OrdinaryDiffEqTag end
 end
+
+# Functions for sparse array handling - will be overloaded by extension
+# Default implementations return false/error for non-sparse types
+is_sparse(::Any) = false
+is_sparse_csc(::Any) = false
+
+# These will error if called without the extension, but should never be called
+# on non-sparse types due to the is_sparse checks
+function nonzeros end
+function spzeros end
+function get_nzval end
+function set_all_nzval! end
+
+# Provide error messages if these are called without extension
+nonzeros(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+spzeros(args...) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+get_nzval(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+set_all_nzval!(A, val) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 
 include("alg_utils.jl")
 include("linsolve_utils.jl")

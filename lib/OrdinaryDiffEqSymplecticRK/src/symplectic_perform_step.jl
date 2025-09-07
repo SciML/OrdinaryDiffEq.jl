@@ -77,22 +77,22 @@ end
 # f.f2(p, q, pa, t) = p which is the Newton/Lagrange equations
 # If called with different functions (which are possible in the Hamiltonian case)
 # an exception is thrown to avoid silently calculate wrong results.
-function verify_f2(f, p, q, pa, t, ::Any,
-        ::C) where {C <: Union{HamiltonConstantCache, VerletLeapfrogConstantCache,
+function verify_f2(f::F, p, q, pa, t, ::Any,
+        ::C) where {F, C <: Union{HamiltonConstantCache, VerletLeapfrogConstantCache,
         LeapfrogDriftKickDriftConstantCache}}
     f(p, q, pa, t)
 end
-function verify_f2(f, res, p, q, pa, t, ::Any,
-        ::C) where {C <: Union{HamiltonMutableCache, VerletLeapfrogCache,
+function verify_f2(f::F, res, p, q, pa, t, ::Any,
+        ::C) where {F, C <: Union{HamiltonMutableCache, VerletLeapfrogCache,
         LeapfrogDriftKickDriftCache}}
     f(res, p, q, pa, t)
 end
 
-function verify_f2(f, p, q, pa, t, integrator, ::C) where {C <: VelocityVerletConstantCache}
+function verify_f2(f::F, p, q, pa, t, integrator, ::C) where {F, C <: VelocityVerletConstantCache}
     res = f(p, q, pa, t)
     res == p ? p : throwex(integrator)
 end
-function verify_f2(f, res, p, q, pa, t, integrator, ::C) where {C <: VelocityVerletCache}
+function verify_f2(f::F, res, p, q, pa, t, integrator, ::C) where {F, C <: VelocityVerletCache}
     f(res, p, q, pa, t)
     res == p ? res : throwex(integrator)
 end

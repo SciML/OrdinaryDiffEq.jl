@@ -179,10 +179,10 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             # we need to set all nzval to a non-zero number
             # otherwise in the following line any zero gets interpreted as a structural zero
             if !isnothing(integrator.f.jac_prototype) &&
-               integrator.f.jac_prototype isa SparseMatrixCSC
-                integrator.f.jac_prototype.nzval .= true
+               is_sparse_csc(integrator.f.jac_prototype)
+                set_all_nzval!(integrator.f.jac_prototype, true)
                 J .= true .* integrator.f.jac_prototype
-                J.nzval .= false
+                set_all_nzval!(J, false)
                 f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
             else
                 f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
@@ -203,10 +203,10 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             # we need to set all nzval to a non-zero number
             # otherwise in the following line any zero gets interpreted as a structural zero
             if !isnothing(integrator.f.jac_prototype) &&
-               integrator.f.jac_prototype isa SparseMatrixCSC
-                integrator.f.jac_prototype.nzval .= true
+               is_sparse_csc(integrator.f.jac_prototype)
+                set_all_nzval!(integrator.f.jac_prototype, true)
                 J .= true .* integrator.f.jac_prototype
-                J.nzval .= false
+                set_all_nzval!(J, false)
                 f.jac(J, uprev, p, t)
             else
                 f.jac(J, uprev, p, t)
@@ -278,7 +278,7 @@ mutable struct WOperator{IIP, T,
             if AJ isa AbstractMatrix
                 mm = mass_matrix isa MatrixOperator ?
                      convert(AbstractMatrix, mass_matrix) : mass_matrix
-                if AJ isa AbstractSparseMatrix
+                if is_sparse(AJ)
 
                     # If gamma is zero, then it's just an initialization and we want to make sure
                     # we get the right sparsity pattern. If gamma is not zero, then it's a case where
@@ -323,8 +323,19 @@ mutable struct WOperator{IIP, T,
             _func_cache, _concrete_form,
             jacvec)
     end
+    
+    function Base.copy(W::WOperator{IIP, T, MType, GType, JType, F, C, JV}) where {IIP, T, MType, GType, JType, F, C, JV}
+        return new{IIP, T, MType, GType, JType, F, C, JV}(
+            W.mass_matrix, 
+            W.gamma, 
+            W.J, 
+            W._func_cache === nothing ? nothing : copy(W._func_cache),
+            W._concrete_form === nothing ? nothing : copy(W._concrete_form),
+            W.jacvec
+        )
+    end
 end
-function WOperator{IIP}(f, u, gamma) where {IIP}
+function WOperator{IIP}(f::F, u, gamma) where {IIP, F}
     if isa(f, Union{SplitFunction, DynamicalODEFunction})
         error("WOperator does not support $(typeof(f)) yet")
     end
@@ -440,7 +451,7 @@ islinearfunction(integrator) = islinearfunction(integrator.f, integrator.alg)
 
 return the tuple `(is_linear_wrt_odealg, islinearodefunction)`.
 """
-function islinearfunction(f, alg)::Tuple{Bool, Bool}
+function islinearfunction(f::F, alg)::Tuple{Bool, Bool} where F
     isode = f isa ODEFunction && islinear(f.f)
     islin = isode || (issplit(alg) && f isa SplitFunction && islinear(f.f1.f))
     return islin, isode

@@ -432,4 +432,35 @@ testTol = 0.2
         s2 = solve(prob_ode_2Dlinear, ExtrapolationMidpointDeuflhard())
         @test all(all(s1[i] - s2[i] .< 5e-6) for i in 1:length(s1))
     end
+
+    # Test for Julia 1.12 threading compatibility (Issue #2612)
+    @testset "Threading compatibility test" begin
+        # Simple problem for threading test
+        simple_prob = ODEProblem((u, p, t) -> u, 0.1, (0.0, 1.0))
+        
+        # Test extrapolation methods with threading enabled
+        @testset "ExtrapolationMidpointDeuflhard with threading" begin
+            sol = solve(simple_prob, 
+                ExtrapolationMidpointDeuflhard(threading = true),
+                reltol = 1e-3)
+            @test SciMLBase.successful_retcode(sol)
+            @test length(sol) > 0
+        end
+        
+        @testset "ImplicitEulerExtrapolation with threading" begin  
+            sol = solve(simple_prob,
+                ImplicitEulerExtrapolation(threading = true),
+                reltol = 1e-3)
+            @test SciMLBase.successful_retcode(sol)
+            @test length(sol) > 0
+        end
+        
+        @testset "ImplicitDeuflhardExtrapolation with threading" begin
+            sol = solve(simple_prob,
+                ImplicitDeuflhardExtrapolation(threading = true),
+                reltol = 1e-3)
+            @test SciMLBase.successful_retcode(sol)
+            @test length(sol) > 0
+        end
+    end
 end # Extrapolation methods

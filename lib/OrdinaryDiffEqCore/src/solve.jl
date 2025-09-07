@@ -745,4 +745,8 @@ function initialize_callbacks!(integrator, initialize_save = true)
 
     # reset this as it is now handled so the integrators should proceed as normal
     integrator.u_modified = false
+
+    if initialize_save
+        SciMLBase.save_discretes_if_enabled!(integrator, integrator.opts.callback; skip_duplicates = true)
+    end
 end

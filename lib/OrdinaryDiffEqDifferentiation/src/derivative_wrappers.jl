@@ -75,7 +75,7 @@ function Base.showerror(io::IO, e::FirstAutodiffJacError)
     Base.showerror(io, e.e)
 end
 
-function jacobian(f, x::AbstractArray{<:Number}, integrator)
+function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where F
     alg = unwrap_alg(integrator, true)
 
     # Update stats.nf
@@ -136,7 +136,7 @@ function jacobian(f, x::AbstractArray{<:Number}, integrator)
 end
 
 # fallback for scalar x, is needed for calc_J to work
-function jacobian(f, x, integrator)
+function jacobian(f::F, x, integrator) where F
     alg = unwrap_alg(integrator, true)
 
     dense = ADTypes.dense_ad(alg_autodiff(alg))
@@ -183,9 +183,9 @@ function jacobian(f, x, integrator)
     return jac
 end
 
-function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
+function jacobian!(J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::SciMLBase.DEIntegrator,
-        jac_config)
+        jac_config) where F
     alg = unwrap_alg(integrator, true)
 
     dense = ADTypes.dense_ad(alg_autodiff(alg))
@@ -249,7 +249,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
         (concrete_jac(alg) !== nothing && concrete_jac(alg)))
         jac_prototype = f.jac_prototype
 
-        if jac_prototype isa SparseMatrixCSC
+        if is_sparse_csc(jac_prototype)
             if f.mass_matrix isa UniformScaling
                 idxs = diagind(jac_prototype)
                 @. @view(jac_prototype[idxs]) = 1
@@ -317,7 +317,7 @@ function resize_jac_config!(cache, integrator)
             ad_left = autodiff_alg
         end
 
-        SciMLBase.@reset cache.jac_config = ([DI.prepare!_jacobian(
+        cache.jac_config = ([DI.prepare!_jacobian(
                                                   uf, cache.du1, config, ad, integrator.u)
                                               for (ad, config) in zip(
             (ad_right, ad_left), cache.jac_config)]...,)
@@ -393,10 +393,10 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     end
 end
 
-function sparsity_colorvec(f, x)
+function sparsity_colorvec(f::F, x) where F
     sparsity = f.sparsity
 
-    if sparsity isa SparseMatrixCSC
+    if is_sparse_csc(sparsity)
         if f.mass_matrix isa UniformScaling
             idxs = diagind(sparsity)
             @. @view(sparsity[idxs]) = 1
