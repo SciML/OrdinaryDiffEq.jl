@@ -569,6 +569,8 @@ function SciMLBase.__init(
     u_modified = false
     EEst = EEstT(1)
     just_hit_tstop = false
+    next_step_tstop = false
+    tstop_target = zero(t)
     isout = false
     accept_step = false
     force_stepfail = false
@@ -611,7 +613,7 @@ function SciMLBase.__init(
         callback_cache,
         kshortsize, force_stepfail,
         last_stepfail,
-        just_hit_tstop, do_error_check,
+        just_hit_tstop, next_step_tstop, tstop_target, do_error_check,
         event_last_time,
         vector_event_last_time,
         last_event_error, accept_step,
@@ -679,7 +681,14 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
             if integrator.do_error_check && check_error!(integrator) != ReturnCode.Success
                 return integrator.sol
             end
-            perform_step!(integrator, integrator.cache)
+            
+            # Use special tstop handling if flag is set, otherwise normal stepping
+            if integrator.next_step_tstop
+                handle_tstop_step!(integrator)
+            else
+                perform_step!(integrator, integrator.cache)
+            end
+            
             loopfooter!(integrator)
             if isempty(integrator.opts.tstops)
                 break
