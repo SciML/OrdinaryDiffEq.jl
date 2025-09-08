@@ -101,7 +101,7 @@ end
     @test 0.0:0.07:1.0 ⊆ sol2.t
 end
 
-@testset "Tstop Robustness Tests (StaticArrays vs Arrays)" begin
+@testset "Tstop Overshoot and Dense Time Event Tests" begin
     # Tests for issue #2752: tstop overshoot errors with StaticArrays
     
     @testset "StaticArrays vs Arrays with extreme precision" begin
