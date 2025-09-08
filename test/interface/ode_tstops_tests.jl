@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, Random
+using OrdinaryDiffEq, Test, Random, StaticArrays, DiffEqCallbacks
 import ODEProblemLibrary: prob_ode_linear
 Random.seed!(100)
 
