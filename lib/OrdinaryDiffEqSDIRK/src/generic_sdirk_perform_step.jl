@@ -78,7 +78,9 @@ end
                     u_tmp += tab.γ * z[i-1]
                 end
                 
-                k_explicit[i] = dt * f_expl(u_tmp, p, t + tab.c_explicit[i] * dt)
+                # Use c from implicit tableau if c_explicit is not defined
+                c_exp = tab.c_explicit !== nothing ? tab.c_explicit[i] : tab.c[i]
+                k_explicit[i] = dt * f_expl(u_tmp, p, t + c_exp * dt)
                 integrator.stats.nf2 += 1
             end
             
@@ -249,7 +251,9 @@ end
             else
                 # Compute intermediate solution for explicit evaluation
                 @.. broadcast=false u = nlsolver.tmp + A[i,i] * zs[i-1]
-                f_expl(k_explicit[i], u, p, t + tab.c_explicit[i] * dt)
+                # Use c from implicit tableau if c_explicit is not defined
+                c_exp = tab.c_explicit !== nothing ? tab.c_explicit[i] : tab.c[i]
+                f_expl(k_explicit[i], u, p, t + c_exp * dt)
                 @.. broadcast=false k_explicit[i] *= dt
                 integrator.stats.nf2 += 1
             end
