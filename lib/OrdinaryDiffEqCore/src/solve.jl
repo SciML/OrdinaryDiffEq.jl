@@ -21,6 +21,7 @@ function SciMLBase.__init(
         save_idxs = nothing,
         save_everystep = isempty(saveat),
         save_on = true,
+        save_discretes = true,
         save_start = save_everystep || isempty(saveat) ||
                      saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
@@ -468,7 +469,7 @@ function SciMLBase.__init(
         timeseries_errors,
         dense_errors, dense,
         save_on, save_start,
-        save_end, save_end_user,
+        save_end, save_discretes, save_end_user,
         callbacks_internal,
         isoutofdomain,
         unstable_check,
