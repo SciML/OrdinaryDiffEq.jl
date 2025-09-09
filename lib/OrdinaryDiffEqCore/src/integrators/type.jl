@@ -37,6 +37,7 @@ mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4
     save_on::Bool
     save_start::Bool
     save_end::Bool
+    save_discretes::Bool
     save_end_user::F3
     callback::F4
     isoutofdomain::F5
