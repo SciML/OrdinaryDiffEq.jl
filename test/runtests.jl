@@ -179,6 +179,7 @@ end
     if !is_APPVEYOR && GROUP == "Enzyme" && isempty(VERSION.prerelease)
         activate_enzyme_env()
         @time @safetestset "Autodiff Events Tests" include("enzyme/autodiff_events.jl")
+        @time @safetestset "Discrete Adjoint Tests" include("enzyme/discrete_adjoints.jl")
     end
 
     # Don't run ODEInterface tests on prerelease
