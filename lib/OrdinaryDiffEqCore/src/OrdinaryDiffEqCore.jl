@@ -29,7 +29,6 @@ import DiffEqBase: initialize!
 
 # DAE Initialization algorithms
 import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
-export DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 
 # Internal utils
 import DiffEqBase: ODE_DEFAULT_NORM,
