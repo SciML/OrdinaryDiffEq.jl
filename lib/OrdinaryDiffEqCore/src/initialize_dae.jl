@@ -1,15 +1,30 @@
-struct DefaultInit <: SciMLBase.DAEInitializationAlgorithm end
+# Import standard initialization algorithms from DiffEqBase
+import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownBasicInit
 
-struct ShampineCollocationInit{T, F} <: SciMLBase.DAEInitializationAlgorithm
+# Re-export for backward compatibility
+export DefaultInit, ShampineCollocationInit, BrownBasicInit
+
+# Extended versions with OrdinaryDiffEq-specific options
+struct ShampineCollocationInitExt{T, F} <: SciMLBase.DAEInitializationAlgorithm
     initdt::T
     nlsolve::F
 end
+function ShampineCollocationInitExt(; initdt = nothing, nlsolve = nothing)
+    ShampineCollocationInitExt(initdt, nlsolve)
+end
+function ShampineCollocationInitExt(initdt)
+    ShampineCollocationInitExt(; initdt = initdt, nlsolve = nothing)
+end
+
+# Constructor that delegates to extended version for backward compatibility
 function ShampineCollocationInit(; initdt = nothing, nlsolve = nothing)
-    ShampineCollocationInit(initdt, nlsolve)
+    if initdt !== nothing || nlsolve !== nothing
+        ShampineCollocationInitExt(initdt, nlsolve)
+    else
+        DiffEqBase.ShampineCollocationInit()
+    end
 end
-function ShampineCollocationInit(initdt)
-    ShampineCollocationInit(; initdt = initdt, nlsolve = nothing)
-end
+ShampineCollocationInit(initdt) = ShampineCollocationInitExt(; initdt = initdt, nlsolve = nothing)
 
 struct BrownFullBasicInit{T, F} <: SciMLBase.DAEInitializationAlgorithm
     abstol::T
@@ -19,6 +34,18 @@ function BrownFullBasicInit(; abstol = 1e-10, nlsolve = nothing)
     BrownFullBasicInit(abstol, nlsolve)
 end
 BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = nothing)
+
+# Alias for consistency with DiffEqBase naming
+const BrownBasicInitExt = BrownFullBasicInit
+
+# Constructor that delegates for backward compatibility
+function BrownBasicInit(; abstol = nothing, nlsolve = nothing)
+    if abstol !== nothing || nlsolve !== nothing
+        BrownFullBasicInit(something(abstol, 1e-10), nlsolve)
+    else
+        DiffEqBase.BrownBasicInit()
+    end
+end
 
 ## Notes
 
@@ -176,4 +203,21 @@ function _initialize_dae!(integrator, prob::AbstractDEProblem, alg::CheckInit,
         isinplace::Union{Val{true}, Val{false}})
     SciMLBase.get_initial_values(
         prob, integrator, prob.f, alg, isinplace; abstol = integrator.opts.abstol)
+end
+
+# Delegate base DiffEqBase types to extended versions with default options
+function _initialize_dae!(integrator, prob::AbstractDEProblem,
+        alg::DiffEqBase.ShampineCollocationInit, isinplace::Union{Val{true}, Val{false}})
+    _initialize_dae!(integrator, prob, ShampineCollocationInitExt(nothing, nothing), isinplace)
+end
+
+function _initialize_dae!(integrator, prob::AbstractDEProblem,
+        alg::DiffEqBase.BrownBasicInit, isinplace::Union{Val{true}, Val{false}})
+    _initialize_dae!(integrator, prob, BrownFullBasicInit(integrator.opts.abstol, nothing), isinplace)
+end
+
+# Handle DiffEqBase.DefaultInit same as our DefaultInit
+function _initialize_dae!(integrator, prob::AbstractDEProblem,
+        alg::DiffEqBase.DefaultInit, isinplace::Union{Val{true}, Val{false}})
+    _initialize_dae!(integrator, prob, DefaultInit(), isinplace)
 end
