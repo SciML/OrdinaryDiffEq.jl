@@ -1,42 +1,13 @@
-# Import standard initialization algorithms from DiffEqBase
-import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownBasicInit
+# Import all initialization algorithms from DiffEqBase
+import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownBasicInit, BrownFullBasicInit
 
 # Re-export for backward compatibility
-export DefaultInit, ShampineCollocationInit, BrownBasicInit
+export DefaultInit, ShampineCollocationInit, BrownBasicInit, BrownFullBasicInit
 
-# Extended versions with OrdinaryDiffEq-specific options
-struct ShampineCollocationInitExt{T, F} <: SciMLBase.DAEInitializationAlgorithm
-    initdt::T
-    nlsolve::F
-end
-function ShampineCollocationInitExt(; initdt = nothing, nlsolve = nothing)
-    ShampineCollocationInitExt(initdt, nlsolve)
-end
-function ShampineCollocationInitExt(initdt)
-    ShampineCollocationInitExt(; initdt = initdt, nlsolve = nothing)
-end
-
-# Constructor for backward compatibility when passing initdt
-function ShampineCollocationInit(initdt::T) where T
-    ShampineCollocationInitExt(; initdt = initdt, nlsolve = nothing)
-end
-
-struct BrownFullBasicInit{T, F} <: SciMLBase.DAEInitializationAlgorithm
-    abstol::T
-    nlsolve::F
-end
-function BrownFullBasicInit(; abstol = 1e-10, nlsolve = nothing)
-    BrownFullBasicInit(abstol, nlsolve)
-end
-BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = nothing)
-
-# Alias for consistency with DiffEqBase naming
+# Legacy aliases for backward compatibility
+const ShampineCollocationInitExt = ShampineCollocationInit
 const BrownBasicInitExt = BrownFullBasicInit
-
-# Constructor for backward compatibility when passing abstol
-function BrownBasicInit(abstol::T) where T
-    BrownFullBasicInit(abstol, nothing)
-end
+export ShampineCollocationInitExt, BrownBasicInitExt
 
 ## Notes
 

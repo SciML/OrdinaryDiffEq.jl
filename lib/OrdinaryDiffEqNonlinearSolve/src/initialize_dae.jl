@@ -17,30 +17,18 @@ end
 end
 
 # Helper to get abstol from either the algorithm or integrator opts
-@inline function get_abstol(alg::Union{BrownFullBasicInit, OrdinaryDiffEqCore.BrownFullBasicInit}, integrator)
+@inline function get_abstol(alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, integrator)
     return alg.abstol
 end
 
-@inline function get_abstol(alg::DiffEqBase.BrownBasicInit, integrator)
-    return integrator.opts.abstol
-end
-
 # Helper to get nlsolve from either the algorithm or nothing
-@inline function get_nlsolve(alg::Union{BrownFullBasicInit, OrdinaryDiffEqCore.BrownFullBasicInit, OrdinaryDiffEqCore.ShampineCollocationInitExt})
+@inline function get_nlsolve(alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit, DiffEqBase.ShampineCollocationInit})
     return alg.nlsolve
 end
 
-@inline function get_nlsolve(alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.ShampineCollocationInit})
-    return nothing
-end
-
 # Helper to get initdt from either the algorithm or nothing
-@inline function get_initdt(alg::OrdinaryDiffEqCore.ShampineCollocationInitExt)
+@inline function get_initdt(alg::DiffEqBase.ShampineCollocationInit)
     return alg.initdt
-end
-
-@inline function get_initdt(alg::Union{DiffEqBase.ShampineCollocationInit, OrdinaryDiffEqCore.ShampineCollocationInit})
-    return nothing
 end
 
 function default_nlsolve(
@@ -80,7 +68,7 @@ Solve for `u`
 
 =#
 
-function _initialize_dae!(integrator, prob::ODEProblem, alg::Union{ShampineCollocationInit, OrdinaryDiffEqCore.ShampineCollocationInitExt},
+function _initialize_dae!(integrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{true})
     @unpack p, t, f = integrator
     M = integrator.f.mass_matrix
@@ -196,7 +184,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::Union{ShampineCollo
     return
 end
 
-function _initialize_dae!(integrator, prob::ODEProblem, alg::Union{ShampineCollocationInit, OrdinaryDiffEqCore.ShampineCollocationInitExt},
+function _initialize_dae!(integrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{false})
     @unpack p, t, f = integrator
     u0 = integrator.u
@@ -417,7 +405,7 @@ function algebraic_jacobian(jac_prototype::T, algebraic_eqs,
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-        alg::Union{BrownFullBasicInit, DiffEqBase.BrownBasicInit}, isinplace::Val{true})
+        alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{true})
     @unpack p, t, f = integrator
     u = integrator.u
     M = integrator.f.mass_matrix
@@ -498,7 +486,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-        alg::Union{BrownFullBasicInit, DiffEqBase.BrownBasicInit}, isinplace::Val{false})
+        alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{false})
     @unpack p, t, f = integrator
 
     u0 = integrator.u
@@ -566,7 +554,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-        alg::Union{BrownFullBasicInit, DiffEqBase.BrownBasicInit}, isinplace::Val{true})
+        alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{true})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
     u = integrator.u
@@ -648,7 +636,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-        alg::Union{BrownFullBasicInit, DiffEqBase.BrownBasicInit}, isinplace::Val{false})
+        alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{false})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
 
