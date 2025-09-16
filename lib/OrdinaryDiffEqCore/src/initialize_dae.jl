@@ -168,15 +168,7 @@ function _initialize_dae!(integrator, prob::AbstractDEProblem, alg::CheckInit,
 end
 
 # Delegate base DiffEqBase types to extended versions with default options
-function _initialize_dae!(integrator, prob::AbstractDEProblem,
-        alg::DiffEqBase.ShampineCollocationInit, isinplace::Union{Val{true}, Val{false}})
-    _initialize_dae!(integrator, prob, ShampineCollocationInitExt(nothing, nothing), isinplace)
-end
-
-function _initialize_dae!(integrator, prob::AbstractDEProblem,
-        alg::DiffEqBase.BrownBasicInit, isinplace::Union{Val{true}, Val{false}})
-    _initialize_dae!(integrator, prob, BrownFullBasicInit(integrator.opts.abstol, nothing), isinplace)
-end
+# No longer needed - DiffEqBase types now have the parameters directly
 
 # Handle DiffEqBase.DefaultInit same as our DefaultInit
 function _initialize_dae!(integrator, prob::AbstractDEProblem,
