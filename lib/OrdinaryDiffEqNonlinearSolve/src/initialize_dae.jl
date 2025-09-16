@@ -16,7 +16,6 @@ end
     end
 end
 
-
 function default_nlsolve(
         ::Nothing, isinplace::Val{true}, u, ::AbstractNonlinearProblem, autodiff = false)
     FastShortcutNonlinearPolyalg(;
