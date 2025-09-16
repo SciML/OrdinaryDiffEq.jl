@@ -155,5 +155,3 @@ function _initialize_dae!(integrator::ODEIntegrator, prob::AbstractDEProblem, al
     SciMLBase.get_initial_values(
         prob, integrator, prob.f, alg, isinplace; abstol = integrator.opts.abstol)
 end
-
-# No longer needed - DiffEqBase types now have the parameters directly
