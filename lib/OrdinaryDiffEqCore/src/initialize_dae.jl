@@ -16,15 +16,10 @@ function ShampineCollocationInitExt(initdt)
     ShampineCollocationInitExt(; initdt = initdt, nlsolve = nothing)
 end
 
-# Constructor that delegates to extended version for backward compatibility
-function ShampineCollocationInit(; initdt = nothing, nlsolve = nothing)
-    if initdt !== nothing || nlsolve !== nothing
-        ShampineCollocationInitExt(initdt, nlsolve)
-    else
-        DiffEqBase.ShampineCollocationInit()
-    end
+# Constructor for backward compatibility when passing initdt
+function ShampineCollocationInit(initdt::T) where T
+    ShampineCollocationInitExt(; initdt = initdt, nlsolve = nothing)
 end
-ShampineCollocationInit(initdt) = ShampineCollocationInitExt(; initdt = initdt, nlsolve = nothing)
 
 struct BrownFullBasicInit{T, F} <: SciMLBase.DAEInitializationAlgorithm
     abstol::T
@@ -38,13 +33,9 @@ BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = not
 # Alias for consistency with DiffEqBase naming
 const BrownBasicInitExt = BrownFullBasicInit
 
-# Constructor that delegates for backward compatibility
-function BrownBasicInit(; abstol = nothing, nlsolve = nothing)
-    if abstol !== nothing || nlsolve !== nothing
-        BrownFullBasicInit(something(abstol, 1e-10), nlsolve)
-    else
-        DiffEqBase.BrownBasicInit()
-    end
+# Constructor for backward compatibility when passing abstol
+function BrownBasicInit(abstol::T) where T
+    BrownFullBasicInit(abstol, nothing)
 end
 
 ## Notes
