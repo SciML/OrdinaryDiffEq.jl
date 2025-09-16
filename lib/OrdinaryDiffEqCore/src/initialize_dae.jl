@@ -1,13 +1,8 @@
 # Import all initialization algorithms from DiffEqBase
 import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownBasicInit, BrownFullBasicInit
 
-# Re-export for backward compatibility
+# Re-export for convenience
 export DefaultInit, ShampineCollocationInit, BrownBasicInit, BrownFullBasicInit
-
-# Legacy aliases for backward compatibility
-const ShampineCollocationInitExt = ShampineCollocationInit
-const BrownBasicInitExt = BrownFullBasicInit
-export ShampineCollocationInitExt, BrownBasicInitExt
 
 ## Notes
 
@@ -33,7 +28,7 @@ end
 
 ## Default algorithms
 
-function _initialize_dae!(integrator, prob::ODEProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::ODEProblem,
         alg::DefaultInit, x::Union{Val{true}, Val{false}})
     if SciMLBase.has_initializeprob(prob.f)
         _initialize_dae!(integrator, prob,
@@ -47,7 +42,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::DAEProblem,
         alg::DefaultInit, x::Union{Val{true}, Val{false}})
     if SciMLBase.has_initializeprob(prob.f)
         _initialize_dae!(integrator, prob,
@@ -66,7 +61,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 end
 
-function _initialize_dae!(integrator, prob::DiscreteProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::DiscreteProblem,
         alg::DefaultInit, x::Union{Val{true}, Val{false}})
     if SciMLBase.has_initializeprob(prob.f)
         # integrator.opts.abstol is `false` for `DiscreteProblem`.
@@ -113,13 +108,13 @@ end
 
 ## NoInit
 
-function _initialize_dae!(integrator, prob::AbstractDEProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::AbstractDEProblem,
         alg::NoInit, x::Union{Val{true}, Val{false}})
 end
 
 ## OverrideInit
 
-function _initialize_dae!(integrator, prob::AbstractDEProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::AbstractDEProblem,
         alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
     initializeprob = prob.f.initialization_data.initializeprob
 
@@ -161,17 +156,10 @@ function _initialize_dae!(integrator, prob::AbstractDEProblem,
 end
 
 ## CheckInit
-function _initialize_dae!(integrator, prob::AbstractDEProblem, alg::CheckInit,
+function _initialize_dae!(integrator::ODEIntegrator, prob::AbstractDEProblem, alg::CheckInit,
         isinplace::Union{Val{true}, Val{false}})
     SciMLBase.get_initial_values(
         prob, integrator, prob.f, alg, isinplace; abstol = integrator.opts.abstol)
 end
 
-# Delegate base DiffEqBase types to extended versions with default options
 # No longer needed - DiffEqBase types now have the parameters directly
-
-# Handle DiffEqBase.DefaultInit same as our DefaultInit
-function _initialize_dae!(integrator, prob::AbstractDEProblem,
-        alg::DiffEqBase.DefaultInit, isinplace::Union{Val{true}, Val{false}})
-    _initialize_dae!(integrator, prob, DefaultInit(), isinplace)
-end

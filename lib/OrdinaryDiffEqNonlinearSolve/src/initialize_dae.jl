@@ -16,20 +16,6 @@ end
     end
 end
 
-# Helper to get abstol from either the algorithm or integrator opts
-@inline function get_abstol(alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, integrator)
-    return alg.abstol
-end
-
-# Helper to get nlsolve from either the algorithm or nothing
-@inline function get_nlsolve(alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit, DiffEqBase.ShampineCollocationInit})
-    return alg.nlsolve
-end
-
-# Helper to get initdt from either the algorithm or nothing
-@inline function get_initdt(alg::DiffEqBase.ShampineCollocationInit)
-    return alg.initdt
-end
 
 function default_nlsolve(
         ::Nothing, isinplace::Val{true}, u, ::AbstractNonlinearProblem, autodiff = false)
@@ -68,7 +54,7 @@ Solve for `u`
 
 =#
 
-function _initialize_dae!(integrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{true})
     @unpack p, t, f = integrator
     M = integrator.f.mass_matrix
@@ -76,7 +62,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::DiffEqBase.Shampine
     tmp = first(get_tmp_cache(integrator))
     u0 = integrator.u
 
-    initdt = get_initdt(alg)
+    initdt = alg.initdt
     dt = if initdt === nothing
         integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
         (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
@@ -93,7 +79,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::DiffEqBase.Shampine
 
     check_dae_tolerance(integrator, tmp, integrator.opts.abstol, t, isinplace) && return
 
-    if isdefined(integrator.cache, :nlsolver) && !isnothing(get_nlsolve(alg))
+    if isdefined(integrator.cache, :nlsolver) && !isnothing(alg.nlsolve)
         # backward Euler
         nlsolver = integrator.cache.nlsolver
         oldγ, oldc, oldmethod,
@@ -165,7 +151,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::DiffEqBase.Shampine
             jac_prototype = f.jac_prototype,
             jac = jac)
         nlprob = NonlinearProblem(nlfunc, integrator.u, p)
-        nlsolve = default_nlsolve(get_nlsolve(alg), isinplace, u0, nlprob, isAD)
+        nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD)
         nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
             reltol = integrator.opts.reltol)
         integrator.u .= nlsol.u
@@ -184,14 +170,14 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::DiffEqBase.Shampine
     return
 end
 
-function _initialize_dae!(integrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{false})
     @unpack p, t, f = integrator
     u0 = integrator.u
     M = integrator.f.mass_matrix
     dtmax = integrator.opts.dtmax
 
-    initdt = get_initdt(alg)
+    initdt = alg.initdt
     dt = if initdt === nothing
         integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
         (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
@@ -208,7 +194,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::DiffEqBase.Shampine
 
     check_dae_tolerance(integrator, resid, integrator.opts.abstol, t, isinplace) && return
 
-    if isdefined(integrator.cache, :nlsolver) && !isnothing(get_nlsolve(alg))
+    if isdefined(integrator.cache, :nlsolver) && !isnothing(alg.nlsolve)
         # backward Euler
         nlsolver = integrator.cache.nlsolver
         oldγ, oldc, oldmethod,
@@ -242,7 +228,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::DiffEqBase.Shampine
             jac_prototype = f.jac_prototype,
             jac = jac)
         nlprob = NonlinearProblem(nlfunc, u0)
-        nlsolve = default_nlsolve(get_nlsolve(alg), isinplace, nlprob, u0)
+        nlsolve = default_nlsolve(alg.nlsolve, isinplace, nlprob, u0)
 
         nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
             reltol = integrator.opts.reltol)
@@ -263,7 +249,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::DiffEqBase.Shampine
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::ShampineCollocationInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     u0 = integrator.u
@@ -323,7 +309,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         jac_prototype = f.jac_prototype,
         jac = jac)
     nlprob = NonlinearProblem(nlfunc, u0, p)
-    nlsolve = default_nlsolve(get_nlsolve(alg), isinplace, u0, nlprob, isAD)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD)
     nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
         reltol = integrator.opts.reltol)
 
@@ -340,7 +326,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::ShampineCollocationInit, isinplace::Val{false})
     @unpack p, t, f = integrator
     u0 = integrator.u
@@ -367,7 +353,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype,
         jac = jac)
     nlprob = NonlinearProblem(nlfunc, u0)
-    nlsolve = default_nlsolve(get_nlsolve(alg), isinplace, nlprob, u0)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, nlprob, u0)
 
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, u0)
@@ -404,7 +390,7 @@ function algebraic_jacobian(jac_prototype::T, algebraic_eqs,
     jac_prototype[algebraic_eqs, algebraic_vars]
 end
 
-function _initialize_dae!(integrator, prob::ODEProblem,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
         alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{true})
     @unpack p, t, f = integrator
     u = integrator.u
@@ -420,7 +406,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
 
-    check_dae_tolerance(integrator, tmp, get_abstol(alg, integrator), t, isinplace) && return
+    check_dae_tolerance(integrator, tmp, alg.abstol, t, isinplace) && return
     alg_u = @view u[algebraic_vars]
 
     # These non-dual values are thus used to make the caches
@@ -468,9 +454,9 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
-    nlsolve = default_nlsolve(get_nlsolve(alg), isinplace, u, nlprob, isAD)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD)
 
-    nlsol = solve(nlprob, nlsolve; abstol = get_abstol(alg, integrator), reltol = integrator.opts.reltol)
+    nlsol = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
     alg_u .= nlsol
 
     recursivecopy!(integrator.uprev, integrator.u)
@@ -485,7 +471,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::ODEProblem,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
         alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{false})
     @unpack p, t, f = integrator
 
@@ -499,7 +485,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     du = f(u0, p, t)
     resid = _vec(du)[algebraic_eqs]
 
-    check_dae_tolerance(integrator, resid, get_abstol(alg, integrator), t, isinplace) && return
+    check_dae_tolerance(integrator, resid, alg.abstol, t, isinplace) && return
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
     if isAD
@@ -528,7 +514,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
     nlfunc = NonlinearFunction(nlequation; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, u0[algebraic_vars])
-    nlsolve = default_nlsolve(get_nlsolve(alg), isinplace, u0, nlprob, isAD)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD)
 
     nlsol = solve(nlprob, nlsolve)
 
@@ -553,7 +539,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{true})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
@@ -578,7 +564,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     normtmp = get_tmp_cache(integrator)[1]
     f(normtmp, du, u, p, t)
 
-    if check_dae_tolerance(integrator, normtmp, get_abstol(alg, integrator), t, isinplace)
+    if check_dae_tolerance(integrator, normtmp, alg.abstol, t, isinplace)
         return
     elseif differential_vars === nothing
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
@@ -609,7 +595,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         f(out, du_tmp, uu, p, t)
     end
 
-    nlsolve_alg = get_nlsolve(alg)
+    nlsolve_alg = alg.nlsolve
     if nlsolve_alg !== nothing
         nlsolve = nlsolve_alg
     else
@@ -618,7 +604,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u), p)
-    nlsol = solve(nlprob, nlsolve; abstol = get_abstol(alg, integrator), reltol = integrator.opts.reltol)
+    nlsol = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
 
     @. du = ifelse(differential_vars, nlsol.u, du)
     @. u = ifelse(differential_vars, u, nlsol.u)
@@ -635,13 +621,13 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{false})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
 
     if check_dae_tolerance(
-        integrator, f(integrator.du, integrator.u, p, t), get_abstol(alg, integrator), t, isinplace)
+        integrator, f(integrator.du, integrator.u, p, t), alg.abstol, t, isinplace)
         return
     elseif differential_vars === nothing
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
@@ -665,7 +651,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u))
 
-    nlsolve = default_nlsolve(get_nlsolve(alg), isinplace, nlprob, integrator.u)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, nlprob, integrator.u)
 
     @show nlsolve
 
