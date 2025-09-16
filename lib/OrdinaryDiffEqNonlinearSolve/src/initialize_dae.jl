@@ -391,7 +391,7 @@ function algebraic_jacobian(jac_prototype::T, algebraic_eqs,
 end
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
-        alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{true})
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     u = integrator.u
     M = integrator.f.mass_matrix
@@ -472,7 +472,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
 end
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
-        alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{false})
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{false})
     @unpack p, t, f = integrator
 
     u0 = integrator.u
@@ -540,7 +540,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
 end
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
-        alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{true})
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
     u = integrator.u
@@ -622,7 +622,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DA
 end
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
-        alg::Union{DiffEqBase.BrownBasicInit, DiffEqBase.BrownFullBasicInit}, isinplace::Val{false})
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{false})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
 
