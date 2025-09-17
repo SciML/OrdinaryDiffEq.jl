@@ -1,25 +1,3 @@
-struct DefaultInit <: SciMLBase.DAEInitializationAlgorithm end
-
-struct ShampineCollocationInit{T, F} <: SciMLBase.DAEInitializationAlgorithm
-    initdt::T
-    nlsolve::F
-end
-function ShampineCollocationInit(; initdt = nothing, nlsolve = nothing)
-    ShampineCollocationInit(initdt, nlsolve)
-end
-function ShampineCollocationInit(initdt)
-    ShampineCollocationInit(; initdt = initdt, nlsolve = nothing)
-end
-
-struct BrownFullBasicInit{T, F} <: SciMLBase.DAEInitializationAlgorithm
-    abstol::T
-    nlsolve::F
-end
-function BrownFullBasicInit(; abstol = 1e-10, nlsolve = nothing)
-    BrownFullBasicInit(abstol, nlsolve)
-end
-BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = nothing)
-
 ## Notes
 
 #=
@@ -44,7 +22,7 @@ end
 
 ## Default algorithms
 
-function _initialize_dae!(integrator, prob::ODEProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::ODEProblem,
         alg::DefaultInit, x::Union{Val{true}, Val{false}})
     if SciMLBase.has_initializeprob(prob.f)
         _initialize_dae!(integrator, prob,
@@ -58,7 +36,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::DAEProblem,
         alg::DefaultInit, x::Union{Val{true}, Val{false}})
     if SciMLBase.has_initializeprob(prob.f)
         _initialize_dae!(integrator, prob,
@@ -77,7 +55,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 end
 
-function _initialize_dae!(integrator, prob::DiscreteProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::DiscreteProblem,
         alg::DefaultInit, x::Union{Val{true}, Val{false}})
     if SciMLBase.has_initializeprob(prob.f)
         # integrator.opts.abstol is `false` for `DiscreteProblem`.
@@ -124,13 +102,13 @@ end
 
 ## NoInit
 
-function _initialize_dae!(integrator, prob::AbstractDEProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::AbstractDEProblem,
         alg::NoInit, x::Union{Val{true}, Val{false}})
 end
 
 ## OverrideInit
 
-function _initialize_dae!(integrator, prob::AbstractDEProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::AbstractDEProblem,
         alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
     initializeprob = prob.f.initialization_data.initializeprob
 
@@ -172,7 +150,7 @@ function _initialize_dae!(integrator, prob::AbstractDEProblem,
 end
 
 ## CheckInit
-function _initialize_dae!(integrator, prob::AbstractDEProblem, alg::CheckInit,
+function _initialize_dae!(integrator::ODEIntegrator, prob::AbstractDEProblem, alg::CheckInit,
         isinplace::Union{Val{true}, Val{false}})
     SciMLBase.get_initial_values(
         prob, integrator, prob.f, alg, isinplace; abstol = integrator.opts.abstol)
