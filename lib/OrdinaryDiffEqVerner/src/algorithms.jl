@@ -85,6 +85,27 @@ function Vern8(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
     Vern8(stage_limiter!, step_limiter!, False(), lazy)
 end
 
+# ------------------------------------------------------------------
+#  Verner RKV87-IIa : 13-stage explicit 8 (7) Runge–Kutta pair
+#  Fixed-step implementation (no adaptivity or dense output yet)
+# ------------------------------------------------------------------
+
+@doc explicit_rk_docstring(
+    "Verner’s “efficient” 13-stage 8/7 Runge–Kutta method (RKV87-IIa).\n" *
+    "This variant is wired **for fixed time steps**.  Use it via\n\n" *
+    "```julia\nsol = solve(prob, RKV87(), dt = h)\n```",
+    "RKV87")
+Base.@kwdef struct RKV87{StageLimiter, StepLimiter, Thread} <:
+                   OrdinaryDiffEqConstantAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter  = trivial_limiter!
+    thread::Thread              = False()
+end
+TruncatedStacktraces.@truncate_stacktrace RKV87 3
+
+# Register the algorithm with the dispatcher
+add_algorithm(RKV87(), RKV87ConstantCache, Vern87IIaTableau)
+
 @doc explicit_rk_docstring(
     "Verner's most efficient 9/8 method (lazy 9th order interpolant).",
     "Vern9",
@@ -112,6 +133,7 @@ end
 function Vern9(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
     Vern9(stage_limiter!, step_limiter!, False(), lazy)
 end
+
 
 """
 Automatic switching algorithm that can switch between the (non-stiff) `Vern6()` and `stiff_alg`.
@@ -153,3 +175,5 @@ To gain access to stiff algorithms you might have to install additional librarie
 such as `OrdinaryDiffEqRosenbrock`.
 """
 AutoVern9(alg; lazy = true, kwargs...) = AutoAlgSwitch(Vern9(lazy = lazy), alg; kwargs...)
+
+
