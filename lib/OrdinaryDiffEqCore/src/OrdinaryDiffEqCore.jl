@@ -27,6 +27,9 @@ import FastPower: fastpower
 import SciMLBase: solve!, step!, isadaptive
 import DiffEqBase: initialize!
 
+# DAE Initialization algorithms
+import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
+
 # Internal utils
 import DiffEqBase: ODE_DEFAULT_NORM,
                    ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,

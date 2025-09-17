@@ -53,7 +53,7 @@ Solve for `u`
 
 =#
 
-function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{true})
     @unpack p, t, f = integrator
     M = integrator.f.mass_matrix
@@ -61,11 +61,12 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     tmp = first(get_tmp_cache(integrator))
     u0 = integrator.u
 
-    dt = if alg.initdt === nothing
+    initdt = alg.initdt
+    dt = if initdt === nothing
         integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
         (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
-        alg.initdt
+        initdt
     end
 
     algebraic_vars = [all(iszero, x) for x in eachcol(M)]
@@ -168,18 +169,19 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     return
 end
 
-function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{false})
     @unpack p, t, f = integrator
     u0 = integrator.u
     M = integrator.f.mass_matrix
     dtmax = integrator.opts.dtmax
 
-    dt = if alg.initdt === nothing
+    initdt = alg.initdt
+    dt = if initdt === nothing
         integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
         (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
-        alg.initdt
+        initdt
     end
 
     algebraic_vars = [all(iszero, x) for x in eachcol(M)]
@@ -246,7 +248,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::ShampineCollocationInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     u0 = integrator.u
@@ -323,7 +325,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::ShampineCollocationInit, isinplace::Val{false})
     @unpack p, t, f = integrator
     u0 = integrator.u
@@ -387,8 +389,8 @@ function algebraic_jacobian(jac_prototype::T, algebraic_eqs,
     jac_prototype[algebraic_eqs, algebraic_vars]
 end
 
-function _initialize_dae!(integrator, prob::ODEProblem,
-        alg::BrownFullBasicInit, isinplace::Val{true})
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     u = integrator.u
     M = integrator.f.mass_matrix
@@ -468,8 +470,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::ODEProblem,
-        alg::BrownFullBasicInit, isinplace::Val{false})
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{false})
     @unpack p, t, f = integrator
 
     u0 = integrator.u
@@ -536,8 +538,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
-        alg::BrownFullBasicInit, isinplace::Val{true})
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
     u = integrator.u
@@ -592,8 +594,9 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         f(out, du_tmp, uu, p, t)
     end
 
-    if alg.nlsolve !== nothing
-        nlsolve = alg.nlsolve
+    nlsolve_alg = alg.nlsolve
+    if nlsolve_alg !== nothing
+        nlsolve = nlsolve_alg
     else
         nlsolve = NewtonRaphson(autodiff = alg_autodiff(integrator.alg))
     end
@@ -617,8 +620,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
-        alg::BrownFullBasicInit, isinplace::Val{false})
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{false})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
 
