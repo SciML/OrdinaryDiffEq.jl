@@ -23,13 +23,15 @@ end
     zᵧ::uType
 end
 
-mutable struct SDIRKConstantCache{N, Tab, uType, tType} <: OrdinaryDiffEqConstantCache
+mutable struct SDIRKConstantCacheImpl{N, Tab, uType, tType} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
     # For algorithms that need additional history
     uprev3::uType
     tprev2::tType
 end
+
+const SDIRKConstantCacheType = SDIRKConstantCacheImpl
 
 # Unified alg_cache functions for mutable cache
 function alg_cache(alg::Union{ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22, SSPSDIRK2,
@@ -100,7 +102,7 @@ function alg_cache(alg::Union{ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2
     uprev3 = u
     tprev2 = t
 
-    SDIRKConstantCache(nlsolver, tab, uprev3, tprev2)
+    SDIRKConstantCacheImpl(nlsolver, tab, uprev3, tprev2)
 end
 
 # Keep old caches for backward compatibility for now, will be removed later.
