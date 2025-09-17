@@ -76,18 +76,58 @@ function modify_dt_for_tstops!(integrator)
     if has_tstop(integrator)
         tdir_t = integrator.tdir * integrator.t
         tdir_tstop = first_tstop(integrator)
+        distance_to_tstop = abs(tdir_tstop - tdir_t)
+        
+        # Store the original dt to check if it gets significantly reduced
+        original_dt = abs(integrator.dt)
+        
         if integrator.opts.adaptive
-            integrator.dt = integrator.tdir *
-                            min(abs(integrator.dt), abs(tdir_tstop - tdir_t)) # step! to the end
+            if original_dt < distance_to_tstop
+                # Normal step, no tstop interference
+                integrator.next_step_tstop = false
+            else
+                # Distance is smaller, entering tstop snap mode
+                integrator.next_step_tstop = true
+                integrator.tstop_target = integrator.tdir * tdir_tstop
+            end
+            integrator.dt = integrator.tdir * min(original_dt, distance_to_tstop)
         elseif iszero(integrator.dtcache) && integrator.dtchangeable
-            integrator.dt = integrator.tdir * abs(tdir_tstop - tdir_t)
+            integrator.dt = integrator.tdir * distance_to_tstop
+            integrator.next_step_tstop = true
+            integrator.tstop_target = integrator.tdir * tdir_tstop
         elseif integrator.dtchangeable && !integrator.force_stepfail
             # always try to step! with dtcache, but lower if a tstop
             # however, if force_stepfail then don't set to dtcache, and no tstop worry
-            integrator.dt = integrator.tdir *
-                            min(abs(integrator.dtcache), abs(tdir_tstop - tdir_t)) # step! to the end
+            if abs(integrator.dtcache) < distance_to_tstop
+                # Normal step with dtcache, no tstop interference
+                integrator.next_step_tstop = false
+            else
+                # Distance is smaller, entering tstop snap mode
+                integrator.next_step_tstop = true
+                integrator.tstop_target = integrator.tdir * tdir_tstop
+            end
+            integrator.dt = integrator.tdir * min(abs(integrator.dtcache), distance_to_tstop)
+        else
+            integrator.next_step_tstop = false
         end
+    else
+        integrator.next_step_tstop = false
     end
+end
+
+function handle_tstop_step!(integrator)
+    # Check if dt is extremely small (< eps(t))
+    eps_threshold = eps(abs(integrator.t))
+    
+    if abs(integrator.dt) < eps_threshold
+        # Skip perform_step! entirely for tiny dt
+        integrator.accept_step = true
+    else
+        # Normal step
+        perform_step!(integrator, integrator.cache)
+    end
+    
+    # Flag will be reset in fixed_t_for_floatingpoint_error! when t is updated
 end
 
 # Want to extend savevalues! for DDEIntegrator
@@ -328,6 +368,13 @@ function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, ts
 end
 
 function fixed_t_for_floatingpoint_error!(integrator, ttmp)
+    # If we're in tstop snap mode, use exact tstop target
+    if integrator.next_step_tstop
+        # Reset the flag now that we're snapping to tstop
+        integrator.next_step_tstop = false
+        return integrator.tstop_target
+    end
+    
     if has_tstop(integrator)
         tstop = integrator.tdir * first_tstop(integrator)
         if abs(ttmp - tstop) <
