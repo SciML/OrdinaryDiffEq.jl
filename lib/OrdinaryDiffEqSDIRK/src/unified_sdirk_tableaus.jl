@@ -2,7 +2,7 @@ using StaticArrays
 
 abstract type AbstractTableau{T} end
 
-struct SDIRKTableau{T, T2, S, hasEmbedded} <: AbstractTableau{T}
+struct SDIRKTableau{T, T2, S, hasEmbedded, hasAdditiveSplitting} <: AbstractTableau{T}
     A::SMatrix{S, S, T}
     b::SVector{S, T}
     c::SVector{S, T2}
@@ -15,7 +15,6 @@ struct SDIRKTableau{T, T2, S, hasEmbedded} <: AbstractTableau{T}
     is_A_stable::Bool
     is_L_stable::Bool
     predictor_type::Symbol
-    has_additive_splitting::Bool
     A_explicit::Union{SMatrix{S, S, T}, Nothing}
     b_explicit::Union{SVector{S, T}, Nothing}
     c_explicit::Union{SVector{S, T2}, Nothing}
@@ -31,10 +30,11 @@ function SDIRKTableau(A::SMatrix{S, S, T}, b::SVector{S, T}, c::SVector{S, T2}, 
                       α_pred=nothing) where {S, T, T2}
     
     hasEmbedded = b_embed !== nothing
-    SDIRKTableau{T, T2, S, hasEmbedded}(A, b, c, b_embed, γ, order, embedded_order,
-                                         is_fsal, is_stiffly_accurate, is_A_stable,
-                                         is_L_stable, predictor_type, has_additive_splitting,
-                                         A_explicit, b_explicit, c_explicit, α_pred)
+    hasAdditiveSplitting = has_additive_splitting
+    SDIRKTableau{T, T2, S, hasEmbedded, hasAdditiveSplitting}(A, b, c, b_embed, γ, order, embedded_order,
+                                                               is_fsal, is_stiffly_accurate, is_A_stable,
+                                                               is_L_stable, predictor_type,
+                                                               A_explicit, b_explicit, c_explicit, α_pred)
 end
 
 function TRBDF2Tableau_unified(T=Float64, T2=Float64)

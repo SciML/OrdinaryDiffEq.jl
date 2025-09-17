@@ -9,6 +9,10 @@ using MuladdMacro: @muladd
 
 @inline _get_step_limiter(alg, cache) = hasproperty(alg, :step_limiter!) ? alg.step_limiter! : trivial_limiter!
 
+# Type-stable IMEX dispatch functions
+@inline _is_imex_scheme(f, ::SDIRKTableau{T, T2, S, hasEmbedded, true}) where {T, T2, S, hasEmbedded} = f isa SplitFunction
+@inline _is_imex_scheme(f, ::SDIRKTableau{T, T2, S, hasEmbedded, false}) where {T, T2, S, hasEmbedded} = false
+
 function initialize!(integrator, cache::SDIRKConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -41,8 +45,8 @@ end
     b_embed = tab.b_embed
     γ = tab.γ
     
-    # Check if this is an IMEX (split function) scheme
-    is_imex = integrator.f isa SplitFunction && tab.has_additive_splitting
+    # Type-stable IMEX check through dispatch
+    is_imex = _is_imex_scheme(integrator.f, tab)
     
     z = Vector{typeof(u)}(undef, s)
     
@@ -189,8 +193,8 @@ end
     b_embed = tab.b_embed
     s = size(A, 1)
     
-    # Check if this is an IMEX (split function) scheme
-    is_imex = integrator.f isa SplitFunction && tab.has_additive_splitting
+    # Type-stable IMEX check through dispatch
+    is_imex = _is_imex_scheme(integrator.f, tab)
     
     # For IMEX schemes, we need to store explicit stage derivatives
     if is_imex
@@ -345,260 +349,8 @@ end
     generic_sdirk_perform_step!(integrator, cache, repeat_step)
 end
 
-@muladd function generic_additive_sdirk_perform_step!(integrator, cache::SDIRKConstantCache, repeat_step=false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tab, nlsolver = cache
-    alg = unwrap_alg(integrator, true)
-    
-    if integrator.f isa SplitFunction
-        f_impl = integrator.f.f1
-        f_expl = integrator.f.f2
-    else
-        f_impl = integrator.f
-    end
-    
-    markfirststage!(nlsolver)
-    
-    s = size(tab.A, 1)
-    γ = tab.γ
-    A = tab.A
-    b = tab.b
-    c = tab.c
-    b_embed = tab.b_embed
-    
-    A_explicit = tab.A_explicit
-    b_explicit = tab.b_explicit
-    
-    if integrator.f isa SplitFunction && !repeat_step && !integrator.last_stepfail
-        z₁ = dt * f_impl(uprev, p, t)
-    else
-        z₁ = dt * integrator.fsalfirst
-    end
-    
-    if s >= 2 && hasfield(typeof(cache), :z₂)
-        if hasproperty(tab, :α_pred) && tab.α_pred !== nothing
-            z₂ = getfield(cache, :z₂)
-            @.. broadcast=false z₂ = zero(eltype(u))
-            for j in 1:1
-                @.. broadcast=false z₂ += tab.α_pred[2, j] * (j == 1 ? z₁ : zero(z₁))
-            end
-        else
-            # Fallback: copy previous stage
-            z₂ = z₁
-        end
-        nlsolver.z = z₂
-        tmp = uprev + γ * z₁
-        
-        if integrator.f isa SplitFunction
-            k1 = dt * integrator.fsalfirst - z₁
-            tmp += A_explicit[2,1] * k1
-        end
-        
-        nlsolver.tmp = tmp
-        nlsolver.c = 2γ
-        z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
-        nlsolvefail(nlsolver) && return
-        
-        if integrator.f isa SplitFunction
-            z₃ = z₂
-            u = nlsolver.tmp + γ * z₂
-            k2 = dt * f_expl(u, p, t + 2γ * dt)
-            integrator.stats.nf2 += 1
-            tmp = uprev + A[3,1] * z₁ + A[3,2] * z₂ + A_explicit[3,1] * k1 + A_explicit[3,2] * k2
-        else
-            if hasproperty(tab, :α_pred) && tab.α_pred !== nothing
-                z₃ = tab.α_pred[3,1] * z₁ + tab.α_pred[3,2] * z₂
-            else
-                θ = c[3] / c[2]
-                α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c[2]) * γ)
-                α32 = ((-2θ + 3θ^2)) + (6θ * (1 - θ) / c[2]) * γ
-                z₃ = α31 * z₁ + α32 * z₂
-            end
-            tmp = uprev + A[3,1] * z₁ + A[3,2] * z₂
-        end
-        
-        nlsolver.z = z₃
-        nlsolver.tmp = tmp
-        nlsolver.c = c[3]
-        z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
-        nlsolvefail(nlsolver) && return
-        
-        # Step 4
-        if integrator.f isa SplitFunction
-            z₄ = z₂
-            u = nlsolver.tmp + γ * z₃
-            k3 = dt * f_expl(u, p, t + c[3] * dt)
-            integrator.stats.nf2 += 1
-            tmp = uprev + A[4,1] * z₁ + A[4,2] * z₂ + A[4,3] * z₃ + A_explicit[4,1] * k1 + A_explicit[4,2] * k2 + A_explicit[4,3] * k3
-        else
-            if hasproperty(tab, :α_pred) && tab.α_pred !== nothing
-                z₄ = tab.α_pred[4,1] * z₁ + tab.α_pred[4,2] * z₂ + tab.α_pred[4,3] * z₃
-            else
-                z₄ = z₁
-            end
-            tmp = uprev + A[4,1] * z₁ + A[4,2] * z₂ + A[4,3] * z₃
-        end
-        
-        nlsolver.z = z₄
-        nlsolver.tmp = tmp
-        nlsolver.c = 1
-        z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
-        nlsolvefail(nlsolver) && return
-        
-        u = nlsolver.tmp + γ * z₄
-        if integrator.f isa SplitFunction
-            k4 = dt * f_expl(u, p, t + dt)
-            integrator.stats.nf2 += 1
-            u = uprev + A[4,1] * z₁ + A[4,2] * z₂ + A[4,3] * z₃ + γ * z₄ + 
-                b_explicit[1] * k1 + b_explicit[2] * k2 + b_explicit[3] * k3 + b_explicit[4] * k4
-        end
-        
-        # Error estimation
-        if integrator.opts.adaptive && b_embed !== nothing
-            if integrator.f isa SplitFunction
-                tmp = b_embed[1] * z₁ + b_embed[2] * z₂ + b_embed[3] * z₃ + b_embed[4] * z₄
-            else
-                tmp = b_embed[1] * z₁ + b_embed[2] * z₂ + b_embed[3] * z₃ + b_embed[4] * z₄
-            end
-            
-            has_smooth_est = hasfield(typeof(alg), :smooth_est)
-            if isnewton(nlsolver) && has_smooth_est && alg.smooth_est
-                integrator.stats.nsolve += 1
-                est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
-            else
-                est = tmp
-            end
-            
-            atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t)
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-        end
-        
-        if integrator.f isa SplitFunction
-            integrator.k[1] = integrator.fsalfirst
-            integrator.fsallast = integrator.f(u, p, t + dt)
-            integrator.k[2] = integrator.fsallast
-        else
-            integrator.fsallast = z₄ ./ dt
-            integrator.k[1] = integrator.fsalfirst
-            integrator.k[2] = integrator.fsallast
-        end
-        integrator.u = u
-        
-    else
-        generic_sdirk_perform_step!(integrator, cache, repeat_step)
-    end
-end
 
-# TRBDF2 special handling for constant cache
-@muladd function perform_step_trbdf2!(integrator, cache::SDIRKConstantCache, repeat_step=false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    tab = cache.tab
-    γ = tab.c[2]
-    d = tab.γ
-    ω = tab.b[1]
-    btilde1, btilde2, btilde3 = tab.b_embed[1], tab.b_embed[2], tab.b_embed[3]
-    α1, α2 = tab.A[3,1], tab.A[3,2]
-    
-    nlsolver = cache.nlsolver
-    alg = unwrap_alg(integrator, true)
-    step_limiter! = _get_step_limiter(alg, cache)
-    markfirststage!(nlsolver)
 
-    zprev = dt * integrator.fsalfirst
-
-    zγ = zprev
-    nlsolver.z = zγ
-    nlsolver.c = γ
-    nlsolver.tmp = uprev + d * zprev
-    zγ = nlsolve!(nlsolver, integrator, cache, repeat_step)
-    nlsolvefail(nlsolver) && return
-
-    z = α1 * zprev + α2 * zγ
-    nlsolver.z = z
-    nlsolver.c = 1
-    nlsolver.tmp = uprev + ω * zprev + ω * zγ
-    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
-    nlsolvefail(nlsolver) && return
-
-    u = nlsolver.tmp + d * z
-    step_limiter!(u, integrator, p, t + dt)
-
-    if integrator.opts.adaptive
-        tmp = btilde1 * zprev + btilde2 * zγ + btilde3 * z
-        has_smooth_est = hasfield(typeof(alg), :smooth_est)
-        if isnewton(nlsolver) && has_smooth_est && alg.smooth_est
-            integrator.stats.nsolve += 1
-            est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
-        else
-            est = tmp
-        end
-        atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-
-    # TRBDF2 is stiffly accurate; use fresh f at t+dt for FSAL
-    integrator.fsallast = integrator.f(u, p, t + dt)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-    integrator.u = u
-end
-
-# TRBDF2 special handling for mutable cache 
-@muladd function perform_step_trbdf2!(integrator, cache::SDIRKCache, repeat_step=false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack zprev, zᵧ, atmp, nlsolver, step_limiter! = cache
-    @unpack z, tmp = nlsolver
-    tab = cache.tab
-    γ = tab.c[2]
-    d = tab.γ
-    ω = tab.b[1]
-    btilde1, btilde2, btilde3 = tab.b_embed[1], tab.b_embed[2], tab.b_embed[3]
-    α1, α2 = tab.A[3,1], tab.A[3,2]
-    
-    alg = unwrap_alg(integrator, true)
-
-    @.. broadcast=false zprev = dt * integrator.fsalfirst
-    markfirststage!(nlsolver)
-
-    @.. broadcast=false zᵧ = zprev
-    z .= zᵧ
-    @.. broadcast=false tmp = uprev + d * zprev
-    nlsolver.c = γ
-    zᵧ .= nlsolve!(nlsolver, integrator, cache, repeat_step)
-    nlsolvefail(nlsolver) && return
-
-    @.. broadcast=false z = α1 * zprev + α2 * zᵧ
-    @.. broadcast=false tmp = uprev + ω * zprev + ω * zᵧ
-    nlsolver.c = 1
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
-    nlsolve!(nlsolver, integrator, cache, repeat_step)
-    nlsolvefail(nlsolver) && return
-
-    @.. broadcast=false u = tmp + d * z
-    step_limiter!(u, integrator, p, t + dt)
-
-    if integrator.opts.adaptive
-        @.. broadcast=false tmp = btilde1 * zprev + btilde2 * zᵧ + btilde3 * z
-        has_smooth_est = hasfield(typeof(alg), :smooth_est)
-        if has_smooth_est && alg.smooth_est && isnewton(nlsolver)
-            est = nlsolver.cache.dz
-            linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
-                linu = _vec(est))
-            integrator.stats.nsolve += 1
-        else
-            est = tmp
-        end
-        calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-
-    integrator.fsallast = integrator.f(u, p, t + dt)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-end
 
 
 
