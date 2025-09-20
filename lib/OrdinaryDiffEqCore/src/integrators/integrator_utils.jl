@@ -439,17 +439,6 @@ function fixed_t_for_floatingpoint_error!(integrator, ttmp)
         # Reset the flag now that we're snapping to tstop
         integrator.next_step_tstop = false
         return integrator.tstop_target
-    end
-
-    if has_tstop(integrator)
-        tstop = integrator.tdir * first_tstop(integrator)
-        if abs(ttmp - tstop) <
-                100eps(float(max(integrator.t, tstop) / oneunit(integrator.t))) *
-                oneunit(integrator.t)
-            tstop
-        else
-            ttmp
-        end
     else
         ttmp
     end
