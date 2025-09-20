@@ -1,7 +1,6 @@
 using OrdinaryDiffEq, Test, Random, StaticArrays, DiffEqCallbacks
 import ODEProblemLibrary: prob_ode_linear
 Random.seed!(100)
-
 @testset "Tstops Tests on the Interval [0, 1]" begin
     prob = prob_ode_linear
 
@@ -136,16 +135,16 @@ end
         # Test with extreme tolerances that originally caused issues
         prob_static = ODEProblem(precise_dynamics, u0_static, tspan)
         sol_static = solve(prob_static, Vern9(); reltol=1e-12, abstol=1e-15, 
-                          tstops=tstops, save_everystep=false)
-        @test sol_static.retcode == :Success
+                          tstops=tstops)
+        @test SciMLBase.successful_retcode(sol_static)
         for tstop in tstops
             @test tstop ∈ sol_static.t
         end
         
         prob_array = ODEProblem(precise_dynamics_array!, u0_array, tspan)
         sol_array = solve(prob_array, Vern9(); reltol=1e-12, abstol=1e-15, 
-                         tstops=tstops, save_everystep=false)
-        @test sol_array.retcode == :Success
+                         tstops=tstops)
+        @test SciMLBase.successful_retcode(sol_static)
         for tstop in tstops
             @test tstop ∈ sol_array.t
         end
@@ -156,7 +155,7 @@ end
     
     @testset "Duplicate tstops handling" begin
         function simple_ode(u, p, t)
-            [0.1 * u[1]]
+            SA[0.1 * u[1]]
         end
         
         u0 = SVector{1}(1.0)
@@ -168,7 +167,7 @@ end
         prob = ODEProblem(simple_ode, u0, tspan)
         sol = solve(prob, Vern9(); tstops=duplicate_tstops)
         
-        @test sol.retcode == :Success
+        @test SciMLBase.successful_retcode(sol)
         
         # Count how many times each tstop appears in solution
         count_05 = count(t -> abs(t - 0.5) < 1e-12, sol.t)
@@ -181,7 +180,7 @@ end
         # Test with StaticArrays too
         prob_static = ODEProblem(simple_ode, u0, tspan)
         sol_static = solve(prob_static, Vern9(); tstops=duplicate_tstops)
-        @test sol_static.retcode == :Success
+        @test SciMLBase.successful_retcode(sol_static)
     end
     
     @testset "PresetTimeCallback with identical times" begin
@@ -192,14 +191,14 @@ end
         
         function affect_preset!(integrator)
             push!(callback_times, integrator.t)
-            integrator.u[1] += 0.1  # Small modification
+            integrator.u += 0.1* integrator.u  # Small modification
         end
         
         function simple_growth(u, p, t)
-            [0.1 * u[1]]
+            SA[0.1 * u[1]]
         end
         
-        u0 = SVector{1}(1.0)
+        u0 = SA[1.0]
         tspan = (0.0, 3.0)
         
         # Define times where both tstops and callbacks should trigger
@@ -212,7 +211,7 @@ end
         sol = solve(prob, Vern9(); tstops=critical_times, callback=preset_cb, 
                    reltol=1e-10, abstol=1e-12)
         
-        @test sol.retcode == :Success
+        @test SciMLBase.successful_retcode(sol)
         
         # Verify all tstops were hit
         for time in critical_times
@@ -244,7 +243,7 @@ end
         sol_array = solve(prob_array, Vern9(); tstops=critical_times, callback=preset_cb_array,
                          reltol=1e-10, abstol=1e-12)
         
-        @test sol_array.retcode == :Success
+        @test SciMLBase.successful_retcode(sol_array)
         @test length(callback_times_array) == length(critical_times)
         
         # Both should have triggered all events
@@ -254,7 +253,7 @@ end
     @testset "Tiny tstop step handling" begin
         # Test cases where tstop is very close to current time (dt < eps(t))
         function test_ode(u, p, t)
-            [0.01 * u[1]]
+            SA[0.01 * u[1]]
         end
         
         u0 = SVector{1}(1.0)
@@ -265,9 +264,8 @@ end
         
         for tiny_tstop in tiny_tstops
             prob = ODEProblem(test_ode, u0, tspan)
-            sol = solve(prob, Vern9(); tstops=[tiny_tstop], save_everystep=false)
-            
-            @test sol.retcode == :Success
+            sol = solve(prob, Vern9(); tstops=[tiny_tstop])
+            @test SciMLBase.successful_retcode(sol)
             @test any(abs.(sol.t .- tiny_tstop) .< 1e-14)  # Should handle tiny tstop correctly
         end
     end
@@ -289,7 +287,7 @@ end
         prob = ODEProblem(oscillator, u0, tspan)
         sol = solve(prob, Vern9(); tstops=close_tstops, reltol=1e-12, abstol=1e-15)
         
-        @test sol.retcode == :Success
+        @test SciMLBase.successful_retcode(sol)
         
         # Should handle all close tstops without error
         # (Some might be deduplicated, but no errors should occur)
@@ -302,7 +300,7 @@ end
     @testset "Backward integration with tstop flags" begin
         # Test that the fix works for backward time integration
         function decay_ode(u, p, t)
-            [-0.1 * u[1]]
+            SA[-0.1 * u[1]]
         end
         
         u0 = SVector{1}(1.0)
@@ -312,7 +310,7 @@ end
         prob = ODEProblem(decay_ode, u0, tspan)
         sol = solve(prob, Vern9(); tstops=tstops, reltol=1e-12, abstol=1e-15)
         
-        @test sol.retcode == :Success
+        @test SciMLBase.successful_retcode(sol)
         for tstop in tstops
             @test tstop ∈ sol.t
         end
@@ -335,7 +333,7 @@ end
             [0.2 * u[1]]  # Exponential growth
         end
         
-        u0 = SVector{1}(0.1)  # Start below 0.5
+        u0 = [0.1]  # Start below 0.5
         tspan = (0.0, 10.0)
         tstops = [2.0, 4.0, 6.0, 8.0]  # Regular tstops
         
@@ -345,7 +343,7 @@ end
         sol = solve(prob, Vern9(); tstops=tstops, callback=continuous_cb,
                    reltol=1e-10, abstol=1e-12)
         
-        @test sol.retcode == :Success
+        @test SciMLBase.successful_retcode(sol)
         
         # Should hit all tstops
         for tstop in tstops
