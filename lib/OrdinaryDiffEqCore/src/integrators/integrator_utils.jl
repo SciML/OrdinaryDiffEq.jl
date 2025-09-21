@@ -73,10 +73,6 @@ function last_step_failed(integrator::ODEIntegrator)
 end
 
 function modify_dt_for_tstops!(integrator)
-    integrator.t, integrator.dt
-    tdir_tstop = first_tstop(integrator)
-    distance_to_tstop = abs(tdir_tstop - integrator.tdir * integrator.t)
-
     if has_tstop(integrator)
         tdir_t = integrator.tdir * integrator.t
         tdir_tstop = first_tstop(integrator)
