@@ -209,6 +209,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
     end
     if force_save || (integrator.opts.save_everystep &&
         (isempty(integrator.sol.t) ||
+         (integrator.t !== integrator.sol.t[end] || iszero(integrator.dt)) &&
          (integrator.opts.save_end || integrator.t !== integrator.sol.prob.tspan[2])
     ))
         integrator.saveiter += 1
