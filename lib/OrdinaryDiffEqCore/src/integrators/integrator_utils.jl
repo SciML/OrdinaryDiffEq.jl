@@ -85,7 +85,7 @@ function last_step_failed(integrator::ODEIntegrator)
 end
 
 function modify_dt_for_tstops!(integrator)
-    return if has_tstop(integrator)
+    if has_tstop(integrator)
         tdir_t = integrator.tdir * integrator.t
         tdir_tstop = first_tstop(integrator)
         distance_to_tstop = abs(tdir_tstop - tdir_t)
@@ -94,6 +94,7 @@ function modify_dt_for_tstops!(integrator)
         original_dt = abs(integrator.dt)
         
         if integrator.opts.adaptive
+            integrator.dtpropose = original_dt
             if original_dt < distance_to_tstop
                 # Normal step, no tstop interference
                 integrator.next_step_tstop = false
@@ -136,7 +137,7 @@ function handle_tstop_step!(integrator)
         perform_step!(integrator, integrator.cache)
     end
     
-    # Flag will be reset in fixed_t_for_floatingpoint_error! when t is updated
+    # Flag will be reset in fixed_t_for_tstop_error! when t is updated
 end
 
 # Want to extend savevalues! for DDEIntegrator
@@ -206,14 +207,10 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
             end
         end
     end
-    if force_save || (
-            integrator.opts.save_everystep &&
-                (
-                isempty(integrator.sol.t) ||
-                    (integrator.t !== integrator.sol.t[end]) &&
-                    (integrator.opts.save_end || integrator.t !== integrator.sol.prob.tspan[2])
-            )
-        )
+    if force_save || (integrator.opts.save_everystep &&
+        (isempty(integrator.sol.t) ||
+         (integrator.opts.save_end || integrator.t !== integrator.sol.prob.tspan[2])
+    ))
         integrator.saveiter += 1
         saved, savedexactly = true, true
         if integrator.opts.save_idxs === nothing
@@ -368,16 +365,20 @@ function _loopfooter!(integrator)
         if integrator.accept_step # Accept
             increment_accept!(integrator.stats)
             integrator.last_stepfail = false
-            dtnew = DiffEqBase.value(
-                step_accept_controller!(
-                    integrator,
-                    integrator.alg,
-                    q
-                )
-            ) *
-                oneunit(integrator.dt)
             integrator.tprev = integrator.t
-            integrator.t = fixed_t_for_floatingpoint_error!(integrator, ttmp)
+
+            if integrator.next_step_tstop
+                # Step controller dt is overly pessimistic, since dt = time to tstop
+                # For example, if super dense time, dt = eps(t), so the next step is tiny
+                # Thus if snap to tstop, let the step controller assume dt was the pre-fixed version
+                integrator.dt = integrator.dtpropose
+            end
+            integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)
+
+            dtnew = DiffEqBase.value(step_accept_controller!(integrator,
+                integrator.alg,
+                q)) *
+                    oneunit(integrator.dt)
             calc_dt_propose!(integrator, dtnew)
             handle_callbacks!(integrator)
         else # Reject
@@ -386,7 +387,7 @@ function _loopfooter!(integrator)
     elseif !integrator.opts.adaptive #Not adaptive
         increment_accept!(integrator.stats)
         integrator.tprev = integrator.t
-        integrator.t = fixed_t_for_floatingpoint_error!(integrator, ttmp)
+        integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)
         integrator.last_stepfail = false
         integrator.accept_step = true
         integrator.dtpropose = integrator.dt
@@ -430,7 +431,7 @@ function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, ts
     )
 end
 
-function fixed_t_for_floatingpoint_error!(integrator, ttmp)
+function fixed_t_for_tstop_error!(integrator, ttmp)
     # If we're in tstop snap mode, use exact tstop target
     if integrator.next_step_tstop
         # Reset the flag now that we're snapping to tstop
@@ -580,10 +581,7 @@ function handle_tstop!(integrator)
         tdir_t = integrator.tdir * integrator.t
         tdir_tstop = first_tstop(integrator)
         if tdir_t == tdir_tstop
-            while tdir_t == tdir_tstop #remove all redundant copies
-                res = pop_tstop!(integrator)
-                has_tstop(integrator) ? (tdir_tstop = first_tstop(integrator)) : break
-            end
+            res = pop_tstop!(integrator)
             integrator.just_hit_tstop = true
         elseif tdir_t > tdir_tstop
             if !integrator.dtchangeable

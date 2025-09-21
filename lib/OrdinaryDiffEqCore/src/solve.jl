@@ -572,7 +572,7 @@ function SciMLBase.__init(
     next_step_tstop = false
     tstop_target = zero(t)
     isout = false
-    accept_step = false
+    accept_step = true
     force_stepfail = false
     last_stepfail = false
     do_error_check = true
@@ -676,7 +676,8 @@ end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
     @inbounds while !isempty(integrator.opts.tstops)
-        while integrator.tdir * integrator.t < first(integrator.opts.tstops)
+        first_tstop = first(integrator.opts.tstops)
+        while integrator.tdir * integrator.t <= first_tstop
             loopheader!(integrator)
             if integrator.do_error_check && check_error!(integrator) != ReturnCode.Success
                 return integrator.sol
@@ -688,9 +689,11 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
             else
                 perform_step!(integrator, integrator.cache)
             end
-            
+
+            should_exit = integrator.next_step_tstop
+
             loopfooter!(integrator)
-            if isempty(integrator.opts.tstops)
+            if isempty(integrator.opts.tstops) || should_exit
                 break
             end
         end
@@ -745,11 +748,11 @@ end
 
     for t in tstops
         tdir_t = tdir * t
-        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+        tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end
     for t in d_discontinuities
         tdir_t = tdir * t
-        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+        tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end
     push!(tstops_internal, tdir_tf)
 
