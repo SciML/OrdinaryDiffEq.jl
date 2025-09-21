@@ -127,11 +127,8 @@ function modify_dt_for_tstops!(integrator)
     end
 end
 
-function handle_tstop_step!(integrator)
-    # Check if dt is extremely small (< eps(t))
-    eps_threshold = eps(abs(integrator.t))
-    
-    if abs(integrator.dt) < eps_threshold
+function handle_tstop_step!(integrator)    
+    if integrator.t isa AbstractFloat && abs(integrator.dt) < eps(abs(integrator.t))
         # Skip perform_step! entirely for tiny dt
         integrator.accept_step = true
     else
