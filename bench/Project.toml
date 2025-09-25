@@ -1,0 +1,8 @@
+[deps]
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqTaylorSeries = "9c7f1690-dd92-42a3-8318-297ee24d8d39"
+ParameterizedFunctions = "65888b18-ceab-5e60-b2b9-181511a3b968"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+TaylorIntegration = "92b13dbe-c966-51a2-8445-caca9f8a7d42"

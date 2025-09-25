@@ -110,6 +110,7 @@ end
 
     min_order_value = get_value(min_order)
     max_order_value = get_value(max_order)
+    # println("current order: ", current_order[])
     jet_index = current_order[] - min_order_value + 1
     # compute one additional order for adaptive order
     jet = jets[jet_index + 1]
@@ -122,10 +123,12 @@ end
         min_work = Inf
         start_order = max(min_order_value, current_order[] - 1)
         end_order = min(max_order_value - 1, current_order[] + 1)
+        dtn = dt^start_order
         for i in start_order:end_order
             A = i * i
-            @.. broadcast=false thread=thread utilde=TaylorDiff.get_coefficient(
-                utaylor, i) * dt^i
+            for ix in eachindex(utaylor)
+                utilde[ix] = TaylorDiff.partials(utaylor[ix])[i] * dtn
+            end
             calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
             EEst = integrator.opts.internalnorm(atmp, t)
@@ -147,6 +150,7 @@ end
                 min_work = work
                 integrator.EEst = EEst
             end
+            dtn *= dt
         end
     end
     return nothing
