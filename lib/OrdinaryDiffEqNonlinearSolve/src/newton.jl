@@ -96,8 +96,15 @@ end
     @unpack z, tmp, ztmp, γ, α, cache, method = nlsolver
     @unpack tstep, invγdt = cache
 
+    new_jac, new_W = do_newJW(integrator, integrator.alg, nlsolver, false)
+    if is_always_new(nlsolver) || new_jac || new_W
+        recompute_jacobian = true
+    else
+        recompute_jacobian = false
+    end
+
     nlcache = nlsolver.cache.cache
-    step!(nlcache)
+    step!(nlcache; recompute_jacobian)
     nlsolver.ztmp = nlcache.u
 
     ustep = compute_ustep(tmp, γ, z, method)
@@ -118,9 +125,16 @@ end
     @unpack z, tmp, ztmp, γ, α, cache, method = nlsolver
     @unpack tstep, invγdt, atmp, ustep = cache
 
-    nlstep_data = integrator.f.nlstep_data
+    new_jac, new_W = do_newJW(integrator, integrator.alg, nlsolver, false)
+    if is_always_new(nlsolver) || new_jac || new_W
+        recompute_jacobian = true
+    else
+        recompute_jacobian = false
+    end
+
     nlcache = nlsolver.cache.cache
-    step!(nlcache)
+    nlstep_data = integrator.f.nlstep_data
+    step!(nlcache; recompute_jacobian)
 
     if nlstep_data !== nothing
         nlstepsol = SciMLBase.build_solution(

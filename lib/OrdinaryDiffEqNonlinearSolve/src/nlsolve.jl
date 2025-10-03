@@ -105,7 +105,7 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
         # don't trust θ for non-adaptive on first iter because the solver doesn't provide feedback
         # for us to know whether our previous nlsolve converged sufficiently well
         check_η_convergence = (iter > 1 ||
-                               (isnewton(nlsolver) && isadaptive(integrator.alg)))
+                               ((isnewton(nlsolver) || isnonlinearsolve(nlsolver)) && isadaptive(integrator.alg)))
         if (iter == 1 && ndz < 1e-5) ||
            (check_η_convergence && η >= zero(η) && η * ndz < κ)
             nlsolver.status = Convergence
@@ -114,7 +114,7 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
         end
     end
 
-    if isnewton(nlsolver) && nlsolver.status == Divergence &&
+    if (isnewton(nlsolver) || isnonlinearsolve(nlsolver)) && nlsolver.status == Divergence &&
        !isJcurrent(nlsolver, integrator)
         nlsolver.status = TryAgain
         nlsolver.nfails += 1
