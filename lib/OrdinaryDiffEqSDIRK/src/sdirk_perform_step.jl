@@ -82,17 +82,27 @@ end
     alg = unwrap_alg(integrator, true)
     markfirststage!(nlsolver)
 
-    # initial guess
-    if alg.extrapolant == :linear
-        @.. broadcast=false z=dt * integrator.fsalfirst
-    else # :constant
-        z .= zero(eltype(u))
+    if f.f isa MatrixOperator && islinear(f.f)
+        # linear ODE u′(t) = f(u,t) = A(t)*u(t):
+        # solve z = dt*f(u+z,t+dt) = dt*A(t+dt)*(u+z)
+        # as linear equation (I/dt-A(t+dt))*z = A(t+dt)*u with one single \
+        A = Matrix(update_coefficients(f.f, uprev #=irrelevant=#, p, t+dt))
+        b = A * uprev
+        W = I/dt - A
+        z = W \ b
+    else
+        # nonlinear ODE: solve nonlinear equation with nonlinear solver
+        # initial guess
+        if alg.extrapolant == :linear
+            @.. broadcast=false z=dt * integrator.fsalfirst
+        else # :constant
+            z .= zero(eltype(u))
+        end
+        nlsolver.tmp .= uprev
+        nlsolver.γ = 1
+        z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+        nlsolvefail(nlsolver) && return
     end
-
-    nlsolver.tmp .= uprev
-    nlsolver.γ = 1
-    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
-    nlsolvefail(nlsolver) && return
     @.. broadcast=false u=uprev + z
 
     step_limiter!(u, integrator, p, t + dt)
