@@ -174,7 +174,7 @@ Base.@kwdef struct RKV76IIa{StageLimiter, StepLimiter, Thread} <:
     thread::Thread = False()
     lazy::Bool = true
 end
-TruncatedStacktraces.@truncate_stacktrace RKV76IIa 3
+@truncate_stacktrace RKV76IIa 3
 # for backwards compatibility
 function RKV76IIa(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
     RKV76IIa(stage_limiter!, step_limiter!, False(), lazy)

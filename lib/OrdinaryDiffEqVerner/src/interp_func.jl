@@ -30,7 +30,7 @@ function SciMLBase.interp_summary(::Type{cacheType},
     dense ? "specialized 9th order lazy interpolation" : "1st order linear"
 end
 
-function DiffEqBase.interp_summary(::Type{cacheType},
+function SciMLBase.interp_summary(::Type{cacheType},
         dense::Bool) where {
         cacheType <:
         Union{RKV76IIaCache, RKV76IIaConstantCache
