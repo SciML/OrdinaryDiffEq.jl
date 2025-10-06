@@ -1,34 +1,12 @@
-struct RodasTableau{T, T2}
-    A::Matrix{T}
-    C::Matrix{T}
-    b::Vector{T}
-    btilde::Vector{T}
-    gamma::T
-    c::Vector{T2}
-    d::Vector{T}
-    H::Matrix{T}
-end
-
-struct Rosenbrock23Tableau{T}
+struct RosenbrockCombinedTableau{T}
     c₃₂::T
     d::T
 end
 
-function Rosenbrock23Tableau(T)
+function RosenbrockCombinedTableau(T)
     c₃₂ = convert(T, 6 + sqrt(2))
     d = convert(T, 1 / (2 + sqrt(2)))
-    Rosenbrock23Tableau(c₃₂, d)
-end
-
-struct Rosenbrock32Tableau{T}
-    c₃₂::T
-    d::T
-end
-
-function Rosenbrock32Tableau(T)
-    c₃₂ = convert(T, 6 + sqrt(2))
-    d = convert(T, 1 / (2 + sqrt(2)))
-    Rosenbrock32Tableau(c₃₂, d)
+    RosenbrockCombinedTableau(c₃₂, d)
 end
 
 

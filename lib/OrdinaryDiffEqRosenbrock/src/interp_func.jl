@@ -3,8 +3,7 @@ function SciMLBase.interp_summary(::Type{cacheType},
         cacheType <:
         Union{Rosenbrock23ConstantCache,
         Rosenbrock32ConstantCache,
-        Rosenbrock23Cache,
-        Rosenbrock32Cache}}
+        RosenbrockCombinedCache}}
     dense ? "specialized 2nd order \"free\" stiffness-aware interpolation" :
     "1st order linear"
 end

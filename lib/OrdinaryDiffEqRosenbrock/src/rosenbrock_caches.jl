@@ -64,7 +64,7 @@ struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
     interp_order::Int
 end
 
-@cache mutable struct Rosenbrock23Cache{uType, rateType, uNoUnitsType, JType, WType,
+@cache mutable struct RosenbrockCombinedCache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
     RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
     u::uType
@@ -97,44 +97,7 @@ end
     stage_limiter!::StageLimiter
 end
 
-@cache mutable struct Rosenbrock32Cache{uType, rateType, uNoUnitsType, JType, WType,
-    TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
-    u::uType
-    uprev::uType
-    k₁::rateType
-    k₂::rateType
-    k₃::rateType
-    du1::rateType
-    du2::rateType
-    f₁::rateType
-    fsalfirst::rateType
-    fsallast::rateType
-    dT::rateType
-    J::JType
-    W::WType
-    tmp::rateType
-    atmp::uNoUnitsType
-    weight::uNoUnitsType
-    tab::TabType
-    tf::TFType
-    uf::UFType
-    linsolve_tmp::rateType
-    linsolve::F
-    jac_config::JCType
-    grad_config::GCType
-    reltol::RTolType
-    alg::A
-    algebraic_vars::AV
-    step_limiter!::StepLimiter
-    stage_limiter!::StageLimiter
-end
-
-function get_fsalfirstlast(cache::Union{Rosenbrock23Cache, Rosenbrock32Cache}, u)
-    (cache.fsalfirst, cache.fsallast)
-end
-
-function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Union{Rosenbrock23, Rosenbrock32}, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
@@ -153,7 +116,7 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
-    tab = Rosenbrock23Tableau(constvalue(uBottomEltypeNoUnits))
+    tab = RosenbrockCombinedTableau(constvalue(uBottomEltypeNoUnits))
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
@@ -176,59 +139,11 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-    Rosenbrock23Cache(u, uprev, k₁, k₂, k₃, du1, du2, f₁,
+    RosenbrockCombinedCache(u, uprev, k₁, k₂, k₃, du1, du2, f₁,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
         alg.stage_limiter!)
-end
-
-function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    k₁ = zero(rate_prototype)
-    k₂ = zero(rate_prototype)
-    k₃ = zero(rate_prototype)
-    du1 = zero(rate_prototype)
-    du2 = zero(rate_prototype)
-    # f₀ = zero(u) fsalfirst
-    f₁ = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    fsallast = zero(rate_prototype)
-    dT = zero(rate_prototype)
-    tmp = zero(rate_prototype)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    weight = similar(u, uEltypeNoUnits)
-    recursivefill!(weight, false)
-    tab = Rosenbrock32Tableau(constvalue(uBottomEltypeNoUnits))
-
-    tf = TimeGradientWrapper(f, uprev, p)
-    uf = UJacobianWrapper(f, t, p)
-    linsolve_tmp = zero(rate_prototype)
-   
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
-    J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-
-    Pl, Pr = wrapprecs(
-        alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
-    linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true))
-
-    algebraic_vars = f.mass_matrix === I ? nothing :
-                     [all(iszero, x) for x in eachcol(f.mass_matrix)]
-
-    Rosenbrock32Cache(u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
-        tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
-        grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!)
 end
 
 struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
@@ -244,7 +159,7 @@ struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
 end
 
 function Rosenbrock23ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where {T}
-    tab = Rosenbrock23Tableau(T)
+    tab = RosenbrockCombinedTableau(T)
     Rosenbrock23ConstantCache(tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff)
 end
 
@@ -274,7 +189,7 @@ struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <:
 end
 
 function Rosenbrock32ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where {T}
-    tab = Rosenbrock32Tableau(T)
+    tab = RosenbrockCombinedTableau(T)
     Rosenbrock32ConstantCache(tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff)
 end
 
@@ -837,7 +752,8 @@ function alg_cache(
 end
 
 function get_fsalfirstlast(
-        cache::Union{RosenbrockCache,
+        cache::Union{RosenbrockCombinedCache, Rosenbrock33Cache,
+            Rosenbrock34Cache,
             Rosenbrock4Cache},
         u)
     (cache.fsalfirst, cache.fsallast)

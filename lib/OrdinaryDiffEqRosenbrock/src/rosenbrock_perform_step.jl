@@ -1,6 +1,4 @@
-################################################################################
-function initialize!(integrator, cache::Union{Rosenbrock23Cache,
-        Rosenbrock32Cache})
+function initialize!(integrator, cache::RosenbrockCombinedCache)
     integrator.kshortsize = 2
     @unpack k₁, k₂, fsalfirst, fsallast = cache
     resize!(integrator.k, integrator.kshortsize)
@@ -24,7 +22,7 @@ function initialize!(integrator,
     integrator.k[2] = zero(integrator.fsalfirst)
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCombinedCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, opts = integrator
     @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack c₃₂, d = cache.tab
@@ -67,119 +65,7 @@ end
     @.. veck₁ = vecu * neginvdtγ
     integrator.stats.nsolve += 1
 
-    @.. u = uprev + dto2 * k₁
-    stage_limiter!(u, integrator, p, t + dto2)
-    f(f₁, u, p, t + dto2)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-    if mass_matrix === I
-        copyto!(tmp, k₁)
-    else
-        mul!(_vec(tmp), mass_matrix, _vec(k₁))
-    end
-
-    @.. linsolve_tmp = f₁ - tmp
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    vecu = _vec(linres.u)
-    veck₂ = _vec(k₂)
-
-    @.. veck₂ = vecu * neginvdtγ + veck₁
-    integrator.stats.nsolve += 1
-
-    @.. u = uprev + dt * k₂
-    stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
-
-    if integrator.opts.adaptive
-        f(fsallast, u, p, t + dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-        if mass_matrix === I
-            @.. broadcast=false linsolve_tmp=fsallast - c₃₂ * (k₂ - f₁) -
-                                             2(k₁ - fsalfirst) + dt * dT
-        else
-            @.. broadcast=false du2=c₃₂ * k₂ + 2k₁
-            mul!(_vec(du1), mass_matrix, _vec(du2))
-            @.. broadcast=false linsolve_tmp=fsallast - du1 + c₃₂ * f₁ + 2fsalfirst +
-                                             dt * dT
-        end
-
-        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-        vecu = _vec(linres.u)
-        veck3 = _vec(k₃)
-        @.. veck3 = vecu * neginvdtγ
-
-        integrator.stats.nsolve += 1
-
-        if mass_matrix === I
-            @.. broadcast=false tmp=dto6 * (k₁ - 2 * k₂ + k₃)
-        else
-            veck₁ = _vec(k₁)
-            veck₂ = _vec(k₂)
-            veck₃ = _vec(k₃)
-            vectmp = _vec(tmp)
-            @.. broadcast=false vectmp=ifelse(cache.algebraic_vars,
-                false, dto6 * (veck₁ - 2 * veck₂ + veck₃))
-        end
-        calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-
-        if mass_matrix !== I
-            algvar = reshape(cache.algebraic_vars, size(u))
-            invatol = inv(integrator.opts.abstol)
-            @.. atmp = ifelse(algvar, fsallast, false) * invatol
-            integrator.EEst += integrator.opts.internalnorm(atmp, t)
-        end
-    end
-    cache.linsolve = linres.cache
-end
-
-@muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, opts = integrator
-    @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
-    @unpack c₃₂, d = cache.tab
-
-    # Assignments
-    sizeu = size(u)
-    mass_matrix = integrator.f.mass_matrix
-
-    # Precalculations
-    dtγ = dt * d
-    neginvdtγ = -inv(dtγ)
-    dto2 = dt / 2
-    dto6 = dt / 6
-
-    if repeat_step
-        f(integrator.fsalfirst, uprev, p, t)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    end
-
-    calc_rosenbrock_differentiation!(integrator, cache, dtγ, dtγ, repeat_step)
-
-    calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
-        integrator.opts.abstol, integrator.opts.reltol,
-        integrator.opts.internalnorm, t)
-
-    if repeat_step
-        linres = dolinsolve(
-            integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-            du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtγ))
-    else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-            du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtγ))
-    end
-
-    vecu = _vec(linres.u)
-    veck₁ = _vec(k₁)
-
-    @.. veck₁ = vecu * neginvdtγ
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + dto2 * k₁
+    @.. broadcast=false u = uprev + dto2 * k₁
     stage_limiter!(u, integrator, p, t + dto2)
     f(f₁, u, p, t + dto2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -190,7 +76,7 @@ end
         mul!(_vec(tmp), mass_matrix, _vec(k₁))
     end
 
-    @.. broadcast=false linsolve_tmp=f₁ - tmp
+    @.. broadcast=false linsolve_tmp = f₁ - tmp
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
@@ -199,41 +85,72 @@ end
     @.. veck₂ = vecu * neginvdtγ + veck₁
     integrator.stats.nsolve += 1
 
-    @.. tmp = uprev + dt * k₂
-    stage_limiter!(u, integrator, p, t + dt)
-    f(fsallast, tmp, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
+    if cache.alg isa Rosenbrock32
+        @.. tmp = uprev + dt * k₂
+        stage_limiter!(u, integrator, p, t + dt)
+        f(fsallast, tmp, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    else
+        @.. u = uprev + dt * k₂
+        stage_limiter!(u, integrator, p, t + dt)
+        f(fsallast, u, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+    
+    step_limiter!(u, integrator, p, t + dt)
     if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=fsallast - c₃₂ * (k₂ - f₁) - 2(k₁ - fsalfirst) +
-                                         dt * dT
+        @.. broadcast=false linsolve_tmp=fsallast - c₃₂ * (k₂ - f₁) -
+                                            2(k₁ - fsalfirst) + dt * dT
     else
         @.. broadcast=false du2=c₃₂ * k₂ + 2k₁
         mul!(_vec(du1), mass_matrix, _vec(du2))
-        @.. broadcast=false linsolve_tmp=fsallast - du1 + c₃₂ * f₁ + 2fsalfirst + dt * dT
+        @.. broadcast=false linsolve_tmp=fsallast - du1 + c₃₂ * f₁ + 2fsalfirst +
+                                             dt * dT
     end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck3 = _vec(k₃)
-
     @.. veck3 = vecu * neginvdtγ
     integrator.stats.nsolve += 1
 
-    @.. broadcast=false u=uprev + dto6 * (k₁ + 4k₂ + k₃)
-
-    step_limiter!(u, integrator, p, t + dt)
+    if cache.alg isa Rosenbrock32
+        @.. broadcast=false u=uprev + dto6 * (k₁ + 4k₂ + k₃)
+        step_limiter!(u, integrator, p, t + dt)
+    end
 
     if integrator.opts.adaptive
-        @.. broadcast=false tmp=dto6 * (k₁ - 2 * k₂ + k₃)
-        calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        if cache.alg isa Rosenbrock32
+            @.. broadcast=false tmp=dto6 * (k₁ - 2 * k₂ + k₃)
+            calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+            if mass_matrix !== I
+                invatol = inv(integrator.opts.abstol)
+                @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) * invatol
+                integrator.EEst += integrator.opts.internalnorm(atmp, t)
+            end
+        else
+            if mass_matrix === I
+                @.. broadcast=false tmp=dto6 * (k₁ - 2 * k₂ + k₃)
+            else
+                veck₁ = _vec(k₁)
+                veck₂ = _vec(k₂)
+                veck₃ = _vec(k₃)
+                vectmp = _vec(tmp)
+                @.. broadcast=false vectmp=ifelse(cache.algebraic_vars,
+                    false, dto6 * (veck₁ - 2 * veck₂ + veck₃))
+            end
+            calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
-        if mass_matrix !== I
-            invatol = inv(integrator.opts.abstol)
-            @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) * invatol
-            integrator.EEst += integrator.opts.internalnorm(atmp, t)
+            if mass_matrix !== I
+                algvar = reshape(cache.algebraic_vars, size(u))
+                invatol = inv(integrator.opts.abstol)
+                @.. atmp = ifelse(algvar, fsallast, false) * invatol
+                integrator.EEst += integrator.opts.internalnorm(atmp, t)
+            end
         end
     end
     cache.linsolve = linres.cache

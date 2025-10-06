@@ -1,6 +1,8 @@
 ### Fallbacks to capture
-ROSENBROCKS_WITH_INTERPOLATIONS = Union{Rosenbrock23ConstantCache, Rosenbrock23Cache,
-    Rosenbrock32ConstantCache, Rosenbrock32Cache,
+ROSENBROCKS_WITH_INTERPOLATIONS = Union{Rosenbrock23ConstantCache, RosenbrockCombinedCache,
+    Rosenbrock32ConstantCache,
+    Rodas23WConstantCache, Rodas3PConstantCache,
+    Rodas23WCache, Rodas3PCache,
     RosenbrockCombinedConstantCache,
     RosenbrockCache}
 
@@ -42,15 +44,15 @@ end
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{Rosenbrock23Cache, Rosenbrock32Cache},
+        cache::RosenbrockCombinedCache,
         idxs::Nothing, T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
     @inbounds @.. y₀ + dt * (c1 * k[1] + c2 * k[2])
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{Rosenbrock23ConstantCache, Rosenbrock23Cache,
-            Rosenbrock32ConstantCache, Rosenbrock32Cache
+        cache::Union{Rosenbrock23ConstantCache, RosenbrockCombinedCache,
+            Rosenbrock32ConstantCache
         }, idxs, T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
     @.. y₀[idxs] + dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
@@ -58,8 +60,8 @@ end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
         cache::Union{Rosenbrock23ConstantCache,
-            Rosenbrock23Cache,
-            Rosenbrock32ConstantCache, Rosenbrock32Cache
+            RosenbrockCombinedCache,
+            Rosenbrock32ConstantCache
         }, idxs::Nothing, T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
     @inbounds @.. out = y₀ + dt * (c1 * k[1] + c2 * k[2])
@@ -68,8 +70,8 @@ end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
         cache::Union{Rosenbrock23ConstantCache,
-            Rosenbrock23Cache,
-            Rosenbrock32ConstantCache, Rosenbrock32Cache
+            RosenbrockCombinedCache,
+            Rosenbrock32ConstantCache
         }, idxs, T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
     @views @.. out = y₀[idxs] + dt * (c1 * k[1][idxs] + c2 * k[2][idxs])
@@ -84,16 +86,16 @@ end
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{Rosenbrock23ConstantCache, Rosenbrock23Cache,
-            Rosenbrock32ConstantCache, Rosenbrock32Cache
+        cache::Union{Rosenbrock23ConstantCache, RosenbrockCombinedCache,
+            Rosenbrock32ConstantCache
         }, idxs::Nothing, T::Type{Val{1}}, differential_vars)
     @rosenbrock2332pre1
     @.. c1diff * k[1] + c2diff * k[2]
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{Rosenbrock23ConstantCache, Rosenbrock23Cache,
-            Rosenbrock32ConstantCache, Rosenbrock32Cache
+        cache::Union{Rosenbrock23ConstantCache, RosenbrockCombinedCache,
+            Rosenbrock32ConstantCache
         }, idxs, T::Type{Val{1}}, differential_vars)
     @rosenbrock2332pre1
     @.. c1diff * k[1][idxs] + c2diff * k[2][idxs]
@@ -101,8 +103,8 @@ end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
         cache::Union{Rosenbrock23ConstantCache,
-            Rosenbrock23Cache,
-            Rosenbrock32ConstantCache, Rosenbrock32Cache
+            RosenbrockCombinedCache,
+            Rosenbrock32ConstantCache
         }, idxs::Nothing, T::Type{Val{1}}, differential_vars)
     @rosenbrock2332pre1
     @.. out = c1diff * k[1] + c2diff * k[2]
@@ -111,8 +113,8 @@ end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
         cache::Union{Rosenbrock23ConstantCache,
-            Rosenbrock23Cache,
-            Rosenbrock32ConstantCache, Rosenbrock32Cache
+            RosenbrockCombinedCache,
+            Rosenbrock32ConstantCache
         }, idxs, T::Type{Val{1}}, differential_vars)
     @rosenbrock2332pre1
     @views @.. out = c1diff * k[1][idxs] + c2diff * k[2][idxs]
