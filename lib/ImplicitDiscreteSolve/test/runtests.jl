@@ -4,7 +4,7 @@ using ImplicitDiscreteSolve
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
 using SciMLBase
-# using JET
+using JET
 
 # Test implicit Euler using ImplicitDiscreteProblem
 @testset "Implicit Euler" begin
