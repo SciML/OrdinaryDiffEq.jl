@@ -4,7 +4,7 @@ using ImplicitDiscreteSolve
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
 using SciMLBase
-using JET
+# using JET
 
 # Test implicit Euler using ImplicitDiscreteProblem
 @testset "Implicit Euler" begin
@@ -22,7 +22,7 @@ using JET
     tspan = (0.0, 0.5)
 
     idprob = ImplicitDiscreteProblem(f!, u0, tspan, []; dt = 0.01)
-    idsol = solve(idprob, IDSolve())
+    idsol = solve(idprob, IDSolve(); adaptive=false)
 
     oprob = ODEProblem(lotkavolterra, u0, tspan)
     osol = solve(oprob, ImplicitEuler())
@@ -45,7 +45,7 @@ using JET
     tspan = (0, 0.2)
 
     idprob = ImplicitDiscreteProblem(g!, u0, tspan, []; dt = 0.01)
-    idsol = solve(idprob, IDSolve())
+    idsol = solve(idprob, IDSolve(); adaptive=false)
 
     oprob = ODEProblem(ff, u0, tspan)
     osol = solve(oprob, ImplicitEuler())
@@ -69,6 +69,18 @@ end
         step!(integ)
         @test integ.u[1]^2 + integ.u[2]^2 ≈ 16
     end
+end
+
+@testset "Hard problem" begin
+    function hard!(resid, u, u_prev, p, t)
+        resid[1] = tanh((u[1]-10t)^2)/2
+    end
+
+    u0 = [0.0]
+    idprob = ImplicitDiscreteProblem(hard!, u0, (0.0, 1.0), [])
+    integrator = init(idprob, IDSolve())
+    idsol = solve!(integrator)
+    @test idsol.retcode == ReturnCode.Success
 end
 
 # @testset "Handle nothing in u0" begin
