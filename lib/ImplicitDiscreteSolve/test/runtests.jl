@@ -4,7 +4,7 @@ using ImplicitDiscreteSolve
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
 using SciMLBase
-# using JET
+using JET
 
 # Test implicit Euler using ImplicitDiscreteProblem
 @testset "Implicit Euler" begin
@@ -125,9 +125,9 @@ end
     @test !SciMLBase.successful_retcode(sol)
 end
 
-# @testset "JET Tests" begin
-#     test_package(
-#         ImplicitDiscreteSolve, target_defined_modules = true, mode = :typo)
-# end
+@testset "JET Tests" begin
+    test_package(
+        ImplicitDiscreteSolve, target_defined_modules = true, mode = :typo)
+end
 
-# include("qa.jl")
+include("qa.jl")
