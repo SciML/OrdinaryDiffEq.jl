@@ -1,43 +1,3 @@
-# function should_accept_step(integrator::ThunderboltTimeIntegrator, cache::HomotopyPathSolverCache, controller::Deuflhard2004_B_DiscreteContinuationControllerVariant)
-#     (; Θks) = cache.inner_solver_cache
-#     (; Θreject) = controller
-#     if cache.inner_solver_cache.parameters.enforce_monotonic_convergence
-#         result = all(Θks .≤ Θreject)
-#         return result
-#     else
-#         return all(isfinite.(Θks))
-#     end
-# end
-# function reject_step!(integrator::ThunderboltTimeIntegrator, cache::HomotopyPathSolverCache, controller::Deuflhard2004_B_DiscreteContinuationControllerVariant)
-#     # Reset solution
-#     integrator.u .= integrator.uprev
-
-#     @inline g(x) = √(1+4x) - 1
-
-#     # Shorten dt according to (Eq. 5.24)
-#     (; Θks) = cache.inner_solver_cache
-#     (; Θbar, Θreject, γ, Θmin, qmin, qmax, p) = controller
-#     for Θk in Θks
-#         if Θk > Θreject
-#             q = clamp(γ * (g(Θbar)/g(Θk))^(1/p), qmin, qmax)
-#             integrator.dt = q * integrator.dt
-#             return
-#         end
-#     end
-# end
-
-# function adapt_dt!(integrator::ThunderboltTimeIntegrator, cache::HomotopyPathSolverCache, controller::Deuflhard2004_B_DiscreteContinuationControllerVariant)
-#     @inline g(x) = √(1+4x) - 1
-
-#     # Adapt dt with a priori estimate (Eq. 5.24)
-#     (; Θks) = cache.inner_solver_cache
-#     (; Θbar, γ, Θmin, qmin, qmax, p) = controller
-
-#     Θ₀ = length(Θks) > 0 ? max(first(Θks), Θmin) : Θmin
-#     q = clamp(γ * (g(Θbar)/(g(Θ₀)))^(1/p), qmin, qmax)
-#     integrator.dt = q * integrator.dt
-# end
-
 Base.@kwdef struct KantorovichTypeController <: OrdinaryDiffEqCore.AbstractController
     Θmin::Float64
     p::Int64
@@ -53,13 +13,13 @@ function OrdinaryDiffEqCore.default_controller(alg::IDSolve, cache::IDSolveCache
 end
 
 function OrdinaryDiffEqCore.stepsize_controller!(
-    integrator, alg::IDSolve
+    integrator, controller::KantorovichTypeController, alg::IDSolve
 )
     @inline g(x) = √(1+4x) - 1
 
     # Adapt dt with a priori estimate (Eq. 5.24)
     (; Θks) = integrator.cache
-    (; Θbar, γ, Θmin, qmin, qmax, p) = integrator.opts.controller
+    (; Θbar, γ, Θmin, qmin, qmax, p) = controller
 
     Θ₀ = length(Θks) > 0 ? max(first(Θks), Θmin) : Θmin
     q = clamp(γ * (g(Θbar)/(g(Θ₀)))^(1/p), qmin, qmax)
@@ -70,12 +30,23 @@ end
 function OrdinaryDiffEqCore.step_accept_controller!(
     integrator, controller::KantorovichTypeController, alg::IDSolve, q
 )
-    integrator.dtpropose = q * integrator.dt
+    @info integrator.dt, q
+    return q * integrator.dt
 end
 
 function OrdinaryDiffEqCore.step_reject_controller!(
     integrator, controller::KantorovichTypeController, alg::IDSolve
 )
-    @info "Reject"
-    integrator.dt *= typeof(integrator.dt)(1//2)
+    @inline g(x) = √(1+4x) - 1
+
+    # Shorten dt according to (Eq. 5.24)
+    (; Θks) = cache.inner_solver_cache
+    (; Θbar, Θreject, γ, Θmin, qmin, qmax, p) = controller
+    for Θk in Θks
+        if Θk > Θreject
+            q = clamp(γ * (g(Θbar)/g(Θk))^(1/p), qmin, qmax)
+            integrator.dt = q * integrator.dt
+            return
+        end
+    end
 end
