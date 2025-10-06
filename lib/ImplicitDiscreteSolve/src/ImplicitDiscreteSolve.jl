@@ -1,8 +1,9 @@
 module ImplicitDiscreteSolve
 
 using SciMLBase
+using NonlinearSolveBase
 using NonlinearSolveFirstOrder
-using UnPack
+using ConcreteStructs
 using SymbolicIndexingInterface: parameter_symbols
 import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_cache, OrdinaryDiffEqMutableCache,
                            OrdinaryDiffEqConstantCache, get_fsalfirstlast, isfsal,
