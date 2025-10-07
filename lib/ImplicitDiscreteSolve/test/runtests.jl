@@ -83,16 +83,22 @@ end
     @test idsol.retcode == ReturnCode.Success
 end
 
-# @testset "Handle nothing in u0" begin
-#     function empty(u_next, u, p, t)
-#         nothing
-#     end
+@testset "Handle nothing in u0" begin
+    function emptyiip(residual, u_next, u, p, t) # TODO OOP variant does not work yet
+        nothing
+    end
+    function emptyoop(u_next, u, p, t) # TODO OOP variant does not work yet
+        nothing
+    end
 
-#     tsteps = 5
-#     u0 = nothing
-#     idprob = ImplicitDiscreteProblem(empty, u0, (0, tsteps), [])
-#     @test_nowarn integ = init(idprob, IDSolve())
-# end
+    tsteps = 5
+    u0 = nothing
+    idprob = ImplicitDiscreteProblem(emptyiip, u0, (0, tsteps), [])
+    @test_nowarn integ = init(idprob, IDSolve())
+
+    idprob2 = ImplicitDiscreteProblem(emptyoop, u0, (0, tsteps), [])
+    @test_throws AssertionError("Empty u not supported with out of place functions yet.") integ = init(idprob2, IDSolve())
+end
 
 @testset "Create NonlinearLeastSquaresProblem" begin
     function over(u_next, u, p, t)

@@ -40,7 +40,7 @@ function OrdinaryDiffEqCore.step_reject_controller!(
     @inline g(x) = √(1+4x) - 1
 
     # Shorten dt according to (Eq. 5.24)
-    (; Θks) = cache.inner_solver_cache
+    (; Θks) = integrator.cache.nlcache
     (; Θbar, Θreject, γ, Θmin, qmin, qmax, p) = controller
     for Θk in Θks
         if Θk > Θreject

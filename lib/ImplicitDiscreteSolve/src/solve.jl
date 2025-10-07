@@ -14,7 +14,7 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     SciMLBase.reinit!(nlcache, p=state)
 
     # solve!(nlcache)
-    # The solve here is simply unrolled by hand to quiery the convergence rate estimates "manually" for now
+    # The solve here is simply unrolled by hand to query the convergence rate estimates "manually" for now
     if nlcache.retcode == ReturnCode.InitialFailure
         integrator.force_stepfail = true
         return
