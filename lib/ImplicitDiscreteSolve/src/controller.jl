@@ -30,7 +30,6 @@ end
 function OrdinaryDiffEqCore.step_accept_controller!(
     integrator, controller::KantorovichTypeController, alg::IDSolve, q
 )
-    @info integrator.dt, q
     return q * integrator.dt
 end
 
