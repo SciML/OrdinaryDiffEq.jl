@@ -154,7 +154,7 @@ function postamble!(nlsolver::NLSolver, integrator::SciMLBase.DEIntegrator)
     end
     integrator.force_stepfail = nlsolvefail(nlsolver)
     setfirststage!(nlsolver, false)
-    isnewton(nlsolver) && (nlsolver.cache.firstcall = false)
+    (isnewton(nlsolver) || isnonlinearsolve(nlsolver)) && (nlsolver.cache.firstcall = false)
 
     nlsolver.z
 end

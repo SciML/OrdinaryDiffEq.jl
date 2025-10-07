@@ -26,7 +26,7 @@ isJcurrent(nlsolver::AbstractNLSolver, integrator) = integrator.t == nlsolver.ca
 isfirstcall(nlsolver::AbstractNLSolver) = nlsolver.cache.firstcall
 isfirststage(nlsolver::AbstractNLSolver) = nlsolver.cache.firststage
 setfirststage!(nlsolver::AbstractNLSolver, val::Bool) = setfirststage!(nlsolver.cache, val)
-function setfirststage!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, val::Bool)
+function setfirststage!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache, NonlinearSolveCache}, val::Bool)
     (nlcache.firststage = val)
 end
 setfirststage!(::Any, val::Bool) = nothing
@@ -37,9 +37,9 @@ getnfails(nlsolver::AbstractNLSolver) = nlsolver.nfails
 
 set_new_W!(nlsolver::AbstractNLSolver, val::Bool)::Bool = set_new_W!(nlsolver.cache, val)
 set_new_W!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache, NonlinearSolveCache}, val::Bool)::Bool = nlcache.new_W = val
+set_new_W!(nlcache::AbstractNLSolverCache, val::Bool)::Bool = nothing
 get_new_W!(nlsolver::AbstractNLSolver)::Bool = get_new_W!(nlsolver.cache)
-get_new_W!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache, NonlinearSolveCache})::Bool = nlcache.new_W
-get_new_W!(::AbstractNLSolverCache)::Bool = true
+get_new_W!(::AbstractNLSolverCache)::Bool = nlcache.new_W
 
 get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}) = nlcache.W
@@ -243,7 +243,8 @@ function build_nlsolver(
                 NonlinearProblem(NonlinearFunction{true}(nlf), ztmp, nlp_params)
             end
             cache = init(prob, nlalg.alg)
-            nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache, true)
+            nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, prob, cache, 
+                true, true, true, tType(dt), invγdt, tType(nlalg.new_W_dt_cutoff), t)
         else
             nlcache = NLNewtonCache(ustep, tstep, k, atmp, dz, J, W, true,
                 true, true, tType(dt), du1, uf, jac_config,
@@ -330,8 +331,8 @@ function build_nlsolver(
             end
             prob = NonlinearProblem(NonlinearFunction{false}(nlf), copy(ztmp), nlp_params)
             cache = init(prob, nlalg.alg)
-            nlcache = NonlinearSolveCache(
-                nothing, tstep, nothing, nothing, invγdt, prob, cache, true)
+            nlcache = NonlinearSolveCache(nothing, tstep, nothing, nothing, prob, cache, 
+                true, true, true, tType(dt), invγdt, tType(nlalg.new_W_dt_cutoff), t)
         else
             nlcache = NLNewtonConstantCache(tstep, J, W, true, true, true, tType(dt), uf,
                 invγdt, tType(nlalg.new_W_dt_cutoff), t)

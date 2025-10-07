@@ -606,7 +606,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
         new_jac, new_W = newJW
     end
 
-    if new_jac && isnewton(lcache)
+    if new_jac && (isnewton(lcache))
         lcache.J_t = t
         if isdae
             lcache.uf.α = nlsolver.α

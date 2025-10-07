@@ -126,13 +126,17 @@ end
     @unpack tstep, invγdt, atmp, ustep = cache
 
     new_jac, new_W = do_newJW(integrator, integrator.alg, nlsolver, false)
+    cache.new_W = new_W
+    @show new_jac, new_W
     if is_always_new(nlsolver) || new_jac || new_W
+        cache.W_γdt = γ*dt
+        cache.J_t = t
         recompute_jacobian = true
     else
         recompute_jacobian = false
     end
 
-    nlcache = nlsolver.cache.cache
+    nlcache = cache.cache
     nlstep_data = integrator.f.nlstep_data
     step!(nlcache; recompute_jacobian)
 
