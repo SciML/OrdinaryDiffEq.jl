@@ -110,7 +110,7 @@ end
 
     min_order_value = get_value(min_order)
     max_order_value = get_value(max_order)
-    # println("current order: ", current_order[])
+    push!(cache.order_history, current_order[])
     jet_index = current_order[] - min_order_value + 1
     # compute one additional order for adaptive order
     jet = jets[jet_index + 1]

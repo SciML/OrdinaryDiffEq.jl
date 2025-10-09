@@ -96,6 +96,7 @@ end
     min_order::Val{P}
     max_order::Val{Q}
     current_order::Base.RefValue{Int}
+    order_history::Vector{Int}
     jets::Vector{FunctionWrapper{Nothing, Tuple{taylorType, uType, tType}}}
     u::uType
     uprev::uType
@@ -124,8 +125,9 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
-    current_order = Ref(min_order_value)
-    ExplicitTaylorAdaptiveOrderCache(alg.min_order, alg.max_order, current_order,
+    current_order = Ref(max_order_value - 1)
+    order_history = Vector{Int}()
+    ExplicitTaylorAdaptiveOrderCache(alg.min_order, alg.max_order, current_order, order_history,
         jets, u, uprev, utaylor, utilde, tmp, atmp,
         alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
