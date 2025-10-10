@@ -22,7 +22,7 @@ end
 
 ## Default algorithms
 
-function _initialize_dae!(integrator, prob::ODEProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::ODEProblem,
         alg::DefaultInit, x::Union{Val{true}, Val{false}})
     if SciMLBase.has_initializeprob(prob.f)
         _initialize_dae!(integrator, prob,
@@ -36,7 +36,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
+function _initialize_dae!(integrator::ODEIntegrator, prob::DAEProblem,
         alg::DefaultInit, x::Union{Val{true}, Val{false}})
     if SciMLBase.has_initializeprob(prob.f)
         _initialize_dae!(integrator, prob,
