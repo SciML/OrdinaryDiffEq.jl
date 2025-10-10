@@ -23,6 +23,7 @@ struct NewmarkBeta{PT, F, F2, P, CS, AD, FDT, ST, CJ} <:
     linsolve::F
     nlsolve::F2
     precs::P
+    autodiff::AD
 end
 
 function NewmarkBeta(β, γ; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
@@ -35,7 +36,9 @@ function NewmarkBeta(β, γ; chunk_size = Val{0}(), autodiff = Val{true}(), stan
         β, γ,
         linsolve,
         nlsolve,
-        precs)
+        precs,
+        autodiff,
+    )
 end
 
 # Needed for remake
@@ -49,5 +52,7 @@ function NewmarkBeta(; β=0.25, γ=0.5, chunk_size = Val{0}(), autodiff = Val{tr
         β, γ,
         linsolve,
         nlsolve,
-        precs)
+        precs,
+        autodiff,
+    )
 end
