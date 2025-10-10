@@ -1,4 +1,8 @@
-using OrdinaryDiffEq, StaticArrays, Test, ADTypes, Enzyme
+using OrdinaryDiffEq, StaticArrays, Test, ADTypes
+
+adchoices = if isempty(VERSION.prerelease)
+    using Enzyme
+end
 
 function time_derivative(du, u, p, t)
     du[1] = -t
@@ -8,6 +12,13 @@ function time_derivative_static(u, p, t)
 end
 function time_derivative_analytic(u0, p, t)
     u0 .- t .^ 2 ./ 2
+end
+
+adchoices = if isempty(VERSION.prerelease)
+    (AutoForwardDiff(), AutoFiniteDiff(),
+        AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const))
+else
+    (AutoForwardDiff(), AutoFiniteDiff())
 end
 
 const CACHE_TEST_ALGS = [Euler(), Midpoint(), RK4(), SSPRK22(), SSPRK33(), SSPRK53(),
@@ -29,8 +40,7 @@ for (ff_time_derivative, u0) in (
 
     prob = ODEProblem(ff_time_derivative, u0, tspan)
 
-    for _autodiff in (AutoForwardDiff(), AutoFiniteDiff(),
-        AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const))
+    for _autodiff in adchoices
         @info "autodiff=$(_autodiff)"
 
         prec = !(_autodiff == AutoFiniteDiff())
@@ -56,26 +66,31 @@ for (ff_time_derivative, u0) in (
         @show KenCarp3
         sol = solve(prob, KenCarp3(autodiff = _autodiff), reltol = 1e-12, abstol = 1e-12)
         @test length(sol) > 2
+        @test SciMLBase.successful_retcode(sol)
         @test sol.errors[:final] < 1e-10
 
         @show KenCarp4
         sol = solve(prob, KenCarp4(autodiff = _autodiff), reltol = 1e-12, abstol = 1e-12)
         @test length(sol) > 2
+        @test SciMLBase.successful_retcode(sol)
         @test sol.errors[:final] < 1e-10
 
         @show KenCarp47
         sol = solve(prob, KenCarp47(autodiff = _autodiff), reltol = 1e-12, abstol = 1e-12)
         @test length(sol) > 2
+        @test SciMLBase.successful_retcode(sol)
         @test sol.errors[:final] < 1e-10
 
         @show KenCarp5
         sol = solve(prob, KenCarp5(autodiff = _autodiff), reltol = 1e-12, abstol = 1e-12)
         @test length(sol) > 2
+        @test SciMLBase.successful_retcode(sol)
         @test sol.errors[:final] < 1e-10
 
         @show KenCarp58
         sol = solve(prob, KenCarp58(autodiff = _autodiff), reltol = 1e-12, abstol = 1e-12)
         @test length(sol) > 2
+        @test SciMLBase.successful_retcode(sol)
         @test sol.errors[:final] < 1e-10
 
         @show TRBDF2

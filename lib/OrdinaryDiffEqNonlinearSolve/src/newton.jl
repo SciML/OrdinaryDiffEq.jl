@@ -1,7 +1,7 @@
 ## initialize!
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, false},
-        integrator::DiffEqBase.DEIntegrator)
+        integrator::SciMLBase.DEIntegrator)
     @unpack dt = integrator
     @unpack cache = nlsolver
 
@@ -12,7 +12,7 @@
 end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, true},
-        integrator::DiffEqBase.DEIntegrator)
+        integrator::SciMLBase.DEIntegrator)
     @unpack u, uprev, t, dt, opts = integrator
     @unpack cache = nlsolver
     @unpack weight = cache
@@ -26,14 +26,14 @@ end
 end
 
 function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, false},
-        integrator::DiffEqBase.DEIntegrator)
+        integrator::SciMLBase.DEIntegrator)
     @unpack uprev, t, p, dt, opts, f = integrator
     @unpack z, tmp, ztmp, γ, α, iter, cache, method, alg = nlsolver
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
 
     @unpack ustep, tstep, k, invγdt = cache
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
         integrator.stats.nnonliniter += cache.cache.stats.nsteps
         integrator.stats.njacs += cache.cache.stats.njacs
@@ -49,27 +49,43 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, false},
 end
 
 function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
-        integrator::DiffEqBase.DEIntegrator)
+        integrator::SciMLBase.DEIntegrator)
     @unpack uprev, t, p, dt, opts, f = integrator
     @unpack z, tmp, ztmp, γ, α, iter, cache, method, alg = nlsolver
 
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
 
-    @unpack ustep, tstep, k, invγdt = cache
+    @unpack ustep, atmp, tstep, k, invγdt = cache
 
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
         integrator.stats.nnonliniter += cache.cache.stats.nsteps
         integrator.stats.njacs += cache.cache.stats.njacs
     end
-    if f isa DAEFunction
-        nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+
+    nlstep_data = f.nlstep_data
+    if nlstep_data !== nothing
+        atmp .= 0
+        if method === COEFFICIENT_MULTISTEP
+            nlstep_data.set_γ_c(nlstep_data.nlprob, (one(t), one(t), α * invγdt, tstep))
+            nlstep_data.set_inner_tmp(nlstep_data.nlprob, atmp)
+            nlstep_data.set_outer_tmp(nlstep_data.nlprob, tmp)
+        else
+            nlstep_data.set_γ_c(nlstep_data.nlprob, (dt, γ, one(t), tstep))
+            nlstep_data.set_inner_tmp(nlstep_data.nlprob, tmp)
+            nlstep_data.set_outer_tmp(nlstep_data.nlprob, atmp)
+        end
+        nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
+        SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p=nlstep_data.nlprob.p)
     else
-        nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
+        if f isa DAEFunction
+            nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+        else
+            nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
+        end
+        SciMLBase.reinit!(cache.cache, z, p=nlp_params)
     end
-    new_prob = remake(cache.prob, p = nlp_params, u0 = z)
-    cache.cache = init(new_prob, alg.alg)
     nothing
 end
 
@@ -102,14 +118,30 @@ end
     @unpack z, tmp, ztmp, γ, α, cache, method = nlsolver
     @unpack tstep, invγdt, atmp, ustep = cache
 
+    nlstep_data = integrator.f.nlstep_data
     nlcache = nlsolver.cache.cache
     step!(nlcache)
-    @.. broadcast=false ztmp=nlcache.u
 
-    ustep = compute_ustep!(ustep, tmp, γ, z, method)
-    calculate_residuals!(atmp, nlcache.fu, uprev, ustep, opts.abstol, opts.reltol,
-        opts.internalnorm, t)
-    ndz = opts.internalnorm(atmp, t)
+    if nlstep_data !== nothing
+        nlstepsol = SciMLBase.build_solution(
+            nlcache.prob, nlcache.alg, nlcache.u, nlcache.fu;
+            nlcache.retcode, nlcache.stats, nlcache.trace
+        )
+        nlstep_data.nlprobmap(ztmp, nlstepsol)
+        ustep = compute_ustep!(ustep, tmp, γ, z, method)
+        calculate_residuals!(@view(atmp[nlstep_data.u0perm]), nlcache.fu, 
+                             @view(uprev[nlstep_data.u0perm]), 
+                             @view(ustep[nlstep_data.u0perm]), opts.abstol, 
+                             opts.reltol, opts.internalnorm, t)
+        ndz = opts.internalnorm(atmp, t)
+    else
+        @.. broadcast=false ztmp=nlcache.u
+        ustep = compute_ustep!(ustep, tmp, γ, z, method)
+        calculate_residuals!(atmp, nlcache.fu, uprev, ustep, opts.abstol, opts.reltol,
+                                opts.internalnorm, t)
+        ndz = opts.internalnorm(atmp, t)
+    end
+
     #ndz = opts.internalnorm(nlcache.fu, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
@@ -155,7 +187,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
         ztmp, ustep = _compute_rhs(tmp, γ, α, tstep, invγdt, method, p, dt, f, z)
     end
 
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
@@ -167,7 +199,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
     dz = _reshape(W \ _vec(ztmp), axes(ztmp))
     dz = relax(dz, nlsolver, integrator, f)
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         integrator.stats.nsolve += 1
     end
 
@@ -194,7 +226,7 @@ end
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
 
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
@@ -236,7 +268,7 @@ end
 
     cache.linsolve = linres.cache
 
-    if DiffEqBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator)
         integrator.stats.nsolve += 1
     end
 
@@ -298,7 +330,7 @@ function compute_ustep!(ustep, tmp, γ, z, method)
     ustep
 end
 
-function _compute_rhs(tmp, γ, α, tstep, invγdt, method::MethodType, p, dt, f, z)
+function _compute_rhs(tmp, γ, α, tstep, invγdt, method::MethodType, p, dt, f::F, z) where F
     mass_matrix = f.mass_matrix
     ustep = compute_ustep(tmp, γ, z, method)
     if method === COEFFICIENT_MULTISTEP
@@ -306,7 +338,7 @@ function _compute_rhs(tmp, γ, α, tstep, invγdt, method::MethodType, p, dt, f,
         if mass_matrix === I
             ztmp = tmp .+ f(z, p, tstep) .- (α * invγdt) .* z
         else
-            update_coefficients!(mass_matrix, ustep, p, tstep)
+            update_coefficients!(mass_matrix, z, p, tstep)
             ztmp = tmp .+ f(z, p, tstep) .- (mass_matrix * z) .* (α * invγdt)
         end
     else
@@ -411,10 +443,15 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) 
     relax(dz, nlsolver, integrator, f, relax(nlsolver))
 end
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
+        r::Nothing) where {TF}
+        dz
+end
+function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         r::Number) where {TF}
     if !iszero(r)
         rmul!(dz, 1 - r)
     end
+    dz
 end
 
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
@@ -427,7 +464,7 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
 
         @unpack uprev, t, p, dt, opts, isdae = integrator
         @unpack z, tmp, ztmp, γ, iter, α, cache, method = nlsolver
-        @unpack ustep, atmp, tstep, k, invγdt, tstep, k, invγdt = cache
+        @unpack ustep, atmp, tstep, k, invγdt = cache
         function resid(z)
             # recompute residual (rhs)
             if isdae
@@ -476,6 +513,11 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
 end
 
 function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
+        r::Nothing) where {TF}
+    return dz
+end
+
+function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         linesearch) where {TF}
     let dz = dz,
         integrator = integrator,
@@ -484,7 +526,8 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         linesearch = linesearch
 
         @unpack uprev, t, p, dt, opts = integrator
-        @unpack z, tmp, ztmp, γ, iter, cache = nlsolver
+        @unpack z, tmp, ztmp, γ, iter, cache, method = nlsolver
+        @unpack ustep, atmp, tstep, k, invγdt = cache
         function resid(z)
             # recompute residual (rhs)
             if f isa DAEFunction

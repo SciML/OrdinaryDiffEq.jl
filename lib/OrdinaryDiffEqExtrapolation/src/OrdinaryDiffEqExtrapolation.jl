@@ -13,13 +13,13 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_or
                            OrdinaryDiffEqAdaptiveAlgorithm,
                            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                            alg_cache, CompiledFloats, @threaded, stepsize_controller!,
-                           DEFAULT_PRECS, full_cache,
+                           DEFAULT_PRECS, full_cache, qmin_default,
                            constvalue, PolyesterThreads, Sequential, BaseThreads,
                            _digest_beta1_beta2, timedepentdtmin, _unwrap_val,
                            _reshape, _vec, get_fsalfirstlast, generic_solver_docstring,
                            differentiation_rk_docstring, _bool_to_ADType,
                            _process_AD_choice, LinearAliasSpecifier
-using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, LinearSolve
+using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, LinearSolve
 import OrdinaryDiffEqCore
 import FastPower
 import OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, UDerivativeWrapper, calc_J,
@@ -29,7 +29,7 @@ import OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, UDerivativeWrapper,
 import ADTypes: AutoForwardDiff, AbstractADType
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")
@@ -37,7 +37,7 @@ include("controllers.jl")
 include("extrapolation_caches.jl")
 include("extrapolation_perform_step.jl")
 
-@inline function DiffEqBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.utilde)

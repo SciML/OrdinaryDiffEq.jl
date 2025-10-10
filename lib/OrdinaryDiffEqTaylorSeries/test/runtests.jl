@@ -1,4 +1,4 @@
-using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, JET
 using Test
 
 @testset "Taylor2 Convergence Tests" begin
@@ -27,4 +27,8 @@ end
 @testset "TaylorN Adaptive Tests" begin
     sol = solve(prob_ode_linear, ExplicitTaylor(order=Val(2)))
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 end
+
+include("jet.jl")
+include("qa.jl")

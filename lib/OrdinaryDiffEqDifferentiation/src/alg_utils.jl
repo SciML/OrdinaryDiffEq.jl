@@ -28,7 +28,7 @@ function alg_autodiff(alg)
     end
 end
 
-Base.@pure function determine_chunksize(u, alg::DiffEqBase.DEAlgorithm)
+Base.@pure function determine_chunksize(u, alg::SciMLBase.DEAlgorithm)
     determine_chunksize(u, get_chunksize(alg))
 end
 Base.@pure function determine_chunksize(u, CS)
@@ -48,14 +48,14 @@ function DiffEqBase.prepare_alg(
             OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT}},
         u0::AbstractArray{T},
         p, prob) where {CS, AD, FDT, T}
-
-
     prepped_AD = prepare_ADType(alg_autodiff(alg), prob, u0, p, standardtag(alg))
 
     sparse_prepped_AD = prepare_user_sparsity(prepped_AD, prob)
 
     # if u0 is a StaticArray or eltype is Complex etc. don't use sparsity
-    if (((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) || (!(prob.f isa DAEFunction) && prob.f.mass_matrix isa MatrixOperator)) && sparse_prepped_AD isa AutoSparse)    
+    if (((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) ||
+         (!(prob.f isa DAEFunction) && prob.f.mass_matrix isa MatrixOperator)) &&
+        sparse_prepped_AD isa AutoSparse)
         @warn "Input type or problem definition is incompatible with sparse automatic differentiation. Switching to using dense automatic differentiation."
         autodiff = ADTypes.dense_ad(sparse_prepped_AD)
     else
@@ -66,7 +66,8 @@ function DiffEqBase.prepare_alg(
 end
 
 function prepare_ADType(autodiff_alg::AutoSparse, prob, u0, p, standardtag)
-    SciMLBase.@set autodiff_alg.dense_ad = prepare_ADType(ADTypes.dense_ad(autodiff_alg), prob, u0, p, standardtag)
+    SciMLBase.@set autodiff_alg.dense_ad = prepare_ADType(
+        ADTypes.dense_ad(autodiff_alg), prob, u0, p, standardtag)
 end
 
 function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
@@ -83,10 +84,10 @@ function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
     cs = fwd_cs == 0 ? nothing : fwd_cs
 
     if ((prob.f isa ODEFunction &&
-      prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) ||
-     (isbitstype(T) && sizeof(T) > 24)) && (cs == 0 || isnothing(cs))
+         prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) ||
+        (isbitstype(T) && sizeof(T) > 24)) && (cs == 0 || isnothing(cs))
         return AutoForwardDiff{1}(tag)
-    else 
+    else
         return AutoForwardDiff{cs}(tag)
     end
 end
@@ -94,9 +95,10 @@ end
 function prepare_ADType(alg::AutoFiniteDiff, prob, u0, p, standardtag)
     # If the autodiff alg is AutoFiniteDiff, prob.f.f isa FunctionWrappersWrapper,
     # and fdtype is complex, fdtype needs to change to something not complex
-    if alg.fdtype == Val{:complex}() && (prob.f isa ODEFunction && prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
-         @warn "AutoFiniteDiff fdtype complex is not compatible with this function"
-         return AutoFiniteDiff(fdtype = Val{:forward}())
+    if alg.fdtype == Val{:complex}() && (prob.f isa ODEFunction &&
+        prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+        @warn "AutoFiniteDiff fdtype complex is not compatible with this function"
+        return AutoFiniteDiff(fdtype = Val{:forward}())
     end
     return alg
 end
@@ -106,7 +108,7 @@ function prepare_user_sparsity(ad_alg, prob)
     sparsity = prob.f.sparsity
 
     if !isnothing(sparsity) && !(ad_alg isa AutoSparse)
-        if sparsity isa SparseMatrixCSC && !SciMLBase.has_jac(prob.f)
+        if is_sparse_csc(sparsity) && !SciMLBase.has_jac(prob.f)
             if prob.f.mass_matrix isa UniformScaling
                 idxs = diagind(sparsity)
                 @. @view(sparsity[idxs]) = 1
@@ -131,9 +133,9 @@ function prepare_user_sparsity(ad_alg, prob)
         # KnownJacobianSparsityDetector needs an AbstractMatrix
         sparsity = sparsity isa MatrixOperator ? sparsity.A : sparsity
 
-        color_alg = DiffEqBase.has_colorvec(prob.f) ?
-                    SparseMatrixColorings.ConstantColoringAlgorithm(
-            sparsity, prob.f.colorvec) : SparseMatrixColorings.GreedyColoringAlgorithm()
+        color_alg = SciMLBase.has_colorvec(prob.f) ?
+                    ConstantColoringAlgorithm(
+            sparsity, prob.f.colorvec) : GreedyColoringAlgorithm()
 
         sparsity_detector = ADTypes.KnownJacobianSparsityDetector(sparsity)
 
@@ -144,7 +146,7 @@ function prepare_user_sparsity(ad_alg, prob)
     end
 end
 
-function prepare_ADType(alg::AbstractADType, prob, u0,p,standardtag)
+function prepare_ADType(alg::AbstractADType, prob, u0, p, standardtag)
     return alg
 end
 

@@ -39,13 +39,13 @@ function isdefaultalg(alg::CompositeAlgorithm{
     true
 end
 
-function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.__init(
+function SciMLBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    SciMLBase.__init(
         prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
         args...; wrap = Val(false), kwargs...)
 end
-function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.__solve(
+function SciMLBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    SciMLBase.__solve(
         prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
         args...; wrap = Val(false), kwargs...)
 end
@@ -134,4 +134,13 @@ end
 function is_mass_matrix_alg(alg::CompositeAlgorithm{
         <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}})
     true
+end
+
+function DefaultImplicitODEAlgorithm(; lazy = true, stol = 0, ntol = Inf, kwargs...)
+    nonstiff = (Tsit5(), Vern7(lazy = lazy))
+    stiff = (Rosenbrock23(; kwargs...), Rodas5P(; kwargs...),
+        FBDF(; kwargs...),
+        FBDF(; linsolve = LinearSolve.KrylovJL_GMRES(), kwargs...))
+    AutoAlgSwitch(
+        nonstiff, stiff; stiffalgfirst = true, stifftol = stol, nonstifftol = ntol)
 end

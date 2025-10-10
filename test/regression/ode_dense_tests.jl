@@ -1,6 +1,6 @@
 using OrdinaryDiffEq, Test, DiffEqBase
 using OrdinaryDiffEqCore
-using ForwardDiff, Printf
+using ForwardDiff
 import ODEProblemLibrary: prob_ode_linear,
                           prob_ode_2Dlinear,
                           prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
@@ -8,7 +8,7 @@ import ODEProblemLibrary: prob_ode_linear,
 const PRINT_TESTS = false
 print_results(x) =
     if PRINT_TESTS
-        @printf("%s \n", x)
+        println(x)
     end
 
 # points and storage arrays used in the interpolation tests
@@ -36,6 +36,10 @@ end
 
 const deriv_test_points = range(0, stop = 1, length = 5)
 
+# left continuous derivative \lim{ϵ->0⁺}\frac{f(x)-f(x-ϵ)}{ϵ}
+function LeftDeriv(f, x)
+    ForwardDiff.derivative(t -> -f(-t), -x)
+end
 # perform the regression tests
 # NOTE: If you want to add new tests (for new algorithms), you have to run the
 #       commands below to get numerical values for `tol_ode_linear` and
@@ -63,7 +67,7 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
             @test interpolation_results_1d[1] ≈ der
             for t in deriv_test_points
                 deriv = sol(t, Val{N})
-                @test deriv≈ForwardDiff.derivative(t -> sol(t, Val{N - 1}), t) rtol=dertol
+                @test deriv≈LeftDeriv(t -> sol(t, Val{N - 1}), t) rtol=dertol
             end
         end
     end
@@ -84,7 +88,7 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
             @test interpolation_results_1d_inplace[1] ≈ der
             for t in deriv_test_points
                 deriv = sol(t, Val{N}, idxs = 1)
-                @test deriv≈ForwardDiff.derivative(t -> sol(t, Val{N - 1}; idxs = 1), t) rtol=dertol
+                @test deriv≈LeftDeriv(t -> sol(t, Val{N - 1}; idxs = 1), t) rtol=dertol
             end
         end
     end
@@ -122,7 +126,7 @@ end
 
 interpd_idxs = sol(0:(1 // 2^(4)):1, idxs = 1:2:5)
 
-@test minimum([interpd_idxs[i] == interpd[i][1:2:5] for i in 1:length(interpd)])
+@test minimum([isapprox(interpd_idxs[i], interpd[i][1:2:5], rtol=1e-14) for i in 1:length(interpd)])
 
 interpd_single = sol(0:(1 // 2^(4)):1, idxs = 1)
 

@@ -1,6 +1,6 @@
 # IMEX Multistep methods
 
-@doc generic_solver_docstring("Crank-Nicholson Adams-Bashforth 2.",
+@doc generic_solver_docstring("Crank-Nicolson Adams Bashforth Order 2 (fixed time step)",
     "CNAB2",
     "IMEX Multistep method.",
     "@article{jorgenson2014unconditional,

@@ -19,7 +19,7 @@ import RecursiveArrayTools: recursive_unitless_bottom_eltype
 import OrdinaryDiffEqCore
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("arrayfuse.jl")
 include("algorithms.jl")

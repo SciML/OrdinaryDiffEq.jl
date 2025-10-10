@@ -13,6 +13,7 @@ jobs:
   CompatHelper:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
       - name: Check if Julia is already available in the PATH
         id: julia_in_path
         run: which julia
@@ -40,7 +41,14 @@ jobs:
       - name: "Run CompatHelper"
         run: |
           import CompatHelper
-          CompatHelper.main(; subdirs=["", "docs", "test/downstream", "lib"])
+          subdirs = ["", "docs", "test/downstream", "test/gpu", "docs"]
+          for f in readdir("lib"; join=true)
+              if isdir(f) && isfile(joinpath(f, "Project.toml"))
+                  push!(subdirs, joinpath("lib", basename(f)))
+              end
+          end
+          @info "CompatHelper directories" subdirs
+          CompatHelper.main(; subdirs)
         shell: julia --color=yes {0}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

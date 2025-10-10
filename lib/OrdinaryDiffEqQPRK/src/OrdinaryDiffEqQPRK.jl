@@ -14,7 +14,7 @@ using RecursiveArrayTools: recursive_unitless_bottom_eltype, recursivefill!
 import OrdinaryDiffEqCore
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

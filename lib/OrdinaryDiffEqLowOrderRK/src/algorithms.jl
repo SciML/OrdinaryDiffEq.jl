@@ -7,6 +7,11 @@
     Springer-Verlag.""", "", "")
 struct Euler <: OrdinaryDiffEqAlgorithm end
 
+@doc generic_solver_docstring(
+    "1st order fully explicit method for testing split accuracy",
+    "SplitEuler",
+    "Split Method.",
+    "", "", "")
 struct SplitEuler <:
        OrdinaryDiffEqExponentialAlgorithm{0, false, Val{:forward}, Val{true}, nothing} end
 
@@ -61,8 +66,7 @@ function Midpoint(stage_limiter!, step_limiter! = trivial_limiter!)
     Midpoint(stage_limiter!, step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("The canonical Runge-Kutta Order 4 method.
-Uses a defect control for adaptive stepping using maximum error over the whole interval.",
+@doc explicit_rk_docstring("The canonical Runge-Kutta Order 4 method. Uses a defect control for adaptive stepping using maximum error over the whole interval. Classic fourth-order method. Good for medium accuracy calculations.",
     "RK4",
     references = "@article{shampine2005solving,
       title={Solving ODEs and DDEs with residual control},
@@ -85,8 +89,7 @@ function RK4(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "A third-order, four-stage FSAL method with embedded error
-estimator of Bogacki and Shampine.",
+    "Bogacki-Shampine 3/2 method. Third-order adaptive method using embedded Euler method for adaptivity. Recommended for non-stiff problems at moderate tolerances.",
     "BS3",
     references = "@article{bogacki19893,
     title={A 3 (2) pair of Runge-Kutta formulas},
@@ -256,7 +259,7 @@ function Anas5(stage_limiter!, step_limiter! = trivial_limiter!; w = 1)
     Anas5(stage_limiter!, step_limiter!, False(), w)
 end
 
-@doc explicit_rk_docstring("5th order method.", "RKO65",
+@doc explicit_rk_docstring("Tsitouras' Runge-Kutta-Oliver 6 stage 5th order method.", "RKO65",
     references = "Tsitouras, Ch. \"Explicit Runge–Kutta methods for starting integration of
     Lane–Emden problem.\" Applied Mathematics and Computation 354 (2019): 353-364.
     doi: https://doi.org/10.1016/j.amc.2019.02.047")

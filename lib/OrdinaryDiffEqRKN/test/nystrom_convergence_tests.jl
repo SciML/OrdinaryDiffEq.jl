@@ -82,26 +82,37 @@ sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 # Adaptive methods regression test
 sol = solve(prob, FineRKN4())
 @test length(sol.u) < 16
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 14
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN4())
 @test length(sol.u) < 25
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN5())
 @test length(sol.u) < 38
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN6())
 @test length(sol.u) < 20
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN6FM())
 @test length(sol.u) < 25
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN8())
 @test length(sol.u) < 13
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN12())
 @test length(sol.u) < 10
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, ERKN4(), reltol = 1e-8)
 @test length(sol.u) < 38
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, ERKN5(), reltol = 1e-8)
 @test length(sol.u) < 34
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, ERKN7(), reltol = 1e-8)
 @test length(sol.u) < 38
+@test SciMLBase.successful_retcode(sol)
 
 u0 = 0.0
 v0 = 1.0
@@ -178,26 +189,37 @@ sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
 # Adaptive methods regression test
 sol = solve(prob, FineRKN4())
 @test length(sol.u) < 16
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 14
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN4())
 @test length(sol.u) < 25
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN5())
 @test length(sol.u) < 38
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN6())
 @test length(sol.u) < 20
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN6FM())
 @test length(sol.u) < 25
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN8())
 @test length(sol.u) < 13
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN12())
 @test length(sol.u) < 10
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, ERKN4(), reltol = 1e-8)
 @test length(sol.u) < 38
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, ERKN5(), reltol = 1e-8)
 @test length(sol.u) < 34
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, ERKN7(), reltol = 1e-8)
 @test length(sol.u) < 38
+@test SciMLBase.successful_retcode(sol)
 
 # Testing generalized Runge-Kutte-Nyström methods on velocity dependent ODEs with the damped oscillator
 println("Out of Place")
@@ -217,7 +239,7 @@ prob = ODEProblem(
             ])),
     ArrayPartition([0.0], [1.0]), # du0, u0
     (0.0, 10.0), # tspan
-    DiffEqBase.NullParameters(), # p
+    SciMLBase.NullParameters(), # p
     SecondOrderODEProblem{false}())
 
 dts = 1.0 ./ 2.0 .^ (5:-1:0)
@@ -235,8 +257,10 @@ sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 
 sol = solve(prob, FineRKN4())
 @test length(sol.u) < 28
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 20
+@test SciMLBase.successful_retcode(sol)
 
 println("In Place")
 # Damped oscillator
@@ -254,7 +278,7 @@ prob = ODEProblem(
             ])),
     ArrayPartition([0.0], [1.0]), # du0, u0
     (0.0, 10.0), # tspan
-    DiffEqBase.NullParameters(), # p
+    SciMLBase.NullParameters(), # p
     SecondOrderODEProblem{false}())
 
 dts = 1.0 ./ 2.0 .^ (5:-1:0)
@@ -271,8 +295,10 @@ sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 # Adaptive methods regression test
 sol = solve(prob, FineRKN4())
 @test length(sol.u) < 28
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 20
+@test SciMLBase.successful_retcode(sol)
 
 # Compare in-place and out-of-place versions
 function damped_oscillator(du, u, p, t)
@@ -435,8 +461,13 @@ end
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        @test_broken sol_i.t ≈ sol_o.t
-        @test_broken sol_i.u ≈ sol_o.u
+        if VERSION >= v"1.11"
+            @test sol_i.t ≈ sol_o.t
+            @test sol_i.u ≈ sol_o.u
+        else
+            @test_broken sol_i.t ≈ sol_o.t
+            @test_broken sol_i.u ≈ sol_o.u
+        end
     end
 
     @testset "DPRKN8" begin
@@ -455,8 +486,13 @@ end
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        @test_broken sol_i.t ≈ sol_o.t
-        @test_broken sol_i.u ≈ sol_o.u
+        if VERSION >= v"1.11"
+            @test sol_i.t ≈ sol_o.t
+            @test sol_i.u ≈ sol_o.u
+        else
+            @test_broken sol_i.t ≈ sol_o.t
+            @test_broken sol_i.u ≈ sol_o.u
+        end
     end
 
     @testset "DPRKN12" begin

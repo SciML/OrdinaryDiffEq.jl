@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        julia-version: [1]
+        julia-version: ['1.10']
         os: [ubuntu-latest]
         package:
           - {user: SciML, repo: DelayDiffEq.jl, group: Interface}
@@ -44,9 +44,6 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
           arch: x64
-      # Explicitly develop the libraries first before running the tests for now.
-      # This is necessary since the tests are likely to fail otherwise, given that all
-      # the libs haven't been registered yet.
       - name: Clone Downstream
         uses: actions/checkout@v4
         with:
@@ -57,11 +54,8 @@ jobs:
         run: |
           using Pkg
           try
-            # force it to use this PR's version of the package
             Pkg.develop(map(path ->Pkg.PackageSpec.(;path="lib/$(path)"), readdir("./lib")));
-            Pkg.develop(PackageSpec(path="."))  # resolver may fail with main deps
-            Pkg.update()
-            Pkg.test(coverage=true)  # resolver may fail with test time deps
+            Pkg.test(coverage=true)  # resolver may fail with test time depsAdd commentMore actions
           catch err
             err isa Pkg.Resolve.ResolverError || rethrow()
             # If we can't resolve that means this is incompatible by SemVer and this is fine

@@ -37,6 +37,7 @@ mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4
     save_on::Bool
     save_start::Bool
     save_end::Bool
+    save_discretes::Bool
     save_end_user::F3
     callback::F4
     isoutofdomain::F5
@@ -84,7 +85,7 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
     uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
     ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
     CallbackCacheType, IA, DV} <:
-               DiffEqBase.AbstractODEIntegrator{algType, IIP, uType, tType}
+               SciMLBase.AbstractODEIntegrator{algType, IIP, uType, tType}
     sol::SolType
     u::uType
     du::duType

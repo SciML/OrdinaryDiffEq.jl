@@ -21,9 +21,11 @@ jobs:
           - AlgConvergence_I
           - AlgConvergence_II
           - AlgConvergence_III
+          - ModelingToolkit
           - Downstream
           - ODEInterfaceRegression
           - Multithreading
+          - QA
 
           - OrdinaryDiffEqAdamsBashforthMoulton
           - OrdinaryDiffEqBDF
@@ -49,6 +51,7 @@ jobs:
           - OrdinaryDiffEqRKN
           - OrdinaryDiffEqRosenbrock
           - OrdinaryDiffEqSDIRK
+          - OrdinaryDiffEqSIMDRK
           - OrdinaryDiffEqSSPRK
           - OrdinaryDiffEqStabilizedIRK
           - OrdinaryDiffEqStabilizedRK
@@ -58,6 +61,7 @@ jobs:
 
           - ImplicitDiscreteSolve
           - SimpleImplicitDiscreteSolve
+          - Enzyme
 
         version:
           - 'lts'
@@ -78,15 +82,6 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
-      # Explicitly develop the libraries first before running the tests for now.
-      # This is necessary since the tests are likely to fail otherwise, given that all
-      # the libs haven't been registered yet.
-      - name: "Develop the libraries since they haven't been registered yet"
-        run: |
-          julia --project=. -e '
-              using Pkg;
-              Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
-          '
       - uses: julia-actions/julia-runtest@v1
         with:
           coverage: false

@@ -71,12 +71,12 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
     tmp::tmpType
     uprev::uprevType
     t::tType
-    function DAEResidualJacobianWrapper(alg, f, p, α, invγdt, tmp, uprev, t)
+    function DAEResidualJacobianWrapper(alg, f::F, p, α, invγdt, tmp, uprev, t) where F
         ad = ADTypes.dense_ad(alg_autodiff(alg)) 
         isautodiff = ad isa AutoForwardDiff 
         if isautodiff
-            tmp_du = PreallocationTools.dualcache(uprev)
-            tmp_u = PreallocationTools.dualcache(uprev)
+            tmp_du = dualcache(uprev)
+            tmp_u = dualcache(uprev)
         else
             tmp_du = similar(uprev)
             tmp_u = similar(uprev)
@@ -98,8 +98,8 @@ is_autodiff(m::DAEResidualJacobianWrapper{isAD}) where {isAD} = isAD
 
 function (m::DAEResidualJacobianWrapper)(out, x)
     if is_autodiff(m)
-        tmp_du = PreallocationTools.get_tmp(m.tmp_du, x)
-        tmp_u = PreallocationTools.get_tmp(m.tmp_u, x)
+        tmp_du = get_tmp(m.tmp_du, x)
+        tmp_u = get_tmp(m.tmp_u, x)
     else
         tmp_du = m.tmp_du
         tmp_u = m.tmp_u
@@ -126,13 +126,13 @@ function (m::DAEResidualDerivativeWrapper)(x)
     m.f(tmp_du, tmp_u, m.p, m.t)
 end
 
-DiffEqBase.has_jac(f::DAEResidualJacobianWrapper) = DiffEqBase.has_jac(f.f)
-DiffEqBase.has_Wfact(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact(f.f)
-DiffEqBase.has_Wfact_t(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact_t(f.f)
+SciMLBase.has_jac(f::DAEResidualJacobianWrapper) = SciMLBase.has_jac(f.f)
+SciMLBase.has_Wfact(f::DAEResidualJacobianWrapper) = SciMLBase.has_Wfact(f.f)
+SciMLBase.has_Wfact_t(f::DAEResidualJacobianWrapper) = SciMLBase.has_Wfact_t(f.f)
 
-DiffEqBase.has_jac(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_jac(f.f)
-DiffEqBase.has_Wfact(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact(f.f)
-DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t(f.f)
+SciMLBase.has_jac(f::DAEResidualDerivativeWrapper) = SciMLBase.has_jac(f.f)
+SciMLBase.has_Wfact(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact(f.f)
+SciMLBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact_t(f.f)
 
 function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},
@@ -153,6 +153,17 @@ function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip)
 end
 
+function daenlf(ztmp, z, p)
+    tmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f = p
+    _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f, z)[1]
+end
+
+function odenlf(ztmp, z, p)
+    tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f = p
+    _compute_rhs!(
+    tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
+end
+
 function build_nlsolver(
         alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
         u, uprev, p, t, dt,
@@ -162,7 +173,7 @@ function build_nlsolver(
         ::Val{true}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits}
     #TODO
-    #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
+    #nlalg = SciMLBase.handle_defaults(alg, nlalg)
     # define unitless type
     uTolType = real(uBottomEltypeNoUnits)
     isdae = alg isa DAEAlgorithm
@@ -177,6 +188,7 @@ function build_nlsolver(
     tstep = zero(t)
     k = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
+    atmp .= false
     dz = zero(u)
 
     if nlalg isa Union{NLNewton, NonlinearSolveAlg}
@@ -215,21 +227,17 @@ function build_nlsolver(
         if nlalg isa NonlinearSolveAlg
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
-            if isdae
-                nlf = (ztmp, z, p) -> begin
-                    tmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f = p
-                    _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f, z)[1]
-                end
-                nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+            prob = if f.nlstep_data !== nothing
+                prob = f.nlstep_data.nlprob
             else
-                nlf = (ztmp, z, p) -> begin
-                    tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f = p
-                    _compute_rhs!(
-                        tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
+                nlf = isdae ? daenlf : odenlf
+                nlp_params = if isdae
+                    (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+                else
+                    (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
-                nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
+                NonlinearProblem(NonlinearFunction{true}(nlf), ztmp, nlp_params)
             end
-            prob = NonlinearProblem(NonlinearFunction(nlf), ztmp, nlp_params)
             cache = init(prob, nlalg.alg)
             nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
         else
@@ -262,6 +270,16 @@ function build_nlsolver(
         Divergence, nlcache)
 end
 
+function oopdaenlf(z, p)
+    tmp, α, tstep, invγdt, _p, dt, uprev, f = p
+    _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
+end
+
+function oopodenlf(z, p)
+    tmp, γ, α, tstep, invγdt, method, _p, dt, f = p
+    _compute_rhs(tmp, γ, α, tstep, invγdt, method, _p, dt, f, z)[1]
+end
+
 function build_nlsolver(
         alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
         u, uprev, p,
@@ -272,7 +290,7 @@ function build_nlsolver(
         ::Val{false}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits}
     #TODO
-    #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
+    #nlalg = SciMLBase.handle_defaults(alg, nlalg)
     # define unitless type
     uTolType = real(uBottomEltypeNoUnits)
     isdae = alg isa DAEAlgorithm
@@ -300,20 +318,13 @@ function build_nlsolver(
         if nlalg isa NonlinearSolveAlg
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
-            if isdae
-                nlf = (z, p) -> begin
-                    tmp, α, tstep, invγdt, _p, dt, uprev, f = p
-                    _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
-                end
-                nlp_params = (tmp, α, tstep, invγdt, _p, dt, uprev, f)
+            nlf = isdae ? oopdaenlf : oopodenlf
+            nlp_params = if isdae
+                (tmp, α, tstep, invγdt, p, dt, uprev, f)
             else
-                nlf = (z, p) -> begin
-                    tmp, γ, α, tstep, invγdt, method, _p, dt, f = p
-                    _compute_rhs(tmp, γ, α, tstep, invγdt, method, _p, dt, f, z)[1]
-                end
-                nlp_params = (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
+                (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
-            prob = NonlinearProblem(NonlinearFunction(nlf), copy(ztmp), nlp_params)
+            prob = NonlinearProblem(NonlinearFunction{false}(nlf), copy(ztmp), nlp_params)
             cache = init(prob, nlalg.alg)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache)
@@ -483,7 +494,7 @@ end
 
 ## resize
 
-function resize_nlsolver!(integrator::DiffEqBase.DEIntegrator, i::Int)
+function resize_nlsolver!(integrator::SciMLBase.DEIntegrator, i::Int)
     isdefined(integrator.cache, :nlsolver) || return
 
     @unpack nlsolver = integrator.cache

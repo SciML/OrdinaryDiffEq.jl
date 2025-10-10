@@ -3,11 +3,11 @@ Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
   Numerica 19 (2010): 209–286. doi:10.1017/S0962492910000048.
 """
 for (Alg, Description, Ref) in [
-    (:LawsonEuler, "First order exponential Euler scheme.", REF1),
+    (:LawsonEuler, "First order exponential Euler scheme (fixed timestepping)", REF1),
     (:NorsettEuler, "First order exponential-RK scheme. Alias: `ETD1`", REF1),
     (:ETDRK2, "2nd order exponential-RK scheme.", REF1),
     (:ETDRK3, "3rd order exponential-RK scheme.", REF1),
-    (:ETDRK4, "4th order exponential-RK scheme", REF1),
+    (:ETDRK4, "4th order exponential-RK scheme (fixed timestepping)", REF1),
     (:HochOst4, "4th order exponential-RK scheme with stiff order 4.", REF1)
 ]
     @eval begin
@@ -39,7 +39,8 @@ for (Alg, Description, Ref) in [
             standardtag = Val{true}(), concrete_jac = nothing,
             chunk_size = Val{0}(),
             diff_type = Val{:forward}())
-        AD_choice, chunk_size, diff_type = _process_AD_choice(
+        AD_choice, chunk_size,
+        diff_type = _process_AD_choice(
             autodiff, chunk_size, diff_type)
 
         $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
@@ -84,7 +85,8 @@ for (Alg, Description, Ref) in [
             m = 30, iop = 0, autodiff = AutoForwardDiff(), standardtag = Val{true}(),
             concrete_jac = nothing, chunk_size = Val{0}(),
             diff_type = Val{:forward}())
-        AD_choice, chunk_size, diff_type = _process_AD_choice(
+        AD_choice, chunk_size,
+        diff_type = _process_AD_choice(
             autodiff, chunk_size, diff_type)
 
         $Alg{_unwrap_val(chunk_size), typeof(AD_choice),
@@ -107,17 +109,17 @@ Tokman, M., Loffeld, J., & Tranquilli, P. (2012). New Adaptive Exponential Propa
 """
 
 for (Alg, Description, Ref) in [(:Exp4, "4th order EPIRK scheme.", REF3)
-                                (:EPIRK4s3A,
-                                    "4th order EPIRK scheme with stiff order 4.", REF4)
-                                (:EPIRK4s3B,
-                                    "4th order EPIRK scheme with stiff order 4.", REF4)
-                                (:EPIRK5s3,
-                                    "5th order “horizontal” EPIRK scheme with stiff order 5. Broken.",
-                                    REF4)
-                                (:EXPRB53s3,
-                                    "5th order EPIRK scheme with stiff order 5.", REF4)
-                                (:EPIRK5P1, "5th order EPIRK scheme", REF5)
-                                (:EPIRK5P2, "5th order EPIRK scheme", REF5)]
+     (:EPIRK4s3A,
+         "4th order EPIRK scheme with stiff order 4.", REF4)
+     (:EPIRK4s3B,
+         "4th order EPIRK scheme with stiff order 4.", REF4)
+     (:EPIRK5s3,
+         "5th order “horizontal” EPIRK scheme with stiff order 5. Broken.",
+         REF4)
+     (:EXPRB53s3,
+         "5th order EPIRK scheme with stiff order 5.", REF4)
+     (:EPIRK5P1, "5th order EPIRK scheme", REF5)
+     (:EPIRK5P2, "5th order EPIRK scheme", REF5)]
     @eval begin
         @doc generic_solver_docstring($Description,
             $(string(Alg)),
@@ -147,7 +149,8 @@ for (Alg, Description, Ref) in [(:Exp4, "4th order EPIRK scheme.", REF3)
             adaptive_krylov = true, m = 30, iop = 0, autodiff = AutoForwardDiff(),
             standardtag = Val{true}(), concrete_jac = nothing,
             chunk_size = Val{0}(), diff_type = Val{:forward}())
-        AD_choice, chunk_size, diff_type = _process_AD_choice(
+        AD_choice, chunk_size,
+        diff_type = _process_AD_choice(
             autodiff, chunk_size, diff_type)
 
         $Alg{_unwrap_val(chunk_size), typeof(AD_choice), diff_type,

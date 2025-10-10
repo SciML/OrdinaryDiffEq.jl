@@ -1,4 +1,4 @@
-abstract type OrdinaryDiffEqCache <: DiffEqBase.DECache end
+abstract type OrdinaryDiffEqCache <: SciMLBase.DECache end
 abstract type OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache end
 abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
@@ -122,5 +122,5 @@ end
 
 alg_cache(alg::OrdinaryDiffEqAlgorithm, prob, callback::F) where {F} = ODEEmptyCache()
 
-get_chunksize(cache::DiffEqBase.DECache) = error("This cache does not have a chunksize.")
+get_chunksize(cache::SciMLBase.DECache) = error("This cache does not have a chunksize.")
 get_chunksize(cache::ODEChunkCache{CS}) where {CS} = CS

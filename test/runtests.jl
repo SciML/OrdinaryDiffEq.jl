@@ -23,12 +23,24 @@ function activate_odeinterface_env()
     Pkg.instantiate()
 end
 
+function activate_enzyme_env()
+    Pkg.activate("enzyme")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_modelingtoolkit_env()
+    Pkg.activate("modelingtoolkit")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
     if contains(GROUP, "OrdinaryDiffEq") || GROUP == "ImplicitDiscreteSolve" || GROUP == "SimpleImplicitDiscreteSolve"
-        Pkg.develop(path = "../lib/$GROUP")
-        Pkg.test(GROUP)
+        Pkg.activate(joinpath(dirname(@__DIR__), "lib", GROUP))
+        Pkg.test(GROUP, julia_args=["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version=false, allow_reresolve=true)
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
         @time @safetestset "Tstops Tests" include("interface/ode_tstops_tests.jl")
@@ -37,7 +49,6 @@ end
         @time @safetestset "Linear Tests" include("interface/ode_twodimlinear_tests.jl")
         @time @safetestset "Differentiation Trait Tests" include("interface/differentiation_traits_tests.jl")
         @time @safetestset "Inf Tests" include("interface/inf_handling.jl")
-        @time @safetestset "Jacobian Tests" include("interface/jacobian_tests.jl")
         @time @safetestset "saveat Tests" include("interface/ode_saveat_tests.jl")
         @time @safetestset "save_idxs Tests" include("interface/ode_saveidxs_tests.jl")
         @time @safetestset "Scalar Handling Tests" include("interface/scalar_handling_tests.jl")
@@ -78,7 +89,6 @@ end
         @time @safetestset "No Index Tests" include("interface/noindex_tests.jl")
         @time @safetestset "Events + DAE addsteps Tests" include("interface/event_dae_addsteps.jl")
         @time @safetestset "No Jac Tests" include("interface/nojac.jl")
-        @time @safetestset "Preconditioner Tests" include("interface/preconditioners.jl")
         @time @safetestset "Units Tests" include("interface/units_tests.jl")
         @time @safetestset "Non-Full Diagonal Sparsity Tests" include("interface/nonfulldiagonal_sparse.jl")
     end
@@ -94,7 +104,7 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "AD Tests" include("interface/ad_tests.jl")
-        @time @safetestset "DAE Initialize Integration" include("interface/dae_initialize_integration.jl")
+        @time @safetestset "GPU AutoDiff Interface Tests" include("interface/gpu_autodiff_interface_tests.jl")
         @time @safetestset "DAE Initialization Tests" include("interface/dae_initialization_tests.jl")
     end
 
@@ -146,16 +156,34 @@ end
         @time @safetestset "Split Methods Tests" include("algconvergence/split_methods_tests.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "Downstream"
-        activate_downstream_env()
-        @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")
-        @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
-        @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
-        @time @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
-        @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
+    if !is_APPVEYOR && GROUP == "ModelingToolkit"
+        activate_modelingtoolkit_env()
+        @time @safetestset "NLStep Tests" include("modelingtoolkit/nlstep_tests.jl")
+        @time @safetestset "Jacobian Tests" include("modelingtoolkit/jacobian_tests.jl")
+        @time @safetestset "Preconditioner Tests" include("modelingtoolkit/preconditioners.jl")
+        @time @safetestset "DAE Initialize Integration" include("modelingtoolkit/dae_initialize_integration.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
+    if !is_APPVEYOR && GROUP == "Downstream"
+        activate_downstream_env()
+        @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
+        @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
+        if VERSION >= v"1.11" && isempty(VERSION.prerelease)
+            @time @safetestset "Mooncake Tests" include("downstream/mooncake.jl")
+        end
+        @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")
+        @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
+    end
+
+    # Don't run Enzyme tests on prerelease
+    if !is_APPVEYOR && GROUP == "Enzyme" && isempty(VERSION.prerelease)
+        activate_enzyme_env()
+        @time @safetestset "Autodiff Events Tests" include("enzyme/autodiff_events.jl")
+        @time @safetestset "Discrete Adjoint Tests" include("enzyme/discrete_adjoints.jl")
+    end
+
+    # Don't run ODEInterface tests on prerelease
+    if !is_APPVEYOR && GROUP == "ODEInterfaceRegression" && isempty(VERSION.prerelease)
         activate_odeinterface_env()
         @time @safetestset "Init dt vs dorpri tests" include("odeinterface/init_dt_vs_dopri_tests.jl")
         @time @safetestset "ODEInterface Regression Tests" include("odeinterface/odeinterface_regression.jl")
@@ -177,5 +205,9 @@ end
         @time @safetestset "Linear Exponential GPU" include("gpu/linear_exp.jl")
         @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
         @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "QA"
+        @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
     end
 end # @time

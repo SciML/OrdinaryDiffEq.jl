@@ -261,8 +261,7 @@ See also `SBDF`.
 SBDF4(; kwargs...) = SBDF(4; kwargs...)
 
 @doc BDF_docstring(
-    "An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
-Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.",
+    "An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function method.",
     "QNDF1",
     references = """@article{shampine1997matlab,
     title={The matlab ode suite},
@@ -382,8 +381,7 @@ function QNDF2(;
 end
 
 @doc BDF_docstring(
-    "An adaptive order quasi-constant timestep NDF method.
-Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).",
+    "An adaptive order quasi-constant timestep NDF method. Similar to MATLAB's ode15s. Uses Shampine's accuracy-optimal coefficients. Performance improves with larger, more complex ODEs. Good for medium to highly stiff problems. Recommended for large systems (>1000 ODEs).",
     "QNDF",
     references = """@article{shampine1997matlab,
     title={The matlab ode suite},
@@ -446,7 +444,7 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         extrapolant, kappa, controller, step_limiter!, AD_choice)
 end
 
-TruncatedStacktraces.@truncate_stacktrace QNDF
+@truncate_stacktrace QNDF
 
 @doc BDF_docstring("The second order Modified Extended BDF method,
     which has improved stability properties over the standard BDF.
@@ -551,7 +549,7 @@ function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         controller, step_limiter!, AD_choice)
 end
 
-TruncatedStacktraces.@truncate_stacktrace FBDF
+@truncate_stacktrace FBDF
 
 """
 QBDF1: Multistep Method
@@ -632,7 +630,7 @@ See also `SBDF`, `IMEXEuler`.
 IMEXEulerARK(; kwargs...) = SBDF(1; ark = true, kwargs...)
 
 @doc BDF_docstring(
-    "Implicit Euler for implicit DAE form.
+    "1st order A-L and stiffly stable adaptive implicit Euler. Implicit Euler for implicit DAE form.
 It uses an apriori error estimator for adaptivity based on a finite differencing approximation from SPICE.",
     "DImplicitEuler",
     extra_keyword_description = """
@@ -667,7 +665,8 @@ function DImplicitEuler(;
         nlsolve, precs, extrapolant, controller, AD_choice)
 end
 
-@doc BDF_docstring("Fully implicit implementation of BDF2.",
+@doc BDF_docstring(
+    "2nd order A-L stable adaptive BDF method. Fully implicit implementation of BDF2.",
     "DABDF2",
     references = """@article{celaya2014implementation,
     title={Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s},
@@ -723,7 +722,8 @@ DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concr
      linsolve,nlsolve,precs,extrapolant)
 =#
 
-@doc BDF_docstring("Fully implicit implementation of FBDF based on Shampine's",
+@doc BDF_docstring(
+    "Fixed-leading coefficient adaptive-order adaptive-time BDF method. Fully implicit implementation of FBDF based on Shampine's",
     "DFBDF",
     references = """@article{shampine2002solving,
     title={Solving 0= F (t, y (t), y′(t)) in Matlab},
@@ -773,4 +773,4 @@ function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         controller, AD_choice)
 end
 
-TruncatedStacktraces.@truncate_stacktrace DFBDF
+@truncate_stacktrace DFBDF

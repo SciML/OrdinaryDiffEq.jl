@@ -77,9 +77,7 @@ function SDIRK_docstring(description::String,
     )
 end
 
-@doc SDIRK_docstring("A 1st order implicit solver. A-B-L-stable.
-    Adaptive timestepping through a divided differences estimate via memory.
-    Strong-stability preserving (SSP).",
+@doc SDIRK_docstring("A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
     "ImplicitEuler";
     references = "@book{wanner1996solving,
     title={Solving ordinary differential equations II},
@@ -122,8 +120,7 @@ function ImplicitEuler(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         nlsolve, precs, extrapolant, controller, step_limiter!, AD_choice)
 end
 
-@doc SDIRK_docstring("A second order A-stable symplectic and symmetric implicit solver.
-    Good for highly stiff equations which need symplectic integration.",
+@doc SDIRK_docstring("A second order A-stable symplectic and symmetric implicit solver. Excellent for Hamiltonian systems and highly stiff equations.",
     "ImplicitMidpoint";
     references = "@book{wanner1996solving,
     title={Solving ordinary differential equations II},
@@ -166,11 +163,7 @@ function ImplicitMidpoint(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 end
 
 @doc SDIRK_docstring(
-    """Second order A-stable symmetric ESDIRK method.
-"Almost symplectic" without numerical dampening.
-Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via divided
-differences approximation to the second derivative terms in the local truncation error
-estimate (the SPICE approximation strategy).""",
+    "A second order A-stable symmetric ESDIRK method. 'Almost symplectic' without numerical dampening.",
     "Trapezoid";
     references = "Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York, NY, USA.",
     extra_keyword_description = """
@@ -213,9 +206,7 @@ function Trapezoid(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         AD_choice)
 end
 
-@doc SDIRK_docstring("A second order A-B-L-S-stable one-step ESDIRK method.
-    Includes stiffness-robust error estimates for accurate adaptive timestepping,
-    smoothed derivatives for highly stiff and oscillatory problems.",
+@doc SDIRK_docstring("A second order A-B-L-S-stable one-step ESDIRK method. Includes stiffness-robust error estimates for accurate adaptive timestepping, smoothed derivatives for highly stiff and oscillatory problems. Good for high tolerances (>1e-2) on stiff problems.",
     "TRBDF2";
     references = "@article{hosea1996analysis,
     title={Analysis and implementation of TR-BDF2},
@@ -264,7 +255,7 @@ function TRBDF2(;
         smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
-TruncatedStacktraces.@truncate_stacktrace TRBDF2
+@truncate_stacktrace TRBDF2
 
 @doc SDIRK_docstring("SDIRK2: SDIRK Method An A-B-L stable 2nd order SDIRK method",
     "SDIRK2";
@@ -369,7 +360,7 @@ end
 @doc SDIRK_docstring(
     """SSPSDIRK is an SSP-optimized SDIRK method,
 so it's an implicit SDIRK method for handling stiffness but if the `dt` is below the SSP `coefficient * dt`,
-then the SSP property of the SSP integrators (the other page) is satisified.
+then the SSP property of the SSP integrators (the other page) is satisfied.
 As such this is a method which is expected to be good on advection-dominated cases where an explicit SSP integrator would be used,
 but where reaction equations are sufficient stiff to justify implicit integration.""",
     "SSPSDIRK2";
@@ -990,7 +981,7 @@ function Kvaerno5(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 end
 
 @doc SDIRK_docstring(
-    "An A-L stable stiffly-accurate 4th order ESDIRK method with splitting.",
+    "An A-L stable stiffly-accurate 4th order ESDIRK method with splitting. Includes splitting capabilities. Recommended for medium tolerance stiff problems (>1e-8).",
     "KenCarp4";
     references = "@book{kennedy2001additive,
     title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
@@ -1034,7 +1025,7 @@ function KenCarp4(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         smooth_est, extrapolant, controller, step_limiter!, AD_choice)
 end
 
-TruncatedStacktraces.@truncate_stacktrace KenCarp4
+@truncate_stacktrace KenCarp4
 
 @doc SDIRK_docstring(
     "An A-L stable stiffly-accurate 4th order seven-stage ESDIRK method with splitting.",

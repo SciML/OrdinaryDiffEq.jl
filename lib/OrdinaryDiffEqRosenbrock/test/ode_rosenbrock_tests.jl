@@ -1,8 +1,12 @@
-using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes, Enzyme
+using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes
 import ODEProblemLibrary: prob_ode_linear,
                           prob_ode_2Dlinear,
                           prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 import LinearSolve
+
+if isempty(VERSION.prerelease)
+    using Enzyme
+end
 
 @testset "Rosenbrock Tests" begin
     ## Breakout these since no other test of their adaptivity
@@ -19,6 +23,7 @@ import LinearSolve
 
     sol = solve(prob, Rosenbrock23())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -27,14 +32,18 @@ import LinearSolve
 
     sol = solve(prob, Rosenbrock23())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts, prob, Rosenbrock23(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test sim.𝒪est[:final]≈2 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts, prob, Rosenbrock23(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test sim.𝒪est[:final]≈2 atol=testTol
 
-    sol = solve(prob, Rosenbrock23(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test length(sol) < 20
+        sol = solve(prob, Rosenbrock23(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
+    end
 
     prob = prob_ode_bigfloat2Dlinear
 
@@ -43,6 +52,7 @@ import LinearSolve
 
     sol = solve(prob, Rosenbrock23(linsolve = QRFactorization()))
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### Rosenbrock32()
 
@@ -53,6 +63,7 @@ import LinearSolve
 
     sol = solve(prob, Rosenbrock32())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -61,28 +72,33 @@ import LinearSolve
 
     sol = solve(prob, Rosenbrock32())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts,
-        prob,
-        Rosenbrock32(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test sim.𝒪est[:final]≈3 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts,
+            prob,
+            Rosenbrock32(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob,
-        Rosenbrock32(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test length(sol) < 20
+        sol = solve(prob,
+            Rosenbrock32(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test length(sol) < 20
+        @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts,
-        prob,
-        Rosenbrock32(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
-    @test sim.𝒪est[:final]≈3 atol=testTol
+        sim = test_convergence(dts,
+            prob,
+            Rosenbrock32(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
+        @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob,
-        Rosenbrock32(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
-    @test length(sol) < 20
+        sol = solve(prob,
+            Rosenbrock32(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const), linsolve = LinearSolve.KrylovJL()))
+        @test length(sol) < 20
+        @test SciMLBase.successful_retcode(sol)
+    end
     ### ROS3P()
 
     prob = prob_ode_linear
@@ -92,6 +108,7 @@ import LinearSolve
 
     sol = solve(prob, ROS3P())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -100,21 +117,25 @@ import LinearSolve
 
     sol = solve(prob, ROS3P())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts,
-        prob,
-        ROS3P(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test sim.𝒪est[:final]≈3 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts,
+            prob,
+            ROS3P(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob,
-        ROS3P(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test length(sol) < 20
+        sol = solve(prob,
+            ROS3P(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test length(sol) < 20
+        @test SciMLBase.successful_retcode(sol)
+    end
 
     ### Rodas3()
 
@@ -125,6 +146,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas3())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -133,21 +155,25 @@ import LinearSolve
 
     sol = solve(prob, Rodas3())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts,
-        prob,
-        Rodas3(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test sim.𝒪est[:final]≈3 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts,
+            prob,
+            Rodas3(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob,
-        Rodas3(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test length(sol) < 20
+        sol = solve(prob,
+            Rodas3(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test length(sol) < 20
+        @test SciMLBase.successful_retcode(sol)
+    end
 
     ### ROS2
     prob = prob_ode_linear
@@ -157,6 +183,7 @@ import LinearSolve
 
     sol = solve(prob, ROS2())
     @test length(sol) < 61
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -165,6 +192,7 @@ import LinearSolve
 
     sol = solve(prob, ROS2PR())
     @test length(sol) < 60
+    @test SciMLBase.successful_retcode(sol)
 
     ### ROS2PR
     prob = prob_ode_linear
@@ -174,6 +202,7 @@ import LinearSolve
 
     sol = solve(prob, ROS2PR())
     @test length(sol) < 30
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -182,6 +211,7 @@ import LinearSolve
 
     sol = solve(prob, ROS2PR())
     @test length(sol) < 30
+    @test SciMLBase.successful_retcode(sol)
 
     ### ROS2S
     prob = prob_ode_linear
@@ -191,6 +221,7 @@ import LinearSolve
 
     sol = solve(prob, ROS2S())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -199,6 +230,7 @@ import LinearSolve
 
     sol = solve(prob, ROS2S())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### ROS3
     prob = prob_ode_linear
@@ -208,6 +240,7 @@ import LinearSolve
 
     sol = solve(prob, ROS3())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -216,6 +249,7 @@ import LinearSolve
 
     sol = solve(prob, ROS3())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### ROS3PR
     prob = prob_ode_linear
@@ -224,7 +258,8 @@ import LinearSolve
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob, ROS3PR())
-    @test length(sol) < 20 #length(sol) = 4 => Too Small??
+    @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol) #length(sol) = 4 => Too Small??
 
     prob = prob_ode_2Dlinear
 
@@ -232,7 +267,8 @@ import LinearSolve
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob, ROS3PR())
-    @test length(sol) < 20 #length(sol) = 4 => Too Small??
+    @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol) #length(sol) = 4 => Too Small??
 
     ### Scholz4_7
     prob = prob_ode_linear
@@ -242,6 +278,7 @@ import LinearSolve
 
     sol = solve(prob, Scholz4_7())
     @test length(sol) < 30
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -250,6 +287,7 @@ import LinearSolve
 
     sol = solve(prob, Scholz4_7())
     @test length(sol) < 30
+    @test SciMLBase.successful_retcode(sol)
 
     println("4th order Rosenbrocks")
 
@@ -262,6 +300,7 @@ import LinearSolve
 
     sol = solve(prob, RosShamp4())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -270,6 +309,7 @@ import LinearSolve
 
     sol = solve(prob, RosShamp4())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### Veldd4
 
@@ -280,6 +320,7 @@ import LinearSolve
 
     sol = solve(prob, Veldd4())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -288,6 +329,7 @@ import LinearSolve
 
     sol = solve(prob, Veldd4())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### Velds4
 
@@ -298,6 +340,7 @@ import LinearSolve
 
     sol = solve(prob, Velds4())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -306,6 +349,7 @@ import LinearSolve
 
     sol = solve(prob, Velds4())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### GRK4T
 
@@ -316,6 +360,7 @@ import LinearSolve
 
     sol = solve(prob, GRK4T())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -324,6 +369,7 @@ import LinearSolve
 
     sol = solve(prob, GRK4T())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### GRK4A
     dts = (1 / 2) .^ (7:-1:4)
@@ -335,6 +381,7 @@ import LinearSolve
 
     sol = solve(prob, GRK4A())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -343,6 +390,7 @@ import LinearSolve
 
     sol = solve(prob, GRK4A())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### Ros4LStab
 
@@ -353,6 +401,7 @@ import LinearSolve
 
     sol = solve(prob, Ros4LStab())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -361,6 +410,7 @@ import LinearSolve
 
     sol = solve(prob, Ros4LStab())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### Rosenbrock-W Algorithms
 
@@ -374,6 +424,7 @@ import LinearSolve
 
     sol = solve(prob, ROS34PW1a())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -382,6 +433,7 @@ import LinearSolve
 
     sol = solve(prob, ROS34PW1a())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### ROS34PW1b
     prob = prob_ode_linear
@@ -391,6 +443,7 @@ import LinearSolve
 
     sol = solve(prob, ROS34PW1b())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -399,6 +452,7 @@ import LinearSolve
 
     sol = solve(prob, ROS34PW1b())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### ROS34PW2
     prob = prob_ode_linear
@@ -408,6 +462,7 @@ import LinearSolve
 
     sol = solve(prob, ROS34PW2())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -416,6 +471,7 @@ import LinearSolve
 
     sol = solve(prob, ROS34PW2())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### ROS34PW3
     prob = prob_ode_linear
@@ -425,6 +481,7 @@ import LinearSolve
 
     sol = solve(prob, ROS34PW3())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -433,6 +490,7 @@ import LinearSolve
 
     sol = solve(prob, ROS34PW3())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### ROS34PRw
     prob = prob_ode_linear
@@ -442,6 +500,7 @@ import LinearSolve
 
     sol = solve(prob, ROS34PRw())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -450,6 +509,7 @@ import LinearSolve
 
     sol = solve(prob, ROS34PRw())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### ROS3PRL
     prob = prob_ode_linear
@@ -459,6 +519,7 @@ import LinearSolve
 
     sol = solve(prob, ROS3PRL())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -467,6 +528,7 @@ import LinearSolve
 
     sol = solve(prob, ROS3PRL())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### ROS3PRL2
     prob = prob_ode_linear
@@ -476,6 +538,7 @@ import LinearSolve
 
     sol = solve(prob, ROS3PRL2())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -484,6 +547,7 @@ import LinearSolve
 
     sol = solve(prob, ROS3PRL2())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### ROK4a
     prob = prob_ode_linear
@@ -493,6 +557,7 @@ import LinearSolve
 
     sol = solve(prob, ROK4a())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -501,6 +566,7 @@ import LinearSolve
 
     sol = solve(prob, ROK4a())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### RosenbrockW6S4OS
     sim = test_convergence(dts, prob, RosenbrockW6S4OS())#test inplace
@@ -524,6 +590,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas23W())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -533,21 +600,25 @@ import LinearSolve
 
     sol = solve(prob, Rodas23W())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts,
-        prob,
-        Rodas23W(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test sim.𝒪est[:final] ≈ 2 atol = testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts,
+            prob,
+            Rodas23W(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
-    sol = solve(prob,
-        Rodas23W(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test length(sol) < 20
+        sol = solve(prob,
+            Rodas23W(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test length(sol) < 20
+        @test SciMLBase.successful_retcode(sol)
+    end
 
     println("Rodas3P")
 
@@ -559,6 +630,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas3P())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -568,21 +640,25 @@ import LinearSolve
 
     sol = solve(prob, Rodas3P())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
-    sim = test_convergence(dts,
-        prob,
-        Rodas3P(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test sim.𝒪est[:final]≈3 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts,
+            prob,
+            Rodas3P(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob,
-        Rodas3P(
-            autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()))
-    @test length(sol) < 20
+        sol = solve(prob,
+            Rodas3P(
+                autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()))
+        @test length(sol) < 20
+        @test SciMLBase.successful_retcode(sol)
+    end
 
     ### Rodas4 Algorithms
 
@@ -598,6 +674,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas4())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(
         dts, prob, Rodas4(autodiff = AutoFiniteDiff()), dense_errors = true)
@@ -606,11 +683,15 @@ import LinearSolve
 
     sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff()))
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
-    sol = solve(prob,
-        Rodas4(autodiff = AutoEnzyme(
-            mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test length(sol) < 20
+    if isempty(VERSION.prerelease)
+        sol = solve(prob,
+            Rodas4(autodiff = AutoEnzyme(
+                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test length(sol) < 20
+        @test SciMLBase.successful_retcode(sol)
+    end
 
     sim = test_convergence(dts, prob, Rodas42(), dense_errors = true)
     @test sim.𝒪est[:final]≈5.1 atol=testTol
@@ -618,6 +699,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas42())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(dts, prob, Rodas4P(), dense_errors = true)
     @test sim.𝒪est[:final]≈4 atol=testTol
@@ -625,6 +707,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas4P())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(dts, prob, Rodas4P2(), dense_errors = true)
     @test sim.𝒪est[:final]≈4 atol=testTol
@@ -632,6 +715,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas4P2())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -641,6 +725,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas4())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     println("Rodas4 with finite diff")
 
@@ -651,6 +736,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff()))
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(
         dts, prob, Rodas4(autodiff = AutoFiniteDiff(fdtype = Val(:forward))),
@@ -660,6 +746,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff(fdtype = Val(:forward))))
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(
         dts, prob, Rodas4(autodiff = AutoFiniteDiff(fdtype = Val(:complex))),
@@ -669,6 +756,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff(fdtype = Val(:forward))))
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(dts, prob, Rodas42(), dense_errors = true)
     @test sim.𝒪est[:final]≈5 atol=testTol
@@ -676,6 +764,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas42())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(dts, prob, Rodas4P(), dense_errors = true)
     @test sim.𝒪est[:final]≈4 atol=testTol
@@ -683,6 +772,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas4P())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(dts, prob, Rodas4P2(), dense_errors = true)
     @test sim.𝒪est[:final]≈4 atol=testTol
@@ -690,6 +780,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas4P2())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     println("Rodas4P2 with finite diff")
 
@@ -700,6 +791,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas4P2(autodiff = AutoFiniteDiff()))
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     ### Rodas5
     println("Rodas5")
@@ -713,6 +805,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas5())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -722,6 +815,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas5())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     println("Rodas5P")
 
@@ -733,6 +827,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas5P())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -742,6 +837,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas5P())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     println("Rodas5Pe")
 
@@ -753,6 +849,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas5Pe())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
 
@@ -762,56 +859,85 @@ import LinearSolve
 
     sol = solve(prob, Rodas5Pe())
     @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
+
+    println("Rodas6P")
+
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, Rodas6P(), dense_errors = true)
+    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+    @test sim.𝒪est[:L2]≈6 atol=testTol
+
+    sol = solve(prob, Rodas6P())
+    @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, Rodas6P(), dense_errors = true)
+    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+    @test sim.𝒪est[:L2]≈6 atol=testTol
+
+    sol = solve(prob, Rodas6P())
+    @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
+
+
 
     println("Rodas5P Enzyme Forward")
 
     prob = prob_ode_linear
 
-    sim = test_convergence(dts, prob,
-        Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)),
-        dense_errors = true)
-    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
-    @test sim.𝒪est[:L2]≈5 atol=testTol
+    if isempty(VERSION.prerelease)
+        sim = test_convergence(dts, prob,
+            Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)),
+            dense_errors = true)
+        #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+        @test sim.𝒪est[:L2]≈5 atol=testTol
 
-    sol = solve(prob,
-        Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
-    @test length(sol) < 20
+        sol = solve(prob,
+            Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)))
+        @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
-    prob = prob_ode_2Dlinear
+        prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob,
-        Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)),
-        dense_errors = true)
-    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
-    @test sim.𝒪est[:L2]≈5 atol=testTol
+        sim = test_convergence(dts, prob,
+            Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const)),
+            dense_errors = true)
+        #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+        @test sim.𝒪est[:L2]≈5 atol=testTol
 
-    sim = test_convergence(dts, prob,
-        Rodas5P(autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL()),
-        dense_errors = true)
-    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
-    @test sim.𝒪est[:L2]≈5 atol=testTol
+        sim = test_convergence(dts, prob,
+            Rodas5P(autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL()),
+            dense_errors = true)
+        #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+        @test sim.𝒪est[:L2]≈5 atol=testTol
 
-    sim = test_convergence(dts, prob,
-        Rodas5P(autodiff = AutoEnzyme(
-                mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
-            linsolve = LinearSolve.KrylovJL_GMRES()),
-        dense_errors = true)
-    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
-    @test sim.𝒪est[:L2]≈5 atol=testTol
+        sim = test_convergence(dts, prob,
+            Rodas5P(autodiff = AutoEnzyme(
+                    mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const),
+                linsolve = LinearSolve.KrylovJL_GMRES()),
+            dense_errors = true)
+        #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+        @test sim.𝒪est[:L2]≈5 atol=testTol
 
-    sol = solve(prob,
-        Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
-            function_annotation = Enzyme.Const)))
-    @test length(sol) < 20
+        sol = solve(prob,
+            Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
+                function_annotation = Enzyme.Const)))
+        @test length(sol) < 20
+    @test SciMLBase.successful_retcode(sol)
 
 
-    prob = ODEProblem((u, p, t) -> 0.9u, 0.1, (0.0, 1.0))
-    @test_nowarn solve(prob, Rosenbrock23(autodiff = AutoFiniteDiff()))
-    @test_nowarn solve(prob,
-        Rosenbrock23(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
-            function_annotation = Enzyme.Const)))
+        prob = ODEProblem((u, p, t) -> 0.9u, 0.1, (0.0, 1.0))
+        @test_nowarn solve(prob, Rosenbrock23(autodiff = AutoFiniteDiff()))
+        @test_nowarn solve(prob,
+            Rosenbrock23(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward),
+                function_annotation = Enzyme.Const)))
+    end
 end
 
 @testset "Convergence with time-dependent matrix-free Jacobian" begin
@@ -850,6 +976,7 @@ end
         Rodas5P,
         Rodas5Pe,
         Rodas5Pr,
+        Rodas6P,
         RosenbrockW6S4OS,
         ROS34PW1a,
         ROS34PW1b,
@@ -890,7 +1017,7 @@ end
         alg = @test_logs @inferred(T(; autodiff = ad))
         @test alg isa
               RosenbrockAlgorithm{0, <:AutoFiniteDiff{Val{:central}}, Val{:central}()}
-        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) === ad
+        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) isa AutoFiniteDiff{Val{:central}}
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{0}()
 
         alg = @test_logs (:warn, r"The `diff_type` keyword is deprecated") match_mode=:any @inferred(T(;

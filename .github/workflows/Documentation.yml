@@ -15,15 +15,6 @@ jobs:
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
-      # Explicitly develop the libraries first before running the tests for now.
-      # This is necessary since the tests are likely to fail otherwise, given that all
-      # the libs haven't been registered yet.
-      - name: "Develop the libraries since they haven't been registered yet"
-        run: |
-          julia --project=. -e '
-              using Pkg;
-              Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
-          '
       - name: Install dependencies
         run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy

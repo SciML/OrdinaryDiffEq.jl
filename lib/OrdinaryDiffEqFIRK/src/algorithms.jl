@@ -66,8 +66,7 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
 end
 
 @doc differentiation_rk_docstring(
-    "An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
-Similar to Hairer's SEULEX.",
+    "An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency. 5th order method with excellent numerical stability. Good for highly stiff systems, problems requiring high-order implicit integration, systems with complex eigenvalue structures. Best for low tolerance stiff problems (<1e-9).",
     "RadauIIA5",
     "Fully-Implicit Runge-Kutta Method.";
     references = hairer1999stiff,

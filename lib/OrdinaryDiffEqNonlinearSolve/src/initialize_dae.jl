@@ -1,3 +1,21 @@
+# Optimized tolerance checking that avoids allocations
+@inline function check_dae_tolerance(integrator, err, abstol, t, ::Val{true})
+    if abstol isa Number
+        return integrator.opts.internalnorm(err, t) / abstol <= 1
+    else
+        @. err = err / abstol  # Safe for in-place functions
+        return integrator.opts.internalnorm(err, t) <= 1
+    end
+end
+
+@inline function check_dae_tolerance(integrator, err, abstol, t, ::Val{false})
+    if abstol isa Number
+        return integrator.opts.internalnorm(err, t) / abstol <= 1
+    else
+        return integrator.opts.internalnorm(err ./ abstol, t) <= 1  # Allocates for out-of-place
+    end
+end
+
 function default_nlsolve(
         ::Nothing, isinplace::Val{true}, u, ::AbstractNonlinearProblem, autodiff = false)
     FastShortcutNonlinearPolyalg(;
@@ -35,7 +53,7 @@ Solve for `u`
 
 =#
 
-function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{true})
     @unpack p, t, f = integrator
     M = integrator.f.mass_matrix
@@ -43,11 +61,12 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     tmp = first(get_tmp_cache(integrator))
     u0 = integrator.u
 
-    dt = if alg.initdt === nothing
+    initdt = alg.initdt
+    dt = if initdt === nothing
         integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
         (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
-        alg.initdt
+        initdt
     end
 
     algebraic_vars = [all(iszero, x) for x in eachcol(M)]
@@ -57,27 +76,29 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     f(tmp, u0, p, t)
     tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
 
-    integrator.opts.internalnorm(tmp, t) <= integrator.opts.abstol && return
+    check_dae_tolerance(integrator, tmp, integrator.opts.abstol, t, isinplace) && return
 
     if isdefined(integrator.cache, :nlsolver) && !isnothing(alg.nlsolve)
         # backward Euler
         nlsolver = integrator.cache.nlsolver
-        oldγ, oldc, oldmethod, olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
+        oldγ, oldc, oldmethod,
+        olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
         integrator.dt
         nlsolver.tmp .= integrator.uprev
         nlsolver.γ, nlsolver.c = 1, 1
         nlsolver.method = DIRK
         integrator.dt = dt
         z = nlsolve!(nlsolver, integrator, integrator.cache)
-        nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod,
+        nlsolver.γ, nlsolver.c, nlsolver.method,
+        integrator.dt = oldγ, oldc, oldmethod,
         olddt
         failed = nlsolvefail(nlsolver)
-        @.. broadcast=false integrator.u=integrator.uprev + z
+        @.. broadcast=false integrator.u=integrator.uprev+z
     else
 
         # _u0 should be non-dual since NonlinearSolve does not differentiate the solver
         # These non-dual values are thus used to make the caches
-        #_du = DiffEqBase.value.(du)
+        #_du = SciMLBase.value.(du)
         _u0 = DiffEqBase.value.(u0)
 
         # If not doing auto-diff of the solver, save an allocation
@@ -91,7 +112,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
                typeof(u0) !== typeof(_u0)
         if isAD
             chunk = ForwardDiff.pickchunksize(length(tmp))
-            _tmp = PreallocationTools.dualcache(tmp, chunk)
+            _tmp = dualcache(tmp, chunk)
         else
             _tmp = tmp
         end
@@ -105,7 +126,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
             end
             update_coefficients!(M, u, p, t)
             # f(u,p,t) + M * (u0 - u)/dt
-            tmp = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
+            tmp = isAD ? get_tmp(_tmp, T) : _tmp
             @. tmp = (_u0 - u) / dt
             mul!(_vec(out), M, _vec(tmp))
             f(tmp, u, p, t)
@@ -148,18 +169,19 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     return
 end
 
-function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{false})
     @unpack p, t, f = integrator
     u0 = integrator.u
     M = integrator.f.mass_matrix
     dtmax = integrator.opts.dtmax
 
-    dt = if alg.initdt === nothing
+    initdt = alg.initdt
+    dt = if initdt === nothing
         integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
         (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
-        alg.initdt
+        initdt
     end
 
     algebraic_vars = [all(iszero, x) for x in eachcol(M)]
@@ -169,22 +191,24 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     du = f(u0, p, t)
     resid = _vec(du)[algebraic_eqs]
 
-    integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
+    check_dae_tolerance(integrator, resid, integrator.opts.abstol, t, isinplace) && return
 
     if isdefined(integrator.cache, :nlsolver) && !isnothing(alg.nlsolve)
         # backward Euler
         nlsolver = integrator.cache.nlsolver
-        oldγ, oldc, oldmethod, olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
+        oldγ, oldc, oldmethod,
+        olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
         integrator.dt
         nlsolver.tmp .= integrator.uprev
         nlsolver.γ, nlsolver.c = 1, 1
         nlsolver.method = DIRK
         integrator.dt = dt
         z = nlsolve!(nlsolver, integrator, integrator.cache)
-        nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod,
+        nlsolver.γ, nlsolver.c, nlsolver.method,
+        integrator.dt = oldγ, oldc, oldmethod,
         olddt
         failed = nlsolvefail(nlsolver)
-        @.. broadcast=false integrator.u=integrator.uprev + z
+        @.. broadcast=false integrator.u=integrator.uprev+z
     else
         nlequation_oop = @closure (u, _) -> begin
             update_coefficients!(M, u, p, t)
@@ -224,7 +248,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::ShampineCollocationInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     u0 = integrator.u
@@ -235,11 +259,11 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     dt = t != 0 ? min(t / 1000, dtmax / 10) : dtmax / 10 # Haven't implemented norm reduction
 
     f(resid, integrator.du, u0, p, t)
-    integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
+    check_dae_tolerance(integrator, resid, integrator.opts.abstol, t, isinplace) && return
 
     # _du and _u should be non-dual since NonlinearSolve does not differentiate the solver
     # These non-dual values are thus used to make the caches
-    #_du = DiffEqBase.value.(du)
+    #_du = SciMLBase.value.(du)
     _u0 = DiffEqBase.value.(u0)
 
     # If not doing auto-diff of the solver, save an allocation
@@ -252,7 +276,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u0) !== typeof(_u0)
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
-        _tmp = PreallocationTools.dualcache(tmp, chunk)
+        _tmp = dualcache(tmp, chunk)
     else
         _tmp = tmp
     end
@@ -264,7 +288,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         else
             T = eltype(u)
         end
-        tmp = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
+        tmp = isAD ? get_tmp(_tmp, T) : _tmp
         #M * (u-u0)/dt - f(u,p,t)
         @. tmp = (u - _u0) / dt
         f(out, tmp, u, p, t)
@@ -301,7 +325,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::ShampineCollocationInit, isinplace::Val{false})
     @unpack p, t, f = integrator
     u0 = integrator.u
@@ -316,7 +340,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     nlequation = (u, _) -> nlequation_oop(u)
 
     resid = f(integrator.du, u0, p, t)
-    integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
+    check_dae_tolerance(integrator, resid, integrator.opts.abstol, t, isinplace) && return
 
     jac = if isnothing(f.jac)
         f.jac
@@ -365,8 +389,8 @@ function algebraic_jacobian(jac_prototype::T, algebraic_eqs,
     jac_prototype[algebraic_eqs, algebraic_vars]
 end
 
-function _initialize_dae!(integrator, prob::ODEProblem,
-        alg::BrownFullBasicInit, isinplace::Val{true})
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     u = integrator.u
     M = integrator.f.mass_matrix
@@ -381,7 +405,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
 
-    integrator.opts.internalnorm(tmp, t) <= alg.abstol && return
+    check_dae_tolerance(integrator, tmp, alg.abstol, t, isinplace) && return
     alg_u = @view u[algebraic_vars]
 
     # These non-dual values are thus used to make the caches
@@ -403,8 +427,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
             end
         end
         chunk = ForwardDiff.pickchunksize(csize)
-        _tmp = PreallocationTools.dualcache(tmp, chunk)
-        _du_tmp = PreallocationTools.dualcache(similar(tmp), chunk)
+        _tmp = dualcache(tmp, chunk)
+        _du_tmp = dualcache(similar(tmp), chunk)
     else
         _tmp, _du_tmp = tmp, similar(tmp)
     end
@@ -416,8 +440,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
         else
             T = eltype(x)
         end
-        uu = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
-        du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, T) : _du_tmp
+        uu = isAD ? get_tmp(_tmp, T) : _tmp
+        du_tmp = isAD ? get_tmp(_du_tmp, T) : _du_tmp
         copyto!(uu, _u)
         alg_uu = @view uu[algebraic_vars]
         alg_uu .= x
@@ -446,8 +470,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::ODEProblem,
-        alg::BrownFullBasicInit, isinplace::Val{false})
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{false})
     @unpack p, t, f = integrator
 
     u0 = integrator.u
@@ -460,12 +484,12 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     du = f(u0, p, t)
     resid = _vec(du)[algebraic_eqs]
 
-    integrator.opts.internalnorm(resid, t) <= alg.abstol && return
+    check_dae_tolerance(integrator, resid, alg.abstol, t, isinplace) && return
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
     if isAD
         chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
-        _tmp = PreallocationTools.dualcache(similar(u0), chunk)
+        _tmp = dualcache(similar(u0), chunk)
     else
         _tmp = similar(u0)
     end
@@ -478,7 +502,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 
     nlequation = @closure (x, _) -> begin
-        uu = isAD ? PreallocationTools.get_tmp(_tmp, x) : _tmp
+        uu = isAD ? get_tmp(_tmp, x) : _tmp
         copyto!(uu, integrator.u)
         alg_u = @view uu[algebraic_vars]
         alg_u .= x
@@ -514,8 +538,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
-        alg::BrownFullBasicInit, isinplace::Val{true})
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
     u = integrator.u
@@ -539,7 +563,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     normtmp = get_tmp_cache(integrator)[1]
     f(normtmp, du, u, p, t)
 
-    if integrator.opts.internalnorm(normtmp, t) <= alg.abstol
+    if check_dae_tolerance(integrator, normtmp, alg.abstol, t, isinplace)
         return
     elseif differential_vars === nothing
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
@@ -548,8 +572,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
-        _tmp = PreallocationTools.dualcache(tmp, chunk)
-        _du_tmp = PreallocationTools.dualcache(du_tmp, chunk)
+        _tmp = dualcache(tmp, chunk)
+        _du_tmp = dualcache(du_tmp, chunk)
     else
         _tmp, _du_tmp = tmp, du_tmp
     end
@@ -561,8 +585,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         else
             T = eltype(x)
         end
-        du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, T) : _du_tmp
-        uu = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
+        du_tmp = isAD ? get_tmp(_du_tmp, T) : _du_tmp
+        uu = isAD ? get_tmp(_tmp, T) : _tmp
 
         @. du_tmp = ifelse(differential_vars, x, _du)
         @. uu = ifelse(differential_vars, _u, x)
@@ -570,8 +594,9 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         f(out, du_tmp, uu, p, t)
     end
 
-    if alg.nlsolve !== nothing
-        nlsolve = alg.nlsolve
+    nlsolve_alg = alg.nlsolve
+    if nlsolve_alg !== nothing
+        nlsolve = nlsolve_alg
     else
         nlsolve = NewtonRaphson(autodiff = alg_autodiff(integrator.alg))
     end
@@ -595,12 +620,13 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     return
 end
 
-function _initialize_dae!(integrator, prob::DAEProblem,
-        alg::BrownFullBasicInit, isinplace::Val{false})
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
+        alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{false})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
 
-    if integrator.opts.internalnorm(f(integrator.du, integrator.u, p, t), t) <= alg.abstol
+    if check_dae_tolerance(
+        integrator, f(integrator.du, integrator.u, p, t), alg.abstol, t, isinplace)
         return
     elseif differential_vars === nothing
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")

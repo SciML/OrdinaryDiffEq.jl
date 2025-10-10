@@ -26,4 +26,14 @@ function EnzymeCore.EnzymeRules.inactive_noinl(
     true
 end
 
+function EnzymeCore.EnzymeRules.inactive_noinl(
+        ::typeof(OrdinaryDiffEqCore.final_progress), args...)
+    true
+end
+
+function EnzymeCore.EnzymeRules.inactive_noinl(
+        ::typeof(OrdinaryDiffEqCore.ode_determine_initdt), args...)
+    true
+end
+
 end

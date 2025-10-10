@@ -4,27 +4,70 @@ CollapsedDocStrings = true
 
 # OrdinaryDiffEqFIRK
 
-FIRK methods are fully implicit Runge-Kutta methods.
-They can have special properties, like be symplectic integrators, and can achieve higher order for the same number of stage in comparison to diagonal methods.
-However, the fully implicit methods have a larger implicit system to solve and thus have a higher linear algebra cost.
-This can be useful in some contexts to promote more parallelism,
-but also since the size of the factorization is cubic and the dominant cost for large equations,
-multiplying `O(n^3)` operations to `O((sn)^3)` can be a considerable cost increase for FIRK tableaus,
-where `s`, the number of stages, is particularly large.
-That said, the restriction to diagonal implicitness imposes order restrictions,
-such as SDIRK methods having a maximum order of 5, which can restrict the problems best suited for SDIRK methods.
+Fully Implicit Runge-Kutta (FIRK) methods for stiff differential equations requiring very high accuracy. These methods solve a fully coupled implicit system at each timestep, providing superior accuracy and stability compared to diagonally implicit methods.
 
-The most common FIRK method in production are those based on RadauIIA tableaus,
-which is an ODE representation of Gaussian collocation.
-Like Gaussian collocation, it achieves higher order convergence than its stages, namely order 2s+1 for s stages.
-Thus RadauIIA FIRK methods tend to be some of the highest order methods (excluding extrapolation methods).
-This means that high order RadauIIA methods are recommended in the same scenarios that high-order explicit Runge-Kutta methods are recommended simply with the restriction of being a stiff equation.
-Such scenarios include cases like very low tolerances: RadauIIA methods can be the best performing methods for scenarios where tolerances are `1e-9` and below.
-Additionally, for ODE systems of size less than 200, the increased size of the Jacobian is mitigated by improved multithreading,
-since BLAS implementations are only good at multithreading LU factorizations after a certain matrix size.
-For this reason, RadauIIA methods tend to be recommended in cases where ODE size is small to intermediate and very accurate solutions are required.
+!!! warning "Real Numbers Only"
+    
+    FIRK methods should only be used for problems defined on real numbers, not complex numbers.
 
-They should be tested against the parallel implicit extrapolation which also specialize in this regime.
+## Key Properties
+
+FIRK methods provide:
+
+  - **Highest-order implicit methods** (excluding extrapolation)
+  - **Superior accuracy** for very low tolerance requirements (≤ 1e-9)
+  - **A-stable and L-stable** behavior for stiff problems
+  - **Higher order per stage** than SDIRK methods (order 2s+1 for s stages)
+  - **Special geometric properties** (some methods are symplectic)
+  - **Excellent for small to medium systems** with high accuracy requirements
+
+## When to Use FIRK Methods
+
+These methods are recommended for:
+
+  - **Very low tolerance problems** (1e-9 and below) where accuracy is paramount
+  - **Small to medium stiff systems** (< 200 equations)
+  - **Problems requiring highest possible accuracy** for implicit methods
+  - **Stiff problems** where SDIRK order limitations (max order 5) are insufficient
+  - **Applications where computational cost is acceptable** for maximum accuracy
+
+## Mathematical Background
+
+RadauIIA methods are based on Gaussian collocation and achieve order 2s+1 for s stages, making them among the highest-order implicit methods available. They represent the ODE analog of Gaussian quadrature. For more details on recent advances in FIRK methods, see our paper: [High-Order Adaptive Time Stepping for the Incompressible Navier-Stokes Equations](https://arxiv.org/abs/2412.14362).
+
+## Computational Considerations
+
+### Advantages
+
+  - **Higher accuracy per stage** than diagonal methods
+  - **Better multithreading** for small systems due to larger linear algebra operations
+  - **No order restrictions** like SDIRK methods (which max out at order 5)
+
+### Disadvantages
+
+  - **Limited to real-valued problems** - cannot be used for complex number systems
+  - **Higher implementation complexity** compared to SDIRK methods
+
+## Solver Selection Guide
+
+### High accuracy requirements
+
+  - **`AdaptiveRadau`**: **Recommended** - adaptive order method that automatically selects optimal order
+  - **`RadauIIA5`**: 5th-order method, good balance of accuracy and efficiency
+  - **`RadauIIA9`**: 9th-order method for extremely high accuracy requirements
+  - **`RadauIIA3`**: 3rd-order method for moderate accuracy needs
+
+### System size considerations
+
+  - **Systems < 200**: FIRK methods are competitive due to better multithreading
+  - **Systems > 200**: Consider SDIRK or BDF methods instead
+
+## Performance Guidelines
+
+  - **Best for tolerances ≤ 1e-9** where high accuracy justifies the cost
+  - **Most efficient on small to medium systems** where linear algebra cost is manageable
+  - **Should be tested against** parallel implicit extrapolation methods which specialize in similar regimes
+  - **Compare with** high-order SDIRK methods for borderline cases
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
