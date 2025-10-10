@@ -15,10 +15,10 @@ for prob in (prob_ode_vanderpol_stiff,)
         J_op = MatrixOperator(zeros(N, N); update_func! = prob.f.jac)
         gamma_op = ScalarOperator(0.0;
             update_func = (old_val, u, p, t; dtgamma) -> dtgamma,
-            accepted_kwargs = (:dtgamma,))
+            accepted_kwargs = Val((:dtgamma,)))
         transform_op = ScalarOperator(0.0;
             update_func = (old_op, u, p, t; dtgamma) -> inv(dtgamma),
-            accepted_kwargs = (:dtgamma,))
+            accepted_kwargs = Val((:dtgamma,)))
         W_op = -(I - gamma_op * J_op) * transform_op
 
         # Make problem with custom MatrixOperator jac_prototype
