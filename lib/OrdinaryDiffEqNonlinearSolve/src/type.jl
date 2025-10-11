@@ -136,7 +136,7 @@ mutable struct NLNewtonCache{
     firststage::Bool
     firstcall::Bool
     W_γdt::tType
-    du1::rateType
+    du1::uType
     uf::ufType
     jac_config::jcType
     linsolve::lsType
