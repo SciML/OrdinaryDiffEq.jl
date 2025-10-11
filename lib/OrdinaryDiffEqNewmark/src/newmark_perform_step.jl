@@ -14,27 +14,26 @@ end
 
 @muladd function perform_step!(integrator, cache::NewmarkBetaCache, repeat_step = false)
     @unpack t, dt, f, p = integrator
-    @unpack upred, β, γ, nlsolver = cache
-
+    @unpack β, γ, nlcache = cache
+    @info dt, integrator.opts.adaptive
     M = f.mass_matrix
 
     # Evaluate predictor
     aₙ     = integrator.fsalfirst.x[1]
     vₙ, uₙ = integrator.uprev.x
 
-    # Manually unrolled to see what needs to go where
-    aₙ₊₁ = copy(aₙ) # acceleration term
-    atmp = copy(aₙ)
-
-    nlf = isinplace(f) ? newmark_discretized_residual! : newmark_discretized_residual
-    nlprob = NonlinearProblem{isinplace(f)}(nlf, aₙ, NewmarkDiscretizationCache(
+    evalcache = NewmarkDiscretizationCache(
         f, t, p,
         dt, β, γ,
         aₙ, vₙ, uₙ,
-        atmp, copy(uₙ), copy(vₙ),
-    ))
-    nlsol = solve(nlprob, nlsolver)
-    aₙ₊₁ = nlsol.u
+    )
+    SciMLBase.reinit!(nlcache, p=evalcache)
+    solve!(nlcache)
+    if nlcache.retcode != ReturnCode.Success
+        integrator.force_stepfail = true
+        return
+    end
+    aₙ₊₁ = nlcache.u
 
     u = ArrayPartition(
         vₙ + dt * ((1-γ)*aₙ + γ*aₙ₊₁),

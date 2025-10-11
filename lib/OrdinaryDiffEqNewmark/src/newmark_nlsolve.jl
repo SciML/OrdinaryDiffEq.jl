@@ -10,10 +10,10 @@
     aₙ
     vₙ
     uₙ
-    # Buffers (TODO the types of these must be compatible with the chosen AD mode)
-    atmp
-    vₙ₊₁
-    uₙ₊₁
+    # # Buffers (TODO the types of these must be compatible with the chosen AD mode)
+    # atmp
+    # vₙ₊₁
+    # uₙ₊₁
 end
 
 # This is derived from the idea stated in Nonlinear Finite Elements by Peter Wriggers, Ch 6.1.2 .
