@@ -1,30 +1,28 @@
 module OrdinaryDiffEqNewmark
 
-import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-                           initialize!, perform_step!, @unpack, unwrap_alg,
-                           calculate_residuals, alg_extrapolates,
-                           OrdinaryDiffEqAlgorithm,
+import OrdinaryDiffEqCore: initialize!, perform_step!, @unpack, unwrap_alg,
+                           alg_extrapolates, isadaptive, alg_order, 
+                           OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAlgorithm,
                            OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                            OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-                           OrdinaryDiffEqNewtonAlgorithm,
                            OrdinaryDiffEqImplicitSecondOrderAlgorithm,
                            OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm,
-                           DEFAULT_PRECS,
                            OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
                            alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                            constvalue, _unwrap_val, _ode_interpolant,
                            trivial_limiter!, _ode_interpolant!,
-                           isesdirk, issplit,
-                           ssp_coefficient, get_fsalfirstlast, generic_solver_docstring
+                           get_fsalfirstlast, generic_solver_docstring,
+                           OrdinaryDiffEqCore
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: DynamicalODEFunction
 using LinearAlgebra: mul!, I
-import OrdinaryDiffEqCore
 
-using SimpleNonlinearSolve
+using NonlinearSolveFirstOrder
 
 using Reexport
 @reexport using DiffEqBase
+
+using ConcreteStructs
 
 include("algorithms.jl")
 include("alg_utils.jl")

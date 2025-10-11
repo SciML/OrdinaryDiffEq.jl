@@ -31,10 +31,12 @@ end
 # Needed for remake
 function NewmarkBeta(; β=0.25, γ=0.5, chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
     concrete_jac = nothing, diff_type = Val{:forward},
-    nlsolve = SimpleNewtonRaphson(),
+    nlsolve = NewtonRaphson(),
     extrapolant = :linear)
     AD_choice, chunk_size, diff_type = OrdinaryDiffEqCore._process_AD_choice(autodiff, chunk_size, diff_type)
-    
+
+    @assert concrete_jac === nothing "Using a aser-defined Jacobian in Newmark-β is not yet possible."
+
     NewmarkBeta{
         typeof(β), typeof(nlsolve),
         _unwrap_val(chunk_size), typeof(AD_choice), autodiff, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(

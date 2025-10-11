@@ -25,32 +25,13 @@ end
     # Manually unrolled to see what needs to go where
     aₙ₊₁ = copy(aₙ) # acceleration term
     atmp = copy(aₙ)
-    # J = zeros(length(aₙ), length(aₙ))
-    # for i in 1:10 # = max iter - Newton loop for eq [1] above
-    #     uₙ₊₁ = uₙ + dt * vₙ + dt^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁)
-    #     vₙ₊₁ = vₙ + dt * ((1-γ)*aₙ + γ*aₙ₊₁)
-    #     # Compute residual
-    #     f.f1(atmp, vₙ₊₁, uₙ₊₁, p, t)
-    #     integrator.stats.nf += 1
-    #     residual = M*(aₙ₊₁ - atmp)
-    #     # Compute jacobian
-    #     f.jac(J, vₙ₊₁, uₙ₊₁, (γ*dt, β*dt*dt), p, t)
-    #     # Solve for increment
-    #     Δaₙ₊₁ = (M-J) \ residual
-    #     aₙ₊₁ .-= Δaₙ₊₁ # Looks like I messed up the signs somewhere :')
-    #     increment_norm = integrator.opts.internalnorm(Δaₙ₊₁, t)
-    #     increment_norm < 1e-4 && break
-    #     i == 10 && error("Newton diverged. ||Δaₙ₊₁||=$increment_norm")
-    # end
 
     nlf = isinplace(f) ? newmark_discretized_residual! : newmark_discretized_residual
-    nlprob = NonlinearProblem{isinplace(f)}(nlf, aₙ, NewmarkDiscretizationCache(;
-        f, dt, t, p,
-        vₙ, uₙ, aₙ,
-        uₙ₊₁ = copy(uₙ),
-        vₙ₊₁ = copy(vₙ),
-        β, γ,
-        atmp,
+    nlprob = NonlinearProblem{isinplace(f)}(nlf, aₙ, NewmarkDiscretizationCache(
+        f, t, p,
+        dt, β, γ,
+        aₙ, vₙ, uₙ,
+        atmp, copy(uₙ), copy(vₙ),
     ))
     nlsol = solve(nlprob, nlsolver)
     aₙ₊₁ = nlsol.u

@@ -1,5 +1,4 @@
-# @concrete mutable struct NewmarkDiscretizationCache
-Base.@kwdef mutable struct NewmarkDiscretizationCache
+@concrete mutable struct NewmarkDiscretizationCache
     # Eval
     f
     t
@@ -11,7 +10,7 @@ Base.@kwdef mutable struct NewmarkDiscretizationCache
     aₙ
     vₙ
     uₙ
-    # Buffers
+    # Buffers (TODO the types of these must be compatible with the chosen AD mode)
     atmp
     vₙ₊₁
     uₙ₊₁
@@ -39,7 +38,7 @@ end
 #   M - (Δtₙ²β  ∂fᵤ +  Δtₙγ  ∂fᵥ) = 0
 
 # Inplace variant
-function newmark_discretized_residual!(residual, aₙ₊₁, p_newmark::NewmarkDiscretizationCache)
+@muladd function newmark_discretized_residual!(residual, aₙ₊₁, p_newmark::NewmarkDiscretizationCache)
     (; f, dt, t, p) = p_newmark
     # (; γ, β, aₙ, vₙ, uₙ, uₙ₊₁, vₙ₊₁, atmp) = p_newmark
     (; γ, β, aₙ, vₙ, uₙ) = p_newmark
@@ -48,6 +47,7 @@ function newmark_discretized_residual!(residual, aₙ₊₁, p_newmark::NewmarkD
     uₙ₊₁ = uₙ + dt * vₙ + dt^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁)
     vₙ₊₁ = vₙ + dt * ((1-γ)*aₙ + γ*aₙ₊₁)
 
+    # This temporary variable is also not compatible with AD.
     atmp = copy(residual)
     f.f1(atmp, vₙ₊₁, uₙ₊₁, p, t)
     M = f.mass_matrix
@@ -59,7 +59,7 @@ function newmark_discretized_residual!(residual, aₙ₊₁, p_newmark::NewmarkD
 end
 
 # Out of place variant
-function newmark_discretized_residual(aₙ₊₁, p_newmark::NewmarkDiscretizationCache)
+@muladd function newmark_discretized_residual(aₙ₊₁, p_newmark::NewmarkDiscretizationCache)
     (; f, dt, t, p) = p_newmark
     # (; γ, β, aₙ, vₙ, uₙ, uₙ₊₁, vₙ₊₁, atmp) = p_newmark
     (; γ, β, aₙ, vₙ, uₙ) = p_newmark
