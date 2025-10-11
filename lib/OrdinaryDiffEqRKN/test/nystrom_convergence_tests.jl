@@ -15,8 +15,6 @@ end
 ff_harmonic = DynamicalODEFunction(f1_harmonic, f2_harmonic; analytic = harmonic_analytic)
 prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
 
-
-
 # Methods need BigFloat to test convergence rate
 dts = big"1.0" ./ big"2.0" .^ (5:-1:1)
 prob_big = DynamicalODEProblem(ff_harmonic, [big"1.0", big"1.0"],
