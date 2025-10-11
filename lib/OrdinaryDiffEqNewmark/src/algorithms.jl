@@ -29,21 +29,23 @@ function NewmarkBeta(β, γ; kwargs...)
 end
 
 # Needed for remake
-function NewmarkBeta(; β=0.25, γ=0.5, chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
-    concrete_jac = nothing, diff_type = Val{:forward},
-    nlsolve = NewtonRaphson(),
-    extrapolant = :linear)
-    AD_choice, chunk_size, diff_type = OrdinaryDiffEqCore._process_AD_choice(autodiff, chunk_size, diff_type)
+function NewmarkBeta(; β = 0.25, γ = 0.5, chunk_size = Val{0}(),
+        autodiff = Val{true}(), standardtag = Val{true}(),
+        concrete_jac = nothing, diff_type = Val{:forward},
+        nlsolve = NewtonRaphson(),
+        extrapolant = :linear)
+    AD_choice, chunk_size, diff_type = OrdinaryDiffEqCore._process_AD_choice(
+        autodiff, chunk_size, diff_type)
 
-    @assert concrete_jac === nothing "Using a aser-defined Jacobian in Newmark-β is not yet possible."
-    @assert 0.0 ≤ β ≤ 0.5 "Beta outside admissible range [0, 0.5]"
-    @assert 0.0 ≤ γ ≤ 1.0 "Gamma outside admissible range [0, 1.0]"
+    @assert concrete_jac===nothing "Using a aser-defined Jacobian in Newmark-β is not yet possible."
+    @assert 0.0≤β≤0.5 "Beta outside admissible range [0, 0.5]"
+    @assert 0.0≤γ≤1.0 "Gamma outside admissible range [0, 1.0]"
 
     NewmarkBeta{
         typeof(β), typeof(nlsolve),
         _unwrap_val(chunk_size), typeof(AD_choice), autodiff, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
         β, γ,
         nlsolve,
-        AD_choice,
+        AD_choice
     )
 end
