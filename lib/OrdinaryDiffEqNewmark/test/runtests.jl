@@ -21,12 +21,27 @@ using OrdinaryDiffEqNewmark, Test, RecursiveArrayTools, DiffEqDevTools, Statisti
         ArrayPartition(-u0 * sin(x) + v0 * cos(x), u0 * cos(x) + v0 * sin(x))
     end
 
-    ff_harmonic! = DynamicalODEFunction(f1_harmonic!, f2_harmonic!; jac=harmonic_jac, analytic = harmonic_analytic)
+    ff_harmonic! = DynamicalODEFunction(f1_harmonic!, f2_harmonic!; analytic = harmonic_analytic)
     prob = DynamicalODEProblem(ff_harmonic!, v0, u0, (0.0, 5.0))
     dts = 1.0 ./ 2.0 .^ (5:-1:0)
 
     sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
     @test sim.𝒪est[:l2]≈2 rtol=1e-1
+
+
+    # function f1_harmonic(v, u, p, t)
+    #     -u
+    # end
+    # function f2_harmonic(v, u, p, t)
+    #     v
+    # end
+
+    # ff_harmonic = DynamicalODEFunction(f1_harmonic, f2_harmonic; analytic = harmonic_analytic)
+    # prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
+    # dts = 1.0 ./ 2.0 .^ (5:-1:0)
+
+    # sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
+    # @test sim.𝒪est[:l2]≈2 rtol=1e-1
 end
 
 # Newmark methods with damped oscillator
@@ -53,7 +68,6 @@ end
     ff_harmonic_damped! = DynamicalODEFunction(
         damped_oscillator!,
         (du, v, u, p, t) -> du = v;
-        jac=damped_jac,
         analytic = damped_oscillator_analytic
     )
 
@@ -63,9 +77,19 @@ end
     sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
     @test sim.𝒪est[:l2]≈2 rtol=1e-1
 
-    # TODO
+
     # function damped_oscillator(v, u, p, t)
-    #     return -u - 0.5 * v
+    #     -u - 0.5 * v
     # end
-    # ...
+    # ff_harmonic_damped = DynamicalODEFunction(
+    #     damped_oscillator,
+    #     (v, u, p, t) -> v;
+    #     analytic = damped_oscillator_analytic
+    # )
+
+    # prob = DynamicalODEProblem(ff_harmonic_damped, [0.0], [1.0], (0.0, 10.0))
+    # dts = 1.0 ./ 2.0 .^ (5:-1:0)
+
+    # sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
+    # @test sim.𝒪est[:l2]≈2 rtol=1e-1
 end

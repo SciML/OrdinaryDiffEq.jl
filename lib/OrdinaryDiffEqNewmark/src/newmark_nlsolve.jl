@@ -44,6 +44,7 @@ function newmark_discretized_residual!(residual, aₙ₊₁, p_newmark::NewmarkD
     # (; γ, β, aₙ, vₙ, uₙ, uₙ₊₁, vₙ₊₁, atmp) = p_newmark
     (; γ, β, aₙ, vₙ, uₙ) = p_newmark
 
+    # TODO these allocate. Add a buffer which is compatible with the used AD.
     uₙ₊₁ = uₙ + dt * vₙ + dt^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁)
     vₙ₊₁ = vₙ + dt * ((1-γ)*aₙ + γ*aₙ₊₁)
 
@@ -60,10 +61,11 @@ end
 # Out of place variant
 function newmark_discretized_residual(aₙ₊₁, p_newmark::NewmarkDiscretizationCache)
     (; f, dt, t, p) = p_newmark
-    (; γ, β, aₙ, vₙ, uₙ, uₙ₊₁, vₙ₊₁) = p_newmark
+    # (; γ, β, aₙ, vₙ, uₙ, uₙ₊₁, vₙ₊₁, atmp) = p_newmark
+    (; γ, β, aₙ, vₙ, uₙ) = p_newmark
 
-    @.. uₙ₊₁ = uₙ + dt * vₙ + dt^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁)
-    @.. vₙ₊₁ = vₙ + dt * ((1-γ)*aₙ + γ*aₙ₊₁)
+    uₙ₊₁ = uₙ + dt * vₙ + dt^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁)
+    vₙ₊₁ = vₙ + dt * ((1-γ)*aₙ + γ*aₙ₊₁)
 
     atmp = f.f1(vₙ₊₁, uₙ₊₁, p, t)
     M = f.mass_matrix

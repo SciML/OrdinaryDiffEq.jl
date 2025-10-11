@@ -1,6 +1,10 @@
 function initialize!(integrator, cache::NewmarkBetaCache)
     duprev, uprev = integrator.uprev.x
-    integrator.f(cache.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    if isinplace(integrator.f)
+        integrator.f(cache.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    else
+        cache.fsalfirst .= integrator.f(integrator.uprev, integrator.p, integrator.t)
+    end
     integrator.stats.nf += 1
     integrator.fsalfirst = cache.fsalfirst
     integrator.fsallast  = cache.fsalfirst
@@ -11,7 +15,6 @@ end
 @muladd function perform_step!(integrator, cache::NewmarkBetaCache, repeat_step = false)
     @unpack t, dt, f, p = integrator
     @unpack upred, β, γ, nlsolver = cache
-
 
     M = f.mass_matrix
 
@@ -57,7 +60,11 @@ end
         uₙ + dt * vₙ + dt^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁),
     )
 
-    f(integrator.fsallast, u, p, t + dt)
+    if isinplace(f)
+        f(integrator.fsallast, u, p, t + dt)
+    else
+        integrator.fsallast .= f(u, p, t + dt)
+    end
     integrator.stats.nf += 1
     integrator.u = u
 
