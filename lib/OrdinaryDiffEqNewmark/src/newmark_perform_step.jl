@@ -41,7 +41,7 @@ end
     # end
 
     nlf = isinplace(f) ? newmark_discretized_residual! : newmark_discretized_residual
-    nlprob = NonlinearProblem{isinplace(f)}(nlf, uprev, NewmarkDiscretizationCache(;
+    nlprob = NonlinearProblem{isinplace(f)}(nlf, aₙ, NewmarkDiscretizationCache(;
         f, dt, t, p,
         vₙ, uₙ, aₙ,
         uₙ₊₁ = copy(uₙ),
@@ -49,7 +49,7 @@ end
         β, γ,
         atmp,
     ))
-    nlsol = solve(nlprob, SimpleNewtonRaphson())
+    nlsol = solve(nlprob, nlsolver)
     aₙ₊₁ = nlsol.u
 
     u = ArrayPartition(

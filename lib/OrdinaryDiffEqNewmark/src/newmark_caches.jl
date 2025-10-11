@@ -24,8 +24,9 @@ function alg_cache(alg::NewmarkBeta, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     c = 1.0
     γ̂ = NaN # FIXME
-    nlsolver = build_nlsolver(alg, u.x[1], uprev.x[1], p, t, dt, f.f1, rate_prototype.x[1], uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ̂, c, Val(true))
+    # nlsolver = build_nlsolver(alg, u.x[1], uprev.x[1], p, t, dt, f.f1, rate_prototype.x[1], uEltypeNoUnits,
+    #     uBottomEltypeNoUnits, tTypeNoUnits, γ̂, c, Val(true))
+    nlsolver = alg.nlsolve
 
     tmp = zero(u)
     NewmarkBetaCache(u, uprev, upred, fsalfirst, β, γ, nlsolver, tmp)

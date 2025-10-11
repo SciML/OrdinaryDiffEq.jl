@@ -41,14 +41,18 @@ end
 # Inplace variant
 function newmark_discretized_residual!(residual, aₙ₊₁, p_newmark::NewmarkDiscretizationCache)
     (; f, dt, t, p) = p_newmark
-    (; γ, β, aₙ, vₙ, uₙ, uₙ₊₁, vₙ₊₁, atmp) = p_newmark
+    # (; γ, β, aₙ, vₙ, uₙ, uₙ₊₁, vₙ₊₁, atmp) = p_newmark
+    (; γ, β, aₙ, vₙ, uₙ) = p_newmark
 
-    @.. uₙ₊₁ = uₙ + dt * vₙ + dt^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁)
-    @.. vₙ₊₁ = vₙ + dt * ((1-γ)*aₙ + γ*aₙ₊₁)
+    uₙ₊₁ = uₙ + dt * vₙ + dt^2/2 * ((1-2β)*aₙ + 2β*aₙ₊₁)
+    vₙ₊₁ = vₙ + dt * ((1-γ)*aₙ + γ*aₙ₊₁)
 
+    atmp = copy(residual)
     f.f1(atmp, vₙ₊₁, uₙ₊₁, p, t)
     M = f.mass_matrix
-    @.. residual = M*aₙ₊₁ - atmp
+
+    mul!(residual, M, aₙ₊₁)
+    residual .-= atmp
 
     return nothing
 end
