@@ -29,19 +29,19 @@ using OrdinaryDiffEqNewmark, Test, RecursiveArrayTools, DiffEqDevTools, Statisti
     @test sim.𝒪est[:l2]≈2 rtol=1e-1
 
 
-    # function f1_harmonic(v, u, p, t)
-    #     -u
-    # end
-    # function f2_harmonic(v, u, p, t)
-    #     v
-    # end
+    function f1_harmonic(v, u, p, t)
+        -u
+    end
+    function f2_harmonic(v, u, p, t)
+        v
+    end
 
-    # ff_harmonic = DynamicalODEFunction(f1_harmonic, f2_harmonic; analytic = harmonic_analytic)
-    # prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
-    # dts = 1.0 ./ 2.0 .^ (5:-1:0)
+    ff_harmonic = DynamicalODEFunction(f1_harmonic, f2_harmonic; analytic = harmonic_analytic)
+    prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
+    dts = 1.0 ./ 2.0 .^ (5:-1:0)
 
-    # sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
-    # @test sim.𝒪est[:l2]≈2 rtol=1e-1
+    sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
+    @test sim.𝒪est[:l2]≈2 rtol=1e-1
 end
 
 # Newmark methods with damped oscillator
@@ -78,18 +78,18 @@ end
     @test sim.𝒪est[:l2]≈2 rtol=1e-1
 
 
-    # function damped_oscillator(v, u, p, t)
-    #     -u - 0.5 * v
-    # end
-    # ff_harmonic_damped = DynamicalODEFunction(
-    #     damped_oscillator,
-    #     (v, u, p, t) -> v;
-    #     analytic = damped_oscillator_analytic
-    # )
+    function damped_oscillator(v, u, p, t)
+        -u - 0.5 * v
+    end
+    ff_harmonic_damped = DynamicalODEFunction(
+        damped_oscillator,
+        (v, u, p, t) -> v;
+        analytic = damped_oscillator_analytic
+    )
 
-    # prob = DynamicalODEProblem(ff_harmonic_damped, [0.0], [1.0], (0.0, 10.0))
-    # dts = 1.0 ./ 2.0 .^ (5:-1:0)
+    prob = DynamicalODEProblem(ff_harmonic_damped, [0.0], [1.0], (0.0, 10.0))
+    dts = 1.0 ./ 2.0 .^ (5:-1:0)
 
-    # sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
-    # @test sim.𝒪est[:l2]≈2 rtol=1e-1
+    sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
+    @test sim.𝒪est[:l2]≈2 rtol=1e-1
 end
