@@ -23,7 +23,7 @@ end
         dt, β, γ,
         aₙ, vₙ, uₙ
     )
-    SciMLBase.reinit!(nlcache, p = evalcache)
+    SciMLBase.reinit!(nlcache, aₙ, p = evalcache)
     solve!(nlcache)
     if nlcache.retcode != ReturnCode.Success
         integrator.force_stepfail = true

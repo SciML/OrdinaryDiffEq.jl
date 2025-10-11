@@ -32,8 +32,7 @@ end
 function NewmarkBeta(; β = 0.25, γ = 0.5, chunk_size = Val{0}(),
         autodiff = Val{true}(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
-        nlsolve = NewtonRaphson(),
-        extrapolant = :linear)
+        nlsolve = NewtonRaphson())
     AD_choice, chunk_size, diff_type = OrdinaryDiffEqCore._process_AD_choice(
         autodiff, chunk_size, diff_type)
 

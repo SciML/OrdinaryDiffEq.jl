@@ -1,4 +1,4 @@
-alg_extrapolates(alg::NewmarkBeta) = true
+alg_extrapolates(alg::NewmarkBeta) = false
 
 alg_order(alg::NewmarkBeta) = alg.γ ≈ 1 / 2 ? 2 : 1
 
