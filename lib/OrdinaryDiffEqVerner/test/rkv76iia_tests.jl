@@ -3,131 +3,159 @@ using LinearAlgebra
 using OrdinaryDiffEqSSPRK, DiffEqDevTools, Test, Random
 import OrdinaryDiffEqLowStorageRK
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear
+using Plots
 
-testTol=0.3
+testTol = 0.3
+println(BigFloat(exp(-64.0)))
+function print_solution_dts(prob, algorithms; abstol=1e-12, reltol=1e-12, show_solution=true, kwargs...)
+    println("\n" * "="^70)
+    println("Comparing dt usage across algorithms")
+    println("="^70)
 
-# Simple convergence test for RKV76IIa
-@testset "RKV76IIa Convergence Tests" begin
-    # Test problem: u' = cos(t), y(0) = 0
-    # Exact solution: u(t) = sin(t)
-    f = (u, p, t) -> cos(t)
-    prob_ode_sin = ODEProblem(ODEFunction(f; analytic = (u0, p, t) -> sin(t)), 0.0, (0.0, 1.0))
+    # println("\nProblem Details:")
+    # println("  Time span: ", prob.tspan)
+    # println("  Initial condition u0: ", prob.u0)
+    # println("  Problem type: ", typeof(prob.f).name.name)
 
-    f = (du, u, p, t) -> du[1] = cos(t)
-    prob_ode_sin_inplace = ODEProblem(ODEFunction(f; analytic = (u0, p, t) -> [sin(t)]), [0.0],
-        (0.0, 1.0))
+    for alg in algorithms
+        alg_name = string(typeof(alg).name.name)
 
-    # Test problem: u' = sin(u), y(0) = 1
-    # Exact solution: u(t) = 2 * arccot(e^(-t) * cot(0.5))
-    f = (u, p, t) -> sin(u)
-    prob_ode_nonlinear = ODEProblem(
-        ODEFunction(f;
-            analytic = (u0, p, t) -> 2 * acot(exp(-t) *
-                                            cot(0.5))), 1.0,
-        (0.0, 0.5))
+        try
+            sol = solve(prob, alg; abstol=abstol, reltol=reltol, kwargs...)
+            final_dt = sol.t[end] - sol.t[end-1]
+            t_end = sol.t[end]
 
-    f = (du, u, p, t) -> du[1] = sin(u[1])
-    prob_ode_nonlinear_inplace = ODEProblem(
-        ODEFunction(f;
-            analytic = (u0, p, t) -> [
-                2 * acot(exp(-t) * cot(0.5))
-            ]),
-        [1.0], (0.0, 0.5))
-
-    test_problems_only_time = [prob_ode_sin, prob_ode_sin_inplace]
-    # test_problems_linear = [prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear]
-    # test_problems_nonlinear = [prob_ode_nonlinear, prob_ode_nonlinear_inplace]
-
-    function f!(du, u, p, t)
-        du[1] = -u[1]
+            println("\nAlgorithm: $alg_name")
+            if show_solution
+                println("  Solution at t=$t_end: ", sol[end])
+            end
+            println("  Final dt: ", final_dt)
+        catch e
+            println("\nAlgorithm: $alg_name")
+            println("  ERROR: ", e)
+        end
     end
 
-    function f(u, p, t)
-        -u
-    end
-
-    # Out-of-place test
-    prob_oop = ODEProblem(f, 1.0, (0.0, 1.0))
-    sol_oop = solve(prob_oop, RKV76IIa(), abstol=1e-12, reltol=1e-12)
-    @test sol_oop[end] ≈ exp(-1.0) atol=1e-10
-    println("Out-of-place solution at t=1: ", sol_oop[end])
-    println("Expected value: ", exp(-1.0))
-
-    dts = 1 .// 2 .^ (2:6)  # [1/16, 1/32, 1/64, 1/128, 1/256]
-    # Tried other ranges of dts
-    # dts = (1/2) .^ (5:9)
-    # dts = 1 .// 2 .^ (4:8)
-
-    errors = zeros(length(dts))
-    println("Testing order 7:")
-    for (i, dt) in enumerate(dts)
-        sol = solve(prob_oop, RKV76IIa(), dt=dt, adaptive=false)
-        errors[i] = abs(sol[end] - exp(-1.0))
-        println("dt = ", dt, ", error = ", errors[i])
-    end
-
-    # Check convergence order, this is failing for now
-    for i in 2:length(errors)
-        order = log(errors[i-1]/errors[i]) / log(2)
-        println("Order between dt=", dts[i-1], " and dt=", dts[i], ": ", order)
-        @test order ≈ 7 atol=testTol  # Allow some tolerance
-
-    end
-
-    # Additional tests disabled for now
-    # println("RKV76IIa")
-    # alg = RKV76IIa()
-    # for prob in test_problems_only_time
-    #     sim = test_convergence(dts, prob, alg)
-    #     @test sim.𝒪est[:final]≈OrdinaryDiffEqVerner.alg_order(alg) atol=testTol
-    # end
-    # for prob in test_problems_linear
-    #     sim = test_convergence(dts, prob, alg)
-    #     @test sim.𝒪est[:final]≈OrdinaryDiffEqVerner.alg_order(alg) atol=testTol
-    # end
-    # for prob in test_problems_nonlinear
-    #     sim = test_convergence(dts, prob, alg)
-    #     @test sim.𝒪est[:final]≈OrdinaryDiffEqVerner.alg_order(alg) atol=testTol
-    # end
+    println("\n" * "="^70)
 end
 
-# # Test with a system of ODEs
-# @testset "RKV76IIa System Test" begin
-#     # Lorenz system
-#     function lorenz!(du, u, p, t)
-#         σ, ρ, β = p
-#         du[1] = σ * (u[2] - u[1])
-#         du[2] = u[1] * (ρ - u[3]) - u[2]
-#         du[3] = u[1] * u[2] - β * u[3]
-#     end
+# ODE function definitions
+f_1 = (u, p, t) -> cos(t)
+prob_ode_sin = ODEProblem(ODEFunction(f_1; analytic = (u0, p, t) -> sin(t)), 0.0, (0.0, 1.0))
 
-#     u0 = [1.0, 0.0, 0.0]
-#     p = [10.0, 28.0, 8/3]
-#     tspan = (0.0, 0.1)
-#     prob = ODEProblem(lorenz!, u0, tspan, p)
+f_1 = (du, u, p, t) -> du[1] = cos(t)
+prob_ode_sin_inplace = ODEProblem(ODEFunction(f_1; analytic = (u0, p, t) -> [sin(t)]), [0.0],
+    (0.0, 1.0))
 
-#     sol = solve(prob, RKV76IIa(), abstol=1e-10, reltol=1e-10)
-#     @test length(sol.t) > 2  # Should have taken multiple steps
-#     @test all(isfinite.(sol[end]))  # Solution should be finite
-# end
+f_2 = (u, p, t) -> sin(u)
+prob_ode_nonlinear = ODEProblem(
+    ODEFunction(f_2;
+        analytic = (u0, p, t) -> 2 * acot(exp(-t) *
+                                          cot(0.5))), 1.0,
+    (0.0, 0.5))
 
-# # Test lazy vs non-lazy
-# @testset "RKV76IIa Lazy Tests" begin
-#     prob = ODEProblem((u,p,t) -> -u, 1.0, (0.0, 1.0))
+f_2 = (du, u, p, t) -> du[1] = sin(u[1])
+prob_ode_nonlinear_inplace = ODEProblem(
+    ODEFunction(f_2;
+        analytic = (u0, p, t) -> [
+            2 * acot(exp(-t) * cot(0.5))
+        ]),
+    [1.0], (0.0, 0.5))
 
-#     sol_lazy = solve(prob, RKV76IIa(lazy=true), abstol=1e-10, reltol=1e-10)
-#     sol_not_lazy = solve(prob, RKV76IIa(lazy=false), abstol=1e-10, reltol=1e-10)
+f_ssp = (u, p, t) -> begin
+    sin(10t) * u * (1 - u)
+end
+test_problem_ssp = ODEProblem(f_ssp, 0.1, (0.0, 8.0))
+test_problem_ssp_long = ODEProblem(f_ssp, 0.1, (0.0, 1.e3))
 
-#     # Both should give the same result
-#     @test sol_lazy[end] ≈ sol_not_lazy[end] atol=1e-12
-# end
-# # In-place test
-    # prob_ip = ODEProblem(f!, [1.0], (0.0, 1.0))
-    # sol_ip = solve(prob_ip, RKV76IIa(), abstol=1e-12, reltol=1e-12)
-    # @test sol_ip[end][1] ≈ exp(-1.0) atol=1e-10
-    # println("In-place solution at t=1: ", sol_ip[end][1])
-    # println("Expected value: ", exp(-1.0))
+function f!(du, u, p, t)
+    du[1] = -u[1]
+end
 
-    # Test that it's order 7
-    # dts = (1/2) .^ (9:5)
-    # dts = 1 .// 2 .^ (8:-1:4)
+function f(u, p, t)
+    -u
+end
+
+test_problems_only_time = [prob_ode_sin, prob_ode_sin_inplace]
+
+
+t_end=1.0
+alg = OrdinaryDiffEqSSPRK.SSPRK22()
+t_end = 64.0
+
+setprecision(256)
+prob_oop = ODEProblem(f, 1.0, (0.0, t_end))
+println("**** exp(-64) ****")
+algorithms = [RKV76IIa(), Vern7()]
+print_solution_dts(prob_oop, algorithms; abstol=1e-40, reltol=1e-40)
+print_solution_dts(prob_oop, [alg]; dt=OrdinaryDiffEqSSPRK.ssp_coefficient(alg), dense=false,abstol=1e-40, reltol=1e-40)
+println("Expected value: ", exp(BigFloat(-t_end)))
+println("**** exp(-64) ****")
+
+
+println("***************** sin in and out of place *********************")
+algorithms = [RKV76IIa(), Vern7()]
+for prob in test_problems_only_time
+    print_solution_dts(prob, algorithms; abstol=1e-12, reltol=1e-12)
+    print_solution_dts(prob, [alg]; dt=OrdinaryDiffEqSSPRK.ssp_coefficient(alg), dense=false)
+end
+println("************** sin in and out of place ************************")
+
+
+test_problems_nonlinear = [prob_ode_nonlinear, prob_ode_nonlinear_inplace]
+t_end = 1.e3
+
+sol_oop = solve(test_problem_ssp_long, RKV76IIa(), abstol=1e-12, reltol=1e-12)
+println("***************** test_problem_ssp_long *********************")
+algorithms = [RKV76IIa(), Vern7(), alg]
+print_solution_dts(test_problem_ssp_long, algorithms; abstol=1e-12, reltol=1e-12)
+print_solution_dts(test_problem_ssp_long, [alg]; dt=OrdinaryDiffEqSSPRK.ssp_coefficient(alg), dense=false)
+println("************** test_problem_ssp_long ************************")
+
+t_end = 64.0
+
+setprecision(256)
+prob_oop = ODEProblem(f, 1.0, (0.0, t_end))
+println("**** exp(-64) ****")
+algorithms = [RKV76IIa(), Vern7()]
+print_solution_dts(prob_oop, algorithms; abstol=1e-40, reltol=1e-40)
+print_solution_dts(prob_oop, [alg]; dt=OrdinaryDiffEqSSPRK.ssp_coefficient(alg), dense=false)
+println("Expected value: ", exp(BigFloat(-t_end)))
+println("**** exp(-64) ****")
+
+
+println("*** Testing Convergence of diff algorithm *** ")
+
+#alg=Vern7()
+alg=RKV76IIa()
+# dts = BigFloat(1) ./ 2 .^ (1:6)
+dts = [8, 6, 4, 2, 1, 0.5, 0.25, 0.125]
+
+errors = zeros(BigFloat, length(dts))
+println("Testing order 7 for RKV76IIa()")
+for (i, dt) in enumerate(dts)
+    sol = solve(prob_oop, alg, dt=dt, adaptive=false)
+    # Use BigFloat for error calculation
+    errors[i] = abs(BigFloat(sol[end]) - exp(BigFloat(-t_end)))
+    println("Computed Solution ", sol[end], " for dt = ", dt, ", error = ", errors[i])
+end
+
+for i in 2:length(errors)
+    order = log(BigFloat(errors[i-1])/BigFloat(errors[i])) / log(2)
+    println("Order between dt=", dts[i-1], " and dt=", dts[i], ": ", order)
+end
+
+plot(
+    dts, errors;
+    xscale = :log10, yscale = :log10,
+    marker = :o, linewidth = 2,
+    xlabel = "dt", ylabel = "Error",
+    title = "Convergence of RKV76IIa",
+    label = "Observed Error"
+)
+# Make reference line pass through the 0.125 dt point
+ref_idx = findfirst(x -> x == 0.125, dts)
+ref_errors = errors[ref_idx] * (BigFloat.(dts) ./ BigFloat(0.125)).^7
+plot!(float.(dts), ref_errors; linestyle = :dash, label = "Order 7 Reference")
+display(current())
+savefig("convergence_rkv76iia.png")
