@@ -129,7 +129,7 @@ println("*** Testing Convergence of diff algorithm *** ")
 #alg=Vern7()
 alg=RKV76IIa()
 # dts = BigFloat(1) ./ 2 .^ (1:6)
-dts = [8, 6, 4, 2, 1, 0.5, 0.25, 0.125]
+dts = [2, 1, 0.5, 0.25, 0.125]
 
 errors = zeros(BigFloat, length(dts))
 println("Testing order 7 for RKV76IIa()")
@@ -151,11 +151,20 @@ plot(
     marker = :o, linewidth = 2,
     xlabel = "dt", ylabel = "Error",
     title = "Convergence of RKV76IIa",
-    label = "Observed Error"
+    label = "Observed Error",
+    legend = :topleft,         # <-- Add this line
 )
+
 # Make reference line pass through the 0.125 dt point
 ref_idx = findfirst(x -> x == 0.125, dts)
 ref_errors = errors[ref_idx] * (BigFloat.(dts) ./ BigFloat(0.125)).^7
-plot!(float.(dts), ref_errors; linestyle = :dash, label = "Order 7 Reference")
+
+plot!(
+    float.(dts), ref_errors;
+    linestyle = :dash,
+    label = "Order 7 Reference",
+    legend = :topleft           # <-- Also add here (to ensure consistency)
+)
+
 display(current())
 savefig("convergence_rkv76iia.png")
