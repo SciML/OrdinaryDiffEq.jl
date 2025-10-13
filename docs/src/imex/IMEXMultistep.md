@@ -113,8 +113,8 @@ These methods are standard in:
   - **Astrophysical simulations** for multiphysics problems
 
 ```@eval
-first_steps = evalfile("./common_first_steps.jl")
-first_steps("OrdinaryDiffEqIMEXMultistep", "CNAB2")
+imex_first_steps = evalfile("./common_imex_first_steps.jl")
+imex_first_steps("OrdinaryDiffEqIMEXMultistep", "CNAB2")
 ```
 
 ## Full list of solvers

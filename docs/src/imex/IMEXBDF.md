@@ -97,8 +97,8 @@ Consider these alternatives:
   - **Linear algebra efficiency** in the implicit component affects overall performance
 
 ```@eval
-first_steps = evalfile("./common_first_steps.jl")
-first_steps("OrdinaryDiffEqBDF", "SBDF2")
+imex_first_steps = evalfile("./common_imex_first_steps.jl")
+imex_first_steps("OrdinaryDiffEqBDF", "SBDF2")
 ```
 
 ## Full list of solvers
