@@ -47,15 +47,5 @@ function imex_first_steps(name, solver)
     sol = solve(prob, $solver(), dt = 0.01)
     ```
 
-    For simpler problems, you can use scalar splitting. Here's an example with exponential growth:
-
-    ```julia
-    # Split du/dt = 3u into du/dt = u (implicit) + 2u (explicit)
-    f1 = (u, p, t) -> u      # Stiff part (implicit)
-    f2 = (u, p, t) -> 2u     # Non-stiff part (explicit)
-    u0 = 1.0
-    tspan = (0.0, 1.0)
-    prob = SplitODEProblem(f1, f2, u0, tspan)
-    sol = solve(prob, $solver(), dt = 0.01)
     ```""")
 end
