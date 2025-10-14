@@ -10,11 +10,10 @@ struct IDSolve{NLS} <:
     controller::Symbol
 end
 
-function IDSolve(; 
-        nlsolve = NewtonRaphson(), 
+function IDSolve(;
+        nlsolve = NewtonRaphson(),
         extrapolant = :constant,
-        controller = :PI,
-    )
-
+        controller = :PI
+)
     IDSolve{typeof(nlsolve)}(nlsolve, extrapolant, controller)
 end
