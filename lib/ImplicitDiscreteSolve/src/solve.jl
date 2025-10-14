@@ -8,10 +8,10 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     else # :constant
         cache.z .= integrator.u
     end
-    state = ImplicitDiscreteState(cache.z, p, t+dt)
+    state = ImplicitDiscreteState(cache.z, p, t + dt)
 
     # nonlinear solve step
-    SciMLBase.reinit!(nlcache, p=state)
+    SciMLBase.reinit!(nlcache, p = state)
 
     # solve!(nlcache)
     # The solve here is simply unrolled by hand to query the convergence rate estimates "manually" for now
@@ -27,7 +27,7 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
         residualnorm = NonlinearSolveBase.L2_NORM(nlcache.fu)
         if nlcache.nsteps > 1
             # Θk = min(residualnorm/residualnormprev, incrementnorm/incrementnormprev)
-            Θk = residualnorm/residualnormprev
+            Θk = residualnorm / residualnormprev
             if residualnormprev ≈ 0.0 #|| incrementnormprev ≈ 0.0
                 push!(Θks, 0.0)
             else
@@ -51,7 +51,8 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     NonlinearSolveBase.update_from_termination_cache!(nlcache.termination_cache, nlcache)
 
     NonlinearSolveBase.update_trace!(
-        nlcache.trace, nlcache.nsteps, NonlinearSolveBase.get_u(nlcache), NonlinearSolveBase.get_fu(nlcache), nothing, nothing, nothing;
+        nlcache.trace, nlcache.nsteps, NonlinearSolveBase.get_u(nlcache),
+        NonlinearSolveBase.get_fu(nlcache), nothing, nothing, nothing;
         last = Val(true)
     )
 
@@ -97,7 +98,8 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
         if sol.retcode == ReturnCode.Success
             integrator.u = sol
         else
-            integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.InitialFailure)
+            integrator.sol = SciMLBase.solution_new_retcode(
+                integrator.sol, ReturnCode.InitialFailure)
         end
     end
 end

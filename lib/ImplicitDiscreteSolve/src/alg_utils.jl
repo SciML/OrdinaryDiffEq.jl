@@ -41,5 +41,3 @@ isadaptive(alg::IDSolve) = true
 
 #     return ConvergenceRateTraceTrick(eltype(δu)[], eltype(fu)[], inner_trace)
 # end
-
-
