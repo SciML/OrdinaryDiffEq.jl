@@ -212,7 +212,7 @@ function build_nlsolver(
         end
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
         linprob = LinearProblem(W, _vec(k), (isdae ? du1 : nothing,u,p,t); u0 = _vec(dz))
-        linsolve = init(linprob, wrapprecs(alg.linsolve, W, weight),
+        linsolve = init(linprob, wrapprecs(alg, W, weight, u, p, t),
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
             assumptions = LinearSolve.OperatorAssumptions(true))
 

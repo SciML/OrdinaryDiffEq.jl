@@ -17,8 +17,7 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
 
     _alg = unwrap_alg(integrator, true)
 
-    _Pl,
-    _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
+    _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
         solverdata)
     if (_Pl !== nothing || _Pr !== nothing)
         __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pl
@@ -58,8 +57,15 @@ function wrapprecs(_Pl, _Pr, weight, u)
     Pl, Pr
 end
 
-function wrapprecs(linsolver, W, weight)
+function wrapprecs(alg, W, weight, u, p, t)
+    linsolver = alg.linsolve
     if hasproperty(linsolver, :precs) && isnothing(linsolver.precs)
+    
+        if alg.precs != OrdinaryDiffEqCore.DEFAULT_PRECS
+            @warn "passing precs via the ODE solver is deprecated. Pass precs via the Linear Solver"
+            precs = Returns(wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing, nothing)..., weight, u))
+            return remake(linsolver; precs)
+        end
         Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
         Pr = Diagonal(_vec(weight))
         precs = Returns((Pl, Pr))
