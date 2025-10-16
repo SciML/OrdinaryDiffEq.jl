@@ -15,6 +15,9 @@ end
     M = f.mass_matrix
 
     # Evaluate predictor
+    if integrator.u_modified
+        f(integrator.fsalfirst.x[1], u, p, t + dt)
+    end
     aₙ = integrator.fsalfirst.x[1]
     vₙ, uₙ = integrator.uprev.x
 
@@ -31,18 +34,13 @@ end
     end
     aₙ₊₁ = nlcache.u
 
-    u = ArrayPartition(
+    @.. integrator.u = ArrayPartition(
         vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁),
         uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
     )
 
-    if isinplace(f)
-        f(integrator.fsallast, u, p, t + dt)
-    else
-        integrator.fsallast .= f(u, p, t + dt)
-    end
+    f(integrator.fsallast, u, p, t + dt)
     integrator.stats.nf += 1
-    integrator.u = u
 
     #
     if integrator.opts.adaptive
@@ -51,7 +49,7 @@ end
         else
             # Zienkiewicz and Xie (1991) Eq. 21
             δaₙ₊₁ = (integrator.fsallast.x[1] - aₙ₊₁)
-            integrator.EEst = dt * dt / 2 * (2 * β - 1 / 3) *
+            integrator.EEst = dt * dt * (β - 1 // 6) *
                               integrator.opts.internalnorm(δaₙ₊₁, t)
         end
     end
@@ -71,12 +69,15 @@ end
 
 @muladd function perform_step!(
         integrator, cache::NewmarkBetaConstantCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @unpack t, u, dt, f, p = integrator
     @unpack β, γ, nlsolver = cache
 
     M = f.mass_matrix
 
     # Evaluate predictor
+    if integrator.u_modified
+        @.. integrator.fsalfirst.x[1] = f(u, p, t + dt)
+    end
     aₙ = integrator.fsalfirst.x[1]
     vₙ, uₙ = integrator.uprev.x
 
@@ -93,14 +94,13 @@ end
     end
     aₙ₊₁ = nlsol.u
 
-    u = ArrayPartition(
+    @.. u = ArrayPartition(
         vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁),
         uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
     )
 
     integrator.fsallast .= f(u, p, t + dt)
     integrator.stats.nf += 1
-    integrator.u = u
 
     #
     if integrator.opts.adaptive
