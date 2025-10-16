@@ -1,4 +1,4 @@
-name = "OrdinaryDiffEqNewmark"
+name = "OrdinaryDiffEqSecondOrderImplicit"
 uuid = "d204908a-63b9-11ef-18f5-cfec7123a93b"
 authors = ["Dennis Ogiermann <termi-official@users.noreply.github.com>"]
 version = "0.0.1"
