@@ -1,5 +1,4 @@
 function initialize!(integrator, cache::NewmarkBetaCache)
-    duprev, uprev = integrator.uprev.x
     integrator.f(cache.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     integrator.stats.nf += 1
     integrator.fsalfirst = cache.fsalfirst
@@ -9,17 +8,18 @@ function initialize!(integrator, cache::NewmarkBetaCache)
 end
 
 @muladd function perform_step!(integrator, cache::NewmarkBetaCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @unpack t, dt, u, f, p = integrator
     @unpack β, γ, nlcache = cache
 
     M = f.mass_matrix
 
     # Evaluate predictor
-    if integrator.u_modified
-        f(integrator.fsalfirst.x[1], u, p, t + dt)
+    vₙ, uₙ = integrator.uprev.x
+    if integrator.u_modified || !integrator.opts.adaptive
+        f(integrator.fsalfirst, integrator.u, p, t + dt)
+        integrator.stats.nf += 1
     end
     aₙ = integrator.fsalfirst.x[1]
-    vₙ, uₙ = integrator.uprev.x
 
     evalcache = NewmarkDiscretizationCache(
         f, t, p,
@@ -34,21 +34,20 @@ end
     end
     aₙ₊₁ = nlcache.u
 
-    @.. integrator.u = ArrayPartition(
+    u .= ArrayPartition(
         vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁),
-        uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
+        uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁),
     )
 
-    f(integrator.fsallast, u, p, t + dt)
-    integrator.stats.nf += 1
-
-    #
     if integrator.opts.adaptive
+        f(integrator.fsallast, u, p, t + dt)
+        integrator.stats.nf += 1
+
         if integrator.success_iter == 0
             integrator.EEst = one(integrator.EEst)
         else
             # Zienkiewicz and Xie (1991) Eq. 21
-            δaₙ₊₁ = (integrator.fsallast.x[1] - aₙ₊₁)
+            δaₙ₊₁ = (integrator.fsallast - aₙ₊₁)
             integrator.EEst = dt * dt * (β - 1 // 6) *
                               integrator.opts.internalnorm(δaₙ₊₁, t)
         end
@@ -58,7 +57,6 @@ end
 end
 
 function initialize!(integrator, cache::NewmarkBetaConstantCache)
-    duprev, uprev = integrator.uprev.x
     cache.fsalfirst .= integrator.f(integrator.uprev, integrator.p, integrator.t)
     integrator.stats.nf += 1
     integrator.fsalfirst = cache.fsalfirst
@@ -75,10 +73,11 @@ end
     M = f.mass_matrix
 
     # Evaluate predictor
-    if integrator.u_modified
-        @.. integrator.fsalfirst.x[1] = f(u, p, t + dt)
+    if integrator.u_modified || !integrator.opts.adaptive
+        integrator.fsalfirst .= f(u, p, t + dt)
+        integrator.stats.nf += 1
     end
-    aₙ = integrator.fsalfirst.x[1]
+    aₙ = integrator.fsalfirst.x[1] # = fsallast
     vₙ, uₙ = integrator.uprev.x
 
     evalcache = NewmarkDiscretizationCache(
@@ -94,16 +93,16 @@ end
     end
     aₙ₊₁ = nlsol.u
 
-    @.. u = ArrayPartition(
+    u .= ArrayPartition(
         vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁),
-        uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
+        uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁),
     )
-
-    integrator.fsallast .= f(u, p, t + dt)
-    integrator.stats.nf += 1
 
     #
     if integrator.opts.adaptive
+        integrator.fsallast .= f(u, p, t + dt)
+        integrator.stats.nf += 1
+
         if integrator.success_iter == 0
             integrator.EEst = one(integrator.EEst)
         else
