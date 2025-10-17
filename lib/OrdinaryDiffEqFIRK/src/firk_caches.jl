@@ -98,9 +98,15 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
 
-    J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-    W1 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W1, false)
+    J, W1_temp = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+    # For sparse matrices, preserve sparsity pattern for KLU compatibility
+    if is_sparse(J)
+        W1 = similar(J, Complex{eltype(W1_temp)})
+        fill!(nonzeros(W1), false)
+    else
+        W1 = similar(J, Complex{eltype(W1_temp)})
+        recursivefill!(W1, false)
+    end
 
     linprob = LinearProblem(W1, _vec(cubuff); u0 = _vec(dw12))
     linsolve = init(
@@ -239,8 +245,14 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
     if J isa AbstractSciMLOperator
         error("Non-concrete Jacobian not yet supported by RadauIIA5.")
     end
-    W2 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W2, false)
+    # For sparse matrices, preserve sparsity pattern for KLU compatibility
+    if is_sparse(J)
+        W2 = similar(J, Complex{eltype(W1)})
+        fill!(nonzeros(W2), false)
+    else
+        W2 = similar(J, Complex{eltype(W1)})
+        recursivefill!(W2, false)
+    end
 
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
@@ -429,10 +441,18 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
     if J isa AbstractSciMLOperator
         error("Non-concrete Jacobian not yet supported by RadauIIA5.")
     end
-    W2 = similar(J, Complex{eltype(W1)})
-    W3 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W2, false)
-    recursivefill!(W3, false)
+    # For sparse matrices, preserve sparsity pattern for KLU compatibility
+    if is_sparse(J)
+        W2 = similar(J, Complex{eltype(W1)})
+        W3 = similar(J, Complex{eltype(W1)})
+        fill!(nonzeros(W2), false)
+        fill!(nonzeros(W3), false)
+    else
+        W2 = similar(J, Complex{eltype(W1)})
+        W3 = similar(J, Complex{eltype(W1)})
+        recursivefill!(W2, false)
+        recursivefill!(W3, false)
+    end
 
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
@@ -638,8 +658,15 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
         error("Non-concrete Jacobian not yet supported by AdaptiveRadau.")
     end
 
+    # For sparse matrices, preserve sparsity pattern for KLU compatibility
     W2 = [similar(J, Complex{eltype(W1)}) for _ in 1:((max_stages - 1) ÷ 2)]
-    recursivefill!.(W2, false)
+    if is_sparse(J)
+        for W in W2
+            fill!(nonzeros(W), false)
+        end
+    else
+        recursivefill!.(W2, false)
+    end
 
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(

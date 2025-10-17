@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
-authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 version = "6.102.1"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -69,6 +69,8 @@ SciMLStructures = "53ae85a6-f571-4167-b2af-e1d143709226"
 SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
 SimpleUnPack = "ce78b400-467f-4804-87d8-8f486da07d0a"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+SparseConnectivityTracer = "9f842d2f-2579-4b1d-911e-f412cf18a3f5"
+Sparspak = "e56a9233-b9d6-4f03-8d0f-1825330902ac"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 StaticArrayInterface = "0d7ed370-da01-4f52-bd93-41d350b8b718"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
@@ -173,6 +175,8 @@ SciMLOperators = "1.8"
 SciMLStructures = "1.7"
 SimpleNonlinearSolve = "2.7"
 SimpleUnPack = "1.1"
+SparseConnectivityTracer = "1.1.1"
+Sparspak = "0.3.14"
 Static = "1.2"
 StaticArrayInterface = "1.8"
 StaticArrays = "1.9.14"
