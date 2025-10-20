@@ -89,7 +89,8 @@ import Accessors: @reset
 # SciMLStructures symbols imported but not directly used in OrdinaryDiffEqCore
 # using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
-using SciMLVerbosity: Verbosity, @SciMLMessage, AbstractVerbositySpecifier
+using SciMLLogging: @SciMLMessage, AbstractVerbositySpecifier, AbstractVerbosityPreset,
+                    None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, CustomLevel
 
 using SymbolicIndexingInterface: state_values, parameter_values
 

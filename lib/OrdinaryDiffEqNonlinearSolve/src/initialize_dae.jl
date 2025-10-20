@@ -163,7 +163,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
 
     if failed
         @SciMLMessage("ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
-            integrator.opts.verbose, :shampine_dt, :numerical)
+            integrator.opts.verbose, :shampine_dt)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
             ReturnCode.InitialFailure)
     end
@@ -243,7 +243,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
 
     if failed
         @SciMLMessage("ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
-            integrator.opts.verbose, :shampine_dt, :numerical)
+            integrator.opts.verbose, :shampine_dt)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
             ReturnCode.InitialFailure)
     end
@@ -321,7 +321,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DA
     end
     if nlsol.retcode != ReturnCode.Success
         @SciMLMessage("ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
-            integrator.opts.verbose, :shampine_dt, :numerical)
+            integrator.opts.verbose, :shampine_dt)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
             ReturnCode.InitialFailure)
     end
@@ -370,7 +370,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DA
     end
     if nlsol.retcode != ReturnCode.Success
         @SciMLMessage("ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
-            integrator.opts.verbose, :shampine_dt, :numerical)
+            integrator.opts.verbose, :shampine_dt)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
             ReturnCode.InitialFailure)
     end
