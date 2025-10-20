@@ -130,7 +130,7 @@
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
     if isnan(d₁)
         @SciMLMessage("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
-            integrator.opts.verbose, :init_NaN, :error_control)
+            integrator.opts.verbose, :init_NaN)
         return tdir * dtmin
     end
 
@@ -251,7 +251,7 @@ end
 
     if any(x -> any(isnan, x),  f₀)
         @SciMLMessage("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
-            integrator.opts.verbose, :init_NaN, :error_control)
+            integrator.opts.verbose, :init_NaN)
     end
 
     inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
