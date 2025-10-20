@@ -302,7 +302,7 @@ end
     dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
     if isnan(dt_factor)
         @SciMLMessage("unlimited dt_factor", 
-            integrator.opts.verbose, :unlimited_dt, :numerical)
+            integrator.opts.verbose, :unlimited_dt)
         #@warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k
     end
     dt_factor = controller.limiter(dt_factor)

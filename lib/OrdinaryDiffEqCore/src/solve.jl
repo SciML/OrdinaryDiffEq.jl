@@ -120,7 +120,7 @@ function SciMLBase.__init(
         # technically this should also warn for zero operators but those are hard to check for
         if (dense || !isempty(saveat))
             @SciMLMessage("Rosenbrock methods on equations without differential states do not bound the error on interpolations.",
-                verbose, :rosenbrock_no_differential_states, :numerical)
+                verbose, :rosenbrock_no_differential_states)
         end
     end
 
@@ -132,7 +132,7 @@ function SciMLBase.__init(
 
     if !isempty(saveat) && dense
         @SciMLMessage("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.",
-            verbose, :dense_output_saveat, :error_control)
+            verbose, :dense_output_saveat)
     end
 
     progress && @logmsg(LogLevel(-1), progress_name, _id = progress_id, progress = 0)
@@ -719,7 +719,7 @@ function handle_dt!(integrator)
         end
         if isnan(integrator.dt)
             @SciMLMessage("Automatic dt set the starting dt as NaN, causing instability. Exiting.",
-                integrator.opts.verbose, :dt_NaN, :numerical)
+                integrator.opts.verbose, :dt_NaN)
         end
     elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
             integrator.tdir < 0
