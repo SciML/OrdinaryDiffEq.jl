@@ -1,205 +1,272 @@
-ode_defaults = Dict(
-    :dt_NaN => Verbosity.Warn(),
-    :init_NaN => Verbosity.Warn(),
-    :rosenbrock_no_differential_states => Verbosity.Warn(),
-    :dense_output_saveat => Verbosity.Warn(),
-    :alg_switch => Verbosity.Warn(),
-    :mismatched_input_output_type => Verbosity.Warn(),
-    :shampine_dt => Verbosity.Warn(),
-    :unlimited_dt => Verbosity.Warn()
+# Group classifications
+const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat)
+const performance_options = (:alg_switch, :mismatched_input_output_type)
+const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt)
+
+function option_group(option::Symbol)
+    if option in error_control_options
+        return :error_control
+    elseif option in performance_options
+        return :performance
+    elseif option in numerical_options
+        return :numerical
+    else
+        error("Unknown verbosity option: $option")
+    end
+end
+
+# Get all options in a group
+function group_options(verbosity::ODEVerbosity, group::Symbol)
+    if group === :error_control
+        return NamedTuple{error_control_options}(getproperty(verbosity, opt)
+                                                 for opt in error_control_options)
+    elseif group === :performance
+        return NamedTuple{performance_options}(getproperty(verbosity, opt)
+                                               for opt in performance_options)
+    elseif group === :numerical
+        return NamedTuple{numerical_options}(getproperty(verbosity, opt)
+                                             for opt in numerical_options)
+    else
+        error("Unknown group: $group")
+    end
+end
+
+"""
+    ODEVerbosity <: AbstractVerbositySpecifier
+
+Verbosity configuration for OrdinaryDiffEq.jl solvers, providing fine-grained control over
+diagnostic messages, warnings, and errors during ODE solution.
+
+# Fields
+
+## Error Control Group
+- `dt_NaN`: Messages when time step becomes NaN
+- `init_NaN`: Messages when initial conditions contain NaN
+- `dense_output_saveat`: Messages about dense output with saveat
+
+## Performance Group
+- `alg_switch`: Messages when algorithm switching occurs
+- `mismatched_input_output_type`: Messages when input/output types don't match
+
+## Numerical Group
+- `rosenbrock_no_differential_states`: Messages when Rosenbrock has no differential states
+- `shampine_dt`: Messages about Shampine time step selection
+- `unlimited_dt`: Messages when time step is unlimited
+
+## Solver Verbosity Groups
+- `linear_verbosity`: Verbosity configuration for linear solvers
+- `nonlinear_verbosity`: Verbosity configuration for nonlinear solvers
+
+# Constructors
+
+    ODEVerbosity(preset::AbstractVerbosityPreset)
+
+Create an `ODEVerbosity` using a preset configuration:
+- `SciMLLogging.None()`: All messages disabled
+- `SciMLLogging.Minimal()`: Only critical errors and fatal issues
+- `SciMLLogging.Standard()`: Balanced verbosity (default)
+- `SciMLLogging.Detailed()`: Comprehensive debugging information
+- `SciMLLogging.All()`: Maximum verbosity
+
+    ODEVerbosity(; error_control=nothing, performance=nothing, numerical=nothing, linear_verbosity=nothing, nonlinear_verbosity=nothing, kwargs...)
+
+Create an `ODEVerbosity` with group-level or individual field control.
+
+# Examples
+
+```julia
+# Use a preset
+verbose = ODEVerbosity(SciMLLogging.Standard())
+
+# Set entire groups
+verbose = ODEVerbosity(
+    error_control = SciMLLogging.WarnLevel(),
+    numerical = SciMLLogging.InfoLevel()
 )
 
-mutable struct ODEErrorControlVerbosity
-    dt_NaN::Verbosity.Type
-    init_NaN::Verbosity.Type
-    dense_output_saveat::Verbosity.Type
+# Set individual fields
+verbose = ODEVerbosity(
+    dt_NaN = SciMLLogging.ErrorLevel(),
+    alg_switch = SciMLLogging.InfoLevel()
+)
 
-    function ODEErrorControlVerbosity(;
-            dt_NaN = ode_defaults[:dt_NaN], init_NaN = ode_defaults[:init_NaN], dense_output_saveat = ode_defaults[:dense_output_saveat])
-            @info "here"
-        new(dt_NaN, init_NaN, dense_output_saveat)
-    end
-end
-
-function ODEErrorControlVerbosity(verbose::Verbosity.Type)
-    @match verbose begin
-        Verbosity.Default() => ODEErrorControlVerbosity()
-
-        Verbosity.None() => ODEErrorControlVerbosity(;NamedTuple{fieldnames(ODEErrorControlVerbosity)}(fill(
-            Verbosity.None(),
-            length(fieldnames(ODEErrorControlVerbosity))))...)
-
-        Verbosity.Info() => ODEErrorControlVerbosity(;NamedTuple{fieldnames(ODEErrorControlVerbosity)}(fill(
-            Verbosity.Info(),
-            length(fieldnames(ODEErrorControlVerbosity))))...)
-
-        Verbosity.Warn() => ODEErrorControlVerbosity(;NamedTuple{fieldnames(ODEErrorControlVerbosity)}(fill(
-            Verbosity.Warn(),
-            length(fieldnames(ODEErrorControlVerbosity))))...)
-
-        Verbosity.Error() => ODEErrorControlVerbosity(;NamedTuple{fieldnames(ODEErrorControlVerbosity)}(fill(
-            Verbosity.Error(),
-            length(fieldnames(ODEErrorControlVerbosity))))...)
-
-        Verbosity.Edge() => ODEErrorControlVerbosity()
-
-        _ => @error "$verbose is not a valid choice for verbosity."
-    end
-end
-
-mutable struct ODEPerformanceVerbosity
-    alg_switch::Verbosity.Type
-    mismatched_input_output_type::Verbosity.Type
-
-    function ODEPerformanceVerbosity(;alg_switch = ode_defaults[:alg_switch],
-            mismatched_input_output_type = ode_defaults[:mismatched_input_output_type])
-        new(alg_switch, mismatched_input_output_type)
-    end
-end
-
-function ODEPerformanceVerbosity(verbose::Verbosity.Type)
-    @match verbose begin
-        Verbosity.None() => ODEPerformanceVerbosity(;
-            NamedTuple{fieldnames(ODEPerformanceVerbosity)}(fill(
-                Verbosity.None(),
-                length(fieldnames(ODEPerformanceVerbosity))))...)
-
-        Verbosity.Info() => ODEPerformanceVerbosity(;
-            NamedTuple{fieldnames(ODEPerformanceVerbosity)}(fill(
-                Verbosity.Info(),
-                length(fieldnames(ODEPerformanceVerbosity))))...)
-
-        Verbosity.Warn() => ODEPerformanceVerbosity(;
-            NamedTuple{fieldnames(ODEPerformanceVerbosity)}(fill(
-                Verbosity.Warn(),
-                length(fieldnames(ODEPerformanceVerbosity))))...)
-
-        Verbosity.Error() => ODEPerformanceVerbosity(;
-            NamedTuple{fieldnames(ODEPerformanceVerbosity)}(fill(
-                Verbosity.Error(),
-                length(fieldnames(ODEPerformanceVerbosity))))...)
-
-        Verbosity.Default() => ODEPerformanceVerbosity()
-
-        _ => @error "Not a valid choice for verbosity."
-    end
-end
-
-mutable struct ODENumericalVerbosity
-    rosenbrock_no_differential_states::Verbosity.Type
-    shampine_dt::Verbosity.Type
-    unlimited_dt::Verbosity.Type
-    function ODENumericalVerbosity(;
-            rosenbrock_no_differential_states = ode_defaults[:rosenbrock_no_differential_states],
-            shampine_dt = ode_defaults[:shampine_dt],
-            unlimited_dt = ode_defaults[:unlimited_dt])
-        new(rosenbrock_no_differential_states, shampine_dt, unlimited_dt)
-    end
-end
-
-function ODENumericalVerbosity(verbose::Verbosity.Type)
-    @match verbose begin
-        Verbosity.None() => ODENumericalVerbosity(;
-            NamedTuple{fieldnames(ODENumericalVerbosity)}(fill(
-                Verbosity.None(),
-                length(fieldnames(ODENumericalVerbosity))))...)
-
-        Verbosity.Info() => OODENumericalVerbosity(;
-            NamedTuple{fieldnames(ODENumericalVerbosity)}(fill(
-                Verbosity.Info(),
-                length(fieldnames(ODENumericalVerbosity))))...)
-
-        Verbosity.Warn() => ODENumericalVerbosity(;
-            NamedTuple{fieldnames(ODENumericalVerbosity)}(fill(
-                Verbosity.Warn(),
-                length(fieldnames(ODENumericalVerbosity))))...)
-
-        Verbosity.Error() => ODENumericalVerbosity(;
-            NamedTuple{fieldnames(ODENumericalVerbosity)}(fill(
-                Verbosity.Error(),
-                length(fieldnames(ODENumericalVerbosity))))...)
-
-        Verbosity.Default() => ODENumericalVerbosity()
-
-        _ => @error "Not a valid choice for verbosity."
-    end
-end
-
-struct ODEVerbosity{T}
-    linear_verbosity::Any
-    nonlinear_verbosity::Any
-
-    error_control::ODEErrorControlVerbosity
-    performance::ODEPerformanceVerbosity
-    numerical::ODENumericalVerbosity
-end
-
-function ODEVerbosity(verbose::Verbosity.Type)
-    @match verbose begin
-        Verbosity.Default() => ODEVerbosity{true}(
-            Verbosity.Default(),
-            Verbosity.Default(),
-            ODEErrorControlVerbosity(Verbosity.Default()),
-            ODEPerformanceVerbosity(Verbosity.Default()),
-            ODENumericalVerbosity(Verbosity.Default())
-        )
-
-        Verbosity.None() => ODEVerbosity{false}(
-            Verbosity.None(),
-            Verbosity.None(),
-            ODEErrorControlVerbosity(Verbosity.None()),
-            ODEPerformanceVerbosity(Verbosity.None()),
-            ODENumericalVerbosity(Verbosity.None())
-        )
-
-        Verbosity.All() => ODEVerbosity{true}(
-            Verbosity.Default(),
-            Verbosity.Default(),
-            ODEErrorControlVerbosity(Verbosity.Info()),
-            ODEPerformanceVerbosity(Verbosity.Info()),
-            ODENumericalVerbosity(Verbosity.Info())
-        )
-
-        _ => @error "Not a valid choice for verbosity."
-    end
+# Mix group and individual settings
+verbose = ODEVerbosity(
+    numerical = SciMLLogging.InfoLevel(),  # Set all numerical to InfoLevel
+    unlimited_dt = SciMLLogging.ErrorLevel()  # Override specific field
+)
+```
+"""
+@concrete struct ODEVerbosity <: AbstractVerbositySpecifier
+    # Solver verbosity
+    linear_verbosity
+    nonlinear_verbosity
+    # Error control
+    dt_NaN
+    init_NaN
+    dense_output_saveat
+    # Performance
+    alg_switch
+    mismatched_input_output_type
+    # Numerical
+    rosenbrock_no_differential_states
+    shampine_dt
+    unlimited_dt
 end
 
 function ODEVerbosity(;
-        error_control = Verbosity.Default(), performance = Verbosity.Default(),
-        numerical = Verbosity.Default(), linear_verbosity = Verbosity.Default(),
-        nonlinear_verbosity = Verbosity.Default(), kwargs...)
-    if error_control isa Verbosity.Type
-        error_control_verbosity = ODEErrorControlVerbosity(error_control)
-    else
-        error_control_verbosity = error_control
+        error_control = nothing, performance = nothing, numerical = nothing,
+        linear_verbosity = nothing, nonlinear_verbosity = nothing, kwargs...)
+    # Validate group arguments
+    if error_control !== nothing && !(error_control isa AbstractMessageLevel)
+        throw(ArgumentError("error_control must be a SciMLLogging.AbstractMessageLevel, got $(typeof(error_control))"))
+    end
+    if performance !== nothing && !(performance isa AbstractMessageLevel)
+        throw(ArgumentError("performance must be a SciMLLogging.AbstractMessageLevel, got $(typeof(performance))"))
+    end
+    if numerical !== nothing && !(numerical isa AbstractMessageLevel)
+        throw(ArgumentError("numerical must be a SciMLLogging.AbstractMessageLevel, got $(typeof(numerical))"))
     end
 
-    if performance isa Verbosity.Type
-        performance_verbosity = ODEPerformanceVerbosity(performance)
-    else
-        performance_verbosity = performance
-    end
-
-    if numerical isa Verbosity.Type
-        numerical_verbosity = ODENumericalVerbosity(numerical)
-    else
-        numerical_verbosity = numerical
-    end
-
-    if !isempty(kwargs)
-        for (key, value) in pairs(kwargs)
-            if hasfield(ODEErrorControlVerbosity, key)
-                setproperty!(error_control_verbosity, key, value)
-            elseif hasfield(ODEPerformanceVerbosity, key)
-                setproperty!(performance_verbosity, key, value)
-            elseif hasfield(ODENumericalVerbosity, key)
-                setproperty!(numerical_verbosity, key, value)
-            else
-                error("$key is not a recognized verbosity toggle.")
-            end
+    # Validate individual kwargs
+    for (key, value) in kwargs
+        if !(key in error_control_options || key in performance_options ||
+             key in numerical_options)
+            throw(ArgumentError("Unknown verbosity option: $key. Valid options are: $(tuple(error_control_options..., performance_options..., numerical_options...))"))
+        end
+        if !(value isa AbstractMessageLevel)
+            throw(ArgumentError("$key must be a SciMLLogging.AbstractMessageLevel, got $(typeof(value))"))
         end
     end
 
-    ODEVerbosity{true}(linear_verbosity, nonlinear_verbosity, error_control_verbosity,
-        performance_verbosity, numerical_verbosity)
+    # Build arguments using NamedTuple for type stability
+    default_args = (
+        linear_verbosity = linear_verbosity === nothing ? Standard() : linear_verbosity,
+        nonlinear_verbosity = nonlinear_verbosity === nothing ? Standard() :
+                              nonlinear_verbosity,
+        dt_NaN = WarnLevel(),
+        init_NaN = WarnLevel(),
+        dense_output_saveat = WarnLevel(),
+        alg_switch = WarnLevel(),
+        mismatched_input_output_type = WarnLevel(),
+        rosenbrock_no_differential_states = WarnLevel(),
+        shampine_dt = WarnLevel(),
+        unlimited_dt = WarnLevel()
+    )
+
+    # Apply group-level settings
+    final_args = if error_control !== nothing || performance !== nothing ||
+                    numerical !== nothing
+        NamedTuple{keys(default_args)}(
+            _resolve_arg_value(
+                key, default_args[key], error_control, performance, numerical)
+        for key in keys(default_args)
+        )
+    else
+        default_args
+    end
+
+    # Apply individual overrides
+    if !isempty(kwargs)
+        final_args = merge(final_args, NamedTuple(kwargs))
+    end
+
+    ODEVerbosity(values(final_args)...)
+end
+
+# Constructor for verbosity presets following the hierarchical levels:
+# None < Minimal < Standard < Detailed < All
+# Each level includes all messages from levels below it plus additional ones
+function ODEVerbosity(verbose::AbstractVerbosityPreset)
+    if verbose isa Minimal
+        # Minimal: Only fatal errors and critical warnings
+        ODEVerbosity(
+            linear_verbosity = Minimal(),
+            nonlinear_verbosity = Minimal(),
+            dt_NaN = ErrorLevel(),
+            init_NaN = ErrorLevel(),
+            dense_output_saveat = Silent(),
+            alg_switch = Silent(),
+            mismatched_input_output_type = Silent(),
+            rosenbrock_no_differential_states = ErrorLevel(),
+            shampine_dt = Silent(),
+            unlimited_dt = ErrorLevel()
+        )
+    elseif verbose isa Standard
+        # Standard: Everything from Minimal + non-fatal warnings
+        ODEVerbosity()
+    elseif verbose isa Detailed
+        # Detailed: Everything from Standard + debugging/solver behavior
+        ODEVerbosity(
+            linear_verbosity = Detailed(),
+            nonlinear_verbosity = Detailed(),
+            dt_NaN = WarnLevel(),
+            init_NaN = WarnLevel(),
+            dense_output_saveat = InfoLevel(),
+            alg_switch = InfoLevel(),
+            mismatched_input_output_type = WarnLevel(),
+            rosenbrock_no_differential_states = WarnLevel(),
+            shampine_dt = InfoLevel(),
+            unlimited_dt = WarnLevel()
+        )
+    elseif verbose isa All
+        # All: Maximum verbosity - every possible logging message at InfoLevel
+        ODEVerbosity(
+            linear_verbosity = All(),
+            nonlinear_verbosity = All(),
+            dt_NaN = WarnLevel(),
+            init_NaN = WarnLevel(),
+            dense_output_saveat = InfoLevel(),
+            alg_switch = InfoLevel(),
+            mismatched_input_output_type = InfoLevel(),
+            rosenbrock_no_differential_states = WarnLevel(),
+            shampine_dt = InfoLevel(),
+            unlimited_dt = WarnLevel()
+        )
+    end
+end
+
+@inline function ODEVerbosity(verbose::None)
+    ODEVerbosity(
+        None(),
+        None(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent()
+    )
+end
+
+# Helper function to resolve argument values based on group membership
+@inline function _resolve_arg_value(
+        key::Symbol, default_val, error_control, performance, numerical)
+    if key === :linear_verbosity || key === :nonlinear_verbosity
+        return default_val
+    elseif key in error_control_options && error_control !== nothing
+        return error_control
+    elseif key in performance_options && performance !== nothing
+        return performance
+    elseif key in numerical_options && numerical !== nothing
+        return numerical
+    else
+        return default_val
+    end
+end
+
+function Base.getproperty(verbosity::ODEVerbosity, name::Symbol)
+    # Check if this is a group name
+    if name === :error_control
+        return group_options(verbosity, :error_control)
+    elseif name === :performance
+        return group_options(verbosity, :performance)
+    elseif name === :numerical
+        return group_options(verbosity, :numerical)
+    else
+        # Fall back to default field access
+        return getfield(verbosity, name)
+    end
 end
