@@ -1,36 +1,3 @@
-# Group classifications
-const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat)
-const performance_options = (:alg_switch, :mismatched_input_output_type)
-const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt)
-
-function option_group(option::Symbol)
-    if option in error_control_options
-        return :error_control
-    elseif option in performance_options
-        return :performance
-    elseif option in numerical_options
-        return :numerical
-    else
-        error("Unknown verbosity option: $option")
-    end
-end
-
-# Get all options in a group
-function group_options(verbosity::ODEVerbosity, group::Symbol)
-    if group === :error_control
-        return NamedTuple{error_control_options}(getproperty(verbosity, opt)
-                                                 for opt in error_control_options)
-    elseif group === :performance
-        return NamedTuple{performance_options}(getproperty(verbosity, opt)
-                                               for opt in performance_options)
-    elseif group === :numerical
-        return NamedTuple{numerical_options}(getproperty(verbosity, opt)
-                                             for opt in numerical_options)
-    else
-        error("Unknown group: $group")
-    end
-end
-
 """
     ODEVerbosity <: AbstractVerbositySpecifier
 
@@ -114,6 +81,40 @@ verbose = ODEVerbosity(
     unlimited_dt
 end
 
+# Group classifications
+const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat)
+const performance_options = (:alg_switch, :mismatched_input_output_type)
+const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt)
+
+function option_group(option::Symbol)
+    if option in error_control_options
+        return :error_control
+    elseif option in performance_options
+        return :performance
+    elseif option in numerical_options
+        return :numerical
+    else
+        error("Unknown verbosity option: $option")
+    end
+end
+
+# Get all options in a group
+function group_options(verbosity::ODEVerbosity, group::Symbol)
+    if group === :error_control
+        return NamedTuple{error_control_options}(getproperty(verbosity, opt)
+                                                 for opt in error_control_options)
+    elseif group === :performance
+        return NamedTuple{performance_options}(getproperty(verbosity, opt)
+                                               for opt in performance_options)
+    elseif group === :numerical
+        return NamedTuple{numerical_options}(getproperty(verbosity, opt)
+                                             for opt in numerical_options)
+    else
+        error("Unknown group: $group")
+    end
+end
+
+
 function ODEVerbosity(;
         error_control = nothing, performance = nothing, numerical = nothing,
         linear_verbosity = nothing, nonlinear_verbosity = nothing, kwargs...)
@@ -141,9 +142,8 @@ function ODEVerbosity(;
 
     # Build arguments using NamedTuple for type stability
     default_args = (
-        linear_verbosity = linear_verbosity === nothing ? Standard() : linear_verbosity,
-        nonlinear_verbosity = nonlinear_verbosity === nothing ? Standard() :
-                              nonlinear_verbosity,
+        linear_verbosity = linear_verbosity === nothing ? Minimal() : linear_verbosity,
+        nonlinear_verbosity = nonlinear_verbosity === nothing ? Minimal() : nonlinear_verbosity,
         dt_NaN = WarnLevel(),
         init_NaN = WarnLevel(),
         dense_output_saveat = WarnLevel(),
