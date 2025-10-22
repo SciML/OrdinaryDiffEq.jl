@@ -44,7 +44,7 @@ mutable struct DEOptions{
     callback::F4
     isoutofdomain::F5
     unstable_check::F7
-    verbose::Bool
+    verbose::ODEVerbosity
     calck::Bool
     force_dtmin::Bool
     advance_to_tstop::Bool
