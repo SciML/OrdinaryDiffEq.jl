@@ -51,7 +51,7 @@ using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
 
 import OrdinaryDiffEqCore: _initialize_dae!, isnewton, get_W, isfirstcall, isfirststage,
                            isJcurrent, get_new_W_γdt_cutoff, resize_nlsolver!, apply_step!,
-                           postamble!, @SciMLMessage
+                           postamble!, @SciMLMessage, Minimal
 
 import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W,
                                       WOperator, StaticWOperator, wrapprecs,
