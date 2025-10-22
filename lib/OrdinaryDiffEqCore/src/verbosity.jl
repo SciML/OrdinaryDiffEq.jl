@@ -10,6 +10,10 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `dt_NaN`: Messages when time step becomes NaN
 - `init_NaN`: Messages when initial conditions contain NaN
 - `dense_output_saveat`: Messages about dense output with saveat
+- `max_iters`: Messages when maximum iterations are reached
+- `dt_min_unstable`: Messages when time step becomes too small/unstable
+- `instability`: Messages when numerical instability is detected
+- `newton_convergence`: Messages when Newton iteration fails to converge
 
 ## Performance Group
 - `alg_switch`: Messages when algorithm switching occurs
@@ -19,6 +23,7 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `rosenbrock_no_differential_states`: Messages when Rosenbrock has no differential states
 - `shampine_dt`: Messages about Shampine time step selection
 - `unlimited_dt`: Messages when time step is unlimited
+- `dt_epsilon`: Messages when timestep goes below floating point epsilon
 
 ## Solver Verbosity Groups
 - `linear_verbosity`: Verbosity configuration for linear solvers
@@ -72,6 +77,10 @@ verbose = ODEVerbosity(
     dt_NaN
     init_NaN
     dense_output_saveat
+    max_iters
+    dt_min_unstable
+    instability
+    newton_convergence
     # Performance
     alg_switch
     mismatched_input_output_type
@@ -79,12 +88,13 @@ verbose = ODEVerbosity(
     rosenbrock_no_differential_states
     shampine_dt
     unlimited_dt
+    dt_epsilon
 end
 
 # Group classifications
-const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat)
+const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability, :newton_convergence)
 const performance_options = (:alg_switch, :mismatched_input_output_type)
-const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt)
+const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon)
 
 function option_group(option::Symbol)
     if option in error_control_options
@@ -147,11 +157,16 @@ function ODEVerbosity(;
         dt_NaN = WarnLevel(),
         init_NaN = WarnLevel(),
         dense_output_saveat = WarnLevel(),
+        max_iters = WarnLevel(),
+        dt_min_unstable = WarnLevel(),
+        instability = WarnLevel(),
+        newton_convergence = WarnLevel(),
         alg_switch = WarnLevel(),
         mismatched_input_output_type = WarnLevel(),
         rosenbrock_no_differential_states = WarnLevel(),
         shampine_dt = WarnLevel(),
-        unlimited_dt = WarnLevel()
+        unlimited_dt = WarnLevel(),
+        dt_epsilon = WarnLevel()
     )
 
     # Apply group-level settings
@@ -186,11 +201,16 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dt_NaN = WarnLevel(),
             init_NaN = WarnLevel(),
             dense_output_saveat = Silent(),
+            max_iters = WarnLevel(),
+            dt_min_unstable = WarnLevel(),
+            instability = WarnLevel(),
+            newton_convergence = WarnLevel(),
             alg_switch = Silent(),
             mismatched_input_output_type = Silent(),
             rosenbrock_no_differential_states = WarnLevel(),
             shampine_dt = Silent(),
-            unlimited_dt = WarnLevel()
+            unlimited_dt = WarnLevel(),
+            dt_epsilon = Silent()
         )
     elseif verbose isa Standard
         # Standard: Everything from Minimal + non-fatal warnings
@@ -203,11 +223,16 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dt_NaN = WarnLevel(),
             init_NaN = WarnLevel(),
             dense_output_saveat = InfoLevel(),
+            max_iters = WarnLevel(),
+            dt_min_unstable = WarnLevel(),
+            instability = WarnLevel(),
+            newton_convergence = WarnLevel(),
             alg_switch = InfoLevel(),
             mismatched_input_output_type = WarnLevel(),
             rosenbrock_no_differential_states = WarnLevel(),
             shampine_dt = InfoLevel(),
-            unlimited_dt = WarnLevel()
+            unlimited_dt = WarnLevel(),
+            dt_epsilon = InfoLevel()
         )
     elseif verbose isa All
         # All: Maximum verbosity - every possible logging message at InfoLevel
@@ -217,11 +242,16 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dt_NaN = WarnLevel(),
             init_NaN = WarnLevel(),
             dense_output_saveat = InfoLevel(),
+            max_iters = WarnLevel(),
+            dt_min_unstable = WarnLevel(),
+            instability = WarnLevel(),
+            newton_convergence = WarnLevel(),
             alg_switch = InfoLevel(),
             mismatched_input_output_type = InfoLevel(),
             rosenbrock_no_differential_states = WarnLevel(),
             shampine_dt = InfoLevel(),
-            unlimited_dt = WarnLevel()
+            unlimited_dt = WarnLevel(),
+            dt_epsilon = InfoLevel()
         )
     end
 end
@@ -230,6 +260,11 @@ end
     ODEVerbosity(
         None(),
         None(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent(),
         Silent(),
         Silent(),
         Silent(),
