@@ -42,7 +42,7 @@ mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4
     callback::F4
     isoutofdomain::F5
     unstable_check::F7
-    verbose::Bool
+    verbose::ODEVerbosity
     calck::Bool
     force_dtmin::Bool
     advance_to_tstop::Bool
