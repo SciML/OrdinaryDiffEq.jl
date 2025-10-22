@@ -100,9 +100,9 @@ function SciMLBase.__init(
         if verbose
             verbose = ODEVerbosity()
         else
-            verbose = ODEVerbosity(SciMLLogging.None())
+            verbose = ODEVerbosity(None())
         end
-    elseif verbose isa SciMLLogging.AbstractVerbosityPreset
+    elseif verbose isa AbstractVerbosityPreset
         verbose = ODEVerbosity(verbose)
     end
 
