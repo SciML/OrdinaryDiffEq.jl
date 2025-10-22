@@ -90,7 +90,8 @@ import Accessors: @reset
 # using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
 using SciMLLogging: SciMLLogging, @SciMLMessage, AbstractVerbositySpecifier, AbstractVerbosityPreset, 
-                    None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, CustomLevel
+                    None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel, 
+                    CustomLevel, AbstractMessageLevel
 
 using SymbolicIndexingInterface: state_values, parameter_values
 
