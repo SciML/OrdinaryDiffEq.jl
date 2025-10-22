@@ -220,7 +220,8 @@ function build_nlsolver(
         linsolve = init(linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
             Pl = Pl, Pr = Pr,
-            assumptions = LinearSolve.OperatorAssumptions(true))
+            assumptions = LinearSolve.OperatorAssumptions(true),
+            verbose = Minimal())
 
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
