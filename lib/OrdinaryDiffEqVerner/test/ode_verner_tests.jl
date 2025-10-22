@@ -1,6 +1,5 @@
 using OrdinaryDiffEqVerner, OrdinaryDiffEqCore
 using DiffEqBase, DiffEqDevTools, LinearAlgebra, Random, Test, Plots
-import OrdinaryDiffEqLowStorageRK
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 
 # Problem mappings
