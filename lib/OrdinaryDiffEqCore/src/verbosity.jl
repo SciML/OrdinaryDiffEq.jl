@@ -183,14 +183,14 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
         ODEVerbosity(
             linear_verbosity = Minimal(),
             nonlinear_verbosity = Minimal(),
-            dt_NaN = ErrorLevel(),
-            init_NaN = ErrorLevel(),
+            dt_NaN = WarnLevel(),
+            init_NaN = WarnLevel(),
             dense_output_saveat = Silent(),
             alg_switch = Silent(),
             mismatched_input_output_type = Silent(),
-            rosenbrock_no_differential_states = ErrorLevel(),
+            rosenbrock_no_differential_states = WarnLevel(),
             shampine_dt = Silent(),
-            unlimited_dt = ErrorLevel()
+            unlimited_dt = WarnLevel()
         )
     elseif verbose isa Standard
         # Standard: Everything from Minimal + non-fatal warnings
