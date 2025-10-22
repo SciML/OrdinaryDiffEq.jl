@@ -25,6 +25,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
+ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 OrdinaryDiffEqExplicitRK = "9286f039-4bc0-4691-8c0a-10fcb0a6a775"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
@@ -39,6 +40,7 @@ Polyester = "0.7"
 LinearAlgebra = "1.10"
 TruncatedStacktraces = "1.4"
 SciMLBase = "2.99"
+ODEProblemLibrary = "0.1.8"
 OrdinaryDiffEqCore = "1.29.0"
 OrdinaryDiffEqExplicitRK = "1.4"
 Static = "1.2"
@@ -53,7 +55,7 @@ Reexport = "1.2"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua", "AllocCheck", "OrdinaryDiffEqExplicitRK"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua", "AllocCheck", "OrdinaryDiffEqExplicitRK", "ODEProblemLibrary"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
