@@ -393,7 +393,6 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack zprev, zᵧ, atmp, nlsolver, step_limiter! = cache
     @unpack z, tmp = nlsolver
-    W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     b = nlsolver.ztmp
     @unpack γ, d, ω, btilde1, btilde2, btilde3, α1, α2 = cache.tab
     alg = unwrap_alg(integrator, true)
@@ -418,7 +417,7 @@ end
     @.. broadcast=false z=α1 * zprev + α2 * zᵧ
     @.. broadcast=false tmp=uprev + ω * zprev + ω * zᵧ
     nlsolver.c = 1
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
@@ -451,7 +450,6 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack zprev, zᵧ, atmp, nlsolver, step_limiter! = cache
     @unpack z, tmp = nlsolver
-    W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     b = nlsolver.ztmp
     @unpack γ, d, ω, btilde1, btilde2, btilde3, α1, α2 = cache.tab
     alg = unwrap_alg(integrator, true)
@@ -484,7 +482,7 @@ end
         tmp[i] = uprev[i] + ω * zprev[i] + ω * zᵧ[i]
     end
     nlsolver.c = 1
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
@@ -576,7 +574,6 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack z₁, z₂, atmp, nlsolver, step_limiter! = cache
     @unpack tmp = nlsolver
-    W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     alg = unwrap_alg(integrator, true)
     markfirststage!(nlsolver)
 
@@ -602,7 +599,7 @@ end
     ### Initial Guess Is α₁ = c₂/γ, c₂ = 0 => z₂ = α₁z₁ = 0
     z₂ .= zero(eltype(u))
     nlsolver.z = z₂
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     @.. broadcast=false tmp=uprev - z₁
     nlsolver.tmp = tmp
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
@@ -873,7 +870,7 @@ end
 
     @.. broadcast=false tmp=uprev + z₁ / 2
     nlsolver.tmp = tmp
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
@@ -989,7 +986,6 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack z₁, z₂, z₃, z₄, z₅, atmp, nlsolver = cache
     @unpack tmp = nlsolver
-    W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4 = cache.tab
     @unpack b1hat1, b2hat1, b3hat1, b4hat1, b1hat2, b2hat2, b3hat2, b4hat2 = cache.tab
     alg = unwrap_alg(integrator, true)
@@ -1015,7 +1011,7 @@ end
 
     @.. broadcast=false tmp=uprev + a21 * z₁
     nlsolver.tmp = tmp
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     nlsolver.c = c2
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
@@ -1154,7 +1150,6 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack z₁, z₂, z₃, z₄, nlsolver = cache
     @unpack tmp = nlsolver
-    W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4 = cache.tab
     alg = unwrap_alg(integrator, true)
     markfirststage!(nlsolver)
@@ -1178,7 +1173,7 @@ end
 
     @.. broadcast=false tmp=uprev + a21 * z₁
     nlsolver.tmp = tmp
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     nlsolver.c = c2
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
@@ -1287,7 +1282,6 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack z₁, z₂, z₃, z₄, z₅, nlsolver = cache
     @unpack tmp = nlsolver
-    W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, c2, c3, c4, c5 = cache.tab
     alg = unwrap_alg(integrator, true)
     markfirststage!(nlsolver)
@@ -1311,7 +1305,7 @@ end
 
     @.. broadcast=false tmp=uprev + a21 * z₁
     nlsolver.tmp = tmp
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     nlsolver.c = c2
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
@@ -1441,7 +1435,6 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack z₁, z₂, z₃, z₄, z₅, z₆, nlsolver = cache
     @unpack tmp = nlsolver
-    W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, c2, c3, c4, c5, c6 = cache.tab
     alg = unwrap_alg(integrator, true)
     markfirststage!(nlsolver)
@@ -1465,7 +1458,7 @@ end
 
     @.. broadcast=false tmp=uprev + a21 * z₁
     nlsolver.tmp = tmp
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     nlsolver.c = c2
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
@@ -1619,7 +1612,6 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, nlsolver = cache
     @unpack tmp = nlsolver
-    W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, c2, c3, c4, c5, c6, c7 = cache.tab
     alg = unwrap_alg(integrator, true)
     markfirststage!(nlsolver)
@@ -1643,7 +1635,7 @@ end
 
     @.. broadcast=false tmp=uprev + a21 * z₁
     nlsolver.tmp = tmp
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     nlsolver.c = c2
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
@@ -1822,7 +1814,6 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, nlsolver = cache
     @unpack tmp = nlsolver
-    W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a92, a93, a94, a95, a96, a97, a98, c2, c3, c4, c5, c6, c7, c8 = cache.tab
     alg = unwrap_alg(integrator, true)
     markfirststage!(nlsolver)
@@ -1846,7 +1837,7 @@ end
 
     @.. broadcast=false tmp=uprev + a21 * z₁
     nlsolver.tmp = tmp
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     nlsolver.c = c2
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
@@ -2040,7 +2031,7 @@ end
     @.. broadcast=false tmp=uprev + a21 * z₁
     nlsolver.tmp = tmp
     nlsolver.c = c2
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
@@ -2239,7 +2230,7 @@ end
     nlsolver.c = 2γ
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
 
     ################################## Solve Step 3
 
@@ -2433,7 +2424,7 @@ end
     nlsolver.c = 2γ
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
 
     ################################## Solve Step 3
 
@@ -2618,7 +2609,7 @@ end
     nlsolver.c = 2γ
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
 
     ################################## Solve Step 3
 
@@ -2813,7 +2804,7 @@ end
     nlsolver.c = 2γ
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
 
     ################################## Solve Step 3
 
@@ -3029,7 +3020,7 @@ end
     nlsolver.c = 2γ
     z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
 
     ################################## Solve Step 3
 
