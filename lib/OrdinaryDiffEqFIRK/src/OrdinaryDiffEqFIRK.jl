@@ -23,6 +23,7 @@ using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
 isfirk, generic_solver_docstring
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu
+using SparseArrays: nonzeros
 import LinearSolve
 import FastBroadcast: @..
 import OrdinaryDiffEqCore
@@ -30,7 +31,7 @@ import OrdinaryDiffEqCore: _ode_interpolant, _ode_interpolant!, has_stiff_interp
 import FastPower: fastpower
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_config,
                                      UDerivativeWrapper, calc_J!, dolinsolve, calc_J,
-                                     islinearfunction
+                                     islinearfunction, is_sparse
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, Convergence, FastConvergence, NLStatus,
                                     VerySlowConvergence,
                                     Divergence, get_new_W_γdt_cutoff
