@@ -3892,3 +3892,178 @@ end
         btilde1, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13,
         btilde14, btilde15, btilde16)
 end
+
+"""
+RKV76.IIa - A 'most efficient' Runge--Kutta (10:7(6)) pair
+From Verner's Website
+"""
+struct RKV76IIaTableau{T, T2}
+    c1::T2
+    c2::T2
+    c3::T2
+    c4::T2
+    c5::T2
+    c6::T2
+    c7::T2
+    c8::T2
+    c9::T2
+    c10::T2
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    a61::T
+    a62::T
+    a63::T
+    a64::T
+    a65::T
+    a71::T
+    a72::T
+    a73::T
+    a74::T
+    a75::T
+    a76::T
+    a81::T
+    a82::T
+    a83::T
+    a84::T
+    a85::T
+    a86::T
+    a87::T
+    a91::T
+    a92::T
+    a93::T
+    a94::T
+    a95::T
+    a96::T
+    a97::T
+    a98::T
+    a101::T
+    a102::T
+    a103::T
+    a104::T
+    a105::T
+    a106::T
+    a107::T
+    a108::T
+    a109::T
+    b1::T
+    b2::T
+    b3::T
+    b4::T
+    b5::T
+    b6::T
+    b7::T
+    b8::T
+    b9::T
+    b10::T
+    bh1::T
+    bh2::T
+    bh3::T
+    bh4::T
+    bh5::T
+    bh6::T
+    bh7::T
+    bh8::T
+    bh9::T
+    bh10::T
+end
+
+function RKV76IIaTableau(T, T2)
+    c1  = convert(T2, BigFloat("0"))
+    c2  = convert(T2, BigFloat("0.069"))
+    c3  = convert(T2, BigFloat("0.118"))
+    c4  = convert(T2, BigFloat("0.177"))
+    c5  = convert(T2, BigFloat("0.501"))
+    c6  = convert(T2, BigFloat("0.7737799115305331003715765296862487670813"))
+    c7  = convert(T2, BigFloat("0.994"))
+    c8  = convert(T2, BigFloat("0.998"))
+    c9  = convert(T2, BigFloat("1"))
+    c10 = convert(T2, BigFloat("1"))
+
+    # Butcher tableau A matrix
+    a21  = convert(T, BigFloat("0.069"))
+    a31  = convert(T, BigFloat("0.01710144927536231884057971014492753623188"))
+    a32  = convert(T, BigFloat("0.1008985507246376811594202898550724637681"))
+    a41  = convert(T, BigFloat("0.04425"))
+    a42  = convert(T, BigFloat("0"))
+    a43  = convert(T, BigFloat("0.13275"))
+    a51  = convert(T, BigFloat("0.7353445130709566216604424016087331226659"))
+    a52  = convert(T, BigFloat("0"))
+    a53  = convert(T, BigFloat("-2.830160657856937661591496696351623096811"))
+    a54  = convert(T, BigFloat("2.595816144785981039931054294742889974145"))
+    a61  = convert(T, BigFloat("-12.21580485360407974005910916471598682362"))
+    a62  = convert(T, BigFloat("0"))
+    a63  = convert(T, BigFloat("48.82665485823736062335980699373053427134"))
+    a64  = convert(T, BigFloat("-38.55615592319928364666616600329792491404"))
+    a65  = convert(T, BigFloat("2.719085830096535863737044703969626233400"))
+    a71  = convert(T, BigFloat("108.8614188704176574066699618897203578466"))
+    a72  = convert(T, BigFloat("0"))
+    a73  = convert(T, BigFloat("-432.4521181775777896358931629332707752654"))
+    a74  = convert(T, BigFloat("343.9115281800118289547200158889409233641"))
+    a75  = convert(T, BigFloat("-20.55041135925273709189369488701721016265"))
+    a76  = convert(T, BigFloat("1.223582486401040366396880041626704217305"))
+    a81  = convert(T, BigFloat("113.4755131883738522204615568160304033854"))
+    a82  = convert(T, BigFloat("0"))
+    a83  = convert(T, BigFloat("-450.8122021555997002820400438087344405365"))
+    a84  = convert(T, BigFloat("358.5132765190089889943579090008312808216"))
+    a85  = convert(T, BigFloat("-21.45046667648445540174055882443151176550"))
+    a86  = convert(T, BigFloat("1.274053318605952891766776667539031508649"))
+    a87  = convert(T, BigFloat("-0.002174193904638422805639851234763413667602"))
+    a91  = convert(T, BigFloat("115.6996223324232534824963925993127275021"))
+    a92  = convert(T, BigFloat("0"))
+    a93  = convert(T, BigFloat("-459.6635446100248030478961869239726305957"))
+    a94  = convert(T, BigFloat("365.5534717131745930309149378867953890507"))
+    a95  = convert(T, BigFloat("-21.88511586349784824146225495848432937529"))
+    a96  = convert(T, BigFloat("1.298718109698721459187976480852777474315"))
+    a97  = convert(T, BigFloat("-0.00005318700918481883515898878747322241917739"))
+    a98  = convert(T, BigFloat("-0.003098494764731864405706095716460833640254"))
+    a101 = convert(T, BigFloat("124.1543935612464600014576130437603883332"))
+    a102 = convert(T, BigFloat("0"))
+    a103 = convert(T, BigFloat("-493.2318713314597046194663569971348299332"))
+    a104 = convert(T, BigFloat("392.2086219315800762927575562172365337929"))
+    a105 = convert(T, BigFloat("-23.48641564290853341361596821616234280392"))
+    a106 = convert(T, BigFloat("1.362322948908907509911149920532561575254"))
+    a107 = convert(T, BigFloat("-0.007051467367205771043993968232310964220061"))
+    a108 = convert(T, BigFloat("0"))
+    a109 = convert(T, BigFloat("0"))
+
+    # High order weights
+    b1  = convert(T, BigFloat("0.05163520172057869163393251056217968836723"))
+    b2  = convert(T, BigFloat("0"))
+    b3  = convert(T, BigFloat("0"))
+    b4  = convert(T, BigFloat("0.2767172535461648728769641534539952501983"))
+    b5  = convert(T, BigFloat("0.3374175285287150670818592701488271741753"))
+    b6  = convert(T, BigFloat("0.1884488267810967803491085059046161195540"))
+    b7  = convert(T, BigFloat("24.54134121634868026791753618430192161716"))
+    b8  = convert(T, BigFloat("-68.81190284469011946382716084194838780382"))
+    b9  = convert(T, BigFloat("44.41634281776488378396776021757684795437"))
+    b10 = convert(T, BigFloat("0"))
+
+    # Low order weights
+    bh1  = convert(T, BigFloat("0.05089676583692947576073561095512200263213"))
+    bh2  = convert(T, BigFloat("0"))
+    bh3  = convert(T, BigFloat("0"))
+    bh4  = convert(T, BigFloat("0.2793777374763233901369432426263934138476"))
+    bh5  = convert(T, BigFloat("0.3281330142746535239936396881369403928344"))
+    bh6  = convert(T, BigFloat("0.224172121818615103358179483735013"))
+    bh7 = convert(T, BigFloat("0.7874574778015076584344903106189416715189"))
+    bh8 = convert(T, BigFloat("0"))
+    bh9 = convert(T, BigFloat("0"))
+    bh10 = convert(T, BigFloat("-0.6700371172080291516839883360724104817561"))
+
+    RKV76IIaTableau(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10,
+                    a21, a31, a32, a41, a42, a43, a51, a52, a53, a54,
+                    a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76,
+                    a81, a82, a83, a84, a85, a86, a87,
+                    a91, a92, a93, a94, a95, a96, a97, a98,
+                    a101, a102, a103, a104, a105, a106, a107, a108, a109,
+                    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+                    bh1, bh2, bh3, bh4, bh5, bh6, bh7, bh8, bh9, bh10)
+end

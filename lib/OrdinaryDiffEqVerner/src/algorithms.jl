@@ -153,3 +153,29 @@ To gain access to stiff algorithms you might have to install additional librarie
 such as `OrdinaryDiffEqRosenbrock`.
 """
 AutoVern9(alg; lazy = true, kwargs...) = AutoAlgSwitch(Vern9(lazy = lazy), alg; kwargs...)
+
+
+@doc explicit_rk_docstring(
+    "Verner's RKV76.IIa 7/6 method. Most efficient 10-stage conventional pair of orders 6 and 7 with interpolants.",
+    "RKV76IIa",
+    references = "@misc{verner2024rkv76iia,
+    title={RKV76.IIa - A 'most efficient' Runge--Kutta (10:7(6)) pair},
+    author={Verner, James H},
+    year={2024},
+    url={https://www.sfu.ca/~jverner/RKV76.IIa.Efficient.000003389335684.240711.FLOAT6040OnWeb}
+    }",
+    extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.
+                    """,
+    extra_keyword_default = "lazy = true")
+Base.@kwdef struct RKV76IIa{StageLimiter, StepLimiter, Thread} <:
+                   OrdinaryDiffEqAdaptiveAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+    lazy::Bool = true
+end
+@truncate_stacktrace RKV76IIa 3
+# for backwards compatibility
+function RKV76IIa(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
+    RKV76IIa(stage_limiter!, step_limiter!, False(), lazy)
+end
