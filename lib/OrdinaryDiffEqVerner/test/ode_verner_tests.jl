@@ -1,4 +1,4 @@
-using OrdinaryDiffEqVerner, OrdinaryDiffEqCore
+using OrdinaryDiffEqVerner, OrdinaryDiffEqCore, OrdinaryDiffEqExplicitRK
 using DiffEqDevTools, Test
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 
