@@ -219,7 +219,8 @@ function build_nlsolver(
         linsolve = init(linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
             Pl = Pl, Pr = Pr,
-            assumptions = LinearSolve.OperatorAssumptions(true))
+            assumptions = LinearSolve.OperatorAssumptions(true),
+            verbose = Minimal())
 
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
@@ -325,7 +326,7 @@ function build_nlsolver(
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
             prob = NonlinearProblem(NonlinearFunction{false}(nlf), copy(ztmp), nlp_params)
-            cache = init(prob, nlalg.alg)
+            cache = init(prob, nlalg.alg, verbose = Minimal())
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache)
         else

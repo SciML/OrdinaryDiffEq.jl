@@ -9,7 +9,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            OrdinaryDiffEqPartitionedAlgorithm,
                            CompiledFloats, uses_uprev,
                            alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-                           constvalue, _unwrap_val,
+                           constvalue, _unwrap_val, @SciMLMessage,
                            explicit_rk_docstring, trivial_limiter!,
                            _ode_interpolant!, _ode_addsteps!, get_fsalfirstlast,
                            generic_solver_docstring, default_linear_interpolation
