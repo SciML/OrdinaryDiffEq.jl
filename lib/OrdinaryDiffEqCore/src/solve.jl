@@ -498,7 +498,7 @@ function SciMLBase.__init(
         Base.depwarn(message, :solve)
     end
 
-    # The folowing code provides an upgrade path for users by preserving the old behavior.
+    # The following code provides an upgrade path for users by preserving the old behavior.
     legacy_controller_parameters = (gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit)
     if controller === nothing # We have to reconstruct the old controller before breaking release.
         if any(legacy_controller_parameters .== nothing)
