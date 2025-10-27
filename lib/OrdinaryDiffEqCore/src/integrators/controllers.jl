@@ -479,7 +479,7 @@ end
     #   EEst = eps(typeof(EEst))
     # end
     # ```
-    EEst = ifelse(EEst > EEst_min, EEst, EEst_min)
+    EEst = max(EEst, EEst_min)
 
     controller.err[1] = inv(EEst)
     err1, err2, err3 = controller.err
@@ -616,7 +616,7 @@ end
     #   EEst = eps(typeof(EEst))
     # end
     # ```
-    EEst = ifelse(EEst > EEst_min, EEst, EEst_min)
+    EEst = max(EEst, EEst_min)
 
     cache.err[1] = inv(EEst)
     err1, err2, err3 = cache.err
