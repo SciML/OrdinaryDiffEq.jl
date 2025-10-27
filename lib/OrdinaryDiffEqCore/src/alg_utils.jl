@@ -379,6 +379,12 @@ function default_controller_v7(QT, alg)
     end
 end
 
+function default_controller_v7(QT, alg::CompositeAlgorithm)
+    return CompositeController(
+        map(alg->default_controller_v7(QT, alg), alg.algs)
+    )
+end
+
 function legacy_default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
     if ispredictive(alg)
         return PredictiveController()
