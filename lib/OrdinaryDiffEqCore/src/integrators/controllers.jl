@@ -875,3 +875,38 @@ function step_reject_controller!(integrator, cache::PredictiveControllerCache, a
     @unpack qold = cache
     return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end
+
+# For a composite algorithm the default strategy is to switch forth and back between the controllers of the individual algorithms
+struct CompositeController{T} <: AbstractController
+    controllers::T
+end
+
+struct CompositeControllerCache{T} <: AbstractControllerCache
+    caches::T
+end
+
+function setup_controller_cache(alg_cache::CompositeCache, cc::CompositeController)
+    CompositeControllerCache(
+        map((cache,controller)->default_controller_v7(cache, controller), alg_cache.caches, cc.controllers)
+    )
+end
+
+@inline function accept_step_controller(integrator, cache::CompositeControllerCache)
+    current_idx = integrator.cache.current
+    accept_step_controller(integrator, cache.caches[current_idx])
+end
+
+@inline function stepsize_controller!(integrator, cache::CompositeControllerCache)
+    current_idx = integrator.cache.current
+    stepsize_controller!(integrator, cache.caches[current_idx])
+end
+
+@inline function step_accept_controller!(integrator, cache::CompositeControllerCache, q)
+    current_idx = integrator.cache.current
+    step_accept_controller!(integrator, cache.caches[current_idx], q)
+end
+
+@inline function step_reject_controller!(integrator, cache::CompositeControllerCache)
+    current_idx = integrator.cache.current
+    step_reject_controller!(integrator, cache.caches[current_idx])
+end
