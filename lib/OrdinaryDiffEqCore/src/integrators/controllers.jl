@@ -3,6 +3,53 @@ abstract type AbstractLegacyController <: AbstractController end
 
 abstract type AbstractControllerCache end
 
+"""
+    setup_controller_cache(alg_cache, controller::AbstractController)::AbstractControllerCache
+
+This function takes a controller together with the cache of the time stepping
+algorithm to construct and initialize the respective cache for the controller.
+"""
+setup_controller_cache
+
+"""
+    accept_step_controller(integrator, controller_cache::AbstractControllerCache)::Bool
+
+This function decides whether the current time step should be accepted or rejected.
+A return value of `false` corresponds to a rejection.
+"""
+accept_step_controller
+
+"""
+    stepsize_controller!(integrator, controller_cache::AbstractControllerCache)
+
+Update the cache to compute the new order of the time marching algorithm and prepare
+for an update of the time step. The update can be either due to a rejection or acceptance
+of the current time step.
+"""
+stepsize_controller!
+
+"""
+    step_accept_controller!(integrator, controller_cache::AbstractControllerCache, q)
+
+This function gets called in case of an accepted time step right after [`stepsize_controller!`](@ref).
+It returns the proposed new time step length. Please note that the time step length might not be
+applied as is and subject to further modification to e.g. match the next time stop.
+
+!!! warning
+    The parameter `q` will be removed the next release and will be passed through the
+    controller cache if needed.
+"""
+step_accept_controller!
+
+"""
+    step_reject_controller!(integrator, controller_cache::AbstractControllerCache)
+
+This function gets called in case of a rejected time step right after [`stepsize_controller!`](@ref).
+It directly sets the time step length (i.e. `integrator.dt`).
+"""
+step_reject_controller!
+
+
 # The legacy controllers do not have this concept.
 setup_controller_cache(alg_cache, controller::AbstractLegacyController) = controller
 
