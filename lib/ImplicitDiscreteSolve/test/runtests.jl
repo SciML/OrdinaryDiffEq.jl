@@ -9,20 +9,20 @@ using JET
 # Test implicit Euler using ImplicitDiscreteProblem
 @testset "Implicit Euler" begin
     function lotkavolterra(u, p, t)
-        [1.5*u[1] - u[1]*u[2], -3.0*u[2] + u[1]*u[2]]
+        [1.5 * u[1] - u[1] * u[2], -3.0 * u[2] + u[1] * u[2]]
     end
 
     function f!(resid, u_next, u, p, t)
         lv = lotkavolterra(u_next, p, t)
-        resid[1] = u_next[1] - u[1] - 0.01*lv[1]
-        resid[2] = u_next[2] - u[2] - 0.01*lv[2]
+        resid[1] = u_next[1] - u[1] - 0.01 * lv[1]
+        resid[2] = u_next[2] - u[2] - 0.01 * lv[2]
         nothing
     end
     u0 = [1.0, 1.0]
     tspan = (0.0, 0.5)
 
     idprob = ImplicitDiscreteProblem(f!, u0, tspan, []; dt = 0.01)
-    idsol = solve(idprob, IDSolve())
+    idsol = solve(idprob, IDSolve(); adaptive = false)
 
     oprob = ODEProblem(lotkavolterra, u0, tspan)
     osol = solve(oprob, ImplicitEuler())
@@ -37,15 +37,15 @@ using JET
 
     function g!(resid, u_next, u, p, t)
         f = ff(u_next, p, t)
-        resid[1] = u_next[1] - u[1] - 0.01*f[1]
-        resid[2] = u_next[2] - u[2] - 0.01*f[2]
+        resid[1] = u_next[1] - u[1] - 0.01 * f[1]
+        resid[2] = u_next[2] - u[2] - 0.01 * f[2]
         nothing
     end
     u0 = [10.0, 0.0]
     tspan = (0, 0.2)
 
     idprob = ImplicitDiscreteProblem(g!, u0, tspan, []; dt = 0.01)
-    idsol = solve(idprob, IDSolve())
+    idsol = solve(idprob, IDSolve(); adaptive = false)
 
     oprob = ODEProblem(ff, u0, tspan)
     osol = solve(oprob, ImplicitEuler())
@@ -55,7 +55,7 @@ end
 
 @testset "Solver initializes" begin
     function periodic!(resid, u_next, u, p, t)
-        resid[1] = u_next[1] - u[1] - sin(t*π/4)
+        resid[1] = u_next[1] - u[1] - sin(t * π / 4)
         resid[2] = 16 - u_next[2]^2 - u_next[1]^2
     end
 
@@ -71,15 +71,34 @@ end
     end
 end
 
+@testset "Hard problem" begin
+    function hard!(resid, u, u_prev, p, t)
+        resid[1] = tanh((u[1] - 10t)^2) / 2
+    end
+
+    u0 = [0.0]
+    idprob = ImplicitDiscreteProblem(hard!, u0, (0.0, 1.0), [])
+    integrator = init(idprob, IDSolve())
+    idsol = solve!(integrator)
+    @test idsol.retcode == ReturnCode.Success
+end
+
 @testset "Handle nothing in u0" begin
-    function empty(u_next, u, p, t)
+    function emptyiip(residual, u_next, u, p, t) # TODO OOP variant does not work yet
+        nothing
+    end
+    function emptyoop(u_next, u, p, t) # TODO OOP variant does not work yet
         nothing
     end
 
     tsteps = 5
     u0 = nothing
-    idprob = ImplicitDiscreteProblem(empty, u0, (0, tsteps), [])
+    idprob = ImplicitDiscreteProblem(emptyiip, u0, (0, tsteps), [])
     @test_nowarn integ = init(idprob, IDSolve())
+
+    idprob2 = ImplicitDiscreteProblem(emptyoop, u0, (0, tsteps), [])
+    @test_throws AssertionError("Empty u not supported with out of place functions yet.") integ=init(
+        idprob2, IDSolve())
 end
 
 @testset "Create NonlinearLeastSquaresProblem" begin
@@ -92,7 +111,7 @@ end
     idprob = ImplicitDiscreteProblem(
         ImplicitDiscreteFunction(over, resid_prototype = zeros(3)), u0, (0, tsteps), [])
     integ = init(idprob, IDSolve())
-    @test integ.cache.prob isa NonlinearLeastSquaresProblem
+    @test integ.cache.nlcache.prob isa NonlinearLeastSquaresProblem
 
     function under(u_next, u, p, t)
         [u_next[1] - u_next[2] - 1]
@@ -100,7 +119,7 @@ end
     idprob = ImplicitDiscreteProblem(
         ImplicitDiscreteFunction(under; resid_prototype = zeros(1)), u0, (0, tsteps), [])
     integ = init(idprob, IDSolve())
-    @test integ.cache.prob isa NonlinearLeastSquaresProblem
+    @test integ.cache.nlcache.prob isa NonlinearLeastSquaresProblem
 
     function full(u_next, u, p, t)
         [u_next[1]^2 - 3, u_next[2] - u[1]]
@@ -108,7 +127,7 @@ end
     idprob = ImplicitDiscreteProblem(
         ImplicitDiscreteFunction(full; resid_prototype = zeros(2)), u0, (0, tsteps), [])
     integ = init(idprob, IDSolve())
-    @test integ.cache.prob isa NonlinearProblem
+    @test integ.cache.nlcache.prob isa NonlinearProblem
 end
 
 @testset "InitialFailure thrown" begin
