@@ -3,10 +3,10 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     (; nlcache, Θks) = cache
 
     # initial guess
-    if alg.extrapolant == :linear
-        @.. broadcast=false cache.z=integrator.u + dt * (integrator.u - integrator.uprev)
-    else # :constant
+    if alg.extrapolant == :constant
         cache.z .= integrator.u
+    else
+        error("Unknown extrapolant $(alg.extrapolant).")
     end
     state = ImplicitDiscreteState(cache.z, p, t + dt)
 
