@@ -24,7 +24,8 @@ end
     evalcache = NewmarkDiscretizationCache(
         f, t, p,
         dt, β, γ,
-        aₙ, vₙ, uₙ
+        aₙ, vₙ, uₙ,
+        nlcache.p.atmp, nlcache.p.vₙ₊₁,  nlcache.p.uₙ₊₁,
     )
     SciMLBase.reinit!(nlcache, aₙ, p = evalcache)
     solve!(nlcache)
@@ -83,7 +84,8 @@ end
     evalcache = NewmarkDiscretizationCache(
         f, t, p,
         dt, β, γ,
-        aₙ, vₙ, uₙ
+        aₙ, vₙ, uₙ,
+        nothing, nothing, nothing,
     )
     prob = NonlinearProblem{false}(newmark_discretized_residual, aₙ, evalcache)
     nlsol = solve(prob, nlsolver)
@@ -108,7 +110,7 @@ end
         else
             # Zienkiewicz and Xie (1991) Eq. 21
             δaₙ₊₁ = (integrator.fsallast.x[1] - aₙ₊₁)
-            integrator.EEst = dt * dt / 2 * (2 * β - 1 / 3) *
+            integrator.EEst = dt * dt * (β - 1 // 6) *
                               integrator.opts.internalnorm(δaₙ₊₁, t)
         end
     end

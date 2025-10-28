@@ -22,7 +22,10 @@ function alg_cache(alg::NewmarkBeta, u, rate_prototype, ::Type{uEltypeNoUnits},
     evalcache = NewmarkDiscretizationCache(
         f, t, p,
         dt, β, γ,
-        aₙ, vₙ, uₙ
+        aₙ, vₙ, uₙ,
+        DiffCache(copy(aₙ)),
+        DiffCache(copy(vₙ)),
+        DiffCache(copy(uₙ)),
     )
     aₙ₊₁ = zero(u.x[1])
     prob = NonlinearProblem{true}(newmark_discretized_residual!, aₙ₊₁, evalcache)
@@ -56,9 +59,9 @@ function alg_cache(alg::NewmarkBeta, u, rate_prototype, ::Type{uEltypeNoUnits},
     evalcache = NewmarkDiscretizationCache(
         f, t, p,
         dt, β, γ,
-        aₙ, vₙ, uₙ
+        aₙ, vₙ, uₙ,
+        nothing, nothing, nothing,
     )
-    aₙ₊₁ = zero(u.x[1])
 
     tmp = zero(u)
     NewmarkBetaConstantCache(u, uprev, fsalfirst, β, γ, alg.nlsolve, tmp)

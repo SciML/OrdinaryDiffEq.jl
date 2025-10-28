@@ -1,19 +1,19 @@
 @concrete mutable struct NewmarkDiscretizationCache
     # Eval
-    f::Any
-    t::Any
-    p::Any
+    f
+    t
+    p
     # Newmark discretization params
-    dt::Any
-    β::Any
-    γ::Any
-    aₙ::Any
-    vₙ::Any
-    uₙ::Any
-    # # Buffers (TODO the types of these must be compatible with the chosen AD mode)
-    # atmp
-    # vₙ₊₁
-    # uₙ₊₁
+    dt
+    β
+    γ
+    aₙ
+    vₙ
+    uₙ
+    # # Buffers be compatible with the chosen AD mode
+    atmp
+    vₙ₊₁
+    uₙ₊₁
 end
 
 # This is derived from the idea stated in Nonlinear Finite Elements by Peter Wriggers, Ch 6.1.2 .
@@ -43,17 +43,20 @@ end
     (; f, dt, t, p) = p_newmark
     (; γ, β, aₙ, vₙ, uₙ) = p_newmark
 
+    atmp = get_tmp(p_newmark.atmp, aₙ₊₁)
+    vₙ₊₁ = get_tmp(p_newmark.vₙ₊₁, aₙ₊₁)
+    uₙ₊₁ = get_tmp(p_newmark.uₙ₊₁, aₙ₊₁)
+
     # TODO these allocate. Add a buffer which is compatible with the used AD.
-    uₙ₊₁ = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
-    vₙ₊₁ = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
+    @.. uₙ₊₁ = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
+    @.. vₙ₊₁ = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
 
     # This temporary variable is also not compatible with AD.
-    atmp = copy(residual)
     f.f1(atmp, vₙ₊₁, uₙ₊₁, p, t)
     M = f.mass_matrix
 
     mul!(residual, M, aₙ₊₁)
-    residual .-= atmp
+    @.. residual = residual - atmp
 
     return nothing
 end
@@ -66,7 +69,6 @@ end
     uₙ₊₁ = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
     vₙ₊₁ = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
 
-    atmp = f.f1(vₙ₊₁, uₙ₊₁, p, t)
     M = f.mass_matrix
-    return M * aₙ₊₁ - atmp
+    return M * aₙ₊₁ - f.f1(vₙ₊₁, uₙ₊₁, p, t)
 end
