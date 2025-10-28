@@ -47,7 +47,6 @@ end
     vₙ₊₁ = get_tmp(p_newmark.vₙ₊₁, aₙ₊₁)
     uₙ₊₁ = get_tmp(p_newmark.uₙ₊₁, aₙ₊₁)
 
-    # TODO these allocate. Add a buffer which is compatible with the used AD.
     @.. uₙ₊₁ = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
     @.. vₙ₊₁ = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
 
