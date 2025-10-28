@@ -7,13 +7,11 @@ struct IDSolve{NLS} <:
        OrdinaryDiffEqAlgorithm
     nlsolve::NLS
     extrapolant::Symbol
-    controller::Symbol
 end
 
 function IDSolve(;
         nlsolve = NewtonRaphson(),
         extrapolant = :constant,
-        controller = :PI
 )
-    IDSolve{typeof(nlsolve)}(nlsolve, extrapolant, controller)
+    IDSolve{typeof(nlsolve)}(nlsolve, extrapolant)
 end
