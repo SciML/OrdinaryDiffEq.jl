@@ -33,7 +33,164 @@ function initialize!(integrator, cache::SDIRKMutableCache)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
-@muladd function generic_sdirk_perform_step!(integrator, cache::SDIRKConstantCache, repeat_step=false)
+# Dispatch for unified caches - all SDIRK algorithms use these same cache types
+@muladd function perform_step!(integrator, cache::SDIRKCache, repeat_step=false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack zs, atmp, nlsolver, tab = cache
+    @unpack tmp = nlsolver
+    alg = unwrap_alg(integrator, true)
+    step_limiter! = _get_step_limiter(alg, cache)
+    
+    A = tab.A
+    b = tab.b
+    c = tab.c
+    b_embed = tab.b_embed
+    s = size(A, 1)
+    
+    is_imex = _is_imex_scheme(integrator.f, tab)
+    
+    if is_imex
+        k_explicit = Vector{typeof(u)}(undef, s)
+        for i in 1:s
+            k_explicit[i] = zero(u)
+        end
+        f_impl = integrator.f.f1
+        f_expl = integrator.f.f2
+    else
+        k_explicit = nothing
+        f_impl = integrator.f
+        f_expl = nothing
+    end
+    
+    markfirststage!(nlsolver)
+    
+    for i in 1:s
+        zi = zs[i]
+        
+        if i == 1
+            if is_imex && !repeat_step && !integrator.last_stepfail
+                f_impl(zi, uprev, p, t)
+                @.. broadcast=false zi *= dt
+            elseif alg.extrapolant == :linear
+                @.. broadcast=false zi = dt * integrator.fsalfirst
+            else
+                fill!(zi, zero(eltype(u)))
+            end
+        else
+            fill!(zi, zero(eltype(u)))
+            
+            if hasproperty(tab, :α_pred) && tab.α_pred !== nothing
+                for j in 1:i-1
+                    @.. broadcast=false zi += tab.α_pred[i, j] * zs[j]
+                end
+            end
+        end
+        
+        nlsolver.z = zi
+        
+        @.. broadcast=false nlsolver.tmp = uprev
+        for j in 1:i-1
+            @.. broadcast=false nlsolver.tmp += A[i, j] * zs[j]
+        end
+        
+        if is_imex && tab.A_explicit !== nothing
+            if i == 1
+                @.. broadcast=false k_explicit[1] = dt * integrator.fsalfirst - zi
+            else
+                @.. broadcast=false u = nlsolver.tmp + A[i,i] * zs[i-1]
+                c_exp = tab.c_explicit !== nothing ? tab.c_explicit[i] : tab.c[i]
+                f_expl(k_explicit[i], u, p, t + c_exp * dt)
+                @.. broadcast=false k_explicit[i] *= dt
+                integrator.stats.nf2 += 1
+            end
+            
+            for j in 1:i-1
+                @.. broadcast=false nlsolver.tmp += tab.A_explicit[i, j] * k_explicit[j]
+            end
+        end
+        
+        nlsolver.c = typeof(nlsolver.c)(c[i])
+        nlsolver.γ = typeof(nlsolver.γ)(A[i, i])
+        
+        if i > 1 && isnewton(nlsolver)
+            set_new_W!(nlsolver, false)
+        end
+        
+        zi .= nlsolve!(nlsolver, integrator, cache, repeat_step)
+        nlsolvefail(nlsolver) && return
+    end
+    
+    @.. broadcast=false u = uprev
+    for i in 1:s
+        @.. broadcast=false u += b[i] * zs[i]
+    end
+    
+    if is_imex && tab.b_explicit !== nothing
+        if s >= 1
+            @.. broadcast=false tmp = nlsolver.tmp + A[s,s] * zs[s]
+            f_expl(k_explicit[s], tmp, p, t + dt)
+            @.. broadcast=false k_explicit[s] *= dt
+            integrator.stats.nf2 += 1
+        end
+        
+        for i in 1:s
+            @.. broadcast=false u += tab.b_explicit[i] * k_explicit[i]
+        end
+    end
+    
+    step_limiter!(u, integrator, p, t + dt)
+    
+    if integrator.opts.adaptive
+        if tab.has_spice_error && integrator.success_iter > 0
+            uprev2 = integrator.uprev2
+            tprev = integrator.tprev
+            
+            dt1 = dt * (t + dt - tprev)
+            dt2 = (t - tprev) * (t + dt - tprev)
+            c = 7 / 12
+            r = c * dt^2
+            
+            @.. broadcast=false tmp = r * integrator.opts.internalnorm(
+                (u - uprev) / dt1 - (uprev - uprev2) / dt2, t)
+            calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        elseif b_embed !== nothing
+            @.. broadcast=false tmp = zero(eltype(u))
+            for i in 1:s
+                @.. broadcast=false tmp += b_embed[i] * zs[i]
+            end
+            
+            has_smooth_est = hasfield(typeof(alg), :smooth_est)
+            if has_smooth_est && alg.smooth_est && isnewton(nlsolver)
+                est = atmp
+                linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
+                    linu = _vec(est))
+                integrator.stats.nsolve += 1
+            else
+                est = tmp
+            end
+            
+            calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        else
+            integrator.EEst = 1
+        end
+    end
+    
+    if is_imex
+        integrator.f(integrator.fsallast, u, p, t + dt)
+    else
+        @.. broadcast=false integrator.fsallast = zs[s] / dt
+    end
+    
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::SDIRKConstantCache, repeat_step=false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tab, nlsolver = cache
     alg = unwrap_alg(integrator, true)
@@ -45,12 +202,10 @@ end
     b_embed = tab.b_embed
     γ = tab.γ
     
-    # Type-stable IMEX check through dispatch
     is_imex = _is_imex_scheme(integrator.f, tab)
     
     z = Vector{typeof(u)}(undef, s)
     
-    # For IMEX schemes, we need to store explicit stage derivatives
     if is_imex
         k_explicit = Vector{typeof(u)}(undef, s)
         f_impl = integrator.f.f1
@@ -64,37 +219,30 @@ end
     markfirststage!(nlsolver)
     
     for i in 1:s
-        # Compute implicit stage sum
         stage_sum = uprev
         for j in 1:i-1
             stage_sum += A[i,j] * z[j]
         end
         
-        # For IMEX schemes, add explicit contributions
         if is_imex && tab.A_explicit !== nothing
-            # First stage for explicit part
             if i == 1
                 k_explicit[1] = dt * integrator.fsalfirst - (is_imex ? dt * f_impl(uprev, p, t) : zero(u))
             else
-                # Compute intermediate solution for explicit evaluation
                 u_tmp = nlsolver.tmp
                 if i >= 2
                     u_tmp += tab.γ * z[i-1]
                 end
                 
-                # Use c from implicit tableau if c_explicit is not defined
                 c_exp = tab.c_explicit !== nothing ? tab.c_explicit[i] : tab.c[i]
                 k_explicit[i] = dt * f_expl(u_tmp, p, t + c_exp * dt)
                 integrator.stats.nf2 += 1
             end
             
-            # Add explicit tableau contributions
             for j in 1:i-1
                 stage_sum += tab.A_explicit[i,j] * k_explicit[j]
             end
         end
 
-        # Determine initial guess for stage
         if i == 1
             if is_imex
                 z_guess = dt * f_impl(uprev, p, t)
@@ -119,15 +267,12 @@ end
         nlsolvefail(nlsolver) && return
     end
     
-    # Compute final solution
     u = uprev
     for i in 1:s
         u += b[i] * z[i]
     end
     
-    # For IMEX schemes, add explicit contributions to final solution
     if is_imex && tab.b_explicit !== nothing
-        # Need final explicit evaluation
         if s >= 1
             u_final = nlsolver.tmp + tab.γ * z[s]
             k_explicit[s] = dt * f_expl(u_final, p, t + dt)
@@ -139,35 +284,46 @@ end
         end
     end
     
-    # apply step limiter if available on algorithm
     if hasproperty(alg, :step_limiter!)
         alg.step_limiter!(u, integrator, p, t + dt)
     end
     
-    # Error estimation
-    if integrator.opts.adaptive && b_embed !== nothing
-        tmp = zero(u)
-        for i in 1:s
-            tmp += b_embed[i] * z[i]
-        end
-        
-        # For IMEX schemes, include explicit error contributions
-        # (This would require additional error estimation tableau components)
-        
-        has_smooth_est = hasfield(typeof(alg), :smooth_est)
-        if isnewton(nlsolver) && has_smooth_est && alg.smooth_est
-            integrator.stats.nsolve += 1
-            est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
+    if integrator.opts.adaptive
+        if tab.has_spice_error && integrator.success_iter > 0
+            uprev2 = integrator.uprev2
+            tprev = integrator.tprev
+            
+            dt1 = dt * (t + dt - tprev)
+            dt2 = (t - tprev) * (t + dt - tprev)
+            c = 7 / 12
+            r = c * dt^2
+            
+            tmp = r * integrator.opts.internalnorm.((u - uprev) / dt1 - (uprev - uprev2) / dt2, t)
+            atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        elseif b_embed !== nothing
+            tmp = zero(u)
+            for i in 1:s
+                tmp += b_embed[i] * z[i]
+            end
+            
+            has_smooth_est = hasfield(typeof(alg), :smooth_est)
+            if isnewton(nlsolver) && has_smooth_est && alg.smooth_est
+                integrator.stats.nsolve += 1
+                est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
+            else
+                est = tmp
+            end
+            
+            atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
         else
-            est = tmp
+            integrator.EEst = 1
         end
-        
-        atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     
-    # Set final derivative appropriately
     if is_imex
         integrator.k[1] = integrator.fsalfirst
         integrator.fsallast = integrator.f(u, p, t + dt)
@@ -178,175 +334,6 @@ end
         integrator.k[2] = integrator.fsallast
     end
     integrator.u = u
-end
-
-@muladd function generic_sdirk_perform_step!(integrator, cache::SDIRKMutableCache, repeat_step=false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack zs, atmp, nlsolver, tab = cache
-    @unpack tmp = nlsolver
-    alg = unwrap_alg(integrator, true)
-    step_limiter! = _get_step_limiter(alg, cache)
-    
-    A = tab.A
-    b = tab.b
-    c = tab.c
-    b_embed = tab.b_embed
-    s = size(A, 1)
-    
-    # Type-stable IMEX check through dispatch
-    is_imex = _is_imex_scheme(integrator.f, tab)
-    
-    # For IMEX schemes, we need to store explicit stage derivatives
-    if is_imex
-        k_explicit = Vector{typeof(u)}(undef, s)
-        for i in 1:s
-            k_explicit[i] = zero(u)
-        end
-        f_impl = integrator.f.f1
-        f_expl = integrator.f.f2
-    else
-        k_explicit = nothing
-        f_impl = integrator.f
-        f_expl = nothing
-    end
-    
-    markfirststage!(nlsolver)
-    
-    # Solve each stage
-    for i in 1:s
-        zi = zs[i]
-        
-        # Determine initial guess for stage
-        if i == 1
-            if is_imex && !repeat_step && !integrator.last_stepfail
-                # For IMEX, explicit tableau is not FSAL
-                f_impl(zi, uprev, p, t)
-                @.. broadcast=false zi *= dt
-            elseif alg.extrapolant == :linear
-                @.. broadcast=false zi = dt * integrator.fsalfirst
-            else
-                fill!(zi, zero(eltype(u)))
-            end
-        else
-            # Initialize stage to zero
-            fill!(zi, zero(eltype(u)))
-            
-            # Add predictor if available
-            if hasproperty(tab, :α_pred) && tab.α_pred !== nothing
-                for j in 1:i-1
-                    @.. broadcast=false zi += tab.α_pred[i, j] * zs[j]
-                end
-            end
-        end
-        
-        nlsolver.z = zi
-        
-        # Compute implicit stage sum
-        @.. broadcast=false nlsolver.tmp = uprev
-        for j in 1:i-1
-            @.. broadcast=false nlsolver.tmp += A[i, j] * zs[j]
-        end
-        
-        # For IMEX schemes, add explicit contributions
-        if is_imex && tab.A_explicit !== nothing
-            # First stage for explicit part
-            if i == 1
-                @.. broadcast=false k_explicit[1] = dt * integrator.fsalfirst - zi
-            else
-                # Compute intermediate solution for explicit evaluation
-                @.. broadcast=false u = nlsolver.tmp + A[i,i] * zs[i-1]
-                # Use c from implicit tableau if c_explicit is not defined
-                c_exp = tab.c_explicit !== nothing ? tab.c_explicit[i] : tab.c[i]
-                f_expl(k_explicit[i], u, p, t + c_exp * dt)
-                @.. broadcast=false k_explicit[i] *= dt
-                integrator.stats.nf2 += 1
-            end
-            
-            # Add explicit tableau contributions
-            for j in 1:i-1
-                @.. broadcast=false nlsolver.tmp += tab.A_explicit[i, j] * k_explicit[j]
-            end
-        end
-        
-        nlsolver.c = typeof(nlsolver.c)(c[i])
-        nlsolver.γ = typeof(nlsolver.γ)(A[i, i])
-        
-        if i > 1 && isnewton(nlsolver)
-            set_new_W!(nlsolver, false)
-        end
-        
-        zi .= nlsolve!(nlsolver, integrator, cache, repeat_step)
-        nlsolvefail(nlsolver) && return
-    end
-    
-    # Compute final solution
-    @.. broadcast=false u = uprev
-    for i in 1:s
-        @.. broadcast=false u += b[i] * zs[i]
-    end
-    
-    # For IMEX schemes, add explicit contributions to final solution
-    if is_imex && tab.b_explicit !== nothing
-        # Need final explicit evaluation
-        if s >= 1
-            @.. broadcast=false tmp = nlsolver.tmp + A[s,s] * zs[s]
-            f_expl(k_explicit[s], tmp, p, t + dt)
-            @.. broadcast=false k_explicit[s] *= dt
-            integrator.stats.nf2 += 1
-        end
-        
-        for i in 1:s
-            @.. broadcast=false u += tab.b_explicit[i] * k_explicit[i]
-        end
-    end
-    
-    step_limiter!(u, integrator, p, t + dt)
-    
-    # Error estimation for adaptive methods
-    if integrator.opts.adaptive && b_embed !== nothing
-        @.. broadcast=false tmp = zero(eltype(u))
-        for i in 1:s
-            @.. broadcast=false tmp += b_embed[i] * zs[i]
-        end
-        
-        # For IMEX schemes, include explicit error contributions
-        # (This would require additional error estimation tableau components)
-        
-        has_smooth_est = hasfield(typeof(alg), :smooth_est)
-        if has_smooth_est && alg.smooth_est && isnewton(nlsolver)
-            est = atmp
-            linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
-                linu = _vec(est))
-            integrator.stats.nsolve += 1
-        else
-            est = tmp
-        end
-        
-        calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-    
-    # Set final derivative appropriately
-    if is_imex
-        integrator.f(integrator.fsallast, u, p, t + dt)
-    else
-        @.. broadcast=false integrator.fsallast = zs[s] / dt
-    end
-    
-    # Keep k array consistent with FSAL bookkeeping
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-    integrator.u = u
-end
-
-# Dispatch for unified caches - all SDIRK algorithms use these same cache types
-@muladd function perform_step!(integrator, cache::SDIRKCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
-end
-
-@muladd function perform_step!(integrator, cache::SDIRKConstantCache, repeat_step=false)
-    generic_sdirk_perform_step!(integrator, cache, repeat_step)
 end
 
 

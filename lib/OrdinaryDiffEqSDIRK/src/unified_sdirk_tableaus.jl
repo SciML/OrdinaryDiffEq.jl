@@ -2,7 +2,7 @@ using StaticArrays
 
 abstract type AbstractTableau{T} end
 
-struct SDIRKTableau{T, T2, S, hasEmbedded, hasAdditiveSplitting} <: AbstractTableau{T}
+struct SDIRKTableau{T, T2, S, hasEmbedded, hasAdditiveSplitting, hasExplicit, hasPred} <: AbstractTableau{T}
     A::SMatrix{S, S, T}
     b::SVector{S, T}
     c::SVector{S, T2}
@@ -19,6 +19,7 @@ struct SDIRKTableau{T, T2, S, hasEmbedded, hasAdditiveSplitting} <: AbstractTabl
     b_explicit::Union{SVector{S, T}, Nothing}
     c_explicit::Union{SVector{S, T2}, Nothing}
     α_pred::Union{SMatrix{S, S, T2}, Nothing}
+    has_spice_error::Bool
 end
 
 function SDIRKTableau(A::SMatrix{S, S, T}, b::SVector{S, T}, c::SVector{S, T2}, γ::T,
@@ -27,17 +28,20 @@ function SDIRKTableau(A::SMatrix{S, S, T}, b::SVector{S, T}, c::SVector{S, T2}, 
                       is_A_stable=true, is_L_stable=false,
                       predictor_type=:default, has_additive_splitting=false,
                       A_explicit=nothing, b_explicit=nothing, c_explicit=nothing,
-                      α_pred=nothing) where {S, T, T2}
+                      α_pred=nothing, has_spice_error=false) where {S, T, T2}
     
     hasEmbedded = b_embed !== nothing
     hasAdditiveSplitting = has_additive_splitting
-    SDIRKTableau{T, T2, S, hasEmbedded, hasAdditiveSplitting}(A, b, c, b_embed, γ, order, embedded_order,
-                                                               is_fsal, is_stiffly_accurate, is_A_stable,
-                                                               is_L_stable, predictor_type,
-                                                               A_explicit, b_explicit, c_explicit, α_pred)
+    hasExplicit = A_explicit !== nothing
+    hasPred = α_pred !== nothing
+    SDIRKTableau{T, T2, S, hasEmbedded, hasAdditiveSplitting, hasExplicit, hasPred}(
+        A, b, c, b_embed, γ, order, embedded_order,
+        is_fsal, is_stiffly_accurate, is_A_stable,
+        is_L_stable, predictor_type,
+        A_explicit, b_explicit, c_explicit, α_pred, has_spice_error)
 end
 
-function TRBDF2Tableau_unified(T=Float64, T2=Float64)
+function TRBDF2Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γ = T2(2 - sqrt(2))
     d = T(1 - sqrt(2) / 2) 
     ω = T(sqrt(2) / 4)
@@ -51,14 +55,23 @@ function TRBDF2Tableau_unified(T=Float64, T2=Float64)
     
     b_embed = @SVector [(1-ω)/3, (3*ω+1)/3, d/3]
     
+    α1 = T2(-sqrt(2) / 2)
+    α2 = T2(1 + sqrt(2) / 2)
+    α_pred = @SMatrix T2[
+        0 0 0;
+        0 0 0;
+        α1 α2 0
+    ]
+    
     SDIRKTableau(A, b, c, d, 2;
                  b_embed=b_embed, embedded_order=3,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
-                 predictor_type=:trbdf2_special)
+                 predictor_type=:trbdf2_special,
+                 α_pred=α_pred)
 end
 
-function ImplicitEulerTableau(T=Float64, T2=Float64)
+function ImplicitEulerTableau(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     A = @SMatrix [T(1.0)]
     b = @SVector [T(1.0)]
     c = @SVector [T2(1.0)]
@@ -67,10 +80,11 @@ function ImplicitEulerTableau(T=Float64, T2=Float64)
     SDIRKTableau(A, b, c, γ, 1;
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
-                 predictor_type=:trivial)
+                 predictor_type=:trivial,
+                 has_spice_error=true)
 end
 
-function ImplicitMidpointTableau(T=Float64, T2=Float64)
+function ImplicitMidpointTableau(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.5)
     γc = T2(0.5)
     A = @SMatrix [γT]
@@ -83,7 +97,7 @@ function ImplicitMidpointTableau(T=Float64, T2=Float64)
                  predictor_type=:trivial)
 end
 
-function TrapezoidTableau(T=Float64, T2=Float64)
+function TrapezoidTableau(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.5)
     A = @SMatrix [T(0)   T(0);
                   T(0.5) T(0.5)]
@@ -93,10 +107,11 @@ function TrapezoidTableau(T=Float64, T2=Float64)
     SDIRKTableau(A, b, c, γT, 2;
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
-                 predictor_type=:default)
+                 predictor_type=:default,
+                 has_spice_error=true)
 end
 
-function SDIRK2Tableau(T=Float64, T2=Float64)
+function SDIRK2Tableau(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(1 - 1/sqrt(2))
     γc = T2(1 - 1/sqrt(2))
     A = @SMatrix [γT        T(0);
@@ -110,7 +125,7 @@ function SDIRK2Tableau(T=Float64, T2=Float64)
                  predictor_type=:default)
 end
 
-function SSPSDIRK2Tableau(T=Float64, T2=Float64)
+function SSPSDIRK2Tableau(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(1 - 1/sqrt(2))
     γc = T2(1 - 1/sqrt(2))
     A = @SMatrix [γT     T(0);
@@ -124,7 +139,7 @@ function SSPSDIRK2Tableau(T=Float64, T2=Float64)
                  predictor_type=:default)
 end
 
-function Kvaerno3Tableau_unified(T=Float64, T2=Float64)
+function Kvaerno3Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.4358665215)
     γc = T2(0.4358665215)
     
@@ -159,7 +174,7 @@ function Kvaerno3Tableau_unified(T=Float64, T2=Float64)
                  α_pred=α_pred)
 end
 
-function KenCarp3Tableau_unified(T=Float64, T2=Float64)
+function KenCarp3Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.435866521508459)
     γc = T2(0.435866521508459)
     
@@ -214,7 +229,7 @@ function KenCarp3Tableau_unified(T=Float64, T2=Float64)
                  α_pred=α_pred)
 end
 
-function Kvaerno4Tableau_unified(T=Float64, T2=Float64)
+function Kvaerno4Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.4358665215)
     γc = T2(0.4358665215)
     
@@ -236,7 +251,7 @@ function Kvaerno4Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function Kvaerno5Tableau_unified(T=Float64, T2=Float64)
+function Kvaerno5Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.26)
     γc = T2(0.26)
     
@@ -259,7 +274,7 @@ function Kvaerno5Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function KenCarp4Tableau_unified(T=Float64, T2=Float64)
+function KenCarp4Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(1//4)
     γc = T2(1//4)
     
@@ -294,7 +309,7 @@ function KenCarp4Tableau_unified(T=Float64, T2=Float64)
                  A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit)
 end
 
-function KenCarp47Tableau_unified(T=Float64, T2=Float64)
+function KenCarp47Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.1496590219993)
     γc = T2(0.1496590219993)
     
@@ -324,7 +339,7 @@ function KenCarp47Tableau_unified(T=Float64, T2=Float64)
                  A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit)
 end
 
-function KenCarp5Tableau_unified(T=Float64, T2=Float64)
+function KenCarp5Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.2113248654051871)
     γc = T2(0.2113248654051871)
     
@@ -355,7 +370,7 @@ function KenCarp5Tableau_unified(T=Float64, T2=Float64)
                  A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit)
 end
 
-function KenCarp58Tableau_unified(T=Float64, T2=Float64)
+function KenCarp58Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.1496590219993)
     γc = T2(0.1496590219993)
     
@@ -386,7 +401,7 @@ function KenCarp58Tableau_unified(T=Float64, T2=Float64)
                  A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit)
 end
 
-function SFSDIRK4Tableau_unified(T=Float64, T2=Float64)
+function SFSDIRK4Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.243220255)
     γc = T2(0.243220255)
     
@@ -405,7 +420,7 @@ function SFSDIRK4Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function SFSDIRK5Tableau_unified(T=Float64, T2=Float64)
+function SFSDIRK5Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.193883658)
     γc = T2(0.193883658)
     
@@ -425,7 +440,7 @@ function SFSDIRK5Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function SFSDIRK6Tableau_unified(T=Float64, T2=Float64)
+function SFSDIRK6Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.161)
     γc = T2(0.161)
     
@@ -445,7 +460,7 @@ function SFSDIRK6Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function SFSDIRK7Tableau_unified(T=Float64, T2=Float64)
+function SFSDIRK7Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.137)
     γc = T2(0.137)
     
@@ -466,7 +481,7 @@ function SFSDIRK7Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function SFSDIRK8Tableau_unified(T=Float64, T2=Float64)
+function SFSDIRK8Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.119)
     γc = T2(0.119)
     
@@ -488,7 +503,7 @@ function SFSDIRK8Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function ESDIRK54I8L2SATableau_unified(T=Float64, T2=Float64)
+function ESDIRK54I8L2SATableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.26)
     γc = T2(0.26)
     
@@ -513,7 +528,7 @@ function ESDIRK54I8L2SATableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function ESDIRK436L2SA2Tableau_unified(T=Float64, T2=Float64)
+function ESDIRK436L2SA2Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.25)
     γc = T2(0.25)
     
@@ -536,7 +551,7 @@ function ESDIRK436L2SA2Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function ESDIRK437L2SATableau_unified(T=Float64, T2=Float64)
+function ESDIRK437L2SATableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.2)
     γc = T2(0.2)
     
@@ -560,7 +575,7 @@ function ESDIRK437L2SATableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function ESDIRK547L2SA2Tableau_unified(T=Float64, T2=Float64)
+function ESDIRK547L2SA2Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.18)
     γc = T2(0.18)
     
@@ -584,7 +599,7 @@ function ESDIRK547L2SA2Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function ESDIRK659L2SATableau_unified(T=Float64, T2=Float64)
+function ESDIRK659L2SATableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.15)
     γc = T2(0.15)
     
@@ -610,7 +625,7 @@ function ESDIRK659L2SATableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function Hairer4Tableau_unified(T=Float64, T2=Float64)
+function Hairer4Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.4358665215)
     γc = T2(0.4358665215)
     
@@ -632,7 +647,7 @@ function Hairer4Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function Hairer42Tableau_unified(T=Float64, T2=Float64)
+function Hairer42Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.3995)
     γc = T2(0.3995)
     
@@ -654,7 +669,7 @@ function Hairer42Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function CFNLIRK3Tableau_unified(T=Float64, T2=Float64)
+function CFNLIRK3Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(0.4358665215)
     γc = T2(0.4358665215)
     
@@ -675,7 +690,7 @@ function CFNLIRK3Tableau_unified(T=Float64, T2=Float64)
                  predictor_type=:hermite)
 end
 
-function get_sdirk_tableau(alg::Symbol, T=Float64, T2=Float64)
+function get_sdirk_tableau(alg::Symbol, ::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     if alg == :ImplicitEuler
         return ImplicitEulerTableau(T, T2)
     elseif alg == :ImplicitMidpoint
@@ -739,4 +754,4 @@ function get_sdirk_tableau(alg::Symbol, T=Float64, T2=Float64)
     end
 end
 
-get_sdirk_tableau(alg, T=Float64, T2=Float64) = get_sdirk_tableau(nameof(typeof(alg)), T, T2)
+get_sdirk_tableau(alg, ::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2} = get_sdirk_tableau(nameof(typeof(alg)), T, T2)
