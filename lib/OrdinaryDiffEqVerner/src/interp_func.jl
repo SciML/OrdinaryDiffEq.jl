@@ -29,3 +29,11 @@ function SciMLBase.interp_summary(::Type{cacheType},
 }}
     dense ? "specialized 9th order lazy interpolation" : "1st order linear"
 end
+
+function SciMLBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <:
+        Union{RKV76IIaCache, RKV76IIaConstantCache
+}}
+    dense ? "specialized 7th order lazy interpolation" : "1st order linear"
+end

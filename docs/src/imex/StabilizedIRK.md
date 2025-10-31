@@ -89,8 +89,8 @@ Consider these alternatives:
   - **Standard IMEX methods** for natural explicit/implicit splitting
 
 ```@eval
-first_steps = evalfile("./common_first_steps.jl")
-first_steps("OrdinaryDiffEqStabilizedIRK", "IRKC")
+imex_first_steps = evalfile("./common_imex_first_steps.jl")
+imex_first_steps("OrdinaryDiffEqStabilizedIRK", "IRKC")
 ```
 
 ## Full list of solvers

@@ -128,7 +128,7 @@ export OrdinaryDiffEqRKN, Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndepend
 
 import OrdinaryDiffEqVerner: OrdinaryDiffEqVerner
 using OrdinaryDiffEqVerner: Vern6, Vern7, Vern8, Vern9, AutoVern6, AutoVern7, AutoVern8,
-                            AutoVern9
+                            AutoVern9 
 export OrdinaryDiffEqVerner, Vern6, Vern7, Vern8, Vern9
 
 import OrdinaryDiffEqHighOrderRK: OrdinaryDiffEqHighOrderRK

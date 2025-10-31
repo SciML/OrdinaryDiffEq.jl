@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqNonlinearSolve"
 uuid = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "1.14.0"
+version = "1.15.0"
 
 [deps]
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
@@ -37,7 +37,7 @@ AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
-NonlinearSolve = "4.10"
+NonlinearSolve = "4.12"
 ForwardDiff = "0.10.38, 1"
 Test = "<0.0.1, 1"
 FastBroadcast = "0.3"

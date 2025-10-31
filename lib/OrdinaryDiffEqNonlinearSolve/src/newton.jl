@@ -56,7 +56,7 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
 
-    @unpack ustep, tstep, k, invγdt = cache
+    @unpack ustep, atmp, tstep, k, invγdt = cache
 
     if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
@@ -66,25 +66,25 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
 
     nlstep_data = f.nlstep_data
     if nlstep_data !== nothing
+        atmp .= 0
         if method === COEFFICIENT_MULTISTEP
             nlstep_data.set_γ_c(nlstep_data.nlprob, (one(t), one(t), α * invγdt, tstep))
-            nlstep_data.set_inner_tmp(nlstep_data.nlprob, zero(z))
+            nlstep_data.set_inner_tmp(nlstep_data.nlprob, atmp)
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, tmp)
         else
             nlstep_data.set_γ_c(nlstep_data.nlprob, (dt, γ, one(t), tstep))
             nlstep_data.set_inner_tmp(nlstep_data.nlprob, tmp)
-            nlstep_data.set_outer_tmp(nlstep_data.nlprob, zero(z))
+            nlstep_data.set_outer_tmp(nlstep_data.nlprob, atmp)
         end
         nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
-        cache.cache = init(nlstep_data.nlprob, alg.alg)
+        SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p=nlstep_data.nlprob.p)
     else
         if f isa DAEFunction
             nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
         else
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
-        new_prob = remake(cache.prob, p = nlp_params, u0 = z)
-        cache.cache = init(new_prob, alg.alg)
+        SciMLBase.reinit!(cache.cache, z, p=nlp_params)
     end
     nothing
 end
@@ -127,7 +127,7 @@ end
             nlcache.prob, nlcache.alg, nlcache.u, nlcache.fu;
             nlcache.retcode, nlcache.stats, nlcache.trace
         )
-        ztmp .= nlstep_data.nlprobmap(nlstepsol)
+        nlstep_data.nlprobmap(ztmp, nlstepsol)
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
         calculate_residuals!(@view(atmp[nlstep_data.u0perm]), nlcache.fu, 
                              @view(uprev[nlstep_data.u0perm]), 
