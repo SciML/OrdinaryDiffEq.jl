@@ -1,6 +1,6 @@
 mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
     F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-    disccache}
+    disccache, verbType}
     maxiters::MI
     save_everystep::Bool
     adaptive::Bool
@@ -42,7 +42,7 @@ mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4
     callback::F4
     isoutofdomain::F5
     unstable_check::F7
-    verbose::ODEVerbosity
+    verbose::verbType
     calck::Bool
     force_dtmin::Bool
     advance_to_tstop::Bool
