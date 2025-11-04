@@ -1,8 +1,6 @@
-mutable struct DEOptions{
-        absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
-        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-        disccache,
-    }
+mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
+    F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+    disccache, verbType}
     maxiters::MI
     save_everystep::Bool
     adaptive::Bool
@@ -44,7 +42,7 @@ mutable struct DEOptions{
     callback::F4
     isoutofdomain::F5
     unstable_check::F7
-    verbose::ODEVerbosity
+    verbose::verbType
     calck::Bool
     force_dtmin::Bool
     advance_to_tstop::Bool
@@ -83,13 +81,11 @@ integrator.opts.abstol = 1e-9
 
 For more info see the linked documentation page.
 """
-mutable struct ODEIntegrator{
-        algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, IIP,
-        uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
-        ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
-        CallbackCacheType, IA, DV,
-    } <:
-    SciMLBase.AbstractODEIntegrator{algType, IIP, uType, tType}
+mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, IIP,
+    uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
+    ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
+    CallbackCacheType, IA, DV} <:
+               SciMLBase.AbstractODEIntegrator{algType, IIP, uType, tType}
     sol::SolType
     u::uType
     du::duType
