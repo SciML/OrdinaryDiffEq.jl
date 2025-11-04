@@ -464,7 +464,7 @@ function SciMLBase.__init(
         typeof(d_discontinuities_internal), typeof(userdata),
         typeof(save_idxs),
         typeof(maxiters), typeof(tstops),
-        typeof(saveat), typeof(d_discontinuities)}(maxiters, save_everystep,
+        typeof(saveat), typeof(d_discontinuities), typeof(verbose)}(maxiters, save_everystep,
         adaptive, abstol_internal,
         reltol_internal,
         QT(gamma), QT(qmax),
