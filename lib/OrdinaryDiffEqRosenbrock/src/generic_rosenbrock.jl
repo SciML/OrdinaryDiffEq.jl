@@ -255,7 +255,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             linsolve = init(linprob,alg.linsolve,alias = LinearAliasSpecifier(alias_A=true,alias_b=true),
                             Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
                             Pr = Diagonal(_vec(weight)),
-                            verbose = Minimal()) 
+                            verbose = verbose.linear_verbosity) 
             $cachename($(valsyms...))
         end
     end
