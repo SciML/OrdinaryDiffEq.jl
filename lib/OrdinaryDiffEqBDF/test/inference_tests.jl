@@ -1,5 +1,6 @@
 using OrdinaryDiffEqBDF, ADTypes, Test
 using NonlinearSolve: TrustRegion
+using SciMLLogging: Standard
 
 prob = ODEProblem((du, u, p, t) -> du .= u, zeros(1), (0.0, 1.0))
 nlalg = FBDF(autodiff = false,
@@ -9,10 +10,10 @@ basicalgad = FBDF()
 
 nlsolver = @inferred OrdinaryDiffEqBDF.build_nlsolver(
     basicalg, prob.u0, prob.u0, prob.p, 0.0, 0.0, prob.f, prob.u0, Float64,
-    Float64, Float64, 0.0, 0.0, Val(true))
+    Float64, Float64, 0.0, 0.0, Val(true), Standard())
 nlsolver = @inferred OrdinaryDiffEqBDF.build_nlsolver(
     nlalg, prob.u0, prob.u0, prob.p, 0.0, 0.0, prob.f, prob.u0, Float64,
-    Float64, Float64, 0.0, 0.0, Val(true))
+    Float64, Float64, 0.0, 0.0, Val(true), Standard())
 nlsolver = @test_throws Any @inferred OrdinaryDiffEqBDF.build_nlsolver(
     basicalgad, prob.u0, prob.u0, prob.p, 0.0, 0.0, prob.f, prob.u0, Float64,
-    Float64, Float64, 0.0, 0.0, Val(true))
+    Float64, Float64, 0.0, 0.0, Val(true), Standard())

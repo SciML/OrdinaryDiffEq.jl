@@ -290,7 +290,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, du1, du2)
     sequence = generate_sequence(constvalue(uBottomEltypeNoUnits), alg)
     cc = alg_cache(alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false))
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false), verbose)
     diff1 = Array{typeof(u), 1}(undef, get_thread_count(alg))
     diff2 = Array{typeof(u), 1}(undef, get_thread_count(alg))
     for i in 1:get_thread_count(alg)
@@ -988,7 +988,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard, u, rate_prototype,
 
     cc = alg_cache(alg::ExtrapolationMidpointDeuflhard, u, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p,
-        calck, Val(false))
+        calck, Val(false), verbose)
     # Initialize cache
     ExtrapolationMidpointDeuflhardCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T,
         res, fsalfirst, k, k_tmps, cc.Q, cc.n_curr,
@@ -1127,7 +1127,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
 
     cc = alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p,
-        calck, Val(false))
+        calck, Val(false), verbose)
 
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
@@ -1299,7 +1299,7 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner, u, rate_prototype,
     end
 
     cc = alg_cache(alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false))
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false), verbose)
 
     # Initialize the cache
     ExtrapolationMidpointHairerWannerCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp,
@@ -1456,7 +1456,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
     end
 
     cc = alg_cache(alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false))
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false), verbose)
 
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
@@ -1654,7 +1654,7 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
     end
 
     cc = alg_cache(alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false))
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false), verbose)
 
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
