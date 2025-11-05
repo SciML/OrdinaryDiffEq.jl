@@ -122,6 +122,19 @@ function calc_J(integrator, cache, next_step::Bool = false)
         uprev = integrator.u
     end
 
+    method = if SciMLBase.has_jac(f)
+        "user-provided"
+    else
+        if hasproperty(cache, :jac_config) && cache.jac_config !== nothing
+            "autodiff"
+        else
+            "finite-diff"
+        end
+    end
+
+    @SciMLMessage("Computing Jacobian at t = $(t) using $(method)",
+                  integrator.opts.verbose, :jacobian_update)
+
     if alg isa DAEAlgorithm
         if SciMLBase.has_jac(f)
             duprev = integrator.duprev
@@ -729,8 +742,12 @@ function update_W!(nlsolver::AbstractNLSolver,
         integrator::SciMLBase.DEIntegrator{<:Any, true}, cache, dtgamma,
         repeat_step::Bool, newJW = nothing)
     if isnewton(nlsolver)
-        calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step,
+        new_jac, new_W = calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step,
             newJW)
+        if new_W
+            @SciMLMessage("W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
+                          integrator.opts.verbose, :w_factorization)
+        end
     end
     nothing
 end
@@ -756,6 +773,10 @@ function update_W!(nlsolver::AbstractNLSolver,
             set_W_γdt!(nlsolver, nlsolver.α * inv(dtgamma))
         elseif new_W && !isdae
             set_W_γdt!(nlsolver, dtgamma)
+        end
+        if new_W
+            @SciMLMessage("W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
+                          integrator.opts.verbose, :w_factorization)
         end
     end
     nothing
