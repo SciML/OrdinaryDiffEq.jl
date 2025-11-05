@@ -14,16 +14,25 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `dt_min_unstable`: Messages when time step becomes too small/unstable
 - `instability`: Messages when numerical instability is detected
 - `newton_convergence`: Messages when Newton iteration fails to converge
+- `step_rejected`: Messages when adaptive steps are rejected
+- `step_accepted`: Messages when adaptive steps are accepted
+- `convergence_limit`: Messages when convergence at floating point precision limit
 
 ## Performance Group
 - `alg_switch`: Messages when algorithm switching occurs
 - `mismatched_input_output_type`: Messages when input/output types don't match
+- `jacobian_update`: Messages when Jacobian matrix is computed/updated
+- `w_factorization`: Messages when W matrix is factorized
+- `newton_iterations`: Messages about Newton iteration progress
 
 ## Numerical Group
 - `rosenbrock_no_differential_states`: Messages when Rosenbrock has no differential states
 - `shampine_dt`: Messages about Shampine time step selection
 - `unlimited_dt`: Messages when time step is unlimited
 - `dt_epsilon`: Messages when timestep goes below floating point epsilon
+- `order_change`: Messages when extrapolation order changes
+- `stability_check`: Messages about stability checks in extrapolation methods
+- `near_singular`: Messages when Jacobian/mass matrix appears near-singular
 
 ## Solver Verbosity Groups
 - `linear_verbosity`: Verbosity configuration for linear solvers
@@ -81,20 +90,29 @@ verbose = ODEVerbosity(
     dt_min_unstable
     instability
     newton_convergence
+    step_rejected
+    step_accepted
+    convergence_limit
     # Performance
     alg_switch
     mismatched_input_output_type
+    jacobian_update
+    w_factorization
+    newton_iterations
     # Numerical
     rosenbrock_no_differential_states
     shampine_dt
     unlimited_dt
     dt_epsilon
+    order_change
+    stability_check
+    near_singular
 end
 
 # Group classifications
-const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability, :newton_convergence)
-const performance_options = (:alg_switch, :mismatched_input_output_type)
-const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon)
+const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit)
+const performance_options = (:alg_switch, :mismatched_input_output_type, :jacobian_update, :w_factorization, :newton_iterations)
+const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon, :order_change, :stability_check, :near_singular)
 
 function option_group(option::Symbol)
     if option in error_control_options
@@ -161,12 +179,21 @@ function ODEVerbosity(;
         dt_min_unstable = WarnLevel(),
         instability = WarnLevel(),
         newton_convergence = WarnLevel(),
+        step_rejected = Silent(),
+        step_accepted = Silent(),
+        convergence_limit = Silent(),
         alg_switch = WarnLevel(),
         mismatched_input_output_type = WarnLevel(),
+        jacobian_update = Silent(),
+        w_factorization = Silent(),
+        newton_iterations = Silent(),
         rosenbrock_no_differential_states = WarnLevel(),
         shampine_dt = WarnLevel(),
         unlimited_dt = WarnLevel(),
-        dt_epsilon = WarnLevel()
+        dt_epsilon = WarnLevel(),
+        order_change = Silent(),
+        stability_check = Silent(),
+        near_singular = Silent()
     )
 
     # Apply group-level settings
@@ -205,12 +232,21 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
             newton_convergence = WarnLevel(),
+            step_rejected = Silent(),
+            step_accepted = Silent(),
+            convergence_limit = Silent(),
             alg_switch = Silent(),
             mismatched_input_output_type = Silent(),
+            jacobian_update = Silent(),
+            w_factorization = Silent(),
+            newton_iterations = Silent(),
             rosenbrock_no_differential_states = WarnLevel(),
             shampine_dt = Silent(),
             unlimited_dt = WarnLevel(),
-            dt_epsilon = Silent()
+            dt_epsilon = Silent(),
+            order_change = Silent(),
+            stability_check = Silent(),
+            near_singular = WarnLevel()
         )
     elseif verbose isa Standard
         # Standard: Everything from Minimal + non-fatal warnings
@@ -227,12 +263,21 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
             newton_convergence = WarnLevel(),
+            step_rejected = InfoLevel(),
+            step_accepted = Silent(),
+            convergence_limit = InfoLevel(),
             alg_switch = InfoLevel(),
             mismatched_input_output_type = WarnLevel(),
+            jacobian_update = InfoLevel(),
+            w_factorization = InfoLevel(),
+            newton_iterations = InfoLevel(),
             rosenbrock_no_differential_states = WarnLevel(),
             shampine_dt = InfoLevel(),
             unlimited_dt = WarnLevel(),
-            dt_epsilon = InfoLevel()
+            dt_epsilon = InfoLevel(),
+            order_change = InfoLevel(),
+            stability_check = InfoLevel(),
+            near_singular = WarnLevel()
         )
     elseif verbose isa All
         # All: Maximum verbosity - every possible logging message at InfoLevel
@@ -246,12 +291,21 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
             newton_convergence = WarnLevel(),
+            step_rejected = InfoLevel(),
+            step_accepted = InfoLevel(),
+            convergence_limit = InfoLevel(),
             alg_switch = InfoLevel(),
             mismatched_input_output_type = InfoLevel(),
+            jacobian_update = InfoLevel(),
+            w_factorization = InfoLevel(),
+            newton_iterations = InfoLevel(),
             rosenbrock_no_differential_states = WarnLevel(),
             shampine_dt = InfoLevel(),
             unlimited_dt = WarnLevel(),
-            dt_epsilon = InfoLevel()
+            dt_epsilon = InfoLevel(),
+            order_change = InfoLevel(),
+            stability_check = InfoLevel(),
+            near_singular = WarnLevel()
         )
     end
 end
@@ -260,6 +314,14 @@ end
     ODEVerbosity(
         None(),
         None(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent(),
+        Silent(),
         Silent(),
         Silent(),
         Silent(),
