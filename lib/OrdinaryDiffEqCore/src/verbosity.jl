@@ -12,7 +12,6 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `dense_output_saveat`: Messages about dense output with saveat
 - `max_iters`: Messages when maximum iterations are reached
 - `dt_min_unstable`: Messages when time step becomes too small/unstable
-- `instability`: Messages when numerical instability is detected
 - `newton_convergence`: Messages when Newton iteration fails to converge
 - `step_rejected`: Messages when adaptive steps are rejected
 - `step_accepted`: Messages when adaptive steps are accepted
@@ -30,7 +29,6 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `shampine_dt`: Messages about Shampine time step selection
 - `unlimited_dt`: Messages when time step is unlimited
 - `dt_epsilon`: Messages when timestep goes below floating point epsilon
-- `order_change`: Messages when extrapolation order changes
 - `stability_check`: Messages about stability checks in extrapolation methods
 - `near_singular`: Messages when Jacobian/mass matrix appears near-singular
 
@@ -88,7 +86,6 @@ verbose = ODEVerbosity(
     dense_output_saveat
     max_iters
     dt_min_unstable
-    instability
     newton_convergence
     step_rejected
     step_accepted
@@ -104,15 +101,14 @@ verbose = ODEVerbosity(
     shampine_dt
     unlimited_dt
     dt_epsilon
-    order_change
     stability_check
     near_singular
 end
 
 # Group classifications
-const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit)
+const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit)
 const performance_options = (:alg_switch, :mismatched_input_output_type, :jacobian_update, :w_factorization, :newton_iterations)
-const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon, :order_change, :stability_check, :near_singular)
+const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon, :stability_check, :near_singular)
 
 function option_group(option::Symbol)
     if option in error_control_options
@@ -177,21 +173,19 @@ function ODEVerbosity(;
         dense_output_saveat = WarnLevel(),
         max_iters = WarnLevel(),
         dt_min_unstable = WarnLevel(),
-        instability = WarnLevel(),
-        newton_convergence = WarnLevel(),
+        newton_convergence = Silent(),
         step_rejected = Silent(),
         step_accepted = Silent(),
         convergence_limit = Silent(),
-        alg_switch = WarnLevel(),
+        alg_switch = Silent(),
         mismatched_input_output_type = WarnLevel(),
         jacobian_update = Silent(),
         w_factorization = Silent(),
         newton_iterations = Silent(),
         rosenbrock_no_differential_states = WarnLevel(),
-        shampine_dt = WarnLevel(),
+        shampine_dt = Silent(),
         unlimited_dt = WarnLevel(),
-        dt_epsilon = WarnLevel(),
-        order_change = Silent(),
+        dt_epsilon = Silent(),
         stability_check = Silent(),
         near_singular = Silent()
     )
@@ -230,7 +224,6 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dense_output_saveat = Silent(),
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
-            instability = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -244,7 +237,6 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             shampine_dt = Silent(),
             unlimited_dt = WarnLevel(),
             dt_epsilon = Silent(),
-            order_change = Silent(),
             stability_check = Silent(),
             near_singular = WarnLevel()
         )
@@ -261,9 +253,8 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dense_output_saveat = InfoLevel(),
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
-            instability = WarnLevel(),
             newton_convergence = WarnLevel(),
-            step_rejected = InfoLevel(),
+            step_rejected = Silent(),
             step_accepted = Silent(),
             convergence_limit = InfoLevel(),
             alg_switch = InfoLevel(),
@@ -275,7 +266,6 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             shampine_dt = InfoLevel(),
             unlimited_dt = WarnLevel(),
             dt_epsilon = InfoLevel(),
-            order_change = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel()
         )
@@ -289,7 +279,6 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dense_output_saveat = InfoLevel(),
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
-            instability = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = InfoLevel(),
             step_accepted = InfoLevel(),
@@ -303,7 +292,6 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             shampine_dt = InfoLevel(),
             unlimited_dt = WarnLevel(),
             dt_epsilon = InfoLevel(),
-            order_change = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel()
         )
@@ -314,8 +302,6 @@ end
     ODEVerbosity(
         None(),
         None(),
-        Silent(),
-        Silent(),
         Silent(),
         Silent(),
         Silent(),
