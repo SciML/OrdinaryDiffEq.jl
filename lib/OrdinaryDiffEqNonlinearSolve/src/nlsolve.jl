@@ -59,6 +59,8 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
             ndz = compute_step!(nlsolver, integrator)
         end
         if !isfinite(ndz)
+            @SciMLMessage("Newton iteration diverged: residual norm is not finite (ndz = $(ndz))",
+                          integrator.opts.verbose, :newton_convergence)
             nlsolver.status = Divergence
             nlsolver.nfails += 1
             break
@@ -76,6 +78,8 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
             # it convergence/divergence according to `ndz` directly.
             if abs(θ - one(θ)) <= eps_around_one(θ)
                 if ndz <= one(ndz)
+                    @SciMLMessage("Newton iteration converged at floating point limit: θ ≈ 1.0, ndz = $(ndz)",
+                                  integrator.opts.verbose, :convergence_limit)
                     nlsolver.status = Convergence
                     nlsolver.nfails = 0
                     break
@@ -88,6 +92,8 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
 
             # divergence
             if check_div′ && θ > 2
+                @SciMLMessage("Newton iteration diverging: θ = $(θ) > 2, ndz = $(ndz), ndzprev = $(ndzprev)",
+                              integrator.opts.verbose, :newton_convergence)
                 nlsolver.status = Divergence
                 nlsolver.nfails += 1
                 break
@@ -113,6 +119,8 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
                                (isnewton(nlsolver) && isadaptive(integrator.alg)))
         if (iter == 1 && ndz < 1e-5) ||
            (check_η_convergence && η >= zero(η) && η * ndz < κ)
+            @SciMLMessage("Newton iteration converged in $(iter) iterations: η = $(η), ndz = $(ndz)",
+                          integrator.opts.verbose, :newton_iterations)
             nlsolver.status = Convergence
             nlsolver.nfails = 0
             break
@@ -121,6 +129,8 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
 
     if isnewton(nlsolver) && nlsolver.status == Divergence &&
        !isJcurrent(nlsolver, integrator)
+        @SciMLMessage("Newton iteration failed with stale Jacobian, retrying with fresh Jacobian",
+                      integrator.opts.verbose, :newton_convergence)
         nlsolver.status = TryAgain
         nlsolver.nfails += 1
         always_new || @goto REDO
