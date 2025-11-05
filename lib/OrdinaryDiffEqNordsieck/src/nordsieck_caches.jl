@@ -1,6 +1,6 @@
 # TODO: Optimize cache size
 mutable struct AN5ConstantCache{zType, lType, dtsType, dType, tsit5Type} <:
-    OrdinaryDiffEqConstantCache
+               OrdinaryDiffEqConstantCache
     # `z` is the Nordsieck vector
     z::zType
     # `l` is used for the corrector iteration
@@ -19,12 +19,10 @@ mutable struct AN5ConstantCache{zType, lType, dtsType, dType, tsit5Type} <:
     order::Int
 end
 
-function alg_cache(
-        alg::AN5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::AN5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     N = 5
     z = [zero(rate_prototype) for i in 1:(N + 1)]
     Δ = u
@@ -33,11 +31,11 @@ function alg_cache(
     c_LTE = c_conv = zero(tTypeNoUnits)
     dts = fill(zero(dt), 6)
     tsit5tab = Tsit5ConstantCache()
-    return AN5ConstantCache(z, l, m, c_LTE, c_conv, dts, Δ, tsit5tab, 1)
+    AN5ConstantCache(z, l, m, c_LTE, c_conv, dts, Δ, tsit5tab, 1)
 end
 
 mutable struct AN5Cache{uType, dType, rateType, zType, lType, dtsType, tsit5Type} <:
-    OrdinaryDiffEqMutableCache
+               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -62,12 +60,10 @@ mutable struct AN5Cache{uType, dType, rateType, zType, lType, dtsType, tsit5Type
     order::Int
 end
 
-function alg_cache(
-        alg::AN5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::AN5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     #################################################
     # Tsit5
     # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
@@ -82,10 +78,8 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
-    tsit5cache = Tsit5Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
-        trivial_limiter!, trivial_limiter!, False()
-    )
+    tsit5cache = Tsit5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
+        trivial_limiter!, trivial_limiter!, False())
     #################################################
     N = 5
     Δ = similar(atmp)
@@ -101,15 +95,13 @@ function alg_cache(
     end
     ratetmp = zero(rate_prototype)
 
-    return AN5Cache(
-        u, uprev, tmp, Δ, atmp, fsalfirst, ratetmp,
+    AN5Cache(u, uprev, tmp, Δ, atmp, fsalfirst, ratetmp,
         z, l, m, c_LTE, c_conv, dts,
-        tsit5cache, 1
-    )
+        tsit5cache, 1)
 end
 
 mutable struct JVODEConstantCache{zType, lType, dtsType, dType, tsit5Type, etaType} <:
-    OrdinaryDiffEqConstantCache
+               OrdinaryDiffEqConstantCache
     # `z` is the Nordsieck vector
     z::zType
     # `l` is used for the corrector iteration
@@ -147,12 +139,10 @@ mutable struct JVODEConstantCache{zType, lType, dtsType, dType, tsit5Type, etaTy
     maxη::etaType
 end
 
-function alg_cache(
-        alg::JVODE, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::JVODE, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     N = 12
     z = [rate_prototype for i in 1:(N + 1)]
     Δ = u
@@ -162,23 +152,21 @@ function alg_cache(
     dts = fill(zero(dt), N + 1)
     tsit5tab = Tsit5ConstantCache()
     η = zero(dt / dt)
-    return JVODEConstantCache(
-        z, l, m,
+    JVODEConstantCache(z, l, m,
         c_LTE₊₁, c_LTE, c_LTE₋₁, c_conv, c_𝒟, prev_𝒟,
-        dts, Δ, tsit5tab, 2, 1, 1, 2, η, η, η, η, η
-    )
+        dts, Δ, tsit5tab, 2, 1, 1, 2, η, η, η, η, η)
 end
 
 mutable struct JVODECache{
-        uType,
-        rateType,
-        zType,
-        lType,
-        dtsType,
-        dType,
-        etaType,
-        tsit5Type,
-    } <: OrdinaryDiffEqMutableCache
+    uType,
+    rateType,
+    zType,
+    lType,
+    dtsType,
+    dType,
+    etaType,
+    tsit5Type
+} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -223,12 +211,10 @@ mutable struct JVODECache{
     maxη::etaType
 end
 
-function alg_cache(
-        alg::JVODE, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::JVODE, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     #################################################
     # Tsit5
     # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
@@ -243,10 +229,8 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
-    tsit5cache = Tsit5Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
-        trivial_limiter!, trivial_limiter!, False()
-    )
+    tsit5cache = Tsit5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
+        trivial_limiter!, trivial_limiter!, False())
     #################################################
     fsalfirst = zero(rate_prototype)
     N = 12
@@ -275,14 +259,12 @@ function alg_cache(
     z[13] = zero(rate_prototype)
     ratetmp = zero(rate_prototype)
     #################################################
-    return JVODECache(
-        u, uprev, tmp, fsalfirst, ratetmp,
+    JVODECache(u, uprev, tmp, fsalfirst, ratetmp,
         z, l, m,
         c_LTE₊₁, c_LTE, c_LTE₋₁, c_conv, c_𝒟, prev_𝒟,
-        dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η
-    )
+        dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η)
 end
 
 function get_fsalfirstlast(cache::Union{JVODECache, AN5Cache}, u)
-    return get_fsalfirstlast(cache.tsit5cache, u)
+    get_fsalfirstlast(cache.tsit5cache, u)
 end

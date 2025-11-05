@@ -2,7 +2,7 @@ abstract type FeaginCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::FeaginCache, u) = (cache.fsalfirst, cache.k)
 
 @cache struct Feagin10Cache{uType, uNoUnitsType, rateType, TabType, StepLimiter} <:
-    FeaginCache
+              FeaginCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -29,12 +29,10 @@ get_fsalfirstlast(cache::FeaginCache, u) = (cache.fsalfirst, cache.k)
     step_limiter!::StepLimiter
 end
 
-function alg_cache(
-        alg::Feagin10, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Feagin10, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = Feagin10ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -58,23 +56,19 @@ function alg_cache(
     recursivefill!(atmp, false)
     k = zero(rate_prototype)
 
-    return Feagin10Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14,
-        k15, k16, k17, tmp, atmp, k, tab, alg.step_limiter!
-    )
+    Feagin10Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14,
+        k15, k16, k17, tmp, atmp, k, tab, alg.step_limiter!)
 end
 
-function alg_cache(
-        alg::Feagin10, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Feagin10, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return Feagin10ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    Feagin10ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct Feagin12Cache{uType, uNoUnitsType, rateType, TabType, StepLimiter} <:
-    FeaginCache
+              FeaginCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -109,12 +103,10 @@ end
     step_limiter!::StepLimiter
 end
 
-function alg_cache(
-        alg::Feagin12, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Feagin12, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = Feagin12ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -146,24 +138,20 @@ function alg_cache(
     recursivefill!(atmp, false)
     k = zero(rate_prototype)
 
-    return Feagin12Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14,
+    Feagin12Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14,
         k15, k16, k17, k18, k19, k20, k21, k22, k23, k24,
-        k25, tmp, atmp, k, tab, alg.step_limiter!
-    )
+        k25, tmp, atmp, k, tab, alg.step_limiter!)
 end
 
-function alg_cache(
-        alg::Feagin12, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Feagin12, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return Feagin12ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    Feagin12ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct Feagin14Cache{uType, uNoUnitsType, rateType, TabType, StepLimiter} <:
-    FeaginCache
+              FeaginCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -208,12 +196,10 @@ end
     step_limiter!::StepLimiter
 end
 
-function alg_cache(
-        alg::Feagin14, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Feagin14, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = Feagin14ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -255,19 +241,15 @@ function alg_cache(
     recursivefill!(atmp, false)
     k = zero(rate_prototype)
 
-    return Feagin14Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14,
+    Feagin14Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14,
         k15, k16,
         k17, k18, k19, k20, k21, k22, k23, k24, k25, k26, k27, k28, k29, k30,
-        k31, k32, k33, k34, k35, tmp, atmp, k, tab, alg.step_limiter!
-    )
+        k31, k32, k33, k34, k35, tmp, atmp, k, tab, alg.step_limiter!)
 end
 
-function alg_cache(
-        alg::Feagin14, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Feagin14, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return Feagin14ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    Feagin14ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end

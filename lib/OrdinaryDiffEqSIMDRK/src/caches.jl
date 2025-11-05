@@ -229,8 +229,7 @@ function MER5v2ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     btilde_12 = convert(T, 0.15118141529529247)
     btilde_13 = convert(T, 0.3043705741223895)
     btilde_14 = convert(T, -0.0827772936325406)
-    return MER5v2ConstantCache(
-        c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12, c_13,
+    MER5v2ConstantCache(c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12, c_13,
         c_14, a2_1, a3_1,
         a4_1, a5_1, a6_1, a7_1, a8_1, a9_1, a10_1, a11_1, a12_1, a13_1,
         a14_1, a4_2, a5_2, a6_2, a7_2, a8_2, a9_2, a10_2, a11_2, a12_2,
@@ -244,17 +243,14 @@ function MER5v2ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         btilde_3,
         btilde_4, btilde_5, btilde_6, btilde_7, btilde_8, btilde_9,
         btilde_10,
-        btilde_11, btilde_12, btilde_13, btilde_14
-    )
+        btilde_11, btilde_12, btilde_13, btilde_14)
 end
 
-function alg_cache(
-        alg::MER5v2, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::MER5v2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return MER5v2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    MER5v2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 struct MER6v2ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
@@ -519,8 +515,7 @@ function MER6v2ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     btilde_12 = convert(T, -1.5902737477948865e-5)
     btilde_13 = convert(T, -0.002650053713821432)
     btilde_14 = convert(T, 0.002076376586804707)
-    return MER6v2ConstantCache(
-        c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12, c_13,
+    MER6v2ConstantCache(c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12, c_13,
         c_14, c_15, a2_1, a3_1,
         a4_1, a5_1, a6_1, a7_1, a8_1, a9_1, a10_1, a11_1, a12_1, a13_1,
         a14_1, a15_1, a4_2, a5_2, a6_2, a7_2, a8_2, a9_2, a10_2, a11_2, a12_2,
@@ -534,17 +529,14 @@ function MER6v2ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         btilde_3,
         btilde_4, btilde_5, btilde_6, btilde_7, btilde_8, btilde_9,
         btilde_10,
-        btilde_11, btilde_12, btilde_13, btilde_14
-    )
+        btilde_11, btilde_12, btilde_13, btilde_14)
 end
 
-function alg_cache(
-        alg::MER6v2, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::MER6v2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return MER6v2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    MER6v2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 struct RK6v4ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
@@ -1043,7 +1035,7 @@ function RK6v4ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     btilde_20 = convert(T, -0.05956848835084534)
     btilde_21 = convert(T, 0.028833209735199462)
 
-    return RK6v4ConstantCache(
+    RK6v4ConstantCache(
         c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12, c_13, c_14, c_15,
         c_16, c_17, c_18, c_19, c_20,
         c_21, c_22, a2_1, a3_1, a4_1, a5_1,
@@ -1076,15 +1068,12 @@ function RK6v4ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         a22_19, a22_20, a22_21, btilde_1, btilde_2, btilde_3,
         btilde_4, btilde_5, btilde_6, btilde_7, btilde_8, btilde_9,
         btilde_10, btilde_11, btilde_12, btilde_13,
-        btilde_14, btilde_15, btilde_16, btilde_17, btilde_18, btilde_19, btilde_20, btilde_21
-    )
+        btilde_14, btilde_15, btilde_16, btilde_17, btilde_18, btilde_19, btilde_20, btilde_21)
 end
 
-function alg_cache(
-        alg::RK6v4, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::RK6v4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return RK6v4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    RK6v4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end

@@ -12,12 +12,10 @@ mutable struct IDSolveCache{uType, cType, thetaType} <: OrdinaryDiffEqMutableCac
     Θks::thetaType
 end
 
-function alg_cache(
-        alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
     f_nl = (resid, u_next, p) -> f(resid, u_next, p.u, p.p, p.t)
 
@@ -27,25 +25,22 @@ function alg_cache(
     prob = if nlls
         NonlinearLeastSquaresProblem{isinplace(f)}(
             NonlinearFunction(f_nl; resid_prototype = f.resid_prototype),
-            unl, state
-        )
+            unl, state)
     else
         NonlinearProblem{isinplace(f)}(f_nl, unl, state)
     end
 
     nlcache = init(prob, alg.nlsolve)
 
-    return IDSolveCache(u, uprev, state.u, nlcache, uBottomEltypeNoUnits[])
+    IDSolveCache(u, uprev, state.u, nlcache, uBottomEltypeNoUnits[])
 end
 
 isdiscretecache(cache::IDSolveCache) = true
 
-function alg_cache(
-        alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     @assert !isnothing(u) "Empty u not supported with out of place functions yet."
 
     state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
@@ -57,8 +52,7 @@ function alg_cache(
     prob = if nlls
         NonlinearLeastSquaresProblem{isinplace(f)}(
             NonlinearFunction(f_nl; resid_prototype = f.resid_prototype),
-            unl, state
-        )
+            unl, state)
     else
         NonlinearProblem{isinplace(f)}(f_nl, unl, state)
     end
@@ -66,7 +60,7 @@ function alg_cache(
     nlcache = init(prob, alg.nlsolve)
 
     # FIXME Use IDSolveConstantCache?
-    return IDSolveCache(u, uprev, state.u, nlcache, uBottomEltypeNoUnits[])
+    IDSolveCache(u, uprev, state.u, nlcache, uBottomEltypeNoUnits[])
 end
 
 get_fsalfirstlast(cache::IDSolveCache, rate_prototype) = (nothing, nothing)

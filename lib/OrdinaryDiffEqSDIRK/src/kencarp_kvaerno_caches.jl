@@ -3,23 +3,19 @@ mutable struct Kvaerno3ConstantCache{Tab, N} <: SDIRKConstantCache
     tab::Tab
 end
 
-function alg_cache(
-        alg::Kvaerno3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Kvaerno3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = Kvaerno3Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, 2tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false)
-    )
-    return Kvaerno3ConstantCache(nlsolver, tab)
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+    Kvaerno3ConstantCache(nlsolver, tab)
 end
 
 @cache mutable struct Kvaerno3Cache{uType, rateType, uNoUnitsType, Tab, N, StepLimiter} <:
-    SDIRKMutableCache
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -33,18 +29,14 @@ end
     step_limiter!::StepLimiter
 end
 
-function alg_cache(
-        alg::Kvaerno3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Kvaerno3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = Kvaerno3Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, 2tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -54,9 +46,8 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return Kvaerno3Cache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, atmp, nlsolver, tab, alg.step_limiter!
-    )
+    Kvaerno3Cache(
+        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
 @cache mutable struct KenCarp3ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -64,26 +55,21 @@ end
     tab::Tab
 end
 
-function alg_cache(
-        alg::KenCarp3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::KenCarp3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = KenCarp3Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
-    return KenCarp3ConstantCache(nlsolver, tab)
+    KenCarp3ConstantCache(nlsolver, tab)
 end
 
 @cache mutable struct KenCarp3Cache{
-        uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter,
-    } <:
-    SDIRKMutableCache
+    uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter} <:
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -101,18 +87,14 @@ end
     step_limiter!::StepLimiter
 end
 
-function alg_cache(
-        alg::KenCarp3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::KenCarp3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = KenCarp3Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
     if f isa SplitFunction
@@ -135,10 +117,8 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return KenCarp3Cache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, k1, k2,
-        k3, k4, atmp, nlsolver, tab, alg.step_limiter!
-    )
+    KenCarp3Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, k1, k2,
+        k3, k4, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
 @cache mutable struct CFNLIRK3ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -146,24 +126,20 @@ end
     tab::Tab
 end
 
-function alg_cache(
-        alg::CFNLIRK3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::CFNLIRK3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = CFNLIRK3Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
-    return CFNLIRK3ConstantCache(nlsolver, tab)
+    CFNLIRK3ConstantCache(nlsolver, tab)
 end
 
 @cache mutable struct CFNLIRK3Cache{uType, rateType, uNoUnitsType, N, Tab, kType} <:
-    SDIRKMutableCache
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -180,18 +156,14 @@ end
     tab::Tab
 end
 
-function alg_cache(
-        alg::CFNLIRK3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::CFNLIRK3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = CFNLIRK3Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
     k1 = zero(u)
@@ -206,7 +178,7 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return CFNLIRK3Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, k1, k2, k3, k4, atmp, nlsolver, tab)
+    CFNLIRK3Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, k1, k2, k3, k4, atmp, nlsolver, tab)
 end
 
 @cache mutable struct Kvaerno4ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -214,23 +186,19 @@ end
     tab::Tab
 end
 
-function alg_cache(
-        alg::Kvaerno4, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Kvaerno4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = Kvaerno4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false)
-    )
-    return Kvaerno4ConstantCache(nlsolver, tab)
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+    Kvaerno4ConstantCache(nlsolver, tab)
 end
 
 @cache mutable struct Kvaerno4Cache{uType, rateType, uNoUnitsType, N, Tab, StepLimiter} <:
-    SDIRKMutableCache
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -245,18 +213,14 @@ end
     step_limiter!::StepLimiter
 end
 
-function alg_cache(
-        alg::Kvaerno4, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Kvaerno4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = Kvaerno4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -267,9 +231,8 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return Kvaerno4Cache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, atmp, nlsolver, tab, alg.step_limiter!
-    )
+    Kvaerno4Cache(
+        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
 @cache mutable struct KenCarp4ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -277,25 +240,20 @@ end
     tab::Tab
 end
 
-function alg_cache(
-        alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = KenCarp4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false)
-    )
-    return KenCarp4ConstantCache(nlsolver, tab)
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+    KenCarp4ConstantCache(nlsolver, tab)
 end
 
 @cache mutable struct KenCarp4Cache{
-        uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter,
-    } <:
-    SDIRKMutableCache
+    uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter} <:
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -319,18 +277,14 @@ end
 
 @truncate_stacktrace KenCarp4Cache 1
 
-function alg_cache(
-        alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = KenCarp4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
     if f isa SplitFunction
@@ -359,10 +313,9 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return KenCarp4Cache(
+    KenCarp4Cache(
         u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, k1, k2, k3, k4, k5, k6, atmp,
-        nlsolver, tab, alg.step_limiter!
-    )
+        nlsolver, tab, alg.step_limiter!)
 end
 
 @cache mutable struct Kvaerno5ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -370,24 +323,20 @@ end
     tab::Tab
 end
 
-function alg_cache(
-        alg::Kvaerno5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Kvaerno5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = Kvaerno5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
-    return Kvaerno5ConstantCache(nlsolver, tab)
+    Kvaerno5ConstantCache(nlsolver, tab)
 end
 
 @cache mutable struct Kvaerno5Cache{uType, rateType, uNoUnitsType, N, Tab, StepLimiter} <:
-    SDIRKMutableCache
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -404,18 +353,14 @@ end
     step_limiter!::StepLimiter
 end
 
-function alg_cache(
-        alg::Kvaerno5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::Kvaerno5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = Kvaerno5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -428,10 +373,8 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return Kvaerno5Cache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆,
-        z₇, atmp, nlsolver, tab, alg.step_limiter!
-    )
+    Kvaerno5Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆,
+        z₇, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
 @cache mutable struct KenCarp5ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -439,26 +382,21 @@ end
     tab::Tab
 end
 
-function alg_cache(
-        alg::KenCarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::KenCarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = KenCarp5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
-    return KenCarp5ConstantCache(nlsolver, tab)
+    KenCarp5ConstantCache(nlsolver, tab)
 end
 
 @cache mutable struct KenCarp5Cache{
-        uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter,
-    } <:
-    SDIRKMutableCache
+    uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter} <:
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -484,18 +422,14 @@ end
     step_limiter!::StepLimiter
 end
 
-function alg_cache(
-        alg::KenCarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::KenCarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = KenCarp5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
     if f isa SplitFunction
@@ -529,10 +463,8 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return KenCarp5Cache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈,
-        k1, k2, k3, k4, k5, k6, k7, k8, atmp, nlsolver, tab, alg.step_limiter!
-    )
+    KenCarp5Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈,
+        k1, k2, k3, k4, k5, k6, k7, k8, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
 @cache mutable struct KenCarp47ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -540,24 +472,20 @@ end
     tab::Tab
 end
 
-function alg_cache(
-        alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = KenCarp47Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
-    return KenCarp47ConstantCache(nlsolver, tab)
+    KenCarp47ConstantCache(nlsolver, tab)
 end
 
 @cache mutable struct KenCarp47Cache{uType, rateType, uNoUnitsType, N, Tab, kType} <:
-    SDIRKMutableCache
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -581,18 +509,14 @@ end
 end
 @truncate_stacktrace KenCarp47Cache 1
 
-function alg_cache(
-        alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = KenCarp47Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
     if f isa SplitFunction
@@ -623,10 +547,8 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return KenCarp47Cache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇,
-        k1, k2, k3, k4, k5, k6, k7, atmp, nlsolver, tab
-    )
+    KenCarp47Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇,
+        k1, k2, k3, k4, k5, k6, k7, atmp, nlsolver, tab)
 end
 
 @cache mutable struct KenCarp58ConstantCache{N, Tab} <: SDIRKConstantCache
@@ -634,24 +556,20 @@ end
     tab::Tab
 end
 
-function alg_cache(
-        alg::KenCarp58, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::KenCarp58, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = KenCarp58Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
-    return KenCarp58ConstantCache(nlsolver, tab)
+    KenCarp58ConstantCache(nlsolver, tab)
 end
 
 @cache mutable struct KenCarp58Cache{uType, rateType, uNoUnitsType, N, Tab, kType} <:
-    SDIRKMutableCache
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -678,18 +596,14 @@ end
 
 @truncate_stacktrace KenCarp58Cache 1
 
-function alg_cache(
-        alg::KenCarp58, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::KenCarp58, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = KenCarp58Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.c3
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true)
-    )
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
     if f isa SplitFunction
@@ -723,8 +637,6 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return KenCarp58Cache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈,
-        k1, k2, k3, k4, k5, k6, k7, k8, atmp, nlsolver, tab
-    )
+    KenCarp58Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈,
+        k1, k2, k3, k4, k5, k6, k7, k8, atmp, nlsolver, tab)
 end
