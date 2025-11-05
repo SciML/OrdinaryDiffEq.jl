@@ -3,6 +3,7 @@ module SimpleImplicitDiscreteSolve
 using SciMLBase
 using SimpleNonlinearSolve
 using Reexport
+
 @reexport using SciMLBase
 
 """
@@ -69,7 +70,7 @@ function SciMLBase.solve(
         nlf = isinplace(f) ? (out, u, p) -> f(out, u, uprev, p, t) :
             (u, p) -> f(u, uprev, p, t)
         nlprob = NonlinearProblem{isinplace(f)}(nlf, uprev, p)
-        nlsol = solve(nlprob, SimpleNewtonRaphson(), verbose = Minimal())
+        nlsol = solve(nlprob, SimpleNewtonRaphson())
         u = nlsol.u
         save_everystep && (us[i] = u)
         convfail = (nlsol.retcode != ReturnCode.Success)
