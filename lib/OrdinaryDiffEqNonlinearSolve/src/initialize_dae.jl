@@ -195,7 +195,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator,
         nlprob = NonlinearProblem(nlfunc, integrator.u, p)
         nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD)
         nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
-            reltol = integrator.opts.reltol, verbose = verbose.nonlinear_verbosity)
+            reltol = integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity)
         integrator.u .= nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
     end
