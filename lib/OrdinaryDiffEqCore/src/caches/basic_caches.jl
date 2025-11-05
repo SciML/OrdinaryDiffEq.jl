@@ -61,7 +61,7 @@ function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoU
         dt, reltol, p, calck,
         ::Val{V}, verbose) where {V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V))
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V), verbose)
     CompositeCache(caches, alg.choice_function, 1)
 end
 
@@ -72,7 +72,7 @@ function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u
         CS, V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, A1, A2, A3, A4, A5, A6}
     args = (u, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-        reltol, p, calck, Val(V))
+        reltol, p, calck, Val(V), verbose)
     # Core.Typeof to turn uEltypeNoUnits into Type{uEltypeNoUnits} rather than DataType
     argT = map(Core.Typeof, args)
     T1 = Base.promote_op(alg_cache, A1, argT...)
@@ -110,13 +110,13 @@ end
 @generated function __alg_cache(algs::T, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev,
         uprev2, f, t, dt, reltol, p, calck,
-        ::Val{V}) where {T <: Tuple, V, uEltypeNoUnits,
+        ::Val{V}, verbose) where {T <: Tuple, V, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits}
     return Expr(:tuple,
         map(1:length(T.types)) do i
             :(alg_cache(algs[$i], u, rate_prototype, uEltypeNoUnits,
                 uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-                reltol, p, calck, Val($V)))
+                reltol, p, calck, Val($V), verbose))
         end...)
 end
 
