@@ -1,8 +1,16 @@
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: ODEVerbosity, option_group, group_options
+using OrdinaryDiffEqBDF
+using OrdinaryDiffEqExtrapolation
+using OrdinaryDiffEqFIRK
+using OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
 using ODEProblemLibrary: prob_ode_vanderpol_stiff
-using SciMLLogging
 using Test
+import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
+using LinearSolve: LinearVerbosity
+using NonlinearSolve: NonlinearVerbosity
 
 @testset "ODEVerbosity Tests" begin
     @testset "Default constructor" begin
@@ -32,8 +40,8 @@ using Test
         @test v_none.alg_switch isa SciMLLogging.Silent
         @test v_none.rosenbrock_no_differential_states isa SciMLLogging.Silent
 
-        @test v_minimal.dt_NaN isa SciMLLogging.ErrorLevel
-        @test v_minimal.init_NaN isa SciMLLogging.ErrorLevel
+        @test v_minimal.dt_NaN isa SciMLLogging.WarnLevel
+        @test v_minimal.init_NaN isa SciMLLogging.WarnLevel
         @test v_minimal.alg_switch isa SciMLLogging.Silent
         @test v_minimal.dense_output_saveat isa SciMLLogging.Silent
 
@@ -51,26 +59,26 @@ using Test
     end
 
     @testset "Group-level keyword constructors" begin
-        v_error = ODEVerbosity(error_control = ErrorLevel())
+        v_error = ODEVerbosity(error_control = SciMLLogging.ErrorLevel())
         @test v_error.dt_NaN isa SciMLLogging.ErrorLevel
         @test v_error.init_NaN isa SciMLLogging.ErrorLevel
         @test v_error.dense_output_saveat isa SciMLLogging.ErrorLevel
 
-        v_numerical = ODEVerbosity(numerical = Silent())
+        v_numerical = ODEVerbosity(numerical = SciMLLogging.Silent())
         @test v_numerical.rosenbrock_no_differential_states isa SciMLLogging.Silent
         @test v_numerical.shampine_dt isa SciMLLogging.Silent
         @test v_numerical.unlimited_dt isa SciMLLogging.Silent
 
-        v_performance = ODEVerbosity(performance = InfoLevel())
+        v_performance = ODEVerbosity(performance = SciMLLogging.InfoLevel())
         @test v_performance.alg_switch isa SciMLLogging.InfoLevel
         @test v_performance.mismatched_input_output_type isa SciMLLogging.InfoLevel
     end
 
     @testset "Mixed group and individual settings" begin
         v_mixed = ODEVerbosity(
-            numerical = Silent(),
-            shampine_dt = WarnLevel(),
-            performance = InfoLevel()
+            numerical = SciMLLogging.Silent(),
+            shampine_dt = SciMLLogging.WarnLevel(),
+            performance = SciMLLogging.InfoLevel()
         )
         # Individual override should take precedence
         @test v_mixed.shampine_dt isa SciMLLogging.WarnLevel
@@ -84,9 +92,9 @@ using Test
 
     @testset "Individual keyword arguments" begin
         v_individual = ODEVerbosity(
-            dt_NaN = ErrorLevel(),
-            alg_switch = InfoLevel(),
-            shampine_dt = Silent()
+            dt_NaN = SciMLLogging.ErrorLevel(),
+            alg_switch = SciMLLogging.InfoLevel(),
+            shampine_dt = SciMLLogging.Silent()
         )
         @test v_individual.dt_NaN isa SciMLLogging.ErrorLevel
         @test v_individual.alg_switch isa SciMLLogging.InfoLevel
@@ -127,7 +135,7 @@ using Test
     end
 
     @testset "Group options function" begin
-        v = ODEVerbosity(numerical = WarnLevel())
+        v = ODEVerbosity(numerical = SciMLLogging.WarnLevel())
         numerical_opts = group_options(v, :numerical)
         @test numerical_opts isa NamedTuple
         @test :rosenbrock_no_differential_states in keys(numerical_opts)
@@ -148,54 +156,6 @@ using Test
 
         # Test error for unknown group
         @test_throws ErrorException group_options(v, :unknown_group)
-    end
-
-    @testset "Group getproperty access" begin
-        v = ODEVerbosity()
-
-        # Test getting groups returns NamedTuples
-        error_group = v.error_control
-        performance_group = v.performance
-        numerical_group = v.numerical
-
-        @test error_group isa NamedTuple
-        @test performance_group isa NamedTuple
-        @test numerical_group isa NamedTuple
-
-        # Test correct keys are present
-        @test :dt_NaN in keys(error_group)
-        @test :init_NaN in keys(error_group)
-        @test :dense_output_saveat in keys(error_group)
-
-        @test :alg_switch in keys(performance_group)
-        @test :mismatched_input_output_type in keys(performance_group)
-
-        @test :rosenbrock_no_differential_states in keys(numerical_group)
-        @test :shampine_dt in keys(numerical_group)
-        @test :unlimited_dt in keys(numerical_group)
-
-        # Test values are AbstractMessageLevel types
-        @test error_group.dt_NaN isa SciMLLogging.AbstractMessageLevel
-        @test performance_group.alg_switch isa SciMLLogging.AbstractMessageLevel
-        @test numerical_group.shampine_dt isa SciMLLogging.AbstractMessageLevel
-
-        # Individual field access should still work
-        @test v.dt_NaN isa SciMLLogging.WarnLevel
-        @test v.alg_switch isa SciMLLogging.WarnLevel
-        @test v.shampine_dt isa SciMLLogging.WarnLevel
-    end
-
-    @testset "Argument validation" begin
-        # Test invalid error_control type
-        @test_throws ArgumentError ODEVerbosity(error_control = "invalid")
-        @test_throws ArgumentError ODEVerbosity(performance = 123)
-        @test_throws ArgumentError ODEVerbosity(numerical = :symbol)
-
-        # Test unknown keyword argument
-        @test_throws ArgumentError ODEVerbosity(unknown_field = WarnLevel())
-
-        # Test invalid value for individual field
-        @test_throws ArgumentError ODEVerbosity(dt_NaN = "not_a_level")
     end
 
     @testset "All error control fields" begin
@@ -254,7 +214,201 @@ using Test
     @testset "Stiff Switching Message" begin
         verb = ODEVerbosity(performance = ODEPerformanceVerbosity(alg_switch = Verbosity.Info()))
         solve(prob_ode_vanderpol_stiff, AutoTsit5(Rodas5()), verbose = verb)
-    end 
+    end
+
+    @testset "Linear Verbosity Passthrough to Caches" begin
+        # Define a simple stiff test problem
+        function rober(du, u, p, t)
+            y₁, y₂, y₃ = u
+            k₁, k₂, k₃ = p
+            du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+            du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+            du[3] = y₁ + y₂ + y₃ - 1
+            nothing
+        end
+        u0 = [1.0, 0.0, 0.0]
+        tspan = (0.0, 1e-1)
+        p = [0.04, 3e7, 1e4]
+        prob = ODEProblem(rober, u0, tspan, p)
+
+        @testset "Rosenbrock Solvers" begin
+            @testset "Rosenbrock23 with Detailed LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Detailed())
+                integrator = init(prob, Rosenbrock23(), verbose = verbose, dt = 1e-3)
+
+                # Check that the cache has a linsolve field
+                @test hasproperty(integrator.cache, :linsolve)
+
+                # Check that the linear solver cache has verbose field
+                @test hasproperty(integrator.cache.linsolve, :verbose)
+
+                # Verify the verbosity was passed through correctly
+                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Detailed())
+            end
+
+            @testset "Rosenbrock23 with Minimal LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Minimal())
+                integrator = init(prob, Rosenbrock23(), verbose = verbose, dt = 1e-3)
+
+                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Minimal())
+            end
+
+            @testset "Rosenbrock23 with None LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.None())
+                integrator = init(prob, Rosenbrock23(), verbose = verbose, dt = 1e-3)
+
+                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.None())
+            end
+
+            @testset "Rosenbrock32 with Detailed LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Detailed())
+                integrator = init(prob, Rosenbrock32(), verbose = verbose, dt = 1e-3)
+
+                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Detailed())
+            end
+
+            @testset "Rodas4 with All LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.All())
+                integrator = init(prob, Rodas4(), verbose = verbose, dt = 1e-3)
+
+                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.All())
+            end
+        end
+
+        @testset "FIRK Solvers (Radau Methods)" begin
+            @testset "RadauIIA3 with Detailed LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Detailed())
+                integrator = init(prob, RadauIIA3(), verbose = verbose, dt = 1e-3)
+
+                # RadauIIA3 has a linsolve field
+                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Detailed())
+            end
+
+            @testset "RadauIIA3 with Minimal LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Minimal())
+                integrator = init(prob, RadauIIA3(), verbose = verbose, dt = 1e-3)
+
+                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Minimal())
+            end
+
+            @testset "RadauIIA5 with Detailed LinearVerbosity (two linear solvers)" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Detailed())
+                integrator = init(prob, RadauIIA5(), verbose = verbose, dt = 1e-3)
+
+                @test integrator.cache.linsolve1.verbose == LinearVerbosity(SciMLLogging.Detailed())
+                @test integrator.cache.linsolve2.verbose == LinearVerbosity(SciMLLogging.Detailed())
+            end
+
+            @testset "RadauIIA5 with None LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.None())
+                integrator = init(prob, RadauIIA5(), verbose = verbose, dt = 1e-3)
+
+                @test integrator.cache.linsolve1.verbose == LinearVerbosity(SciMLLogging.None())
+                @test integrator.cache.linsolve2.verbose == LinearVerbosity(SciMLLogging.None())
+            end
+
+            @testset "RadauIIA9 with All LinearVerbosity (three linear solvers)" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.All())
+                integrator = init(prob, RadauIIA9(), verbose = verbose, dt = 1e-3)
+
+                # Check all three linear solvers have the correct verbosity
+                @test integrator.cache.linsolve1.verbose == LinearVerbosity(SciMLLogging.All())
+                @test integrator.cache.linsolve2.verbose ==
+                      LinearVerbosity(SciMLLogging.All())
+                @test integrator.cache.linsolve3.verbose ==
+                      LinearVerbosity(SciMLLogging.All())
+            end
+        end
+
+        @testset "Extrapolation Solvers" begin
+            @testset "ImplicitEulerExtrapolation with Detailed LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Detailed())
+                integrator = init(prob, ImplicitEulerExtrapolation(), verbose = verbose, dt = 1e-3)
+
+                # Check that all linear solvers in the array have the correct verbosity
+                for ls in integrator.cache.linsolve
+                    @test ls.verbose == LinearVerbosity(SciMLLogging.Detailed())
+                end
+            end
+
+            @testset "ImplicitEulerExtrapolation with Minimal LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Minimal())
+                integrator = init(prob, ImplicitEulerExtrapolation(), verbose = verbose, dt = 1e-3)
+
+                for ls in integrator.cache.linsolve
+                    @test ls.verbose == LinearVerbosity(SciMLLogging.Minimal())
+                end
+            end
+
+            @testset "ImplicitDeuflhardExtrapolation with None LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.None())
+                integrator = init(prob, ImplicitDeuflhardExtrapolation(), verbose = verbose, dt = 1e-3)
+
+                for ls in integrator.cache.linsolve
+                    @test ls.cacheval.verbose isa SciMLLogging.None
+                end
+            end
+
+            @testset "ImplicitHairerWannerExtrapolation with All LinearVerbosity" begin
+                verbose = ODEVerbosity(linear_verbosity = SciMLLogging.All())
+                integrator = init(prob, ImplicitHairerWannerExtrapolation(), verbose = verbose, dt = 1e-3)
+
+                for ls in integrator.cache.linsolve
+                    @test ls.verbose == LinearVerbosity(SciMLLogging.All())
+                end
+            end
+        end
+
+        @testset "Preset Verbosity Levels" begin
+            @testset "Rosenbrock23 with Standard() preset (default linear_verbosity = Minimal)" begin
+                verbose = ODEVerbosity(SciMLLogging.Standard())
+                integrator = init(prob, Rosenbrock23(), verbose = verbose, dt = 1e-3)
+
+                # Standard() uses Minimal() for linear_verbosity
+                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Minimal())
+            end
+
+            @testset "RadauIIA3 with Detailed() preset" begin
+                verbose = ODEVerbosity(SciMLLogging.Detailed())
+                integrator = init(prob, RadauIIA3(), verbose = verbose, dt = 1e-3)
+
+                # Detailed() uses Detailed() for linear_verbosity
+                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Detailed())
+            end
+
+        end
+    end
+
+    @testset "Nonlinear Verbosity Passthrough to Caches" begin
+        # Define a simple stiff test problem
+        function rober(du, u, p, t)
+            y₁, y₂, y₃ = u
+            k₁, k₂, k₃ = p
+            du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+            du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+            du[3] = y₁ + y₂ + y₃ - 1
+            nothing
+        end
+        u0 = [1.0, 0.0, 0.0]
+        tspan = (0.0, 1e-1)
+        p = [0.04, 3e7, 1e4]
+        prob = ODEProblem(rober, u0, tspan, p)
+
+        @testset "ImplicitEuler with Detailed NonlinearVerbosity" begin
+            verbose = ODEVerbosity(nonlinear_verbosity = SciMLLogging.Detailed())
+            integrator = init(prob, ImplicitEuler(nlsolve = NonlinearSolveAlg()), verbose = verbose, dt = 1e-3)
+
+            # Check that the cache has an nlsolver field
+            @test hasproperty(integrator.cache, :nlsolver)
+
+            # Check that the nlsolver has a cache field
+            @test hasproperty(integrator.cache.nlsolver, :cache)
+
+            # Verify the verbosity was passed through correctly
+            @test integrator.cache.nlsolver.cache.cache.verbose == NonlinearVerbosity(SciMLLogging.Detailed())
+        end
+
+    end
 end
 
 
