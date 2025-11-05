@@ -56,15 +56,15 @@ function alg_cache(alg::PDIRK44, u, rate_prototype, ::Type{uEltypeNoUnits},
     if alg.threading
         nlsolver1 = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(true))
+            Val(true), verbose)
         nlsolver2 = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(true))
+            Val(true), verbose)
         nlsolver = [nlsolver1, nlsolver2]
     else
         _nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(true))
+            Val(true), verbose)
         nlsolver = [_nlsolver]
     end
     tab = PDIRK44Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -81,15 +81,15 @@ function alg_cache(alg::PDIRK44, u, rate_prototype, ::Type{uEltypeNoUnits},
     if alg.threading
         nlsolver1 = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(false))
+            Val(false), verbose)
         nlsolver2 = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(false))
+            Val(false), verbose)
         nlsolver = [nlsolver1, nlsolver2]
     else
         _nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(false))
+            Val(false), verbose)
         nlsolver = [_nlsolver]
     end
     tab = PDIRK44Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))

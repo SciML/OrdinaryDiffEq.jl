@@ -23,7 +23,7 @@ function alg_cache(alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits}
         ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     atmp = similar(u, uEltypeNoUnits)
@@ -46,7 +46,7 @@ function alg_cache(alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits}
         ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     ImplicitEulerConstantCache(nlsolver)
 end
 
@@ -60,7 +60,7 @@ function alg_cache(alg::ImplicitMidpoint, u, rate_prototype, ::Type{uEltypeNoUni
         ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 2, 1 // 2
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     ImplicitMidpointConstantCache(nlsolver)
 end
 
@@ -79,7 +79,7 @@ function alg_cache(alg::ImplicitMidpoint, u, rate_prototype, ::Type{uEltypeNoUni
         ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 2, 1 // 2
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
     ImplicitMidpointCache(u, uprev, fsalfirst, nlsolver, alg.step_limiter!)
 end
@@ -96,7 +96,7 @@ function alg_cache(alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 2, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
 
     uprev3 = u
     tprev2 = t
@@ -124,7 +124,7 @@ function alg_cache(alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 2, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     uprev3 = zero(u)
@@ -148,7 +148,7 @@ function alg_cache(alg::TRBDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = TRBDF2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.d, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     TRBDF2ConstantCache(nlsolver, tab)
 end
 
@@ -172,7 +172,7 @@ function alg_cache(alg::TRBDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = TRBDF2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.d, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     atmp = similar(u, uEltypeNoUnits)
@@ -193,7 +193,7 @@ function alg_cache(alg::SDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     SDIRK2ConstantCache(nlsolver)
 end
 
@@ -215,7 +215,7 @@ function alg_cache(alg::SDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -243,7 +243,7 @@ function alg_cache(alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     γ, c = 1, 1
 
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
 
     SDIRK22ConstantCache(uprev3, tprev2, nlsolver)
 end
@@ -270,7 +270,7 @@ function alg_cache(alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = SDIRK22Tableau(constvalue(uBottomEltypeNoUnits))
     γ, c = 1, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     uprev3 = zero(u)
@@ -292,7 +292,7 @@ function alg_cache(alg::SSPSDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 4, 1 // 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     SSPSDIRK2ConstantCache(nlsolver)
 end
 
@@ -311,7 +311,7 @@ function alg_cache(alg::SSPSDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 4, 1 // 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -334,7 +334,7 @@ function alg_cache(alg::Cash4, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = Cash4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     Cash4ConstantCache(nlsolver, tab)
 end
 
@@ -359,7 +359,7 @@ function alg_cache(alg::Cash4, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = Cash4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -385,7 +385,7 @@ function alg_cache(alg::SFSDIRK4, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = SFSDIRK4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     SFSDIRK4ConstantCache(nlsolver, tab)
 end
 
@@ -411,7 +411,7 @@ function alg_cache(alg::SFSDIRK4, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = SFSDIRK4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -437,7 +437,7 @@ function alg_cache(alg::SFSDIRK5, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = SFSDIRK5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     SFSDIRK5ConstantCache(nlsolver, tab)
 end
 
@@ -464,7 +464,7 @@ function alg_cache(alg::SFSDIRK5, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = SFSDIRK5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -491,7 +491,7 @@ function alg_cache(alg::SFSDIRK6, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = SFSDIRK6Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     SFSDIRK6ConstantCache(nlsolver, tab)
 end
 
@@ -518,7 +518,7 @@ function alg_cache(alg::SFSDIRK6, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = SFSDIRK6Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -545,7 +545,7 @@ function alg_cache(alg::SFSDIRK7, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = SFSDIRK7Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     SFSDIRK7ConstantCache(nlsolver, tab)
 end
 
@@ -573,7 +573,7 @@ function alg_cache(alg::SFSDIRK7, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = SFSDIRK7Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -601,7 +601,7 @@ function alg_cache(alg::SFSDIRK8, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = SFSDIRK8Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     SFSDIRK8ConstantCache(nlsolver, tab)
 end
 
@@ -630,7 +630,7 @@ function alg_cache(alg::SFSDIRK8, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = SFSDIRK8Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -664,7 +664,7 @@ function alg_cache(
     end
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     Hairer4ConstantCache(nlsolver, tab)
 end
 
@@ -695,7 +695,7 @@ function alg_cache(
     end
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -734,7 +734,7 @@ function alg_cache(alg::ESDIRK54I8L2SA, u, rate_prototype, ::Type{uEltypeNoUnits
     tab = ESDIRK54I8L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -765,7 +765,7 @@ function alg_cache(alg::ESDIRK54I8L2SA, u, rate_prototype, ::Type{uEltypeNoUnits
     tab = ESDIRK54I8L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     ESDIRK54I8L2SAConstantCache(nlsolver, tab)
 end
 
@@ -792,7 +792,7 @@ function alg_cache(alg::ESDIRK436L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits
     tab = ESDIRK436L2SA2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -820,7 +820,7 @@ function alg_cache(alg::ESDIRK436L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits
     tab = ESDIRK436L2SA2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     ESDIRK436L2SA2ConstantCache(nlsolver, tab)
 end
 
@@ -848,7 +848,7 @@ function alg_cache(alg::ESDIRK437L2SA, u, rate_prototype, ::Type{uEltypeNoUnits}
     tab = ESDIRK437L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -877,7 +877,7 @@ function alg_cache(alg::ESDIRK437L2SA, u, rate_prototype, ::Type{uEltypeNoUnits}
     tab = ESDIRK437L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     ESDIRK437L2SAConstantCache(nlsolver, tab)
 end
 
@@ -905,7 +905,7 @@ function alg_cache(alg::ESDIRK547L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits
     tab = ESDIRK547L2SA2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -934,7 +934,7 @@ function alg_cache(alg::ESDIRK547L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits
     tab = ESDIRK547L2SA2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     ESDIRK547L2SA2ConstantCache(nlsolver, tab)
 end
 
@@ -965,7 +965,7 @@ function alg_cache(alg::ESDIRK659L2SA, u, rate_prototype, ::Type{uEltypeNoUnits}
     tab = ESDIRK659L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
     fsalfirst = zero(rate_prototype)
 
     z₁ = zero(u)
@@ -997,6 +997,6 @@ function alg_cache(alg::ESDIRK659L2SA, u, rate_prototype, ::Type{uEltypeNoUnits}
     tab = ESDIRK659L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     ESDIRK659L2SAConstantCache(nlsolver, tab)
 end
