@@ -33,7 +33,7 @@ function alg_cache(alg::IRKC, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
     zprev = u
     du₁ = rate_prototype
     du₂ = rate_prototype
@@ -46,7 +46,7 @@ function alg_cache(alg::IRKC, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
 
     gprev = zero(u)
     gprev2 = zero(u)

@@ -165,7 +165,7 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true),
-        verbose = Minimal())
+        verbose = verbose.linear_verbosity)
 
      
     algebraic_vars = f.mass_matrix === I ? nothing :
@@ -217,7 +217,7 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true),
-        verbose = Minimal())
+        verbose = verbose.linear_verbosity)
 
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
@@ -370,7 +370,7 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true),
-        verbose = Minimal())
+        verbose = verbose.linear_verbosity)
 
     Rosenbrock33Cache(u, uprev, du, du1, du2, k1, k2, k3, k4,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
@@ -462,7 +462,7 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true),
-        verbose = Minimal())
+        verbose = verbose.linear_verbosity)
 
     Rosenbrock34Cache(u, uprev, du, du1, du2, k1, k2, k3, k4,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
@@ -661,7 +661,7 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true),
-        verbose = Minimal())
+        verbose = verbose.linear_verbosity)
 
     Rodas23WCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
@@ -711,7 +711,7 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true),
-        verbose = Minimal())
+        verbose = verbose.linear_verbosity)
 
     Rodas3PCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
@@ -827,7 +827,7 @@ function alg_cache(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A=true, alias_b=true),
         Pl=Pl, Pr=Pr,
         assumptions=LinearSolve.OperatorAssumptions(true),
-        verbose = Minimal())
+        verbose = verbose.linear_verbosity)
 
     
     # Return the cache struct with vectors
