@@ -70,3 +70,6 @@ path = "../OrdinaryDiffEqCore"
 
 [sources.OrdinaryDiffEqVerner]
 path = "../OrdinaryDiffEqVerner"
+
+[sources.OrdinaryDiffEqTsit5]
+path = "../OrdinaryDiffEqTsit5"
