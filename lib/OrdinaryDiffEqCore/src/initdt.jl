@@ -15,7 +15,10 @@
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
-        return tdir * max(smalldt, dtmin)
+        result_dt = tdir * max(smalldt, dtmin)
+        @SciMLMessage("Using default small timestep for DAE: dt = $(result_dt)",
+                      integrator.opts.verbose, :shampine_dt)
+        return result_dt
     end
 
     if eltype(u0) <: Number && !(integrator.alg isa CompositeAlgorithm)
@@ -116,7 +119,10 @@
             integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
             copyto!(f₀, ftmp)
         catch
-            return tdir * max(smalldt, dtmin)
+            result_dt = tdir * max(smalldt, dtmin)
+            @SciMLMessage("Mass matrix appears singular, using default small timestep: dt = $(result_dt)",
+                          integrator.opts.verbose, :near_singular)
+            return result_dt
         end
     end
 
@@ -160,7 +166,10 @@
     if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType) * oneunit(_tType)
         # This catches Andreas' non-singular example
         # should act like it's singular
-        return tdir * max(smalldt, dtmin)
+        result_dt = tdir * max(smalldt, dtmin)
+        @SciMLMessage("Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
+                      integrator.opts.verbose, :dt_epsilon)
+        return result_dt
     end
 
     dt₀_tdir = tdir * dt₀
