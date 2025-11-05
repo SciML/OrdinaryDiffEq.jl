@@ -78,3 +78,6 @@ path = "../OrdinaryDiffEqDifferentiation"
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
+
+[sources.OrdinaryDiffEqSDIRK]
+path = "../OrdinaryDiffEqSDIRK"
