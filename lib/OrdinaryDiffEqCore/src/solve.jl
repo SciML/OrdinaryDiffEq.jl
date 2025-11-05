@@ -98,12 +98,14 @@ function SciMLBase.__init(
 
     if verbose isa Bool
         if verbose
-            verbose = ODEVerbosity()
+            verbose_spec = ODEVerbosity()
         else
-            verbose = ODEVerbosity(None())
+            verbose_spec = ODEVerbosity(None())
         end
     elseif verbose isa AbstractVerbosityPreset
-        verbose = ODEVerbosity(verbose)
+        verbose_spec = ODEVerbosity(verbose)
+    else
+        verbose_spec = verbose
     end
 
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
@@ -114,7 +116,7 @@ function SciMLBase.__init(
         # technically this should also warn for zero operators but those are hard to check for
         if (dense || !isempty(saveat))
             @SciMLMessage("Rosenbrock methods on equations without differential states do not bound the error on interpolations.",
-                verbose, :rosenbrock_no_differential_states)
+                verbose_spec, :rosenbrock_no_differential_states)
         end
     end
 
@@ -126,7 +128,7 @@ function SciMLBase.__init(
 
     if !isempty(saveat) && dense
         @SciMLMessage("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.",
-            verbose, :dense_output_saveat)
+            verbose_spec, :dense_output_saveat)
     end
 
     progress && @logmsg(LogLevel(-1), progress_name, _id=progress_id, progress=0)
@@ -426,11 +428,11 @@ function SciMLBase.__init(
     if prob isa DAEProblem
         cache = alg_cache(_alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
             uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-            reltol_internal, p, calck, Val(isinplace(prob)))
+            reltol_internal, p, calck, Val(isinplace(prob)), verbose_spec)
     else
         cache = alg_cache(_alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
             tTypeNoUnits, uprev, uprev2, f, t, dt, reltol_internal, p, calck,
-            Val(isinplace(prob)))
+            Val(isinplace(prob)), verbose_spec)
     end
 
     # Setting up the step size controller
@@ -464,7 +466,7 @@ function SciMLBase.__init(
         typeof(d_discontinuities_internal), typeof(userdata),
         typeof(save_idxs),
         typeof(maxiters), typeof(tstops),
-        typeof(saveat), typeof(d_discontinuities), typeof(verbose)}(maxiters, save_everystep,
+        typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec)}(maxiters, save_everystep,
         adaptive, abstol_internal,
         reltol_internal,
         QT(gamma), QT(qmax),
@@ -494,7 +496,7 @@ function SciMLBase.__init(
         callbacks_internal,
         isoutofdomain,
         unstable_check,
-        verbose, calck, force_dtmin,
+        verbose_spec, calck, force_dtmin,
         advance_to_tstop,
         stop_at_next_tstop)
 
