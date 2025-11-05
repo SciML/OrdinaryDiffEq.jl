@@ -24,7 +24,7 @@ end
 function alg_cache(alg::DImplicitEuler, du, u, res_prototype, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1, 1
     α = 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
@@ -36,7 +36,7 @@ end
 function alg_cache(alg::DImplicitEuler, du, u, res_prototype, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1, 1
     α = 1
     k₁ = zero(rate_prototype)
@@ -62,7 +62,7 @@ function alg_cache(alg::DABDF2, du, u, res_prototype, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = Int64(1) // 1, 1
     α = Int64(1) // 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
@@ -91,7 +91,7 @@ end
 function alg_cache(alg::DABDF2, du, u, res_prototype, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = Int64(1) // 1, 1
     α = Int64(1) // 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
@@ -140,7 +140,7 @@ end
 
 function alg_cache(alg::DFBDF{MO}, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits,
-        uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{false}) where {MO}
+        uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{false}, verbose) where {MO}
     γ, c = 1.0, 1.0
     max_order = MO
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
@@ -211,7 +211,7 @@ end
 function alg_cache(alg::DFBDF{MO}, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits,
         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}) where {MO}
+        ::Val{true}, verbose) where {MO}
     γ, c = 1.0, 1.0
     fsalfirst = zero(rate_prototype)
     max_order = MO
