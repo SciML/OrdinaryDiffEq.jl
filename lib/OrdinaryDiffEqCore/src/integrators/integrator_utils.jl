@@ -10,7 +10,7 @@ function loopheader!(integrator)
     if integrator.iter > 0
         if (integrator.opts.adaptive && !integrator.accept_step) ||
            integrator.force_stepfail
-            @SciMLMessage("Step rejected: EEst = $(integrator.EEst), adjusting dt: $(integrator.tprev + integrator.dtpropose) → $(integrator.t + integrator.dt)",
+            @SciMLMessage(lazy"Step rejected: EEst = $(integrator.EEst), adjusting dt: $(integrator.tprev + integrator.dtpropose) → $(integrator.t + integrator.dt)",
                           integrator.opts.verbose, :step_rejected)
             if integrator.isout
                 integrator.dt = integrator.dt * integrator.opts.qmin
@@ -18,7 +18,7 @@ function loopheader!(integrator)
                 step_reject_controller!(integrator, integrator.alg)
             end
         else
-            @SciMLMessage("Step accepted: t = $(integrator.t), dt = $(integrator.dt), EEst = $(integrator.EEst)",
+            @SciMLMessage(lazy"Step accepted: t = $(integrator.t), dt = $(integrator.dt), EEst = $(integrator.EEst)",
                           integrator.opts.verbose, :step_accepted)
             integrator.success_iter += 1
             apply_step!(integrator)
