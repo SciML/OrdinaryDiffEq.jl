@@ -13,7 +13,7 @@
 
     if integrator.isdae
         result_dt = tdir * max(smalldt, dtmin)
-        @SciMLMessage("Using default small timestep for DAE: dt = $(result_dt)",
+        @SciMLMessage(lazy"Using default small timestep for DAE: dt = $(result_dt)",
                       integrator.opts.verbose, :shampine_dt)
         return result_dt
     end
@@ -115,7 +115,7 @@
             copyto!(f₀, ftmp)
         catch
             result_dt = tdir * max(smalldt, dtmin)
-            @SciMLMessage("Mass matrix appears singular, using default small timestep: dt = $(result_dt)",
+            @SciMLMessage(lazy"Mass matrix appears singular, using default small timestep: dt = $(result_dt)",
                           integrator.opts.verbose, :near_singular)
             return result_dt
         end
@@ -156,7 +156,7 @@
         # This catches Andreas' non-singular example
         # should act like it's singular
         result_dt = tdir * max(smalldt, dtmin)
-        @SciMLMessage("Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
+        @SciMLMessage(lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
                       integrator.opts.verbose, :dt_epsilon)
         return result_dt
     end
