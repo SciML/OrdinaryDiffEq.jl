@@ -11,7 +11,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, qsteady_max_default,
                            calculate_residuals, calculate_residuals!,
                            get_current_adaptive_order, get_fsalfirstlast,
                            ode_interpolant, ode_interpolant!, trivial_limiter!,
-                           generic_solver_docstring, @SciMLMessage
+                           generic_solver_docstring
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import LinearAlgebra: rmul!
 import Static: False

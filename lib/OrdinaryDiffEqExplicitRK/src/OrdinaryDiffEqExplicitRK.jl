@@ -6,7 +6,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, alg_stability_size,
                            unwrap_alg,
                            OrdinaryDiffEqMutableCache, initialize!, perform_step!, isfsal,
                            CompositeAlgorithm, calculate_residuals!, calculate_residuals,
-                           full_cache, get_fsalfirstlast, @SciMLMessage
+                           full_cache, get_fsalfirstlast
 using TruncatedStacktraces: @truncate_stacktrace
 using RecursiveArrayTools, FastBroadcast, MuladdMacro, DiffEqBase
 import LinearAlgebra: norm

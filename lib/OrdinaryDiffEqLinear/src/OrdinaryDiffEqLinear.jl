@@ -9,7 +9,7 @@ import OrdinaryDiffEqCore: alg_order, alg_extrapolates, dt_required,
                            initialize!, perform_step!, unwrap_alg,
                            calculate_residuals!, get_fsalfirstlast,
                            _vec, isdtchangeable, full_cache,
-                           generic_solver_docstring, @SciMLMessage
+                           generic_solver_docstring
 using LinearAlgebra: mul!, I
 using SciMLOperators: AbstractSciMLOperator
 using ExponentialUtilities
