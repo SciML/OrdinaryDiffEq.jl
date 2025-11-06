@@ -18,8 +18,8 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
     bool = !(stiffness <= os * tol)
 
     if bool
-        @SciMLMessage("Stiffness detected: |eigen_est·dt/stability_size| = $(stiffness) > $(os * tol)",
-                      integrator.opts.verbose, :alg_switch)
+        @SciMLMessage("Stiffness detected at t = $(integrator.t)",
+                      integrator.opts.verbose, :stiff_detection)
     end
 
     if !bool
@@ -55,12 +55,12 @@ function (AS::AutoSwitchCache)(integrator)
                AS.count < 0 ? 1 : AS.count + 1 :
                AS.count > 0 ? -1 : AS.count - 1
     if (!AS.is_stiffalg && AS.count > AS.maxstiffstep)
-        @SciMLMessage("Switching from $(AS.nonstiffalg) to $(AS.stiffalg) (stiff count: $(AS.count))",
+        @SciMLMessage("Switching from $(nameof(typeof(AS.nonstiffalg))) to $(nameof(typeof(AS.stiffalg))) at t = $(integrator.t)",
                       integrator.opts.verbose, :alg_switch)
         integrator.dt = dt * AS.dtfac
         AS.is_stiffalg = true
     elseif (AS.is_stiffalg && AS.count < -AS.maxnonstiffstep)
-        @SciMLMessage("Switching from $(AS.stiffalg) to $(AS.nonstiffalg) (nonstiff count: $(abs(AS.count))), dt adjusted by factor $(1/AS.dtfac)",
+        @SciMLMessage("Switching from $(nameof(typeof(AS.stiffalg))) to $(nameof(typeof(AS.nonstiffalg))) at t = $(integrator.t)",
                       integrator.opts.verbose, :alg_switch)
         integrator.dt = dt / AS.dtfac
         AS.is_stiffalg = false
