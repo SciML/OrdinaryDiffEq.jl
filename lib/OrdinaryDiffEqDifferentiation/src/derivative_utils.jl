@@ -132,7 +132,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
         end
     end
 
-    @SciMLMessage("Computing Jacobian at t = $(t) using $(method)",
+    @SciMLMessage(lazy"Computing Jacobian at t = $(t) using $(method)",
                   integrator.opts.verbose, :jacobian_update)
 
     if alg isa DAEAlgorithm
@@ -745,7 +745,7 @@ function update_W!(nlsolver::AbstractNLSolver,
         new_jac, new_W = calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step,
             newJW)
         if new_W
-            @SciMLMessage("W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
+            @SciMLMessage(lazy"W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
                           integrator.opts.verbose, :w_factorization)
         end
     end
@@ -775,7 +775,7 @@ function update_W!(nlsolver::AbstractNLSolver,
             set_W_γdt!(nlsolver, dtgamma)
         end
         if new_W
-            @SciMLMessage("W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
+            @SciMLMessage(lazy"W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
                           integrator.opts.verbose, :w_factorization)
         end
     end
