@@ -63,6 +63,7 @@ import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, S
 
 include("type.jl")
 include("utils.jl")
+include("deprecated.jl")
 include("nlsolve.jl")
 include("functional.jl")
 include("newton.jl")
