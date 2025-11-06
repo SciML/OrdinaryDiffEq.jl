@@ -12,6 +12,7 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `dense_output_saveat`: Messages about dense output with saveat
 - `max_iters`: Messages when maximum iterations are reached
 - `dt_min_unstable`: Messages when time step becomes too small/unstable
+- `instability`: Messages when numerical instability is detected
 - `newton_convergence`: Messages when Newton iteration fails to converge
 - `step_rejected`: Messages when adaptive steps are rejected
 - `step_accepted`: Messages when adaptive steps are accepted
@@ -87,6 +88,7 @@ verbose = ODEVerbosity(
     dense_output_saveat
     max_iters
     dt_min_unstable
+    instability
     newton_convergence
     step_rejected
     step_accepted
@@ -108,7 +110,7 @@ verbose = ODEVerbosity(
 end
 
 # Group classifications
-const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit)
+const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit)
 const performance_options = (:alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update, :w_factorization, :newton_iterations)
 const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon, :stability_check, :near_singular)
 
@@ -175,6 +177,7 @@ function ODEVerbosity(;
         dense_output_saveat = WarnLevel(),
         max_iters = WarnLevel(),
         dt_min_unstable = WarnLevel(),
+        instability = WarnLevel(),
         newton_convergence = Silent(),
         step_rejected = Silent(),
         step_accepted = Silent(),
@@ -227,6 +230,7 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dense_output_saveat = Silent(),
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
+            instability = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -257,6 +261,7 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dense_output_saveat = InfoLevel(),
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
+            instability = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -268,11 +273,11 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             w_factorization = InfoLevel(),
             newton_iterations = InfoLevel(),
             rosenbrock_no_differential_states = WarnLevel(),
-            shampine_dt = Silent(),
+            shampine_dt = InfoLevel(),
             unlimited_dt = WarnLevel(),
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
-            near_singular = Silent()
+            near_singular = WarnLevel()
         )
     elseif verbose isa All
         # All: Maximum verbosity - every possible logging message at InfoLevel
@@ -284,6 +289,7 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             dense_output_saveat = InfoLevel(),
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
+            instability = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = InfoLevel(),
             step_accepted = InfoLevel(),
@@ -308,6 +314,7 @@ end
     ODEVerbosity(
         None(),
         None(),
+        Silent(),
         Silent(),
         Silent(),
         Silent(),
