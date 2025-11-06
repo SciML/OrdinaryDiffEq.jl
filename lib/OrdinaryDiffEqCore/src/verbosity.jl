@@ -19,6 +19,7 @@ diagnostic messages, warnings, and errors during ODE solution.
 
 ## Performance Group
 - `alg_switch`: Messages when algorithm switching occurs
+- `stiff_detection`: Messages when stiffness is detected
 - `mismatched_input_output_type`: Messages when input/output types don't match
 - `jacobian_update`: Messages when Jacobian matrix is computed/updated
 - `w_factorization`: Messages when W matrix is factorized
@@ -92,6 +93,7 @@ verbose = ODEVerbosity(
     convergence_limit
     # Performance
     alg_switch
+    stiff_detection
     mismatched_input_output_type
     jacobian_update
     w_factorization
@@ -107,7 +109,7 @@ end
 
 # Group classifications
 const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit)
-const performance_options = (:alg_switch, :mismatched_input_output_type, :jacobian_update, :w_factorization, :newton_iterations)
+const performance_options = (:alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update, :w_factorization, :newton_iterations)
 const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon, :stability_check, :near_singular)
 
 function option_group(option::Symbol)
@@ -178,6 +180,7 @@ function ODEVerbosity(;
         step_accepted = Silent(),
         convergence_limit = Silent(),
         alg_switch = Silent(),
+        stiff_detection = Silent(),
         mismatched_input_output_type = WarnLevel(),
         jacobian_update = Silent(),
         w_factorization = Silent(),
@@ -229,6 +232,7 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             step_accepted = Silent(),
             convergence_limit = Silent(),
             alg_switch = Silent(),
+            stiff_detection = Silent(),
             mismatched_input_output_type = Silent(),
             jacobian_update = Silent(),
             w_factorization = Silent(),
@@ -258,16 +262,17 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             step_accepted = Silent(),
             convergence_limit = InfoLevel(),
             alg_switch = InfoLevel(),
+            stiff_detection = Silent(),
             mismatched_input_output_type = WarnLevel(),
             jacobian_update = InfoLevel(),
             w_factorization = InfoLevel(),
             newton_iterations = InfoLevel(),
             rosenbrock_no_differential_states = WarnLevel(),
-            shampine_dt = InfoLevel(),
+            shampine_dt = Silent(),
             unlimited_dt = WarnLevel(),
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
-            near_singular = WarnLevel()
+            near_singular = Silent()
         )
     elseif verbose isa All
         # All: Maximum verbosity - every possible logging message at InfoLevel
@@ -284,6 +289,7 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
             step_accepted = InfoLevel(),
             convergence_limit = InfoLevel(),
             alg_switch = InfoLevel(),
+            stiff_detection = InfoLevel(),
             mismatched_input_output_type = InfoLevel(),
             jacobian_update = InfoLevel(),
             w_factorization = InfoLevel(),
@@ -302,6 +308,7 @@ end
     ODEVerbosity(
         None(),
         None(),
+        Silent(),
         Silent(),
         Silent(),
         Silent(),
