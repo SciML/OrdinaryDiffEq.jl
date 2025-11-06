@@ -12,7 +12,7 @@ import DiffEqBase
 import PreallocationTools: dualcache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
 using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
-                      step!
+                      step!, NonlinearVerbosity
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 import FastClosures: @closure
