@@ -322,7 +322,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                     norm_diff2 = integrator.opts.internalnorm(diff2[1], t)
                     if norm_diff1 < norm_diff2
                         # Divergence of iteration, overflow is possible. Force fail and start with smaller step
-                        @SciMLMessage("Deuflhard stability check failed: ||diff1|| = $(norm_diff1) < ||diff2|| = $(norm_diff2), divergence detected",
+                        @SciMLMessage(lazy"Deuflhard stability check failed: ||diff1|| = $(norm_diff1) < ||diff2|| = $(norm_diff2), divergence detected",
                                       integrator.opts.verbose, :stability_check)
                         integrator.force_stepfail = true
                         return

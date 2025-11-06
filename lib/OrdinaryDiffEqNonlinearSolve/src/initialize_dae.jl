@@ -162,7 +162,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
     end
 
     if failed
-        @SciMLMessage("ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
+        @SciMLMessage(lazy"ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
             integrator.opts.verbose, :shampine_dt)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
             ReturnCode.InitialFailure)
@@ -242,7 +242,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
     end
 
     if failed
-        @SciMLMessage("ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
+        @SciMLMessage(lazy"ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
             integrator.opts.verbose, :shampine_dt)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
             ReturnCode.InitialFailure)
@@ -320,7 +320,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DA
         recursivecopy!(integrator.uprev2, integrator.uprev)
     end
     if nlsol.retcode != ReturnCode.Success
-        @SciMLMessage("ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
+        @SciMLMessage(lazy"ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
             integrator.opts.verbose, :shampine_dt)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
             ReturnCode.InitialFailure)
@@ -369,7 +369,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DA
         integrator.uprev2 = copy(integrator.uprev)
     end
     if nlsol.retcode != ReturnCode.Success
-        @SciMLMessage("ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
+        @SciMLMessage(lazy"ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
             integrator.opts.verbose, :shampine_dt)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
             ReturnCode.InitialFailure)
