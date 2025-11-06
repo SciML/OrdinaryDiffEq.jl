@@ -11,7 +11,7 @@ import OrdinaryDiffEqCore: alg_order, qmax_default, qmin_default, beta2_default,
                            calculate_residuals!, calculate_residuals, CompiledFloats,
                            copyat_or_push!, get_fsalfirstlast,
                            unwrap_alg, _ode_interpolant, _ode_interpolant!,
-                           DerivativeOrderNotPossibleError, full_cache, isdp8, @SciMLMessage
+                           DerivativeOrderNotPossibleError, full_cache, isdp8
 import Static: False
 import MuladdMacro: @muladd
 using DiffEqBase
