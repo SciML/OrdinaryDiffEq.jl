@@ -150,6 +150,7 @@ include("composite_algs.jl")
 include("alg_utils.jl")
 
 include("caches/basic_caches.jl")
+include("deprecated.jl")
 
 include("integrators/type.jl")
 include("integrators/controllers.jl")
