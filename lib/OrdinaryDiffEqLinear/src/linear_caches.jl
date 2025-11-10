@@ -174,7 +174,7 @@ end
 end
 
 function alg_cache(alg::CG4a, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{true})
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{true}, verbose)
     W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
@@ -186,7 +186,7 @@ struct CG4aConstantCache <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::CG4a, u, rate_prototype, uEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{false})
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{false}, verbose)
     CG4aConstantCache()
 end
 
