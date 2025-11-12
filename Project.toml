@@ -1,15 +1,17 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
-authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 version = "6.103.0"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
 ExponentialUtilities = "d4d017d3-3776-5f7e-afef-a10c40355c18"
@@ -110,9 +112,11 @@ OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
 ADTypes = "1.16"
 Adapt = "4.3"
 ArrayInterface = "7.19"
+BenchmarkTools = "1.6.3"
 CommonSolve = "0.2.4"
 DataStructures = "0.18.22, 0.19"
 DiffEqBase = "6.190.2"
+DiffEqDevTools = "2.48.0"
 DocStringExtensions = "0.9.5"
 EnumX = "1.0.5"
 ExplicitImports = "1.13.1"

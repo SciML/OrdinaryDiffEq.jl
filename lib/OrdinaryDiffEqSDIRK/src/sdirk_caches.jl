@@ -106,3 +106,58 @@ function alg_cache(alg::Union{ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2
 end
 
 # Keep old caches for backward compatibility for now, will be removed later.
+const ImplicitEulerCacheInner = SDIRKCache
+const ImplicitEulerConstantCacheInner = SDIRKConstantCacheImpl
+
+mutable struct ImplicitEulerCache{C<:ImplicitEulerCacheInner} <: SDIRKMutableCache
+    inner::C
+end
+
+mutable struct ImplicitEulerConstantCache{C<:ImplicitEulerConstantCacheInner} <: SDIRKConstantCache
+    inner::C
+end
+
+function Base.getproperty(cache::ImplicitEulerCache, sym::Symbol)
+    sym === :inner && return getfield(cache, :inner)
+    return getproperty(getfield(cache, :inner), sym)
+end
+
+function Base.getproperty(cache::ImplicitEulerConstantCache, sym::Symbol)
+    sym === :inner && return getfield(cache, :inner)
+    return getproperty(getfield(cache, :inner), sym)
+end
+
+function Base.setproperty!(cache::ImplicitEulerCache, sym::Symbol, val)
+    sym === :inner && return setfield!(cache, :inner, val)
+    setproperty!(getfield(cache, :inner), sym, val)
+end
+
+function Base.setproperty!(cache::ImplicitEulerConstantCache, sym::Symbol, val)
+    sym === :inner && return setfield!(cache, :inner, val)
+    setproperty!(getfield(cache, :inner), sym, val)
+end
+
+function ImplicitEulerCache(u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, step_limiter!)
+    T = eltype(u)
+    T2 = eltype(atmp)
+    tab = ImplicitEulerTableau(T === Nothing ? Float64 : T, T2 === Nothing ? Float64 : T2)
+    zs = Vector{typeof(u)}(undef, 1)
+    zs[1] = nlsolver.z
+    inner = SDIRKCache(u, uprev, uprev2, fsalfirst, zs, atmp, nlsolver, tab,
+        algebraic_vars, step_limiter!, zero(u), zero(eltype(tab.c)), zero(u), zero(u))
+    ImplicitEulerCache(inner)
+end
+
+function ImplicitEulerConstantCache(nlsolver)
+    tab = ImplicitEulerTableau()
+    inner = SDIRKConstantCacheImpl(nlsolver, tab, zero(nlsolver.tmp), zero(eltype(tab.c)))
+    ImplicitEulerConstantCache(inner)
+end
+
+@muladd function perform_step!(integrator, cache::ImplicitEulerCache, repeat_step=false)
+    perform_step!(integrator, cache.inner, repeat_step)
+end
+
+@muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache, repeat_step=false)
+    perform_step!(integrator, cache.inner, repeat_step)
+end

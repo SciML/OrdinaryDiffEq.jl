@@ -141,7 +141,7 @@ end
     step_limiter!(u, integrator, p, t + dt)
     
     if integrator.opts.adaptive
-        if tab.has_spice_error && integrator.success_iter > 0
+        if alg isa ImplicitEuler && integrator.success_iter > 0
             uprev2 = integrator.uprev2
             tprev = integrator.tprev
             
@@ -150,8 +150,20 @@ end
             c = 7 / 12
             r = c * dt^2
             
-            @.. broadcast=false tmp = r * integrator.opts.internalnorm(
-                (u - uprev) / dt1 - (uprev - uprev2) / dt2, t)
+            @.. broadcast=false tmp = r * ((u - uprev) / dt1 - (uprev - uprev2) / dt2)
+            calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        elseif alg isa Trapezoid && integrator.success_iter > 0
+            uprev2 = integrator.uprev2
+            tprev = integrator.tprev
+            
+            dt1 = dt * (t + dt - tprev)
+            dt2 = (t - tprev) * (t + dt - tprev)
+            c = 1 / 12
+            r = c * dt^3
+            
+            @.. broadcast=false tmp = r * ((u - uprev) / dt1 - (uprev - uprev2) / dt2)
             calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -289,7 +301,7 @@ end
     end
     
     if integrator.opts.adaptive
-        if tab.has_spice_error && integrator.success_iter > 0
+        if alg isa ImplicitEuler && integrator.success_iter > 0
             uprev2 = integrator.uprev2
             tprev = integrator.tprev
             
@@ -298,7 +310,20 @@ end
             c = 7 / 12
             r = c * dt^2
             
-            tmp = r * integrator.opts.internalnorm.((u - uprev) / dt1 - (uprev - uprev2) / dt2, t)
+            tmp = r * ((u - uprev) / dt1 - (uprev - uprev2) / dt2)
+            atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        elseif alg isa Trapezoid && integrator.success_iter > 0
+            uprev2 = integrator.uprev2
+            tprev = integrator.tprev
+            
+            dt1 = dt * (t + dt - tprev)
+            dt2 = (t - tprev) * (t + dt - tprev)
+            c = 1 / 12
+            r = c * dt^3
+            
+            tmp = r * ((u - uprev) / dt1 - (uprev - uprev2) / dt2)
             atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
