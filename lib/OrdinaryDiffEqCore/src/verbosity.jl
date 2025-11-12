@@ -114,39 +114,41 @@ const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat, :max_it
 const performance_options = (:alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update, :w_factorization, :newton_iterations)
 const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon, :stability_check, :near_singular)
 
-function option_group(option::Symbol)
-    if option in error_control_options
-        return :error_control
-    elseif option in performance_options
-        return :performance
-    elseif option in numerical_options
-        return :numerical
-    else
-        error("Unknown verbosity option: $option")
-    end
-end
-
-# Get all options in a group
-function group_options(verbosity::ODEVerbosity, group::Symbol)
-    if group === :error_control
-        return NamedTuple{error_control_options}(getproperty(verbosity, opt)
-                                                 for opt in error_control_options)
-    elseif group === :performance
-        return NamedTuple{performance_options}(getproperty(verbosity, opt)
-                                               for opt in performance_options)
-    elseif group === :numerical
-        return NamedTuple{numerical_options}(getproperty(verbosity, opt)
-                                             for opt in numerical_options)
-    else
-        error("Unknown group: $group")
-    end
-end
-
-
 function ODEVerbosity(;
         error_control = nothing, performance = nothing, numerical = nothing,
         linear_verbosity = nothing, nonlinear_verbosity = nothing, kwargs...)
     # Validate group arguments
+
+    if error_control === nothing && performance === nothing && numerical === nothing &&
+        linear_verbosity === nothing && nonlinear_verbosity === nothing && isempty(kwargs)
+        return ODEVerbosity(
+            linear_verbosity = Minimal(),
+            nonlinear_verbosity = Minimal(),
+            dt_NaN = WarnLevel(),
+            init_NaN = WarnLevel(),
+            dense_output_saveat = WarnLevel(),
+            max_iters = WarnLevel(),
+            dt_min_unstable = WarnLevel(),
+            instability = WarnLevel(),
+            newton_convergence = Silent(),
+            step_rejected = Silent(),
+            step_accepted = Silent(),
+            convergence_limit = Silent(),
+            alg_switch = Silent(),
+            stiff_detection = Silent(),
+            mismatched_input_output_type = WarnLevel(),
+            jacobian_update = Silent(),
+            w_factorization = Silent(),
+            newton_iterations = Silent(),
+            rosenbrock_no_differential_states = WarnLevel(),
+            shampine_dt = Silent(),
+            unlimited_dt = WarnLevel(),
+            dt_epsilon = Silent(),
+            stability_check = Silent(),
+            near_singular = Silent()
+        )
+    end
+
     if error_control !== nothing && !(error_control isa AbstractMessageLevel)
         throw(ArgumentError("error_control must be a SciMLLogging.AbstractMessageLevel, got $(typeof(error_control))"))
     end
@@ -196,13 +198,37 @@ function ODEVerbosity(;
         near_singular = Silent()
     )
 
-    # Apply group-level settings
+    # Apply group-level settings - done explicitly for type stability
     final_args = if error_control !== nothing || performance !== nothing ||
                     numerical !== nothing
-        NamedTuple{keys(default_args)}(
-            _resolve_arg_value(
-                key, default_args[key], error_control, performance, numerical)
-        for key in keys(default_args)
+        (
+            linear_verbosity = default_args.linear_verbosity,
+            nonlinear_verbosity = default_args.nonlinear_verbosity,
+            # Error control group
+            dt_NaN = error_control !== nothing ? error_control : default_args.dt_NaN,
+            init_NaN = error_control !== nothing ? error_control : default_args.init_NaN,
+            dense_output_saveat = error_control !== nothing ? error_control : default_args.dense_output_saveat,
+            max_iters = error_control !== nothing ? error_control : default_args.max_iters,
+            dt_min_unstable = error_control !== nothing ? error_control : default_args.dt_min_unstable,
+            instability = error_control !== nothing ? error_control : default_args.instability,
+            newton_convergence = error_control !== nothing ? error_control : default_args.newton_convergence,
+            step_rejected = error_control !== nothing ? error_control : default_args.step_rejected,
+            step_accepted = error_control !== nothing ? error_control : default_args.step_accepted,
+            convergence_limit = error_control !== nothing ? error_control : default_args.convergence_limit,
+            # Performance group
+            alg_switch = performance !== nothing ? performance : default_args.alg_switch,
+            stiff_detection = performance !== nothing ? performance : default_args.stiff_detection,
+            mismatched_input_output_type = performance !== nothing ? performance : default_args.mismatched_input_output_type,
+            jacobian_update = performance !== nothing ? performance : default_args.jacobian_update,
+            w_factorization = performance !== nothing ? performance : default_args.w_factorization,
+            newton_iterations = performance !== nothing ? performance : default_args.newton_iterations,
+            # Numerical group
+            rosenbrock_no_differential_states = numerical !== nothing ? numerical : default_args.rosenbrock_no_differential_states,
+            shampine_dt = numerical !== nothing ? numerical : default_args.shampine_dt,
+            unlimited_dt = numerical !== nothing ? numerical : default_args.unlimited_dt,
+            dt_epsilon = numerical !== nothing ? numerical : default_args.dt_epsilon,
+            stability_check = numerical !== nothing ? numerical : default_args.stability_check,
+            near_singular = numerical !== nothing ? numerical : default_args.near_singular
         )
     else
         default_args
@@ -222,7 +248,7 @@ end
 function ODEVerbosity(verbose::AbstractVerbosityPreset)
     if verbose isa Minimal
         # Minimal: Only fatal errors and critical warnings
-        ODEVerbosity(
+        return ODEVerbosity(
             linear_verbosity = Minimal(),
             nonlinear_verbosity = Minimal(),
             dt_NaN = WarnLevel(),
@@ -250,10 +276,10 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
         )
     elseif verbose isa Standard
         # Standard: Everything from Minimal + non-fatal warnings
-        ODEVerbosity()
+        return ODEVerbosity()
     elseif verbose isa Detailed
         # Detailed: Everything from Standard + debugging/solver behavior
-        ODEVerbosity(
+        return ODEVerbosity(
             linear_verbosity = Detailed(),
             nonlinear_verbosity = Detailed(),
             dt_NaN = WarnLevel(),
@@ -281,7 +307,7 @@ function ODEVerbosity(verbose::AbstractVerbosityPreset)
         )
     elseif verbose isa All
         # All: Maximum verbosity - every possible logging message at InfoLevel
-        ODEVerbosity(
+        return ODEVerbosity(
             linear_verbosity = All(),
             nonlinear_verbosity = All(),
             dt_NaN = WarnLevel(),
@@ -337,20 +363,4 @@ end
         Silent(),
         Silent()
     )
-end
-
-# Helper function to resolve argument values based on group membership
-@inline function _resolve_arg_value(
-        key::Symbol, default_val, error_control, performance, numerical)
-    if key === :linear_verbosity || key === :nonlinear_verbosity
-        return default_val
-    elseif key in error_control_options && error_control !== nothing
-        return error_control
-    elseif key in performance_options && performance !== nothing
-        return performance
-    elseif key in numerical_options && numerical !== nothing
-        return numerical
-    else
-        return default_val
-    end
 end
