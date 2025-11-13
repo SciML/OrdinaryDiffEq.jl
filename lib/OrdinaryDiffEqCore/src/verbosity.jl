@@ -114,41 +114,12 @@ const error_control_options = (:dt_NaN, :init_NaN, :dense_output_saveat, :max_it
 const performance_options = (:alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update, :w_factorization, :newton_iterations)
 const numerical_options = (:rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon, :stability_check, :near_singular)
 
-function ODEVerbosity(;
-        error_control = nothing, performance = nothing, numerical = nothing,
-        linear_verbosity = nothing, nonlinear_verbosity = nothing, kwargs...)
+# Runtime helper for complex verbosity construction path
+function _build_ode_verbosity_runtime(
+    error_control, performance, numerical,
+    linear_verbosity, nonlinear_verbosity, kwargs
+)
     # Validate group arguments
-
-    if error_control === nothing && performance === nothing && numerical === nothing &&
-        linear_verbosity === nothing && nonlinear_verbosity === nothing && isempty(kwargs)
-        return ODEVerbosity(
-            linear_verbosity = Minimal(),
-            nonlinear_verbosity = Minimal(),
-            dt_NaN = WarnLevel(),
-            init_NaN = WarnLevel(),
-            dense_output_saveat = WarnLevel(),
-            max_iters = WarnLevel(),
-            dt_min_unstable = WarnLevel(),
-            instability = WarnLevel(),
-            newton_convergence = Silent(),
-            step_rejected = Silent(),
-            step_accepted = Silent(),
-            convergence_limit = Silent(),
-            alg_switch = Silent(),
-            stiff_detection = Silent(),
-            mismatched_input_output_type = WarnLevel(),
-            jacobian_update = Silent(),
-            w_factorization = Silent(),
-            newton_iterations = Silent(),
-            rosenbrock_no_differential_states = WarnLevel(),
-            shampine_dt = Silent(),
-            unlimited_dt = WarnLevel(),
-            dt_epsilon = Silent(),
-            stability_check = Silent(),
-            near_singular = Silent()
-        )
-    end
-
     if error_control !== nothing && !(error_control isa AbstractMessageLevel)
         throw(ArgumentError("error_control must be a SciMLLogging.AbstractMessageLevel, got $(typeof(error_control))"))
     end
@@ -160,7 +131,7 @@ function ODEVerbosity(;
     end
 
     # Validate individual kwargs
-    for (key, value) in kwargs
+    for (key, value) in pairs(kwargs)
         if !(key in error_control_options || key in performance_options ||
              key in numerical_options)
             throw(ArgumentError("Unknown verbosity option: $key. Valid options are: $(tuple(error_control_options..., performance_options..., numerical_options...))"))
@@ -240,6 +211,113 @@ function ODEVerbosity(;
     end
 
     ODEVerbosity(values(final_args)...)
+end
+
+# Optionally-generated function for ODEVerbosity construction
+# Uses compile-time type information to optimize the common default case
+function _build_ode_verbosity(
+    error_control,
+    performance,
+    numerical,
+    linear_verbosity,
+    nonlinear_verbosity,
+    kwargs
+)
+    if @generated
+        # Generated path: In this block, we're at compile time
+        # error_control, performance, numerical, etc. are the actual type values
+        # Check if all group params are Nothing and kwargs is empty (fast default path)
+        if error_control === Nothing && performance === Nothing && numerical === Nothing &&
+           linear_verbosity === Nothing && nonlinear_verbosity === Nothing &&
+           kwargs <: NamedTuple{()}
+            # Return an expression that constructs the default directly
+            return quote
+                ODEVerbosity(
+                    Minimal(),          # linear_verbosity
+                    Minimal(),          # nonlinear_verbosity
+                    WarnLevel(),        # dt_NaN
+                    WarnLevel(),        # init_NaN
+                    WarnLevel(),        # dense_output_saveat
+                    WarnLevel(),        # max_iters
+                    WarnLevel(),        # dt_min_unstable
+                    WarnLevel(),        # instability
+                    Silent(),           # newton_convergence
+                    Silent(),           # step_rejected
+                    Silent(),           # step_accepted
+                    Silent(),           # convergence_limit
+                    Silent(),           # alg_switch
+                    Silent(),           # stiff_detection
+                    WarnLevel(),        # mismatched_input_output_type
+                    Silent(),           # jacobian_update
+                    Silent(),           # w_factorization
+                    Silent(),           # newton_iterations
+                    WarnLevel(),        # rosenbrock_no_differential_states
+                    Silent(),           # shampine_dt
+                    WarnLevel(),        # unlimited_dt
+                    Silent(),           # dt_epsilon
+                    Silent(),           # stability_check
+                    Silent()            # near_singular
+                )
+            end
+        else
+            # For non-default cases, delegate to runtime logic
+            return quote
+                _build_ode_verbosity_runtime(
+                    error_control, performance, numerical,
+                    linear_verbosity, nonlinear_verbosity, kwargs
+                )
+            end
+        end
+    else
+        # Runtime fallback: error_control, performance, etc. are VALUES
+        if error_control === nothing && performance === nothing && numerical === nothing &&
+           linear_verbosity === nothing && nonlinear_verbosity === nothing &&
+           isempty(kwargs)
+            # Fast default path at runtime
+            ODEVerbosity(
+                Minimal(),          # linear_verbosity
+                Minimal(),          # nonlinear_verbosity
+                WarnLevel(),        # dt_NaN
+                WarnLevel(),        # init_NaN
+                WarnLevel(),        # dense_output_saveat
+                WarnLevel(),        # max_iters
+                WarnLevel(),        # dt_min_unstable
+                WarnLevel(),        # instability
+                Silent(),           # newton_convergence
+                Silent(),           # step_rejected
+                Silent(),           # step_accepted
+                Silent(),           # convergence_limit
+                Silent(),           # alg_switch
+                Silent(),           # stiff_detection
+                WarnLevel(),        # mismatched_input_output_type
+                Silent(),           # jacobian_update
+                Silent(),           # w_factorization
+                Silent(),           # newton_iterations
+                WarnLevel(),        # rosenbrock_no_differential_states
+                Silent(),           # shampine_dt
+                WarnLevel(),        # unlimited_dt
+                Silent(),           # dt_epsilon
+                Silent(),           # stability_check
+                Silent()            # near_singular
+            )
+        else
+            # Complex path
+            _build_ode_verbosity_runtime(
+                error_control, performance, numerical,
+                linear_verbosity, nonlinear_verbosity, kwargs
+            )
+        end
+    end
+end
+
+function ODEVerbosity(;
+        error_control = nothing, performance = nothing, numerical = nothing,
+        linear_verbosity = nothing, nonlinear_verbosity = nothing, kwargs...)
+    _build_ode_verbosity(
+        error_control, performance, numerical,
+        linear_verbosity, nonlinear_verbosity,
+        NamedTuple(kwargs)
+    )
 end
 
 # Constructor for verbosity presets following the hierarchical levels:
