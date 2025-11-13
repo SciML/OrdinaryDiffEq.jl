@@ -96,17 +96,7 @@ function SciMLBase.__init(
         error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
     end
 
-    if verbose isa Bool
-        if verbose
-            verbose_spec = ODEVerbosity()
-        else
-            verbose_spec = ODEVerbosity(None())
-        end
-    elseif verbose isa AbstractVerbosityPreset
-        verbose_spec = ODEVerbosity(verbose)
-    else
-        verbose_spec = verbose
-    end
+    verbose_spec = _process_verbose_param(verbose)
 
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
        # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
