@@ -364,3 +364,15 @@ end
         Silent()
     )
 end
+
+const DEFAULT_VERBOSE = ODEVerbosity()
+
+@inline function _process_verbose_param(verbose::SciMLLogging.AbstractVerbosityPreset)
+    ODEVerbosity(verbose)
+end
+
+@inline function _process_verbose_param(verbose::Bool)
+    verbose ? DEFAULT_VERBOSE : ODEVerbosity(SciMLLogging.None())
+end 
+
+@inline _process_verbose_param(verbose::ODEVerbosity) = verbose
