@@ -1,3 +1,9 @@
+# Skip Enzyme tests on Julia 1.12+ prerelease versions
+if !isempty(VERSION.prerelease)
+    @warn "Skipping Enzyme tests on Julia prerelease version $(VERSION)"
+    exit(0)
+end
+
 using SciMLSensitivity
 using OrdinaryDiffEq, OrdinaryDiffEqCore, FiniteDiff, Test
 using Zygote
