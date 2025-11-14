@@ -133,6 +133,7 @@ function get_differential_vars(f, u)
 end
 
 isnewton(::Any) = false
+isnonlinearsolve(::Any) = false
 
 function _bool_to_ADType(::Val{true}, ::Val{CS}, _) where {CS}
     Base.depwarn(
