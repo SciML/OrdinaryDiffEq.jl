@@ -65,8 +65,12 @@ jobs:
 
         version:
           - 'lts'
+          - '1.11'
           - '1'
           - 'pre'
+        exclude:
+          - group: Enzyme
+            version: 'pre'
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
