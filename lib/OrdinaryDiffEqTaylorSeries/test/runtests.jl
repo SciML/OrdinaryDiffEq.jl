@@ -1,4 +1,4 @@
-using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, JET
+using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools
 using Test
 
 @testset "Taylor2 Convergence Tests" begin
@@ -30,5 +30,8 @@ end
     @test SciMLBase.successful_retcode(sol)
 end
 
-include("jet.jl")
-include("qa.jl")
+# Only run QA tests on stable Julia versions
+if isempty(VERSION.prerelease)
+    include("jet.jl")
+    include("qa.jl")
+end
