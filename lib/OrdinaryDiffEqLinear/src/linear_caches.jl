@@ -185,7 +185,7 @@ end
 struct CG4aConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::CG4a, u, rate_prototype, uEltypeNoUnits,
+function alg_cache(alg::CG4a, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{false}, verbose)
     CG4aConstantCache()
 end
