@@ -17,6 +17,6 @@ OrdinaryDiffEqNonlinearSolve = "1"
 OrdinaryDiffEqSDIRK = "1"
 
 [sources]
-OrdinaryDiffEqBDF = {path = "lib/OrdinaryDiffEqBDF"}
-OrdinaryDiffEqNonlinearSolve = {path = "lib/OrdinaryDiffEqNonlinearSolve"}
-OrdinaryDiffEqSDIRK = {path = "lib/OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqBDF = {path = "../../lib/OrdinaryDiffEqBDF"}
+OrdinaryDiffEqNonlinearSolve = {path = "../../lib/OrdinaryDiffEqNonlinearSolve"}
+OrdinaryDiffEqSDIRK = {path = "../../lib/OrdinaryDiffEqSDIRK"}
