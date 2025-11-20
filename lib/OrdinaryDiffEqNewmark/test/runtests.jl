@@ -1,4 +1,4 @@
-using OrdinaryDiffEqSecondOrderImplicit, Test, RecursiveArrayTools, DiffEqDevTools
+using OrdinaryDiffEqNewmark, Test, RecursiveArrayTools, DiffEqDevTools
 
 # Newmark methods with harmonic oscillator
 @testset "Harmonic Oscillator" begin

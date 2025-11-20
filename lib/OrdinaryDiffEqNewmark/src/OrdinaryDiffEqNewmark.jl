@@ -1,4 +1,4 @@
-module OrdinaryDiffEqSecondOrderImplicit
+module OrdinaryDiffEqNewmark
 
 import OrdinaryDiffEqCore: initialize!, perform_step!, @unpack, unwrap_alg,
                            alg_extrapolates, isadaptive, alg_order,
