@@ -635,74 +635,56 @@ end
 
 @muladd function perform_step!(integrator, cache::SDIRK22ConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack a, α, β = cache.tab
+    @unpack γ, a21, bhat1, bhat2, btilde1, btilde2 = cache.tab
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
-
-    # precalculations
-    γ = a * dt
-    γdt = γ * dt
     markfirststage!(nlsolver)
 
-    # initial guess
+    # Want to solve nonlinear problems of the from
+    #   z = dt ⋅ f(tmp + γ ⋅ z, p, t + c ⋅ dt)
+    # 1st stage of SDIRK22:
+    #   z1 = dt ⋅ f(uprev + γ ⋅ z1, p, t + γ ⋅ dt)
+    nlsolver.c = γ
+    nlsolver.tmp = uprev 
+    # The same nlsolver.γ is used in all stages
+
+    # Initial guess (FSAL)
     zprev = dt * integrator.fsalfirst
-    nlsolver.z = zprev
+    nlsolver.z = zprev 
+    
+    z1 = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
 
-    # first stage
-    nlsolver.tmp = uprev + γdt * integrator.fsalfirst
+    # 2nd stage of SDIRK22:
+    #   z = dt ⋅ f(uprev + a21 * z1 + γ ⋅ z, p, t + dt)
+    nlsolver.c = 1
+    nlsolver.tmp = uprev + a21 * z1
+
+    # Initial guess
+    nlsolver.z = z1
+
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    uprev = α * nlsolver.tmp + β * z
 
-    # final stage
-    γ = dt
-    γdt = γ * dt
-    markfirststage!(nlsolver)
-    nlsolver.tmp = uprev + γdt * integrator.fsalfirst
-    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
-    nlsolvefail(nlsolver) && return
-    u = nlsolver.tmp
+    # u = uprev + (1-γ) * z1 + γ * z
+    u = nlsolver.tmp + γ * z
+
+    ################################### Finalize
 
     if integrator.opts.adaptive
-        if integrator.iter > 2
-            # local truncation error (LTE) bound by dt^3/12*max|y'''(t)|
-            # use 3rd divided differences (DD) a la SPICE and Shampine
-
-            # TODO: check numerical stability
-            uprev2 = integrator.uprev2
-            tprev = integrator.tprev
-            uprev3 = cache.uprev3
-            tprev2 = cache.tprev2
-
-            dt1 = dt * (t + dt - tprev)
-            dt2 = (t - tprev) * (t + dt - tprev)
-            dt3 = (t - tprev) * (t - tprev2)
-            dt4 = (tprev - tprev2) * (t - tprev2)
-            dt5 = t + dt - tprev2
-            c = 7 / 12 # default correction factor in SPICE (LTE overestimated by DD)
-            r = c * dt^3 / 2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
-
-            DD31 = (u - uprev) / dt1 - (uprev - uprev2) / dt2
-            DD30 = (uprev - uprev2) / dt3 - (uprev2 - uprev3) / dt4
-            tmp = r * abs((DD31 - DD30) / dt5)
-            atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm,
-                t)
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst <= 1
-                cache.uprev3 = uprev2
-                cache.tprev2 = tprev
-            end
-        elseif integrator.success_iter > 0
-            integrator.EEst = 1
-            cache.uprev3 = integrator.uprev2
-            cache.tprev2 = integrator.tprev
+        tmp = btilde1 * z1 + btilde2 * z
+        if isnewton(nlsolver) && alg.smooth_est # From Shampine
+            integrator.stats.nsolve += 1
+            est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
-            integrator.EEst = 1
+            est = tmp
         end
+        atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
+    integrator.fsallast = z ./ dt
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -710,77 +692,51 @@ end
 
 @muladd function perform_step!(integrator, cache::SDIRK22Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack atmp, nlsolver, step_limiter! = cache
+    @unpack z1, atmp, nlsolver, step_limiter! = cache
     @unpack z, tmp = nlsolver
-    @unpack a, α, β = cache.tab
+    W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
+    b = nlsolver.ztmp
+    @unpack γ, a21, bhat1, bhat2, btilde1, btilde2 = cache.tab
     alg = unwrap_alg(integrator, true)
-    mass_matrix = integrator.f.mass_matrix
-
-    # precalculations
-    γ = a * dt
-    γdt = γ * dt
     markfirststage!(nlsolver)
 
-    # first stage
+    # See in-place version for details
     @.. broadcast=false z=dt * integrator.fsalfirst
-    @.. broadcast=false tmp=uprev + γdt * integrator.fsalfirst
-    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    @.. broadcast=false tmp=uprev 
+    nlsolver.c = γ
+    z1 .= nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    @.. broadcast=false u=α * tmp + β * z
 
-    # final stage
-    γ = dt
-    γdt = γ * dt
-    markfirststage!(nlsolver)
-    @.. broadcast=false tmp=uprev + γdt * integrator.fsalfirst
-    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    @.. broadcast=false z=z1
+    @.. broadcast=false tmp=uprev + a21 * z
+    nlsolver.c = 1
+    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    z .= nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    @.. broadcast=false u=nlsolver.tmp
+
+    @.. broadcast=false u=tmp + γ * z
 
     step_limiter!(u, integrator, p, t + dt)
 
+    ################################### Finalize
+
     if integrator.opts.adaptive
-        if integrator.iter > 2
-            # local truncation error (LTE) bound by dt^3/12*max|y'''(t)|
-            # use 3rd divided differences (DD) a la SPICE and Shampine
+        @.. broadcast=false tmp=btilde1 * z1 + btilde2 * z
+        if alg.smooth_est && isnewton(nlsolver) # From Shampine
+            est = nlsolver.cache.dz
+            linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
+                linu = _vec(est))
 
-            # TODO: check numerical stability
-            uprev2 = integrator.uprev2
-            tprev = integrator.tprev
-            uprev3 = cache.uprev3
-            tprev2 = cache.tprev2
-
-            dt1 = dt * (t + dt - tprev)
-            dt2 = (t - tprev) * (t + dt - tprev)
-            dt3 = (t - tprev) * (t - tprev2)
-            dt4 = (tprev - tprev2) * (t - tprev2)
-            dt5 = t + dt - tprev2
-            c = 7 / 12 # default correction factor in SPICE (LTE overestimated by DD)
-            r = c * dt^3 / 2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
-
-            @inbounds for i in eachindex(u)
-                DD31 = (u[i] - uprev[i]) / dt1 - (uprev[i] - uprev2[i]) / dt2
-                DD30 = (uprev[i] - uprev2[i]) / dt3 - (uprev2[i] - uprev3[i]) / dt4
-                tmp[i] = r * abs((DD31 - DD30) / dt5)
-            end
-            calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t)
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst <= 1
-                copyto!(cache.uprev3, uprev2)
-                cache.tprev2 = tprev
-            end
-        elseif integrator.success_iter > 0
-            integrator.EEst = 1
-            copyto!(cache.uprev3, integrator.uprev2)
-            cache.tprev2 = integrator.tprev
+            integrator.stats.nsolve += 1
         else
-            integrator.EEst = 1
+            est = tmp
         end
+        calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
-    f(integrator.fsallast, u, p, t + dt)
+    @.. broadcast=false integrator.fsallast=z / dt
 end
 
 @muladd function perform_step!(integrator, cache::SSPSDIRK2ConstantCache,

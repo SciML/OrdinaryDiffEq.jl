@@ -226,9 +226,7 @@ function alg_cache(alg::SDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
     SDIRK2Cache(u, uprev, fsalfirst, z₁, z₂, atmp, nlsolver, alg.step_limiter!)
 end
 
-struct SDIRK22ConstantCache{uType, tType, N, Tab} <: SDIRKConstantCache
-    uprev3::uType
-    tprev2::tType
+mutable struct SDIRK22ConstantCache{N, Tab} <: SDIRKConstantCache
     nlsolver::N
     tab::Tab
 end
@@ -238,26 +236,29 @@ function alg_cache(alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = SDIRK22Tableau(constvalue(uBottomEltypeNoUnits))
-    uprev3 = u
-    tprev2 = t
-    γ, c = 1, 1
+
+    # Want to solve nonlinear problems of the from
+    #   z = dt ⋅ f(tmp + γ ⋅ z, p, t + c ⋅ dt)
+    #
+    # 1st stage of SDIRK22:
+    #   z = dt ⋅ f(u + γ ⋅ z, p, t + γ ⋅ dt)
+    γ = tab.γ
+    c = γ
 
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
 
-    SDIRK22ConstantCache(uprev3, tprev2, nlsolver)
+    SDIRK22ConstantCache(nlsolver, tab)
 end
 
 @cache mutable struct SDIRK22Cache{
-    uType, rateType, uNoUnitsType, tType, N, Tab, StepLimiter} <:
+    uType, rateType, uNoUnitsType, N, Tab, StepLimiter} <:
                       SDIRKMutableCache
     u::uType
     uprev::uType
-    uprev2::uType
     fsalfirst::rateType
+    z1::uType
     atmp::uNoUnitsType
-    uprev3::uType
-    tprev2::tType
     nlsolver::N
     tab::Tab
     step_limiter!::StepLimiter
@@ -268,18 +269,18 @@ function alg_cache(alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = SDIRK22Tableau(constvalue(uBottomEltypeNoUnits))
-    γ, c = 1, 1
+    γ = tab.γ
+    c = γ
+
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
-    uprev3 = zero(u)
-    tprev2 = t
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    z1 = zero(u)
 
-    SDIRK22Cache(
-        u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, tab, alg.step_limiter!) # shouldn't this be SDIRK22Cache instead of SDIRK22?
+    SDIRK22Cache(u, uprev, fsalfirst, z1, atmp, nlsolver, tab, alg.step_limiter!) 
 end
 
 mutable struct SSPSDIRK2ConstantCache{N} <: SDIRKConstantCache
