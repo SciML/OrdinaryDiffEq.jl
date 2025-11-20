@@ -16,12 +16,13 @@ time stepping procedure for dynamic analysis." Earthquake engineering &
 structural dynamics 20.9 (1991): 871-887, doi:
 https://doi.org/10.1002/eqe.4290200907
 """
-struct NewmarkBeta{PT, F, CS, AD, FDT, ST, CJ} <:
+struct NewmarkBeta{PT, F, CS, AD, FDT, ST, CJ, Thread} <:
        OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm{CS, AD, FDT, ST, CJ}
     β::PT
     γ::PT
     nlsolve::F
     autodiff::AD
+    thread::Thread
 end
 
 function NewmarkBeta(β, γ; kwargs...)
@@ -32,7 +33,7 @@ end
 function NewmarkBeta(; β = 0.25, γ = 0.5, chunk_size = Val{0}(),
         autodiff = Val{true}(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
-        nlsolve = NewtonRaphson())
+        nlsolve = NewtonRaphson(), thread = False())
     AD_choice, chunk_size, diff_type = OrdinaryDiffEqCore._process_AD_choice(
         autodiff, chunk_size, diff_type)
 
@@ -42,9 +43,12 @@ function NewmarkBeta(; β = 0.25, γ = 0.5, chunk_size = Val{0}(),
 
     NewmarkBeta{
         typeof(β), typeof(nlsolve),
-        _unwrap_val(chunk_size), typeof(AD_choice), autodiff, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
+        _unwrap_val(chunk_size), typeof(AD_choice), autodiff, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
+        typeof(thread),
+        }(
         β, γ,
         nlsolve,
-        AD_choice
+        AD_choice,
+        thread,
     )
 end

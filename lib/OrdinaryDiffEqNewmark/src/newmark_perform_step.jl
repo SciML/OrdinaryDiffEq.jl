@@ -3,15 +3,12 @@ function initialize!(integrator, cache::NewmarkBetaCache)
     integrator.stats.nf += 1
     integrator.fsalfirst = cache.fsalfirst
     integrator.fsallast = cache.fsalfirst
-    # integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
     return
 end
 
 @muladd function perform_step!(integrator, cache::NewmarkBetaCache, repeat_step = false)
     @unpack t, dt, u, f, p = integrator
-    @unpack β, γ, nlcache = cache
-
-    M = f.mass_matrix
+    @unpack β, γ, thread, nlcache, atmp = cache
 
     # Evaluate predictor
     vₙ, uₙ = integrator.uprev.x
@@ -35,10 +32,8 @@ end
     end
     aₙ₊₁ = nlcache.u
 
-    u .= ArrayPartition(
-        vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁),
-        uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁),
-    )
+    @.. broadcast=false thread=thread u.x[1] = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
+    @.. broadcast=false thread=thread u.x[2] = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
 
     if integrator.opts.adaptive
         f(integrator.fsallast, u, p, t + dt)
@@ -48,9 +43,9 @@ end
             integrator.EEst = one(integrator.EEst)
         else
             # Zienkiewicz and Xie (1991) Eq. 21
-            δaₙ₊₁ = (integrator.fsallast - aₙ₊₁)
+            @.. broadcast=false thread=thread atmp = (integrator.fsallast - aₙ₊₁)
             integrator.EEst = dt * dt * (β - 1 // 6) *
-                              integrator.opts.internalnorm(δaₙ₊₁, t)
+                              integrator.opts.internalnorm(atmp, t)
         end
     end
 
@@ -62,16 +57,13 @@ function initialize!(integrator, cache::NewmarkBetaConstantCache)
     integrator.stats.nf += 1
     integrator.fsalfirst = cache.fsalfirst
     integrator.fsallast = cache.fsalfirst
-    # integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
     return
 end
 
 @muladd function perform_step!(
         integrator, cache::NewmarkBetaConstantCache, repeat_step = false)
     @unpack t, u, dt, f, p = integrator
-    @unpack β, γ, nlsolver = cache
-
-    M = f.mass_matrix
+    @unpack β, γ, thread, nlsolver, atmp = cache
 
     # Evaluate predictor
     if integrator.u_modified || !integrator.opts.adaptive
@@ -95,10 +87,19 @@ end
     end
     aₙ₊₁ = nlsol.u
 
-    u .= ArrayPartition(
-        vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁),
-        uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁),
-    )
+    # The velocity component in uprev and u is shadowed, so the order of these two operation below matter.
+    @.. broadcast=false thread=thread u.x[2] = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
+    @.. broadcast=false thread=thread u.x[1] = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
+
+    # @info "A", integrator.opts.internalnorm(aₙ₊₁,t), integrator.opts.internalnorm(vₙ,t), integrator.opts.internalnorm(aₙ,t)
+    # u .= ArrayPartition(
+    #     vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁),
+    #     uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁),
+    # )
+    # @info integrator.opts.internalnorm(aₙ₊₁,t), integrator.opts.internalnorm(vₙ,t), integrator.opts.internalnorm(aₙ,t)
+
+    # # u.x[1] .= vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
+    # # u.x[2] .= uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
 
     #
     if integrator.opts.adaptive
@@ -109,9 +110,9 @@ end
             integrator.EEst = one(integrator.EEst)
         else
             # Zienkiewicz and Xie (1991) Eq. 21
-            δaₙ₊₁ = (integrator.fsallast.x[1] - aₙ₊₁)
+            @.. broadcast=false thread=thread atmp = (integrator.fsallast.x[1] - aₙ₊₁)
             integrator.EEst = dt * dt * (β - 1 // 6) *
-                              integrator.opts.internalnorm(δaₙ₊₁, t)
+                              integrator.opts.internalnorm(atmp, t)
         end
     end
 

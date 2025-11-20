@@ -17,6 +17,9 @@ import PreallocationTools: DiffCache, get_tmp
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: DynamicalODEFunction
 using LinearAlgebra: mul!, I
+import FastBroadcast: @..
+import MuladdMacro: @muladd
+import Static: False
 
 using NonlinearSolveFirstOrder
 
