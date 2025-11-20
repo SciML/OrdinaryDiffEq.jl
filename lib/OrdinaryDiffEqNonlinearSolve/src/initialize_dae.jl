@@ -396,8 +396,8 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
     M = integrator.f.mass_matrix
     M isa UniformScaling && return
     update_coefficients!(M, u, p, t)
-    algebraic_vars = mapreduce(iszero, &, M, dims=1)[:]
-    algebraic_eqs = mapreduce(iszero, &, M, dims=2)[:]
+    algebraic_vars = mapreduce(iszero, &, M, dims = 1)[:]
+    algebraic_eqs = mapreduce(iszero, &, M, dims = 2)[:]
     (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
     tmp = get_tmp_cache(integrator)[1]
 
