@@ -498,8 +498,11 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         end
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
-        @.. dz = dz * α
+        α, ϕα = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        # Check whether relaxation is better than the full step
+        if ϕα < ϕ(1)
+            @.. dz = dz * α
+        end
         return dz
     end
 end
@@ -558,8 +561,11 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         end
         α0 = one(eltype(dz))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
-        dz = dz * α
+        α, ϕα = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        # Check whether relaxation is better than the full step
+        if ϕα < ϕ(1)
+            dz = dz * α
+        end
         return dz
     end
 end
