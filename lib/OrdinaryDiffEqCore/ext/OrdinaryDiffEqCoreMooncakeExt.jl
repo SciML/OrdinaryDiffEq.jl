@@ -8,7 +8,7 @@ Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
 Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.SciMLBase.check_error), Any}
 Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
-    typeof(OrdinaryDiffEqCore.fixed_t_for_floatingpoint_error!), Any, Any}
+    typeof(OrdinaryDiffEqCore.fixed_t_for_tstop_error!), Any, Any}
 Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.final_progress), Any}
 
