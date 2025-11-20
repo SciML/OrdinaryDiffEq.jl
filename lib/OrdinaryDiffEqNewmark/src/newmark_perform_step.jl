@@ -32,8 +32,8 @@ end
     end
     aₙ₊₁ = nlcache.u
 
-    @.. broadcast=false thread=thread u.x[1] = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
-    @.. broadcast=false thread=thread u.x[2] = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
+    @.. thread=thread u.x[1] = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
+    @.. thread=thread u.x[2] = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
 
     if integrator.opts.adaptive
         f(integrator.fsallast, u, p, t + dt)
@@ -43,7 +43,7 @@ end
             integrator.EEst = one(integrator.EEst)
         else
             # Zienkiewicz and Xie (1991) Eq. 21
-            @.. broadcast=false thread=thread atmp = (integrator.fsallast - aₙ₊₁)
+            @.. thread=thread atmp = (integrator.fsallast - aₙ₊₁)
             integrator.EEst = dt * dt * (β - 1 // 6) *
                               integrator.opts.internalnorm(atmp, t)
         end
@@ -88,8 +88,8 @@ end
     aₙ₊₁ = nlsol.u
 
     # The velocity component in uprev and u is shadowed, so the order of these two operation below matter.
-    @.. broadcast=false thread=thread u.x[2] = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
-    @.. broadcast=false thread=thread u.x[1] = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
+    @.. thread=thread u.x[2] = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
+    @.. thread=thread u.x[1] = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
 
     # @info "A", integrator.opts.internalnorm(aₙ₊₁,t), integrator.opts.internalnorm(vₙ,t), integrator.opts.internalnorm(aₙ,t)
     # u .= ArrayPartition(
@@ -110,7 +110,7 @@ end
             integrator.EEst = one(integrator.EEst)
         else
             # Zienkiewicz and Xie (1991) Eq. 21
-            @.. broadcast=false thread=thread atmp = (integrator.fsallast.x[1] - aₙ₊₁)
+            @.. thread=thread atmp = (integrator.fsallast.x[1] - aₙ₊₁)
             integrator.EEst = dt * dt * (β - 1 // 6) *
                               integrator.opts.internalnorm(atmp, t)
         end

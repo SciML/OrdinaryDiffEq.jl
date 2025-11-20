@@ -19,7 +19,6 @@ using SciMLBase: DynamicalODEFunction
 using LinearAlgebra: mul!, I
 import FastBroadcast: @..
 import MuladdMacro: @muladd
-import Static: False
 
 using NonlinearSolveFirstOrder
 
