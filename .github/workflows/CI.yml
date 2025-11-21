@@ -43,6 +43,7 @@ jobs:
           - OrdinaryDiffEqLinear
           - OrdinaryDiffEqLowOrderRK
           - OrdinaryDiffEqLowStorageRK
+          - OrdinaryDiffEqNewmark
           - OrdinaryDiffEqNonlinearSolve
           - OrdinaryDiffEqNordsieck
           - OrdinaryDiffEqPDIRK
