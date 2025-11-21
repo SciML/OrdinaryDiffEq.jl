@@ -1,6 +1,6 @@
 # Usage
 
-OrdinaryDiffEq.jl is part of the SciML common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](https://diffeq.sciml.ai/dev/tutorials/ode_example/) using the `Tsit5()` algorithm:
+OrdinaryDiffEq.jl is part of the SciML common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](https://docs.sciml.ai/DiffEqDocs/dev/getting_started/) using the `Tsit5()` algorithm:
 
 ```julia
 using OrdinaryDiffEq
