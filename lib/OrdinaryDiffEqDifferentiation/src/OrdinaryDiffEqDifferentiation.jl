@@ -6,7 +6,7 @@ import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse
 import ForwardDiff, FiniteDiff
 import ForwardDiff.Dual
 import LinearSolve
-import LinearSolve: OperatorAssumptions
+import LinearSolve: OperatorAssumptions, LinearVerbosity
 import FunctionWrappersWrappers
 import DiffEqBase
 
@@ -44,7 +44,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
                           get_new_W_γdt_cutoff,
                           TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM,
                           FastConvergence, Convergence, SlowConvergence,
-                          VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue
+                          VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue, @SciMLMessage
 
 import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff,
                            _get_fwd_tag
