@@ -36,7 +36,7 @@ function SciMLBase.solve(prob::ImplicitDiscreteProblem, alg::SimpleIDSolve;
     @assert !dense
     (initsol, initfail) = SciMLBase.__init(prob, alg; dt)
     if initfail
-        sol = SciMLBase.build_solution(prob, alg, prob.tspan[1], u0, k = nothing,
+        sol = SciMLBase.build_solution(prob, alg, prob.tspan[1], prob.u0, k = nothing,
             stats = nothing, calculate_error = false)
         return SciMLBase.solution_new_retcode(sol, ReturnCode.InitialFailure)
     end
