@@ -13,7 +13,7 @@ jobs:
   CompatHelper:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Check if Julia is already available in the PATH
         id: julia_in_path
         run: which julia
