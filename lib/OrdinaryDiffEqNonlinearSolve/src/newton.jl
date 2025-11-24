@@ -262,7 +262,7 @@ end
         update_coefficients!(W, ustep, p, tstep)
     elseif W isa AbstractSciMLOperator
         # logic for generic AbstractSciMLOperator does not yet support partial state updates, so provide full state
-        update_coefficients!(W, ustep, p, tstep; dtgamma = γW, transform = true)
+        update_coefficients!(W, ustep, p, tstep; gamma = γW, transform = true)
     end
 
     if integrator.opts.adaptive
