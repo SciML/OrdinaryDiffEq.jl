@@ -35,7 +35,7 @@ get_fsalfirstlast(cache::QPRK98Cache, u) = (cache.fsalfirst, cache.k)
 function alg_cache(alg::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -65,6 +65,6 @@ end
 function alg_cache(::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     QPRK98ConstantCache()
 end

@@ -224,13 +224,13 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
     end
 
     quote
-        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}, verbose)
             tf = TimeDerivativeWrapper(f,u,p)
             uf = UDerivativeWrapper(f,t,p)
             J,W = build_J_W(alg,u,uprev,p,t,dt,f, nothing, uEltypeNoUnits,Val(false))
             $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,nothing)
         end
-        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}, verbose)
             du = zero(rate_prototype)
             du1 = zero(rate_prototype)
             du2 = zero(rate_prototype)
@@ -254,7 +254,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
             linsolve = init(linprob,alg.linsolve,alias = LinearAliasSpecifier(alias_A=true,alias_b=true),
                             Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-                            Pr = Diagonal(_vec(weight))) 
+                            Pr = Diagonal(_vec(weight)),
+                            verbose = verbose.linear_verbosity) 
             $cachename($(valsyms...))
         end
     end
