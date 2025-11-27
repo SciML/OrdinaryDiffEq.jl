@@ -9,7 +9,8 @@
     number={2},
     pages={770--775},
     year={2011},
-    publisher={Elsevier}
+    publisher={Elsevier},
+    doi={10.1016/j.camwa.2011.06.002}
     }")
 Base.@kwdef struct Tsit5{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
