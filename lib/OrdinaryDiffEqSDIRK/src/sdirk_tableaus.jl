@@ -2210,16 +2210,39 @@ function ESDIRK659L2SATableau(T, T2)
 end
 
 struct SDIRK22Tableau{T}
-    a::T
-    α::T
-    β::T
+    γ::T
+    a21::T
+    bhat1::T
+    bhat2::T
+    btilde1::T
+    btilde2::T
 end
+#=
+Tableau:
+γ=1-1/√2
 
+c = [γ; 1]
+A = [  γ  0  
+     1-γ  γ]
+b = [1-γ; γ]
+
+Embedded scheme: 1st order, A- and L-stable
+bhat = [1-γ+γ^2; γ-γ^2] 
+
+Error estimation:
+btilde = bhat-b = [btilde1; btilde2] = [γ/(1+γ) - 1 + γ; 1/(1+γ) - γ].
+=#
 function SDIRK22Tableau(T)
-    a = convert(T, 1 - 1 / sqrt(2))
-    α = convert(T, -sqrt(2))
-    β = convert(T, 1 + sqrt(2))
-    SDIRK22Tableau(a, α, β)
+    γ = convert(T, 1 - 1 / sqrt(2))
+    a21 = convert(T, 1 - γ)
+    #bhat1 = convert(T, γ / (1 + γ))
+    #bhat2 = convert(T, 1 / (1 + γ))
+    bhat1 = convert(T, 1 - γ + γ^2)
+    bhat2 = convert(T, γ - γ^2)
+    btilde1 = convert(T, bhat1 - 1 + γ) 
+    btilde2 = convert(T, bhat2 - γ)
+    
+    SDIRK22Tableau(γ, a21, bhat1, bhat2, btilde1, btilde2)
 end
 
 struct KenCarp47Tableau{T, T2}
