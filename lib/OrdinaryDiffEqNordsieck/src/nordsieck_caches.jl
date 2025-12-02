@@ -133,6 +133,7 @@ mutable struct JVODEConstantCache{zType, lType, dtsType, dType, tsit5Type, etaTy
     n_wait::Int
     # `η` is `dtₙ₊₁/dtₙ`
     η::etaType
+    ηold::etaType
     ηq::etaType
     η₊₁::etaType
     η₋₁::etaType
@@ -154,7 +155,7 @@ function alg_cache(alg::JVODE, u, rate_prototype, ::Type{uEltypeNoUnits},
     η = zero(dt / dt)
     JVODEConstantCache(z, l, m,
         c_LTE₊₁, c_LTE, c_LTE₋₁, c_conv, c_𝒟, prev_𝒟,
-        dts, Δ, tsit5tab, 2, 1, 1, 2, η, η, η, η, η)
+        dts, Δ, tsit5tab, 2, 1, 1, 2, η, η, η, η, η, η)
 end
 
 mutable struct JVODECache{
@@ -205,6 +206,7 @@ mutable struct JVODECache{
     n_wait::Int
     # `η` is `dtₙ₊₁/dtₙ`
     η::etaType
+    ηold::etaType
     ηq::etaType
     η₊₁::etaType
     η₋₁::etaType
@@ -262,7 +264,7 @@ function alg_cache(alg::JVODE, u, rate_prototype, ::Type{uEltypeNoUnits},
     JVODECache(u, uprev, tmp, fsalfirst, ratetmp,
         z, l, m,
         c_LTE₊₁, c_LTE, c_LTE₋₁, c_conv, c_𝒟, prev_𝒟,
-        dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η)
+        dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η, η)
 end
 
 function get_fsalfirstlast(cache::Union{JVODECache, AN5Cache}, u)
