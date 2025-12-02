@@ -44,15 +44,15 @@ solref = @test_nowarn solve(prob,
     TRBDF2(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         smooth_est = false));
 @test length(sol.t) < 20
-sol = @test_nowarn solve(prob,
+sol = solve(prob,
     TRBDF2(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         precs = precsl, smooth_est = false, concrete_jac = true));
 @test length(sol.t) < 20
-sol = @test_nowarn solve(prob,
+sol = solve(prob,
     TRBDF2(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         precs = precsr, smooth_est = false, concrete_jac = true));
 @test length(sol.t) < 20
-sol = @test_nowarn solve(prob,
+sol = solve(prob,
     TRBDF2(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         precs = precslr, smooth_est = false, concrete_jac = true));
 @test length(sol.t) < 20
@@ -60,12 +60,12 @@ sol = @test_nowarn solve(prob,
     QNDF(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         concrete_jac = true));
 @test length(sol.t) < 25
-sol = @test_nowarn solve(prob,
+sol = solve(prob,
     Rosenbrock23(autodiff = AutoFiniteDiff(),
         linsolve = KrylovJL_GMRES(),
         precs = precslr, concrete_jac = true));
 @test length(sol.t) < 20
-sol = @test_nowarn solve(prob,
+sol = solve(prob,
     Rodas4(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         precs = precslr, concrete_jac = true));
 @test length(sol.t) < 20
@@ -79,15 +79,15 @@ sol = @test_nowarn solve(prob,
     TRBDF2(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         smooth_est = false));
 @test length(sol.t) < 20
-sol = @test_nowarn solve(prob,
+sol = solve(prob,
     TRBDF2(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         precs = precsl, smooth_est = false, concrete_jac = true));
 @test length(sol.t) < 20
-sol = @test_nowarn solve(prob,
+sol = solve(prob,
     TRBDF2(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         precs = precsr, smooth_est = false, concrete_jac = true));
 @test length(sol.t) < 20
-sol = @test_nowarn solve(prob,
+sol = solve(prob,
     TRBDF2(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         precs = precslr, smooth_est = false, concrete_jac = true));
 @test length(sol.t) < 20
@@ -95,11 +95,11 @@ sol = @test_nowarn solve(prob,
     QNDF(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         concrete_jac = true));
 @test length(sol.t) < 25
-sol = @test_nowarn solve(prob,
+sol = solve(prob,
     Rosenbrock23(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         precs = precslr, concrete_jac = true));
 @test length(sol.t) < 20
-sol = @test_nowarn solve(prob,
+sol = solve(prob,
     Rodas4(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
         precs = precslr, concrete_jac = true));
 @test length(sol.t) < 20

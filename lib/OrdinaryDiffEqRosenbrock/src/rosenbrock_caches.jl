@@ -154,19 +154,12 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    Pl, Pr = wrapprecs(
-        alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
-    linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing,u,p,t); u0 = _vec(tmp))
+    linsolve = init(linprob, wrapprecs(alg, W, weight, u, p, t),
+        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true))
 
-     
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
@@ -201,22 +194,12 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
-   
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-
-    Pl, Pr = wrapprecs(
-        alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
-    linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing,u,p,t); u0 = _vec(tmp))
+    linsolve = init(linprob, wrapprecs(alg, W, weight, u, p, t), alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true))
-
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
@@ -250,7 +233,7 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
     uf = UDerivativeWrapper(f, t, p)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
-    linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    linsolve = nothing #init(linprob,wrapprecs(alg, W, weight, u, p, t),alias_A=true,alias_b=true)
     Rosenbrock23ConstantCache(constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
         alg_autodiff(alg))
 end
@@ -280,7 +263,7 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
     uf = UDerivativeWrapper(f, t, p)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
-    linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    linsolve = nothing #init(linprob,wrapprecs(alg, W, weight, u, p, t),alias_A=true,alias_b=true)
     Rosenbrock32ConstantCache(constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
         alg_autodiff(alg))
 end
@@ -355,20 +338,13 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
-    
+
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    Pl, Pr = wrapprecs(
-        alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
-    linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
+    linsolve = init(linprob, wrapprecs(alg, W, weight, u, p, t), alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true))
-
     Rosenbrock33Cache(u, uprev, du, du1, du2, k1, k2, k3, k4,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
@@ -384,7 +360,7 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     uf = UDerivativeWrapper(f, t, p)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
-    linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    linsolve = nothing #init(linprob,wrapprecs(alg, W, weight, u, p, t),alias_A=true,alias_b=true)
     Rosenbrock33ConstantCache(tf, uf,
         ROS3PTableau(constvalue(uBottomEltypeNoUnits),
             constvalue(tTypeNoUnits)), J, W, linsolve)
@@ -445,21 +421,13 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
-    
+
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    Pl, Pr = wrapprecs(
-        alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
-    linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
+    linsolve = init(linprob, wrapprecs(alg, W, weight, u, p, t), alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true))
-
     Rosenbrock34Cache(u, uprev, du, du1, du2, k1, k2, k3, k4,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
@@ -485,7 +453,7 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
     uf = UDerivativeWrapper(f, t, p)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
-    linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    linsolve = nothing #init(linprob,wrapprecs(alg, W, weight, u, p, t),alias_A=true,alias_b=true)
     Rosenbrock34ConstantCache(tf, uf,
         Rodas3Tableau(constvalue(uBottomEltypeNoUnits),
             constvalue(tTypeNoUnits)), J, W, linsolve)
@@ -643,21 +611,12 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
     linsolve_tmp = zero(rate_prototype)
-
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    Pl, Pr = wrapprecs(
-        alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
-    linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
+    linsolve = init(linprob, wrapprecs(alg, W, weight, u, p, t), alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true))
-
     Rodas23WCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
@@ -691,22 +650,13 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
-
+    linsolve_tmp = zero(rate_prototype)
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-
-    linsolve_tmp = zero(rate_prototype)
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    Pl, Pr = wrapprecs(
-        alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
-    linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
+    linsolve = init(linprob, wrapprecs(alg, W, weight, u, p, t), alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true))
-
     Rodas3PCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
@@ -721,7 +671,7 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
     uf = UDerivativeWrapper(f, t, p)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
-    linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    linsolve = nothing #init(linprob,wrapprecs(alg, W, weight, u, p, t),alias_A=true,alias_b=true)
     Rodas23WConstantCache(tf, uf,
         Rodas3PTableau(constvalue(uBottomEltypeNoUnits),
             constvalue(tTypeNoUnits)), J, W, linsolve,
@@ -736,7 +686,7 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     uf = UDerivativeWrapper(f, t, p)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
-    linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    linsolve = nothing #init(linprob,wrapprecs(alg, W, weight, u, p, t),alias_A=true,alias_b=true)
     Rodas3PConstantCache(tf, uf,
         Rodas3PTableau(constvalue(uBottomEltypeNoUnits),
             constvalue(tTypeNoUnits)), J, W, linsolve,
@@ -765,7 +715,7 @@ function alg_cache(
     uf = UDerivativeWrapper(f, t, p)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
-    linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    linsolve = nothing #init(linprob,wrapprecs(alg, W, weight, u, p, t),alias_A=true,alias_b=true)
     tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     RosenbrockCombinedConstantCache(tf, uf,
         tab, J, W, linsolve,
@@ -804,25 +754,15 @@ function alg_cache(
 
     tf = TimeGradientWrapper(f, uprev, p)
     uf = UJacobianWrapper(f, t, p)
-
+    linsolve_tmp = zero(rate_prototype)
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
+    linsolve = init(linprob, wrapprecs(alg, W, weight, u, p, t), alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        assumptions = LinearSolve.OperatorAssumptions(true))
 
-    Pl, Pr = wrapprecs(
-        alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing)..., weight, tmp)
 
-    linsolve_tmp = zero(rate_prototype)
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0=_vec(tmp))
-
-    linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A=true, alias_b=true),
-        Pl=Pl, Pr=Pr,
-        assumptions=LinearSolve.OperatorAssumptions(true))
-
-    
     # Return the cache struct with vectors
     RosenbrockCache(
         u, uprev, dense, du, du1, du2, dtC, dtd, ks, fsalfirst, fsallast,
