@@ -90,7 +90,13 @@ import Accessors: @reset
 # SciMLStructures symbols imported but not directly used in OrdinaryDiffEqCore
 # using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
+using SciMLLogging: SciMLLogging, @SciMLMessage, AbstractVerbositySpecifier, AbstractVerbosityPreset, 
+                    None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel, 
+                    CustomLevel, AbstractMessageLevel
+
 using SymbolicIndexingInterface: state_values, parameter_values
+
+using ConcreteStructs: @concrete
 
 const CompiledFloats = Union{Float32, Float64}
 import Preferences
@@ -136,6 +142,7 @@ end
 
 include("doc_utils.jl")
 include("misc_utils.jl")
+include("verbosity.jl")
 
 include("algorithms.jl")
 include("composite_algs.jl")
@@ -143,6 +150,7 @@ include("composite_algs.jl")
 include("alg_utils.jl")
 
 include("caches/basic_caches.jl")
+include("deprecated.jl")
 
 include("integrators/type.jl")
 include("integrators/controllers.jl")
