@@ -985,7 +985,7 @@ end
     ### STEP 2
     nlsolver.tmp = z₁
     nlsolver.c = 2
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     z₂ = z₁ + z
@@ -993,7 +993,7 @@ end
     tmp2 = 0.5uprev + z₁ - 0.5z₂
     nlsolver.tmp = tmp2
     nlsolver.c = 1
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     u = tmp2 + z
@@ -1039,7 +1039,7 @@ end
     ### STEP 2
     nlsolver.tmp = z₁
     nlsolver.c = 2
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     @.. broadcast=false z₂=z₁+z
@@ -1048,7 +1048,7 @@ end
     @.. broadcast=false tmp2=0.5uprev+z₁-0.5z₂
     nlsolver.tmp = tmp2
     nlsolver.c = 1
-    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+    set_new_W!(nlsolver, false)
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     @.. broadcast=false u=tmp2+z
