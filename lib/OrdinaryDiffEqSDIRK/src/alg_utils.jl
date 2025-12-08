@@ -1,6 +1,6 @@
 alg_extrapolates(alg::ImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
-alg_extrapolates(alg::SDIRK22) = true
+alg_extrapolates(alg::SDIRK22) = false
 
 alg_order(alg::Trapezoid) = 2
 alg_order(alg::ImplicitEuler) = 1
