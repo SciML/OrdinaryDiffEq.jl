@@ -71,9 +71,9 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
     tmp::tmpType
     uprev::uprevType
     t::tType
-    function DAEResidualJacobianWrapper(alg, f::F, p, α, invγdt, tmp, uprev, t) where F
-        ad = ADTypes.dense_ad(alg_autodiff(alg)) 
-        isautodiff = ad isa AutoForwardDiff 
+    function DAEResidualJacobianWrapper(alg, f::F, p, α, invγdt, tmp, uprev, t) where {F}
+        ad = ADTypes.dense_ad(alg_autodiff(alg))
+        isautodiff = ad isa AutoForwardDiff
         if isautodiff
             tmp_du = dualcache(uprev)
             tmp_u = dualcache(uprev)
@@ -161,7 +161,7 @@ end
 function odenlf(ztmp, z, p)
     tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f = p
     _compute_rhs!(
-    tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
+        tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
 end
 
 function build_nlsolver(
@@ -212,7 +212,8 @@ function build_nlsolver(
         end
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
         linprob = LinearProblem(W, _vec(k); u0 = _vec(dz))
-        Pl, Pr = wrapprecs(
+        Pl,
+        Pr = wrapprecs(
             alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                 nothing)...,
             weight, dz)
@@ -225,6 +226,7 @@ function build_nlsolver(
         invγdt = inv(oneunit(t) * one(uTolType))
 
         if nlalg isa NonlinearSolveAlg
+            γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
             prob = if f.nlstep_data !== nothing
@@ -265,7 +267,7 @@ function build_nlsolver(
     # build non-linear solver
     ηold = one(t)
 
-    NLSolver{true, tTypeNoUnits}(z, tmp, ztmp, γ, c, α, nlalg, nlalg.κ,
+    NLSolver{true, tTypeNoUnits}(z, tmp, ztmp, tTypeNoUnits(γ), c, α, nlalg, nlalg.κ,
         nlalg.fast_convergence_cutoff, ηold, 0, nlalg.max_iter,
         Divergence, nlcache)
 end
@@ -316,6 +318,7 @@ function build_nlsolver(
 
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
         if nlalg isa NonlinearSolveAlg
+            γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
             nlf = isdae ? oopdaenlf : oopodenlf
@@ -351,7 +354,7 @@ function build_nlsolver(
 
     # build non-linear solver
     ηold = one(tTypeNoUnits)
-    NLSolver{false, tTypeNoUnits}(z, tmp, ztmp, γ, c, α, nlalg, nlalg.κ,
+    NLSolver{false, tTypeNoUnits}(z, tmp, ztmp, tTypeNoUnits(γ), c, α, nlalg, nlalg.κ,
         nlalg.fast_convergence_cutoff, ηold, 0, nlalg.max_iter,
         Divergence,
         nlcache)
@@ -404,7 +407,8 @@ acceleration based on the current iterate `z` and the settings and history in th
         while cond(R) > droptol && history > 1
             qrdelete!(Q, R, history)
             history -= 1
-            Qcur, Rcur = view(Q, :, 1:history),
+            Qcur,
+            Rcur = view(Q, :, 1:history),
             UpperTriangular(view(R, 1:history, 1:history))
         end
     end
@@ -454,10 +458,10 @@ by performing Anderson acceleration based on the settings and history in the `ca
     end
 
     # update history of differences of z₊
-    @.. broadcast=false Δz₊s[history]=z - z₊old
+    @.. broadcast=false Δz₊s[history]=z-z₊old
 
     # replace/add difference of residuals as right-most column to QR decomposition
-    @.. broadcast=false dzold=dz - dzold
+    @.. broadcast=false dzold=dz-dzold
     qradd!(Q, R, _vec(dzold), history)
 
     # update cached values
@@ -472,7 +476,8 @@ by performing Anderson acceleration based on the settings and history in the `ca
         while cond(R) > droptol && history > 1
             qrdelete!(Q, R, history)
             history -= 1
-            Qcur, Rcur = view(Q, :, 1:history),
+            Qcur,
+            Rcur = view(Q, :, 1:history),
             UpperTriangular(view(R, 1:history, 1:history))
         end
     end
@@ -486,7 +491,7 @@ by performing Anderson acceleration based on the settings and history in the `ca
 
     # update next iterate
     for i in 1:history
-        @.. broadcast=false z=z - γs[i] * Δz₊s[i]
+        @.. broadcast=false z=z-γs[i]*Δz₊s[i]
     end
 
     nothing
@@ -580,7 +585,7 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::AbstractVector, k::Int)
     @inbounds begin
         d = norm(v)
         R[k, k] = d
-        @.. broadcast=false @view(Q[:, k])=v / d
+        @.. broadcast=false @view(Q[:, k])=v/d
     end
 
     Q, R
