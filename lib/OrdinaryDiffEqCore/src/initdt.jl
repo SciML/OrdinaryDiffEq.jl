@@ -12,7 +12,10 @@
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
-        return tdir * max(smalldt, dtmin)
+        result_dt = tdir * max(smalldt, dtmin)
+        @SciMLMessage(lazy"Using default small timestep for DAE: dt = $(result_dt)",
+                      integrator.opts.verbose, :shampine_dt)
+        return result_dt
     end
 
     if eltype(u0) <: Number && !(integrator.alg isa CompositeAlgorithm)
@@ -110,7 +113,10 @@
             integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
             copyto!(f₀, ftmp)
         catch
-            return tdir * max(smalldt, dtmin)
+            result_dt = tdir * max(smalldt, dtmin)
+            @SciMLMessage(lazy"Mass matrix appears singular, using default small timestep: dt = $(result_dt)",
+                          integrator.opts.verbose, :near_singular)
+            return result_dt
         end
     end
 
@@ -128,10 +134,8 @@
     # because it also checks if partials are NaN
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
     if isnan(d₁)
-        if integrator.opts.verbose
-            @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
-        end
-
+        @SciMLMessage("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN)
         return tdir * dtmin
     end
 
@@ -150,7 +154,10 @@
     if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType) * oneunit(_tType)
         # This catches Andreas' non-singular example
         # should act like it's singular
-        return tdir * max(smalldt, dtmin)
+        result_dt = tdir * max(smalldt, dtmin)
+        @SciMLMessage(lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
+                      integrator.opts.verbose, :dt_epsilon)
+        return result_dt
     end
 
     dt₀_tdir = tdir * dt₀
@@ -249,8 +256,10 @@ end
     d₀ = internalnorm(u0 ./ sk, t)
 
     f₀ = f(u0, p, t)
-    if integrator.opts.verbose && any(x -> any(isnan, x), f₀)
-        @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
+
+    if any(x -> any(isnan, x),  f₀)
+        @SciMLMessage("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN)
     end
 
     inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
