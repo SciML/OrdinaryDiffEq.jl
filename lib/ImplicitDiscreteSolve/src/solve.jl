@@ -1,7 +1,7 @@
 # Remake the nonlinear problem, then update
 function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
-    @unpack alg, u, uprev, dt, t, f, p = integrator
-    @unpack state, prob = cache
+    (; alg, u, uprev, dt, t, f, p) = integrator
+    (; state, prob) = cache
     state.u .= uprev
     state.t_next = t
     prob = remake(prob, p = state)
@@ -43,7 +43,7 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
         _initialize_dae!(integrator, prob,
             OverrideInit(atol), x)
     else
-        @unpack u, p, t, f = integrator
+        (; u, p, t, f) = integrator
         initstate = ImplicitDiscreteState(u, p, t)
 
         _f = if isinplace(f)

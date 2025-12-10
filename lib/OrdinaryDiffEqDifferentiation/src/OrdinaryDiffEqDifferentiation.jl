@@ -35,7 +35,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
                           DAEAlgorithm,
                           OrdinaryDiffEqImplicitAlgorithm, CompositeAlgorithm,
                           OrdinaryDiffEqExponentialAlgorithm,
-                          OrdinaryDiffEqAdaptiveExponentialAlgorithm, @unpack,
+                          OrdinaryDiffEqAdaptiveExponentialAlgorithm,
                           AbstractNLSolver, nlsolve_f, issplit,
                           concrete_jac, unwrap_alg, OrdinaryDiffEqCache, _vec, standardtag,
                           isnewton, _unwrap_val,

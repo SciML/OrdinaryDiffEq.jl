@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::AitkenNevilleCache)
     integrator.kshortsize = 2
-    @unpack k, fsalfirst = cache
+    (; k, fsalfirst) = cache
 
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -14,10 +14,10 @@ function initialize!(integrator, cache::AitkenNevilleCache)
 end
 
 function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    @unpack k, fsalfirst, T, utilde, atmp, dtpropose, cur_order, A = cache
-    @unpack u_tmps, k_tmps = cache
+    (; k, fsalfirst, T, utilde, atmp, dtpropose, cur_order, A) = cache
+    (; u_tmps, k_tmps) = cache
 
     max_order = min(size(T, 1), cur_order + 1)
 
@@ -138,9 +138,9 @@ function initialize!(integrator, cache::AitkenNevilleConstantCache)
 end
 
 function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, f, p = integrator
+    (; t, dt, uprev, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    @unpack dtpropose, T, cur_order, work, A = cache
+    (; dtpropose, T, cur_order, work, A) = cache
 
     max_order = min(size(T, 1), cur_order + 1)
 
@@ -262,13 +262,13 @@ end
 
 function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
         repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    @unpack T, utilde, atmp, dtpropose, n_curr, A, stage_number, diff1, diff2 = cache
-    @unpack J, W, uf, tf, jac_config = cache
-    @unpack u_tmps, k_tmps, linsolve_tmps, u_tmps2 = cache
+    (; T, utilde, atmp, dtpropose, n_curr, A, stage_number, diff1, diff2) = cache
+    (; J, W, uf, tf, jac_config) = cache
+    (; u_tmps, k_tmps, linsolve_tmps, u_tmps2) = cache
 
-    @unpack sequence = cache
+    (; sequence) = cache
 
     if integrator.opts.adaptive
         # Set up the order window
@@ -517,10 +517,10 @@ end
 
 function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCache,
         repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    @unpack dtpropose, T, n_curr, work, A, tf, uf = cache
-    @unpack sequence, stage_number = cache
+    (; dtpropose, T, n_curr, work, A, tf, uf) = cache
+    (; sequence, stage_number) = cache
 
     if integrator.opts.adaptive
         # Set up the order window
@@ -711,7 +711,7 @@ end
 
 function initialize!(integrator, cache::ExtrapolationMidpointDeuflhardCache)
     # cf. initialize! of MidpointCache
-    @unpack k, fsalfirst = cache
+    (; k, fsalfirst) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
@@ -723,19 +723,19 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
         repeat_step = false)
     # Unpack all information needed
-    @unpack t, uprev, dt, f, p = integrator
+    (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k = cache
-    @unpack u_temp3, u_temp4, k_tmps = cache
+    (; n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k) = cache
+    (; u_temp3, u_temp4, k_tmps) = cache
 
     # Coefficients for obtaining u
-    @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
+    (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     # Coefficients for obtaining utilde
-    @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
+    (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     # Additional constant information
-    @unpack subdividing_sequence = cache.coefficients
-    @unpack stage_number = cache
-    @unpack sequence_factor = alg
+    (; subdividing_sequence) = cache.coefficients
+    (; stage_number) = cache
+    (; sequence_factor) = alg
 
     fill!(cache.Q, zero(eltype(cache.Q)))
     tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
@@ -941,17 +941,17 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstantCache,
         repeat_step = false)
     # Unpack all information needed
-    @unpack t, uprev, dt, f, p = integrator
+    (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    @unpack n_curr = cache
+    (; n_curr) = cache
     # Coefficients for obtaining u
-    @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
+    (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     # Coefficients for obtaining utilde
-    @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
+    (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     # Additional constant information
-    @unpack subdividing_sequence = cache.coefficients
-    @unpack stage_number = cache
-    @unpack sequence_factor = alg
+    (; subdividing_sequence) = cache.coefficients
+    (; stage_number) = cache
+    (; sequence_factor) = alg
 
     # Create auxiliary variables
     u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
@@ -1120,7 +1120,7 @@ end
 
 function initialize!(integrator, cache::ImplicitDeuflhardExtrapolationCache)
     # cf. initialize! of MidpointCache
-    @unpack k, fsalfirst = cache
+    (; k, fsalfirst) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
@@ -1132,20 +1132,20 @@ end
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
         repeat_step = false)
     # Unpack all information needed
-    @unpack t, uprev, dt, f, p = integrator
+    (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2 = cache
-    @unpack u_temp3, u_temp4, k_tmps = cache
+    (; n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2) = cache
+    (; u_temp3, u_temp4, k_tmps) = cache
 
     # Coefficients for obtaining u
-    @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
+    (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     # Coefficients for obtaining utilde
-    @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
+    (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     # Additional constant information
-    @unpack subdividing_sequence = cache.coefficients
-    @unpack stage_number = cache
+    (; subdividing_sequence) = cache.coefficients
+    (; stage_number) = cache
 
-    @unpack J, W, uf, tf, linsolve_tmps, jac_config = cache
+    (; J, W, uf, tf, linsolve_tmps, jac_config) = cache
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 
@@ -1529,16 +1529,16 @@ end
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstantCache,
         repeat_step = false)
     # Unpack all information needed
-    @unpack t, uprev, dt, f, p = integrator
+    (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    @unpack n_curr = cache
+    (; n_curr) = cache
     # Coefficients for obtaining u
-    @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
+    (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     # Coefficients for obtaining utilde
-    @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
+    (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     # Additional constant information
-    @unpack subdividing_sequence = cache.coefficients
-    @unpack stage_number = cache
+    (; subdividing_sequence) = cache.coefficients
+    (; stage_number) = cache
 
     # Create auxiliary variables
     u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
@@ -1781,7 +1781,7 @@ end
 
 function initialize!(integrator, cache::ExtrapolationMidpointHairerWannerCache)
     # cf. initialize! of MidpointCache
-    @unpack k, fsalfirst = cache
+    (; k, fsalfirst) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
@@ -1793,17 +1793,17 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache,
         repeat_step = false)
     # Unpack all information needed
-    @unpack t, uprev, dt, f, p = integrator
+    (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k = cache
-    @unpack u_temp3, u_temp4, k_tmps = cache
+    (; n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k) = cache
+    (; u_temp3, u_temp4, k_tmps) = cache
     # Coefficients for obtaining u
-    @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
+    (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     # Coefficients for obtaining utilde
-    @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
+    (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     # Additional constant information
-    @unpack subdividing_sequence = cache.coefficients
-    @unpack sequence_factor = alg
+    (; subdividing_sequence) = cache.coefficients
+    (; sequence_factor) = alg
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 
@@ -2015,16 +2015,16 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConstantCache,
         repeat_step = false)
     # Unpack all information needed
-    @unpack t, uprev, dt, f, p = integrator
+    (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    @unpack n_curr = cache
+    (; n_curr) = cache
     # Coefficients for obtaining u
-    @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
+    (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     # Coefficients for obtaining utilde
-    @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
+    (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     # Additional constant information
-    @unpack subdividing_sequence = cache.coefficients
-    @unpack sequence_factor = alg
+    (; subdividing_sequence) = cache.coefficients
+    (; sequence_factor) = alg
 
     # Create auxiliary variables
     u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
@@ -2209,15 +2209,15 @@ end
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConstantCache,
         repeat_step = false)
     # Unpack all information needed
-    @unpack t, uprev, dt, f, p = integrator
+    (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    @unpack n_curr = cache
+    (; n_curr) = cache
     # Coefficients for obtaining u
-    @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
+    (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     # Coefficients for obtaining utilde
-    @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
+    (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     # Additional constant information
-    @unpack subdividing_sequence = cache.coefficients
+    (; subdividing_sequence) = cache.coefficients
 
     # Create auxiliary variables
     u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
@@ -2477,7 +2477,7 @@ end
 
 function initialize!(integrator, cache::ImplicitHairerWannerExtrapolationCache)
     # cf. initialize! of MidpointCache
-    @unpack k, fsalfirst = cache
+    (; k, fsalfirst) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
@@ -2489,18 +2489,18 @@ end
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache,
         repeat_step = false)
     # Unpack all information needed
-    @unpack t, uprev, dt, f, p = integrator
+    (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2 = cache
-    @unpack u_temp3, u_temp4, k_tmps = cache
+    (; n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2) = cache
+    (; u_temp3, u_temp4, k_tmps) = cache
     # Coefficients for obtaining u
-    @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
+    (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     # Coefficients for obtaining utilde
-    @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
+    (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     # Additional constant information
-    @unpack subdividing_sequence = cache.coefficients
+    (; subdividing_sequence) = cache.coefficients
 
-    @unpack J, W, uf, tf, linsolve_tmps, jac_config = cache
+    (; J, W, uf, tf, linsolve_tmps, jac_config) = cache
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 
@@ -2904,16 +2904,16 @@ function perform_step!(integrator,
         cache::ImplicitEulerBarycentricExtrapolationConstantCache,
         repeat_step = false)
     # Unpack all information needed
-    @unpack t, uprev, dt, f, p = integrator
+    (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    @unpack n_curr = cache
+    (; n_curr) = cache
     # Coefficients for obtaining u
-    @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
+    (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     # Coefficients for obtaining utilde
-    @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
+    (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     # Additional constant information
-    @unpack subdividing_sequence = cache.coefficients
-    @unpack sequence_factor = alg
+    (; subdividing_sequence) = cache.coefficients
+    (; sequence_factor) = alg
 
     # Create auxiliary variables
     u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
@@ -3165,7 +3165,7 @@ end
 
 function initialize!(integrator, cache::ImplicitEulerBarycentricExtrapolationCache)
     # cf. initialize! of MidpointCache
-    @unpack k, fsalfirst = cache
+    (; k, fsalfirst) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
@@ -3177,19 +3177,19 @@ end
 function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationCache,
         repeat_step = false)
     # Unpack all information needed
-    @unpack t, uprev, dt, f, p = integrator
+    (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2 = cache
-    @unpack u_temp3, u_temp4, k_tmps = cache
+    (; n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2) = cache
+    (; u_temp3, u_temp4, k_tmps) = cache
     # Coefficients for obtaining u
-    @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
+    (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     # Coefficients for obtaining utilde
-    @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
+    (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     # Additional constant information
-    @unpack subdividing_sequence = cache.coefficients
-    @unpack sequence_factor = alg
+    (; subdividing_sequence) = cache.coefficients
+    (; sequence_factor) = alg
 
-    @unpack J, W, uf, tf, linsolve_tmps, jac_config = cache
+    (; J, W, uf, tf, linsolve_tmps, jac_config) = cache
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 

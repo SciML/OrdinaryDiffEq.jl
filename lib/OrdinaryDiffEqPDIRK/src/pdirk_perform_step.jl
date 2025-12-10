@@ -1,10 +1,10 @@
 function initialize!(integrator, cache::PDIRK44ConstantCache) end
 
 @muladd function perform_step!(integrator, cache::PDIRK44ConstantCache, repeat_step = false)
-    @unpack dt, uprev, u = integrator
+    (; dt, uprev, u) = integrator
     alg = unwrap_alg(integrator, true)
-    @unpack nlsolver, tab = cache
-    @unpack γs, cs, α1, α2, b1, b2, b3, b4 = tab
+    (; nlsolver, tab) = cache
+    (; γs, cs, α1, α2, b1, b2, b3, b4) = tab
 
     if isthreaded(alg.threading)
         k2 = Array{typeof(u)}(undef, 2)
@@ -75,10 +75,10 @@ end
 function initialize!(integrator, cache::PDIRK44Cache) end
 
 @muladd function perform_step!(integrator, cache::PDIRK44Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    @unpack nlsolver, k1, k2, tab = cache
-    @unpack γs, cs, α1, α2, b1, b2, b3, b4 = tab
+    (; nlsolver, k1, k2, tab) = cache
+    (; γs, cs, α1, α2, b1, b2, b3, b4) = tab
     if isthreaded(alg.threading)
         let nlsolver = nlsolver, u = u, uprev = uprev, integrator = integrator,
             cache = cache, dt = dt, repeat_step = repeat_step,

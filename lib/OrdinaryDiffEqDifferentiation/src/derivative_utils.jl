@@ -29,8 +29,8 @@ Base.:\(W::StaticWOperator, v::AbstractArray) = isinv(W) ? W.W * v : W.F \ v
 
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     @inbounds begin
-        @unpack t, dt, uprev, u, f, p = integrator
-        @unpack du2, fsalfirst, dT, tf, linsolve_tmp = cache
+        (; t, dt, uprev, u, f, p) = integrator
+        (; du2, fsalfirst, dT, tf, linsolve_tmp) = cache
 
         # Time derivative
         if !repeat_step # skip calculation if step is repeated
@@ -75,7 +75,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 end
 
 function calc_tderivative(integrator, cache)
-    @unpack t, dt, uprev, u, f, p, alg = integrator
+    (; t, dt, uprev, u, f, p, alg) = integrator
 
     # Time derivative
     if SciMLBase.has_tgrad(f)
@@ -116,7 +116,7 @@ either automatic or finite differencing will be used depending on the `uf` objec
 cache. If `next_step`, then it will evaluate the Jacobian at the next step.
 """
 function calc_J(integrator, cache, next_step::Bool = false)
-    @unpack dt, t, uprev, f, p, alg = integrator
+    (; dt, t, uprev, f, p, alg) = integrator
     if next_step
         t = t + dt
         uprev = integrator.u
@@ -128,7 +128,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
             uf = cache.uf
             J = f.jac(duprev, uprev, p, uf.α * uf.invγdt, t)
         else
-            @unpack uf = cache
+            (; uf) = cache
             x = zero(uprev)
             J = jacobian(uf, x, integrator)
         end
@@ -136,7 +136,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
         if SciMLBase.has_jac(f)
             J = f.jac(uprev, p, t)
         else
-            @unpack uf = cache
+            (; uf) = cache
 
             uf.f = nlsolve_f(f, alg)
             uf.p = p
@@ -163,7 +163,7 @@ either automatic or finite differencing will be used depending on the `cache`.
 If `next_step`, then it will evaluate the Jacobian at the next step.
 """
 function calc_J!(J, integrator, cache, next_step::Bool = false)
-    @unpack dt, t, uprev, f, p, alg = integrator
+    (; dt, t, uprev, f, p, alg) = integrator
     if next_step
         t = t + dt
         uprev = integrator.u
@@ -188,7 +188,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
                 f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
             end
         else
-            @unpack du1, uf, jac_config = cache
+            (; du1, uf, jac_config) = cache
             # using `dz` as temporary array
             x = cache.dz
             uf.t = t
@@ -212,7 +212,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
                 f.jac(J, uprev, p, t)
             end
         else
-            @unpack du1, uf, jac_config = cache
+            (; du1, uf, jac_config) = cache
             uf.f = nlsolve_f(f, alg)
             uf.t = t
             if !(p isa SciMLBase.NullParameters)
@@ -572,7 +572,7 @@ is_always_new(alg) = isdefined(alg, :always_new) ? alg.always_new : false
 
 function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
         repeat_step, newJW = nothing)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (; t, dt, uprev, u, f, p) = integrator
     lcache = nlsolver === nothing ? cache : nlsolver.cache
     next_step = is_always_new(nlsolver)
     if next_step
@@ -580,7 +580,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
         uprev = integrator.u
     end
 
-    @unpack J = lcache
+    (; J) = lcache
     isdae = integrator.alg isa DAEAlgorithm
     alg = unwrap_alg(integrator, true)
     if !isdae
@@ -652,7 +652,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
 end
 
 @noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step)
-    @unpack t, uprev, p, f = integrator
+    (; t, uprev, p, f) = integrator
 
     next_step = is_always_new(nlsolver)
     if next_step
@@ -908,7 +908,7 @@ end
 function resize_J_W!(cache, integrator, i)
     (isdefined(cache, :J) && isdefined(cache, :W)) || return
 
-    @unpack f = integrator
+    (; f) = integrator
 
     if cache.W isa WOperator
         nf = nlsolve_f(f, integrator.alg)

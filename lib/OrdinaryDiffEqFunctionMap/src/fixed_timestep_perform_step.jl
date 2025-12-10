@@ -4,9 +4,9 @@ function initialize!(integrator, cache::FunctionMapCache)
 end
 
 function perform_step!(integrator, cache::FunctionMapCache, repeat_step = false)
-    @unpack u, uprev, dt, t, f, p = integrator
+    (; u, uprev, dt, t, f, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack tmp = cache
+    (; tmp) = cache
     if integrator.f != DiffEqBase.DISCRETE_INPLACE_DEFAULT &&
        !(integrator.f isa DiffEqBase.EvalFunc &&
          integrator.f.f === DiffEqBase.DISCRETE_INPLACE_DEFAULT)
@@ -21,7 +21,7 @@ function perform_step!(integrator, cache::FunctionMapCache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::FunctionMapConstantCache, repeat_step = false)
-    @unpack uprev, dt, t, f, p = integrator
+    (; uprev, dt, t, f, p) = integrator
     alg = unwrap_alg(integrator, nothing)
     if integrator.f != DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT &&
        !(integrator.f isa DiffEqBase.EvalFunc &&

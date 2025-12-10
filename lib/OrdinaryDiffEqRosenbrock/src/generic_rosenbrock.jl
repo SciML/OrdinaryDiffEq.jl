@@ -282,7 +282,7 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
 
           function initialize!(integrator, cache::$cachename)
             integrator.kshortsize = 2
-            @unpack fsalfirst,fsallast = cache
+            (; fsalfirst,fsallast) = cache
             integrator.fsalfirst = fsalfirst
             integrator.fsallast = fsallast
             resize!(integrator.k, integrator.kshortsize)
@@ -302,8 +302,8 @@ and then gives the result by `y_{n+1}=y_n+ki*bi`. Terms with 0s (according to ta
 Special steps can be added before calculating `y_{n+1}`. The non-inplace `perform_step!` assumes the mass_matrix==I.
 """
 function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-    unpacktabexpr=:(@unpack ()=cache.tab)
-    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
+    unpacktabexpr=:((;) = cache.tab)
+    unpacktabexpr.args[1].args[1].args=_nonzero_vals(tabmask)
     dtCijexprs=[:($(Symbol(:dtC,Cind[1],Cind[2]))=$(Symbol(:C,Cind[1],Cind[2]))/dt) for Cind in findall(!iszero,tabmask.C)]
     dtdiexprs=[:($(Symbol(:dtd,dind))=dt*$(Symbol(:d,dind))) for dind in eachindex(tabmask.d)]
     iterexprs=[]
@@ -348,8 +348,8 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
     end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @unpack t,dt,uprev,u,f,p = integrator
-            @unpack tf,uf = cache
+            (; t,dt,uprev,u,f,p) = integrator
+            (; tf,uf) = cache
             $unpacktabexpr
 
             $(dtCijexprs...)
@@ -387,8 +387,8 @@ Generate inplace version of `perform_step!` expression emulating those in `perfo
 The inplace `perform_step!` produces the same result as the non-inplace version except that it treats the mass_matrix appropriately.
 """
 function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-    unpacktabexpr=:(@unpack ()=cache.tab)
-    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
+    unpacktabexpr=:((;) = cache.tab)
+    unpacktabexpr.args[1].args[1].args=_nonzero_vals(tabmask)
     dtCij=[:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt) for Cind in findall(!iszero,tabmask.C)]
     dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in eachindex(tabmask.d)]
     iterexprs=[]
@@ -461,8 +461,8 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @unpack t,dt,uprev,u,f,p = integrator
-            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight = cache
+            (; t,dt,uprev,u,f,p) = integrator
+            (; du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight) = cache
             $unpacktabexpr
 
             # Assignments

@@ -4,7 +4,7 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_or
                            get_current_alg_order, calculate_residuals!,
                            accept_step_controller,
                            default_controller, beta2_default, beta1_default, gamma_default,
-                           initialize!, perform_step!, @unpack, @cache, unwrap_alg,
+                           initialize!, perform_step!, @cache, unwrap_alg,
                            isthreaded,
                            step_accept_controller!, calculate_residuals,
                            OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,

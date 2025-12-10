@@ -1,8 +1,8 @@
 function step_accept_controller!(
         integrator, controller::PredictiveController, alg::AdaptiveRadau, q)
-    @unpack qmin, qmax, gamma, qsteady_min, qsteady_max = integrator.opts
-    @unpack cache = integrator
-    @unpack num_stages, step, iter, hist_iter, index = cache
+    (; qmin, qmax, gamma, qsteady_min, qsteady_max) = integrator.opts
+    (; cache) = integrator
+    (; num_stages, step, iter, hist_iter, index) = cache
 
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -44,9 +44,9 @@ end
 
 function step_reject_controller!(
         integrator, controller::PredictiveController, alg::AdaptiveRadau)
-    @unpack dt, success_iter, qold = integrator
-    @unpack cache = integrator
-    @unpack num_stages, step, iter, hist_iter = cache
+    (; dt, success_iter, qold) = integrator
+    (; cache) = integrator
+    (; num_stages, step, iter, hist_iter) = cache
     integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
     cache.step = step + 1
     hist_iter = hist_iter * 0.8 + iter * 0.2

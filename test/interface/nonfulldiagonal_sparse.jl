@@ -1,11 +1,10 @@
 using OrdinaryDiffEq, SparseArrays, LinearSolve, LinearAlgebra
-using SimpleUnPack
 using ComponentArrays
 
 function enclosethetimedifferential(parameters::NamedTuple)::Function
     @info "Enclosing the time differential"
 
-    @unpack Δr, r_space, countorderapprox = parameters.compute
+    (; Δr, r_space, countorderapprox) = parameters.compute
     N = length(r_space)
 
     function first_deriv(N)
@@ -56,7 +55,7 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
     bc_xx = zeros(Real, N)
 
     function timedifferentialclosure!(du, u, p, t)
-        @unpack (α, D, v, k_p, V_c, Q_l, Q_r, V_b,
+        (; α, D, v, k_p, V_c, Q_l, Q_r, V_b,
         S, Lm, Dm, V_v) = p
 
         c = u[1:(end - 3)]
