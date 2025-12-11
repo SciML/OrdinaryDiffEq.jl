@@ -108,16 +108,23 @@ end
                 @.. broadcast=false nlsolver.tmp += tab.A_explicit[i, j] * k_explicit[j]
             end
         end
-        
-        nlsolver.c = typeof(nlsolver.c)(c[i])
-        nlsolver.γ = typeof(nlsolver.γ)(A[i, i])
-        
-        if i > 1 && isnewton(nlsolver)
-            set_new_W!(nlsolver, false)
+        if iszero(A[i, i])
+            # explicit stage (no nonlinear solve needed)
+            nlsolver.c = typeof(nlsolver.c)(c[i])
+            f_impl(zi, nlsolver.tmp, p, t + c[i] * dt)
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            @.. broadcast=false zi *= dt
+        else
+            nlsolver.c = typeof(nlsolver.c)(c[i])
+            nlsolver.γ = typeof(nlsolver.γ)(A[i, i])
+            
+            if i > 1 && isnewton(nlsolver)
+                set_new_W!(nlsolver, false)
+            end
+            
+            zi .= nlsolve!(nlsolver, integrator, cache, repeat_step)
+            nlsolvefail(nlsolver) && return
         end
-        
-        zi .= nlsolve!(nlsolver, integrator, cache, repeat_step)
-        nlsolvefail(nlsolver) && return
     end
     
     @.. broadcast=false u = uprev
@@ -273,10 +280,16 @@ end
         nlsolver.z = z_guess
         nlsolver.tmp = stage_sum
         nlsolver.c = typeof(nlsolver.c)(c[i])
-        nlsolver.γ = typeof(nlsolver.γ)(A[i,i])
-        
-        z[i] = nlsolve!(nlsolver, integrator, cache, repeat_step)
-        nlsolvefail(nlsolver) && return
+        if iszero(A[i,i])
+            # explicit stage (no nonlinear solve required)
+            z[i] = dt * f_impl(stage_sum, p, t + c[i] * dt)
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        else
+            nlsolver.γ = typeof(nlsolver.γ)(A[i,i])
+            
+            z[i] = nlsolve!(nlsolver, integrator, cache, repeat_step)
+            nlsolvefail(nlsolver) && return
+        end
     end
     
     u = uprev

@@ -154,6 +154,15 @@ sol_lorenz = solve(prob_lorenz, ESDIRK659L2SA())
 @test length(sol_lorenz.u) < 1000
 @test SciMLBase.successful_retcode(sol_lorenz)
 
+# regression test: SDIRK methods with explicit first stage should accept the first step
+sol_trap = solve(prob_linear, Trapezoid())
+@test SciMLBase.successful_retcode(sol_trap)
+@test minimum(abs.(diff(sol_trap.t))) > eps(eltype(sol_trap.t))
+
+sol_trbdf2 = solve(prob_linear, TRBDF2())
+@test SciMLBase.successful_retcode(sol_trbdf2)
+@test minimum(abs.(diff(sol_trbdf2.t))) > eps(eltype(sol_trbdf2.t))
+
 # Adaptivity tests for Alshina2, 3
 
 for prob in [prob_ode_2Dlinear, prob_ode_linear]
