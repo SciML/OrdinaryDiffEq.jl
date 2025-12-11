@@ -355,6 +355,7 @@ end
 
 SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
+SciMLOperators.has_concretization(::WOperator) = true
 
 # In WOperator update_coefficients!, accept both missing u/p/t and missing dtgamma and don't update them in that case.
 # This helps support partial updating logic used with Newton solvers.
