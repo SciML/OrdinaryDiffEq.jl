@@ -14,8 +14,8 @@ function initialize!(integrator, cache::CNAB2ConstantCache)
 end
 
 function perform_step!(integrator, cache::CNAB2ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k2, nlsolver = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k2, nlsolver) = cache
     cnt = integrator.iter
     f1 = integrator.f.f1
     f2 = integrator.f.f2
@@ -64,10 +64,10 @@ function initialize!(integrator, cache::CNAB2Cache)
 end
 
 function perform_step!(integrator, cache::CNAB2Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k1, k2, du₁, nlsolver = cache
-    @unpack z, tmp = nlsolver
-    @unpack f1 = f
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k1, k2, du₁, nlsolver) = cache
+    (; z, tmp) = nlsolver
+    (; f1) = f
     cnt = integrator.iter
 
     f1(du₁, uprev, p, t)
@@ -113,8 +113,8 @@ function initialize!(integrator, cache::CNLF2ConstantCache)
 end
 
 function perform_step!(integrator, cache::CNLF2ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k2, uprev2, nlsolver = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k2, uprev2, nlsolver) = cache
     cnt = integrator.iter
     f1 = integrator.f.f1
     f2 = integrator.f.f2
@@ -165,10 +165,10 @@ function initialize!(integrator, cache::CNLF2Cache)
 end
 
 function perform_step!(integrator, cache::CNLF2Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack uprev2, k2, du₁, nlsolver = cache
-    @unpack z, tmp = nlsolver
-    @unpack f1 = f
+    (; t, dt, uprev, u, f, p) = integrator
+    (; uprev2, k2, du₁, nlsolver) = cache
+    (; z, tmp) = nlsolver
+    (; f1) = f
     cnt = integrator.iter
 
     f1(du₁, uprev, p, t)

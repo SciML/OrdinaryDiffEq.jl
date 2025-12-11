@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSDIRK"
 uuid = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.7.0"
+version = "1.8.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -37,7 +37,7 @@ LinearAlgebra = "1.10"
 OrdinaryDiffEqDifferentiation = "1.12.0"
 TruncatedStacktraces = "1.4"
 SciMLBase = "2.99"
-OrdinaryDiffEqCore = "1.29.0"
+OrdinaryDiffEqCore = "2"
 Aqua = "0.8.11"
 MacroTools = "0.5"
 julia = "1.10"

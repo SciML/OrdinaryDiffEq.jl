@@ -3,7 +3,7 @@ module OrdinaryDiffEqStabilizedIRK
 import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
                            calculate_residuals!,
                            beta2_default, beta1_default, gamma_default, issplit,
-                           initialize!, perform_step!, @unpack, unwrap_alg,
+                           initialize!, perform_step!, unwrap_alg,
                            calculate_residuals, fac_default_gamma,
                            OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
                            OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,

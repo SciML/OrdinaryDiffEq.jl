@@ -2,8 +2,8 @@
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, false},
         integrator::SciMLBase.DEIntegrator)
-    @unpack dt = integrator
-    @unpack cache = nlsolver
+    (; dt) = integrator
+    (; cache) = nlsolver
 
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
@@ -13,9 +13,9 @@ end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, true},
         integrator::SciMLBase.DEIntegrator)
-    @unpack u, uprev, t, dt, opts = integrator
-    @unpack cache = nlsolver
-    @unpack weight = cache
+    (; u, uprev, t, dt, opts) = integrator
+    (; cache) = nlsolver
+    (; weight) = cache
 
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
@@ -27,12 +27,12 @@ end
 
 function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, false},
         integrator::SciMLBase.DEIntegrator)
-    @unpack uprev, t, p, dt, opts, f = integrator
-    @unpack z, tmp, ztmp, γ, α, iter, cache, method, alg = nlsolver
+    (; uprev, t, p, dt, opts, f) = integrator
+    (; z, tmp, ztmp, γ, α, iter, cache, method, alg) = nlsolver
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
 
-    @unpack ustep, tstep, k, invγdt = cache
+    (; ustep, tstep, k, invγdt) = cache
     if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
         integrator.stats.nnonliniter += cache.cache.stats.nsteps
@@ -50,13 +50,13 @@ end
 
 function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
         integrator::SciMLBase.DEIntegrator)
-    @unpack uprev, t, p, dt, opts, f = integrator
-    @unpack z, tmp, ztmp, γ, α, iter, cache, method, alg = nlsolver
+    (; uprev, t, p, dt, opts, f) = integrator
+    (; z, tmp, ztmp, γ, α, iter, cache, method, alg) = nlsolver
 
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
 
-    @unpack ustep, atmp, tstep, k, invγdt = cache
+    (; ustep, atmp, tstep, k, invγdt) = cache
 
     if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
@@ -92,9 +92,9 @@ end
 ## compute_step!
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NonlinearSolveAlg, false}, integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, ztmp, γ, α, cache, method = nlsolver
-    @unpack tstep, invγdt = cache
+    (; uprev, t, p, dt, opts) = integrator
+    (; z, tmp, ztmp, γ, α, cache, method) = nlsolver
+    (; tstep, invγdt) = cache
 
     nlcache = nlsolver.cache.cache
     step!(nlcache)
@@ -114,9 +114,9 @@ end
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NonlinearSolveAlg, true}, integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, ztmp, γ, α, cache, method = nlsolver
-    @unpack tstep, invγdt, atmp, ustep = cache
+    (; uprev, t, p, dt, opts) = integrator
+    (; z, tmp, ztmp, γ, α, cache, method) = nlsolver
+    (; tstep, invγdt, atmp, ustep) = cache
 
     nlstep_data = integrator.f.nlstep_data
     nlcache = nlsolver.cache.cache
@@ -174,9 +174,9 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7).
 """
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, false}, integrator, γW)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, ztmp, γ, α, cache, method = nlsolver
-    @unpack tstep, W, invγdt = cache
+    (; uprev, t, p, dt, opts) = integrator
+    (; z, tmp, ztmp, γ, α, cache, method) = nlsolver
+    (; tstep, W, invγdt) = cache
 
     f = nlsolve_f(integrator)
 
@@ -219,9 +219,9 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true}, integrator, γW)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, ztmp, γ, α, iter, cache, method = nlsolver
-    @unpack W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight = cache
+    (; uprev, t, p, dt, opts) = integrator
+    (; z, tmp, ztmp, γ, α, iter, cache, method) = nlsolver
+    (; W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight) = cache
 
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
@@ -462,9 +462,9 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         f = f,
         linesearch = linesearch
 
-        @unpack uprev, t, p, dt, opts, isdae = integrator
-        @unpack z, tmp, ztmp, γ, iter, α, cache, method = nlsolver
-        @unpack ustep, atmp, tstep, k, invγdt = cache
+        (; uprev, t, p, dt, opts, isdae) = integrator
+        (; z, tmp, ztmp, γ, iter, α, cache, method) = nlsolver
+        (; ustep, atmp, tstep, k, invγdt) = cache
         function resid(z)
             # recompute residual (rhs)
             if isdae
@@ -525,9 +525,9 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         f = f,
         linesearch = linesearch
 
-        @unpack uprev, t, p, dt, opts = integrator
-        @unpack z, tmp, ztmp, γ, iter, cache, method = nlsolver
-        @unpack ustep, atmp, tstep, k, invγdt = cache
+        (; uprev, t, p, dt, opts) = integrator
+        (; z, tmp, ztmp, γ, iter, cache, method) = nlsolver
+        (; ustep, atmp, tstep, k, invγdt) = cache
         function resid(z)
             # recompute residual (rhs)
             if f isa DAEFunction

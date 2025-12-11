@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqRosenbrock"
 uuid = "43230ef6-c299-4910-a778-202eb28ce4ce"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.18.1"
+version = "1.19.0"
 
 [deps]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -51,7 +51,7 @@ PrecompileTools = "1.2"
 LinearAlgebra = "1.10"
 OrdinaryDiffEqDifferentiation = "1.12.0"
 SciMLBase = "2.99"
-OrdinaryDiffEqCore = "1.29.0"
+OrdinaryDiffEqCore = "2"
 Static = "1.2"
 Aqua = "0.8.11"
 Preferences = "1.4"

@@ -14,7 +14,7 @@ end
 
 @muladd function perform_step!(integrator, cache::SplitEulerConstantCache,
         repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (; t, dt, uprev, u, f, p) = integrator
     u = @.. broadcast=false uprev+dt * integrator.fsalfirst
     integrator.fsallast = f.f1(u, p, t + dt) + f.f2(u, p, t + dt)  # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -27,7 +27,7 @@ end
 get_fsalfirstlast(cache::SplitEulerCache, u) = (cache.fsalfirst, cache.k)
 function initialize!(integrator, cache::SplitEulerCache)
     integrator.kshortsize = 2
-    @unpack k, fsalfirst = cache
+    (; k, fsalfirst) = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k
     resize!(integrator.k, integrator.kshortsize)
@@ -41,7 +41,7 @@ function initialize!(integrator, cache::SplitEulerCache)
 end
 
 @muladd function perform_step!(integrator, cache::SplitEulerCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (; t, dt, uprev, u, f, p) = integrator
     @.. broadcast=false u=uprev + dt * integrator.fsalfirst
     f.f1(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
     f.f2(cache.tmp, u, p, t + dt) # For the interpolation, needs k at the updated point

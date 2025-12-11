@@ -24,7 +24,7 @@ function stepsize_controller_internal!(integrator,
             ImplicitDeuflhardExtrapolation})
     # Standard step size controller
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
-    @unpack controller = integrator.opts
+    (; controller) = integrator.opts
 
     if iszero(integrator.EEst)
         q = inv(integrator.opts.qmax)
@@ -45,14 +45,14 @@ function stepsize_predictor!(integrator,
         alg::Union{ExtrapolationMidpointDeuflhard,
             ImplicitDeuflhardExtrapolation}, n_new::Int)
     # Compute and save the stepsize scaling for order n_new based on the latest error estimate of the current order.
-    @unpack controller = integrator.opts
+    (; controller) = integrator.opts
 
     if iszero(integrator.EEst)
         q = inv(integrator.opts.qmax)
     else
         # Initialize
-        @unpack t, EEst = integrator
-        @unpack stage_number = integrator.cache
+        (; t, EEst) = integrator
+        (; stage_number) = integrator.cache
         tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
         s_curr = stage_number[integrator.cache.n_curr - alg.min_order + 1]
         s_new = stage_number[n_new - alg.min_order + 1]
@@ -73,8 +73,8 @@ function step_accept_controller!(integrator,
         alg::Union{ExtrapolationMidpointDeuflhard,
             ImplicitDeuflhardExtrapolation}, q)
     # Compute new order and stepsize, return new stepsize
-    @unpack min_order, max_order = alg
-    @unpack n_curr, n_old, Q = integrator.cache
+    (; min_order, max_order) = alg
+    (; n_curr, n_old, Q) = integrator.cache
     s = integrator.cache.stage_number
 
     # Compute new order based on available quantities
@@ -142,7 +142,7 @@ function stepsize_controller_internal!(integrator,
             ImplicitEulerBarycentricExtrapolation})
     # Standard step size controller
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
-    @unpack controller = integrator.opts
+    (; controller) = integrator.opts
 
     if alg isa
        Union{ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation,
@@ -197,8 +197,8 @@ function step_accept_controller!(integrator,
             ImplicitEulerExtrapolation,
             ImplicitEulerBarycentricExtrapolation}, q)
     # Compute new order and stepsize, return new stepsize
-    @unpack min_order, max_order = alg
-    @unpack n_curr, n_old, Q, sigma, work, dt_new = integrator.cache
+    (; min_order, max_order) = alg
+    (; n_curr, n_old, Q, sigma, work, dt_new) = integrator.cache
     s = integrator.cache.stage_number
 
     # Compute new order based on available quantities
@@ -253,7 +253,7 @@ function step_reject_controller!(integrator,
             ImplicitEulerExtrapolation,
             ImplicitEulerBarycentricExtrapolation})
     # Compute and save order and stepsize for redoing the current step
-    @unpack n_old, n_curr, Q = integrator.cache
+    (; n_old, n_curr, Q) = integrator.cache
 
     # Order selection
     n_red = n_old

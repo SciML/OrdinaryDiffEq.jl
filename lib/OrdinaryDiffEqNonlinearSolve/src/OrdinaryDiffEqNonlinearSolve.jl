@@ -37,7 +37,7 @@ end
 
 using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
                           AbstractNLSolverAlgorithm, AbstractNLSolverCache,
-                          AbstractNLSolver, NewtonAlgorithm, @unpack,
+                          AbstractNLSolver, NewtonAlgorithm,
                           OverrideInit, ShampineCollocationInit, BrownFullBasicInit,
                           _vec, _unwrap_val, DAEAlgorithm,
                           _reshape, calculate_residuals, calculate_residuals!,

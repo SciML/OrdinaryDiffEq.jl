@@ -11,7 +11,7 @@ function initialize!(integrator, ::QPRK98ConstantCache)
 end
 
 @muladd function perform_step!(integrator, ::QPRK98ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (; t, dt, uprev, u, f, p) = integrator
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract QPRK98Tableau T T2
@@ -90,12 +90,12 @@ function initialize!(integrator, cache::QPRK98Cache)
 end
 
 @muladd function perform_step!(integrator, cache::QPRK98Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (; t, dt, uprev, u, f, p) = integrator
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract QPRK98Tableau T T2
-    @unpack fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16,
-    utilde, tmp, atmp, k, stage_limiter!, step_limiter!, thread = cache
+    (; fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16,
+    utilde, tmp, atmp, k, stage_limiter!, step_limiter!, thread) = cache
     k1 = fsalfirst
     f(k1, uprev, p, t)
     @.. broadcast=false thread=thread tmp=uprev + dt * b21 * k1

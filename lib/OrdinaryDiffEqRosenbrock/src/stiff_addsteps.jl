@@ -4,7 +4,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @unpack tf, uf, d = cache
+        (; tf, uf, d) = cache
         dtγ = dt * d
         neginvdtγ = -inv(dtγ)
         dto2 = dt / 2
