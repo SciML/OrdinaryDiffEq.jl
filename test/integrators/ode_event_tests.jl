@@ -445,3 +445,34 @@ step!(integrator, 1e-5, true)
     solve(prob, LinearExponential(), dt = t_l[2] - t_l[1], callback = cb)
     @test length(saved_values.saveval) == length(t_l)
 end
+
+# https://github.com/SciML/DiffEqBase.jl/issues/1231
+@testset "Successive callbacks in same integration step" begin
+    cb = ContinuousCallback(
+        (u, t, integrator) -> t - 0e-8,
+        (integrator) -> push!(record, 0)
+    )
+
+    vcb = VectorContinuousCallback(
+        (out, u, t, integrator) -> out .= (t - 1e-8, t - 2e-8),
+        (integrator, event_index) -> push!(record, event_index),
+        2
+    )
+
+    f = (u, p, t) -> 1.0
+    u0 = 0.0
+
+    # Forward propagation with successive events
+    record = []
+    tspan = (-1.0, 1.0)
+    prob = ODEProblem(f, u0, tspan)
+    sol = solve(prob, Tsit5(), dt = 2.0, callback = CallbackSet(cb, vcb))
+    @test record == [0, 1, 2]
+
+    # Backward propagation with successive events
+    record = []
+    tspan = (1.0, -1.0)
+    prob = ODEProblem(f, u0, tspan)
+    sol = solve(prob, Tsit5(), dt = 2.0, callback = CallbackSet(cb, vcb))
+    @test record == [2, 1, 0]
+end
