@@ -897,10 +897,10 @@ for alg in [LinearSolve.AppleAccelerateLUFactorization,
     LinearSolve.SparspakFactorization,
     LinearSolve.UMFPACKFactorization]
     @eval function LinearSolve.init_cacheval(alg::$alg, A::WOperator, b, u, Pl, Pr,
-            maxiters::Int, abstol, reltol, verbose::Bool,
+            maxiters::Int, abstol, reltol, verbose::Union{LinearVerbosity,Bool},
             assumptions::OperatorAssumptions)
         LinearSolve.init_cacheval(alg, A.J, b, u, Pl, Pr,
-            maxiters::Int, abstol, reltol, verbose::Bool,
+            maxiters::Int, abstol, reltol, verbose::Union{LinearVerbosity,Bool},
             assumptions::OperatorAssumptions)
     end
 end
