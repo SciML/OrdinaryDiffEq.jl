@@ -51,6 +51,7 @@ jobs:
           - OrdinaryDiffEqQPRK
           - OrdinaryDiffEqRKN
           - OrdinaryDiffEqRosenbrock
+          - OrdinaryDiffEqRKIP
           - OrdinaryDiffEqSDIRK
           - OrdinaryDiffEqSIMDRK
           - OrdinaryDiffEqSSPRK
