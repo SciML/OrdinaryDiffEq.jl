@@ -6,7 +6,7 @@ function EnzymeCore.EnzymeRules.inactive_noinl(
     true
 end
 function EnzymeCore.EnzymeRules.inactive_noinl(
-        ::typeof(OrdinaryDiffEqCore.fixed_t_for_floatingpoint_error!), args...)
+        ::typeof(OrdinaryDiffEqCore.fixed_t_for_tstop_error!), args...)
     true
 end
 function EnzymeCore.EnzymeRules.inactive_noinl(
