@@ -1240,7 +1240,7 @@ end
     linsolve_tmp = @.. du + dtd[1] * dT
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     # constant number for type stability make sure this is greater than num_stages
-    ks = ntuple(Returns(k1), 20)
+    ks = ntuple(Returns(k1), Val(20))
     # Loop for stages
     for stage in 2:num_stages
         u = uprev
