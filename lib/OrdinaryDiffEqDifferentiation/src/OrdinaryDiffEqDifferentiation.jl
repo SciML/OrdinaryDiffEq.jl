@@ -6,7 +6,7 @@ import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse
 import ForwardDiff, FiniteDiff
 import ForwardDiff.Dual
 import LinearSolve
-import LinearSolve: OperatorAssumptions
+import LinearSolve: OperatorAssumptions, LinearVerbosity
 import FunctionWrappersWrappers
 import DiffEqBase
 
