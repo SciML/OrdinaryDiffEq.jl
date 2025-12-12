@@ -45,7 +45,7 @@ function step_accept_controller!(integrator, alg::QNDF{max_order}, q) where {max
             Fₖ₋₁ = inv(zₖ₋₁)
             if zₖ₋₁ <= 0.1
                 hₖ₋₁ = 10 * h
-            elseif 1 / 10 < zₖ₋₁ <= 1.3
+            elseif zₖ₋₁ <= 1.3
                 hₖ₋₁ = Fₖ₋₁ * h
             end
             if hₖ₋₁ > hₖ
@@ -89,14 +89,6 @@ function step_accept_controller!(integrator, alg::QNDF{max_order}, q) where {max
     return integrator.dt / q
 end
 
-function step_reject_controller!(integrator, ::QNDF)
-    bdf_step_reject_controller!(integrator, integrator.cache.EEst1)
-end
-
-function step_reject_controller!(integrator, ::FBDF)
-    bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
-end
-
 function bdf_step_reject_controller!(integrator, EEst1)
     k = integrator.cache.order
     h = integrator.dt
@@ -122,7 +114,7 @@ function bdf_step_reject_controller!(integrator, EEst1)
         Fₖ₋₁ = inv(zₖ₋₁)
         if zₖ₋₁ <= 10
             hₖ₋₁ = Fₖ₋₁ * h
-        elseif zₖ₋₁ > 10
+        else # zₖ₋₁ > 10
             hₖ₋₁ = 0.1 * h
         end
         if integrator.cache.consfailcnt > 2 || hₖ₋₁ > hₖ
@@ -136,6 +128,14 @@ function bdf_step_reject_controller!(integrator, EEst1)
     end
     integrator.dt = hₙ
     integrator.cache.order = kₙ
+end
+
+function step_reject_controller!(integrator, ::QNDF)
+    bdf_step_reject_controller!(integrator, integrator.cache.EEst1)
+end
+
+function step_reject_controller!(integrator, ::FBDF)
+    bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
 end
 
 function post_newton_controller!(integrator, alg::FBDF)
