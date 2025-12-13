@@ -238,27 +238,49 @@ function jacobian!(J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number}
     nothing
 end
 
-# Check if jacobian config needs to be computed based on algorithm and function properties
-# Returns Val{true} if we need to compute jac_config, Val{false} otherwise
-@inline function _needs_jac_config(alg, f)
-    haslinsolve = hasfield(typeof(alg), :linsolve)
-    needs_config = !SciMLBase.has_jac(f) &&
-       (!SciMLBase.has_Wfact_t(f)) &&
-       ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve &&
-           (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
-        (concrete_jac(alg) !== nothing && concrete_jac(alg)))
-    Val(needs_config)
-end
-
-# Dispatch-based build_jac_config for type stability
+# Type-stable dispatch based on field types for build_jac_config
+# First dispatch on f.jac type
 function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
         u, tmp, du2) where {F1, F2}
-    _build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2, _needs_jac_config(alg, f))
+    _build_jac_config_jac(alg, f, uf, du1, uprev, u, tmp, du2, f.jac)
 end
 
-# When we need to compute jac_config
-@inline function _build_jac_config(alg, f::F1, uf::F2, du1, uprev,
-        u, tmp, du2, ::Val{true}) where {F1, F2}
+# f.jac is provided - no need to compute jac_config
+@inline function _build_jac_config_jac(alg, f::F1, uf::F2, du1, uprev,
+        u, tmp, du2, jac) where {F1, F2}
+    (nothing, nothing)
+end
+
+# f.jac is nothing - check Wfact_t next
+@inline function _build_jac_config_jac(alg, f::F1, uf::F2, du1, uprev,
+        u, tmp, du2, ::Nothing) where {F1, F2}
+    _build_jac_config_wfact(alg, f, uf, du1, uprev, u, tmp, du2, f.Wfact_t)
+end
+
+# f.Wfact_t is provided - no need to compute jac_config
+@inline function _build_jac_config_wfact(alg, f::F1, uf::F2, du1, uprev,
+        u, tmp, du2, wfact_t) where {F1, F2}
+    (nothing, nothing)
+end
+
+# f.Wfact_t is nothing - check algorithm conditions and compute if needed
+@inline function _build_jac_config_wfact(alg, f::F1, uf::F2, du1, uprev,
+        u, tmp, du2, ::Nothing) where {F1, F2}
+    # Check algorithm conditions for whether we need concrete jacobian
+    haslinsolve = hasfield(typeof(alg), :linsolve)
+    needs_config = ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve &&
+           (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
+        (concrete_jac(alg) !== nothing && concrete_jac(alg)))
+
+    if needs_config
+        _compute_jac_config(alg, f, uf, du1, uprev, u)
+    else
+        (nothing, nothing)
+    end
+end
+
+# Actually compute the jacobian config
+@inline function _compute_jac_config(alg, f::F1, uf::F2, du1, uprev, u) where {F1, F2}
     jac_prototype = f.jac_prototype
 
     if is_sparse_csc(jac_prototype)
@@ -298,12 +320,6 @@ end
     end
 
     jac_config
-end
-
-# When we don't need to compute jac_config (f has jac or Wfact_t, or no concrete jac needed)
-@inline function _build_jac_config(alg, f::F1, uf::F2, du1, uprev,
-        u, tmp, du2, ::Val{false}) where {F1, F2}
-    (nothing, nothing)
 end
 
 function get_chunksize(jac_config::ForwardDiff.JacobianConfig{
@@ -379,13 +395,14 @@ end
 # Fallback for other AD backends
 gpu_safe_autodiff(backend, u) = backend
 
-# Dispatch-based build_grad_config for type stability
+# Type-stable dispatch based on field type for build_grad_config
+# When f.tgrad is Nothing, we need to compute the config
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
-    _build_grad_config(alg, f, tf, du1, t, Val(!SciMLBase.has_tgrad(f)))
+    _build_grad_config_dispatch(alg, f, tf, du1, t, f.tgrad)
 end
 
-# When we need to compute grad_config (f doesn't have tgrad)
-@inline function _build_grad_config(alg, f::F1, tf::F2, du1, t, ::Val{true}) where {F1, F2}
+# f.tgrad is nothing - need to compute grad_config
+@inline function _build_grad_config_dispatch(alg, f::F1, tf::F2, du1, t, ::Nothing) where {F1, F2}
     ad = ADTypes.dense_ad(alg_autodiff(alg))
 
     # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
@@ -409,8 +426,8 @@ end
     return grad_config
 end
 
-# When we don't need to compute grad_config (f has tgrad)
-@inline function _build_grad_config(alg, f::F1, tf::F2, du1, t, ::Val{false}) where {F1, F2}
+# f.tgrad is provided - return nothing tuple
+@inline function _build_grad_config_dispatch(alg, f::F1, tf::F2, du1, t, tgrad) where {F1, F2}
     (nothing, nothing)
 end
 
