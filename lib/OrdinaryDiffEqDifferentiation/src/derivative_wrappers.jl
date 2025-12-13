@@ -263,16 +263,32 @@ end
     (nothing, nothing)
 end
 
-# f.Wfact_t is nothing - check algorithm conditions and compute if needed
+# f.Wfact_t is nothing - dispatch on algorithm's concrete_jac and linsolve for type stability
 @inline function _build_jac_config_wfact(alg, f::F1, uf::F2, du1, uprev,
         u, tmp, du2, ::Nothing) where {F1, F2}
-    # Check algorithm conditions for whether we need concrete jacobian
-    haslinsolve = hasfield(typeof(alg), :linsolve)
-    needs_config = ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve &&
-           (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
-        (concrete_jac(alg) !== nothing && concrete_jac(alg)))
+    _build_jac_config_alg(alg, f, uf, du1, uprev, u, concrete_jac(alg), alg.linsolve)
+end
 
-    if needs_config
+# concrete_jac is nothing and linsolve is nothing -> need config (default factorization)
+@inline function _build_jac_config_alg(alg, f::F1, uf::F2, du1, uprev, u,
+        ::Nothing, ::Nothing) where {F1, F2}
+    _compute_jac_config(alg, f, uf, du1, uprev, u)
+end
+
+# concrete_jac is nothing and linsolve is provided -> check if needs concrete A
+@inline function _build_jac_config_alg(alg, f::F1, uf::F2, du1, uprev, u,
+        ::Nothing, linsolve) where {F1, F2}
+    if LinearSolve.needs_concrete_A(linsolve)
+        _compute_jac_config(alg, f, uf, du1, uprev, u)
+    else
+        (nothing, nothing)
+    end
+end
+
+# concrete_jac is true -> need config
+@inline function _build_jac_config_alg(alg, f::F1, uf::F2, du1, uprev, u,
+        cj::Bool, linsolve) where {F1, F2}
+    if cj
         _compute_jac_config(alg, f, uf, du1, uprev, u)
     else
         (nothing, nothing)
