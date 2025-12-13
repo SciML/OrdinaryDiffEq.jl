@@ -238,55 +238,101 @@ function jacobian!(J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number}
     nothing
 end
 
+# Type-stable dispatch based on field types for build_jac_config
+# First dispatch on f.jac type
 function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
         u, tmp, du2) where {F1, F2}
-    haslinsolve = hasfield(typeof(alg), :linsolve)
+    _build_jac_config_jac(alg, f, uf, du1, uprev, u, tmp, du2, f.jac)
+end
 
-    if !SciMLBase.has_jac(f) &&
-       (!SciMLBase.has_Wfact_t(f)) &&
-       ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve &&
-           (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
-        (concrete_jac(alg) !== nothing && concrete_jac(alg)))
-        jac_prototype = f.jac_prototype
+# f.jac is provided - no need to compute jac_config
+@inline function _build_jac_config_jac(alg, f::F1, uf::F2, du1, uprev,
+        u, tmp, du2, jac) where {F1, F2}
+    (nothing, nothing)
+end
 
-        if is_sparse_csc(jac_prototype)
-            if f.mass_matrix isa UniformScaling
-                idxs = diagind(jac_prototype)
-                @. @view(jac_prototype[idxs]) = 1
-            else
-                idxs = findall(!iszero, f.mass_matrix)
-                @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
-            end
-        end
+# f.jac is nothing - check Wfact_t next
+@inline function _build_jac_config_jac(alg, f::F1, uf::F2, du1, uprev,
+        u, tmp, du2, ::Nothing) where {F1, F2}
+    _build_jac_config_wfact(alg, f, uf, du1, uprev, u, tmp, du2, f.Wfact_t)
+end
 
-        autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg), u)
-        dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
+# f.Wfact_t is provided - no need to compute jac_config
+@inline function _build_jac_config_wfact(alg, f::F1, uf::F2, du1, uprev,
+        u, tmp, du2, wfact_t) where {F1, F2}
+    (nothing, nothing)
+end
 
-        if dense isa AutoFiniteDiff
-            dir_forward = @set dense.dir = 1
-            dir_reverse = @set dense.dir = -1
+# f.Wfact_t is nothing - dispatch on algorithm's concrete_jac and linsolve for type stability
+@inline function _build_jac_config_wfact(alg, f::F1, uf::F2, du1, uprev,
+        u, tmp, du2, ::Nothing) where {F1, F2}
+    _build_jac_config_alg(alg, f, uf, du1, uprev, u, concrete_jac(alg), alg.linsolve)
+end
 
-            if autodiff_alg isa AutoSparse
-                autodiff_alg_forward = @set autodiff_alg.dense_ad = dir_forward
-                autodiff_alg_reverse = @set autodiff_alg.dense_ad = dir_reverse
-            else
-                autodiff_alg_forward = dir_forward
-                autodiff_alg_reverse = dir_reverse
-            end
+# concrete_jac is nothing and linsolve is nothing -> need config (default factorization)
+@inline function _build_jac_config_alg(alg, f::F1, uf::F2, du1, uprev, u,
+        ::Nothing, ::Nothing) where {F1, F2}
+    _compute_jac_config(alg, f, uf, du1, uprev, u)
+end
 
-            jac_config_forward = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_forward, u, strict = Val(false))
-            jac_config_reverse = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_reverse, u, strict = Val(false))
-
-            jac_config = (jac_config_forward, jac_config_reverse)
-        else
-            jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u, strict = Val(false))
-            jac_config = (jac_config1, jac_config1)
-        end
-
+# concrete_jac is nothing and linsolve is provided -> check if needs concrete A
+@inline function _build_jac_config_alg(alg, f::F1, uf::F2, du1, uprev, u,
+        ::Nothing, linsolve) where {F1, F2}
+    if LinearSolve.needs_concrete_A(linsolve)
+        _compute_jac_config(alg, f, uf, du1, uprev, u)
     else
-        jac_config = (nothing, nothing)
+        (nothing, nothing)
+    end
+end
+
+# concrete_jac is true -> need config
+@inline function _build_jac_config_alg(alg, f::F1, uf::F2, du1, uprev, u,
+        cj::Bool, linsolve) where {F1, F2}
+    if cj
+        _compute_jac_config(alg, f, uf, du1, uprev, u)
+    else
+        (nothing, nothing)
+    end
+end
+
+# Actually compute the jacobian config
+@inline function _compute_jac_config(alg, f::F1, uf::F2, du1, uprev, u) where {F1, F2}
+    jac_prototype = f.jac_prototype
+
+    if is_sparse_csc(jac_prototype)
+        if f.mass_matrix isa UniformScaling
+            idxs = diagind(jac_prototype)
+            @. @view(jac_prototype[idxs]) = 1
+        else
+            idxs = findall(!iszero, f.mass_matrix)
+            @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
+        end
+    end
+
+    autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg), u)
+    dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
+
+    if dense isa AutoFiniteDiff
+        dir_forward = @set dense.dir = 1
+        dir_reverse = @set dense.dir = -1
+
+        if autodiff_alg isa AutoSparse
+            autodiff_alg_forward = @set autodiff_alg.dense_ad = dir_forward
+            autodiff_alg_reverse = @set autodiff_alg.dense_ad = dir_reverse
+        else
+            autodiff_alg_forward = dir_forward
+            autodiff_alg_reverse = dir_reverse
+        end
+
+        jac_config_forward = DI.prepare_jacobian(
+            uf, du1, autodiff_alg_forward, u, strict = Val(false))
+        jac_config_reverse = DI.prepare_jacobian(
+            uf, du1, autodiff_alg_reverse, u, strict = Val(false))
+
+        jac_config = (jac_config_forward, jac_config_reverse)
+    else
+        jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u, strict = Val(false))
+        jac_config = (jac_config1, jac_config1)
     end
 
     jac_config
@@ -365,32 +411,40 @@ end
 # Fallback for other AD backends
 gpu_safe_autodiff(backend, u) = backend
 
+# Type-stable dispatch based on field type for build_grad_config
+# When f.tgrad is Nothing, we need to compute the config
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
-    if !SciMLBase.has_tgrad(f)
-        ad = ADTypes.dense_ad(alg_autodiff(alg))
+    _build_grad_config_dispatch(alg, f, tf, du1, t, f.tgrad)
+end
 
-        # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
-        ad = gpu_safe_autodiff(ad, du1)
+# f.tgrad is nothing - need to compute grad_config
+@inline function _build_grad_config_dispatch(alg, f::F1, tf::F2, du1, t, ::Nothing) where {F1, F2}
+    ad = ADTypes.dense_ad(alg_autodiff(alg))
 
-        if ad isa AutoFiniteDiff
-            dir_true = @set ad.dir = 1
-            dir_false = @set ad.dir = -1
+    # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
+    ad = gpu_safe_autodiff(ad, du1)
 
-            grad_config_true = DI.prepare_derivative(tf, du1, dir_true, t)
-            grad_config_false = DI.prepare_derivative(tf, du1, dir_false, t)
+    if ad isa AutoFiniteDiff
+        dir_true = @set ad.dir = 1
+        dir_false = @set ad.dir = -1
 
-            grad_config = (grad_config_true, grad_config_false)
-        elseif ad isa AutoForwardDiff
-            grad_config1 = DI.prepare_derivative(tf, du1, ad, convert(eltype(du1), t))
-            grad_config = (grad_config1, grad_config1)
-        else
-            grad_config1 = DI.prepare_derivative(tf, du1, ad, t)
-            grad_config = (grad_config1, grad_config1)
-        end
-        return grad_config
+        grad_config_true = DI.prepare_derivative(tf, du1, dir_true, t)
+        grad_config_false = DI.prepare_derivative(tf, du1, dir_false, t)
+
+        grad_config = (grad_config_true, grad_config_false)
+    elseif ad isa AutoForwardDiff
+        grad_config1 = DI.prepare_derivative(tf, du1, ad, convert(eltype(du1), t))
+        grad_config = (grad_config1, grad_config1)
     else
-        return (nothing, nothing)
+        grad_config1 = DI.prepare_derivative(tf, du1, ad, t)
+        grad_config = (grad_config1, grad_config1)
     end
+    return grad_config
+end
+
+# f.tgrad is provided - return nothing tuple
+@inline function _build_grad_config_dispatch(alg, f::F1, tf::F2, du1, t, tgrad) where {F1, F2}
+    (nothing, nothing)
 end
 
 function sparsity_colorvec(f::F, x) where F
