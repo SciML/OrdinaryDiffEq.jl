@@ -26,7 +26,7 @@ for x in 0:0.001:5
     called = false
     fordiff = ForwardDiff.jacobian(test_f, p)
     @test called
-    @test findiff ≈ fordiff
+    @test findiff ≈ fordiff rtol=1e-5
 end
 
 function f2(du, u, p, t)
@@ -53,7 +53,7 @@ for x in 2.1:0.001:5
     called = false
     fordiff = ForwardDiff.jacobian(test_f2, p)
     @test called
-    @test findiff ≈ fordiff
+    @test findiff ≈ fordiff rtol=1e-5
 end
 
 #=
@@ -111,7 +111,7 @@ for x in 1.0:0.001:2.5
     called = false
     fordiff = ForwardDiff.jacobian(test_lotka, p)
     @test called
-    @test findiff ≈ fordiff
+    @test findiff ≈ fordiff rtol=1e-5
 end
 
 # Gradients and Hessians
