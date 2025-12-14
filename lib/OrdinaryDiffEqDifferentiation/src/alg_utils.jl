@@ -16,14 +16,16 @@ function _alg_autodiff(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
     alg.autodiff
 end
 
-# Type-stable helper functions using dispatch instead of runtime conditionals
-_unwrap_autodiff(::Val{true}) = AutoForwardDiff()
-_unwrap_autodiff(::Val{false}) = AutoFiniteDiff()
-_unwrap_autodiff(x) = x
-
 function alg_autodiff(alg)
     autodiff = _alg_autodiff(alg)
-    return _unwrap_autodiff(autodiff)
+
+    if autodiff == Val(true)
+        return AutoForwardDiff()
+    elseif autodiff == Val(false)
+        return AutoFiniteDiff()
+    else
+        return autodiff
+    end
 end
 
 Base.@pure function determine_chunksize(u, alg::SciMLBase.DEAlgorithm)

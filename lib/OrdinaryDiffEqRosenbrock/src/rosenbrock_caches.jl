@@ -772,19 +772,6 @@ function alg_cache(
         alg_autodiff(alg), size(tab.H, 1))
 end
 
-# Function barrier helper for type stability - Julia specializes on concrete types
-@inline function _make_rosenbrock_cache(
-        u, uprev, dense, du, du1, du2, dtC, dtd, ks, fsalfirst, fsallast,
-        dT, J::JType, W::WType, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve::F, jac_config::JCType, grad_config::GCType, reltol, alg,
-        step_limiter!, stage_limiter!, interp_order) where {JType, WType, F, JCType, GCType}
-    RosenbrockCache(
-        u, uprev, dense, du, du1, du2, dtC, dtd, ks, fsalfirst, fsallast,
-        dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg,
-        step_limiter!, stage_limiter!, interp_order)
-end
-
 function alg_cache(
         alg::Union{Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P},
         u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -835,8 +822,9 @@ function alg_cache(
         Pl=Pl, Pr=Pr,
         assumptions=LinearSolve.OperatorAssumptions(true))
 
-    # Use function barrier to ensure type stability in cache construction
-    _make_rosenbrock_cache(
+    
+    # Return the cache struct with vectors
+    RosenbrockCache(
         u, uprev, dense, du, du1, du2, dtC, dtd, ks, fsalfirst, fsallast,
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
