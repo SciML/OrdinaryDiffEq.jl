@@ -36,12 +36,14 @@ f_mm = ODEFunction{true}(f_ode, mass_matrix = M)
 prob_mm = ODEProblem(f_mm, u₀, tspan, p)
 f_mm_oop = ODEFunction{false}(f_ode, mass_matrix = M)
 prob_mm_oop = ODEProblem(f_mm_oop, u₀, tspan, p)
-@test_broken sol1 = @inferred solve(
+if VERSION >= v"1.12"
+sol1 = @inferred solve(
     prob, DFBDF(autodiff = afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
-@test_broken sol2 = @inferred solve(
+sol2 = @inferred solve(
     prob_oop, DFBDF(autodiff = afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
-@test_broken sol3 = @inferred solve(
+sol3 = @inferred solve(
     prob_mm, FBDF(autodiff = afd_cs3), dt = 1e-5, abstol = 1e-8, reltol = 1e-8)
+end
 
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
