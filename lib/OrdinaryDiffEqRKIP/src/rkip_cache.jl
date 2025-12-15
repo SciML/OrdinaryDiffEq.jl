@@ -41,7 +41,7 @@ get_fsalfirstlast(cache::RKIPCache, u) = (zero(cache.tmp), zero(cache.tmp))
         step_index::Int,
         unique_stage_index::Int) where {
         expOpType <: AbstractSciMLOperator, opType <: AbstractSciMLOperator, T <: Number}
-    @unpack expÂ_for_this_step, expÂ_cached = cache
+    (; expÂ_for_this_step, expÂ_cached) = cache
     expÂ_for_this_step[unique_stage_index] = (action == :use_cached) ?
                                               expÂ_cached[step_index, unique_stage_index] :
                                               exp(A, h) # fetching or generating exp(Â*c_i*dt)
@@ -68,7 +68,7 @@ end
         cache::RKIPCache{expOpType, cacheType, tType, opType, uType, iip},
         Â::opType, dt::tType,
         alg::algType) where {expOpType, cacheType, tType, opType, uType, algType, iip}
-    @unpack dt_for_expÂ_caching = alg
+    (; dt_for_expÂ_caching) = alg
 
     if !iszero(dt) && !(dt ≈ cache.last_step) # we check that new exp(A dt) are needed
         dt_abs = abs(dt) # only the positive dt are used for indexing

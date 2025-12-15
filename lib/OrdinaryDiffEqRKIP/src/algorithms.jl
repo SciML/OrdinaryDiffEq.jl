@@ -101,7 +101,7 @@ has_dtnew_modification(alg::RKIP) = true
 
 function dtnew_modification(alg::RKIP{tableauType, elType, dtType},
         dtnew) where {tableauType, elType, dtType}
-    @unpack dt_for_expÂ_caching = alg
+    (; dt_for_expÂ_caching) = alg
     if first(alg.dt_for_expÂ_caching) > dtnew && alg.clamp_lower_dt
         dtnew = first(alg.dt_for_expÂ_caching)
     elseif last(alg.dt_for_expÂ_caching) < dtnew && alg.clamp_higher_dt

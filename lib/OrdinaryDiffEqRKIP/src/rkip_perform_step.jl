@@ -48,10 +48,10 @@ end
 @fastmath function perform_step!(integrator,
         cache::RKIPCache{expOpType, cacheType, tType, opType, uType, iip}) where {
         expOpType, cacheType, tType, opType, uType, iip}
-    @unpack t, dt, uprev, u, f, p, fsalfirst, fsallast, alg = integrator
-    @unpack c, α, αEEst, stages, A = alg.tableau
-    @unpack kk, utilde, tmp = cache
-    @unpack adaptive, abstol, reltol, internalnorm = integrator.opts
+    (; t, dt, uprev, u, f, p, fsalfirst, fsallast, alg) = integrator
+    (; c, α, αEEst, stages, A) = alg.tableau
+    (; kk, utilde, tmp) = cache
+    (; adaptive, abstol, reltol, internalnorm) = integrator.opts
 
     Â::opType = f.f1.f # Linear Operator
 
@@ -102,7 +102,9 @@ end
     fsallast = f_mip!(fsallast, cache.tmp, Â, f.f2, u, p, t + dt, iip) # derivative estimation for interpolation
     integrator.stats.nf += 1
     integrator.stats.nf2 += 1
-    @pack! integrator = fsalfirst, fsallast, u
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = fsallast
+    integrator.u = u
 
     @bb copyto!(integrator.k[1], fsalfirst)
     @bb copyto!(integrator.k[2], fsallast)
@@ -111,7 +113,7 @@ end
 function initialize!(integrator,
         cache::RKIPCache{expOpType, cacheType, tType, opType, uType, iip}) where {
         expOpType, cacheType, tType, opType, uType, iip}
-    @unpack f, u, p, t, fsalfirst, fsallast = integrator
+    (; f, u, p, t, fsalfirst, fsallast) = integrator
 
     kshortsize = 2
     k = [zero(u) for _ in 1:kshortsize]
@@ -120,7 +122,10 @@ function initialize!(integrator,
     integrator.stats.nf += 1
     integrator.stats.nf2 += 1
 
-    @pack! integrator = kshortsize, k, fsalfirst, fsallast
+    integrator.kshortsize = kshortsize
+    integrator.k = k
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = fsallast
 
     @bb copyto!(integrator.k[1], fsalfirst)
     @bb copyto!(integrator.k[2], fsallast)

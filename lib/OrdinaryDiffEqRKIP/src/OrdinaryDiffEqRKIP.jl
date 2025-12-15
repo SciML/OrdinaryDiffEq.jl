@@ -1,5 +1,6 @@
 module OrdinaryDiffEqRKIP
 
+using Compat: logrange
 using LinearAlgebra: ldiv!, exp, axpy!, norm, mul!
 using SciMLOperators: AbstractSciMLOperator
 using MaybeInplace: @bb
