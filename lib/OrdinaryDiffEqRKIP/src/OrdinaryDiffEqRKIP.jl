@@ -2,7 +2,6 @@ module OrdinaryDiffEqRKIP
 
 using LinearAlgebra: ldiv!, exp, axpy!, norm, mul!
 using SciMLOperators: AbstractSciMLOperator
-using UnPack: @pack!, @unpack
 using MaybeInplace: @bb
 using SciMLBase: isinplace
 using DiffEqBase: ExplicitRKTableau
