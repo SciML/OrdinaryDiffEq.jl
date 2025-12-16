@@ -217,7 +217,12 @@ end
     integrator.stats.nw += 1
 
     # Newton iteration
-    local ndw, ff1, ff2
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
+    ff1 = zero(u)
+    ff2 = zero(u)
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -353,7 +358,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -524,7 +532,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -710,7 +721,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -984,7 +998,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1239,7 +1256,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1555,7 +1575,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1819,7 +1842,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
