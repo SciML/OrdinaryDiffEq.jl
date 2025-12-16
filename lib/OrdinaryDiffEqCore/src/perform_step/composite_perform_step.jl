@@ -204,6 +204,8 @@ function choose_algorithm!(integrator, cache::DefaultCache)
         algs = integrator.alg.algs
         cache.current = new_current
         init_ith_default_cache(cache, algs, new_current)
+        new_cache = nothing
+        old_cache = nothing
         if new_current == 1
             fsalfirst, fsallast = get_fsalfirstlast(cache.cache1, u)
             !isnothing(fsalfirst) && (integrator.fsalfirst = fsalfirst)

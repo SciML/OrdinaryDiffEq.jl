@@ -159,6 +159,7 @@ function SciMLBase.__init(
 
     use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_du0)
 
+    aliases = nothing
     if use_old_kwargs
         aliases = ODEAliasSpecifier()
         if haskey(kwargs, :alias_u0)
@@ -275,6 +276,7 @@ function SciMLBase.__init(
     end
     rateType = typeof(rate_prototype) ## Can be different if united
 
+    res_prototype = nothing
     if isdae
         if uBottomEltype == uBottomEltypeNoUnits
             res_prototype = u
@@ -322,6 +324,7 @@ function SciMLBase.__init(
     saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
         prob, save_idxs)
 
+    ks_prototype = nothing
     if save_idxs === nothing
         ksEltype = Vector{rateType}
     else

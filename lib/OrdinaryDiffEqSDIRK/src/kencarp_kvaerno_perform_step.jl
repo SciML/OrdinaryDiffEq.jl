@@ -148,6 +148,11 @@ end
     (; γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32, ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4, ebtilde1, ebtilde2, ebtilde3, ebtilde4) = cache.tab
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    k3 = nothing
+    k4 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -276,6 +281,7 @@ end
     (; ebtilde1, ebtilde2, ebtilde3, ebtilde4) = cache.tab
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -409,6 +415,10 @@ end
     (; γ, a31, a32, a41, a42, a43, c2, c3, ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4) = cache.tab
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    k3 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -517,6 +527,7 @@ end
 
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -792,6 +803,13 @@ end
     (; ebtilde1, ebtilde3, ebtilde4, ebtilde5, ebtilde6) = cache.tab
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    k3 = nothing
+    k4 = nothing
+    k5 = nothing
+    k6 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -966,6 +984,7 @@ end
     (; ebtilde1, ebtilde3, ebtilde4, ebtilde5, ebtilde6) = cache.tab
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -1355,6 +1374,15 @@ end
     (; ebtilde1, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8) = cache.tab
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    k3 = nothing
+    k4 = nothing
+    k5 = nothing
+    k6 = nothing
+    k7 = nothing
+    k8 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -1571,6 +1599,7 @@ end
     (; ebtilde1, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8) = cache.tab
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -1793,6 +1822,14 @@ end
     (; ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7) = cache.tab
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    k3 = nothing
+    k4 = nothing
+    k5 = nothing
+    k6 = nothing
+    k7 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -1987,6 +2024,7 @@ end
     (; ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7) = cache.tab
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -2190,6 +2228,15 @@ end
     (; ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8) = cache.tab
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    k3 = nothing
+    k4 = nothing
+    k5 = nothing
+    k6 = nothing
+    k7 = nothing
+    k8 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -2408,6 +2455,7 @@ end
     (; ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8) = cache.tab
     alg = unwrap_alg(integrator, true)
 
+    f2 = nothing
     if integrator.f isa SplitFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
