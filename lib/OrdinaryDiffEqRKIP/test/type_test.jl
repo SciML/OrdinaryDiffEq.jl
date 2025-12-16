@@ -18,7 +18,7 @@ function test(A_prototype, u_prototype, iip; use_ldiv = false, broken = false)
         analytic = (u0, _, t) -> u0 .* exp(2μ * t)
 
         for μₐ in [2μ, μ, 0.0]
-            Â = A_prototype(μₐ)
+            Â = A_prototype(μₐ)
             f = (du, u, _, _) -> du .= (2μ - μₐ) .* u
 
             if !iip
@@ -28,17 +28,24 @@ function test(A_prototype, u_prototype, iip; use_ldiv = false, broken = false)
             u0 = u_prototype(1.0)
             t = (0.0, 1.0)
 
-            splfc = SplitFunction{iip}(Â, f; analytic = analytic)
+            splfc = SplitFunction{iip}(Â, f; analytic = analytic)
             spltode = SplitODEProblem(splfc, u0, t)
-            sol = solve(
-                spltode, RKIP(; use_ldiv = use_ldiv); reltol = reltol, abstol = 1e-10)
 
             if broken
-              @test_broken isapprox(sol(t[end]), splfc.analytic(u0, nothing, t[end]);
-                  rtol = 1e2 * reltol, atol = 1e-8)
+                # Wrap in try-catch since broken tests may throw during solve
+                try
+                    sol = solve(
+                        spltode, RKIP(; use_ldiv = use_ldiv); reltol = reltol, abstol = 1e-10)
+                    @test_broken isapprox(sol(t[end]), splfc.analytic(u0, nothing, t[end]);
+                        rtol = 1e2 * reltol, atol = 1e-8)
+                catch
+                    @test_broken false  # Expected to fail
+                end
             else
-              @test isapprox(sol(t[end]), splfc.analytic(u0, nothing, t[end]);
-                  rtol = 1e2 * reltol, atol = 1e-8)
+                sol = solve(
+                    spltode, RKIP(; use_ldiv = use_ldiv); reltol = reltol, abstol = 1e-10)
+                @test isapprox(sol(t[end]), splfc.analytic(u0, nothing, t[end]);
+                    rtol = 1e2 * reltol, atol = 1e-8)
             end
         end
     end
