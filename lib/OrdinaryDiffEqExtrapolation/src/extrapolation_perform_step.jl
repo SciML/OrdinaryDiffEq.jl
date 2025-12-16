@@ -744,6 +744,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
     fill!(cache.Q, zero(eltype(cache.Q)))
     tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
 
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         win_min = max(alg.min_order, n_curr - 1)
@@ -965,6 +966,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
     fill!(cache.Q, zero(eltype(cache.Q)))
 
     # Start computation
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         win_min = max(alg.min_order, n_curr - 1)
@@ -1153,6 +1155,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         win_min = max(alg.min_order, n_curr - 1)
@@ -1551,6 +1554,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
     fill!(cache.Q, zero(eltype(cache.Q)))
 
     # Start computation
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         win_min = max(alg.min_order, n_curr - 1)
