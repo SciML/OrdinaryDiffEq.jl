@@ -270,6 +270,8 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
     (; sequence) = cache
 
+    win_min = nothing
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
@@ -522,6 +524,8 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
     (; dtpropose, T, n_curr, work, A, tf, uf) = cache
     (; sequence, stage_number) = cache
 
+    win_min = nothing
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
@@ -1807,6 +1811,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 
+    win_min = nothing
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
@@ -2032,6 +2038,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
     T = fill(zero(uprev), alg.max_order + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
     fill!(cache.Q, zero(eltype(cache.Q)))
 
+    win_min = nothing
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
@@ -2225,6 +2233,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
     T = fill(zero(uprev), alg.max_order + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
     fill!(cache.Q, zero(eltype(cache.Q)))
 
+    win_min = nothing
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
@@ -2504,6 +2514,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 
+    win_min = nothing
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
@@ -2921,6 +2933,8 @@ function perform_step!(integrator,
     T = fill(zero(uprev), alg.max_order + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
     fill!(cache.Q, zero(eltype(cache.Q)))
 
+    win_min = nothing
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
@@ -3193,6 +3207,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
     fill!(cache.Q, zero(eltype(cache.Q)))
 
+    win_min = nothing
+    win_max = nothing
     if integrator.opts.adaptive
         # Set up the order window
         # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
