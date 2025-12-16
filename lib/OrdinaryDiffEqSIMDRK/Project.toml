@@ -28,7 +28,7 @@ VectorizationBase = "0.21"
 StaticArrays = "1.9"
 SafeTestsets = "0.1"
 Reexport = "1"
-julia = "1.10, 1.11, 1.12"
+julia = "1.10"
 
 [targets]
 test = ["DiffEqDevTools", "SafeTestsets", "StaticArrays", "Test"]
