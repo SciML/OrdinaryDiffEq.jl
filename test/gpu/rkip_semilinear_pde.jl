@@ -1,5 +1,8 @@
+# RKIP semilinear PDE tests on GPU with CUDA
 import LinearAlgebra
+using CUDA
 using FFTW
+using Test
 
 using OrdinaryDiffEqRKIP: RKIP
 using SciMLBase: SplitODEProblem, SplitFunction, solve
@@ -22,6 +25,9 @@ end
 function DiagonalFourierOperator(diag::Vector{T}) where {T <: Complex}
     DiagonalFourierOperator(diag, FFTW.plan_fft!, FFTW.plan_ifft!)
 end
+function DiagonalFourierOperator(diag::CuArray{T, 1}) where {T <: Complex}
+    DiagonalFourierOperator(diag, CUDA.CUFFT.plan_fft!, CUDA.CUFFT.plan_ifft!)
+end
 
 function LinearAlgebra.exp(D::DiagonalFourierOperator, t)
     exp_kernel = similar(D.diag)
@@ -43,8 +49,9 @@ function (D::DiagonalFourierOperator)(du, u, _, _, _)
     apply_kernel!(du, u, D.tmp, D.diag, D.plan_fft!, D.plan_ifft!)
 end
 
-cpu_init(u0::Vector, ::Vector{T}) where {T <: Real} = u0
-cpu_init(u0::Function, τ::Vector{T}) where {T <: Real} = Vector{Complex{T}}(u0.(τ))
+gpu_init(u0::CuArray, ::Vector{T}) where {T <: Real} = u0
+gpu_init(u0::Vector, ::Vector{T}) where {T <: Real} = CuArray{Complex{T}, 1}(u0)
+gpu_init(u0::Function, τ::Vector{T}) where {T <: Real} = CuArray{Complex{T}, 1}(u0.(τ))
 
 function create_semilinear_problem(
         nb_pts::Int,
@@ -57,7 +64,7 @@ function create_semilinear_problem(
     domain_size = dτ * nb_pts
     τ = Vector{T}(range(-domain_size / 2.0, domain_size / 2.0, nb_pts))
 
-    u0_good_type = cpu_init(u0, τ)
+    u0_good_type = gpu_init(u0, τ)
 
     ω = 2π .* Vector{T}(FFTW.fftfreq(nb_pts, nb_pts / domain_size))
     diag = typeof(u0_good_type)(semilinear_fourier_part.(ω))
@@ -94,9 +101,6 @@ function create_lle_scan(nb_pts::Int, dτ::T, scan_time::T, u0,
         (du, u, t) -> lle_non_linpart!(du, u, Δ_min + (Δ_max - Δ_min) * t / scan_time, S))
 end
 
-"""
-Test function of the NLSE on a conservative soliton
-"""
 function nlse_test(
         ::Type{T}; B = 5.0, nb_pts = 512, dτ = 5e-3, propag_dist = 10.0,
         save_everystep = false, reltol = 1e-6) where {T <: Real}
@@ -111,11 +115,6 @@ function nlse_test(
     return solve(problem, RKIP(T(1e-4), T(1.0)); save_everystep, reltol = T(reltol))
 end
 
-nlse_test(; kwargs...) = nlse_test(Float64; kwargs...)
-
-"""
-Lugiato-Lefever equation test. Useful for benchmark due to its particular dynamic
-"""
 function lle_scan_test(
         ::Type{T}; nb_pts = 1024, dτ = 5e-2, save_everystep = false,
         reltol = 1e-6, S = 3, Δ_min = -2.0, Δ_max = 12.0, t_max = 10) where {T <: Real}
@@ -131,4 +130,32 @@ function lle_scan_test(
     return solve(problem, RKIP(T(1e-4), T(1.0)); save_everystep, reltol = T(reltol))
 end
 
-lle_scan_test(; kwargs...) = lle_scan_test(Float64; kwargs...)
+CUDA.allowscalar(false) # ensure no scalar indexing is used (for performance)
+
+@testset "Lugiato-Lefever equation test on GPU with CUDA - Float64" begin
+    @test !isnothing(lle_scan_test(Float64))
+end
+
+@testset "Lugiato-Lefever equation test on GPU with CUDA - Float32" begin
+    @test !isnothing(lle_scan_test(Float32))
+end
+
+@testset "NLSE test on GPU with CUDA - Float64" begin
+    sol = nlse_test(Float64)
+
+    # NLSE Soliton solution, only the phase change
+    p1 = abs2.(sol.u[1])
+    p2 = abs2.(sol.u[end])
+
+    @test LinearAlgebra.norm(p1 .- p2) / LinearAlgebra.norm(p1) < 1.5e-2
+end
+
+@testset "NLSE test on GPU with CUDA - Float32" begin
+    sol = nlse_test(Float32)
+
+    # NLSE Soliton solution, only the phase change
+    p1 = abs2.(sol.u[1])
+    p2 = abs2.(sol.u[end])
+
+    @test LinearAlgebra.norm(p1 .- p2) / LinearAlgebra.norm(p1) < 1.5e-2
+end
