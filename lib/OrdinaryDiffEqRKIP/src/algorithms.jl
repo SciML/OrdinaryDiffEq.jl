@@ -130,7 +130,7 @@ function alg_cache(
         is_cached = Vector{Bool}(undef, length(alg.dt_for_expÂ_caching))
         fill!(is_cached, false)
 
-        c_extended = vcat(alg.tableau.c, 1.0) # all the c values of Runge-Kutta and 1 wich is needed for the RKIP step
+        c_extended = vcat(alg.tableau.c, 1.0) # all the c values of Runge-Kutta and 1 which is needed for the RKIP step
         c_unique = unique(c_extended) # in some tableau, there is duplicate: we only keep the unique value to save on caching time and memory
         c_index = [findfirst(==(c), c_unique) for c in c_extended] # index mapping
 

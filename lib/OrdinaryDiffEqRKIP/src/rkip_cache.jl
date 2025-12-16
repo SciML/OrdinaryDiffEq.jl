@@ -77,8 +77,8 @@ end
         step_index = clamp(searchsortedlast(dt_for_expÂ_caching, dt_abs),
             1, lastindex(dt_for_expÂ_caching)) # fetching the index corresponding to the step size
 
-        if dt_for_expÂ_caching[step_index] ≈ dt_abs # if dt corresponds to a cahing step
-            action = (cache.cached[step_index] ? :use_cached : :cache) # if alreay present, we reuse the cached, otherwise it is generated
+        if dt_for_expÂ_caching[step_index] ≈ dt_abs # if dt corresponds to a caching step
+            action = (cache.cached[step_index] ? :use_cached : :cache) # if already present, we reuse the cached, otherwise it is generated
         end
 
         for (unique_stage_index, c) in enumerate(cache.c_unique) # iterating over all unique c_i of the RK tableau

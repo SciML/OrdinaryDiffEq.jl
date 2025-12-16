@@ -15,7 +15,7 @@ end
 
 """
 Helper function to compute Au + f(u, p, t) and if in place, store the result in res.
-Retunr res if in place, otherwise return Au + f(u, p, t)
+Return res if in place, otherwise return Au + f(u, p, t)
 """
 function f_mip!(res::uType, tmp::uType, A::opType, f, u::uType, p,
         t::tType, ::Val{true}) where {tType, uType, opType}
