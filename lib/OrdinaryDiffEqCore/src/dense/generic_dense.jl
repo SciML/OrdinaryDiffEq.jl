@@ -17,7 +17,7 @@ struct DerivativeOrderNotPossibleError <: Exception end
 
 function Base.showerror(io::IO, e::DerivativeOrderNotPossibleError)
     print(io, DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE)
-    println(io, TruncatedStacktraces.VERBOSE_MSG)
+    println(io, VERBOSE_MSG)
 end
 
 ## Integrator Dispatches

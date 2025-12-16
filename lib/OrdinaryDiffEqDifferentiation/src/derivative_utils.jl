@@ -583,6 +583,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     (; J) = lcache
     isdae = integrator.alg isa DAEAlgorithm
     alg = unwrap_alg(integrator, true)
+    mass_matrix = nothing
     if !isdae
         mass_matrix = integrator.f.mass_matrix
     end
@@ -663,6 +664,7 @@ end
     cache = nlsolver isa OrdinaryDiffEqCache ? nlsolver : nlsolver.cache
 
     isdae = integrator.alg isa DAEAlgorithm
+    mass_matrix = nothing
     if !isdae
         mass_matrix = integrator.f.mass_matrix
     end
@@ -672,6 +674,7 @@ end
     islin, isode = islinearfunction(integrator)
     !isdae && update_coefficients!(mass_matrix, uprev, p, t)
 
+    J = nothing
     if cache.W isa StaticWOperator
         integrator.stats.nw += 1
         J = calc_J(integrator, cache, next_step)
