@@ -602,6 +602,8 @@ function ode_interpolation!(vals, tvals, id::I, idxs, ::Type{deriv}, p,
     i₊ = 2
     # if CompositeCache, have an inplace cache for lower allocations
     # (expecting the same algorithms for large portions of ts)
+    current_alg = nothing
+    cache_i₊ = nothing
     if cache isa CompositeCache
         current_alg = id.alg_choice[i₊]
         cache_i₊ = cache.caches[current_alg]
