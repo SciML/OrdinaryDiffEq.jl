@@ -206,6 +206,7 @@ end
         @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
         @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
         @time @safetestset "RKIP Semilinear PDE GPU" include("gpu/rkip_semilinear_pde.jl")
+        @time @safetestset "simple dae on GPU" include("gpu/simple_dae.jl")
     end
 
     if !is_APPVEYOR && GROUP == "QA"
