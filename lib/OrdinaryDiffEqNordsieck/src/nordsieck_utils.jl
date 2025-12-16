@@ -59,7 +59,7 @@ function nordsieck_prepare_next!(integrator, cache::T) where {T}
     if isconst
         cache.Δ = cache.c_LTE * cache.Δ
     else
-        @.. broadcast=false cache.Δ=cache.c_LTE * cache.Δ
+        @.. broadcast=false cache.Δ=cache.c_LTE*cache.Δ
     end
     return nothing
 end
@@ -165,21 +165,25 @@ function perform_predict!(cache::T, rewind = false) where {T}
         if !rewind
             if isconst
                 for i in 1:order, j in order:-1:i
+
                     z[j] = z[j] + z[j + 1]
                 end
             else
                 for i in 1:order, j in order:-1:i
-                    @.. broadcast=false z[j]=z[j] + z[j + 1]
+
+                    @.. broadcast=false z[j]=z[j]+z[j + 1]
                 end
             end # endif const cache
         else
             if isconst
                 for i in 1:order, j in order:-1:i
+
                     z[j] = z[j] - z[j + 1]
                 end
             else
                 for i in 1:order, j in order:-1:i
-                    @.. broadcast=false z[j]=z[j] - z[j + 1]
+
+                    @.. broadcast=false z[j]=z[j]-z[j + 1]
                 end
             end # endif const cache
         end # endif !rewind
@@ -233,9 +237,9 @@ function nlsolve_functional!(integrator, cache::T) where {T}
             cache.Δ = ratetmp - cache.Δ
         else
             @.. broadcast=false integrator.u=-z[2]
-            @.. broadcast=false ratetmp=inv(l[2]) * muladd(dt, ratetmp, integrator.u)
-            @.. broadcast=false integrator.u=ratetmp + z[1]
-            @.. broadcast=false cache.Δ=ratetmp - cache.Δ
+            @.. broadcast=false ratetmp=inv(l[2])*muladd(dt, ratetmp, integrator.u)
+            @.. broadcast=false integrator.u=ratetmp+z[1]
+            @.. broadcast=false cache.Δ=ratetmp-cache.Δ
         end
         # @show norm(dt*ratetmp - ( z[2] + (integrator.u - z[1])*l[2] ))
         # @show norm(cache.Δ - (integrator.u - z[1]))
@@ -394,6 +398,7 @@ end
 # TODO: Check them
 function stepsize_η₊₁!(integrator, cache::T, order) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
+    atmp = ratetmp = integrator.uprev  # Initialize for JET
     isconstcache || ((; atmp, ratetmp) = cache)
     (; uprev, t, u) = integrator
     (; z, c_LTE₊₁, dts, c_𝒟) = cache
@@ -424,6 +429,7 @@ end
 
 function stepsize_η₋₁!(integrator, cache::T, order) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
+    atmp = integrator.uprev  # Initialize for JET
     isconstcache || (atmp = cache.atmp)
     (; uprev, t, u) = integrator
     (; z, c_LTE₋₁) = cache
