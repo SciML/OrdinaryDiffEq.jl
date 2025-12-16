@@ -667,6 +667,7 @@ end
     TI21, TI22, TI23, TI31, TI32, TI33) = cache.tab
     (; c1, c2, γ, α, β, e1, e2, e3) = cache.tab
     (; κ) = cache
+    linres1 = nothing
     (; z1, z2, z3, w1, w2, w3,
     dw1, ubuff, dw23, cubuff,
     k, k2, k3, fw1, fw2, fw3,
@@ -1168,6 +1169,7 @@ end
     TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55) = cache.tab
     (; c1, c2, c3, c4, γ, α1, β1, α2, β2, e1, e2, e3, e4, e5) = cache.tab
     (; κ) = cache
+    linres1 = nothing
     (; z1, z2, z3, z4, z5, w1, w2, w3, w4, w5) = cache
     (; dw1, ubuff, dw23, dw45, cubuff1, cubuff2) = cache
     (; k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5) = cache

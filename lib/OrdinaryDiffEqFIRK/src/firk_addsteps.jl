@@ -41,7 +41,11 @@ function _ode_addsteps!(integrator, cache::RadauIIA3ConstantCache)
     integrator.stats.nw += 1
 
     # Newton iteration
-    local ndw, ff1, ff2
+    local ff1, ff2
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -166,7 +170,10 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -330,7 +337,10 @@ function _ode_addsteps!(integrator, cache::RadauIIA5ConstantCache,
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -485,7 +495,10 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -721,7 +734,10 @@ function _ode_addsteps!(integrator, cache::RadauIIA9ConstantCache,
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -952,7 +968,10 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1226,7 +1245,10 @@ function _ode_addstep!(integrator, cache::AdaptiveRadauConstantCache, repeat_ste
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1460,7 +1482,10 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
