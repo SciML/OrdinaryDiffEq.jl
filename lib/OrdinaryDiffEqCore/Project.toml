@@ -86,7 +86,7 @@ DiffEqBase = "6.190.2"
 FillArrays = "1.13"
 Adapt = "4.3"
 Reexport = "1.2"
-julia = "1.10"
+julia = "1.10, 1.11, 1.12"
 
 [weakdeps]
 Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
