@@ -18,15 +18,15 @@ DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
-Test = "1"
-DiffEqDevTools = "2.44"
+Test = "<0.0.1, 1"
+DiffEqDevTools = "2.44.4"
 MuladdMacro = "0.2"
 OrdinaryDiffEqCore = "2"
 Static = "0.7, 0.8, 1"
 SLEEFPirates = "0.6"
 VectorizationBase = "0.21"
 StaticArrays = "1.9"
-SafeTestsets = "0.1"
+SafeTestsets = "0.1.0"
 Reexport = "1"
 julia = "1.10"
 

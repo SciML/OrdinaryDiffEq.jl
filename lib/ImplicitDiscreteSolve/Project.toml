@@ -19,7 +19,7 @@ Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 
 [compat]
-Test = "1.10.0"
+Test = "<0.0.1, 1"
 OrdinaryDiffEqSDIRK = "1.6.0"
 SciMLBase = "2.99"
 SimpleNonlinearSolve = "2.7"
