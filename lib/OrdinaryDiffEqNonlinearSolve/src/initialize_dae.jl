@@ -274,7 +274,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator,
         nlsolve = default_nlsolve(alg.nlsolve, isinplace, nlprob, u0)
 
         nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
-            reltol = integrator.opts.reltol, integrator.opts.verbose.nonlinear_verbosity)
+            reltol = integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity)
         integrator.u = nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
     end
