@@ -49,7 +49,7 @@ function initialize!(integrator, cache::RadauIIA3Cache)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     if integrator.opts.adaptive
-        @unpack abstol, reltol = integrator.opts
+        (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^(2 / 3) / 10
             cache.atol = cache.rtol * (abstol / reltol)
@@ -88,7 +88,7 @@ function initialize!(integrator, cache::RadauIIA5Cache)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     if integrator.opts.adaptive
-        @unpack abstol, reltol = integrator.opts
+        (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^(2 / 3) / 10
             cache.atol = cache.rtol * (abstol / reltol)
@@ -131,7 +131,7 @@ function initialize!(integrator, cache::RadauIIA9Cache)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     if integrator.opts.adaptive
-        @unpack abstol, reltol = integrator.opts
+        (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^(3 / 5) / 10
             cache.atol = cache.rtol * (abstol / reltol)
@@ -175,13 +175,13 @@ function initialize!(integrator, cache::AdaptiveRadauCache)
 end
 
 @muladd function perform_step!(integrator, cache::RadauIIA3ConstantCache)
-    @unpack t, dt, uprev, u, f, p, k = integrator
-    @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
-    @unpack c1, c2, α, β, e1, e2 = cache.tab
-    @unpack κ = cache
-    @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
+    (; t, dt, uprev, u, f, p, k) = integrator
+    (; T11, T12, T21, T22, TI11, TI12, TI21, TI22) = cache.tab
+    (; c1, c2, α, β, e1, e2) = cache.tab
+    (; κ) = cache
+    (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
-    @unpack maxiters = alg
+    (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations
@@ -217,7 +217,12 @@ end
     integrator.stats.nw += 1
 
     # Newton iteration
-    local ndw, ff1, ff2
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
+    ff1 = zero(u)
+    ff2 = zero(u)
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -309,18 +314,18 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::RadauIIA3Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst, k = integrator
-    @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
-    @unpack c1, c2, α, β, e1, e2 = cache.tab
-    @unpack κ = cache
-    @unpack z1, z2, w1, w2,
+    (; t, dt, uprev, u, f, p, fsallast, fsalfirst, k) = integrator
+    (; T11, T12, T21, T22, TI11, TI12, TI21, TI22) = cache.tab
+    (; c1, c2, α, β, e1, e2) = cache.tab
+    (; κ) = cache
+    (; z1, z2, w1, w2,
     dw12, cubuff,
     k, k2, fw1, fw2,
     J, W1,
-    tmp, atmp, jac_config, rtol, atol, step_limiter! = cache
-    @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
+    tmp, atmp, jac_config, rtol, atol, step_limiter!) = cache
+    (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
-    @unpack maxiters = alg
+    (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
     # precalculations
     αdt, βdt = α / dt, β / dt
@@ -353,7 +358,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -471,14 +479,14 @@ end
 
 @muladd function perform_step!(integrator, cache::RadauIIA5ConstantCache,
         repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, k = integrator
-    @unpack T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13,
-    TI21, TI22, TI23, TI31, TI32, TI33 = cache.tab
-    @unpack c1, c2, γ, α, β, e1, e2, e3 = cache.tab
-    @unpack κ, cont1, cont2, cont3 = cache
-    @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
+    (; t, dt, uprev, u, f, p, k) = integrator
+    (; T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13,
+    TI21, TI22, TI23, TI31, TI32, TI33) = cache.tab
+    (; c1, c2, γ, α, β, e1, e2, e3) = cache.tab
+    (; κ, cont1, cont2, cont3) = cache
+    (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
-    @unpack maxiters = alg
+    (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations
@@ -524,7 +532,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -651,19 +662,20 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::RadauIIA5Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst, k = integrator
-    @unpack T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13,
-    TI21, TI22, TI23, TI31, TI32, TI33 = cache.tab
-    @unpack c1, c2, γ, α, β, e1, e2, e3 = cache.tab
-    @unpack κ = cache
-    @unpack z1, z2, z3, w1, w2, w3,
+    (; t, dt, uprev, u, f, p, fsallast, fsalfirst, k) = integrator
+    (; T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13,
+    TI21, TI22, TI23, TI31, TI32, TI33) = cache.tab
+    (; c1, c2, γ, α, β, e1, e2, e3) = cache.tab
+    (; κ) = cache
+    linres1 = nothing
+    (; z1, z2, z3, w1, w2, w3,
     dw1, ubuff, dw23, cubuff,
     k, k2, k3, fw1, fw2, fw3,
     J, W1, W2,
-    tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
-    @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
+    tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!) = cache
+    (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
-    @unpack maxiters = alg
+    (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations
@@ -710,7 +722,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -893,17 +908,17 @@ end
 
 @muladd function perform_step!(integrator, cache::RadauIIA9ConstantCache,
         repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, k = integrator
-    @unpack T11, T12, T13, T14, T15, T21, T22, T23, T24, T25, T31, T32,
-    T33, T34, T35, T41, T42, T43, T44, T45, T51 = cache.tab#= T52 = 1, T53 = 0, T54 = 1, T55 = 0=#
-    @unpack TI11,
+    (; t, dt, uprev, u, f, p, k) = integrator
+    (; T11, T12, T13, T14, T15, T21, T22, T23, T24, T25, T31, T32,
+    T33, T34, T35, T41, T42, T43, T44, T45, T51) = cache.tab#= T52 = 1, T53 = 0, T54 = 1, T55 = 0=#
+    (; TI11,
     TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25, TI31, TI32, TI33, TI34,
-    TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55 = cache.tab
-    @unpack c1, c2, c3, c4, γ, α1, β1, α2, β2, e1, e2, e3, e4, e5 = cache.tab
-    @unpack κ = cache
-    @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
+    TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55) = cache.tab
+    (; c1, c2, c3, c4, γ, α1, β1, α2, β2, e1, e2, e3, e4, e5) = cache.tab
+    (; κ) = cache
+    (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
-    @unpack maxiters = alg
+    (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations rtol pow is (num stages + 1)/(2*num stages)
@@ -984,7 +999,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1143,23 +1161,24 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::RadauIIA9Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst, k = integrator
-    @unpack T11, T12, T13, T14, T15, T21, T22, T23, T24, T25, T31, T32,
-    T33, T34, T35, T41, T42, T43, T44, T45, T51 = cache.tab#= T52 = 1, T53 = 0, T54 = 1, T55 = 0=#
-    @unpack TI11,
+    (; t, dt, uprev, u, f, p, fsallast, fsalfirst, k) = integrator
+    (; T11, T12, T13, T14, T15, T21, T22, T23, T24, T25, T31, T32,
+    T33, T34, T35, T41, T42, T43, T44, T45, T51) = cache.tab#= T52 = 1, T53 = 0, T54 = 1, T55 = 0=#
+    (; TI11,
     TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25, TI31, TI32, TI33, TI34,
-    TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55 = cache.tab
-    @unpack c1, c2, c3, c4, γ, α1, β1, α2, β2, e1, e2, e3, e4, e5 = cache.tab
-    @unpack κ = cache
-    @unpack z1, z2, z3, z4, z5, w1, w2, w3, w4, w5 = cache
-    @unpack dw1, ubuff, dw23, dw45, cubuff1, cubuff2 = cache
-    @unpack k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5 = cache
-    @unpack J, W1, W2, W3 = cache
-    @unpack tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
-    linsolve1, linsolve2, linsolve3, rtol, atol, step_limiter! = cache
-    @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
+    TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55) = cache.tab
+    (; c1, c2, c3, c4, γ, α1, β1, α2, β2, e1, e2, e3, e4, e5) = cache.tab
+    (; κ) = cache
+    linres1 = nothing
+    (; z1, z2, z3, z4, z5, w1, w2, w3, w4, w5) = cache
+    (; dw1, ubuff, dw23, dw45, cubuff1, cubuff2) = cache
+    (; k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5) = cache
+    (; J, W1, W2, W3) = cache
+    (; tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
+    linsolve1, linsolve2, linsolve3, rtol, atol, step_limiter!) = cache
+    (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
-    @unpack maxiters = alg
+    (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations
@@ -1239,7 +1258,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1484,14 +1506,14 @@ end
 
 @muladd function perform_step!(integrator, cache::AdaptiveRadauConstantCache,
         repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, k = integrator
-    @unpack tabs, num_stages, index = cache
+    (; t, dt, uprev, u, f, p, k) = integrator
+    (; tabs, num_stages, index) = cache
     tab = tabs[index]
-    @unpack T, TI, γ, α, β, c, e = tab
-    @unpack κ = cache
-    @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
+    (; T, TI, γ, α, β, c, e) = tab
+    (; κ) = cache
+    (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
-    @unpack maxiters = alg
+    (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations rtol pow is (num stages + 1)/(2*num stages)
@@ -1555,7 +1577,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1728,17 +1753,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::AdaptiveRadauCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst, k = integrator
-    @unpack num_stages, tabs, index = cache
+    (; t, dt, uprev, u, f, p, fsallast, fsalfirst, k) = integrator
+    (; num_stages, tabs, index) = cache
     tab = tabs[index]
-    @unpack T, TI, γ, α, β, c, e = tab
-    @unpack κ, derivatives, z, w, c_prime, αdt, βdt = cache
-    @unpack dw1, ubuff, dw2, cubuff, dw = cache
-    @unpack ks, fw, J, W1, W2 = cache
-    @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
-    @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
+    (; T, TI, γ, α, β, c, e) = tab
+    (; κ, derivatives, z, w, c_prime, αdt, βdt) = cache
+    (; dw1, ubuff, dw2, cubuff, dw) = cache
+    (; ks, fw, J, W1, W2) = cache
+    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!) = cache
+    (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
-    @unpack maxiters = alg
+    (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations
@@ -1749,7 +1774,7 @@ end
     end
 
     if integrator.opts.adaptive
-        @unpack abstol, reltol = integrator.opts
+        (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^((num_stages + 1) / (2 * num_stages)) / 10
             cache.atol = cache.rtol * (abstol / reltol)
@@ -1819,7 +1844,10 @@ end
     end
 
     # Newton iteration
-    local ndw
+    # Initialize variables for JET
+    ndw = one(eltype(u))
+    ndwprev = one(eltype(u))
+    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0

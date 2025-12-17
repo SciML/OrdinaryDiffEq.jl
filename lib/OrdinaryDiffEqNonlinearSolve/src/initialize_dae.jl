@@ -55,7 +55,7 @@ Solve for `u`
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{true})
-    @unpack p, t, f = integrator
+    (; p, t, f) = integrator
     M = integrator.f.mass_matrix
     dtmax = integrator.opts.dtmax
     tmp = first(get_tmp_cache(integrator))
@@ -171,7 +171,7 @@ end
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{false})
-    @unpack p, t, f = integrator
+    (; p, t, f) = integrator
     u0 = integrator.u
     M = integrator.f.mass_matrix
     dtmax = integrator.opts.dtmax
@@ -250,7 +250,7 @@ end
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::ShampineCollocationInit, isinplace::Val{true})
-    @unpack p, t, f = integrator
+    (; p, t, f) = integrator
     u0 = integrator.u
 
     dtmax = integrator.opts.dtmax
@@ -327,7 +327,7 @@ end
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::ShampineCollocationInit, isinplace::Val{false})
-    @unpack p, t, f = integrator
+    (; p, t, f) = integrator
     u0 = integrator.u
     dtmax = integrator.opts.dtmax
 
@@ -391,13 +391,14 @@ end
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
         alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true})
-    @unpack p, t, f = integrator
+    (; p, t, f) = integrator
     u = integrator.u
     M = integrator.f.mass_matrix
     M isa UniformScaling && return
     update_coefficients!(M, u, p, t)
-    algebraic_vars = [all(iszero, x) for x in eachcol(M)]
-    algebraic_eqs = [all(iszero, x) for x in eachrow(M)]
+    algebraic_vars = vec(all(iszero, M, dims = 1))
+    algebraic_eqs = vec(all(iszero, M, dims = 2))
+
     (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
     tmp = get_tmp_cache(integrator)[1]
 
@@ -456,7 +457,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD)
 
     nlsol = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
-    alg_u .= nlsol
+    alg_u .= nlsol.u
 
     recursivecopy!(integrator.uprev, integrator.u)
     if alg_extrapolates(integrator.alg)
@@ -472,7 +473,7 @@ end
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
         alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{false})
-    @unpack p, t, f = integrator
+    (; p, t, f) = integrator
 
     u0 = integrator.u
     M = integrator.f.mass_matrix
@@ -540,7 +541,7 @@ end
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true})
-    @unpack p, t, f = integrator
+    (; p, t, f) = integrator
     differential_vars = prob.differential_vars
     u = integrator.u
     du = integrator.du
@@ -622,7 +623,7 @@ end
 
 function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::DAEProblem,
         alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{false})
-    @unpack p, t, f = integrator
+    (; p, t, f) = integrator
     differential_vars = prob.differential_vars
 
     if check_dae_tolerance(

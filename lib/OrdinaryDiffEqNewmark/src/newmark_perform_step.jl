@@ -7,8 +7,8 @@ function initialize!(integrator, cache::NewmarkBetaCache)
 end
 
 @muladd function perform_step!(integrator, cache::NewmarkBetaCache, repeat_step = false)
-    @unpack t, dt, u, f, p = integrator
-    @unpack β, γ, thread, nlcache, atmp = cache
+    (; t, dt, u, f, p) = integrator
+    (; β, γ, thread, nlcache, atmp) = cache
 
     # Evaluate predictor
     vₙ, uₙ = integrator.uprev.x
@@ -62,8 +62,8 @@ end
 
 @muladd function perform_step!(
         integrator, cache::NewmarkBetaConstantCache, repeat_step = false)
-    @unpack t, u, dt, f, p = integrator
-    @unpack β, γ, thread, nlsolver, atmp = cache
+    (; t, u, dt, f, p) = integrator
+    (; β, γ, thread, nlsolver, atmp) = cache
 
     # Evaluate predictor
     if integrator.u_modified || !integrator.opts.adaptive

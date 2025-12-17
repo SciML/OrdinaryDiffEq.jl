@@ -181,7 +181,7 @@ end
 function full_cache(integrator::ODEIntegrator)
     # for DefaultCache, we need to make sure to initialize all the caches in case they get switched to later
     if integrator.cache isa DefaultCache
-        @unpack alg, cache = integrator
+        (; alg, cache) = integrator
         algs = alg.algs
         init_ith_default_cache(cache, algs, 1)
         init_ith_default_cache(cache, algs, 2)
@@ -218,7 +218,7 @@ function SciMLBase.add_saveat!(integrator::ODEIntegrator, t)
 end
 
 function resize!(integrator::ODEIntegrator, i::Int)
-    @unpack cache = integrator
+    (; cache) = integrator
 
     for c in full_cache(integrator)
         # Skip nothings which may exist in the cache since extra variables
@@ -234,7 +234,7 @@ function resize!(integrator::ODEIntegrator, i::Int)
 end
 # we can't use resize!(..., i::Union{Int, NTuple{N,Int}}) where {N} because of method ambiguities with DiffEqBase
 function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
-    @unpack cache = integrator
+    (; cache) = integrator
 
     for c in full_cache(cache)
         resize!(c, i)

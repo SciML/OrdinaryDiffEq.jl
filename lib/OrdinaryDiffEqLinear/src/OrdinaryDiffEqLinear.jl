@@ -6,7 +6,7 @@ import OrdinaryDiffEqCore: alg_order, alg_extrapolates, dt_required,
                            OrdinaryDiffEqExponentialAlgorithm,
                            OrdinaryDiffEqMutableCache, @cache, alg_cache,
                            OrdinaryDiffEqConstantCache,
-                           initialize!, perform_step!, @unpack, unwrap_alg,
+                           initialize!, perform_step!, unwrap_alg,
                            calculate_residuals!, get_fsalfirstlast,
                            _vec, isdtchangeable, full_cache,
                            generic_solver_docstring

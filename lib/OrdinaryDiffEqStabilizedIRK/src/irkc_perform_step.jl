@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::IRKCConstantCache)
-    @unpack uprev, p, t = integrator
-    @unpack f1, f2 = integrator.f
+    (; uprev, p, t) = integrator
+    (; f1, f2) = integrator.f
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     cache.du₁ = f1(uprev, p, t)
@@ -16,9 +16,9 @@ function initialize!(integrator, cache::IRKCConstantCache)
 end
 
 function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack minm, du₁, du₂, nlsolver = cache
-    @unpack f1, f2 = integrator.f
+    (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    (; minm, du₁, du₂, nlsolver) = cache
+    (; f1, f2) = integrator.f
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -129,8 +129,8 @@ function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false
 end
 
 function initialize!(integrator, cache::IRKCCache)
-    @unpack uprev, p, t = integrator
-    @unpack f1, f2 = integrator.f
+    (; uprev, p, t) = integrator
+    (; f1, f2) = integrator.f
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -143,11 +143,11 @@ function initialize!(integrator, cache::IRKCCache)
 end
 
 function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack gprev, gprev2, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, du₁, du₂, atmp, nlsolver = cache
-    @unpack tmp, z = nlsolver
-    @unpack minm = cache.constantcache
-    @unpack f1, f2 = integrator.f
+    (; t, dt, uprev, u, f, p) = integrator
+    (; gprev, gprev2, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, du₁, du₂, atmp, nlsolver) = cache
+    (; tmp, z) = nlsolver
+    (; minm) = cache.constantcache
+    (; f1, f2) = integrator.f
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)

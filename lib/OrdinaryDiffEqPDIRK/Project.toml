@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqPDIRK"
 uuid = "5dd0a6cf-3d4b-4314-aa06-06d4e299bc89"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.6.0"
+version = "1.8.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -34,11 +34,11 @@ MuladdMacro = "0.2"
 Polyester = "0.7"
 OrdinaryDiffEqDifferentiation = "1.12.0"
 SciMLBase = "2.99"
-OrdinaryDiffEqCore = "1.29.0"
+OrdinaryDiffEqCore = "2"
 Aqua = "0.8.11"
 StaticArrays = "1.9"
 julia = "1.10"
-JET = "0.9.18, 0.10.4"
+JET = "0.9, 0.11"
 ADTypes = "1.16"
 OrdinaryDiffEqNonlinearSolve = "1.13.0"
 AllocCheck = "0.2"

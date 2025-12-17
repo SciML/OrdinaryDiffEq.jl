@@ -1,7 +1,7 @@
 module OrdinaryDiffEqSDIRK
 
 import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-                           initialize!, perform_step!, @unpack, unwrap_alg,
+                           initialize!, perform_step!, unwrap_alg,
                            calculate_residuals, alg_extrapolates,
                            OrdinaryDiffEqAlgorithm,
                            OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,

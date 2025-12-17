@@ -61,7 +61,7 @@ struct DummyController <: AbstractController
 end
 
 @inline function stepsize_controller!(integrator, controller::IController, alg)
-    @unpack qmin, qmax, gamma = integrator.opts
+    (; qmin, qmax, gamma) = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)
 
     if iszero(EEst)
@@ -77,7 +77,7 @@ end
 end
 
 function step_accept_controller!(integrator, controller::IController, alg, q)
-    @unpack qsteady_min, qsteady_max = integrator.opts
+    (; qsteady_min, qsteady_max) = integrator.opts
 
     if qsteady_min <= q <= qsteady_max
         q = one(q)
@@ -86,7 +86,7 @@ function step_accept_controller!(integrator, controller::IController, alg, q)
 end
 
 function step_reject_controller!(integrator, controller::IController, alg)
-    @unpack qold = integrator
+    (; qold) = integrator
     integrator.dt = qold
 end
 
@@ -133,9 +133,9 @@ mutable struct PIController{QT} <: AbstractController
 end
 
 @inline function stepsize_controller!(integrator, controller::PIController, alg)
-    @unpack qold = integrator
-    @unpack qmin, qmax, gamma = integrator.opts
-    @unpack beta1, beta2 = controller
+    (; qold) = integrator
+    (; qmin, qmax, gamma) = integrator.opts
+    (; beta1, beta2) = controller
     EEst = DiffEqBase.value(integrator.EEst)
 
     if iszero(EEst)
@@ -150,7 +150,7 @@ end
 end
 
 function step_accept_controller!(integrator, controller::PIController, alg, q)
-    @unpack qsteady_min, qsteady_max, qoldinit = integrator.opts
+    (; qsteady_min, qsteady_max, qoldinit) = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)
 
     if qsteady_min <= q <= qsteady_max
@@ -161,8 +161,8 @@ function step_accept_controller!(integrator, controller::PIController, alg, q)
 end
 
 function step_reject_controller!(integrator, controller::PIController, alg)
-    @unpack q11 = integrator
-    @unpack qmin, gamma = integrator.opts
+    (; q11) = integrator
+    (; qmin, gamma) = integrator.opts
     integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
@@ -268,7 +268,7 @@ end
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
 @inline function stepsize_controller!(integrator, controller::PIDController, alg)
-    @unpack qmax = integrator.opts
+    (; qmax) = integrator.opts
     beta1, beta2, beta3 = controller.beta
 
     EEst = DiffEqBase.value(integrator.EEst)
@@ -321,7 +321,7 @@ end
 end
 
 function step_accept_controller!(integrator, controller::PIDController, alg, dt_factor)
-    @unpack qsteady_min, qsteady_max = integrator.opts
+    (; qsteady_min, qsteady_max) = integrator.opts
 
     if qsteady_min <= inv(dt_factor) <= qsteady_max
         dt_factor = one(dt_factor)
@@ -401,7 +401,7 @@ function post_newton_controller!(integrator, alg)
 end
 
 @inline function stepsize_controller!(integrator, controller::PredictiveController, alg)
-    @unpack qmin, qmax, gamma = integrator.opts
+    (; qmin, qmax, gamma) = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)
     if iszero(EEst)
         q = inv(qmax)
@@ -410,10 +410,10 @@ end
             fac = gamma
         else
             if isfirk(alg)
-                @unpack iter = integrator.cache
-                @unpack maxiters = alg
+                (; iter) = integrator.cache
+                (; maxiters) = alg
             else
-                @unpack iter, maxiters = integrator.cache.nlsolver
+                (; iter, maxiters) = integrator.cache.nlsolver
             end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end
@@ -426,7 +426,7 @@ end
 end
 
 function step_accept_controller!(integrator, controller::PredictiveController, alg, q)
-    @unpack qmin, qmax, gamma, qsteady_min, qsteady_max = integrator.opts
+    (; qmin, qmax, gamma, qsteady_min, qsteady_max) = integrator.opts
 
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -449,6 +449,6 @@ function step_accept_controller!(integrator, controller::PredictiveController, a
 end
 
 function step_reject_controller!(integrator, controller::PredictiveController, alg)
-    @unpack dt, success_iter, qold = integrator
+    (; dt, success_iter, qold) = integrator
     integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end

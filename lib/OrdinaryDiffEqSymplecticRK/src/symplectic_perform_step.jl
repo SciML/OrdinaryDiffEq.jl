@@ -19,7 +19,7 @@ end
 
 @muladd function perform_step!(integrator, cache::SymplecticEulerConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    (; t, dt, f, p) = integrator
     duprev, uprev = integrator.uprev.x
     kuprev = integrator.fsalfirst.x[2]
     u = uprev + dt * kuprev
@@ -58,7 +58,7 @@ function initialize!(integrator, cache::SymplecticEulerCache)
 end
 
 @muladd function perform_step!(integrator, cache::SymplecticEulerCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    (; t, dt, f, p) = integrator
     duprev, uprev = integrator.uprev.x
     du, u = integrator.u.x
     kuprev = integrator.fsalfirst.x[2]
@@ -164,7 +164,7 @@ end
 
 @muladd function perform_step!(integrator, cache::VelocityVerletConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    (; t, dt, f, p) = integrator
     duprev, uprev = load_symp_state(integrator)
 
     # x(t+Δt) = x(t) + v(t)*Δt + 1/2*a(t)*Δt^2
@@ -181,7 +181,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::VelocityVerletCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    (; t, dt, f, p) = integrator
     duprev, uprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -200,7 +200,7 @@ end
 
 @muladd function perform_step!(integrator, cache::VerletLeapfrogConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    (; t, dt, f, p) = integrator
     duprev, uprev, kduprev, _ = load_symp_state(integrator)
 
     # kick-drift-kick scheme of the Leapfrog method:
@@ -222,7 +222,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::VerletLeapfrogCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    (; t, dt, f, p) = integrator
     duprev, uprev, kduprev, _ = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -246,7 +246,7 @@ end
 
 @muladd function perform_step!(integrator, cache::LeapfrogDriftKickDriftConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    (; t, dt, f, p) = integrator
     duprev, uprev, _, _ = load_symp_state(integrator)
 
     # drift-kick-drift scheme of the Leapfrog method, allowing for f1 to depend on v:
@@ -275,7 +275,7 @@ end
 
 @muladd function perform_step!(integrator, cache::LeapfrogDriftKickDriftCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    (; t, dt, f, p) = integrator
     duprev, uprev, _, _ = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -305,8 +305,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic2ConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, b1, b2 = cache
+    (; t, dt, f, p) = integrator
+    (; a1, a2, b1, b2) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -330,8 +330,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic2Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, b1, b2 = cache.tab
+    (; t, dt, f, p) = integrator
+    (; a1, a2, b1, b2) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -357,8 +357,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic3ConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, b1, b2, b3 = cache
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, b1, b2, b3) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -390,8 +390,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic3Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, b1, b2, b3 = cache.tab
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, b1, b2, b3) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -425,8 +425,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic4ConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, b1, b2, b3, b4 = cache
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, b1, b2, b3, b4) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -466,8 +466,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic4Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, b1, b2, b3, b4 = cache.tab
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, b1, b2, b3, b4) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -509,9 +509,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic45ConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    (; t, dt, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    @unpack a1, a2, a3, a4, a5, b1, b2, b3, b4, b5 = cache
+    (; a1, a2, a3, a4, a5, b1, b2, b3, b4, b5) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -562,9 +562,9 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic45Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    (; t, dt, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    @unpack a1, a2, a3, a4, a5, b1, b2, b3, b4, b5 = cache.tab
+    (; a1, a2, a3, a4, a5, b1, b2, b3, b4, b5) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -617,8 +617,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic5ConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6 = cache
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -673,8 +673,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic5Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6 = cache.tab
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -731,8 +731,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic6ConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, b1, b2, b3, b4, b5, b6, b7, b8 = cache
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, a7, a8, b1, b2, b3, b4, b5, b6, b7, b8) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -800,8 +800,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic6Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, b1, b2, b3, b4, b5, b6, b7, b8 = cache.tab
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, a7, a8, b1, b2, b3, b4, b5, b6, b7, b8) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -871,8 +871,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic62ConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10 = cache
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -954,8 +954,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic62Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10 = cache.tab
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -1038,9 +1038,9 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::McAte8ConstantCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16,
-    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16 = cache
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16,
+    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -1164,9 +1164,9 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::McAte8Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16,
-    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16 = cache.tab
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16,
+    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -1292,9 +1292,9 @@ end
 
 @muladd function perform_step!(integrator, cache::KahanLi8ConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
-    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18 = cache
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -1432,9 +1432,9 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KahanLi8Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
-    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18 = cache.tab
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -1574,13 +1574,13 @@ end
 
 @muladd function perform_step!(integrator, cache::SofSpa10ConstantCache,
         repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
     a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34,
     a35, a36,
     b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18,
     b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34,
-    b35, b36 = cache
+    b35, b36) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -1844,13 +1844,13 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SofSpa10Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+    (; t, dt, f, p) = integrator
+    (; a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
     a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34,
     a35, a36,
     b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18,
     b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34,
-    b35, b36 = cache.tab
+    b35, b36) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 

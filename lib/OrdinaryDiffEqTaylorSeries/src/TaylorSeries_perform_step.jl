@@ -11,7 +11,7 @@ end
 
 @muladd function perform_step!(
         integrator, cache::ExplicitTaylor2ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (; t, dt, uprev, u, f, p) = integrator
     k1 = f(uprev, p, t)
     u1 = make_taylor(uprev, k1)
     t1 = TaylorScalar{1}(t, one(t))
@@ -34,8 +34,8 @@ function initialize!(integrator, cache::ExplicitTaylor2Cache)
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitTaylor2Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k1, k2, k3, utilde, tmp = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k1, k2, k3, utilde, tmp) = cache
 
     # The following code is written to be fully non-allocating
     f(k1, uprev, p, t)
@@ -55,8 +55,8 @@ end
 
 @muladd function perform_step!(
         integrator, cache::ExplicitTaylorConstantCache{P}, repeat_step = false) where {P}
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack jet = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; jet) = cache
     utaylor = jet(uprev, t)
     u = map(x -> evaluate_polynomial(x, dt), utaylor)
     if integrator.opts.adaptive
@@ -81,8 +81,8 @@ end
 
 @muladd function perform_step!(
         integrator, cache::ExplicitTaylorCache{P}, repeat_step = false) where {P}
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack jet, utaylor, utilde, tmp, atmp, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; jet, utaylor, utilde, tmp, atmp, thread) = cache
 
     jet(utaylor, uprev, t)
     for i in eachindex(utaylor)

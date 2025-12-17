@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSymplecticRK"
 uuid = "fa646aed-7ef9-47eb-84c4-9443fc8cbfa8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.7.0"
+version = "1.9.0"
 
 [deps]
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
@@ -38,10 +38,10 @@ Polyester = "0.7"
 LinearAlgebra = "1.10"
 OrdinaryDiffEqRKN = "1.4.0"
 SciMLBase = "2.99"
-OrdinaryDiffEqCore = "1.29.0"
+OrdinaryDiffEqCore = "2"
 Aqua = "0.8.11"
 julia = "1.10"
-JET = "0.9.18, 0.10.4"
+JET = "0.9, 0.11"
 RecursiveArrayTools = "3.36"
 AllocCheck = "0.2"
 DiffEqBase = "6.176"

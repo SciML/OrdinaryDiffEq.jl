@@ -1,5 +1,5 @@
 function nordsieck_adjust!(integrator, cache::T) where {T}
-    @unpack nextorder, order = cache
+    (; nextorder, order) = cache
     if nextorder != order
         # TODO: optimize?
         nordsieck_adjust_order!(cache, nextorder - order)
@@ -15,7 +15,7 @@ end
 
 function nordsieck_finalize!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
-    @unpack order, dts = cache
+    (; order, dts) = cache
     update_nordsieck_vector!(cache)
     cache.n_wait -= 1
     if is_nordsieck_change_order(cache, 1) && cache.order != 12
@@ -30,9 +30,9 @@ end
 
 function nordsieck_prepare_next!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
-    @unpack maxη, order, L = cache
+    (; maxη, order, L) = cache
     # TODO: further clean up
-    @unpack bias1, bias2, bias3, addon = integrator.alg
+    (; bias1, bias2, bias3, addon) = integrator.alg
     if integrator.EEst > one(integrator.EEst)
         nordsieck_rewind!(cache)
         cache.n_wait = max(2, cache.n_wait)
@@ -59,7 +59,7 @@ function nordsieck_prepare_next!(integrator, cache::T) where {T}
     if isconst
         cache.Δ = cache.c_LTE * cache.Δ
     else
-        @.. broadcast=false cache.Δ=cache.c_LTE * cache.Δ
+        @.. broadcast=false cache.Δ=cache.c_LTE*cache.Δ
     end
     return nothing
 end
@@ -96,7 +96,7 @@ function calc_coeff!(cache::T) where {T}
     @inbounds begin
         isconst = T <: OrdinaryDiffEqConstantCache
         isvarorder = is_nordsieck_change_order(cache, 1)
-        @unpack m, l, dts, order = cache
+        (; m, l, dts, order) = cache
         dtsum = dt = dts[1]
         if order == 1
             l[1] = l[2] = cache.c_LTE₋₁ = cache.c_𝒟 = 1
@@ -160,26 +160,30 @@ end
 function perform_predict!(cache::T, rewind = false) where {T}
     @inbounds begin
         isconst = T <: OrdinaryDiffEqConstantCache
-        @unpack z, order = cache
+        (; z, order) = cache
         # This can be parallelized
         if !rewind
             if isconst
                 for i in 1:order, j in order:-1:i
+
                     z[j] = z[j] + z[j + 1]
                 end
             else
                 for i in 1:order, j in order:-1:i
-                    @.. broadcast=false z[j]=z[j] + z[j + 1]
+
+                    @.. broadcast=false z[j]=z[j]+z[j + 1]
                 end
             end # endif const cache
         else
             if isconst
                 for i in 1:order, j in order:-1:i
+
                     z[j] = z[j] - z[j + 1]
                 end
             else
                 for i in 1:order, j in order:-1:i
-                    @.. broadcast=false z[j]=z[j] - z[j + 1]
+
+                    @.. broadcast=false z[j]=z[j]-z[j + 1]
                 end
             end # endif const cache
         end # endif !rewind
@@ -191,7 +195,7 @@ function update_nordsieck_vector!(cache::T) where {T}
     isvode = (T <: JVODECache || T <: JVODEConstantCache)
     @inbounds begin
         isconst = T <: OrdinaryDiffEqConstantCache
-        @unpack z, Δ, l, order = cache
+        (; z, Δ, l, order) = cache
         if isconst
             for i in 1:(order + 1)
                 z[i] = muladd.(l[i], Δ, z[i])
@@ -205,13 +209,13 @@ function update_nordsieck_vector!(cache::T) where {T}
 end
 
 function nlsolve_functional!(integrator, cache::T) where {T}
-    @unpack f, dt, t, p = integrator
+    (; f, dt, t, p) = integrator
     isconstcache = T <: OrdinaryDiffEqConstantCache
-    @unpack z, l, c_conv, Δ = cache
+    (; z, l, c_conv, Δ) = cache
     if isconstcache
         ratetmp = integrator.f(z[1], p, dt + t)
     else
-        @unpack ratetmp = cache
+        (; ratetmp) = cache
         integrator.f(ratetmp, z[1], p, dt + t)
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -233,9 +237,9 @@ function nlsolve_functional!(integrator, cache::T) where {T}
             cache.Δ = ratetmp - cache.Δ
         else
             @.. broadcast=false integrator.u=-z[2]
-            @.. broadcast=false ratetmp=inv(l[2]) * muladd(dt, ratetmp, integrator.u)
-            @.. broadcast=false integrator.u=ratetmp + z[1]
-            @.. broadcast=false cache.Δ=ratetmp - cache.Δ
+            @.. broadcast=false ratetmp=inv(l[2])*muladd(dt, ratetmp, integrator.u)
+            @.. broadcast=false integrator.u=ratetmp+z[1]
+            @.. broadcast=false cache.Δ=ratetmp-cache.Δ
         end
         # @show norm(dt*ratetmp - ( z[2] + (integrator.u - z[1])*l[2] ))
         # @show norm(cache.Δ - (integrator.u - z[1]))
@@ -262,7 +266,7 @@ end
 
 function nordsieck_rescale!(cache::T, rewind = false) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
-    @unpack z, dts, order = cache
+    (; z, dts, order) = cache
     eta = rewind ? dts[2] / dts[1] : dts[1] / dts[2]
     factor = eta
     for i in 2:(order + 1)
@@ -298,7 +302,7 @@ end
 
 function nordsieck_adjust_order!(cache::T, dorder) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
-    @unpack order, dts = cache
+    (; order, dts) = cache
     # WIP: uncomment when finished
     #@inbound begin
     begin
@@ -355,7 +359,7 @@ end
 
 function chooseη!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
-    @unpack ηq, η₋₁, η₊₁, order, z, Δ = cache
+    (; ηq, η₋₁, η₊₁, order, z, Δ) = cache
     η = max(ηq, η₋₁, η₊₁)
     if η < integrator.opts.qsteady_max
         cache.η = 1
@@ -394,9 +398,10 @@ end
 # TODO: Check them
 function stepsize_η₊₁!(integrator, cache::T, order) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
-    isconstcache || (@unpack atmp, ratetmp = cache)
-    @unpack uprev, t, u = integrator
-    @unpack z, c_LTE₊₁, dts, c_𝒟 = cache
+    atmp = ratetmp = integrator.uprev  # Initialize for JET
+    isconstcache || ((; atmp, ratetmp) = cache)
+    (; uprev, t, u) = integrator
+    (; z, c_LTE₊₁, dts, c_𝒟) = cache
     bias3 = integrator.alg.bias3
     addon = integrator.alg.addon
     q = order
@@ -424,9 +429,10 @@ end
 
 function stepsize_η₋₁!(integrator, cache::T, order) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
+    atmp = integrator.uprev  # Initialize for JET
     isconstcache || (atmp = cache.atmp)
-    @unpack uprev, t, u = integrator
-    @unpack z, c_LTE₋₁ = cache
+    (; uprev, t, u) = integrator
+    (; z, c_LTE₋₁) = cache
     bias1 = integrator.alg.bias1
     addon = integrator.alg.addon
     cache.η₋₁ = 0

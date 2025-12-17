@@ -103,6 +103,7 @@
     still works for matrix-free definitions of the mass matrix.
     =#
 
+    ftmp = nothing
     if prob.f.mass_matrix != I && (!(prob.f isa DynamicalODEFunction) ||
         any(mm != I for mm in prob.f.mass_matrix))
         ftmp = zero(f₀)

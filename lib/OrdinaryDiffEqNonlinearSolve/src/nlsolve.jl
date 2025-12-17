@@ -19,6 +19,8 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
     always_new = is_always_new(nlsolver)
     check_div′ = check_div(nlsolver)
     @label REDO
+    # Initialize γW for JET
+    γW = one(integrator.dt)
     if isnewton(nlsolver)
         cache === nothing &&
             throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
@@ -30,13 +32,15 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
         always_new || update_W!(nlsolver, integrator, cache, γW, repeat_step)
     end
 
-    @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
+    (; maxiters, κ, fast_convergence_cutoff) = nlsolver
 
     initialize!(nlsolver, integrator)
     nlsolver.status = check_div′ ? Divergence : Convergence
     η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
 
-    local ndz
+    # Initialize ndz and ndzprev for JET
+    ndz = one(η)
+    ndzprev = one(η)
     for iter in 1:maxiters
         if always_new && isnewton(nlsolver)
             if ArrayInterface.ismutable(integrator.u)

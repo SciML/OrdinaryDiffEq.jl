@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqExtrapolation"
 uuid = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "1.9.0"
+version = "1.11.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -36,10 +36,10 @@ LinearSolve = "3.26"
 Polyester = "0.7"
 OrdinaryDiffEqDifferentiation = "1.12.0"
 SciMLBase = "2.99"
-OrdinaryDiffEqCore = "1.29.0"
+OrdinaryDiffEqCore = "2"
 Aqua = "0.8.11"
 julia = "1.10"
-JET = "0.9.18, 0.10.4"
+JET = "0.9, 0.11"
 ADTypes = "1.16"
 RecursiveArrayTools = "3.36"
 FastPower = "1.1"

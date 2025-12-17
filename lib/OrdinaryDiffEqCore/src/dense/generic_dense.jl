@@ -17,7 +17,7 @@ struct DerivativeOrderNotPossibleError <: Exception end
 
 function Base.showerror(io::IO, e::DerivativeOrderNotPossibleError)
     print(io, DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE)
-    println(io, TruncatedStacktraces.VERBOSE_MSG)
+    println(io, VERBOSE_MSG)
 end
 
 ## Integrator Dispatches
@@ -555,7 +555,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tvals, id::I, idxs, ::Type{deriv}, p,
         continuity::Symbol = :left) where {I, deriv}
-    @unpack ts, timeseries, ks, f, cache, differential_vars = id
+    (; ts, timeseries, ks, f, cache, differential_vars) = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
     # start the search thinking it's ts[1]-ts[2]
@@ -593,7 +593,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(vals, tvals, id::I, idxs, ::Type{deriv}, p,
         continuity::Symbol = :left) where {I, deriv}
-    @unpack ts, timeseries, ks, f, cache, differential_vars = id
+    (; ts, timeseries, ks, f, cache, differential_vars) = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
 
@@ -602,6 +602,8 @@ function ode_interpolation!(vals, tvals, id::I, idxs, ::Type{deriv}, p,
     i₊ = 2
     # if CompositeCache, have an inplace cache for lower allocations
     # (expecting the same algorithms for large portions of ts)
+    current_alg = nothing
+    cache_i₊ = nothing
     if cache isa CompositeCache
         current_alg = id.alg_choice[i₊]
         cache_i₊ = cache.caches[current_alg]
@@ -758,7 +760,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tval::Number, id::I, idxs, ::Type{deriv}, p,
         continuity::Symbol = :left) where {I, deriv}
-    @unpack ts, timeseries, ks, f, cache, differential_vars = id
+    (; ts, timeseries, ks, f, cache, differential_vars) = id
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
@@ -842,7 +844,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(out, tval::Number, id::I, idxs, ::Type{deriv}, p,
         continuity::Symbol = :left) where {I, deriv}
-    @unpack ts, timeseries, ks, f, cache, differential_vars = id
+    (; ts, timeseries, ks, f, cache, differential_vars) = id
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left

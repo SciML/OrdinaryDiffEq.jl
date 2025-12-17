@@ -48,9 +48,8 @@ end
 @muladd function perform_step!(
         integrator, cache::MER5v2ConstantCache,
         repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack (
-        c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12, c_13, c_14, a2_1, a3_1,
+    (; t, dt, uprev, u, f, p) = integrator
+    (;  c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12, c_13, c_14, a2_1, a3_1,
         a4_1, a5_1, a6_1, a7_1, a8_1, a9_1, a10_1, a11_1, a12_1, a13_1,
         a14_1, a4_2, a5_2, a6_2, a7_2, a8_2, a9_2, a10_2, a11_2, a12_2,
         a13_2, a14_2, a4_3, a5_3, a6_3, a7_3, a8_3, a9_3, a10_3, a11_3,
@@ -191,8 +190,8 @@ end
 @muladd function perform_step!(
         integrator, cache::MER6v2ConstantCache,
         repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack (c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10,
+    (; t, dt, uprev, u, f, p) = integrator
+    (; c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10,
         c_11, c_12, c_13, c_14, c_15, a2_1, a3_1,
         a4_1, a5_1, a6_1, a7_1, a8_1, a9_1, a10_1, a11_1, a12_1, a13_1,
         a14_1, a15_1, a4_2, a5_2, a6_2, a7_2, a8_2, a9_2, a10_2, a11_2, a12_2,
@@ -341,8 +340,8 @@ end
 @muladd function perform_step!(
         integrator, cache::RK6v4ConstantCache,
         repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack (c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12, c_13, c_14, c_15,
+    (; t, dt, uprev, u, f, p) = integrator
+    (; c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12, c_13, c_14, c_15,
     c_16, c_17, c_18, c_19, c_20,
     c_21, c_22, a2_1, a3_1, a4_1, a5_1,
     a6_1, a7_1, a8_1, a9_1, a10_1, a11_1, a12_1,

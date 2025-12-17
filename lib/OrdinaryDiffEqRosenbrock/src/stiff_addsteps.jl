@@ -4,7 +4,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @unpack tf, uf, d = cache
+        (; tf, uf, d) = cache
         dtγ = dt * d
         neginvdtγ = -inv(dtγ)
         dto2 = dt / 2
@@ -85,7 +85,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
         linsolve_tmp = @.. du + dtd[1] * dT
         k1 = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
         # constant number for type stability make sure this is greater than num_stages
-        ks = ntuple(Returns(k1), 20)
+        ks = ntuple(Returns(k1), Val(20))
         # Last stage affect's ks for Rodas5,5P,6P
         for stage in 2:num_stages
             u = uprev

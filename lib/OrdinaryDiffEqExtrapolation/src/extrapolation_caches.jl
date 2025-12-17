@@ -329,7 +329,7 @@ function create_extrapolation_coefficients(T,
             ImplicitHairerWannerExtrapolation})
     # Compute and return extrapolation_coefficients
 
-    @unpack min_order, init_order, max_order, sequence = alg
+    (; min_order, init_order, max_order, sequence) = alg
 
     # Initialize subdividing_sequence:
     if sequence == :harmonic
@@ -395,7 +395,7 @@ end
 function create_extrapolation_coefficients(T, alg::ImplicitEulerBarycentricExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @unpack min_order, init_order, max_order, sequence = alg
+    (; min_order, init_order, max_order, sequence) = alg
 
     # Initialize subdividing_sequence:
     if sequence == :harmonic
@@ -462,7 +462,7 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
         alg::ImplicitEulerBarycentricExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @unpack min_order, init_order, max_order, sequence = alg
+    (; min_order, init_order, max_order, sequence) = alg
 
     max_order > 15 &&
         error("max_order > 15 not allowed for Float32 or Float64 with this algorithm. That's a bad idea.")
@@ -660,7 +660,7 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
             ImplicitHairerWannerExtrapolation})
     # Compute and return extrapolation_coefficients
 
-    @unpack min_order, init_order, max_order, sequence = alg
+    (; min_order, init_order, max_order, sequence) = alg
 
     max_order > 15 &&
         error("max_order > 15 not allowed for Float32 or Float64 with this algorithm. That's a bad idea.")
@@ -855,7 +855,7 @@ end
 function generate_sequence(T, alg::ImplicitEulerExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @unpack min_order, init_order, max_order, sequence = alg
+    (; min_order, init_order, max_order, sequence) = alg
 
     # Initialize subdividing_sequence:
     if sequence == :harmonic
@@ -874,7 +874,7 @@ end
 function generate_sequence(T::Type{<:CompiledFloats}, alg::ImplicitEulerExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @unpack min_order, init_order, max_order, sequence = alg
+    (; min_order, init_order, max_order, sequence) = alg
 
     # Initialize subdividing_sequence:
     if sequence == :harmonic

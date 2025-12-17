@@ -3,7 +3,7 @@ module OrdinaryDiffEqPDIRK
 import OrdinaryDiffEqCore: isfsal, alg_order, _unwrap_val,
                            OrdinaryDiffEqNewtonAlgorithm, OrdinaryDiffEqConstantCache,
                            OrdinaryDiffEqMutableCache, constvalue, alg_cache,
-                           uses_uprev, @unpack, unwrap_alg, @cache, DEFAULT_PRECS,
+                           uses_uprev, unwrap_alg, @cache, DEFAULT_PRECS,
                            @threaded, initialize!, perform_step!, isthreaded,
                            full_cache, get_fsalfirstlast, differentiation_rk_docstring,
                            _bool_to_ADType, _process_AD_choice
