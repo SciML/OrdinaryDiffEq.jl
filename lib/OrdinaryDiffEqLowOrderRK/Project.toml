@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqLowOrderRK"
 uuid = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.7.0"
+version = "1.8.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"

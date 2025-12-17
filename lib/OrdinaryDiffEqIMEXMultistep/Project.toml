@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqIMEXMultistep"
 uuid = "9f002381-b378-40b7-97a6-27a27c83f129"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.8.0"
+version = "1.9.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
