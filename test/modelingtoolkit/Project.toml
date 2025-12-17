@@ -10,7 +10,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 DiffEqDevTools = "2"
-ModelingToolkit = "10.10"
+ModelingToolkit = "10.10, 11"
 NonlinearSolve = "4.10"
 OrdinaryDiffEqBDF = "1"
 OrdinaryDiffEqNonlinearSolve = "1"
