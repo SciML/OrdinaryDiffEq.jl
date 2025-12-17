@@ -38,9 +38,7 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
     nlsolver.status = check_div′ ? Divergence : Convergence
     η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
 
-    # Initialize ndz and ndzprev for JET
     ndz = one(η)
-    ndzprev = one(η)
     for iter in 1:maxiters
         if always_new && isnewton(nlsolver)
             if ArrayInterface.ismutable(integrator.u)
@@ -53,7 +51,7 @@ function nlsolve!(nlsolver::NL, integrator::SciMLBase.DEIntegrator,
         nlsolver.iter = iter
 
         # compute next step and calculate norm of residuals
-        iter > 1 && (ndzprev = ndz)
+        ndzprev = ndz
         if isnewton(nlsolver)
             # Newton solve requires γW in order to update W
             ndz = compute_step!(nlsolver, integrator, γW)
