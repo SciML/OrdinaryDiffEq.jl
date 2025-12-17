@@ -1,6 +1,6 @@
 # Generic tableau-based perform_step! implementation for SDIRK methods
 
-using OrdinaryDiffEqCore: @unpack, unwrap_alg, OrdinaryDiffEqCore, calculate_residuals
+using OrdinaryDiffEqCore: unwrap_alg, OrdinaryDiffEqCore, calculate_residuals
 using OrdinaryDiffEqNonlinearSolve: markfirststage!, nlsolve!, nlsolvefail, isnewton, set_new_W!, get_W
 using OrdinaryDiffEqDifferentiation: dolinsolve
 using LinearAlgebra: I, mul!
@@ -35,9 +35,9 @@ end
 
 # Dispatch for unified caches - all SDIRK algorithms use these same cache types
 @muladd function perform_step!(integrator, cache::SDIRKCache, repeat_step=false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack zs, atmp, nlsolver, tab = cache
-    @unpack tmp = nlsolver
+    (; t, dt, uprev, u, f, p) = integrator
+    (; zs, atmp, nlsolver, tab) = cache
+    (; tmp) = nlsolver
     alg = unwrap_alg(integrator, true)
     step_limiter! = _get_step_limiter(alg, cache)
     
@@ -210,8 +210,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SDIRKConstantCache, repeat_step=false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tab, nlsolver = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tab, nlsolver) = cache
     alg = unwrap_alg(integrator, true)
     
     s = size(tab.A, 1)
