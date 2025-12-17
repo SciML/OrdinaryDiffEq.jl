@@ -219,8 +219,6 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     ff1 = zero(u)
     ff2 = zero(u)
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
@@ -253,7 +251,7 @@ end
         dw2 = imag(dw12)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         atmp1 = calculate_residuals(dw1, uprev, u, atol, rtol, internalnorm, t)
         atmp2 = calculate_residuals(dw2, uprev, u, atol, rtol, internalnorm, t)
         ndw = internalnorm(atmp1, t) + internalnorm(atmp2, t)
@@ -267,6 +265,7 @@ end
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         w1 = @. w1 - dw1
@@ -277,7 +276,6 @@ end
         z2 = @. T21 * w1 + T22 * w2
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -360,8 +358,6 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -413,7 +409,7 @@ end
         dw2 = imag(dw12)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
         ndw1 = internalnorm(atmp, t)
         calculate_residuals!(atmp, dw2, uprev, u, atol, rtol, internalnorm, t)
@@ -427,6 +423,7 @@ end
             if diverge
                 break
             end
+            η = θ / (1 - θ)
         end
 
         @. w1 = w1 - dw1
@@ -437,7 +434,6 @@ end
         @. z2 = T21 * w1 + T22 * w2
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -534,8 +530,6 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -573,7 +567,7 @@ end
         dw3 = imag(dw23)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         atmp1 = calculate_residuals(dw1, uprev, u, atol, rtol, internalnorm, t)
         atmp2 = calculate_residuals(dw2, uprev, u, atol, rtol, internalnorm, t)
         atmp3 = calculate_residuals(dw3, uprev, u, atol, rtol, internalnorm, t)
@@ -587,6 +581,7 @@ end
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         w1 = @.. w1-dw1
@@ -599,7 +594,6 @@ end
         z3 = @.. T31 * w1+w2           # T32 = 1, T33 = 0
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -724,8 +718,6 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -803,7 +795,7 @@ end
         @.. dw3=imag(dw23)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
         ndw1 = internalnorm(atmp, t)
         calculate_residuals!(atmp, dw2, uprev, u, atol, rtol, internalnorm, t)
@@ -821,6 +813,7 @@ end
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         @.. w1=w1 - dw1
@@ -833,7 +826,6 @@ end
         @.. z3=T31 * w1 + w2           # T32 = 1, T33 = 0
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -1001,8 +993,6 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1053,7 +1043,7 @@ end
         dw5 = imag(dw45)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         atmp1 = calculate_residuals(dw1, uprev, u, atol, rtol, internalnorm, t)
         atmp2 = calculate_residuals(dw2, uprev, u, atol, rtol, internalnorm, t)
         atmp3 = calculate_residuals(dw3, uprev, u, atol, rtol, internalnorm, t)
@@ -1072,6 +1062,7 @@ end
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         w1 = @.. w1-dw1
@@ -1088,7 +1079,6 @@ end
         z5 = @.. T51*w1+w2+w4#= T52=1, T53=0, T54=1, T55=0 =#
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -1260,8 +1250,6 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1378,7 +1366,7 @@ end
         @.. dw5=imag(dw45)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
         ndw1 = internalnorm(atmp, t)
         calculate_residuals!(atmp, dw2, uprev, u, atol, rtol, internalnorm, t)
@@ -1401,6 +1389,7 @@ end
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         @.. w1=w1 - dw1
@@ -1417,8 +1406,6 @@ end
         @.. z5=T51 * w1 + w2 + w4#= T52=1, T53=0, T54=1, T55=0 =#
 
         # check stopping criterion
-
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -1579,8 +1566,6 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1633,7 +1618,7 @@ end
         integrator.stats.nsolve += (num_stages + 1) ÷ 2
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         ndw = 0.0
         for i in 1:num_stages
             ndw += internalnorm(
@@ -1650,6 +1635,7 @@ end
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         for i in 1:num_stages
@@ -1672,7 +1658,6 @@ end
         end
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -1846,8 +1831,6 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1939,7 +1922,7 @@ end
         end
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
         ndw = internalnorm(atmp, t)
         for i in 2:num_stages
@@ -1957,6 +1940,7 @@ end
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         @.. w[1] = w[1] - dw1
@@ -1980,7 +1964,6 @@ end
         end
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :

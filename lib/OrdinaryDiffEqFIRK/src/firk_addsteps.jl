@@ -45,7 +45,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA3ConstantCache)
     # Initialize variables for JET
     ndw = one(eltype(u))
     ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -76,7 +75,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3ConstantCache)
         dw2 = imag(dw12)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         atmp1 = calculate_residuals(dw1, uprev, u, atol, rtol, internalnorm, t)
         atmp2 = calculate_residuals(dw2, uprev, u, atol, rtol, internalnorm, t)
         ndw = internalnorm(atmp1, t) + internalnorm(atmp2, t)
@@ -90,6 +89,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3ConstantCache)
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         w1 = @. w1 - dw1
@@ -100,7 +100,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA3ConstantCache)
         z2 = @. T21 * w1 + T22 * w2
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -173,7 +172,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
     # Initialize variables for JET
     ndw = one(eltype(u))
     ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -225,7 +223,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
         dw2 = imag(dw12)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
         ndw1 = internalnorm(atmp, t)
         calculate_residuals!(atmp, dw2, uprev, u, atol, rtol, internalnorm, t)
@@ -239,6 +237,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
             if diverge
                 break
             end
+            η = θ / (1 - θ)
         end
 
         @. w1 = w1 - dw1
@@ -249,7 +248,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
         @. z2 = T21 * w1 + T22 * w2
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -339,8 +337,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA5ConstantCache,
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -378,7 +374,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5ConstantCache,
         dw3 = imag(dw23)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         atmp1 = calculate_residuals(dw1, uprev, u, atol, rtol, internalnorm, t)
         atmp2 = calculate_residuals(dw2, uprev, u, atol, rtol, internalnorm, t)
         atmp3 = calculate_residuals(dw3, uprev, u, atol, rtol, internalnorm, t)
@@ -392,6 +388,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5ConstantCache,
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         w1 = @.. w1-dw1
@@ -404,7 +401,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA5ConstantCache,
         z3 = @.. T31 * w1+w2           # T32 = 1, T33 = 0
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -497,8 +493,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -576,7 +570,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
         @.. dw3=imag(dw23)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
         ndw1 = internalnorm(atmp, t)
         calculate_residuals!(atmp, dw2, uprev, u, atol, rtol, internalnorm, t)
@@ -594,6 +588,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         @.. w1=w1 - dw1
@@ -606,7 +601,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
         @.. z3=T31 * w1 + w2           # T32 = 1, T33 = 0
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -736,8 +730,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA9ConstantCache,
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -788,7 +780,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA9ConstantCache,
         dw5 = imag(dw45)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         atmp1 = calculate_residuals(dw1, uprev, u, atol, rtol, internalnorm, t)
         atmp2 = calculate_residuals(dw2, uprev, u, atol, rtol, internalnorm, t)
         atmp3 = calculate_residuals(dw3, uprev, u, atol, rtol, internalnorm, t)
@@ -807,6 +799,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA9ConstantCache,
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         w1 = @.. w1-dw1
@@ -823,7 +816,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA9ConstantCache,
         z5 = @.. T51*w1+w2+w4#= T52=1, T53=0, T54=1, T55=0 =#
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -970,8 +962,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1088,7 +1078,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
         @.. dw5=imag(dw45)
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
         ndw1 = internalnorm(atmp, t)
         calculate_residuals!(atmp, dw2, uprev, u, atol, rtol, internalnorm, t)
@@ -1111,6 +1101,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         @.. w1=w1 - dw1
@@ -1127,8 +1118,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
         @.. z5=T51 * w1 + w2 + w4#= T52=1, T53=0, T54=1, T55=0 =#
 
         # check stopping criterion
-
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -1247,8 +1236,6 @@ function _ode_addstep!(integrator, cache::AdaptiveRadauConstantCache, repeat_ste
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1300,7 +1287,7 @@ function _ode_addstep!(integrator, cache::AdaptiveRadauConstantCache, repeat_ste
         integrator.stats.nsolve += (num_stages + 1) ÷ 2
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         ndw = 0.0
         for i in 1:num_stages
             ndw += internalnorm(
@@ -1318,6 +1305,7 @@ function _ode_addstep!(integrator, cache::AdaptiveRadauConstantCache, repeat_ste
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         for i in 1:num_stages
@@ -1340,7 +1328,6 @@ function _ode_addstep!(integrator, cache::AdaptiveRadauConstantCache, repeat_ste
         end
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
@@ -1484,8 +1471,6 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    ndwprev = one(eltype(u))
-    θ = one(eltype(u))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
@@ -1577,7 +1562,7 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
         end
 
         # compute norm of residuals
-        iter > 1 && (ndwprev = ndw)
+        ndwprev = ndw
         calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
         ndw = internalnorm(atmp, t)
         for i in 2:num_stages
@@ -1595,6 +1580,7 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
             if diverge || veryslowconvergence
                 break
             end
+            η = θ / (1 - θ)
         end
 
         @.. w[1] = w[1] - dw1
@@ -1618,7 +1604,6 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
         end
 
         # check stopping criterion
-        iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
