@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqLowStorageRK"
 uuid = "b0944070-b475-4768-8dec-fb6eb410534d"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.8.0"
+version = "1.9.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"

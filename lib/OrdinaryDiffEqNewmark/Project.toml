@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqNewmark"
 uuid = "d204908a-63b9-11ef-18f5-cfec7123a93b"
 authors = ["Dennis Ogiermann <termi-official@users.noreply.github.com>"]
-version = "1.0.0"
+version = "1.1.0"
 
 [deps]
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
