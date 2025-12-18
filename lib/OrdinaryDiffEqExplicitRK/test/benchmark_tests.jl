@@ -10,7 +10,7 @@ using LinearAlgebra
 using Plots
 
 
-include("../src/tsit5_matrix.jl")
+include("../src/algorithms.jl")
 
 # Import tableau construction functions
 using OrdinaryDiffEqExplicitRK: constructDormandPrince
