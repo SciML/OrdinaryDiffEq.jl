@@ -80,11 +80,26 @@ Kvaerno5
 
 ### IMEX SDIRK
 
+These methods support `SplitODEProblem` for implicit-explicit (IMEX) integration,
+where the stiff part is treated implicitly and the non-stiff part is treated explicitly.
+
 ```@docs
 KenCarp4
 KenCarp47
 KenCarp5
 KenCarp58
+```
+
+### Higher-Order ESDIRK
+
+Higher-order ESDIRK (Explicit first stage Singly Diagonally Implicit Runge-Kutta) methods.
+These are high-order L-stable implicit methods where the first stage is explicit.
+
+!!! note
+    These methods do not support `SplitODEProblem`. For IMEX integration with split
+    problems, use the KenCarp methods above instead.
+
+```@docs
 ESDIRK54I8L2SA
 ESDIRK436L2SA2
 ESDIRK437L2SA
