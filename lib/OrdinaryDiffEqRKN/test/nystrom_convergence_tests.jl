@@ -47,6 +47,36 @@ sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
 @test sim.𝒪est[:l2]≈7 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
+# Float64 convergence tests for DPRKN methods
+# These tests ensure the CompiledFloats coefficients match the rational coefficients
+# (Regression test for https://github.com/SciML/OrdinaryDiffEq.jl/issues/1938)
+@testset "Float64 DPRKN convergence" begin
+    # Use longer integration time to keep errors above machine precision
+    prob_f64 = DynamicalODEProblem(ff_harmonic, ones(2), fill(0.0, 2), (0.0, 20.0))
+    dts_f64 = 1.0 ./ 2.0 .^ (2:5)
+
+    sim = test_convergence(dts_f64, prob_f64, DPRKN4())
+    @test sim.𝒪est[:l2]≈4 rtol=1e-1
+
+    sim = test_convergence(dts_f64, prob_f64, DPRKN5())
+    @test sim.𝒪est[:l2]≈5 rtol=1e-1
+
+    sim = test_convergence(dts_f64, prob_f64, DPRKN6())
+    @test sim.𝒪est[:l2]≈6 rtol=1e-1
+
+    sim = test_convergence(dts_f64, prob_f64, DPRKN6FM())
+    @test sim.𝒪est[:l2]≈6 rtol=1e-1
+
+    # DPRKN8 needs larger timesteps and longer integration to avoid hitting machine precision
+    prob_f64_long = DynamicalODEProblem(ff_harmonic, ones(2), fill(0.0, 2), (0.0, 50.0))
+    dts_f64_large = [1.0, 0.5, 0.25, 0.125]
+    sim = test_convergence(dts_f64_large, prob_f64_long, DPRKN8())
+    @test sim.𝒪est[:l2]≈8 rtol=1e-1
+
+    # DPRKN12 is too accurate for Float64 convergence testing (hits machine precision
+    # even at dt=1.0), so we only test it with BigFloat (see tests above)
+end
+
 sol = solve(prob, Nystrom4(), dt = 1 / 1000)
 
 # Nyström method

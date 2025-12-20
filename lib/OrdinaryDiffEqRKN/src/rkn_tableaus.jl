@@ -936,9 +936,9 @@ function DPRKN5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
     a32 = convert(T, 1 // 48)
     a41 = convert(T, 1 // 24)
     a43 = convert(T, 1 // 12)
-    a51 = convert(T, 7 // 90)
-    a53 = convert(T, 4 // 15)
-    a54 = convert(T, 1 // 15)
+    a51 = convert(T, 0.0703125) # 9/128
+    a53 = convert(T, 0.140625)  # 9/64
+    a54 = convert(T, 0.0703125) # 9/128
     a61 = convert(T, 0.07777777777777778)
     a63 = convert(T, 0.26666666666666666)
     a64 = convert(T, 0.06666666666666667)
