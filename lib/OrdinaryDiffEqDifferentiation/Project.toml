@@ -30,12 +30,12 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 OrdinaryDiffEqDifferentiationSparseArraysExt = "SparseArrays"
 
 [extras]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
@@ -50,6 +50,7 @@ FiniteDiff = "2.27"
 StaticArrayInterface = "1.8"
 DifferentiationInterface = "0.6.54, 0.7"
 LinearSolve = "3.26"
+
 ConstructionBase = "1.5.8"
 LinearAlgebra = "1.10"
 SciMLBase = "2.99"

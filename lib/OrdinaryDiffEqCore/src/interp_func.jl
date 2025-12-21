@@ -75,14 +75,17 @@ function SciMLBase.strip_interpolation(id::InterpolationData)
 end
 
 function strip_cache(cache)
-    if !(cache isa OrdinaryDiffEqCore.DefaultCache)
-        cache = SciMLBase.constructorof(typeof(cache))([nothing
-                                                        for name in
-                                                            fieldnames(typeof(cache))]...)
-    else
-        # need to do something special for default cache
+    if cache isa OrdinaryDiffEqCore.DefaultCache
         cache = OrdinaryDiffEqCore.DefaultCache{Nothing, Nothing, Nothing, Nothing,
             Nothing, Nothing, Nothing, Nothing}(nothing, nothing, 0, nothing)
+    else
+        try
+            cache = SciMLBase.constructorof(typeof(cache))([nothing
+                                                            for name in
+                                                                fieldnames(typeof(cache))]...)
+        catch
+            cache = (; (name => nothing for name in fieldnames(typeof(cache)))...)
+        end
     end
 
     cache
