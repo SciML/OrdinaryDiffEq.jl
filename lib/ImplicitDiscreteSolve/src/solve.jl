@@ -1,5 +1,6 @@
 function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     (; alg, u, uprev, dt, t, tprev, f, p) = integrator
+    (; nlcache, Θks) = cache
 
     # initial guess
     if alg.extrapolant == :linear
@@ -10,20 +11,57 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     state = ImplicitDiscreteState(cache.z, p, t+dt)
 
     # nonlinear solve step
-    SciMLBase.reinit!(cache.nlcache, p=state)
-    # TODO compute convergence rate estimate
-    # for i in 1:10
-    #     step!(cache.nlcache)
-    #     # ...
-    # end
-    solve!(cache.nlcache)
-    if cache.nlcache.retcode != ReturnCode.Success
+    SciMLBase.reinit!(nlcache, p=state)
+
+    # solve!(nlcache)
+    # The solve here is simply unrolled by hand to quiery the convergence rate estimates "manually" for now
+    if nlcache.retcode == ReturnCode.InitialFailure
+        integrator.force_stepfail = true
+        return
+    end
+
+    resize!(Θks, 0)
+    residualnormprev = zero(eltype(u))
+    while NonlinearSolveBase.not_terminated(nlcache)
+        step!(nlcache)
+        residualnorm = NonlinearSolveBase.L2_NORM(nlcache.fu)
+        if nlcache.nsteps > 1
+            # Θk = min(residualnorm/residualnormprev, incrementnorm/incrementnormprev)
+            Θk = residualnorm/residualnormprev
+            if residualnormprev ≈ 0.0 #|| incrementnormprev ≈ 0.0
+                push!(Θks, 0.0)
+            else
+                push!(Θks, Θk)
+            end
+            # if nlcache.parameters.enforce_monotonic_convergence && Θk ≥ 1.0
+            #     @debug "Newton-Raphson diverged. Aborting. ||r|| = $residualnorm" _group=:nlsolve
+            #     return false
+            # end
+        end
+        residualnormprev = residualnorm
+    end
+
+    # The solver might have set a different `retcode`
+    if nlcache.retcode == ReturnCode.Default
+        nlcache.retcode = ifelse(
+            nlcache.nsteps ≥ nlcache.maxiters, ReturnCode.MaxIters, ReturnCode.Success
+        )
+    end
+
+    NonlinearSolveBase.update_from_termination_cache!(nlcache.termination_cache, nlcache)
+
+    NonlinearSolveBase.update_trace!(
+        nlcache.trace, nlcache.nsteps, NonlinearSolveBase.get_u(nlcache), NonlinearSolveBase.get_fu(nlcache), nothing, nothing, nothing;
+        last = Val(true)
+    )
+
+    if nlcache.retcode != ReturnCode.Success
         integrator.force_stepfail = true
         return
     end
 
     # Accept step
-    u .= cache.nlcache.u
+    u .= nlcache.u
 end
 
 function initialize!(integrator, cache::IDSolveCache)

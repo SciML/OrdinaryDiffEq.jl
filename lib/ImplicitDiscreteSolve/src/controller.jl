@@ -55,15 +55,16 @@ end
 function OrdinaryDiffEqCore.stepsize_controller!(
     integrator, alg::IDSolve
 )
-    # @inline g(x) = √(1+4x) - 1
+    @inline g(x) = √(1+4x) - 1
 
-    # # Adapt dt with a priori estimate (Eq. 5.24)
-    # (; Θks) = cache.inner_solver_cache
-    # (; Θbar, γ, Θmin, qmin, qmax, p) = controller
+    # Adapt dt with a priori estimate (Eq. 5.24)
+    (; Θks) = integrator.cache
+    (; Θbar, γ, Θmin, qmin, qmax, p) = integrator.opts.controller
 
-    # Θ₀ = length(Θks) > 0 ? max(first(Θks), Θmin) : Θmin
-    # q = clamp(γ * (g(Θbar)/(g(Θ₀)))^(1/p), qmin, qmax)
-    return 1.1
+    Θ₀ = length(Θks) > 0 ? max(first(Θks), Θmin) : Θmin
+    q = clamp(γ * (g(Θbar)/(g(Θ₀)))^(1/p), qmin, qmax)
+
+    return q
 end
 
 function OrdinaryDiffEqCore.step_accept_controller!(

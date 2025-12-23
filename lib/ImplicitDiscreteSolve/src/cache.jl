@@ -4,11 +4,12 @@ struct ImplicitDiscreteState{uType, pType, tType}
     t::tType
 end
 
-mutable struct IDSolveCache{uType, cType} <: OrdinaryDiffEqMutableCache
+mutable struct IDSolveCache{uType, cType, thetaType} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     z::uType
     nlcache::cType
+    Θks::thetaType
 end
 
 function alg_cache(alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -30,7 +31,7 @@ function alg_cache(alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     nlcache = init(prob, alg.nlsolve)
 
-    IDSolveCache(u, uprev, state.u, nlcache)
+    IDSolveCache(u, uprev, state.u, nlcache, uBottomEltypeNoUnits[])
 end
 
 isdiscretecache(cache::IDSolveCache) = true
@@ -58,8 +59,8 @@ function alg_cache(alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     nlcache = init(prob, alg.nlsolve)
 
-    # FIXME Use IDSolveConstantCache
-    IDSolveCache(u, uprev, state.u, nlcache)
+    # FIXME Use IDSolveConstantCache?
+    IDSolveCache(u, uprev, state.u, nlcache, uBottomEltypeNoUnits[])
 end
 
 get_fsalfirstlast(cache::IDSolveCache, rate_prototype) = (nothing, nothing)
