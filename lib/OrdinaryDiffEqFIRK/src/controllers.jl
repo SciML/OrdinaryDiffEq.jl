@@ -1,8 +1,15 @@
 function step_accept_controller!(
+<<<<<<< HEAD
         integrator, controller::LegacyPredictiveController, alg::AdaptiveRadau, q)
     (; qmin, qmax, gamma, qsteady_min, qsteady_max) = integrator.opts
     (; cache) = integrator
     (; num_stages, step, iter, hist_iter, index) = cache
+=======
+        integrator, controller::PredictiveController, alg::AdaptiveRadau, q)
+    @unpack qmin, qmax, gamma, qsteady_min, qsteady_max = integrator.opts
+    @unpack cache = integrator
+    @unpack num_stages, step, iter, hist_iter, index = cache
+>>>>>>> ca8c0788f (Change name of legacy controllers back and add New suffix to the controllers in the new interface)
 
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -43,7 +50,7 @@ function step_accept_controller!(
 end
 
 function step_reject_controller!(
-        integrator, controller::LegacyPredictiveController, alg::AdaptiveRadau)
+        integrator, controller::PredictiveController, alg::AdaptiveRadau)
     (; dt, success_iter, qold) = integrator
     (; cache) = integrator
     (; num_stages, step, iter, hist_iter) = cache
