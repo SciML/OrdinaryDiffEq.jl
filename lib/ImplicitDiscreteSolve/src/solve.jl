@@ -1,13 +1,13 @@
 function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
-    (; alg, u, uprev, dt, t, f, p) = integrator
+    (; alg, u, uprev, dt, t, tprev, f, p) = integrator
 
     # initial guess
     if alg.extrapolant == :linear
-        @.. broadcast=false cache.z=integrator.uprev + dt * (integrator.uprev - integrator.uprev2)
+        @.. broadcast=false cache.z=integrator.u + dt * (integrator.u - integrator.uprev)
     else # :constant
         cache.z .= integrator.u
     end
-    state = ImplicitDiscreteState(cache.z, p, t)
+    state = ImplicitDiscreteState(cache.z, p, t+dt)
 
     # nonlinear solve step
     SciMLBase.reinit!(cache.nlcache, p=state)

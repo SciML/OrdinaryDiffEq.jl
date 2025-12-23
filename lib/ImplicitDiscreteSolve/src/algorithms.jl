@@ -3,7 +3,6 @@
 
 First order solver for `ImplicitDiscreteSystems`.
 """
-# struct IDSolve{CS, AD, NLS, FDT, ST, CJ} <:
 struct IDSolve{NLS} <:
        OrdinaryDiffEqAlgorithm
     nlsolve::NLS
@@ -12,7 +11,7 @@ struct IDSolve{NLS} <:
 end
 
 function IDSolve(;
-        nlsolve = NewtonRaphson(), #NLNewton(),
+        nlsolve = NewtonRaphson(),
         extrapolant = :constant,
         controller = :PI,
     )
