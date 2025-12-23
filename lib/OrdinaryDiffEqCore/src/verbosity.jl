@@ -6,7 +6,8 @@
         :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
         :w_factorization, :newton_iterations,
         :rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon,
-        :stability_check, :near_singular
+        :stability_check, :near_singular,
+        :sensitivity_vjp_choice
     )
 
     presets = (
@@ -34,7 +35,8 @@
             unlimited_dt = Silent(),
             dt_epsilon = Silent(),
             stability_check = Silent(),
-            near_singular = Silent()
+            near_singular = Silent(),
+            sensitivity_vjp_choice = Silent()
         ),
         Minimal = (
             linear_verbosity = Minimal(),
@@ -60,7 +62,8 @@
             unlimited_dt = WarnLevel(),
             dt_epsilon = Silent(),
             stability_check = Silent(),
-            near_singular = WarnLevel()
+            near_singular = WarnLevel(),
+            sensitivity_vjp_choice = Silent()
         ),
         Standard = (
             linear_verbosity = Minimal(),
@@ -86,7 +89,8 @@
             unlimited_dt = WarnLevel(),
             dt_epsilon = Silent(),
             stability_check = Silent(),
-            near_singular = Silent()
+            near_singular = Silent(),
+            sensitivity_vjp_choice = Silent()
         ),
         Detailed = (
             linear_verbosity = Detailed(),
@@ -112,7 +116,8 @@
             unlimited_dt = WarnLevel(),
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
-            near_singular = WarnLevel()
+            near_singular = WarnLevel(),
+            sensitivity_vjp_choice = WarnLevel()
         ),
         All = (
             linear_verbosity = All(),
@@ -138,7 +143,8 @@
             unlimited_dt = WarnLevel(),
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
-            near_singular = WarnLevel()
+            near_singular = WarnLevel(),
+            sensitivity_vjp_choice = WarnLevel()
         )
     )
 
@@ -154,6 +160,9 @@
         numerical = (
             :rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon,
             :stability_check, :near_singular
+        ),
+        sensitivity = (
+            :sensitivity_vjp_choice,
         )
     )
 end
@@ -197,6 +206,9 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `dt_epsilon`: Messages when timestep goes below floating point epsilon
 - `stability_check`: Messages about stability checks in extrapolation methods
 - `near_singular`: Messages when Jacobian/mass matrix appears near-singular
+
+## Sensitivity Group
+- `sensitivity_vjp_choice`: Messages about VJP choice in sensitivity analysis (used by SciMLSensitivity.jl)
 
 # Constructors
 
