@@ -1,38 +1,33 @@
-# Remake the nonlinear problem, then update
 function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     (; alg, u, uprev, dt, t, f, p) = integrator
-    (; state, prob) = cache
-    state.u .= uprev
-    state.t_next = t
-    prob = remake(prob, p = state)
 
-    u = solve(prob, SimpleNewtonRaphson())
-    integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, u.retcode)
-    integrator.u = u
+    # initial guess
+    if alg.extrapolant == :linear
+        @.. broadcast=false cache.z=integrator.uprev + dt * (integrator.uprev - integrator.uprev2)
+    else # :constant
+        cache.z .= integrator.u
+    end
+    state = ImplicitDiscreteState(cache.z, p, t)
+
+    # nonlinear solve step
+    SciMLBase.reinit!(cache.nlcache, p=state)
+    # TODO compute convergence rate estimate
+    # for i in 1:10
+    #     step!(cache.nlcache)
+    #     # ...
+    # end
+    solve!(cache.nlcache)
+    if cache.nlcache.retcode != ReturnCode.Success
+        integrator.force_stepfail = true
+        return
+    end
+
+    # Accept step
+    u .= cache.nlcache.u
 end
 
 function initialize!(integrator, cache::IDSolveCache)
-    integrator.u isa AbstractVector && (cache.state.u .= integrator.u)
-    cache.state.p = integrator.p
-    cache.state.t_next = integrator.t
-    f = integrator.f
-
-    _f = if isinplace(f)
-        (resid, u_next, p) -> f(resid, u_next, p.u, p.p, p.t_next)
-    else
-        (u_next, p) -> f(u_next, p.u, p.p, p.t_next)
-    end
-    u_len = isnothing(integrator.u) ? 0 : length(integrator.u)
-    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != u_len)
-
-    prob = if nlls
-        NonlinearLeastSquaresProblem{isinplace(f)}(
-            NonlinearFunction(_f; resid_prototype = f.resid_prototype),
-            cache.state.u, cache.state)
-    else
-        NonlinearProblem{isinplace(f)}(_f, cache.state.u, cache.state)
-    end
-    cache.prob = prob
+    integrator.u isa AbstractVector && (cache.z .= integrator.u)
 end
 
 function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
@@ -47,9 +42,9 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
         initstate = ImplicitDiscreteState(u, p, t)
 
         _f = if isinplace(f)
-            (resid, u_next, p) -> f(resid, u_next, p.u, p.p, p.t_next)
+            (resid, u_next, p) -> f(resid, u_next, p.u, p.p, p.t)
         else
-            (u_next, p) -> f(u_next, p.u, p.p, p.t_next)
+            (u_next, p) -> f(u_next, p.u, p.p, p.t)
         end
 
         nlls = !isnothing(f.resid_prototype) &&
@@ -60,7 +55,7 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
         else
             NonlinearProblem{isinplace(f)}(_f, u, initstate)
         end
-        sol = solve(prob, SimpleNewtonRaphson())
+        sol = solve(prob, integrator.alg.nlsolve)
         if sol.retcode == ReturnCode.Success
             integrator.u = sol
         else
