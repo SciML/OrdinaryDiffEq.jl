@@ -94,7 +94,7 @@ function stepsize_controller_internal!(integrator,
             ImplicitDeuflhardExtrapolation})
     # Standard step size controller
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
-    @unpack controller = cache
+    (; controller) = cache
 
     if iszero(integrator.EEst)
         q = inv(controller.qmax)
@@ -146,14 +146,14 @@ function stepsize_predictor!(integrator,
         alg::Union{ExtrapolationMidpointDeuflhard,
             ImplicitDeuflhardExtrapolation}, n_new::Int)
     # Compute and save the stepsize scaling for order n_new based on the latest error estimate of the current order.
-    @unpack controller = cache
+    (; controller) = cache
 
     if iszero(integrator.EEst)
         q = inv(controller.qmax)
     else
         # Initialize
-        @unpack t, EEst = integrator
-        @unpack stage_number = integrator.cache
+        (; t, EEst) = integrator
+        (; stage_number) = integrator.cache
         tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
         s_curr = stage_number[integrator.cache.n_curr - alg.min_order + 1]
         s_new = stage_number[n_new - alg.min_order + 1]
@@ -301,7 +301,7 @@ function stepsize_controller_internal!(integrator,
             ImplicitEulerBarycentricExtrapolation})
     # Standard step size controller
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
-    @unpack controller = cache
+    (; controller) = cache
 
     if alg isa
     Union{ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation,
