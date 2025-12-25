@@ -677,7 +677,7 @@ end
 function SciMLBase.solve!(integrator::ODEIntegrator)
     @inbounds while !isempty(integrator.opts.tstops)
         first_tstop = first(integrator.opts.tstops)
-        while integrator.tdir * integrator.t <= first_tstop
+        while integrator.tdir * integrator.t < first_tstop
             loopheader!(integrator)
             if integrator.do_error_check && check_error!(integrator) != ReturnCode.Success
                 return integrator.sol
