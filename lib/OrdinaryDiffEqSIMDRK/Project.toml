@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSIMDRK"
 uuid = "dc97f408-7a72-40e4-9b0d-228a53b292f8"
 authors = ["Yingbo Ma <mayingbo5@gmail.com>", "Chris Elrod <elrodc@gmail.com>"]
-version = "1.3.0"
+version = "1.4.0"
 
 [deps]
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
