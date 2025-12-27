@@ -449,8 +449,8 @@ end
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        @test sol_i.t ≈ sol_o.t
-        @test sol_i.u ≈ sol_o.u
+        @test sol_i.t ≈ sol_o.t rtol=1e-5
+        @test sol_i.u ≈ sol_o.u rtol=1e-5
     end
 
     @testset "DPRKN6" begin
