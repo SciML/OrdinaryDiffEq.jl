@@ -72,6 +72,8 @@ jobs:
           - 'pre'
         exclude:
           - group: Enzyme
+            version: '1'
+          - group: Enzyme
             version: 'pre'
     steps:
       - uses: actions/checkout@v6
