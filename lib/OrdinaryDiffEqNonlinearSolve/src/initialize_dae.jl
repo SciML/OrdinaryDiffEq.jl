@@ -36,6 +36,11 @@ function find_algebraic_vars_eqs(M::AbstractMatrix)
     return algebraic_vars, algebraic_eqs
 end
 
+# Handle SciMLOperators (e.g., MatrixOperator) by extracting the underlying matrix
+function find_algebraic_vars_eqs(M::AbstractSciMLOperator)
+    return find_algebraic_vars_eqs(M.A)
+end
+
 # Optimized tolerance checking that avoids allocations
 @inline function check_dae_tolerance(integrator, err, abstol, t, ::Val{true})
     if abstol isa Number
@@ -131,7 +136,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator,
         integrator.dt = oldγ, oldc, oldmethod,
         olddt
         failed = nlsolvefail(nlsolver)
-        @.. broadcast=false integrator.u=integrator.uprev + z
+        @.. broadcast=false integrator.u=integrator.uprev+z
     else
 
         # _u0 should be non-dual since NonlinearSolve does not differentiate the solver
@@ -246,7 +251,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator,
         integrator.dt = oldγ, oldc, oldmethod,
         olddt
         failed = nlsolvefail(nlsolver)
-        @.. broadcast=false integrator.u=integrator.uprev + z
+        @.. broadcast=false integrator.u=integrator.uprev+z
     else
         nlequation_oop = @closure (u, _) -> begin
             update_coefficients!(M, u, p, t)
