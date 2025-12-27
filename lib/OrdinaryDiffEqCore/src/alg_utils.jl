@@ -308,10 +308,24 @@ alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_orde
 
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
-# this is actually incorrect and is purposefully decreased as this tends
-# to track the real error much better
 
-function default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
+function default_controller_v7(QT, alg)
+    if ispredictive(alg)
+        return NewPredictiveController(QT, alg)
+    elseif isstandard(alg)
+        return NewIController(QT, alg)
+    else
+        return NewPIController(QT, alg)
+    end
+end
+
+function default_controller_v7(QT, alg::CompositeAlgorithm)
+    return CompositeController(
+        map(alg->default_controller_v7(QT, alg), alg.algs)
+    )
+end
+
+function legacy_default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
     if ispredictive(alg)
         return PredictiveController()
     elseif isstandard(alg)
@@ -322,6 +336,9 @@ function default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = not
         return PIController(beta1, beta2)
     end
 end
+
+# TODO remove this when done
+default_controller(args...) = legacy_default_controller(args...)
 
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
     if alg isa OrdinaryDiffEqCompositeAlgorithm
