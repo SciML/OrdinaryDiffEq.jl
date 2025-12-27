@@ -36,9 +36,9 @@ function find_algebraic_vars_eqs(M::AbstractMatrix)
     return algebraic_vars, algebraic_eqs
 end
 
-# Handle SciMLOperators (e.g., MatrixOperator) by extracting the underlying matrix
+# Handle SciMLOperators (e.g., MatrixOperator) by converting to matrix
 function find_algebraic_vars_eqs(M::AbstractSciMLOperator)
-    return find_algebraic_vars_eqs(M.A)
+    return find_algebraic_vars_eqs(convert(AbstractMatrix, M))
 end
 
 # Optimized tolerance checking that avoids allocations
