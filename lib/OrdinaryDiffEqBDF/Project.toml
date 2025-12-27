@@ -38,7 +38,7 @@ AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
-NonlinearSolve = "4.10"
+NonlinearSolve = "4.12"
 ForwardDiff = "0.10.38, 1"
 Test = "<0.0.1, 1"
 FastBroadcast = "0.3"
