@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqCore"
 uuid = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "2.2.0"
+version = "2.3.0"
 
 [deps]
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
@@ -64,7 +64,7 @@ EnumX = "1.0"
 Polyester = "0.7"
 LinearAlgebra = "1.10"
 TruncatedStacktraces = "1.4"
-SciMLBase = "2.115"
+SciMLBase = "2.116"
 FastClosures = "0.3"
 DataStructures = "0.18.22, 0.19"
 Static = "1.2"
