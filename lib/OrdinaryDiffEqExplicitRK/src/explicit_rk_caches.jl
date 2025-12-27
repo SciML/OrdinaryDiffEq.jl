@@ -16,7 +16,7 @@ get_fsalfirstlast(cache::ExplicitRKCache, u) = (cache.kk[1], cache.fsallast)
 function alg_cache(alg::ExplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     kk = Vector{typeof(rate_prototype)}(undef, 0)
     for i in 1:(alg.tableau.stages)
         push!(kk, zero(rate_prototype))
@@ -55,6 +55,6 @@ end
 function alg_cache(alg::ExplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     ExplicitRKConstantCache(alg.tableau, rate_prototype)
 end

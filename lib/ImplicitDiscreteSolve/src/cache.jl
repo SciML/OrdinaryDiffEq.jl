@@ -14,7 +14,7 @@ end
 function alg_cache(alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
     IDSolveCache(u, uprev, state, nothing)
 end
@@ -28,7 +28,7 @@ end
 function alg_cache(alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
     IDSolveCache(u, uprev, state, nothing)
 end
