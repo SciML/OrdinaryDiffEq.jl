@@ -1,3 +1,41 @@
+# Efficient algebraic variable/equation detection for sparse mass matrices.
+# O(nnz) instead of O(n²) for sparse matrices.
+"""
+    find_algebraic_vars_eqs(M::SparseMatrixCSC)
+
+Find algebraic variables (zero columns) and algebraic equations (zero rows) from mass matrix.
+Returns (algebraic_vars::Vector{Bool}, algebraic_eqs::Vector{Bool}).
+
+For sparse matrices, uses O(nnz) traversal of CSC structure instead of O(n²) iteration.
+"""
+function find_algebraic_vars_eqs(M::SparseMatrixCSC)
+    n_cols = size(M, 2)
+    n_rows = size(M, 1)
+
+    # Initialize all as algebraic (true = zero column/row)
+    algebraic_vars = fill(true, n_cols)
+    algebraic_eqs = fill(true, n_rows)
+
+    # Mark columns/rows with non-zero values as differential (false)
+    @inbounds for j in 1:n_cols
+        for idx in M.colptr[j]:(M.colptr[j + 1] - 1)
+            if !iszero(M.nzval[idx])
+                algebraic_vars[j] = false
+                algebraic_eqs[M.rowval[idx]] = false
+            end
+        end
+    end
+
+    return algebraic_vars, algebraic_eqs
+end
+
+# Fallback for non-sparse matrices (original behavior)
+function find_algebraic_vars_eqs(M::AbstractMatrix)
+    algebraic_vars = vec(all(iszero, M, dims = 1))
+    algebraic_eqs = vec(all(iszero, M, dims = 2))
+    return algebraic_vars, algebraic_eqs
+end
+
 # Optimized tolerance checking that avoids allocations
 @inline function check_dae_tolerance(integrator, err, abstol, t, ::Val{true})
     if abstol isa Number
@@ -53,7 +91,8 @@ Solve for `u`
 
 =#
 
-function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator,
+        prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{true})
     (; p, t, f) = integrator
     M = integrator.f.mass_matrix
@@ -69,8 +108,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
         initdt
     end
 
-    algebraic_vars = [all(iszero, x) for x in eachcol(M)]
-    algebraic_eqs = [all(iszero, x) for x in eachrow(M)]
+    algebraic_vars, algebraic_eqs = find_algebraic_vars_eqs(M)
     (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
     update_coefficients!(M, u0, p, t)
     f(tmp, u0, p, t)
@@ -93,7 +131,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
         integrator.dt = oldγ, oldc, oldmethod,
         olddt
         failed = nlsolvefail(nlsolver)
-        @.. broadcast=false integrator.u=integrator.uprev+z
+        @.. broadcast=false integrator.u=integrator.uprev + z
     else
 
         # _u0 should be non-dual since NonlinearSolve does not differentiate the solver
@@ -169,7 +207,8 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
     return
 end
 
-function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
+function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator,
+        prob::ODEProblem, alg::DiffEqBase.ShampineCollocationInit,
         isinplace::Val{false})
     (; p, t, f) = integrator
     u0 = integrator.u
@@ -184,8 +223,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
         initdt
     end
 
-    algebraic_vars = [all(iszero, x) for x in eachcol(M)]
-    algebraic_eqs = [all(iszero, x) for x in eachrow(M)]
+    algebraic_vars, algebraic_eqs = find_algebraic_vars_eqs(M)
     (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
     update_coefficients!(M, u0, p, t)
     du = f(u0, p, t)
@@ -208,7 +246,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
         integrator.dt = oldγ, oldc, oldmethod,
         olddt
         failed = nlsolvefail(nlsolver)
-        @.. broadcast=false integrator.u=integrator.uprev+z
+        @.. broadcast=false integrator.u=integrator.uprev + z
     else
         nlequation_oop = @closure (u, _) -> begin
             update_coefficients!(M, u, p, t)
@@ -396,8 +434,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
     M = integrator.f.mass_matrix
     M isa UniformScaling && return
     update_coefficients!(M, u, p, t)
-    algebraic_vars = vec(all(iszero, M, dims = 1))
-    algebraic_eqs = vec(all(iszero, M, dims = 2))
+    algebraic_vars, algebraic_eqs = find_algebraic_vars_eqs(M)
 
     (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
     tmp = get_tmp_cache(integrator)[1]
@@ -478,8 +515,7 @@ function _initialize_dae!(integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::OD
     u0 = integrator.u
     M = integrator.f.mass_matrix
     update_coefficients!(M, u0, p, t)
-    algebraic_vars = [all(iszero, x) for x in eachcol(M)]
-    algebraic_eqs = [all(iszero, x) for x in eachrow(M)]
+    algebraic_vars, algebraic_eqs = find_algebraic_vars_eqs(M)
     (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 
     du = f(u0, p, t)
