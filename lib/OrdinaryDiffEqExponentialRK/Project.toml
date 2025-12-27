@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqExponentialRK"
 uuid = "e0540318-69ee-4070-8777-9e2de6de23de"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.10.0"
+version = "1.11.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -38,7 +38,7 @@ Random = "<0.0.1, 1"
 DiffEqDevTools = "2.44.4"
 MuladdMacro = "0.2"
 OrdinaryDiffEqVerner = "1.5.0"
-LinearSolve = "3.26"
+LinearSolve = "3.46"
 ExponentialUtilities = "1.27"
 LinearAlgebra = "1.10"
 OrdinaryDiffEqDifferentiation = "1.12.0"

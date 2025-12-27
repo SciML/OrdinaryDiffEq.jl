@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqStabilizedRK"
 uuid = "358294b1-0aab-51c3-aafe-ad5ab194a2ad"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.6.0"
+version = "1.7.0"
 
 [deps]
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
