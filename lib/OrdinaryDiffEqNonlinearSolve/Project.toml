@@ -23,6 +23,7 @@ PreallocationTools = "d236fae5-4411-538c-8e31-a6e3d9e00b46"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SciMLStructures = "53ae85a6-f571-4167-b2af-e1d143709226"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [extras]
 LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
@@ -67,6 +68,7 @@ DiffEqBase = "6.190.2"
 SafeTestsets = "0.1.0"
 SciMLOperators = "1.4"
 SciMLStructures = "1.7"
+SparseArrays = "1"
 
 [targets]
 test = ["DiffEqDevTools", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "Test", "JET", "Aqua", "AllocCheck"]
