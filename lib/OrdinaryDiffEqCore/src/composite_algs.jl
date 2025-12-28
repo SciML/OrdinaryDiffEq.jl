@@ -19,7 +19,7 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
 
     if bool
         @SciMLMessage(lazy"Stiffness detected at t = $(integrator.t)",
-            integrator.opts.verbose, :stiff_detection)
+                      integrator.opts.verbose, :stiff_detection)
     end
 
     if !bool
@@ -56,12 +56,12 @@ function (AS::AutoSwitchCache)(integrator)
                AS.count > 0 ? -1 : AS.count - 1
     if (!AS.is_stiffalg && AS.count > AS.maxstiffstep)
         @SciMLMessage(lazy"Switching from $(nameof(typeof(AS.nonstiffalg))) to $(nameof(typeof(AS.stiffalg))) at t = $(integrator.t)",
-            integrator.opts.verbose, :alg_switch)
+                      integrator.opts.verbose, :alg_switch)
         integrator.dt = dt * AS.dtfac
         AS.is_stiffalg = true
     elseif (AS.is_stiffalg && AS.count < -AS.maxnonstiffstep)
         @SciMLMessage(lazy"Switching from $(nameof(typeof(AS.stiffalg))) to $(nameof(typeof(AS.nonstiffalg))) at t = $(integrator.t)",
-            integrator.opts.verbose, :alg_switch)
+                      integrator.opts.verbose, :alg_switch)
         integrator.dt = dt / AS.dtfac
         AS.is_stiffalg = false
     end

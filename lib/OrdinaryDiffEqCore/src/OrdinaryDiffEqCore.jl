@@ -42,9 +42,7 @@ import SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator,
 
 using DiffEqBase: DEIntegrator
 
-import RecursiveArrayTools: chain, recursivecopy!, recursivecopy, recursive_bottom_eltype,
-                            recursive_unitless_bottom_eltype, recursive_unitless_eltype,
-                            copyat_or_push!, DiffEqArray, recursivefill!
+import RecursiveArrayTools: chain, recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype, copyat_or_push!, DiffEqArray, recursivefill!
 
 import RecursiveArrayTools
 using DataStructures: BinaryHeap, FasterForward
@@ -58,13 +56,13 @@ import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
 
 # Integrator Interface
 import SciMLBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
-                  resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
-                  terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
-                  u_modified!, savevalues!,
-                  add_tstop!, has_tstop, first_tstop, pop_tstop!,
-                  add_saveat!, set_reltol!,
-                  set_abstol!, postamble!, last_step_failed,
-                  isautodifferentiable
+                   resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
+                   terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
+                   u_modified!, savevalues!,
+                   add_tstop!, has_tstop, first_tstop, pop_tstop!,
+                   add_saveat!, set_reltol!,
+                   set_abstol!, postamble!, last_step_failed,
+                   isautodifferentiable
 import DiffEqBase: get_tstops, get_tstops_array, get_tstops_max
 
 using DiffEqBase: check_error!, @def, _vec, _reshape
@@ -77,7 +75,7 @@ using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val
 import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
 
 import SciMLBase: unwrap_cache,
-                  islinear
+                   islinear
 import DiffEqBase: calculate_residuals,
                    calculate_residuals!, @tight_loop_macros,
                    timedepentdtmin
@@ -91,10 +89,8 @@ import Accessors: @reset
 # SciMLStructures symbols imported but not directly used in OrdinaryDiffEqCore
 # using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
-using SciMLLogging: SciMLLogging, @SciMLMessage, AbstractVerbositySpecifier,
-                    AbstractVerbosityPreset,
-                    None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel,
-                    ErrorLevel,
+using SciMLLogging: SciMLLogging, @SciMLMessage, AbstractVerbositySpecifier, AbstractVerbosityPreset, 
+                    None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel, 
                     CustomLevel, AbstractMessageLevel, @verbosity_specifier
 
 using SymbolicIndexingInterface: state_values, parameter_values

@@ -270,8 +270,7 @@ function alg_cache(alg::Vern9, u, rate_prototype, ::Type{uEltypeNoUnits},
     Vern9ConstantCache(alg.lazy)
 end
 
-@cache struct RKV76IIaCache{
-    uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
+@cache struct RKV76IIaCache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
     Thread} <:
               OrdinaryDiffEqMutableCache
     u::uType
@@ -320,8 +319,7 @@ function alg_cache(alg::RKV76IIa, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
-    RKV76IIaCache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, tab,
+    RKV76IIaCache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, tab,
         alg.stage_limiter!, alg.step_limiter!, alg.thread, alg.lazy)
 end
 

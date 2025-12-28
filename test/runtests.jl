@@ -38,13 +38,9 @@ end
 #Start Test Script
 
 @time begin
-    if contains(GROUP, "OrdinaryDiffEq") || GROUP == "ImplicitDiscreteSolve" ||
-       GROUP == "SimpleImplicitDiscreteSolve"
+    if contains(GROUP, "OrdinaryDiffEq") || GROUP == "ImplicitDiscreteSolve" || GROUP == "SimpleImplicitDiscreteSolve"
         Pkg.activate(joinpath(dirname(@__DIR__), "lib", GROUP))
-        Pkg.test(GROUP,
-            julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"],
-            force_latest_compatible_version = false,
-            allow_reresolve = true)
+        Pkg.test(GROUP, julia_args=["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version=false, allow_reresolve=true)
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
         @time @safetestset "Tstops Tests" include("interface/ode_tstops_tests.jl")
@@ -95,7 +91,7 @@ end
         @time @safetestset "No Jac Tests" include("interface/nojac.jl")
         @time @safetestset "Units Tests" include("interface/units_tests.jl")
         @time @safetestset "Non-Full Diagonal Sparsity Tests" include("interface/nonfulldiagonal_sparse.jl")
-        @time @safetestset "ODEVerbosity Tests" include("interface/verbosity.jl")
+        @time @safetestset "ODEVerbosity Tests" include("interface/verbosity.jl") 
         @time @safetestset "ODEVerbosity JET Tests" include("interface/verbosity_jet.jl")
     end
 

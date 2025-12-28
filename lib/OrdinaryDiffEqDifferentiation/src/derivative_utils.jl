@@ -133,7 +133,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
     end
 
     @SciMLMessage(lazy"Computing Jacobian at t = $(t) using $(method)",
-        integrator.opts.verbose, :jacobian_update)
+                  integrator.opts.verbose, :jacobian_update)
 
     if alg isa DAEAlgorithm
         if SciMLBase.has_jac(f)
@@ -336,13 +336,12 @@ mutable struct WOperator{IIP, T,
             _func_cache, _concrete_form,
             jacvec)
     end
-
-    function Base.copy(W::WOperator{IIP, T, MType, GType, JType, F, C,
-            JV}) where {IIP, T, MType, GType, JType, F, C, JV}
+    
+    function Base.copy(W::WOperator{IIP, T, MType, GType, JType, F, C, JV}) where {IIP, T, MType, GType, JType, F, C, JV}
         return new{IIP, T, MType, GType, JType, F, C, JV}(
-            W.mass_matrix,
-            W.gamma,
-            W.J,
+            W.mass_matrix, 
+            W.gamma, 
+            W.J, 
             W._func_cache === nothing ? nothing : copy(W._func_cache),
             W._concrete_form === nothing ? nothing : copy(W._concrete_form),
             W.jacvec
@@ -465,7 +464,7 @@ islinearfunction(integrator) = islinearfunction(integrator.f, integrator.alg)
 
 return the tuple `(is_linear_wrt_odealg, islinearodefunction)`.
 """
-function islinearfunction(f::F, alg)::Tuple{Bool, Bool} where {F}
+function islinearfunction(f::F, alg)::Tuple{Bool, Bool} where F
     isode = f isa ODEFunction && islinear(f.f)
     islin = isode || (issplit(alg) && f isa SplitFunction && islinear(f.f1.f))
     return islin, isode
@@ -743,12 +742,11 @@ function update_W!(nlsolver::AbstractNLSolver,
         integrator::SciMLBase.DEIntegrator{<:Any, true}, cache, dtgamma,
         repeat_step::Bool, newJW = nothing)
     if isnewton(nlsolver)
-        new_jac,
-        new_W = calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step,
+        new_jac, new_W = calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step,
             newJW)
         if new_W
             @SciMLMessage(lazy"W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
-                integrator.opts.verbose, :w_factorization)
+                          integrator.opts.verbose, :w_factorization)
         end
     end
     nothing
@@ -778,7 +776,7 @@ function update_W!(nlsolver::AbstractNLSolver,
         end
         if new_W
             @SciMLMessage(lazy"W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
-                integrator.opts.verbose, :w_factorization)
+                          integrator.opts.verbose, :w_factorization)
         end
     end
     nothing
@@ -860,8 +858,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
         elseif f.jac_prototype === nothing
             if alg_autodiff(alg) isa AutoSparse
                 if isnothing(f.sparsity)
-                    !isnothing(jac_config) ?
-                    convert.(eltype(u), sparsity_pattern(jac_config[1])) :
+                    !isnothing(jac_config) ? convert.(eltype(u), sparsity_pattern(jac_config[1])) :
                     spzeros(eltype(u), length(u), length(u))
                 elseif eltype(f.sparsity) == Bool
                     convert.(eltype(u), f.sparsity)

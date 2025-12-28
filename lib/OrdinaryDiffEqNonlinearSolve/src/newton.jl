@@ -78,14 +78,14 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, atmp)
         end
         nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
-        SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p = nlstep_data.nlprob.p)
+        SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p=nlstep_data.nlprob.p)
     else
         if f isa DAEFunction
             nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
         else
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
-        SciMLBase.reinit!(cache.cache, z, p = nlp_params)
+        SciMLBase.reinit!(cache.cache, z, p=nlp_params)
     end
     nothing
 end
@@ -130,16 +130,16 @@ end
         )
         nlstep_data.nlprobmap(ztmp, nlstepsol)
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
-        calculate_residuals!(@view(atmp[nlstep_data.u0perm]), nlcache.fu,
-            @view(uprev[nlstep_data.u0perm]),
-            @view(ustep[nlstep_data.u0perm]), opts.abstol,
-            opts.reltol, opts.internalnorm, t)
+        calculate_residuals!(@view(atmp[nlstep_data.u0perm]), nlcache.fu, 
+                             @view(uprev[nlstep_data.u0perm]), 
+                             @view(ustep[nlstep_data.u0perm]), opts.abstol, 
+                             opts.reltol, opts.internalnorm, t)
         ndz = opts.internalnorm(atmp, t)
     else
         @.. broadcast=false ztmp=nlcache.u
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
         calculate_residuals!(atmp, nlcache.fu, uprev, ustep, opts.abstol, opts.reltol,
-            opts.internalnorm, t)
+                                opts.internalnorm, t)
         ndz = opts.internalnorm(atmp, t)
     end
 
@@ -235,8 +235,7 @@ end
         _uprev = get_dae_uprev(integrator, uprev)
         b, ustep = _compute_rhs!(tmp, ztmp, ustep, α, tstep, k, invγdt, p, _uprev, f, z)
     else
-        b,
-        ustep = _compute_rhs!(
+        b, ustep = _compute_rhs!(
             tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f, z)
     end
 
@@ -294,7 +293,7 @@ end
     end
 
     # compute next iterate
-    @.. broadcast=false ztmp=z-dz
+    @.. broadcast=false ztmp=z - dz
 
     ndz
 end
@@ -332,8 +331,7 @@ function compute_ustep!(ustep, tmp, γ, z, method)
     ustep
 end
 
-function _compute_rhs(
-        tmp, γ, α, tstep, invγdt, method::MethodType, p, dt, f::F, z) where {F}
+function _compute_rhs(tmp, γ, α, tstep, invγdt, method::MethodType, p, dt, f::F, z) where F
     mass_matrix = f.mass_matrix
     ustep = compute_ustep(tmp, γ, z, method)
     if method === COEFFICIENT_MULTISTEP
@@ -357,7 +355,7 @@ end
 
 function _compute_rhs!(tmp, ztmp, ustep, α, tstep, k,
         invγdt, p, uprev, f::TF, z) where {TF <: DAEFunction}
-    @.. broadcast=false ztmp=(tmp+α*z)*invγdt
+    @.. broadcast=false ztmp=(tmp + α * z) * invγdt
     @.. ustep = uprev + z
     f(k, ztmp, ustep, p, tstep)
     return _vec(k), ustep
@@ -370,11 +368,11 @@ function _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k,
     if method === COEFFICIENT_MULTISTEP
         f(k, z, p, tstep)
         if mass_matrix === I
-            @.. broadcast=false ztmp=tmp+k-(α*invγdt)*z
+            @.. broadcast=false ztmp=tmp + k - (α * invγdt) * z
         else
             update_coefficients!(mass_matrix, ustep, p, tstep)
             mul!(_vec(ztmp), mass_matrix, _vec(z))
-            @.. broadcast=false ztmp=tmp+k-(α*invγdt)*ztmp
+            @.. broadcast=false ztmp=tmp + k - (α * invγdt) * ztmp
         end
     else
         f(k, ustep, p, tstep)
@@ -447,7 +445,7 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) 
 end
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         r::Nothing) where {TF}
-    dz
+        dz
 end
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         r::Number) where {TF}
@@ -459,7 +457,10 @@ end
 
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         linesearch) where {TF}
-    let dz = dz, integrator = integrator, nlsolver = nlsolver, f = f,
+    let dz = dz,
+        integrator = integrator,
+        nlsolver = nlsolver,
+        f = f,
         linesearch = linesearch
 
         (; uprev, t, p, dt, opts, isdae) = integrator
@@ -469,12 +470,10 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
             # recompute residual (rhs)
             if isdae
                 _uprev = get_dae_uprev(integrator, uprev)
-                b,
-                ustep2 = _compute_rhs!(
+                b, ustep2 = _compute_rhs!(
                     tmp, ztmp, ustep, α, tstep, k, invγdt, p, _uprev, f::TF, z)
             else
-                b,
-                ustep2 = _compute_rhs!(
+                b, ustep2 = _compute_rhs!(
                     tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f, z)
             end
             calculate_residuals!(atmp, b, uprev, ustep2, opts.abstol, opts.reltol,
@@ -521,7 +520,10 @@ end
 
 function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         linesearch) where {TF}
-    let dz = dz, integrator = integrator, nlsolver = nlsolver, f = f,
+    let dz = dz,
+        integrator = integrator,
+        nlsolver = nlsolver,
+        f = f,
         linesearch = linesearch
 
         (; uprev, t, p, dt, opts) = integrator
@@ -580,3 +582,4 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
 
     nothing
 end
+
