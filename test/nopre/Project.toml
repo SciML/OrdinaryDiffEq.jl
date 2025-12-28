@@ -1,0 +1,11 @@
+[deps]
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+SciMLLogging = "a6db7da4-7206-11f0-1eab-35f2a5dbe1d1"
+
+[compat]
+JET = "0.9, 0.11"
+OrdinaryDiffEq = "6"
+OrdinaryDiffEqCore = "2"
+SciMLLogging = "1.7.1"

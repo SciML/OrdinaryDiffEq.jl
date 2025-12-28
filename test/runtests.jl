@@ -35,6 +35,12 @@ function activate_modelingtoolkit_env()
     Pkg.instantiate()
 end
 
+function activate_nopre_env()
+    Pkg.activate("nopre")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -91,8 +97,7 @@ end
         @time @safetestset "No Jac Tests" include("interface/nojac.jl")
         @time @safetestset "Units Tests" include("interface/units_tests.jl")
         @time @safetestset "Non-Full Diagonal Sparsity Tests" include("interface/nonfulldiagonal_sparse.jl")
-        @time @safetestset "ODEVerbosity Tests" include("interface/verbosity.jl") 
-        @time @safetestset "ODEVerbosity JET Tests" include("interface/verbosity_jet.jl")
+        @time @safetestset "ODEVerbosity Tests" include("interface/verbosity.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIV" || GROUP == "Interface")
@@ -182,6 +187,12 @@ end
         activate_enzyme_env()
         @time @safetestset "Autodiff Events Tests" include("enzyme/autodiff_events.jl")
         @time @safetestset "Discrete Adjoint Tests" include("enzyme/discrete_adjoints.jl")
+    end
+
+    # Don't run Nopre tests on prerelease
+    if !is_APPVEYOR && GROUP == "Nopre" && isempty(VERSION.prerelease)
+        activate_nopre_env()
+        @time @safetestset "ODEVerbosity JET Tests" include("nopre/verbosity_jet.jl")
     end
 
     # Don't run ODEInterface tests on prerelease
