@@ -46,7 +46,10 @@ end
 @time begin
     if contains(GROUP, "OrdinaryDiffEq") || GROUP == "ImplicitDiscreteSolve" || GROUP == "SimpleImplicitDiscreteSolve"
         Pkg.activate(joinpath(dirname(@__DIR__), "lib", GROUP))
-        Pkg.test(GROUP, julia_args=["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version=false, allow_reresolve=true)
+        # Develop local OrdinaryDiffEqCore to ensure the local version is used
+        Pkg.develop(PackageSpec(path = joinpath(dirname(@__DIR__), "lib", "OrdinaryDiffEqCore")))
+        Pkg.instantiate()
+        Pkg.test(GROUP, julia_args=["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version=false, allow_reresolve=false)
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
         @time @safetestset "Tstops Tests" include("interface/ode_tstops_tests.jl")
