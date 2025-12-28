@@ -43,3 +43,68 @@ function alg_cache(alg, u, rate_prototype, ::Type{uEltypeNoUnits},
     alg_cache(alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false))
 end
+
+# Disambiguation for CompositeAlgorithm: these methods are more specific than both
+# the generic fallbacks above (specific alg type) and the CompositeAlgorithm methods
+# in basic_caches.jl (specific Val value). They forward to the proper CompositeAlgorithm
+# implementation which already handles verbose correctly.
+function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        v::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, v, verbose)
+    CompositeCache(caches, alg.choice_function, 1)
+end
+
+function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        v::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, v, verbose)
+    CompositeCache(caches, alg.choice_function, 1)
+end
+
+# Same for the 6-tuple specialization
+function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u,
+        rate_prototype, ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        v::Val{true}, verbose) where {
+        CS, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, A1, A2, A3, A4, A5, A6}
+    args = (u, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
+        reltol, p, calck, v, verbose)
+    argT = map(Core.Typeof, args)
+    T1 = Base.promote_op(alg_cache, A1, argT...)
+    T2 = Base.promote_op(alg_cache, A2, argT...)
+    T3 = Base.promote_op(alg_cache, A3, argT...)
+    T4 = Base.promote_op(alg_cache, A4, argT...)
+    T5 = Base.promote_op(alg_cache, A5, argT...)
+    T6 = Base.promote_op(alg_cache, A6, argT...)
+    DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
+        alg_cache(alg.algs[1], args...),
+        nothing, nothing, nothing, nothing, nothing,
+        alg.choice_function, 1)
+end
+
+function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u,
+        rate_prototype, ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        v::Val{false}, verbose) where {
+        CS, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, A1, A2, A3, A4, A5, A6}
+    args = (u, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
+        reltol, p, calck, v, verbose)
+    argT = map(Core.Typeof, args)
+    T1 = Base.promote_op(alg_cache, A1, argT...)
+    T2 = Base.promote_op(alg_cache, A2, argT...)
+    T3 = Base.promote_op(alg_cache, A3, argT...)
+    T4 = Base.promote_op(alg_cache, A4, argT...)
+    T5 = Base.promote_op(alg_cache, A5, argT...)
+    T6 = Base.promote_op(alg_cache, A6, argT...)
+    DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
+        alg_cache(alg.algs[1], args...),
+        nothing, nothing, nothing, nothing, nothing,
+        alg.choice_function, 1)
+end
