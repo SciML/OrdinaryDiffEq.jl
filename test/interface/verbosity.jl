@@ -4,7 +4,7 @@ using OrdinaryDiffEq
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
 using ODEProblemLibrary: prob_ode_vanderpol_stiff
 using Test
-import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
+using SciMLLogging
 using LinearSolve: LinearVerbosity
 using NonlinearSolve: NonlinearVerbosity
 

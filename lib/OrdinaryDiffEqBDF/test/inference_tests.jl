@@ -1,6 +1,6 @@
 using OrdinaryDiffEqBDF, ADTypes, Test
 using NonlinearSolve: TrustRegion
-import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
+using SciMLLogging
 using OrdinaryDiffEqCore: ODEVerbosity
 
 prob = ODEProblem((du, u, p, t) -> du .= u, zeros(1), (0.0, 1.0))

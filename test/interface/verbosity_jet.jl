@@ -1,7 +1,7 @@
 using OrdinaryDiffEq
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: ODEVerbosity
-import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
+using SciMLLogging
 using JET
 using Test
 
