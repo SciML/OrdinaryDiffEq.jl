@@ -107,7 +107,8 @@ function dtnew_modification(alg::RKIP{tableauType, elType, dtType},
     elseif last(alg.dt_for_expÂ_caching) < dtnew && alg.clamp_higher_dt
         dtnew = last(alg.dt_for_expÂ_caching)
     else
-        dtnew = alg.dt_for_expÂ_caching[searchsortedfirst(alg.dt_for_expÂ_caching, dtnew)]
+        dtnew = alg.dt_for_expÂ_caching[searchsortedfirst(
+            alg.dt_for_expÂ_caching, dtnew)]
     end
     return dtnew
 end

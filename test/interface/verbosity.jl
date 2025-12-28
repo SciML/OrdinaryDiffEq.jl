@@ -256,35 +256,40 @@ using NonlinearSolve: NonlinearVerbosity
                 @test hasproperty(integrator.cache.linsolve, :verbose)
 
                 # Verify the verbosity was passed through correctly
-                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Detailed())
+                @test integrator.cache.linsolve.verbose ==
+                      LinearVerbosity(SciMLLogging.Detailed())
             end
 
             @testset "Rosenbrock23 with Minimal LinearVerbosity" begin
                 verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Minimal())
                 integrator = init(prob, Rosenbrock23(), verbose = verbose, dt = 1e-3)
 
-                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Minimal())
+                @test integrator.cache.linsolve.verbose ==
+                      LinearVerbosity(SciMLLogging.Minimal())
             end
 
             @testset "Rosenbrock23 with None LinearVerbosity" begin
                 verbose = ODEVerbosity(linear_verbosity = SciMLLogging.None())
                 integrator = init(prob, Rosenbrock23(), verbose = verbose, dt = 1e-3)
 
-                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.None())
+                @test integrator.cache.linsolve.verbose ==
+                      LinearVerbosity(SciMLLogging.None())
             end
 
             @testset "Rosenbrock32 with Detailed LinearVerbosity" begin
                 verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Detailed())
                 integrator = init(prob, Rosenbrock32(), verbose = verbose, dt = 1e-3)
 
-                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Detailed())
+                @test integrator.cache.linsolve.verbose ==
+                      LinearVerbosity(SciMLLogging.Detailed())
             end
 
             @testset "Rodas4 with All LinearVerbosity" begin
                 verbose = ODEVerbosity(linear_verbosity = SciMLLogging.All())
                 integrator = init(prob, Rodas4(), verbose = verbose, dt = 1e-3)
 
-                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.All())
+                @test integrator.cache.linsolve.verbose ==
+                      LinearVerbosity(SciMLLogging.All())
             end
         end
 
@@ -294,30 +299,36 @@ using NonlinearSolve: NonlinearVerbosity
                 integrator = init(prob, RadauIIA3(), verbose = verbose, dt = 1e-3)
 
                 # RadauIIA3 has a linsolve field
-                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Detailed())
+                @test integrator.cache.linsolve.verbose ==
+                      LinearVerbosity(SciMLLogging.Detailed())
             end
 
             @testset "RadauIIA3 with Minimal LinearVerbosity" begin
                 verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Minimal())
                 integrator = init(prob, RadauIIA3(), verbose = verbose, dt = 1e-3)
 
-                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Minimal())
+                @test integrator.cache.linsolve.verbose ==
+                      LinearVerbosity(SciMLLogging.Minimal())
             end
 
             @testset "RadauIIA5 with Detailed LinearVerbosity (two linear solvers)" begin
                 verbose = ODEVerbosity(linear_verbosity = SciMLLogging.Detailed())
                 integrator = init(prob, RadauIIA5(), verbose = verbose, dt = 1e-3)
 
-                @test integrator.cache.linsolve1.verbose == LinearVerbosity(SciMLLogging.Detailed())
-                @test integrator.cache.linsolve2.verbose == LinearVerbosity(SciMLLogging.Detailed())
+                @test integrator.cache.linsolve1.verbose ==
+                      LinearVerbosity(SciMLLogging.Detailed())
+                @test integrator.cache.linsolve2.verbose ==
+                      LinearVerbosity(SciMLLogging.Detailed())
             end
 
             @testset "RadauIIA5 with None LinearVerbosity" begin
                 verbose = ODEVerbosity(linear_verbosity = SciMLLogging.None())
                 integrator = init(prob, RadauIIA5(), verbose = verbose, dt = 1e-3)
 
-                @test integrator.cache.linsolve1.verbose == LinearVerbosity(SciMLLogging.None())
-                @test integrator.cache.linsolve2.verbose == LinearVerbosity(SciMLLogging.None())
+                @test integrator.cache.linsolve1.verbose ==
+                      LinearVerbosity(SciMLLogging.None())
+                @test integrator.cache.linsolve2.verbose ==
+                      LinearVerbosity(SciMLLogging.None())
             end
 
             @testset "RadauIIA9 with All LinearVerbosity (three linear solvers)" begin
@@ -325,7 +336,8 @@ using NonlinearSolve: NonlinearVerbosity
                 integrator = init(prob, RadauIIA9(), verbose = verbose, dt = 1e-3)
 
                 # Check all three linear solvers have the correct verbosity
-                @test integrator.cache.linsolve1.verbose == LinearVerbosity(SciMLLogging.All())
+                @test integrator.cache.linsolve1.verbose ==
+                      LinearVerbosity(SciMLLogging.All())
                 @test integrator.cache.linsolve2.verbose ==
                       LinearVerbosity(SciMLLogging.All())
                 @test integrator.cache.linsolve3.verbose ==
@@ -378,7 +390,8 @@ using NonlinearSolve: NonlinearVerbosity
                 integrator = init(prob, Rosenbrock23(), verbose = verbose, dt = 1e-3)
 
                 # Standard() uses Minimal() for linear_verbosity
-                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Minimal())
+                @test integrator.cache.linsolve.verbose ==
+                      LinearVerbosity(SciMLLogging.Minimal())
             end
 
             @testset "RadauIIA3 with Detailed() preset" begin
@@ -386,9 +399,9 @@ using NonlinearSolve: NonlinearVerbosity
                 integrator = init(prob, RadauIIA3(), verbose = verbose, dt = 1e-3)
 
                 # Detailed() uses Detailed() for linear_verbosity
-                @test integrator.cache.linsolve.verbose == LinearVerbosity(SciMLLogging.Detailed())
+                @test integrator.cache.linsolve.verbose ==
+                      LinearVerbosity(SciMLLogging.Detailed())
             end
-
         end
     end
 
@@ -418,10 +431,8 @@ using NonlinearSolve: NonlinearVerbosity
             @test hasproperty(integrator.cache.nlsolver, :cache)
 
             # Verify the verbosity was passed through correctly
-            @test integrator.cache.nlsolver.cache.cache.verbose == NonlinearVerbosity(SciMLLogging.Detailed())
+            @test integrator.cache.nlsolver.cache.cache.verbose ==
+                  NonlinearVerbosity(SciMLLogging.Detailed())
         end
-
     end
 end
-
-

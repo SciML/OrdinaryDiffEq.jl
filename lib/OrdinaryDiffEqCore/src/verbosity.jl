@@ -176,50 +176,57 @@ diagnostic messages, warnings, and errors during ODE solution.
 # Fields
 
 ## Solver Verbosity
-- `linear_verbosity`: Verbosity configuration for linear solvers
-- `nonlinear_verbosity`: Verbosity configuration for nonlinear solvers
+
+  - `linear_verbosity`: Verbosity configuration for linear solvers
+  - `nonlinear_verbosity`: Verbosity configuration for nonlinear solvers
 
 ## Error Control Group
-- `dt_NaN`: Messages when time step becomes NaN
-- `init_NaN`: Messages when initial conditions contain NaN
-- `dense_output_saveat`: Messages about dense output with saveat
-- `max_iters`: Messages when maximum iterations are reached
-- `dt_min_unstable`: Messages when time step becomes too small/unstable
-- `instability`: Messages when numerical instability is detected
-- `newton_convergence`: Messages when Newton iteration fails to converge
-- `step_rejected`: Messages when adaptive steps are rejected
-- `step_accepted`: Messages when adaptive steps are accepted
-- `convergence_limit`: Messages when convergence at floating point precision limit
+
+  - `dt_NaN`: Messages when time step becomes NaN
+  - `init_NaN`: Messages when initial conditions contain NaN
+  - `dense_output_saveat`: Messages about dense output with saveat
+  - `max_iters`: Messages when maximum iterations are reached
+  - `dt_min_unstable`: Messages when time step becomes too small/unstable
+  - `instability`: Messages when numerical instability is detected
+  - `newton_convergence`: Messages when Newton iteration fails to converge
+  - `step_rejected`: Messages when adaptive steps are rejected
+  - `step_accepted`: Messages when adaptive steps are accepted
+  - `convergence_limit`: Messages when convergence at floating point precision limit
 
 ## Performance Group
-- `alg_switch`: Messages when algorithm switching occurs
-- `stiff_detection`: Messages when stiffness is detected
-- `mismatched_input_output_type`: Messages when input/output types don't match
-- `jacobian_update`: Messages when Jacobian matrix is computed/updated
-- `w_factorization`: Messages when W matrix is factorized
-- `newton_iterations`: Messages about Newton iteration progress
+
+  - `alg_switch`: Messages when algorithm switching occurs
+  - `stiff_detection`: Messages when stiffness is detected
+  - `mismatched_input_output_type`: Messages when input/output types don't match
+  - `jacobian_update`: Messages when Jacobian matrix is computed/updated
+  - `w_factorization`: Messages when W matrix is factorized
+  - `newton_iterations`: Messages about Newton iteration progress
 
 ## Numerical Group
-- `rosenbrock_no_differential_states`: Messages when Rosenbrock has no differential states
-- `shampine_dt`: Messages about Shampine time step selection
-- `unlimited_dt`: Messages when time step is unlimited
-- `dt_epsilon`: Messages when timestep goes below floating point epsilon
-- `stability_check`: Messages about stability checks in extrapolation methods
-- `near_singular`: Messages when Jacobian/mass matrix appears near-singular
+
+  - `rosenbrock_no_differential_states`: Messages when Rosenbrock has no differential states
+  - `shampine_dt`: Messages about Shampine time step selection
+  - `unlimited_dt`: Messages when time step is unlimited
+  - `dt_epsilon`: Messages when timestep goes below floating point epsilon
+  - `stability_check`: Messages about stability checks in extrapolation methods
+  - `near_singular`: Messages when Jacobian/mass matrix appears near-singular
 
 ## Sensitivity Group
-- `sensitivity_vjp_choice`: Messages about VJP choice in sensitivity analysis (used by SciMLSensitivity.jl)
+
+  - `sensitivity_vjp_choice`: Messages about VJP choice in sensitivity analysis (used by SciMLSensitivity.jl)
 
 # Constructors
 
     ODEVerbosity(preset::AbstractVerbosityPreset)
 
 Create an `ODEVerbosity` using a preset configuration:
-- `SciMLLogging.None()`: All messages disabled
-- `SciMLLogging.Minimal()`: Only critical errors and fatal issues
-- `SciMLLogging.Standard()`: Balanced verbosity (default)
-- `SciMLLogging.Detailed()`: Comprehensive debugging information
-- `SciMLLogging.All()`: Maximum verbosity
+
+  - `SciMLLogging.None()`: All messages disabled
+
+  - `SciMLLogging.Minimal()`: Only critical errors and fatal issues
+  - `SciMLLogging.Standard()`: Balanced verbosity (default)
+  - `SciMLLogging.Detailed()`: Comprehensive debugging information
+  - `SciMLLogging.All()`: Maximum verbosity
 
     ODEVerbosity(; preset=nothing, error_control=nothing, performance=nothing, numerical=nothing, kwargs...)
 

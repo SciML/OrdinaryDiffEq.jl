@@ -304,7 +304,7 @@ end
             beta1 = $beta1,
             beta2 = $beta2,
             beta3 = $beta3,
-            k = $k", 
+            k = $k",
             integrator.opts.verbose, :unlimited_dt)
     end
     dt_factor = controller.limiter(dt_factor)
@@ -378,7 +378,8 @@ the following logic is applied:
 ```julia
 if integrator.success_iter > 0
     expo = 1 / (alg_adaptive_order(integrator.alg) + 1)
-    qgus = (integrator.dtacc / integrator.dt) * (((integrator.EEst^2) / integrator.erracc)^expo)
+    qgus = (integrator.dtacc / integrator.dt) *
+           (((integrator.EEst^2) / integrator.erracc)^expo)
     qgus = max(inv(integrator.opts.qmax),
         min(inv(integrator.opts.qmin), qgus / integrator.opts.gamma))
     qacc = max(q, qgus)
