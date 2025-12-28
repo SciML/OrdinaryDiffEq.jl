@@ -53,9 +53,3 @@ test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "Statistics", "Linea
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
-
-[sources.OrdinaryDiffEqTsit5]
-path = "../OrdinaryDiffEqTsit5"
-
-[sources.OrdinaryDiffEqRKN]
-path = "../OrdinaryDiffEqRKN"

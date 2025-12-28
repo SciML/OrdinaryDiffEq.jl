@@ -57,6 +57,3 @@ path = "../OrdinaryDiffEqCore"
 
 [sources.OrdinaryDiffEqVerner]
 path = "../OrdinaryDiffEqVerner"
-
-[sources.OrdinaryDiffEqRosenbrock]
-path = "../OrdinaryDiffEqRosenbrock"
