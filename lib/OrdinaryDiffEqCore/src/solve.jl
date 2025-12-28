@@ -212,6 +212,12 @@ function SciMLBase.__init(
         u = recursivecopy(prob.u0)
     end
 
+    # Handle null u0 (e.g., MTK systems with only callbacks and no state variables)
+    # Convert to empty Float64 array to allow initialization to proceed
+    if u === nothing
+        u = Float64[]
+    end
+
     if _alg isa DAEAlgorithm
         if !isnothing(aliases.alias_du0) && aliases.alias_du0
             du = prob.du0
