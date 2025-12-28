@@ -82,10 +82,28 @@ function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u
     T4 = Base.promote_op(alg_cache, A4, argT...)
     T5 = Base.promote_op(alg_cache, A5, argT...)
     T6 = Base.promote_op(alg_cache, A6, argT...)
-    DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
-        alg_cache(alg.algs[1], args...),
-        nothing, nothing, nothing, nothing, nothing,
-        alg.choice_function, 1)
+    cache = DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
+        args, alg.choice_function, 1, u)
+    algs = alg.algs
+    if isbitstype(T1)
+        cache.cache1 = alg_cache(algs[1], args...)
+    end
+    if isbitstype(T2)
+        cache.cache2 = alg_cache(algs[2], args...)
+    end
+    if isbitstype(T3)
+        cache.cache3 = alg_cache(algs[3], args...)
+    end
+    if isbitstype(T4)
+        cache.cache4 = alg_cache(algs[4], args...)
+    end
+    if isbitstype(T5)
+        cache.cache5 = alg_cache(algs[5], args...)
+    end
+    if isbitstype(T6)
+        cache.cache6 = alg_cache(algs[6], args...)
+    end
+    cache
 end
 
 function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u,
@@ -103,8 +121,26 @@ function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u
     T4 = Base.promote_op(alg_cache, A4, argT...)
     T5 = Base.promote_op(alg_cache, A5, argT...)
     T6 = Base.promote_op(alg_cache, A6, argT...)
-    DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
-        alg_cache(alg.algs[1], args...),
-        nothing, nothing, nothing, nothing, nothing,
-        alg.choice_function, 1)
+    cache = DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
+        args, alg.choice_function, 1, u)
+    algs = alg.algs
+    if isbitstype(T1)
+        cache.cache1 = alg_cache(algs[1], args...)
+    end
+    if isbitstype(T2)
+        cache.cache2 = alg_cache(algs[2], args...)
+    end
+    if isbitstype(T3)
+        cache.cache3 = alg_cache(algs[3], args...)
+    end
+    if isbitstype(T4)
+        cache.cache4 = alg_cache(algs[4], args...)
+    end
+    if isbitstype(T5)
+        cache.cache5 = alg_cache(algs[5], args...)
+    end
+    if isbitstype(T6)
+        cache.cache6 = alg_cache(algs[6], args...)
+    end
+    cache
 end
