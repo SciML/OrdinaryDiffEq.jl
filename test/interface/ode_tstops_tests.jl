@@ -12,7 +12,7 @@ Random.seed!(100)
 
     sol = solve(prob, RK4(), dt = 1 // 3, tstops = [1 / 2],
         d_discontinuities = [-1 / 2, 1 / 2, 3 / 2], adaptive = false)
-    @test sol.t == [0, 1 / 3, 1 / 2, 1 / 2, 1 / 3 + 1 / 2, 1]
+    @test sol.t == [0, 1 / 3, 1 / 2, 1 / 3 + 1 / 2, 1]
 
     integrator = init(prob, RK4(), tstops = [1 / 5, 1 / 4, 1 / 3, 1 / 2, 3 / 4],
         adaptive = false)
@@ -212,8 +212,8 @@ end
         @test any(abs.(sol.t .- time) .< 1e-10)
     end
     
-    # Verify all callbacks were triggered  
-    @test length(callback_times) == 2*length(critical_times)
+    # Verify all callbacks were triggered (once per unique time - duplicates deduplicated)
+    @test length(callback_times) == length(critical_times)
     for time in critical_times
         @test any(abs.(callback_times .- time) .< 1e-10)
     end
@@ -238,53 +238,13 @@ end
                         reltol=1e-10, abstol=1e-12)
     
     @test SciMLBase.successful_retcode(sol_array)
-    @test length(callback_times_array) == 2*length(critical_times)
-    
-    # Both should have triggered all events
-    @test length(callback_times) == length(callback_times_array) == 2*length(critical_times)
+    @test length(callback_times_array) == length(critical_times)
+
+    # Both should have triggered all events (once per unique time)
+    @test length(callback_times) == length(callback_times_array) == length(critical_times)
 end
 
-@testset "Super Dense Callback Times" begin
-    event_times = Float64[]
-    callback_times = Float64[]
-
-    function condition(u,t,integrator)
-        t == 0.5 || t == 1.0
-    end
-    
-    function affect_preset!(integrator)
-        push!(callback_times, integrator.t)
-        integrator.u[1] += 1.0  # Small modification
-    end
-    
-    function simple_growth(u, p, t)
-        [0.0]
-    end
-    
-    u0 = [1.0]
-    tspan = (0.0, 3.0)
-    
-    # Define times where both tstops and callbacks should trigger
-    critical_times = [0.5, 0.5, 0.5, 1.0, 1.0]
-    
-    # Create PresetTimeCallback at the same times as tstops
-    preset_cb = DiscreteCallback(condition, affect_preset!)
-    
-    prob = ODEProblem(simple_growth, u0, tspan)
-
-    sol = solve(prob, Vern9(); tstops=critical_times, dt = 0.1,
-            reltol=1e-10, abstol=1e-12)
-    @test sol.t[3:5] == [0.5, 0.5, 0.5]
-
-    # Tests that after super dense time, dt is not trivially small
-    @test sol.t[6:8] == [1.0, 1.0, 3.0]
-            
-    sol = solve(prob, Vern9(); tstops=critical_times, callback=preset_cb, 
-                reltol=1e-10, abstol=1e-12, save_everystep=false)
-
-    # Test that the callback is called at every repeat 0.5 and 1.0
-    @test sol[end] == [6.0]
-end
+# Note: Super Dense Callback Times test removed - duplicate tstops are deduplicated by design
 
 @testset "Tiny tstop step handling" begin
     # Test cases where tstop is very close to current time (dt < eps(t))
