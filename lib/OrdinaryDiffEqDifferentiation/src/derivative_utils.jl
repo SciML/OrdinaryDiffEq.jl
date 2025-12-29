@@ -556,11 +556,11 @@ function build_J_W(
         W = f.W_prototype
         J = f.jac_prototype
     elseif f.jac_prototype isa AbstractSciMLOperator
-        W = WOperator{IIP}(f, u, dt)
+        W = WOperator{IIP}(f, _vec(u), dt)
         J = W.J
     elseif islin
         J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
-        W = WOperator{IIP}(f.mass_matrix, dt, J, u)
+        W = WOperator{IIP}(f.mass_matrix, dt, J, _vec(u))
     elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
             (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))
 
@@ -578,7 +578,7 @@ function build_J_W(
         jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 
         J = jacvec
-        W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
+        W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, _vec(u), jacvec)
     elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
             concrete_jac(alg) !== nothing && concrete_jac(alg)
         # The linear solver does not need a concrete Jacobian, but the user has
@@ -609,7 +609,7 @@ function build_J_W(
         else
             jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 
-            WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
+            WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, _vec(u), jacvec)
         end
     else
         J = if !IIP && SciMLBase.has_jac(f)
