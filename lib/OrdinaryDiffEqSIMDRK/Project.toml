@@ -4,34 +4,36 @@ authors = ["Yingbo Ma <mayingbo5@gmail.com>", "Chris Elrod <elrodc@gmail.com>"]
 version = "1.4.0"
 
 [deps]
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
-VectorizationBase = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
-Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
-SLEEFPirates = "476501e8-09a2-5ece-8869-fb82de89a1fa"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
-
-[extras]
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
-SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SLEEFPirates = "476501e8-09a2-5ece-8869-fb82de89a1fa"
+Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
+VectorizationBase = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
 
 [compat]
-Test = "<0.0.1, 1"
 DiffEqDevTools = "2.44.4"
+JET = "0.9, 0.11"
 MuladdMacro = "0.2"
 OrdinaryDiffEqCore = "2"
-Static = "0.7, 0.8, 1"
-SLEEFPirates = "0.6"
-VectorizationBase = "0.21"
-StaticArrays = "1.9"
-SafeTestsets = "0.1.0"
 Reexport = "1"
+SLEEFPirates = "0.6"
+SafeTestsets = "0.1.0"
+Static = "0.7, 0.8, 1"
+StaticArrays = "1.9"
+Test = "<0.0.1, 1"
+VectorizationBase = "0.21"
 julia = "1.10"
 
-[targets]
-test = ["DiffEqDevTools", "SafeTestsets", "StaticArrays", "Test"]
+[extras]
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
+
+[targets]
+test = ["DiffEqDevTools", "JET", "SafeTestsets", "StaticArrays", "Test"]
