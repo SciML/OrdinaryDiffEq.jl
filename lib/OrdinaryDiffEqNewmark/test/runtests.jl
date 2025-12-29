@@ -1,4 +1,5 @@
 using OrdinaryDiffEqNewmark, Test, RecursiveArrayTools, DiffEqDevTools
+using SafeTestsets
 
 # Newmark methods with harmonic oscillator
 @testset "Harmonic Oscillator" begin
@@ -92,4 +93,9 @@ end
 
     sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
     @test sim.𝒪est[:l2]≈2 rtol=1e-1
+end
+
+# Only run JET tests on stable Julia versions
+if isempty(VERSION.prerelease)
+    @time @safetestset "JET Tests" include("jet.jl")
 end
