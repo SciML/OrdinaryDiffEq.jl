@@ -4,6 +4,9 @@ OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 SciMLLogging = "a6db7da4-7206-11f0-1eab-35f2a5dbe1d1"
 
+[sources]
+OrdinaryDiffEqCore = {path = "../../lib/OrdinaryDiffEqCore"}
+
 [compat]
 JET = "0.9, 0.11"
 OrdinaryDiffEq = "6"
