@@ -97,8 +97,9 @@ end
     @test_nowarn integ = init(idprob, IDSolve())
 
     idprob2 = ImplicitDiscreteProblem(emptyoop, u0, (0, tsteps), [])
-    @test_throws AssertionError("Empty u not supported with out of place functions yet.") integ=init(
-        idprob2, IDSolve())
+    # OOP with u0=nothing throws MethodError because oneunit(Nothing) is not defined
+    # before the assertion in alg_cache can be reached
+    @test_throws MethodError integ=init(idprob2, IDSolve())
 end
 
 @testset "Create NonlinearLeastSquaresProblem" begin
