@@ -9,6 +9,8 @@
 # Once they add the verbose parameter, they can use the full verbosity system.
 
 # OLD signature -> NEW signature (for old callers using updated OrdinaryDiffEq algorithms)
+# NOTE: These use ::Type{} constraints to match the old calling convention where types
+# are passed as Type{T} rather than as values. This matches how old code calls alg_cache.
 function alg_cache(alg, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
