@@ -100,7 +100,7 @@ using OrdinaryDiffEqSymplecticRK
 function HH_acceleration!(dv, v, u, p, t)
     x, y = u
     dx, dy = dv
-    dv[1] = -x - 2x * y
+    dv[1] = -x - 2 * x * y
     dv[2] = y^2 - y - x^2
 end
 initial_positions = [0.0, 0.1]
