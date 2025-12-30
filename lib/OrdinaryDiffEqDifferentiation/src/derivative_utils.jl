@@ -556,8 +556,12 @@ function build_J_W(
         W = f.W_prototype
         J = f.jac_prototype
     elseif f.jac_prototype isa AbstractSciMLOperator
-        W = WOperator{IIP}(f, _vec(u), dt)
-        J = W.J
+        J = deepcopy(f.jac_prototype)
+        if J isa AbstractMatrix
+            @assert SciMLBase.has_jac(f) "f needs to have an associated jacobian"
+            J = MatrixOperator(J; update_func! = f.jac)
+        end
+        W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, _vec(u))
     elseif islin
         J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
         W = WOperator{IIP}(f.mass_matrix, dt, J, _vec(u))
