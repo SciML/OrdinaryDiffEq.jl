@@ -186,6 +186,11 @@ end
 function jacobian!(J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::SciMLBase.DEIntegrator,
         jac_config) where F
+    # Handle empty state vector - nothing to compute
+    if isempty(x)
+        return nothing
+    end
+
     alg = unwrap_alg(integrator, true)
 
     dense = ADTypes.dense_ad(alg_autodiff(alg))
