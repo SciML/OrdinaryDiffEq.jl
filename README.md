@@ -39,15 +39,15 @@ sol = solve(prob, Tsit5(), reltol = 1e-8, abstol = 1e-8)
 using Plots
 plot(sol, linewidth = 5, title = "Solution to the linear ODE with a thick line",
     xaxis = "Time (t)", yaxis = "u(t) (in μm)", label = "My Thick Line!") # legend=false
-plot!(sol.t, t -> 0.5 * exp(1.01t), lw = 3, ls = :dash, label = "True Solution!")
+plot!(sol.t, t -> 0.5 * exp(1.01 * t), lw = 3, ls = :dash, label = "True Solution!")
 ```
 
-That example uses the out-of-place syntax `f(u,p,t)`, while the inplace syntax (more efficient for systems of equations) is shown in the Lorenz example:
+That example uses the out-of-place syntax `f(u,p,t)`, while the in-place syntax (more efficient for systems of equations) is shown in the Lorenz example:
 
 ```julia
 using OrdinaryDiffEq
 function lorenz!(du, u, p, t)
-    du[1] = 10.0(u[2] - u[1])
+    du[1] = 10.0 * (u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
     du[3] = u[1] * u[2] - (8 / 3) * u[3]
 end
@@ -64,7 +64,7 @@ Very fast static array versions can be specifically compiled to the size of your
 ```julia
 using OrdinaryDiffEq, StaticArrays
 function lorenz(u, p, t)
-    SA[10.0(u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
+    SA[10.0 * (u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
 end
 u0 = SA[1.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
@@ -78,7 +78,7 @@ For "refined ODEs", like dynamical equations and `SecondOrderODEProblem`s, refer
 function HH_acceleration!(dv, v, u, p, t)
     x, y = u
     dx, dy = dv
-    dv[1] = -x - 2x * y
+    dv[1] = -x - 2 * x * y
     dv[2] = y^2 - y - x^2
 end
 initial_positions = [0.0, 0.1]
