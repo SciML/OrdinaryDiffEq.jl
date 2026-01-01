@@ -1,7 +1,13 @@
 using Documenter, OrdinaryDiffEq
 
-cp("./docs/Manifest.toml", "./docs/src/assets/Manifest.toml", force = true)
-cp("./docs/Project.toml", "./docs/src/assets/Project.toml", force = true)
+# Handle both running from repo root and from docs directory
+manifest_src = isfile("./docs/Manifest.toml") ? "./docs/Manifest.toml" : "Manifest.toml"
+project_src = isfile("./docs/Project.toml") ? "./docs/Project.toml" : "Project.toml"
+manifest_dst = isfile("./docs/src/assets/Manifest.toml") || isdir("./docs/src/assets") ? "./docs/src/assets/Manifest.toml" : "src/assets/Manifest.toml"
+project_dst = isfile("./docs/src/assets/Project.toml") || isdir("./docs/src/assets") ? "./docs/src/assets/Project.toml" : "src/assets/Project.toml"
+
+cp(manifest_src, manifest_dst, force = true)
+cp(project_src, project_dst, force = true)
 
 # Keep pages.jl separate for the DiffEqDocs.jl build
 include("pages.jl")
