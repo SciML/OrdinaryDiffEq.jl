@@ -236,3 +236,116 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 end
+
+
+function eval_poly_derivative(Θ, coeffs, order::Int)
+    n = length(coeffs)
+    # If not enough terms for this derivative, return zero
+    if n <= order
+        return zero(eltype(coeffs))
+    end
+    result = zero(eltype(coeffs))
+    for i in (order+1):n
+        # Compute the coefficient for the k-th derivative
+        coeff = coeffs[i] * prod(j -> i-j, 0:(order-1))
+        # Θ^(i-order)
+        Θpow = Θ^(i-order)
+        result += coeff * Θpow
+    end
+    return result
+end
+"""
+Generic interpolation for Runge-Kutta methods.
+Arguments:
+- Θ: interpolation parameter (0 ≤ Θ ≤ 1)
+- dt: time step
+- y₀: initial value
+- k: stage derivatives (vector of vectors, one per component)
+- tableau: coefficient matrix where each row contains polynomial coefficients for a stage
+          Each row i contains [a₀, a₁, a₂, ...] for polynomial aᵢ₀ + aᵢ₁*Θ + aᵢ₂*Θ² + ...
+- idxs: indices (optional, for partial interpolation)
+- order: 0 for value, 1 for derivative
+"""
+"""
+Evaluate the k-th derivative of a polynomial at Θ.
+coeffs = [c₀, c₁, c₂, ...]
+order = k (0 for value, 1 for first derivative, etc.)
+"""
+
+function generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs=nothing, order=0)
+    nstages = size(B_interp, 1)
+    
+    # Evaluate polynomial (or derivative) for each stage using the generic function
+    b = Vector{eltype(B_interp)}(undef, nstages)
+    for i in 1:nstages
+        coeffs = @view B_interp[i, :]
+        b[i] = eval_poly_derivative(Θ, coeffs, order)
+    end
+    
+    # Compute scaling factor for higher derivatives
+    @assert order >= 0 "Derivative order must be non-negative"
+    inv_dt_factor = order <= 1 ? one(dt) : inv(dt)^(order - 1)
+    
+    # Compute the weighted sum of stage derivatives
+    if isnothing(idxs)
+        interp_sum = sum(k[i] * b[i] for i in 1:nstages)
+        if order == 0
+            return y₀ + dt * interp_sum
+        else
+            return interp_sum * inv_dt_factor
+        end
+    else
+        interp_sum = sum(k[i][idxs] * b[i] for i in 1:nstages)
+        if order == 0
+            return y₀[idxs] + dt * interp_sum
+        else
+            return interp_sum * inv_dt_factor
+        end
+    end
+end
+
+# In-place version
+function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs=nothing, order=0)
+    nstages = size(B_interp, 1)
+    
+    # Evaluate polynomial (or derivative) for each stage using the generic function
+    b = Vector{eltype(B_interp)}(undef, nstages)
+    for i in 1:nstages
+        coeffs = @view B_interp[i, :]
+        b[i] = eval_poly_derivative(Θ, coeffs, order)
+    end
+    
+    # Compute scaling factor for higher derivatives
+    @assert order >= 0 "Derivative order must be non-negative"
+    inv_dt_factor = order <= 1 ? one(dt) : inv(dt)^(order - 1)
+    
+    # Compute in-place
+    if isnothing(idxs)
+        if order == 0
+            @.. out = y₀
+            for i in 1:nstages
+                @.. out += dt * k[i] * b[i]
+            end
+        else
+            @.. out = zero(eltype(out))
+            for i in 1:nstages
+                @.. out += k[i] * b[i]
+            end
+            @.. out *= inv_dt_factor
+        end
+    else
+        if order == 0
+            @views @.. out = y₀[idxs]
+            for i in 1:nstages
+                @views @.. out += dt * k[i][idxs] * b[i]
+            end
+        else
+            @.. out = zero(eltype(out))
+            for i in 1:nstages
+                @views @.. out += k[i][idxs] * b[i]
+            end
+            @.. out *= inv_dt_factor
+        end
+    end
+    return out
+end
