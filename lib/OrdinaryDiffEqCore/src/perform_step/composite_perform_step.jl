@@ -258,9 +258,6 @@ function choose_algorithm!(integrator, cache::DefaultCache)
             old_cache = cache.cache6
         end
 
-        integrator.opts.controller.beta2 = beta2 = beta2_default(algs[new_current])
-        integrator.opts.controller.beta1 = beta1_default(algs[new_current], beta2)
-
         reset_alg_dependent_opts!(integrator, algs[old_current], algs[new_current])
         transfer_cache!(integrator, old_cache, new_cache)
     end
@@ -277,12 +274,6 @@ function reset_alg_dependent_opts!(integrator, alg1, alg2)
     if integrator.opts.adaptive == isadaptive(alg1)
         integrator.opts.adaptive = isadaptive(alg2)
     end
-    if integrator.opts.qmin == qmin_default(alg1)
-        integrator.opts.qmin = qmin_default(alg2)
-    end
-    if integrator.opts.qmax == qmax_default(alg1)
-        integrator.opts.qmax == qmax_default(alg2)
-    end
     reset_alg_dependent_opts!(integrator.opts.controller, alg1, alg2)
     nothing
 end
@@ -291,3 +282,4 @@ end
 # Example: send the history variables from one multistep method to another
 
 transfer_cache!(integrator, alg1, alg2) = nothing
+reset_alg_dependent_opts!(::Union{AbstractController, AbstractControllerCache}, alg1, alg2) = nothing

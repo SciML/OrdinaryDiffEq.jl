@@ -36,17 +36,17 @@ function SciMLBase.__init(
         dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
         force_dtmin = false,
         adaptive = anyadaptive(alg),
-        gamma = gamma_default(alg),
         abstol = nothing,
         reltol = nothing,
-        qmin = qmin_default(alg),
-        qmax = qmax_default(alg),
-        qsteady_min = qsteady_min_default(alg),
-        qsteady_max = qsteady_max_default(alg),
+        gamma = nothing,
+        qmin = nothing,
+        qmax = nothing,
+        qsteady_min = nothing,
+        qsteady_max = nothing,
         beta1 = nothing,
         beta2 = nothing,
-        qoldinit = anyadaptive(alg) ? 1 // 10^4 : 0,
-        controller = nothing,
+        qoldinit = nothing,
+        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(typeof(one(eltype(prob.tspan))), alg), # We have to reconstruct the old controller before breaking release.,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
@@ -426,15 +426,56 @@ function SciMLBase.__init(
         throw(ArgumentError("Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."))
     end
 
+    # Deprecation warnings for users to break down which parameters they accidentally set.
     if (beta1 !== nothing || beta2 !== nothing)
         message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
         Base.depwarn(message, :init)
         Base.depwarn(message, :solve)
     end
-
-    if controller === nothing
-        controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
+    if (qmin !== nothing || qmax !== nothing)
+        message = "Providing the legacy PID parameters `qmin, qmax` is deprecated. Use the keyword argument `controller` instead."
+        Base.depwarn(message, :init)
+        Base.depwarn(message, :solve)
     end
+    if (qsteady_min !== nothing || qsteady_max !== nothing)
+        message = "Providing the legacy PID parameters `qsteady_min, qsteady_max` is deprecated. Use the keyword argument `controller` instead."
+        Base.depwarn(message, :init)
+        Base.depwarn(message, :solve)
+    end
+    if (qoldinit !== nothing)
+        message = "Providing the legacy PID parameters `qoldinit` is deprecated. Use the keyword argument `controller` instead."
+        Base.depwarn(message, :init)
+        Base.depwarn(message, :solve)
+    end
+
+    # The following code provides an upgrade path for users by preserving the old behavior.
+    legacy_controller_parameters = (gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit)
+    if controller === nothing # We have to reconstruct the old controller before breaking release.
+        if any(legacy_controller_parameters .== nothing)
+            gamma = gamma === nothing ? gamma_default(alg) : gamma
+            qmin = qmin === nothing ? qmin_default(alg) : qmin
+            qmax = qmax === nothing ? qmax_default(alg) : qmax
+            qsteady_min = qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min
+            qsteady_max = qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max
+            qoldinit = qoldinit === nothing ? (anyadaptive(alg) ? 1 // 10^4 : 0) : qoldinit
+            controller = legacy_default_controller(_alg, cache, qoldinit, beta1, beta2)
+        end
+    else # Controller has been passed
+        gamma = hasfield(typeof(controller), :gamma) ? controller.gamma : gamma_default(alg)
+        qmin = hasfield(typeof(controller), :qmin) ? controller.qmin : qmin_default(alg)
+        qmax = hasfield(typeof(controller), :qmax) ? controller.qmax : qmax_default(alg)
+        qsteady_min = hasfield(typeof(controller), :qsteady_min) ? controller.qsteady_min : qsteady_min_default(alg)
+        qsteady_max = hasfield(typeof(controller), :qsteady_max) ? controller.qsteady_max : qsteady_max_default(alg)
+        qoldinit = hasfield(typeof(controller), :qoldinit) ? controller.qoldinit : (anyadaptive(alg) ? 1 // 10^4 : 0)
+    end
+
+
+    atmp = if hasfield(typeof(cache), :atmp)
+            cache.atmp
+        else
+            nothing
+        end
+    controller_cache = setup_controller_cache(_alg, atmp, controller)
 
     save_end_user = save_end
     save_end = save_end === nothing ?
@@ -442,7 +483,9 @@ function SciMLBase.__init(
                prob.tspan[2] in saveat : save_end
 
     opts = DEOptions{typeof(abstol_internal), typeof(reltol_internal),
-        QT, tType, typeof(controller),
+        QT, tType, 
+        # typeof(controller),
+        typeof(controller_cache),
         typeof(internalnorm), typeof(internalopnorm),
         typeof(save_end_user),
         typeof(callbacks_internal),
@@ -455,14 +498,20 @@ function SciMLBase.__init(
         typeof(saveat), typeof(d_discontinuities)}(maxiters, save_everystep,
         adaptive, abstol_internal,
         reltol_internal,
-        QT(gamma), QT(qmax),
+        # TODO vvv remove this block as these are controller and not integrator parameters vvv
+        QT(gamma),
+        QT(qmax),
         QT(qmin),
         QT(qsteady_max),
         QT(qsteady_min),
         QT(qoldinit),
+        # TODO ^^^remove this block as these are controller and not integrator parameters ^^^
         QT(failfactor),
         tType(dtmax), tType(dtmin),
-        controller,
+        # TODO vvv remove this vvv
+        # controller,
+        controller_cache,
+        # TODO ^^^ remove this ^^^
         internalnorm,
         internalopnorm,
         save_idxs, tstops_internal,
@@ -539,13 +588,18 @@ function SciMLBase.__init(
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),
-        typeof(initializealg), typeof(differential_vars)}(
+        typeof(initializealg), typeof(differential_vars),
+        typeof(controller_cache)}(
         sol, u, du, k, t, tType(dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
         dtpropose, tdir, eigen_est, EEst,
+        # TODO vvv remove these
         QT(qoldinit), q11,
-        erracc, dtacc, success_iter,
+        erracc, dtacc,
+        # TODO ^^^ remove these
+        controller_cache,
+        success_iter,
         iter, saveiter, saveiter_dense, cache,
         callback_cache,
         kshortsize, force_stepfail,
