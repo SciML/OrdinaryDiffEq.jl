@@ -64,6 +64,7 @@ jobs:
           - ImplicitDiscreteSolve
           - SimpleImplicitDiscreteSolve
           - Enzyme
+          - Nopre
 
         version:
           - 'lts'
@@ -74,6 +75,8 @@ jobs:
           - group: Enzyme
             version: '1'
           - group: Enzyme
+            version: 'pre'
+          - group: Nopre
             version: 'pre'
     steps:
       - uses: actions/checkout@v6
