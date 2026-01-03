@@ -35,13 +35,14 @@ function alg_cache(alg::ExplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},
     ExplicitRKCache(u, uprev, tmp, utilde, atmp, fsalfirst, fsallast, kk, tab)
 end
 
-struct ExplicitRKConstantCache{MType, VType, KType} <: OrdinaryDiffEqConstantCache
+struct ExplicitRKConstantCache{MType, VType, KType, BType} <: OrdinaryDiffEqConstantCache
     A::MType
     c::VType
     α::VType
     αEEst::VType
     stages::Int
     kk::KType
+    B_interp::BType
 end
 
 function ExplicitRKConstantCache(tableau, rate_prototype)
@@ -49,6 +50,7 @@ function ExplicitRKConstantCache(tableau, rate_prototype)
     A = copy(A') # Transpose A to column major looping
     kk = Array{typeof(rate_prototype)}(undef, stages) # Not ks since that's for integrator.opts.dense
     αEEst = isempty(αEEst) ? αEEst : α .- αEEst
+    B_interp = hasproperty(tableau, :B_interp) ? tableau.B_interp : nothing
     ExplicitRKConstantCache(A, c, α, αEEst, stages, kk)
 end
 

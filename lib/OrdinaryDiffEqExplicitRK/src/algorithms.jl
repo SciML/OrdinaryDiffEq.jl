@@ -3,7 +3,7 @@ constructDormandPrince()
 
 Constructs the tableau object for the Dormand-Prince Order 4/5 method.
 """
-function constructDormandPrince(T::Type = Float64)
+function constructDormandPrince(::Type{T} = Float64) where T
     A = [0 0 0 0 0 0 0
          1//5 0 0 0 0 0 0
          3//40 9//40 0 0 0 0 0
@@ -58,7 +58,7 @@ For Tsit5, the original formulation was:
     ... and so on for all 7 stages
 =
 """
-function construct_tsit5_interp_matrix(T::Type = Float64)
+function construct_tsit5_interp_matrix(::Type{T} = Float64) where T
     # Original Tsit5 interpolation coefficients
     # From OrdinaryDiffEqTsit5/src/tsit_tableaus.jl
 
@@ -122,7 +122,7 @@ end
 High-precision version for BigFloat and other arbitrary-precision types.
 We have not tested this
 """
-function construct_tsit5_interp_matrix_highprecision(T::Type)
+function construct_tsit5_interp_matrix_highprecision(::Type{T}) where T
     # Stage 1
     r11 = convert(T, big"0.999999999999999974283372471559910888475488471328")
     r12 = convert(T, big"-2.763706197274825911336735930481400260916070804192")
@@ -177,13 +177,8 @@ end
 
 Automatically selects appropriate precision based on type.
 """
-function construct_tsit5_interp_matrix_auto(T::Type)
-    if T <: Union{Float32, Float64}
-        return construct_tsit5_interp_matrix(T)
-    else
-        return construct_tsit5_interp_matrix_highprecision(T)
-    end
-end
+construct_tsit5_interp_matrix_auto(::Type{T}) where {T <: Union{Float32, Float64}} = construct_tsit5_interp_matrix(T)
+construct_tsit5_interp_matrix_auto(::Type{T}) where T = construct_tsit5_interp_matrix_highprecision(T)
 
 # Convert Tsit5 tableau to ExplicitRK format
 
@@ -195,7 +190,7 @@ This allows using Tsit5 with the generic ExplicitRK solver.
 
 Tsit5 is a 7-stage, 5th-order method with 4th-order embedded error estimate.
 """
-function constructTsit5ExplicitRK(T::Type = Float64)
+function constructTsit5ExplicitRK(::Type{T} = Float64) where T
     # Build the A matrix (Butcher tableau coefficients)
     # 7 stages, lower triangular (explicit method)
     A=[0 0 0 0 0 0 0
@@ -259,7 +254,7 @@ end
 Simplified version using rational and decimal approximations.
 Faster to construct but slightly less accurate than the full precision version.
 """
-function constructTsit5ExplicitRKSimple(T::Type = Float64)
+function constructTsit5ExplicitRKSimple(::Type{T} = Float64) where T
     #Tested a few more variants and leaving them commented out here for future reference
     # Build the A matrix with simpler rationals/decimals
     # A = [0          0          0          0          0          0       0
