@@ -14,13 +14,15 @@ du[2] = -0.5*u[2]
 =#
 
 function dae!(du, u, p, t)
-    mul!(du, p, u)
+    return mul!(du, p, u)
 end
 
-p = [-1 0 0 0
-     1 -0.5 0 0
-     1 1 -1 0
-     -1 1 0 -1]
+p = [
+    -1 0 0 0
+    1 -0.5 0 0
+    1 1 -1 0
+    -1 1 0 -1
+]
 
 # mass_matrix = [1 0 0 0
 #                0 1 0 0
@@ -53,8 +55,8 @@ sol_d = solve(prob_d, Rodas5P())
 @testset "Test constraints in GPU sol" begin
     for t in sol_d.t
         u = Vector(sol_d(t))
-        @test isapprox(u[1] + u[2], u[3]; atol = 1e-6)
-        @test isapprox(-u[1] + u[2], u[4]; atol = 1e-6)
+        @test isapprox(u[1] + u[2], u[3]; atol = 1.0e-6)
+        @test isapprox(-u[1] + u[2], u[4]; atol = 1.0e-6)
     end
 end
 

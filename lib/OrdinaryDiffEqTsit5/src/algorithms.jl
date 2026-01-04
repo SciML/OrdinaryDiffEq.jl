@@ -11,9 +11,10 @@
     year={2011},
     publisher={Elsevier},
     doi={10.1016/j.camwa.2011.06.002}
-    }")
+    }"
+)
 Base.@kwdef struct Tsit5{StageLimiter, StepLimiter, Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -21,7 +22,7 @@ end
 @truncate_stacktrace Tsit5 3
 # for backwards compatibility
 function Tsit5(stage_limiter!, step_limiter! = trivial_limiter!)
-    Tsit5(stage_limiter!, step_limiter!, False())
+    return Tsit5(stage_limiter!, step_limiter!, False())
 end
 
 """

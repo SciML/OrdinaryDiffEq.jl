@@ -891,8 +891,6 @@ function _transformtab(Alpha,Gamma,B,Bhat)
 end
 
 
-
-
 # 2 step ROS Methods
 """
     ROS2Tableau()
@@ -912,8 +910,6 @@ function ROS2Tableau() # 2nd order
     a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
-
-
 
 
 """
@@ -982,8 +978,6 @@ function ROS2PRTableau() # 2nd order
 end
 
 
-
-
 """
     ROS2STableau()
 
@@ -1008,7 +1002,6 @@ function ROS2STableau() # 2nd order
 end
 
 
-
 """
     ROS3Tableau()
 E. Hairer, G. Wanner, Solving ordinary differential equations II,
@@ -1029,7 +1022,6 @@ function ROS3Tableau() # 3rd order
     a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
-
 
 
 """
@@ -1055,8 +1047,6 @@ function ROS3PRTableau() # 3rd order
 end
 
 
-
-
 """
     Scholz4_7Tableau()
 
@@ -1079,7 +1069,6 @@ function Scholz4_7Tableau() # 3rd order
     a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
-
 
 
 """
@@ -1132,8 +1121,6 @@ macro ROS23(part)
         nothing
     end
 end
-
-
 
 
 # 4 step ROS Methods
@@ -1288,7 +1275,6 @@ function ROS3PRLTableau() # 3rd order
 end
 
 
-
 """
     ROS3PRL2Tableau()
 
@@ -1314,7 +1300,6 @@ function ROS3PRL2Tableau() # 3rd order
     a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
-
 
 
 """

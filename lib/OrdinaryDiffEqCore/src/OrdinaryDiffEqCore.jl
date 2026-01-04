@@ -1,7 +1,7 @@
 module OrdinaryDiffEqCore
 
 if isdefined(Base, :Experimental) &&
-   isdefined(Base.Experimental, Symbol("@max_methods"))
+        isdefined(Base.Experimental, Symbol("@max_methods"))
     @eval Base.Experimental.@max_methods 1
 end
 
@@ -32,13 +32,13 @@ import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 
 # Internal utils
 import DiffEqBase: ODE_DEFAULT_NORM,
-                   ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
-                   ODE_DEFAULT_UNSTABLE_CHECK
+    ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
+    ODE_DEFAULT_UNSTABLE_CHECK
 
 import SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator,
-                       MatrixOperator, FunctionOperator,
-                       update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
-                       isconstant
+    MatrixOperator, FunctionOperator,
+    update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
+    isconstant
 
 using DiffEqBase: DEIntegrator
 
@@ -52,17 +52,17 @@ using ArrayInterface: ArrayInterface, issingular
 import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
 import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
-                         StaticMatrix
+    StaticMatrix
 
 # Integrator Interface
 import SciMLBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
-                   resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
-                   terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
-                   u_modified!, savevalues!,
-                   add_tstop!, has_tstop, first_tstop, pop_tstop!,
-                   add_saveat!, set_reltol!,
-                   set_abstol!, postamble!, last_step_failed,
-                   isautodifferentiable
+    resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
+    terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
+    u_modified!, savevalues!,
+    add_tstop!, has_tstop, first_tstop, pop_tstop!,
+    add_saveat!, set_reltol!,
+    set_abstol!, postamble!, last_step_failed,
+    isautodifferentiable
 import DiffEqBase: get_tstops, get_tstops_array, get_tstops_max
 
 using DiffEqBase: check_error!, @def, _vec, _reshape
@@ -70,15 +70,15 @@ using DiffEqBase: check_error!, @def, _vec, _reshape
 using FastBroadcast: @.., True, False
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
-                 ODEAliasSpecifier
+    ODEAliasSpecifier
 
 import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
 
 import SciMLBase: unwrap_cache,
-                   islinear
+    islinear
 import DiffEqBase: calculate_residuals,
-                   calculate_residuals!, @tight_loop_macros,
-                   timedepentdtmin
+    calculate_residuals!, @tight_loop_macros,
+    timedepentdtmin
 
 import Polyester
 # MacroTools and Adapt imported but not directly used in OrdinaryDiffEqCore

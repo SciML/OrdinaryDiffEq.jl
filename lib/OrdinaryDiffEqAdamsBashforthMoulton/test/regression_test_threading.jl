@@ -4,7 +4,8 @@ using Test
 using Static
 
 algorithms = [
-    AB3, AB4, AB5, ABM32, ABM43, ABM54, VCAB3, VCAB4, VCAB5, VCABM3, VCABM4, VCABM5, VCABM]
+    AB3, AB4, AB5, ABM32, ABM43, ABM54, VCAB3, VCAB4, VCAB5, VCABM3, VCABM4, VCABM5, VCABM,
+]
 
 problem = ODEProblemLibrary.prob_ode_linear
 

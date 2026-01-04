@@ -13,7 +13,7 @@ function pois_rand(λ::Float64)
 end
 
 function rate_to_proportion(r::Float64, t::Float64)
-    1 - exp(-r * t)
+    return 1 - exp(-r * t)
 end;
 
 function sir_abm!(du, u, p, t)
@@ -50,7 +50,7 @@ function sir_abm!(du, u, p, t)
             end
         end
     end
-    nothing
+    return nothing
 end
 
 δt = 0.1

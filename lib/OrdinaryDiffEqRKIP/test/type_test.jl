@@ -2,7 +2,7 @@ using Test
 using OrdinaryDiffEqRKIP: RKIP
 using SciMLBase: SplitODEProblem, SplitFunction, solve
 using SciMLOperators: ScalarOperator, DiagonalOperator, MatrixOperator,
-                      AbstractSciMLOperator
+    AbstractSciMLOperator
 
 using StaticArrays
 
@@ -12,8 +12,8 @@ LinearAlgebra.exp(d::ScalarOperator, t) = ScalarOperator(exp(t * d.val)) # Tempo
 LinearAlgebra.exp(d::MatrixOperator, t) = MatrixOperator(exp(t * d.A))
 
 function test(A_prototype, u_prototype, iip; use_ldiv = false, broken = false)
-    for reltol in [1e-3, 1e-6, 1e-8, 1e-10, 1e-12],
-        μ in 1.05
+    for reltol in [1.0e-3, 1.0e-6, 1.0e-8, 1.0e-10, 1.0e-12],
+            μ in 1.05
 
         analytic = (u0, _, t) -> u0 .* exp(2μ * t)
 
@@ -35,20 +35,27 @@ function test(A_prototype, u_prototype, iip; use_ldiv = false, broken = false)
                 # Wrap in try-catch since broken tests may throw during solve
                 try
                     sol = solve(
-                        spltode, RKIP(; use_ldiv = use_ldiv); reltol = reltol, abstol = 1e-10)
-                    @test_broken isapprox(sol(t[end]), splfc.analytic(u0, nothing, t[end]);
-                        rtol = 1e2 * reltol, atol = 1e-8)
+                        spltode, RKIP(; use_ldiv = use_ldiv); reltol = reltol, abstol = 1.0e-10
+                    )
+                    @test_broken isapprox(
+                        sol(t[end]), splfc.analytic(u0, nothing, t[end]);
+                        rtol = 1.0e2 * reltol, atol = 1.0e-8
+                    )
                 catch
                     @test_broken false  # Expected to fail
                 end
             else
                 sol = solve(
-                    spltode, RKIP(; use_ldiv = use_ldiv); reltol = reltol, abstol = 1e-10)
-                @test isapprox(sol(t[end]), splfc.analytic(u0, nothing, t[end]);
-                    rtol = 1e2 * reltol, atol = 1e-8)
+                    spltode, RKIP(; use_ldiv = use_ldiv); reltol = reltol, abstol = 1.0e-10
+                )
+                @test isapprox(
+                    sol(t[end]), splfc.analytic(u0, nothing, t[end]);
+                    rtol = 1.0e2 * reltol, atol = 1.0e-8
+                )
             end
         end
     end
+    return
 end
 
 @testset "In-Place ScalarOperator Vector Adaptative Ldiv" begin
@@ -84,15 +91,15 @@ end
 # fails as calling a MatrixOperator on  a StaticVector change its type to Vector, causing a type instability
 
 @testset "Out-of-place Diagonal 1x1 Operator SVector Adaptative" begin
-    test((μ) -> DiagonalOperator([μ]), u0 -> SVector(u0), false, broken=true)
+    test((μ) -> DiagonalOperator([μ]), u0 -> SVector(u0), false, broken = true)
 end
 
 @testset "Out-of-place Matrix 1x1 Operator SVector Adaptative" begin
-    test((μ) -> MatrixOperator([μ;;]), u0 -> SVector(u0), false, broken=true)
+    test((μ) -> MatrixOperator([μ;;]), u0 -> SVector(u0), false, broken = true)
 end
 
 # Fails for a strange reason as calling ldiv!(a, B, c) on a MatrixOperator dispatch toward an inexisting method
 
 @testset "In-Place MatrixOperator Vector Float Adaptative Ldiv" begin
-    test(μ -> MatrixOperator([μ;;]), u0 -> [u0], true; use_ldiv=true, broken=true)
+    test(μ -> MatrixOperator([μ;;]), u0 -> [u0], true; use_ldiv = true, broken = true)
 end

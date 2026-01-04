@@ -25,9 +25,9 @@ end
 # with a₁ = 1-2β and a₂ = 1-γ, such that
 #   uₙ₊₁ = uₙ + Δtₙ vₙ + Δtₙ²/2 [(1-2β)aₙ + 2βaₙ₊₁]
 #   vₙ₊₁ = vₙ + Δtₙ [(1-γ)aₙ + γaₙ₊₁]
-# 
+#
 # This allows us to reduce the implicit discretization to have only aₙ₊₁ as the unknown:
-#   Maₙ₊₁ = f(vₙ₊₁(aₙ₊₁), uₙ₊₁(aₙ₊₁), tₙ₊₁) 
+#   Maₙ₊₁ = f(vₙ₊₁(aₙ₊₁), uₙ₊₁(aₙ₊₁), tₙ₊₁)
 #         = f(vₙ + Δtₙ [(1-γ)aₙ + γaₙ₊₁], uₙ + Δtₙ vₙ + Δtₙ²/2 [(1-2β)aₙ + 2βaₙ₊₁], tₙ₊₁)
 # Such that we have to solve the nonlinear problem
 #   Maₙ₊₁ - f(vₙ₊₁(aₙ₊₁), uₙ₊₁(aₙ₊₁), tₙ₊₁)  = 0
@@ -39,7 +39,8 @@ end
 
 # Inplace variant
 @muladd function newmark_discretized_residual!(
-        residual, aₙ₊₁, p_newmark::NewmarkDiscretizationCache)
+        residual, aₙ₊₁, p_newmark::NewmarkDiscretizationCache
+    )
     (; f, dt, t, p) = p_newmark
     (; γ, β, aₙ, vₙ, uₙ) = p_newmark
 

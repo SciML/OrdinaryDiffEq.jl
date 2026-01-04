@@ -3,7 +3,7 @@ using OrdinaryDiffEq, JLArrays, LinearAlgebra, Test, ADTypes
 @testset "GPU AutoDiff with JLArrays" begin
     function f(u, p, t)
         A = jl(-ones(3, 3))
-        return A*u
+        return A * u
     end
     function f!(du, u, p, t)
         A = jl(-ones(3, 3))

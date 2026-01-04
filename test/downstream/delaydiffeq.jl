@@ -7,7 +7,8 @@ using Test
     # disable reuse
     nlsolve = nlsolve = NLNewton(fast_convergence_cutoff = 0)
 
-    algdict = Dict(BS3() => 2.4e-6,
+    algdict = Dict(
+        BS3() => 2.4e-6,
         Tsit5() => 4.5e-3,
         RK4() => 1.1e-4,
         Vern6() => 1.0e-3,
@@ -15,7 +16,8 @@ using Test
         TRBDF2(nlsolve = nlsolve) => 6.2e-2,
         KenCarp4(nlsolve = nlsolve) => 5.6e-2,
         Rosenbrock23() => 6.5e-4,
-        Rodas4() => 5.4e-4)
+        Rodas4() => 5.4e-4
+    )
 
     for (alg, error) in algdict
         ddealg = MethodOfSteps(alg)
@@ -24,8 +26,8 @@ using Test
         @test sol.errors[:l∞] < error
 
         sol_scalar = solve(prob_scalar, ddealg)
-        @test sol.t≈sol_scalar.t atol=1e-3
-        @test sol[1, :]≈sol_scalar.u atol=1e-3
+        @test sol.t ≈ sol_scalar.t atol = 1.0e-3
+        @test sol[1, :] ≈ sol_scalar.u atol = 1.0e-3
     end
 end
 
@@ -35,7 +37,7 @@ function lotka_volterra!(du, u, h, p, t)
     🕥🐰 = h(p, t - τ; idxs = 1)
     du[1] = d🐰 = α * 🕥🐰 - β * 🐺 * 🐰
     du[2] = d🐺 = γ * 🐺 * 🐰 - δ * 🐺
-    nothing
+    return nothing
 end
 uₒ = [1.0, 1.0]
 tspan = (0.0, 10.0)

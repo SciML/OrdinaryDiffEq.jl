@@ -34,10 +34,15 @@ resize!(i, 5)
 @test size(i.cache.nlsolver.cache.W) == (5, 5)
 @test length(i.cache.nlsolver.cache.du1) == 5
 @test length(i.cache.nlsolver.cache.weight) == 5
-@test all(size(DI.jacobian(
-    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.nlsolver.cache.jac_config[1],
-    AutoForwardDiff(tag = ForwardDiff.Tag(DiffEqBase.OrdinaryDiffEqTag(), Float64)), rand(5))) .==
-          5)
+@test all(
+    size(
+        DI.jacobian(
+            (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.nlsolver.cache.jac_config[1],
+            AutoForwardDiff(tag = ForwardDiff.Tag(DiffEqBase.OrdinaryDiffEqTag(), Float64)), rand(5)
+        )
+    ) .==
+        5
+)
 solve!(i)
 
 i = init(prob, ImplicitEuler(; autodiff = AutoFiniteDiff()))
@@ -57,9 +62,14 @@ resize!(i, 5)
 @test size(i.cache.nlsolver.cache.W) == (5, 5)
 @test length(i.cache.nlsolver.cache.du1) == 5
 @test length(i.cache.nlsolver.cache.weight) == 5
-@test all(size(DI.jacobian(
-    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.nlsolver.cache.jac_config[1],
-    AutoFiniteDiff(), rand(5))) .== 5)
+@test all(
+    size(
+        DI.jacobian(
+            (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.nlsolver.cache.jac_config[1],
+            AutoFiniteDiff(), rand(5)
+        )
+    ) .== 5
+)
 solve!(i)
 
 i = init(prob, Rosenbrock23())
@@ -79,10 +89,15 @@ resize!(i, 5)
 @test size(i.cache.J) == (5, 5)
 @test size(i.cache.W) == (5, 5)
 @test length(i.cache.linsolve_tmp) == 5
-@test all(size(DI.jacobian(
-    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.jac_config[1],
-    AutoForwardDiff(tag = ForwardDiff.Tag(DiffEqBase.OrdinaryDiffEqTag(), Float64)), rand(5))) .==
-          5)
+@test all(
+    size(
+        DI.jacobian(
+            (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.jac_config[1],
+            AutoForwardDiff(tag = ForwardDiff.Tag(DiffEqBase.OrdinaryDiffEqTag(), Float64)), rand(5)
+        )
+    ) .==
+        5
+)
 solve!(i)
 
 i = init(prob, Rosenbrock23(autodiff = AutoForwardDiff(), linsolve = KrylovJL_GMRES()))
@@ -121,9 +136,14 @@ resize!(i, 5)
 @test size(i.cache.J) == (5, 5)
 @test size(i.cache.W) == (5, 5)
 @test length(i.cache.linsolve_tmp) == 5
-@test all(size(DI.jacobian(
-    (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.jac_config[1],
-    AutoFiniteDiff(), rand(5))) .== 5)
+@test all(
+    size(
+        DI.jacobian(
+            (du, u) -> (i.f(du, u, nothing, nothing)), rand(5), i.cache.jac_config[1],
+            AutoFiniteDiff(), rand(5)
+        )
+    ) .== 5
+)
 solve!(i)
 
 function f(du, u, p, t)
@@ -132,6 +152,7 @@ function f(du, u, p, t)
     for i in 3:length(u)
         du[i] = 0.0
     end
+    return
 end
 function f_jac(J, u, p, t)
     J[1, 1] = 2.0 - 1.2 * u[2]
@@ -147,7 +168,7 @@ function f_jac(J, u, p, t)
             end
         end
     end
-    nothing
+    return nothing
 end
 ff = ODEFunction(f; jac = f_jac, jac_prototype = [1.0 1.0; 1.0 1.0])
 
@@ -160,7 +181,7 @@ solve!(i)
 function dsdt(ds, s, _, t)
     # state looks like x1,v1, x2,v2, x3,v3,...
     ds[1:2:end] .= s[2:2:end] # velocity changes position
-    ds[2:2:end] .= -1.0 # (constant downward acceleration)
+    return ds[2:2:end] .= -1.0 # (constant downward acceleration)
 end
 
 function splitCheck(s, t, intgr)
@@ -187,7 +208,7 @@ function splitMod!(intgr)
     # comment out these lines and it will work with Rosenbrock32.
     resize!(intgr, length(s) + 2) # (resizes s -> intgr.u)
     s[end - 1] = rand() # new position
-    s[end] = rand() # new velocity
+    return s[end] = rand() # new velocity
 end
 
 function runSim(method)
@@ -198,7 +219,7 @@ function runSim(method)
     # callback to bounce / split system.
     cb = DiscreteCallback(splitCheck, splitMod!)
 
-    solve(prob, method, callback = cb, dtmax = 0.01)
+    return solve(prob, method, callback = cb, dtmax = 0.01)
     # setting dtmax here so the discrete callback doesn't miss the zero-crossing too badly.
     # ...no real reason not to use a continuous callback here, I just chose not to.
 end

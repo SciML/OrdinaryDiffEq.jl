@@ -6,11 +6,11 @@ using OrdinaryDiffEq, DiffEqCallbacks, Test
 @testset "Null u0 with callbacks" begin
     @testset "Explicit solvers" begin
         for (name, alg, kwargs) in [
-            ("FunctionMap", FunctionMap(), (dt = 0.1,)),
-            ("Euler", Euler(), (dt = 0.1,)),
-            ("RK4", RK4(), (dt = 0.1,)),
-            ("Tsit5", Tsit5(), ())
-        ]
+                ("FunctionMap", FunctionMap(), (dt = 0.1,)),
+                ("Euler", Euler(), (dt = 0.1,)),
+                ("RK4", RK4(), (dt = 0.1,)),
+                ("Tsit5", Tsit5(), ()),
+            ]
             @testset "$name" begin
                 counter = Ref(0)
                 cb = PresetTimeCallback([0.5], integrator -> (counter[] += 1))
@@ -27,12 +27,12 @@ using OrdinaryDiffEq, DiffEqCallbacks, Test
 
     @testset "Implicit solvers" begin
         for (name, alg) in [
-            ("Rosenbrock23", Rosenbrock23()),
-            ("Rodas5P", Rodas5P()),
-            ("TRBDF2", TRBDF2()),
-            ("ImplicitEuler", ImplicitEuler()),
-            ("QNDF", QNDF())
-        ]
+                ("Rosenbrock23", Rosenbrock23()),
+                ("Rodas5P", Rodas5P()),
+                ("TRBDF2", TRBDF2()),
+                ("ImplicitEuler", ImplicitEuler()),
+                ("QNDF", QNDF()),
+            ]
             @testset "$name" begin
                 counter = Ref(0)
                 cb = PresetTimeCallback([0.5], integrator -> (counter[] += 1))

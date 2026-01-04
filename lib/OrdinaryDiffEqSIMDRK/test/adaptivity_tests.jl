@@ -1,7 +1,7 @@
 using OrdinaryDiffEqSIMDRK, StaticArrays, Test
 
 function lorenz(u, p, t)
-    SA[10.0(u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
+    return SA[10.0(u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
 end
 u0 = SA[1.0; 0.0; 0.0]
 tspan = (0.0, 100.0)

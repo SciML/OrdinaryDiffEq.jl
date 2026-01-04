@@ -62,20 +62,24 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     end
 
     # Accept step
-    u .= nlcache.u
+    return u .= nlcache.u
 end
 
 function initialize!(integrator, cache::IDSolveCache)
-    integrator.u isa AbstractVector && (cache.z .= integrator.u)
+    return integrator.u isa AbstractVector && (cache.z .= integrator.u)
 end
 
-function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
-        alg::DefaultInit, x::Union{Val{true}, Val{false}})
+function _initialize_dae!(
+        integrator, prob::ImplicitDiscreteProblem,
+        alg::DefaultInit, x::Union{Val{true}, Val{false}}
+    )
     isnothing(prob.u0) && return
-    atol = one(eltype(prob.u0)) * 1e-12
-    if SciMLBase.has_initializeprob(prob.f)
-        _initialize_dae!(integrator, prob,
-            OverrideInit(atol), x)
+    atol = one(eltype(prob.u0)) * 1.0e-12
+    return if SciMLBase.has_initializeprob(prob.f)
+        _initialize_dae!(
+            integrator, prob,
+            OverrideInit(atol), x
+        )
     else
         (; u, p, t, f) = integrator
         initstate = ImplicitDiscreteState(u, p, t)
@@ -87,10 +91,11 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
         end
 
         nlls = !isnothing(f.resid_prototype) &&
-               (length(f.resid_prototype) != length(integrator.u))
+            (length(f.resid_prototype) != length(integrator.u))
         prob = if nlls
             NonlinearLeastSquaresProblem{isinplace(f)}(
-                NonlinearFunction(_f; resid_prototype = f.resid_prototype), u, initstate)
+                NonlinearFunction(_f; resid_prototype = f.resid_prototype), u, initstate
+            )
         else
             NonlinearProblem{isinplace(f)}(_f, u, initstate)
         end
@@ -99,7 +104,8 @@ function _initialize_dae!(integrator, prob::ImplicitDiscreteProblem,
             integrator.u = sol
         else
             integrator.sol = SciMLBase.solution_new_retcode(
-                integrator.sol, ReturnCode.InitialFailure)
+                integrator.sol, ReturnCode.InitialFailure
+            )
         end
     end
 end
