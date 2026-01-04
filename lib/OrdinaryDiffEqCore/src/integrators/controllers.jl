@@ -2,11 +2,11 @@ abstract type AbstractController end
 using OrdinaryDiffEqCore
 
 @inline function stepsize_controller!(integrator, alg)
-    stepsize_controller!(integrator, integrator.opts.controller, alg)
+    return stepsize_controller!(integrator, integrator.opts.controller, alg)
 end
 
 @inline function step_accept_controller!(integrator, alg, q)
-    step_accept_controller!(integrator, integrator.opts.controller, alg, q)
+    return step_accept_controller!(integrator, integrator.opts.controller, alg, q)
 end
 
 @inline function step_reject_controller!(integrator, alg)
@@ -73,7 +73,7 @@ end
         # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
         integrator.qold = DiffEqBase.value(integrator.dt) / q
     end
-    q
+    return q
 end
 
 function step_accept_controller!(integrator, controller::IController, alg, q)
@@ -82,12 +82,12 @@ function step_accept_controller!(integrator, controller::IController, alg, q)
     if qsteady_min <= q <= qsteady_max
         q = one(q)
     end
-    integrator.dt / q # new dt
+    return integrator.dt / q # new dt
 end
 
 function step_reject_controller!(integrator, controller::IController, alg)
     (; qold) = integrator
-    integrator.dt = qold
+    return integrator.dt = qold
 end
 
 # PI step size controller
@@ -146,7 +146,7 @@ end
         integrator.q11 = q11
         @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
     end
-    q
+    return q
 end
 
 function step_accept_controller!(integrator, controller::PIController, alg, q)
@@ -163,14 +163,14 @@ end
 function step_reject_controller!(integrator, controller::PIController, alg)
     (; q11) = integrator
     (; qmin, gamma) = integrator.opts
-    integrator.dt /= min(inv(qmin), q11 / gamma)
+    return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
 function reset_alg_dependent_opts!(controller::PIController, alg1, alg2)
     if controller.beta2 == beta2_default(alg1)
         controller.beta2 = beta2_default(alg2)
     end
-    if controller.beta1 == beta1_default(alg1, controller.beta2)
+    return if controller.beta1 == beta1_default(alg1, controller.beta2)
         controller.beta1 = beta1_default(alg2, controller.beta2)
     end
 end
@@ -249,9 +249,11 @@ struct PIDController{QT, Limiter} <: AbstractController
     limiter::Limiter    # limiter of the dt factor (before clipping)
 end
 
-function PIDController(beta1, beta2, beta3 = zero(beta1);
+function PIDController(
+        beta1, beta2, beta3 = zero(beta1);
         limiter = default_dt_factor_limiter,
-        accept_safety = 0.81)
+        accept_safety = 0.81
+    )
     beta = MVector(map(float, promote(beta1, beta2, beta3))...)
     QT = eltype(beta)
     err = MVector{3, QT}(true, true, true)
@@ -259,10 +261,12 @@ function PIDController(beta1, beta2, beta3 = zero(beta1);
 end
 
 function Base.show(io::IO, controller::PIDController)
-    print(io, "PIDController(beta=", controller.beta,
+    return print(
+        io, "PIDController(beta=", controller.beta,
         ", accept_safety=", controller.accept_safety,
         ", limiter=", controller.limiter,
-        ")")
+        ")"
+    )
 end
 
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
@@ -334,7 +338,7 @@ function step_accept_controller!(integrator, controller::PIDController, alg, dt_
 end
 
 function step_reject_controller!(integrator, controller::PIDController, alg)
-    integrator.dt *= integrator.qold
+    return integrator.dt *= integrator.qold
 end
 
 # Gustafsson predictive step size controller
@@ -397,7 +401,7 @@ end
 
 function post_newton_controller!(integrator, alg)
     integrator.dt = integrator.dt / integrator.opts.failfactor
-    nothing
+    return nothing
 end
 
 @inline function stepsize_controller!(integrator, controller::PredictiveController, alg)
@@ -422,7 +426,7 @@ end
         @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         integrator.qold = q
     end
-    q
+    return q
 end
 
 function step_accept_controller!(integrator, controller::PredictiveController, alg, q)
@@ -433,7 +437,7 @@ function step_accept_controller!(integrator, controller::PredictiveController, a
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qgus = (integrator.dtacc / integrator.dt) *
-               fastpower((EEst^2) / integrator.erracc, expo)
+            fastpower((EEst^2) / integrator.erracc, expo)
         qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
         qacc = max(q, qgus)
     else
@@ -443,12 +447,12 @@ function step_accept_controller!(integrator, controller::PredictiveController, a
         qacc = one(qacc)
     end
     integrator.dtacc = integrator.dt
-    integrator.erracc = max(1e-2, EEst)
+    integrator.erracc = max(1.0e-2, EEst)
 
     return integrator.dt / qacc
 end
 
 function step_reject_controller!(integrator, controller::PredictiveController, alg)
     (; dt, success_iter, qold) = integrator
-    integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
+    return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end

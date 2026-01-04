@@ -4,8 +4,8 @@ using OrdinaryDiffEq
 println("First")
 # set_X!(integrator, integrator.X) should not change the result.
 @testset "Trivial $setter ($alg, inplace=$iip)" for alg in [RK4, Trapezoid],
-    setter in [set_t!, set_u!, set_ut!],
-    iip in [false, true]
+        setter in [set_t!, set_u!, set_ut!],
+        iip in [false, true]
 
     if iip
         f = (du, u, p, t) -> (du .= 2u)
@@ -35,7 +35,7 @@ println("First")
     if alg === Trapezoid
         rtol = integrator1.opts.reltol * 100
         atol = integrator1.opts.abstol
-        @test integrator1.u≈integrator2.u rtol=rtol atol=atol
+        @test integrator1.u ≈ integrator2.u rtol = rtol atol = atol
     else
         @test integrator1.u == integrator2.u
     end
@@ -44,8 +44,8 @@ end
 println("Second")
 
 @testset "Resolve with $setter ($alg, inplace=$iip)" for alg in [RK4, Trapezoid],
-    setter in [set_t!, set_ut!],
-    iip in [false, true]
+        setter in [set_t!, set_ut!],
+        iip in [false, true]
 
     if iip
         f = (du, u, p, t) -> (du .= 2u * cos(2π * t))
@@ -73,7 +73,7 @@ println("Second")
     if alg === Trapezoid
         rtol *= 100
     end
-    @test integrator1.u≈integrator2.u rtol=rtol atol=atol
+    @test integrator1.u ≈ integrator2.u rtol = rtol atol = atol
 end
 
 @testset "set_proposed_dt!" begin

@@ -3,9 +3,11 @@ import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 vecarrzero(m::Integer, n) = map(t -> zeros(n), 1:m)
 
-algs_ODE = zip([Tsit5(), Tsit5(), ABM54(), AutoTsit5(Rosenbrock23())],
+algs_ODE = zip(
+    [Tsit5(), Tsit5(), ABM54(), AutoTsit5(Rosenbrock23())],
     [Dict(), Dict(:dense => false), Dict(:dt => 0.1), Dict()],
-    ["(normal)", "(not dense)", "(fixed-step)", "(CompositeAlgorithm)"])
+    ["(normal)", "(not dense)", "(fixed-step)", "(CompositeAlgorithm)"]
+)
 
 tt = 0:0.05:1
 ntt = length(tt)
@@ -14,7 +16,7 @@ out_VVF_1 = vecarrzero(ntt, 1)                           # Vector{Vector{Float64
 out_VVF_2 = vecarrzero(ntt, 2)                           # Vector{Vector{Float64}}
 out_VMF = vecarrzero(ntt, size(prob_ode_2Dlinear.u0))   # Vector{Matrix{Float64}}
 
-@testset verbose=true "ODESolution interpolation $str" for (alg, kwargs, str) in algs_ODE
+@testset verbose = true "ODESolution interpolation $str" for (alg, kwargs, str) in algs_ODE
     sol_ODE = solve(prob_ode_linear, alg; kwargs...)
     sol_ODE_2D = solve(prob_ode_2Dlinear, alg; kwargs...)
 

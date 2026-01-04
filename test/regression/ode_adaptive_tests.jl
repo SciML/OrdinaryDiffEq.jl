@@ -21,12 +21,14 @@ val4 = maximum(abs.(sol3.u[end] - sol3.u_analytic[end]))
 @test SciMLBase.successful_retcode(sol)
 @test SciMLBase.successful_retcode(sol2)
 @test SciMLBase.successful_retcode(sol3)
-@test max(val1, val2, val3, val4) < 2e-3
+@test max(val1, val2, val3, val4) < 2.0e-3
 
 function lorenz(u, p, t)
-    [10.0(u[2] - u[1])
-     u[1] * (28.0 - u[3]) - u[2]
-     u[1] * u[2] - (8 / 3) * u[3]]
+    return [
+        10.0(u[2] - u[1])
+        u[1] * (28.0 - u[3]) - u[2]
+        u[1] * u[2] - (8 / 3) * u[3]
+    ]
 end
 u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
@@ -41,7 +43,7 @@ sol = solve(prob, FBDF())
 function lorenz(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
-    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return du[3] = u[1] * u[2] - (8 / 3) * u[3]
 end
 u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
@@ -56,7 +58,7 @@ sol = solve(prob, FBDF())
 function lorenz(out, du, u, p, t)
     out[1] = 10.0(u[2] - u[1]) - du[1]
     out[2] = u[1] * (28.0 - u[3]) - u[2] - du[2]
-    out[3] = u[1] * u[2] - (8 / 3) * u[3] - du[3]
+    return out[3] = u[1] * u[2] - (8 / 3) * u[3] - du[3]
 end
 u0 = [1.0; 0.0; 0.0]
 du0 = [0.0; 0.0; 0.0]
@@ -68,9 +70,11 @@ sol = solve(prob, DFBDF())
 @test SciMLBase.successful_retcode(sol)
 
 function lorenz(du, u, p, t)
-    [10.0(u[2] - u[1]) - du[1]
-     u[1] * (28.0 - u[3]) - u[2] - du[2]
-     u[1] * u[2] - (8 / 3) * u[3] - du[3]]
+    return [
+        10.0(u[2] - u[1]) - du[1]
+        u[1] * (28.0 - u[3]) - u[2] - du[2]
+        u[1] * u[2] - (8 / 3) * u[3] - du[3]
+    ]
 end
 u0 = [1.0; 0.0; 0.0]
 du0 = [0.0; 0.0; 0.0]
@@ -87,14 +91,14 @@ tspan = (1.6078221f0, 2.0f0)
 initial_condition = [2.1349438f6, -2.1349438f6]
 prob = ODEProblem(possibly_singular, initial_condition, tspan)
 for alg in [
-    Rosenbrock23(),
-    Rosenbrock32(),
-    Rodas3(),
-    Rodas4(),
-    Rodas4P(),
-    Rodas5(),
-    Rodas5P()
-]
+        Rosenbrock23(),
+        Rosenbrock32(),
+        Rodas3(),
+        Rodas4(),
+        Rodas4P(),
+        Rodas5(),
+        Rodas5P(),
+    ]
     sol = solve(prob, alg)
     @test sol.retcode == ReturnCode.Success
 end
@@ -159,9 +163,9 @@ sol_lorenz = solve(prob_lorenz, ESDIRK659L2SA())
 for prob in [prob_ode_2Dlinear, prob_ode_linear]
     sol = solve(prob, Alshina2())
     val = maximum(abs.(sol.u[end] - sol.u_analytic[end]))
-    @test val < 1e-6
+    @test val < 1.0e-6
 
     sol = solve(prob, Alshina3())
     val = maximum(abs.(sol.u[end] - sol.u_analytic[end]))
-    @test val < 1e-6
+    @test val < 1.0e-6
 end

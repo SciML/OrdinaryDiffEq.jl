@@ -2,7 +2,7 @@ abstract type ABMMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type ABMVariableCoefficientMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::ABMMutableCache, u) = (cache.fsalfirst, cache.k)
 function get_fsalfirstlast(cache::ABMVariableCoefficientMutableCache, u)
-    (cache.fsalfirst, cache.k4)
+    return (cache.fsalfirst, cache.k4)
 end
 @cache mutable struct AB3Cache{uType, rateType, Thread} <: ABMMutableCache
     u::uType
@@ -23,26 +23,30 @@ end
     step::Int
 end
 
-function alg_cache(alg::AB3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::AB3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     ralk2 = zero(rate_prototype)
     k = zero(rate_prototype)
     tmp = zero(u)
-    AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, 1, alg.thread)
+    return AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, 1, alg.thread)
 end
 
-function alg_cache(alg::AB3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::AB3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
-    AB3ConstantCache(k2, k3, 1)
+    return AB3ConstantCache(k2, k3, 1)
 end
 
 @cache mutable struct ABM32Cache{uType, rateType, Thread} <: ABMMutableCache
@@ -64,26 +68,30 @@ end
     step::Int
 end
 
-function alg_cache(alg::ABM32, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::ABM32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     ralk2 = zero(rate_prototype)
     k = zero(rate_prototype)
     tmp = zero(u)
-    ABM32Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, 1, alg.thread)
+    return ABM32Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, 1, alg.thread)
 end
 
-function alg_cache(alg::ABM32, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::ABM32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
-    ABM32ConstantCache(k2, k3, 1)
+    return ABM32ConstantCache(k2, k3, 1)
 end
 
 @cache mutable struct AB4Cache{uType, rateType, Thread} <: ABMMutableCache
@@ -110,10 +118,12 @@ end
     step::Int
 end
 
-function alg_cache(alg::AB4, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::AB4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -124,17 +134,19 @@ function alg_cache(alg::AB4, u, rate_prototype, ::Type{uEltypeNoUnits},
     t2 = zero(rate_prototype)
     t3 = zero(rate_prototype)
     t4 = zero(rate_prototype)
-    AB4Cache(u, uprev, fsalfirst, k2, k3, k4, ralk2, k, tmp, t2, t3, t4, 1, alg.thread)
+    return AB4Cache(u, uprev, fsalfirst, k2, k3, k4, ralk2, k, tmp, t2, t3, t4, 1, alg.thread)
 end
 
-function alg_cache(alg::AB4, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::AB4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
     k4 = rate_prototype
-    AB4ConstantCache(k2, k3, k4, 1)
+    return AB4ConstantCache(k2, k3, k4, 1)
 end
 
 @cache mutable struct ABM43Cache{uType, rateType, Thread} <: ABMMutableCache
@@ -164,10 +176,12 @@ end
     step::Int
 end
 
-function alg_cache(alg::ABM43, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::ABM43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -181,18 +195,22 @@ function alg_cache(alg::ABM43, u, rate_prototype, ::Type{uEltypeNoUnits},
     t5 = zero(rate_prototype)
     t6 = zero(rate_prototype)
     t7 = zero(rate_prototype)
-    ABM43Cache(u, uprev, fsalfirst, k2, k3, k4, ralk2, k,
-        tmp, t2, t3, t4, t5, t6, t7, 1, alg.thread)
+    return ABM43Cache(
+        u, uprev, fsalfirst, k2, k3, k4, ralk2, k,
+        tmp, t2, t3, t4, t5, t6, t7, 1, alg.thread
+    )
 end
 
-function alg_cache(alg::ABM43, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::ABM43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
     k4 = rate_prototype
-    ABM43ConstantCache(k2, k3, k4, 1)
+    return ABM43ConstantCache(k2, k3, k4, 1)
 end
 
 @cache mutable struct AB5Cache{uType, rateType, Thread} <: ABMMutableCache
@@ -220,10 +238,12 @@ end
     step::Int
 end
 
-function alg_cache(alg::AB5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::AB5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -234,18 +254,20 @@ function alg_cache(alg::AB5, u, rate_prototype, ::Type{uEltypeNoUnits},
     t2 = zero(rate_prototype)
     t3 = zero(rate_prototype)
     t4 = zero(rate_prototype)
-    AB5Cache(u, uprev, fsalfirst, k2, k3, k4, k5, k, tmp, t2, t3, t4, 1, alg.thread)
+    return AB5Cache(u, uprev, fsalfirst, k2, k3, k4, k5, k, tmp, t2, t3, t4, 1, alg.thread)
 end
 
-function alg_cache(alg::AB5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::AB5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
     k4 = rate_prototype
     k5 = rate_prototype
-    AB5ConstantCache(k2, k3, k4, k5, 1)
+    return AB5ConstantCache(k2, k3, k4, k5, 1)
 end
 
 @cache mutable struct ABM54Cache{uType, rateType, Thread} <: ABMMutableCache
@@ -277,10 +299,12 @@ end
     step::Int
 end
 
-function alg_cache(alg::ABM54, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::ABM54, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -295,23 +319,29 @@ function alg_cache(alg::ABM54, u, rate_prototype, ::Type{uEltypeNoUnits},
     t6 = zero(rate_prototype)
     t7 = zero(rate_prototype)
     t8 = zero(rate_prototype)
-    ABM54Cache(u, uprev, fsalfirst, k2, k3, k4, k5, k, tmp,
-        t2, t3, t4, t5, t6, t7, t8, 1, alg.thread)
+    return ABM54Cache(
+        u, uprev, fsalfirst, k2, k3, k4, k5, k, tmp,
+        t2, t3, t4, t5, t6, t7, t8, 1, alg.thread
+    )
 end
 
-function alg_cache(alg::ABM54, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::ABM54, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
     k4 = rate_prototype
     k5 = rate_prototype
-    ABM54ConstantCache(k2, k3, k4, k5, 1)
+    return ABM54ConstantCache(k2, k3, k4, k5, 1)
 end
 
-@cache mutable struct VCAB3ConstantCache{TabType, tArrayType, rArrayType, cArrayType,
-    dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCAB3ConstantCache{
+        TabType, tArrayType, rArrayType, cArrayType,
+        dtArrayType,
+    } <: OrdinaryDiffEqConstantCache
     dts::dtArrayType
     c::cArrayType
     g::tArrayType
@@ -324,9 +354,11 @@ end
     step::Int
 end
 
-@cache mutable struct VCAB3Cache{uType, rateType, TabType, bs3Type, tArrayType, cArrayType,
-    uNoUnitsType, coefType, dtArrayType, Thread} <:
-                      ABMVariableCoefficientMutableCache
+@cache mutable struct VCAB3Cache{
+        uType, rateType, TabType, bs3Type, tArrayType, cArrayType,
+        uNoUnitsType, coefType, dtArrayType, Thread,
+    } <:
+    ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -348,10 +380,12 @@ end
     thread::Thread
 end
 
-function alg_cache(alg::VCAB3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCAB3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 3)
     c = fill(zero(t), 3, 3)
     g = fill(zero(t), 3)
@@ -366,13 +400,15 @@ function alg_cache(alg::VCAB3, u, rate_prototype, ::Type{uEltypeNoUnits},
     β = fill(zero(t), 3)
     order = 3
     tab = BS3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    VCAB3ConstantCache(dts, c, g, ϕ_n, ϕstar_nm1, ϕstar_n, β, order, tab, 1)
+    return VCAB3ConstantCache(dts, c, g, ϕ_n, ϕstar_nm1, ϕstar_n, β, order, tab, 1)
 end
 
-function alg_cache(alg::VCAB3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCAB3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = BS3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     bk1 = zero(rate_prototype)
     bk2 = zero(rate_prototype)
@@ -382,8 +418,10 @@ function alg_cache(alg::VCAB3, u, rate_prototype, ::Type{uEltypeNoUnits},
     batmp = similar(u, uEltypeNoUnits)
     recursivefill!(batmp, false)
     btmp = zero(u)
-    bs3cache = BS3Cache(u, uprev, bk1, bk2, bk3, bk4, butilde, btmp, batmp, tab,
-        trivial_limiter!, trivial_limiter!, False())
+    bs3cache = BS3Cache(
+        u, uprev, bk1, bk2, bk3, bk4, butilde, btmp, batmp, tab,
+        trivial_limiter!, trivial_limiter!, False()
+    )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
     dts = fill(zero(dt), 3)
@@ -403,12 +441,16 @@ function alg_cache(alg::VCAB3, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     tmp = zero(u)
     utilde = zero(u)
-    VCAB3Cache(u, uprev, fsalfirst, bs3cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕstar_n, β,
-        order, atmp, tmp, utilde, tab, 1, alg.thread)
+    return VCAB3Cache(
+        u, uprev, fsalfirst, bs3cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕstar_n, β,
+        order, atmp, tmp, utilde, tab, 1, alg.thread
+    )
 end
 
-@cache mutable struct VCAB4ConstantCache{rk4constcache, tArrayType, rArrayType, cArrayType,
-    dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCAB4ConstantCache{
+        rk4constcache, tArrayType, rArrayType, cArrayType,
+        dtArrayType,
+    } <: OrdinaryDiffEqConstantCache
     ϕstar_nm1::rArrayType
     dts::dtArrayType
     c::cArrayType
@@ -421,9 +463,11 @@ end
     step::Int
 end
 
-@cache mutable struct VCAB4Cache{uType, rateType, rk4cacheType, tArrayType, cArrayType,
-    uNoUnitsType, coefType, dtArrayType, Thread} <:
-                      ABMVariableCoefficientMutableCache
+@cache mutable struct VCAB4Cache{
+        uType, rateType, rk4cacheType, tArrayType, cArrayType,
+        uNoUnitsType, coefType, dtArrayType, Thread,
+    } <:
+    ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -444,10 +488,12 @@ end
     thread::Thread
 end
 
-function alg_cache(alg::VCAB4, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCAB4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 4)
     c = fill(zero(t), 4, 4)
     g = fill(zero(t), 4)
@@ -462,13 +508,15 @@ function alg_cache(alg::VCAB4, u, rate_prototype, ::Type{uEltypeNoUnits},
     β = fill(zero(t), 4)
     order = 4
     rk4constcache = RK4ConstantCache()
-    VCAB4ConstantCache(ϕstar_nm1, dts, c, g, ϕ_n, ϕstar_n, β, order, rk4constcache, 1)
+    return VCAB4ConstantCache(ϕstar_nm1, dts, c, g, ϕ_n, ϕstar_n, β, order, rk4constcache, 1)
 end
 
-function alg_cache(alg::VCAB4, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCAB4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     rk1 = zero(rate_prototype)
     rk2 = zero(rate_prototype)
     rk3 = zero(rate_prototype)
@@ -477,8 +525,10 @@ function alg_cache(alg::VCAB4, u, rate_prototype, ::Type{uEltypeNoUnits},
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
-    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
-        trivial_limiter!, False())
+    rk4cache = RK4Cache(
+        u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+        trivial_limiter!, False()
+    )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
     dts = fill(zero(dt), 4)
@@ -498,14 +548,18 @@ function alg_cache(alg::VCAB4, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     tmp = zero(u)
     utilde = zero(u)
-    VCAB4Cache(u, uprev, fsalfirst, rk4cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕstar_n, β,
-        order, atmp, tmp, utilde, 1, alg.thread)
+    return VCAB4Cache(
+        u, uprev, fsalfirst, rk4cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕstar_n, β,
+        order, atmp, tmp, utilde, 1, alg.thread
+    )
 end
 
 # VCAB5
 
-@cache mutable struct VCAB5ConstantCache{rk4constcache, tArrayType, rArrayType, cArrayType,
-    dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCAB5ConstantCache{
+        rk4constcache, tArrayType, rArrayType, cArrayType,
+        dtArrayType,
+    } <: OrdinaryDiffEqConstantCache
     ϕstar_nm1::rArrayType
     dts::dtArrayType
     c::cArrayType
@@ -518,9 +572,11 @@ end
     step::Int
 end
 
-@cache mutable struct VCAB5Cache{uType, rateType, rk4cacheType, tArrayType, cArrayType,
-    uNoUnitsType, coefType, dtArrayType, Thread} <:
-                      ABMVariableCoefficientMutableCache
+@cache mutable struct VCAB5Cache{
+        uType, rateType, rk4cacheType, tArrayType, cArrayType,
+        uNoUnitsType, coefType, dtArrayType, Thread,
+    } <:
+    ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -541,10 +597,12 @@ end
     thread::Thread
 end
 
-function alg_cache(alg::VCAB5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCAB5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 5)
     c = fill(zero(t), 5, 5)
     g = fill(zero(t), 5)
@@ -559,13 +617,15 @@ function alg_cache(alg::VCAB5, u, rate_prototype, ::Type{uEltypeNoUnits},
     β = fill(zero(t), 5)
     order = 5
     rk4constcache = RK4ConstantCache()
-    VCAB5ConstantCache(ϕstar_nm1, dts, c, g, ϕ_n, ϕstar_n, β, order, rk4constcache, 1)
+    return VCAB5ConstantCache(ϕstar_nm1, dts, c, g, ϕ_n, ϕstar_n, β, order, rk4constcache, 1)
 end
 
-function alg_cache(alg::VCAB5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCAB5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     rk1 = zero(rate_prototype)
     rk2 = zero(rate_prototype)
     rk3 = zero(rate_prototype)
@@ -574,8 +634,10 @@ function alg_cache(alg::VCAB5, u, rate_prototype, ::Type{uEltypeNoUnits},
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
-    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
-        trivial_limiter!, False())
+    rk4cache = RK4Cache(
+        u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+        trivial_limiter!, False()
+    )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
     dts = fill(zero(dt), 5)
@@ -595,14 +657,18 @@ function alg_cache(alg::VCAB5, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     tmp = zero(u)
     utilde = zero(u)
-    VCAB5Cache(u, uprev, fsalfirst, rk4cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕstar_n, β,
-        order, atmp, tmp, utilde, 1, alg.thread)
+    return VCAB5Cache(
+        u, uprev, fsalfirst, rk4cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕstar_n, β,
+        order, atmp, tmp, utilde, 1, alg.thread
+    )
 end
 
 # VCABM3
 
-@cache mutable struct VCABM3ConstantCache{TabType, tArrayType, rArrayType, cArrayType,
-    dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCABM3ConstantCache{
+        TabType, tArrayType, rArrayType, cArrayType,
+        dtArrayType,
+    } <: OrdinaryDiffEqConstantCache
     dts::dtArrayType
     c::cArrayType
     g::tArrayType
@@ -617,9 +683,10 @@ end
 end
 
 @cache mutable struct VCABM3Cache{
-    uType, rateType, TabType, bs3Type, tArrayType, cArrayType,
-    uNoUnitsType, coefType, dtArrayType, Thread} <:
-                      ABMVariableCoefficientMutableCache
+        uType, rateType, TabType, bs3Type, tArrayType, cArrayType,
+        uNoUnitsType, coefType, dtArrayType, Thread,
+    } <:
+    ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -642,10 +709,12 @@ end
     thread::Thread
 end
 
-function alg_cache(alg::VCABM3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCABM3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 3)
     c = fill(zero(t), 4, 4)
     g = fill(zero(t), 4)
@@ -661,13 +730,15 @@ function alg_cache(alg::VCABM3, u, rate_prototype, ::Type{uEltypeNoUnits},
     β = fill(zero(t), 3)
     order = 3
     tab = BS3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    VCABM3ConstantCache(dts, c, g, ϕ_n, ϕ_np1, ϕstar_nm1, ϕstar_n, β, order, tab, 1)
+    return VCABM3ConstantCache(dts, c, g, ϕ_n, ϕ_np1, ϕstar_nm1, ϕstar_n, β, order, tab, 1)
 end
 
-function alg_cache(alg::VCABM3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCABM3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = BS3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     bk1 = zero(rate_prototype)
     bk2 = zero(rate_prototype)
@@ -677,8 +748,10 @@ function alg_cache(alg::VCABM3, u, rate_prototype, ::Type{uEltypeNoUnits},
     batmp = similar(u, uEltypeNoUnits)
     recursivefill!(batmp, false)
     btmp = zero(u)
-    bs3cache = BS3Cache(u, uprev, bk1, bk2, bk3, bk4, butilde, btmp, batmp, tab,
-        trivial_limiter!, trivial_limiter!, False())
+    bs3cache = BS3Cache(
+        u, uprev, bk1, bk2, bk3, bk4, butilde, btmp, batmp, tab,
+        trivial_limiter!, trivial_limiter!, False()
+    )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
     dts = fill(zero(dt), 3)
@@ -702,15 +775,18 @@ function alg_cache(alg::VCABM3, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     tmp = zero(u)
     utilde = zero(u)
-    VCABM3Cache(u, uprev, fsalfirst, bs3cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1,
-        ϕstar_n, β, order, atmp, tmp, utilde, tab, 1, alg.thread)
+    return VCABM3Cache(
+        u, uprev, fsalfirst, bs3cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1,
+        ϕstar_n, β, order, atmp, tmp, utilde, tab, 1, alg.thread
+    )
 end
 
 # VCABM4
 
 @cache mutable struct VCABM4ConstantCache{
-    rk4constcache, tArrayType, rArrayType, cArrayType,
-    dtArrayType} <: OrdinaryDiffEqConstantCache
+        rk4constcache, tArrayType, rArrayType, cArrayType,
+        dtArrayType,
+    } <: OrdinaryDiffEqConstantCache
     ϕstar_nm1::rArrayType
     dts::dtArrayType
     c::cArrayType
@@ -724,9 +800,11 @@ end
     step::Int
 end
 
-@cache mutable struct VCABM4Cache{uType, rateType, rk4cacheType, tArrayType, cArrayType,
-    uNoUnitsType, coefType, dtArrayType, Thread} <:
-                      ABMVariableCoefficientMutableCache
+@cache mutable struct VCABM4Cache{
+        uType, rateType, rk4cacheType, tArrayType, cArrayType,
+        uNoUnitsType, coefType, dtArrayType, Thread,
+    } <:
+    ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -748,10 +826,12 @@ end
     thread::Thread
 end
 
-function alg_cache(alg::VCABM4, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCABM4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 4)
     c = fill(zero(t), 5, 5)
     g = fill(zero(t), 5)
@@ -767,14 +847,18 @@ function alg_cache(alg::VCABM4, u, rate_prototype, ::Type{uEltypeNoUnits},
     β = fill(zero(t), 4)
     order = 4
     rk4constcache = RK4ConstantCache()
-    VCABM4ConstantCache(ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1, ϕstar_n, β, order, rk4constcache,
-        1)
+    return VCABM4ConstantCache(
+        ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1, ϕstar_n, β, order, rk4constcache,
+        1
+    )
 end
 
-function alg_cache(alg::VCABM4, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCABM4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     rk1 = zero(rate_prototype)
     rk2 = zero(rate_prototype)
     rk3 = zero(rate_prototype)
@@ -783,8 +867,10 @@ function alg_cache(alg::VCABM4, u, rate_prototype, ::Type{uEltypeNoUnits},
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
-    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
-        trivial_limiter!, False())
+    rk4cache = RK4Cache(
+        u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+        trivial_limiter!, False()
+    )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
     dts = fill(zero(dt), 4)
@@ -808,15 +894,18 @@ function alg_cache(alg::VCABM4, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     tmp = zero(u)
     utilde = zero(u)
-    VCABM4Cache(u, uprev, fsalfirst, rk4cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1,
-        ϕstar_n, β, order, atmp, tmp, utilde, 1, alg.thread)
+    return VCABM4Cache(
+        u, uprev, fsalfirst, rk4cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1,
+        ϕstar_n, β, order, atmp, tmp, utilde, 1, alg.thread
+    )
 end
 
 # VCABM5
 
 @cache mutable struct VCABM5ConstantCache{
-    rk4constcache, tArrayType, rArrayType, cArrayType,
-    dtArrayType} <: OrdinaryDiffEqConstantCache
+        rk4constcache, tArrayType, rArrayType, cArrayType,
+        dtArrayType,
+    } <: OrdinaryDiffEqConstantCache
     ϕstar_nm1::rArrayType
     dts::dtArrayType
     c::cArrayType
@@ -830,9 +919,11 @@ end
     step::Int
 end
 
-@cache mutable struct VCABM5Cache{uType, rateType, rk4cacheType, tArrayType, cArrayType,
-    uNoUnitsType, coefType, dtArrayType, Thread} <:
-                      ABMVariableCoefficientMutableCache
+@cache mutable struct VCABM5Cache{
+        uType, rateType, rk4cacheType, tArrayType, cArrayType,
+        uNoUnitsType, coefType, dtArrayType, Thread,
+    } <:
+    ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -854,10 +945,12 @@ end
     thread::Thread
 end
 
-function alg_cache(alg::VCABM5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCABM5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(t), 5)
     c = fill(zero(t), 6, 6)
     g = fill(zero(t), 6)
@@ -873,14 +966,18 @@ function alg_cache(alg::VCABM5, u, rate_prototype, ::Type{uEltypeNoUnits},
     β = fill(zero(t), 5)
     order = 5
     rk4constcache = RK4ConstantCache()
-    VCABM5ConstantCache(ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1, ϕstar_n, β, order, rk4constcache,
-        1)
+    return VCABM5ConstantCache(
+        ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1, ϕstar_n, β, order, rk4constcache,
+        1
+    )
 end
 
-function alg_cache(alg::VCABM5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCABM5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     rk1 = zero(rate_prototype)
     rk2 = zero(rate_prototype)
     rk3 = zero(rate_prototype)
@@ -889,8 +986,10 @@ function alg_cache(alg::VCABM5, u, rate_prototype, ::Type{uEltypeNoUnits},
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
-    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
-        trivial_limiter!, False())
+    rk4cache = RK4Cache(
+        u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+        trivial_limiter!, False()
+    )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
     dts = fill(zero(dt), 5)
@@ -914,14 +1013,18 @@ function alg_cache(alg::VCABM5, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     tmp = zero(u)
     utilde = zero(u)
-    VCABM5Cache(u, uprev, fsalfirst, rk4cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1,
-        ϕstar_n, β, order, atmp, tmp, utilde, 1, alg.thread)
+    return VCABM5Cache(
+        u, uprev, fsalfirst, rk4cache, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1,
+        ϕstar_n, β, order, atmp, tmp, utilde, 1, alg.thread
+    )
 end
 
 # VCABM
 
-@cache mutable struct VCABMConstantCache{tArrayType, rArrayType, cArrayType, dtType,
-    dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCABMConstantCache{
+        tArrayType, rArrayType, cArrayType, dtType,
+        dtArrayType,
+    } <: OrdinaryDiffEqConstantCache
     ϕstar_nm1::rArrayType
     dts::dtArrayType
     c::cArrayType
@@ -937,9 +1040,11 @@ end
     step::Int
 end
 
-@cache mutable struct VCABMCache{uType, rateType, dtType, tArrayType, cArrayType,
-    uNoUnitsType, coefType, dtArrayType, Thread} <:
-                      ABMVariableCoefficientMutableCache
+@cache mutable struct VCABMCache{
+        uType, rateType, dtType, tArrayType, cArrayType,
+        uNoUnitsType, coefType, dtArrayType, Thread,
+    } <:
+    ABMVariableCoefficientMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -969,10 +1074,12 @@ end
     thread::Thread
 end
 
-function alg_cache(alg::VCABM, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCABM, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 13)
     c = fill(zero(t), 13, 13)
     g = fill(zero(t), 13)
@@ -990,14 +1097,18 @@ function alg_cache(alg::VCABM, u, rate_prototype, ::Type{uEltypeNoUnits},
     ξ0 = zero(dt)
     order = 1
     max_order = 12
-    VCABMConstantCache(ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1, ϕstar_n, β, ξ, ξ0, order,
-        max_order, 1)
+    return VCABMConstantCache(
+        ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1, ϕstar_n, β, ξ, ξ0, order,
+        max_order, 1
+    )
 end
 
-function alg_cache(alg::VCABM, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::VCABM, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
     dts = fill(zero(dt), 13)
@@ -1035,8 +1146,9 @@ function alg_cache(alg::VCABM, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmpm2, false)
     atmpp1 = similar(u, uEltypeNoUnits)
     recursivefill!(atmpp1, false)
-    VCABMCache(
+    return VCABMCache(
         u, uprev, fsalfirst, k4, ϕstar_nm1, dts, c, g, ϕ_n, ϕ_np1, ϕstar_n, β, order,
         max_order, atmp, tmp, ξ, ξ0, utilde, utildem1, utildem2, utildep1, atmpm1,
-        atmpm2, atmpp1, 1, alg.thread)
+        atmpm2, atmpp1, 1, alg.thread
+    )
 end

@@ -4,24 +4,32 @@ mutable struct ExtrapolationController{QT} <: AbstractController
 end
 
 function reset_alg_dependent_opts!(controller::ExtrapolationController, alg1, alg2)
-    if controller.beta1 == beta1_default(alg1, beta2_default(alg1))
+    return if controller.beta1 == beta1_default(alg1, beta2_default(alg1))
         controller.beta1 = beta1_default(alg2, beta2_default(alg2))
     end
 end
 
-@inline function stepsize_controller!(integrator,
-        alg::Union{ExtrapolationMidpointDeuflhard,
-            ImplicitDeuflhardExtrapolation})
+@inline function stepsize_controller!(
+        integrator,
+        alg::Union{
+            ExtrapolationMidpointDeuflhard,
+            ImplicitDeuflhardExtrapolation,
+        }
+    )
     # Dummy function
     # ExtrapolationMidpointDeuflhard's stepsize scaling is stored in the cache;
     # it is computed by  stepsize_controller_internal! (in perform_step!) resp. stepsize_predictor!
     # (in step_accept_controller! and step_reject_controller!)
-    zero(typeof(integrator.opts.qmax))
+    return zero(typeof(integrator.opts.qmax))
 end
 
-function stepsize_controller_internal!(integrator,
-        alg::Union{ExtrapolationMidpointDeuflhard,
-            ImplicitDeuflhardExtrapolation})
+function stepsize_controller_internal!(
+        integrator,
+        alg::Union{
+            ExtrapolationMidpointDeuflhard,
+            ImplicitDeuflhardExtrapolation,
+        }
+    )
     # Standard step size controller
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
     (; controller) = integrator.opts
@@ -31,19 +39,25 @@ function stepsize_controller_internal!(integrator,
     else
         # Update gamma and beta1
         controller.beta1 = typeof(controller.beta1)(1 // (2integrator.cache.n_curr + 1))
-        integrator.opts.gamma = FastPower.fastpower(typeof(integrator.opts.gamma)(1 // 4),
-            controller.beta1)
+        integrator.opts.gamma = FastPower.fastpower(
+            typeof(integrator.opts.gamma)(1 // 4),
+            controller.beta1
+        )
         # Compute new stepsize scaling
         qtmp = FastPower.fastpower(integrator.EEst, controller.beta1) /
-               integrator.opts.gamma
+            integrator.opts.gamma
         @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
     end
-    integrator.cache.Q[integrator.cache.n_curr - alg.min_order + 1] = q
+    return integrator.cache.Q[integrator.cache.n_curr - alg.min_order + 1] = q
 end
 
-function stepsize_predictor!(integrator,
-        alg::Union{ExtrapolationMidpointDeuflhard,
-            ImplicitDeuflhardExtrapolation}, n_new::Int)
+function stepsize_predictor!(
+        integrator,
+        alg::Union{
+            ExtrapolationMidpointDeuflhard,
+            ImplicitDeuflhardExtrapolation,
+        }, n_new::Int
+    )
     # Compute and save the stepsize scaling for order n_new based on the latest error estimate of the current order.
     (; controller) = integrator.opts
 
@@ -58,20 +72,28 @@ function stepsize_predictor!(integrator,
         s_new = stage_number[n_new - alg.min_order + 1]
         # Update gamma and beta1
         controller.beta1 = typeof(controller.beta1)(1 // (2integrator.cache.n_curr + 1))
-        integrator.opts.gamma = FastPower.fastpower(typeof(integrator.opts.gamma)(1 // 4),
-            controller.beta1)
+        integrator.opts.gamma = FastPower.fastpower(
+            typeof(integrator.opts.gamma)(1 // 4),
+            controller.beta1
+        )
         # Compute new stepsize scaling
         qtmp = EEst *
-               FastPower.fastpower(FastPower.fastpower(tol, (1.0 - s_curr / s_new)),
-            controller.beta1) / integrator.opts.gamma
+            FastPower.fastpower(
+            FastPower.fastpower(tol, (1.0 - s_curr / s_new)),
+            controller.beta1
+        ) / integrator.opts.gamma
         @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
     end
-    integrator.cache.Q[n_new - alg.min_order + 1] = q
+    return integrator.cache.Q[n_new - alg.min_order + 1] = q
 end
 
-function step_accept_controller!(integrator,
-        alg::Union{ExtrapolationMidpointDeuflhard,
-            ImplicitDeuflhardExtrapolation}, q)
+function step_accept_controller!(
+        integrator,
+        alg::Union{
+            ExtrapolationMidpointDeuflhard,
+            ImplicitDeuflhardExtrapolation,
+        }, q
+    )
     # Compute new order and stepsize, return new stepsize
     (; min_order, max_order) = alg
     (; n_curr, n_old, Q) = integrator.cache
@@ -82,8 +104,10 @@ function step_accept_controller!(integrator,
     dt_new = Vector{eltype(Q)}(undef, length(tmp) + 1)
     dt_new[1:(end - 1)] = integrator.dt ./ Q[tmp] # Store for the possible new stepsizes
     dtmin = timedepentdtmin(integrator)
-    dt_new[1:(end - 1)] = max.(dtmin,
-        min.(abs(integrator.opts.dtmax), abs.(dt_new[1:(end - 1)]))) # Safety scaling
+    dt_new[1:(end - 1)] = max.(
+        dtmin,
+        min.(abs(integrator.opts.dtmax), abs.(dt_new[1:(end - 1)]))
+    ) # Safety scaling
 
     # n_new is the most efficient order of the last step
     work = s[tmp] ./ dt_new[1:(end - 1)]
@@ -105,12 +129,16 @@ function step_accept_controller!(integrator,
     end
 
     integrator.cache.n_curr = n_new
-    dt_new[n_new - min_order + 1]
+    return dt_new[n_new - min_order + 1]
 end
 
-function step_reject_controller!(integrator,
-        alg::Union{ExtrapolationMidpointDeuflhard,
-            ImplicitDeuflhardExtrapolation})
+function step_reject_controller!(
+        integrator,
+        alg::Union{
+            ExtrapolationMidpointDeuflhard,
+            ImplicitDeuflhardExtrapolation,
+        }
+    )
     # Compute and save reduced stepsize dt_red of order n_old
     # Use the latest error estimate to predict dt_red if an estimate of order n_old is not available
     if integrator.cache.n_curr < integrator.cache.n_old
@@ -118,57 +146,76 @@ function step_reject_controller!(integrator,
     end
     integrator.cache.n_curr = integrator.cache.n_old # Reset order for redoing the rejected step
     dt_red = integrator.dt /
-             integrator.cache.Q[integrator.cache.n_old - integrator.alg.min_order + 1]
+        integrator.cache.Q[integrator.cache.n_old - integrator.alg.min_order + 1]
     dtmin = timedepentdtmin(integrator)
     dt_red = integrator.tdir * max(dtmin, min(abs(integrator.opts.dtmax), abs(dt_red))) # Safety scaling
-    integrator.dt = dt_red
+    return integrator.dt = dt_red
 end
 
-@inline function stepsize_controller!(integrator,
-        alg::Union{ExtrapolationMidpointHairerWanner,
+@inline function stepsize_controller!(
+        integrator,
+        alg::Union{
+            ExtrapolationMidpointHairerWanner,
             ImplicitHairerWannerExtrapolation,
             ImplicitEulerExtrapolation,
-            ImplicitEulerBarycentricExtrapolation})
+            ImplicitEulerBarycentricExtrapolation,
+        }
+    )
     # Dummy function
     # ExtrapolationMidpointHairerWanner's stepsize scaling is stored in the cache;
     # it is computed by  stepsize_controller_internal! (in perform_step!), step_accept_controller! or step_reject_controller!
-    zero(typeof(integrator.opts.qmax))
+    return zero(typeof(integrator.opts.qmax))
 end
 
-function stepsize_controller_internal!(integrator,
-        alg::Union{ExtrapolationMidpointHairerWanner,
+function stepsize_controller_internal!(
+        integrator,
+        alg::Union{
+            ExtrapolationMidpointHairerWanner,
             ImplicitHairerWannerExtrapolation,
             ImplicitEulerExtrapolation,
-            ImplicitEulerBarycentricExtrapolation})
+            ImplicitEulerBarycentricExtrapolation,
+        }
+    )
     # Standard step size controller
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
     (; controller) = integrator.opts
 
-    if alg isa
-       Union{ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation,
-        ImplicitHairerWannerExtrapolation}
+    return if alg isa
+            Union{
+            ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation,
+            ImplicitHairerWannerExtrapolation,
+        }
         if iszero(integrator.EEst)
             q = inv(integrator.opts.qmax)
         else
             # Update gamma and beta1
             if alg isa ImplicitHairerWannerExtrapolation
-                controller.beta1 = typeof(controller.beta1)(1 //
-                                                            (2integrator.cache.n_curr + 1))
+                controller.beta1 = typeof(controller.beta1)(
+                    1 //
+                        (2integrator.cache.n_curr + 1)
+                )
             elseif alg isa ImplicitEulerExtrapolation
                 controller.beta1 = typeof(controller.beta1)(1 // (integrator.cache.n_curr))
             else
-                controller.beta1 = typeof(controller.beta1)(1 //
-                                                            (integrator.cache.n_curr - 1))
+                controller.beta1 = typeof(controller.beta1)(
+                    1 //
+                        (integrator.cache.n_curr - 1)
+                )
             end
             integrator.opts.gamma = FastPower.fastpower(
-                typeof(integrator.opts.gamma)(65 //
-                                              100),
-                controller.beta1)
+                typeof(integrator.opts.gamma)(
+                    65 //
+                        100
+                ),
+                controller.beta1
+            )
             # Compute new stepsize scaling
             qtmp = FastPower.fastpower(integrator.EEst, controller.beta1) /
-                   (integrator.opts.gamma)
-            @fastmath q = max(inv(integrator.opts.qmax),
-                min(inv(integrator.opts.qmin), qtmp))
+                (integrator.opts.gamma)
+            @fastmath q = max(
+                inv(integrator.opts.qmax),
+                min(inv(integrator.opts.qmin), qtmp)
+            )
         end
         integrator.cache.Q[integrator.cache.n_curr + 1] = q
     else
@@ -178,24 +225,33 @@ function stepsize_controller_internal!(integrator,
             # Update gamma and beta1
             controller.beta1 = typeof(controller.beta1)(1 // (2integrator.cache.n_curr + 1))
             integrator.opts.gamma = FastPower.fastpower(
-                typeof(integrator.opts.gamma)(65 //
-                                              100),
-                controller.beta1)
+                typeof(integrator.opts.gamma)(
+                    65 //
+                        100
+                ),
+                controller.beta1
+            )
             # Compute new stepsize scaling
             qtmp = FastPower.fastpower(integrator.EEst, controller.beta1) /
-                   integrator.opts.gamma
-            @fastmath q = max(inv(integrator.opts.qmax),
-                min(inv(integrator.opts.qmin), qtmp))
+                integrator.opts.gamma
+            @fastmath q = max(
+                inv(integrator.opts.qmax),
+                min(inv(integrator.opts.qmin), qtmp)
+            )
         end
         integrator.cache.Q[integrator.cache.n_curr + 1] = q
     end
 end
 
-function step_accept_controller!(integrator,
-        alg::Union{ExtrapolationMidpointHairerWanner,
+function step_accept_controller!(
+        integrator,
+        alg::Union{
+            ExtrapolationMidpointHairerWanner,
             ImplicitHairerWannerExtrapolation,
             ImplicitEulerExtrapolation,
-            ImplicitEulerBarycentricExtrapolation}, q)
+            ImplicitEulerBarycentricExtrapolation,
+        }, q
+    )
     # Compute new order and stepsize, return new stepsize
     (; min_order, max_order) = alg
     (; n_curr, n_old, Q, sigma, work, dt_new) = integrator.cache
@@ -205,9 +261,9 @@ function step_accept_controller!(integrator,
     win_min_old = min(n_old, n_curr) - 1 # cf. win_min in perform_step! of the last step
     tmp = win_min_old:(max(n_curr, n_old) + 1) # Index range for the new order
     fill!(dt_new, zero(eltype(dt_new)))
-    @.. broadcast=false Q=integrator.dt/Q
+    @.. broadcast = false Q = integrator.dt / Q
     copyto!(dt_new, win_min_old, Q, win_min_old, (max(n_curr, n_old) + 1) - win_min_old + 1)
-    @.. broadcast=false Q=integrator.dt/Q
+    @.. broadcast = false Q = integrator.dt / Q
     dtmin = timedepentdtmin(integrator)
     fill!(work, zero(eltype(work))) # work[n] is the work for order (n-1)
     for i in tmp
@@ -241,17 +297,23 @@ function step_accept_controller!(integrator,
     if n_new == n_curr + 1
         # Compute the new stepsize of order n_new based on the optimal stepsize of order n_curr
         dt_new[n_new + 1] = s[n_curr + 2] / s[n_curr + 1] * dt_new[n_curr + 1]
-        dt_new[n_new + 1] = max(dtmin,
-            min(abs(integrator.opts.dtmax), abs(dt_new[n_new + 1])))
+        dt_new[n_new + 1] = max(
+            dtmin,
+            min(abs(integrator.opts.dtmax), abs(dt_new[n_new + 1]))
+        )
     end
-    dt_new[n_new + 1]
+    return dt_new[n_new + 1]
 end
 
-function step_reject_controller!(integrator,
-        alg::Union{ExtrapolationMidpointHairerWanner,
+function step_reject_controller!(
+        integrator,
+        alg::Union{
+            ExtrapolationMidpointHairerWanner,
             ImplicitHairerWannerExtrapolation,
             ImplicitEulerExtrapolation,
-            ImplicitEulerBarycentricExtrapolation})
+            ImplicitEulerBarycentricExtrapolation,
+        }
+    )
     # Compute and save order and stepsize for redoing the current step
     (; n_old, n_curr, Q) = integrator.cache
 
@@ -266,5 +328,5 @@ function step_reject_controller!(integrator,
     dt_red = integrator.dt / Q[n_red + 1]
     dtmin = timedepentdtmin(integrator)
     dt_red = integrator.tdir * max(dtmin, min(abs(integrator.opts.dtmax), abs(dt_red))) # Safety scaling
-    integrator.dt = dt_red
+    return integrator.dt = dt_red
 end

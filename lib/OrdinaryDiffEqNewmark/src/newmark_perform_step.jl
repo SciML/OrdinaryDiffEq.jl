@@ -22,7 +22,7 @@ end
         f, t, p,
         dt, β, γ,
         aₙ, vₙ, uₙ,
-        nlcache.p.atmp, nlcache.p.vₙ₊₁,  nlcache.p.uₙ₊₁,
+        nlcache.p.atmp, nlcache.p.vₙ₊₁, nlcache.p.uₙ₊₁,
     )
     SciMLBase.reinit!(nlcache, aₙ, p = evalcache)
     solve!(nlcache)
@@ -32,8 +32,8 @@ end
     end
     aₙ₊₁ = nlcache.u
 
-    @.. thread=thread u.x[1] = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
-    @.. thread=thread u.x[2] = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
+    @.. thread = thread u.x[1] = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
+    @.. thread = thread u.x[2] = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
 
     if integrator.opts.adaptive
         f(integrator.fsallast, u, p, t + dt)
@@ -43,9 +43,9 @@ end
             integrator.EEst = one(integrator.EEst)
         else
             # Zienkiewicz and Xie (1991) Eq. 21
-            @.. thread=thread atmp = (integrator.fsallast - aₙ₊₁)
+            @.. thread = thread atmp = (integrator.fsallast - aₙ₊₁)
             integrator.EEst = dt * dt * (β - 1 // 6) *
-                              integrator.opts.internalnorm(atmp, t)
+                integrator.opts.internalnorm(atmp, t)
         end
     end
 
@@ -61,7 +61,8 @@ function initialize!(integrator, cache::NewmarkBetaConstantCache)
 end
 
 @muladd function perform_step!(
-        integrator, cache::NewmarkBetaConstantCache, repeat_step = false)
+        integrator, cache::NewmarkBetaConstantCache, repeat_step = false
+    )
     (; t, u, dt, f, p) = integrator
     (; β, γ, thread, nlsolver, atmp) = cache
 
@@ -88,8 +89,8 @@ end
     aₙ₊₁ = nlsol.u
 
     # The velocity component in uprev and u is shadowed, so the order of these two operation below matter.
-    @.. thread=thread u.x[2] = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
-    @.. thread=thread u.x[1] = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
+    @.. thread = thread u.x[2] = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
+    @.. thread = thread u.x[1] = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
 
     # @info "A", integrator.opts.internalnorm(aₙ₊₁,t), integrator.opts.internalnorm(vₙ,t), integrator.opts.internalnorm(aₙ,t)
     # u .= ArrayPartition(
@@ -110,9 +111,9 @@ end
             integrator.EEst = one(integrator.EEst)
         else
             # Zienkiewicz and Xie (1991) Eq. 21
-            @.. thread=thread atmp = (integrator.fsallast.x[1] - aₙ₊₁)
+            @.. thread = thread atmp = (integrator.fsallast.x[1] - aₙ₊₁)
             integrator.EEst = dt * dt * (β - 1 // 6) *
-                              integrator.opts.internalnorm(atmp, t)
+                integrator.opts.internalnorm(atmp, t)
         end
     end
 

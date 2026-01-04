@@ -10,7 +10,7 @@ import LinearAlgebra
     u0 = [0.0, 0.0, 0.0]
     f! = (dx, x, p, t) -> dx .= cos.(x)
 
-    alg = RKIP(1e-2, 1e1)
+    alg = RKIP(1.0e-2, 1.0e1)
 
     splfc = SplitFunction{true}(Â, f!)
     spltode = SplitODEProblem(splfc, u0, (0, 1.0))

@@ -3,37 +3,43 @@ abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
 abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} <:
-              OrdinaryDiffEqAdaptiveAlgorithm end
+OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} <:
-              OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
 abstract type OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} <:
-              OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
 
 abstract type OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} <:
-              OrdinaryDiffEqAlgorithm end
+OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ} <:
-              OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
 abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS, AD, FDT, ST, CJ} <:
-              OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
-const NewtonAlgorithm = Union{OrdinaryDiffEqNewtonAlgorithm,
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm}
-const RosenbrockAlgorithm = Union{OrdinaryDiffEqRosenbrockAlgorithm,
-    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm}
+OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+const NewtonAlgorithm = Union{
+    OrdinaryDiffEqNewtonAlgorithm,
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+}
+const RosenbrockAlgorithm = Union{
+    OrdinaryDiffEqRosenbrockAlgorithm,
+    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
+}
 
 abstract type OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ} <:
-              OrdinaryDiffEqAlgorithm end
+OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD, FDT, ST, CJ} <:
-              OrdinaryDiffEqAdaptiveAlgorithm end
+OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqLinearExponentialAlgorithm <:
-              OrdinaryDiffEqExponentialAlgorithm{
+OrdinaryDiffEqExponentialAlgorithm{
     0,
     false,
     Val{:forward},
     Val{true},
-    nothing
+    nothing,
 } end
-const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,
-    OrdinaryDiffEqAdaptiveExponentialAlgorithm}
+const ExponentialAlgorithm = Union{
+    OrdinaryDiffEqExponentialAlgorithm,
+    OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+}
 
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -43,30 +49,39 @@ abstract type DAEAlgorithm{CS, AD, FDT, ST, CJ} <: SciMLBase.AbstractDAEAlgorith
 # Partitioned ODE Specific Algorithms
 abstract type OrdinaryDiffEqPartitionedAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqAdaptivePartitionedAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
-const PartitionedAlgorithm = Union{OrdinaryDiffEqPartitionedAlgorithm,
-    OrdinaryDiffEqAdaptivePartitionedAlgorithm}
+const PartitionedAlgorithm = Union{
+    OrdinaryDiffEqPartitionedAlgorithm,
+    OrdinaryDiffEqAdaptivePartitionedAlgorithm,
+}
 
 # Second order ODE Specific Algorithms
 abstract type OrdinaryDiffEqImplicitSecondOrderAlgorithm{CS, AD, FDT, ST, CJ} <:
-    OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
 abstract type OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm{CS, AD, FDT, ST, CJ} <:
-    OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
-const ImplicitSecondOrderAlgorithm = Union{OrdinaryDiffEqImplicitSecondOrderAlgorithm,
-    OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm}
+OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+const ImplicitSecondOrderAlgorithm = Union{
+    OrdinaryDiffEqImplicitSecondOrderAlgorithm,
+    OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm,
+}
 
 function SciMLBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
     T = SciMLBase.remaker_of(thing)
-    T(; SciMLBase.struct_as_namedtuple(thing)..., kwargs...)
+    return T(; SciMLBase.struct_as_namedtuple(thing)..., kwargs...)
 end
 
 function SciMLBase.remake(
         thing::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT,
-                ST, CJ},
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm{
+                CS, AD, FDT,
+                ST, CJ,
             },
-            DAEAlgorithm{CS, AD, FDT, ST, CJ}};
-        kwargs...) where {CS, AD, FDT, ST, CJ}
+            OrdinaryDiffEqImplicitAlgorithm{
+                CS, AD, FDT, ST, CJ,
+            },
+            DAEAlgorithm{CS, AD, FDT, ST, CJ},
+        };
+        kwargs...
+    ) where {CS, AD, FDT, ST, CJ}
     if haskey(kwargs, :autodiff) && kwargs[:autodiff] isa AutoForwardDiff
         chunk_size = _get_fwd_chunksize(kwargs[:autodiff])
     else
@@ -74,10 +89,12 @@ function SciMLBase.remake(
     end
 
     T = SciMLBase.remaker_of(thing)
-    T(; SciMLBase.struct_as_namedtuple(thing)...,
+    return T(;
+        SciMLBase.struct_as_namedtuple(thing)...,
         chunk_size = chunk_size, autodiff = thing.autodiff, standardtag = Val{ST}(),
         concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
-        kwargs...)
+        kwargs...
+    )
 end
 
 ###############################################################################
@@ -117,7 +134,7 @@ struct CompositeAlgorithm{CS, T, F} <: OrdinaryDiffEqCompositeAlgorithm
     choice_function::F
     function CompositeAlgorithm(algs::T, choice_function::F) where {T, F}
         CS = mapreduce(alg -> 0, max, algs)
-        new{CS, T, F}(algs, choice_function)
+        return new{CS, T, F}(algs, choice_function)
     end
 end
 
@@ -141,7 +158,8 @@ mutable struct AutoSwitchCache{nAlg, sAlg, tolType, T}
     stiffalgfirst::Bool
     switch_max::Int
     current::Int
-    function AutoSwitchCache(count::Int,
+    function AutoSwitchCache(
+            count::Int,
             successive_switches::Int,
             nonstiffalg::nAlg,
             stiffalg::sAlg,
@@ -153,8 +171,10 @@ mutable struct AutoSwitchCache{nAlg, sAlg, tolType, T}
             dtfac::T,
             stiffalgfirst::Bool,
             switch_max::Int,
-            current::Int = 0) where {nAlg, sAlg, tolType, T}
-        new{nAlg, sAlg, tolType, T}(count,
+            current::Int = 0
+        ) where {nAlg, sAlg, tolType, T}
+        return new{nAlg, sAlg, tolType, T}(
+            count,
             successive_switches,
             nonstiffalg,
             stiffalg,
@@ -166,7 +186,8 @@ mutable struct AutoSwitchCache{nAlg, sAlg, tolType, T}
             dtfac,
             stiffalgfirst,
             switch_max,
-            current)
+            current
+        )
     end
 end
 

@@ -23,12 +23,13 @@ using SafeTestsets
     end
 
     ff_harmonic! = DynamicalODEFunction(
-        f1_harmonic!, f2_harmonic!; analytic = harmonic_analytic)
+        f1_harmonic!, f2_harmonic!; analytic = harmonic_analytic
+    )
     prob = DynamicalODEProblem(ff_harmonic!, v0, u0, (0.0, 5.0))
     dts = 1.0 ./ 2.0 .^ (5:-1:0)
 
     sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
-    @test sim.𝒪est[:l2]≈2 rtol=1e-1
+    @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
 
     function f1_harmonic(v, u, p, t)
         -u
@@ -38,12 +39,13 @@ using SafeTestsets
     end
 
     ff_harmonic = DynamicalODEFunction(
-        f1_harmonic, f2_harmonic; analytic = harmonic_analytic)
+        f1_harmonic, f2_harmonic; analytic = harmonic_analytic
+    )
     prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
     dts = 1.0 ./ 2.0 .^ (5:-1:0)
 
     sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
-    @test sim.𝒪est[:l2]≈2 rtol=1e-1
+    @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
 end
 
 # Newmark methods with damped oscillator
@@ -58,12 +60,16 @@ end
     function damped_oscillator_analytic(du0_u0, p, t)
         ArrayPartition(
             [
-                exp(-t / 4) / 15 * (15 * du0_u0[1] * cos(sqrt(15) * t / 4) -
-                 sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4))
+                exp(-t / 4) / 15 * (
+                    15 * du0_u0[1] * cos(sqrt(15) * t / 4) -
+                        sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4)
+                ),
             ], # du
             [
-                exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
-                 sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4))
+                exp(-t / 4) / 15 * (
+                    15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
+                        sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4)
+                ),
             ]
         )
     end
@@ -77,7 +83,7 @@ end
     dts = 1.0 ./ 2.0 .^ (5:-1:0)
 
     sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
-    @test sim.𝒪est[:l2]≈2 rtol=1e-1
+    @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
 
     function damped_oscillator(v, u, p, t)
         -u - 0.5 * v
@@ -92,7 +98,7 @@ end
     dts = 1.0 ./ 2.0 .^ (5:-1:0)
 
     sim = test_convergence(dts, prob, NewmarkBeta(), dense_errors = true)
-    @test sim.𝒪est[:l2]≈2 rtol=1e-1
+    @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
 end
 
 # Only run JET tests on stable Julia versions

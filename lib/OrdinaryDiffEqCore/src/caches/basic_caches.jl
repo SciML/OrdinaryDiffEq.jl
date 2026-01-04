@@ -17,7 +17,7 @@ mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
 end
 
 function ismutablecache(cache::CompositeCache{T, F}) where {T, F}
-    eltype(T) <: OrdinaryDiffEqMutableCache
+    return eltype(T) <: OrdinaryDiffEqMutableCache
 end
 
 function get_fsalfirstlast(cache::CompositeCache, u)
@@ -41,38 +41,52 @@ mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiff
     cache5::T5
     cache6::T6
     function DefaultCache{T1, T2, T3, T4, T5, T6, F, uType}(
-            args, choice_function, current, u) where {T1, T2, T3, T4, T5, T6, F, uType}
-        new{T1, T2, T3, T4, T5, T6, typeof(args), F, uType}(
-            args, choice_function, current, u)
+            args, choice_function, current, u
+        ) where {T1, T2, T3, T4, T5, T6, F, uType}
+        return new{T1, T2, T3, T4, T5, T6, typeof(args), F, uType}(
+            args, choice_function, current, u
+        )
     end
 end
 
 function get_fsalfirstlast(cache::DefaultCache, u)
-    (cache.u, cache.u) # will be overwritten by the cache choice
+    return (cache.u, cache.u) # will be overwritten by the cache choice
 end
 
-function ismutablecache(cache::DefaultCache{
-        T1, T2, T3, T4, T5, T6, A, F, uType}) where {T1, T2, T3, T4, T5, T6, A, F, uType}
-    T1 <: OrdinaryDiffEqMutableCache
+function ismutablecache(
+        cache::DefaultCache{
+            T1, T2, T3, T4, T5, T6, A, F, uType,
+        }
+    ) where {T1, T2, T3, T4, T5, T6, A, F, uType}
+    return T1 <: OrdinaryDiffEqMutableCache
 end
 
-function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{V}) where {V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V))
-    CompositeCache(caches, alg.choice_function, 1)
+        ::Val{V}
+    ) where {V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    caches = __alg_cache(
+        alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)
+    )
+    return CompositeCache(caches, alg.choice_function, 1)
 end
 
-function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u,
+function alg_cache(
+        alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u,
         rate_prototype, ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{V}) where {
-        CS, V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, A1, A2, A3, A4, A5, A6}
-    args = (u, rate_prototype, uEltypeNoUnits,
+        ::Val{V}
+    ) where {
+        CS, V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, A1, A2, A3, A4, A5, A6,
+    }
+    args = (
+        u, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-        reltol, p, calck, Val(V))
+        reltol, p, calck, Val(V),
+    )
     # Core.Typeof to turn uEltypeNoUnits into Type{uEltypeNoUnits} rather than DataType
     argT = map(Core.Typeof, args)
     T1 = Base.promote_op(alg_cache, A1, argT...)
@@ -82,7 +96,8 @@ function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u
     T5 = Base.promote_op(alg_cache, A5, argT...)
     T6 = Base.promote_op(alg_cache, A6, argT...)
     cache = DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
-        args, alg.choice_function, 1, u)
+        args, alg.choice_function, 1, u
+    )
     algs = alg.algs
     # If the type is a bitstype we need to initialize it correctly here since isdefined will always return true.
     if isbitstype(T1)
@@ -103,21 +118,31 @@ function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u
     if isbitstype(T6)
         cache.cache6 = alg_cache(algs[6], args...)
     end
-    cache
+    return cache
 end
 
 # map + closure approach doesn't infer
-@generated function __alg_cache(algs::T, u, rate_prototype, ::Type{uEltypeNoUnits},
+@generated function __alg_cache(
+        algs::T, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev,
         uprev2, f, t, dt, reltol, p, calck,
-        ::Val{V}) where {T <: Tuple, V, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits}
-    return Expr(:tuple,
+        ::Val{V}
+    ) where {
+        T <: Tuple, V, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits,
+    }
+    return Expr(
+        :tuple,
         map(1:length(T.types)) do i
-            :(alg_cache(algs[$i], u, rate_prototype, uEltypeNoUnits,
-                uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-                reltol, p, calck, Val($V)))
-        end...)
+            :(
+                alg_cache(
+                    algs[$i], u, rate_prototype, uEltypeNoUnits,
+                    uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
+                    reltol, p, calck, Val($V)
+                )
+            )
+        end...
+    )
 end
 
 alg_cache(alg::OrdinaryDiffEqAlgorithm, prob, callback::F) where {F} = ODEEmptyCache()

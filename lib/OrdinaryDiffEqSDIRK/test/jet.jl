@@ -3,5 +3,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqSDIRK, target_defined_modules = true, mode = :typo)
+        OrdinaryDiffEqSDIRK, target_defined_modules = true, mode = :typo
+    )
 end

@@ -6,11 +6,13 @@ function initialize!(integrator, cache::KuttaPRK2p5ConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator, cache::KuttaPRK2p5ConstantCache,
-        repeat_step = false)
+@muladd function perform_step!(
+        integrator, cache::KuttaPRK2p5ConstantCache,
+        repeat_step = false
+    )
     (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
     (; α21, α31, α32, α41, α42, α43, α5_6) = cache
@@ -26,23 +28,28 @@ end
     if !isthreaded(alg.threading)
         k5_6[1] = f(
             uprev +
-            dt *
-            (α5_6[1, 1] * k1 + α5_6[1, 2] * k2 + α5_6[1, 3] * k3 + α5_6[1, 4] * k4),
-            p, t + c5_6[1] * dt)
+                dt *
+                (α5_6[1, 1] * k1 + α5_6[1, 2] * k2 + α5_6[1, 3] * k3 + α5_6[1, 4] * k4),
+            p, t + c5_6[1] * dt
+        )
         k5_6[2] = f(
             uprev +
-            dt *
-            (α5_6[2, 1] * k1 + α5_6[2, 2] * k2 + α5_6[2, 3] * k3 + α5_6[2, 4] * k4),
-            p, t + c5_6[2] * dt)
+                dt *
+                (α5_6[2, 1] * k1 + α5_6[2, 2] * k2 + α5_6[2, 3] * k3 + α5_6[2, 4] * k4),
+            p, t + c5_6[2] * dt
+        )
     else
         let
             @threaded alg.threading for i in [1, 2]
                 k5_6[i] = f(
                     uprev +
-                    dt * (α5_6[i, 1] * k1 + α5_6[i, 2] * k2 + α5_6[i, 3] * k3 +
-                     α5_6[i, 4] * k4),
+                        dt * (
+                        α5_6[i, 1] * k1 + α5_6[i, 2] * k2 + α5_6[i, 3] * k3 +
+                            α5_6[i, 4] * k4
+                    ),
                     p,
-                    t + c5_6[i] * dt)
+                    t + c5_6[i] * dt
+                )
             end
         end
     end
@@ -62,7 +69,7 @@ function initialize!(integrator, cache::KuttaPRK2p5Cache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::KuttaPRK2p5Cache, repeat_step = false)
@@ -74,37 +81,43 @@ end
 
     f(k1, uprev, p, t)
 
-    @.. broadcast=false u=uprev + dt * α21 * k1
+    @.. broadcast = false u = uprev + dt * α21 * k1
     f(k2, u, p, t + c2 * dt)
 
-    @.. broadcast=false u=uprev + dt * (α31 * k1 + α32 * k2)
+    @.. broadcast = false u = uprev + dt * (α31 * k1 + α32 * k2)
     f(k3, u, p, t + c3 * dt)
 
-    @.. broadcast=false u=uprev + dt * (α41 * k1 + α42 * k2 + α43 * k3)
+    @.. broadcast = false u = uprev + dt * (α41 * k1 + α42 * k2 + α43 * k3)
     f(k4, u, p, t + c4 * dt)
 
     if !isthreaded(alg.threading)
-        @.. broadcast=false u=uprev +
-                              dt * (α5_6[1, 1] * k1 + α5_6[1, 2] * k2 + α5_6[1, 3] * k3 +
-                               α5_6[1, 4] * k4)
+        @.. broadcast = false u = uprev +
+            dt * (
+            α5_6[1, 1] * k1 + α5_6[1, 2] * k2 + α5_6[1, 3] * k3 +
+                α5_6[1, 4] * k4
+        )
         f(k5_6[1], u, p, t + c5_6[1] * dt)
 
-        @.. broadcast=false u=uprev +
-                              dt * (α5_6[2, 1] * k1 + α5_6[2, 2] * k2 + α5_6[2, 3] * k3 +
-                               α5_6[2, 4] * k4)
+        @.. broadcast = false u = uprev +
+            dt * (
+            α5_6[2, 1] * k1 + α5_6[2, 2] * k2 + α5_6[2, 3] * k3 +
+                α5_6[2, 4] * k4
+        )
         f(k5_6[2], u, p, t + c5_6[2] * dt)
     else
         tmps = (u, tmp)
         let
             @threaded alg.threading for i in [1, 2]
-                @.. broadcast=false tmps[i]=uprev +
-                                            dt * (α5_6[i, 1] * k1 + α5_6[i, 2] * k2 +
-                                             α5_6[i, 3] * k3 + α5_6[i, 4] * k4)
+                @.. broadcast = false tmps[i] = uprev +
+                    dt * (
+                    α5_6[i, 1] * k1 + α5_6[i, 2] * k2 +
+                        α5_6[i, 3] * k3 + α5_6[i, 4] * k4
+                )
                 f(k5_6[i], tmps[i], p, t + c5_6[i] * dt)
             end
         end
     end
 
-    @.. broadcast=false u=uprev + dt * (β1 * k1 + β3 * k3 + β5 * k5_6[1] + β6 * k5_6[2])
+    @.. broadcast = false u = uprev + dt * (β1 * k1 + β3 * k3 + β5 * k5_6[1] + β6 * k5_6[2])
     f(k, u, p, t + dt)
 end

@@ -99,7 +99,7 @@ end
     idprob2 = ImplicitDiscreteProblem(emptyoop, u0, (0, tsteps), [])
     # OOP with u0=nothing throws MethodError because oneunit(Nothing) is not defined
     # before the assertion in alg_cache can be reached
-    @test_throws MethodError integ=init(idprob2, IDSolve())
+    @test_throws MethodError integ = init(idprob2, IDSolve())
 end
 
 @testset "Create NonlinearLeastSquaresProblem" begin
@@ -110,7 +110,8 @@ end
     tsteps = 5
     u0 = [1.0, 1.0]
     idprob = ImplicitDiscreteProblem(
-        ImplicitDiscreteFunction(over, resid_prototype = zeros(3)), u0, (0, tsteps), [])
+        ImplicitDiscreteFunction(over, resid_prototype = zeros(3)), u0, (0, tsteps), []
+    )
     integ = init(idprob, IDSolve())
     @test integ.cache.nlcache.prob isa NonlinearLeastSquaresProblem
 
@@ -118,7 +119,8 @@ end
         [u_next[1] - u_next[2] - 1]
     end
     idprob = ImplicitDiscreteProblem(
-        ImplicitDiscreteFunction(under; resid_prototype = zeros(1)), u0, (0, tsteps), [])
+        ImplicitDiscreteFunction(under; resid_prototype = zeros(1)), u0, (0, tsteps), []
+    )
     integ = init(idprob, IDSolve())
     @test integ.cache.nlcache.prob isa NonlinearLeastSquaresProblem
 
@@ -126,7 +128,8 @@ end
         [u_next[1]^2 - 3, u_next[2] - u[1]]
     end
     idprob = ImplicitDiscreteProblem(
-        ImplicitDiscreteFunction(full; resid_prototype = zeros(2)), u0, (0, tsteps), [])
+        ImplicitDiscreteFunction(full; resid_prototype = zeros(2)), u0, (0, tsteps), []
+    )
     integ = init(idprob, IDSolve())
     @test integ.cache.nlcache.prob isa NonlinearProblem
 end
@@ -147,7 +150,8 @@ end
 
 @testset "JET Tests" begin
     test_package(
-        ImplicitDiscreteSolve, target_defined_modules = true, mode = :typo)
+        ImplicitDiscreteSolve, target_defined_modules = true, mode = :typo
+    )
 end
 
 include("qa.jl")

@@ -1,5 +1,6 @@
 function step_accept_controller!(
-        integrator, controller::PredictiveController, alg::AdaptiveRadau, q)
+        integrator, controller::PredictiveController, alg::AdaptiveRadau, q
+    )
     (; qmin, qmax, gamma, qsteady_min, qsteady_max) = integrator.opts
     (; cache) = integrator
     (; num_stages, step, iter, hist_iter, index) = cache
@@ -9,7 +10,7 @@ function step_accept_controller!(
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qgus = (integrator.dtacc / integrator.dt) *
-               fastpow((EEst^2) / integrator.erracc, expo)
+            fastpow((EEst^2) / integrator.erracc, expo)
         qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
         qacc = max(q, qgus)
     else
@@ -19,7 +20,7 @@ function step_accept_controller!(
         qacc = one(qacc)
     end
     integrator.dtacc = integrator.dt
-    integrator.erracc = max(1e-2, EEst)
+    integrator.erracc = max(1.0e-2, EEst)
     cache.step = step + 1
     hist_iter = hist_iter * 0.8 + iter * 0.2
     cache.hist_iter = hist_iter
@@ -31,8 +32,12 @@ function step_accept_controller!(
             cache.index += 1
             cache.step = 1
             cache.hist_iter = iter
-        elseif ((hist_iter > 8 || cache.status == VerySlowConvergence ||
-                 cache.status == Divergence) && num_stages > min_stages)
+        elseif (
+                (
+                    hist_iter > 8 || cache.status == VerySlowConvergence ||
+                        cache.status == Divergence
+                ) && num_stages > min_stages
+            )
             cache.num_stages -= 2
             cache.index -= 1
             cache.step = 1
@@ -43,7 +48,8 @@ function step_accept_controller!(
 end
 
 function step_reject_controller!(
-        integrator, controller::PredictiveController, alg::AdaptiveRadau)
+        integrator, controller::PredictiveController, alg::AdaptiveRadau
+    )
     (; dt, success_iter, qold) = integrator
     (; cache) = integrator
     (; num_stages, step, iter, hist_iter) = cache
@@ -52,9 +58,13 @@ function step_reject_controller!(
     hist_iter = hist_iter * 0.8 + iter * 0.2
     cache.hist_iter = hist_iter
     min_stages = (alg.min_order - 1) ÷ 4 * 2 + 1
-    if (step > 10)
-        if ((hist_iter > 8 || cache.status == VerySlowConvergence ||
-             cache.status == Divergence) && num_stages > min_stages)
+    return if (step > 10)
+        if (
+                (
+                    hist_iter > 8 || cache.status == VerySlowConvergence ||
+                        cache.status == Divergence
+                ) && num_stages > min_stages
+            )
             cache.num_stages -= 2
             cache.index -= 1
             cache.step = 1

@@ -1,5 +1,5 @@
 function default_controller(alg::Union{QNDF, FBDF}, args...)
-    DummyController()
+    return DummyController()
 end
 
 # QNBDF
@@ -127,15 +127,15 @@ function bdf_step_reject_controller!(integrator, EEst1)
         u_modified!(integrator, true)
     end
     integrator.dt = hₙ
-    integrator.cache.order = kₙ
+    return integrator.cache.order = kₙ
 end
 
 function step_reject_controller!(integrator, ::QNDF)
-    bdf_step_reject_controller!(integrator, integrator.cache.EEst1)
+    return bdf_step_reject_controller!(integrator, integrator.cache.EEst1)
 end
 
 function step_reject_controller!(integrator, ::FBDF)
-    bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
+    return bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
 end
 
 function post_newton_controller!(integrator, alg::FBDF)
@@ -146,20 +146,24 @@ function post_newton_controller!(integrator, alg::FBDF)
     integrator.dt = integrator.dt / integrator.opts.failfactor
     integrator.cache.consfailcnt += 1
     integrator.cache.nconsteps = 0
-    nothing
+    return nothing
 end
 
-function choose_order!(alg::FBDF, integrator,
+function choose_order!(
+        alg::FBDF, integrator,
         cache::OrdinaryDiffEqMutableCache,
-        ::Val{max_order}) where {max_order}
+        ::Val{max_order}
+    ) where {max_order}
     (; t, dt, u, cache, uprev) = integrator
     (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history) = cache
     k = cache.order
     # only when the order of amount of terk follows the order of step size, and achieve enough constant step size, the order could be increased.
     if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
-       ((k == 1 && terk > terkp1) ||
-        (k == 2 && terkm1 > terk > terkp1) ||
-        (k > 2 && terkm2 > terkm1 > terk > terkp1))
+            (
+            (k == 1 && terk > terkp1) ||
+                (k == 2 && terkm1 > terk > terkp1) ||
+                (k > 2 && terkm2 > terkm1 > terk > terkp1)
+        )
         k += 1
         terk = terkp1
     else
@@ -167,17 +171,21 @@ function choose_order!(alg::FBDF, integrator,
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 2,
-                Val(max_order))
-            terk_tmp = @.. broadcast=false fd_weights[k - 2, 1]*u
+            fd_weights = calc_finite_difference_weights(
+                ts_tmp, t + dt, k - 2,
+                Val(max_order)
+            )
+            terk_tmp = @.. broadcast = false fd_weights[k - 2, 1] * u
             vc = _vec(terk_tmp)
             for i in 2:(k - 2)
                 @.. @views vc += fd_weights[i, k - 2] * u_history[:, i - 1]
             end
-            @.. broadcast=false terk_tmp*=abs(dt^(k - 2))
-            calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
+            @.. broadcast = false terk_tmp *= abs(dt^(k - 2))
+            calculate_residuals!(
+                atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
                 integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t)
+                integrator.opts.internalnorm, t
+            )
             terkm2 = integrator.opts.internalnorm(atmp, t)
             k -= 1
         end
@@ -185,16 +193,20 @@ function choose_order!(alg::FBDF, integrator,
     return k, terk
 end
 
-function choose_order!(alg::FBDF, integrator,
+function choose_order!(
+        alg::FBDF, integrator,
         cache::OrdinaryDiffEqConstantCache,
-        ::Val{max_order}) where {max_order}
+        ::Val{max_order}
+    ) where {max_order}
     (; t, dt, u, cache, uprev) = integrator
     (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history) = cache
     k = cache.order
     if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
-       ((k == 1 && terk > terkp1) ||
-        (k == 2 && terkm1 > terk > terkp1) ||
-        (k > 2 && terkm2 > terkm1 > terk > terkp1))
+            (
+            (k == 1 && terk > terkp1) ||
+                (k == 2 && terkm1 > terk > terkp1) ||
+                (k > 2 && terkm2 > terkm1 > terk > terkp1)
+        )
         k += 1
         terk = terkp1
     else
@@ -202,8 +214,10 @@ function choose_order!(alg::FBDF, integrator,
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 2,
-                Val(max_order))
+            fd_weights = calc_finite_difference_weights(
+                ts_tmp, t + dt, k - 2,
+                Val(max_order)
+            )
             local terk_tmp
             if u isa Number
                 terk_tmp = fd_weights[k - 2, 1] * u
@@ -218,13 +232,15 @@ function choose_order!(alg::FBDF, integrator,
                 @.. terk_tmp = fd_weights[k - 2, 1] * _vec(u)
                 for i in 2:(k - 2)
                     @.. terk_tmp += fd_weights[i, k - 2] *
-                                    $(_reshape(view(u_history, :, i - 1), axes(u)))
+                        $(_reshape(view(u_history, :, i - 1), axes(u)))
                 end
                 @.. terk_tmp *= abs(dt^(k - 2))
             end
-            atmp = calculate_residuals(terk_tmp, _vec(uprev), _vec(u),
+            atmp = calculate_residuals(
+                terk_tmp, _vec(uprev), _vec(u),
                 integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t)
+                integrator.opts.internalnorm, t
+            )
             terkm2 = integrator.opts.internalnorm(atmp, t)
             k -= 1
         end
@@ -232,10 +248,12 @@ function choose_order!(alg::FBDF, integrator,
     return k, terk
 end
 
-function stepsize_controller!(integrator,
-        alg::FBDF{max_order}) where {
+function stepsize_controller!(
+        integrator,
+        alg::FBDF{max_order}
+    ) where {
         max_order,
-}
+    }
     (; cache) = integrator
     cache.prev_order = cache.order
     k, terk = choose_order!(alg, integrator, cache, Val(max_order))
@@ -249,11 +267,13 @@ function stepsize_controller!(integrator,
         q = ((2 * terk / (k + 1))^(1 / (k + 1)))
     end
     integrator.qold = q
-    q
+    return q
 end
 
-function step_accept_controller!(integrator, alg::FBDF{max_order},
-        q) where {max_order}
+function step_accept_controller!(
+        integrator, alg::FBDF{max_order},
+        q
+    ) where {max_order}
     integrator.cache.consfailcnt = 0
     if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
         q = one(q)
@@ -264,7 +284,7 @@ function step_accept_controller!(integrator, alg::FBDF{max_order},
 end
 
 function step_reject_controller!(integrator, ::DFBDF)
-    bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
+    return bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
 end
 
 function post_newton_controller!(integrator, alg::DFBDF)
@@ -275,20 +295,24 @@ function post_newton_controller!(integrator, alg::DFBDF)
     integrator.dt = integrator.dt / integrator.opts.failfactor
     integrator.cache.consfailcnt += 1
     integrator.cache.nconsteps = 0
-    nothing
+    return nothing
 end
 
-function choose_order!(alg::DFBDF, integrator,
+function choose_order!(
+        alg::DFBDF, integrator,
         cache::OrdinaryDiffEqMutableCache,
-        ::Val{max_order}) where {max_order}
+        ::Val{max_order}
+    ) where {max_order}
     (; t, dt, u, cache, uprev) = integrator
     (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history) = cache
     k = cache.order
     # only when the order of amount of terk follows the order of step size, and achieve enough constant step size, the order could be increased.
     if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
-       ((k == 1 && terk > terkp1) ||
-        (k == 2 && terkm1 > terk > terkp1) ||
-        (k > 2 && terkm2 > terkm1 > terk > terkp1))
+            (
+            (k == 1 && terk > terkp1) ||
+                (k == 2 && terkm1 > terk > terkp1) ||
+                (k > 2 && terkm2 > terkm1 > terk > terkp1)
+        )
         k += 1
         terk = terkp1
     else
@@ -296,17 +320,21 @@ function choose_order!(alg::DFBDF, integrator,
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 2,
-                Val(max_order))
-            terk_tmp = @.. broadcast=false fd_weights[k - 2, 1]*u
+            fd_weights = calc_finite_difference_weights(
+                ts_tmp, t + dt, k - 2,
+                Val(max_order)
+            )
+            terk_tmp = @.. broadcast = false fd_weights[k - 2, 1] * u
             vc = _vec(terk_tmp)
             for i in 2:(k - 2)
-                @.. broadcast=false @views vc += fd_weights[i, k - 2] * u_history[:, i - 1]
+                @.. broadcast = false @views vc += fd_weights[i, k - 2] * u_history[:, i - 1]
             end
-            @.. broadcast=false terk_tmp*=abs(dt^(k - 2))
-            calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
+            @.. broadcast = false terk_tmp *= abs(dt^(k - 2))
+            calculate_residuals!(
+                atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
                 integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t)
+                integrator.opts.internalnorm, t
+            )
             terkm2 = integrator.opts.internalnorm(atmp, t)
             k -= 1
         end
@@ -314,16 +342,20 @@ function choose_order!(alg::DFBDF, integrator,
     return k, terk
 end
 
-function choose_order!(alg::DFBDF, integrator,
+function choose_order!(
+        alg::DFBDF, integrator,
         cache::OrdinaryDiffEqConstantCache,
-        ::Val{max_order}) where {max_order}
+        ::Val{max_order}
+    ) where {max_order}
     (; t, dt, u, cache, uprev) = integrator
     (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history) = cache
     k = cache.order
     if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
-       ((k == 1 && terk > terkp1) ||
-        (k == 2 && terkm1 > terk > terkp1) ||
-        (k > 2 && terkm2 > terkm1 > terk > terkp1))
+            (
+            (k == 1 && terk > terkp1) ||
+                (k == 2 && terkm1 > terk > terkp1) ||
+                (k > 2 && terkm2 > terkm1 > terk > terkp1)
+        )
         k += 1
         terk = terkp1
     else
@@ -331,9 +363,11 @@ function choose_order!(alg::DFBDF, integrator,
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 2,
-                Val(max_order))
-            terk_tmp = @.. broadcast=false fd_weights[k - 2, 1]*u
+            fd_weights = calc_finite_difference_weights(
+                ts_tmp, t + dt, k - 2,
+                Val(max_order)
+            )
+            terk_tmp = @.. broadcast = false fd_weights[k - 2, 1] * u
             if u isa Number
                 for i in 2:(k - 2)
                     terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
@@ -342,15 +376,17 @@ function choose_order!(alg::DFBDF, integrator,
             else
                 vc = _vec(terk_tmp)
                 for i in 2:(k - 2)
-                    @.. broadcast=false @views vc += fd_weights[i, k - 2] *
-                                                     u_history[:, i - 1]
+                    @.. broadcast = false @views vc += fd_weights[i, k - 2] *
+                        u_history[:, i - 1]
                 end
                 terk_tmp = reshape(vc, size(terk_tmp))
-                terk_tmp *= @.. broadcast=false abs(dt^(k - 2))
+                terk_tmp *= @.. broadcast = false abs(dt^(k - 2))
             end
-            atmp = calculate_residuals(_vec(terk_tmp), _vec(uprev), _vec(u),
+            atmp = calculate_residuals(
+                _vec(terk_tmp), _vec(uprev), _vec(u),
                 integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t)
+                integrator.opts.internalnorm, t
+            )
             terkm2 = integrator.opts.internalnorm(atmp, t)
             k -= 1
         end
@@ -358,10 +394,12 @@ function choose_order!(alg::DFBDF, integrator,
     return k, terk
 end
 
-function stepsize_controller!(integrator,
-        alg::DFBDF{max_order}) where {
+function stepsize_controller!(
+        integrator,
+        alg::DFBDF{max_order}
+    ) where {
         max_order,
-}
+    }
     (; cache) = integrator
     cache.prev_order = cache.order
     k, terk = choose_order!(alg, integrator, cache, Val(max_order))
@@ -375,11 +413,13 @@ function stepsize_controller!(integrator,
         q = ((2 * terk / (k + 1))^(1 / (k + 1)))
     end
     integrator.qold = q
-    q
+    return q
 end
 
-function step_accept_controller!(integrator, alg::DFBDF{max_order},
-        q) where {max_order}
+function step_accept_controller!(
+        integrator, alg::DFBDF{max_order},
+        q
+    ) where {max_order}
     integrator.cache.consfailcnt = 0
     if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
         q = one(q)

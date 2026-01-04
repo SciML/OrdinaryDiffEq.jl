@@ -21,23 +21,27 @@ function SciMLBase.__init(prob::ImplicitDiscreteProblem, alg::SimpleIDSolve; dt 
     nlf = isinplace(f) ? (out, u, p) -> f(out, u, u0, p, t) : (u, p) -> f(u, u0, p, t)
     prob = NonlinearProblem{isinplace(f)}(nlf, u0, p)
     sol = solve(prob, SimpleNewtonRaphson())
-    sol, (sol.retcode != ReturnCode.Success)
+    return sol, (sol.retcode != ReturnCode.Success)
 end
 
-function SciMLBase.solve(prob::ImplicitDiscreteProblem, alg::SimpleIDSolve;
+function SciMLBase.solve(
+        prob::ImplicitDiscreteProblem, alg::SimpleIDSolve;
         dt = 1,
         save_everystep = true,
         save_start = true,
         adaptive = false,
         dense = false,
         save_end = true,
-        kwargs...)
+        kwargs...
+    )
     @assert !adaptive
     @assert !dense
     (initsol, initfail) = SciMLBase.__init(prob, alg; dt)
     if initfail
-        sol = SciMLBase.build_solution(prob, alg, prob.tspan[1], prob.u0, k = nothing,
-            stats = nothing, calculate_error = false)
+        sol = SciMLBase.build_solution(
+            prob, alg, prob.tspan[1], prob.u0, k = nothing,
+            stats = nothing, calculate_error = false
+        )
         return SciMLBase.solution_new_retcode(sol, ReturnCode.InitialFailure)
     end
 
@@ -63,7 +67,7 @@ function SciMLBase.solve(prob::ImplicitDiscreteProblem, alg::SimpleIDSolve;
         uprev = u
         t = ts[i]
         nlf = isinplace(f) ? (out, u, p) -> f(out, u, uprev, p, t) :
-              (u, p) -> f(u, uprev, p, t)
+            (u, p) -> f(u, uprev, p, t)
         nlprob = NonlinearProblem{isinplace(f)}(nlf, uprev, p)
         nlsol = solve(nlprob, SimpleNewtonRaphson())
         u = nlsol.u
@@ -71,22 +75,27 @@ function SciMLBase.solve(prob::ImplicitDiscreteProblem, alg::SimpleIDSolve;
         convfail = (nlsol.retcode != ReturnCode.Success)
 
         if convfail
-            sol = SciMLBase.build_solution(prob, alg, ts[1:i], us[1:i], k = nothing,
-                stats = nothing, calculate_error = false)
+            sol = SciMLBase.build_solution(
+                prob, alg, ts[1:i], us[1:i], k = nothing,
+                stats = nothing, calculate_error = false
+            )
             sol = SciMLBase.solution_new_retcode(sol, ReturnCode.ConvergenceFailure)
             return sol
         end
     end
 
     !save_everystep && save_end && (us[end] = u)
-    sol = SciMLBase.build_solution(prob, alg, ts, us,
+    sol = SciMLBase.build_solution(
+        prob, alg, ts, us,
         k = nothing, stats = nothing,
-        calculate_error = false)
+        calculate_error = false
+    )
 
     SciMLBase.has_analytic(prob.f) &&
         SciMLBase.calculate_solution_errors!(
-            sol; timeseries_errors = true, dense_errors = false)
-    sol
+        sol; timeseries_errors = true, dense_errors = false
+    )
+    return sol
 end
 
 export SimpleIDSolve

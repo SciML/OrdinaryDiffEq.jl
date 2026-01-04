@@ -58,15 +58,19 @@ struct KuttaPRK2p5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
         c5_6 = Array{T2}(undef, 2)
         c5_6[1] = T2(2 // 3)
         c5_6[2] = T2(4 // 5)
-        new{T, T2}(α21, α31, α32, α41, α42, α43, α5_6, β1, β3, β5, β6, c2, c3, c4,
-            c5_6)
+        return new{T, T2}(
+            α21, α31, α32, α41, α42, α43, α5_6, β1, β3, β5, β6, c2, c3, c4,
+            c5_6
+        )
     end
 end
 
-function alg_cache(alg::KuttaPRK2p5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::KuttaPRK2p5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
     k1 = zero(rate_prototype)
@@ -77,14 +81,18 @@ function alg_cache(alg::KuttaPRK2p5, u, rate_prototype, ::Type{uEltypeNoUnits},
     k5_6[1] = zero(rate_prototype)
     k5_6[2] = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
-    tab = KuttaPRK2p5ConstantCache(constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits))
-    KuttaPRK2p5Cache(u, uprev, k, k1, k2, k3, k4, k5_6, tmp, fsalfirst, tab)
+    tab = KuttaPRK2p5ConstantCache(
+        constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits)
+    )
+    return KuttaPRK2p5Cache(u, uprev, k, k1, k2, k3, k4, k5_6, tmp, fsalfirst, tab)
 end
 
-function alg_cache(alg::KuttaPRK2p5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::KuttaPRK2p5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    KuttaPRK2p5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return KuttaPRK2p5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end

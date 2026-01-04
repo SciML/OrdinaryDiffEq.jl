@@ -5,7 +5,7 @@ rlc1!(v′, v, (R, L, C), t) = -(v′ / R + v / L) / C
 identity_f(v, u, p, t) = v # needed to form second order dynamical ODE
 
 function setup_rlc(R, L, C; v_init = 0.0, v′_init = 0.0, tspan = (0.0, 50.0))
-    DynamicalODEProblem{false}(rlc1!, identity_f, v′_init, v_init, tspan, (R, L, C))
+    return DynamicalODEProblem{false}(rlc1!, identity_f, v′_init, v_init, tspan, (R, L, C))
 end
 
 # simulate voltage impulse
@@ -24,7 +24,7 @@ sol = solve(prob, CalvoSanz4(), dt = 1 / 10)
 
 function f(du, u, p, t)
     du .= u
-    nothing
+    return nothing
 end
 dprob = DiscreteProblem(f, [1, 2, 3], (0, 100))
 sol = solve(dprob, FunctionMap())
@@ -55,7 +55,7 @@ tspan = (0.0, 2π)
 A = √(x₀[1]^2 + dx₀[1]^2)
 
 function harmonicoscillator(ddu, du, u, ω, t)
-    ddu .= -ω^2 * u
+    return ddu .= -ω^2 * u
 end
 
 prob = SecondOrderODEProblem(harmonicoscillator, dx₀, x₀, tspan, ω)

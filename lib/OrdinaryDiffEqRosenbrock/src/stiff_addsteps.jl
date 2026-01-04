@@ -1,8 +1,12 @@
-function _ode_addsteps!(k, t, uprev, u, dt, f, p,
-        cache::Union{Rosenbrock23ConstantCache,
-            Rosenbrock32ConstantCache},
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p,
+        cache::Union{
+            Rosenbrock23ConstantCache,
+            Rosenbrock32ConstantCache,
+        },
         always_calc_begin = false, allow_calc_end = true,
-        force_calc_end = false)
+        force_calc_end = false
+    )
     if length(k) < 2 || always_calc_begin
         (; tf, uf, d) = cache
         dtγ = dt * d
@@ -16,7 +20,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
             autodiff_alg = SciMLBase.@set autodiff_alg.dir = sign(dt)
         end
 
-        dT = DI.derivative(tf, autodiff_alg,t)
+        dT = DI.derivative(tf, autodiff_alg, t)
 
         mass_matrix = f.mass_matrix
         if uprev isa Number
@@ -43,12 +47,14 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         copyat_or_push!(k, 1, k₁)
         copyat_or_push!(k, 2, k₂)
     end
-    nothing
+    return nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConstantCache,
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConstantCache,
         always_calc_begin = false, allow_calc_end = true,
-        force_calc_end = false)
+        force_calc_end = false
+    )
     if length(k) < size(cache.tab.H, 1) || always_calc_begin
         (; tf, uf) = cache
         (; A, C, gamma, c, d, H) = cache.tab
@@ -120,12 +126,14 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
             copyat_or_push!(k, j, kj)
         end
     end
-    nothing
+    return nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         always_calc_begin = false, allow_calc_end = true,
-        force_calc_end = false)
+        force_calc_end = false
+    )
     if length(k) < 2 || always_calc_begin
         (; du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
         (; A, C, gamma, c, d, H) = cache.tab
@@ -149,7 +157,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         linsolve = cache.linsolve
 
         linres = dolinsolve(
-            cache, linsolve; A = W, b = _vec(linsolve_tmp), reltol = cache.reltol)
+            cache, linsolve; A = W, b = _vec(linsolve_tmp), reltol = cache.reltol
+        )
         @.. $(_vec(ks[1])) = -linres.u
         # Last stage affect's ks for Rodas5,5P,6P
         for stage in 2:length(ks)
@@ -174,7 +183,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
             end
 
             linres = dolinsolve(
-                cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
+                cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol
+            )
             @.. $(_vec(ks[stage])) = -linres.u
         end
 
@@ -186,5 +196,5 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
             end
         end
     end
-    nothing
+    return nothing
 end

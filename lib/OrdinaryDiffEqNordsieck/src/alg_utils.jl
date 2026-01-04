@@ -9,5 +9,5 @@ qsteady_max_default(alg::JVODE) = 3 // 2
 get_current_alg_order(alg::JVODE, cache) = get_current_adaptive_order(alg, cache)
 
 function default_controller(alg::Union{JVODE}, args...)
-    DummyController()
+    return DummyController()
 end
