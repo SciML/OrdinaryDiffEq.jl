@@ -4,15 +4,16 @@ abstract type AbstractLegacyController <: AbstractController end
 abstract type AbstractControllerCache end
 
 """
-    setup_controller_cache(alg_cache, controller::AbstractController)::AbstractControllerCache
+    setup_controller_cache(alg, controller::AbstractController)::AbstractControllerCache
 
-This function takes a controller together with the cache of the time stepping
-algorithm to construct and initialize the respective cache for the controller.
+This function takes a controller together with the time stepping algorithm to
+construct and initialize the respective cache for the controller.
 """
 setup_controller_cache
 
 """
-    accept_step_controller(integrator, controller_cache::AbstractControllerCache)::Bool
+    accept_step_controller(integrator, alg)::Bool
+    accept_step_controller(integrator, controller_cache::AbstractControllerCache, alg)::Bool
 
 This function decides whether the current time step should be accepted or rejected.
 A return value of `false` corresponds to a rejection.
@@ -20,7 +21,8 @@ A return value of `false` corresponds to a rejection.
 accept_step_controller
 
 """
-    stepsize_controller!(integrator, controller_cache::AbstractControllerCache)
+    stepsize_controller!(integrator, alg)
+    stepsize_controller!(integrator, controller_cache::AbstractControllerCache, alg)
 
 Update the cache to compute the new order of the time marching algorithm and prepare
 for an update of the time step. The update can be either due to a rejection or acceptance
@@ -29,7 +31,8 @@ of the current time step.
 stepsize_controller!
 
 """
-    step_accept_controller!(integrator, controller_cache::AbstractControllerCache, q)
+    step_accept_controller!(integrator, alg, q)
+    step_accept_controller!(integrator, controller_cache::AbstractControllerCache, alg, q)
 
 This function gets called in case of an accepted time step right after [`stepsize_controller!`](@ref).
 It returns the proposed new time step length. Please note that the time step length might not be
@@ -42,7 +45,8 @@ applied as is and subject to further modification to e.g. match the next time st
 step_accept_controller!
 
 """
-    step_reject_controller!(integrator, controller_cache::AbstractControllerCache)
+    step_reject_controller!(integrator, alg)
+    step_reject_controller!(integrator, controller_cache::AbstractControllerCache, alg)
 
 This function gets called in case of a rejected time step right after [`stepsize_controller!`](@ref).
 It directly sets the time step length (i.e. `integrator.dt`).
@@ -51,7 +55,7 @@ step_reject_controller!
 
 
 # The legacy controllers do not have this concept.
-setup_controller_cache(alg_cache, controller::AbstractLegacyController) = controller
+setup_controller_cache(alg, controller::AbstractLegacyController) = controller
 
 # checks whether the controller should accept a step based on the error estimate
 @inline function accept_step_controller(integrator, controller_or_cache::Union{<:AbstractLegacyController, <:AbstractControllerCache})
@@ -89,7 +93,7 @@ end
 struct DummyController <: AbstractController
 end
 
-setup_controller_cache(alg_cache, controller::DummyController) = controller
+setup_controller_cache(alg, controller::DummyController) = controller
 
 @inline function accept_step_controller(integrator, controller::DummyController)
     return integrator.EEst <= 1
@@ -189,7 +193,7 @@ mutable struct IControllerCache{C, T} <: AbstractControllerCache
     # EEst::T
 end
 
-function setup_controller_cache(alg_cache, controller::NewIController{T}) where {T}
+function setup_controller_cache(alg, controller::NewIController{T}) where {T}
     return IControllerCache(
         controller,
         T(1),
@@ -357,7 +361,7 @@ mutable struct PIControllerCache{T} <: AbstractControllerCache
 end
 
 
-function setup_controller_cache(alg_cache, controller::NewPIController{T}) where {T}
+function setup_controller_cache(alg, controller::NewPIController{T}) where {T}
     return PIControllerCache(
         controller,
         T(1),
@@ -405,16 +409,6 @@ function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     @unpack qmin, gamma = controller
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
-
-# FIXME multi-controller?
-# function reset_alg_dependent_opts!(controller::PIControllerCache, alg1, alg2)
-#     if controller.beta2 == beta2_default(alg1)
-#         controller.beta2 = beta2_default(alg2)
-#     end
-#     if controller.beta1 == beta1_default(alg1, controller.beta2)
-#         controller.beta1 = beta1_default(alg2, controller.beta2)
-#     end
-# end
 
 # PID step size controller
 """
@@ -638,7 +632,7 @@ mutable struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
     dt_factor::T
 end
 
-function setup_controller_cache(alg_cache, controller::NewPIDController{QT}) where {QT}
+function setup_controller_cache(alg, controller::NewPIDController{QT}) where {QT}
     err = MVector{3, QT}(true, true, true)
     return PIDControllerCache(
         controller,
@@ -855,14 +849,16 @@ mutable struct PredictiveControllerCache{T} <: AbstractControllerCache
     dtacc::T
     erracc::T
     qold::T
+    q::T
 end
 
-function setup_controller_cache(alg_cache, controller::NewPredictiveController{T}) where {T}
+function setup_controller_cache(alg, controller::NewPredictiveController{T}) where {T}
     return PredictiveControllerCache{T}(
         controller,
         T(1),
         T(1),
         T(1),
+        T(1)
     )
 end
 
@@ -932,28 +928,28 @@ struct CompositeControllerCache{T} <: AbstractControllerCache
     caches::T
 end
 
-function setup_controller_cache(alg_cache::CompositeCache, cc::CompositeController)
-    CompositeControllerCache(
-        map((cache,controller)->default_controller_v7(cache, controller), alg_cache.caches, cc.controllers)
+function setup_controller_cache(alg::CompositeAlgorithm, cc::CompositeController)
+    return CompositeControllerCache(
+        map((alg, controller) -> setup_controller_cache(alg, controller), alg.algs, cc.controllers)
     )
 end
 
-@inline function accept_step_controller(integrator, cache::CompositeControllerCache)
+@inline function accept_step_controller(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
     current_idx = integrator.cache.current
-    accept_step_controller(integrator, cache.caches[current_idx])
+    return accept_step_controller(integrator, cache.caches[current_idx], alg.algs[current_idx])
 end
 
-@inline function stepsize_controller!(integrator, cache::CompositeControllerCache)
+@inline function stepsize_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
     current_idx = integrator.cache.current
-    stepsize_controller!(integrator, cache.caches[current_idx])
+    return stepsize_controller!(integrator, cache.caches[current_idx], alg.algs[current_idx])
 end
 
-@inline function step_accept_controller!(integrator, cache::CompositeControllerCache, q)
+@inline function step_accept_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm, q)
     current_idx = integrator.cache.current
-    step_accept_controller!(integrator, cache.caches[current_idx], q)
+    return step_accept_controller!(integrator, cache.caches[current_idx], alg.algs[current_idx], q)
 end
 
-@inline function step_reject_controller!(integrator, cache::CompositeControllerCache)
+@inline function step_reject_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
     current_idx = integrator.cache.current
-    step_reject_controller!(integrator, cache.caches[current_idx])
+    return step_reject_controller!(integrator, cache.caches[current_idx], alg.algs[current_idx])
 end
