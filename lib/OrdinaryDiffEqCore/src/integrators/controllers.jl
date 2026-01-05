@@ -430,7 +430,7 @@ end
 function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIControllerCache{T}) where {T}
     cache.q = T(1)
     cache.q11 = T(1)
-    cache.errold = T(cache.controller.qoldinit)
+    return cache.errold = T(cache.controller.qoldinit)
 end
 
 # PID step size controller
@@ -653,7 +653,7 @@ end
 
 function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIDControllerCache{T}) where {T}
     cache.err = MVector{3, T}(true, true, true)
-    cache.dt_factor = T(1 // 10^4)
+    return cache.dt_factor = T(1 // 10^4)
 end
 
 function setup_controller_cache(alg, atmp, controller::NewPIDController{QT}) where {QT}
@@ -881,7 +881,7 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PredictiveControlle
     cache.dtacc = T(1)
     cache.erracc = T(1)
     cache.qold = T(1)
-    cache.q = T(1)
+    return cache.q = T(1)
 end
 
 function setup_controller_cache(alg, atmp::UT, controller::NewPredictiveController{T}) where {T, UT}
