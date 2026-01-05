@@ -369,29 +369,30 @@ alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_orde
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 
-function default_controller(alg)
+function default_controller_v7(alg)
     if ispredictive(alg)
-        return PredictiveController()
+        return PredictiveController(alg)
     elseif isstandard(alg)
-        return IController()
+        return IController(alg)
     else
-        beta2 = beta2_default(alg)
-        beta1 = beta1_default(alg, beta2)
-        return PIController(beta1, beta2)
+        return PIController(alg)
     end
 end
 
 function legacy_default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
     if ispredictive(alg)
-        return PredictiveController()
+        return LegacyPredictiveController()
     elseif isstandard(alg)
-        return IController()
+        return LegacyIController()
     else # Default is PI-controller
         QT = typeof(qoldinit)
         beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
-        return PIController(beta1, beta2)
+        return LegacyPIController(beta1, beta2)
     end
 end
+
+# TODO remove this when done
+default_controller = legacy_default_controller
 
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
     if alg isa OrdinaryDiffEqCompositeAlgorithm
