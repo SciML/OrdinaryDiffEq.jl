@@ -4,7 +4,7 @@ mutable struct ExtrapolationController{QT} <: AbstractLegacyController
 end
 
 function reset_alg_dependent_opts!(controller::ExtrapolationController, alg1, alg2)
-    return if controller.beta1 == beta1_default(alg1, beta2_default(alg1))
+    if controller.beta1 == beta1_default(alg1, beta2_default(alg1))
         controller.beta1 = beta1_default(alg2, beta2_default(alg2))
     end
     return nothing
