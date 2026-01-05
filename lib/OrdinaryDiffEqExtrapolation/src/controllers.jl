@@ -28,7 +28,7 @@ mutable struct ExtrapolationControllerCache{QT} <: AbstractControllerCache
     gamma::QT
 end
 
-function setup_controller_cache(alg_cache, controller::NewExtrapolationController{T}) where {T}
+function setup_controller_cache(alg, controller::NewExtrapolationController{T}) where {T}
     return ExtrapolationControllerCache{T}(
         controller,
         T(1),
