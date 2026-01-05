@@ -2,10 +2,10 @@ module OrdinaryDiffEqExtrapolation
 
 import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_order,
     get_current_alg_order, calculate_residuals!,
-    accept_step_controller,
+    accept_step_controller, default_controller_v7,
     legacy_default_controller, beta2_default, beta1_default, gamma_default,
     initialize!, perform_step!, @cache, unwrap_alg,
-    isthreaded,
+    isthreaded, isadaptive, LegacyPIController,
     step_accept_controller!, calculate_residuals,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     reset_alg_dependent_opts!, AbstractController, AbstractLegacyController,
