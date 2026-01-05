@@ -12,7 +12,7 @@ function SciMLBase.__solve(
 end
 
 determine_controller_datatype(u, ts) = DiffEqBase.value(promote_type(eltype(u), eltype(ts)))
-determine_controller_datatype(::Nothing, ts::Tuple{<:Real,<:Real}) = DiffEqBase.value(eltype(ts))
+determine_controller_datatype(::Nothing, ts::Tuple{<:Real, <:Real}) = DiffEqBase.value(eltype(ts))
 determine_controller_datatype(::Nothing, ts) = Float64 # This seems to be an assumption implicitly taken somewhere
 
 function SciMLBase.__init(
