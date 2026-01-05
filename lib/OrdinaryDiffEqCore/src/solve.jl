@@ -51,7 +51,7 @@ function SciMLBase.__init(
         beta1 = nothing,
         beta2 = nothing,
         qoldinit = nothing,
-        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(typeof(one(eltype(prob.tspan))), alg), # We have to reconstruct the old controller before breaking release.,
+        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(promote_type(eltype(prob.u0),eltype(prob.tspan)), alg), # We have to reconstruct the old controller before breaking release.,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
@@ -433,15 +433,6 @@ function SciMLBase.__init(
         sizehint!(ks, 2)
     end
 
-    QT, EEstT = if tTypeNoUnits <: Integer
-        typeof(qmin), typeof(qmin)
-    elseif prob isa SciMLBase.AbstractDiscreteProblem
-        # The QT fields are not used for DiscreteProblems
-        constvalue(tTypeNoUnits), constvalue(tTypeNoUnits)
-    else
-        typeof(DiffEqBase.value(internalnorm(u, t))), typeof(internalnorm(u, t))
-    end
-
     k = rateType[]
 
     if uses_uprev(_alg, adaptive) || calck
@@ -526,6 +517,15 @@ function SciMLBase.__init(
         nothing
     end
     controller_cache = setup_controller_cache(_alg, atmp, controller)
+
+    QT, EEstT = if tTypeNoUnits <: Integer
+        typeof(qmin), typeof(qmin)
+    elseif prob isa SciMLBase.AbstractDiscreteProblem
+        # The QT fields are not used for DiscreteProblems
+        constvalue(tTypeNoUnits), constvalue(tTypeNoUnits)
+    else
+        typeof(DiffEqBase.value(internalnorm(u, t))), typeof(internalnorm(u, t))
+    end
 
     save_end_user = save_end
     save_end = save_end === nothing ?
