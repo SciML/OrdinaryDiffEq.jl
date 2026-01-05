@@ -51,7 +51,7 @@ function SciMLBase.__init(
         beta1 = nothing,
         beta2 = nothing,
         qoldinit = nothing,
-        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(promote_type(eltype(prob.u0),eltype(prob.tspan)), alg), # We have to reconstruct the old controller before breaking release.,
+        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(promote_type(eltype(prob.u0), eltype(prob.tspan)), alg), # We have to reconstruct the old controller before breaking release.,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
