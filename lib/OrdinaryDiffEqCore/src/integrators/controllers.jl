@@ -4,7 +4,7 @@ abstract type AbstractLegacyController <: AbstractController end
 abstract type AbstractControllerCache end
 
 """
-    setup_controller_cache(alg, controller::AbstractController)::AbstractControllerCache
+    setup_controller_cache(alg, atmp, controller::AbstractController)::AbstractControllerCache
 
 This function takes a controller together with the time stepping algorithm to
 construct and initialize the respective cache for the controller.
@@ -55,7 +55,7 @@ step_reject_controller!
 
 
 # The legacy controllers do not have this concept.
-setup_controller_cache(alg, controller::AbstractLegacyController) = controller
+setup_controller_cache(alg, atmp, controller::AbstractLegacyController) = controller
 
 # checks whether the controller should accept a step based on the error estimate
 @inline function accept_step_controller(integrator, controller_or_cache::Union{<:AbstractLegacyController, <:AbstractControllerCache})
@@ -99,7 +99,7 @@ end
 struct DummyController <: AbstractController
 end
 
-setup_controller_cache(alg, controller::DummyController) = controller
+setup_controller_cache(alg, atmp, controller::DummyController) = controller
 
 @inline function accept_step_controller(integrator, controller::DummyController)
     return integrator.EEst <= 1
@@ -191,19 +191,21 @@ function NewIController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing
     )
 end
 
-mutable struct IControllerCache{C, T} <: AbstractControllerCache
+mutable struct IControllerCache{C, T, UT} <: AbstractControllerCache
     controller::C
     q::T
     dtreject::T
     # I believe this should go here or in the algorithm cache, but not in the integrator itself.
     # EEst::T
+    atmp::UT
 end
 
-function setup_controller_cache(alg, controller::NewIController{T}) where {T}
+function setup_controller_cache(alg, atmp, controller::NewIController{T}) where {T}
     return IControllerCache(
         controller,
         T(1),
         T(1 // 10^4), # TODO which value?
+        atmp,
     )
 end
 
@@ -356,7 +358,7 @@ function NewPIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothi
     )
 end
 
-mutable struct PIControllerCache{T} <: AbstractControllerCache
+mutable struct PIControllerCache{T, UT} <: AbstractControllerCache
     controller::NewPIController{T}
     # Propsoed scaling factor for the time step length
     q::T
@@ -364,15 +366,16 @@ mutable struct PIControllerCache{T} <: AbstractControllerCache
     q11::T
     # Previous EEst
     errold::T
+    atmp::UT
 end
 
-
-function setup_controller_cache(alg, controller::NewPIController{T}) where {T}
+function setup_controller_cache(alg, atmp, controller::NewPIController{T}) where {T}
     return PIControllerCache(
         controller,
         T(1),
         T(1),
         T(1 // 10^4),
+        atmp,
     )
 end
 
@@ -627,18 +630,20 @@ function Base.show(io::IO, controller::NewPIDController)
     )
 end
 
-mutable struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
+mutable struct PIDControllerCache{T, Limiter, UT} <: AbstractControllerCache
     controller::NewPIDController{T, Limiter}
     err::MVector{3, T} # history of the error estimates
     dt_factor::T
+    atmp::UT
 end
 
-function setup_controller_cache(alg, controller::NewPIDController{QT}) where {QT}
+function setup_controller_cache(alg, atmp, controller::NewPIDController{QT}) where {QT}
     err = MVector{3, QT}(true, true, true)
     return PIDControllerCache(
         controller,
         err,
         QT(1 // 10^4),
+        atmp,
     )
 end
 
@@ -844,21 +849,23 @@ function NewPredictiveController(QT, alg; qmin = nothing, qmax = nothing, gamma 
     )
 end
 
-mutable struct PredictiveControllerCache{T} <: AbstractControllerCache
+mutable struct PredictiveControllerCache{T, UT} <: AbstractControllerCache
     controller::NewPredictiveController{T}
     dtacc::T
     erracc::T
     qold::T
     q::T
+    atmp::UT
 end
 
-function setup_controller_cache(alg, controller::NewPredictiveController{T}) where {T}
+function setup_controller_cache(alg, atmp, controller::NewPredictiveController{T}) where {T}
     return PredictiveControllerCache{T}(
         controller,
         T(1),
         T(1),
         T(1),
-        T(1)
+        T(1),
+        atmp,
     )
 end
 
@@ -924,13 +931,15 @@ struct CompositeController{T} <: AbstractController
     controllers::T
 end
 
-struct CompositeControllerCache{T} <: AbstractControllerCache
+struct CompositeControllerCache{T, UT} <: AbstractControllerCache
     caches::T
+    atmp::UT # This is just here for easy access
 end
 
-function setup_controller_cache(alg::CompositeAlgorithm, cc::CompositeController)
+function setup_controller_cache(alg::CompositeAlgorithm, atmp, cc::CompositeController)
     return CompositeControllerCache(
-        map((alg, controller) -> setup_controller_cache(alg, controller), alg.algs, cc.controllers)
+        map((alg, controller) -> setup_controller_cache(alg, atmp, controller), alg.algs, cc.controllers),
+        atmp,
     )
 end
 
