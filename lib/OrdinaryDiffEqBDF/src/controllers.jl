@@ -254,6 +254,14 @@ end
 
 function stepsize_controller!(
         integrator,
+        alg::FBDF
+    )
+    return stepsize_controller!(integrator, integrator.cache, alg)
+end
+
+function stepsize_controller!(
+        integrator,
+        cache::Union{FBDFCache, FBDFConstantCache},
         alg::FBDF{max_order}
     ) where {
         max_order,
@@ -400,11 +408,18 @@ end
 
 function stepsize_controller!(
         integrator,
+        alg::DFBDF
+    )
+    return stepsize_controller!(integrator, integrator.cache, alg)
+end
+
+function stepsize_controller!(
+        integrator,
+        cache::Union{DFBDFCache, DFBDFConstantCache},
         alg::DFBDF{max_order}
     ) where {
         max_order,
     }
-    (; cache) = integrator
     cache.prev_order = cache.order
     k, terk = choose_order!(alg, integrator, cache, Val(max_order))
     if k != cache.order

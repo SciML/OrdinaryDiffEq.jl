@@ -103,14 +103,6 @@ end
 
 setup_controller_cache(alg, atmp, controller::DummyController) = controller
 
-# We need this for now for composite controllers
-@inline function accept_step_controller(integrator, controller::DummyController)
-    return integrator.EEst <= 1
-end
-@inline stepsize_controller!(integrator, controller::DummyController, alg) = stepsize_controller!(integrator, alg)
-@inline step_accept_controller!(integrator, controller::DummyController, alg, q) = step_accept_controller!(integrator, alg, q)
-@inline step_reject_controller!(integrator, controller::DummyController, alg) = step_reject_controller!(integrator, alg)
-
 # Standard integral (I) step size controller
 """
     IController()
@@ -988,3 +980,11 @@ end
     current_idx = integrator.cache.current
     return step_reject_controller!(integrator, cache.caches[current_idx], alg.algs[current_idx])
 end
+
+# We need this for now as a workaround to make composite controllers work
+@inline function accept_step_controller(integrator, controller::DummyController)
+    return integrator.EEst <= 1
+end
+@inline stepsize_controller!(integrator, controller::DummyController, alg) = stepsize_controller!(integrator, integrator.cache.caches[integrator.cache.current], alg)
+@inline step_accept_controller!(integrator, controller::DummyController, alg, q) = step_accept_controller!(integrator, integrator.cache.caches[integrator.cache.current], alg, q)
+@inline step_reject_controller!(integrator, controller::DummyController, alg) = step_reject_controller!(integrator, integrator.cache.caches[integrator.cache.current], alg)
