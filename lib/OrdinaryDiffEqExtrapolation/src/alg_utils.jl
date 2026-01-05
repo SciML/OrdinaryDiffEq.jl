@@ -64,8 +64,7 @@ function default_controller_v7(
             ImplicitEulerBarycentricExtrapolation,
         }
     )
-    beta1 = QT(beta1_default(alg, beta2_default(alg)))
-    return ExtrapolationController(beta1)
+    return NewExtrapolationController(QT, alg)
 end
 
 # FIXME AitkenNeville is missing integration with the extrapolation controller and picks up the PI controller instead.
