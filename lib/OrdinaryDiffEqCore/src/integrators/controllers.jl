@@ -513,7 +513,6 @@ end
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
 @inline function stepsize_controller!(integrator, controller::PIDController, alg)
-    (; qmax) = integrator.opts
     beta1, beta2, beta3 = controller.beta
 
     EEst = DiffEqBase.value(integrator.EEst)
@@ -593,8 +592,6 @@ struct NewPIDController{T, Limiter} <: AbstractController
     accept_safety::T   # accept a step if the predicted change of the step size
     # is bigger than this parameter
     limiter::Limiter    # limiter of the dt factor (before clipping)
-    qmin::T
-    qmax::T
     qsteady_min::T
     qsteady_max::T
 end
@@ -603,7 +600,7 @@ function NewPIDController(alg; kwargs...)
     return NewPIDController(Float64, alg; kwargs...)
 end
 
-function NewPIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qmin = nothing, qmax = nothing, qsteady_min = nothing, qsteady_max = nothing)
+function NewPIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = nothing, qsteady_max = nothing)
     if beta === nothing
         beta2 = QT(beta2_default(alg))
         beta1 = QT(beta1_default(alg, beta2))
@@ -616,8 +613,6 @@ function NewPIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter
         beta,
         QT(accept_safety),
         limiter,
-        QT(qmin === nothing ? qmin_default(alg) : qmin),
-        QT(qmax === nothing ? qmax_default(alg) : qmax),
         QT(qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min),
         QT(qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max),
     )
@@ -650,7 +645,6 @@ end
 @inline function stepsize_controller!(integrator, cache::PIDControllerCache, alg)
     @unpack controller = cache
     beta1, beta2, beta3 = controller.beta
-    @unpack qmax = controller
 
     EEst = DiffEqBase.value(integrator.EEst)
 
