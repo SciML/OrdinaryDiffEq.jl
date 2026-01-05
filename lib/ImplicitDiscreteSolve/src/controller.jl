@@ -25,7 +25,7 @@ The baseline algorithm has been derived in Peter Deuflhard's book "Newton Method
 Nonlinear Problems" in Section 5.1.3 (Adaptive pathfollowing algorithms). Please note
 that some implementation details deviate from the original algorithm.
 """
-Base.@kwdef struct KantorovichTypeController <: OrdinaryDiffEqCore.AbstractController
+Base.@kwdef struct KantorovichTypeController <: AbstractLegacyController
     Θmin::Float64
     p::Int64
     Θreject::Float64 = 0.95
