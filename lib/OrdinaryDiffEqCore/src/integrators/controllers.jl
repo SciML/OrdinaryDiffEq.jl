@@ -210,7 +210,7 @@ function setup_controller_cache(alg, atmp, controller::NewIController{T}) where 
 end
 
 @inline function stepsize_controller!(integrator, cache::IControllerCache, alg)
-    @unpack qmin, qmax, gamma = cache.controller
+    (; qmin, qmax, gamma) = cache.controller
     EEst = DiffEqBase.value(integrator.EEst)
 
     if iszero(EEst)
@@ -227,7 +227,7 @@ end
 
 # TODO change signature to remove the q input
 function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
-    @unpack qsteady_min, qsteady_max = cache.controller
+    (; qsteady_min, qsteady_max) = cache.controller
     @assert q ≈ cache.q "Controller cache went out of sync with time stepping logic."
 
     if qsteady_min <= q <= qsteady_max
@@ -380,9 +380,9 @@ function setup_controller_cache(alg, atmp, controller::NewPIController{T}) where
 end
 
 @inline function stepsize_controller!(integrator, cache::PIControllerCache, alg)
-    @unpack errold, controller = cache
-    @unpack qmin, qmax, gamma = controller
-    @unpack beta1, beta2 = controller
+    (; errold, controller) = cache
+    (; qmin, qmax, gamma) = controller
+    (; beta1, beta2) = controller
     EEst = DiffEqBase.value(integrator.EEst)
 
     if iszero(EEst)
@@ -401,8 +401,8 @@ end
 
 function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
     @assert q ≈ cache.q "Controller cache went out of sync with time stepping logic (q=$q | cache.q=$(cache.q))."
-    @unpack controller = cache
-    @unpack qsteady_min, qsteady_max, qoldinit = controller
+    (; controller) = cache
+    (; qsteady_min, qsteady_max, qoldinit) = controller
     EEst = DiffEqBase.value(integrator.EEst)
 
     if qsteady_min <= q <= qsteady_max
@@ -414,8 +414,8 @@ function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
 end
 
 function step_reject_controller!(integrator, cache::PIControllerCache, alg)
-    @unpack controller, q11 = cache
-    @unpack qmin, gamma = controller
+    (; controller, q11) = cache
+    (; qmin, gamma) = controller
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
@@ -648,7 +648,7 @@ function setup_controller_cache(alg, atmp, controller::NewPIDController{QT}) whe
 end
 
 @inline function stepsize_controller!(integrator, cache::PIDControllerCache, alg)
-    @unpack controller = cache
+    (; controller) = cache
     beta1, beta2, beta3 = controller.beta
 
     EEst = DiffEqBase.value(integrator.EEst)
@@ -697,8 +697,8 @@ end
 
 function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_factor)
     @assert dt_factor ≈ cache.dt_factor "Controller cache went out of sync with time stepping logic."
-    @unpack controller = cache
-    @unpack qsteady_min, qsteady_max = controller
+    (; controller) = cache
+    (; qsteady_min, qsteady_max) = controller
 
     if qsteady_min <= inv(dt_factor) <= qsteady_max
         dt_factor = one(dt_factor)
@@ -870,7 +870,7 @@ function setup_controller_cache(alg, atmp, controller::NewPredictiveController{T
 end
 
 @inline function stepsize_controller!(integrator, cache::PredictiveControllerCache, alg)
-    @unpack qmin, qmax, gamma = integrator.opts
+    (; qmin, qmax, gamma) = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)
     if iszero(EEst)
         q = inv(qmax)
@@ -879,10 +879,10 @@ end
             fac = gamma
         else
             if isfirk(alg)
-                @unpack iter = integrator.cache
-                @unpack maxiters = alg
+                (; iter) = integrator.cache
+                (; maxiters) = alg
             else
-                @unpack iter, maxiters = integrator.cache.nlsolver
+                (; iter, maxiters) = integrator.cache.nlsolver
             end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end
@@ -897,8 +897,8 @@ end
 
 function step_accept_controller!(integrator, cache::PredictiveControllerCache, alg, q)
     @assert q ≈ cache.q "Controller cache went out of sync with time stepping logic."
-    @unpack dtacc, erracc, controller = cache
-    @unpack qmin, qmax, gamma, qsteady_min, qsteady_max = controller
+    (; dtacc, erracc, controller) = cache
+    (; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller
 
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -921,8 +921,8 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
 end
 
 function step_reject_controller!(integrator, cache::PredictiveControllerCache, alg)
-    @unpack dt, success_iter = integrator
-    @unpack qold = cache
+    (; dt, success_iter) = integrator
+    (; qold) = cache
     return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end
 
