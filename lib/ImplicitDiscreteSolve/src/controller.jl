@@ -25,26 +25,40 @@ The baseline algorithm has been derived in Peter Deuflhard's book "Newton Method
 Nonlinear Problems" in Section 5.1.3 (Adaptive pathfollowing algorithms). Please note
 that some implementation details deviate from the original algorithm.
 """
-Base.@kwdef struct KantorovichTypeController <: AbstractLegacyController
-    Θmin::Float64
+Base.@kwdef struct KantorovichTypeController{T} <: AbstractController
+    Θmin::T
     p::Int64
-    Θreject::Float64 = 0.95
-    Θbar::Float64 = 0.5
-    γ::Float64 = 0.95
-    qmin::Float64 = 1 / 5
-    qmax::Float64 = 5.0
+    Θreject::T = 0.95
+    Θbar::T = 0.5
+    γ::T = 0.95
+    qmin::T = 1 / 5
+    qmax::T = 5.0
     strict::Bool = true
 end
 
-function OrdinaryDiffEqCore.default_controller(
-        alg::IDSolve, cache::IDSolveCache, _1, _2, _3
+mutable struct KantorovichTypeControllerCache{T} <: AbstractControllerCache
+    controller::KantorovichTypeController{T}
+    # Proposed scaling factor for the time step length
+    q::T
+end
+
+function OrdinaryDiffEqCore.default_controller_v7(
+        QT, alg::IDSolve,
     )
-    return KantorovichTypeController(; Θmin = 1 // 8, p = 1)
+    return KantorovichTypeController{QT}(; Θmin = QT(1 // 8), p = 1)
+end
+
+function OrdinaryDiffEqCore.setup_controller_cache(alg, atmp, controller::KantorovichTypeController{T}) where {T}
+    return KantorovichTypeControllerCache(
+        controller,
+        T(1),
+    )
 end
 
 function OrdinaryDiffEqCore.stepsize_controller!(
-        integrator, controller::KantorovichTypeController, alg::IDSolve
+        integrator, cache::KantorovichTypeControllerCache, alg::IDSolve
     )
+    (; controller) = cache
     @inline g(x) = √(1 + 4x) - 1
 
     # Adapt dt with a priori estimate (Eq. 5.24)
@@ -52,20 +66,22 @@ function OrdinaryDiffEqCore.stepsize_controller!(
     (; Θbar, γ, Θmin, qmin, qmax, p) = controller
 
     Θ₀ = length(Θks) > 0 ? max(first(Θks), Θmin) : Θmin
-    q = clamp(γ * (g(Θbar) / (g(Θ₀)))^(1 / p), qmin, qmax)
+    cache.q = clamp(γ * (g(Θbar) / (g(Θ₀)))^(1 / p), qmin, qmax)
 
-    return q
+    return cache.q
 end
 
 function OrdinaryDiffEqCore.step_accept_controller!(
-        integrator, controller::KantorovichTypeController, alg::IDSolve, q
+        integrator, cache::KantorovichTypeControllerCache, alg::IDSolve, q
     )
-    return q * integrator.dt
+    @assert q ≈ cache.q "Controller cache went out of sync with time stepping logic."
+    return cache.q * integrator.dt
 end
 
 function OrdinaryDiffEqCore.step_reject_controller!(
-        integrator, controller::KantorovichTypeController, alg::IDSolve
+        integrator, cache::KantorovichTypeControllerCache, alg::IDSolve
     )
+    (; controller) = cache
     @inline g(x) = √(1 + 4x) - 1
 
     # Shorten dt according to (Eq. 5.24)
@@ -81,7 +97,8 @@ function OrdinaryDiffEqCore.step_reject_controller!(
     return
 end
 
-function OrdinaryDiffEqCore.accept_step_controller(integrator, controller::KantorovichTypeController)
+function OrdinaryDiffEqCore.accept_step_controller(integrator, cache::KantorovichTypeControllerCache)
+    (; controller) = cache
     (; Θks) = integrator.cache
     if controller.strict
         return all(controller.Θreject .< Θks)

@@ -10,7 +10,7 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_cache, OrdinaryDiffEqMut
     alg_order, beta2_default, beta1_default, dt_required,
     _initialize_dae!, DefaultInit, BrownFullBasicInit, OverrideInit,
     @muladd, @.., _unwrap_val, OrdinaryDiffEqCore, isadaptive,
-    AbstractLegacyController
+    AbstractController, AbstractControllerCache
 
 using Reexport
 @reexport using SciMLBase
