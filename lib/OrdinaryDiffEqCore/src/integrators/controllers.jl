@@ -64,16 +64,16 @@ end
 
 @inline function stepsize_controller!(integrator, alg)
     # TODO replace this when done - right now this holds the controller cache!
-    stepsize_controller!(integrator, integrator.opts.controller, alg)
+    return stepsize_controller!(integrator, integrator.opts.controller, alg)
     # stepsize_controller!(integrator, integrator.controller_cache, alg)
-    return nothing
+    # return nothing
 end
 
 @inline function step_accept_controller!(integrator, alg, q)
     # TODO replace this when done - right now this holds the controller cache!
-    step_accept_controller!(integrator, integrator.opts.controller, alg, q)
+    return step_accept_controller!(integrator, integrator.opts.controller, alg, q)
     # step_accept_controller!(integrator, integrator.controller_cache, alg, q)
-    return nothing
+    # return nothing
 end
 
 @inline function step_reject_controller!(integrator, alg)
@@ -860,8 +860,8 @@ mutable struct PredictiveControllerCache{T, UT} <: AbstractControllerCache
     atmp::UT
 end
 
-function setup_controller_cache(alg, atmp, controller::NewPredictiveController{T}) where {T}
-    return PredictiveControllerCache{T}(
+function setup_controller_cache(alg, atmp::UT, controller::NewPredictiveController{T}) where {T, UT}
+    return PredictiveControllerCache{T, UT}(
         controller,
         T(1),
         T(1),
