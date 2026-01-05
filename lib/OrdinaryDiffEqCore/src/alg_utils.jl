@@ -371,23 +371,23 @@ alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_orde
 
 function default_controller_v7(QT, alg)
     if ispredictive(alg)
-        return PredictiveController(QT, alg)
+        return NewPredictiveController(QT, alg)
     elseif isstandard(alg)
-        return IController(QT, alg)
+        return NewIController(QT, alg)
     else
-        return PIController(QT, alg)
+        return NewPIController(QT, alg)
     end
 end
 
 function legacy_default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
     if ispredictive(alg)
-        return LegacyPredictiveController()
+        return PredictiveController()
     elseif isstandard(alg)
-        return LegacyIController()
+        return IController()
     else # Default is PI-controller
         QT = typeof(qoldinit)
         beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
-        return LegacyPIController(beta1, beta2)
+        return PIController(beta1, beta2)
     end
 end
 
