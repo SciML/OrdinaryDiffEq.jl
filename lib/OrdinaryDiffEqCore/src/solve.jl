@@ -521,10 +521,10 @@ function SciMLBase.__init(
 
 
     atmp = if hasfield(typeof(cache), :atmp)
-            cache.atmp
-        else
-            nothing
-        end
+        cache.atmp
+    else
+        nothing
+    end
     controller_cache = setup_controller_cache(_alg, atmp, controller)
 
     save_end_user = save_end
