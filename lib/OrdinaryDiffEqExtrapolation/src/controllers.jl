@@ -36,8 +36,11 @@ function setup_controller_cache(alg, controller::NewExtrapolationController{T}) 
     )
 end
 
-stepsize_controller_internal!(integrator, alg) = stepsize_controller_internal!(integrator, integrator.controller_cache, alg)
-stepsize_predictor!(integrator, alg, n_new) = stepsize_predictor!(integrator, integrator.controller_cache, alg, n_new)
+# TODO replace this when done - right now this holds the controller cache!
+stepsize_controller_internal!(integrator, alg) = stepsize_controller_internal!(integrator, integrator.opts.controller, alg)
+stepsize_predictor!(integrator, alg, n_new) = stepsize_predictor!(integrator, integrator.opts.controller, alg, n_new)
+# stepsize_controller_internal!(integrator, alg) = stepsize_controller_internal!(integrator, integrator.controller_cache, alg)
+# stepsize_predictor!(integrator, alg, n_new) = stepsize_predictor!(integrator, integrator.controller_cache, alg, n_new)
 
 @inline function stepsize_controller!(
         integrator,
