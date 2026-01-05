@@ -44,14 +44,14 @@ function SciMLBase.__init(
         gamma = gamma_default(alg),
         abstol = nothing,
         reltol = nothing,
-        qmin = qmin_default(alg),
-        qmax = qmax_default(alg),
-        qsteady_min = qsteady_min_default(alg),
-        qsteady_max = qsteady_max_default(alg),
+        qmin = nothing,
+        qmax = nothing,
+        qsteady_min = nothing,
+        qsteady_max = nothing,
         beta1 = nothing,
         beta2 = nothing,
-        qoldinit = anyadaptive(alg) ? 1 // 10^4 : 0,
-        controller = nothing,
+        qoldinit = nothing,
+        controller = any((qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller(alg), # We have to reconstruct the old controller before breaking release.,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
@@ -476,14 +476,37 @@ function SciMLBase.__init(
         throw(ArgumentError("Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."))
     end
 
+    # Deprecation warnings for users to break down which parameters they accidentally set.
     if (beta1 !== nothing || beta2 !== nothing)
         message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
         Base.depwarn(message, :init)
         Base.depwarn(message, :solve)
     end
+    if (qmin !== nothing || qmax !== nothing)
+        message = "Providing the legacy PID parameters `qmin, qmax` is deprecated. Use the keyword argument `controller` instead."
+        Base.depwarn(message, :init)
+        Base.depwarn(message, :solve)
+    end
+    if (qsteady_min !== nothing || qsteady_max !== nothing)
+        message = "Providing the legacy PID parameters `qsteady_min, qsteady_max` is deprecated. Use the keyword argument `controller` instead."
+        Base.depwarn(message, :init)
+        Base.depwarn(message, :solve)
+    end
+    if (qoldinit !== nothing)
+        message = "Providing the legacy PID parameters `qoldinit` is deprecated. Use the keyword argument `controller` instead."
+        Base.depwarn(message, :init)
+        Base.depwarn(message, :solve)
+    end
 
-    if controller === nothing
-        controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
+    # The folowing code provides an upgrade path for users by preserving the old behavior.
+    legacy_controller_parameters = (qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit)
+    if any(legacy_controller_parameters .== nothing) && controller === nothing # We have to reconstruct the old controller before breaking release.
+        qmin === nothing ? qmin_default(alg) : qmin
+        qmax === nothing ? qmax_default(alg) : qmax
+        qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min
+        qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max
+        qoldinit === nothing ? (anyadaptive(alg) ? 1 // 10^4 : 0) : qoldinit
+        controller = legacy_default_controller(_alg, cache, qoldinit, beta1, beta2)
     end
 
     save_end_user = save_end
@@ -508,11 +531,14 @@ function SciMLBase.__init(
         maxiters, save_everystep,
         adaptive, abstol_internal,
         reltol_internal,
-        QT(gamma), QT(qmax),
-        QT(qmin),
+        # TODO vvv remove this block as these are controller and not integrator parameters vvv
+        # QT(gamma),
+        # QT(qmax),
+        # QT(qmin),
         QT(qsteady_max),
         QT(qsteady_min),
-        QT(qoldinit),
+        # QT(qoldinit),
+        # TODO ^^^remove this block as these are controller and not integrator parameters ^^^
         QT(failfactor),
         tType(dtmax), tType(dtmin),
         controller,
