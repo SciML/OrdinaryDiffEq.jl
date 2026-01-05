@@ -103,9 +103,13 @@ end
 
 setup_controller_cache(alg, atmp, controller::DummyController) = controller
 
+# We need this for now for composite controllers
 @inline function accept_step_controller(integrator, controller::DummyController)
     return integrator.EEst <= 1
 end
+@inline stepsize_controller!(integrator, controller::DummyController, alg) = stepsize_controller!(integrator, alg)
+@inline step_accept_controller!(integrator, controller::DummyController, alg, q) = step_accept_controller!(integrator, alg, q)
+@inline step_reject_controller!(integrator, controller::DummyController, alg) = step_reject_controller!(integrator, alg)
 
 # Standard integral (I) step size controller
 """
