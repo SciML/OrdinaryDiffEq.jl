@@ -1,4 +1,6 @@
 abstract type AbstractController end
+abstract type AbstractLegacyController <: AbstractController end
+
 using OrdinaryDiffEqCore
 
 @inline function stepsize_controller!(integrator, alg)
@@ -54,7 +56,7 @@ the predicted step size.
     Solving Ordinary Differential Equations I Nonstiff Problems
     [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
 """
-struct IController <: AbstractController
+struct IController <: AbstractLegacyController
 end
 
 struct DummyController <: AbstractController
@@ -127,7 +129,7 @@ the predicted step size.
     Solving Ordinary Differential Equations I Nonstiff Problems
     [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
 """
-mutable struct PIController{QT} <: AbstractController
+mutable struct PIController{QT} <: AbstractLegacyController
     beta1::QT
     beta2::QT
 end
@@ -241,7 +243,7 @@ Some standard controller parameters suggested in the literature are
     Compressible Computational Fluid Dynamics    # is bigger than this parameter
     [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)    # limiter of the dt factor (before clipping)
 """
-struct PIDController{QT, Limiter} <: AbstractController
+struct PIDController{QT, Limiter} <: AbstractLegacyController
     beta::MVector{3, QT} # controller coefficients
     err::MVector{3, QT} # history of the error estimates
     accept_safety::QT   # accept a step if the predicted change of the step size
@@ -406,7 +408,7 @@ else
 end
 ```
 """
-struct PredictiveController <: AbstractController
+struct PredictiveController <: AbstractLegacyController
 end
 
 function post_newton_controller!(integrator, alg)

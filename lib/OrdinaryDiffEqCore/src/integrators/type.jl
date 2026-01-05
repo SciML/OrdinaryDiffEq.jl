@@ -8,12 +8,14 @@ mutable struct DEOptions{
     adaptive::Bool
     abstol::absType
     reltol::relType
-    gamma::QT
-    qmax::QT
-    qmin::QT
+    # TODO vvv remove this block as these are controller and not integrator parameters vvv
+    # gamma::QT
+    # qmax::QT
+    # qmin::QT
     qsteady_max::QT
     qsteady_min::QT
-    qoldinit::QT
+    # qoldinit::QT
+    # TODO ^^^ remove this block as these are controller and not integrator parameters ^^^
     failfactor::QT
     dtmax::tType
     dtmin::tType
