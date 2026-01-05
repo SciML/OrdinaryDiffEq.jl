@@ -11,6 +11,10 @@ function SciMLBase.__solve(
     return integrator.sol
 end
 
+determine_controller_datatype(u, ts) = DiffEqBase.value(promote_type(eltype(u), eltype(ts)))
+determine_controller_datatype(::Nothing, ts::Tuple{<:Real,<:Real}) = DiffEqBase.value(eltype(ts))
+determine_controller_datatype(::Nothing, ts) = Float64 # This seems to be an assumption implicitly taken somewhere
+
 function SciMLBase.__init(
         prob::Union{
             SciMLBase.AbstractODEProblem,
@@ -51,7 +55,7 @@ function SciMLBase.__init(
         beta1 = nothing,
         beta2 = nothing,
         qoldinit = nothing,
-        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(promote_type(eltype(prob.u0), eltype(prob.tspan)), alg), # We have to reconstruct the old controller before breaking release.,
+        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(determine_controller_datatype(prob.u0, prob.tspan), alg), # We have to reconstruct the old controller before breaking release.,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
