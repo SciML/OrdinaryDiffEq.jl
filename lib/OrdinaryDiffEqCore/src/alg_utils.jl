@@ -368,10 +368,20 @@ alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_orde
 
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
-# this is actually incorrect and is purposefully decreased as this tends
-# to track the real error much better
 
-function default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
+function default_controller(alg)
+    if ispredictive(alg)
+        return PredictiveController()
+    elseif isstandard(alg)
+        return IController()
+    else
+        beta2 = beta2_default(alg)
+        beta1 = beta1_default(alg, beta2)
+        return PIController(beta1, beta2)
+    end
+end
+
+function legacy_default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
     if ispredictive(alg)
         return PredictiveController()
     elseif isstandard(alg)

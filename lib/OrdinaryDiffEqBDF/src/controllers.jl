@@ -1,4 +1,4 @@
-function default_controller(alg::Union{QNDF, FBDF}, args...)
+function legacy_default_controller(alg::Union{QNDF, FBDF}, args...)
     return DummyController()
 end
 
