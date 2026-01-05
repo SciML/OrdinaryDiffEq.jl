@@ -8,7 +8,7 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_or
     isthreaded,
     step_accept_controller!, calculate_residuals,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    reset_alg_dependent_opts!, AbstractController,
+    reset_alg_dependent_opts!, AbstractController, AbstractLegacyController,
     step_accept_controller!, step_reject_controller!,
     OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdaptiveImplicitAlgorithm,
