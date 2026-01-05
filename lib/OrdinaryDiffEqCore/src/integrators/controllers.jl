@@ -294,9 +294,12 @@ end
 
 mutable struct PIControllerCache{T} <: AbstractControllerCache
     controller::PIController{T}
+    # Propsoed scaling factor for the time step length
     q::T
+    # Cached εₙ₊₁^β₁
     q11::T
-    qold::T
+    # Previous EEst
+    errold::T
 end
 
 
@@ -304,25 +307,25 @@ function setup_controller_cache(alg_cache, controller::PIController{T}) where {T
     return PIControllerCache(
         controller,
         T(1),
-        T(1 // 10^4), # TODO which value?
+        T(1),
         T(1 // 10^4),
     )
 end
 
 @inline function stepsize_controller!(integrator, cache::PIControllerCache, alg)
-    @unpack controller = cache
-    @unpack qold = integrator
+    @unpack errold, controller = cache
     @unpack qmin, qmax, gamma = controller
     @unpack beta1, beta2 = controller
     EEst = DiffEqBase.value(integrator.EEst)
 
     if iszero(EEst)
-        q = inv(qmax)
+        q = qmax
     else
-        q11 = fastpower(EEst, convert(typeof(EEst), beta1))
-        q = q11 / fastpower(qold, convert(typeof(EEst), beta2))
-        integrator.q11 = q11
-        @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
+        q11 = fastpower(EEst, -beta1)
+        q = q11 * fastpower(errold, -beta2)
+        cache.q11 = q11
+        integrator.q11 = q11 # TODO remove
+        @fastmath q = clamp(q * gamma, qmin, qmax)
     end
     cache.q = q
     return q
@@ -337,15 +340,15 @@ function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
     if qsteady_min <= q <= qsteady_max
         q = one(q)
     end
-    cache.qold = max(EEst, qoldinit)
-    return integrator.dt / q # new dt
+    cache.errold = max(EEst, qoldinit)
+    integrator.qold = cache.errold # TODO remove
+    return integrator.dt * q # new dt
 end
 
 function step_reject_controller!(integrator, cache::PIControllerCache, alg)
-    @unpack controller = cache
-    @unpack q11 = cache
+    @unpack controller, q11 = cache
     @unpack qmin, gamma = controller
-    return integrator.dt /= min(inv(qmin), q11 / gamma)
+    return integrator.dt *= max(qmin, q11 * gamma)
 end
 
 # FIXME multi-controller?
@@ -583,7 +586,7 @@ end
 
 function setup_controller_cache(alg_cache, controller::PIDController{QT}) where {QT}
     err = MVector{3, QT}(true, true, true)
-    return PIControllerCache(
+    return PIDControllerCache(
         controller,
         err,
         QT(1 // 10^4),
@@ -631,16 +634,16 @@ end
     # ensures
     #   0.21 ≈ limiter(0) <= dt_factor <= limiter(Inf) ≈ 2.57
     # See Söderlind, Wang (2006), Section 6.
-    cache.qold = dt_factor
+    cache.dt_factor = dt_factor
     return dt_factor
 end
 
 @inline function accept_step_controller(integrator, cache::PIDControllerCache)
-    return cache.qold >= cache.controller.accept_safety
+    return cache.dt_factor >= cache.controller.accept_safety
 end
 
 function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_factor)
-    @assert dt_factor ≈ cache.q "Controller cache went out of sync with time stepping logic."
+    @assert dt_factor ≈ cache.dt_factor "Controller cache went out of sync with time stepping logic."
     @unpack controller = cache
     @unpack qsteady_min, qsteady_max = controller
 
