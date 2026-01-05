@@ -22,17 +22,19 @@ function NewExtrapolationController(QT, alg; qmin = nothing, qmax = nothing, gam
     )
 end
 
-mutable struct ExtrapolationControllerCache{QT} <: AbstractControllerCache
+mutable struct ExtrapolationControllerCache{QT, UT} <: AbstractControllerCache
     controller::NewExtrapolationController{QT}
     beta1::QT
     gamma::QT
+    atmp::UT
 end
 
-function setup_controller_cache(alg, controller::NewExtrapolationController{T}) where {T}
-    return ExtrapolationControllerCache{T}(
+function setup_controller_cache(alg, atmp, controller::NewExtrapolationController{T}) where {T}
+    return ExtrapolationControllerCache(
         controller,
         T(1),
-        T(1)
+        T(1),
+        atmp,
     )
 end
 
