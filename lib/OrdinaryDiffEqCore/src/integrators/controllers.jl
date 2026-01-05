@@ -321,11 +321,12 @@ end
     if iszero(EEst)
         q = qmax
     else
-        q11 = fastpower(EEst, -beta1)
-        q = q11 * fastpower(errold, -beta2)
+        # Legacy code
+        q11 = fastpower(EEst, beta1)
+        q = q11 / fastpower(errold, beta2)
         cache.q11 = q11
         integrator.q11 = q11 # TODO remove
-        @fastmath q = clamp(q * gamma, qmin, qmax)
+        @fastmath q = clamp(q / gamma, inv(qmax), inv(qmin))
     end
     cache.q = q
     return q
@@ -342,13 +343,13 @@ function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
     end
     cache.errold = max(EEst, qoldinit)
     integrator.qold = cache.errold # TODO remove
-    return integrator.dt * q # new dt
+    return integrator.dt / q # new dt
 end
 
 function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     @unpack controller, q11 = cache
     @unpack qmin, gamma = controller
-    return integrator.dt *= max(qmin, q11 * gamma)
+    return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
 # FIXME multi-controller?
