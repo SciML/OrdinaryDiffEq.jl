@@ -63,15 +63,21 @@ setup_controller_cache(alg, controller::AbstractLegacyController) = controller
 end
 
 @inline function stepsize_controller!(integrator, alg)
-    return stepsize_controller!(integrator, integrator.controller_cache, alg)
+    # TODO replace this when done - right now this holds the controller cache!
+    return stepsize_controller!(integrator, integrator.opts.controller, alg)
+    # stepsize_controller!(integrator, integrator.controller_cache, alg)
 end
 
 @inline function step_accept_controller!(integrator, alg, q)
-    return step_accept_controller!(integrator, integrator.controller_cache, alg, q)
+    # TODO replace this when done - right now this holds the controller cache!
+    return step_accept_controller!(integrator, integrator.opts.controller, alg, q)
+    # step_accept_controller!(integrator, integrator.controller_cache, alg, q)
 end
 
 @inline function step_reject_controller!(integrator, alg)
-    step_reject_controller!(integrator, integrator.controller_cache, alg)
+    # TODO replace this when done - right now this holds the controller cache!
+    step_reject_controller!(integrator, integrator.opts.controller, alg)
+    # step_reject_controller!(integrator, integrator.controller_cache, alg)
     cache = integrator.cache
     if hasfield(typeof(cache), :nlsolve)
         nlsolve = cache.nlsolve
