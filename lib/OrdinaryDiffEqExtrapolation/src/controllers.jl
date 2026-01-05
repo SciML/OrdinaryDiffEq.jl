@@ -1,12 +1,13 @@
 # Extrapolation methods
-mutable struct ExtrapolationController{QT} <: AbstractController
+mutable struct LegacyExtrapolationController{QT} <: AbstractLegacyController
     beta1::QT
 end
 
-function reset_alg_dependent_opts!(controller::ExtrapolationController, alg1, alg2)
-    return if controller.beta1 == beta1_default(alg1, beta2_default(alg1))
+function reset_alg_dependent_opts!(controller::LegacyExtrapolationController, alg1, alg2)
+    if controller.beta1 == beta1_default(alg1, beta2_default(alg1))
         controller.beta1 = beta1_default(alg2, beta2_default(alg2))
     end
+    return nothing
 end
 
 @inline function stepsize_controller!(
