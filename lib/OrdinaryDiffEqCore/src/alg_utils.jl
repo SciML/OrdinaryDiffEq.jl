@@ -369,13 +369,13 @@ alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_orde
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 
-function default_controller_v7(alg)
+function default_controller_v7(QT, alg)
     if ispredictive(alg)
-        return PredictiveController(alg)
+        return PredictiveController(QT, alg)
     elseif isstandard(alg)
-        return IController(alg)
+        return IController(QT, alg)
     else
-        return PIController(alg)
+        return PIController(QT, alg)
     end
 end
 
