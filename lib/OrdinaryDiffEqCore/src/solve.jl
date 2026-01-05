@@ -51,7 +51,7 @@ function SciMLBase.__init(
         beta1 = nothing,
         beta2 = nothing,
         qoldinit = nothing,
-        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(alg), # We have to reconstruct the old controller before breaking release.,
+        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(typeof(one(eltype(prob.tspan))), alg), # We have to reconstruct the old controller before breaking release.,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
@@ -502,26 +502,24 @@ function SciMLBase.__init(
     legacy_controller_parameters = (gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit)
     if controller === nothing # We have to reconstruct the old controller before breaking release.
         if any(legacy_controller_parameters .== nothing)
-            gamma === nothing ? gamma_default(alg) : gamma
-            qmin === nothing ? qmin_default(alg) : qmin
-            qmax === nothing ? qmax_default(alg) : qmax
-            qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min
-            qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max
-            qoldinit === nothing ? (anyadaptive(alg) ? 1 // 10^4 : 0) : qoldinit
+            gamma = gamma === nothing ? gamma_default(alg) : gamma
+            qmin = qmin === nothing ? qmin_default(alg) : qmin
+            qmax = qmax === nothing ? qmax_default(alg) : qmax
+            qsteady_min = qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min
+            qsteady_max = qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max
+            qoldinit = qoldinit === nothing ? (anyadaptive(alg) ? 1 // 10^4 : 0) : qoldinit
             controller = legacy_default_controller(_alg, cache, qoldinit, beta1, beta2)
         end
-    elseif controller isa AbstractLegacyController # Legacy controller has been passed
-        gamma === nothing ? gamma_default(alg) : gamma
-        qmin === nothing ? qmin_default(alg) : qmin
-        qmax === nothing ? qmax_default(alg) : qmax
-        qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min
-        qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max
-        qoldinit === nothing ? (anyadaptive(alg) ? 1 // 10^4 : 0) : qoldinit
-    else
-        @unpack gamma, qmin, qmax, qsteady_min, qsteady_max, qoldinit = controller
+    else # Controller has been passed
+        gamma = hasfield(typeof(controller), :gamma) ? controller.gamma : gamma_default(alg)
+        qmin = hasfield(typeof(controller), :qmin) ? controller.qmin : qmin_default(alg)
+        qmax = hasfield(typeof(controller), :qmax) ? controller.qmax : qmax_default(alg)
+        qsteady_min = hasfield(typeof(controller), :qsteady_min) ? controller.qsteady_min : qsteady_min_default(alg)
+        qsteady_max = hasfield(typeof(controller), :qsteady_max) ? controller.qsteady_max : qsteady_max_default(alg)
+        qoldinit = hasfield(typeof(controller), :qoldinit) ? controller.qoldinit : (anyadaptive(alg) ? 1 // 10^4 : 0)
     end
 
-    controller_cache = setup_controller_cache(_alg, cache, controller)
+    controller_cache = setup_controller_cache(cache, controller)
 
     save_end_user = save_end
     save_end = save_end === nothing ?

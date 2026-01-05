@@ -4,7 +4,7 @@ abstract type AbstractLegacyController <: AbstractController end
 abstract type AbstractControllerCache end
 
 # The legacy controllers do not have this concept.
-setup_controller_cache(alg, cache, controller::AbstractLegacyController) = controller
+setup_controller_cache(alg_cache, controller::AbstractLegacyController) = controller
 
 # checks whether the controller should accept a step based on the error estimate
 @inline function accept_step_controller(integrator, controller::Union{<:AbstractLegacyController, <:AbstractControllerCache})
@@ -113,8 +113,12 @@ struct IController{T} <: AbstractController
     qsteady_max::T
 end
 
-function IController(alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
-    return IController(
+function IController(alg; kwargs...)
+    return IController(Float64, alg; kwargs...)
+end
+
+function IController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
+    return IController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
         gamma === nothing ? gamma_default(alg) : gamma,
@@ -131,11 +135,11 @@ mutable struct IControllerCache{C, T} <: AbstractControllerCache
     # EEst::T
 end
 
-function setup_controller_cache(alg, cache, controller::IController)
+function setup_controller_cache(alg_cache, controller::IController{T}) where {T}
     return IControllerCache(
         controller,
-        1 // 1,
-        1 // 10^4, # TODO which value?
+        T(1),
+        T(1 // 10^4), # TODO which value?
     )
 end
 
@@ -268,11 +272,15 @@ struct PIController{T} <: AbstractController
     qoldinit::T
 end
 
-function PIController(alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
+function PIController(alg; kwargs...)
+    return PIController(Float64, alg; kwargs...)
+end
+
+function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
     beta2 = beta2 === nothing ? beta2_default(alg) : beta2
     beta1 = beta1 === nothing ? beta1_default(alg, beta2) : beta1
     qoldinit = qoldinit === nothing ? 1 // 10^4 : qoldinit
-    return PIController{promote_type(typeof(qoldinit), typeof(beta1))}(
+    return PIController{QT}(
         beta1,
         beta2,
         qmin === nothing ? qmin_default(alg) : qmin,
@@ -292,12 +300,12 @@ mutable struct PIControllerCache{T} <: AbstractControllerCache
 end
 
 
-function setup_controller_cache(alg, cache, controller::PIController)
+function setup_controller_cache(alg_cache, controller::PIController{T}) where {T}
     return PIControllerCache(
         controller,
-        1 // 1,
-        1 // 10^4, # TODO which value?
-        1 // 10^4,
+        T(1),
+        T(1 // 10^4), # TODO which value?
+        T(1 // 10^4),
     )
 end
 
@@ -535,12 +543,16 @@ struct PIDController{T, Limiter} <: AbstractController
     qoldinit::T
 end
 
-function PIDController(alg; beta1 = nothing, beta2 = nothing, beta3 = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
+function PIDController(alg; kwargs...)
+    return PIDController(Float64, alg; kwargs...)
+end
+
+function PIDController(QT, alg; beta1 = nothing, beta2 = nothing, beta3 = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
     beta2 = beta2 === nothing ? beta2_default(alg) : beta2
     beta1 = beta1 === nothing ? beta1_default(alg, beta2) : beta1
     beta3 = beta3 === nothing ? zero(beta1) : beta3
     beta = MVector(map(float, promote(beta1, beta2, beta3))...)
-    return PIDController(
+    return PIDController{QT}(
         beta,
         err,
         accept_safety,
@@ -569,7 +581,7 @@ struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
     dt_factor::T
 end
 
-function setup_controller_cache(alg, cache, controller::PIDController{QT}) where {QT}
+function setup_controller_cache(alg_cache, controller::PIDController{QT}) where {QT}
     err = MVector{3, QT}(true, true, true)
     return PIControllerCache(
         controller,
@@ -767,8 +779,12 @@ struct PredictiveController{T} <: AbstractController
     qsteady_max::T
 end
 
-function PredictiveController(alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
-    return PredictiveController(
+function PredictiveController(alg; kwargs...)
+    return PIController(Float64, alg; kwargs...)
+end
+
+function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
+    return PredictiveController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
         gamma === nothing ? gamma_default(alg) : gamma,
@@ -783,11 +799,11 @@ mutable struct PredictiveControllerCache{T} <: AbstractControllerCache
     erracc::T
 end
 
-function setup_controller_cache(alg, cache, controller::PredictiveController)
-    return PredictiveControllerCache(
+function setup_controller_cache(alg_cache, controller::PredictiveController{T}) where {T}
+    return PredictiveControllerCache{T}(
         controller,
-        1 // 1,
-        1 // 1,
+        T(1),
+        T(1),
     )
 end
 
