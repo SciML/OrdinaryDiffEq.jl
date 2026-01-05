@@ -44,6 +44,10 @@ end
 
 setup_controller_cache(alg_cache, controller::DummyController) = controller
 
+@inline function accept_step_controller(integrator, controller::DummyController)
+    return integrator.EEst <= 1
+end
+
 # Standard integral (I) step size controller
 """
     LegacyIController()
@@ -544,32 +548,31 @@ struct PIDController{T, Limiter} <: AbstractController
     limiter::Limiter    # limiter of the dt factor (before clipping)
     qmin::T
     qmax::T
-    gamma::T
     qsteady_min::T
     qsteady_max::T
-    qoldinit::T
 end
 
 function PIDController(alg; kwargs...)
     return PIDController(Float64, alg; kwargs...)
 end
 
-function PIDController(QT, alg; beta1 = nothing, beta2 = nothing, beta3 = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
-    beta2 = beta2 === nothing ? beta2_default(alg) : beta2
-    beta1 = beta1 === nothing ? beta1_default(alg, beta2) : beta1
-    beta3 = beta3 === nothing ? zero(beta1) : beta3
-    beta = MVector(map(float, promote(beta1, beta2, beta3))...)
-    return PIDController{QT}(
+function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qmin = nothing, qmax = nothing, qsteady_min = nothing, qsteady_max = nothing)
+    if beta === nothing
+        beta2 = QT(beta2_default(alg))
+        beta1 = QT(beta1_default(alg, beta2))
+        beta3 = QT(zero(beta1))
+    else
+        beta1, beta2, beta3 = beta
+    end
+    beta = SVector(map(float, promote(beta1, beta2, beta3))...)
+    return PIDController{QT, typeof(limiter)}(
         beta,
-        err,
-        accept_safety,
+        QT(accept_safety),
         limiter,
-        qmin === nothing ? qmin_default(alg) : qmin,
-        qmax === nothing ? qmax_default(alg) : qmax,
-        gamma === nothing ? gamma_default(alg) : gamma,
-        qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
-        qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
-        qoldinit === nothing ? 1 // 10^4 : qoldinit,
+        QT(qmin === nothing ? qmin_default(alg) : qmin),
+        QT(qmax === nothing ? qmax_default(alg) : qmax),
+        QT(qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min),
+        QT(qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max),
     )
 end
 
@@ -582,7 +585,7 @@ function Base.show(io::IO, controller::PIDController)
     )
 end
 
-struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
+mutable struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
     controller::PIDController{T, Limiter}
     err::MVector{3, T} # history of the error estimates
     dt_factor::T
@@ -656,8 +659,8 @@ function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_
         # cache.q = ...?
     end
     @inbounds begin
-        controller.err[3] = controller.err[2]
-        controller.err[2] = controller.err[1]
+        cache.err[3] = cache.err[2]
+        cache.err[2] = cache.err[1]
     end
     return integrator.dt * dt_factor # new dt
 end
