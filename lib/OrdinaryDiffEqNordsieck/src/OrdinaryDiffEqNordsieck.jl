@@ -1,7 +1,7 @@
 module OrdinaryDiffEqNordsieck
 
 import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, qsteady_max_default,
-    get_current_alg_order,
+    get_current_alg_order, DummyController,
     AbstractController, OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,
     alg_cache, OrdinaryDiffEqMutableCache,
@@ -11,7 +11,8 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, qsteady_max_default,
     calculate_residuals, calculate_residuals!,
     get_current_adaptive_order, get_fsalfirstlast,
     ode_interpolant, ode_interpolant!, trivial_limiter!,
-    generic_solver_docstring
+    generic_solver_docstring,
+    default_controller_v7, legacy_default_controller
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import LinearAlgebra: rmul!
 import Static: False
