@@ -11,9 +11,9 @@ function SciMLBase.__solve(
     return integrator.sol
 end
 
-determine_controller_datatype(u, ts) = DiffEqBase.value(promote_type(eltype(u), eltype(ts)))
-determine_controller_datatype(::Nothing, ts::Tuple{<:Real, <:Real}) = DiffEqBase.value(eltype(ts))
-determine_controller_datatype(::Nothing, ts) = Float64 # This seems to be an assumption implicitly taken somewhere
+determine_controller_datatype(u, ts::Tuple{<:AbstractFloat, <:AbstractFloat}) = DiffEqBase.value(promote_type(eltype(u), eltype(ts)))
+determine_controller_datatype(::Nothing, ts::Tuple{<:AbstractFloat, <:AbstractFloat}) = DiffEqBase.value(eltype(ts))
+determine_controller_datatype(u, ts) = Float64 # This seems to be an assumption implicitly taken somewhere
 
 function SciMLBase.__init(
         prob::Union{
