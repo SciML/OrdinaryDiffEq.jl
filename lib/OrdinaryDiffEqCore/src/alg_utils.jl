@@ -381,7 +381,7 @@ end
 
 function default_controller_v7(QT, alg::CompositeAlgorithm)
     return CompositeController(
-        map(alg->default_controller_v7(QT, alg), alg.algs)
+        map(alg -> default_controller_v7(QT, alg), alg.algs)
     )
 end
 
