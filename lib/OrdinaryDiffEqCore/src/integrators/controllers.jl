@@ -248,6 +248,8 @@ function step_reject_controller!(integrator, cache::IControllerCache, alg)
 end
 
 
+SciMLBase.reinit!(integrator::ODEIntegrator, cache::IControllerCache{T}) where {T} = cache.q = T(1)
+
 # PI step size controller
 """
     PIController(beta1, beta2)
@@ -380,7 +382,7 @@ function setup_controller_cache(alg, atmp, controller::NewPIController{T}) where
         controller,
         T(1),
         T(1),
-        T(1 // 10^4),
+        T(controller.qoldinit),
         atmp,
     )
 end
@@ -423,6 +425,12 @@ function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; controller, q11) = cache
     (; qmin, gamma) = controller
     return integrator.dt /= min(inv(qmin), q11 / gamma)
+end
+
+function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIControllerCache{T}) where {T}
+    cache.q = T(1)
+    cache.q11 = T(1)
+    cache.errold = T(cache.controller.qoldinit)
 end
 
 # PID step size controller
@@ -641,6 +649,11 @@ mutable struct PIDControllerCache{T, Limiter, UT} <: AbstractControllerCache
     err::MVector{3, T} # history of the error estimates
     dt_factor::T
     atmp::UT
+end
+
+function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIDControllerCache{T}) where {T}
+    cache.err = MVector{3, T}(true, true, true)
+    cache.dt_factor = T(1 // 10^4)
 end
 
 function setup_controller_cache(alg, atmp, controller::NewPIDController{QT}) where {QT}
@@ -862,6 +875,13 @@ mutable struct PredictiveControllerCache{T, UT} <: AbstractControllerCache
     qold::T
     q::T
     atmp::UT
+end
+
+function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PredictiveControllerCache{T}) where {T}
+    cache.dtacc = T(1)
+    cache.erracc = T(1)
+    cache.qold = T(1)
+    cache.q = T(1)
 end
 
 function setup_controller_cache(alg, atmp::UT, controller::NewPredictiveController{T}) where {T, UT}
