@@ -8,31 +8,31 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
 function activate_downstream_env()
     Pkg.activate("downstream")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
+    return Pkg.instantiate()
 end
 
 function activate_gpu_env()
     Pkg.activate("gpu")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
+    return Pkg.instantiate()
 end
 
 function activate_odeinterface_env()
     Pkg.activate("odeinterface")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
+    return Pkg.instantiate()
 end
 
 function activate_enzyme_env()
     Pkg.activate("enzyme")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
+    return Pkg.instantiate()
 end
 
 function activate_modelingtoolkit_env()
     Pkg.activate("modelingtoolkit")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
+    return Pkg.instantiate()
 end
 
 #Start Test Script
@@ -40,9 +40,10 @@ end
 @time begin
     if contains(GROUP, "OrdinaryDiffEq") || GROUP == "ImplicitDiscreteSolve" || GROUP == "SimpleImplicitDiscreteSolve"
         Pkg.activate(joinpath(dirname(@__DIR__), "lib", GROUP))
-        Pkg.test(GROUP, julia_args=["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version=false, allow_reresolve=true)
+        Pkg.test(GROUP, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
+        @time @safetestset "Null u0 Callbacks Tests" include("interface/null_u0_callbacks_test.jl")
         @time @safetestset "Tstops Tests" include("interface/ode_tstops_tests.jl")
         @time @safetestset "Backwards Tests" include("interface/ode_backwards_test.jl")
         @time @safetestset "Initdt Tests" include("interface/ode_initdt_tests.jl")
@@ -109,7 +110,7 @@ end
     end
 
     if !is_APPVEYOR &&
-       (GROUP == "All" || GROUP == "Integrators_I" || GROUP == "Integrators")
+            (GROUP == "All" || GROUP == "Integrators_I" || GROUP == "Integrators")
         @time @safetestset "Reinit Tests" include("integrators/reinit_test.jl")
         @time @safetestset "Events Tests" include("integrators/ode_event_tests.jl")
         @time @safetestset "Alg Events Tests" include("integrators/alg_events_tests.jl")
@@ -124,7 +125,7 @@ end
     end
 
     if !is_APPVEYOR &&
-       (GROUP == "All" || GROUP == "Integrators_II" || GROUP == "Integrators")
+            (GROUP == "All" || GROUP == "Integrators_II" || GROUP == "Integrators")
         @time @safetestset "Reverse Directioned Event Tests" include("integrators/rev_events_tests.jl")
         @time @safetestset "Differentiation Direction Tests" include("integrators/diffdir_tests.jl")
         @time @safetestset "Resize Tests" include("integrators/resize_tests.jl")
@@ -197,8 +198,12 @@ end
         activate_gpu_env()
         @time @safetestset "Simple GPU" begin
             import OrdinaryDiffEqCore
-            include(joinpath(dirname(pathof(OrdinaryDiffEqCore.DiffEqBase)), "..",
-                "test/gpu/simple_gpu.jl"))
+            include(
+                joinpath(
+                    dirname(pathof(OrdinaryDiffEqCore.DiffEqBase)), "..",
+                    "test/gpu/simple_gpu.jl"
+                )
+            )
         end
         @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
         @time @safetestset "Linear LSRK GPU" include("gpu/linear_lsrk.jl")

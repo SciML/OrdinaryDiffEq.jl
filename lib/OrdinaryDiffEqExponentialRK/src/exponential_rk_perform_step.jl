@@ -5,7 +5,7 @@
 @inline function _compute_nl!(G, f, u, p, t, A, Au_cache)
     f(G, u, p, t)
     mul!(Au_cache, A, u)
-    G .-= Au_cache
+    return G .-= Au_cache
 end
 
 ##########################################
@@ -20,7 +20,7 @@ function initialize!(integrator, cache::ExpRKConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 function initialize!(integrator, cache::ExpRKCache)
     # Pre-start fsal
@@ -31,7 +31,7 @@ function initialize!(integrator, cache::ExpRKCache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 ###########################################
@@ -49,8 +49,10 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step 
     end
     @muladd v = uprev + dt * nl
     if alg.krylov
-        u = expv(dt, A, v; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+        u = expv(
+            dt, A, v; m = min(alg.m, size(A, 1)),
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+        )
     else
         exphA = cache.ops
         u = exphA * v
@@ -61,7 +63,7 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step = false)
@@ -76,11 +78,13 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step = false)
     else
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
-    @muladd @.. broadcast=false tmp=uprev+dt*G
+    @muladd @.. broadcast = false tmp = uprev + dt * G
     if alg.krylov
         Ks, expv_cache = KsCache
-        arnoldi!(Ks, A, tmp; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+        arnoldi!(
+            Ks, A, tmp; m = min(alg.m, size(A, 1)),
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+        )
         expv!(u, dt, Ks; cache = expv_cache)
     else
         mul!(u, exphA, tmp)
@@ -88,7 +92,7 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -98,8 +102,10 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
     alg = unwrap_alg(integrator, true)
 
     if alg.krylov
-        w = phiv(dt, A, integrator.fsalfirst, 1; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+        w = phiv(
+            dt, A, integrator.fsalfirst, 1; m = min(alg.m, size(A, 1)),
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+        )
         u = uprev + dt * w[:, 2]
     else
         phihA = cache.ops
@@ -111,7 +117,7 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step = false)
@@ -123,18 +129,20 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step = false
     if alg.krylov
         Ks, phiv_cache, ws = KsCache
         w = ws[1]
-        arnoldi!(Ks, A, integrator.fsalfirst; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+        arnoldi!(
+            Ks, A, integrator.fsalfirst; m = min(alg.m, size(A, 1)),
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+        )
         phiv!(w, dt, Ks, 1; cache = phiv_cache)
-        @muladd @.. broadcast=false u=uprev+dt*@view(w[:, 2])
+        @muladd @.. broadcast = false u = uprev + dt * @view(w[:, 2])
     else
         mul!(rtmp, cache.phihA, integrator.fsalfirst)
-        @muladd @.. broadcast=false u=uprev+dt*rtmp
+        @muladd @.. broadcast = false u = uprev + dt * rtmp
     end
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -145,8 +153,10 @@ function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step = fal
 
     if alg.krylov
         F1 = integrator.fsalfirst
-        w1 = phiv(dt, A, F1, 2; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+        w1 = phiv(
+            dt, A, F1, 2; m = min(alg.m, size(A, 1)),
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+        )
         U2 = uprev + dt * w1[:, 2]
         F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
         if isa(f, SplitFunction)
@@ -154,8 +164,10 @@ function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step = fal
         else
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
-        w2 = phiv(dt, A, F2, 2; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+        w2 = phiv(
+            dt, A, F2, 2; m = min(alg.m, size(A, 1)),
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+        )
         u = uprev + dt * (w1[:, 2] - w1[:, 3] + w2[:, 3])
     else
         phi1, phi2 = cache.ops
@@ -174,7 +186,7 @@ function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step = fal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
@@ -188,11 +200,13 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
         Ks, phiv_cache, ws = KsCache
         w1, w2 = ws
         # Krylov for F1
-        arnoldi!(Ks, A, F1; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+        arnoldi!(
+            Ks, A, F1; m = min(alg.m, size(A, 1)),
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+        )
         phiv!(w1, dt, Ks, 2; cache = phiv_cache)
         # Krylov for F2
-        @muladd @.. broadcast=false tmp=uprev+dt*@view(w1[:, 2])
+        @muladd @.. broadcast = false tmp = uprev + dt * @view(w1[:, 2])
         _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
         if isa(f, SplitFunction)
             integrator.stats.nf2 += 1
@@ -200,8 +214,10 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
         F2 .+= mul!(rtmp, A, uprev)
-        arnoldi!(Ks, A, F2; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+        arnoldi!(
+            Ks, A, F2; m = min(alg.m, size(A, 1)),
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+        )
         phiv!(w2, dt, Ks, 2; cache = phiv_cache)
         # Update u
         u .= uprev
@@ -214,7 +230,7 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
         # The caching version uses a special formula to save computation
         # Compute U2
         mul!(rtmp, phi1, F1)
-        @muladd @.. broadcast=false tmp=uprev+dt*rtmp # tmp is U2
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
         # Compute G2 - G1, storing result in the cache F2
         f.f2(rtmp, uprev, p, t)
         integrator.stats.nf2 += 1
@@ -228,7 +244,7 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -240,8 +256,10 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step = fal
     Au = A * uprev
     F1 = integrator.fsalfirst
     if alg.krylov
-        kwargs = (m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
-            iop = alg.iop)
+        kwargs = (
+            m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
+            iop = alg.iop,
+        )
         # Krylov on F1 (first column)
         Ks = arnoldi(A, F1; kwargs...)
         w1_half = phiv(dt / 2, Ks, 1)
@@ -260,10 +278,12 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step = fal
         # Krylov on F3 (third column)
         w3 = phiv(dt, A, F3, 3; kwargs...)
         u = uprev +
-            dt * (4w1[:, 4] - 3w1[:, 3] + w1[:, 2]
-             -
-             8w2[:, 4] + 4w2[:, 3]
-             + 4w3[:, 4] - w3[:, 3])
+            dt * (
+            4w1[:, 4] - 3w1[:, 3] + w1[:, 2]
+                -
+                8w2[:, 4] + 4w2[:, 3]
+                + 4w3[:, 4] - w3[:, 3]
+        )
     else
         A21, A3, B1, B2, B3 = cache.ops
         # stage 1 (fsaled)
@@ -284,7 +304,7 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step = fal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::ETDRK3Cache, repeat_step = false)
@@ -299,19 +319,21 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step = false)
     if alg.krylov
         Ks, phiv_cache, ws = KsCache
         w1_half, w1, w2, w3 = ws
-        kwargs = (m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
-            iop = alg.iop)
+        kwargs = (
+            m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
+            iop = alg.iop,
+        )
         # Krylov for F1 (first column)
         arnoldi!(Ks, A, F1; kwargs...)
         phiv!(w1_half, halfdt, Ks, 1; cache = phiv_cache)
         phiv!(w1, dt, Ks, 3; cache = phiv_cache)
-        @muladd @.. broadcast=false @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
+        @muladd @.. broadcast = false @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
         _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp)
         F2 .+= Au
         # Krylov for F2 (second column)
         arnoldi!(Ks, A, F2; kwargs...)
         phiv!(w2, dt, Ks, 3; cache = phiv_cache)
-        @muladd @.. broadcast=false @views tmp = uprev + dt * (2 * w2[:, 2] - w1[:, 2]) # tmp is U3
+        @muladd @.. broadcast = false @views tmp = uprev + dt * (2 * w2[:, 2] - w1[:, 2]) # tmp is U3
         _compute_nl!(F3, f, tmp, p, t + dt, A, rtmp)
         F3 .+= Au
         if isa(f, SplitFunction)
@@ -323,22 +345,22 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step = false)
         arnoldi!(Ks, A, F3; kwargs...)
         phiv!(w3, dt, Ks, 3; cache = phiv_cache)
         # Update u
-        @views @.. broadcast=false rtmp=4w1[:, 4]-3w1[:, 3]+w1[:, 2]-8w2[:, 4]+
-                                        4w2[:, 3]+4w3[:, 4]-w3[:, 3]
-        @muladd @.. broadcast=false u=uprev+dt*rtmp
+        @views @.. broadcast = false rtmp = 4w1[:, 4] - 3w1[:, 3] + w1[:, 2] - 8w2[:, 4] +
+            4w2[:, 3] + 4w3[:, 4] - w3[:, 3]
+        @muladd @.. broadcast = false u = uprev + dt * rtmp
     else
         A21, A3, B1, B2, B3 = cache.ops
         # stage 1 (fsaled)
         # stage 2
         mul!(rtmp, A21, F1)
-        @muladd @.. broadcast=false tmp=uprev+dt*rtmp # tmp is U2
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
         f.f2(F2, tmp, p, t + halfdt)
         F2 .+= Au
         integrator.stats.nf2 += 1
         # stage 3
-        @muladd @.. broadcast=false F3=2*F2-F1 # use F3 temporarily as cache
+        @muladd @.. broadcast = false F3 = 2 * F2 - F1 # use F3 temporarily as cache
         mul!(rtmp, A3, F3)
-        @muladd @.. broadcast=false tmp=uprev+dt*rtmp # tmp is U3
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U3
         f.f2(F3, tmp, p, t + dt)
         F3 .+= Au
         integrator.stats.nf2 += 1
@@ -351,7 +373,7 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -364,8 +386,10 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step = fal
     F1 = integrator.fsalfirst
     halfdt = dt / 2
     if alg.krylov
-        kwargs = (m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
-            iop = alg.iop)
+        kwargs = (
+            m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
+            iop = alg.iop,
+        )
         # Krylov on F1 (first column)
         Ks = arnoldi(A, F1; kwargs...)
         w1_half = phiv(halfdt, Ks, 1)
@@ -394,8 +418,10 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step = fal
         w4 = phiv(dt, A, F4, 3; kwargs...)
         # update u
         u = uprev +
-            dt * (w1[:, 2] - 3w1[:, 3] + 4w1[:, 4] + 2w2[:, 3] - 4w2[:, 4] +
-             2w3[:, 3] - 4w3[:, 4] + 4w4[:, 4] - w4[:, 3])
+            dt * (
+            w1[:, 2] - 3w1[:, 3] + 4w1[:, 4] + 2w2[:, 3] - 4w2[:, 4] +
+                2w3[:, 3] - 4w3[:, 4] + 4w4[:, 4] - w4[:, 3]
+        )
     else
         A21, A41, A43, B1, B2, B4 = cache.ops
         # stage 1 (fsaled)
@@ -418,7 +444,7 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step = fal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
@@ -433,21 +459,23 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
     if alg.krylov
         Ks, phiv_cache, ws = KsCache
         w1_half, w2_half, w1, w2, w3, w4 = ws
-        kwargs = (m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
-            iop = alg.iop)
+        kwargs = (
+            m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
+            iop = alg.iop,
+        )
         # Krylov for F1 (first column)
         arnoldi!(Ks, A, F1; kwargs...)
         phiv!(w1_half, halfdt, Ks, 1; cache = phiv_cache)
         phiv!(w1, dt, Ks, 3; cache = phiv_cache)
         U2 = u # temporarily use u to store U2 (used in the extra Krylov step)
-        @muladd @.. broadcast=false @views U2 = uprev + halfdt * w1_half[:, 2]
+        @muladd @.. broadcast = false @views U2 = uprev + halfdt * w1_half[:, 2]
         _compute_nl!(F2, f, U2, p, t + halfdt, A, rtmp)
         F2 .+= Au
         # Krylov for F2 (second column)
         arnoldi!(Ks, A, F2; kwargs...)
         phiv!(w2_half, halfdt, Ks, 1; cache = phiv_cache)
         phiv!(w2, dt, Ks, 3; cache = phiv_cache)
-        @muladd @.. broadcast=false @views tmp = uprev + halfdt * w2_half[:, 2] # tmp is U3
+        @muladd @.. broadcast = false @views tmp = uprev + halfdt * w2_half[:, 2] # tmp is U3
         _compute_nl!(F3, f, tmp, p, t + halfdt, A, rtmp)
         F3 .+= Au
         # Krylov for F3 (third column)
@@ -456,10 +484,10 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
         # Extra Krylov for computing F4
         # Compute rtmp = 2F3 - F1 - Au + A*U2
         mul!(rtmp, A, U2)
-        @.. broadcast=false rtmp+=2F3 - F1 - Au
+        @.. broadcast = false rtmp += 2F3 - F1 - Au
         arnoldi!(Ks, A, rtmp; kwargs...)
         phiv!(w1_half, halfdt, Ks, 1; cache = phiv_cache) # original w1_half is no longer needed
-        @muladd @.. broadcast=false @views tmp = U2 + halfdt * w1_half[:, 2] # tmp is U4
+        @muladd @.. broadcast = false @views tmp = U2 + halfdt * w1_half[:, 2] # tmp is U4
         _compute_nl!(F4, f, tmp, p, t + dt, A, rtmp)
         F4 .+= Au
         if isa(f, SplitFunction)
@@ -471,26 +499,27 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
         arnoldi!(Ks, A, F4; kwargs...)
         phiv!(w4, dt, Ks, 3; cache = phiv_cache)
         # update u
-        @views @.. broadcast=false rtmp=w1[:, 2]-3w1[:, 3]+4w1[:, 4]+2w2[
-            :, 3]-
-        4w2[:, 4]+
-        2w3[:, 3]-4w3[:, 4]+4w4[:, 4]-w4[:, 3]
-        @muladd @.. broadcast=false u=uprev+dt*rtmp
+        @views @.. broadcast = false rtmp = w1[:, 2] - 3w1[:, 3] + 4w1[:, 4] + 2w2[
+            :, 3,
+        ] -
+            4w2[:, 4] +
+            2w3[:, 3] - 4w3[:, 4] + 4w4[:, 4] - w4[:, 3]
+        @muladd @.. broadcast = false u = uprev + dt * rtmp
     else
         A21, A41, A43, B1, B2, B4 = cache.ops
         # stage 1 (fsaled)
         # stage 2
         mul!(rtmp, A21, F1)
-        @muladd @.. broadcast=false tmp=uprev+dt*rtmp # tmp is U2
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
         f.f2(F2, tmp, p, t + halfdt)
         F2 .+= Au
         # stage 3
         mul!(rtmp, A21, F2) # A32 = A21
-        @muladd @.. broadcast=false tmp=uprev+dt*rtmp # tmp is U3
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U3
         f.f2(F3, tmp, p, t + halfdt)
         F3 .+= Au
         # stage 4
-        @.. broadcast=false tmp=uprev
+        @.. broadcast = false tmp = uprev
         axpy!(dt, mul!(rtmp, A41, F1), tmp)
         axpy!(dt, mul!(rtmp, A43, F3), tmp) # tmp is U4
         f.f2(F4, tmp, p, t + dt)
@@ -506,7 +535,7 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -519,8 +548,10 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step = f
     F1 = integrator.fsalfirst
     halfdt = dt / 2
     if alg.krylov
-        kwargs = (m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
-            iop = alg.iop)
+        kwargs = (
+            m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
+            iop = alg.iop,
+        )
         # Krylov on F1 (first column)
         Ks = arnoldi(A, F1; kwargs...)
         w1_half = phiv(halfdt, Ks, 3)
@@ -544,11 +575,13 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step = f
         w4_half = phiv(halfdt, Ks, 3)
         w4 = phiv(dt, Ks, 3)
         U5 = uprev +
-             dt * (0.5w1_half[:, 2] - 0.75w1_half[:, 3] + 0.5w1_half[:, 4] + w1[:, 4] -
-              0.25w1[:, 3] +
-              0.5w2_half[:, 3] - w2[:, 4] + 0.25w2[:, 3] - 0.5w2_half[:, 4] +
-              0.5w3_half[:, 3] - w2[:, 4] + 0.25w3[:, 3] - 0.5w3_half[:, 4] +
-              w4[:, 4] - 0.25w4[:, 3] - 0.25w4_half[:, 3] + 0.5w4_half[:, 4])
+            dt * (
+            0.5w1_half[:, 2] - 0.75w1_half[:, 3] + 0.5w1_half[:, 4] + w1[:, 4] -
+                0.25w1[:, 3] +
+                0.5w2_half[:, 3] - w2[:, 4] + 0.25w2[:, 3] - 0.5w2_half[:, 4] +
+                0.5w3_half[:, 3] - w2[:, 4] + 0.25w3[:, 3] - 0.5w3_half[:, 4] +
+                w4[:, 4] - 0.25w4[:, 3] - 0.25w4_half[:, 3] + 0.5w4_half[:, 4]
+        )
         F5 = _compute_nl(f, U5, p, t + halfdt, A) + Au
         if isa(f, SplitFunction)
             integrator.stats.nf2 += 4
@@ -559,8 +592,10 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step = f
         w5 = phiv(dt, A, F5, 3; kwargs...)
         # update u
         u = uprev +
-            dt * (w1[:, 2] - 3w1[:, 3] + 4w1[:, 4] - w4[:, 3] + 4w4[:, 4] + 4w5[:, 3] -
-             8w5[:, 4])
+            dt * (
+            w1[:, 2] - 3w1[:, 3] + 4w1[:, 4] - w4[:, 3] + 4w4[:, 4] + 4w5[:, 3] -
+                8w5[:, 4]
+        )
     else
         A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5 = cache.ops
         # stage 1 (fsaled)
@@ -586,7 +621,7 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step = f
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
@@ -601,48 +636,56 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
     if alg.krylov
         Ks, phiv_cache, ws = KsCache
         w1_half, w2_half, w3_half, w4_half, w1, w2, w3, w4, w5 = ws
-        kwargs = (m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
-            iop = alg.iop)
+        kwargs = (
+            m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
+            iop = alg.iop,
+        )
         # Krylov on F1 (first column)
         arnoldi!(Ks, A, F1; kwargs...)
         phiv!(w1_half, halfdt, Ks, 3; cache = phiv_cache)
         phiv!(w1, dt, Ks, 3; cache = phiv_cache)
-        @muladd @.. broadcast=false @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
+        @muladd @.. broadcast = false @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
         _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp)
         F2 .+= Au
         # Krylov on F2 (second column)
         arnoldi!(Ks, A, F2; kwargs...)
         phiv!(w2_half, halfdt, Ks, 3; cache = phiv_cache)
         phiv!(w2, dt, Ks, 3; cache = phiv_cache)
-        @muladd @.. broadcast=false @views tmp = uprev +
-                                                 dt * (0.5w1_half[:, 2] - w1_half[:, 3] +
-                                                  w2_half[:, 3]) # tmp is U3
+        @muladd @.. broadcast = false @views tmp = uprev +
+            dt * (
+            0.5w1_half[:, 2] - w1_half[:, 3] +
+                w2_half[:, 3]
+        ) # tmp is U3
         _compute_nl!(F3, f, tmp, p, t + halfdt, A, rtmp)
         F3 .+= Au
         # Krylov on F3 (third column)
         arnoldi!(Ks, A, F3; kwargs...)
         phiv!(w3_half, halfdt, Ks, 3; cache = phiv_cache)
         phiv!(w3, dt, Ks, 3; cache = phiv_cache)
-        @muladd @.. broadcast=false @views tmp = uprev +
-                                                 dt * (w1[:, 2] - 2w1[:, 3] + w2[:, 3] +
-                                                  w3[:, 3]) # tmp is U4
+        @muladd @.. broadcast = false @views tmp = uprev +
+            dt * (
+            w1[:, 2] - 2w1[:, 3] + w2[:, 3] +
+                w3[:, 3]
+        ) # tmp is U4
         _compute_nl!(F4, f, tmp, p, t + dt, A, rtmp)
         F4 .+= Au
         # Krylov on F4 (fourth column)
         arnoldi!(Ks, A, F4; kwargs...)
         phiv!(w4_half, halfdt, Ks, 3; cache = phiv_cache)
         phiv!(w4, dt, Ks, 3; cache = phiv_cache)
-        @muladd @.. broadcast=false @views tmp = uprev +
-                                                 dt *
-                                                 (0.5w1_half[:, 2] - 0.75w1_half[:, 3] +
-                                                  0.5w1_half[:, 4] + w1[:, 4] -
-                                                  0.25w1[:, 3] +
-                                                  0.5w2_half[:, 3] - w2[:, 4] +
-                                                  0.25w2[:, 3] - 0.5w2_half[:, 4] +
-                                                  0.5w3_half[:, 3] - w2[:, 4] +
-                                                  0.25w3[:, 3] - 0.5w3_half[:, 4] +
-                                                  w4[:, 4] - 0.25w4[:, 3] -
-                                                  0.25w4_half[:, 3] + 0.5w4_half[:, 4]) # tmp is U5
+        @muladd @.. broadcast = false @views tmp = uprev +
+            dt *
+            (
+            0.5w1_half[:, 2] - 0.75w1_half[:, 3] +
+                0.5w1_half[:, 4] + w1[:, 4] -
+                0.25w1[:, 3] +
+                0.5w2_half[:, 3] - w2[:, 4] +
+                0.25w2[:, 3] - 0.5w2_half[:, 4] +
+                0.5w3_half[:, 3] - w2[:, 4] +
+                0.25w3[:, 3] - 0.5w3_half[:, 4] +
+                w4[:, 4] - 0.25w4[:, 3] -
+                0.25w4_half[:, 3] + 0.5w4_half[:, 4]
+        ) # tmp is U5
         _compute_nl!(F5, f, tmp, p, t + dt, A, rtmp)
         F5 .+= Au
         if isa(f, SplitFunction)
@@ -654,23 +697,23 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
         arnoldi!(Ks, A, F5; kwargs...)
         phiv!(w5, dt, Ks, 3; cache = phiv_cache)
         # update u
-        @muladd @.. broadcast=false @views rtmp = w1[:, 2] - 3w1[:, 3] + 4w1[:, 4] -
-                                                  w4[:, 3] + 4w4[:, 4] + 4w5[:, 3] -
-                                                  8w5[:, 4]
-        @muladd @.. broadcast=false u=uprev+dt*rtmp
+        @muladd @.. broadcast = false @views rtmp = w1[:, 2] - 3w1[:, 3] + 4w1[:, 4] -
+            w4[:, 3] + 4w4[:, 4] + 4w5[:, 3] -
+            8w5[:, 4]
+        @muladd @.. broadcast = false u = uprev + dt * rtmp
     else
         A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5 = cache.ops
         # stage 1 (fsaled)
         # stage 2
         mul!(rtmp, A21, F1)
-        @muladd @.. broadcast=false tmp=uprev+dt*rtmp # tmp is U2
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
         f.f2(F2, tmp, p, t + halfdt)
         F2 .+= Au
         # stage 3
         mul!(rtmp, A31, F1)
         mul!(rtmp2, A32, F2)
         rtmp .+= rtmp2
-        @muladd @.. broadcast=false tmp=uprev+dt*rtmp # tmp is U3
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U3
         f.f2(F3, tmp, p, t + halfdt)
         F3 .+= Au
         # stage 4
@@ -678,7 +721,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
         mul!(rtmp, A41, F1)
         mul!(rtmp2, A42, F2)
         rtmp .+= rtmp2
-        @muladd @.. broadcast=false tmp=uprev+dt*rtmp # tmp is U4
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U4
         f.f2(F4, tmp, p, t + dt)
         F4 .+= Au
         # stage 5
@@ -687,7 +730,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
         rtmp .+= rtmp2
         mul!(rtmp2, A54, F4)
         rtmp .+= rtmp2
-        @muladd @.. broadcast=false tmp=uprev+dt*rtmp # tmp is U5
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U5
         f.f2(F5, tmp, p, t + halfdt)
         F5 .+= Au
         integrator.stats.nf2 += 4
@@ -697,12 +740,12 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
         rtmp .+= rtmp2
         mul!(rtmp2, B5, F5)
         rtmp .+= rtmp2
-        @muladd @.. broadcast=false u=uprev+dt*rtmp
+        @muladd @.. broadcast = false u = uprev + dt * rtmp
     end
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -714,10 +757,12 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step = false
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(uprev) is fsaled
     ts = [dt / 3, 2dt / 3, dt]
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)))
+        m = min(alg.m, size(J, 1)),
+    )
 
     # Krylov for f(uprev)
     B1 = [zero(f0) f0]
@@ -751,7 +796,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step = false
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
@@ -761,10 +806,12 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
     ts = [dt / 3, 2dt / 3, dt]
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)), caches = KsCache)
+        m = min(alg.m, size(J, 1)), caches = KsCache,
+    )
 
     # Krylov for f(uprev)
     B[:, 2] .= f0
@@ -773,14 +820,14 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
         K[:, i] ./= ts[i]
     end
     mul!(rtmp, K, [-7 / 300, 97 / 150, -37 / 300]) # rtmp is now w4
-    @muladd @.. broadcast=false tmp=uprev+dt*rtmp # tmp is now u4
+    @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is now u4
     mul!(rtmp2, J, rtmp)
     f(rtmp, tmp, p, t + dt) # TODO: what should be the time?
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @muladd @.. broadcast=false @view(B[:, 2])=rtmp-f0-dt*rtmp2 # B[:,2] is now d4
+    @muladd @.. broadcast = false @view(B[:, 2]) = rtmp - f0 - dt * rtmp2 # B[:,2] is now d4
     # Partially update entities that use k1, k2, k3
     mul!(rtmp, K, [59 / 300, -7 / 75, 269 / 300]) # rtmp is now w7
-    @muladd @.. broadcast=false u=uprev+dt*@view(K[:, 3])
+    @muladd @.. broadcast = false u = uprev + dt * @view(K[:, 3])
     # Krylov for the first remainder d4
     phiv_timestep!(K, ts, J, B; kwargs...)
     @inbounds for i in 1:3
@@ -788,11 +835,11 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
     end
     mul!(rtmp2, K, [2 / 3, 2 / 3, 2 / 3])
     rtmp .+= rtmp2 # w7 fully updated
-    @muladd @.. broadcast=false tmp=uprev+dt*rtmp # tmp is now u7
+    @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is now u7
     mul!(rtmp2, J, rtmp)
     f(rtmp, tmp, p, t + dt) # TODO: what should be the time?
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @muladd @.. broadcast=false @view(B[:, 2])=rtmp-f0-dt*rtmp2 # B[:,2] is now d7
+    @muladd @.. broadcast = false @view(B[:, 2]) = rtmp - f0 - dt * rtmp2 # B[:,2] is now d7
     # Partially update entities that use k4, k5, k6
     mul!(rtmp, K, [1.0, -4 / 3, 1.0])
     axpy!(dt, rtmp, u)
@@ -804,7 +851,7 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -813,10 +860,12 @@ function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step = 
     J = calc_J(integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(uprev) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)))
+        m = min(alg.m, size(J, 1)),
+    )
 
     # Compute U2 and U3 vertically
     K = phiv_timestep([dt / 2, 2dt / 3], J, [zero(f0) f0]; kwargs...)
@@ -838,7 +887,7 @@ function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step = 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step = false)
@@ -847,26 +896,28 @@ function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step = false)
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)), caches = KsCache)
+        m = min(alg.m, size(J, 1)), caches = KsCache,
+    )
 
     # Compute U2 and U3 vertically
     B[:, 2] .= f0
     phiv_timestep!(K, [dt / 2, 2dt / 3], J, @view(B[:, 1:2]); kwargs...)
     ## U2 and R2
-    @.. broadcast=false tmp=uprev+@view(K[:, 1]) # tmp is now U2
+    @.. broadcast = false tmp = uprev + @view(K[:, 1]) # tmp is now U2
     f(rtmp, tmp, p, t + dt / 2)
     mul!(rtmp2, J, @view(K[:, 1]))
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R2
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
     B[:, 4] .= (32 / dt^2) * rtmp
     B[:, 5] .= (-144 / dt^3) * rtmp
     ## U3 and R3
-    @.. broadcast=false tmp=uprev+@view(K[:, 2]) # tmp is now U3
+    @.. broadcast = false tmp = uprev + @view(K[:, 2]) # tmp is now U3
     f(rtmp, tmp, p, t + 2dt / 3)
     mul!(rtmp2, J, @view(K[:, 2]))
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R3
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
     B[:, 4] .-= (13.5 / dt^2) * rtmp
     B[:, 5] .+= (81 / dt^3) * rtmp
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
@@ -874,11 +925,11 @@ function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step = false)
     # Update u
     du = @view(K[:, 1])
     phiv_timestep!(du, dt, J, B; kwargs...)
-    @.. broadcast=false u=uprev+du
+    @.. broadcast = false u = uprev + du
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -887,10 +938,12 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step = 
     J = calc_J(integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(uprev) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)))
+        m = min(alg.m, size(J, 1)),
+    )
 
     # Compute U2 and U3 vertically
     K = phiv_timestep([dt / 2, 3dt / 4], J, [zero(f0) zero(f0) f0]; kwargs...)
@@ -914,7 +967,7 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step = 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step = false)
@@ -923,10 +976,12 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step = false)
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)), caches = KsCache)
+        m = min(alg.m, size(J, 1)), caches = KsCache,
+    )
 
     # Compute U2 and U3 vertically
     fill!(@view(B[:, 2]), zero(eltype(B)))
@@ -935,17 +990,17 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step = false)
     K[:, 1] .*= 8 / (3 * dt)
     K[:, 2] .*= 16 / (9 * dt)
     ## U2 and R2
-    @.. broadcast=false tmp=uprev+@view(K[:, 1]) # tmp is now U2
+    @.. broadcast = false tmp = uprev + @view(K[:, 1]) # tmp is now U2
     f(rtmp, tmp, p, t + dt / 2)
     mul!(rtmp2, J, @view(K[:, 1]))
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R2
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
     B[:, 4] .= (54 / dt^2) * rtmp
     B[:, 5] .= (-324 / dt^3) * rtmp
     ## U3 and R3
-    @.. broadcast=false tmp=uprev+@view(K[:, 2]) # tmp is now U3
+    @.. broadcast = false tmp = uprev + @view(K[:, 2]) # tmp is now U3
     f(rtmp, tmp, p, t + 3dt / 4)
     mul!(rtmp2, J, @view(K[:, 2]))
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R3
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
     B[:, 4] .-= (16 / dt^2) * rtmp
     B[:, 5] .+= (144 / dt^3) * rtmp
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
@@ -955,11 +1010,11 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step = false)
     B[:, 2] .= f0
     du = @view(K[:, 1])
     phiv_timestep!(du, dt, J, B; kwargs...)
-    @.. broadcast=false u=uprev+du
+    @.. broadcast = false u = uprev + du
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -968,10 +1023,12 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step = f
     J = calc_J(integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(uprev) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)))
+        m = min(alg.m, size(J, 1)),
+    )
 
     # Compute U2 horizontally
     B = fill(zero(eltype(f0)), length(f0), 4)
@@ -1003,7 +1060,7 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step = f
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step = false)
@@ -1012,10 +1069,12 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step = false)
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)), caches = KsCache)
+        m = min(alg.m, size(J, 1)), caches = KsCache,
+    )
 
     # Compute U2 horizontally
     fill!(@view(B[:, 2]), zero(eltype(B)))
@@ -1023,11 +1082,11 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step = false)
     B[:, 4] .= (-3025 / (192 * dt^2)) .* f0
     phiv_timestep!(k, 48dt / 55, J, @view(B[:, 1:4]); kwargs...)
     ## Compute R2
-    @.. broadcast=false tmp=uprev+k # tmp is now U2
+    @.. broadcast = false tmp = uprev + k # tmp is now U2
     f(rtmp, tmp, p, t + 48dt / 55)
     mul!(rtmp2, J, k)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R2
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
 
     # Compute U3 horizontally
     B[:, 2] .= (53 / 5) .* f0
@@ -1040,21 +1099,21 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step = false)
     B[:, 4] .= (-166375 / (61056 * dt^2)) .* rtmp
     B[:, 5] .= (499125 / (27136 * dt^3)) .* rtmp
     ## Compute R3 and update B
-    @.. broadcast=false tmp=uprev+k # tmp is now U3
+    @.. broadcast = false tmp = uprev + k # tmp is now U3
     f(rtmp, tmp, p, t + 4dt / 9)
     mul!(rtmp2, J, k)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R3
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
     B[:, 4] .+= (2187 / (106 * dt^2)) .* rtmp
     B[:, 5] .-= (2187 / (106 * dt^3)) .* rtmp
 
     # Update u
     phiv_timestep!(k, dt, J, B; kwargs...)
-    @.. broadcast=false u=uprev+k
+    @.. broadcast = false u = uprev + k
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1063,10 +1122,12 @@ function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step = 
     J = calc_J(integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(uprev) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)))
+        m = min(alg.m, size(J, 1)),
+    )
 
     # Compute the first group for U2 and U3
     B = [zero(f0) f0]
@@ -1095,7 +1156,7 @@ function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step = 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step = false)
@@ -1104,21 +1165,23 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step = false)
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)), caches = KsCache)
+        m = min(alg.m, size(J, 1)), caches = KsCache,
+    )
 
     # Compute the first group for U2 and U3
     B[:, 2] .= f0
     phiv_timestep!(K, [dt / 2, 9dt / 10], J, @view(B[:, 1:2]); kwargs...)
     ## U2 and R2
-    @.. broadcast=false tmp=uprev+@view(K[:, 1]) # tmp is now U2
+    @.. broadcast = false tmp = uprev + @view(K[:, 1]) # tmp is now U2
     f(rtmp, tmp, p, t + dt / 2)
     mul!(rtmp2, J, @view(K[:, 1]))
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R2
-    @.. broadcast=false tmp=uprev+@view(K[:, 2]) # tmp is now U3 (partially)
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
+    @.. broadcast = false tmp = uprev + @view(K[:, 2]) # tmp is now U3 (partially)
 
     # Compute the second group for U3
     fill!(@view(B[:, 2]), zero(eltype(B)))
@@ -1134,7 +1197,7 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step = false)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     tmp .-= uprev
     mul!(rtmp2, J, tmp)
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R3
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
     ## Update B using R3
     B[:, 4] .-= (250 / (81 * dt^2)) * rtmp
     B[:, 5] .+= (500 / (27 * dt^3)) * rtmp
@@ -1142,11 +1205,11 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step = false)
     # Update u
     du = @view(K[:, 1])
     phiv_timestep!(du, dt, J, B; kwargs...)
-    @.. broadcast=false u=uprev+du
+    @.. broadcast = false u = uprev + du
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1155,10 +1218,12 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step = f
     J = calc_J(integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(uprev) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)))
+        m = min(alg.m, size(J, 1)),
+    )
 
     # Coefficients (scaling factors absorbed)
     g11 = 0.35129592695058193092 * dt
@@ -1198,7 +1263,7 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step = f
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
@@ -1207,10 +1272,12 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)), caches = KsCache)
+        m = min(alg.m, size(J, 1)), caches = KsCache,
+    )
 
     # Coefficients (scaling factors absorbed)
     g11 = 0.35129592695058193092 * dt
@@ -1226,15 +1293,15 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
     B[:, 2] .= f0
     phiv_timestep!(K, [g11, g21, g31], J, @view(B[:, 1:2]); kwargs...)
     ## U1 and R1
-    @.. broadcast=false tmp=uprev+@view(K[:, 1]) # tmp is now U1
+    @.. broadcast = false tmp = uprev + @view(K[:, 1]) # tmp is now U1
     f(rtmp, tmp, p, t + g11)
     mul!(rtmp2, J, @view(K[:, 1]))
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R1
-    @.. broadcast=false tmp=uprev+@view(K[:, 2]) # partially update U2 (stored tmp)
-    @.. broadcast=false u=uprev+@view(K[:, 3]) # partially update u
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R1
+    @.. broadcast = false tmp = uprev + @view(K[:, 2]) # partially update U2 (stored tmp)
+    @.. broadcast = false u = uprev + @view(K[:, 3]) # partially update u
     B[:, 2] .= rtmp
-    @.. broadcast=false @view(B[:, 4])=(-2)*rtmp
+    @.. broadcast = false @view(B[:, 4]) = (-2) * rtmp
 
     # Compute the second column (R1)
     k = @view(K[:, 1])
@@ -1245,7 +1312,7 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     tmp .-= uprev
     mul!(rtmp2, J, tmp)
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R2
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
     axpy!(b2, k, u) # partially update u
     B[:, 4] .+= rtmp # is now dR
 
@@ -1256,7 +1323,7 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1265,14 +1332,16 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step = f
     J = calc_J(integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(uprev) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)))
+        m = min(alg.m, size(J, 1)),
+    )
 
     # Coefficients (scaling factors absorbed)
     g11 = 0.46629408528088195806 * dt
-    g21 = 0.88217912653363865140 * dt # g22 = g32
+    g21 = 0.8821791265336386514 * dt # g22 = g32
     g31 = dt
     g32 = 0.92074916488140031449 * dt
     g33 = 0.79791561832664517267 * dt
@@ -1310,7 +1379,7 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step = f
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step = false)
@@ -1319,14 +1388,16 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step = false)
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
-    kwargs = (tol = integrator.opts.reltol, iop = alg.iop,
+    kwargs = (
+        tol = integrator.opts.reltol, iop = alg.iop,
         opnorm = integrator.opts.internalopnorm,
         adaptive = alg.adaptive_krylov, tau = (alg.adaptive_krylov ? 0.0 : dt),
-        m = min(alg.m, size(J, 1)), caches = KsCache)
+        m = min(alg.m, size(J, 1)), caches = KsCache,
+    )
 
     # Coefficients (scaling factors absorbed)
     g11 = 0.46629408528088195806 * dt
-    g21 = 0.88217912653363865140 * dt # g22 = g32
+    g21 = 0.8821791265336386514 * dt # g22 = g32
     g31 = dt
     g32 = 0.92074916488140031449 * dt
     g33 = 0.79791561832664517267 * dt
@@ -1340,14 +1411,14 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step = false)
     B[:, 2] .= f0
     phiv_timestep!(K, [g11, g21, g31], J, @view(B[:, 1:2]); kwargs...)
     ## U1 and R1
-    @.. broadcast=false tmp=uprev+@view(K[:, 1]) # tmp is now U1
+    @.. broadcast = false tmp = uprev + @view(K[:, 1]) # tmp is now U1
     f(rtmp, tmp, p, t + g11)
     mul!(rtmp2, J, @view(K[:, 1]))
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R1
-    @.. broadcast=false tmp=uprev+@view(K[:, 2]) # partially update U2 (stored in tmp)
-    @.. broadcast=false u=uprev+@view(K[:, 3]) # partially update u
-    @.. broadcast=false dR=-2rtmp # partially update dR
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R1
+    @.. broadcast = false tmp = uprev + @view(K[:, 2]) # partially update U2 (stored in tmp)
+    @.. broadcast = false u = uprev + @view(K[:, 3]) # partially update u
+    @.. broadcast = false dR = -2rtmp # partially update dR
 
     # Compute the second column (R1)
     fill!(@view(B[:, 2]), zero(eltype(B)))
@@ -1360,20 +1431,20 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step = false)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     tmp .-= uprev
     mul!(rtmp2, J, tmp)
-    @.. broadcast=false rtmp=rtmp-f0-rtmp2 # rtmp is now R2
+    @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
     dR .+= rtmp # dR is now R2 - 2R1
     axpy!(b2, k, u) # partially update u
 
     # Compute the third column (dR = R2 - 2R1)
-    @.. broadcast=false @view(B[:, 2])=b31*dR
-    @.. broadcast=false @view(B[:, 3])=b32*dR
-    @.. broadcast=false @view(B[:, 4])=b33*dR
+    @.. broadcast = false @view(B[:, 2]) = b31 * dR
+    @.. broadcast = false @view(B[:, 3]) = b32 * dR
+    @.. broadcast = false @view(B[:, 4]) = b33 * dR
     phiv_timestep!(k, g33, J, B; kwargs...)
     u .+= k
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1385,19 +1456,25 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step = fa
     alg = unwrap_alg(integrator, true)
 
     F1 = integrator.fsalfirst
-    w1 = phiv(dt, A, F1, 3; m = min(alg.m, size(A, 1)),
-        opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+    w1 = phiv(
+        dt, A, F1, 3; m = min(alg.m, size(A, 1)),
+        opnorm = integrator.opts.internalopnorm, iop = alg.iop
+    )
     U2 = uprev + dt * w1[:, 2]
     F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    w2 = phiv(dt, A, F2, 3; m = min(alg.m, size(A, 1)),
-        opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+    w2 = phiv(
+        dt, A, F2, 3; m = min(alg.m, size(A, 1)),
+        opnorm = integrator.opts.internalopnorm, iop = alg.iop
+    )
     u = uprev + dt * (w1[:, 2] - 2w1[:, 4] + 2w2[:, 4])
     if integrator.opts.adaptive
         # error estimator for the imbedded method
         utilde = 2dt * (-w1[:, 4] + w2[:, 4])
-        atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        atmp = calculate_residuals(
+            utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -1406,7 +1483,7 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step = fa
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
@@ -1421,16 +1498,18 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
     # Krylov for F1
     arnoldi!(
         Ks, J, F1; m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
-        iop = alg.iop)
+        iop = alg.iop
+    )
     phiv!(w1, dt, Ks, 3; cache = phiv_cache)
     # Krylov for F2
-    @muladd @.. broadcast=false tmp=uprev+dt*@view(w1[:, 2])
+    @muladd @.. broadcast = false tmp = uprev + dt * @view(w1[:, 2])
     _compute_nl!(F2, f, tmp, p, t + dt, J, rtmp)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     F2 .+= mul!(rtmp, J, uprev)
     arnoldi!(
         Ks, J, F2; m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
-        iop = alg.iop)
+        iop = alg.iop
+    )
     phiv!(w2, dt, Ks, 3; cache = phiv_cache)
     # Update u
     u .= uprev
@@ -1439,15 +1518,17 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
     axpy!(2dt, @view(w2[:, 4]), u)
     if integrator.opts.adaptive
         # error estimator for the imbedded method
-        @views @.. broadcast=false utilde=(2*dt)*(-w1[:, 4]+w2[:, 4])
-        calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        @views @.. broadcast = false utilde = (2 * dt) * (-w1[:, 4] + w2[:, 4])
+        calculate_residuals!(
+            tmp, utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
         integrator.EEst = integrator.opts.internalnorm(tmp, t)
     end
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1458,8 +1539,10 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step = fa
 
     Au = A * uprev
     F1 = integrator.fsalfirst
-    kwargs = (m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
-        iop = alg.iop)
+    kwargs = (
+        m = min(alg.m, size(A, 1)), opnorm = integrator.opts.internalopnorm,
+        iop = alg.iop,
+    )
     # Krylov on F1 (first column)
     Ks = arnoldi(A, F1; kwargs...)
     w1_half = phiv(dt / 2, Ks, 1)
@@ -1475,13 +1558,17 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step = fa
     # Krylov on F3 (third column)
     w3 = phiv(dt, A, F3, 4; kwargs...)
     u = uprev +
-        dt * (w1[:, 2] - 14w1[:, 4] + 36w1[:, 5] + 16w2[:, 4] - 48w2[:, 5] - 2w3[:, 4] +
-         12w3[:, 5])
+        dt * (
+        w1[:, 2] - 14w1[:, 4] + 36w1[:, 5] + 16w2[:, 4] - 48w2[:, 5] - 2w3[:, 4] +
+            12w3[:, 5]
+    )
     if integrator.opts.adaptive
         # error estimator for the imbedded method
         utilde = dt * (36w1[:, 5] - 48w2[:, 5] + 12w3[:, 5])
-        atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        atmp = calculate_residuals(
+            utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -1490,7 +1577,7 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step = fa
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function perform_step!(integrator, cache::Exprb43Cache, repeat_step = false)
@@ -1504,20 +1591,22 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step = false)
     halfdt = dt / 2
     Ks, phiv_cache, ws = KsCache
     w1_half, w1, w2, w3 = ws
-    kwargs = (m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
-        iop = alg.iop)
+    kwargs = (
+        m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
+        iop = alg.iop,
+    )
     # Krylov for F1
     arnoldi!(Ks, J, F1; kwargs...)
     phiv!(w1_half, halfdt, Ks, 1; cache = phiv_cache)
     phiv!(w1, dt, Ks, 4; cache = phiv_cache)
-    @muladd @.. broadcast=false @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
+    @muladd @.. broadcast = false @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
     _compute_nl!(F2, f, tmp, p, t + halfdt, J, rtmp)
     F2 .+= Au
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # Krylov for F2
     arnoldi!(Ks, J, F2; kwargs...)
     phiv!(w2, dt, Ks, 4; cache = phiv_cache)
-    @muladd @.. broadcast=false @views tmp = uprev + dt * w2[:, 2] # tmp is U3
+    @muladd @.. broadcast = false @views tmp = uprev + dt * w2[:, 2] # tmp is U3
     _compute_nl!(F3, f, tmp, p, t + dt, J, rtmp)
     F3 .+= Au
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1525,20 +1614,22 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step = false)
     arnoldi!(Ks, J, F3; kwargs...)
     phiv!(w3, dt, Ks, 4; cache = phiv_cache)
     # Update u
-    @views @.. broadcast=false rtmp=w1[:, 2]-14w1[:, 4]+36w1[:, 5]+16w2[:, 4]-
-    48w2[:, 5]-2w3[:, 4]+12w3[:, 5]
-    @muladd @.. broadcast=false u=uprev+dt*rtmp
+    @views @.. broadcast = false rtmp = w1[:, 2] - 14w1[:, 4] + 36w1[:, 5] + 16w2[:, 4] -
+        48w2[:, 5] - 2w3[:, 4] + 12w3[:, 5]
+    @muladd @.. broadcast = false u = uprev + dt * rtmp
     if integrator.opts.adaptive
-        @views @.. broadcast=false rtmp=36w1[:, 5]-48w2[:, 5]+12w3[:, 5]
-        @.. broadcast=false utilde=dt*rtmp
-        calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        @views @.. broadcast = false rtmp = 36w1[:, 5] - 48w2[:, 5] + 12w3[:, 5]
+        @.. broadcast = false utilde = dt * rtmp
+        calculate_residuals!(
+            tmp, utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
         integrator.EEst = integrator.opts.internalnorm(tmp, t)
     end
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1560,7 +1651,7 @@ function initialize!(integrator, cache::ETD2ConstantCache)
     rate_prototype = lin
     integrator.fsallast = ETD2Fsal(rate_prototype)
     integrator.k[1] = lin + nl
-    integrator.k[2] = zero(rate_prototype)
+    return integrator.k[2] = zero(rate_prototype)
 end
 
 function perform_step!(integrator, cache::ETD2ConstantCache, repeat_step = false)
@@ -1585,7 +1676,7 @@ function perform_step!(integrator, cache::ETD2ConstantCache, repeat_step = false
     integrator.k[2] = lin + nl
     integrator.fsallast.lin = lin
     integrator.fsallast.nl = nl
-    integrator.fsallast.nlprev = nlprev
+    return integrator.fsallast.nlprev = nlprev
 end
 
 function initialize!(integrator, cache::ETD2Cache)
@@ -1602,24 +1693,24 @@ function initialize!(integrator, cache::ETD2Cache)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.k[1] = lin + nl
-    integrator.k[2] = zero(rate_prototype)
+    return integrator.k[2] = zero(rate_prototype)
 end
 
 function perform_step!(integrator, cache::ETD2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; lin, nl, nlprev) = integrator.fsalfirst
     (; utmp, rtmp1, rtmp2, exphA, phihA, B1, B0) = cache
-    @.. broadcast=false integrator.k[1]=lin+nl
+    @.. broadcast = false integrator.k[1] = lin + nl
 
     if integrator.iter == 1 # ETD1 for initial step
         mul!(utmp, exphA, uprev)
         mul!(rtmp1, phihA, nl)
-        @muladd @.. broadcast=false u=utmp+dt*rtmp1
+        @muladd @.. broadcast = false u = utmp + dt * rtmp1
     else
         mul!(utmp, exphA, uprev)
         mul!(rtmp1, B1, nl)
         mul!(rtmp2, B0, nlprev)
-        @muladd @.. broadcast=false u=utmp+dt*(rtmp1+rtmp2)
+        @muladd @.. broadcast = false u = utmp + dt * (rtmp1 + rtmp2)
     end
 
     # Push the fsal at t+dt
@@ -1629,5 +1720,5 @@ function perform_step!(integrator, cache::ETD2Cache, repeat_step = false)
     f.f2(fsallast.nl, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
-    @.. broadcast=false integrator.k[2]=fsallast.lin+fsallast.nl
+    return @.. broadcast = false integrator.k[2] = fsallast.lin + fsallast.nl
 end

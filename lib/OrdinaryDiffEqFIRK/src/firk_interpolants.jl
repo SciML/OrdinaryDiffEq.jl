@@ -1,6 +1,7 @@
 FIRK_WITH_INTERPOLATIONS = Union{
     RadauIIA3ConstantCache, RadauIIA3Cache, RadauIIA5ConstantCache, RadauIIA5Cache,
-    RadauIIA9ConstantCache, RadauIIA9Cache, AdaptiveRadauConstantCache, AdaptiveRadauCache}
+    RadauIIA9ConstantCache, RadauIIA9Cache, AdaptiveRadauConstantCache, AdaptiveRadauCache,
+}
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::Union{RadauIIA3ConstantCache, RadauIIA3Cache},
@@ -16,7 +17,8 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache::Union{RadauIIA3ConstantCache, RadauIIA3Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; c1) = cache.tab
     z1 = k[3]
     z2 = k[4] 
@@ -28,7 +30,8 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::Union{RadauIIA5ConstantCache, RadauIIA5Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; c1, c2) = cache.tab
     z1 = k[3]
     z2 = k[4]
@@ -43,7 +46,8 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache::Union{RadauIIA5ConstantCache, RadauIIA5Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; c1, c2) = cache.tab
     z1 = k[3]
     z2 = k[4]
@@ -58,7 +62,8 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::Union{RadauIIA9ConstantCache, RadauIIA9Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; c1, c2, c3, c4) = cache.tab
 
     z1 = k[3]
@@ -79,7 +84,8 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache::Union{RadauIIA9ConstantCache, RadauIIA9Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; c1, c2, c3, c4) = cache.tab
 
     z1 = k[3]
@@ -100,7 +106,8 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::Union{AdaptiveRadauConstantCache, AdaptiveRadauCache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; num_stages, index) = cache
     (; c) = cache.tabs[index]
 
@@ -120,7 +127,8 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache::Union{AdaptiveRadauConstantCache, AdaptiveRadauCache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; num_stages, index) = cache
     (; c) = cache.tabs[index]
 

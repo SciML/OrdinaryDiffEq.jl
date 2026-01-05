@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqNordsieck"
 uuid = "c9986a66-5c92-4813-8696-a7ec84c806c8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.6.0"
+version = "1.7.0"
 
 [deps]
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"

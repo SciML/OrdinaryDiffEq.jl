@@ -10,8 +10,8 @@ function initialize!(integrator, cache::PDIRK44ConstantCache) end
         k2 = Array{typeof(u)}(undef, 2)
         k1 = Array{typeof(u)}(undef, 2)
         let nlsolver = nlsolver, u = u, uprev = uprev, integrator = integrator,
-            cache = cache, dt = dt, repeat_step = repeat_step,
-            k1 = k1
+                cache = cache, dt = dt, repeat_step = repeat_step,
+                k1 = k1
 
             @threaded alg.threading for i in 1:2
                 nlsolver[i].z = zero(u)
@@ -25,8 +25,8 @@ function initialize!(integrator, cache::PDIRK44ConstantCache) end
         nlsolvefail(nlsolver[1]) && return
         nlsolvefail(nlsolver[2]) && return
         let nlsolver = nlsolver, u = u, uprev = uprev, integrator = integrator,
-            cache = cache, dt = dt, repeat_step = repeat_step,
-            k1 = k1, k2 = k2
+                cache = cache, dt = dt, repeat_step = repeat_step,
+                k1 = k1, k2 = k2
 
             @threaded alg.threading for i in 1:2
                 nlsolver[i].c = cs[2 + i]
@@ -81,8 +81,8 @@ function initialize!(integrator, cache::PDIRK44Cache) end
     (; γs, cs, α1, α2, b1, b2, b3, b4) = tab
     if isthreaded(alg.threading)
         let nlsolver = nlsolver, u = u, uprev = uprev, integrator = integrator,
-            cache = cache, dt = dt, repeat_step = repeat_step,
-            k1 = k1
+                cache = cache, dt = dt, repeat_step = repeat_step,
+                k1 = k1
 
             @threaded alg.threading for i in 1:2
                 nlsolver[i].z .= zero(eltype(u))
@@ -96,13 +96,13 @@ function initialize!(integrator, cache::PDIRK44Cache) end
         nlsolvefail(nlsolver[1]) && return
         nlsolvefail(nlsolver[2]) && return
         let nlsolver = nlsolver, u = u, uprev = uprev, integrator = integrator,
-            cache = cache, dt = dt, repeat_step = repeat_step,
-            k1 = k1, k2 = k2
+                cache = cache, dt = dt, repeat_step = repeat_step,
+                k1 = k1, k2 = k2
 
             @threaded alg.threading for i in 1:2
                 nlsolver[i].c = cs[2 + i]
                 nlsolver[i].z .= zero(eltype(u))
-                @.. broadcast=false nlsolver[i].tmp=uprev + α1[i] * k1[1] + α2[i] * k1[2]
+                @.. broadcast = false nlsolver[i].tmp = uprev + α1[i] * k1[1] + α2[i] * k1[2]
                 k2[i] .= nlsolve!(nlsolver[i], integrator, cache, repeat_step)
             end
         end
@@ -125,19 +125,19 @@ function initialize!(integrator, cache::PDIRK44Cache) end
         k1[2] .= nlsolve!(_nlsolver, integrator, cache, repeat_step)
         nlsolvefail(_nlsolver) && return
         _nlsolver.z .= zero(eltype(u))
-        @.. broadcast=false _nlsolver.tmp=uprev + α1[1] * k1[1] + α2[1] * k1[2]
+        @.. broadcast = false _nlsolver.tmp = uprev + α1[1] * k1[1] + α2[1] * k1[2]
         _nlsolver.γ = γs[1]
         _nlsolver.c = cs[3]
         markfirststage!(_nlsolver)
         k2[1] .= nlsolve!(_nlsolver, integrator, cache, repeat_step)
         nlsolvefail(_nlsolver) && return
         _nlsolver.z .= zero(eltype(u))
-        @.. broadcast=false _nlsolver.tmp=uprev + α1[2] * k1[1] + α2[2] * k1[2]
+        @.. broadcast = false _nlsolver.tmp = uprev + α1[2] * k1[1] + α2[2] * k1[2]
         _nlsolver.γ = γs[2]
         _nlsolver.c = cs[4]
         markfirststage!(_nlsolver)
         k2[2] .= nlsolve!(_nlsolver, integrator, cache, repeat_step)
         nlsolvefail(_nlsolver) && return
     end
-    @.. broadcast=false u=uprev + b1 * k1[1] + b2 * k2[1] + b3 * k1[2] + b4 * k2[2]
+    @.. broadcast = false u = uprev + b1 * k1[1] + b2 * k2[1] + b3 * k1[2] + b4 * k2[2]
 end

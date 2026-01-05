@@ -1,16 +1,18 @@
 using Documenter, OrdinaryDiffEq
 
-cp("./docs/Manifest.toml", "./docs/src/assets/Manifest.toml", force = true)
-cp("./docs/Project.toml", "./docs/src/assets/Project.toml", force = true)
+cp(joinpath(@__DIR__, "Manifest.toml"), joinpath(@__DIR__, "src", "assets", "Manifest.toml"), force = true)
+cp(joinpath(@__DIR__, "Project.toml"), joinpath(@__DIR__, "src", "assets", "Project.toml"), force = true)
 
 # Keep pages.jl separate for the DiffEqDocs.jl build
 include("pages.jl")
 
-makedocs(sitename = "OrdinaryDiffEq.jl",
+makedocs(
+    sitename = "OrdinaryDiffEq.jl",
     authors = "Chris Rackauckas et al.",
     clean = true,
     doctest = false,
-    modules = [OrdinaryDiffEq,
+    modules = [
+        OrdinaryDiffEq,
         OrdinaryDiffEq.OrdinaryDiffEqAdamsBashforthMoulton,
         OrdinaryDiffEq.OrdinaryDiffEqBDF,
         OrdinaryDiffEq.OrdinaryDiffEqDefault,
@@ -36,15 +38,22 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         OrdinaryDiffEq.OrdinaryDiffEqStabilizedRK,
         OrdinaryDiffEq.OrdinaryDiffEqSymplecticRK,
         OrdinaryDiffEq.OrdinaryDiffEqTsit5,
-        OrdinaryDiffEq.OrdinaryDiffEqVerner
+        OrdinaryDiffEq.OrdinaryDiffEqVerner,
     ],
     warnonly = [:docs_block, :missing_docs, :eval_block],
-    format = Documenter.HTML(analytics = "UA-90474609-3",
+    format = Documenter.HTML(
+        analytics = "UA-90474609-3",
         assets = ["assets/favicon.ico"],
         canonical = "https://ordinarydiffeq.sciml.ai/stable/",
-        size_threshold_ignore = [joinpath("semiimplicit", "Rosenbrock.md"),
-            joinpath("massmatrixdae", "Rosenbrock.md")]),
-    pages = pages)
+        size_threshold_ignore = [
+            joinpath("semiimplicit", "Rosenbrock.md"),
+            joinpath("massmatrixdae", "Rosenbrock.md"),
+        ]
+    ),
+    pages = pages
+)
 
-deploydocs(repo = "github.com/SciML/OrdinaryDiffEq.jl";
-    push_preview = true)
+deploydocs(
+    repo = "github.com/SciML/OrdinaryDiffEq.jl";
+    push_preview = true
+)

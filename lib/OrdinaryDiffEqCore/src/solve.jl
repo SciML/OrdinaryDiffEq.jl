@@ -1,16 +1,21 @@
 function SciMLBase.__solve(
-        prob::Union{SciMLBase.AbstractODEProblem,
-            SciMLBase.AbstractDAEProblem},
+        prob::Union{
+            SciMLBase.AbstractODEProblem,
+            SciMLBase.AbstractDAEProblem,
+        },
         alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, args...;
-        kwargs...)
+        kwargs...
+    )
     integrator = SciMLBase.__init(prob, alg, args...; kwargs...)
     solve!(integrator)
-    integrator.sol
+    return integrator.sol
 end
 
 function SciMLBase.__init(
-        prob::Union{SciMLBase.AbstractODEProblem,
-            SciMLBase.AbstractDAEProblem},
+        prob::Union{
+            SciMLBase.AbstractODEProblem,
+            SciMLBase.AbstractDAEProblem,
+        },
         alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
         timeseries_init = (),
         ts_init = (),
@@ -23,15 +28,15 @@ function SciMLBase.__init(
         save_on = true,
         save_discretes = true,
         save_start = save_everystep || isempty(saveat) ||
-                     saveat isa Number || prob.tspan[1] in saveat,
+            saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
         callback = nothing,
         dense = save_everystep && isempty(saveat) &&
-                !default_linear_interpolation(prob, alg),
+            !default_linear_interpolation(prob, alg),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
-                (dense) || !isempty(saveat), # and no dense output
+            (dense) || !isempty(saveat), # and no dense output
         dt = isdiscretealg(alg) && isempty(tstops) ?
-             eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
+            eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
         dtmin = eltype(prob.tspan)(0),
         dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
         force_dtmin = false,
@@ -70,7 +75,8 @@ function SciMLBase.__init(
         initialize_integrator = true,
         alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
-        kwargs...)
+        kwargs...
+    )
     if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")
     end
@@ -90,17 +96,17 @@ function SciMLBase.__init(
             error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
         end
     elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
-           !(prob isa SciMLBase.AbstractDAEProblem) &&
-           !is_mass_matrix_alg(alg) &&
-           prob.f.mass_matrix != I
+            !(prob isa SciMLBase.AbstractDAEProblem) &&
+            !is_mass_matrix_alg(alg) &&
+            prob.f.mass_matrix != I
         error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
     end
 
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
-       # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
-       !only_diagonal_mass_matrix(alg) &&
-       prob.f.mass_matrix isa AbstractMatrix &&
-       all(isequal(0), prob.f.mass_matrix)
+            # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
+            !only_diagonal_mass_matrix(alg) &&
+            prob.f.mass_matrix isa AbstractMatrix &&
+            all(isequal(0), prob.f.mass_matrix)
         # technically this should also warn for zero operators but those are hard to check for
         if (dense || !isempty(saveat)) && verbose
             @warn("Rosenbrock methods on equations without differential states do not bound the error on interpolations.")
@@ -108,8 +114,8 @@ function SciMLBase.__init(
     end
 
     if only_diagonal_mass_matrix(alg) &&
-       prob.f.mass_matrix isa AbstractMatrix &&
-       !isdiag(prob.f.mass_matrix)
+            prob.f.mass_matrix isa AbstractMatrix &&
+            !isdiag(prob.f.mass_matrix)
         throw(ArgumentError("$(typeof(alg).name.name) only works with diagonal mass matrices. Please choose a solver suitable for your problem (e.g. Rodas5P)"))
     end
 
@@ -117,7 +123,7 @@ function SciMLBase.__init(
         @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
     end
 
-    progress && @logmsg(LogLevel(-1), progress_name, _id=progress_id, progress=0)
+    progress && @logmsg(LogLevel(-1), progress_name, _id = progress_id, progress = 0)
 
     tType = eltype(prob.tspan)
     tspan = prob.tspan
@@ -125,24 +131,34 @@ function SciMLBase.__init(
 
     t = tspan[1]
 
-    if (((!(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
-          !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
-          !(alg isa DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
-        dt == tType(0) && isempty(tstops)) && dt_required(alg)
+    if (
+            (
+                (
+                    !(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
+                        !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
+                        !(alg isa DAEAlgorithm)
+                ) || !adaptive || !isadaptive(alg)
+            ) &&
+                dt == tType(0) && isempty(tstops)
+        ) && dt_required(alg)
         throw(ArgumentError("Fixed timestep methods require a choice of dt or choosing the tstops"))
     end
     if !isadaptive(alg) && adaptive
         throw(ArgumentError("Fixed timestep methods can not be run with adaptive=true"))
     end
 
-    isdae = alg isa DAEAlgorithm || (!(prob isa SciMLBase.AbstractDiscreteProblem) &&
-             prob.f.mass_matrix != I &&
-             !(prob.f.mass_matrix isa Tuple) &&
-             ArrayInterface.issingular(prob.f.mass_matrix))
+    isdae = alg isa DAEAlgorithm || (
+        !(prob isa SciMLBase.AbstractDiscreteProblem) &&
+            prob.f.mass_matrix != I &&
+            !(prob.f.mass_matrix isa Tuple) &&
+            ArrayInterface.issingular(prob.f.mass_matrix)
+    )
     if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
         auto = alg.choice_function
-        _alg = CompositeAlgorithm(alg.algs,
-            AutoSwitchCache(0, 0,
+        _alg = CompositeAlgorithm(
+            alg.algs,
+            AutoSwitchCache(
+                0, 0,
                 auto.nonstiffalg,
                 auto.stiffalg,
                 auto.stiffalgfirst,
@@ -152,7 +168,9 @@ function SciMLBase.__init(
                 auto.stifftol,
                 auto.dtfac,
                 auto.stiffalgfirst,
-                auto.switch_max, 0))
+                auto.switch_max, 0
+            )
+        )
     else
         _alg = alg
     end
@@ -178,7 +196,8 @@ function SciMLBase.__init(
             Base.depwarn(message, :init)
             Base.depwarn(message, :solve)
             aliases = ODEAliasSpecifier(
-                alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0)
+                alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0
+            )
         else
             aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = nothing)
         end
@@ -212,6 +231,12 @@ function SciMLBase.__init(
         u = recursivecopy(prob.u0)
     end
 
+    # Handle null u0 (e.g., MTK systems with only callbacks and no state variables)
+    # Convert to empty Float64 array to allow initialization to proceed
+    if u === nothing
+        u = Float64[]
+    end
+
     if _alg isa DAEAlgorithm
         if !isnothing(aliases.alias_du0) && aliases.alias_du0
             du = prob.du0
@@ -235,9 +260,15 @@ function SciMLBase.__init(
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            abstol_internal = unitfulvalue(real(convert(uBottomEltype,
-                oneunit(uBottomEltype) *
-                1 // 10^6)))
+            abstol_internal = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype,
+                        oneunit(uBottomEltype) *
+                            1 // 10^6
+                    )
+                )
+            )
         else
             abstol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
         end
@@ -249,8 +280,14 @@ function SciMLBase.__init(
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            reltol_internal = unitfulvalue(real(convert(uBottomEltype,
-                oneunit(uBottomEltype) * 1 // 10^3)))
+            reltol_internal = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype,
+                        oneunit(uBottomEltype) * 1 // 10^3
+                    )
+                )
+            )
         else
             reltol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
         end
@@ -262,13 +299,13 @@ function SciMLBase.__init(
     # dtmin is all abs => does not care about sign already.
 
     if !isdae && isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
-       uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
+            uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
         rate_prototype = recursivecopy(u)
     elseif prob isa DAEProblem
         rate_prototype = prob.du0
     else
         if (uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits) ||
-           eltype(u) <: Enum
+                eltype(u) <: Enum
             rate_prototype = u
         else # has units!
             rate_prototype = u / oneunit(tType)
@@ -300,8 +337,10 @@ function SciMLBase.__init(
     end
     tstops_internal = initialize_tstops(tType, tstops, d_discontinuities, tspan)
     saveat_internal = initialize_saveat(tType, saveat, tspan)
-    d_discontinuities_internal = initialize_d_discontinuities(tType, d_discontinuities,
-        tspan)
+    d_discontinuities_internal = initialize_d_discontinuities(
+        tType, d_discontinuities,
+        tspan
+    )
 
     callbacks_internal = CallbackSet(callback)
 
@@ -309,11 +348,15 @@ function SciMLBase.__init(
     if max_len_cb !== nothing
         uBottomEltypeReal = real(uBottomEltype)
         if isinplace(prob)
-            callback_cache = DiffEqBase.CallbackCache(u, max_len_cb, uBottomEltypeReal,
-                uBottomEltypeReal)
+            callback_cache = DiffEqBase.CallbackCache(
+                u, max_len_cb, uBottomEltypeReal,
+                uBottomEltypeReal
+            )
         else
-            callback_cache = DiffEqBase.CallbackCache(max_len_cb, uBottomEltypeReal,
-                uBottomEltypeReal)
+            callback_cache = DiffEqBase.CallbackCache(
+                max_len_cb, uBottomEltypeReal,
+                uBottomEltypeReal
+            )
         end
     else
         callback_cache = nothing
@@ -321,8 +364,9 @@ function SciMLBase.__init(
 
     ### Algorithm-specific defaults ###
     save_idxs,
-    saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
-        prob, save_idxs)
+        saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
+        prob, save_idxs
+    )
 
     ks_prototype = nothing
     if save_idxs === nothing
@@ -335,11 +379,11 @@ function SciMLBase.__init(
     # Have to convert in case passed in wrong.
     if save_idxs === nothing
         timeseries = timeseries_init === () ? uType[] :
-                     convert(Vector{uType}, timeseries_init)
+            convert(Vector{uType}, timeseries_init)
     else
         u_initial = u[save_idxs]
         timeseries = timeseries_init === () ? typeof(u_initial)[] :
-                     convert(Vector{uType}, timeseries_init)
+            convert(Vector{uType}, timeseries_init)
     end
 
     ts = ts_init === () ? tType[] : convert(Vector{tType}, ts_init)
@@ -406,13 +450,17 @@ function SciMLBase.__init(
     end
 
     if prob isa DAEProblem
-        cache = alg_cache(_alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
+        cache = alg_cache(
+            _alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
             uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-            reltol_internal, p, calck, Val(isinplace(prob)))
+            reltol_internal, p, calck, Val(isinplace(prob))
+        )
     else
-        cache = alg_cache(_alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+        cache = alg_cache(
+            _alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
             tTypeNoUnits, uprev, uprev2, f, t, dt, reltol_internal, p, calck,
-            Val(isinplace(prob)))
+            Val(isinplace(prob))
+        )
     end
 
     # Setting up the step size controller
@@ -432,10 +480,11 @@ function SciMLBase.__init(
 
     save_end_user = save_end
     save_end = save_end === nothing ?
-               save_everystep || isempty(saveat) || saveat isa Number ||
-               prob.tspan[2] in saveat : save_end
+        save_everystep || isempty(saveat) || saveat isa Number ||
+        prob.tspan[2] in saveat : save_end
 
-    opts = DEOptions{typeof(abstol_internal), typeof(reltol_internal),
+    opts = DEOptions{
+        typeof(abstol_internal), typeof(reltol_internal),
         QT, tType, typeof(controller),
         typeof(internalnorm), typeof(internalopnorm),
         typeof(save_end_user),
@@ -446,7 +495,9 @@ function SciMLBase.__init(
         typeof(d_discontinuities_internal), typeof(userdata),
         typeof(save_idxs),
         typeof(maxiters), typeof(tstops),
-        typeof(saveat), typeof(d_discontinuities)}(maxiters, save_everystep,
+        typeof(saveat), typeof(d_discontinuities),
+    }(
+        maxiters, save_everystep,
         adaptive, abstol_internal,
         reltol_internal,
         QT(gamma), QT(qmax),
@@ -478,17 +529,21 @@ function SciMLBase.__init(
         unstable_check,
         verbose, calck, force_dtmin,
         advance_to_tstop,
-        stop_at_next_tstop)
+        stop_at_next_tstop
+    )
 
     stats = SciMLBase.DEStats(0)
     differential_vars = prob isa DAEProblem ? prob.differential_vars :
-                        get_differential_vars(f, u)
+        get_differential_vars(f, u)
 
     id = InterpolationData(
-        f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
-    sol = SciMLBase.build_solution(prob, _alg, ts, timeseries,
+        f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
+    )
+    sol = SciMLBase.build_solution(
+        prob, _alg, ts, timeseries,
         dense = dense, k = ks, interp = id, alg_choice = alg_choice,
-        calculate_error = false, stats = stats, saved_subsystem = saved_subsystem)
+        calculate_error = false, stats = stats, saved_subsystem = saved_subsystem
+    )
 
     FType = typeof(f)
     SolType = typeof(sol)
@@ -514,8 +569,10 @@ function SciMLBase.__init(
     event_last_time = 0
     vector_event_last_time = 1
     last_event_error = prob isa SciMLBase.AbstractDiscreteProblem ? false :
-                       (Base.isbitstype(uBottomEltypeNoUnits) ? zero(uBottomEltypeNoUnits) :
-                        0.0)
+        (
+            Base.isbitstype(uBottomEltypeNoUnits) ? zero(uBottomEltypeNoUnits) :
+            0.0
+        )
     dtchangeable = isdtchangeable(_alg)
     q11 = QT(1)
     success_iter = 0
@@ -526,14 +583,16 @@ function SciMLBase.__init(
     saveiter_dense = 0
     fsalfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
 
-    integrator = ODEIntegrator{typeof(_alg), isinplace(prob), uType, typeof(du),
+    integrator = ODEIntegrator{
+        typeof(_alg), isinplace(prob), uType, typeof(du),
         tType, typeof(p),
         typeof(eigen_est), typeof(EEst),
         QT, typeof(tdir), typeof(k), SolType,
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),
-        typeof(initializealg), typeof(differential_vars)}(
+        typeof(initializealg), typeof(differential_vars),
+    }(
         sol, u, du, k, t, tType(dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
@@ -551,11 +610,12 @@ function SciMLBase.__init(
         isout, reeval_fsal,
         u_modified, reinitiailize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast)
+        fsalfirst, fsallast
+    )
 
     if initialize_integrator
         if isdae || SciMLBase.has_initializeprob(prob.f) ||
-           prob isa SciMLBase.ImplicitDiscreteProblem
+                prob isa SciMLBase.ImplicitDiscreteProblem
             DiffEqBase.initialize_dae!(integrator)
             !isnothing(integrator.u) && update_uprev!(integrator)
         end
@@ -601,7 +661,7 @@ function SciMLBase.__init(
     end
 
     handle_dt!(integrator)
-    integrator
+    return integrator
 end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
@@ -624,23 +684,25 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
     f = integrator.sol.prob.f
 
     if SciMLBase.has_analytic(f)
-        SciMLBase.calculate_solution_errors!(integrator.sol;
+        SciMLBase.calculate_solution_errors!(
+            integrator.sol;
             timeseries_errors = integrator.opts.timeseries_errors,
-            dense_errors = integrator.opts.dense_errors)
+            dense_errors = integrator.opts.dense_errors
+        )
     end
     if integrator.sol.retcode != ReturnCode.Default
         return integrator.sol
     end
-    integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
+    return integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
 end
 
 # Helpers
 
 function handle_dt!(integrator)
-    if iszero(integrator.dt) && integrator.opts.adaptive
+    return if iszero(integrator.dt) && integrator.opts.adaptive
         auto_dt_reset!(integrator)
         if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
-           !isnan(integrator.dt)
+                !isnan(integrator.dt)
             error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
         end
         if isnan(integrator.dt)
@@ -649,7 +711,7 @@ function handle_dt!(integrator)
             end
         end
     elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
-           integrator.tdir < 0
+            integrator.tdir < 0
         integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
     end
 end
@@ -741,8 +803,10 @@ function initialize_callbacks!(integrator, initialize_save = true)
         end
 
         if initialize_save &&
-           (any((c) -> c.save_positions[2], callbacks.discrete_callbacks) ||
-            any((c) -> c.save_positions[2], callbacks.continuous_callbacks))
+                (
+                any((c) -> c.save_positions[2], callbacks.discrete_callbacks) ||
+                    any((c) -> c.save_positions[2], callbacks.continuous_callbacks)
+            )
             savevalues!(integrator, true)
         end
     end
@@ -750,7 +814,7 @@ function initialize_callbacks!(integrator, initialize_save = true)
     # reset this as it is now handled so the integrators should proceed as normal
     integrator.u_modified = false
 
-    if initialize_save
+    return if initialize_save
         SciMLBase.save_discretes_if_enabled!(integrator, integrator.opts.callback; skip_duplicates = true)
     end
 end

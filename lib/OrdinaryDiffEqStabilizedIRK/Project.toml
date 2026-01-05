@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqStabilizedIRK"
 uuid = "e3e12d00-db14-5390-b879-ac3dd2ef6296"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.8.0"
+version = "1.9.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -44,7 +44,7 @@ julia = "1.10"
 JET = "0.9, 0.11"
 ADTypes = "1.16"
 RecursiveArrayTools = "3.36"
-OrdinaryDiffEqNonlinearSolve = "1.13.0"
+OrdinaryDiffEqNonlinearSolve = "1.16.0"
 AllocCheck = "0.2"
 DiffEqBase = "6.176"
 Reexport = "1.2"

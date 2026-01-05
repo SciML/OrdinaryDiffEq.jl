@@ -1,39 +1,43 @@
 name = "ImplicitDiscreteSolve"
 uuid = "3263718b-31ed-49cf-8a0f-35a466e8af96"
 authors = ["vyudu <vincent.duyuan@gmail.com>"]
-version = "1.4.0"
+version = "1.5.0"
 
 [deps]
-SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
-SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
+ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+NonlinearSolveBase = "be0214bd-f91f-a760-ac4e-3421ce2b2da0"
+NonlinearSolveFirstOrder = "5959db7a-ea39-4486-b5fe-2dd0bf03d60d"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
+
+[sources]
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+
+[compat]
+AllocCheck = "0.2"
+Aqua = "0.8.11"
+ConcreteStructs = "0.2.3"
+DiffEqBase = "6.176"
+JET = "0.9.18, 0.10.4"
+NonlinearSolveBase = "2.0.0"
+NonlinearSolveFirstOrder = "1.9.0"
+OrdinaryDiffEqCore = "2"
+OrdinaryDiffEqSDIRK = "1.6.0"
+Reexport = "1.2"
+SciMLBase = "2.99"
+SymbolicIndexingInterface = "0.3.38"
+Test = "1.10.0"
+julia = "1.10"
 
 [extras]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
-
-[compat]
-Test = "<0.0.1, 1"
-OrdinaryDiffEqSDIRK = "1.6.0"
-SciMLBase = "2.99"
-SimpleNonlinearSolve = "2.7"
-OrdinaryDiffEqCore = "2"
-Aqua = "0.8.11"
-SymbolicIndexingInterface = "0.3.38"
-JET = "0.9, 0.11"
-AllocCheck = "0.2"
-DiffEqBase = "6.176"
-Reexport = "1.2"
-julia = "1.10"
 
 [targets]
 test = ["OrdinaryDiffEqSDIRK", "Test", "JET", "Aqua", "AllocCheck"]
-
-[sources.OrdinaryDiffEqCore]
-path = "../OrdinaryDiffEqCore"

@@ -30,9 +30,11 @@ function RadauIIA3Tableau(T, T2)
     β = T(-sqrt(2))
     e1 = T(1 / 4)
     e2 = T(-1 / 4)
-    RadauIIA3Tableau{T, T2}(T11, T12, T21, T22,
+    return RadauIIA3Tableau{T, T2}(
+        T11, T12, T21, T22,
         TI11, TI12, TI21, TI22,
-        c1, c2, α, β, e1, e2)
+        c1, c2, α, β, e1, e2
+    )
 end
 
 struct RadauIIA5Tableau{T, T2}
@@ -69,14 +71,14 @@ end
 #                        0  α -β
 #                        0  β  α]
 function RadauIIA5Tableau(T, T2)
-    T11 = convert(T, 9.1232394870892942792e-02)
+    T11 = convert(T, 9.1232394870892942792e-2)
     T12 = convert(T, -0.14125529502095420843e0)
-    T13 = convert(T, -3.0029194105147424492e-02)
+    T13 = convert(T, -3.0029194105147424492e-2)
     T21 = convert(T, 0.24171793270710701896e0)
     T22 = convert(T, 0.20412935229379993199e0)
     T23 = convert(T, 0.38294211275726193779e0)
     T31 = convert(T, 0.96604818261509293619e0)
-    TI11 = convert(T, 4.3255798900631553510e0)
+    TI11 = convert(T, 4.325579890063155351e0)
     TI12 = convert(T, 0.33919925181580986954e0)
     TI13 = convert(T, 0.54177053993587487119e0)
     TI21 = convert(T, -4.1787185915519047273e0)
@@ -104,13 +106,15 @@ function RadauIIA5Tableau(T, T2)
     e1 = convert(T, -(13 + 7 * sqrt6) / 3)
     e2 = convert(T, (-13 + 7 * sqrt6) / 3)
     e3 = convert(T, -1 / 3)
-    RadauIIA5Tableau{T, T2}(T11, T12, T13, T21, T22, T23, T31,
+    return RadauIIA5Tableau{T, T2}(
+        T11, T12, T13, T21, T22, T23, T31,
         #= T33 = 0 =#
         TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33,
         c1, c2,
         #= c3 = 1 =#
         γ, α, β,
-        e1, e2, e3)
+        e1, e2, e3
+    )
 end
 
 struct RadauIIA9Tableau{T, T2}
@@ -214,7 +218,7 @@ function RadauIIA9Tableau(T, T2)
     TI21 = convert(T, 5.344186437834911598895e0)
     TI22 = convert(T, 4.593615567759161004454e0)
     TI23 = convert(T, -3.036360323459424298646e0)
-    TI24 = convert(T, 1.050660190231458863860e0)
+    TI24 = convert(T, 1.05066019023145886386e0)
     TI25 = convert(T, -2.727786118642962705386e-1)
     TI31 = convert(T, 3.748059807439804860051e0)
     TI32 = convert(T, -3.984965736343884667252e0)
@@ -226,30 +230,31 @@ function RadauIIA9Tableau(T, T2)
     TI43 = convert(T, -1.721290632540055611515e-1)
     TI44 = convert(T, -9.916977798254264258817e-2)
     TI45 = convert(T, 5.312281158383066671849e-1)
-    TI51 = convert(T, -8.611443979875291977700e0)
+    TI51 = convert(T, -8.6114439798752919777e0)
     TI52 = convert(T, 9.699991409528808231336e0)
     TI53 = convert(T, 1.914728639696874284851e0)
     TI54 = convert(T, 2.418692006084940026427e0)
     TI55 = convert(T, -1.047463487935337418694e0)
 
     c1 = convert(T2, 5.710419611451768219312e-2)
-    c2 = convert(T2, 2.768430136381238276800e-1)
+    c2 = convert(T2, 2.7684301363812382768e-1)
     c3 = convert(T2, 5.835904323689168200567e-1)
-    c4 = convert(T2, 8.602401356562194478479e-1)#= c5 = convert(T2, 1) =#
+    c4 = convert(T2, 8.602401356562194478479e-1) #= c5 = convert(T2, 1) =#
 
     γ = convert(T, 6.286704751729276645173e0)
     α1 = convert(T, 3.655694325463572258243e0)
     β1 = convert(T, 6.543736899360077294021e0)
-    α2 = convert(T, 5.700953298671789419170e0)
+    α2 = convert(T, 5.70095329867178941917e0)
     β2 = convert(T, 3.210265600308549888425e0)
 
     e1 = convert(T, -2.778093394406463730479e1)
     e2 = convert(T, 3.641478498049213152712e0)
     e3 = convert(T, -1.252547721169118720491e0)
     e4 = convert(T, 5.920031671845428725662e-1)
-    e5 = convert(T, -2.000000000000000000000e-1)
+    e5 = convert(T, -2.0e-1)
 
-    RadauIIA9Tableau{T, T2}(T11, T12, T13, T14, T15,
+    return RadauIIA9Tableau{T, T2}(
+        T11, T12, T13, T14, T15,
         T21, T22, T23, T24, T25, T31, T32, T33, T34, T35,
         T41, T42, T43, T44, T45, T51,
         #=T52, T53, T54, T55=#
@@ -259,7 +264,8 @@ function RadauIIA9Tableau(T, T2)
         c1, c2, c3, c4,
         #= c5 = 1 =#
         γ, α1, β1, α2, β2,
-        e1, e2, e3, e4, e5)
+        e1, e2, e3, e4, e5
+    )
 end
 
 struct RadauIIATableau{T1, T2}
@@ -276,7 +282,7 @@ import LinearAlgebra: eigen
 import FastGaussQuadrature: gaussradau
 
 function RadauIIATableau{T1, T2}(tab::RadauIIATableau{T1, T2}) where {T1, T2}
-    RadauIIATableau{T1, T2}(tab.T, tab.TI, tab.c, tab.γ, tab.α, tab.β, tab.e)
+    return RadauIIATableau{T1, T2}(tab.T, tab.TI, tab.c, tab.γ, tab.α, tab.β, tab.e)
 end
 
 function RadauIIATableau(T1, T2, num_stages::Int)
@@ -333,11 +339,13 @@ function generateRadauTableau(T1, T2, num_stages::Int)
     A = c_powers' ./ (1:num_stages)
     b = vcat(-(num_stages)^2, -0.5, zeros(num_stages - 2))
     e = A \ b
-    tab = RadauIIATableau{T1, T2}(T, TI, c2, γ, α, β, e)
+    return tab = RadauIIATableau{T1, T2}(T, TI, c2, γ, α, β, e)
 end
 
 const RadauIIATableauCache = Dict{
-    Tuple{Type, Type, Int}, RadauIIATableau{T1, T2} where {T1, T2}}(
+    Tuple{Type, Type, Int}, RadauIIATableau{T1, T2} where {T1, T2},
+}(
     (Float64, Float64, 3) => generateRadauTableau(Float64, Float64, 3),
     (Float64, Float64, 5) => generateRadauTableau(Float64, Float64, 5),
-    (Float64, Float64, 7) => generateRadauTableau(Float64, Float64, 7))
+    (Float64, Float64, 7) => generateRadauTableau(Float64, Float64, 7)
+)

@@ -1,10 +1,10 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Test,
-      ODEInterface, ODEInterfaceDiffEq
+    ODEInterface, ODEInterfaceDiffEq
 
 import ODEProblemLibrary: prob_ode_bigfloatlinear,
-                          prob_ode_linear,
-                          prob_ode_2Dlinear,
-                          prob_ode_bigfloat2Dlinear
+    prob_ode_linear,
+    prob_ode_2Dlinear,
+    prob_ode_bigfloat2Dlinear
 
 probbig = prob_ode_bigfloat2Dlinear
 probnum = prob_ode_linear
@@ -25,12 +25,12 @@ tabalg = ExplicitRK()
 sol1 = solve(probnum, DP5(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnum, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
-@test sol1.u[end] - sol2.u[end] < 1e-10
+@test sol1.u[end] - sol2.u[end] < 1.0e-10
 
 sol1 = solve(prob, DP5(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(prob, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
-@test minimum(sol1.u[end] - sol2.u[end] .< 3e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 3.0e-10)
 
 sol1 = solve(probnum, DP5(), dt = 1 / 2^6, beta2 = 0.04)
 sol2 = solve(probnum, tabalg, dt = 1 / 2^6, beta2 = 0.04)
@@ -41,14 +41,14 @@ sol2 = solve(probnum, tabalg, beta2 = 0.04, beta1 = 0.17)
 sol3 = solve(probnum, dopri5())
 
 @test sol1.t ≈ sol2.t
-@test sol1.t≈sol3.t atol=1e-6
+@test sol1.t ≈ sol3.t atol = 1.0e-6
 
 sol1 = solve(prob, DP5(), dt = 1 / 8)
 sol2 = solve(prob, tabalg, beta2 = 0.04, beta1 = 0.17, dt = 1 / 8)
 sol3 = solve(prob, dopri5(), dt = 1 / 8)
 
 @test sol1.t ≈ sol2.t
-@test sol1.t≈sol3.t atol=1e-5
+@test sol1.t ≈ sol3.t atol = 1.0e-5
 
 sol4 = solve(prob, DP5(), dt = 1 / 8, calck = false)
 

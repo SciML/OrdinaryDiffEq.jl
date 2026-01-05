@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqLinear"
 uuid = "521117fe-8c41-49f8-b3b6-30780b3f0fb5"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.8.0"
+version = "1.9.0"
 
 [deps]
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"

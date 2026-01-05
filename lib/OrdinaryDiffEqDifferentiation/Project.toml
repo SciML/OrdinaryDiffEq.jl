@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqDifferentiation"
 uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "1.19.0"
+version = "1.21.0"
 
 [deps]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -49,7 +49,7 @@ Test = "<0.0.1, 1"
 FiniteDiff = "2.27"
 StaticArrayInterface = "1.8"
 DifferentiationInterface = "0.6.54, 0.7"
-LinearSolve = "3.26"
+LinearSolve = "3.54"
 ConstructionBase = "1.5.8"
 LinearAlgebra = "1.10"
 SciMLBase = "2.99"

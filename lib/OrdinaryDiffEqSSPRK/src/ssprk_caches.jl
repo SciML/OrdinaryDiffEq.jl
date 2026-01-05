@@ -3,7 +3,7 @@ abstract type SSPRKConstantCache <: OrdinaryDiffEqConstantCache end
 get_fsalfirstlast(cache::SSPRKMutableCache, u) = (cache.fsalfirst, cache.k)
 
 @cache struct SSPRK22Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <:
-              SSPRKMutableCache
+    SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -15,28 +15,32 @@ end
 
 struct SSPRK22ConstantCache <: SSPRKConstantCache end
 
-function alg_cache(alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
     else
         fsalfirst = k
     end
-    SSPRK22Cache(u, uprev, k, fsalfirst, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+    return SSPRK22Cache(u, uprev, k, fsalfirst, alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
-function alg_cache(alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK22ConstantCache()
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK22ConstantCache()
 end
 
 @cache struct SSPRK33Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <:
-              SSPRKMutableCache
+    SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -48,34 +52,38 @@ end
 
 struct SSPRK33ConstantCache <: SSPRKConstantCache end
 
-function alg_cache(alg::SSPRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
     else
         fsalfirst = k
     end
-    SSPRK33Cache(u, uprev, k, fsalfirst, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+    return SSPRK33Cache(u, uprev, k, fsalfirst, alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
-function alg_cache(alg::SSPRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK33ConstantCache()
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK33ConstantCache()
 end
 
 @cache struct KYKSSPRK42Cache{
-    uType,
-    rateType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread
-} <: SSPRKMutableCache
+        uType,
+        rateType,
+        TabType,
+        StageLimiter,
+        StepLimiter,
+        Thread,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -108,8 +116,8 @@ end
 function KYKSSPRK42ConstantCache(T, T2)
     α20 = T(0.394806441339829)
     α21 = T(0.605193558660171)
-    α30 = T(0.002797307087390)
-    α32 = T(0.997202692912610)
+    α30 = T(0.00279730708739)
+    α32 = T(0.99720269291261)
     α40 = T(0.252860909354373)
     α43 = T(0.747139090645627)
     β10 = T(0.406584463657504)
@@ -121,33 +129,42 @@ function KYKSSPRK42ConstantCache(T, T2)
     c1 = T2(0.406584463657504)
     c2 = T2(0.4921245969136438)
     c3 = T2(0.9098323119879613)
-    KYKSSPRK42ConstantCache(α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43, c1,
-        c2, c3)
+    return KYKSSPRK42ConstantCache(
+        α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43, c1,
+        c2, c3
+    )
 end
 
-function alg_cache(alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
-    tab = KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits))
-    KYKSSPRK42Cache(
+    tab = KYKSSPRK42ConstantCache(
+        constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits)
+    )
+    return KYKSSPRK42Cache(
         u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
-        alg.thread)
+        alg.thread
+    )
 end
 
-function alg_cache(alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct SSPRK53Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              SSPRKMutableCache
+    SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -186,21 +203,23 @@ struct SSPRK53ConstantCache{T, T2} <: SSPRKConstantCache
         β10 = T(0.377268915331368)
         β21 = T(0.377268915331368)
         β32 = T(0.242995220537396)
-        β43 = T(0.238458932846290)
+        β43 = T(0.23845893284629)
         β54 = T(0.287632146308408)
         c1 = T2(0.377268915331368)
         c2 = T2(0.754537830662736)
         c3 = T2(0.728985661612188)
-        c4 = T2(0.699226135931670)
+        c4 = T2(0.69922613593167)
 
-        new{T, T2}(α30, α32, α40, α43, α52, α54, β10, β21, β32, β43, β54, c1, c2, c3, c4)
+        return new{T, T2}(α30, α32, α40, α43, α52, α54, β10, β21, β32, β43, β54, c1, c2, c3, c4)
     end
 end
 
-function alg_cache(alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
     if calck
@@ -209,25 +228,29 @@ function alg_cache(alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
         fsalfirst = k
     end
     tab = SSPRK53ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    SSPRK53Cache(u, uprev, k, fsalfirst, tmp, tab, alg.stage_limiter!, alg.step_limiter!,
-        alg.thread)
+    return SSPRK53Cache(
+        u, uprev, k, fsalfirst, tmp, tab, alg.stage_limiter!, alg.step_limiter!,
+        alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK53ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK53ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct SSPRK53_2N1Cache{
-    uType,
-    rateType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread
-} <: SSPRKMutableCache
+        uType,
+        rateType,
+        TabType,
+        StageLimiter,
+        StepLimiter,
+        Thread,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -264,41 +287,49 @@ struct SSPRK53_2N1ConstantCache{T, T2} <: SSPRKConstantCache
         c3 = T2(1.005292266294979)
         c4 = T2(0.541442494648948)
 
-        new{T, T2}(α40, α43, β10, β21, β32, β43, β54, c1, c2, c3, c4)
+        return new{T, T2}(α40, α43, β10, β21, β32, β43, β54, c1, c2, c3, c4)
     end
 end
 
-function alg_cache(alg::SSPRK53_2N1, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK53_2N1, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
     else
         fsalfirst = k
     end
-    tab = SSPRK53_2N1ConstantCache(constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits))
-    SSPRK53_2N1Cache(u, uprev, k, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
-        alg.thread)
+    tab = SSPRK53_2N1ConstantCache(
+        constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits)
+    )
+    return SSPRK53_2N1Cache(
+        u, uprev, k, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
+        alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK53_2N1, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK53_2N1, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK53_2N1ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK53_2N1ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct SSPRK53_2N2Cache{
-    uType,
-    rateType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread
-} <: SSPRKMutableCache
+        uType,
+        rateType,
+        TabType,
+        StageLimiter,
+        StepLimiter,
+        Thread,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -327,8 +358,8 @@ struct SSPRK53_2N2ConstantCache{T, T2} <: SSPRKConstantCache
     function SSPRK53_2N2ConstantCache(T, T2)
         α30 = T(0.682342861037239)
         α32 = T(0.317657138962761)
-        α50 = T(0.045230974482400)
-        α54 = T(0.954769025517600)
+        α50 = T(0.0452309744824)
+        α54 = T(0.9547690255176)
         β10 = T(0.465388589249323)
         β21 = T(0.465388589249323)
         β32 = T(0.124745797313998)
@@ -336,38 +367,46 @@ struct SSPRK53_2N2ConstantCache{T, T2} <: SSPRKConstantCache
         β54 = T(0.154263303748666)
         c1 = T2(0.465388589249323)
         c2 = T2(0.930777178498646)
-        c3 = T2(0.420413812847710)
+        c3 = T2(0.42041381284771)
         c4 = T2(0.885802402097033)
 
-        new{T, T2}(α30, α32, α50, α54, β10, β21, β32, β43, β54, c1, c2, c3, c4)
+        return new{T, T2}(α30, α32, α50, α54, β10, β21, β32, β43, β54, c1, c2, c3, c4)
     end
 end
 
-function alg_cache(alg::SSPRK53_2N2, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK53_2N2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
     else
         fsalfirst = k
     end
-    tab = SSPRK53_2N2ConstantCache(constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits))
-    SSPRK53_2N2Cache(u, uprev, k, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
-        alg.thread)
+    tab = SSPRK53_2N2ConstantCache(
+        constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits)
+    )
+    return SSPRK53_2N2Cache(
+        u, uprev, k, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
+        alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK53_2N2, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK53_2N2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK53_2N2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK53_2N2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct SSPRK53_HCache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              SSPRKMutableCache
+    SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -411,14 +450,16 @@ struct SSPRK53_HConstantCache{T, T2} <: SSPRKConstantCache
         c3 = T2(0.782435937433493)
         c4 = T2(0.622731084668631)
 
-        new{T, T2}(α30, α32, α40, α41, α43, β10, β21, β32, β43, β54, c1, c2, c3, c4)
+        return new{T, T2}(α30, α32, α40, α41, α43, β10, β21, β32, β43, β54, c1, c2, c3, c4)
     end
 end
 
-function alg_cache(alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
     if calck
@@ -427,19 +468,23 @@ function alg_cache(alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
         fsalfirst = k
     end
     tab = SSPRK53_HConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    SSPRK53_HCache(u, uprev, k, fsalfirst, tmp, tab, alg.stage_limiter!, alg.step_limiter!,
-        alg.thread)
+    return SSPRK53_HCache(
+        u, uprev, k, fsalfirst, tmp, tab, alg.stage_limiter!, alg.step_limiter!,
+        alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK53_HConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK53_HConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct SSPRK63Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              SSPRKMutableCache
+    SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -473,30 +518,34 @@ struct SSPRK63ConstantCache{T, T2} <: SSPRKConstantCache
     function SSPRK63ConstantCache(T, T2)
         α40 = T(0.476769811285196)
         α41 = T(0.098511733286064)
-        α43 = T(0.424718455428740)
+        α43 = T(0.42471845542874)
         α62 = T(0.155221702560091)
         α65 = T(0.844778297439909)
         β10 = T(0.284220721334261)
         β21 = T(0.284220721334261)
         β32 = T(0.284220721334261)
-        β43 = T(0.120713785765930)
+        β43 = T(0.12071378576593)
         β54 = T(0.284220721334261)
-        β65 = T(0.240103497065900)
+        β65 = T(0.2401034970659)
         c1 = T2(0.284220721334261)
         c2 = T2(0.568441442668522)
         c3 = T2(0.852662164002783)
         c4 = T2(0.510854218958172)
         c5 = T2(0.795074940292433)
 
-        new{T, T2}(α40, α41, α43, α62, α65, β10, β21, β32, β43, β54, β65, c1, c2, c3, c4,
-            c5)
+        return new{T, T2}(
+            α40, α41, α43, α62, α65, β10, β21, β32, β43, β54, β65, c1, c2, c3, c4,
+            c5
+        )
     end
 end
 
-function alg_cache(alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     u₂ = zero(u)
     k = zero(rate_prototype)
@@ -506,19 +555,23 @@ function alg_cache(alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
         fsalfirst = k
     end
     tab = SSPRK63ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    SSPRK63Cache(u, uprev, k, fsalfirst, tmp, u₂, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread)
+    return SSPRK63Cache(
+        u, uprev, k, fsalfirst, tmp, u₂, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK63ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK63ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct SSPRK73Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              SSPRKMutableCache
+    SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -556,11 +609,11 @@ struct SSPRK73ConstantCache{T, T2} <: SSPRKConstantCache
     function SSPRK73ConstantCache(T, T2)
         α40 = T(0.184962588071072)
         α43 = T(0.815037411928928)
-        α50 = T(0.180718656570380)
+        α50 = T(0.18071865657038)
         α51 = T(0.314831034403793)
         α54 = T(0.504450309025826)
-        α73 = T(0.120199000000000)
-        α76 = T(0.879801000000000)
+        α73 = T(0.120199)
+        α76 = T(0.879801)
         β10 = T(0.233213863663009)
         β21 = T(0.233213863663009)
         β32 = T(0.233213863663009)
@@ -575,16 +628,19 @@ struct SSPRK73ConstantCache{T, T2} <: SSPRKConstantCache
         c5 = T2(0.574607439040817)
         c6 = T2(0.807821302703826)
 
-        new{T, T2}(
+        return new{T, T2}(
             α40, α43, α50, α51, α54, α73, α76, β10, β21, β32, β43, β54, β65, β76, c1,
-            c2, c3, c4, c5, c6)
+            c2, c3, c4, c5, c6
+        )
     end
 end
 
-function alg_cache(alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     u₁ = zero(u)
     k = zero(rate_prototype)
@@ -594,19 +650,23 @@ function alg_cache(alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
         fsalfirst = k
     end
     tab = SSPRK73ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    SSPRK73Cache(u, uprev, k, fsalfirst, tmp, u₁, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread)
+    return SSPRK73Cache(
+        u, uprev, k, fsalfirst, tmp, u₁, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK73ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK73ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct SSPRK83Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              SSPRKMutableCache
+    SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -653,7 +713,7 @@ struct SSPRK83ConstantCache{T, T2} <: SSPRKConstantCache
         α65 = T(0.995745989333635)
         α72 = T(0.104380143093325)
         α73 = T(0.243265240906726)
-        α76 = T(0.652354615999950)
+        α76 = T(0.65235461599995)
         β10 = T(0.195804015330143)
         β21 = T(0.195804015330143)
         β32 = T(0.195804015330143)
@@ -670,15 +730,19 @@ struct SSPRK83ConstantCache{T, T2} <: SSPRKConstantCache
         c6 = T2(0.755247658555329)
         c7 = T2(0.804195984669857)
 
-        new{T, T2}(α50, α51, α54, α61, α65, α72, α73, α76, β10, β21, β32, β43, β54, β65,
-            β76, β87, c1, c2, c3, c4, c5, c6, c7)
+        return new{T, T2}(
+            α50, α51, α54, α61, α65, α72, α73, α76, β10, β21, β32, β43, β54, β65,
+            β76, β87, c1, c2, c3, c4, c5, c6, c7
+        )
     end
 end
 
-function alg_cache(alg::SSPRK83, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK83, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     u₂ = zero(u)
     u₃ = zero(u)
@@ -689,19 +753,25 @@ function alg_cache(alg::SSPRK83, u, rate_prototype, ::Type{uEltypeNoUnits},
         fsalfirst = k
     end
     tab = SSPRK83ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    SSPRK83Cache(u, uprev, k, fsalfirst, tmp, u₂, u₃, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread)
+    return SSPRK83Cache(
+        u, uprev, k, fsalfirst, tmp, u₂, u₃, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK83, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK83, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK83ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK83ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK43Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
-    StepLimiter, Thread} <: SSPRKMutableCache
+@cache struct SSPRK43Cache{
+        uType, rateType, uNoUnitsType, TabType, StageLimiter,
+        StepLimiter, Thread,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -726,14 +796,16 @@ struct SSPRK43ConstantCache{T, T2} <: SSPRKConstantCache
         half_u = T(0.5)
         half_t = T2(0.5)
 
-        new{T, T2}(one_third_u, two_thirds_u, half_u, half_t)
+        return new{T, T2}(one_third_u, two_thirds_u, half_u, half_t)
     end
 end
 
-function alg_cache(alg::SSPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
@@ -744,25 +816,29 @@ function alg_cache(alg::SSPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tab = SSPRK43ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    SSPRK43Cache(u, uprev, k, fsalfirst, utilde, atmp, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread)
+    return SSPRK43Cache(
+        u, uprev, k, fsalfirst, utilde, atmp, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK43ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK43ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct SSPRK432Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    StageLimiter,
-    StepLimiter,
-    Thread
-} <: SSPRKMutableCache
+        uType,
+        rateType,
+        uNoUnitsType,
+        StageLimiter,
+        StepLimiter,
+        Thread,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -776,10 +852,12 @@ end
 
 struct SSPRK432ConstantCache <: SSPRKConstantCache end
 
-function alg_cache(alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
@@ -789,19 +867,25 @@ function alg_cache(alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
     utilde = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
-    SSPRK432Cache(u, uprev, k, fsalfirst, utilde, atmp, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread)
+    return SSPRK432Cache(
+        u, uprev, k, fsalfirst, utilde, atmp, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK432ConstantCache()
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK432ConstantCache()
 end
 
-@cache mutable struct SSPRKMSVS32Cache{uType, rateType, dtArrayType, dtType, StageLimiter,
-    StepLimiter, Thread} <: SSPRKMutableCache
+@cache mutable struct SSPRKMSVS32Cache{
+        uType, rateType, dtArrayType, dtType, StageLimiter,
+        StepLimiter, Thread,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -820,7 +904,7 @@ end
 end
 
 @cache mutable struct SSPRKMSVS32ConstantCache{uType, dtArrayType, dtType} <:
-                      OrdinaryDiffEqConstantCache
+    OrdinaryDiffEqConstantCache
     u_2::uType
     u_1::uType
     dts::dtArrayType
@@ -830,10 +914,12 @@ end
     step::Int
 end
 
-function alg_cache(alg::SSPRKMSVS32, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRKMSVS32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     dts = fill(zero(dt), 3)
     dtf = fill(zero(dt), 2)
@@ -842,29 +928,33 @@ function alg_cache(alg::SSPRKMSVS32, u, rate_prototype, ::Type{uEltypeNoUnits},
     u_1 = zero(u)
     k = zero(rate_prototype)
     tmp = zero(u)
-    SSPRKMSVS32Cache(u, uprev, fsalfirst, u_2, u_1, k, tmp, dts, dtf, μ, 0.5,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread, 1)
+    return SSPRKMSVS32Cache(
+        u, uprev, fsalfirst, u_2, u_1, k, tmp, dts, dtf, μ, 0.5,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread, 1
+    )
 end
 
-function alg_cache(alg::SSPRKMSVS32, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRKMSVS32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 3)
     dtf = fill(zero(dt), 2)
     μ = zero(dt)
     u_2 = u
     u_1 = u
-    SSPRKMSVS32ConstantCache(u_2, u_1, dts, dtf, μ, 0.5, 1)
+    return SSPRKMSVS32ConstantCache(u_2, u_1, dts, dtf, μ, 0.5, 1)
 end
 
 @cache mutable struct SSPRKMSVS43Cache{
-    uType,
-    rateType,
-    StageLimiter,
-    StepLimiter,
-    Thread
-} <: SSPRKMutableCache
+        uType,
+        rateType,
+        StageLimiter,
+        StepLimiter,
+        Thread,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -883,7 +973,7 @@ end
 end
 
 @cache mutable struct SSPRKMSVS43ConstantCache{uType, rateType} <:
-                      OrdinaryDiffEqConstantCache
+    OrdinaryDiffEqConstantCache
     u_3::uType
     u_2::uType
     u_1::uType
@@ -893,10 +983,12 @@ end
     step::Int
 end
 
-function alg_cache(alg::SSPRKMSVS43, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRKMSVS43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     u_3 = zero(u)
     u_2 = zero(u)
@@ -906,31 +998,35 @@ function alg_cache(alg::SSPRKMSVS43, u, rate_prototype, ::Type{uEltypeNoUnits},
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     tmp = zero(u)
-    SSPRKMSVS43Cache(u, uprev, fsalfirst, u_3, u_2, u_1, k, k1, k2, k3, tmp,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread, 1)
+    return SSPRKMSVS43Cache(
+        u, uprev, fsalfirst, u_3, u_2, u_1, k, k1, k2, k3, tmp,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread, 1
+    )
 end
 
-function alg_cache(alg::SSPRKMSVS43, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRKMSVS43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     u_3 = u
     u_2 = u
     u_1 = u
     k1 = rate_prototype
     k2 = rate_prototype
     k3 = rate_prototype
-    SSPRKMSVS43ConstantCache(u_3, u_2, u_1, k1, k2, k3, 1)
+    return SSPRKMSVS43ConstantCache(u_3, u_2, u_1, k1, k2, k3, 1)
 end
 
 @cache struct SSPRK932Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    StageLimiter,
-    StepLimiter,
-    Thread
-} <: SSPRKMutableCache
+        uType,
+        rateType,
+        uNoUnitsType,
+        StageLimiter,
+        StepLimiter,
+        Thread,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -944,10 +1040,12 @@ end
 
 struct SSPRK932ConstantCache <: SSPRKConstantCache end
 
-function alg_cache(alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
@@ -957,19 +1055,23 @@ function alg_cache(alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
     utilde = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
-    SSPRK932Cache(u, uprev, k, fsalfirst, utilde, atmp, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread)
+    return SSPRK932Cache(
+        u, uprev, k, fsalfirst, utilde, atmp, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK932ConstantCache()
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK932ConstantCache()
 end
 
 @cache struct SSPRK54Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              SSPRKMutableCache
+    SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -1006,7 +1108,7 @@ struct SSPRK54ConstantCache{T, T2} <: SSPRKConstantCache
     c4::T2
 
     function SSPRK54ConstantCache(T, T2)
-        β10 = T(0.391752226571890)
+        β10 = T(0.39175222657189)
         α20 = T(0.444370493651235)
         α21 = T(0.555629506348765)
         β21 = T(0.368410593050371)
@@ -1018,23 +1120,27 @@ struct SSPRK54ConstantCache{T, T2} <: SSPRKConstantCache
         β43 = T(0.544974750228521)
         α52 = T(0.517231671970585)
         α53 = T(0.096059710526147)
-        β53 = T(0.063692468666290)
+        β53 = T(0.06369246866629)
         α54 = T(0.386708617503269)
         β54 = T(0.226007483236906)
-        c1 = T2(0.391752226571890)
-        c2 = T2(0.586079689311540)
-        c3 = T2(0.474542363121400)
+        c1 = T2(0.39175222657189)
+        c2 = T2(0.58607968931154)
+        c3 = T2(0.4745423631214)
         c4 = T2(0.935010630967653)
 
-        new{T, T2}(β10, α20, α21, β21, α30, α32, β32, α40, α43, β43, α52, α53, β53, α54,
-            β54, c1, c2, c3, c4)
+        return new{T, T2}(
+            β10, α20, α21, β21, α30, α32, β32, α40, α43, β43, α52, α53, β53, α54,
+            β54, c1, c2, c3, c4
+        )
     end
 end
 
-function alg_cache(alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     u₂ = zero(u)
     u₃ = zero(u)
     tmp = zero(u)
@@ -1046,19 +1152,23 @@ function alg_cache(alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
     end
     k₃ = zero(rate_prototype)
     tab = SSPRK54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    SSPRK54Cache(u, uprev, k, fsalfirst, k₃, u₂, u₃, tmp, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread)
+    return SSPRK54Cache(
+        u, uprev, k, fsalfirst, k₃, u₂, u₃, tmp, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct SSPRK104Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <:
-              SSPRKMutableCache
+    SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -1072,10 +1182,12 @@ end
 
 struct SSPRK104ConstantCache <: SSPRKConstantCache end
 
-function alg_cache(alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
     if calck
@@ -1084,20 +1196,26 @@ function alg_cache(alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
         fsalfirst = k
     end
     k₄ = zero(rate_prototype)
-    SSPRK104Cache(u, uprev, k, fsalfirst, k₄, tmp, alg.stage_limiter!, alg.step_limiter!,
-        alg.thread)
+    return SSPRK104Cache(
+        u, uprev, k, fsalfirst, k₄, tmp, alg.stage_limiter!, alg.step_limiter!,
+        alg.thread
+    )
 end
 
-function alg_cache(alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SSPRK104ConstantCache()
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return SSPRK104ConstantCache()
 end
 
-@cache struct KYK2014DGSSPRK_3S2_Cache{uType, rateType, TabType, StageLimiter, StepLimiter,
-    Thread} <:
-              SSPRKMutableCache
+@cache struct KYK2014DGSSPRK_3S2_Cache{
+        uType, rateType, TabType, StageLimiter, StepLimiter,
+        Thread,
+    } <:
+    SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -1144,30 +1262,40 @@ struct KYK2014DGSSPRK_3S2_ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
         β_32 = T(0.345866039233415)
         c_1 = β_10
         c_2 = α_21 * β_10 + β_21 # ==0.96376427726
-        new{T, T2}(α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2)
+        return new{T, T2}(α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2)
     end
 end
 
-function alg_cache(alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     u_1 = zero(u)
     u_2 = zero(u)
     kk_1 = zero(rate_prototype)
     kk_2 = zero(rate_prototype)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
-    tab = KYK2014DGSSPRK_3S2_ConstantCache(constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits))
-    KYK2014DGSSPRK_3S2_Cache(u, uprev, k, fsalfirst, tab, u_1, u_2, kk_1, kk_2,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread)
+    tab = KYK2014DGSSPRK_3S2_ConstantCache(
+        constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits)
+    )
+    return KYK2014DGSSPRK_3S2_Cache(
+        u, uprev, k, fsalfirst, tab, u_1, u_2, kk_1, kk_2,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
+    )
 end
 
-function alg_cache(alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    KYK2014DGSSPRK_3S2_ConstantCache(constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits))
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return KYK2014DGSSPRK_3S2_ConstantCache(
+        constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits)
+    )
 end

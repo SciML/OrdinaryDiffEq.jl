@@ -65,8 +65,8 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
         # Convergence
         if integrator.alg isa IRKCAlgs # To match the constants given in the paper
             if iter >= 2 &&
-               abs(eig_prev - integrator.eigen_est) <
-               max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
+                    abs(eig_prev - integrator.eigen_est) <
+                    max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
                 integrator.eigen_est *= 1.2
                 # Store the eigenvector
                 cache.zprev = z - uprev
@@ -74,7 +74,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
             end
         else
             if iter >= 2 &&
-               abs(eig_prev - integrator.eigen_est) < integrator.eigen_est * 0.05
+                    abs(eig_prev - integrator.eigen_est) < integrator.eigen_est * 0.05
                 # Store the eigenvector
                 cache.zprev = z - uprev
                 return true
@@ -115,17 +115,17 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     if isfirst
         if integrator.alg isa IRKCAlgs
             if integrator.alg isa IRKC
-                @.. broadcast=false z=cache.du₂
+                @.. broadcast = false z = cache.du₂
             else
-                @.. broadcast=false z=fsalfirst
+                @.. broadcast = false z = fsalfirst
             end
         else
-            @.. broadcast=false fz=fsalfirst
+            @.. broadcast = false fz = fsalfirst
             f(z, fz, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
     else
-        @.. broadcast=false z=ccache.zprev
+        @.. broadcast = false z = ccache.zprev
     end
     # Perturbation
     u_norm = integrator.opts.internalnorm(uprev, t)
@@ -138,17 +138,17 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     if (!is_u_zero && !is_z_zero)
         dz_u = u_norm * sqrt_pert
         quot = dz_u / z_norm
-        @.. broadcast=false z=uprev + quot * z
+        @.. broadcast = false z = uprev + quot * z
     elseif !is_u_zero
         dz_u = u_norm * sqrt_pert
-        @.. broadcast=false z=uprev + uprev * dz_u
+        @.. broadcast = false z = uprev + uprev * dz_u
     elseif !is_z_zero
         dz_u = pert
         quot = dz_u / z_norm
-        @.. broadcast=false z*=quot
+        @.. broadcast = false z *= quot
     else
         dz_u = pert
-        @.. broadcast=false z=dz_u * one(eltype(z))
+        @.. broadcast = false z = dz_u * one(eltype(z))
     end # endif
     # Start power iteration
     integrator.eigen_est = 0
@@ -156,11 +156,11 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
         if integrator.alg isa IRKC
             f.f2(fz, z, p, t)
             integrator.stats.nf2 += 1
-            @.. broadcast=false atmp=fz - cache.du₂
+            @.. broadcast = false atmp = fz - cache.du₂
         else
             f(fz, z, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            @.. broadcast=false atmp=fz - fsalfirst
+            @.. broadcast = false atmp = fz - fsalfirst
         end
         Δ = integrator.opts.internalnorm(atmp, t)
         eig_prev = integrator.eigen_est
@@ -168,25 +168,25 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
         # Convergence
         if integrator.alg isa IRKCAlgs # To match the constants given in the paper
             if iter >= 2 &&
-               abs(eig_prev - integrator.eigen_est) <
-               max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
+                    abs(eig_prev - integrator.eigen_est) <
+                    max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
                 integrator.eigen_est *= 1.2
                 # Store the eigenvector
-                @.. broadcast=false ccache.zprev=z - uprev
+                @.. broadcast = false ccache.zprev = z - uprev
                 return true
             end
         else
             if iter >= 2 &&
-               abs(eig_prev - integrator.eigen_est) < integrator.eigen_est * 0.05
+                    abs(eig_prev - integrator.eigen_est) < integrator.eigen_est * 0.05
                 # Store the eigenvector
-                @.. broadcast=false ccache.zprev=z - uprev
+                @.. broadcast = false ccache.zprev = z - uprev
                 return true
             end
         end
         # Next `z`
         if Δ != zero(Δ)
             quot = dz_u / Δ
-            @.. broadcast=false z=uprev + quot * atmp
+            @.. broadcast = false z = uprev + quot * atmp
         else
             # An arbitrary change on `z`
             nind = length(uprev)
