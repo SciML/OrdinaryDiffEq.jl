@@ -7,7 +7,7 @@ abstract type AbstractControllerCache end
 setup_controller_cache(alg_cache, controller::AbstractLegacyController) = controller
 
 # checks whether the controller should accept a step based on the error estimate
-@inline function accept_step_controller(integrator, controller::Union{<:AbstractLegacyController, <:AbstractControllerCache})
+@inline function accept_step_controller(integrator, controller_or_cache::Union{<:AbstractLegacyController, <:AbstractControllerCache})
     return integrator.EEst <= 1
 end
 
@@ -50,7 +50,7 @@ end
 
 # Standard integral (I) step size controller
 """
-    LegacyIController()
+    IController()
 
 The standard (integral) controller is the most basic step size controller.
 This controller is usually the first one introduced in numerical analysis classes
@@ -79,10 +79,10 @@ the predicted step size.
     Solving Ordinary Differential Equations I Nonstiff Problems
     [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
 """
-struct LegacyIController <: AbstractLegacyController
+struct IController <: AbstractLegacyController
 end
 
-@inline function stepsize_controller!(integrator, controller::LegacyIController, alg)
+@inline function stepsize_controller!(integrator, controller::IController, alg)
     (; qmin, qmax, gamma) = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -98,7 +98,7 @@ end
     return q
 end
 
-function step_accept_controller!(integrator, controller::LegacyIController, alg, q)
+function step_accept_controller!(integrator, controller::IController, alg, q)
     (; qsteady_min, qsteady_max) = integrator.opts
 
     if qsteady_min <= q <= qsteady_max
@@ -107,12 +107,12 @@ function step_accept_controller!(integrator, controller::LegacyIController, alg,
     return integrator.dt / q # new dt
 end
 
-function step_reject_controller!(integrator, controller::LegacyIController, alg)
+function step_reject_controller!(integrator, controller::IController, alg)
     (; qold) = integrator
     return integrator.dt = qold
 end
 
-struct IController{T} <: AbstractController
+struct NewIController{T} <: AbstractController
     qmin::T
     qmax::T
     gamma::T
@@ -120,12 +120,12 @@ struct IController{T} <: AbstractController
     qsteady_max::T
 end
 
-function IController(alg; kwargs...)
-    return IController(Float64, alg; kwargs...)
+function NewIController(alg; kwargs...)
+    return NewIController(Float64, alg; kwargs...)
 end
 
-function IController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
-    return IController{QT}(
+function NewIController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
+    return NewIController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
         gamma === nothing ? gamma_default(alg) : gamma,
@@ -142,7 +142,7 @@ mutable struct IControllerCache{C, T} <: AbstractControllerCache
     # EEst::T
 end
 
-function setup_controller_cache(alg_cache, controller::IController{T}) where {T}
+function setup_controller_cache(alg_cache, controller::NewIController{T}) where {T}
     return IControllerCache(
         controller,
         T(1),
@@ -185,7 +185,7 @@ end
 
 # PI step size controller
 """
-    LegacyPIController(beta1, beta2)
+    PIController(beta1, beta2)
 
 The proportional-integral (PI) controller is a widespread step size controller
 with improved stability properties compared to the [`IController`](@ref).
@@ -208,7 +208,7 @@ the predicted step size.
 !!! note
 
     The coefficients `beta1, beta2` are not scaled by the order of the method,
-    in contrast to the [`LegacyPIDController`](@ref). For the `LegacyPIController`, this
+    in contrast to the [`PIDController`](@ref). For the `PIController`, this
     scaling by the order must be done when the controller is constructed.
 
 ## References
@@ -220,12 +220,12 @@ the predicted step size.
     Solving Ordinary Differential Equations I Nonstiff Problems
     [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
 """
-mutable struct LegacyPIController{QT} <: AbstractLegacyController
+mutable struct PIController{QT} <: AbstractLegacyController
     beta1::QT
     beta2::QT
 end
 
-@inline function stepsize_controller!(integrator, controller::LegacyPIController, alg)
+@inline function stepsize_controller!(integrator, controller::PIController, alg)
     (; qold) = integrator
     (; qmin, qmax, gamma) = integrator.opts
     (; beta1, beta2) = controller
@@ -242,7 +242,7 @@ end
     return q
 end
 
-function step_accept_controller!(integrator, controller::LegacyPIController, alg, q)
+function step_accept_controller!(integrator, controller::PIController, alg, q)
     (; qsteady_min, qsteady_max, qoldinit) = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -253,13 +253,13 @@ function step_accept_controller!(integrator, controller::LegacyPIController, alg
     return integrator.dt / q # new dt
 end
 
-function step_reject_controller!(integrator, controller::LegacyPIController, alg)
+function step_reject_controller!(integrator, controller::PIController, alg)
     (; q11) = integrator
     (; qmin, gamma) = integrator.opts
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
-function reset_alg_dependent_opts!(controller::LegacyPIController, alg1, alg2)
+function reset_alg_dependent_opts!(controller::PIController, alg1, alg2)
     if controller.beta2 == beta2_default(alg1)
         controller.beta2 = beta2_default(alg2)
     end
@@ -268,7 +268,7 @@ function reset_alg_dependent_opts!(controller::LegacyPIController, alg1, alg2)
     end
 end
 
-struct PIController{T} <: AbstractController
+struct NewPIController{T} <: AbstractController
     beta1::T
     beta2::T
     qmin::T
@@ -279,15 +279,15 @@ struct PIController{T} <: AbstractController
     qoldinit::T
 end
 
-function PIController(alg; kwargs...)
-    return PIController(Float64, alg; kwargs...)
+function NewPIController(alg; kwargs...)
+    return NewPIController(Float64, alg; kwargs...)
 end
 
-function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
+function NewPIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
     beta2 = beta2 === nothing ? beta2_default(alg) : beta2
     beta1 = beta1 === nothing ? beta1_default(alg, beta2) : beta1
     qoldinit = qoldinit === nothing ? 1 // 10^4 : qoldinit
-    return PIController{QT}(
+    return NewPIController{QT}(
         beta1,
         beta2,
         qmin === nothing ? qmin_default(alg) : qmin,
@@ -300,7 +300,7 @@ function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing,
 end
 
 mutable struct PIControllerCache{T} <: AbstractControllerCache
-    controller::PIController{T}
+    controller::NewPIController{T}
     # Propsoed scaling factor for the time step length
     q::T
     # Cached εₙ₊₁^β₁
@@ -310,7 +310,7 @@ mutable struct PIControllerCache{T} <: AbstractControllerCache
 end
 
 
-function setup_controller_cache(alg_cache, controller::PIController{T}) where {T}
+function setup_controller_cache(alg_cache, controller::NewPIController{T}) where {T}
     return PIControllerCache(
         controller,
         T(1),
@@ -371,12 +371,12 @@ end
 
 # PID step size controller
 """
-    LegacyPIDController(beta1, beta2, beta3=zero(beta1);
+    PIDController(beta1, beta2, beta3=zero(beta1);
                   limiter=default_dt_factor_limiter,
                   accept_safety=0.81)
 
 The proportional-integral-derivative (PID) controller is a generalization of the
-[`LegacyPIController`](@ref) and can have improved stability and efficiency properties.
+[`PIController`](@ref) and can have improved stability and efficiency properties.
 
 Construct a PID step size controller adapting the time step based on the formula
 
@@ -409,17 +409,17 @@ Some standard controller parameters suggested in the literature are
 
 !!! note
 
-    In contrast to the [`LegacyPIController`](@ref), the coefficients `beta1, beta2, beta3`
+    In contrast to the [`PIController`](@ref), the coefficients `beta1, beta2, beta3`
     are scaled by the order of the method. Thus, standard controllers such as PI42
     can use the same coefficients `beta1, beta2, beta3` for different algorithms.
 
 !!! note
 
-    In contrast to other controllers, the `LegacyPIDController` does not use the keyword
+    In contrast to other controllers, the `PIDController` does not use the keyword
     arguments `qmin, qmax` to limit the step size change or the safety factor `gamma`.
     These common keyword arguments are replaced by the `limiter` and `accept_safety`
     to guarantee a smooth behavior (Söderlind and Wang, 2006).
-    Because of this, a `LegacyPIDController` behaves different from a [`LegacyPIController`](@ref),
+    Because of this, a `PIDController` behaves different from a [`PIController`](@ref),
     even if `beta1, beta2` are adapted accordingly and `iszero(beta3)`.
 
 ## References
@@ -435,7 +435,7 @@ Some standard controller parameters suggested in the literature are
     Compressible Computational Fluid Dynamics    # is bigger than this parameter
     [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)    # limiter of the dt factor (before clipping)
 """
-struct LegacyPIDController{QT, Limiter} <: AbstractLegacyController
+struct PIDController{QT, Limiter} <: AbstractLegacyController
     beta::MVector{3, QT} # controller coefficients
     err::MVector{3, QT} # history of the error estimates
     accept_safety::QT   # accept a step if the predicted change of the step size
@@ -443,7 +443,7 @@ struct LegacyPIDController{QT, Limiter} <: AbstractLegacyController
     limiter::Limiter    # limiter of the dt factor (before clipping)
 end
 
-function LegacyPIDController(
+function PIDController(
         beta1, beta2, beta3 = zero(beta1);
         limiter = default_dt_factor_limiter,
         accept_safety = 0.81
@@ -451,12 +451,12 @@ function LegacyPIDController(
     beta = MVector(map(float, promote(beta1, beta2, beta3))...)
     QT = eltype(beta)
     err = MVector{3, QT}(true, true, true)
-    return LegacyPIDController(beta, err, convert(QT, accept_safety), limiter)
+    return PIDController(beta, err, convert(QT, accept_safety), limiter)
 end
 
-function Base.show(io::IO, controller::LegacyPIDController)
+function Base.show(io::IO, controller::PIDController)
     return print(
-        io, "LegacyPIDController(beta=", controller.beta,
+        io, "PIDController(beta=", controller.beta,
         ", accept_safety=", controller.accept_safety,
         ", limiter=", controller.limiter,
         ")"
@@ -465,7 +465,7 @@ end
 
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
-@inline function stepsize_controller!(integrator, controller::LegacyPIDController, alg)
+@inline function stepsize_controller!(integrator, controller::PIDController, alg)
     (; qmax) = integrator.opts
     beta1, beta2, beta3 = controller.beta
 
@@ -519,11 +519,11 @@ end
     return dt_factor
 end
 
-@inline function accept_step_controller(integrator, controller::LegacyPIDController)
+@inline function accept_step_controller(integrator, controller::PIDController)
     return integrator.qold >= controller.accept_safety
 end
 
-function step_accept_controller!(integrator, controller::LegacyPIDController, alg, dt_factor)
+function step_accept_controller!(integrator, controller::PIDController, alg, dt_factor)
     (; qsteady_min, qsteady_max) = integrator.opts
 
     if qsteady_min <= inv(dt_factor) <= qsteady_max
@@ -536,12 +536,12 @@ function step_accept_controller!(integrator, controller::LegacyPIDController, al
     return integrator.dt * dt_factor # new dt
 end
 
-function step_reject_controller!(integrator, controller::LegacyPIDController, alg)
+function step_reject_controller!(integrator, controller::PIDController, alg)
     return integrator.dt *= integrator.qold
 end
 
 
-struct PIDController{T, Limiter} <: AbstractController
+struct NewPIDController{T, Limiter} <: AbstractController
     beta::SVector{3, T} # controller coefficients
     accept_safety::T   # accept a step if the predicted change of the step size
     # is bigger than this parameter
@@ -552,11 +552,11 @@ struct PIDController{T, Limiter} <: AbstractController
     qsteady_max::T
 end
 
-function PIDController(alg; kwargs...)
-    return PIDController(Float64, alg; kwargs...)
+function NewPIDController(alg; kwargs...)
+    return NewPIDController(Float64, alg; kwargs...)
 end
 
-function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qmin = nothing, qmax = nothing, qsteady_min = nothing, qsteady_max = nothing)
+function NewPIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qmin = nothing, qmax = nothing, qsteady_min = nothing, qsteady_max = nothing)
     if beta === nothing
         beta2 = QT(beta2_default(alg))
         beta1 = QT(beta1_default(alg, beta2))
@@ -565,7 +565,7 @@ function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = 
         beta1, beta2, beta3 = beta
     end
     beta = SVector(map(float, promote(beta1, beta2, beta3))...)
-    return PIDController{QT, typeof(limiter)}(
+    return NewPIDController{QT, typeof(limiter)}(
         beta,
         QT(accept_safety),
         limiter,
@@ -576,9 +576,9 @@ function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = 
     )
 end
 
-function Base.show(io::IO, controller::PIDController)
+function Base.show(io::IO, controller::NewPIDController)
     return print(
-        io, "PIDController(beta=", controller.beta,
+        io, "NewPIDController(beta=", controller.beta,
         ", accept_safety=", controller.accept_safety,
         ", limiter=", controller.limiter,
         ")"
@@ -586,12 +586,12 @@ function Base.show(io::IO, controller::PIDController)
 end
 
 mutable struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
-    controller::PIDController{T, Limiter}
+    controller::NewPIDController{T, Limiter}
     err::MVector{3, T} # history of the error estimates
     dt_factor::T
 end
 
-function setup_controller_cache(alg_cache, controller::PIDController{QT}) where {QT}
+function setup_controller_cache(alg_cache, controller::NewPIDController{QT}) where {QT}
     err = MVector{3, QT}(true, true, true)
     return PIDControllerCache(
         controller,
@@ -724,10 +724,10 @@ else
 end
 ```
 """
-struct LegacyPredictiveController <: AbstractController
+struct PredictiveController <: AbstractController
 end
 
-@inline function stepsize_controller!(integrator, controller::LegacyPredictiveController, alg)
+@inline function stepsize_controller!(integrator, controller::PredictiveController, alg)
     (; qmin, qmax, gamma) = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)
     if iszero(EEst)
@@ -752,7 +752,7 @@ end
     return q
 end
 
-function step_accept_controller!(integrator, controller::LegacyPredictiveController, alg, q)
+function step_accept_controller!(integrator, controller::PredictiveController, alg, q)
     (; qmin, qmax, gamma, qsteady_min, qsteady_max) = integrator.opts
 
     EEst = DiffEqBase.value(integrator.EEst)
@@ -775,13 +775,13 @@ function step_accept_controller!(integrator, controller::LegacyPredictiveControl
     return integrator.dt / qacc
 end
 
-function step_reject_controller!(integrator, controller::LegacyPredictiveController, alg)
+function step_reject_controller!(integrator, controller::PredictiveController, alg)
     (; dt, success_iter, qold) = integrator
     return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end
 
 
-struct PredictiveController{T} <: AbstractController
+struct NewPredictiveController{T} <: AbstractController
     qmin::T
     qmax::T
     gamma::T
@@ -789,12 +789,12 @@ struct PredictiveController{T} <: AbstractController
     qsteady_max::T
 end
 
-function PredictiveController(alg; kwargs...)
+function NewPredictiveController(alg; kwargs...)
     return PIController(Float64, alg; kwargs...)
 end
 
-function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
-    return PredictiveController{QT}(
+function NewPredictiveController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
+    return NewPredictiveController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
         gamma === nothing ? gamma_default(alg) : gamma,
@@ -804,14 +804,16 @@ function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, gamma = n
 end
 
 mutable struct PredictiveControllerCache{T} <: AbstractControllerCache
-    controller::PredictiveController{T}
+    controller::NewPredictiveController{T}
     dtacc::T
     erracc::T
+    qold::T
 end
 
-function setup_controller_cache(alg_cache, controller::PredictiveController{T}) where {T}
+function setup_controller_cache(alg_cache, controller::NewPredictiveController{T}) where {T}
     return PredictiveControllerCache{T}(
         controller,
+        T(1),
         T(1),
         T(1),
     )

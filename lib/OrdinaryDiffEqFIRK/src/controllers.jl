@@ -1,5 +1,5 @@
 function step_accept_controller!(
-        integrator, controller::LegacyPredictiveController, alg::AdaptiveRadau, q
+        integrator, controller::PredictiveController, alg::AdaptiveRadau, q
     )
     (; qmin, qmax, gamma, qsteady_min, qsteady_max) = integrator.opts
     (; cache) = integrator
@@ -48,7 +48,7 @@ function step_accept_controller!(
 end
 
 function step_reject_controller!(
-        integrator, controller::LegacyPredictiveController, alg::AdaptiveRadau
+        integrator, controller::PredictiveController, alg::AdaptiveRadau
     )
     (; dt, success_iter, qold) = integrator
     (; cache) = integrator
