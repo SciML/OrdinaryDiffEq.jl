@@ -519,7 +519,13 @@ function SciMLBase.__init(
         qoldinit = hasfield(typeof(controller), :qoldinit) ? controller.qoldinit : (anyadaptive(alg) ? 1 // 10^4 : 0)
     end
 
-    controller_cache = setup_controller_cache(_alg, controller)
+
+    atmp = if hasfield(typeof(cache), :atmp)
+            cache.atmp
+        else
+            nothing
+        end
+    controller_cache = setup_controller_cache(_alg, atmp, controller)
 
     save_end_user = save_end
     save_end = save_end === nothing ?

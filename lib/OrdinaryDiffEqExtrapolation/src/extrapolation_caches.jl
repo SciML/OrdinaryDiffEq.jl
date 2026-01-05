@@ -132,7 +132,6 @@ end
     n_curr::Int # Storage for the current extrapolation order
     n_old::Int # Storage for the extrapolation order n_curr before perform_step! changes the latter
     sigma::Rational{Int} # Parameter for order selection
-    res::uNoUnitsType # Storage for the scaled residual of u and utilde
 
     #Stepsizing caches
     work::Array{QType, 1}
@@ -304,7 +303,6 @@ function alg_cache(
         #Pr = Diagonal(_vec(weight)))
     end
 
-    res = uEltypeNoUnits.(zero(u))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, du1, du2)
     sequence = generate_sequence(constvalue(uBottomEltypeNoUnits), alg)
@@ -323,7 +321,7 @@ function alg_cache(
         dtpropose, T, A, step_no,
         du1, du2, J, W, tf, uf, linsolve_tmps, linsolve,
         jac_config, grad_config, sequence, cc.stage_number,
-        cc.Q, cc.n_curr, cc.n_old, cc.sigma, res, cc.work,
+        cc.Q, cc.n_curr, cc.n_old, cc.sigma, cc.work,
         cc.dt_new, diff1, diff2
     )
 end
@@ -1063,7 +1061,7 @@ end
     u_temp4::Array{uType, 1}
     tmp::uType # for get_tmp_cache()
     T::Array{uType, 1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-    res::uNoUnitsType # Storage for the scaled residual of u and utilde
+    atmp::uNoUnitsType # Storage for the scaled residual of u and utilde
 
     fsalfirst::rateType
     k::rateType
@@ -1157,7 +1155,7 @@ end
     u_temp4::Array{uType, 1}
     tmp::uType # for get_tmp_cache()
     T::Array{uType, 1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-    res::uNoUnitsType # Storage for the scaled residual of u and utilde
+    atmp::uNoUnitsType # Storage for the scaled residual of u and utilde
 
     fsalfirst::rateType
     k::rateType
@@ -1402,7 +1400,7 @@ end
     u_temp4::Array{uType, 1}
     tmp::uType # for get_tmp_cache()
     T::Array{uType, 1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-    res::uNoUnitsType # Storage for the scaled residual of u and utilde
+    atmp::uNoUnitsType # Storage for the scaled residual of u and utilde
 
     fsalfirst::rateType
     k::rateType
@@ -1559,7 +1557,7 @@ end
     u_temp4::Array{uType, 1}
     tmp::uType # for get_tmp_cache()
     T::Array{uType, 1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-    res::uNoUnitsType # Storage for the scaled residual of u and utilde
+    atmp::uNoUnitsType # Storage for the scaled residual of u and utilde
 
     fsalfirst::rateType
     k::rateType
@@ -1775,7 +1773,7 @@ end
     u_temp4::Array{uType, 1}
     tmp::uType # for get_tmp_cache()
     T::Array{uType, 1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-    res::uNoUnitsType # Storage for the scaled residual of u and utilde
+    atmp::uNoUnitsType # Storage for the scaled residual of u and utilde
 
     fsalfirst::rateType
     k::rateType
