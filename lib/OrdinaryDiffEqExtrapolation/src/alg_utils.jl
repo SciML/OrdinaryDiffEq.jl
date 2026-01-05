@@ -53,6 +53,37 @@ function legacy_default_controller(
     return LegacyExtrapolationController(beta1)
 end
 
+function default_controller_v7(
+        QT,
+        alg::Union{
+            ExtrapolationMidpointDeuflhard,
+            ImplicitDeuflhardExtrapolation,
+            ExtrapolationMidpointHairerWanner,
+            ImplicitHairerWannerExtrapolation,
+            ImplicitEulerExtrapolation,
+            ImplicitEulerBarycentricExtrapolation,
+        }
+    )
+    beta1 = QT(beta1_default(alg, beta2_default(alg)))
+    return LegacyExtrapolationController(beta1)
+end
+
+# FIXME AitkenNeville is missing integration with the extrapolation controller and picks up the PI controller instead.
+function legacy_default_controller(
+        alg::AitkenNeville,
+        cache,
+        qoldinit, _beta1 = nothing, _beta2 = nothing
+    )
+    QT = typeof(qoldinit)
+    beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
+    return LegacyPIController(beta1, beta2)
+end
+function default_controller_v7(QT, alg::AitkenNeville)
+    beta2 = QT(beta2_default(alg))
+    beta1 = QT(beta1_default(alg, beta2))
+    return LegacyPIController(beta1, beta2)
+end
+
 beta2_default(alg::ExtrapolationMidpointDeuflhard) = 0 // 1
 beta2_default(alg::ImplicitDeuflhardExtrapolation) = 0 // 1
 beta2_default(alg::ExtrapolationMidpointHairerWanner) = 0 // 1
