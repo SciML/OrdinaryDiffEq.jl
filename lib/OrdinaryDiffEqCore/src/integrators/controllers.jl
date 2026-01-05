@@ -64,14 +64,14 @@ end
 
 @inline function stepsize_controller!(integrator, alg)
     # TODO replace this when done - right now this holds the controller cache!
-    return stepsize_controller!(integrator, integrator.opts.controller, alg)
+    stepsize_controller!(integrator, integrator.opts.controller, alg)
     # stepsize_controller!(integrator, integrator.controller_cache, alg)
     return nothing
 end
 
 @inline function step_accept_controller!(integrator, alg, q)
     # TODO replace this when done - right now this holds the controller cache!
-    return step_accept_controller!(integrator, integrator.opts.controller, alg, q)
+    step_accept_controller!(integrator, integrator.opts.controller, alg, q)
     # step_accept_controller!(integrator, integrator.controller_cache, alg, q)
     return nothing
 end
