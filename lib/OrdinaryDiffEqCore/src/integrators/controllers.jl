@@ -38,6 +38,12 @@ function post_newton_controller!(integrator, alg)
     return nothing
 end
 
+# This is a helper for Nordsieck and BDF methods, which come with an integrated controller.
+struct DummyController <: AbstractController
+end
+
+setup_controller_cache(alg_cache, controller::DummyController) = controller
+
 # Standard integral (I) step size controller
 """
     LegacyIController()
@@ -70,9 +76,6 @@ the predicted step size.
     [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
 """
 struct LegacyIController <: AbstractLegacyController
-end
-
-struct DummyController <: AbstractController
 end
 
 @inline function stepsize_controller!(integrator, controller::LegacyIController, alg)

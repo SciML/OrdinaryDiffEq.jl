@@ -2,6 +2,10 @@ function legacy_default_controller(alg::Union{QNDF, FBDF}, args...)
     return DummyController()
 end
 
+function default_controller_v7(QT, alg::Union{QNDF, FBDF}, args...)
+    DummyController()
+end
+
 # QNBDF
 stepsize_controller!(integrator, alg::QNDF) = nothing
 
