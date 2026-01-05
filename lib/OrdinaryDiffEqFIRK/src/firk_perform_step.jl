@@ -203,8 +203,10 @@ end
     else
         c2′ = dt / cache.dtprev
         c1′ = c1 * c2′
-        z1 = @.. c1′ * (integrator.k[3] + (c1′ - c1m1) * integrator.k[4])
-        z2 = @.. c2′ * (integrator.k[3] + (c2′ - c1m1) * integrator.k[4])
+        k3 = (integrator.k[3] - integrator.k[4]) / c1m1
+        k4 = k3 - (integrator.k[3] / c1)
+        z1 = @.. c1′ * (k3 + (c1′ - c1m1) * k4)
+        z2 = @.. c2′ * (k3 + (c2′ - c1m1) * k4)
         w1 = @.. TI11 * z1 + TI12 * z2
         w2 = @.. TI21 * z1 + TI22 * z2
     end
@@ -299,8 +301,8 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            integrator.k[3] = (z1 - z2) / c1m1
-            integrator.k[4] = integrator.k[3] - (z1 / c1)
+            integrator.k[3] = z1
+            integrator.k[4] = z2
         end
     end
 
@@ -349,10 +351,12 @@ end
     else
         c2′ = dt / cache.dtprev
         c1′ = c1 * c2′
-        @.. z1=c1′ * (integrator.k[3] + (c1′ - c1m1) * integrator.k[4])
-        @.. z2=c2′ * (integrator.k[3] + (c2′ - c1m1) * integrator.k[4])
-        @.. w1=TI11 * z1 + TI12 * z2
-        @.. w2=TI21 * z1 + TI22 * z2
+        k3 = (integrator.k[3] - integrator.k[4]) / c1m1
+        k4 = k3 - (integrator.k[3] / c1)
+        @.. z1 = c1′ * (k3 + (c1′ - c1m1) * k4)
+        @.. z2 = c2′ * (k3 + (c2′ - c1m1) * k4)
+        @.. w1 = TI11 * z1 + TI12 * z2
+        @.. w2 = TI21 * z1 + TI22 * z2
     end
 
     # Newton iteration
@@ -463,8 +467,8 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            integrator.k[3] = (z1 - z2) / c1m1
-            integrator.k[4] = integrator.k[3] - (z1 / c1)
+            integrator.k[3] = z1
+            integrator.k[4] = z2
         end
     end
 
@@ -519,12 +523,23 @@ end
         c3′ = dt / cache.dtprev
         c1′ = c1 * c3′
         c2′ = c2 * c3′
-        z1 = @.. c1′ * (k[3] + (c1′ - c2m1) * (k[4] + (c1′ - c1m1) * k[5]))
-        z2 = @.. c2′ * (k[3] + (c2′ - c2m1) * (k[4] + (c2′ - c1m1) * k[5]))
-        z3 = @.. c3′ * (k[3] + (c3′ - c2m1) * (k[4] + (c3′ - c1m1) * k[5]))
-        w1 = @.. TI11*z1+TI12*z2+TI13*z3
-        w2 = @.. TI21*z1+TI22*z2+TI23*z3
-        w3 = @.. TI31*z1+TI32*z2+TI33*z3
+        z1 = @.. integrator.k[3]
+        z2 = @.. integrator.k[4]
+        z3 = @.. integrator.k[5]
+        k1 = (z2 - z3) / c2m1 #first derivative on [c2, 1]
+        tmp = (k1 - z2) / c1mc2 #first derivative on [c1, c2]
+        k2 = (tmp - k1) / c1m1 #second derivative on [c1, 1]
+        k3 = k2  - (tmp - k1 / c1) / c2 #third derivative on [0, c2]
+
+        z1= @.. c1′ * (k1 +
+                (c1′ - c2m1) * (k2 + (c1′ - c1m1) * k3))
+        z2= @.. c2′ * (k1 +
+                (c2′ - c2m1) * (k2 + (c2′ - c1m1) * k3))
+        z3= @.. c3′ * (k1 +
+                (c3′ - c2m1) * (k2 + (c3′ - c1m1) * k3))
+        w1= @.. TI11 * z1 + TI12 * z2 + TI13 * z3
+        w2= @.. TI21 * z1 + TI22 * z2 + TI23 * z3
+        w3= @.. TI31 * z1 + TI32 * z2 + TI33 * z3 
     end
 
     # Newton iteration
@@ -640,10 +655,9 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            integrator.k[3] = (z2 - z3)/c2m1
-            tmp = @.. (z1 - z2)/c1mc2
-            integrator.k[4] = (tmp - integrator.k[3])/c1m1
-            integrator.k[5] = integrator.k[4]-(tmp - z1 / c1) / c2
+            integrator.k[3] = z1
+            integrator.k[4] = z2
+            integrator.k[5] = z3
         end
     end
 
@@ -704,12 +718,20 @@ end
         c3′ = dt / cache.dtprev
         c1′ = c1 * c3′
         c2′ = c2 * c3′
-        @.. z1=c1′ * (integrator.k[3] +
-                (c1′ - c2m1) * (integrator.k[4] + (c1′ - c1m1) * integrator.k[5]))
-        @.. z1=c2′ * (integrator.k[3] +
-                (c2′ - c2m1) * (integrator.k[4] + (c2′ - c1m1) * integrator.k[5]))
-        @.. z1=c3′ * (integrator.k[3] +
-                (c3′ - c2m1) * (integrator.k[4] + (c3′ - c1m1) * integrator.k[5]))
+        @.. z1 = integrator.k[3]
+        @.. z2 = integrator.k[4]
+        @.. z3 = integrator.k[5]
+        k1 = (z2 - z3) / c2m1 #first derivative on [c2, 1]
+        tmp = (k1 - z2) / c1mc2 #first derivative on [c1, c2]
+        k2 = (tmp - k1) / c1m1 #second derivative on [c1, 1]
+        k3 = k2  - (tmp - k1 / c1) / c2 #third derivative on [0, c2]
+
+        @.. z1=c1′ * (k1 +
+                (c1′ - c2m1) * (k2 + (c1′ - c1m1) * k3))
+        @.. z2=c2′ * (k1 +
+                (c2′ - c2m1) * (k2 + (c2′ - c1m1) * k3))
+        @.. z3=c3′ * (k1 +
+                (c3′ - c2m1) * (k2 + (c3′ - c1m1) * k3))
         @.. w1=TI11 * z1 + TI12 * z2 + TI13 * z3
         @.. w2=TI21 * z1 + TI22 * z2 + TI23 * z3
         @.. w3=TI31 * z1 + TI32 * z2 + TI33 * z3
@@ -886,10 +908,9 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            integrator.k[3] = (z2 - z3) / c2m1 # (c2, z2) and (1, z3)
-            @.. tmp = (z1 - z2) / c1mc2
-            integrator.k[4] = (tmp - integrator.k[3]) / c1m1
-            integrator.k[5] = integrator.k[4] - (tmp - z1 / c1) / c2
+            integrator.k[3] = z1
+            integrator.k[4] = z2
+            integrator.k[5] = z3
         end
     end
 
@@ -964,25 +985,45 @@ end
         c2′ = c2 * c5′
         c3′ = c3 * c5′
         c4′ = c4 * c5′
-        z1 = @.. c1′ * (k[3] +
-                  (c1′-c4m1) * (k[4] +
-                   (c1′ - c3m1) * (k[5] +
-                                   (c1′ - c2m1) * (k[6] + (c1′ - c1m1) * k[7]))))
-        z2 = @.. c2′ * (k[3] +
-                  (c2′-c4m1) * (k[4] +
-                   (c2′ - c3m1) * (k[5] +
-                                   (c2′ - c2m1) * (k[6] + (c2′ - c1m1) * k[7]))))
-        z3 = @.. c3′ * (k[3] +
-                  (c3′-c4m1) * (k[4] +
-                   (c3′ - c3m1) * (k[5] +
-                                   (c3′ - c2m1) * (k[6] + (c3′ - c1m1) * k[7]))))
-        z4 = @.. c4′ * (k[3] +
-                  (c4′-c4m1) * (k[4] +
-                   (c4′ - c3m1) * (k[5] +
-                                   (c4′ - c2m1) * (k[6] + (c4′ - c1m1) * k[7]))))
-        z5 = @.. c5′ * (k[3] +
-                  (c5′-c4m1) * (k[4] +
-                   (c5′ - c3m1) * (k[5] + (c5′ - c2m1) * (k[6] + (c5′ - c1m1) * k[7]))))
+        z1 = @.. integrator.k[3]
+        z2 = @.. integrator.k[4]
+        z3 = @.. integrator.k[5]
+        z4 = @.. integrator.k[6]
+        z5 = @.. integrator.k[7]
+        k3 = (z4 - z5) / c4m1 # first derivative on [c4, 1]
+        tmp1 = @.. (z3 - z4) / c3mc4 # first derivative on [c3, c4]
+        k4 = (tmp1 - integrator.k[3]) / c3m1 # second derivative on [c3, 1]
+        tmp2 = @.. (z2 - z3) / c2mc3 # first derivative on [c2, c3]
+        tmp3 = @.. (tmp2 - tmp1) / c2mc4 # second derivative on [c2, c4]
+        k5 = (tmp3 - integrator.k[4]) / c2m1 # third derivative on [c2, 1]
+        tmp4 = @.. (z1 - z2) / c1mc2 # first derivative on [c1, c2]
+        tmp5 = @.. (tmp4 - tmp2) / c1mc3 # second derivative on [c1, c3]
+        tmp6 = @.. (tmp5 - tmp3) / c1mc4 # third derivative on [c1, c4]
+        k6 = (tmp6 - integrator.k[5]) / c1m1 #fourth derivative on [c1, 1]
+        tmp7 = @.. z1 / c1 #first derivative on [0, c1]
+        tmp8 = @.. (tmp4 - tmp7) / c2 #second derivative on [0, c2]
+        tmp9 = @.. (tmp5 - tmp8) / c3 #third derivative on [0, c3]
+        tmp10 = @.. (tmp6 - tmp9) / c4 #fourth derivative on [0,c4]
+        k7 = integrator.k[6] - tmp10 #fifth derivative on [0,1] 
+        z1 = @.. c1′ * (k3 +
+                  (c1′-c4m1) * (k4 +
+                   (c1′ - c3m1) * (k5 +
+                                   (c1′ - c2m1) * (k6 + (c1′ - c1m1) * k7))))
+        z2 = @.. c2′ * (k3 +
+                  (c2′-c4m1) * (k4 +
+                   (c2′ - c3m1) * (k5 +
+                                   (c2′ - c2m1) * (k6 + (c2′ - c1m1) * k7))))
+        z3 = @.. c3′ * (k3 +
+                  (c3′-c4m1) * (k4 +
+                   (c3′ - c3m1) * (k5 +
+                                   (c3′ - c2m1) * (k6 + (c3′ - c1m1) * k7))))
+        z4 = @.. c4′ * (k3 +
+                  (c4′-c4m1) * (k4 +
+                   (c4′ - c3m1) * (k5 +
+                                   (c4′ - c2m1) * (k6 + (c4′ - c1m1) * k7))))
+        z5 = @.. c5′ * (k3 +
+                  (c5′-c4m1) * (k4 +
+                   (c5′ - c3m1) * (k5 + (c5′ - c2m1) * (k6 + (c5′ - c1m1) * k7))))
         w1 = @.. TI11*z1+TI12*z2+TI13*z3+TI14*z4+TI15*z5
         w2 = @.. TI21*z1+TI22*z2+TI23*z3+TI24*z4+TI25*z5
         w3 = @.. TI31*z1+TI32*z2+TI33*z3+TI34*z4+TI35*z5
@@ -1124,21 +1165,11 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            integrator.k[3] = (z4 - z5) / c4m1 # first derivative on [c4, 1]
-            tmp1 = @.. (z3 - z4) / c3mc4 # first derivative on [c3, c4]
-            integrator.k[4] = (tmp1 - integrator.k[3]) / c3m1 # second derivative on [c3, 1]
-            tmp2 = @.. (z2 - z3) / c2mc3 # first derivative on [c2, c3]
-            tmp3 = @.. (tmp2 - tmp1) / c2mc4 # second derivative on [c2, c4]
-            integrator.k[5] = (tmp3 - integrator.k[4]) / c2m1 # third derivative on [c2, 1]
-            tmp4 = @.. (z1 - z2) / c1mc2 # first derivative on [c1, c2]
-            tmp5 = @.. (tmp4 - tmp2) / c1mc3 # second derivative on [c1, c3]
-            tmp6 = @.. (tmp5 - tmp3) / c1mc4 # third derivative on [c1, c4]
-            integrator.k[6] = (tmp6 - integrator.k[5]) / c1m1 #fourth derivative on [c1, 1]
-            tmp7 = @.. z1 / c1 #first derivative on [0, c1]
-            tmp8 = @.. (tmp4 - tmp7) / c2 #second derivative on [0, c2]
-            tmp9 = @.. (tmp5 - tmp8) / c3 #third derivative on [0, c3]
-            tmp10 = @.. (tmp6 - tmp9) / c4 #fourth derivative on [0,c4]
-            integrator.k[7] = integrator.k[6] - tmp10 #fifth derivative on [0,1]
+            integrator.k[3] = z1
+            integrator.k[4] = z2
+            integrator.k[5] = z3
+            integrator.k[6] = z4
+            integrator.k[7] = z5
         end
     end
 
@@ -1220,26 +1251,45 @@ end
         c2′ = c2 * c5′
         c3′ = c3 * c5′
         c4′ = c4 * c5′
-        @.. z1 = c1′ * (integrator.k[3] +
-                  (c1′-c4m1) * (integrator.k[4] +
-                   (c1′ - c3m1) * (integrator.k[5] +
-                    (c1′ - c2m1) * (integrator.k[6] + (c1′ - c1m1) * integrator.k[7]))))
-        @.. z2 = c2′ * (integrator.k[3] +
-                  (c2′-c4m1) * (integrator.k[4] +
-                   (c2′ - c3m1) * (integrator.k[5] +
-                    (c2′ - c2m1) * (integrator.k[6] + (c2′ - c1m1) * integrator.k[7]))))
-        @.. z3 = c3′ * (integrator.k[3] +
-                  (c3′-c4m1) * (integrator.k[4] +
-                   (c3′ - c3m1) * (integrator.k[5] +
-                    (c3′ - c2m1) * (integrator.k[6] + (c3′ - c1m1) * integrator.k[7]))))
-        @.. z4 = c4′ * (integrator.k[3] +
-                  (c4′-c4m1) * (integrator.k[4] +
-                   (c4′ - c3m1) * (integrator.k[5] +
-                    (c4′ - c2m1) * (integrator.k[6] + (c4′ - c1m1) * integrator.k[7]))))
-        @.. z5 = c5′ * (integrator.k[3] +
-                  (c5′-c4m1) * (integrator.k[4] +
-                   (c5′ - c3m1) * (integrator.k[5] +
-                    (c5′ - c2m1) * (integrator.k[6] + (c5′ - c1m1) * integrator.k[7]))))
+        @.. z1 = integrator.k[3]
+        @.. z2 = integrator.k[4]
+        @.. z3 = integrator.k[5]
+        @.. z4 = integrator.k[6]
+        @.. z5 = integrator.k[7]
+        k3 = @.. (z4 - z5) / c4m1 # first derivative on [c4, 1]
+        @.. tmp = (z3 - z4) / c3mc4 # first derivative on [c3, c4]
+        k4 = @.. (tmp - z1) / c3m1 # second derivative on [c3, 1]
+        @.. tmp2 = (z2 - z3) / c2mc3 # first derivative on [c2, c3]
+        @.. tmp3 = (tmp2 - tmp) / c2mc4 # second derivative on [c2, c4]
+        k5 = @.. (tmp3 - z2) / c2m1 # third derivative on [c2, 1]
+        @.. tmp4 = (z1 - z2) / c1mc2 # first derivative on [c1, c2]
+        @.. tmp5 = (tmp4 - tmp2) / c1mc3 # second derivative on [c1, c3]
+        @.. tmp6 = (tmp5 - tmp3) / c1mc4 # third derivative on [c1, c4]
+        k6 = @.. (tmp6 - z3) / c1m1 #fourth derivative on [c1, 1]
+        @.. tmp7 = z1 / c1 #first derivative on [0, c1]
+        @.. tmp8 = (tmp4 - tmp7) / c2 #second derivative on [0, c2]
+        @.. tmp9 = (tmp5 - tmp8) / c3 #third derivative on [0, c3]
+        @.. tmp10 = (tmp6 - tmp9) / c4 #fourth derivative on [0,c4]
+        k7 = @.. z4 - tmp10 #fifth derivative on [0,1]
+        @.. z1 = c1′ * (k3 +
+                  (c1′-c4m1) * (k4 +
+                   (c1′ - c3m1) * (k5 +
+                    (c1′ - c2m1) * (k6 + (c1′ - c1m1) * k7))))
+        @.. z2 = c2′ * (k3 +
+                  (c2′-c4m1) * (k4 +
+                   (c2′ - c3m1) * (k5 +
+                    (c2′ - c2m1) * (k6 + (c2′ - c1m1) * k7))))
+        @.. z3 = c3′ * (k3 +
+                  (c3′-c4m1) * (k4 +
+                   (c3′ - c3m1) * (k5 +
+                    (c3′ - c2m1) * (k6 + (c3′ - c1m1) * k7))))
+        @.. z4 = c4′ * (k3 +
+                  (c4′-c4m1) * (k4 +
+                   (c4′ - c3m1) * (k5 +
+                    (c4′ - c2m1) * (k6 + (c4′ - c1m1) * k7))))
+        @.. z5 = c5′ * (k3 +
+                  (c5′-c4m1) * (k4 +
+                   (c5′ - c3m1) * (k5 + (c5′ - c2m1) * (k6 + (c5′ - c1m1) * k7))))
         @.. w1 = TI11*z1+TI12*z2+TI13*z3+TI14*z4+TI15*z5
         @.. w2 = TI21*z1+TI22*z2+TI23*z3+TI24*z4+TI25*z5
         @.. w3 = TI31*z1+TI32*z2+TI33*z3+TI34*z4+TI35*z5
@@ -1468,21 +1518,11 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            integrator.k[3] = (z4 - z5) / c4m1 # first derivative on [c4, 1]
-            @.. tmp = (z3 - z4) / c3mc4 # first derivative on [c3, c4]
-            integrator.k[4] = (tmp - integrator.k[3]) / c3m1 # second derivative on [c3, 1]
-            @.. tmp2 = (z2 - z3) / c2mc3 # first derivative on [c2, c3]
-            @.. tmp3 = (tmp2 - tmp) / c2mc4 # second derivative on [c2, c4]
-            integrator.k[5] = (tmp3 - integrator.k[4]) / c2m1 # third derivative on [c2, 1]
-            @.. tmp4 = (z1 - z2) / c1mc2 # first derivative on [c1, c2]
-            @.. tmp5 = (tmp4 - tmp2) / c1mc3 # second derivative on [c1, c3]
-            @.. tmp6 = (tmp5 - tmp3) / c1mc4 # third derivative on [c1, c4]
-            integrator.k[6] = (tmp6 - integrator.k[5]) / c1m1 #fourth derivative on [c1, 1]
-            @.. tmp7 = z1 / c1 #first derivative on [0, c1]
-            @.. tmp8 = (tmp4 - tmp7) / c2 #second derivative on [0, c2]
-            @.. tmp9 = (tmp5 - tmp8) / c3 #third derivative on [0, c3]
-            @.. tmp10 = (tmp6 - tmp9) / c4 #fourth derivative on [0,c4]
-            integrator.k[7] = integrator.k[6] - tmp10 #fifth derivative on [0,1]
+            integrator.k[3] = z1
+            integrator.k[4] = z2
+            integrator.k[5] = z3
+            integrator.k[6] = z4
+            integrator.k[7] = z5
         end
     end
 
@@ -1542,6 +1582,25 @@ end
     else
         c_prime = Vector{typeof(dt)}(undef, num_stages) #time stepping
         c_prime[num_stages] = dt / cache.dtprev
+        derivatives = Matrix{typeof(u)}(undef, num_stages, num_stages)
+        for i in 1:num_stages
+            z[i] = @.. integrator.k[i + 2]
+        end
+        derivatives[1, 1] = @.. z[1] / c[1]
+        for j in 2:num_stages
+            derivatives[1, j] = @.. (z[j - 1] - z[j]) / (c[j - 1] - c[j]) #first derivatives
+        end
+        for i in 2:num_stages
+            derivatives[i, i] = @.. (derivatives[i - 1, i] -
+                                        derivatives[i - 1, i - 1]) / c[i]
+            for j in (i + 1):num_stages
+                derivatives[i, j] = @.. (derivatives[i - 1, j - 1] -
+                                            derivatives[i - 1, j]) / (c[j - i] - c[j]) #all others
+            end
+        end
+        for i in 1:num_stages
+            k[i + 2] = derivatives[i, num_stages]
+        end
         for i in 1:(num_stages - 1)
             c_prime[i] = c[i] * c_prime[num_stages]
         end
@@ -1710,21 +1769,8 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            derivatives = Matrix{typeof(u)}(undef, num_stages, num_stages)
-            derivatives[1, 1] = @.. z[1] / c[1]
-            for j in 2:num_stages
-                derivatives[1, j] = @.. (z[j - 1] - z[j]) / (c[j - 1] - c[j]) #first derivatives
-            end
-            for i in 2:num_stages
-                derivatives[i, i] = @.. (derivatives[i - 1, i] -
-                                         derivatives[i - 1, i - 1]) / c[i]
-                for j in (i + 1):num_stages
-                    derivatives[i, j] = @.. (derivatives[i - 1, j - 1] -
-                                             derivatives[i - 1, j]) / (c[j - i] - c[j]) #all others
-                end
-            end
             for i in 1:num_stages
-                integrator.k[i + 2] = derivatives[i, num_stages]
+                integrator.k[i + 2] = @.. z[i]
             end
         end
     end
@@ -1805,6 +1851,22 @@ end
             integrator.k[i + 2] = map(zero, u)
         end
     else
+        for i in 1:num_stages @.. z[i] = integrator.k[i + 2] end
+        @.. derivatives[1, 1] = z[1] / c[1]
+        for j in 2:num_stages
+            @.. derivatives[1, j] = (z[j - 1] - z[j]) / (c[j - 1] - c[j]) #first derivatives
+        end
+        for i in 2:num_stages
+            @.. derivatives[i, i] = (derivatives[i - 1, i] -
+                                        derivatives[i - 1, i - 1]) / c[i]
+            for j in (i + 1):num_stages
+                @.. derivatives[i, j] = (derivatives[i - 1, j - 1] -
+                                            derivatives[i - 1, j]) / (c[j - i] - c[j]) #all others
+            end
+        end
+        for i in 1:num_stages
+            integrator.k[i + 2] = derivatives[i, num_stages]
+        end
         c_prime[num_stages] = dt / cache.dtprev
         for i in 1:(num_stages - 1)
             c_prime[i] = c[i] * c_prime[num_stages]
@@ -2028,20 +2090,8 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            @.. derivatives[1, 1] = z[1] / c[1]
-            for j in 2:num_stages
-                @.. derivatives[1, j] = (z[j - 1] - z[j]) / (c[j - 1] - c[j]) #first derivatives
-            end
-            for i in 2:num_stages
-                @.. derivatives[i, i] = (derivatives[i - 1, i] -
-                                         derivatives[i - 1, i - 1]) / c[i]
-                for j in (i + 1):num_stages
-                    @.. derivatives[i, j] = (derivatives[i - 1, j - 1] -
-                                             derivatives[i - 1, j]) / (c[j - i] - c[j]) #all others
-                end
-            end
             for i in 1:num_stages
-                integrator.k[i + 2] = derivatives[i, num_stages]
+                integrator.k[i + 2] = z[i]
             end
         end
     end
