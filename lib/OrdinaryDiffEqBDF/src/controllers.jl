@@ -13,7 +13,11 @@ stepsize_controller!(integrator, alg::QNDF) = nothing
 # Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
 # E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
 
-function step_accept_controller!(integrator, alg::QNDF{max_order}, q) where {max_order}
+function step_accept_controller!(integrator, alg::QNDF, q)
+    return step_accept_controller!(integrator, integrator.cache, alg, q)
+end
+
+function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstantCache}, alg::QNDF{max_order}, q) where {max_order}
     #step is accepted, reset count of consecutive failed steps
     integrator.cache.consfailcnt = 0
     integrator.cache.nconsteps += 1
@@ -266,11 +270,10 @@ function stepsize_controller!(
     ) where {
         max_order,
     }
-    (; cache) = integrator
     cache.prev_order = cache.order
     k, terk = choose_order!(alg, integrator, cache, Val(max_order))
     if k != cache.order
-        integrator.cache.nconsteps = 0
+        cache.nconsteps = 0
         cache.order = k
     end
     if iszero(terk)
@@ -282,16 +285,20 @@ function stepsize_controller!(
     return q
 end
 
+function step_accept_controller!(integrator, alg::FBDF, q)
+    return step_accept_controller!(integrator, integrator.cache, alg, q)
+end
+
 function step_accept_controller!(
-        integrator, alg::FBDF{max_order},
+        integrator, cache::Union{FBDFCache, FBDFConstantCache}, alg::FBDF{max_order},
         q
     ) where {max_order}
-    integrator.cache.consfailcnt = 0
+    cache.consfailcnt = 0
     if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
         q = one(q)
     end
-    integrator.cache.nconsteps += 1
-    integrator.cache.iters_from_event += 1
+    cache.nconsteps += 1
+    cache.iters_from_event += 1
     return integrator.dt / q
 end
 
@@ -423,7 +430,7 @@ function stepsize_controller!(
     cache.prev_order = cache.order
     k, terk = choose_order!(alg, integrator, cache, Val(max_order))
     if k != cache.order
-        integrator.cache.nconsteps = 0
+        cache.nconsteps = 0
         cache.order = k
     end
     if iszero(terk)
@@ -435,15 +442,19 @@ function stepsize_controller!(
     return q
 end
 
+function step_accept_controller!(integrator, alg::DFBDF, q)
+    return step_accept_controller!(integrator, integrator.cache, alg, q)
+end
+
 function step_accept_controller!(
-        integrator, alg::DFBDF{max_order},
+        integrator, cache::Union{DFBDFCache, DFBDFConstantCache}, alg::DFBDF{max_order},
         q
     ) where {max_order}
-    integrator.cache.consfailcnt = 0
+    cache.consfailcnt = 0
     if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
         q = one(q)
     end
-    integrator.cache.nconsteps += 1
-    integrator.cache.iters_from_event += 1
+    cache.nconsteps += 1
+    cache.iters_from_event += 1
     return integrator.dt / q
 end
