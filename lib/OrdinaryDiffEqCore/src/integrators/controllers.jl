@@ -386,7 +386,7 @@ end
     EEst = DiffEqBase.value(integrator.EEst)
 
     if iszero(EEst)
-        q = qmax
+        q = inv(qmax)
     else
         # Legacy code
         q11 = fastpower(EEst, beta1)
