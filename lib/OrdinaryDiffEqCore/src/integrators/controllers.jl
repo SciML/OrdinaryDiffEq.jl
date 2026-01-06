@@ -89,8 +89,10 @@ end
 end
 
 reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
+reset_alg_dependent_opts!(controller::AbstractControllerCache, alg1, alg2) = nothing
 
 SciMLBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
+SciMLBase.reinit!(integrator::ODEIntegrator, controller::AbstractControllerCache) = nothing
 
 function post_newton_controller!(integrator, alg)
     return post_newton_controller!(integrator, integrator.opts.controller, alg)
@@ -321,13 +323,15 @@ function step_reject_controller!(integrator, controller::PIController, alg)
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
-function reset_alg_dependent_opts!(controller::PIController, alg1, alg2)
-    if controller.beta2 == beta2_default(alg1)
-        controller.beta2 = beta2_default(alg2)
+function reset_alg_dependent_opts!(controller::PIController{QT}, alg1, alg2) where {QT}
+    # These guards here prevent potentially that user-defined betas get overridden.
+    if controller.beta2 == QT(beta2_default(alg1))
+        controller.beta2 = QT(beta2_default(alg2))
     end
-    return if controller.beta1 == beta1_default(alg1, controller.beta2)
-        controller.beta1 = beta1_default(alg2, controller.beta2)
+    if controller.beta1 == QT(beta1_default(alg1, controller.beta2))
+        controller.beta1 = QT(beta1_default(alg2, controller.beta2))
     end
+    return nothing
 end
 
 struct NewPIController{T} <: AbstractController

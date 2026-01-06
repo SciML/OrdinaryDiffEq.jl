@@ -298,4 +298,3 @@ end
 # Example: send the history variables from one multistep method to another
 
 transfer_cache!(integrator, alg1, alg2) = nothing
-reset_alg_dependent_opts!(::Union{AbstractController, AbstractControllerCache}, alg1, alg2) = nothing
