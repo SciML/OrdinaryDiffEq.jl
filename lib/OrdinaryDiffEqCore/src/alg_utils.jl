@@ -379,11 +379,30 @@ function default_controller_v7(QT, alg)
     end
 end
 
-function default_controller_v7(QT, alg::CompositeAlgorithm)
-    return CompositeController(
-        map(alg -> default_controller_v7(QT, alg), alg.algs)
-    )
+function default_controller_v7(QT, alg::OrdinaryDiffEqCompositeAlgorithm)
+    beta2 = convert(QT, beta2_default(alg.algs[1]))
+    beta1 = convert(QT, beta1_default(alg.algs[1], beta2))
+    return PIController(beta1, beta2)
+    # TODO Uncomment this code below to when removing the legacy controllers on OrdinaryDiffEq v7.
+    # return CompositeController(
+    #     __default_controller_v7(QT, alg.algs)
+    # )
 end
+
+# @generated function __default_controller_v7(
+#     QT, algs::T
+# ) where {
+#     T <: Tuple
+# }
+#     return Expr(
+#         :tuple,
+#         map(1:length(T.types)) do i
+#             :(
+#                 default_controller_v7(QT, algs[$i])
+#             )
+#         end...
+#     )
+# end
 
 function legacy_default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
     if ispredictive(alg)
