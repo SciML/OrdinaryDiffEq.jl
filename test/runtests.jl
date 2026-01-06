@@ -43,7 +43,11 @@ end
         Pkg.test(GROUP, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
-        @time @safetestset "Null u0 Callbacks Tests" include("interface/null_u0_callbacks_test.jl")
+        # Skip on Julia LTS due to oneunit(Type{Any}) not being defined
+        # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/XXXX
+        if VERSION >= v"1.11"
+            @time @safetestset "Null u0 Callbacks Tests" include("interface/null_u0_callbacks_test.jl")
+        end
         @time @safetestset "Tstops Tests" include("interface/ode_tstops_tests.jl")
         @time @safetestset "Backwards Tests" include("interface/ode_backwards_test.jl")
         @time @safetestset "Initdt Tests" include("interface/ode_initdt_tests.jl")
