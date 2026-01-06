@@ -495,14 +495,6 @@ function SciMLBase.__init(
     end
 
     QT = determine_controller_datatype(u, internalnorm, tspan)
-    EEstT = if tTypeNoUnits <: Integer
-       typeof(qmin)
-    elseif prob isa SciMLBase.AbstractDiscreteProblem
-        # The QT fields are not used for DiscreteProblems
-        constvalue(tTypeNoUnits)
-    else
-        typeof(internalnorm(u, t))
-    end
 
     # The following code provides an upgrade path for users by preserving the old behavior.
     legacy_controller_parameters = (gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit)
@@ -523,6 +515,14 @@ function SciMLBase.__init(
         qsteady_min = hasfield(typeof(controller), :qsteady_min) ? controller.qsteady_min : qsteady_min_default(alg)
         qsteady_max = hasfield(typeof(controller), :qsteady_max) ? controller.qsteady_max : qsteady_max_default(alg)
         qoldinit = hasfield(typeof(controller), :qoldinit) ? controller.qoldinit : (anyadaptive(alg) ? 1 // 10^4 : 0)
+    end
+
+    EEstT = if tTypeNoUnits <: Integer
+        promote_type(typeof(qmin), typeof(qmax))
+    elseif prob isa SciMLBase.AbstractDiscreteProblem
+        constvalue(tTypeNoUnits)
+    else
+        typeof(internalnorm(u, t))
     end
 
     atmp = if hasfield(typeof(cache), :atmp)
