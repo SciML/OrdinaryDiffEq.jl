@@ -93,6 +93,10 @@ reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
 SciMLBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
 
 function post_newton_controller!(integrator, alg)
+    post_newton_controller!(integrator, integrator.cache, alg)
+    return nothing
+end
+function post_newton_controller!(integrator, cache, alg)
     integrator.dt = integrator.dt / integrator.opts.failfactor
     return nothing
 end
