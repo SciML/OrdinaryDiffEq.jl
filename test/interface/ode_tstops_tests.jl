@@ -11,19 +11,25 @@ Random.seed!(100)
     sol = solve(prob, RK4(), dt = 1 // 3, tstops = [1 / 2], adaptive = false)
     @test sol.t == [0, 1 / 3, 1 / 2, 1 / 3 + 1 / 2, 1]
 
-    sol = solve(prob, RK4(), dt = 1 // 3, tstops = [1 / 2],
-        d_discontinuities = [-1 / 2, 1 / 2, 3 / 2], adaptive = false)
+    sol = solve(
+        prob, RK4(), dt = 1 // 3, tstops = [1 / 2],
+        d_discontinuities = [-1 / 2, 1 / 2, 3 / 2], adaptive = false
+    )
     @test sol.t == [0, 1 / 3, 1 / 2, 1 / 3 + 1 / 2, 1]
 
     # TODO
-    integrator = init(prob, RK4(), tstops = [1 / 5, 1 / 4, 1 / 3, 1 / 2, 3 / 4],
-        adaptive = false)
+    integrator = init(
+        prob, RK4(), tstops = [1 / 5, 1 / 4, 1 / 3, 1 / 2, 3 / 4],
+        adaptive = false
+    )
 
     sol = solve(prob, RK4(), tstops = [1 / 5, 1 / 4, 1 / 3, 1 / 2, 3 / 4], adaptive = false)
     @test sol.t == [0, 1 / 5, 1 / 4, 1 / 3, 1 / 2, 3 / 4, 1]
 
-    sol = solve(prob, RK4(), tstops = [0, 1 / 5, 1 / 4, 1 / 3, 1 / 2, 3 / 4, 1],
-        adaptive = false)
+    sol = solve(
+        prob, RK4(), tstops = [0, 1 / 5, 1 / 4, 1 / 3, 1 / 2, 3 / 4, 1],
+        adaptive = false
+    )
     @test sol.t == [0, 1 / 5, 1 / 4, 1 / 3, 1 / 2, 3 / 4, 1]
 
     sol = solve(prob, RK4(), tstops = 0:(1 // 16):1, adaptive = false)
@@ -33,8 +39,12 @@ Random.seed!(100)
     @test sol.t == collect(range(0, stop = 1, length = 100))
 end
 
-@testset "Integrator Tstops Tests on the Interval $(["[-1, 0]", "[0, 1]"][i])" for (i, tdir) in enumerate([-1.0;
-                                                                                                           1.0])
+@testset "Integrator Tstops Tests on the Interval $(["[-1, 0]", "[0, 1]"][i])" for (i, tdir) in enumerate(
+        [
+            -1.0;
+            1.0
+        ]
+    )
     prob2 = remake(prob_ode_linear, tspan = (0.0, tdir * 1.0))
     integrator = init(prob2, Tsit5())
     tstops = tdir .* [0, 1 / 5, 1 / 4, 1 / 3, 1 / 2, 3 / 4, 1]
@@ -71,8 +81,10 @@ end
     called = Ref(false)
     tval = rand()
     ff(du, u, p, t) = du .= 0
-    cb = DiscreteCallback((u, t, integrator) -> t == Float32(tval),
-        integrator -> (called[] = true))
+    cb = DiscreteCallback(
+        (u, t, integrator) -> t == Float32(tval),
+        integrator -> (called[] = true)
+    )
     prob = ODEProblem(ff, [0.0], (0.0f0, 1.0f0))
     sol = solve(prob, Tsit5(), tstops = [tval], callback = cb)
 end

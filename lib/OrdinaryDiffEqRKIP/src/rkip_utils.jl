@@ -8,12 +8,15 @@ Safe function for computing the matrix exponential vector product for both mutab
 Same principle of operation as `_safe_matvec_prod` for mutability/in-place handling.
 """
 @inline expmv_rkip_mip(cache::RKIPCache{expOpType, cacheType, tType, opType, uType, iip}, v::uType, h::tType, p, t) where {expOpType, cacheType, tType, opType, uType, iip} = expmv_rkip_mip(
-    cache, v, h, lastindex(cache.c_mapping), p, t) # If i is not precised, this is the final step in the RKIP -> h = dt
+    cache, v, h, lastindex(cache.c_mapping), p, t
+) # If i is not precised, this is the final step in the RKIP -> h = dt
 
 @inline function expmv_rkip_mip(
         cache::RKIPCache{expOpType, cacheType, tType, opType, uType, iip}, v::uType,
-        h::tType, stage_index::Int, p, t) where {
-        expOpType, cacheType, tType, opType, uType, iip}
+        h::tType, stage_index::Int, p, t
+    ) where {
+        expOpType, cacheType, tType, opType, uType, iip,
+    }
     if !(h ≈ tType(0.0))
         c = cache.c_mapping[stage_index]
         exp_cache = cache.exp_cache
@@ -25,7 +28,8 @@ end
 
 @inline function _expmv_rkip_mip(
         cache::ExpCacheNoLdiv{expOpType}, tmp::vType, v::vType, stage_index::Integer,
-        positive, iip, p, t) where {expOpType <: AbstractSciMLOperator, vType}
+        positive, iip, p, t
+    ) where {expOpType <: AbstractSciMLOperator, vType}
     op = get_op_for_this_step(cache, positive, stage_index)
     v = matvec_prod_mip(tmp, op, v, iip, p, t)
     return v
@@ -33,7 +37,8 @@ end
 
 @inline function _expmv_rkip_mip(
         cache::ExpCache{expOpType}, tmp::vType, v::vType, stage_index::Integer,
-        positive, ::Val{true}, p, t) where {expOpType <: AbstractSciMLOperator, vType}
+        positive, ::Val{true}, p, t
+    ) where {expOpType <: AbstractSciMLOperator, vType}
     op = get_op_for_this_step(cache, stage_index)
     if positive
         matvec_prod_mip(tmp, op, v, Val(true), p, t)
@@ -51,14 +56,16 @@ For mutable type, overwrite `v` with `mat*v` and return `v`. Otherwise return  `
 Use the dispatch between ::Val{true} (in place) and ::Val{false} immutable to decide
 """
 @inline function matvec_prod_mip(
-        tmp::V, mat::M, v::V, ::Val{true}, p, t) where {V, M <: AbstractSciMLOperator}
+        tmp::V, mat::M, v::V, ::Val{true}, p, t
+    ) where {V, M <: AbstractSciMLOperator}
     mat(tmp, v, v, p, t)
     copyto!(v, tmp)
     return v
 end
 
 @inline function matvec_prod_mip(
-        _::V, mat::M, v::V, ::Val{false}, p, t) where {V, M <: AbstractSciMLOperator}
+        _::V, mat::M, v::V, ::Val{false}, p, t
+    ) where {V, M <: AbstractSciMLOperator}
     v = mat(v, v, p, t)
     return v
 end

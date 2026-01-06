@@ -2,8 +2,10 @@
 # is specialized, yet, it needs to take both ODEIntegrator and DDEIntegrator.
 # Hence, we need to have two separate functions.
 
-function _change_t_via_interpolation!(integrator, t,
-        modify_save_endpoint::Type{Val{T}}, reinitialize_alg = nothing) where {T}
+function _change_t_via_interpolation!(
+        integrator, t,
+        modify_save_endpoint::Type{Val{T}}, reinitialize_alg = nothing
+    ) where {T}
     # Can get rid of an allocation here with a function
     # get_tmp_arr(integrator.cache) which gives a pointer to some
     # cache array which can be modified.
@@ -18,31 +20,37 @@ function _change_t_via_interpolation!(integrator, t,
         integrator.t = t
         integrator.dt = integrator.t - integrator.tprev
         SciMLBase.reeval_internals_due_to_modification!(
-            integrator; callback_initializealg = reinitialize_alg)
+            integrator; callback_initializealg = reinitialize_alg
+        )
         if T
             solution_endpoint_match_cur_integrator!(integrator)
         end
     end
     return nothing
 end
-function SciMLBase.change_t_via_interpolation!(integrator::ODEIntegrator,
+function SciMLBase.change_t_via_interpolation!(
+        integrator::ODEIntegrator,
         t,
         modify_save_endpoint::Type{Val{T}} = Val{
             false,
-        }, reinitialize_alg = nothing) where {
+        }, reinitialize_alg = nothing
+    ) where {
         T,
-}
+    }
     _change_t_via_interpolation!(integrator, t, modify_save_endpoint, reinitialize_alg)
     return nothing
 end
 
 function SciMLBase.reeval_internals_due_to_modification!(
         integrator::ODEIntegrator, continuous_modification = true;
-        callback_initializealg = nothing)
+        callback_initializealg = nothing
+    )
     if integrator.isdae
-        DiffEqBase.initialize_dae!(integrator,
+        DiffEqBase.initialize_dae!(
+            integrator,
             isnothing(callback_initializealg) ? integrator.initializealg :
-            callback_initializealg)
+                callback_initializealg
+        )
         update_uprev!(integrator)
     end
 
@@ -57,7 +65,7 @@ function SciMLBase.reeval_internals_due_to_modification!(
     end
 
     integrator.u_modified = false
-    integrator.reeval_fsal = true
+    return integrator.reeval_fsal = true
 end
 
 @inline function SciMLBase.get_du(integrator::ODEIntegrator)
@@ -77,7 +85,7 @@ end
         out .= integrator.cache.tmp
     else
         return if isfsal(integrator.alg) &&
-                  !has_stiff_interpolation(integrator.alg)
+                !has_stiff_interpolation(integrator.alg)
             # Special stiff interpolations do not store the
             # right value in fsallast
             out .= integrator.fsallast
@@ -88,11 +96,11 @@ end
 end
 
 function u_modified!(integrator::ODEIntegrator, bool::Bool)
-    integrator.u_modified = bool
+    return integrator.u_modified = bool
 end
 
 function get_proposed_dt(integrator::ODEIntegrator)
-    ifelse(integrator.opts.adaptive, integrator.dtpropose, integrator.dtcache)
+    return ifelse(integrator.opts.adaptive, integrator.dtpropose, integrator.dtcache)
 end
 function set_proposed_dt!(integrator::ODEIntegrator, dt::Number)
     (integrator.dtpropose = dt; integrator.dtcache = dt)
@@ -103,61 +111,81 @@ function set_proposed_dt!(integrator::ODEIntegrator, integrator2::ODEIntegrator)
     integrator.dtcache = integrator2.dtcache
     integrator.qold = integrator2.qold
     integrator.erracc = integrator2.erracc
-    integrator.dtacc = integrator2.dtacc
+    return integrator.dtacc = integrator2.dtacc
 end
 
 #TODO: Bigger caches for most algorithms
 @inline function SciMLBase.get_tmp_cache(integrator::ODEIntegrator)
-    get_tmp_cache(integrator::ODEIntegrator, integrator.alg, integrator.cache)
+    return get_tmp_cache(integrator::ODEIntegrator, integrator.alg, integrator.cache)
 end
 
 # the ordering of the cache arrays is important!!!
-@inline function SciMLBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
-        cache::OrdinaryDiffEqConstantCache)
-    nothing
+@inline function SciMLBase.get_tmp_cache(
+        integrator, alg::OrdinaryDiffEqAlgorithm,
+        cache::OrdinaryDiffEqConstantCache
+    )
+    return nothing
 end
-@inline function SciMLBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.tmp,)
+@inline function SciMLBase.get_tmp_cache(
+        integrator, alg::OrdinaryDiffEqAlgorithm,
+        cache::OrdinaryDiffEqMutableCache
+    )
+    return (cache.tmp,)
 end
-@inline function SciMLBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(
+        integrator,
         alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.nlsolver.tmp, cache.atmp)
+        cache::OrdinaryDiffEqMutableCache
+    )
+    return (cache.nlsolver.tmp, cache.atmp)
 end
-@inline function SciMLBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqNewtonAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.nlsolver.tmp, cache.nlsolver.z)
+@inline function SciMLBase.get_tmp_cache(
+        integrator, alg::OrdinaryDiffEqNewtonAlgorithm,
+        cache::OrdinaryDiffEqMutableCache
+    )
+    return (cache.nlsolver.tmp, cache.nlsolver.z)
 end
-@inline function SciMLBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(
+        integrator,
         alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.tmp, cache.linsolve_tmp)
+        cache::OrdinaryDiffEqMutableCache
+    )
+    return (cache.tmp, cache.linsolve_tmp)
 end
 
-@inline function SciMLBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(
+        integrator,
         alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.tmp, cache.utilde)
+        cache::OrdinaryDiffEqMutableCache
+    )
+    return (cache.tmp, cache.utilde)
 end
-@inline function SciMLBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(
+        integrator,
         alg::OrdinaryDiffEqExponentialAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.tmp, cache.dz)
+        cache::OrdinaryDiffEqMutableCache
+    )
+    return (cache.tmp, cache.dz)
 end
-@inline function SciMLBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(
+        integrator,
         alg::OrdinaryDiffEqLinearExponentialAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.tmp,)
+        cache::OrdinaryDiffEqMutableCache
+    )
+    return (cache.tmp,)
 end
-@inline function SciMLBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
-        cache::CompositeCache)
-    get_tmp_cache(integrator, alg.algs[1], cache.caches[1])
+@inline function SciMLBase.get_tmp_cache(
+        integrator, alg::CompositeAlgorithm,
+        cache::CompositeCache
+    )
+    return get_tmp_cache(integrator, alg.algs[1], cache.caches[1])
 end
-@inline function SciMLBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
-        cache::DefaultCache)
+@inline function SciMLBase.get_tmp_cache(
+        integrator, alg::CompositeAlgorithm,
+        cache::DefaultCache
+    )
     init_ith_default_cache(cache, alg.algs, cache.current)
-    if cache.current == 1
+    return if cache.current == 1
         get_tmp_cache(integrator, alg.algs[1], cache.cache1)
     elseif cache.current == 2
         get_tmp_cache(integrator, alg.algs[2], cache.cache2)
@@ -173,9 +201,11 @@ end
     end
 end
 
-@inline function SciMLBase.get_tmp_cache(integrator, alg::DAEAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.nlsolver.cache.dz, cache.atmp)
+@inline function SciMLBase.get_tmp_cache(
+        integrator, alg::DAEAlgorithm,
+        cache::OrdinaryDiffEqMutableCache
+    )
+    return (cache.nlsolver.cache.dz, cache.atmp)
 end
 
 function full_cache(integrator::ODEIntegrator)
@@ -190,21 +220,22 @@ function full_cache(integrator::ODEIntegrator)
         init_ith_default_cache(cache, algs, 5)
         init_ith_default_cache(cache, algs, 6)
     end
-    full_cache(integrator.cache)
+    return full_cache(integrator.cache)
 end
 function full_cache(cache::CompositeCache)
-    Iterators.flatten(full_cache(c) for c in cache.caches)
+    return Iterators.flatten(full_cache(c) for c in cache.caches)
 end
 function full_cache(cache::DefaultCache)
     caches = (
-        cache.cache1, cache.cache2, cache.cache3, cache.cache4, cache.cache5, cache.cache6)
-    Iterators.flatten(full_cache(c) for c in caches)
+        cache.cache1, cache.cache2, cache.cache3, cache.cache4, cache.cache5, cache.cache6,
+    )
+    return Iterators.flatten(full_cache(c) for c in caches)
 end
 
 function SciMLBase.add_tstop!(integrator::ODEIntegrator, t)
     integrator.tdir * (t - integrator.t) < zero(integrator.t) &&
         error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
-    push!(integrator.opts.tstops, integrator.tdir * t)
+    return push!(integrator.opts.tstops, integrator.tdir * t)
 end
 
 SciMLBase.has_tstop(integrator::ODEIntegrator) = !isempty(integrator.opts.tstops)
@@ -214,7 +245,7 @@ SciMLBase.pop_tstop!(integrator::ODEIntegrator) = pop!(integrator.opts.tstops)
 function SciMLBase.add_saveat!(integrator::ODEIntegrator, t)
     integrator.tdir * (t - integrator.t) < zero(integrator.t) &&
         error("Tried to add a saveat that is behind the current time. This is strictly forbidden")
-    push!(integrator.opts.saveat, integrator.tdir * t)
+    return push!(integrator.opts.saveat, integrator.tdir * t)
 end
 
 function resize!(integrator::ODEIntegrator, i::Int)
@@ -230,7 +261,7 @@ function resize!(integrator::ODEIntegrator, i::Int)
     resize_f!(integrator.f, i)
     resize_nlsolver!(integrator, i)
     resize_J_W!(cache, integrator, i)
-    resize_non_user_cache!(integrator, cache, i)
+    return resize_non_user_cache!(integrator, cache, i)
 end
 # we can't use resize!(..., i::Union{Int, NTuple{N,Int}}) where {N} because of method ambiguities with DiffEqBase
 function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
@@ -245,7 +276,7 @@ function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
     # TODO the parts below need to be adapted for implicit methods
     isdefined(integrator.cache, :nlsolver) && resize_nlsolver!(integrator, i)
     resize_J_W!(cache, integrator, i)
-    resize_non_user_cache!(integrator, cache, i)
+    return resize_non_user_cache!(integrator, cache, i)
 end
 
 # default fallback
@@ -259,13 +290,13 @@ end
 function resize_J_W! end
 
 function resize_non_user_cache!(integrator::ODEIntegrator, i::Int)
-    resize_non_user_cache!(integrator, integrator.cache, i)
+    return resize_non_user_cache!(integrator, integrator.cache, i)
 end
 function deleteat_non_user_cache!(integrator::ODEIntegrator, i)
-    deleteat_non_user_cache!(integrator, integrator.cache, i)
+    return deleteat_non_user_cache!(integrator, integrator.cache, i)
 end
 function addat_non_user_cache!(integrator::ODEIntegrator, i)
-    addat_non_user_cache!(integrator, integrator.cache, i)
+    return addat_non_user_cache!(integrator, integrator.cache, i)
 end
 
 resize_non_user_cache!(integrator::ODEIntegrator, cache, i) = nothing
@@ -274,57 +305,61 @@ function resize_non_user_cache!(integrator::ODEIntegrator, cache::CompositeCache
     for _cache in cache.caches
         resize_non_user_cache!(integrator, _cache, i)
     end
+    return
 end
 
 function deleteat_non_user_cache!(integrator::ODEIntegrator, cache::CompositeCache, i)
     for _cache in cache.caches
         deleteat_non_user_cache!(integrator, _cache, i)
     end
+    return
 end
 
 function addat_non_user_cache!(integrator::ODEIntegrator, cache::CompositeCache, i)
     for _cache in cache.caches
         addat_non_user_cache!(integrator, _cache, i)
     end
+    return
 end
 
 function deleteat_non_user_cache!(integrator::ODEIntegrator, cache, idxs)
     # ordering doesn't matter in deterministic cache, so just resize
     # to match the size of u
     i = length(integrator.u)
-    resize_non_user_cache!(integrator, cache, i)
+    return resize_non_user_cache!(integrator, cache, i)
 end
 
 function addat_non_user_cache!(integrator::ODEIntegrator, cache, idxs)
     # ordering doesn't matter in deterministic cache, so just resize
     # to match the size of u
     i = length(integrator.u)
-    resize_non_user_cache!(integrator, cache, i)
+    return resize_non_user_cache!(integrator, cache, i)
 end
 
 function deleteat!(integrator::ODEIntegrator, idxs)
     for c in full_cache(integrator)
         deleteat!(c, idxs)
     end
-    deleteat_non_user_cache!(integrator, integrator.cache, idxs)
+    return deleteat_non_user_cache!(integrator, integrator.cache, idxs)
 end
 
 function addat!(integrator::ODEIntegrator, idxs)
     for c in full_cache(integrator)
         addat!(c, idxs)
     end
-    addat_non_user_cache!(integrator, integrator.cache, idxs)
+    return addat_non_user_cache!(integrator, integrator.cache, idxs)
 end
 
 function terminate!(integrator::ODEIntegrator, retcode = ReturnCode.Terminated)
     integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, retcode)
-    integrator.opts.tstops.valtree = typeof(integrator.opts.tstops.valtree)()
+    return integrator.opts.tstops.valtree = typeof(integrator.opts.tstops.valtree)()
 end
 
 const EMPTY_ARRAY_OF_PAIRS = Pair[]
 
 SciMLBase.has_reinit(integrator::ODEIntegrator) = true
-function SciMLBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.u0;
+function SciMLBase.reinit!(
+        integrator::ODEIntegrator, u0 = integrator.sol.prob.u0;
         t0 = integrator.sol.prob.tspan[1],
         tf = integrator.sol.prob.tspan[2],
         erase_sol = true,
@@ -332,11 +367,12 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.u
         saveat = integrator.opts.saveat_cache,
         d_discontinuities = integrator.opts.d_discontinuities_cache,
         reset_dt = (integrator.dtcache == zero(integrator.dt)) &&
-                   integrator.opts.adaptive,
+            integrator.opts.adaptive,
         reinit_dae = true,
         reinit_callbacks = true, initialize_save = true,
         reinit_cache = true,
-        reinit_retcode = true)
+        reinit_retcode = true
+    )
     if reinit_dae && SciMLBase.has_initializeprob(integrator.sol.prob.f)
         # This is `remake` infrastructure. `reinit!` is somewhat like `remake` for
         # integrators, so we reuse some of the same pieces. If we pass `integrator.p`
@@ -346,8 +382,10 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.u
         # a symbolic `remake` and it can modify `newp` inplace. The array of pairs is a
         # const global to avoid allocating every time this function is called.
         u0,
-        newp = SciMLBase.late_binding_update_u0_p(integrator.sol.prob, u0,
-            EMPTY_ARRAY_OF_PAIRS, t0, u0, integrator.p)
+            newp = SciMLBase.late_binding_update_u0_p(
+            integrator.sol.prob, u0,
+            EMPTY_ARRAY_OF_PAIRS, t0, u0, integrator.p
+        )
         if newp !== integrator.p
             integrator.p = newp
             sol = integrator.sol
@@ -378,9 +416,11 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.u
     tspan = (tType(t0), tType(tf))
     integrator.opts.tstops = initialize_tstops(tType, tstops, d_discontinuities, tspan)
     integrator.opts.saveat = initialize_saveat(tType, saveat, tspan)
-    integrator.opts.d_discontinuities = initialize_d_discontinuities(tType,
+    integrator.opts.d_discontinuities = initialize_d_discontinuities(
+        tType,
         d_discontinuities,
-        tspan)
+        tspan
+    )
 
     if erase_sol
         if integrator.opts.save_start
@@ -428,7 +468,7 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.u
     end
 
     if reinit_dae &&
-       (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
+            (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
         DiffEqBase.initialize_dae!(integrator)
         update_uprev!(integrator)
     end
@@ -448,30 +488,36 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.u
 end
 
 function SciMLBase.auto_dt_reset!(integrator::ODEIntegrator)
-    integrator.dt = ode_determine_initdt(integrator.u, integrator.t,
+    integrator.dt = ode_determine_initdt(
+        integrator.u, integrator.t,
         integrator.tdir, integrator.opts.dtmax,
         integrator.opts.abstol, integrator.opts.reltol,
         integrator.opts.internalnorm, integrator.sol.prob,
-        integrator)
+        integrator
+    )
     integrator.dtpropose = integrator.dt
-    increment_nf!(integrator.stats, 2)
+    return increment_nf!(integrator.stats, 2)
 end
 
 function increment_nf!(stats, amt = 1)
-    stats.nf += amt
+    return stats.nf += amt
 end
 
 function SciMLBase.set_t!(integrator::ODEIntegrator, t::Real)
     if integrator.opts.save_everystep
-        error("Integrator time cannot be reset unless it is initialized",
-            " with save_everystep=false")
+        error(
+            "Integrator time cannot be reset unless it is initialized",
+            " with save_everystep=false"
+        )
     end
-    if alg_extrapolates(integrator.alg) || !isdtchangeable(integrator.alg)
-        reinit!(integrator, integrator.u;
+    return if alg_extrapolates(integrator.alg) || !isdtchangeable(integrator.alg)
+        reinit!(
+            integrator, integrator.u;
             t0 = t,
             reset_dt = false,
             reinit_callbacks = false,
-            reinit_cache = false)
+            reinit_cache = false
+        )
     else
         integrator.t = t
     end
@@ -479,11 +525,13 @@ end
 
 function SciMLBase.set_u!(integrator::ODEIntegrator, u)
     if integrator.opts.save_everystep
-        error("Integrator state cannot be reset unless it is initialized",
-            " with save_everystep=false")
+        error(
+            "Integrator state cannot be reset unless it is initialized",
+            " with save_everystep=false"
+        )
     end
     integrator.u = u
-    u_modified!(integrator, true)
+    return u_modified!(integrator, true)
 end
 
 SciMLBase.has_stats(i::ODEIntegrator) = true

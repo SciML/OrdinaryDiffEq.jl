@@ -3,7 +3,7 @@ CUDA.allowscalar(false)
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1614
 function f(du, u, p, t)
-    @. du = u
+    return @. du = u
 end
 
 problem = ODEProblem(f, CUDA.ones(1), (0.0, 1.0))

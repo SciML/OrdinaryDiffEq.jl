@@ -1,35 +1,35 @@
 const FIRST_AUTODIFF_TGRAD_MESSAGE = """
-                               First call to automatic differentiation for time gradient
-                               failed. This means that the user `f` function is not compatible
-                               with automatic differentiation. Methods to fix this include:
+First call to automatic differentiation for time gradient
+failed. This means that the user `f` function is not compatible
+with automatic differentiation. Methods to fix this include:
 
-                               1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
-                                  Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at
-                                  https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
-                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic
-                                  differentiation (using tools like PreallocationTools.jl). More details
-                                  can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
-                               3. Defining analytical Jacobians and time gradients. More details can be
-                                  found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction
+1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
+   Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at
+   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
+2. Improving the compatibility of `f` with ForwardDiff.jl automatic
+   differentiation (using tools like PreallocationTools.jl). More details
+   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
+3. Defining analytical Jacobians and time gradients. More details can be
+   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction
 
-                               Note 1: this failure occurred inside of the time gradient function. These
-                               time gradients are only required by Rosenbrock methods (`Rosenbrock23`,
-                               `Rodas4`, etc.) and are done by automatic differentiation w.r.t. the
-                               argument `t`. If your function is compatible with automatic differentiation
-                               w.r.t. `u`, i.e. for Jacobian generation, another way to work around this
-                               issue is to switch to a non-Rosenbrock method.
+Note 1: this failure occurred inside of the time gradient function. These
+time gradients are only required by Rosenbrock methods (`Rosenbrock23`,
+`Rodas4`, etc.) and are done by automatic differentiation w.r.t. the
+argument `t`. If your function is compatible with automatic differentiation
+w.r.t. `u`, i.e. for Jacobian generation, another way to work around this
+issue is to switch to a non-Rosenbrock method.
 
-                               Note 2: turning off automatic differentiation tends to have a very minimal
-                               performance impact (for this use case, because it's forward mode for a
-                               square Jacobian. This is different from optimization gradient scenarios).
-                               However, one should be careful as some methods are more sensitive to
-                               accurate gradients than others. Specifically, Rodas methods like `Rodas4`
-                               and `Rodas5P` require accurate Jacobians in order to have good convergence,
-                               while many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),
-                               and Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which
-                               is sensitive to autodiff and solving at a low tolerance, please change the
-                               algorithm as well.
-                               """
+Note 2: turning off automatic differentiation tends to have a very minimal
+performance impact (for this use case, because it's forward mode for a
+square Jacobian. This is different from optimization gradient scenarios).
+However, one should be careful as some methods are more sensitive to
+accurate gradients than others. Specifically, Rodas methods like `Rodas4`
+and `Rodas5P` require accurate Jacobians in order to have good convergence,
+while many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),
+and Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which
+is sensitive to autodiff and solving at a low tolerance, please change the
+algorithm as well.
+"""
 
 struct FirstAutodiffTgradError <: Exception
     e::Any
@@ -41,30 +41,30 @@ function Base.showerror(io::IO, e::FirstAutodiffTgradError)
 end
 
 const FIRST_AUTODIFF_JAC_MESSAGE = """
-                               First call to automatic differentiation for the Jacobian
-                               failed. This means that the user `f` function is not compatible
-                               with automatic differentiation. Methods to fix this include:
+First call to automatic differentiation for the Jacobian
+failed. This means that the user `f` function is not compatible
+with automatic differentiation. Methods to fix this include:
 
-                               1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
-                                  Rosenbrock23(autodiff = AutoFiniteDiff())). More details can befound at
-                                  https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
-                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic
-                                  differentiation (using tools like PreallocationTools.jl). More details
-                                  can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
-                               3. Defining analytical Jacobians. More details can be
-                                  found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction
+1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
+   Rosenbrock23(autodiff = AutoFiniteDiff())). More details can befound at
+   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
+2. Improving the compatibility of `f` with ForwardDiff.jl automatic
+   differentiation (using tools like PreallocationTools.jl). More details
+   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
+3. Defining analytical Jacobians. More details can be
+   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction
 
-                               Note: turning off automatic differentiation tends to have a very minimal
-                               performance impact (for this use case, because it's forward mode for a
-                               square Jacobian. This is different from optimization gradient scenarios).
-                               However, one should be careful as some methods are more sensitive to
-                               accurate gradients than others. Specifically, Rodas methods like `Rodas4`
-                               and `Rodas5P` require accurate Jacobians in order to have good convergence,
-                               while many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),
-                               and Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which
-                               is sensitive to autodiff and solving at a low tolerance, please change the
-                               algorithm as well.
-                               """
+Note: turning off automatic differentiation tends to have a very minimal
+performance impact (for this use case, because it's forward mode for a
+square Jacobian. This is different from optimization gradient scenarios).
+However, one should be careful as some methods are more sensitive to
+accurate gradients than others. Specifically, Rodas methods like `Rodas4`
+and `Rodas5P` require accurate Jacobians in order to have good convergence,
+while many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),
+and Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which
+is sensitive to autodiff and solving at a low tolerance, please change the
+algorithm as well.
+"""
 
 struct FirstAutodiffJacError <: Exception
     e::Any
@@ -75,7 +75,7 @@ function Base.showerror(io::IO, e::FirstAutodiffJacError)
     Base.showerror(io, e.e)
 end
 
-function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where F
+function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where {F}
     alg = unwrap_alg(integrator, true)
 
     # Update stats.nf
@@ -86,11 +86,13 @@ function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where F
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
         maxcolor = maximum(colorvec)
         chunk_size = (get_chunksize(alg) == Val(0) || get_chunksize(alg) == Val(nothing)) ?
-                     nothing : get_chunksize(alg)
-        num_of_chunks = div(maxcolor,
+            nothing : get_chunksize(alg)
+        num_of_chunks = div(
+            maxcolor,
             isnothing(chunk_size) ?
-            getsize(ForwardDiff.pickchunksize(maxcolor)) : _unwrap_val(chunk_size),
-            RoundUp)
+                getsize(ForwardDiff.pickchunksize(maxcolor)) : _unwrap_val(chunk_size),
+            RoundUp
+        )
 
         integrator.stats.nf += num_of_chunks
 
@@ -99,7 +101,7 @@ function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where F
         if dense.fdtype == Val(:forward)
             integrator.stats.nf += maximum(colorvec) + 1
         elseif dense.fdtype == Val(:central)
-            integrator.stats.nf += 2*maximum(colorvec)
+            integrator.stats.nf += 2 * maximum(colorvec)
         elseif dense.fdtype == Val(:complex)
             integrator.stats.nf += maximum(colorvec)
         end
@@ -136,7 +138,7 @@ function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where F
 end
 
 # fallback for scalar x, is needed for calc_J to work
-function jacobian(f::F, x, integrator) where F
+function jacobian(f::F, x, integrator) where {F}
     alg = unwrap_alg(integrator, true)
 
     dense = ADTypes.dense_ad(alg_autodiff(alg))
@@ -183,9 +185,11 @@ function jacobian(f::F, x, integrator) where F
     return jac
 end
 
-function jacobian!(J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number},
+function jacobian!(
+        J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::SciMLBase.DEIntegrator,
-        jac_config) where F
+        jac_config
+    ) where {F}
     # Handle empty state vector - nothing to compute
     if isempty(x)
         return nothing
@@ -201,12 +205,18 @@ function jacobian!(J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number}
         else
             sparsity, colorvec = sparsity_colorvec(integrator.f, x)
             maxcolor = maximum(colorvec)
-            chunk_size = (get_chunksize(alg) == Val(0) ||
-                          get_chunksize(alg) == Val(nothing)) ? nothing : get_chunksize(alg)
+            chunk_size = (
+                    get_chunksize(alg) == Val(0) ||
+                    get_chunksize(alg) == Val(nothing)
+                ) ? nothing : get_chunksize(alg)
             num_of_chunks = chunk_size === nothing ?
-                            Int(ceil(maxcolor /
-                                     getsize(ForwardDiff.pickchunksize(maxcolor)))) :
-                            Int(ceil(maxcolor / _unwrap_val(chunk_size)))
+                Int(
+                    ceil(
+                        maxcolor /
+                        getsize(ForwardDiff.pickchunksize(maxcolor))
+                    )
+                ) :
+                Int(ceil(maxcolor / _unwrap_val(chunk_size)))
 
             integrator.stats.nf += num_of_chunks
         end
@@ -240,18 +250,28 @@ function jacobian!(J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number}
         DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
     end
 
-    nothing
+    return nothing
 end
 
-function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
-        u, tmp, du2) where {F1, F2}
+function build_jac_config(
+        alg, f::F1, uf::F2, du1, uprev,
+        u, tmp, du2
+    ) where {F1, F2}
     haslinsolve = hasfield(typeof(alg), :linsolve)
 
     if !SciMLBase.has_jac(f) &&
-       (!SciMLBase.has_Wfact_t(f)) &&
-       ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve &&
-           (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
-        (concrete_jac(alg) !== nothing && concrete_jac(alg)))
+            (!SciMLBase.has_Wfact_t(f)) &&
+            (
+            (
+                concrete_jac(alg) === nothing && (
+                    !haslinsolve || (
+                        haslinsolve &&
+                            (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))
+                    )
+                )
+            ) ||
+                (concrete_jac(alg) !== nothing && concrete_jac(alg))
+        )
         jac_prototype = f.jac_prototype
 
         if is_sparse_csc(jac_prototype)
@@ -280,9 +300,11 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
             end
 
             jac_config_forward = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_forward, u, strict = Val(false))
+                uf, du1, autodiff_alg_forward, u, strict = Val(false)
+            )
             jac_config_reverse = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_reverse, u, strict = Val(false))
+                uf, du1, autodiff_alg_reverse, u, strict = Val(false)
+            )
 
             jac_config = (jac_config_forward, jac_config_reverse)
         else
@@ -294,17 +316,20 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev,
         jac_config = (nothing, nothing)
     end
 
-    jac_config
+    return jac_config
 end
 
-function get_chunksize(jac_config::ForwardDiff.JacobianConfig{
-        T,
-        V,
-        N,
-        D
-}) where {T, V, N, D
-}
-    Val(N)
+function get_chunksize(
+        jac_config::ForwardDiff.JacobianConfig{
+            T,
+            V,
+            N,
+            D,
+        }
+    ) where {
+        T, V, N, D,
+    }
+    return Val(N)
 end # don't degrade compile time information to runtime information
 
 function resize_jac_config!(cache, integrator)
@@ -322,12 +347,18 @@ function resize_jac_config!(cache, integrator)
             ad_left = autodiff_alg
         end
 
-        cache.jac_config = ([DI.prepare!_jacobian(
-                                                  uf, cache.du1, config, ad, integrator.u)
-                                              for (ad, config) in zip(
-            (ad_right, ad_left), cache.jac_config)]...,)
+        cache.jac_config = (
+            [
+                DI.prepare!_jacobian(
+                        uf, cache.du1, config, ad, integrator.u
+                    )
+                    for (ad, config) in zip(
+                        (ad_right, ad_left), cache.jac_config
+                    )
+            ]...,
+        )
     end
-    cache.jac_config
+    return cache.jac_config
 end
 
 function resize_grad_config!(cache, integrator)
@@ -343,12 +374,18 @@ function resize_grad_config!(cache, integrator)
             ad_left = autodiff_alg
         end
 
-        cache.grad_config = ([DI.prepare!_derivative(
-                                  cache.tf, cache.du1, config, ad, integrator.t)
-                              for (ad, config) in zip(
-            (ad_right, ad_left), cache.grad_config)]...,)
+        cache.grad_config = (
+            [
+                DI.prepare!_derivative(
+                        cache.tf, cache.du1, config, ad, integrator.t
+                    )
+                    for (ad, config) in zip(
+                        (ad_right, ad_left), cache.grad_config
+                    )
+            ]...,
+        )
     end
-    cache.grad_config
+    return cache.grad_config
 end
 
 """
@@ -398,7 +435,7 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     end
 end
 
-function sparsity_colorvec(f::F, x) where F
+function sparsity_colorvec(f::F, x) where {F}
     sparsity = f.sparsity
 
     if is_sparse_csc(sparsity)
@@ -414,6 +451,6 @@ function sparsity_colorvec(f::F, x) where F
     col_alg = GreedyColoringAlgorithm()
     col_prob = ColoringProblem()
     colorvec = SciMLBase.has_colorvec(f) ? f.colorvec :
-              (isnothing(sparsity) ? (1:length(x)) : column_colors(coloring(sparsity, col_prob, col_alg)))
-    sparsity, colorvec
+        (isnothing(sparsity) ? (1:length(x)) : column_colors(coloring(sparsity, col_prob, col_alg)))
+    return sparsity, colorvec
 end

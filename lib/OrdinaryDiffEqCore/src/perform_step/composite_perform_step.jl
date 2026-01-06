@@ -1,5 +1,5 @@
 function init_ith_default_cache(cache::DefaultCache, algs, i)
-    if i == 1
+    return if i == 1
         if !isdefined(cache, :cache1)
             cache.cache1 = alg_cache(algs[1], cache.args...)
         end
@@ -72,7 +72,7 @@ function initialize!(integrator, cache::DefaultCache)
         # the controller was initialized by default for algs[1]
         reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[6])
     end
-    resize!(integrator.k, integrator.kshortsize)
+    return resize!(integrator.k, integrator.kshortsize)
 end
 
 function initialize!(integrator, cache::CompositeCache)
@@ -89,17 +89,21 @@ function initialize!(integrator, cache::CompositeCache)
         !isnothing(fsallast) && (integrator.fsallast = fsallast)
         initialize!(integrator, @inbounds(cache.caches[2]))
         # the controller was initialized by default for integrator.alg.algs[1]
-        reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],
-            integrator.alg.algs[2])
+        reset_alg_dependent_opts!(
+            integrator.opts.controller, integrator.alg.algs[1],
+            integrator.alg.algs[2]
+        )
     else
         fsalfirst, fsallast = get_fsalfirstlast(cache.caches[cache.current], u)
         !isnothing(fsalfirst) && (integrator.fsalfirst = fsalfirst)
         !isnothing(fsallast) && (integrator.fsallast = fsallast)
         initialize!(integrator, @inbounds(cache.caches[cache.current]))
-        reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],
-            integrator.alg.algs[cache.current])
+        reset_alg_dependent_opts!(
+            integrator.opts.controller, integrator.alg.algs[1],
+            integrator.alg.algs[cache.current]
+        )
     end
-    resize!(integrator.k, integrator.kshortsize)
+    return resize!(integrator.k, integrator.kshortsize)
 end
 
 function initialize!(integrator, cache::CompositeCache{Tuple{T1, T2}, F}) where {T1, T2, F}
@@ -115,10 +119,12 @@ function initialize!(integrator, cache::CompositeCache{Tuple{T1, T2}, F}) where 
         !isnothing(fsalfirst) && (integrator.fsalfirst = fsalfirst)
         !isnothing(fsallast) && (integrator.fsallast = fsallast)
         initialize!(integrator, @inbounds(cache.caches[2]))
-        reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],
-            integrator.alg.algs[2])
+        reset_alg_dependent_opts!(
+            integrator.opts.controller, integrator.alg.algs[1],
+            integrator.alg.algs[2]
+        )
     end
-    resize!(integrator.k, integrator.kshortsize)
+    return resize!(integrator.k, integrator.kshortsize)
 end
 
 """
@@ -129,7 +135,7 @@ In particular, prevents dt ⟶ 0 if starting with non-adaptive alg and opts.adap
 and dt=cst if starting with adaptive alg and opts.adaptive=false.
 """
 function ensure_behaving_adaptivity!(integrator, cache::Union{DefaultCache, CompositeCache})
-    if anyadaptive(integrator.alg) && !isadaptive(integrator.alg)
+    return if anyadaptive(integrator.alg) && !isadaptive(integrator.alg)
         integrator.opts.adaptive = isadaptive(integrator.alg.algs[cache.current])
     end
 end
@@ -137,7 +143,7 @@ end
 function perform_step!(integrator, cache::DefaultCache, repeat_step = false)
     algs = integrator.alg.algs
     init_ith_default_cache(cache, algs, cache.current)
-    if cache.current == 1
+    return if cache.current == 1
         perform_step!(integrator, @inbounds(cache.cache1), repeat_step)
     elseif cache.current == 2
         perform_step!(integrator, @inbounds(cache.cache2), repeat_step)
@@ -153,7 +159,7 @@ function perform_step!(integrator, cache::DefaultCache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::CompositeCache, repeat_step = false)
-    if cache.current == 1
+    return if cache.current == 1
         perform_step!(integrator, @inbounds(cache.caches[1]), repeat_step)
     elseif cache.current == 2
         perform_step!(integrator, @inbounds(cache.caches[2]), repeat_step)
@@ -164,12 +170,14 @@ end
 
 choose_algorithm!(integrator, cache::OrdinaryDiffEqCache) = nothing
 
-function choose_algorithm!(integrator,
-        cache::CompositeCache{Tuple{T1, T2}, F}) where {T1, T2, F}
+function choose_algorithm!(
+        integrator,
+        cache::CompositeCache{Tuple{T1, T2}, F}
+    ) where {T1, T2, F}
     new_current = cache.choice_function(integrator)
     old_current = cache.current
     u = integrator.u
-    @inbounds if new_current != old_current
+    return @inbounds if new_current != old_current
         cache.current = new_current
         if new_current == 1
             fsalfirst, fsallast = get_fsalfirstlast(cache.caches[1], u)
@@ -183,15 +191,23 @@ function choose_algorithm!(integrator,
             initialize!(integrator, @inbounds(cache.caches[2]))
         end
         if old_current == 1 && new_current == 2
-            reset_alg_dependent_opts!(integrator, integrator.alg.algs[1],
-                integrator.alg.algs[2])
-            transfer_cache!(integrator, integrator.cache.caches[1],
-                integrator.cache.caches[2])
+            reset_alg_dependent_opts!(
+                integrator, integrator.alg.algs[1],
+                integrator.alg.algs[2]
+            )
+            transfer_cache!(
+                integrator, integrator.cache.caches[1],
+                integrator.cache.caches[2]
+            )
         elseif old_current == 2 && new_current == 1
-            reset_alg_dependent_opts!(integrator, integrator.alg.algs[2],
-                integrator.alg.algs[1])
-            transfer_cache!(integrator, integrator.cache.caches[2],
-                integrator.cache.caches[1])
+            reset_alg_dependent_opts!(
+                integrator, integrator.alg.algs[2],
+                integrator.alg.algs[1]
+            )
+            transfer_cache!(
+                integrator, integrator.cache.caches[2],
+                integrator.cache.caches[1]
+            )
         end
     end
 end
@@ -200,7 +216,7 @@ function choose_algorithm!(integrator, cache::DefaultCache)
     new_current = cache.choice_function(integrator)
     old_current = cache.current
     u = integrator.u
-    @inbounds if new_current != old_current
+    return @inbounds if new_current != old_current
         algs = integrator.alg.algs
         cache.current = new_current
         init_ith_default_cache(cache, algs, new_current)
@@ -284,7 +300,7 @@ function reset_alg_dependent_opts!(integrator, alg1, alg2)
         integrator.opts.qmax == qmax_default(alg2)
     end
     reset_alg_dependent_opts!(integrator.opts.controller, alg1, alg2)
-    nothing
+    return nothing
 end
 
 # Write how to transfer the cache variables from one cache to the other

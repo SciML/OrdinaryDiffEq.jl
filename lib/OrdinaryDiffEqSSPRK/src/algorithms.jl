@@ -4,7 +4,8 @@ Fixed timestep only.",
     "SSPRK53_2N2",
     references = "Higueras and T. Roldán.
     New third order low-storage SSP explicit Runge–Kutta methods
-    arXiv:1809.04807v1.")
+    arXiv:1809.04807v1."
+)
 Base.@kwdef struct SSPRK53_2N2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -12,9 +13,11 @@ Base.@kwdef struct SSPRK53_2N2{StageLimiter, StepLimiter, Thread} <: OrdinaryDif
 end
 # for backwards compatibility
 function SSPRK53_2N2(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK53_2N2(stage_limiter!,
+    return SSPRK53_2N2(
+        stage_limiter!,
         step_limiter!,
-        False())
+        False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -24,7 +27,8 @@ Fixed timestep only.",
     references = "Shu, Chi-Wang, and Stanley Osher.
     Efficient implementation of essentially non-oscillatory shock-capturing schemes.
     Journal of Computational Physics 77.2 (1988): 439-471.
-    https://doi.org/10.1016/0021-9991(88)90177-5")
+    https://doi.org/10.1016/0021-9991(88)90177-5"
+)
 Base.@kwdef struct SSPRK22{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -32,8 +36,10 @@ Base.@kwdef struct SSPRK22{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqA
 end
 # for backwards compatibility
 function SSPRK22(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK22(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK22(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -42,7 +48,8 @@ Fixed timestep only.",
     "SSPRK53",
     references = "Ruuth, Steven.
     Global optimization of explicit strong-stability-preserving Runge-Kutta methods.
-    Mathematics of Computation 75.253 (2006): 183-207")
+    Mathematics of Computation 75.253 (2006): 183-207"
+)
 Base.@kwdef struct SSPRK53{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -50,8 +57,10 @@ Base.@kwdef struct SSPRK53{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqA
 end
 # for backwards compatibility
 function SSPRK53(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK53(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK53(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -60,7 +69,8 @@ Fixed timestep only.",
     "SSPRK63",
     references = "Ruuth, Steven.
     Global optimization of explicit strong-stability-preserving Runge-Kutta methods.
-    Mathematics of Computation 75.253 (2006): 183-207")
+    Mathematics of Computation 75.253 (2006): 183-207"
+)
 Base.@kwdef struct SSPRK63{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -68,8 +78,10 @@ Base.@kwdef struct SSPRK63{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqA
 end
 # for backwards compatibility
 function SSPRK63(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK63(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK63(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -78,7 +90,8 @@ Fixed timestep only.",
     "SSPRK83",
     references = "Ruuth, Steven.
     Global optimization of explicit strong-stability-preserving Runge-Kutta methods.
-    Mathematics of Computation 75.253 (2006): 183-207")
+    Mathematics of Computation 75.253 (2006): 183-207"
+)
 Base.@kwdef struct SSPRK83{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -86,8 +99,10 @@ Base.@kwdef struct SSPRK83{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqA
 end
 # for backwards compatibility
 function SSPRK83(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK83(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK83(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -95,34 +110,37 @@ end
     "SSPRK43",
     references = """Optimal third-order explicit SSP method with four stages discovered by
 
-    - J. F. B. M. Kraaijevanger.
-      "Contractivity of Runge-Kutta methods."
-      In: BIT Numerical Mathematics 31.3 (1991), pp. 482–528.
-      [DOI: 10.1007/BF01933264](https://doi.org/10.1007/BF01933264).
+      - J. F. B. M. Kraaijevanger.
+        "Contractivity of Runge-Kutta methods."
+        In: BIT Numerical Mathematics 31.3 (1991), pp. 482–528.
+        [DOI: 10.1007/BF01933264](https://doi.org/10.1007/BF01933264).
 
-  Embedded method constructed by
+    Embedded method constructed by
 
-    - Sidafa Conde, Imre Fekete, John N. Shadid.
-      "Embedded error estimation and adaptive step-size control for
-      optimal explicit strong stability preserving Runge–Kutta methods."
-      [arXiv: 1806.08693](https://arXiv.org/abs/1806.08693)
+      - Sidafa Conde, Imre Fekete, John N. Shadid.
+        "Embedded error estimation and adaptive step-size control for
+        optimal explicit strong stability preserving Runge–Kutta methods."
+        [arXiv: 1806.08693](https://arXiv.org/abs/1806.08693)
 
-  Efficient implementation (and optimized controller) developed by
+    Efficient implementation (and optimized controller) developed by
 
-    - Hendrik Ranocha, Lisandro Dalcin, Matteo Parsani, David I. Ketcheson (2021)
-      Optimized Runge-Kutta Methods with Automatic Step Size Control for
-      Compressible Computational Fluid Dynamics
-      [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)""")
+      - Hendrik Ranocha, Lisandro Dalcin, Matteo Parsani, David I. Ketcheson (2021)
+        Optimized Runge-Kutta Methods with Automatic Step Size Control for
+        Compressible Computational Fluid Dynamics
+        [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)"""
+)
 Base.@kwdef struct SSPRK43{StageLimiter, StepLimiter, Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
 # for backwards compatibility
 function SSPRK43(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK43(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK43(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -131,17 +149,20 @@ end
     references = "Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
     Strong stability preserving Runge-Kutta and multistep time discretizations.
     World Scientific, 2011.
-    Example 6.1")
+    Example 6.1"
+)
 Base.@kwdef struct SSPRK432{StageLimiter, StepLimiter, Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
 # for backwards compatibility
 function SSPRK432(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK432(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK432(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -152,18 +173,21 @@ size.",
     references = "Shu, Chi-Wang.
     Total-variation-diminishing time discretizations.
     SIAM Journal on Scientific and Statistical Computing 9, no. 6 (1988): 1073-1084.
-    [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)")
+    [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)"
+)
 Base.@kwdef struct SSPRKMSVS32{StageLimiter, StepLimiter, Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
 # for backwards compatibility
 function SSPRKMSVS32(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRKMSVS32(stage_limiter!,
+    return SSPRKMSVS32(
+        stage_limiter!,
         step_limiter!,
-        False())
+        False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -172,7 +196,8 @@ Fixed timestep only.",
     "SSPRK54",
     references = "Ruuth, Steven.
     Global optimization of explicit strong-stability-preserving Runge-Kutta methods.
-    Mathematics of Computation 75.253 (2006): 183-207.")
+    Mathematics of Computation 75.253 (2006): 183-207."
+)
 Base.@kwdef struct SSPRK54{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -180,8 +205,10 @@ Base.@kwdef struct SSPRK54{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqA
 end
 # for backwards compatibility
 function SSPRK54(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK54(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK54(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -190,7 +217,8 @@ Fixed timestep only.",
     "SSPRK53_2N1",
     references = "Higueras and T. Roldán.
     New third order low-storage SSP explicit Runge–Kutta methods
-    arXiv:1809.04807v1.")
+    arXiv:1809.04807v1."
+)
 Base.@kwdef struct SSPRK53_2N1{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -198,9 +226,11 @@ Base.@kwdef struct SSPRK53_2N1{StageLimiter, StepLimiter, Thread} <: OrdinaryDif
 end
 # for backwards compatibility
 function SSPRK53_2N1(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK53_2N1(stage_limiter!,
+    return SSPRK53_2N1(
+        stage_limiter!,
         step_limiter!,
-        False())
+        False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -210,7 +240,8 @@ Fixed timestep only.",
     references = "Ketcheson, David I.
     Highly efficient strong stability-preserving Runge–Kutta methods with
     low-storage implementations.
-    SIAM Journal on Scientific Computing 30.4 (2008): 2113-2136.")
+    SIAM Journal on Scientific Computing 30.4 (2008): 2113-2136."
+)
 Base.@kwdef struct SSPRK104{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -218,8 +249,10 @@ Base.@kwdef struct SSPRK104{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEq
 end
 # for backwards compatibility
 function SSPRK104(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK104(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK104(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -230,17 +263,20 @@ improved embedded method.",
     "SSPRK932",
     references = "Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
     Strong stability preserving Runge-Kutta and multistep time discretizations.
-    World Scientific, 2011.")
+    World Scientific, 2011."
+)
 Base.@kwdef struct SSPRK932{StageLimiter, StepLimiter, Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
 # for backwards compatibility
 function SSPRK932(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK932(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK932(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -251,18 +287,21 @@ size.",
     references = "Shu, Chi-Wang.
     Total-variation-diminishing time discretizations.
     SIAM Journal on Scientific and Statistical Computing 9, no. 6 (1988): 1073-1084.
-    [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)")
+    [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)"
+)
 Base.@kwdef struct SSPRKMSVS43{StageLimiter, StepLimiter, Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
 # for backwards compatibility
 function SSPRKMSVS43(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRKMSVS43(stage_limiter!,
+    return SSPRKMSVS43(
+        stage_limiter!,
         step_limiter!,
-        False())
+        False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -271,7 +310,8 @@ Fixed timestep only.",
     "SSPRK73",
     references = "Ruuth, Steven.
     Global optimization of explicit strong-stability-preserving Runge-Kutta methods.
-    Mathematics of Computation 75.253 (2006): 183-207")
+    Mathematics of Computation 75.253 (2006): 183-207"
+)
 Base.@kwdef struct SSPRK73{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -279,8 +319,10 @@ Base.@kwdef struct SSPRK73{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqA
 end
 # for backwards compatibility
 function SSPRK73(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK73(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK73(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -289,7 +331,8 @@ Fixed timestep only.",
     "SSPRK53_H",
     references = "Higueras and T. Roldán.
     New third order low-storage SSP explicit Runge–Kutta methods
-    arXiv:1809.04807v1.")
+    arXiv:1809.04807v1."
+)
 Base.@kwdef struct SSPRK53_H{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -297,8 +340,10 @@ Base.@kwdef struct SSPRK53_H{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
 end
 # for backwards compatibility
 function SSPRK53_H(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK53_H(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK53_H(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -308,7 +353,8 @@ Fixed timestep only.",
     references = "Shu, Chi-Wang, and Stanley Osher.
     Efficient implementation of essentially non-oscillatory shock-capturing schemes.
     Journal of Computational Physics 77.2 (1988): 439-471.
-    https://doi.org/10.1016/0021-9991(88)90177-5")
+    https://doi.org/10.1016/0021-9991(88)90177-5"
+)
 Base.@kwdef struct SSPRK33{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -316,8 +362,10 @@ Base.@kwdef struct SSPRK33{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqA
 end
 # for backwards compatibility
 function SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!)
-    SSPRK33(stage_limiter!,
-        step_limiter!, False())
+    return SSPRK33(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -330,7 +378,8 @@ end
     volume={60},
     pages={313--344},
     year={2014},
-    publisher={Springer}}")
+    publisher={Springer}}"
+)
 Base.@kwdef struct KYKSSPRK42{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -338,9 +387,11 @@ Base.@kwdef struct KYKSSPRK42{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
 end
 # for backwards compatibility
 function KYKSSPRK42(stage_limiter!, step_limiter! = trivial_limiter!)
-    KYKSSPRK42(stage_limiter!,
+    return KYKSSPRK42(
+        stage_limiter!,
         step_limiter!,
-        False())
+        False()
+    )
 end
 
 @doc explicit_rk_docstring(
@@ -353,16 +404,19 @@ end
     volume={60},
     pages={313--344},
     year={2014},
-    publisher={Springer}}""")
+    publisher={Springer}}"""
+)
 Base.@kwdef struct KYK2014DGSSPRK_3S2{StageLimiter, StepLimiter, Thread} <:
-                   OrdinaryDiffEqAlgorithm
+    OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
 # for backwards compatibility
 function KYK2014DGSSPRK_3S2(stage_limiter!, step_limiter! = trivial_limiter!)
-    KYK2014DGSSPRK_3S2(stage_limiter!,
+    return KYK2014DGSSPRK_3S2(
+        stage_limiter!,
         step_limiter!,
-        False())
+        False()
+    )
 end

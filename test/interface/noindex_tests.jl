@@ -6,7 +6,7 @@ end
 Base.size(x::NoIndexArray) = size(x.x)
 Base.axes(x::NoIndexArray) = axes(x.x)
 function Base.similar(x::NoIndexArray, dims::Union{Integer, AbstractUnitRange}...)
-    NoIndexArray(similar(x.x, dims...))
+    return NoIndexArray(similar(x.x, dims...))
 end
 Base.copyto!(x::NoIndexArray, y::NoIndexArray) = NoIndexArray(copyto!(x.x, y.x))
 Base.copy(x::NoIndexArray) = NoIndexArray(copy(x.x))
@@ -21,17 +21,21 @@ struct NoIndexStyle{N} <: Broadcast.AbstractArrayStyle{N} end
 NoIndexStyle(::Val{N}) where {N} = NoIndexStyle{N}()
 NoIndexStyle{M}(::Val{N}) where {N, M} = NoIndexStyle{N}()
 Base.BroadcastStyle(::Type{<:NoIndexArray{T, N}}) where {T, N} = NoIndexStyle{N}()
-function Base.similar(bc::Base.Broadcast.Broadcasted{NoIndexStyle{N}},
-        ::Type{ElType}) where {N, ElType}
-    NoIndexArray(similar(Array{ElType, N}, axes(bc)))
+function Base.similar(
+        bc::Base.Broadcast.Broadcasted{NoIndexStyle{N}},
+        ::Type{ElType}
+    ) where {N, ElType}
+    return NoIndexArray(similar(Array{ElType, N}, axes(bc)))
 end
 Base.Broadcast._broadcast_getindex(x::NoIndexArray, i) = x.x[i]
 Base.Broadcast.extrude(x::NoIndexArray) = x
 using ArrayInterface
 ArrayInterface.fast_scalar_indexing(::Type{<:NoIndexArray}) = false
 
-@inline function Base.copyto!(dest::NoIndexArray,
-        bc::Base.Broadcast.Broadcasted{<:NoIndexStyle})
+@inline function Base.copyto!(
+        dest::NoIndexArray,
+        bc::Base.Broadcast.Broadcasted{<:NoIndexStyle}
+    )
     axes(dest) == axes(bc) || throwdm(axes(dest), axes(bc))
     bc′ = Base.Broadcast.preprocess(dest, bc)
     dest′ = dest.x
@@ -45,7 +49,7 @@ Base.show_vector(io::IO, x::NoIndexArray) = Base.show_vector(io, x.x)
 Base.show(io::IO, x::NoIndexArray) = (print(io, "NoIndexArray"); show(io, x.x))
 function Base.show(io::IO, ::MIME"text/plain", x::NoIndexArray)
     println(io, Base.summary(x), ":")
-    Base.print_array(io, x.x)
+    return Base.print_array(io, x.x)
 end
 
 prob = ODEProblem((du, u, p, t) -> copyto!(du, u), NoIndexArray(ones(10, 10)), (0.0, 10.0))
@@ -66,7 +70,7 @@ Base.ndims(::Type{<:CustomArray{T, N}}) where {T, N} = N
 Base.zero(x::CustomArray) = CustomArray(zero(x.x))
 Base.zero(::Type{<:CustomArray{T, N}}) where {T, N} = CustomArray(zero(Array{T, N}))
 function Base.similar(x::CustomArray, dims::Union{Integer, AbstractUnitRange}...)
-    CustomArray(similar(x.x, dims...))
+    return CustomArray(similar(x.x, dims...))
 end
 Base.copyto!(x::CustomArray, y::CustomArray) = CustomArray(copyto!(x.x, y.x))
 Base.copy(x::CustomArray) = CustomArray(copy(x.x))
@@ -92,19 +96,22 @@ CustomStyle(::Val{N}) where {N} = CustomStyle{N}()
 CustomStyle{M}(::Val{N}) where {N, M} = NoIndexStyle{N}()
 Base.BroadcastStyle(::Type{<:CustomArray{T, N}}) where {T, N} = CustomStyle{N}()
 function Broadcast.BroadcastStyle(
-        ::CustomStyle{N}, ::Broadcast.DefaultArrayStyle{0}) where {N}
-    CustomStyle{N}()
+        ::CustomStyle{N}, ::Broadcast.DefaultArrayStyle{0}
+    ) where {N}
+    return CustomStyle{N}()
 end
 function Base.similar(
-        bc::Base.Broadcast.Broadcasted{CustomStyle{N}}, ::Type{ElType}) where {N, ElType}
-    CustomArray(similar(Array{ElType, N}, axes(bc)))
+        bc::Base.Broadcast.Broadcasted{CustomStyle{N}}, ::Type{ElType}
+    ) where {N, ElType}
+    return CustomArray(similar(Array{ElType, N}, axes(bc)))
 end
 Base.Broadcast._broadcast_getindex(x::CustomArray, i) = x.x[i]
 Base.Broadcast.extrude(x::CustomArray) = x
 Base.Broadcast.broadcastable(x::CustomArray) = x
 
 @inline function Base.copyto!(
-        dest::CustomArray, bc::Base.Broadcast.Broadcasted{<:CustomStyle})
+        dest::CustomArray, bc::Base.Broadcast.Broadcasted{<:CustomStyle}
+    )
     axes(dest) == axes(bc) || throwdm(axes(dest), axes(bc))
     bc′ = Base.Broadcast.preprocess(dest, bc)
     dest′ = dest.x
@@ -138,7 +145,7 @@ Base.show_vector(io::IO, x::CustomArray) = Base.show_vector(io, x.x)
 Base.show(io::IO, x::CustomArray) = (print(io, "CustomArray"); show(io, x.x))
 function Base.show(io::IO, ::MIME"text/plain", x::CustomArray)
     println(io, Base.summary(x), ":")
-    Base.print_array(io, x.x)
+    return Base.print_array(io, x.x)
 end
 
 prob = ODEProblem((du, u, p, t) -> copyto!(du, u), CustomArray(ones(10)), (0.0, 10.0))

@@ -24,13 +24,16 @@ Currently, Rosenbrock solvers are allocating and marked with @test_broken.
     rosenbrock_solvers = [
         Rosenbrock23(), Rosenbrock32(), RosShamp4(), Veldd4(), Velds4(), GRK4T(), GRK4A(),
         Rodas3(), Rodas23W(), Rodas3P(), Rodas4(), Rodas42(), Rodas4P(), Rodas4P2(), Rodas5(),
-        Rodas5P(), Rodas5Pe(), Rodas5Pr(), Rodas6P()]
+        Rodas5P(), Rodas5Pe(), Rodas5Pr(), Rodas6P(),
+    ]
 
     @testset "Rosenbrock Solver Allocation Analysis" begin
         for solver in rosenbrock_solvers
             @testset "$(typeof(solver)) allocation check" begin
-                integrator = init(linear_prob, solver, dt = 0.1,
-                    save_everystep = false, abstol = 1e-6, reltol = 1e-6)
+                integrator = init(
+                    linear_prob, solver, dt = 0.1,
+                    save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6
+                )
                 step!(integrator)  # Setup step may allocate
 
                 # Use AllocCheck for accurate allocation detection
@@ -43,7 +46,7 @@ Currently, Rosenbrock solvers are allocating and marked with @test_broken.
                 # However, we don't want to allow any dynamic dispatch from this module
                 @test count(
                     t -> t isa AllocCheck.DynamicDispatch &&
-                         any(s -> contains(string(s.file), "Rosenbrock"), t.backtrace),
+                        any(s -> contains(string(s.file), "Rosenbrock"), t.backtrace),
                     allocs
                 ) == 0
 

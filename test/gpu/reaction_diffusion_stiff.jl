@@ -17,8 +17,10 @@ const X = reshape([i for i in 1:N for j in 1:N], N, N)
 const Y = reshape([j for i in 1:N for j in 1:N], N, N)
 const α₁ = 1.0 .* (X .>= 4 * N / 5)
 
-const Mx = Tridiagonal([1.0 for i in 1:(N - 1)], [-2.0 for i in 1:N],
-    [1.0 for i in 1:(N - 1)])
+const Mx = Tridiagonal(
+    [1.0 for i in 1:(N - 1)], [-2.0 for i in 1:N],
+    [1.0 for i in 1:(N - 1)]
+)
 const My = copy(Mx)
 Mx[2, 1] = 2.0
 Mx[end - 1, end] = 2.0
@@ -44,7 +46,7 @@ function f(du, u, p, t)
     @. DA = D * (MyA + AMx)
     @. dA = DA + α₁ - β₁ * A - r₁ * A * B + r₂ * C
     @. dB = α₂ - β₂ * B - r₁ * A * B + r₂ * C
-    @. dC = α₃ - β₃ * C + r₁ * A * B - r₂ * C
+    return @. dC = α₃ - β₃ * C + r₁ * A * B - r₂ * C
 end
 
 # Solve the ODE
@@ -56,8 +58,10 @@ println("CPU Times")
 println("BS3")
 @time sol = solve(prob, BS3(), progress = true, save_everystep = false, save_start = false)
 println("ROCK2")
-@time sol = solve(prob, ROCK2(), progress = true, save_everystep = false,
-    save_start = false)
+@time sol = solve(
+    prob, ROCK2(), progress = true, save_everystep = false,
+    save_start = false
+)
 
 using CUDA
 gu0 = CuArray(Float32.(u0))
@@ -81,7 +85,7 @@ function gf(du, u, p, t)
     @. gDA = D * (gMyA + gAMx)
     @. dA = gDA + gα₁ - β₁ * A - r₁ * A * B + r₂ * C
     @. dB = α₂ - β₂ * B - r₁ * A * B + r₂ * C
-    @. dC = α₃ - β₃ * C + r₁ * A * B - r₂ * C
+    return @. dC = α₃ - β₃ * C + r₁ * A * B - r₂ * C
 end
 
 prob2 = ODEProblem(gf, gu0, (0.0f0, 100.0f0))
@@ -94,5 +98,7 @@ println("GPU Times")
 println("BS3")
 @time sol = solve(prob2, BS3(), progress = true, save_everystep = false, save_start = false)
 println("ROCK2")
-@time sol = solve(prob2, ROCK2(), progress = true, save_everystep = false,
-    save_start = false)
+@time sol = solve(
+    prob2, ROCK2(), progress = true, save_everystep = false,
+    save_start = false
+)

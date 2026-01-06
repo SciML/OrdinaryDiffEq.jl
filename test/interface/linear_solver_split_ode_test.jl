@@ -16,9 +16,11 @@ f1 = (du, u, p, t) -> du .= M1 * u
 f2 = (du, u, p, t) -> du .= M2 * u
 prob = SplitODEProblem(f1, f2, u0, tspan)
 
-for algname in (:SBDF2,
-    :SBDF3,
-    :KenCarp47)
+for algname in (
+        :SBDF2,
+        :SBDF3,
+        :KenCarp47,
+    )
     @testset "$algname" begin
         alg0 = @eval $algname()
         alg1 = @eval $algname(linsolve = LUFactorization())
@@ -35,9 +37,11 @@ f1 = M1 |> MatrixOperator
 f2 = M2 |> MatrixOperator
 prob = SplitODEProblem(f1, f2, u0, tspan)
 
-for algname in (:SBDF2,
-    :SBDF3,
-    :KenCarp47)
+for algname in (
+        :SBDF2,
+        :SBDF3,
+        :KenCarp47,
+    )
     @testset "$algname" begin
         alg0 = @eval $algname()
 

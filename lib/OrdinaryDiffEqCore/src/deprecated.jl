@@ -10,18 +10,26 @@
 
 # OLD signature -> NEW signature (for old callers using updated OrdinaryDiffEq algorithms)
 # These add the default ODEVerbosity() when called without verbose parameter.
-function alg_cache(alg, u, rate_prototype, uEltypeNoUnits,
+function alg_cache(
+        alg, u, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true})
-    alg_cache(alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(true), ODEVerbosity())
+        ::Val{true}
+    )
+    return alg_cache(
+        alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(true), ODEVerbosity()
+    )
 end
 
-function alg_cache(alg, u, rate_prototype, uEltypeNoUnits,
+function alg_cache(
+        alg, u, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false})
-    alg_cache(alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false), ODEVerbosity())
+        ::Val{false}
+    )
+    return alg_cache(
+        alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false), ODEVerbosity()
+    )
 end

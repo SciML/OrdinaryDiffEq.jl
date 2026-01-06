@@ -91,12 +91,12 @@ end
 
 function default_controller(alg::RDPK3SpFSAL35, cache, qoldinit, args...)
     QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.70, -0.23, 0.00))...)
+    return PIDController(map(Base.Fix1(convert, QT), (0.7, -0.23, 0.0))...)
 end
 
 function default_controller(alg::RDPK3Sp49, cache, qoldinit, args...)
     QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.25, -0.12, 0.00))...)
+    return PIDController(map(Base.Fix1(convert, QT), (0.25, -0.12, 0.0))...)
 end
 
 function default_controller(alg::RDPK3SpFSAL49, cache, qoldinit, args...)
@@ -106,10 +106,10 @@ end
 
 function default_controller(alg::RDPK3Sp510, cache, qoldinit, args...)
     QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.47, -0.20, 0.06))...)
+    return PIDController(map(Base.Fix1(convert, QT), (0.47, -0.2, 0.06))...)
 end
 
 function default_controller(alg::RDPK3SpFSAL510, cache, qoldinit, args...)
     QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.45, -0.13, 0.00))...)
+    return PIDController(map(Base.Fix1(convert, QT), (0.45, -0.13, 0.0))...)
 end

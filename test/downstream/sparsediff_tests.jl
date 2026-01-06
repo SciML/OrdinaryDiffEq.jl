@@ -20,7 +20,7 @@ function f_ip(dx, x, p, t)
     end
     dx[1] = -2x[1] + x[2]
     dx[end] = x[end - 1] - 2x[end]
-    nothing
+    return nothing
 end
 
 ## out-of-place
@@ -40,7 +40,7 @@ function second_derivative_stencil(N)
         (j - i == -1 || j - i == 1) && (A[i, j] = 1)
         j - i == 0 && (A[i, j] = -2)
     end
-    A
+    return A
 end
 
 function generate_sparsity_pattern(N::Integer)
@@ -57,8 +57,10 @@ u0 = [1.0, 2.0, 3, 4, 5, 5, 4, 3, 2, 1]
 tspan = (0.0, 10.0)
 
 adchoices = if isempty(VERSION.prerelease)
-    [AutoForwardDiff(), AutoFiniteDiff(),
-        AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const)]
+    [
+        AutoForwardDiff(), AutoFiniteDiff(),
+        AutoEnzyme(mode = Enzyme.Forward, function_annotation = Enzyme.Const),
+    ]
 else
     [AutoForwardDiff(), AutoFiniteDiff()]
 end
@@ -69,23 +71,33 @@ for f in [f_oop, f_ip]
 
     for ad in adchoices, linsolve in [nothing, LinearSolve.KrylovJL_GMRES()]
         for Solver in [Rodas5, Rosenbrock23, Trapezoid, KenCarp4, FBDF]
-            for tol in [nothing, 1e-10]
+            for tol in [nothing, 1.0e-10]
                 sol_std = solve(prob_std, Solver(autodiff = ad, linsolve = linsolve), reltol = tol, abstol = tol)
                 @test sol_std.retcode == ReturnCode.Success
-                for (i, prob) in enumerate(map(f -> ODEProblem(f, u0, tspan),
-                    [
-                        ODEFunction(f, colorvec = colors,
-                            jac_prototype = jac_sp),
-                        ODEFunction(f, colorvec = colors,
-                            jac_prototype = jac_sp, mass_matrix = I(length(u0))),
-                        ODEFunction(f, jac_prototype = jac_sp),
-                        ODEFunction(f, colorvec = colors,
-                            sparsity = jac_sp)
-                    ]))
+                for (i, prob) in enumerate(
+                        map(
+                            f -> ODEProblem(f, u0, tspan),
+                            [
+                                ODEFunction(
+                                    f, colorvec = colors,
+                                    jac_prototype = jac_sp
+                                ),
+                                ODEFunction(
+                                    f, colorvec = colors,
+                                    jac_prototype = jac_sp, mass_matrix = I(length(u0))
+                                ),
+                                ODEFunction(f, jac_prototype = jac_sp),
+                                ODEFunction(
+                                    f, colorvec = colors,
+                                    sparsity = jac_sp
+                                ),
+                            ]
+                        )
+                    )
                     sol = solve(prob, Solver(autodiff = ad, linsolve = linsolve), reltol = tol, abstol = tol)
                     @test sol.retcode == ReturnCode.Success
                     if tol != nothing
-                        @test sol_std.u[end]≈sol.u[end] atol=tol
+                        @test sol_std.u[end] ≈ sol.u[end] atol = tol
                     else
                         @test sol_std.u[end] ≈ sol.u[end]
                     end
@@ -117,5 +129,4 @@ jac_prototype = sparse(Diagonal(vcat(1, zeros(9))))
 
 fun = ODEFunction(f; jac, jac_prototype)
 prob = ODEProblem(fun, u0, (0.0, 1.0))
-@test_nowarn sol = solve(prob, Rodas4(); reltol = 1e-8, abstol = 1e-8)
-
+@test_nowarn sol = solve(prob, Rodas4(); reltol = 1.0e-8, abstol = 1.0e-8)

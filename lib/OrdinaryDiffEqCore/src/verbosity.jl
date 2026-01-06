@@ -7,7 +7,7 @@
         :w_factorization, :newton_iterations,
         :rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon,
         :stability_check, :near_singular,
-        :sensitivity_vjp_choice
+        :sensitivity_vjp_choice,
     )
 
     presets = (
@@ -36,7 +36,7 @@
             dt_epsilon = Silent(),
             stability_check = Silent(),
             near_singular = Silent(),
-            sensitivity_vjp_choice = Silent()
+            sensitivity_vjp_choice = Silent(),
         ),
         Minimal = (
             linear_verbosity = Minimal(),
@@ -63,7 +63,7 @@
             dt_epsilon = Silent(),
             stability_check = Silent(),
             near_singular = WarnLevel(),
-            sensitivity_vjp_choice = Silent()
+            sensitivity_vjp_choice = Silent(),
         ),
         Standard = (
             linear_verbosity = Minimal(),
@@ -90,7 +90,7 @@
             dt_epsilon = Silent(),
             stability_check = Silent(),
             near_singular = Silent(),
-            sensitivity_vjp_choice = Silent()
+            sensitivity_vjp_choice = Silent(),
         ),
         Detailed = (
             linear_verbosity = Detailed(),
@@ -117,7 +117,7 @@
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
-            sensitivity_vjp_choice = WarnLevel()
+            sensitivity_vjp_choice = WarnLevel(),
         ),
         All = (
             linear_verbosity = All(),
@@ -144,26 +144,26 @@
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
-            sensitivity_vjp_choice = WarnLevel()
-        )
+            sensitivity_vjp_choice = WarnLevel(),
+        ),
     )
 
     groups = (
         error_control = (
             :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable,
-            :instability, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit
+            :instability, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         ),
         performance = (
             :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
-            :w_factorization, :newton_iterations
+            :w_factorization, :newton_iterations,
         ),
         numerical = (
             :rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon,
-            :stability_check, :near_singular
+            :stability_check, :near_singular,
         ),
         sensitivity = (
             :sensitivity_vjp_choice,
-        )
+        ),
     )
 end
 
@@ -255,11 +255,11 @@ function ODEVerbosity end
 const DEFAULT_VERBOSE = ODEVerbosity()
 
 @inline function _process_verbose_param(verbose::SciMLLogging.AbstractVerbosityPreset)
-    ODEVerbosity(verbose)
+    return ODEVerbosity(verbose)
 end
 
 @inline function _process_verbose_param(verbose::Bool)
-    verbose ? DEFAULT_VERBOSE : ODEVerbosity(SciMLLogging.None())
+    return verbose ? DEFAULT_VERBOSE : ODEVerbosity(SciMLLogging.None())
 end
 
 @inline _process_verbose_param(verbose::ODEVerbosity) = verbose

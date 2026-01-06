@@ -11,16 +11,20 @@ function brusselator_2d_loop(du, u, p, t)
         i, j = Tuple(I)
         x, y = xyd_brusselator[I[1]], xyd_brusselator[I[2]]
         ip1, im1, jp1, jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N),
-        limit(j - 1, N)
-        du[i, j, 1] = alpha * (u[im1, j, 1] + u[ip1, j, 1] + u[i, jp1, 1] + u[i, jm1, 1] -
-                       4u[i, j, 1]) +
-                      B + u[i, j, 1]^2 * u[i, j, 2] - (A + 1) * u[i, j, 1] +
-                      brusselator_f(x, y, t)
-        du[i, j, 2] = alpha * (u[im1, j, 2] + u[ip1, j, 2] + u[i, jp1, 2] + u[i, jm1, 2] -
-                       4u[i, j, 2]) +
-                      A * u[i, j, 1] - u[i, j, 1]^2 * u[i, j, 2]
+            limit(j - 1, N)
+        du[i, j, 1] = alpha * (
+            u[im1, j, 1] + u[ip1, j, 1] + u[i, jp1, 1] + u[i, jm1, 1] -
+                4u[i, j, 1]
+        ) +
+            B + u[i, j, 1]^2 * u[i, j, 2] - (A + 1) * u[i, j, 1] +
+            brusselator_f(x, y, t)
+        du[i, j, 2] = alpha * (
+            u[im1, j, 2] + u[ip1, j, 2] + u[i, jp1, 2] + u[i, jm1, 2] -
+                4u[i, j, 2]
+        ) +
+            A * u[i, j, 1] - u[i, j, 1]^2 * u[i, j, 2]
     end
-    nothing
+    return nothing
 end
 p = (3.4, 1.0, 10.0, step(xyd_brusselator))
 
@@ -33,19 +37,25 @@ function init_brusselator_2d(xyd)
         u[I, 1] = 22 * (y * (1 - y))^(3 / 2)
         u[I, 2] = 27 * (x * (1 - x))^(3 / 2)
     end
-    u
+    return u
 end
 u0 = init_brusselator_2d(xyd_brusselator)
-prob_ode_brusselator_2d = ODEProblem(brusselator_2d_loop,
-    u0, (0.0, 5.0), p)
+prob_ode_brusselator_2d = ODEProblem(
+    brusselator_2d_loop,
+    u0, (0.0, 5.0), p
+)
 
 integ1 = init(prob_ode_brusselator_2d, TRBDF2(), save_everystep = false)
-integ2 = init(prob_ode_brusselator_2d, TRBDF2(linsolve = KrylovJL_GMRES()),
-    save_everystep = false)
+integ2 = init(
+    prob_ode_brusselator_2d, TRBDF2(linsolve = KrylovJL_GMRES()),
+    save_everystep = false
+)
 
-nojac = @allocated init(prob_ode_brusselator_2d,
+nojac = @allocated init(
+    prob_ode_brusselator_2d,
     TRBDF2(linsolve = KrylovJL_GMRES()),
-    save_everystep = false)
+    save_everystep = false
+)
 jac = @allocated init(prob_ode_brusselator_2d, TRBDF2(), save_everystep = false)
 @test jac / nojac > 50
 @test integ1.cache.nlsolver.cache.jac_config !== (nothing, nothing)
@@ -107,7 +117,7 @@ function pollu(dy, y, p, t)
     r25 = k25 * y[20]
 
     dy[1] = -r1 - r10 - r14 - r23 - r24 +
-            r2 + r3 + r9 + r11 + r12 + r22 + r25
+        r2 + r3 + r9 + r11 + r12 + r22 + r25
     dy[2] = -r2 - r3 - r9 - r12 + r1 + r21
     dy[3] = -r15 + r1 + r17 + r19 + r22
     dy[4] = -r2 - r16 - r17 - r23 + r15
@@ -126,7 +136,7 @@ function pollu(dy, y, p, t)
     dy[17] = -r20
     dy[18] = r20
     dy[19] = -r21 - r22 - r24 + r23 + r25
-    dy[20] = -r25 + r24
+    return dy[20] = -r25 + r24
 end
 
 function fjac(J, y, p, t)
@@ -245,15 +255,21 @@ u0[9] = 0.01
 u0[17] = 0.007
 prob = ODEProblem(ODEFunction(pollu, jac = fjac), u0, (0.0, 60.0))
 
-integ = init(prob, Rosenbrock23(), abstol = 1e-6, reltol = 1e-6)
+integ = init(prob, Rosenbrock23(), abstol = 1.0e-6, reltol = 1.0e-6)
 @test integ.cache.jac_config === (nothing, nothing)
-integ = init(prob, Rosenbrock23(linsolve = SimpleLUFactorization()), abstol = 1e-6,
-    reltol = 1e-6)
+integ = init(
+    prob, Rosenbrock23(linsolve = SimpleLUFactorization()), abstol = 1.0e-6,
+    reltol = 1.0e-6
+)
 @test integ.cache.jac_config === (nothing, nothing)
-integ = init(prob, Rosenbrock23(linsolve = GenericLUFactorization()), abstol = 1e-6,
-    reltol = 1e-6)
+integ = init(
+    prob, Rosenbrock23(linsolve = GenericLUFactorization()), abstol = 1.0e-6,
+    reltol = 1.0e-6
+)
 @test integ.cache.jac_config === (nothing, nothing)
-integ = init(prob,
+integ = init(
+    prob,
     Rosenbrock23(linsolve = RFLUFactorization(), autodiff = AutoForwardDiff(chunksize = 3)),
-    abstol = 1e-6, reltol = 1e-6)
+    abstol = 1.0e-6, reltol = 1.0e-6
+)
 @test integ.cache.jac_config === (nothing, nothing)

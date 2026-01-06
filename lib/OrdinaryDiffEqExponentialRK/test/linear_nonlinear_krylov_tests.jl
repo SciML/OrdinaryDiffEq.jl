@@ -26,7 +26,7 @@ let N = 20
 
     @testset "Classical ExpRK - Low Order" begin
         dt = 0.01
-        tol = 1e-3
+        tol = 1.0e-3
         Algs = [LawsonEuler, NorsettEuler, ETDRK2]
         for Alg in Algs
             sol = solve(prob, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
@@ -43,7 +43,7 @@ let N = 20
 
     @testset "Classical ExpRK - High Order" begin
         dt = 0.05
-        tol = 1e-5
+        tol = 1.0e-5
         Algs = [ETDRK3, ETDRK4, HochOst4]
         for Alg in Algs
             sol = solve(prob, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
@@ -60,7 +60,7 @@ let N = 20
 
     @testset "EPIRK" begin
         dt = 0.05
-        tol = 1e-5
+        tol = 1.0e-5
         Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EXPRB53s3, EPIRK5P1, EPIRK5P2]
         for Alg in Algs
             sol = solve(prob, Alg(); dt = dt, reltol = tol)
@@ -98,13 +98,13 @@ let N = 20
         end
 
         println("Exprb32, out-of-place")
-        regression_test(prob, Exprb32(m = N), 3e-4)
+        regression_test(prob, Exprb32(m = N), 3.0e-4)
         println("Exprb32, inplace")
-        regression_test(prob_ip, Exprb32(m = N), 3e-4)
+        regression_test(prob_ip, Exprb32(m = N), 3.0e-4)
         println("Exprb43, out-of-place")
-        regression_test(prob, Exprb43(m = N), 3e-4)
+        regression_test(prob, Exprb43(m = N), 3.0e-4)
         println("Exprb43, inplace")
-        regression_test(prob_ip, Exprb43(m = N), 3e-4)
+        regression_test(prob_ip, Exprb43(m = N), 3.0e-4)
     end
 end
 
@@ -117,9 +117,11 @@ end
     du = ones(N - 1)
     A = spdiagm(-1 => du, 0 => dd, 1 => du)
     f = (u, p, t) -> A * u
-    exp_fun = ODEFunction(f;
+    exp_fun = ODEFunction(
+        f;
         jac = (u, p, t) -> A,
-        analytic = (u, p, t) -> exp(t * Matrix(A)) * u)
+        analytic = (u, p, t) -> exp(t * Matrix(A)) * u
+    )
     prob = ODEProblem(exp_fun, u0, (0.0, 1.0))
     sol = solve(prob, LawsonEuler(krylov = true, m = N); dt = 0.1)
     @test sol(1.0) ≈ exp_fun.analytic(u0, nothing, 1.0)

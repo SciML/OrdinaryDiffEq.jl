@@ -21,14 +21,14 @@ struct StaticWOperator{isinv, T, F} <: AbstractSciMLOperator{T}
         else
             W
         end
-        new{isinv, T, typeof(F)}(_W, F)
+        return new{isinv, T, typeof(F)}(_W, F)
     end
 end
 isinv(W::StaticWOperator{S}) where {S} = S
 Base.:\(W::StaticWOperator, v::AbstractArray) = isinv(W) ? W.W * v : W.F \ v
 
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
-    @inbounds begin
+    return @inbounds begin
         (; t, dt, uprev, u, f, p) = integrator
         (; du2, fsalfirst, dT, tf, linsolve_tmp) = cache
 
@@ -43,14 +43,14 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 
                 autodiff_alg = ADTypes.dense_ad(gpu_safe_autodiff(alg_autodiff(alg), u))
 
-                # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers work 
+                # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers work
                 t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT), t) : t
 
                 grad_config_tup = cache.grad_config
 
                 if autodiff_alg isa AutoFiniteDiff
                     grad_config = diffdir(integrator) > 0 ? grad_config_tup[1] :
-                                  grad_config_tup[2]
+                        grad_config_tup[2]
                 else
                     grad_config = grad_config_tup[1]
                 end
@@ -58,7 +58,8 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
                 if integrator.iter == 1
                     try
                         DI.derivative!(
-                            tf, linsolve_tmp, dT, grad_config, autodiff_alg, t)
+                            tf, linsolve_tmp, dT, grad_config, autodiff_alg, t
+                        )
                     catch e
                         throw(FirstAutodiffTgradError(e))
                     end
@@ -70,7 +71,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
             end
         end
 
-        @.. broadcast=false linsolve_tmp=fsalfirst+dtd1*dT
+        @.. broadcast = false linsolve_tmp = fsalfirst + dtd1 * dT
     end
 end
 
@@ -103,7 +104,7 @@ function calc_tderivative(integrator, cache)
 
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
-    dT
+    return dT
 end
 
 """
@@ -132,8 +133,10 @@ function calc_J(integrator, cache, next_step::Bool = false)
         end
     end
 
-    @SciMLMessage(lazy"Computing Jacobian at t = $(t) using $(method)",
-                  integrator.opts.verbose, :jacobian_update)
+    @SciMLMessage(
+        lazy"Computing Jacobian at t = $(t) using $(method)",
+        integrator.opts.verbose, :jacobian_update
+    )
 
     if alg isa DAEAlgorithm
         if SciMLBase.has_jac(f)
@@ -163,7 +166,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
     end
 
     integrator.stats.njacs += 1
-    J
+    return J
 end
 
 """
@@ -192,7 +195,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             # we need to set all nzval to a non-zero number
             # otherwise in the following line any zero gets interpreted as a structural zero
             if !isnothing(integrator.f.jac_prototype) &&
-               is_sparse_csc(integrator.f.jac_prototype)
+                    is_sparse_csc(integrator.f.jac_prototype)
                 set_all_nzval!(integrator.f.jac_prototype, true)
                 J .= true .* integrator.f.jac_prototype
                 set_all_nzval!(J, false)
@@ -216,7 +219,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             # we need to set all nzval to a non-zero number
             # otherwise in the following line any zero gets interpreted as a structural zero
             if !isnothing(integrator.f.jac_prototype) &&
-               is_sparse_csc(integrator.f.jac_prototype)
+                    is_sparse_csc(integrator.f.jac_prototype)
                 set_all_nzval!(integrator.f.jac_prototype, true)
                 J .= true .* integrator.f.jac_prototype
                 set_all_nzval!(J, false)
@@ -266,13 +269,15 @@ to be a diffeq operator --- it will automatically be converted to one.
 internal cache (can be specified in the constructor; default to regular `Vector`).
 It supports all of `AbstractSciMLOperator`'s interface.
 """
-mutable struct WOperator{IIP, T,
-    MType,
-    GType,
-    JType,
-    F,
-    C,
-    JV} <: AbstractSciMLOperator{T}
+mutable struct WOperator{
+        IIP, T,
+        MType,
+        GType,
+        JType,
+        F,
+        C,
+        JV,
+    } <: AbstractSciMLOperator{T}
     mass_matrix::MType
     gamma::GType
     J::JType
@@ -290,7 +295,7 @@ mutable struct WOperator{IIP, T,
             AJ = J isa MatrixOperator ? convert(AbstractMatrix, J) : J
             if AJ isa AbstractMatrix
                 mm = mass_matrix isa MatrixOperator ?
-                     convert(AbstractMatrix, mass_matrix) : mass_matrix
+                    convert(AbstractMatrix, mass_matrix) : mass_matrix
                 if is_sparse(AJ)
 
                     # If gamma is zero, then it's just an initialization and we want to make sure
@@ -332,16 +337,18 @@ mutable struct WOperator{IIP, T,
         F = typeof(_func_cache)
         C = typeof(_concrete_form)
         JV = typeof(jacvec)
-        return new{IIP, T, MType, GType, JType, F, C, JV}(mass_matrix, gamma, J,
+        return new{IIP, T, MType, GType, JType, F, C, JV}(
+            mass_matrix, gamma, J,
             _func_cache, _concrete_form,
-            jacvec)
+            jacvec
+        )
     end
-    
+
     function Base.copy(W::WOperator{IIP, T, MType, GType, JType, F, C, JV}) where {IIP, T, MType, GType, JType, F, C, JV}
         return new{IIP, T, MType, GType, JType, F, C, JV}(
-            W.mass_matrix, 
-            W.gamma, 
-            W.J, 
+            W.mass_matrix,
+            W.gamma,
+            W.J,
             W._func_cache === nothing ? nothing : copy(W._func_cache),
             W._concrete_form === nothing ? nothing : copy(W._concrete_form),
             W.jacvec
@@ -371,23 +378,25 @@ Base.eltype(W::WOperator) = eltype(W.J)
 
 # In WOperator update_coefficients!, accept both missing u/p/t and missing dtgamma and don't update them in that case.
 # This helps support partial updating logic used with Newton solvers.
-function SciMLOperators.update_coefficients!(W::WOperator,
+function SciMLOperators.update_coefficients!(
+        W::WOperator,
         u = nothing,
         p = nothing,
         t = nothing;
-        dtgamma = nothing)
+        dtgamma = nothing
+    )
     if (u !== nothing) && (p !== nothing) && (t !== nothing)
         update_coefficients!(W.J, u, p, t)
         update_coefficients!(W.mass_matrix, u, p, t)
         !isnothing(W.jacvec) && update_coefficients!(W.jacvec, u, p, t)
     end
     dtgamma !== nothing && (W.gamma = dtgamma)
-    W
+    return W
 end
 
 function SciMLOperators.update_coefficients!(J::UJacobianWrapper, u, p, t)
     J.p = p
-    J.t = t
+    return J.t = t
 end
 
 function Base.convert(::Type{AbstractMatrix}, W::WOperator{IIP}) where {IIP}
@@ -408,26 +417,26 @@ end
 Base.size(W::WOperator) = size(W.J)
 Base.size(W::WOperator, d::Integer) = d <= 2 ? size(W)[d] : 1
 function Base.getindex(W::WOperator, i::Int)
-    -W.mass_matrix[i] / W.gamma + W.J[i]
+    return -W.mass_matrix[i] / W.gamma + W.J[i]
 end
 function Base.getindex(W::WOperator, I::Vararg{Int, N}) where {N}
-    -W.mass_matrix[I...] / W.gamma + W.J[I...]
+    return -W.mass_matrix[I...] / W.gamma + W.J[I...]
 end
 function Base.:*(W::WOperator, x::AbstractVecOrMat)
-    (W.mass_matrix * x) / -W.gamma + W.J * x
+    return (W.mass_matrix * x) / -W.gamma + W.J * x
 end
 function Base.:*(W::WOperator, x::Number)
-    (W.mass_matrix * x) / -W.gamma + W.J * x
+    return (W.mass_matrix * x) / -W.gamma + W.J * x
 end
 function Base.:\(W::WOperator, x::AbstractVecOrMat)
-    if size(W) == () # scalar operator
+    return if size(W) == () # scalar operator
         convert(Number, W) \ x
     else
         convert(AbstractMatrix, W) \ x
     end
 end
 function Base.:\(W::WOperator, x::Number)
-    if size(W) == () # scalar operator
+    return if size(W) == () # scalar operator
         convert(Number, W) \ x
     else
         convert(AbstractMatrix, W) \ x
@@ -438,7 +447,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
         a = -W.mass_matrix.λ / W.gamma
-        @.. broadcast=false Y=a*B
+        @.. broadcast = false Y = a * B
     else
         mul!(_vec(Y), W.mass_matrix, _vec(B))
         lmul!(-inv(W.gamma), Y)
@@ -449,7 +458,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
     else
         mul!(_vec(W._func_cache), W.J, _vec(B))
     end
-    _vec(Y) .+= _vec(W._func_cache)
+    return _vec(Y) .+= _vec(W._func_cache)
 end
 
 """
@@ -464,7 +473,7 @@ islinearfunction(integrator) = islinearfunction(integrator.f, integrator.alg)
 
 return the tuple `(is_linear_wrt_odealg, islinearodefunction)`.
 """
-function islinearfunction(f::F, alg)::Tuple{Bool, Bool} where F
+function islinearfunction(f::F, alg)::Tuple{Bool, Bool} where {F}
     isode = f isa ODEFunction && islinear(f.f)
     islin = isode || (issplit(alg) && f isa SplitFunction && islinear(f.f1.f))
     return islin, isode
@@ -483,7 +492,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     # TODO: add `isJcurrent` support for Rosenbrock solvers
     if !isnewton(nlsolver)
         isfreshJ = !(integrator.alg isa CompositeAlgorithm) &&
-                   (integrator.iter > 1 && errorfail && !integrator.u_modified)
+            (integrator.iter > 1 && errorfail && !integrator.u_modified)
         return !isfreshJ, true
     end
     isfirstcall(nlsolver) && return true, true
@@ -514,7 +523,8 @@ end
 end
 
 function jacobian2W!(
-        W::AbstractMatrix, mass_matrix, dtgamma::Number, J::AbstractMatrix)::Nothing
+        W::AbstractMatrix, mass_matrix, dtgamma::Number, J::AbstractMatrix
+    )::Nothing
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
@@ -527,15 +537,15 @@ function jacobian2W!(
             idxs = diagind(W)
             λ = -mass_matrix.λ
             if ArrayInterface.fast_scalar_indexing(J) &&
-               ArrayInterface.fast_scalar_indexing(W)
+                    ArrayInterface.fast_scalar_indexing(W)
                 @inbounds for i in 1:size(J, 1)
                     W[i, i] = muladd(λ, invdtgamma, J[i, i])
                 end
             else
-                @.. broadcast=false @view(W[idxs])=muladd(λ, invdtgamma, @view(J[idxs]))
+                @.. broadcast = false @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
             end
         else
-            @.. broadcast=false W=muladd(-mass_matrix, invdtgamma, J)
+            @.. broadcast = false W = muladd(-mass_matrix, invdtgamma, J)
         end
     end
     return nothing
@@ -583,8 +593,10 @@ end
 
 is_always_new(alg) = isdefined(alg, :always_new) ? alg.always_new : false
 
-function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
-        repeat_step, newJW = nothing)
+function calc_W!(
+        W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
+        repeat_step, newJW = nothing
+    )
     (; t, dt, uprev, u, f, p) = integrator
     lcache = nlsolver === nothing ? cache : nlsolver.cache
     next_step = is_always_new(nlsolver)
@@ -606,8 +618,10 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     if SciMLBase.has_Wfact_t(f)
         f.Wfact_t(W, u, p, dtgamma, t)
         isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
-        is_compos && (integrator.eigen_est = constvalue(opnorm(LowerTriangular(W), Inf)) +
-                                inv(dtgamma)) # TODO: better estimate
+        is_compos && (
+            integrator.eigen_est = constvalue(opnorm(LowerTriangular(W), Inf)) +
+                inv(dtgamma)
+        ) # TODO: better estimate
         # It's equivalent with evaluating a new Jacobian, but not a new W,
         # because we won't call `lu!`, and the iteration matrix is fresh.
         return (true, false)
@@ -640,7 +654,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
         if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
-            (new_jac && (calc_J!(W.J, integrator, lcache, next_step)))
+                (new_jac && (calc_J!(W.J, integrator, lcache, next_step)))
             new_W && !isdae &&
                 jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J)
         end
@@ -649,7 +663,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     else # concrete W using jacobian from `calc_J!`
         islin, isode = islinearfunction(integrator)
         islin ? (J = isode ? f.f : f.f1.f) :
-        (new_jac && (calc_J!(J, integrator, lcache, next_step)))
+            (new_jac && (calc_J!(J, integrator, lcache, next_step)))
         new_W && !isdae && jacobian2W!(W, mass_matrix, dtgamma, J)
     end
     if isnewton(nlsolver)
@@ -715,8 +729,10 @@ end
             end
         end
     end
-    is_compos && (integrator.eigen_est = isarray ? constvalue(opnorm(J, Inf)) :
-                            integrator.opts.internalnorm(J, t))
+    is_compos && (
+        integrator.eigen_est = isarray ? constvalue(opnorm(J, Inf)) :
+            integrator.opts.internalnorm(J, t)
+    )
     return W
 end
 
@@ -726,7 +742,8 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
     new_jac = new_W = false
     if !repeat_step
         new_jac, new_W = calc_W!(
-            cache.W, integrator, nlsolver, cache, dtgamma, repeat_step)
+            cache.W, integrator, nlsolver, cache, dtgamma, repeat_step
+        )
     end
     # If the Jacobian is not updated, we won't have to update ∂/∂t either.
     calc_tderivative!(integrator, cache, dtd1, repeat_step || !new_jac)
@@ -735,26 +752,34 @@ end
 
 # update W matrix (only used in Newton method)
 function update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing)
-    update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step, newJW)
+    return update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step, newJW)
 end
 
-function update_W!(nlsolver::AbstractNLSolver,
+function update_W!(
+        nlsolver::AbstractNLSolver,
         integrator::SciMLBase.DEIntegrator{<:Any, true}, cache, dtgamma,
-        repeat_step::Bool, newJW = nothing)
+        repeat_step::Bool, newJW = nothing
+    )
     if isnewton(nlsolver)
-        new_jac, new_W = calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step,
-            newJW)
+        new_jac, new_W = calc_W!(
+            get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step,
+            newJW
+        )
         if new_W
-            @SciMLMessage(lazy"W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
-                          integrator.opts.verbose, :w_factorization)
+            @SciMLMessage(
+                lazy"W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
+                integrator.opts.verbose, :w_factorization
+            )
         end
     end
-    nothing
+    return nothing
 end
 
-function update_W!(nlsolver::AbstractNLSolver,
+function update_W!(
+        nlsolver::AbstractNLSolver,
         integrator::SciMLBase.DEIntegrator{<:Any, false}, cache, dtgamma,
-        repeat_step::Bool, newJW = nothing)
+        repeat_step::Bool, newJW = nothing
+    )
     if isnewton(nlsolver)
         isdae = integrator.alg isa DAEAlgorithm
         new_jac, new_W = true, true
@@ -775,15 +800,19 @@ function update_W!(nlsolver::AbstractNLSolver,
             set_W_γdt!(nlsolver, dtgamma)
         end
         if new_W
-            @SciMLMessage(lazy"W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
-                          integrator.opts.verbose, :w_factorization)
+            @SciMLMessage(
+                lazy"W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
+                integrator.opts.verbose, :w_factorization
+            )
         end
     end
-    nothing
+    return nothing
 end
 
-function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUnits},
-        ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
+function build_J_W(
+        alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUnits},
+        ::Val{IIP}
+    ) where {IIP, uEltypeNoUnits, F}
     # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
     # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
@@ -802,14 +831,16 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
         J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
         W = WOperator{IIP}(f.mass_matrix, dt, J, u)
     elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
-           (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))
+            (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))
 
         # If factorization, then just use the jac_prototype
         J = similar(f.jac_prototype)
         W = similar(J)
-    elseif (IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
-            alg.linsolve !== nothing &&
-            !LinearSolve.needs_concrete_A(alg.linsolve))
+    elseif (
+            IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
+                alg.linsolve !== nothing &&
+                !LinearSolve.needs_concrete_A(alg.linsolve)
+        )
         # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
         # Jacobian is a bad idea and create a fully matrix-free solver. This can
         # be overridden with concrete_jac.
@@ -818,7 +849,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, u, jacvec)
     elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
-           concrete_jac(alg) !== nothing && concrete_jac(alg)
+            concrete_jac(alg) !== nothing && concrete_jac(alg)
         # The linear solver does not need a concrete Jacobian, but the user has
         # asked for one. This will happen when the Jacobian is used in the preconditioner
         # Thus setup JacVec and a concrete J, using sparsity when possible
@@ -827,9 +858,10 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
             if alg_autodiff(alg) isa AutoSparse
                 if isnothing(f.sparsity)
                     !isnothing(jac_config) ?
-                    convert.(
-                        eltype(u), sparsity_pattern(jac_config[1])) :
-                    spzeros(eltype(u), length(u), length(u))
+                        convert.(
+                            eltype(u), sparsity_pattern(jac_config[1])
+                        ) :
+                        spzeros(eltype(u), length(u), length(u))
                 elseif eltype(f.sparsity) == Bool
                     convert.(eltype(u), f.sparsity)
                 else
@@ -859,7 +891,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUn
             if alg_autodiff(alg) isa AutoSparse
                 if isnothing(f.sparsity)
                     !isnothing(jac_config) ? convert.(eltype(u), sparsity_pattern(jac_config[1])) :
-                    spzeros(eltype(u), length(u), length(u))
+                        spzeros(eltype(u), length(u), length(u))
                 elseif eltype(f.sparsity) == Bool
                     convert.(eltype(u), f.sparsity)
                 else
@@ -891,41 +923,50 @@ function LinearSolve.init_cacheval(
         alg::LinearSolve.DefaultLinearSolver, A::WOperator, b, u,
         Pl, Pr,
         maxiters::Int, abstol, reltol, verbose::LinearVerbosity,
-        assumptions::OperatorAssumptions)
-    LinearSolve.init_cacheval(alg, A.J, b, u, Pl, Pr,
+        assumptions::OperatorAssumptions
+    )
+    return LinearSolve.init_cacheval(
+        alg, A.J, b, u, Pl, Pr,
         maxiters::Int, abstol, reltol, verbose::LinearVerbosity,
-        assumptions::OperatorAssumptions)
+        assumptions::OperatorAssumptions
+    )
 end
 
-for alg in [LinearSolve.AppleAccelerateLUFactorization,
-    LinearSolve.BunchKaufmanFactorization,
-    LinearSolve.CHOLMODFactorization,
-    LinearSolve.CholeskyFactorization,
-    LinearSolve.CudaOffloadFactorization,
-    LinearSolve.DiagonalFactorization,
-    LinearSolve.FastLUFactorization,
-    LinearSolve.FastQRFactorization,
-    LinearSolve.GenericFactorization,
-    LinearSolve.GenericLUFactorization,
-    LinearSolve.KLUFactorization,
-    LinearSolve.LDLtFactorization,
-    LinearSolve.LUFactorization,
-    LinearSolve.MKLLUFactorization,
-    LinearSolve.MetalLUFactorization,
-    LinearSolve.NormalBunchKaufmanFactorization,
-    LinearSolve.NormalCholeskyFactorization,
-    LinearSolve.QRFactorization,
-    LinearSolve.RFLUFactorization,
-    LinearSolve.SVDFactorization,
-    LinearSolve.SimpleLUFactorization,
-    LinearSolve.SparspakFactorization,
-    LinearSolve.UMFPACKFactorization]
-    @eval function LinearSolve.init_cacheval(alg::$alg, A::WOperator, b, u, Pl, Pr,
+for alg in [
+        LinearSolve.AppleAccelerateLUFactorization,
+        LinearSolve.BunchKaufmanFactorization,
+        LinearSolve.CHOLMODFactorization,
+        LinearSolve.CholeskyFactorization,
+        LinearSolve.CudaOffloadFactorization,
+        LinearSolve.DiagonalFactorization,
+        LinearSolve.FastLUFactorization,
+        LinearSolve.FastQRFactorization,
+        LinearSolve.GenericFactorization,
+        LinearSolve.GenericLUFactorization,
+        LinearSolve.KLUFactorization,
+        LinearSolve.LDLtFactorization,
+        LinearSolve.LUFactorization,
+        LinearSolve.MKLLUFactorization,
+        LinearSolve.MetalLUFactorization,
+        LinearSolve.NormalBunchKaufmanFactorization,
+        LinearSolve.NormalCholeskyFactorization,
+        LinearSolve.QRFactorization,
+        LinearSolve.RFLUFactorization,
+        LinearSolve.SVDFactorization,
+        LinearSolve.SimpleLUFactorization,
+        LinearSolve.SparspakFactorization,
+        LinearSolve.UMFPACKFactorization,
+    ]
+    @eval function LinearSolve.init_cacheval(
+            alg::$alg, A::WOperator, b, u, Pl, Pr,
             maxiters::Int, abstol, reltol, verbose::LinearVerbosity,
-            assumptions::OperatorAssumptions)
-        LinearSolve.init_cacheval(alg, A.J, b, u, Pl, Pr,
+            assumptions::OperatorAssumptions
+        )
+        return LinearSolve.init_cacheval(
+            alg, A.J, b, u, Pl, Pr,
             maxiters::Int, abstol, reltol, verbose::LinearVerbosity,
-            assumptions::OperatorAssumptions)
+            assumptions::OperatorAssumptions
+        )
     end
 end
 
@@ -940,20 +981,25 @@ function resize_J_W!(cache, integrator, i)
         if !islin
             if cache.J isa AbstractSciMLOperator
                 resize_JVPCache!(
-                    cache.J, f, cache.du1, integrator.u, alg_autodiff(integrator.alg))
+                    cache.J, f, cache.du1, integrator.u, alg_autodiff(integrator.alg)
+                )
             elseif f.jac_prototype !== nothing
                 J = similar(f.jac_prototype, i, i)
                 J = MatrixOperator(J; update_func! = f.jac)
             end
             if cache.W.jacvec isa AbstractSciMLOperator
-                resize_JVPCache!(cache.W.jacvec, f, cache.du1, integrator.u,
-                    alg_autodiff(integrator.alg))
+                resize_JVPCache!(
+                    cache.W.jacvec, f, cache.du1, integrator.u,
+                    alg_autodiff(integrator.alg)
+                )
             end
-            cache.W = WOperator{SciMLBase.isinplace(integrator.sol.prob)}(f.mass_matrix,
+            cache.W = WOperator{SciMLBase.isinplace(integrator.sol.prob)}(
+                f.mass_matrix,
                 integrator.dt,
                 cache.J,
                 integrator.u,
-                cache.W.jacvec)
+                cache.W.jacvec
+            )
             cache.J = cache.W.J
         end
     else
@@ -963,7 +1009,7 @@ function resize_J_W!(cache, integrator, i)
         cache.W = similar(cache.W, i, i)
     end
 
-    nothing
+    return nothing
 end
 
 getsize(::Val{N}) where {N} = N

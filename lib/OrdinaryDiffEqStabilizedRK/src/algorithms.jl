@@ -1,7 +1,6 @@
-
 @doc generic_solver_docstring(
     """High stability for real eigenvalues. Second order method. Exhibits high stability for real eigenvalues
-and is smoothened to allow for moderate sized complex eigenvalues.""",
+    and is smoothened to allow for moderate sized complex eigenvalues.""",
     "ROCK2",
     "Stabilized Explicit Method.",
     """Assyr Abdulle, Alexei A. Medovikov. Second Order Chebyshev Methods based on Orthogonal Polynomials.
@@ -18,19 +17,20 @@ and is smoothened to allow for moderate sized complex eigenvalues.""",
     min_stages = 0,
     max_stages = 200,
     eigen_est = nothing,
-    """)
+    """
+)
 struct ROCK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
 end
 function ROCK2(; min_stages = 0, max_stages = 200, eigen_est = nothing)
-    ROCK2(min_stages, max_stages, eigen_est)
+    return ROCK2(min_stages, max_stages, eigen_est)
 end
 
 @doc generic_solver_docstring(
     """High stability for real eigenvalues. Fourth order method. Exhibits high stability for real eigenvalues
-and is smoothened to allow for moderate sized complex eigenvalues.""",
+    and is smoothened to allow for moderate sized complex eigenvalues.""",
     "ROCK4",
     "Stabilized Explicit Method.",
     """Assyr Abdulle. Fourth Order Chebyshev Methods With Recurrence Relation. 2002 Society for
@@ -48,14 +48,15 @@ and is smoothened to allow for moderate sized complex eigenvalues.""",
     min_stages = 0,
     max_stages = 152,
     eigen_est = nothing,
-    """)
+    """
+)
 struct ROCK4{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
 end
 function ROCK4(; min_stages = 0, max_stages = 152, eigen_est = nothing)
-    ROCK4(min_stages, max_stages, eigen_est)
+    return ROCK4(min_stages, max_stages, eigen_est)
 end
 
 # SERK methods
@@ -84,12 +85,13 @@ end
     """,
     """
     eigen_est = nothing,
-    """)
+    """
+)
 function RKC end
 
 @doc generic_solver_docstring(
     """Fourth order method. Exhibits high stability for real eigenvalues
-and is smoothened to allow for moderate sized complex eigenvalues.""",
+    and is smoothened to allow for moderate sized complex eigenvalues.""",
     "ESERK4",
     "Stabilized Explicit Method.",
     """J. Martín-Vaquero, B. Kleefeld. Extrapolated stabilized explicit Runge-Kutta methods,
@@ -103,12 +105,13 @@ and is smoothened to allow for moderate sized complex eigenvalues.""",
     """,
     """
     eigen_est = nothing,
-    """)
+    """
+)
 function ESERK4 end
 
 @doc generic_solver_docstring(
     """Fifth order method. Exhibits high stability for real eigenvalues
-and is smoothened to allow for moderate sized complex eigenvalues.""",
+    and is smoothened to allow for moderate sized complex eigenvalues.""",
     "ESERK5",
     "Stabilized Explicit Method.",
     """J. Martín-Vaquero, A. Kleefeld. ESERK5: A fifth-order extrapolated stabilized explicit Runge-Kutta method,
@@ -122,10 +125,12 @@ and is smoothened to allow for moderate sized complex eigenvalues.""",
     """,
     """
     eigen_est = nothing,
-    """)
+    """
+)
 function ESERK5 end
 
-@doc generic_solver_docstring("""Second order method.""",
+@doc generic_solver_docstring(
+    """Second order method.""",
     "SERK2",
     "Stabilized Explicit Method.",
     """@article{kleefeld2013serk2v2,
@@ -147,7 +152,8 @@ function ESERK5 end
     """
     controller = :PI
     eigen_est = nothing,
-    """)
+    """
+)
 struct SERK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     controller::Symbol
     eigen_est::E

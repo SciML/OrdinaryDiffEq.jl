@@ -1,5 +1,5 @@
 macro swap!(x, y)
-    quote
+    return quote
         local tmp = $(esc(x))
         $(esc(x)) = $(esc(y))
         $(esc(y)) = tmp
@@ -13,14 +13,14 @@ macro cache(expr)
     jac_vars = Pair{Symbol, Expr}[]
     for x in fields
         if x.args[2] == :uType || x.args[2] == :rateType ||
-           x.args[2] == :kType || x.args[2] == :uNoUnitsType
+                x.args[2] == :kType || x.args[2] == :uNoUnitsType
             push!(cache_vars, :(c.$(x.args[1])))
         elseif x.args[2] == :DiffCacheType
             push!(cache_vars, :(c.$(x.args[1]).du))
             push!(cache_vars, :(c.$(x.args[1]).dual_du))
         end
     end
-    quote
+    return quote
         $(esc(expr))
         $(esc(:full_cache))(c::$(esc(name))) = tuple($(cache_vars...))
     end
@@ -39,9 +39,9 @@ end
 
 function diffdir(integrator::SciMLBase.DEIntegrator)
     difference = maximum(abs, integrator.uprev) * sqrt(eps(typeof(integrator.t)))
-    dir = integrator.tdir > zero(integrator.tdir) ?
-          integrator.t > integrator.sol.prob.tspan[2] - difference ? -1 : 1 :
-          integrator.t < integrator.sol.prob.tspan[2] + difference ? 1 : -1
+    return dir = integrator.tdir > zero(integrator.tdir) ?
+        integrator.t > integrator.sol.prob.tspan[2] - difference ? -1 : 1 :
+        integrator.t < integrator.sol.prob.tspan[2] + difference ? 1 : -1
 end
 
 error_constant(integrator, order) = error_constant(integrator, integrator.alg, order)
@@ -57,7 +57,7 @@ isthreaded(::BaseThreads) = true
 isthreaded(::PolyesterThreads) = true
 
 macro threaded(option, ex)
-    quote
+    return quote
         opt = $(esc(option))
         if (opt === BaseThreads()) || ((opt isa Bool) && opt)
             $(esc(:(Threads.@threads :static $ex)))
@@ -96,7 +96,7 @@ end
 
 macro fold(arg)
     # https://github.com/JuliaLang/julia/pull/43852
-    if VERSION < v"1.8.0-DEV.1484"
+    return if VERSION < v"1.8.0-DEV.1484"
         esc(:(@generated $arg))
     else
         esc(:(Base.@assume_effects :foldable $arg))
@@ -137,7 +137,8 @@ isnewton(::Any) = false
 function _bool_to_ADType(::Val{true}, ::Val{CS}, _) where {CS}
     Base.depwarn(
         "Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.",
-        :_bool_to_ADType)
+        :_bool_to_ADType
+    )
     _CS = CS === 0 ? nothing : CS
     return AutoForwardDiff{_CS}(nothing)
 end
@@ -145,7 +146,8 @@ end
 function _bool_to_ADType(::Val{false}, _, ::Val{FD}) where {FD}
     Base.depwarn(
         "Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.",
-        :_bool_to_ADType)
+        :_bool_to_ADType
+    )
     return AutoFiniteDiff(; fdtype = Val{FD}(), dir = 1)
 end
 
@@ -159,7 +161,8 @@ function _process_AD_choice(ad_alg::Bool, ::Val{CS}, ::Val{FD}) where {CS, FD}
 end
 
 function _process_AD_choice(
-        ad_alg::AutoForwardDiff{CS}, ::Val{CS2}, ::Val{FD}) where {CS, CS2, FD}
+        ad_alg::AutoForwardDiff{CS}, ::Val{CS2}, ::Val{FD}
+    ) where {CS, CS2, FD}
     # Non-default `chunk_size`
     if (CS2 != 0) && (isnothing(CS) || (CS2 !== CS))
         @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
@@ -171,7 +174,8 @@ function _process_AD_choice(
 end
 
 function _process_AD_choice(
-        ad_alg::AutoForwardDiff{CS}, CS2::Int, ::Val{FD}) where {CS, FD}
+        ad_alg::AutoForwardDiff{CS}, CS2::Int, ::Val{FD}
+    ) where {CS, FD}
     # Non-default `chunk_size`
     if CS2 != 0
         @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
@@ -182,7 +186,8 @@ function _process_AD_choice(
 end
 
 function _process_AD_choice(
-        ad_alg::AutoFiniteDiff{FD}, ::Val{CS}, ::Val{FD2}) where {FD, CS, FD2}
+        ad_alg::AutoFiniteDiff{FD}, ::Val{CS}, ::Val{FD2}
+    ) where {FD, CS, FD2}
     # Non-default `diff_type`
     if FD2 !== :forward
         @warn "The `diff_type` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoFiniteDiff` with `fdtype=Val{$FD2}()`."
@@ -196,9 +201,9 @@ end
 
 function _process_AD_choice(ad_alg::AutoSparse, cs2::Val{CS2}, fd::Val{FD}) where {CS2, FD}
     _, cs, fd = _process_AD_choice(ad_alg.dense_ad, cs2, fd)
-    ad_alg, cs, fd
+    return ad_alg, cs, fd
 end
 
 function _process_AD_choice(ad_alg, cs2, fd)
-    ad_alg, cs2, fd
+    return ad_alg, cs2, fd
 end

@@ -7,7 +7,7 @@ alg_stability_size(alg::ExplicitTaylor) = 1
 JET_CACHE = IdDict()
 
 function build_jet(f::ODEFunction{iip}, p, order, length = nothing) where {iip}
-    build_jet(f, Val{iip}(), p, order, length)
+    return build_jet(f, Val{iip}(), p, order, length)
 end
 
 function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, iip}

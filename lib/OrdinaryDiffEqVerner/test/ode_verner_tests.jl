@@ -3,20 +3,20 @@ using DiffEqDevTools, Test
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 
 # Problem mappings
-const probbig    = prob_ode_bigfloat2Dlinear
+const probbig = prob_ode_bigfloat2Dlinear
 const probnumbig = prob_ode_bigfloatlinear
-const probnum    = prob_ode_linear
-const prob       = prob_ode_2Dlinear
+const probnum = prob_ode_linear
+const prob = prob_ode_2Dlinear
 
 testTol = 2.0
 
 # Custom ODE functions for testing
 function f!(du, u, p, t)
-    du[1] = -u[1]
+    return du[1] = -u[1]
 end
 
 function f(u, p, t)
-    -u
+    return -u
 end
 
 t_end = 64.0
@@ -29,7 +29,7 @@ prob_iip = ODEProblem(ODEFunction(f!; analytic = (u0, p, t) -> [exp(-t)]), [1.0]
 function check_convergence(dts, prob, alg, order_expected)
     # Use DiffEqDevTools for overall convergence estimate
     sim = test_convergence(dts, prob, alg)
-    @test (sim.𝒪est[:final] > order_expected) || (abs(sim.𝒪est[:final] - order_expected) < testTol)
+    return @test (sim.𝒪est[:final] > order_expected) || (abs(sim.𝒪est[:final] - order_expected) < testTol)
 
 end
 # -------------------------------------------------------------
@@ -43,11 +43,11 @@ check_convergence(dts, probbig, Vern6(), 6)
 tabalg = ExplicitRK(tableau = constructVernerEfficient6(BigFloat))
 sol1 = solve(probnumbig, Vern6(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
-@test sol1.u[end] - sol2.u[end] < 1e-10
+@test sol1.u[end] - sol2.u[end] < 1.0e-10
 
 sol1 = solve(probbig, Vern6(); dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(probbig, tabalg; dt = 1 / 2^3, adaptive = false, save_everystep = false)
-@test minimum(sol1.u[end] - sol2.u[end] .< 1e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 1.0e-10)
 
 sol1 = solve(probbig, tabalg; dt = 1 / 2^6)
 sol2 = solve(probbig, Vern6(); dt = 1 / 2^6)
@@ -65,11 +65,11 @@ check_convergence(dts, probbig, Vern7(), 7)
 tabalg = ExplicitRK(tableau = constructVerner7(BigFloat))
 sol1 = solve(probnumbig, Vern7(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
-@test sol1.u[end] - sol2.u[end] < 1e-10
+@test sol1.u[end] - sol2.u[end] < 1.0e-10
 
 sol1 = solve(probbig, Vern7(); dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(probbig, tabalg; dt = 1 / 2^3, adaptive = false, save_everystep = false)
-@test minimum(sol1.u[end] - sol2.u[end] .< 1e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 1.0e-10)
 
 sol1 = solve(probbig, tabalg; dt = 1 / 2^6)
 sol2 = solve(probbig, Vern7(); dt = 1 / 2^6)
@@ -87,11 +87,11 @@ check_convergence(dts, probbig, Vern8(), 8)
 tabalg = ExplicitRK(tableau = constructVerner8(BigFloat))
 sol1 = solve(probnumbig, Vern8(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
-@test sol1.u[end] - sol2.u[end] < 1e-10
+@test sol1.u[end] - sol2.u[end] < 1.0e-10
 
 sol1 = solve(probbig, Vern8(); dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(probbig, tabalg; dt = 1 / 2^3, adaptive = false, save_everystep = false)
-@test minimum(sol1.u[end] - sol2.u[end] .< 1e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 1.0e-10)
 
 sol1 = solve(prob, tabalg; dt = 1 / 2^6)
 sol2 = solve(prob, Vern8(); dt = 1 / 2^6)
@@ -109,11 +109,11 @@ check_convergence(dts, probbig, Vern9(), 9)
 tabalg = ExplicitRK(tableau = constructVernerEfficient9(BigFloat))
 sol1 = solve(probnumbig, Vern9(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
-@test abs(sol1.u[end] - sol2.u[end]) < 1e-15
+@test abs(sol1.u[end] - sol2.u[end]) < 1.0e-15
 
 sol1 = solve(probbig, Vern9(); dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(probbig, tabalg; dt = 1 / 2^3, adaptive = false, save_everystep = false)
-@test minimum(abs.(sol1.u[end] - sol2.u[end]) .< 1e-15)
+@test minimum(abs.(sol1.u[end] - sol2.u[end]) .< 1.0e-15)
 
 sol1 = solve(probbig, tabalg; dt = 1 / 2^6)
 sol2 = solve(probbig, Vern9(); dt = 1 / 2^6)

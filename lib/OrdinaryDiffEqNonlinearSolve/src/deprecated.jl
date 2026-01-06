@@ -9,12 +9,16 @@
 # OLD signature -> NEW signature (for old callers)
 # The OLD signature has: (alg, u, uprev, p, t, dt, f, rate_prototype, Types..., γ, c, iip)
 # We forward to the NEW signature adding α=1 and verbose=NonlinearVerbosity()
-function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
+function build_nlsolver(
+        alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, γ, c,
-        iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        iip
+    ) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits,
-        tTypeNoUnits, γ, c, 1, iip, NonlinearVerbosity())
+        tTypeNoUnits, γ, c, 1, iip, NonlinearVerbosity()
+    )
 end

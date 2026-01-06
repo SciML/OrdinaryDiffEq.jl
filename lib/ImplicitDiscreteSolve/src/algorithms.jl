@@ -4,7 +4,7 @@
 First order solver for `ImplicitDiscreteSystems`.
 """
 struct IDSolve{NLS} <:
-       OrdinaryDiffEqAlgorithm
+    OrdinaryDiffEqAlgorithm
     nlsolve::NLS
     extrapolant::Symbol
 end
@@ -12,6 +12,6 @@ end
 function IDSolve(;
         nlsolve = NewtonRaphson(),
         extrapolant = :constant,
-)
-    IDSolve{typeof(nlsolve)}(nlsolve, extrapolant)
+    )
+    return IDSolve{typeof(nlsolve)}(nlsolve, extrapolant)
 end

@@ -44,6 +44,7 @@ ssp_coefficient(alg::Euler) = 1
 function prepare_alg(
         alg::SplitEuler,
         u0::AbstractArray,
-        p, prob)
-    alg
+        p, prob
+    )
+    return alg
 end

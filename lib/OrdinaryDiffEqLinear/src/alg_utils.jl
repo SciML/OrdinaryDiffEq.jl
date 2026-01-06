@@ -24,10 +24,11 @@ dt_required(alg::LinearExponential) = false
 function DiffEqBase.prepare_alg(
         alg::LinearExponential,
         u0::AbstractArray,
-        p, prob)
-    alg
+        p, prob
+    )
+    return alg
 end
 
 function isdtchangeable(alg::Union{LieEuler, MagnusGauss4, CayleyEuler})
-    false
+    return false
 end # due to caching

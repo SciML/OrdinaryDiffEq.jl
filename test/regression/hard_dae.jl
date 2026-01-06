@@ -3,37 +3,39 @@ using LinearAlgebra
 using NLsolve
 using Test
 
-p_inv = [500.0
-         0.084
-         4.69
-         2.0
-         400.0
-         20.0
-         0.2
-         1000.0
-         0.59
-         736.0
-         0.0
-         0.0
-         0.2
-         1.27
-         14.3
-         0.0
-         50.0
-         0.2
-         0.08
-         0.003
-         0.074
-         0.2
-         0.01 # Matt
-         1.0  # V_ref
-         1.0  # ω ref
-         0.7  # Pref
-         0    # Q_ref
-         0.5  #Xtrans
-         0.0  # Rtrans
-         1.01 #Vm
-         0.0] # Vθ
+p_inv = [
+    500.0
+    0.084
+    4.69
+    2.0
+    400.0
+    20.0
+    0.2
+    1000.0
+    0.59
+    736.0
+    0.0
+    0.0
+    0.2
+    1.27
+    14.3
+    0.0
+    50.0
+    0.2
+    0.08
+    0.003
+    0.074
+    0.2
+    0.01 # Matt
+    1.0  # V_ref
+    1.0  # ω ref
+    0.7  # Pref
+    0    # Q_ref
+    0.5  #Xtrans
+    0.0  # Rtrans
+    1.01 #Vm
+    0.0
+] # Vθ
 
 function vsm(dx, x, p, t)
     #PARAMETERS
@@ -131,22 +133,30 @@ function vsm(dx, x, p, t)
     dx[i__ξq_ic] = Vq_filter_ref - vq_filt_olc                                 #docs:(3b)
 
     #current control equations
-    Id_cnv_ref = (kpv * (Vd_filter_ref - vd_filt_olc) + kiv * ξd_ic -                           #docs:(3i)
-                  cf * ω_oc * vq_filt_olc + kffi * id_filt_olc)
-    Iq_cnv_ref = (kpv * (Vq_filter_ref - vq_filt_olc) +
-                  kiv * ξq_ic +                           #docs:(3j)
-                  cf * ω_oc * vd_filt_olc +
-                  kffi * iq_filt_olc)
+    Id_cnv_ref = (
+        kpv * (Vd_filter_ref - vd_filt_olc) + kiv * ξd_ic -                           #docs:(3i)
+            cf * ω_oc * vq_filt_olc + kffi * id_filt_olc
+    )
+    Iq_cnv_ref = (
+        kpv * (Vq_filter_ref - vq_filt_olc) +
+            kiv * ξq_ic +                           #docs:(3j)
+            cf * ω_oc * vd_filt_olc +
+            kffi * iq_filt_olc
+    )
     dx[i__γd_ic] = Id_cnv_ref - id_cnv_olc                                      #docs:(3c)
     dx[i__γq_ic] = Iq_cnv_ref - iq_cnv_olc                                      #docs:(3d)
 
     #active damping equations
-    Vd_cnv_ref = (kpc * (Id_cnv_ref - id_cnv_olc) + kic * γd_ic - lf * ω_oc * iq_cnv_olc +          #docs:(3k)
-                  kffv * vd_filt_olc - kad * (vd_filt_olc - ϕd_ic))
-    Vq_cnv_ref = (kpc * (Iq_cnv_ref - iq_cnv_olc) +
-                  kic * γq_ic +
-                  lf * ω_oc * id_cnv_olc +          #docs:(3l)
-                  kffv * vq_filt_olc - kad * (vq_filt_olc - ϕq_ic))
+    Vd_cnv_ref = (
+        kpc * (Id_cnv_ref - id_cnv_olc) + kic * γd_ic - lf * ω_oc * iq_cnv_olc +          #docs:(3k)
+            kffv * vd_filt_olc - kad * (vd_filt_olc - ϕd_ic)
+    )
+    Vq_cnv_ref = (
+        kpc * (Iq_cnv_ref - iq_cnv_olc) +
+            kic * γq_ic +
+            lf * ω_oc * id_cnv_olc +          #docs:(3l)
+            kffv * vq_filt_olc - kad * (vq_filt_olc - ϕq_ic)
+    )
     dx[i__ϕd_ic] = ωad * (vd_filt_olc - ϕd_ic)                                 #docs:(3e)
     dx[i__ϕq_ic] = ωad * (vq_filt_olc - ϕq_ic)                                  #docs:(3f)
 
@@ -159,27 +169,28 @@ function vsm(dx, x, p, t)
     Vi_pcc = Vm * sin(Vθ)
 
     dx[i__ir_cnv] = (ω_base / lf) *                                                #docs:(5a)
-                    (Vr_cnv - vr_filter - rf * ir_cnv + ω_sys * lf * ii_cnv)
+        (Vr_cnv - vr_filter - rf * ir_cnv + ω_sys * lf * ii_cnv)
     dx[i__ii_cnv] = (ω_base / lf) *                                                #docs:(5b)
-                    (Vi_cnv - vi_filter - rf * ii_cnv - ω_sys * lf * ir_cnv)
+        (Vi_cnv - vi_filter - rf * ii_cnv - ω_sys * lf * ir_cnv)
     dx[i__vr_filter] = (ω_base / cf) *                                             #docs:(5c)
-                       (ir_cnv - ir_filter + ω_sys * cf * vi_filter)
+        (ir_cnv - ir_filter + ω_sys * cf * vi_filter)
     dx[i__vi_filter] = (ω_base / cf) *                                             #docs:(5d)
-                       (ii_cnv - ii_filter - ω_sys * cf * vr_filter)
+        (ii_cnv - ii_filter - ω_sys * cf * vr_filter)
     dx[i__ir_filter] = (ω_base / lg) *                                             #docs:(5e)
-                       (vr_filter - Vr_pcc - rg * ir_filter + ω_sys * lg * ii_filter)
+        (vr_filter - Vr_pcc - rg * ir_filter + ω_sys * lg * ii_filter)
     dx[i__ii_filter] = +(ω_base / lg) *                                            #docs:(5f)
-                       (vi_filter - Vi_pcc - rg * ii_filter - ω_sys * lg * ir_filter)
+        (vi_filter - Vi_pcc - rg * ii_filter - ω_sys * lg * ir_filter)
 
     # Network interface algebraic equations 0 = I - YV
     line_currents = ((Vr_cnv + Vi_cnv * 1im) - (Vr_pcc + Vi_pcc * 1im)) /
-                    (Rtrans + Xtrans * 1im)
+        (Rtrans + Xtrans * 1im)
     dx[i__ii_source] = ii_source - imag(line_currents)
     dx[i__ir_source] = ir_source - real(line_currents)
     return
 end
 
-u0 = [0.0,
+u0 = [
+    0.0,
     0.01,
     0.01,
     0.01,
@@ -199,7 +210,7 @@ u0 = [0.0,
     0.01,
     0.0,
     1.0,
-    0.0
+    0.0,
 ]
 init_f! = (dx, x) -> vsm(dx, x, p_inv, 0)
 res = nlsolve(init_f!, u0)
@@ -215,18 +226,21 @@ affect!(integrator) = integrator.p[28] += 0.2
 cb = DiscreteCallback(condition, affect!)
 
 prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
-refsol = solve(prob, Rodas4(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1e-12,
-    abstol = 1e-17)
+refsol = solve(
+    prob, Rodas4(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1.0e-12,
+    abstol = 1.0e-17
+)
 
 for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF)
     @show solver
     prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
     sol = solve(
-        prob, solver(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1e-14,
-        abstol = 1e-14)
+        prob, solver(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1.0e-14,
+        abstol = 1.0e-14
+    )
     @test sol.retcode == ReturnCode.Success
     @test sol.t[end] == 20.0
-    @test maximum(sol - refsol) < 1e-11
+    @test maximum(sol - refsol) < 1.0e-11
 end
 
 function hardstop!(du, u, p, t)
@@ -234,7 +248,7 @@ function hardstop!(du, u, p, t)
     y, f_wall, dy = u
     du[1] = dy
     du[2] = ifelse(y <= 0, y, f_wall)
-    du[3] = (-ifelse(t < 2, -pg * pm, pg * pm) - f_wall) / (-pm)
+    return du[3] = (-ifelse(t < 2, -pg * pm, pg * pm) - f_wall) / (-pm)
 end
 
 hardstop!(u, p, t) = (du = similar(u); hardstop!(du, u, p, t); du)
@@ -244,11 +258,11 @@ prob1 = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
 prob2 = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
 for prob in [prob1, prob2]
     @test solve(prob, ImplicitEuler(), dt = 1 / 2^10, adaptive = false).retcode ==
-          ReturnCode.ConvergenceFailure
+        ReturnCode.ConvergenceFailure
 end
 
 condition2 = (u, t, integrator) -> t == 2
-affect2! = integrator -> integrator.u[1] = 1e-6
+affect2! = integrator -> integrator.u[1] = 1.0e-6
 cb = DiscreteCallback(condition2, affect2!)
 
 @isdefined(N_FAILS) || const N_FAILS = Ref(0)
@@ -260,16 +274,20 @@ function choice_function(integrator)
         N_FAILS[] = 0
     end
 
-    (N_FAILS[] > 3) + 1
+    return (N_FAILS[] > 3) + 1
 end
-simple_implicit_euler = ImplicitEuler(nlsolve = NLNewton(check_div = false,
-    always_new = true))
+simple_implicit_euler = ImplicitEuler(
+    nlsolve = NLNewton(
+        check_div = false,
+        always_new = true
+    )
+)
 alg_switch = CompositeAlgorithm((ImplicitEuler(), simple_implicit_euler), choice_function)
 
 for prob in [prob1, prob2], alg in [simple_implicit_euler, alg_switch]
     sol = solve(prob, alg, callback = cb, dt = 1 / 2^10, adaptive = false)
     @test sol.retcode == ReturnCode.Success
     @test sol(0, idxs = 1) == 5
-    @test abs(sol(2-2^-10, idxs = 1)) <= 1e-4
+    @test abs(sol(2 - 2^-10, idxs = 1)) <= 1.0e-4
     @test sol(4, idxs = 1) > 10
 end

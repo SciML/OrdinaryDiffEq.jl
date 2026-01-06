@@ -20,7 +20,7 @@ probiip = ODEProblem(fiip, ones(2), (0.0, 1000.0), 1.0)
 end
 
 function ad_helper(alg, prob)
-    function costoop(p)
+    return function costoop(p)
         _oprob = remake(prob; p)
         sol = solve(_oprob, alg, saveat = 1:10)
         return sum(sol)

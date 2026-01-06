@@ -9,7 +9,7 @@ function stepsize_controller!(integrator, alg::JVODE)
         η = integrator.cache.η
         integrator.qold = η
     end
-    η
+    return η
 end
 
 function step_accept_controller!(integrator, alg::JVODE, η)
@@ -21,5 +21,5 @@ function step_accept_controller!(integrator, alg::JVODE, η)
 end
 
 function step_reject_controller!(integrator, alg::JVODE)
-    integrator.dt *= integrator.qold
+    return integrator.dt *= integrator.qold
 end

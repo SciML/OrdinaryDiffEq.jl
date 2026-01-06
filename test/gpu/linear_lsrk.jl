@@ -8,7 +8,7 @@ gu0 = CuArray(Float32.(u0))
 
 # Define the discretized PDE as an ODE function
 function f(du, u, p, t)
-    @. du = u
+    return @. du = u
 end
 prob = ODEProblem{true, SciMLBase.FullSpecialize}(f, u0, (0.0f0, 10.0f0))
 prob2 = ODEProblem{true, SciMLBase.FullSpecialize}(f, gu0, (0.0f0, 10.0f0))

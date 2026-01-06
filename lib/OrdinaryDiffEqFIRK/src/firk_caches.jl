@@ -2,7 +2,7 @@ abstract type FIRKMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::FIRKMutableCache, u) = (cache.fsalfirst, cache.k)
 
 mutable struct RadauIIA3ConstantCache{F, Tab, Tol, Dt, U, JType} <:
-               OrdinaryDiffEqConstantCache
+    OrdinaryDiffEqConstantCache
     uf::F
     tab::Tab
     κ::Tol
@@ -16,10 +16,12 @@ mutable struct RadauIIA3ConstantCache{F, Tab, Tol, Dt, U, JType} <:
     J::JType
 end
 
-function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     tab = RadauIIA3Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -27,12 +29,16 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
     κ = convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
-    RadauIIA3ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, dt, dt,
-        Convergence, J)
+    return RadauIIA3ConstantCache(
+        uf, tab, κ, one(uToltype), 10000, u, u, dt, dt,
+        Convergence, J
+    )
 end
 
-mutable struct RadauIIA3Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, UF, JC,
-    F1, Tab, Tol, Dt, rTol, aTol, StepLimiter} <: FIRKMutableCache
+mutable struct RadauIIA3Cache{
+        uType, cuType, uNoUnitsType, rateType, JType, W1Type, UF, JC,
+        F1, Tab, Tol, Dt, rTol, aTol, StepLimiter,
+    } <: FIRKMutableCache
     u::uType
     uprev::uType
     z1::uType
@@ -66,10 +72,12 @@ mutable struct RadauIIA3Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Ty
     step_limiter!::StepLimiter
 end
 
-function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     tab = RadauIIA3Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -105,25 +113,28 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
     linprob = LinearProblem(W1, _vec(cubuff); u0 = _vec(dw12))
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
+    )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
 
-    RadauIIA3Cache(u, uprev,
+    return RadauIIA3Cache(
+        u, uprev,
         z1, z2, w1, w2,
         dw12, cubuff,
         du1, fsalfirst, k, k2, fw1, fw2,
         J, W1,
         uf, tab, κ, one(uToltype), 10000,
         tmp, atmp, jac_config, linsolve, rtol, atol, dt, dt,
-        Convergence, alg.step_limiter!)
+        Convergence, alg.step_limiter!
+    )
 end
 
 mutable struct RadauIIA5ConstantCache{F, Tab, Tol, Dt, U, JType} <:
-               OrdinaryDiffEqConstantCache
+    OrdinaryDiffEqConstantCache
     uf::F
     tab::Tab
     κ::Tol
@@ -138,10 +149,12 @@ mutable struct RadauIIA5ConstantCache{F, Tab, Tol, Dt, U, JType} <:
     J::JType
 end
 
-function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     tab = RadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -149,13 +162,17 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
-    RadauIIA5ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt,
-        Convergence, J)
+    return RadauIIA5ConstantCache(
+        uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt,
+        Convergence, J
+    )
 end
 
-mutable struct RadauIIA5Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
-    UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
-               FIRKMutableCache
+mutable struct RadauIIA5Cache{
+        uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
+        UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter,
+    } <:
+    FIRKMutableCache
     u::uType
     uprev::uType
     z1::uType
@@ -197,10 +214,12 @@ mutable struct RadauIIA5Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Ty
     step_limiter!::StepLimiter
 end
 
-function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     tab = RadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -245,31 +264,35 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
+    )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
     linprob = LinearProblem(W2, _vec(cubuff); u0 = _vec(dw23))
     linsolve2 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
+    )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
 
-    RadauIIA5Cache(u, uprev,
+    return RadauIIA5Cache(
+        u, uprev,
         z1, z2, z3, w1, w2, w3,
         dw1, ubuff, dw23, cubuff,
         du1, fsalfirst, k, k2, k3, fw1, fw2, fw3,
         J, W1, W2,
         uf, tab, κ, one(uToltype), 10000,
         tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt,
-        Convergence, alg.step_limiter!)
+        Convergence, alg.step_limiter!
+    )
 end
 
 mutable struct RadauIIA9ConstantCache{F, Tab, Tol, Dt, U, JType} <:
-               OrdinaryDiffEqConstantCache
+    OrdinaryDiffEqConstantCache
     uf::F
     tab::Tab
     κ::Tol
@@ -286,10 +309,12 @@ mutable struct RadauIIA9ConstantCache{F, Tab, Tol, Dt, U, JType} <:
     J::JType
 end
 
-function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     tab = RadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -297,13 +322,17 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
-    RadauIIA9ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, u, u, dt, dt,
-        Convergence, J)
+    return RadauIIA9ConstantCache(
+        uf, tab, κ, one(uToltype), 10000, u, u, u, u, u, dt, dt,
+        Convergence, J
+    )
 end
 
-mutable struct RadauIIA9Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
-    UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
-               FIRKMutableCache
+mutable struct RadauIIA9Cache{
+        uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
+        UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter,
+    } <:
+    FIRKMutableCache
     u::uType
     uprev::uType
     z1::uType
@@ -366,10 +395,12 @@ mutable struct RadauIIA9Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Ty
     step_limiter!::StepLimiter
 end
 
-function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     tab = RadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -437,26 +468,30 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
+    )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
     linprob = LinearProblem(W2, _vec(cubuff1); u0 = _vec(dw23))
     linsolve2 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
+    )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
     linprob = LinearProblem(W3, _vec(cubuff2); u0 = _vec(dw45))
     linsolve3 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
+    )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
 
-    RadauIIA9Cache(u, uprev,
+    return RadauIIA9Cache(
+        u, uprev,
         z1, z2, z3, z4, z5, w1, w2, w3, w4, w5,
         dw1, ubuff, dw23, dw45, cubuff1, cubuff2,
         du1, fsalfirst, k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5,
@@ -464,11 +499,12 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
         uf, tab, κ, one(uToltype), 10000,
         tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
         linsolve1, linsolve2, linsolve3, rtol, atol, dt, dt,
-        Convergence, alg.step_limiter!)
+        Convergence, alg.step_limiter!
+    )
 end
 
 mutable struct AdaptiveRadauConstantCache{F, Tab, Tol, Dt, U, JType} <:
-               OrdinaryDiffEqConstantCache
+    OrdinaryDiffEqConstantCache
     uf::F
     tabs::Vector{Tab}
     κ::Tol
@@ -485,10 +521,12 @@ mutable struct AdaptiveRadauConstantCache{F, Tab, Tol, Dt, U, JType} <:
     index::Int
 end
 
-function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
 
@@ -503,8 +541,10 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     end
     num_stages = min_stages
 
-    tabs = [RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i)
-            for i in min_stages:2:max_stages]
+    tabs = [
+        RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i)
+            for i in min_stages:2:max_stages
+    ]
     cont = Vector{typeof(u)}(undef, max_stages)
     for i in 1:max_stages
         cont[i] = zero(u)
@@ -514,14 +554,17 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
-    AdaptiveRadauConstantCache(uf, tabs, κ, one(uToltype), 10000, cont, dt, dt,
-        Convergence, J, num_stages, 1, 0.0, index)
+    return AdaptiveRadauConstantCache(
+        uf, tabs, κ, one(uToltype), 10000, cont, dt, dt,
+        Convergence, J, num_stages, 1, 0.0, index
+    )
 end
 
 mutable struct AdaptiveRadauCache{
-    uType, cuType, tType, uNoUnitsType, rateType, JType, W1Type, W2Type,
-    UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
-               FIRKMutableCache
+        uType, cuType, tType, uNoUnitsType, rateType, JType, W1Type, W2Type,
+        UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter,
+    } <:
+    FIRKMutableCache
     u::uType
     uprev::uType
     z::Vector{uType}
@@ -565,10 +608,12 @@ mutable struct AdaptiveRadauCache{
     index::Int
 end
 
-function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
 
@@ -583,8 +628,10 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     end
     num_stages = min_stages
 
-    tabs = [RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i)
-            for i in min_stages:2:max_stages]
+    tabs = [
+        RadauIIATableau(uToltype, constvalue(tTypeNoUnits), i)
+            for i in min_stages:2:max_stages
+    ]
 
     index = 1
 
@@ -644,23 +691,31 @@ function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits}
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
+    )
 
-    linsolve2 = [init(LinearProblem(W2[i], _vec(cubuff[i]); u0 = _vec(dw2[i])),
-                     alg.linsolve, alias = LinearAliasSpecifier(
-                         alias_A = true, alias_b = true),
-                     assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity)
-                 for i in 1:((max_stages - 1) ÷ 2)]
+    linsolve2 = [
+        init(
+                LinearProblem(W2[i], _vec(cubuff[i]); u0 = _vec(dw2[i])),
+                alg.linsolve, alias = LinearAliasSpecifier(
+                    alias_A = true, alias_b = true
+                ),
+                assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
+            )
+            for i in 1:((max_stages - 1) ÷ 2)
+    ]
 
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
 
-    AdaptiveRadauCache(u, uprev,
+    return AdaptiveRadauCache(
+        u, uprev,
         z, w, c_prime, αdt, βdt, dw1, ubuff, dw2, cubuff, dw, derivatives,
         du1, fsalfirst, ks, k, fw,
         J, W1, W2,
         uf, tabs, κ, one(uToltype), 10000, tmp,
         atmp, jac_config,
         linsolve1, linsolve2, rtol, atol, dt, dt,
-        Convergence, alg.step_limiter!, num_stages, 1, 0.0, index)
+        Convergence, alg.step_limiter!, num_stages, 1, 0.0, index
+    )
 end

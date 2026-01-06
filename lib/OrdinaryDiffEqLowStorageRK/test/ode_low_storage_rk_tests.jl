@@ -9,23 +9,33 @@ f = (u, p, t) -> cos(t)
 prob_ode_sin = ODEProblem(ODEFunction(f; analytic = (u0, p, t) -> sin(t)), 0.0, (0.0, 1.0))
 
 f = (du, u, p, t) -> du[1] = cos(t)
-prob_ode_sin_inplace = ODEProblem(ODEFunction(f; analytic = (u0, p, t) -> [sin(t)]), [0.0],
-    (0.0, 1.0))
+prob_ode_sin_inplace = ODEProblem(
+    ODEFunction(f; analytic = (u0, p, t) -> [sin(t)]), [0.0],
+    (0.0, 1.0)
+)
 
 f = (u, p, t) -> sin(u)
 prob_ode_nonlinear = ODEProblem(
-    ODEFunction(f;
-        analytic = (u0, p, t) -> 2 * acot(exp(-t) *
-                                          cot(0.5))), 1.0,
-    (0.0, 0.5))
+    ODEFunction(
+        f;
+        analytic = (u0, p, t) -> 2 * acot(
+            exp(-t) *
+                cot(0.5)
+        )
+    ), 1.0,
+    (0.0, 0.5)
+)
 
 f = (du, u, p, t) -> du[1] = sin(u[1])
 prob_ode_nonlinear_inplace = ODEProblem(
-    ODEFunction(f;
+    ODEFunction(
+        f;
         analytic = (u0, p, t) -> [
-            2 * acot(exp(-t) * cot(0.5))
-        ]),
-    [1.0], (0.0, 0.5))
+            2 * acot(exp(-t) * cot(0.5)),
+        ]
+    ),
+    [1.0], (0.0, 0.5)
+)
 
 test_problems_only_time = [prob_ode_sin, prob_ode_sin_inplace]
 test_problems_linear = [prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear]
@@ -46,15 +56,15 @@ dts_SHLDDRK_2N = (1 / 2) .^ (0:3)
 alg = SHLDDRK_2N()
 for prob in test_problems_only_time
     sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
-    @test sim.𝒪est[:final]≈4 atol=0.46
+    @test sim.𝒪est[:final] ≈ 4 atol = 0.46
 end
 for prob in test_problems_linear
     sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
-    @test sim.𝒪est[:final]≈4 atol=0.46
+    @test sim.𝒪est[:final] ≈ 4 atol = 0.46
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
-    @test sim.𝒪est[:final]≈4 atol=1
+    @test sim.𝒪est[:final] ≈ 4 atol = 1
     # due to unusual saturation towards high dts(0.5 and onwards) and
     # saturation towards low dts due to less precision in the provided values of weights , tolerance is kept so high
 end
@@ -64,15 +74,15 @@ dts = 1 .// 2 .^ (8:-1:4)
 alg = SHLDDRK52()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+    @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+    @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+    @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
 end
 
 @testset "ORK256" begin
@@ -81,42 +91,55 @@ end
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -126,42 +149,55 @@ end
     dts = 1 ./ 2 .^ (7:-1:3)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -177,42 +213,55 @@ end
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -222,42 +271,55 @@ end
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -267,42 +329,55 @@ end
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -312,42 +387,55 @@ end
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -357,42 +445,55 @@ end
     dts = 1 ./ 2 .^ (7:-1:3)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -402,42 +503,55 @@ end
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -447,42 +561,55 @@ end
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
         sim = test_convergence(dts, prob, alg2)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
-    integ = init(prob_ode_large, alg2, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -491,30 +618,39 @@ end
     dts = 1 ./ 2 .^ (7:-1:4)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -523,30 +659,39 @@ end
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -555,26 +700,34 @@ end
 function RemakeNew(p::ODEProblem)
     u1 = @. BigFloat(p.u0)
     tsp1 = @. BigFloat(p.tspan)
-    remake(p; u0 = u1, tspan = tsp1)
+    return remake(p; u0 = u1, tspan = tsp1)
 end
 
 test_problems_only_time_BigFloat = @. RemakeNew(test_problems_only_time)
 test_problems_linear_BigFloat = @. RemakeNew(test_problems_linear)
 f = (u, p, t) -> sin(u)
 prob_nonlinear_A = ODEProblem(
-    ODEFunction(f;
-        analytic = (u0, p, t) -> 2 * acot(exp(-t) *
-                                          cot(BigFloat(0.5)))),
-    BigFloat(1.0), (BigFloat(0.0), BigFloat(0.5)))
+    ODEFunction(
+        f;
+        analytic = (u0, p, t) -> 2 * acot(
+            exp(-t) *
+                cot(BigFloat(0.5))
+        )
+    ),
+    BigFloat(1.0), (BigFloat(0.0), BigFloat(0.5))
+)
 
 f = (du, u, p, t) -> du[1] = sin(u[1])
 prob_nonlinear_B = ODEProblem(
-    ODEFunction(f;
+    ODEFunction(
+        f;
         analytic = (u0, p, t) -> [
-            2 * acot(exp(-t) * cot(BigFloat(0.5)))
-        ]),
+            2 * acot(exp(-t) * cot(BigFloat(0.5))),
+        ]
+    ),
     [BigFloat(1.0)],
-    (BigFloat(0.0), BigFloat(0.5)))
+    (BigFloat(0.0), BigFloat(0.5))
+)
 test_problems_nonlinear_BigFloat = [prob_nonlinear_A, prob_nonlinear_B]
 
 @testset "CKLLSRK43_2" begin
@@ -582,33 +735,44 @@ test_problems_nonlinear_BigFloat = [prob_nonlinear_A, prob_nonlinear_B]
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol=testTol    # This scheme has linear order of 4
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol = testTol    # This scheme has linear order of 4
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -617,33 +781,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈1 atol=testTol          # The CI plot is linear but the evaluated order is 1
+        @test sim.𝒪est[:final] ≈ 1 atol = testTol          # The CI plot is linear but the evaluated order is 1
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -652,33 +827,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -687,33 +873,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -722,33 +919,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -757,33 +965,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -792,33 +1011,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 0.5 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 0.5 atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -827,33 +1057,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -862,33 +1103,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -897,33 +1149,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -932,33 +1195,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 2 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 2 atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 10
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -967,33 +1241,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1002,33 +1287,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 0.5 atol=testTol                              # This scheme has linear orderof 4.5
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 0.5 atol = testTol                              # This scheme has linear orderof 4.5
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1037,33 +1333,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1072,33 +1379,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (10:-1:6)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1107,33 +1425,44 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, adaptive = false, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 13
-    integ = init(prob_ode_large, alg, adaptive = true, dt = 1.e-2, save_start = false,
-        save_end = false, save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, adaptive = true, dt = 1.0e-2, save_start = false,
+        save_end = false, save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 14
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 13
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1145,30 +1474,39 @@ end
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
         # higher order as pure quadrature
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1178,30 +1516,39 @@ end
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
         # higher order as pure quadrature
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1211,30 +1558,39 @@ end
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
         # higher order as pure quadrature
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1244,32 +1600,41 @@ end
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
         # higher order as pure quadrature
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     dts = 1 ./ 2 .^ (6:-1:3)
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=1
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = 1
     end
 
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1278,30 +1643,39 @@ end
     dts = 1 ./ 2 .^ (7:-1:3)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1310,31 +1684,40 @@ end
     dts = 1 ./ 2 .^ (6:-1:2)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     dts = 1 ./ 2 .^ (7:-1:2)
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1343,32 +1726,41 @@ end
     dts = 1 ./ 1.95 .^ (5:-1:1)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     dts = 1 ./ 2 .^ (5:-1:2)
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     dts = 1.5 ./ 2 .^ (5:-1:2)
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1377,32 +1769,41 @@ end
     dts = 1 ./ 1.95 .^ (5:-1:1)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     dts = 1 ./ 2 .^ (5:-1:2)
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=0.33
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = 0.33
     end
     dts = 1.5 ./ 2 .^ (5:-1:2)
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1414,30 +1815,39 @@ end
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
         # higher order as pure quadrature
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1447,31 +1857,40 @@ end
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
         # higher order as pure quadrature
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     dts = 1 ./ 2 .^ (8:-1:2)
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1480,30 +1899,39 @@ end
     dts = 1 ./ 2 .^ (4.5:-1:1.5)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1513,30 +1941,39 @@ end
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
         # higher order as pure quadrature
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1546,31 +1983,40 @@ end
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
         # higher order as pure quadrature
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) + 1 atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     dts = 1 ./ 2 .^ (8:-1:2)
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1579,30 +2025,39 @@ end
     dts = 1 ./ 2 .^ (4.5:-1:1.5)
     for prob in test_problems_only_time
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final]≈OrdinaryDiffEqLowStorageRK.alg_order(alg) atol=testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false)
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
-    integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true))
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
     # test whether aliasing u0 is bad
-    new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f, [1.0],
-        (0.0, 0.5))
-    sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false)
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
     sol_new = solve(
-        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
-        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true))
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
     @test sol_old[end] ≈ sol_new[end]
 end
 
@@ -1627,7 +2082,7 @@ end
 
     @test sol_SA ≈ sol_SV
     @test sol_SV.stats.naccept == sol_SA.stats.naccept
-    
+
     # Plain vector
     u = [1.0, 2.0]
     ode = ODEProblem(rhs!, u, (0, 0.7))

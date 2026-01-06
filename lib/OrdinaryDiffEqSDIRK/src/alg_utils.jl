@@ -32,11 +32,15 @@ alg_order(alg::SFSDIRK8) = 4
 alg_order(alg::Hairer4) = 4
 alg_order(alg::Hairer42) = 4
 
-function isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5, KenCarp58,
-        Kvaerno3, Kvaerno4, Kvaerno5, ESDIRK437L2SA,
-        ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK547L2SA2,
-        ESDIRK659L2SA, CFNLIRK3})
-    true
+function isesdirk(
+        alg::Union{
+            KenCarp3, KenCarp4, KenCarp5, KenCarp58,
+            Kvaerno3, Kvaerno4, Kvaerno5, ESDIRK437L2SA,
+            ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK547L2SA2,
+            ESDIRK659L2SA, CFNLIRK3,
+        }
+    )
+    return true
 end
 
 alg_adaptive_order(alg::Trapezoid) = 1

@@ -7,25 +7,27 @@ using OrdinaryDiffEqCore: alg_order
     μ = 1.01
     linnonlin_f2 = (u, p, t) -> μ * u
     linnonlin_f1 = ScalarOperator(μ)
-    linnonlin_fun = SplitFunction(linnonlin_f1, linnonlin_f2;
-        analytic = (u0, p, t) -> u0 .* exp.(2μ * t))
+    linnonlin_fun = SplitFunction(
+        linnonlin_f1, linnonlin_f2;
+        analytic = (u0, p, t) -> u0 .* exp.(2μ * t)
+    )
     prob = SplitODEProblem(linnonlin_fun, 1 / 2, (0.0, 1.0))
 
     Random.seed!(100)
     dts = 1 ./ 2 .^ (7:-1:4) #14->7 good plot
     for Alg in [
-        LawsonEuler,
-        NorsettEuler,
-        ETDRK2,
-        ETDRK3,
-        ETDRK4,
-        HochOst4,
-        ETD2,
-        KenCarp3,
-        CFNLIRK3
-    ]
+            LawsonEuler,
+            NorsettEuler,
+            ETDRK2,
+            ETDRK3,
+            ETDRK4,
+            HochOst4,
+            ETD2,
+            KenCarp3,
+            CFNLIRK3,
+        ]
         sim = test_convergence(dts, prob, Alg())
-        @test sim.𝒪est[:l2]≈alg_order(Alg()) atol=0.2
+        @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol = 0.2
     end
 
     # Dense test
@@ -40,33 +42,35 @@ end
     A = [2.0 -1.0; -1.0 2.0]
     linnonlin_f1 = MatrixOperator(A)
     linnonlin_f2 = (du, u, p, t) -> du .= μ .* u
-    linnonlin_fun_iip = SplitFunction(linnonlin_f1, linnonlin_f2;
-        analytic = (u0, p, t) -> exp((A + μ * I) * t) * u0)
+    linnonlin_fun_iip = SplitFunction(
+        linnonlin_f1, linnonlin_f2;
+        analytic = (u0, p, t) -> exp((A + μ * I) * t) * u0
+    )
     prob = SplitODEProblem(linnonlin_fun_iip, u0, (0.0, 1.0))
 
     dts = 1 ./ 2 .^ (8:-1:4)
     for Alg in [
-        LawsonEuler(),
-        NorsettEuler(),
-        ETDRK2(),
-        ETDRK3(),
-        ETDRK4(),
-        HochOst4(),
-        ETD2()
-    ]
+            LawsonEuler(),
+            NorsettEuler(),
+            ETDRK2(),
+            ETDRK3(),
+            ETDRK4(),
+            HochOst4(),
+            ETD2(),
+        ]
         sim = test_convergence(dts, prob, Alg)
-        @test sim.𝒪est[:l2]≈alg_order(Alg) atol=0.15
+        @test sim.𝒪est[:l2] ≈ alg_order(Alg) atol = 0.15
     end
 
     dts = 1 ./ 2 .^ (13:-1:9)
     Alg = KenCarp3(linsolve = LinearSolve.KrylovJL_GMRES())
-    sim = test_convergence(dts, prob, Alg, reltol = 1e-16)
-    @test sim.𝒪est[:l2]≈alg_order(Alg) atol=0.5
+    sim = test_convergence(dts, prob, Alg, reltol = 1.0e-16)
+    @test sim.𝒪est[:l2] ≈ alg_order(Alg) atol = 0.5
 
     dts = 1 ./ 2 .^ (8:-1:4)
     sim = test_convergence(dts, prob, ETDRK4(), dense_errors = true)
-    @test sim.𝒪est[:l2]≈4 atol=0.1
-    @test sim.𝒪est[:L2]≈4 atol=0.1
+    @test sim.𝒪est[:l2] ≈ 4 atol = 0.1
+    @test sim.𝒪est[:L2] ≈ 4 atol = 0.1
 end
 
 @info "CFNLIRK3() is broken"
@@ -83,17 +87,19 @@ end
     tspan = (0.0, 1.0)
     prob = ODEProblem(fun, u0, tspan)
     # Setup approximate solution
-    test_setup = Dict(:alg => Vern9(), :reltol => 1e-16, :abstol => 1e-16)
+    test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-16, :abstol => 1.0e-16)
     # Convergence simulation
     dts = 1 ./ 2 .^ (7:-1:4)
     Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2]
     for Alg in Algs
-        sim = analyticless_test_convergence(dts, prob, Alg(adaptive_krylov = false),
-            test_setup)
+        sim = analyticless_test_convergence(
+            dts, prob, Alg(adaptive_krylov = false),
+            test_setup
+        )
         if Alg == EPIRK5s3
-            @test_broken sim.𝒪est[:l2]≈alg_order(Alg()) atol=0.1
+            @test_broken sim.𝒪est[:l2] ≈ alg_order(Alg()) atol = 0.1
         else
-            @test sim.𝒪est[:l2]≈alg_order(Alg()) atol=0.1
+            @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol = 0.1
         end
     end
 end
@@ -111,17 +117,19 @@ end
     tspan = (0.0, 1.0)
     prob = ODEProblem(fun, u0, tspan)
     # Setup approximate solution
-    test_setup = Dict(:alg => Vern9(), :reltol => 1e-16, :abstol => 1e-16)
+    test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-16, :abstol => 1.0e-16)
     # Convergence simulation
     dts = 1 ./ 2 .^ (7:-1:4)
     Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2]
     for Alg in Algs
-        sim = analyticless_test_convergence(dts, prob, Alg(adaptive_krylov = false),
-            test_setup)
+        sim = analyticless_test_convergence(
+            dts, prob, Alg(adaptive_krylov = false),
+            test_setup
+        )
         if Alg == EPIRK5s3
-            @test_broken sim.𝒪est[:l2]≈alg_order(Alg()) atol=0.1
+            @test_broken sim.𝒪est[:l2] ≈ alg_order(Alg()) atol = 0.1
         else
-            @test sim.𝒪est[:l2]≈alg_order(Alg()) atol=0.1
+            @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol = 0.1
         end
     end
 end
@@ -140,19 +148,23 @@ end
     prob = ODEProblem(fun, u0, tspan)
     prob_ip = ODEProblem(fun_ip, u0, tspan)
     # Setup approximate solution
-    test_setup = Dict(:alg => Vern9(), :reltol => 1e-16, :abstol => 1e-16)
+    test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-16, :abstol => 1.0e-16)
     # Convergence simulation
     dts = 1 ./ 2 .^ (7:-1:4)
     sim = analyticless_test_convergence(dts, prob, HochOst4(krylov = true), test_setup)
-    @test sim.𝒪est[:l2]≈4 atol=0.1
+    @test sim.𝒪est[:l2] ≈ 4 atol = 0.1
     sim = analyticless_test_convergence(dts, prob_ip, HochOst4(krylov = true), test_setup)
-    @test sim.𝒪est[:l2]≈4 atol=0.1
-    sim = analyticless_test_convergence(dts, prob, EPIRK5P1(adaptive_krylov = false),
-        test_setup)
-    @test sim.𝒪est[:l2]≈5 atol=0.1
-    sim = analyticless_test_convergence(dts, prob_ip, EPIRK5P1(adaptive_krylov = false),
-        test_setup)
-    @test sim.𝒪est[:l2]≈5 atol=0.1
+    @test sim.𝒪est[:l2] ≈ 4 atol = 0.1
+    sim = analyticless_test_convergence(
+        dts, prob, EPIRK5P1(adaptive_krylov = false),
+        test_setup
+    )
+    @test sim.𝒪est[:l2] ≈ 5 atol = 0.1
+    sim = analyticless_test_convergence(
+        dts, prob_ip, EPIRK5P1(adaptive_krylov = false),
+        test_setup
+    )
+    @test sim.𝒪est[:l2] ≈ 5 atol = 0.1
 end
 
 @testset "Adaptive Exprb Out-of-place" begin
@@ -167,13 +179,13 @@ end
     tspan = (0.0, 1.0)
     prob = ODEProblem(fun, u0, tspan)
     # Setup approximate solution
-    test_setup = Dict(:alg => Vern9(), :reltol => 1e-16, :abstol => 1e-16)
+    test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-16, :abstol => 1.0e-16)
     # Convergence simulation
     dts = 1 ./ 2 .^ (7:-1:4)
     Algs = [Exprb32, Exprb43]
     for Alg in Algs
         sim = analyticless_test_convergence(dts, prob, Alg(), test_setup)
-        @test sim.𝒪est[:l2]≈alg_order(Alg()) atol=0.1
+        @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol = 0.1
     end
 end
 
@@ -190,12 +202,12 @@ end
     tspan = (0.0, 1.0)
     prob = ODEProblem(fun, u0, tspan)
     # Setup approximate solution
-    test_setup = Dict(:alg => Vern9(), :reltol => 1e-16, :abstol => 1e-16)
+    test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-16, :abstol => 1.0e-16)
     # Convergence simulation
     dts = 1 ./ 2 .^ (7:-1:4)
     Algs = [Exprb32, Exprb43]
     for Alg in Algs
         sim = analyticless_test_convergence(dts, prob, Alg(), test_setup)
-        @test sim.𝒪est[:l2]≈alg_order(Alg()) atol=0.1
+        @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol = 0.1
     end
 end

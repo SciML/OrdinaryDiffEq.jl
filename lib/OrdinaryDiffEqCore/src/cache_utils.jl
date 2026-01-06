@@ -2,7 +2,7 @@ is_constant_cache(::OrdinaryDiffEqConstantCache) = true
 is_constant_cache(::OrdinaryDiffEqCache) = false
 is_constant_cache(cache::CompositeCache) = is_constant_cache(cache.caches[1])
 function is_constant_cache(::DefaultCache{Cache1}) where {Cache1}
-    Cache1 <: OrdinaryDiffEqConstantCache
+    return Cache1 <: OrdinaryDiffEqConstantCache
 end
 
 function SciMLBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
@@ -36,9 +36,12 @@ function SciMLBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
     end
 end
 
-@deprecate alg_cache(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, u, rate_prototype,
+@deprecate alg_cache(
+    alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, u, rate_prototype,
     uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f,
-    t, dt, reltol, p, calck, ::Type{Val{iip}}) where {iip} alg_cache(alg,
+    t, dt, reltol, p, calck, ::Type{Val{iip}}
+) where {iip} alg_cache(
+    alg,
     u,
     rate_prototype,
     uEltypeNoUnits,
@@ -51,4 +54,5 @@ end
     reltol,
     p,
     calck,
-    Val(iip))
+    Val(iip)
+)

@@ -17,12 +17,14 @@ using OrdinaryDiffEqStabilizedIRK: maxeig!
         eigm = maximum(abs.(eigvals(A)))
         maxeig!(integrator, integrator.cache)
         eigest = integrator.eigen_est
-        @test eigest≈eigm rtol=0.1eigm
+        @test eigest ≈ eigm rtol = 0.1eigm
 
-        A = A - 1e2I
+        A = A - 1.0e2I
         test_f1 = !iip ? (u, p, t) -> A * u : (du, u, p, t) -> mul!(du, A, u)
-        prob = SplitODEProblem{iip}(SplitFunction{iip}(test_f1, test_f2), ones(20),
-            (0.0, 1.0))
+        prob = SplitODEProblem{iip}(
+            SplitFunction{iip}(test_f1, test_f2), ones(20),
+            (0.0, 1.0)
+        )
         @test_nowarn solve(prob, alg)
     end
 end

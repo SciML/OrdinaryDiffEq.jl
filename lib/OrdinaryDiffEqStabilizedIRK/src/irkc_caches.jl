@@ -7,7 +7,7 @@
 end
 
 @cache mutable struct IRKCCache{uType, rateType, uNoUnitsType, N, C <: IRKCConstantCache} <:
-                      OrdinaryDiffEqMutableCache
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     gprev::uType
@@ -24,29 +24,37 @@ end
 end
 
 function get_fsalfirstlast(cache::IRKCCache, u)
-    (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
+    return (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
 end
 
-function alg_cache(alg::IRKC, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::IRKC, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    )
     zprev = u
     du₁ = rate_prototype
     du₂ = rate_prototype
-    IRKCConstantCache(50, zprev, nlsolver, du₁, du₂)
+    return IRKCConstantCache(50, zprev, nlsolver, du₁, du₂)
 end
 
-function alg_cache(alg::IRKC, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::IRKC, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
+    )
 
     gprev = zero(u)
     gprev2 = zero(u)
@@ -60,6 +68,8 @@ function alg_cache(alg::IRKC, u, rate_prototype, ::Type{uEltypeNoUnits},
     du₁ = zero(rate_prototype)
     du₂ = zero(rate_prototype)
     constantcache = IRKCConstantCache(50, zprev, nlsolver, du₁, du₂)
-    IRKCCache(u, uprev, gprev, gprev2, fsalfirst, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, atmp, nlsolver, du₁,
-        du₂, constantcache)
+    return IRKCCache(
+        u, uprev, gprev, gprev2, fsalfirst, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, atmp, nlsolver, du₁,
+        du₂, constantcache
+    )
 end

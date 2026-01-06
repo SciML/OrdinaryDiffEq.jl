@@ -4,17 +4,23 @@ struct MER5v2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgori
     thread::Thread
 end
 
-function MER5v2(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-        thread = False())
-    MER5v2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+function MER5v2(;
+        stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+        thread = False()
+    )
+    return MER5v2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(
+        stage_limiter!,
         step_limiter!,
-        thread)
+        thread
+    )
 end
 
 # for backwards compatibility
 function MER5v2(stage_limiter!, step_limiter! = trivial_limiter!)
-    MER5v2{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!, False())
+    return MER5v2{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 struct MER6v2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
@@ -23,17 +29,23 @@ struct MER6v2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgori
     thread::Thread
 end
 
-function MER6v2(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-        thread = False())
-    MER6v2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+function MER6v2(;
+        stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+        thread = False()
+    )
+    return MER6v2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(
+        stage_limiter!,
         step_limiter!,
-        thread)
+        thread
+    )
 end
 
 # for backwards compatibility
 function MER6v2(stage_limiter!, step_limiter! = trivial_limiter!)
-    MER6v2{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!, False())
+    return MER6v2{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 struct RK6v4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
@@ -42,23 +54,31 @@ struct RK6v4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     thread::Thread
 end
 
-function RK6v4(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-        thread = False())
-    RK6v4{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+function RK6v4(;
+        stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+        thread = False()
+    )
+    return RK6v4{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(
+        stage_limiter!,
         step_limiter!,
-        thread)
+        thread
+    )
 end
 
 # for backwards compatibility
 function RK6v4(stage_limiter!, step_limiter! = trivial_limiter!)
-    RK6v4{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!, False())
+    return RK6v4{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!, False()
+    )
 end
 
 function Base.show(io::IO, alg::Union{MER5v2, MER6v2, RK6v4})
-    print(io, "$(nameof(typeof(alg)))(stage_limiter! = ", alg.stage_limiter!,
+    return print(
+        io, "$(nameof(typeof(alg)))(stage_limiter! = ", alg.stage_limiter!,
         ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
+        ", thread = ", alg.thread, ")"
+    )
 end
 
 OrdinaryDiffEqCore.alg_order(alg::MER5v2) = 5

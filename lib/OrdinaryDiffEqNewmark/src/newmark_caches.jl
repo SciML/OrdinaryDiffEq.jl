@@ -1,5 +1,5 @@
 @cache struct NewmarkBetaCache{uType, rateType, parameterType, N, Thread} <:
-              OrdinaryDiffEqMutableCache
+    OrdinaryDiffEqMutableCache
     u::uType # Current solution
     uprev::uType # Previous solution
     fsalfirst::rateType
@@ -11,10 +11,12 @@
     thread::Thread
 end
 
-function alg_cache(alg::NewmarkBeta, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::NewmarkBeta, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     (; β, γ, thread) = alg
     fsalfirst = zero(rate_prototype)
 
@@ -35,11 +37,11 @@ function alg_cache(alg::NewmarkBeta, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     tmp = zero(u)
     atmp = zero(u)
-    NewmarkBetaCache(u, uprev, fsalfirst, β, γ, nlcache, tmp, atmp, thread)
+    return NewmarkBetaCache(u, uprev, fsalfirst, β, γ, nlcache, tmp, atmp, thread)
 end
 
 @cache struct NewmarkBetaConstantCache{uType, rateType, parameterType, N, Thread} <:
-              OrdinaryDiffEqConstantCache
+    OrdinaryDiffEqConstantCache
     u::uType # Current solution
     uprev::uType # Previous solution
     fsalfirst::rateType
@@ -51,10 +53,12 @@ end
     thread::Thread
 end
 
-function alg_cache(alg::NewmarkBeta, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::NewmarkBeta, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     (; β, γ, thread) = alg
     fsalfirst = zero(rate_prototype)
 
@@ -70,9 +74,9 @@ function alg_cache(alg::NewmarkBeta, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     tmp = zero(u)
     atmp = zero(u)
-    NewmarkBetaConstantCache(u, uprev, fsalfirst, β, γ, alg.nlsolve, tmp, atmp, thread)
+    return NewmarkBetaConstantCache(u, uprev, fsalfirst, β, γ, alg.nlsolve, tmp, atmp, thread)
 end
 
 function get_fsalfirstlast(cache::Union{NewmarkBetaCache, NewmarkBetaConstantCache}, u)
-    (cache.fsalfirst, cache.fsalfirst)
+    return (cache.fsalfirst, cache.fsalfirst)
 end

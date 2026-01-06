@@ -1,5 +1,5 @@
 using ComponentArrays, CUDA, Adapt, RecursiveArrayTools, FastBroadcast, FillArrays,
-      OrdinaryDiffEq, Test
+    OrdinaryDiffEq, Test
 using OrdinaryDiffEqCore
 
 a = ComponentArray((a = rand(Float32, 5, 5), b = rand(Float32, 5, 5)))

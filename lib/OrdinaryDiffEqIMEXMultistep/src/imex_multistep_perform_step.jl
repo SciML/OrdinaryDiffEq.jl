@@ -10,7 +10,7 @@ function initialize!(integrator, cache::CNAB2ConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 function perform_step!(integrator, cache::CNAB2ConstantCache, repeat_step = false)
@@ -50,7 +50,7 @@ function perform_step!(integrator, cache::CNAB2ConstantCache, repeat_step = fals
     integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function initialize!(integrator, cache::CNAB2Cache)
@@ -60,7 +60,7 @@ function initialize!(integrator, cache::CNAB2Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 function perform_step!(integrator, cache::CNAB2Cache, repeat_step = false)
@@ -72,12 +72,12 @@ function perform_step!(integrator, cache::CNAB2Cache, repeat_step = false)
 
     f1(du₁, uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @.. broadcast=false k1=integrator.fsalfirst - du₁
+    @.. broadcast = false k1 = integrator.fsalfirst - du₁
     # Explicit part
     if cnt == 1
-        @.. broadcast=false tmp=uprev + dt * k1
+        @.. broadcast = false tmp = uprev + dt * k1
     else
-        @.. broadcast=false tmp=uprev + dt * (3 // 2 * k1 - 1 // 2 * k2)
+        @.. broadcast = false tmp = uprev + dt * (3 // 2 * k1 - 1 // 2 * k2)
     end
     # Implicit part
     # precalculations
@@ -85,16 +85,16 @@ function perform_step!(integrator, cache::CNAB2Cache, repeat_step = false)
     γdt = γ * dt
 
     # initial guess
-    @.. broadcast=false z=dt * du₁
-    @.. broadcast=false tmp+=γ * z
+    @.. broadcast = false z = dt * du₁
+    @.. broadcast = false tmp += γ * z
     markfirststage!(nlsolver)
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    @.. broadcast=false u=tmp + 1 // 2 * z
+    @.. broadcast = false u = tmp + 1 // 2 * z
 
     cache.k2 .= k1
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 # CNLF2
@@ -109,7 +109,7 @@ function initialize!(integrator, cache::CNLF2ConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 function perform_step!(integrator, cache::CNLF2ConstantCache, repeat_step = false)
@@ -151,7 +151,7 @@ function perform_step!(integrator, cache::CNLF2ConstantCache, repeat_step = fals
     integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function initialize!(integrator, cache::CNLF2Cache)
@@ -161,7 +161,7 @@ function initialize!(integrator, cache::CNLF2Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 function perform_step!(integrator, cache::CNLF2Cache, repeat_step = false)
@@ -175,27 +175,27 @@ function perform_step!(integrator, cache::CNLF2Cache, repeat_step = false)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # Explicit part
     if cnt == 1
-        @.. broadcast=false tmp=uprev + dt * (integrator.fsalfirst - du₁)
+        @.. broadcast = false tmp = uprev + dt * (integrator.fsalfirst - du₁)
     else
-        @.. broadcast=false tmp=uprev2 + 2 // 1 * dt * (integrator.fsalfirst - du₁)
+        @.. broadcast = false tmp = uprev2 + 2 // 1 * dt * (integrator.fsalfirst - du₁)
     end
     # Implicit part
     # precalculations
     γ = 1 // 1
     if cnt != 1
-        @.. broadcast=false tmp+=γ * dt * k2
+        @.. broadcast = false tmp += γ * dt * k2
     end
     γdt = γ * dt
 
     # initial guess
-    @.. broadcast=false z=dt * du₁
+    @.. broadcast = false z = dt * du₁
     markfirststage!(nlsolver)
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    @.. broadcast=false u=tmp + γ * z
+    @.. broadcast = false u = tmp + γ * z
 
     cache.uprev2 .= uprev
     cache.k2 .= du₁
     f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end

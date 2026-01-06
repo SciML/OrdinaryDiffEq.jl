@@ -8,17 +8,23 @@ using Test
 for prob in (prob_ode_vanderpol_stiff,)
     # Ensure all solutions use the same linear solve for fair comparison.
     # TODO: in future, ensure and test that polyalg chooses the best linear solve when unspecified.
-    for alg in (Rosenbrock23(linsolve = KrylovJL_GMRES()),
-        FBDF(linsolve = KrylovJL_GMRES()))
-        # Manually construct a custom W operator using the Jacobian 
+    for alg in (
+            Rosenbrock23(linsolve = KrylovJL_GMRES()),
+            FBDF(linsolve = KrylovJL_GMRES()),
+        )
+        # Manually construct a custom W operator using the Jacobian
         N = length(prob.u0)
         J_op = MatrixOperator(zeros(N, N); update_func! = prob.f.jac)
-        gamma_op = ScalarOperator(0.0;
+        gamma_op = ScalarOperator(
+            0.0;
             update_func = (old_val, u, p, t; dtgamma) -> dtgamma,
-            accepted_kwargs = Val((:dtgamma,)))
-        transform_op = ScalarOperator(0.0;
+            accepted_kwargs = Val((:dtgamma,))
+        )
+        transform_op = ScalarOperator(
+            0.0;
             update_func = (old_op, u, p, t; dtgamma) -> inv(dtgamma),
-            accepted_kwargs = Val((:dtgamma,)))
+            accepted_kwargs = Val((:dtgamma,))
+        )
         W_op = -(I - gamma_op * J_op) * transform_op
 
         # Make problem with custom MatrixOperator jac_prototype
@@ -29,7 +35,7 @@ for prob in (prob_ode_vanderpol_stiff,)
         integrator = init(prob_J, Rosenbrock23())
         @test integrator.cache.J isa typeof(J_op)
 
-        # Make problem with custom SciMLOperator W_prototype 
+        # Make problem with custom SciMLOperator W_prototype
         f_W = ODEFunction(prob.f.f; jac_prototype = J_op, W_prototype = W_op)
         prob_W = remake(prob; f = f_W)
 
@@ -48,8 +54,8 @@ for prob in (prob_ode_vanderpol_stiff,)
         sol_J = solve(prob_J, alg) # note: direct linsolve in this case is broken, see #1998
         sol_W = solve(prob_W, alg)
 
-        rtol = 1e-2
-        
+        rtol = 1.0e-2
+
         @test prob_J.f.sparsity.A == prob_W.f.sparsity.A
 
         @test all(isapprox.(sol_J.t, sol_W.t; rtol))

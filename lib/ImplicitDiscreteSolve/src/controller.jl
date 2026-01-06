@@ -37,13 +37,14 @@ Base.@kwdef struct KantorovichTypeController <: OrdinaryDiffEqCore.AbstractContr
 end
 
 function OrdinaryDiffEqCore.default_controller(
-        alg::IDSolve, cache::IDSolveCache, _1, _2, _3)
+        alg::IDSolve, cache::IDSolveCache, _1, _2, _3
+    )
     return KantorovichTypeController(; Θmin = 1 // 8, p = 1)
 end
 
 function OrdinaryDiffEqCore.stepsize_controller!(
         integrator, controller::KantorovichTypeController, alg::IDSolve
-)
+    )
     @inline g(x) = √(1 + 4x) - 1
 
     # Adapt dt with a priori estimate (Eq. 5.24)
@@ -58,13 +59,13 @@ end
 
 function OrdinaryDiffEqCore.step_accept_controller!(
         integrator, controller::KantorovichTypeController, alg::IDSolve, q
-)
+    )
     return q * integrator.dt
 end
 
 function OrdinaryDiffEqCore.step_reject_controller!(
         integrator, controller::KantorovichTypeController, alg::IDSolve
-)
+    )
     @inline g(x) = √(1 + 4x) - 1
 
     # Shorten dt according to (Eq. 5.24)
@@ -77,6 +78,7 @@ function OrdinaryDiffEqCore.step_reject_controller!(
             return
         end
     end
+    return
 end
 
 function OrdinaryDiffEqCore.accept_step_controller(integrator, controller::KantorovichTypeController)

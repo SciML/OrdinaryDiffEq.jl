@@ -1,6 +1,6 @@
 using OrdinaryDiffEq, Test
 import ODEProblemLibrary: prob_ode_linear,
-                          linear, f_2dlinear
+    linear, f_2dlinear
 
 # scalar, not in-place
 prob = prob_ode_linear

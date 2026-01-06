@@ -18,7 +18,7 @@ end
     p1 = abs2.(sol.u[1])
     p2 = abs2.(sol.u[end])
 
-    @test norm(p1 .- p2) / norm(p1) < 1e-2 # small difference with analytical solution due to boundary periodic condition
+    @test norm(p1 .- p2) / norm(p1) < 1.0e-2 # small difference with analytical solution due to boundary periodic condition
 end
 
 @testset "NLSE test - Float32" begin
@@ -28,5 +28,5 @@ end
     p1 = abs2.(sol.u[1])
     p2 = abs2.(sol.u[end])
 
-    @test norm(p1 .- p2) / norm(p1) < 1e-2 # small difference with analytical solution due to boundary periodic condition
+    @test norm(p1 .- p2) / norm(p1) < 1.0e-2 # small difference with analytical solution due to boundary periodic condition
 end

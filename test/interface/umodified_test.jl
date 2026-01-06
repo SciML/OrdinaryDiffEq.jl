@@ -2,7 +2,7 @@ using OrdinaryDiffEq, Test, LinearAlgebra
 
 T = 1000.0;
 Ttr = 0.0;
-d0 = 1e-9;
+d0 = 1.0e-9;
 threshold = 10^4 * d0;
 dt = 0.1;
 diff_eq_kwargs = Dict();

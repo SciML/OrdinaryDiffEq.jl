@@ -8,7 +8,7 @@ function dynamics!(dx, x, θ, t)
     dx[2] = -M * g - z + p
     dx[3] = p - w(t) # the last state (algebraic) p has to be equal to w
 
-    if z <= zmin
+    return if z <= zmin
         dx[2] = max(dx[2], 0.0)
     elseif z >= zmax
         dx[2] = min(dx[2], 0.0)
@@ -21,16 +21,18 @@ zmax_cond(x, t, integrator) = zmax - x[1]
 
 function zmin_affect_neg!(integrator)
     integrator.u[1] = zmin
-    integrator.u[2] = 0.0
+    return integrator.u[2] = 0.0
 end
 
 function zmax_affect_neg!(integrator)
     integrator.u[1] = zmax
-    integrator.u[2] = 0.0
+    return integrator.u[2] = 0.0
 end
 
-cbs = CallbackSet(ContinuousCallback(zmin_cond, zmin_affect_neg!),
-    ContinuousCallback(zmax_cond, zmax_affect_neg!))
+cbs = CallbackSet(
+    ContinuousCallback(zmin_cond, zmin_affect_neg!),
+    ContinuousCallback(zmax_cond, zmax_affect_neg!)
+)
 
 tf = 20.0
 tspan = (0.0, tf)
@@ -48,12 +50,12 @@ E = diagm([1.0, M, 0.0])
 f = ODEFunction(dynamics!, mass_matrix = E)
 prob = ODEProblem(f, x0, tspan, θ)
 
-sol1 = solve(prob, Rodas4(), callback = cbs, reltol = 1e-6)
-@test sol1(0.06692341688237893)[3]≈0.72 atol=1e-2
-sol1 = solve(prob, Rodas5(), callback = cbs, reltol = 1e-6)
-@test sol1(0.06692341688237893)[3]≈0.72 atol=1e-2
-sol1 = solve(prob, Rodas5P(), callback = cbs, reltol = 1e-6)
-@test sol1(0.06692341688237893)[3]≈0.72 atol=1e-2
+sol1 = solve(prob, Rodas4(), callback = cbs, reltol = 1.0e-6)
+@test sol1(0.06692341688237893)[3] ≈ 0.72 atol = 1.0e-2
+sol1 = solve(prob, Rodas5(), callback = cbs, reltol = 1.0e-6)
+@test sol1(0.06692341688237893)[3] ≈ 0.72 atol = 1.0e-2
+sol1 = solve(prob, Rodas5P(), callback = cbs, reltol = 1.0e-6)
+@test sol1(0.06692341688237893)[3] ≈ 0.72 atol = 1.0e-2
 
 #=
 sol1 = solve(prob,Rosenbrock23(),callback=cbs, reltol=1e-6)

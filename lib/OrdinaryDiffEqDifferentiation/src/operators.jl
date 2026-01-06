@@ -28,7 +28,7 @@ end
 SciMLBase.isinplace(::JVPCache) = true
 ArrayInterface.can_setindex(::JVPCache) = false
 function ArrayInterface.restructure(y::JVPCache, x::JVPCache)
-    @assert size(y)==size(x) "cannot restructure operators. ensure their sizes match."
+    @assert size(y) == size(x) "cannot restructure operators. ensure their sizes match."
     return x
 end
 
@@ -49,7 +49,8 @@ function (op::JVPCache)(Jv, v, u, p, t)
 end
 
 function LinearAlgebra.mul!(
-        Jv::AbstractArray, J::JVPCache, v::AbstractArray)
+        Jv::AbstractArray, J::JVPCache, v::AbstractArray
+    )
     J.jvp_op(Jv, v, J.u, J.p, J.t)
     return Jv
 end
@@ -61,29 +62,34 @@ function prepare_jvp(f::SciMLBase.AbstractDiffEqFunction, du, u, p, t, autodiff)
     autodiff = autodiff isa AutoSparse ? ADTypes.dense_ad(autodiff) : autodiff
     @assert DI.check_inplace(autodiff) "AD backend $(autodiff) doesn't support in-place problems."
     di_prep = DI.prepare_pushforward(
-        f, du, autodiff, u, (u,), DI.ConstantOrCache(p), DI.Constant(t))
-    return (Jv,
+        f, du, autodiff, u, (u,), DI.ConstantOrCache(p), DI.Constant(t)
+    )
+    return (
+        Jv,
         v,
         u,
         p,
-        t) -> DI.pushforward!(f, du, (reshape(Jv, size(du)),), di_prep, autodiff, u,
-        (reshape(v, size(u)),), DI.ConstantOrCache(p), DI.Constant(t))
+        t,
+    ) -> DI.pushforward!(
+        f, du, (reshape(Jv, size(du)),), di_prep, autodiff, u,
+        (reshape(v, size(u)),), DI.ConstantOrCache(p), DI.Constant(t)
+    )
 end
 
 function SciMLOperators.update_coefficients!(J::JVPCache, u, p, t)
     J.u = u
     J.p = p
-    J.t = t
+    return J.t = t
 end
 
 function resize_JVPCache!(J::JVPCache, f, du, u, p, t, autodiff)
     J.jvp_op = prepare_jvp(f, du, u, p, t, autodiff)
     J.du = du
-    update_coefficients!(J, u, p, t)
+    return update_coefficients!(J, u, p, t)
 end
 
 function resize_JVPCache!(J::JVPCache, f, du, u, autodiff)
     J.jvp_op = prepare_jvp(f, du, u, J.p, J.t, autodiff)
     J.du = du
-    update_coefficients!(J, u, J.p, J.t)
+    return update_coefficients!(J, u, J.p, J.t)
 end

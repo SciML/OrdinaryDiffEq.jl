@@ -14,14 +14,14 @@ function test_step_limiter(alg_type)
     sol = solve(prob, alg_type(; step_limiter!), dt = 0.1)
 
     n = sol.stats.naccept + sol.stats.nreject
-    @test n == STEP_LIMITER_VAR[]
+    return @test n == STEP_LIMITER_VAR[]
 end
 
 @testset "Step_limiter Test" begin
     # it only catches the most basic errors, i.e. if the step_limiter! function is not called
     # or called more then one time
 
-    # test the step_limiter! function 
+    # test the step_limiter! function
     alg_types = [
         QNDF1, QNDF2, QNDF, FBDF, ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2,
         SDIRK2, SDIRK22, ABDF2, Feagin10, Feagin12, Feagin14,
@@ -44,7 +44,8 @@ end
         ParsaniKetchesonDeconinck3S184, ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
         CKLLSRK43_2, CKLLSRK54_3C, CKLLSRK95_4S, CKLLSRK95_4C, CKLLSRK95_4M, CKLLSRK54_3C_3R,
         CKLLSRK54_3M_3R, CKLLSRK54_3N_3R, CKLLSRK85_4C_3R, CKLLSRK85_4M_3R, CKLLSRK85_4P_3R,
-        CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R] #Stepanov5    
+        CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R,
+    ] #Stepanov5
 
     for alg_type in alg_types
         test_step_limiter(alg_type)

@@ -3,17 +3,20 @@ function _alg_autodiff(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have an autodifferentiation option defined.")
 end
 function _alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD}
-    alg.autodiff
+    return alg.autodiff
 end
 _alg_autodiff(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
 _alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
 _alg_autodiff(alg::CompositeAlgorithm) = _alg_autodiff(alg.algs[end])
-function _alg_autodiff(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD}
-}) where {
-        CS, AD
-}
-    alg.autodiff
+function _alg_autodiff(
+        alg::Union{
+            OrdinaryDiffEqExponentialAlgorithm{CS, AD},
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
+        }
+    ) where {
+        CS, AD,
+    }
+    return alg.autodiff
 end
 
 function alg_autodiff(alg)
@@ -41,21 +44,29 @@ end
 
 function DiffEqBase.prepare_alg(
         alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD,
-                FDT},
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm{
+                CS, AD,
+                FDT,
+            },
             OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT},
             DAEAlgorithm{CS, AD, FDT},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT}},
+            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT},
+        },
         u0::AbstractArray{T},
-        p, prob) where {CS, AD, FDT, T}
+        p, prob
+    ) where {CS, AD, FDT, T}
     prepped_AD = prepare_ADType(alg_autodiff(alg), prob, u0, p, standardtag(alg))
 
     sparse_prepped_AD = prepare_user_sparsity(prepped_AD, prob)
 
     # if u0 is a StaticArray or eltype is Complex etc. don't use sparsity
-    if (((typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) ||
-         (!(prob.f isa DAEFunction) && prob.f.mass_matrix isa MatrixOperator)) &&
-        sparse_prepped_AD isa AutoSparse)
+    if (
+            (
+                (typeof(u0) <: StaticArray) || (eltype(u0) <: Complex) ||
+                    (!(prob.f isa DAEFunction) && prob.f.mass_matrix isa MatrixOperator)
+            ) &&
+                sparse_prepped_AD isa AutoSparse
+        )
         @warn "Input type or problem definition is incompatible with sparse automatic differentiation. Switching to using dense automatic differentiation."
         autodiff = ADTypes.dense_ad(sparse_prepped_AD)
     else
@@ -66,8 +77,9 @@ function DiffEqBase.prepare_alg(
 end
 
 function prepare_ADType(autodiff_alg::AutoSparse, prob, u0, p, standardtag)
-    SciMLBase.@set autodiff_alg.dense_ad = prepare_ADType(
-        ADTypes.dense_ad(autodiff_alg), prob, u0, p, standardtag)
+    return SciMLBase.@set autodiff_alg.dense_ad = prepare_ADType(
+        ADTypes.dense_ad(autodiff_alg), prob, u0, p, standardtag
+    )
 end
 
 function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
@@ -83,9 +95,13 @@ function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
 
     cs = fwd_cs == 0 ? nothing : fwd_cs
 
-    if ((prob.f isa ODEFunction &&
-         prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) ||
-        (isbitstype(T) && sizeof(T) > 24)) && (cs == 0 || isnothing(cs))
+    if (
+            (
+                prob.f isa ODEFunction &&
+                    prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
+            ) ||
+                (isbitstype(T) && sizeof(T) > 24)
+        ) && (cs == 0 || isnothing(cs))
         return AutoForwardDiff{1}(tag)
     else
         return AutoForwardDiff{cs}(tag)
@@ -95,8 +111,10 @@ end
 function prepare_ADType(alg::AutoFiniteDiff, prob, u0, p, standardtag)
     # If the autodiff alg is AutoFiniteDiff, prob.f.f isa FunctionWrappersWrapper,
     # and fdtype is complex, fdtype needs to change to something not complex
-    if alg.fdtype == Val{:complex}() && (prob.f isa ODEFunction &&
-        prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+    if alg.fdtype == Val{:complex}() && (
+            prob.f isa ODEFunction &&
+                prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
+        )
         @warn "AutoFiniteDiff fdtype complex is not compatible with this function"
         return AutoFiniteDiff(fdtype = Val{:forward}())
     end
@@ -134,13 +152,15 @@ function prepare_user_sparsity(ad_alg, prob)
         sparsity = sparsity isa MatrixOperator ? sparsity.A : sparsity
 
         color_alg = SciMLBase.has_colorvec(prob.f) ?
-                    ConstantColoringAlgorithm(
-            sparsity, prob.f.colorvec) : GreedyColoringAlgorithm()
+            ConstantColoringAlgorithm(
+                sparsity, prob.f.colorvec
+            ) : GreedyColoringAlgorithm()
 
         sparsity_detector = ADTypes.KnownJacobianSparsityDetector(sparsity)
 
         return AutoSparse(
-            ad_alg, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg)
+            ad_alg, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg
+        )
     else
         return ad_alg
     end
@@ -152,5 +172,5 @@ end
 
 @generated function pick_static_chunksize(::Val{chunksize}) where {chunksize}
     x = ForwardDiff.pickchunksize(chunksize)
-    :(Val{$x}())
+    return :(Val{$x}())
 end

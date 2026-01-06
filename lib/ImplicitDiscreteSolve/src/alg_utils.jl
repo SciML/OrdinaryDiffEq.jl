@@ -1,11 +1,11 @@
 function SciMLBase.isautodifferentiable(alg::IDSolve)
-    true
+    return true
 end
 function SciMLBase.allows_arbitrary_number_types(alg::IDSolve)
-    true
+    return true
 end
 function SciMLBase.allowscomplex(alg::IDSolve)
-    true
+    return true
 end
 
 SciMLBase.isdiscrete(alg::IDSolve) = true

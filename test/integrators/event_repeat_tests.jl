@@ -7,7 +7,7 @@ cond(u, p, t) = u - exp(70eps(1.0))
 
 c = Ref(0)
 function affect!(integrator)
-    c[] += 1
+    return c[] += 1
 end
 cb = ContinuousCallback(cond, affect!)
 @info "Event Repeat Test 1"
@@ -19,7 +19,7 @@ function condition_v(out, u, t, integrator)
     out[2] = u - exp(60eps(1.0))
     out[3] = u - exp(70eps(1.0))
     out[4] = u - exp(80eps(1.0))
-    out[5] = u - exp(90eps(1.0))
+    return out[5] = u - exp(90eps(1.0))
 end
 
 c1 = Ref(0)
@@ -29,7 +29,7 @@ c4 = Ref(0)
 c5 = Ref(0)
 
 function affect_v!(integrator, idx)
-    if idx == 1
+    return if idx == 1
         c1[] += 1
     elseif idx == 2
         c2[] += 1

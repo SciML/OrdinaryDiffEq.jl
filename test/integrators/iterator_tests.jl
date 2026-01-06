@@ -3,12 +3,16 @@ import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 prob = prob_ode_linear
 
-sol = solve(prob, BS3(); dt = 1 // 2^(4), tstops = [0.5], saveat = 0.01,
-    save_everystep = true)
+sol = solve(
+    prob, BS3(); dt = 1 // 2^(4), tstops = [0.5], saveat = 0.01,
+    save_everystep = true
+)
 sol(0.9)
 
-integrator = init(prob, BS3(); dt = 1 // 2^(4), tstops = [0.5], saveat = 0.01,
-    save_everystep = true)
+integrator = init(
+    prob, BS3(); dt = 1 // 2^(4), tstops = [0.5], saveat = 0.01,
+    save_everystep = true
+)
 step!(integrator)
 @test integrator.iter == 1
 solve!(integrator)
@@ -33,8 +37,10 @@ for (u, t) in tuples(integrator)
     @test t ∈ [0.5, 1.0]
 end
 
-integrator = init(prob, Tsit5(); dt = 1 // 2^(4), tstops = [0.5], advance_to_tstop = true,
-    stop_at_next_tstop = true)
+integrator = init(
+    prob, Tsit5(); dt = 1 // 2^(4), tstops = [0.5], advance_to_tstop = true,
+    stop_at_next_tstop = true
+)
 for (u, t) in tuples(integrator)
     @test t == 0.5
 end
@@ -54,8 +60,10 @@ for i in Base.Iterators.take(integrator, 12)
 end
 @test integrator.iter == 24
 
-integrator = init(prob_ode_2Dlinear, Tsit5(); dt = 1 // 2^(4), tstops = [0.5],
-    advance_to_tstop = true, stop_at_next_tstop = true)
+integrator = init(
+    prob_ode_2Dlinear, Tsit5(); dt = 1 // 2^(4), tstops = [0.5],
+    advance_to_tstop = true, stop_at_next_tstop = true
+)
 for (u, t) in tuples(integrator)
     @test t == 0.5
 end

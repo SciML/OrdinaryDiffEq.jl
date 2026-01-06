@@ -1,14 +1,18 @@
 ## initialize!
 
-@muladd function initialize!(nlsolver::NLSolver{<:NLFunctional},
-        integrator::SciMLBase.DEIntegrator)
+@muladd function initialize!(
+        nlsolver::NLSolver{<:NLFunctional},
+        integrator::SciMLBase.DEIntegrator
+    )
     nlsolver.cache.tstep = integrator.t + nlsolver.c * integrator.dt
 
     nothing
 end
 
-@muladd function initialize!(nlsolver::NLSolver{<:NLAnderson},
-        integrator::SciMLBase.DEIntegrator)
+@muladd function initialize!(
+        nlsolver::NLSolver{<:NLAnderson},
+        integrator::SciMLBase.DEIntegrator
+    )
     (; cache) = nlsolver
 
     cache.history = 0
@@ -20,7 +24,7 @@ end
 ## initial_η
 
 function initial_η(nlsolver::NLSolver{<:Union{NLFunctional, NLAnderson}}, integrator)
-    nlsolver.ηold
+    return nlsolver.ηold
 end
 
 ## compute_step!
@@ -44,7 +48,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7).
 """
 function compute_step!(nlsolver::NLSolver{<:NLFunctional}, integrator)
-    compute_step_fixedpoint!(nlsolver, integrator)
+    return compute_step_fixedpoint!(nlsolver, integrator)
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLAnderson, false}, integrator)
@@ -77,8 +81,8 @@ end
     previter = nlsolver.iter - 1
     if previter == aa_start
         # update cached values for next step of Anderson acceleration
-        @.. broadcast=false cache.dzold=cache.dz
-        @.. broadcast=false cache.z₊old=nlsolver.z
+        @.. broadcast = false cache.dzold = cache.dz
+        @.. broadcast = false cache.z₊old = nlsolver.z
     elseif previter > aa_start
         # actually perform Anderson acceleration
         anderson!(nlsolver.z, cache)
@@ -93,9 +97,13 @@ end
 
 @muladd function compute_step_fixedpoint!(
         nlsolver::NLSolver{
-            <:Union{NLFunctional,
-                NLAnderson}, false},
-        integrator)
+            <:Union{
+                NLFunctional,
+                NLAnderson,
+            }, false,
+        },
+        integrator
+    )
     (; uprev, t, p, dt, opts) = integrator
     (; z, γ, α, cache, tmp) = nlsolver
     (; tstep) = cache
@@ -105,11 +113,11 @@ end
 
     γdt = γ * dt
     if isdae
-        ustep = @.. broadcast=false uprev+z
+        ustep = @.. broadcast = false uprev + z
         invγdt = inv(γdt)
-        dustep = @.. broadcast=false (tmp + α * z)*invγdt
+        dustep = @.. broadcast = false (tmp + α * z) * invγdt
         dz = f(dustep, ustep, p, t)
-        ztmp = @.. broadcast=false z+dz
+        ztmp = @.. broadcast = false z + dz
     else
         mass_matrix = integrator.f.mass_matrix
         if nlsolver.method === COEFFICIENT_MULTISTEP
@@ -123,7 +131,7 @@ end
                 ztmp = dz .+ z
             end
         else
-            ustep = @.. broadcast=false tmp+γ * z
+            ustep = @.. broadcast = false tmp + γ * z
             if mass_matrix === I
                 ztmp = dt .* f(ustep, p, tstep)
                 dz = ztmp .- z
@@ -139,8 +147,10 @@ end
     end
 
     # compute norm of residuals
-    atmp = calculate_residuals(dz, uprev, ustep, opts.abstol, opts.reltol,
-        opts.internalnorm, t)
+    atmp = calculate_residuals(
+        dz, uprev, ustep, opts.abstol, opts.reltol,
+        opts.internalnorm, t
+    )
     ndz = opts.internalnorm(atmp, t)
 
     # cache results
@@ -154,9 +164,13 @@ end
 
 @muladd function compute_step_fixedpoint!(
         nlsolver::NLSolver{
-            <:Union{NLFunctional,
-                NLAnderson}, true},
-        integrator)
+            <:Union{
+                NLFunctional,
+                NLAnderson,
+            }, true,
+        },
+        integrator
+    )
     (; uprev, t, p, dt, opts) = integrator
     (; z, tmp, ztmp, γ, α, cache) = nlsolver
     (; ustep, tstep, k, atmp, dz) = cache
@@ -166,36 +180,36 @@ end
 
     γdt = γ * dt
     if isdae
-        @.. broadcast=false ustep=uprev + z
-        @.. broadcast=false ztmp=(tmp + α * z) * inv(γdt)
+        @.. broadcast = false ustep = uprev + z
+        @.. broadcast = false ztmp = (tmp + α * z) * inv(γdt)
         f(k, ztmp, ustep, p, tstep)
-        @.. broadcast=false dz=k
-        @.. broadcast=false ztmp=z + dz
+        @.. broadcast = false dz = k
+        @.. broadcast = false ztmp = z + dz
     else
         mass_matrix = integrator.f.mass_matrix
         if nlsolver.method === COEFFICIENT_MULTISTEP
             ustep = z
             f(k, ustep, p, tstep)
             if mass_matrix === I
-                @.. broadcast=false ztmp=(tmp + k) * (γdt / α)
-                @.. broadcast=false dz=ztmp - z
+                @.. broadcast = false ztmp = (tmp + k) * (γdt / α)
+                @.. broadcast = false dz = ztmp - z
             else
                 update_coefficients!(mass_matrix, ustep, p, tstep)
                 mul!(_vec(ztmp), mass_matrix, _vec(z))
-                @.. broadcast=false dz=(tmp + k) * γdt - α * ztmp
-                @.. broadcast=false ztmp=dz + z
+                @.. broadcast = false dz = (tmp + k) * γdt - α * ztmp
+                @.. broadcast = false ztmp = dz + z
             end
         else
-            @.. broadcast=false ustep=tmp + γ * z
+            @.. broadcast = false ustep = tmp + γ * z
             f(k, ustep, p, tstep)
             if mass_matrix === I
-                @.. broadcast=false ztmp=dt * k
-                @.. broadcast=false dz=ztmp - z
+                @.. broadcast = false ztmp = dt * k
+                @.. broadcast = false dz = ztmp - z
             else
                 update_coefficients!(mass_matrix, ustep, p, tstep)
                 mul!(_vec(ztmp), mass_matrix, _vec(z))
-                @.. broadcast=false dz=dt * k - ztmp
-                @.. broadcast=false ztmp=z + dz
+                @.. broadcast = false dz = dt * k - ztmp
+                @.. broadcast = false ztmp = z + dz
             end
         end
     end
@@ -205,8 +219,10 @@ end
     end
 
     # compute norm of residuals
-    calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
-        opts.internalnorm, t)
+    calculate_residuals!(
+        atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
+        opts.internalnorm, t
+    )
     ndz = opts.internalnorm(atmp, t)
 
     ndz
@@ -219,12 +235,14 @@ function Base.resize!(nlcache::NLFunctionalCache, i::Int)
     resize!(nlcache.k, i)
     resize!(nlcache.atmp, i)
     resize!(nlcache.dz, i)
-    nothing
+    return nothing
 end
 
-function Base.resize!(nlcache::NLAndersonCache, nlsolver::NLSolver{<:NLAnderson},
-        integrator, i::Int)
-    resize!(nlcache, nlsolver.alg, i)
+function Base.resize!(
+        nlcache::NLAndersonCache, nlsolver::NLSolver{<:NLAnderson},
+        integrator, i::Int
+    )
+    return resize!(nlcache, nlsolver.alg, i)
 end
 
 function Base.resize!(nlcache::NLAndersonCache, nlalg::NLAnderson, i::Int)
@@ -256,5 +274,5 @@ function Base.resize!(nlcache::NLAndersonCache, nlalg::NLAnderson, i::Int)
         end
     end
 
-    nothing
+    return nothing
 end

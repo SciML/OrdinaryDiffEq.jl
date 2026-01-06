@@ -4,21 +4,24 @@ Overwrite compute f(u, p, t) and if possible, overwrite u with the result.
 Same principle of operation as `matvec_prod_mip` for mutability/in-place handling.
 """
 function nl_part_mip(
-        tmp::uType, f!, u::uType, p, t::tType, ::Val{true}) where {tType, uType}
+        tmp::uType, f!, u::uType, p, t::tType, ::Val{true}
+    ) where {tType, uType}
     f!(tmp, u, p, t)
     copyto!(u, tmp)
     return u
 end
 function nl_part_mip(_::uType, f, u::uType, p, t::tType, ::Val{false}) where {tType, uType}
-    f(u, p, t)
+    return f(u, p, t)
 end
 
 """
 Helper function to compute Au + f(u, p, t) and if in place, store the result in res.
 Return res if in place, otherwise return Au + f(u, p, t)
 """
-function f_mip!(res::uType, tmp::uType, A::opType, f, u::uType, p,
-        t::tType, ::Val{true}) where {tType, uType, opType}
+function f_mip!(
+        res::uType, tmp::uType, A::opType, f, u::uType, p,
+        t::tType, ::Val{true}
+    ) where {tType, uType, opType}
     res .= u
     res = matvec_prod_mip(tmp, A, res, Val(true), p, t)
     f(tmp, u, p, t)
@@ -26,28 +29,37 @@ function f_mip!(res::uType, tmp::uType, A::opType, f, u::uType, p,
     return res
 end
 
-function f_mip!(_::uType, tmp::uType, A::opType, f, u::uType, p,
-        t::tType, ::Val{false}) where {tType, uType, opType}
-    matvec_prod_mip(tmp, A, u, Val(false), p, t) + f(u, p, t)
+function f_mip!(
+        _::uType, tmp::uType, A::opType, f, u::uType, p,
+        t::tType, ::Val{false}
+    ) where {tType, uType, opType}
+    return matvec_prod_mip(tmp, A, u, Val(false), p, t) + f(u, p, t)
 end
 
 """
 Helper function for the residual maybe in place.
 Same principle of operation as `_safe_matvec_prod` for mutability/in-place handling.
 """
-function calculate_residuals_mip(tmp::uType, utilde::uType, uprev::uType, u::uType, abstol,
-        reltol, internalnorm, t, ::Val{true}) where {uType}
+function calculate_residuals_mip(
+        tmp::uType, utilde::uType, uprev::uType, u::uType, abstol,
+        reltol, internalnorm, t, ::Val{true}
+    ) where {uType}
     calculate_residuals!(tmp, utilde, uprev, u, abstol, reltol, internalnorm, t)
     return tmp
 end
-function calculate_residuals_mip(_::uType, utilde::uType, uprev::uType, u::uType, abstol,
-        reltol, internalnorm, t, ::Val{false}) where {uType}
-    calculate_residuals(utilde, uprev, u, abstol, reltol, internalnorm, t)
+function calculate_residuals_mip(
+        _::uType, utilde::uType, uprev::uType, u::uType, abstol,
+        reltol, internalnorm, t, ::Val{false}
+    ) where {uType}
+    return calculate_residuals(utilde, uprev, u, abstol, reltol, internalnorm, t)
 end
 
-@fastmath function perform_step!(integrator,
-        cache::RKIPCache{expOpType, cacheType, tType, opType, uType, iip}) where {
-        expOpType, cacheType, tType, opType, uType, iip}
+@fastmath function perform_step!(
+        integrator,
+        cache::RKIPCache{expOpType, cacheType, tType, opType, uType, iip}
+    ) where {
+        expOpType, cacheType, tType, opType, uType, iip,
+    }
     (; t, dt, uprev, u, f, p, fsalfirst, fsallast, alg) = integrator
     (; c, α, αEEst, stages, A) = alg.tableau
     (; kk, utilde, tmp) = cache
@@ -95,7 +107,8 @@ end
     if adaptive
         utilde = expmv_rkip_mip(cache, utilde, dt, p, t) # stepping forward into the interaction ũ = exp(Â dt)*ũ
         tmp = calculate_residuals_mip(
-            tmp, utilde, uprev, u, abstol, reltol, internalnorm, t, iip) # error computation maybe in place
+            tmp, utilde, uprev, u, abstol, reltol, internalnorm, t, iip
+        ) # error computation maybe in place
         integrator.EEst = internalnorm(tmp, t)
     end
 
@@ -110,9 +123,12 @@ end
     @bb copyto!(integrator.k[2], fsallast)
 end
 
-function initialize!(integrator,
-        cache::RKIPCache{expOpType, cacheType, tType, opType, uType, iip}) where {
-        expOpType, cacheType, tType, opType, uType, iip}
+function initialize!(
+        integrator,
+        cache::RKIPCache{expOpType, cacheType, tType, opType, uType, iip}
+    ) where {
+        expOpType, cacheType, tType, opType, uType, iip,
+    }
     (; f, u, p, t, fsalfirst, fsallast) = integrator
 
     kshortsize = 2
@@ -128,5 +144,5 @@ function initialize!(integrator,
     integrator.fsallast = fsallast
 
     @bb copyto!(integrator.k[1], fsalfirst)
-    @bb copyto!(integrator.k[2], fsallast)
+    return @bb copyto!(integrator.k[2], fsallast)
 end

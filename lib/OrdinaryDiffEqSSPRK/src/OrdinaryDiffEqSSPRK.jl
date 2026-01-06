@@ -1,18 +1,18 @@
 module OrdinaryDiffEqSSPRK
 
 import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-                           initialize!, perform_step!, unwrap_alg,
-                           calculate_residuals, ssp_coefficient,
-                           OrdinaryDiffEqAlgorithm,
-                           OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-                           OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-                           OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-                           OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
-                           alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-                           constvalue, _unwrap_val,
-                           explicit_rk_docstring, trivial_limiter!,
-                           _ode_interpolant, _ode_interpolant!,
-                           _ode_addsteps!, get_fsalfirstlast, copyat_or_push!
+    initialize!, perform_step!, unwrap_alg,
+    calculate_residuals, ssp_coefficient,
+    OrdinaryDiffEqAlgorithm,
+    OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
+    OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
+    alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
+    constvalue, _unwrap_val,
+    explicit_rk_docstring, trivial_limiter!,
+    _ode_interpolant, _ode_interpolant!,
+    _ode_addsteps!, get_fsalfirstlast, copyat_or_push!
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def
 using Static: False
@@ -42,7 +42,7 @@ PrecompileTools.@compile_workload begin
     prob_list = []
 
     low_storage = [
-        SSPRK43()
+        SSPRK43(),
     ]
 
     low_storage_nonadaptive = [
@@ -59,29 +59,51 @@ PrecompileTools.@compile_workload begin
     end
 
     if Preferences.@load_preference("PrecompileAutoSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0), Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]
+            )
+        )
     end
 
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0), Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]
+            )
+        )
     end
 
     if Preferences.@load_preference("PrecompileNoSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
-                Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0))
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
+                Float64[]
+            )
+        )
     end
 
     for prob in prob_list, solver in solver_list
@@ -97,7 +119,7 @@ PrecompileTools.@compile_workload begin
 end
 
 export SSPRK53_2N2, SSPRK22, SSPRK53, SSPRK63, SSPRK83, SSPRK43, SSPRK432, SSPRKMSVS32,
-       SSPRK54, SSPRK53_2N1, SSPRK104, SSPRK932, SSPRKMSVS43, SSPRK73, SSPRK53_H,
-       SSPRK33, KYKSSPRK42, KYK2014DGSSPRK_3S2
+    SSPRK54, SSPRK53_2N1, SSPRK104, SSPRK932, SSPRKMSVS43, SSPRK73, SSPRK53_H,
+    SSPRK33, KYKSSPRK42, KYK2014DGSSPRK_3S2
 
 end

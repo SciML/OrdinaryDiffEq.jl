@@ -66,32 +66,50 @@ REF6 = """
 """
 
 for (Alg, Description, Ref) in [
-    (:MagnusMidpoint, "Second order Magnus Midpoint method.",
-        "https://joshuagoings.com/2017/06/15/magnus/"),
-    (:MagnusLeapfrog, "Second order Magnus Leapfrog method.",
-        "https://joshuagoings.com/2017/06/15/magnus/"),
-    (:LieEuler, "description", REF1),
-    (:MagnusGauss4,
-        "Fourth order Magnus method approximated using a two stage Gauss quadrature.",
-        REF5),
-    (:MagnusNC6,
-        "Sixth order Magnus method approximated using Newton-Cotes quadrature.", REF3),
-    (:MagnusGL6,
-        "Sixth order Magnus method approximated using Gauss-Legendre quadrature.", REF3),
-    (:MagnusGL8,
-        "Eighth order Magnus method approximated using Newton-Cotes quadrature.", REF3),
-    (:MagnusNC8,
-        "Eighth order Magnus method approximated using Gauss-Legendre quadrature.", REF3),
-    (:MagnusGL4,
-        "Fourth order Magnus method approximated using Gauss-Legendre quadrature.", REF4),
-    (:RKMK2, "Second order Runge–Kutta–Munthe-Kaas method.", REF1),
-    (:RKMK4, "Fourth order Runge–Kutta–Munthe-Kaas method.", REF1),
-    (:LieRK4, "Fourth order Lie Runge-Kutta method.", REF1),
-    (:CG2, "Second order Crouch–Grossman method.", REF1),
-    (:CG3, "Third order Crouch-Grossman method.", REF2),
-    (:CG4a, " Fourth order Crouch-Grossman method.", REF6)]
+        (
+            :MagnusMidpoint, "Second order Magnus Midpoint method.",
+            "https://joshuagoings.com/2017/06/15/magnus/",
+        ),
+        (
+            :MagnusLeapfrog, "Second order Magnus Leapfrog method.",
+            "https://joshuagoings.com/2017/06/15/magnus/",
+        ),
+        (:LieEuler, "description", REF1),
+        (
+            :MagnusGauss4,
+            "Fourth order Magnus method approximated using a two stage Gauss quadrature.",
+            REF5,
+        ),
+        (
+            :MagnusNC6,
+            "Sixth order Magnus method approximated using Newton-Cotes quadrature.", REF3,
+        ),
+        (
+            :MagnusGL6,
+            "Sixth order Magnus method approximated using Gauss-Legendre quadrature.", REF3,
+        ),
+        (
+            :MagnusGL8,
+            "Eighth order Magnus method approximated using Newton-Cotes quadrature.", REF3,
+        ),
+        (
+            :MagnusNC8,
+            "Eighth order Magnus method approximated using Gauss-Legendre quadrature.", REF3,
+        ),
+        (
+            :MagnusGL4,
+            "Fourth order Magnus method approximated using Gauss-Legendre quadrature.", REF4,
+        ),
+        (:RKMK2, "Second order Runge–Kutta–Munthe-Kaas method.", REF1),
+        (:RKMK4, "Fourth order Runge–Kutta–Munthe-Kaas method.", REF1),
+        (:LieRK4, "Fourth order Lie Runge-Kutta method.", REF1),
+        (:CG2, "Second order Crouch–Grossman method.", REF1),
+        (:CG3, "Third order Crouch-Grossman method.", REF2),
+        (:CG4a, " Fourth order Crouch-Grossman method.", REF6),
+    ]
     @eval begin
-        @doc generic_solver_docstring($Description,
+        @doc generic_solver_docstring(
+            $Description,
             $(string(Alg)),
             "Semilinear ODE solver",
             $Ref,
@@ -106,7 +124,8 @@ for (Alg, Description, Ref) in [
             krylov = false,
             m = 30,
             iop = 0,
-            """)
+            """
+        )
         struct $Alg <: OrdinaryDiffEqLinearExponentialAlgorithm
             krylov::Bool
             m::Int
@@ -116,7 +135,8 @@ for (Alg, Description, Ref) in [
     @eval $Alg(; krylov = false, m = 30, iop = 0) = $Alg(krylov, m, iop)
 end
 
-@doc generic_solver_docstring("Fourth Order Adaptive Magnus method.",
+@doc generic_solver_docstring(
+    "Fourth Order Adaptive Magnus method.",
     "MagnusAdapt4",
     "Semilinear ODE solver",
     "@article{li2008adaptive,
@@ -127,10 +147,12 @@ end
     number={9},
     pages={1111--1118},
     year={2008},
-    publisher={Springer}}", "", "")
+    publisher={Springer}}", "", ""
+)
 struct MagnusAdapt4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
-@doc generic_solver_docstring("First order method using Cayley transformations.",
+@doc generic_solver_docstring(
+    "First order method using Cayley transformations.",
     "CayleyEuler",
     "Semilinear ODE solver",
     "@article{iserles2000lie,
@@ -140,7 +162,8 @@ struct MagnusAdapt4 <: OrdinaryDiffEqAdaptiveAlgorithm end
     volume={9},
     pages={215--365},
     year={2000},
-    publisher={Cambridge University Press}}", "", "")
+    publisher={Cambridge University Press}}", "", ""
+)
 struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 
 @doc generic_solver_docstring(
@@ -166,9 +189,10 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
     krylov = :off,
     m = 10,
     iop = 0,
-    """)
+    """
+)
 struct LinearExponential <:
-       OrdinaryDiffEqExponentialAlgorithm{1, false, Val{:forward}, Val{true}, nothing}
+    OrdinaryDiffEqExponentialAlgorithm{1, false, Val{:forward}, Val{true}, nothing}
     krylov::Symbol
     m::Int
     iop::Int

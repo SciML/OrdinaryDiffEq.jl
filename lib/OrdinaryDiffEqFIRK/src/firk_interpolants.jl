@@ -1,10 +1,12 @@
 FIRK_WITH_INTERPOLATIONS = Union{
     RadauIIA3ConstantCache, RadauIIA3Cache, RadauIIA5ConstantCache, RadauIIA5Cache,
-    RadauIIA9ConstantCache, RadauIIA9Cache, AdaptiveRadauConstantCache, AdaptiveRadauCache}
+    RadauIIA9ConstantCache, RadauIIA9Cache, AdaptiveRadauConstantCache, AdaptiveRadauCache,
+}
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::Union{RadauIIA3ConstantCache, RadauIIA3Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; cont1, cont2) = cache
     (; c1) = cache.tab
     c1m1 = c1 - 1
@@ -14,7 +16,8 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache::Union{RadauIIA3ConstantCache, RadauIIA3Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; c1) = cache.tab
     c1m1 = c1 - 1
     Θdt = 1 - Θ
@@ -23,17 +26,19 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::Union{RadauIIA5ConstantCache, RadauIIA5Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; c1, c2) = cache.tab
     c1m1 = c1 - 1
     c2m1 = c2 - 1
-    Θdt = 1-Θ
+    Θdt = 1 - Θ
     @.. y₁ - Θdt * (k[3] - (Θdt + c2m1) * (k[4] - (Θdt + c1m1) * k[5]))
 end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache::Union{RadauIIA5ConstantCache, RadauIIA5Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; c1, c2) = cache.tab
     (; dtprev) = cache
     c1m1 = c1 - 1
@@ -44,7 +49,8 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::Union{RadauIIA9ConstantCache, RadauIIA9Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; c1, c2, c3, c4) = cache.tab
     c1m1 = c1 - 1
     c2m1 = c2 - 1
@@ -52,14 +58,17 @@ end
     c4m1 = c4 - 1
     Θdt = 1 - Θ
     @.. y₁ -
-        Θdt * (k[3] -
-         (Θdt + c4m1) *
-         (k[4] - (Θdt + c3m1) * (k[5] - (Θdt + c2m1) * (k[6] - (Θdt + c1m1) * k[7]))))
+        Θdt * (
+        k[3] -
+            (Θdt + c4m1) *
+            (k[4] - (Θdt + c3m1) * (k[5] - (Θdt + c2m1) * (k[6] - (Θdt + c1m1) * k[7])))
+    )
 end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache::Union{RadauIIA9ConstantCache, RadauIIA9Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; c1, c2, c3, c4) = cache.tab
     c1m1 = c1 - 1
     c2m1 = c2 - 1
@@ -67,14 +76,17 @@ end
     c4m1 = c4 - 1
     Θdt = 1 - Θ
     @.. out = y₁ -
-              Θdt * (k[3] -
-               (Θdt + c4m1) *
-               (k[4] - (Θdt + c3m1) * (k[5] - (Θdt + c2m1) * (k[6] - (Θdt + c1m1) * k[7]))))
+        Θdt * (
+        k[3] -
+            (Θdt + c4m1) *
+            (k[4] - (Θdt + c3m1) * (k[5] - (Θdt + c2m1) * (k[6] - (Θdt + c1m1) * k[7])))
+    )
 end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::Union{AdaptiveRadauConstantCache, AdaptiveRadauCache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; num_stages, index) = cache
     (; c) = cache.tabs[index]
     Θdt = 1 - Θ
@@ -91,7 +103,8 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache::Union{AdaptiveRadauConstantCache, AdaptiveRadauCache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
     (; num_stages, index) = cache
     (; c) = cache.tabs[index]
     Θdt = 1 - Θ

@@ -6,7 +6,7 @@ function test_callback_inplace(alg; kwargs...)
     cb = ContinuousCallback((u, t, int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [5.0], (2.0, 0.0), callback = cb)
     sol = solve(prob, alg; kwargs...)
-    sol.u[end][1] ≈ exp(1)
+    return sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_outofplace(alg; kwargs...)
@@ -14,7 +14,7 @@ function test_callback_outofplace(alg; kwargs...)
     cb = ContinuousCallback((u, t, int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [5.0], (2.0, 0.0), callback = cb)
     sol = solve(prob, alg; kwargs...)
-    sol.u[end][1] ≈ exp(1)
+    return sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_scalar(alg; kwargs...)
@@ -22,7 +22,7 @@ function test_callback_scalar(alg; kwargs...)
     cb = ContinuousCallback((u, t, int) -> u - exp(1), terminate!)
     prob = ODEProblem(f, 5.0, (2.0, 0.0), callback = cb)
     sol = solve(prob, alg; kwargs...)
-    sol.u[end] ≈ exp(1)
+    return sol.u[end] ≈ exp(1)
 end
 
 function test_callback_svector(alg; kwargs...)
@@ -30,7 +30,7 @@ function test_callback_svector(alg; kwargs...)
     cb = ContinuousCallback((u, t, int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, SVector(5.0), (2.0, 0.0), callback = cb)
     sol = solve(prob, alg; kwargs...)
-    sol.u[end][1] ≈ exp(1)
+    return sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_mvector(alg; kwargs...)
@@ -38,7 +38,7 @@ function test_callback_mvector(alg; kwargs...)
     cb = ContinuousCallback((u, t, int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, MVector(5.0), (2.0, 0.0), callback = cb)
     sol = solve(prob, alg; kwargs...)
-    sol.u[end][1] ≈ exp(1)
+    return sol.u[end][1] ≈ exp(1)
 end
 
 println("inplace")

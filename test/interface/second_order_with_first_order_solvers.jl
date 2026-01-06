@@ -1,7 +1,7 @@
 using OrdinaryDiffEq
 
 function SinCosDiffEqToSolve!(ddu, du, u, p, t)
-    ddu[1] = -u[1]
+    return ddu[1] = -u[1]
 end
 
 prob = SecondOrderODEProblem(SinCosDiffEqToSolve!, [2.0], [3.0], (0.0, 1.0))

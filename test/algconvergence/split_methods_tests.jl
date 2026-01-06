@@ -50,77 +50,78 @@ prob = SplitODEProblem(ff_split, 1.0, (0.0, 1.0))
 sol = solve(prob, KenCarp3())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CFNLIRK3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 sol = solve(
-    prob, KenCarp3(nlsolve = OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve.NLFunctional()))
+    prob, KenCarp3(nlsolve = OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve.NLFunctional())
+)
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 sol = solve(prob, KenCarp4())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp4())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp5())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp5())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 sol = solve(prob, KenCarp47())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp47())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp58())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp58())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 # IMEXEuler
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEuler())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # IMEXEulerARK
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEulerARK())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # CNAB2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNAB2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # CNLF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNLF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF3
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF3())
-@test_broken sim.𝒪est[:l∞]≈3 atol=testTol
+@test_broken sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 # SBDF4
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF4())
-@test_broken sim.𝒪est[:l∞]≈4 atol=testTol
+@test_broken sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 # IRKC
 dts = 1 .// 2 .^ (12:-1:8)
 sim = test_convergence(dts, prob, IRKC())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # Now test only the second part
 println("Testing only second part of Split ODE")
@@ -134,71 +135,71 @@ prob = SplitODEProblem(ff_split2, 1.0, (0.0, 1.0))
 sol = solve(prob, KenCarp3())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CFNLIRK3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 sol = solve(prob, KenCarp4())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp4())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp5())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp5())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 sol = solve(prob, KenCarp47())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp47())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp58())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp58())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 # IMEXEuler
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEuler())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # IMEXEulerARK
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEulerARK())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # CNAB2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNAB2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # CNLF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNLF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF3
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF3())
-@test_broken sim.𝒪est[:l∞]≈3 atol=testTol
+@test_broken sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 # SBDF4
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF4())
-@test_broken sim.𝒪est[:l∞]≈4 atol=testTol
+@test_broken sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 # IRKC
 dts = 1 .// 2 .^ (12:-1:8)
 sim = test_convergence(dts, prob, IRKC())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # Test together
 println("Testing both parts of Split ODE together")
@@ -212,71 +213,71 @@ prob = SplitODEProblem(ff_split3, 1.0, (0.0, 1.0))
 sol = solve(prob, KenCarp3())
 dts = 1 .// 2 .^ (12:-1:8)
 sim = test_convergence(dts, prob, KenCarp3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 dts = 1 .// 2 .^ (12:-1:8)
 sim = test_convergence(dts, prob, CFNLIRK3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 sol = solve(prob, KenCarp4())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp4())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp5())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp5())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 sol = solve(prob, KenCarp47())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp47())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp58())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp58())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 # IMEXEuler
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEuler())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # IMEXEulerARK
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEulerARK())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # CNAB2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNAB2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # CNLF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNLF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF3
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF3())
-@test_broken sim.𝒪est[:l∞]≈3 atol=testTol
+@test_broken sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 # SBDF4
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF4())
-@test_broken sim.𝒪est[:l∞]≈4 atol=testTol
+@test_broken sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 # IRKC
 dts = 1 .// 2 .^ (12:-1:8)
 sim = test_convergence(dts, prob, IRKC())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 println("IIP Tests")
 # Now test only the first part
@@ -291,56 +292,56 @@ prob = SplitODEProblem(ff_split4, rand(4, 2), (0.0, 1.0))
 sol = solve(prob, KenCarp3())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CFNLIRK3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 sol = solve(prob, KenCarp4())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp4())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp5())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp5())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 sol = solve(prob, KenCarp47())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp47())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp58())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp58())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 # IMEXEuler
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEuler())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # IMEXEulerARK
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEulerARK())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # CNAB2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNAB2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # CNLF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNLF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF3
 dts = 1 .// 2 .^ (8:-1:4)
@@ -350,12 +351,12 @@ sim = test_convergence(dts, prob, SBDF3())
 # SBDF4
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF4())
-@test_broken sim.𝒪est[:l∞]≈4 atol=testTol
+@test_broken sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 # IRKC
 dts = 1 .// 2 .^ (12:-1:8)
 sim = test_convergence(dts, prob, IRKC())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # Now test only the second part
 println("Testing only second part of Split ODE")
@@ -369,71 +370,71 @@ prob = SplitODEProblem(ff_split5, rand(4, 2), (0.0, 1.0))
 sol = solve(prob, KenCarp3())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CFNLIRK3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 sol = solve(prob, KenCarp4())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp4())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp5())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp5())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 sol = solve(prob, KenCarp47())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp47())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp58())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp58())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 # IMEXEuler
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEuler())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # IMEXEulerARK
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEulerARK())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # CNAB2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNAB2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # CNLF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNLF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF3
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF3())
-@test_broken sim.𝒪est[:l∞]≈3 atol=testTol
+@test_broken sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 # SBDF4
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF4())
-@test_broken sim.𝒪est[:l∞]≈4 atol=testTol
+@test_broken sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 # IRKC
 dts = 1 .// 2 .^ (12:-1:8)
 sim = test_convergence(dts, prob, IRKC())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # Test together
 println("Testing both parts of Split ODE together")
@@ -447,68 +448,68 @@ prob = SplitODEProblem(ff_split6, rand(4, 2), (0.0, 1.0))
 sol = solve(prob, KenCarp3())
 dts = 1 .// 2 .^ (12:-1:8)
 sim = test_convergence(dts, prob, KenCarp3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 dts = 1 .// 2 .^ (12:-1:8)
 sim = test_convergence(dts, prob, CFNLIRK3())
-@test sim.𝒪est[:l∞]≈3 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 sol = solve(prob, KenCarp4())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp4())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp5())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp5())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 sol = solve(prob, KenCarp47())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp47())
-@test sim.𝒪est[:l∞]≈4 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 sol = solve(prob, KenCarp58())
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp58())
-@test sim.𝒪est[:l∞]≈5 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 5 atol = testTol
 
 # IMEXEuler
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEuler())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # IMEXEulerARK
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, IMEXEulerARK())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
 # CNAB2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNAB2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # CNLF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, CNLF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF2
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF2())
-@test sim.𝒪est[:l∞]≈2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
 # SBDF3
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF3())
-@test_broken sim.𝒪est[:l∞]≈3 atol=testTol
+@test_broken sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 # SBDF4
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, SBDF4())
-@test_broken sim.𝒪est[:l∞]≈4 atol=testTol
+@test_broken sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
 # IRKC
 dts = 1 .// 2 .^ (12:-1:8)
 sim = test_convergence(dts, prob, IRKC())
-@test sim.𝒪est[:l∞]≈1 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol = testTol

@@ -1,6 +1,7 @@
 # IMEX Multistep methods
 
-@doc generic_solver_docstring("Crank-Nicolson Adams Bashforth Order 2 (fixed time step)",
+@doc generic_solver_docstring(
+    "Crank-Nicolson Adams Bashforth Order 2 (fixed time step)",
     "CNAB2",
     "IMEX Multistep method.",
     "@article{jorgenson2014unconditional,
@@ -19,9 +20,10 @@
     number={6},
     pages={647--659},
     year={2010},
-    publisher={Wiley Online Library}}", "", "")
+    publisher={Wiley Online Library}}", "", ""
+)
 struct CNAB2{CS, AD, F, F2, P, FDT, ST, CJ} <:
-       OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -33,20 +35,24 @@ function CNAB2(;
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
-        extrapolant = :linear)
+        extrapolant = :linear
+    )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    CNAB2{
+    return CNAB2{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
+        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
+    }(
         linsolve,
         nlsolve,
         precs,
         extrapolant,
-        AD_choice)
+        AD_choice
+    )
 end
 
-@doc generic_solver_docstring("Crank-Nicholson Leapfrong 2.",
+@doc generic_solver_docstring(
+    "Crank-Nicholson Leapfrong 2.",
     "CNLF2",
     "IMEX Multistep method.",
     "@article{han2020second,
@@ -64,9 +70,10 @@ end
     volume={281},
     pages={263--276},
     year={2015},
-    publisher={Elsevier}}", "", "")
+    publisher={Elsevier}}", "", ""
+)
 struct CNLF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
-       OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -77,15 +84,18 @@ function CNLF2(;
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
-        extrapolant = :linear)
+        extrapolant = :linear
+    )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    CNLF2{
+    return CNLF2{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac)}(
+        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
+    }(
         linsolve,
         nlsolve,
         precs,
         extrapolant,
-        AD_choice)
+        AD_choice
+    )
 end

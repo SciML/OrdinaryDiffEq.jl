@@ -1,6 +1,9 @@
-function isdtchangeable(alg::Union{
-        LawsonEuler, NorsettEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4, ETD2})
-    false
+function isdtchangeable(
+        alg::Union{
+            LawsonEuler, NorsettEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4, ETD2,
+        }
+    )
+    return false
 end # due to caching
 
 alg_order(alg::LawsonEuler) = 1
@@ -26,8 +29,9 @@ alg_adaptive_order(alg::Exprb43) = 4
 function DiffEqBase.prepare_alg(
         alg::ETD2,
         u0::AbstractArray,
-        p, prob)
-    alg
+        p, prob
+    )
+    return alg
 end
 
 fsal_typeof(alg::ETD2, rate_prototype) = ETD2Fsal{typeof(rate_prototype)}

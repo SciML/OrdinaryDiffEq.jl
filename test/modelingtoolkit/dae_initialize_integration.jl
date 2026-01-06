@@ -5,13 +5,15 @@ using ModelingToolkit: D_nounits as D, t_nounits as t
 @variables v(t) w(t) F(t)
 single_neuron_eqs = [
     D(v) ~ min(max(-2 - v, v), 2 - v) - w + F, # add the flux term
-    D(w) ~ e * (v - g * w + b)
+    D(w) ~ e * (v - g * w + b),
 ]
 n1 = System(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n1)
 n2 = System(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n2)
 @parameters Di Dk
-connections = [0 ~ n1.F - Di * Dk * max(n1.v - n2.v, 0)
-               0 ~ n2.F - Di * max(n2.v - n1.v, 0)]
+connections = [
+    0 ~ n1.F - Di * Dk * max(n1.v - n2.v, 0)
+    0 ~ n2.F - Di * max(n2.v - n1.v, 0)
+]
 connected = System(connections, t, [], [Di, Dk], systems = [n1, n2], name = :connected)
 connected = complete(connected)
 
@@ -21,7 +23,7 @@ u0 = [
     n1.F => 0,
     n2.v => -2,
     n2.w => -0.7,
-    n2.F => 0
+    n2.F => 0,
 ]
 tspan = (0.0, 1750.0)
 p0 = [
@@ -32,7 +34,7 @@ p0 = [
     n2.e => 0.04,
     n2.b => 0.2,
     Di => 0.047,
-    Dk => 1
+    Dk => 1,
 ]
 
 prob = ODEProblem(connected, [u0; p0], tspan)
@@ -42,17 +44,17 @@ sol = solve(prob, Rodas5(), initializealg = ShampineCollocationInit())
 @test prob.u0 == sol[1]
 #test initialization when given a specific nonlinear solver
 using NonlinearSolve
-sol = solve(prob, Rodas5(), initializealg = BrownFullBasicInit(1e-10, RobustMultiNewton()))
+sol = solve(prob, Rodas5(), initializealg = BrownFullBasicInit(1.0e-10, RobustMultiNewton()))
 @test prob.u0 == sol[1]
 
 # Initialize on ODEs
 # https://github.com/SciML/ModelingToolkit.jl/issues/2508
 
 function testsys(du, u, p, t)
-    du[1] = -2
+    return du[1] = -2
 end
 function initsys(du, u, p)
-    du[1] = -1 + u[1]
+    return du[1] = -1 + u[1]
 end
 nlprob = NonlinearProblem(initsys, [0.0])
 initprobmap(nlprob) = nlprob.u
@@ -65,13 +67,13 @@ sol = solve(prob, Tsit5())
 @test sol.u[1] == [1.0]
 
 prob = ODEProblem(_f, [0.0], (0.0, 1.0))
-sol = solve(prob, Tsit5(), dt = 1e-10)
+sol = solve(prob, Tsit5(), dt = 1.0e-10)
 @test SciMLBase.successful_retcode(sol)
 @test sol.u[1] == [1.0]
 @test sol.u[2] ≈ [0.9999999998]
 @test sol.u[end] ≈ [-1.0]
 
-sol = solve(prob, Rodas5P(), dt = 1e-10)
+sol = solve(prob, Rodas5P(), dt = 1.0e-10)
 @test SciMLBase.successful_retcode(sol)
 @test sol.u[1] == [1.0]
 @test sol.u[2] ≈ [0.9999999998]
