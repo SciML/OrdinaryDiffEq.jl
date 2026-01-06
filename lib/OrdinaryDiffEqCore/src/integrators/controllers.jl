@@ -775,7 +775,7 @@ else
 end
 ```
 """
-struct PredictiveController <: AbstractController
+struct PredictiveController <: AbstractLegacyController
 end
 
 @inline function stepsize_controller!(integrator, controller::PredictiveController, alg)
