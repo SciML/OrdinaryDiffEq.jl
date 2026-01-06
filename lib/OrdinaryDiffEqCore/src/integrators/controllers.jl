@@ -985,9 +985,9 @@ end
 @inline function accept_step_controller(integrator, controller::DummyController)
     return integrator.EEst <= 1
 end
-@inline stepsize_controller!(integrator, controller::DummyController, alg)       = default_stepsize_controller!(integrator, integrator.cache, alg)
+@inline stepsize_controller!(integrator, controller::DummyController, alg) = default_stepsize_controller!(integrator, integrator.cache, alg)
 @inline step_accept_controller!(integrator, controller::DummyController, alg, q) = default_step_accept_controller!(integrator, integrator.cache, alg, q)
-@inline step_reject_controller!(integrator, controller::DummyController, alg)    = default_step_reject_controller!(integrator, integrator.cache, alg)
+@inline step_reject_controller!(integrator, controller::DummyController, alg) = default_step_reject_controller!(integrator, integrator.cache, alg)
 
 # Default alg with dummy controller
 function default_stepsize_controller!(integrator, cache::DefaultCache, alg)
