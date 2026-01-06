@@ -981,10 +981,72 @@ end
     return step_reject_controller!(integrator, cache.caches[current_idx], alg.algs[current_idx])
 end
 
-# We need this for now as a workaround to make composite controllers work
+# We need this for now as a workaround to make composite controllers work when they have a dummy controller attached
 @inline function accept_step_controller(integrator, controller::DummyController)
     return integrator.EEst <= 1
 end
-@inline stepsize_controller!(integrator, controller::DummyController, alg) = stepsize_controller!(integrator, integrator.cache.caches[integrator.cache.current], alg)
-@inline step_accept_controller!(integrator, controller::DummyController, alg, q) = step_accept_controller!(integrator, integrator.cache.caches[integrator.cache.current], alg, q)
-@inline step_reject_controller!(integrator, controller::DummyController, alg) = step_reject_controller!(integrator, integrator.cache.caches[integrator.cache.current], alg)
+@inline stepsize_controller!(integrator, controller::DummyController, alg)       = default_stepsize_controller!(integrator, integrator.cache, alg)
+@inline step_accept_controller!(integrator, controller::DummyController, alg, q) = default_step_accept_controller!(integrator, integrator.cache, alg, q)
+@inline step_reject_controller!(integrator, controller::DummyController, alg)    = default_step_reject_controller!(integrator, integrator.cache, alg)
+
+# Default alg with dummy controller
+function default_stepsize_controller!(integrator, cache::DefaultCache, alg)
+    return if cache.current == 1
+        stepsize_controller!(integrator, @inbounds(cache.cache1), alg)
+    elseif cache.current == 2
+        stepsize_controller!(integrator, @inbounds(cache.cache2), alg)
+    elseif cache.current == 3
+        stepsize_controller!(integrator, @inbounds(cache.cache3), alg)
+    elseif cache.current == 4
+        stepsize_controller!(integrator, @inbounds(cache.cache4), alg)
+    elseif cache.current == 5
+        stepsize_controller!(integrator, @inbounds(cache.cache5), alg)
+    elseif cache.current == 6
+        stepsize_controller!(integrator, @inbounds(cache.cache6), alg)
+    end
+end
+
+function default_step_accept_controller!(integrator, cache::DefaultCache, alg, q)
+    return if cache.current == 1
+        step_accept_controller!(integrator, @inbounds(cache.cache1), alg, q)
+    elseif cache.current == 2
+        step_accept_controller!(integrator, @inbounds(cache.cache2), alg, q)
+    elseif cache.current == 3
+        step_accept_controller!(integrator, @inbounds(cache.cache3), alg, q)
+    elseif cache.current == 4
+        step_accept_controller!(integrator, @inbounds(cache.cache4), alg, q)
+    elseif cache.current == 5
+        step_accept_controller!(integrator, @inbounds(cache.cache5), alg, q)
+    elseif cache.current == 6
+        step_accept_controller!(integrator, @inbounds(cache.cache6), alg, q)
+    end
+end
+
+function default_step_reject_controller!(integrator, cache::DefaultCache, alg)
+    return if cache.current == 1
+        step_reject_controller!(integrator, @inbounds(cache.cache1), alg)
+    elseif cache.current == 2
+        step_reject_controller!(integrator, @inbounds(cache.cache2), alg)
+    elseif cache.current == 3
+        step_reject_controller!(integrator, @inbounds(cache.cache3), alg)
+    elseif cache.current == 4
+        step_reject_controller!(integrator, @inbounds(cache.cache4), alg)
+    elseif cache.current == 5
+        step_reject_controller!(integrator, @inbounds(cache.cache5), alg)
+    elseif cache.current == 6
+        step_reject_controller!(integrator, @inbounds(cache.cache6), alg)
+    end
+end
+
+# Composite alg with dummy controller
+function default_stepsize_controller!(integrator, cache::CompositeCache, alg)
+    return step_stepsize_controller!(integrator, @inbounds(cache.caches[cache.current]), alg)
+end
+
+function default_step_accept_controller!(integrator, cache::CompositeCache, alg, q)
+    return step_accept_controller!(integrator, @inbounds(cache.caches[cache.current]), alg, q)
+end
+
+function default_step_reject_controller!(integrator, cache::CompositeCache, alg)
+    return step_reject_controller!(integrator, @inbounds(cache.caches[cache.current]), alg)
+end
