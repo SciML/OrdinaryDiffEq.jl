@@ -1040,7 +1040,7 @@ end
 
 # Composite alg with dummy controller
 function default_stepsize_controller!(integrator, cache::CompositeCache, alg)
-    return step_stepsize_controller!(integrator, @inbounds(cache.caches[cache.current]), alg)
+    return stepsize_controller!(integrator, @inbounds(cache.caches[cache.current]), alg)
 end
 
 function default_step_accept_controller!(integrator, cache::CompositeCache, alg, q)
