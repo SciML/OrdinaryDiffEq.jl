@@ -116,7 +116,7 @@ end
         l[i] = k[i + 2]
         for j in 1:num_stages
             if j != i
-                l[i] *= (Θ - c[j]) / (c[i] - c[j])
+                l[i] .*= (Θ - c[j]) / (c[i] - c[j])
             end
         end
         l[i] *= Θ / c[i]
