@@ -9,16 +9,23 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
 
     safe = (integrator.alg isa RKCAlgs) ? 1.0 : 1.2
     # Initial guess for eigenvector `z`
+    # When isfirst=true, z starts as a rate (from fsalfirst) with units [u]/[t]
+    # When isfirst=false, z comes from cache.zprev which has state units [u]
+    # We track this to know whether to multiply by dt in the normalization step
+    z_has_rate_units = false
     if isfirst
         if integrator.alg isa RKCAlgs
             z = fsalfirst
+            z_has_rate_units = true
         else
             fz = fsalfirst
             z = f(fz, p, t)
+            z_has_rate_units = true
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
     else
         z = cache.zprev
+        z_has_rate_units = false
     end
     # Perturbation
     u_norm = integrator.opts.internalnorm(uprev, t)
@@ -27,36 +34,58 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     sqrt_pert = sqrt(pert)
     is_u_zero = u_norm == zero(u_norm)
     is_z_zero = z_norm == zero(z_norm)
-    # Normalize `z` such that z-u lie in a circle
+    # Normalize `z` such that z-uprev lie in a circle
+    # When z has rate units [u]/[t], multiply by dt to convert to state units [u]
+    # Also adjust dz_u accordingly so eigenvalue estimate remains correct
+    dt_val = DiffEqBase.value(abs(dt))  # Unitless dt for scaling
     if (!is_u_zero && !is_z_zero)
         dz_u = u_norm * sqrt_pert
-        quot = dz_u / z_norm
-        z = uprev + quot * z
+        if z_has_rate_units
+            # z has rate units [u]/[t], need to convert to state units [u]
+            # We want ||z - uprev|| = dz_u, and z = uprev + quot * dt * z
+            # ||z - uprev|| = quot * |dt| * ||z|| = dz_u => quot = dz_u / (|dt| * ||z||)
+            quot = dz_u / (dt_val * z_norm)
+            z = uprev + quot * dt * z
+        else
+            # z already has state units
+            quot = dz_u / z_norm
+            z = uprev + quot * z
+        end
     elseif !is_u_zero
         dz_u = u_norm * sqrt_pert
         z = uprev + uprev * dz_u
     elseif !is_z_zero
         dz_u = pert
-        quot = dz_u / z_norm
-        z *= quot
+        if z_has_rate_units
+            quot = dz_u / (dt_val * z_norm)
+            z = dt * quot * z
+        else
+            quot = dz_u / z_norm
+            z = quot * z
+        end
     else
         dz_u = pert
-        z = dz_u * ones(z)
+        # Create z with state units (matching uprev)
+        z = dz_u * one.(uprev)
     end # endif
     # Start power iteration
-    integrator.eigen_est = 0
+    integrator.eigen_est = zero(real(eltype(u)))
     for iter in 1:maxiter
         fz = f(z, p, t)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        # fz - fsalfirst has rate units [u]/[t], norm strips units
         tmp = fz - fsalfirst
         Δ = integrator.opts.internalnorm(tmp, t)
         eig_prev = integrator.eigen_est
+        # eigen_est is kept unitless (norm strips units)
         integrator.eigen_est = Δ / dz_u * safe
         # Convergence
         if integrator.alg isa RKCAlgs # To match the constants given in the paper
+            # Use DiffEqBase.value to strip units from dtmax for comparison with unitless eigen_est
+            dtmax_val = DiffEqBase.value(real(integrator.opts.dtmax))
             if iter >= 2 &&
                     abs(eig_prev - integrator.eigen_est) <
-                    max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
+                    max(integrator.eigen_est, 1 / dtmax_val) * 0.01
                 integrator.eigen_est *= 1.2
                 # Store the eigenvector
                 cache.zprev = z - uprev
@@ -73,8 +102,11 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
 
         # Next `z`
         if Δ != zero(Δ)
-            quot = dz_u / Δ
-            z = uprev + quot * tmp
+            # We want ||z - uprev|| = dz_u, so quot = dz_u / (Δ * |dt|) since z = uprev + quot * dt * tmp
+            # This gives ||z - uprev|| = quot * |dt| * Δ = dz_u / (Δ * |dt|) * |dt| * Δ = dz_u
+            quot = dz_u / (Δ * dt_val)
+            # tmp has rate units [u]/[t], multiply by dt to get state units [u]
+            z = uprev + quot * dt * tmp
         else
             # An arbitrary change on `z`
             nind = length(z)
@@ -93,17 +125,22 @@ end
 function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     isfirst = integrator.iter == 1 || integrator.u_modified
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    fz, z, atmp = cache.k, cache.tmp, cache.atmp
+    # Note: Use fz (rateType) as temporary for rate differences instead of atmp (uNoUnitsType)
+    # to ensure proper unit handling with Unitful.jl
+    fz, z = cache.k, cache.tmp
     ccache = cache.constantcache
     maxiter = (integrator.alg isa Union{ESERK4, ESERK5, SERK2}) ? 100 : 50
     safe = (integrator.alg isa RKCAlgs) ? 1.0 : 1.2
     # Initial guess for eigenvector `z`
+    # Note: z must have units of u (state), not u/t (rate).
+    # Multiply fsalfirst by dt to convert from rate to state units.
     if isfirst
         if integrator.alg isa RKCAlgs
-            @.. broadcast = false z = fsalfirst
+            @.. broadcast = false z = dt * fsalfirst
         else
             @.. broadcast = false fz = fsalfirst
             f(z, fz, p, t)
+            @.. broadcast = false z = dt * z
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
     else
@@ -116,7 +153,11 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     sqrt_pert = sqrt(pert)
     is_u_zero = u_norm == zero(u_norm)
     is_z_zero = z_norm == zero(z_norm)
+    # Get unitless dt for scaling (needed because we use quot * dt * fz in iteration)
+    dt_val = DiffEqBase.value(abs(dt))
     # Normalize `z` such that z-u lie in a circle
+    # Note: z already has state units (dt * fsalfirst from initialization)
+    # We want ||z - uprev|| = dz_u after normalization
     if (!is_u_zero && !is_z_zero)
         dz_u = u_norm * sqrt_pert
         quot = dz_u / z_norm
@@ -133,19 +174,24 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
         @.. broadcast = false z = dz_u * one(eltype(z))
     end # endif
     # Start power iteration
-    integrator.eigen_est = 0
+    integrator.eigen_est = zero(real(eltype(u)))
     for iter in 1:maxiter
         f(fz, z, p, t)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false atmp = fz - fsalfirst
-        Δ = integrator.opts.internalnorm(atmp, t)
+        # Compute fz = fz - fsalfirst in-place (rate difference, units [u]/[t])
+        @.. broadcast = false fz = fz - fsalfirst
+        # norm strips units
+        Δ = integrator.opts.internalnorm(fz, t)
         eig_prev = integrator.eigen_est
+        # eigen_est is kept unitless (norm strips units)
         integrator.eigen_est = Δ / dz_u * safe
         # Convergence
         if integrator.alg isa RKCAlgs # To match the constants given in the paper
+            # Use DiffEqBase.value to strip units from dtmax for comparison with unitless eigen_est
+            dtmax_val = DiffEqBase.value(real(integrator.opts.dtmax))
             if iter >= 2 &&
                     abs(eig_prev - integrator.eigen_est) <
-                    max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
+                    max(integrator.eigen_est, 1 / dtmax_val) * 0.01
                 integrator.eigen_est *= 1.2
                 # Store the eigenvector
                 @.. broadcast = false ccache.zprev = z - uprev
@@ -161,8 +207,11 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
         end
         # Next `z`
         if Δ != zero(Δ)
-            quot = dz_u / Δ
-            @.. broadcast = false z = uprev + quot * atmp
+            # We want ||z - uprev|| = dz_u, so quot = dz_u / (Δ * |dt|) since z = uprev + quot * dt * fz
+            # This gives ||z - uprev|| = quot * |dt| * Δ = dz_u / (Δ * |dt|) * |dt| * Δ = dz_u
+            quot = dz_u / (Δ * dt_val)
+            # fz has rate units [u]/[t], multiply by dt to get state units [u]
+            @.. broadcast = false z = uprev + quot * dt * fz
         else
             # An arbitrary change on `z`
             nind = length(uprev)
