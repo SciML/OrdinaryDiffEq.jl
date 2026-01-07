@@ -72,7 +72,32 @@ prob = ODEProblem(lorenz, u0, tspan)
 sol = solve(prob, Tsit5())
 ```
 
-For "refined ODEs", like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://diffeq.sciml.ai/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/SciML/SciMLTutorials.jl) we show how to solve equations of motion using symplectic methods:
+For "refined ODEs", like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://diffeq.sciml.ai/dev/types/ode_types/). For example, the harmonic oscillator equations can be solved using symplectic methods. The harmonic oscillator is described by:
+
+$$\ddot{x} + \omega^2 x = 0$$
+
+which is equivalent to the first-order system:
+
+$$\dot{x} = v$$
+$$\dot{v} = -\omega^2 x$$
+
+```julia
+using OrdinaryDiffEq
+function harmonic_oscillator!(dv, v, u, p, t)
+    ω = p[1]
+    dv[1] = -ω^2 * u[1]
+end
+ω = 2.0  # angular frequency
+initial_position = [1.0]
+initial_velocity = [0.0]
+tspan = (0.0, 10.0)
+prob = SecondOrderODEProblem(harmonic_oscillator!, initial_velocity, initial_position, tspan, [ω])
+sol = solve(prob, VelocityVerlet(), dt = 1 / 100)
+using Plots
+plot(sol, idxs = (1, 2), label = "Phase space", xaxis = "Position", yaxis = "Velocity")
+```
+
+For more complex dynamical systems, such as the Hénon-Heiles potential, symplectic integrators preserve the structure of Hamiltonian dynamics. In [DiffEqTutorials.jl](https://github.com/SciML/SciMLTutorials.jl) we show how to solve these equations of motion:
 
 ```julia
 function HH_acceleration!(dv, v, u, p, t)
