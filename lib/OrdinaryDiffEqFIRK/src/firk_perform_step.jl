@@ -675,8 +675,41 @@ end
             integrator.k[4] = z2
             integrator.k[5] = z3
         end
-    end
+    else
+        p = integrator.p
+        t = integrator.t
+        #function condition!(u, p, t)
+        #    return [u[1] - 1.0]
+        #end
+        function condition!(u, p, t)
+            return [u[1] - 1, u[1] - 2]
+        end
+        out_prev = condition!(uprev, p, t)
+        out_curr = condition!(u, p, t + dt)
+        for (idx, (f0, f1)) in enumerate(zip(out_prev, out_curr))
+            if (f0 * f1 < zero(f0))
+                function zero_func(θ, p)
+                    u₁ = similar(u)
+                    _ode_interpolant!(u₁, θ, dt, uprev, u, integrator.k, cache,
+                                    nothing, Val{0}, nothing)
 
+                    out = condition!(u₁, p, t + θ * dt)
+                    out[idx]
+                end
+                prob = IntervalNonlinearProblem(zero_func, [zero(dt), one(dt)], p)
+                sol = solve(prob)
+                tmp = sol[]
+                if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) breakpointθ = tmp end
+            end
+        end
+    end
+    if !isnan(breakpointθ) && 0.0 < breakpointθ < 1.0
+        println("Discontinuity detected at t = ", t + breakpointθ * dt)
+        cache.new_dt = breakpointθ * dt
+        @show t
+        @show cache.new_dt
+    end
+    
     integrator.fsallast = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
@@ -952,6 +985,39 @@ end
             integrator.k[4] .= z2
             integrator.k[5] .= z3
         end
+    else
+        p = integrator.p
+        t = integrator.t
+        #function condition!(u, p, t)
+        #    return [u[1] - 1.0]
+        #end
+        function condition!(u, p, t)
+            return [u[1] - 1, u[1] - 2]
+        end
+        out_prev = condition!(uprev, p, t)
+        out_curr = condition!(u, p, t + dt)
+        for (idx, (f0, f1)) in enumerate(zip(out_prev, out_curr))
+            if (f0 * f1 < zero(f0))
+                function zero_func(θ, p)
+                    u₁ = similar(u)
+                    _ode_interpolant!(u₁, θ, dt, uprev, u, integrator.k, cache,
+                                    nothing, Val{0}, nothing)
+
+                    out = condition!(u₁, p, t + θ * dt)
+                    out[idx]
+                end
+                prob = IntervalNonlinearProblem(zero_func, [zero(dt), one(dt)], p)
+                sol = solve(prob)
+                tmp = sol[]
+                if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) breakpointθ = tmp end
+            end
+        end
+    end
+    if !isnan(breakpointθ) && 0.0 < breakpointθ < 1.0
+        println("Discontinuity detected at t = ", t + breakpointθ * dt)
+        cache.new_dt = breakpointθ * dt
+        @show t
+        @show cache.new_dt
     end
 
     f(fsallast, u, p, t + dt)
