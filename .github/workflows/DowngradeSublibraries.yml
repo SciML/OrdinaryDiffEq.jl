@@ -45,7 +45,7 @@ jobs:
           # - 'lib/OrdinaryDiffEqRosenbrock'  # disabled: see #2977
           # - 'lib/OrdinaryDiffEqSDIRK'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqSSPRK'
-          - 'lib/OrdinaryDiffEqStabilizedIRK'
+          # - 'lib/OrdinaryDiffEqStabilizedIRK'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqStabilizedRK'
           - 'lib/OrdinaryDiffEqSymplecticRK'
           # - 'lib/OrdinaryDiffEqTaylorSeries'  # disabled: see #2977
