@@ -8,12 +8,14 @@ mutable struct DEOptions{
     adaptive::Bool
     abstol::absType
     reltol::relType
+    # TODO vvv remove this block as these are controller and not integrator parameters vvv
     gamma::QT
     qmax::QT
     qmin::QT
     qsteady_max::QT
     qsteady_min::QT
     qoldinit::QT
+    # TODO ^^^ remove this block as these are controller and not integrator parameters ^^^
     failfactor::QT
     dtmax::tType
     dtmin::tType
@@ -87,7 +89,7 @@ mutable struct ODEIntegrator{
         algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, IIP,
         uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
-        CallbackCacheType, IA, DV,
+        CallbackCacheType, IA, DV, CC,
     } <:
     SciMLBase.AbstractODEIntegrator{algType, IIP, uType, tType}
     sol::SolType
@@ -109,10 +111,13 @@ mutable struct ODEIntegrator{
     tdir::tdirType
     eigen_est::eigenType
     EEst::EEstT
+    # TODO vvv remove these
     qold::QT
     q11::QT
     erracc::QT
     dtacc::tType
+    # TODO ^^^ remove these
+    controller_cache::CC
     success_iter::Int
     iter::Int
     saveiter::Int

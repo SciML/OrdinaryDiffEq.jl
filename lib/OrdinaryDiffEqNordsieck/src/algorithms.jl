@@ -16,19 +16,22 @@ struct AN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
     `JVODE` is experimental, the solver `VCABM` is generally preferred.
 """
-struct JVODE{bType, aType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
+struct JVODE{bType, aType, qType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
     algorithm::Symbol
     bias1::bType
     bias2::bType
     bias3::bType
     addon::aType
+    qmax::qType
+    qsteady_min::qType
+    qsteady_max::qType
 end
 
 function JVODE(
         algorithm = :Adams; bias1 = 6, bias2 = 6, bias3 = 10,
-        addon = 1 // 10^6
+        addon = 1 // 10^6, qmax = float(10), qsteady_min = float(1), qsteady_max = float(3 // 2)
     )
-    return JVODE(algorithm, bias1, bias2, bias3, addon)
+    return JVODE(algorithm, bias1, bias2, bias3, addon, qmax, qsteady_min, qsteady_max)
 end
 """
 !!! warning "Experimental"
