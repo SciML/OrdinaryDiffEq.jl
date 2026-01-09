@@ -664,7 +664,6 @@ function alg_cache(
 
         derivatives[i, j] = zero(u)
     end
-
     fsalfirst = zero(rate_prototype)
     fw = [zero(rate_prototype) for i in 1:max_stages]
     ks = [zero(rate_prototype) for i in 1:max_stages]
