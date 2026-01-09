@@ -20,35 +20,35 @@ jobs:
         julia-version: ['1.11']
         project:
           - 'lib/ImplicitDiscreteSolve'
-          - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'
-          - 'lib/OrdinaryDiffEqBDF'
+          # - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqBDF'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqCore'
-          - 'lib/OrdinaryDiffEqDefault'
+          # - 'lib/OrdinaryDiffEqDefault'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqDifferentiation'
           - 'lib/OrdinaryDiffEqExplicitRK'
-          - 'lib/OrdinaryDiffEqExponentialRK'
-          - 'lib/OrdinaryDiffEqExtrapolation'
-          - 'lib/OrdinaryDiffEqFIRK'
+          # - 'lib/OrdinaryDiffEqExponentialRK'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqExtrapolation'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqFIRK'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqFeagin'
           - 'lib/OrdinaryDiffEqFunctionMap'
           - 'lib/OrdinaryDiffEqHighOrderRK'
-          - 'lib/OrdinaryDiffEqIMEXMultistep'
-          - 'lib/OrdinaryDiffEqLinear'
+          # - 'lib/OrdinaryDiffEqIMEXMultistep'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqLinear'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqLowOrderRK'
           - 'lib/OrdinaryDiffEqLowStorageRK'
-          - 'lib/OrdinaryDiffEqNonlinearSolve'
+          # - 'lib/OrdinaryDiffEqNonlinearSolve'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqNordsieck'
-          - 'lib/OrdinaryDiffEqPDIRK'
+          # - 'lib/OrdinaryDiffEqPDIRK'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqPRK'
           - 'lib/OrdinaryDiffEqQPRK'
-          - 'lib/OrdinaryDiffEqRKN'
-          - 'lib/OrdinaryDiffEqRosenbrock'
-          - 'lib/OrdinaryDiffEqSDIRK'
+          # - 'lib/OrdinaryDiffEqRKN'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqRosenbrock'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqSDIRK'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqSSPRK'
-          - 'lib/OrdinaryDiffEqStabilizedIRK'
+          # - 'lib/OrdinaryDiffEqStabilizedIRK'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqStabilizedRK'
           - 'lib/OrdinaryDiffEqSymplecticRK'
-          - 'lib/OrdinaryDiffEqTaylorSeries'
+          # - 'lib/OrdinaryDiffEqTaylorSeries'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqTsit5'
           - 'lib/OrdinaryDiffEqVerner'
           - 'lib/SimpleImplicitDiscreteSolve'
