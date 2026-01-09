@@ -473,8 +473,8 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            integrator.k[3] = copy(z1)
-            integrator.k[4] = copy(z2)
+            integrator.k[3] .= z1
+            integrator.k[4] .= z2
         end
     end
 
@@ -936,9 +936,9 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            integrator.k[3] = copy(z1)
-            integrator.k[4] = copy(z2)
-            integrator.k[5] = copy(z3)
+            integrator.k[3] .= z1
+            integrator.k[4] .= z2
+            integrator.k[5] .= z3
         end
     end
 
@@ -1570,11 +1570,11 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            integrator.k[3] = copy(z1)
-            integrator.k[4] = copy(z2)
-            integrator.k[5] = copy(z3)
-            integrator.k[6] = copy(z4)
-            integrator.k[7] = copy(z5)
+            integrator.k[3] .= z1
+            integrator.k[4] .= z2
+            integrator.k[5] .= z3
+            integrator.k[6] .= z4
+            integrator.k[7] .= z5
         end
     end
 
@@ -1655,15 +1655,11 @@ end
         for i in 1:(num_stages - 1)
             c_prime[i] = c[i] * c_prime[num_stages]
         end
-        z_deriv = Vector{typeof(u)}(undef, num_stages)
-        for i in 1:num_stages
-            z_deriv[i] = derivatives[i, num_stages]
-        end
         for i in 1:num_stages # collocation polynomial
-            z[i] = @.. z_deriv[num_stages]
+            z[i] = @.. derivatives[num_stages, num_stages]
             j = num_stages - 1
             while j > 0
-                z[i] = @.. z_deriv[j] + z[i] * (c_prime[i] - c[num_stages - j] + 1)
+                z[i] = @.. derivatives[j, num_stages] + z[i] * (c_prime[i] - c[num_stages - j] + 1)
                 j = j - 1
             end
             z[i] = @.. z[i] * c_prime[i]
@@ -1845,7 +1841,7 @@ end
     (; num_stages, tabs, index) = cache
     tab = tabs[index]
     (; T, TI, γ, α, β, c, e) = tab
-    (; κ, derivatives, z_deriv, z, w, c_prime, αdt, βdt) = cache
+    (; κ, derivatives, z, w, c_prime, αdt, βdt) = cache
     (; dw1, ubuff, dw2, cubuff, dw) = cache
     (; ks, fw, J, W1, W2) = cache
     (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!) = cache
@@ -1921,18 +1917,15 @@ end
                                             derivatives[i - 1, j]) / (c[j - i] - c[j]) #all others
             end
         end
-        for i in 1:num_stages
-            @.. z_deriv[i] = derivatives[i, num_stages]
-        end
         c_prime[num_stages] = dt / cache.dtprev
         for i in 1:(num_stages - 1)
             c_prime[i] = c[i] * c_prime[num_stages]
         end
         for i in 1:num_stages # collocation polynomial
-            @.. z[i] = z_deriv[num_stages]
+            @.. z[i] = derivatives[num_stages, num_stages]
             j = num_stages - 1
             while j > 0
-                @.. z[i] = z_deriv[j] + z[i] * (c_prime[i] - c[num_stages - j] + 1)
+                @.. z[i] = derivatives[j, num_stages] + z[i] * (c_prime[i] - c[num_stages - j] + 1)
                 j = j - 1
             end
             @.. z[i] = z[i] * c_prime[i]
@@ -2161,7 +2154,7 @@ end
         cache.dtprev = dt
         if alg.extrapolant != :constant
             for i in 1:num_stages
-                integrator.k[i + 2] = copy(z[i])
+                integrator.k[i + 2] .= z[i]
             end
         end
     end

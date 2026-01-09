@@ -578,7 +578,6 @@ mutable struct AdaptiveRadauCache{
     cubuff::Vector{cuType}
     dw::Vector{uType}
     derivatives::Matrix{uType}
-    z_deriv::Vector{uType}
     du1::rateType
     fsalfirst::rateType
     ks::Vector{rateType}
@@ -665,7 +664,6 @@ function alg_cache(
 
         derivatives[i, j] = zero(u)
     end
-    z_deriv = [zero(u) for i in 1:max_stages]
     fsalfirst = zero(rate_prototype)
     fw = [zero(rate_prototype) for i in 1:max_stages]
     ks = [zero(rate_prototype) for i in 1:max_stages]
@@ -711,7 +709,7 @@ function alg_cache(
 
     return AdaptiveRadauCache(
         u, uprev,
-        z, w, c_prime, αdt, βdt, dw1, ubuff, dw2, cubuff, dw, derivatives, z_deriv,
+        z, w, c_prime, αdt, βdt, dw1, ubuff, dw2, cubuff, dw, derivatives,
         du1, fsalfirst, ks, k, fw,
         J, W1, W2,
         uf, tabs, κ, one(uToltype), 10000, tmp,
