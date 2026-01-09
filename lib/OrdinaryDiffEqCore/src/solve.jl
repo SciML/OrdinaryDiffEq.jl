@@ -11,6 +11,478 @@ function SciMLBase.__solve(
     return integrator.sol
 end
 
+#=
+    Helper functions for __init
+
+These helper functions break down the monolithic __init function into smaller,
+more focused and testable pieces. This improves maintainability and makes the
+initialization flow easier to understand.
+
+The init codepath is:
+  CommonSolve.init -> DiffEqBase.init -> DiffEqBase.init_up -> DiffEqBase.init_call -> SciMLBase.__init
+
+The init_up layer exists to allow ChainRules differentiation (since kwargs can't be differentiated).
+Currently only solve_up has AD rules defined, but the structure is maintained for consistency.
+=#
+
+"""
+    validate_prob_alg_compat(prob, alg, verbose, dense, saveat)
+
+Validate that the problem and algorithm are compatible. Throws errors or warnings
+for incompatible combinations.
+"""
+function validate_prob_alg_compat(prob, alg, verbose, dense, saveat)
+    if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
+        error("You cannot use an ODE Algorithm with a DAEProblem")
+    end
+
+    if prob isa SciMLBase.AbstractODEProblem && alg isa DAEAlgorithm
+        error("You cannot use an DAE Algorithm with a ODEProblem")
+    end
+
+    if prob isa SciMLBase.ODEProblem
+        if !(prob.f isa SciMLBase.DynamicalODEFunction) && alg isa PartitionedAlgorithm
+            error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
+        end
+    end
+
+    if prob.f isa DynamicalODEFunction && prob.f.mass_matrix isa Tuple
+        if any(mm != I for mm in prob.f.mass_matrix)
+            error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
+        end
+    elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
+            !(prob isa SciMLBase.AbstractDAEProblem) &&
+            !is_mass_matrix_alg(alg) &&
+            prob.f.mass_matrix != I
+        error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
+    end
+
+    if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
+            # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
+            !only_diagonal_mass_matrix(alg) &&
+            prob.f.mass_matrix isa AbstractMatrix &&
+            all(isequal(0), prob.f.mass_matrix)
+        # technically this should also warn for zero operators but those are hard to check for
+        if (dense || !isempty(saveat)) && verbose
+            @warn("Rosenbrock methods on equations without differential states do not bound the error on interpolations.")
+        end
+    end
+
+    if only_diagonal_mass_matrix(alg) &&
+            prob.f.mass_matrix isa AbstractMatrix &&
+            !isdiag(prob.f.mass_matrix)
+        throw(ArgumentError("$(typeof(alg).name.name) only works with diagonal mass matrices. Please choose a solver suitable for your problem (e.g. Rodas5P)"))
+    end
+
+    if !isempty(saveat) && dense
+        @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
+    end
+end
+
+"""
+    validate_dt_requirements(alg, adaptive, dt, tstops, tType)
+
+Validate that timestep requirements are satisfied for the algorithm.
+"""
+function validate_dt_requirements(alg, adaptive, dt, tstops, tType)
+    if (
+            (
+                (
+                    !(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
+                        !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
+                        !(alg isa DAEAlgorithm)
+                ) || !adaptive || !isadaptive(alg)
+            ) &&
+                dt == tType(0) && isempty(tstops)
+        ) && dt_required(alg)
+        throw(ArgumentError("Fixed timestep methods require a choice of dt or choosing the tstops"))
+    end
+    if !isadaptive(alg) && adaptive
+        throw(ArgumentError("Fixed timestep methods can not be run with adaptive=true"))
+    end
+end
+
+"""
+    prepare_algorithm(alg)
+
+Prepare the algorithm for use, converting AutoSwitch to AutoSwitchCache if needed.
+Returns the prepared algorithm.
+"""
+function prepare_algorithm(alg)
+    if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
+        auto = alg.choice_function
+        return CompositeAlgorithm(
+            alg.algs,
+            AutoSwitchCache(
+                0, 0,
+                auto.nonstiffalg,
+                auto.stiffalg,
+                auto.stiffalgfirst,
+                auto.maxstiffstep,
+                auto.maxnonstiffstep,
+                auto.nonstifftol,
+                auto.stifftol,
+                auto.dtfac,
+                auto.stiffalgfirst,
+                auto.switch_max, 0
+            )
+        )
+    else
+        return alg
+    end
+end
+
+"""
+    resolve_aliases(alias, kwargs)
+
+Resolve alias specifications from both new ODEAliasSpecifier and deprecated keyword arguments.
+Returns the resolved ODEAliasSpecifier.
+"""
+function resolve_aliases(alias, kwargs)
+    use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_du0)
+
+    if use_old_kwargs
+        aliases = ODEAliasSpecifier()
+        if haskey(kwargs, :alias_u0)
+            message = "`alias_u0` keyword argument is deprecated, to set `alias_u0`,
+            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))"
+            Base.depwarn(message, :init)
+            Base.depwarn(message, :solve)
+            aliases = ODEAliasSpecifier(alias_u0 = values(kwargs).alias_u0)
+        else
+            aliases = ODEAliasSpecifier(alias_u0 = nothing)
+        end
+
+        if haskey(kwargs, :alias_du0)
+            message = "`alias_du0` keyword argument is deprecated, to set `alias_du0`,
+            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))"
+            Base.depwarn(message, :init)
+            Base.depwarn(message, :solve)
+            aliases = ODEAliasSpecifier(
+                alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0
+            )
+        else
+            aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = nothing)
+        end
+
+        return aliases
+    else
+        # If alias isa Bool, all fields of ODEAliases set to alias
+        if alias isa Bool
+            return ODEAliasSpecifier(alias = alias)
+        elseif alias isa ODEAliasSpecifier
+            return alias
+        end
+    end
+end
+
+"""
+    extract_state_variables(prob, alg, aliases)
+
+Extract and possibly copy state variables (f, p, u, du) from the problem based on alias settings.
+Returns (f, p, u, du, duprev).
+"""
+function extract_state_variables(prob, alg, aliases)
+    if isnothing(aliases.alias_f) || aliases.alias_f
+        f = prob.f
+    else
+        f = deepcopy(prob.f)
+    end
+
+    if isnothing(aliases.alias_p) || aliases.alias_p
+        p = prob.p
+    else
+        p = recursivecopy(prob.p)
+    end
+
+    if !isnothing(aliases.alias_u0) && aliases.alias_u0
+        u = prob.u0
+    else
+        u = recursivecopy(prob.u0)
+    end
+
+    # Handle null u0 (e.g., MTK systems with only callbacks and no state variables)
+    # Convert to empty Float64 array to allow initialization to proceed
+    if u === nothing
+        u = Float64[]
+    end
+
+    if alg isa DAEAlgorithm
+        if !isnothing(aliases.alias_du0) && aliases.alias_du0
+            du = prob.du0
+        else
+            du = recursivecopy(prob.du0)
+        end
+        duprev = recursivecopy(du)
+    else
+        du = nothing
+        duprev = nothing
+    end
+
+    return f, p, u, du, duprev
+end
+
+"""
+    compute_tolerances(prob, u, abstol, reltol, uBottomEltype, uBottomEltypeNoUnits)
+
+Compute internal tolerance values, using defaults if not specified.
+Returns (abstol_internal, reltol_internal).
+"""
+function compute_tolerances(prob, u, abstol, reltol, uBottomEltype, uBottomEltypeNoUnits)
+    if prob isa SciMLBase.AbstractDiscreteProblem
+        abstol_internal = false
+    elseif abstol === nothing
+        if uBottomEltypeNoUnits == uBottomEltype
+            abstol_internal = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype,
+                        oneunit(uBottomEltype) *
+                            1 // 10^6
+                    )
+                )
+            )
+        else
+            abstol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
+        end
+    else
+        abstol_internal = real.(abstol)
+    end
+
+    if prob isa SciMLBase.AbstractDiscreteProblem
+        reltol_internal = false
+    elseif reltol === nothing
+        if uBottomEltypeNoUnits == uBottomEltype
+            reltol_internal = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype,
+                        oneunit(uBottomEltype) * 1 // 10^3
+                    )
+                )
+            )
+        else
+            reltol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
+        end
+    else
+        reltol_internal = real.(reltol)
+    end
+
+    return abstol_internal, reltol_internal
+end
+
+"""
+    compute_rate_prototype(prob, u, isdae, uBottomEltype, uBottomEltypeNoUnits, tType, tTypeNoUnits)
+
+Compute the rate prototype used for derivative storage.
+Returns (rate_prototype, res_prototype) where res_prototype is only non-nothing for DAEs.
+"""
+function compute_rate_prototype(prob, u, isdae, uBottomEltype, uBottomEltypeNoUnits, tType, tTypeNoUnits)
+    if !isdae && isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
+            uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits
+        rate_prototype = recursivecopy(u)
+    elseif prob isa DAEProblem
+        rate_prototype = prob.du0
+    else
+        if (uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits) ||
+                eltype(u) <: Enum
+            rate_prototype = u
+        else # has units!
+            rate_prototype = u / oneunit(tType)
+        end
+    end
+
+    res_prototype = nothing
+    if isdae
+        if uBottomEltype == uBottomEltypeNoUnits
+            res_prototype = u
+        else
+            res_prototype = one(u)
+        end
+    end
+
+    return rate_prototype, res_prototype
+end
+
+"""
+    setup_callback_cache(prob, u, callbacks_internal, uBottomEltype)
+
+Set up the callback cache for vector callbacks.
+Returns the callback_cache (or nothing if not needed).
+"""
+function setup_callback_cache(prob, u, callbacks_internal, uBottomEltype)
+    max_len_cb = DiffEqBase.max_vector_callback_length_int(callbacks_internal)
+    if max_len_cb !== nothing
+        uBottomEltypeReal = real(uBottomEltype)
+        if isinplace(prob)
+            return DiffEqBase.CallbackCache(
+                u, max_len_cb, uBottomEltypeReal,
+                uBottomEltypeReal
+            )
+        else
+            return DiffEqBase.CallbackCache(
+                max_len_cb, uBottomEltypeReal,
+                uBottomEltypeReal
+            )
+        end
+    else
+        return nothing
+    end
+end
+
+"""
+    setup_timeseries_storage(prob, u, save_idxs, timeseries_init, ts_init, ks_init,
+                            adaptive, _alg, save_everystep, dt, dtmin, tstops, tspan,
+                            saveat_internal, save_start, save_end, internalnorm, rateType)
+
+Initialize timeseries storage arrays with appropriate sizehints.
+Returns (timeseries, ts, ks, alg_choice, ks_prototype, saved_subsystem).
+"""
+function setup_timeseries_storage(prob, u, save_idxs, timeseries_init, ts_init, ks_init,
+        adaptive, _alg, save_everystep, dt, dtmin, tstops, tspan,
+        saveat_internal, save_start, save_end, internalnorm, rateType)
+    uType = typeof(u)
+    tType = eltype(tspan)
+
+    save_idxs_resolved, saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
+        prob, save_idxs
+    )
+
+    ks_prototype = nothing
+    if save_idxs_resolved === nothing
+        ksEltype = Vector{rateType}
+    else
+        rate_prototype = u  # Will be replaced with actual rate_prototype in caller
+        ks_prototype = rate_prototype[save_idxs_resolved]
+        ksEltype = Vector{typeof(ks_prototype)}
+    end
+
+    # Have to convert in case passed in wrong.
+    if save_idxs_resolved === nothing
+        timeseries = timeseries_init === () ? uType[] :
+            convert(Vector{uType}, timeseries_init)
+    else
+        u_initial = u[save_idxs_resolved]
+        timeseries = timeseries_init === () ? typeof(u_initial)[] :
+            convert(Vector{uType}, timeseries_init)
+    end
+
+    ts = ts_init === () ? tType[] : convert(Vector{tType}, ts_init)
+    ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype}, ks_init)
+    alg_choice = _alg isa CompositeAlgorithm ? Int[] : nothing
+
+    if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
+        if dt == 0
+            steps = length(tstops)
+        else
+            # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
+            # Therefore user specified dtmin doesn't matter, but we need to ensure dt>=eps()
+            # to prevent infinite loops.
+            abs(dt) < dtmin &&
+                throw(ArgumentError("Supplied dt is smaller than dtmin"))
+            steps = ceil(Int, internalnorm((tspan[2] - tspan[1]) / dt, tspan[1]))
+        end
+        sizehint!(timeseries, steps + 1)
+        sizehint!(ts, steps + 1)
+        sizehint!(ks, steps + 1)
+    elseif save_everystep
+        sizehint!(timeseries, 50)
+        sizehint!(ts, 50)
+        sizehint!(ks, 50)
+    elseif !isempty(saveat_internal)
+        savelength = length(saveat_internal) + 1
+        if save_start == false
+            savelength -= 1
+        end
+        if save_end == false && prob.tspan[2] in saveat_internal.valtree
+            savelength -= 1
+        end
+        sizehint!(timeseries, savelength)
+        sizehint!(ts, savelength)
+        sizehint!(ks, savelength)
+    else
+        sizehint!(timeseries, 2)
+        sizehint!(ts, 2)
+        sizehint!(ks, 2)
+    end
+
+    return timeseries, ts, ks, alg_choice, ks_prototype, save_idxs_resolved, saved_subsystem
+end
+
+"""
+    setup_controller(_alg, cache, qoldinit, beta1, beta2, controller)
+
+Set up the step size controller, handling deprecated beta1/beta2 arguments.
+Returns the controller.
+"""
+function setup_controller(_alg, cache, qoldinit, beta1, beta2, controller)
+    if (beta1 !== nothing || beta2 !== nothing) && controller !== nothing
+        throw(ArgumentError("Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."))
+    end
+
+    if (beta1 !== nothing || beta2 !== nothing)
+        message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
+        Base.depwarn(message, :init)
+        Base.depwarn(message, :solve)
+    end
+
+    if controller === nothing
+        return default_controller(_alg, cache, qoldinit, beta1, beta2)
+    else
+        return controller
+    end
+end
+
+"""
+    finalize_integrator_init!(integrator, prob, _alg, isdae, save_start, save_idxs,
+                              t, timeseries, ts, ks, rate_prototype, ks_prototype,
+                              alg_choice, initialize_save)
+
+Perform final initialization steps on the integrator: DAE initialization,
+initial save, callback initialization, and algorithm initialization.
+"""
+function finalize_integrator_init!(integrator, prob, _alg, isdae, save_start, save_idxs,
+        t, timeseries, ts, ks, rate_prototype, ks_prototype,
+        alg_choice, initialize_save)
+    if isdae || SciMLBase.has_initializeprob(prob.f) ||
+            prob isa SciMLBase.ImplicitDiscreteProblem
+        DiffEqBase.initialize_dae!(integrator)
+        !isnothing(integrator.u) && update_uprev!(integrator)
+    end
+
+    if save_start
+        integrator.saveiter += 1 # Starts at 1 so first save is at 2
+        integrator.saveiter_dense += 1
+        copyat_or_push!(ts, 1, t)
+        # N.B.: integrator.u can be modified by initialized_dae!
+        if save_idxs === nothing
+            copyat_or_push!(timeseries, 1, integrator.u)
+            copyat_or_push!(ks, 1, [rate_prototype])
+        else
+            copyat_or_push!(timeseries, 1, integrator.u[save_idxs], Val{false})
+            copyat_or_push!(ks, 1, [ks_prototype])
+        end
+    else
+        integrator.saveiter = 0 # Starts at 0 so first save is at 1
+        integrator.saveiter_dense = 0
+    end
+
+    initialize_callbacks!(integrator, initialize_save)
+    initialize!(integrator, integrator.cache)
+
+    if _alg isa OrdinaryDiffEqCompositeAlgorithm
+        # in case user mixes adaptive and non-adaptive algorithms
+        ensure_behaving_adaptivity!(integrator, integrator.cache)
+
+        if save_start
+            # Loop to get all of the extra possible saves in callback initialization
+            for i in 1:(integrator.saveiter)
+                copyat_or_push!(alg_choice, i, integrator.cache.current)
+            end
+        end
+    end
+end
+
 function SciMLBase.__init(
         prob::Union{
             SciMLBase.AbstractODEProblem,
@@ -77,51 +549,8 @@ function SciMLBase.__init(
         initializealg = DefaultInit(),
         kwargs...
     )
-    if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
-        error("You cannot use an ODE Algorithm with a DAEProblem")
-    end
-
-    if prob isa SciMLBase.AbstractODEProblem && alg isa DAEAlgorithm
-        error("You cannot use an DAE Algorithm with a ODEProblem")
-    end
-
-    if prob isa SciMLBase.ODEProblem
-        if !(prob.f isa SciMLBase.DynamicalODEFunction) && alg isa PartitionedAlgorithm
-            error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
-        end
-    end
-
-    if prob.f isa DynamicalODEFunction && prob.f.mass_matrix isa Tuple
-        if any(mm != I for mm in prob.f.mass_matrix)
-            error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
-        end
-    elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
-            !(prob isa SciMLBase.AbstractDAEProblem) &&
-            !is_mass_matrix_alg(alg) &&
-            prob.f.mass_matrix != I
-        error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
-    end
-
-    if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
-            # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
-            !only_diagonal_mass_matrix(alg) &&
-            prob.f.mass_matrix isa AbstractMatrix &&
-            all(isequal(0), prob.f.mass_matrix)
-        # technically this should also warn for zero operators but those are hard to check for
-        if (dense || !isempty(saveat)) && verbose
-            @warn("Rosenbrock methods on equations without differential states do not bound the error on interpolations.")
-        end
-    end
-
-    if only_diagonal_mass_matrix(alg) &&
-            prob.f.mass_matrix isa AbstractMatrix &&
-            !isdiag(prob.f.mass_matrix)
-        throw(ArgumentError("$(typeof(alg).name.name) only works with diagonal mass matrices. Please choose a solver suitable for your problem (e.g. Rodas5P)"))
-    end
-
-    if !isempty(saveat) && dense
-        @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
-    end
+    # Validate problem-algorithm compatibility
+    validate_prob_alg_compat(prob, alg, verbose, dense, saveat)
 
     progress && @logmsg(LogLevel(-1), progress_name, _id = progress_id, progress = 0)
 
@@ -131,123 +560,25 @@ function SciMLBase.__init(
 
     t = tspan[1]
 
-    if (
-            (
-                (
-                    !(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
-                        !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
-                        !(alg isa DAEAlgorithm)
-                ) || !adaptive || !isadaptive(alg)
-            ) &&
-                dt == tType(0) && isempty(tstops)
-        ) && dt_required(alg)
-        throw(ArgumentError("Fixed timestep methods require a choice of dt or choosing the tstops"))
-    end
-    if !isadaptive(alg) && adaptive
-        throw(ArgumentError("Fixed timestep methods can not be run with adaptive=true"))
-    end
+    # Validate timestep requirements
+    validate_dt_requirements(alg, adaptive, dt, tstops, tType)
 
+    # Determine if this is a DAE problem
     isdae = alg isa DAEAlgorithm || (
         !(prob isa SciMLBase.AbstractDiscreteProblem) &&
             prob.f.mass_matrix != I &&
             !(prob.f.mass_matrix isa Tuple) &&
             ArrayInterface.issingular(prob.f.mass_matrix)
     )
-    if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
-        auto = alg.choice_function
-        _alg = CompositeAlgorithm(
-            alg.algs,
-            AutoSwitchCache(
-                0, 0,
-                auto.nonstiffalg,
-                auto.stiffalg,
-                auto.stiffalgfirst,
-                auto.maxstiffstep,
-                auto.maxnonstiffstep,
-                auto.nonstifftol,
-                auto.stifftol,
-                auto.dtfac,
-                auto.stiffalgfirst,
-                auto.switch_max, 0
-            )
-        )
-    else
-        _alg = alg
-    end
 
-    use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_du0)
+    # Prepare algorithm (convert AutoSwitch to AutoSwitchCache if needed)
+    _alg = prepare_algorithm(alg)
 
-    aliases = nothing
-    if use_old_kwargs
-        aliases = ODEAliasSpecifier()
-        if haskey(kwargs, :alias_u0)
-            message = "`alias_u0` keyword argument is deprecated, to set `alias_u0`,
-            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            aliases = ODEAliasSpecifier(alias_u0 = values(kwargs).alias_u0)
-        else
-            aliases = ODEAliasSpecifier(alias_u0 = nothing)
-        end
+    # Resolve alias specifications
+    aliases = resolve_aliases(alias, kwargs)
 
-        if haskey(kwargs, :alias_du0)
-            message = "`alias_du0` keyword argument is deprecated, to set `alias_du0`,
-            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            aliases = ODEAliasSpecifier(
-                alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0
-            )
-        else
-            aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = nothing)
-        end
-
-        aliases
-
-    else
-        # If alias isa Bool, all fields of ODEAliases set to alias
-        if alias isa Bool
-            aliases = ODEAliasSpecifier(alias = alias)
-        elseif alias isa ODEAliasSpecifier
-            aliases = alias
-        end
-    end
-
-    if isnothing(aliases.alias_f) || aliases.alias_f
-        f = prob.f
-    else
-        f = deepcopy(prob.f)
-    end
-
-    if isnothing(aliases.alias_p) || aliases.alias_p
-        p = prob.p
-    else
-        p = recursivecopy(prob.p)
-    end
-
-    if !isnothing(aliases.alias_u0) && aliases.alias_u0
-        u = prob.u0
-    else
-        u = recursivecopy(prob.u0)
-    end
-
-    # Handle null u0 (e.g., MTK systems with only callbacks and no state variables)
-    # Convert to empty Float64 array to allow initialization to proceed
-    if u === nothing
-        u = Float64[]
-    end
-
-    if _alg isa DAEAlgorithm
-        if !isnothing(aliases.alias_du0) && aliases.alias_du0
-            du = prob.du0
-        else
-            du = recursivecopy(prob.du0)
-        end
-        duprev = recursivecopy(du)
-    else
-        du = nothing
-        duprev = nothing
-    end
+    # Extract state variables based on alias settings
+    f, p, u, du, duprev = extract_state_variables(prob, _alg, aliases)
 
     uType = typeof(u)
     uBottomEltype = recursive_bottom_eltype(u)
@@ -256,73 +587,21 @@ function SciMLBase.__init(
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(one(tType))
 
-    if prob isa SciMLBase.AbstractDiscreteProblem
-        abstol_internal = false
-    elseif abstol === nothing
-        if uBottomEltypeNoUnits == uBottomEltype
-            abstol_internal = unitfulvalue(
-                real(
-                    convert(
-                        uBottomEltype,
-                        oneunit(uBottomEltype) *
-                            1 // 10^6
-                    )
-                )
-            )
-        else
-            abstol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
-        end
-    else
-        abstol_internal = real.(abstol)
-    end
-
-    if prob isa SciMLBase.AbstractDiscreteProblem
-        reltol_internal = false
-    elseif reltol === nothing
-        if uBottomEltypeNoUnits == uBottomEltype
-            reltol_internal = unitfulvalue(
-                real(
-                    convert(
-                        uBottomEltype,
-                        oneunit(uBottomEltype) * 1 // 10^3
-                    )
-                )
-            )
-        else
-            reltol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
-        end
-    else
-        reltol_internal = real.(reltol)
-    end
+    # Compute tolerances
+    abstol_internal, reltol_internal = compute_tolerances(
+        prob, u, abstol, reltol, uBottomEltype, uBottomEltypeNoUnits
+    )
 
     dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
     # dtmin is all abs => does not care about sign already.
 
-    if !isdae && isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
-            uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
-        rate_prototype = recursivecopy(u)
-    elseif prob isa DAEProblem
-        rate_prototype = prob.du0
-    else
-        if (uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits) ||
-                eltype(u) <: Enum
-            rate_prototype = u
-        else # has units!
-            rate_prototype = u / oneunit(tType)
-        end
-    end
-    rateType = typeof(rate_prototype) ## Can be different if united
+    # Compute rate and residual prototypes
+    rate_prototype, res_prototype = compute_rate_prototype(
+        prob, u, isdae, uBottomEltype, uBottomEltypeNoUnits, tType, tTypeNoUnits
+    )
+    rateType = typeof(rate_prototype)
 
-    res_prototype = nothing
-    if isdae
-        if uBottomEltype == uBottomEltypeNoUnits
-            res_prototype = u
-        else
-            res_prototype = one(u)
-        end
-        resType = typeof(res_prototype)
-    end
-
+    # Handle tstops aliasing
     if isnothing(aliases.alias_tstops) || aliases.alias_tstops
         tstops = tstops
     else
@@ -344,23 +623,8 @@ function SciMLBase.__init(
 
     callbacks_internal = CallbackSet(callback)
 
-    max_len_cb = DiffEqBase.max_vector_callback_length_int(callbacks_internal)
-    if max_len_cb !== nothing
-        uBottomEltypeReal = real(uBottomEltype)
-        if isinplace(prob)
-            callback_cache = DiffEqBase.CallbackCache(
-                u, max_len_cb, uBottomEltypeReal,
-                uBottomEltypeReal
-            )
-        else
-            callback_cache = DiffEqBase.CallbackCache(
-                max_len_cb, uBottomEltypeReal,
-                uBottomEltypeReal
-            )
-        end
-    else
-        callback_cache = nothing
-    end
+    # Set up callback cache
+    callback_cache = setup_callback_cache(prob, u, callbacks_internal, uBottomEltype)
 
     ### Algorithm-specific defaults ###
     save_idxs,
@@ -463,20 +727,8 @@ function SciMLBase.__init(
         )
     end
 
-    # Setting up the step size controller
-    if (beta1 !== nothing || beta2 !== nothing) && controller !== nothing
-        throw(ArgumentError("Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."))
-    end
-
-    if (beta1 !== nothing || beta2 !== nothing)
-        message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-
-    if controller === nothing
-        controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
-    end
+    # Set up step size controller
+    controller = setup_controller(_alg, cache, qoldinit, beta1, beta2, controller)
 
     save_end_user = save_end
     save_end = save_end === nothing ?
@@ -614,43 +866,9 @@ function SciMLBase.__init(
     )
 
     if initialize_integrator
-        if isdae || SciMLBase.has_initializeprob(prob.f) ||
-                prob isa SciMLBase.ImplicitDiscreteProblem
-            DiffEqBase.initialize_dae!(integrator)
-            !isnothing(integrator.u) && update_uprev!(integrator)
-        end
-
-        if save_start
-            integrator.saveiter += 1 # Starts at 1 so first save is at 2
-            integrator.saveiter_dense += 1
-            copyat_or_push!(ts, 1, t)
-            # N.B.: integrator.u can be modified by initialized_dae!
-            if save_idxs === nothing
-                copyat_or_push!(timeseries, 1, integrator.u)
-                copyat_or_push!(ks, 1, [rate_prototype])
-            else
-                copyat_or_push!(timeseries, 1, integrator.u[save_idxs], Val{false})
-                copyat_or_push!(ks, 1, [ks_prototype])
-            end
-        else
-            integrator.saveiter = 0 # Starts at 0 so first save is at 1
-            integrator.saveiter_dense = 0
-        end
-
-        initialize_callbacks!(integrator, initialize_save)
-        initialize!(integrator, integrator.cache)
-
-        if _alg isa OrdinaryDiffEqCompositeAlgorithm
-            # in case user mixes adaptive and non-adaptive algorithms
-            ensure_behaving_adaptivity!(integrator, integrator.cache)
-
-            if save_start
-                # Loop to get all of the extra possible saves in callback initialization
-                for i in 1:(integrator.saveiter)
-                    copyat_or_push!(alg_choice, i, integrator.cache.current)
-                end
-            end
-        end
+        finalize_integrator_init!(integrator, prob, _alg, isdae, save_start, save_idxs,
+            t, timeseries, ts, ks, rate_prototype, ks_prototype,
+            alg_choice, initialize_save)
     end
 
     if _tstops !== nothing
