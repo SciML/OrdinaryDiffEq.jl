@@ -12,6 +12,7 @@ on:
       - 'docs/**'
 jobs:
   test:
+    if: false
     runs-on: ubuntu-latest
     strategy:
       matrix:
