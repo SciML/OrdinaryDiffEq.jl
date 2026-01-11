@@ -44,7 +44,7 @@ end
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
         # Skip on Julia LTS (oneunit(Type{Any}) not defined) and pre-release (stalls)
-        # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/XXXX
+        # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2979
         if VERSION >= v"1.11" && isempty(VERSION.prerelease)
             @time @safetestset "Null u0 Callbacks Tests" include("interface/null_u0_callbacks_test.jl")
         end
