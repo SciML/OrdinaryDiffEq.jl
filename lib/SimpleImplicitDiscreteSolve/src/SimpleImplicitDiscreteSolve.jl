@@ -3,6 +3,7 @@ module SimpleImplicitDiscreteSolve
 using SciMLBase
 using SimpleNonlinearSolve
 using Reexport
+
 @reexport using SciMLBase
 
 """

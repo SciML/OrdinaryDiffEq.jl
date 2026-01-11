@@ -65,11 +65,11 @@ function alg_cache(
         alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{V}
+        ::Val{V}, verbose
     ) where {V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     caches = __alg_cache(
         alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V), verbose
     )
     return CompositeCache(caches, alg.choice_function, 1)
 end
@@ -78,14 +78,14 @@ function alg_cache(
         alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u,
         rate_prototype, ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{V}
+        ::Val{V}, verbose
     ) where {
         CS, V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, A1, A2, A3, A4, A5, A6,
     }
     args = (
         u, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-        reltol, p, calck, Val(V),
+        reltol, p, calck, Val(V), verbose,
     )
     # Core.Typeof to turn uEltypeNoUnits into Type{uEltypeNoUnits} rather than DataType
     argT = map(Core.Typeof, args)
@@ -126,7 +126,7 @@ end
         algs::T, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev,
         uprev2, f, t, dt, reltol, p, calck,
-        ::Val{V}
+        ::Val{V}, verbose
     ) where {
         T <: Tuple, V, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits,
@@ -138,7 +138,7 @@ end
                 alg_cache(
                     algs[$i], u, rate_prototype, uEltypeNoUnits,
                     uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-                    reltol, p, calck, Val($V)
+                    reltol, p, calck, Val($V), verbose
                 )
             )
         end...

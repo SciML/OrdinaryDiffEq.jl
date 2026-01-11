@@ -4,7 +4,7 @@ f_ec(u, p, t) = exp(u)
 u0 = 0.0 # explosion time is 1.0
 tspan = (0.0, 10.0)
 prob = ODEProblem(f_ec, u0, tspan)
-options = [:reltol => 1.0e-8, :abstol => 1.0e-8, :verbose => false]
+options = [:reltol => 1.0e-8, :abstol => 1.0e-8]
 desired_codes = (ReturnCode.MaxIters, ReturnCode.Unstable)
 
 # Test that sol.retcode is set to the correct value by various ways to

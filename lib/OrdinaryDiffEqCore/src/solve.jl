@@ -59,7 +59,7 @@ function SciMLBase.__init(
         internalopnorm = opnorm,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-        verbose = true,
+        verbose = ODEVerbosity(),
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,
@@ -102,14 +102,19 @@ function SciMLBase.__init(
         error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
     end
 
+    verbose_spec = _process_verbose_param(verbose)
+
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
             # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
             !only_diagonal_mass_matrix(alg) &&
             prob.f.mass_matrix isa AbstractMatrix &&
             all(isequal(0), prob.f.mass_matrix)
         # technically this should also warn for zero operators but those are hard to check for
-        if (dense || !isempty(saveat)) && verbose
-            @warn("Rosenbrock methods on equations without differential states do not bound the error on interpolations.")
+        if (dense || !isempty(saveat))
+            @SciMLMessage(
+                "Rosenbrock methods on equations without differential states do not bound the error on interpolations.",
+                verbose_spec, :rosenbrock_no_differential_states
+            )
         end
     end
 
@@ -120,7 +125,10 @@ function SciMLBase.__init(
     end
 
     if !isempty(saveat) && dense
-        @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
+        @SciMLMessage(
+            "Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.",
+            verbose_spec, :dense_output_saveat
+        )
     end
 
     progress && @logmsg(LogLevel(-1), progress_name, _id = progress_id, progress = 0)
@@ -453,13 +461,13 @@ function SciMLBase.__init(
         cache = alg_cache(
             _alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
             uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-            reltol_internal, p, calck, Val(isinplace(prob))
+            reltol_internal, p, calck, Val(isinplace(prob)), verbose_spec
         )
     else
         cache = alg_cache(
             _alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
             tTypeNoUnits, uprev, uprev2, f, t, dt, reltol_internal, p, calck,
-            Val(isinplace(prob))
+            Val(isinplace(prob)), verbose_spec
         )
     end
 
@@ -495,7 +503,7 @@ function SciMLBase.__init(
         typeof(d_discontinuities_internal), typeof(userdata),
         typeof(save_idxs),
         typeof(maxiters), typeof(tstops),
-        typeof(saveat), typeof(d_discontinuities),
+        typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
     }(
         maxiters, save_everystep,
         adaptive, abstol_internal,
@@ -527,7 +535,7 @@ function SciMLBase.__init(
         callbacks_internal,
         isoutofdomain,
         unstable_check,
-        verbose, calck, force_dtmin,
+        verbose_spec, calck, force_dtmin,
         advance_to_tstop,
         stop_at_next_tstop
     )
@@ -706,9 +714,10 @@ function handle_dt!(integrator)
             error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
         end
         if isnan(integrator.dt)
-            if integrator.opts.verbose
-                @warn("Automatic dt set the starting dt as NaN, causing instability. Exiting.")
-            end
+            @SciMLMessage(
+                "Automatic dt set the starting dt as NaN, causing instability. Exiting.",
+                integrator.opts.verbose, :dt_NaN
+            )
         end
     elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
             integrator.tdir < 0

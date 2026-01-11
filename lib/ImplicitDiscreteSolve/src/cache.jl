@@ -16,7 +16,7 @@ function alg_cache(
         alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
     f_nl = (resid, u_next, p) -> f(resid, u_next, p.u, p.p, p.t)
@@ -44,7 +44,7 @@ function alg_cache(
         alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     @assert !isnothing(u) "Empty u not supported with out of place functions yet."
 
@@ -70,3 +70,28 @@ function alg_cache(
 end
 
 get_fsalfirstlast(cache::IDSolveCache, rate_prototype) = (nothing, nothing)
+
+# Backwards compatibility: handle old callers that don't pass verbose parameter
+function alg_cache(
+        alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return alg_cache(
+        alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(true), nothing
+    )
+end
+
+function alg_cache(
+        alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return alg_cache(
+        alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(false), nothing
+    )
+end

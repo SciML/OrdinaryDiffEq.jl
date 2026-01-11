@@ -51,8 +51,9 @@ function initialize!(
     else
         nlp_params = (tmp, γ, α, tstep, invγdt, method, p, dt, f)
     end
+
     new_prob = remake(cache.prob, p = nlp_params, u0 = z)
-    cache.cache = init(new_prob, alg.alg)
+    cache.cache = init(new_prob, alg.alg; verbose = nlsolver.cache.cache.verbose)
     return nothing
 end
 

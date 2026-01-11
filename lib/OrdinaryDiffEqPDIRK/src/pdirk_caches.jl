@@ -52,26 +52,26 @@ function alg_cache(
         alg::PDIRK44, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
     if alg.threading
         nlsolver1 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(true)
+            Val(true), verbose
         )
         nlsolver2 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(true)
+            Val(true), verbose
         )
         nlsolver = [nlsolver1, nlsolver2]
     else
         _nlsolver = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(true)
+            Val(true), verbose
         )
         nlsolver = [_nlsolver]
     end
@@ -85,26 +85,26 @@ function alg_cache(
         alg::PDIRK44, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
     if alg.threading
         nlsolver1 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(false)
+            Val(false), verbose
         )
         nlsolver2 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(false)
+            Val(false), verbose
         )
         nlsolver = [nlsolver1, nlsolver2]
     else
         _nlsolver = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(false)
+            Val(false), verbose
         )
         nlsolver = [_nlsolver]
     end

@@ -11,6 +11,7 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCac
     generic_solver_docstring,
     full_cache,
     _bool_to_ADType
+using SciMLLogging: @SciMLMessage
 import OrdinaryDiffEqLowOrderRK: BS3ConstantCache, BS3Cache, RK4ConstantCache, RK4Cache
 import RecursiveArrayTools: recursivefill!
 using MuladdMacro, FastBroadcast

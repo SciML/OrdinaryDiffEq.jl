@@ -6,6 +6,7 @@ import OrdinaryDiffEqCore: alg_order, issplit, OrdinaryDiffEqNewtonAlgorithm, _u
     @cache, alg_cache, initialize!, perform_step!,
     full_cache, get_fsalfirstlast,
     generic_solver_docstring, _bool_to_ADType, _process_AD_choice
+using SciMLLogging: @SciMLMessage
 
 using FastBroadcast
 import OrdinaryDiffEqCore
