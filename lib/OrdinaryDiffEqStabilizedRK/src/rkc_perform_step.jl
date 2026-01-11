@@ -18,7 +18,11 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
-    mdeg = floor(Int, sqrt((1.5 + abs(dt) * integrator.eigen_est) / 0.811)) + 1
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = floor(
+        Int,
+        sqrt((1.5 + DiffEqBase.value(abs(dt)) * integrator.eigen_est) / 0.811)
+    ) + 1
     mdeg = min(max(mdeg, cache.min_stage), cache.max_stage)
     cache.mdeg = max(mdeg, 3) - 2
     choosedeg!(cache)
@@ -99,7 +103,11 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
-    mdeg = floor(Int, sqrt((1.5 + abs(dt) * integrator.eigen_est) / 0.811)) + 1
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = floor(
+        Int,
+        sqrt((1.5 + DiffEqBase.value(abs(dt)) * integrator.eigen_est) / 0.811)
+    ) + 1
     mdeg = min(max(mdeg, ccache.min_stage), ccache.max_stage)
     ccache.mdeg = max(mdeg, 3) - 2
     choosedeg!(cache)
@@ -137,8 +145,7 @@ end
     else
         @.. broadcast = false u = -δt₂ * k
     end
-    c = DiffEqBase.value(sign(δt₁)) * integrator.opts.internalnorm(δt₁, t)
-    tᵢ₋₁ += c
+    tᵢ₋₁ += δt₁
     f(k, uᵢ₋₁, p, tᵢ₋₁)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
@@ -183,7 +190,11 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
-    mdeg = floor(Int, sqrt((3 + abs(dt) * integrator.eigen_est) / 0.353)) + 1
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = floor(
+        Int,
+        sqrt((3 + DiffEqBase.value(abs(dt)) * integrator.eigen_est) / 0.353)
+    ) + 1
     mdeg = min(max(mdeg, cache.min_stage), cache.max_stage)
     cache.mdeg = max(mdeg, 5) - 4
     choosedeg!(cache)
@@ -246,8 +257,7 @@ end
 
     # Stage-2
     c₂ = a₂₁
-    _c₂ = DiffEqBase.value(sign(c₂)) * integrator.opts.internalnorm(c₂, t)
-    tᵢ₋₂ = tᵢ₋₁ + _c₂
+    tᵢ₋₂ = tᵢ₋₁ + c₂
     uᵢ₋₁ = f(uᵢ₋₁, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     uᵢ₋₂ += a₃₂ * uᵢ₋₁
@@ -259,8 +269,7 @@ end
 
     # Stage-3
     c₃ = a₃₁ + a₃₂
-    _c₃ = DiffEqBase.value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
-    tᵢ₋₂ = tᵢ₋₁ + _c₃
+    tᵢ₋₂ = tᵢ₋₁ + c₃
     uᵢ₋₂ = f(uᵢ₋₂, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     uᵢ₋₃ += a₄₃ * uᵢ₋₂
@@ -271,8 +280,7 @@ end
 
     #Stage-4
     c₄ = a₄₁ + a₄₂ + a₄₃
-    _c₄ = DiffEqBase.value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
-    tᵢ₋₂ = tᵢ₋₁ + _c₄
+    tᵢ₋₂ = tᵢ₋₁ + c₄
     uᵢ₋₃ = f(uᵢ₋₃, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     u += B₄ * uᵢ₋₃
@@ -321,7 +329,11 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
-    mdeg = floor(Int, sqrt((3 + abs(dt) * integrator.eigen_est) / 0.353)) + 1
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = floor(
+        Int,
+        sqrt((3 + DiffEqBase.value(abs(dt)) * integrator.eigen_est) / 0.353)
+    ) + 1
     mdeg = min(max(mdeg, ccache.min_stage), ccache.max_stage)
     ccache.mdeg = max(mdeg, 5) - 4
     choosedeg!(cache)
@@ -383,8 +395,7 @@ end
 
     # Stage-2
     c₂ = a₂₁
-    _c₂ = value(sign(c₂)) * integrator.opts.internalnorm(c₂, t)
-    tᵢ₋₂ = tᵢ₋₁ + _c₂
+    tᵢ₋₂ = tᵢ₋₁ + c₂
     f(k, uᵢ₋₁, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast = false uᵢ₋₂ += a₃₂ * k
@@ -396,8 +407,7 @@ end
 
     # Stage-3
     c₃ = a₃₁ + a₃₂
-    _c₃ = DiffEqBase.value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
-    tᵢ₋₂ = tᵢ₋₁ + _c₃
+    tᵢ₋₂ = tᵢ₋₁ + c₃
     f(k, uᵢ₋₂, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast = false uᵢ₋₃ += a₄₃ * k
@@ -408,8 +418,7 @@ end
 
     #Stage-4
     c₄ = a₄₁ + a₄₂ + a₄₃
-    _c₄ = DiffEqBase.value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
-    tᵢ₋₂ = tᵢ₋₁ + _c₄
+    tᵢ₋₂ = tᵢ₋₁ + c₄
     f(k, uᵢ₋₃, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast = false u += B₄ * k
@@ -454,7 +463,8 @@ end
     # The the number of degree for Chebyshev polynomial
     #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
     maxm = 50
-    mdeg = 1 + Int(floor(sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)))
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = 1 + Int(floor(sqrt(1.54 * DiffEqBase.value(abs(dt)) * integrator.eigen_est + 1)))
     mdeg = (mdeg > maxm) ? maxm : mdeg
 
     w0 = 1 + 2 / (13 * (mdeg^2))
@@ -478,6 +488,10 @@ end
     d2z1 = zero(eltype(u))
     d2z2 = zero(eltype(u))
 
+    # Initialize feval for the case when mdeg=1 (no loop iterations)
+    # In this case, use fsalfirst as the initial derivative estimate
+    feval = fsalfirst
+
     # stage 2 - mdeg
     for iter in 2:mdeg
         z = 2 * w0 * z1 - z2
@@ -489,9 +503,9 @@ end
         ν = -b / b2
         μs = μ * w1 / w0
         #using u as temporary storage
-        u = f(gprev, p, t + dt * th1)
+        feval = f(gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        u = μ * gprev + ν * gprev2 + (1 - μ - ν) * uprev + dt * μs * (u - νs * fsalfirst)
+        u = μ * gprev + ν * gprev2 + (1 - μ - ν) * uprev + dt * μs * (feval - νs * fsalfirst)
         th = μ * th1 + ν * th2 + μs * (1 - νs)
         if (iter < mdeg)
             gprev2 = gprev
@@ -509,8 +523,10 @@ end
         end
     end
     # error estimate
+    # Note: feval contains the last derivative evaluation f(gprev, ...)
+    # The error estimate formula uses derivatives, not states
     if integrator.opts.adaptive
-        tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + gprev)
+        tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + feval)
         atmp = calculate_residuals(
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -540,7 +556,8 @@ end
     # The the number of degree for Chebyshev polynomial
     #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/10eps(t)))))
     maxm = 50
-    mdeg = 1 + Int(floor(sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)))
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = 1 + Int(floor(sqrt(1.54 * DiffEqBase.value(abs(dt)) * integrator.eigen_est + 1)))
     mdeg = (mdeg > maxm) ? maxm : mdeg
 
     w0 = 1 + 2 / (13 * (mdeg^2))
@@ -595,8 +612,10 @@ end
         end
     end
     # error estimate
+    # Note: k contains the last derivative evaluation f(gprev, ...)
+    # The error estimate formula uses derivatives, not states
     if integrator.opts.adaptive
-        @.. broadcast = false tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + gprev)
+        @.. broadcast = false tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + k)
         calculate_residuals!(
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -627,7 +646,8 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
-    mdeg = Int(floor(sqrt(abs(dt) * integrator.eigen_est)) + 1)
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = Int(floor(sqrt(DiffEqBase.value(abs(dt)) * integrator.eigen_est)) + 1)
     mdeg = (mdeg > 4000) ? 4000 : mdeg
     cache.mdeg = mdeg
     choosedeg_SERK!(integrator, cache)
@@ -709,7 +729,8 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
-    mdeg = Int(floor(sqrt(abs(dt) * integrator.eigen_est)) + 1)
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = Int(floor(sqrt(DiffEqBase.value(abs(dt)) * integrator.eigen_est)) + 1)
     mdeg = (mdeg > 4000) ? 4000 : mdeg
     ccache.mdeg = mdeg
     choosedeg_SERK!(integrator, cache)
@@ -791,7 +812,8 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
-    mdeg = Int(floor(sqrt(abs(dt) * integrator.eigen_est / 0.98)) + 1)
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = Int(floor(sqrt(DiffEqBase.value(abs(dt)) * integrator.eigen_est / 0.98)) + 1)
     mdeg = (mdeg > 2000) ? 2000 : mdeg
     cache.mdeg = mdeg
     choosedeg_SERK!(integrator, cache)
@@ -872,7 +894,8 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
-    mdeg = Int(floor(sqrt(abs(dt) * integrator.eigen_est / 0.98)) + 1)
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = Int(floor(sqrt(DiffEqBase.value(abs(dt)) * integrator.eigen_est / 0.98)) + 1)
     mdeg = (mdeg > 2000) ? 2000 : mdeg
     ccache.mdeg = mdeg
     choosedeg_SERK!(integrator, cache)
@@ -954,7 +977,8 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
-    mdeg = Int(floor(sqrt(abs(dt) * integrator.eigen_est / 0.8)) + 1)
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = Int(floor(sqrt(DiffEqBase.value(abs(dt)) * integrator.eigen_est / 0.8)) + 1)
     mdeg = (mdeg > 250) ? 250 : mdeg
     cache.mdeg = mdeg
     choosedeg_SERK!(integrator, cache)
@@ -1019,7 +1043,8 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
-    mdeg = Int(floor(sqrt(abs(dt) * integrator.eigen_est / 0.8)) + 1)
+    # Use DiffEqBase.value to strip units from dt for Unitful compatibility
+    mdeg = Int(floor(sqrt(DiffEqBase.value(abs(dt)) * integrator.eigen_est / 0.8)) + 1)
     mdeg = (mdeg > 250) ? 250 : mdeg
     ccache.mdeg = mdeg
     choosedeg_SERK!(integrator, cache)
