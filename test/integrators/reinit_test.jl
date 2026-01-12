@@ -101,3 +101,16 @@ end
     @test integrator.sol.t[1] == t0
     @test integrator.sol.interp.ts[1] == t0
 end
+
+@testset "zero allocations with reset_dt = false" begin
+    prob = prob_ode_2Dlinear
+    integrator = init(prob, Tsit5(); dt = 1 // 2^(4), tstops = [1 // 2], saveat = [1 // 4])
+    solve!(integrator)
+
+    # Run once to compile
+    reinit!(integrator; reset_dt = false)
+
+    # Now test for zero allocations
+    allocs = @allocated reinit!(integrator; reset_dt = false)
+    @test allocs == 0
+end
