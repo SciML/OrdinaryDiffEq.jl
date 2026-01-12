@@ -537,9 +537,9 @@ end
         z2 = @.. integrator.k[4]
         z3 = @.. integrator.k[5]
         k1 = (z2 - z3) / c2m1 #first derivative on [c2, 1]
-        tmp = (k1 - z2) / c1mc2 #first derivative on [c1, c2]
+        tmp = (z1 - z2) / c1mc2 #first derivative on [c1, c2]
         k2 = (tmp - k1) / c1m1 #second derivative on [c1, 1]
-        k3 = k2  - (tmp - k1 / c1) / c2 #third derivative on [0, c2]
+        k3 = k2  - (tmp - z1 / c1) / c2 #third derivative on [0, c2]
 
         z1= @.. c1′ * (k1 +
                 (c1′ - c2m1) * (k2 + (c1′ - c1m1) * k3))
@@ -736,9 +736,9 @@ end
         @.. z2 = integrator.k[4]
         @.. z3 = integrator.k[5]
         k1 = (z2 - z3) / c2m1 #first derivative on [c2, 1]
-        tmp = (k1 - z2) / c1mc2 #first derivative on [c1, c2]
+        @.. tmp = (z1 - z2) / c1mc2 #first derivative on [c1, c2]
         k2 = (tmp - k1) / c1m1 #second derivative on [c1, 1]
-        k3 = k2  - (tmp - k1 / c1) / c2 #third derivative on [0, c2]
+        k3 = k2  - (tmp - z1 / c1) / c2 #third derivative on [0, c2]
 
         @.. z1=c1′ * (k1 +
                 (c1′ - c2m1) * (k2 + (c1′ - c1m1) * k3))
@@ -1024,21 +1024,21 @@ end
         z3 = @.. integrator.k[5]
         z4 = @.. integrator.k[6]
         z5 = @.. integrator.k[7]
-        k3 = (z4 - z5) / c4m1 # first derivative on [c4, 1]
+        k3 = @.. (z4 - z5) / c4m1 # first derivative on [c4, 1]
         tmp1 = @.. (z3 - z4) / c3mc4 # first derivative on [c3, c4]
-        k4 = (tmp1 - integrator.k[3]) / c3m1 # second derivative on [c3, 1]
+        k4 = @.. (tmp1 - k3) / c3m1 # second derivative on [c3, 1]
         tmp2 = @.. (z2 - z3) / c2mc3 # first derivative on [c2, c3]
         tmp3 = @.. (tmp2 - tmp1) / c2mc4 # second derivative on [c2, c4]
-        k5 = (tmp3 - integrator.k[4]) / c2m1 # third derivative on [c2, 1]
+        k5 = @.. (tmp3 - k4) / c2m1 # third derivative on [c2, 1]
         tmp4 = @.. (z1 - z2) / c1mc2 # first derivative on [c1, c2]
         tmp5 = @.. (tmp4 - tmp2) / c1mc3 # second derivative on [c1, c3]
         tmp6 = @.. (tmp5 - tmp3) / c1mc4 # third derivative on [c1, c4]
-        k6 = (tmp6 - integrator.k[5]) / c1m1 #fourth derivative on [c1, 1]
+        k6 = @.. (tmp6 - k5) / c1m1 #fourth derivative on [c1, 1]
         tmp7 = @.. z1 / c1 #first derivative on [0, c1]
         tmp8 = @.. (tmp4 - tmp7) / c2 #second derivative on [0, c2]
         tmp9 = @.. (tmp5 - tmp8) / c3 #third derivative on [0, c3]
         tmp10 = @.. (tmp6 - tmp9) / c4 #fourth derivative on [0,c4]
-        k7 = integrator.k[6] - tmp10 #fifth derivative on [0,1] 
+        k7 = @.. k6 - tmp10 #fifth derivative on [0,1] 
         z1 = @.. c1′ * (k3 +
                   (c1′-c4m1) * (k4 +
                    (c1′ - c3m1) * (k5 +
@@ -1233,8 +1233,7 @@ end
     (; dw1, ubuff, dw23, dw45, cubuff1, cubuff2) = cache
     (; k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5) = cache
     (; J, W1, W2, W3) = cache
-    (;
-        tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
+    (;  tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
         linsolve1, linsolve2, linsolve3, rtol, atol, step_limiter!,
     ) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
@@ -1296,21 +1295,21 @@ end
         @.. z3 = integrator.k[5]
         @.. z4 = integrator.k[6]
         @.. z5 = integrator.k[7]
-        k3 = @.. (z4 - z5) / c4m1 # first derivative on [c4, 1]
+        k3 = (z4 - z5) / c4m1 # first derivative on [c4, 1]
         @.. tmp = (z3 - z4) / c3mc4 # first derivative on [c3, c4]
-        k4 = @.. (tmp - z1) / c3m1 # second derivative on [c3, 1]
+        k4 = (tmp - k3) / c3m1 # second derivative on [c3, 1]
         @.. tmp2 = (z2 - z3) / c2mc3 # first derivative on [c2, c3]
         @.. tmp3 = (tmp2 - tmp) / c2mc4 # second derivative on [c2, c4]
-        k5 = @.. (tmp3 - z2) / c2m1 # third derivative on [c2, 1]
+        k5 = (tmp3 - k4) / c2m1 # third derivative on [c2, 1]
         @.. tmp4 = (z1 - z2) / c1mc2 # first derivative on [c1, c2]
         @.. tmp5 = (tmp4 - tmp2) / c1mc3 # second derivative on [c1, c3]
         @.. tmp6 = (tmp5 - tmp3) / c1mc4 # third derivative on [c1, c4]
-        k6 = @.. (tmp6 - z3) / c1m1 #fourth derivative on [c1, 1]
+        k6 = (tmp6 - k5) / c1m1 #fourth derivative on [c1, 1]
         @.. tmp7 = z1 / c1 #first derivative on [0, c1]
         @.. tmp8 = (tmp4 - tmp7) / c2 #second derivative on [0, c2]
         @.. tmp9 = (tmp5 - tmp8) / c3 #third derivative on [0, c3]
         @.. tmp10 = (tmp6 - tmp9) / c4 #fourth derivative on [0,c4]
-        k7 = @.. z4 - tmp10 #fifth derivative on [0,1]
+        k7 = k6 - tmp10 #fifth derivative on [0,1] 
         @.. z1 = c1′ * (k3 +
                   (c1′-c4m1) * (k4 +
                    (c1′ - c3m1) * (k5 +
