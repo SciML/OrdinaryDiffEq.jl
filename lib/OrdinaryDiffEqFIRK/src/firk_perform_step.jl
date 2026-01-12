@@ -533,9 +533,9 @@ end
         c3′ = dt / cache.dtprev
         c1′ = c1 * c3′
         c2′ = c2 * c3′
-        z1 = @.. integrator.k[3]
-        z2 = @.. integrator.k[4]
-        z3 = @.. integrator.k[5]
+        z1 = integrator.k[3]
+        z2 = integrator.k[4]
+        z3 = integrator.k[5]
         k1 = (z2 - z3) / c2m1 #first derivative on [c2, 1]
         tmp = (z1 - z2) / c1mc2 #first derivative on [c1, c2]
         k2 = (tmp - k1) / c1m1 #second derivative on [c1, 1]
@@ -691,7 +691,7 @@ end
     (;
         z1, z2, z3, w1, w2, w3,
         dw1, ubuff, dw23, cubuff,
-        k, k2, k3, fw1, fw2, fw3,
+        k, k1, k2, k3, fw1, fw2, fw3,
         J, W1, W2,
         tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!,
     ) = cache
@@ -735,10 +735,10 @@ end
         @.. z1 = integrator.k[3]
         @.. z2 = integrator.k[4]
         @.. z3 = integrator.k[5]
-        k1 = (z2 - z3) / c2m1 #first derivative on [c2, 1]
+        @.. k1 = (z2 - z3) / c2m1 #first derivative on [c2, 1]
         @.. tmp = (z1 - z2) / c1mc2 #first derivative on [c1, c2]
-        k2 = (tmp - k1) / c1m1 #second derivative on [c1, 1]
-        k3 = k2  - (tmp - z1 / c1) / c2 #third derivative on [0, c2]
+        @.. k2 = (tmp - k1) / c1m1 #second derivative on [c1, 1]
+        @.. k3 = k2  - (tmp - z1 / c1) / c2 #third derivative on [0, c2]
 
         @.. z1=c1′ * (k1 +
                 (c1′ - c2m1) * (k2 + (c1′ - c1m1) * k3))
@@ -1019,11 +1019,11 @@ end
         c2′ = c2 * c5′
         c3′ = c3 * c5′
         c4′ = c4 * c5′
-        z1 = @.. integrator.k[3]
-        z2 = @.. integrator.k[4]
-        z3 = @.. integrator.k[5]
-        z4 = @.. integrator.k[6]
-        z5 = @.. integrator.k[7]
+        z1 = integrator.k[3]
+        z2 = integrator.k[4]
+        z3 = integrator.k[5]
+        z4 = integrator.k[6]
+        z5 = integrator.k[7]
         k3 = @.. (z4 - z5) / c4m1 # first derivative on [c4, 1]
         tmp1 = @.. (z3 - z4) / c3mc4 # first derivative on [c3, c4]
         k4 = @.. (tmp1 - k3) / c3m1 # second derivative on [c3, 1]
@@ -1231,7 +1231,7 @@ end
     linres1 = nothing
     (; z1, z2, z3, z4, z5, w1, w2, w3, w4, w5) = cache
     (; dw1, ubuff, dw23, dw45, cubuff1, cubuff2) = cache
-    (; k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5) = cache
+    (; k, k1, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5) = cache
     (; J, W1, W2, W3) = cache
     (;  tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
         linsolve1, linsolve2, linsolve3, rtol, atol, step_limiter!,
@@ -1295,40 +1295,40 @@ end
         @.. z3 = integrator.k[5]
         @.. z4 = integrator.k[6]
         @.. z5 = integrator.k[7]
-        k3 = (z4 - z5) / c4m1 # first derivative on [c4, 1]
+        @.. k1 = (z4 - z5) / c4m1 # first derivative on [c4, 1]
         @.. tmp = (z3 - z4) / c3mc4 # first derivative on [c3, c4]
-        k4 = (tmp - k3) / c3m1 # second derivative on [c3, 1]
+        @.. k2 = (tmp - k1) / c3m1 # second derivative on [c3, 1]
         @.. tmp2 = (z2 - z3) / c2mc3 # first derivative on [c2, c3]
         @.. tmp3 = (tmp2 - tmp) / c2mc4 # second derivative on [c2, c4]
-        k5 = (tmp3 - k4) / c2m1 # third derivative on [c2, 1]
+        @.. k3 = (tmp3 - k2) / c2m1 # third derivative on [c2, 1]
         @.. tmp4 = (z1 - z2) / c1mc2 # first derivative on [c1, c2]
         @.. tmp5 = (tmp4 - tmp2) / c1mc3 # second derivative on [c1, c3]
         @.. tmp6 = (tmp5 - tmp3) / c1mc4 # third derivative on [c1, c4]
-        k6 = (tmp6 - k5) / c1m1 #fourth derivative on [c1, 1]
+        @.. k4 = (tmp6 - k3) / c1m1 #fourth derivative on [c1, 1]
         @.. tmp7 = z1 / c1 #first derivative on [0, c1]
         @.. tmp8 = (tmp4 - tmp7) / c2 #second derivative on [0, c2]
         @.. tmp9 = (tmp5 - tmp8) / c3 #third derivative on [0, c3]
         @.. tmp10 = (tmp6 - tmp9) / c4 #fourth derivative on [0,c4]
-        k7 = k6 - tmp10 #fifth derivative on [0,1] 
-        @.. z1 = c1′ * (k3 +
-                  (c1′-c4m1) * (k4 +
-                   (c1′ - c3m1) * (k5 +
-                    (c1′ - c2m1) * (k6 + (c1′ - c1m1) * k7))))
-        @.. z2 = c2′ * (k3 +
-                  (c2′-c4m1) * (k4 +
-                   (c2′ - c3m1) * (k5 +
-                    (c2′ - c2m1) * (k6 + (c2′ - c1m1) * k7))))
-        @.. z3 = c3′ * (k3 +
-                  (c3′-c4m1) * (k4 +
-                   (c3′ - c3m1) * (k5 +
-                    (c3′ - c2m1) * (k6 + (c3′ - c1m1) * k7))))
-        @.. z4 = c4′ * (k3 +
-                  (c4′-c4m1) * (k4 +
-                   (c4′ - c3m1) * (k5 +
-                    (c4′ - c2m1) * (k6 + (c4′ - c1m1) * k7))))
-        @.. z5 = c5′ * (k3 +
-                  (c5′-c4m1) * (k4 +
-                   (c5′ - c3m1) * (k5 + (c5′ - c2m1) * (k6 + (c5′ - c1m1) * k7))))
+        @.. k5 = k4 - tmp10 #fifth derivative on [0,1] 
+        @.. z1 = c1′ * (k1 +
+                  (c1′-c4m1) * (k2 +
+                   (c1′ - c3m1) * (k3 +
+                    (c1′ - c2m1) * (k4 + (c1′ - c1m1) * k5))))
+        @.. z2 = c2′ * (k1 +
+                  (c2′-c4m1) * (k2 +
+                   (c2′ - c3m1) * (k3 +
+                    (c2′ - c2m1) * (k4 + (c2′ - c1m1) * k5))))
+        @.. z3 = c3′ * (k1 +
+                  (c3′-c4m1) * (k2 +
+                   (c3′ - c3m1) * (k3 +
+                    (c3′ - c2m1) * (k4 + (c3′ - c1m1) * k5))))
+        @.. z4 = c4′ * (k1 +
+                  (c4′-c4m1) * (k2 +
+                   (c4′ - c3m1) * (k3 +
+                    (c4′ - c2m1) * (k4 + (c4′ - c1m1) * k5))))
+        @.. z5 = c5′ * (k1 +
+                  (c5′-c4m1) * (k2 +
+                   (c5′ - c3m1) * (k3 + (c5′ - c2m1) * (k4 + (c5′ - c1m1) * k5))))
         @.. w1 = TI11*z1+TI12*z2+TI13*z3+TI14*z4+TI15*z5
         @.. w2 = TI21*z1+TI22*z2+TI23*z3+TI24*z4+TI25*z5
         @.. w3 = TI31*z1+TI32*z2+TI33*z3+TI34*z4+TI35*z5
@@ -1903,7 +1903,9 @@ end
             integrator.k[i + 2] = map(zero, u)
         end
     else
-        for i in 1:num_stages @.. z[i] = integrator.k[i + 2] end
+        for i in 1:num_stages 
+            @.. z[i] = integrator.k[i + 2] 
+        end
         @.. derivatives[1, 1] = z[1] / c[1]
         for j in 2:num_stages
             @.. derivatives[1, j] = (z[j - 1] - z[j]) / (c[j - 1] - c[j]) #first derivatives
