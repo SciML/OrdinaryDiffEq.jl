@@ -19,9 +19,14 @@ jobs:
           - "lts"
     runs-on: ubuntu-latest
     steps:
-      # Clean stale AirspeedVelocity installation to avoid path issues
+      # Clean stale AirspeedVelocity installation to avoid path issues with self-hosted runners
       - name: Clean AirspeedVelocity cache
-        run: rm -rf ~/.julia/bin/benchpkg* ~/.julia/bin/asvjl* ~/.julia/packages/AirspeedVelocity || true
+        run: |
+          rm -rf ~/.julia/bin/benchpkg* ~/.julia/bin/asvjl* || true
+          rm -rf ~/.julia/packages/AirspeedVelocity || true
+          rm -rf ~/.julia/compiled/*/AirspeedVelocity || true
+          # Ensure ~/.julia/bin is in PATH
+          echo "$HOME/.julia/bin" >> $GITHUB_PATH
       - uses: MilesCranmer/AirspeedVelocity.jl@action-v1
         with:
           julia-version: "${{ matrix.version }}"
