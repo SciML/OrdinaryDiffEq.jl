@@ -332,6 +332,11 @@ jobs:
           - group: SimpleImplicitDiscreteSolve_QA
             version: '1.11'
           - group: SimpleImplicitDiscreteSolve_QA
+          # Skip ODEInterfaceRegression until ODEInterface.jl is fixed upstream
+          # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2987
+          - group: ODEInterfaceRegression
+            version: '1'
+          - group: ODEInterfaceRegression
             version: 'pre'
     steps:
       - uses: actions/checkout@v6

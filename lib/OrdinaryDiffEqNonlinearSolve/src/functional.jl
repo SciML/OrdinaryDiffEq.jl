@@ -119,7 +119,7 @@ end
         dz = f(dustep, ustep, p, t)
         ztmp = @.. broadcast = false z + dz
     else
-        mass_matrix = integrator.f.mass_matrix
+        mass_matrix = get_mass_matrix(integrator.f)
         if nlsolver.method === COEFFICIENT_MULTISTEP
             ustep = z
             if mass_matrix === I
@@ -186,7 +186,7 @@ end
         @.. broadcast = false dz = k
         @.. broadcast = false ztmp = z + dz
     else
-        mass_matrix = integrator.f.mass_matrix
+        mass_matrix = get_mass_matrix(integrator.f)
         if nlsolver.method === COEFFICIENT_MULTISTEP
             ustep = z
             f(k, ustep, p, tstep)
