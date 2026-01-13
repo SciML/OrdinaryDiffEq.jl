@@ -27,6 +27,7 @@ jobs:
           - Multithreading
           - QA
 
+          # Functional tests for sublibraries (run on all Julia versions)
           - OrdinaryDiffEqAdamsBashforthMoulton
           - OrdinaryDiffEqBDF
           - OrdinaryDiffEqCore
@@ -58,12 +59,52 @@ jobs:
           - OrdinaryDiffEqStabilizedIRK
           - OrdinaryDiffEqStabilizedRK
           - OrdinaryDiffEqSymplecticRK
+          - OrdinaryDiffEqTaylorSeries
           - OrdinaryDiffEqTsit5
           - OrdinaryDiffEqVerner
 
           - ImplicitDiscreteSolve
           - SimpleImplicitDiscreteSolve
           - Enzyme
+
+          # QA tests for sublibraries (JET, Aqua, AllocCheck - excluded from pre)
+          - OrdinaryDiffEqAdamsBashforthMoulton_QA
+          - OrdinaryDiffEqBDF_QA
+          - OrdinaryDiffEqCore_QA
+          - OrdinaryDiffEqDefault_QA
+          - OrdinaryDiffEqDifferentiation_QA
+          - OrdinaryDiffEqExplicitRK_QA
+          - OrdinaryDiffEqExponentialRK_QA
+          - OrdinaryDiffEqExtrapolation_QA
+          - OrdinaryDiffEqFIRK_QA
+          - OrdinaryDiffEqFeagin_QA
+          - OrdinaryDiffEqFunctionMap_QA
+          - OrdinaryDiffEqHighOrderRK_QA
+          - OrdinaryDiffEqIMEXMultistep_QA
+          - OrdinaryDiffEqLinear_QA
+          - OrdinaryDiffEqLowOrderRK_QA
+          - OrdinaryDiffEqLowStorageRK_QA
+          - OrdinaryDiffEqNewmark_QA
+          - OrdinaryDiffEqNonlinearSolve_QA
+          - OrdinaryDiffEqNordsieck_QA
+          - OrdinaryDiffEqPDIRK_QA
+          - OrdinaryDiffEqPRK_QA
+          - OrdinaryDiffEqQPRK_QA
+          - OrdinaryDiffEqRKN_QA
+          - OrdinaryDiffEqRosenbrock_QA
+          - OrdinaryDiffEqRKIP_QA
+          - OrdinaryDiffEqSDIRK_QA
+          - OrdinaryDiffEqSIMDRK_QA
+          - OrdinaryDiffEqSSPRK_QA
+          - OrdinaryDiffEqStabilizedIRK_QA
+          - OrdinaryDiffEqStabilizedRK_QA
+          - OrdinaryDiffEqSymplecticRK_QA
+          - OrdinaryDiffEqTaylorSeries_QA
+          - OrdinaryDiffEqTsit5_QA
+          - OrdinaryDiffEqVerner_QA
+
+          - ImplicitDiscreteSolve_QA
+          - SimpleImplicitDiscreteSolve_QA
 
         version:
           - 'lts'
@@ -74,6 +115,79 @@ jobs:
           - group: Enzyme
             version: '1'
           - group: Enzyme
+            version: 'pre'
+          # Exclude QA tests from pre-release Julia (JET/Aqua may not work on pre)
+          - group: OrdinaryDiffEqAdamsBashforthMoulton_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqBDF_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqCore_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqDefault_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqDifferentiation_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqExplicitRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqExponentialRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqExtrapolation_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqFIRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqFeagin_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqFunctionMap_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqHighOrderRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqIMEXMultistep_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqLinear_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqLowOrderRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqLowStorageRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqNewmark_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqNonlinearSolve_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqNordsieck_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqPDIRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqPRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqQPRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqRKN_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqRosenbrock_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqRKIP_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqSDIRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqSIMDRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqSSPRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqStabilizedIRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqStabilizedRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqSymplecticRK_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqTaylorSeries_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqTsit5_QA
+            version: 'pre'
+          - group: OrdinaryDiffEqVerner_QA
+            version: 'pre'
+          - group: ImplicitDiscreteSolve_QA
+            version: 'pre'
+          - group: SimpleImplicitDiscreteSolve_QA
             version: 'pre'
     steps:
       - uses: actions/checkout@v6
