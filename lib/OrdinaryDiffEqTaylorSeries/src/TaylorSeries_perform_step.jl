@@ -60,8 +60,9 @@ end
     ) where {P}
     (; t, dt, uprev, u, f, p) = integrator
     (; jet) = cache
+    # jet now returns TaylorScalar with concrete numeric types
     utaylor = jet(uprev, t)
-    u = map(x -> evaluate_polynomial(x, dt), utaylor)
+    u = eval_taylor_polynomial(utaylor, dt)
     if integrator.opts.adaptive
         utilde = TaylorDiff.get_coefficient(utaylor, P) * dt^(P + 1)
         atmp = calculate_residuals(
