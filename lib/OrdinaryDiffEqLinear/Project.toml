@@ -4,29 +4,31 @@ authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "1.9.0"
 
 [deps]
-DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 ExponentialUtilities = "d4d017d3-3776-5f7e-afef-a10c40355c18"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
-OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 
 [extras]
-JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
-OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 
 [compat]
-SafeTestsets = "0.1.0"
+SciMLOperators = "1.4"
+Pkg = "1"
 OrdinaryDiffEqTsit5 = "1.4.0"
 Test = "<0.0.1, 1"
 Random = "<0.0.1, 1"
@@ -42,12 +44,12 @@ JET = "0.9, 0.11"
 RecursiveArrayTools = "3.36"
 AllocCheck = "0.2"
 DiffEqBase = "6.176"
+SafeTestsets = "0.1.0"
 OrdinaryDiffEqRosenbrock = "1.15.1"
 Reexport = "1.2"
-SciMLOperators = "1.4"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "OrdinaryDiffEqRosenbrock", "SafeTestsets", "Test", "OrdinaryDiffEqVerner", "OrdinaryDiffEqTsit5"]
+test = ["DiffEqDevTools", "Random", "OrdinaryDiffEqRosenbrock", "SafeTestsets", "Test", "OrdinaryDiffEqVerner", "OrdinaryDiffEqTsit5", "Pkg"]
 
 [sources.OrdinaryDiffEqTsit5]
 path = "../OrdinaryDiffEqTsit5"

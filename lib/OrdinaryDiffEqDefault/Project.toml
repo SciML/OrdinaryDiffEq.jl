@@ -22,6 +22,7 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 [extras]
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -31,6 +32,7 @@ AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
+Pkg = "1"
 OrdinaryDiffEqTsit5 = "1.4.0"
 Test = "<0.0.1, 1"
 Random = "<0.0.1, 1"
@@ -57,7 +59,7 @@ SafeTestsets = "0.1.0"
 AllocCheck = "0.2"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "StaticArrays", "Test"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "StaticArrays", "Test", "Pkg"]
 
 [sources.OrdinaryDiffEqTsit5]
 path = "../OrdinaryDiffEqTsit5"

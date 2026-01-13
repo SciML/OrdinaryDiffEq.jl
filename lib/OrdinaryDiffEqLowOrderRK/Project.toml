@@ -4,18 +4,19 @@ authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "1.9.0"
 
 [deps]
-OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
-MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
@@ -25,6 +26,7 @@ AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
+Pkg = "1"
 Test = "<0.0.1, 1"
 FastBroadcast = "0.3"
 Random = "<0.0.1, 1"
@@ -45,7 +47,7 @@ SafeTestsets = "0.1.0"
 Reexport = "1.2"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

@@ -13,8 +13,8 @@ OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
-Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
+Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -24,6 +24,7 @@ DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -38,6 +39,7 @@ AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
+Pkg = "1"
 NonlinearSolve = "4.12"
 ForwardDiff = "0.10.38, 1"
 Test = "<0.0.1, 1"
@@ -71,7 +73,7 @@ Reexport = "1.2"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = ["DiffEqDevTools", "ForwardDiff", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve"]
+test = ["DiffEqDevTools", "ForwardDiff", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg"]
 
 [sources.OrdinaryDiffEqSDIRK]
 path = "../OrdinaryDiffEqSDIRK"

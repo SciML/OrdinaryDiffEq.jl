@@ -4,9 +4,10 @@ uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "SparseArrays"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "SparseArrays", "Pkg"]
 
 [compat]
+Pkg = "1"
 ForwardDiff = "0.10.38, 1"
 FunctionWrappersWrappers = "0.1"
 FastBroadcast = "0.3"
@@ -60,6 +61,7 @@ SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
