@@ -9,9 +9,15 @@ on:
 permissions:
   pull-requests: write    # needed to post comments
 
+# Prevent cancellation when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
   bench:
     name: "Benchmarks"
+    timeout-minutes: 30
     strategy:
       matrix:
         version:
