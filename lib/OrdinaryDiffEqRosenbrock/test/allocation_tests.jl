@@ -40,8 +40,10 @@ operations that will naturally allocate. The core numerical stepping should be a
                 # Test perform_step! directly - this is the core stepping function
                 # that should be allocation-free (unlike step! which includes saving)
                 cache = integrator.cache
-                allocs = check_allocs(OrdinaryDiffEqCore.perform_step!,
-                    (typeof(integrator), typeof(cache)))
+                allocs = check_allocs(
+                    OrdinaryDiffEqCore.perform_step!,
+                    (typeof(integrator), typeof(cache))
+                )
 
                 # These solvers should be allocation-free in perform_step!
                 @test_broken length(allocs) == 0
