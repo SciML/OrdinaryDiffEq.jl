@@ -62,4 +62,4 @@ julia = "1.10"
 path = "../OrdinaryDiffEqCore"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg", "JET", "Aqua", "AllocCheck"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg"]
