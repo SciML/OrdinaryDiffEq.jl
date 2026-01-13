@@ -355,7 +355,7 @@ function compute_ustep!(ustep, tmp, γ, z, method)
 end
 
 function _compute_rhs(tmp, γ, α, tstep, invγdt, method::MethodType, p, dt, f::F, z) where {F}
-    mass_matrix = f.mass_matrix
+    mass_matrix = get_mass_matrix(f)
     ustep = compute_ustep(tmp, γ, z, method)
     if method === COEFFICIENT_MULTISTEP
         # tmp = outertmp ./ hγ
@@ -390,7 +390,7 @@ function _compute_rhs!(
         tmp, ztmp, ustep, γ, α, tstep, k,
         invγdt, method::MethodType, p, dt, f, z
     )
-    mass_matrix = f.mass_matrix
+    mass_matrix = get_mass_matrix(f)
     ustep = compute_ustep!(ustep, tmp, γ, z, method)
     if method === COEFFICIENT_MULTISTEP
         f(k, z, p, tstep)
@@ -433,7 +433,7 @@ function _compute_rhs!(
         tmp::Array, ztmp::Array, ustep::Array, γ, α, tstep, k,
         invγdt, method::MethodType, p, dt, f, z
     )
-    mass_matrix = f.mass_matrix
+    mass_matrix = get_mass_matrix(f)
     ustep = compute_ustep!(ustep, tmp, γ, z, method)
     if method === COEFFICIENT_MULTISTEP
         f(k, z, p, tstep)
