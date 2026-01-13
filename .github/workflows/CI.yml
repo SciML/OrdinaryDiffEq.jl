@@ -67,7 +67,7 @@ jobs:
           - SimpleImplicitDiscreteSolve
           - Enzyme
 
-          # QA tests for sublibraries (JET, Aqua, AllocCheck - excluded from pre)
+          # QA tests for sublibraries (JET, Aqua, AllocCheck - run only on Julia 1)
           - OrdinaryDiffEqAdamsBashforthMoulton_QA
           - OrdinaryDiffEqBDF_QA
           - OrdinaryDiffEqCore_QA
@@ -116,77 +116,221 @@ jobs:
             version: '1'
           - group: Enzyme
             version: 'pre'
-          # Exclude QA tests from pre-release Julia (JET/Aqua may not work on pre)
+          # QA tests only run on Julia 1 (latest stable) - exclude from lts, 1.11, and pre
+          - group: OrdinaryDiffEqAdamsBashforthMoulton_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqAdamsBashforthMoulton_QA
+            version: '1.11'
           - group: OrdinaryDiffEqAdamsBashforthMoulton_QA
             version: 'pre'
           - group: OrdinaryDiffEqBDF_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqBDF_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqBDF_QA
             version: 'pre'
+          - group: OrdinaryDiffEqCore_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqCore_QA
+            version: '1.11'
           - group: OrdinaryDiffEqCore_QA
             version: 'pre'
           - group: OrdinaryDiffEqDefault_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqDefault_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqDefault_QA
             version: 'pre'
+          - group: OrdinaryDiffEqDifferentiation_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqDifferentiation_QA
+            version: '1.11'
           - group: OrdinaryDiffEqDifferentiation_QA
             version: 'pre'
           - group: OrdinaryDiffEqExplicitRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqExplicitRK_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqExplicitRK_QA
             version: 'pre'
+          - group: OrdinaryDiffEqExponentialRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqExponentialRK_QA
+            version: '1.11'
           - group: OrdinaryDiffEqExponentialRK_QA
             version: 'pre'
           - group: OrdinaryDiffEqExtrapolation_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqExtrapolation_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqExtrapolation_QA
             version: 'pre'
+          - group: OrdinaryDiffEqFIRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqFIRK_QA
+            version: '1.11'
           - group: OrdinaryDiffEqFIRK_QA
             version: 'pre'
           - group: OrdinaryDiffEqFeagin_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqFeagin_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqFeagin_QA
             version: 'pre'
+          - group: OrdinaryDiffEqFunctionMap_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqFunctionMap_QA
+            version: '1.11'
           - group: OrdinaryDiffEqFunctionMap_QA
             version: 'pre'
           - group: OrdinaryDiffEqHighOrderRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqHighOrderRK_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqHighOrderRK_QA
             version: 'pre'
+          - group: OrdinaryDiffEqIMEXMultistep_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqIMEXMultistep_QA
+            version: '1.11'
           - group: OrdinaryDiffEqIMEXMultistep_QA
             version: 'pre'
           - group: OrdinaryDiffEqLinear_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqLinear_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqLinear_QA
             version: 'pre'
+          - group: OrdinaryDiffEqLowOrderRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqLowOrderRK_QA
+            version: '1.11'
           - group: OrdinaryDiffEqLowOrderRK_QA
             version: 'pre'
           - group: OrdinaryDiffEqLowStorageRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqLowStorageRK_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqLowStorageRK_QA
             version: 'pre'
+          - group: OrdinaryDiffEqNewmark_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqNewmark_QA
+            version: '1.11'
           - group: OrdinaryDiffEqNewmark_QA
             version: 'pre'
           - group: OrdinaryDiffEqNonlinearSolve_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqNonlinearSolve_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqNonlinearSolve_QA
             version: 'pre'
+          - group: OrdinaryDiffEqNordsieck_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqNordsieck_QA
+            version: '1.11'
           - group: OrdinaryDiffEqNordsieck_QA
             version: 'pre'
           - group: OrdinaryDiffEqPDIRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqPDIRK_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqPDIRK_QA
             version: 'pre'
+          - group: OrdinaryDiffEqPRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqPRK_QA
+            version: '1.11'
           - group: OrdinaryDiffEqPRK_QA
             version: 'pre'
           - group: OrdinaryDiffEqQPRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqQPRK_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqQPRK_QA
             version: 'pre'
+          - group: OrdinaryDiffEqRKN_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqRKN_QA
+            version: '1.11'
           - group: OrdinaryDiffEqRKN_QA
             version: 'pre'
           - group: OrdinaryDiffEqRosenbrock_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqRosenbrock_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqRosenbrock_QA
             version: 'pre'
+          - group: OrdinaryDiffEqRKIP_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqRKIP_QA
+            version: '1.11'
           - group: OrdinaryDiffEqRKIP_QA
             version: 'pre'
           - group: OrdinaryDiffEqSDIRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqSDIRK_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqSDIRK_QA
             version: 'pre'
+          - group: OrdinaryDiffEqSIMDRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqSIMDRK_QA
+            version: '1.11'
           - group: OrdinaryDiffEqSIMDRK_QA
             version: 'pre'
           - group: OrdinaryDiffEqSSPRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqSSPRK_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqSSPRK_QA
             version: 'pre'
+          - group: OrdinaryDiffEqStabilizedIRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqStabilizedIRK_QA
+            version: '1.11'
           - group: OrdinaryDiffEqStabilizedIRK_QA
             version: 'pre'
           - group: OrdinaryDiffEqStabilizedRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqStabilizedRK_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqStabilizedRK_QA
             version: 'pre'
+          - group: OrdinaryDiffEqSymplecticRK_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqSymplecticRK_QA
+            version: '1.11'
           - group: OrdinaryDiffEqSymplecticRK_QA
             version: 'pre'
           - group: OrdinaryDiffEqTaylorSeries_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqTaylorSeries_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqTaylorSeries_QA
             version: 'pre'
+          - group: OrdinaryDiffEqTsit5_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqTsit5_QA
+            version: '1.11'
           - group: OrdinaryDiffEqTsit5_QA
             version: 'pre'
           - group: OrdinaryDiffEqVerner_QA
+            version: 'lts'
+          - group: OrdinaryDiffEqVerner_QA
+            version: '1.11'
+          - group: OrdinaryDiffEqVerner_QA
             version: 'pre'
           - group: ImplicitDiscreteSolve_QA
+            version: 'lts'
+          - group: ImplicitDiscreteSolve_QA
+            version: '1.11'
+          - group: ImplicitDiscreteSolve_QA
             version: 'pre'
+          - group: SimpleImplicitDiscreteSolve_QA
+            version: 'lts'
+          - group: SimpleImplicitDiscreteSolve_QA
+            version: '1.11'
           - group: SimpleImplicitDiscreteSolve_QA
             version: 'pre'
     steps:
