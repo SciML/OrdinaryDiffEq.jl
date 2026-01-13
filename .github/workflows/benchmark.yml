@@ -18,6 +18,9 @@ jobs:
           - "1"
           - "lts"
     runs-on: ubuntu-latest
+    env:
+      # Force consistent Julia depot path for self-hosted runners
+      JULIA_DEPOT_PATH: ~/.julia
     steps:
       # Clean stale AirspeedVelocity installation to avoid path issues with self-hosted runners
       - name: Clean AirspeedVelocity cache
