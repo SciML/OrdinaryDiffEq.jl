@@ -32,3 +32,4 @@ jobs:
           julia-version: ${{ matrix.version }}
           script: "benchmark/benchmarks.jl"
           extra-pkgs: "StableRNGs,StaticArrays"
+          job-summary: true
