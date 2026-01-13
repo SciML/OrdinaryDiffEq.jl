@@ -21,10 +21,7 @@ TaylorDiff = "b36ab563-344f-407b-a36a-4f200bebf99c"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 
 [extras]
-AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
-JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -32,12 +29,9 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-AllocCheck = "0.2"
-Aqua = "0.8.11"
 DiffEqBase = "6.176"
 DiffEqDevTools = "2.44.4"
 FastBroadcast = "0.3"
-JET = "0.9, 0.11"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2"
 ODEProblemLibrary = "1"
@@ -62,4 +56,4 @@ julia = "1.10"
 path = "../OrdinaryDiffEqCore"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg", "JET", "Aqua", "AllocCheck"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg"]
