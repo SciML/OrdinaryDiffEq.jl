@@ -1,3 +1,6 @@
+using Pkg
+Pkg.add("JET")
+
 import OrdinaryDiffEqTsit5
 using OrdinaryDiffEqTsit5
 using OrdinaryDiffEqCore

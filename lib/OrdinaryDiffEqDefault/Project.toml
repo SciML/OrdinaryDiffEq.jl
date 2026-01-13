@@ -57,7 +57,7 @@ SafeTestsets = "0.1.0"
 AllocCheck = "0.2"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "StaticArrays", "Test", "JET", "Aqua", "AllocCheck"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "StaticArrays", "Test"]
 
 [sources.OrdinaryDiffEqTsit5]
 path = "../OrdinaryDiffEqTsit5"

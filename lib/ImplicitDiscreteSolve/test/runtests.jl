@@ -155,6 +155,8 @@ end
 
 # Run QA tests (JET, Aqua)
 if TEST_GROUP != "FUNCTIONAL"
+    using Pkg
+    Pkg.add("JET")
     using JET
     @testset "JET Tests" begin
         test_package(

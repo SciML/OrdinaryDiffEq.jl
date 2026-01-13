@@ -27,4 +27,4 @@ SciMLBase = "2.99"
 SimpleNonlinearSolve = "2.7"
 
 [targets]
-test = ["JET", "OrdinaryDiffEqSDIRK", "Test", "AllocCheck"]
+test = ["OrdinaryDiffEqSDIRK", "Test"]

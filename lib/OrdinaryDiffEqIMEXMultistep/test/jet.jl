@@ -1,3 +1,6 @@
+using Pkg
+Pkg.add("JET")
+
 import OrdinaryDiffEqIMEXMultistep
 using JET
 

@@ -4,8 +4,8 @@ authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "2.3.0"
 
 [deps]
-SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
 StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 FunctionWrappersWrappers = "77dc65aa-8811-40c2-897b-53d922fa7daf"
@@ -32,9 +32,9 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 FastPower = "a4df4552-cc26-4903-aec0-212e50a0e84b"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 SciMLStructures = "53ae85a6-f571-4167-b2af-e1d143709226"
-Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
@@ -46,11 +46,11 @@ AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
-SafeTestsets = "0.1.0"
-SciMLOperators = "1.4"
+FillArrays = "1.13"
+Adapt = "4.3"
 Accessors = "0.1.36"
 StaticArraysCore = "1.4.3"
-SciMLStructures = "1.7"
+Reexport = "1.2"
 FunctionWrappersWrappers = "0.1"
 FastBroadcast = "0.3"
 Random = "<0.0.1, 1"
@@ -75,6 +75,7 @@ Preferences = "1.4"
 SymbolicIndexingInterface = "0.3.31"
 MacroTools = "0.5.6"
 JET = "0.9, 0.11"
+julia = "1.10"
 ADTypes = "1.16"
 InteractiveUtils = "1.10"
 RecursiveArrayTools = "3.36"
@@ -83,17 +84,16 @@ Logging = "1.10"
 Mooncake = "0.4"
 AllocCheck = "0.2"
 DiffEqBase = "6.194"
-FillArrays = "1.13"
-Adapt = "4.3"
-Reexport = "1.2"
-julia = "1.10"
+SafeTestsets = "0.1.0"
+SciMLOperators = "1.4"
+SciMLStructures = "1.7"
 
 [weakdeps]
 Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua", "AllocCheck"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test"]
 
 [extensions]
 OrdinaryDiffEqCoreEnzymeCoreExt = "EnzymeCore"
