@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, BenchmarkTools, DiffEqBase
+using OrdinaryDiffEq, BenchmarkTools
 using LinearAlgebra, SparseArrays, StaticArrays, StableRNGs
 
 const SUITE = BenchmarkGroup()
@@ -284,85 +284,33 @@ function create_brusselator_2d_prob(N::Int)
 end
 
 # =============================================================================
-# Benchmark Definitions
+# Benchmark Definitions (Minimal set for CI)
 # =============================================================================
 
-# Non-stiff benchmarks with different solvers
+# Non-stiff benchmarks - representative subset
 lv_prob = lotka_volterra_prob()
-pl_prob = pleiades_prob()
-fn_prob = fitzhugh_nagumo_prob()
 
-# Explicit RK methods for non-stiff problems
-explicit_solvers = [Tsit5(), Vern6(), Vern7(), DP5(), BS3()]
-
+# Key explicit RK solvers
 SUITE["nonstiff"]["lotka_volterra"] = BenchmarkGroup()
-SUITE["nonstiff"]["pleiades"] = BenchmarkGroup()
-SUITE["nonstiff"]["fitzhugh_nagumo"] = BenchmarkGroup()
+SUITE["nonstiff"]["lotka_volterra"]["Tsit5"] = @benchmarkable solve(
+    $lv_prob, Tsit5(), reltol = 1.0e-6, abstol = 1.0e-8
+)
+SUITE["nonstiff"]["lotka_volterra"]["Vern7"] = @benchmarkable solve(
+    $lv_prob, Vern7(), reltol = 1.0e-6, abstol = 1.0e-8
+)
 
-for solver in explicit_solvers
-    solver_name = string(typeof(solver).name.name)
-    SUITE["nonstiff"]["lotka_volterra"][solver_name] = @benchmarkable solve(
-        $lv_prob, $solver, reltol = 1.0e-6, abstol = 1.0e-8
-    )
-    SUITE["nonstiff"]["pleiades"][solver_name] = @benchmarkable solve(
-        $pl_prob, $solver, reltol = 1.0e-6, abstol = 1.0e-8
-    )
-    SUITE["nonstiff"]["fitzhugh_nagumo"][solver_name] = @benchmarkable solve(
-        $fn_prob, $solver, reltol = 1.0e-6, abstol = 1.0e-8
-    )
-end
-
-# Stiff benchmarks with different solvers
+# Stiff benchmarks - representative subset
 rober_prob_instance = rober_prob()
-vdp_prob = van_der_pol_prob()
-pollution_prob_instance = pollution_prob()
-
-# Stiff solvers
-stiff_solvers = [Rosenbrock23(), Rodas4(), TRBDF2(), KenCarp4(), FBDF()]
 
 SUITE["stiff"]["rober"] = BenchmarkGroup()
-SUITE["stiff"]["van_der_pol"] = BenchmarkGroup()
-SUITE["stiff"]["pollution"] = BenchmarkGroup()
+SUITE["stiff"]["rober"]["Rodas4"] = @benchmarkable solve(
+    $rober_prob_instance, Rodas4(), reltol = 1.0e-6, abstol = 1.0e-8
+)
+SUITE["stiff"]["rober"]["TRBDF2"] = @benchmarkable solve(
+    $rober_prob_instance, TRBDF2(), reltol = 1.0e-6, abstol = 1.0e-8
+)
 
-for solver in stiff_solvers
-    solver_name = string(typeof(solver).name.name)
-    SUITE["stiff"]["rober"][solver_name] = @benchmarkable solve(
-        $rober_prob_instance, $solver, reltol = 1.0e-6, abstol = 1.0e-8
-    )
-    SUITE["stiff"]["van_der_pol"][solver_name] = @benchmarkable solve(
-        $vdp_prob, $solver, reltol = 1.0e-6, abstol = 1.0e-8
-    )
-    SUITE["stiff"]["pollution"][solver_name] = @benchmarkable solve(
-        $pollution_prob_instance, $solver, reltol = 1.0e-6, abstol = 1.0e-8
-    )
-end
-
-# Scaling benchmarks
+# Scaling benchmarks - single representative size
 SUITE["scaling"]["linear"] = BenchmarkGroup()
-SUITE["scaling"]["brusselator_2d"] = BenchmarkGroup()
-
-# Linear ODE scaling (different problem sizes)
-for N in [10, 50, 100]
-    prob = create_linear_prob(N)
-    SUITE["scaling"]["linear"]["N$N"] = @benchmarkable solve($prob, Tsit5(), reltol = 1.0e-6, abstol = 1.0e-8)
-end
-
-# Brusselator 2D scaling (different grid sizes)
-for N in [8, 16, 32]
-    prob = create_brusselator_2d_prob(N)
-    SUITE["scaling"]["brusselator_2d"]["$(N)x$(N)"] = @benchmarkable solve(
-        $prob, TRBDF2(),
-        reltol = 1.0e-4, abstol = 1.0e-6, maxiters = 1000
-    )
-end
-
-# =============================================================================
-# Problem Construction Benchmarks
-# =============================================================================
-
-SUITE["construction"] = BenchmarkGroup()
-
-# Test problem construction overhead
-SUITE["construction"]["lotka_volterra"] = @benchmarkable lotka_volterra_prob()
-SUITE["construction"]["rober"] = @benchmarkable rober_prob()
-SUITE["construction"]["linear_N50"] = @benchmarkable create_linear_prob(50)
+prob_linear = create_linear_prob(50)
+SUITE["scaling"]["linear"]["N50"] = @benchmarkable solve($prob_linear, Tsit5(), reltol = 1.0e-6, abstol = 1.0e-8)

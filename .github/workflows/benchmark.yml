@@ -1,9 +1,9 @@
-name: Benchmark
+name: Benchmark this PR
 
 on:
   pull_request:
     branches: [master]
-    paths-ignore: ['docs/**', '*.md']
+    paths-ignore: ['docs/**']
 
 permissions:
   pull-requests: write
@@ -12,14 +12,24 @@ permissions:
 jobs:
   benchmark:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         version: ["1", "lts"]
+    env:
+      # Force consistent Julia depot path for self-hosted runners
+      JULIA_DEPOT_PATH: ~/.julia
     steps:
+      # Clean stale AirspeedVelocity installation to avoid path issues
+      - name: Clean AirspeedVelocity cache
+        run: |
+          rm -rf ~/.julia/bin/benchpkg* ~/.julia/bin/asvjl* || true
+          rm -rf ~/.julia/packages/AirspeedVelocity || true
+          rm -rf ~/.julia/compiled/*/AirspeedVelocity || true
       - uses: MilesCranmer/AirspeedVelocity.jl@action-v1
         with:
-          julia_version: ${{ matrix.version }}
+          julia-version: ${{ matrix.version }}
           script: "benchmark/benchmarks.jl"
-          annotate_pr: true
-          extra-pkgs: "StableRNGs,StaticArrays,LinearAlgebra,SparseArrays,DiffEqBase"
+          extra-pkgs: "StableRNGs,StaticArrays"
+          job-summary: true
