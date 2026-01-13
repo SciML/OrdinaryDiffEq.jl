@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, BenchmarkTools, DiffEqBase
+using OrdinaryDiffEq, BenchmarkTools
 using LinearAlgebra, SparseArrays, StaticArrays, StableRNGs
 
 const SUITE = BenchmarkGroup()
