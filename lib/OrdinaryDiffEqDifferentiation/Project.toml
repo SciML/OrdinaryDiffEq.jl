@@ -1,7 +1,43 @@
 name = "OrdinaryDiffEqDifferentiation"
+version = "1.21.0"
 uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "1.21.0"
+
+[targets]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "SparseArrays", "Pkg"]
+
+[compat]
+Pkg = "1"
+ForwardDiff = "0.10.38, 1"
+FunctionWrappersWrappers = "0.1"
+FastBroadcast = "0.3"
+Random = "<0.0.1, 1"
+DiffEqDevTools = "2.44.4"
+Test = "<0.0.1, 1"
+FiniteDiff = "2.27"
+StaticArrayInterface = "1.8"
+DifferentiationInterface = "0.6.54, 0.7"
+LinearSolve = "3.54"
+ConstructionBase = "1.5.8"
+LinearAlgebra = "1.10"
+SciMLBase = "2.99"
+OrdinaryDiffEqCore = "2"
+SparseArrays = "1.10"
+ConcreteStructs = "0.2"
+Aqua = "0.8.11"
+ArrayInterface = "7.19"
+StaticArrays = "1.9"
+SparseMatrixColorings = "0.4.14"
+julia = "1.10"
+ADTypes = "1.16"
+JET = "0.9, 0.11"
+AllocCheck = "0.2"
+DiffEqBase = "6.176"
+SafeTestsets = "0.1.0"
+SciMLOperators = "1.4"
+
+[weakdeps]
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [deps]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -23,53 +59,19 @@ ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
-[weakdeps]
-SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-
-[extensions]
-OrdinaryDiffEqDifferentiationSparseArraysExt = "SparseArrays"
-
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
-SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-
-[compat]
-ForwardDiff = "0.10.38, 1"
-FunctionWrappersWrappers = "0.1"
-FastBroadcast = "0.3"
-Random = "<0.0.1, 1"
-DiffEqDevTools = "2.44.4"
-Test = "<0.0.1, 1"
-FiniteDiff = "2.27"
-StaticArrayInterface = "1.8"
-DifferentiationInterface = "0.6.54, 0.7"
-LinearSolve = "3.54"
-ConstructionBase = "1.5.8"
-LinearAlgebra = "1.10"
-SciMLBase = "2.99"
-OrdinaryDiffEqCore = "2"
-ConcreteStructs = "0.2"
-SparseArrays = "1.10"
-Aqua = "0.8.11"
-ArrayInterface = "7.19"
-StaticArrays = "1.9"
-SparseMatrixColorings = "0.4.14"
-julia = "1.10"
-ADTypes = "1.16"
-JET = "0.9, 0.11"
-AllocCheck = "0.2"
-DiffEqBase = "6.176"
-SafeTestsets = "0.1.0"
-SciMLOperators = "1.4"
-
-[targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "JET", "Aqua", "AllocCheck", "SparseArrays"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
+
+[extensions]
+OrdinaryDiffEqDifferentiationSparseArraysExt = "SparseArrays"

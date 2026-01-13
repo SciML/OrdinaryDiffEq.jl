@@ -1,3 +1,6 @@
+using Pkg
+Pkg.add("JET")
+
 import OrdinaryDiffEqNordsieck
 using JET
 

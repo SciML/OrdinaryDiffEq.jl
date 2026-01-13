@@ -24,6 +24,7 @@ DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -38,6 +39,7 @@ AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
+Pkg = "1"
 NonlinearSolve = "4.12"
 ForwardDiff = "0.10.38, 1"
 Test = "<0.0.1, 1"
@@ -71,7 +73,7 @@ Reexport = "1.2"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = ["DiffEqDevTools", "ForwardDiff", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "JET", "Aqua", "AllocCheck"]
+test = ["DiffEqDevTools", "ForwardDiff", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg"]
 
 [sources.OrdinaryDiffEqSDIRK]
 path = "../OrdinaryDiffEqSDIRK"

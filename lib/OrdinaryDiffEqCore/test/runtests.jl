@@ -1,7 +1,9 @@
 using SafeTestsets
 
-# Only run QA tests on stable Julia versions
-if isempty(VERSION.prerelease)
+const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+
+# Run QA tests (JET, Aqua)
+if TEST_GROUP != "FUNCTIONAL"
     @time @safetestset "JET Tests" include("jet.jl")
     @time @safetestset "Aqua" include("qa.jl")
 end

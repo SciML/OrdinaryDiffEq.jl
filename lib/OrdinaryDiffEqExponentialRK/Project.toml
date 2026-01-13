@@ -17,6 +17,7 @@ DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -31,6 +32,7 @@ AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
+Pkg = "1"
 OrdinaryDiffEqTsit5 = "1.4.0"
 Test = "<0.0.1, 1"
 FastBroadcast = "0.3"
@@ -57,7 +59,7 @@ Reexport = "1.2"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqTsit5", "LinearSolve", "SparseArrays", "JET", "Aqua", "OrdinaryDiffEqVerner", "OrdinaryDiffEqSDIRK", "AllocCheck"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqTsit5", "LinearSolve", "SparseArrays", "OrdinaryDiffEqVerner", "OrdinaryDiffEqSDIRK", "Pkg"]
 
 [sources.OrdinaryDiffEqSDIRK]
 path = "../OrdinaryDiffEqSDIRK"

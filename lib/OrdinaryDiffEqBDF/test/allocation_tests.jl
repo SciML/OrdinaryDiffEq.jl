@@ -1,3 +1,6 @@
+using Pkg
+Pkg.add("AllocCheck")
+
 using OrdinaryDiffEqBDF
 using OrdinaryDiffEqCore
 using AllocCheck

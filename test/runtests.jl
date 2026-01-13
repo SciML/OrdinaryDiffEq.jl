@@ -38,9 +38,16 @@ end
 #Start Test Script
 
 @time begin
-    if contains(GROUP, "OrdinaryDiffEq") || GROUP == "ImplicitDiscreteSolve" || GROUP == "SimpleImplicitDiscreteSolve"
-        Pkg.activate(joinpath(dirname(@__DIR__), "lib", GROUP))
-        Pkg.test(GROUP, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
+    # Handle sublibrary QA groups (e.g., OrdinaryDiffEqBDF_QA)
+    is_qa_group = endswith(GROUP, "_QA")
+    base_group = is_qa_group ? GROUP[1:(end - 3)] : GROUP
+
+    if contains(base_group, "OrdinaryDiffEq") || base_group == "ImplicitDiscreteSolve" || base_group == "SimpleImplicitDiscreteSolve"
+        Pkg.activate(joinpath(dirname(@__DIR__), "lib", base_group))
+        # Set QA_ONLY env var to tell sublibrary tests whether to run only QA tests
+        withenv("ODEDIFFEQ_TEST_GROUP" => (is_qa_group ? "QA" : "FUNCTIONAL")) do
+            Pkg.test(base_group, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
+        end
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
         # Skip on Julia LTS (oneunit(Type{Any}) not defined) and pre-release (stalls)
@@ -161,7 +168,8 @@ end
         @time @safetestset "Split Methods Tests" include("algconvergence/split_methods_tests.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "ModelingToolkit"
+    # Don't run ModelingToolkit tests on prerelease
+    if !is_APPVEYOR && GROUP == "ModelingToolkit" && isempty(VERSION.prerelease)
         activate_modelingtoolkit_env()
         @time @safetestset "NLStep Tests" include("modelingtoolkit/nlstep_tests.jl")
         @time @safetestset "Jacobian Tests" include("modelingtoolkit/jacobian_tests.jl")
