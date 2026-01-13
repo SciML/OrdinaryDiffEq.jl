@@ -14,9 +14,7 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqCore,
     CompositeAlgorithm,
     ShampineCollocationInit, BrownFullBasicInit, NoInit,
     du_cache, full_cache, isfsal, ode_interpolant, u_cache,
-    AutoSwitch,
-
-    @cache
+    AutoSwitch
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit,
     AutoSwitch

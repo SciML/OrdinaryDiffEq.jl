@@ -168,7 +168,8 @@ end
         @time @safetestset "Split Methods Tests" include("algconvergence/split_methods_tests.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "ModelingToolkit"
+    # Don't run ModelingToolkit tests on prerelease
+    if !is_APPVEYOR && GROUP == "ModelingToolkit" && isempty(VERSION.prerelease)
         activate_modelingtoolkit_env()
         @time @safetestset "NLStep Tests" include("modelingtoolkit/nlstep_tests.jl")
         @time @safetestset "Jacobian Tests" include("modelingtoolkit/jacobian_tests.jl")
