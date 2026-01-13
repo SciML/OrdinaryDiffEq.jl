@@ -81,16 +81,18 @@ function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, 
         # Array case: build function for matrix of coefficients
         # Each row is the coefficients of one TaylorScalar
         n = Base.length(u)
-        coeffs_matrix = [TaylorDiff.flatten(u[i])[j] for i in 1:n, j in 1:(P+1)]
+        coeffs_matrix = [TaylorDiff.flatten(u[i])[j] for i in 1:n, j in 1:(P + 1)]
         jet_coeffs = build_function(coeffs_matrix, u0, t0; expression = Val(false), cse = true)
         # Wrap to return array of TaylorScalars
-        jet = (jet_coeffs[1], (out, u0_val, t0_val) -> begin
-            coeffs_out = jet_coeffs[2](similar(coeffs_matrix, eltype(u0_val)), u0_val, t0_val)
-            for i in 1:n
-                out[i] = TaylorScalar(Tuple(coeffs_out[i, :]))
-            end
-            return out
-        end)
+        jet = (
+            jet_coeffs[1], (out, u0_val, t0_val) -> begin
+                coeffs_out = jet_coeffs[2](similar(coeffs_matrix, eltype(u0_val)), u0_val, t0_val)
+                for i in 1:n
+                    out[i] = TaylorScalar(Tuple(coeffs_out[i, :]))
+                end
+                return out
+            end,
+        )
     else
         # Fallback (shouldn't happen normally)
         jet = build_function(u, u0, t0; expression = Val(false), cse = true)
