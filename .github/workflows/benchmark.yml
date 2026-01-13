@@ -17,6 +17,9 @@ jobs:
       matrix:
         version: ["1", "lts"]
     steps:
+      # Clean stale AirspeedVelocity installation to avoid path issues
+      - name: Clean AirspeedVelocity cache
+        run: rm -rf ~/.julia/bin/benchpkg* ~/.julia/bin/asvjl* ~/.julia/packages/AirspeedVelocity || true
       - uses: MilesCranmer/AirspeedVelocity.jl@action-v1
         with:
           julia-version: ${{ matrix.version }}
