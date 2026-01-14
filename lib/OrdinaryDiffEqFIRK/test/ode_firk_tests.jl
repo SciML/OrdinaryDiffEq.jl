@@ -10,8 +10,8 @@ for prob in [prob_ode_linear, prob_ode_2Dlinear]
 end
 
 sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_linear, RadauIIA9(), dense_errors = true)
-@test sim21.𝒪est[:final] ≈ 8 atol = testTol
-@test sim21.𝒪est[:L2] ≈ 6 atol = testTol
+@test sim21.𝒪est[:final]≈8 atol=testTol
+@test sim21.𝒪est[:L2]≈6 atol=testTol
 
 sim21 = test_convergence(1 ./ 2 .^ (2.5:-1:0.5), prob_ode_2Dlinear, RadauIIA9(), dense_errors = true)
 @test sim21.𝒪est[:final] ≈ 8 atol = testTol
@@ -29,7 +29,6 @@ prob_ode_2Dlinear_big = remake(
 
 #non-threaded tests
 for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear_big]
-
     dts = 1 ./ 2 .^ (4.25:-1:0.25)
     local sim21 = test_convergence(dts, prob, AdaptiveRadau(min_order = i, max_order = i), dense_errors = true)
     @test sim21.𝒪est[:final] ≈ i atol = testTol
@@ -44,9 +43,9 @@ for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear
     local sim21 = test_convergence(
         dts,
         prob,
-        AdaptiveRadau(min_order = i, max_order = i, threading = OrdinaryDiffEqCore.PolyesterThreads())
-    )
-    @test sim21.𝒪est[:final] ≈ i atol = testTol
+        AdaptiveRadau(min_order = i, max_order = i, threading = OrdinaryDiffEqCore.PolyesterThreads()), dense_errors = true)
+    @test sim21.𝒪est[:final] ≈ i atol=testTol
+    @test sim21.𝒪est[:L2] ≈ ((i + 3) ÷ 2) atol=testTol
 end
 
 # Create Van der Pol stiff problem using the same ordering as ODEProblemLibrary

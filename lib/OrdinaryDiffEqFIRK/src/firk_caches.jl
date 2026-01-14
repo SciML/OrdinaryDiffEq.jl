@@ -188,6 +188,7 @@ mutable struct RadauIIA5Cache{
     du1::rateType
     fsalfirst::rateType
     k::rateType
+    k1::rateType
     k2::rateType
     k3::rateType
     fw1::rateType
@@ -241,6 +242,7 @@ function alg_cache(
 
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
+    k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     fw1 = zero(rate_prototype)
@@ -283,7 +285,7 @@ function alg_cache(
         u, uprev,
         z1, z2, z3, w1, w2, w3,
         dw1, ubuff, dw23, cubuff,
-        du1, fsalfirst, k, k2, k3, fw1, fw2, fw3,
+        du1, fsalfirst, k, k1, k2, k3, fw1, fw2, fw3,
         J, W1, W2,
         uf, tab, κ, one(uToltype), 10000,
         tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt,
@@ -354,6 +356,7 @@ mutable struct RadauIIA9Cache{
     du1::rateType
     fsalfirst::rateType
     k::rateType
+    k1::rateType
     k2::rateType
     k3::rateType
     k4::rateType
@@ -430,6 +433,7 @@ function alg_cache(
 
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
+    k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
@@ -494,7 +498,7 @@ function alg_cache(
         u, uprev,
         z1, z2, z3, z4, z5, w1, w2, w3, w4, w5,
         dw1, ubuff, dw23, dw45, cubuff1, cubuff2,
-        du1, fsalfirst, k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5,
+        du1, fsalfirst, k, k1, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5,
         J, W1, W2, W3,
         uf, tab, κ, one(uToltype), 10000,
         tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
@@ -664,7 +668,6 @@ function alg_cache(
 
         derivatives[i, j] = zero(u)
     end
-
     fsalfirst = zero(rate_prototype)
     fw = [zero(rate_prototype) for i in 1:max_stages]
     ks = [zero(rate_prototype) for i in 1:max_stages]
