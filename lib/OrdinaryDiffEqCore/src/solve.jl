@@ -621,7 +621,7 @@ function SciMLBase.__init(
     kshortsize = 0
     reeval_fsal = false
     u_modified = false
-    EEst = one(EEstT)
+    EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
     isout = false
     accept_step = false
