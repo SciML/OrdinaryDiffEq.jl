@@ -62,6 +62,12 @@ jobs:
           projects: ${{ matrix.project }}
           skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation
           julia_version: ${{ matrix.julia-version }}
+      - name: Develop local OrdinaryDiffEqCore
+        if: matrix.project != 'lib/OrdinaryDiffEqCore' && matrix.project != 'lib/SimpleImplicitDiscreteSolve'
+        shell: julia --color=yes --project=${{ matrix.project }} {0}
+        run: |
+          using Pkg
+          Pkg.develop(path="lib/OrdinaryDiffEqCore")
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ matrix.project }}
