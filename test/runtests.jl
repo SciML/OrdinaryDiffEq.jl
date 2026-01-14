@@ -103,7 +103,7 @@ end
         @time @safetestset "No Jac Tests" include("interface/nojac.jl")
         @time @safetestset "Units Tests" include("interface/units_tests.jl")
         @time @safetestset "Non-Full Diagonal Sparsity Tests" include("interface/nonfulldiagonal_sparse.jl")
-        @time @safetestset "ODEVerbosity Tests" include("interface/verbosity.jl") 
+        @time @safetestset "ODEVerbosity Tests" include("interface/verbosity.jl")
         @time @safetestset "ODEVerbosity JET Tests" include("interface/verbosity_jet.jl")
     end
 

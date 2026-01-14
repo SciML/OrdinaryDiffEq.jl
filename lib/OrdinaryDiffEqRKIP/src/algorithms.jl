@@ -68,10 +68,12 @@ KEYWORD_DESCRIPTION = """
 
 @doc generic_solver_docstring(
     METHOD_DESCRIPTION, "RKIP", "Adaptative Exponential Runge-Kutta",
-    REFERENCE, KEYWORD_DESCRIPTION, "")
+    REFERENCE, KEYWORD_DESCRIPTION, ""
+)
 mutable struct RKIP{
-    tableauType <: ExplicitRKTableau, elType, dtType <: AbstractVector{elType}} <:
-               OrdinaryDiffEqAdaptiveAlgorithm
+        tableauType <: ExplicitRKTableau, elType, dtType <: AbstractVector{elType},
+    } <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     tableau::tableauType
     dt_for_expÂ_caching::dtType
     clamp_lower_dt::Bool
@@ -80,11 +82,14 @@ mutable struct RKIP{
     cache::Union{Nothing, RKIPCache}
 end
 
-function RKIP(dtmin::T = 1e-3, dtmax::T = 1.0; nb_of_cache_step::Int = 100,
+function RKIP(
+        dtmin::T = 1.0e-3, dtmax::T = 1.0; nb_of_cache_step::Int = 100,
         tableau = constructVerner6(T), clamp_lower_dt::Bool = false,
-        clamp_higher_dt::Bool = true, use_ldiv = false) where {T}
-    RKIP{
-        typeof(tableau), T, Vector{T}}(
+        clamp_higher_dt::Bool = true, use_ldiv = false
+    ) where {T}
+    return RKIP{
+        typeof(tableau), T, Vector{T},
+    }(
         tableau,
         logrange(dtmin, dtmax, nb_of_cache_step),
         clamp_lower_dt,
@@ -99,8 +104,10 @@ alg_adaptive_order(alg::RKIP) = alg.tableau.adaptiveorder
 
 has_dtnew_modification(alg::RKIP) = true
 
-function dtnew_modification(alg::RKIP{tableauType, elType, dtType},
-        dtnew) where {tableauType, elType, dtType}
+function dtnew_modification(
+        alg::RKIP{tableauType, elType, dtType},
+        dtnew
+    ) where {tableauType, elType, dtType}
     (; dt_for_expÂ_caching) = alg
     if first(alg.dt_for_expÂ_caching) > dtnew && alg.clamp_lower_dt
         dtnew = first(alg.dt_for_expÂ_caching)
@@ -116,13 +123,14 @@ dtnew_modification(_, alg::RKIP, dtnew) = dtnew_modification(alg, dtnew)
 
 function alg_cache(
         alg::RKIP, u::uType, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, iip, verbose) where {uType}
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, iip, verbose
+    ) where {uType}
     tmp = zero(u)
     utilde = zero(u)
     kk = [zero(u) for _ in 1:(alg.tableau.stages)]
 
     Â = isa(f, SplitFunction) ? f.f1.f :
-         throw(ArgumentError("RKIP is only implemented for semilinear problems"))
+        throw(ArgumentError("RKIP is only implemented for semilinear problems"))
     opType = typeof(Â)
     expOpType = typeof(exp(Â, 1.0))
 
@@ -136,14 +144,19 @@ function alg_cache(
 
         exp_cache = ExpCache{expOpType}(
             Array{expOpType, 2}(undef, length(alg.dt_for_expÂ_caching), length(c_unique)),
-            Vector{expOpType}(undef, length(c_unique)))
+            Vector{expOpType}(undef, length(c_unique))
+        )
 
         if !alg.use_ldiv
-            exp_cache = ExpCacheNoLdiv(exp_cache,
+            exp_cache = ExpCacheNoLdiv(
+                exp_cache,
                 ExpCache{expOpType}(
                     Array{expOpType, 2}(
-                        undef, length(alg.dt_for_expÂ_caching), length(c_unique)),
-                    Vector{expOpType}(undef, length(c_unique))))
+                        undef, length(alg.dt_for_expÂ_caching), length(c_unique)
+                    ),
+                    Vector{expOpType}(undef, length(c_unique))
+                )
+            )
             expCacheType = ExpCacheNoLdiv{expOpType}
         else
             expCacheType = ExpCache{expOpType}
@@ -161,7 +174,8 @@ function alg_cache(
         )
     else # cache recycling
         alg.cache = RKIPCache{
-            expOpType, typeof(alg.cache.exp_cache), tTypeNoUnits, opType, uType, iip}(
+            expOpType, typeof(alg.cache.exp_cache), tTypeNoUnits, opType, uType, iip,
+        }(
             alg.cache.exp_cache,
             alg.cache.last_step,
             alg.cache.cached,

@@ -1,19 +1,19 @@
 module OrdinaryDiffEqVerner
 
 import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-                           initialize!, perform_step!, unwrap_alg,
-                           calculate_residuals, alg_stability_size,
-                           OrdinaryDiffEqAlgorithm,
-                           CompositeAlgorithm, AbstractController, PIDController,
-                           OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-                           OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
-                           alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-                           constvalue, _unwrap_val,
-                           explicit_rk_docstring, trivial_limiter!, _ode_interpolant,
-                           _ode_interpolant!, _ode_addsteps!, @fold,
-                           @OnDemandTableauExtract, AutoAlgSwitch,
-                           DerivativeOrderNotPossibleError,
-                           get_fsalfirstlast, copyat_or_push!
+    initialize!, perform_step!, unwrap_alg,
+    calculate_residuals, alg_stability_size,
+    OrdinaryDiffEqAlgorithm,
+    CompositeAlgorithm, AbstractController, PIDController,
+    OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
+    OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
+    alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
+    constvalue, _unwrap_val,
+    explicit_rk_docstring, trivial_limiter!, _ode_interpolant,
+    _ode_interpolant!, _ode_addsteps!, @fold,
+    @OnDemandTableauExtract, AutoAlgSwitch,
+    DerivativeOrderNotPossibleError,
+    get_fsalfirstlast, copyat_or_push!
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 using Static: False
@@ -47,29 +47,51 @@ PrecompileTools.@compile_workload begin
     end
 
     if Preferences.@load_preference("PrecompileAutoSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0), Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]
+            )
+        )
     end
 
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0), Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]
+            )
+        )
     end
 
     if Preferences.@load_preference("PrecompileNoSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
-                Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0))
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
+                Float64[]
+            )
+        )
     end
 
     for prob in prob_list, solver in solver_list

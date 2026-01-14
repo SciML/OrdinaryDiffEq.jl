@@ -16,8 +16,10 @@
 
     if integrator.isdae
         result_dt = tdir * max(smalldt, dtmin)
-        @SciMLMessage(lazy"Using default small timestep for DAE: dt = $(result_dt)",
-                      integrator.opts.verbose, :shampine_dt)
+        @SciMLMessage(
+            lazy"Using default small timestep for DAE: dt = $(result_dt)",
+            integrator.opts.verbose, :shampine_dt
+        )
         return result_dt
     end
 
@@ -120,8 +122,10 @@
             copyto!(f₀, ftmp)
         catch
             result_dt = tdir * max(smalldt, dtmin)
-            @SciMLMessage(lazy"Mass matrix appears singular, using default small timestep: dt = $(result_dt)",
-                          integrator.opts.verbose, :near_singular)
+            @SciMLMessage(
+                lazy"Mass matrix appears singular, using default small timestep: dt = $(result_dt)",
+                integrator.opts.verbose, :near_singular
+            )
             return result_dt
         end
     end
@@ -140,8 +144,10 @@
     # because it also checks if partials are NaN
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
     if isnan(d₁)
-        @SciMLMessage("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
-            integrator.opts.verbose, :init_NaN)
+        @SciMLMessage(
+            "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN
+        )
         return tdir * dtmin
     end
 
@@ -167,8 +173,10 @@
         # This catches Andreas' non-singular example
         # should act like it's singular
         result_dt = tdir * max(smalldt, dtmin)
-        @SciMLMessage(lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
-                      integrator.opts.verbose, :dt_epsilon)
+        @SciMLMessage(
+            lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
+            integrator.opts.verbose, :dt_epsilon
+        )
         return result_dt
     end
 
@@ -283,9 +291,11 @@ end
 
     f₀ = f(u0, p, t)
 
-    if any(x -> any(isnan, x),  f₀)
-        @SciMLMessage("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
-            integrator.opts.verbose, :init_NaN)
+    if any(x -> any(isnan, x), f₀)
+        @SciMLMessage(
+            "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN
+        )
     end
 
     inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))

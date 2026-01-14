@@ -1,8 +1,9 @@
 struct QPRK98ConstantCache <: OrdinaryDiffEqConstantCache end
 
 @cache struct QPRK98Cache{
-    uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqMutableCache
+        uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread,
+    } <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -32,10 +33,12 @@ end
 
 get_fsalfirstlast(cache::QPRK98Cache, u) = (cache.fsalfirst, cache.k)
 
-function alg_cache(alg::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -57,14 +60,18 @@ function alg_cache(alg::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     k = zero(rate_prototype)
     recursivefill!(atmp, false)
-    QPRK98Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15,
+    return QPRK98Cache(
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15,
         k16, utilde, tmp, atmp, k, alg.stage_limiter!, alg.step_limiter!,
-        alg.thread)
+        alg.thread
+    )
 end
 
-function alg_cache(::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        ::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    QPRK98ConstantCache()
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return QPRK98ConstantCache()
 end
