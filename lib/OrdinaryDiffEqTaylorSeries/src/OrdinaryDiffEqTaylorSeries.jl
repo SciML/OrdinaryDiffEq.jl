@@ -1,6 +1,6 @@
 module OrdinaryDiffEqTaylorSeries
 
-import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
+import OrdinaryDiffEqCore: ODEVerbosity, alg_order, alg_stability_size, explicit_rk_docstring,
     OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache,
     alg_cache,
     OrdinaryDiffEqConstantCache, @fold, trivial_limiter!,

@@ -10,7 +10,7 @@ using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas5P
 using OrdinaryDiffEqBDF: FBDF
 import OrdinaryDiffEqCore
 
-import OrdinaryDiffEqCore: is_mass_matrix_alg, default_autoswitch, isdefaultalg
+import OrdinaryDiffEqCore: ODEVerbosity, is_mass_matrix_alg, default_autoswitch, isdefaultalg
 import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType
 import LinearSolve
 using LinearAlgebra: I, isdiag

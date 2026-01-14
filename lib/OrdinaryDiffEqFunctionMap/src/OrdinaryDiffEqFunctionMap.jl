@@ -1,6 +1,6 @@
 module OrdinaryDiffEqFunctionMap
 
-import OrdinaryDiffEqCore: isfsal, beta2_default, beta1_default, OrdinaryDiffEqAlgorithm,
+import OrdinaryDiffEqCore: ODEVerbosity, isfsal, beta2_default, beta1_default, OrdinaryDiffEqAlgorithm,
     initialize!, perform_step!, unwrap_alg,
     OrdinaryDiffEqMutableCache,
     alg_cache, @cache, _ode_addsteps!, _ode_interpolant!,

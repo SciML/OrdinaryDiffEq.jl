@@ -1,6 +1,6 @@
 module OrdinaryDiffEqRKN
 
-import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
+import OrdinaryDiffEqCore: ODEVerbosity, alg_order, calculate_residuals!,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals, alg_extrapolates,
     OrdinaryDiffEqAlgorithm,

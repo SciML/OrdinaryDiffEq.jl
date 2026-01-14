@@ -1,6 +1,6 @@
 module OrdinaryDiffEqExplicitRK
 
-import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, alg_stability_size,
+import OrdinaryDiffEqCore: ODEVerbosity, alg_order, alg_adaptive_order, alg_stability_size,
     OrdinaryDiffEqAdaptiveAlgorithm,
     @cache, alg_cache, OrdinaryDiffEqConstantCache,
     unwrap_alg,

@@ -1,6 +1,6 @@
 module OrdinaryDiffEqStabilizedIRK
 
-import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
+import OrdinaryDiffEqCore: ODEVerbosity, alg_order, alg_maximum_order,
     calculate_residuals!,
     beta2_default, beta1_default, gamma_default, issplit,
     initialize!, perform_step!, unwrap_alg,

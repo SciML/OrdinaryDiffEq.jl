@@ -1,6 +1,6 @@
 module OrdinaryDiffEqLowOrderRK
 
-import OrdinaryDiffEqCore: alg_order, isfsal, beta2_default, beta1_default,
+import OrdinaryDiffEqCore: ODEVerbosity, alg_order, isfsal, beta2_default, beta1_default,
     alg_stability_size,
     ssp_coefficient, OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqExponentialAlgorithm,

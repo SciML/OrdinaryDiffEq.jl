@@ -1,6 +1,6 @@
 module OrdinaryDiffEqNewmark
 
-import OrdinaryDiffEqCore: initialize!, perform_step!, unwrap_alg,
+import OrdinaryDiffEqCore: ODEVerbosity, initialize!, perform_step!, unwrap_alg,
     alg_extrapolates, isadaptive, alg_order,
     OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,

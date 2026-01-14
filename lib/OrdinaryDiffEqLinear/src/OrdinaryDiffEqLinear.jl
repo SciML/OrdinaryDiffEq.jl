@@ -1,6 +1,6 @@
 module OrdinaryDiffEqLinear
 
-import OrdinaryDiffEqCore: alg_order, alg_extrapolates, dt_required,
+import OrdinaryDiffEqCore: ODEVerbosity, alg_order, alg_extrapolates, dt_required,
     OrdinaryDiffEqLinearExponentialAlgorithm,
     OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqExponentialAlgorithm,
