@@ -27,7 +27,7 @@ function alg_cache(
         alg::AB3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -42,7 +42,7 @@ function alg_cache(
         alg::AB3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
@@ -72,7 +72,7 @@ function alg_cache(
         alg::ABM32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -87,7 +87,7 @@ function alg_cache(
         alg::ABM32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
@@ -122,7 +122,7 @@ function alg_cache(
         alg::AB4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -141,7 +141,7 @@ function alg_cache(
         alg::AB4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
@@ -180,7 +180,7 @@ function alg_cache(
         alg::ABM43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -205,7 +205,7 @@ function alg_cache(
         alg::ABM43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
@@ -242,7 +242,7 @@ function alg_cache(
         alg::AB5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -261,7 +261,7 @@ function alg_cache(
         alg::AB5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
@@ -303,7 +303,7 @@ function alg_cache(
         alg::ABM54, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -329,7 +329,7 @@ function alg_cache(
         alg::ABM54, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
@@ -384,7 +384,7 @@ function alg_cache(
         alg::VCAB3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 3)
     c = fill(zero(t), 3, 3)
@@ -407,7 +407,7 @@ function alg_cache(
         alg::VCAB3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = BS3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     bk1 = zero(rate_prototype)
@@ -492,7 +492,7 @@ function alg_cache(
         alg::VCAB4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 4)
     c = fill(zero(t), 4, 4)
@@ -515,7 +515,7 @@ function alg_cache(
         alg::VCAB4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     rk1 = zero(rate_prototype)
     rk2 = zero(rate_prototype)
@@ -601,7 +601,7 @@ function alg_cache(
         alg::VCAB5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 5)
     c = fill(zero(t), 5, 5)
@@ -624,7 +624,7 @@ function alg_cache(
         alg::VCAB5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     rk1 = zero(rate_prototype)
     rk2 = zero(rate_prototype)
@@ -713,7 +713,7 @@ function alg_cache(
         alg::VCABM3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 3)
     c = fill(zero(t), 4, 4)
@@ -737,7 +737,7 @@ function alg_cache(
         alg::VCABM3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = BS3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     bk1 = zero(rate_prototype)
@@ -830,7 +830,7 @@ function alg_cache(
         alg::VCABM4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 4)
     c = fill(zero(t), 5, 5)
@@ -857,7 +857,7 @@ function alg_cache(
         alg::VCABM4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     rk1 = zero(rate_prototype)
     rk2 = zero(rate_prototype)
@@ -949,7 +949,7 @@ function alg_cache(
         alg::VCABM5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(t), 5)
     c = fill(zero(t), 6, 6)
@@ -976,7 +976,7 @@ function alg_cache(
         alg::VCABM5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     rk1 = zero(rate_prototype)
     rk2 = zero(rate_prototype)
@@ -1078,7 +1078,7 @@ function alg_cache(
         alg::VCABM, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 13)
     c = fill(zero(t), 13, 13)
@@ -1107,7 +1107,7 @@ function alg_cache(
         alg::VCABM, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)

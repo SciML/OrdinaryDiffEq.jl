@@ -30,7 +30,7 @@ function alg_cache(
         alg::ROCK2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     constantcache = ROCK2ConstantCache(
         constvalue(uBottomEltypeNoUnits),
@@ -51,7 +51,7 @@ function alg_cache(
         alg::ROCK2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return ROCK2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), u)
 end
@@ -88,7 +88,7 @@ function alg_cache(
         alg::ROCK4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     constantcache = ROCK4ConstantCache(
         constvalue(uBottomEltypeNoUnits),
@@ -110,7 +110,7 @@ function alg_cache(
         alg::ROCK4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return ROCK4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), u)
 end
@@ -136,7 +136,7 @@ function alg_cache(
         alg::RKC, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     constantcache = RKCConstantCache(u)
     gprev = zero(u)
@@ -153,7 +153,7 @@ function alg_cache(
         alg::RKC, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return RKCConstantCache(u)
 end
@@ -188,7 +188,7 @@ function alg_cache(
         alg::ESERK4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     constantcache = ESERK4ConstantCache(u)
     uᵢ = zero(u)
@@ -207,7 +207,7 @@ function alg_cache(
         alg::ESERK4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return ESERK4ConstantCache(u)
 end
@@ -242,7 +242,7 @@ function alg_cache(
         alg::ESERK5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     constantcache = ESERK5ConstantCache(u)
     uᵢ = zero(u)
@@ -261,7 +261,7 @@ function alg_cache(
         alg::ESERK5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return ESERK5ConstantCache(u)
 end
@@ -293,7 +293,7 @@ function alg_cache(
         alg::SERK2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     constantcache = SERK2ConstantCache(u)
     uᵢ₋₁ = zero(u)
@@ -311,7 +311,7 @@ function alg_cache(
         alg::SERK2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SERK2ConstantCache(u)
 end

@@ -18,7 +18,7 @@ function alg_cache(
         alg::Nystrom4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     k₁ = zero(rate_prototype)
@@ -36,7 +36,7 @@ function alg_cache(
         alg::Nystrom4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return Nystrom4ConstantCache()
 end
@@ -63,7 +63,7 @@ function alg_cache(
         alg::FineRKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = FineRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -84,7 +84,7 @@ function alg_cache(
         alg::FineRKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return FineRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -111,7 +111,7 @@ function alg_cache(
         alg::FineRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = FineRKN5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -134,7 +134,7 @@ function alg_cache(
         alg::FineRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return FineRKN5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -154,7 +154,7 @@ function alg_cache(
         alg::Nystrom4VelocityIndependent, u, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     k₁ = zero(rate_prototype)
@@ -171,7 +171,7 @@ function alg_cache(
         alg::Nystrom4VelocityIndependent, u, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return Nystrom4VelocityIndependentConstantCache()
 end
@@ -193,7 +193,7 @@ function alg_cache(
         alg::IRKN3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k₁ = zero(rate_prototype)
     k₂ = zero(rate_prototype)
@@ -212,7 +212,7 @@ function alg_cache(
         alg::IRKN3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return IRKN3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -235,7 +235,7 @@ function alg_cache(
         alg::IRKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k₁ = zero(rate_prototype)
     k₂ = zero(rate_prototype)
@@ -255,7 +255,7 @@ function alg_cache(
         alg::IRKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return IRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -277,7 +277,7 @@ function alg_cache(
         alg::Nystrom5VelocityIndependent, u, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     k₁ = zero(rate_prototype)
@@ -297,7 +297,7 @@ function alg_cache(
         alg::Nystrom5VelocityIndependent, u, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return Nystrom5VelocityIndependentConstantCache(
         constvalue(uBottomEltypeNoUnits),
@@ -324,7 +324,7 @@ function alg_cache(
         alg::DPRKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = DPRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -344,7 +344,7 @@ function alg_cache(
         alg::DPRKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return DPRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -370,7 +370,7 @@ function alg_cache(
         alg::DPRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = DPRKN5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -392,7 +392,7 @@ function alg_cache(
         alg::DPRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return DPRKN5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -418,7 +418,7 @@ function alg_cache(
         alg::DPRKN6, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = DPRKN6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -440,7 +440,7 @@ function alg_cache(
         alg::DPRKN6, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return DPRKN6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -466,7 +466,7 @@ function alg_cache(
         alg::DPRKN6FM, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = DPRKN6FMConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -488,7 +488,7 @@ function alg_cache(
         alg::DPRKN6FM, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return DPRKN6FMConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -517,7 +517,7 @@ function alg_cache(
         alg::DPRKN8, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = DPRKN8ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -542,7 +542,7 @@ function alg_cache(
         alg::DPRKN8, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return DPRKN8ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -579,7 +579,7 @@ function alg_cache(
         alg::DPRKN12, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = DPRKN12ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -615,7 +615,7 @@ function alg_cache(
         alg::DPRKN12, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return DPRKN12ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -639,7 +639,7 @@ function alg_cache(
         alg::ERKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = ERKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -659,7 +659,7 @@ function alg_cache(
         alg::ERKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return ERKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -683,7 +683,7 @@ function alg_cache(
         alg::ERKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = ERKN5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -703,7 +703,7 @@ function alg_cache(
         alg::ERKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return ERKN5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -730,7 +730,7 @@ function alg_cache(
         alg::ERKN7, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = ERKN7ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
@@ -753,7 +753,7 @@ function alg_cache(
         alg::ERKN7, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return ERKN7ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -772,7 +772,7 @@ function alg_cache(
         alg::RKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     k₁ = zero(rate_prototype)
@@ -789,7 +789,7 @@ function alg_cache(
         alg::RKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return RKN4ConstantCache()
 end

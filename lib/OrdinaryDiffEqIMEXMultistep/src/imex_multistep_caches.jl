@@ -31,7 +31,7 @@ function alg_cache(
         alg::CNAB2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 2, 1
     nlsolver = build_nlsolver(
@@ -50,7 +50,7 @@ function alg_cache(
         alg::CNAB2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 2, 1
     nlsolver = build_nlsolver(
@@ -96,7 +96,7 @@ function alg_cache(
         alg::CNLF2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 1, 1
     nlsolver = build_nlsolver(
@@ -116,7 +116,7 @@ function alg_cache(
         alg::CNLF2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 1, 1
     nlsolver = build_nlsolver(

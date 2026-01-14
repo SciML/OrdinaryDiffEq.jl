@@ -19,7 +19,7 @@ function alg_cache(
         alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
@@ -34,7 +34,7 @@ function alg_cache(
         alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK22ConstantCache()
 end
@@ -56,7 +56,7 @@ function alg_cache(
         alg::SSPRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
@@ -71,7 +71,7 @@ function alg_cache(
         alg::SSPRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK33ConstantCache()
 end
@@ -139,7 +139,7 @@ function alg_cache(
         alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
@@ -158,7 +158,7 @@ function alg_cache(
         alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -218,7 +218,7 @@ function alg_cache(
         alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
@@ -238,7 +238,7 @@ function alg_cache(
         alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK53ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -295,7 +295,7 @@ function alg_cache(
         alg::SSPRK53_2N1, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
@@ -317,7 +317,7 @@ function alg_cache(
         alg::SSPRK53_2N1, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK53_2N1ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -378,7 +378,7 @@ function alg_cache(
         alg::SSPRK53_2N2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
@@ -400,7 +400,7 @@ function alg_cache(
         alg::SSPRK53_2N2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK53_2N2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -458,7 +458,7 @@ function alg_cache(
         alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
@@ -478,7 +478,7 @@ function alg_cache(
         alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK53_HConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -544,7 +544,7 @@ function alg_cache(
         alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     u₂ = zero(u)
@@ -565,7 +565,7 @@ function alg_cache(
         alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK63ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -639,7 +639,7 @@ function alg_cache(
         alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     u₁ = zero(u)
@@ -660,7 +660,7 @@ function alg_cache(
         alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK73ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -741,7 +741,7 @@ function alg_cache(
         alg::SSPRK83, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     u₂ = zero(u)
@@ -763,7 +763,7 @@ function alg_cache(
         alg::SSPRK83, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK83ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -804,7 +804,7 @@ function alg_cache(
         alg::SSPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
@@ -826,7 +826,7 @@ function alg_cache(
         alg::SSPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK43ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -856,7 +856,7 @@ function alg_cache(
         alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
@@ -877,7 +877,7 @@ function alg_cache(
         alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK432ConstantCache()
 end
@@ -918,7 +918,7 @@ function alg_cache(
         alg::SSPRKMSVS32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     dts = fill(zero(dt), 3)
@@ -938,7 +938,7 @@ function alg_cache(
         alg::SSPRKMSVS32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 3)
     dtf = fill(zero(dt), 2)
@@ -987,7 +987,7 @@ function alg_cache(
         alg::SSPRKMSVS43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     u_3 = zero(u)
@@ -1008,7 +1008,7 @@ function alg_cache(
         alg::SSPRKMSVS43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     u_3 = u
     u_2 = u
@@ -1044,7 +1044,7 @@ function alg_cache(
         alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
@@ -1065,7 +1065,7 @@ function alg_cache(
         alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK932ConstantCache()
 end
@@ -1139,7 +1139,7 @@ function alg_cache(
         alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     u₂ = zero(u)
     u₃ = zero(u)
@@ -1162,7 +1162,7 @@ function alg_cache(
         alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
@@ -1186,7 +1186,7 @@ function alg_cache(
         alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
@@ -1206,7 +1206,7 @@ function alg_cache(
         alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SSPRK104ConstantCache()
 end
@@ -1270,7 +1270,7 @@ function alg_cache(
         alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose
+        ::Val{true}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     u_1 = zero(u)
     u_2 = zero(u)
@@ -1292,7 +1292,7 @@ function alg_cache(
         alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose
+        ::Val{false}, verbose = ODEVerbosity()
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return KYK2014DGSSPRK_3S2_ConstantCache(
         constvalue(uBottomEltypeNoUnits),
