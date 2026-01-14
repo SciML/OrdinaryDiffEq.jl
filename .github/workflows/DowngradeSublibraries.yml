@@ -60,7 +60,7 @@ jobs:
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
           projects: ${{ matrix.project }}
-          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils
+          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation
           julia_version: ${{ matrix.julia-version }}
       - uses: julia-actions/julia-buildpkg@v1
         with:
