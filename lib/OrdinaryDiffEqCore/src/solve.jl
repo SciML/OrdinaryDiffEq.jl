@@ -648,7 +648,7 @@ function SciMLBase.__init(
     integrator = ODEIntegrator{
         typeof(_alg), isinplace(prob), uType, typeof(du),
         tType, typeof(p),
-        typeof(eigen_est), typeof(EEst),
+        typeof(eigen_est), EEstT,
         QT, typeof(tdir), typeof(k), SolType,
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
