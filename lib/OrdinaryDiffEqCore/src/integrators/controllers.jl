@@ -730,7 +730,7 @@ function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_
 end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
-    return integrator.dt *= cache.qold
+    return integrator.dt *= cache.dt_factor
 end
 
 # Gustafsson predictive step size controller
