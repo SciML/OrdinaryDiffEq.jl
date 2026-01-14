@@ -1,3 +1,7 @@
+# Get mass_matrix from function, defaulting to I if field doesn't exist
+# This allows nlsolver to work with DiscreteFunction which lacks mass_matrix
+get_mass_matrix(f) = hasproperty(f, :mass_matrix) ? f.mass_matrix : I
+
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
 get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cutoff
 # handle FIRK
