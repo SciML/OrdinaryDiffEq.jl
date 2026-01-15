@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqRKIP"
 uuid = "a4daff8c-1d43-4ff3-8eff-f78720aeecdc"
 authors = ["Azercoco <20425137+Azercoco@users.noreply.github.com>"]
-version = "1.3.0"
+version = "1.2.0"
 
 [deps]
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
