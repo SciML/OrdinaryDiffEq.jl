@@ -1,6 +1,6 @@
 module OrdinaryDiffEqLowStorageRK
 
-import OrdinaryDiffEqCore: ODEVerbosity, alg_order, alg_adaptive_order, calculate_residuals!,
+import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
     beta2_default, beta1_default, gamma_default,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals, ssp_coefficient,

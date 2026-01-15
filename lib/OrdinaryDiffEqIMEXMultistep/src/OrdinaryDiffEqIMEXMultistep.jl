@@ -1,6 +1,6 @@
 module OrdinaryDiffEqIMEXMultistep
 
-import OrdinaryDiffEqCore: ODEVerbosity, alg_order, issplit, OrdinaryDiffEqNewtonAlgorithm, _unwrap_val,
+import OrdinaryDiffEqCore: alg_order, issplit, OrdinaryDiffEqNewtonAlgorithm, _unwrap_val,
     DEFAULT_PRECS, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqMutableCache,
     @cache, alg_cache, initialize!, perform_step!,

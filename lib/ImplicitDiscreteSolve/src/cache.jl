@@ -16,7 +16,7 @@ function alg_cache(
         alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
     f_nl = (resid, u_next, p) -> f(resid, u_next, p.u, p.p, p.t)
@@ -44,7 +44,7 @@ function alg_cache(
         alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose = ODEVerbosity()
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     @assert !isnothing(u) "Empty u not supported with out of place functions yet."
 

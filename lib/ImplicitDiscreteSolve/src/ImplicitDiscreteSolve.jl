@@ -5,7 +5,7 @@ using NonlinearSolveBase
 using NonlinearSolveFirstOrder
 using ConcreteStructs
 using SymbolicIndexingInterface: parameter_symbols
-import OrdinaryDiffEqCore: ODEVerbosity, OrdinaryDiffEqAlgorithm, alg_cache, OrdinaryDiffEqMutableCache,
+import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_cache, OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache, get_fsalfirstlast, isfsal,
     initialize!, perform_step!, isdiscretecache, isdiscretealg,
     alg_order, beta2_default, beta1_default, dt_required,

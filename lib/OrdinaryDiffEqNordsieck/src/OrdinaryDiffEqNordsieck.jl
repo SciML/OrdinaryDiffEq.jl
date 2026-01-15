@@ -1,6 +1,6 @@
 module OrdinaryDiffEqNordsieck
 
-import OrdinaryDiffEqCore: ODEVerbosity, alg_order, alg_adaptive_order, qsteady_max_default,
+import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, qsteady_max_default,
     get_current_alg_order,
     AbstractController, OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,

@@ -192,7 +192,7 @@ function build_nlsolver(
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         γ, c, α,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {
         F, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits,
@@ -326,7 +326,7 @@ function build_nlsolver(
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         γ, c, α,
-        ::Val{false}, verbose = ODEVerbosity()
+        ::Val{false}, verbose
     ) where {
         F, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits,

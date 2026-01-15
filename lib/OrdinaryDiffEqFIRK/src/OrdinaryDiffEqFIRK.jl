@@ -1,6 +1,6 @@
 module OrdinaryDiffEqFIRK
 
-import OrdinaryDiffEqCore: ODEVerbosity, alg_order, calculate_residuals!,
+import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals,
     OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
@@ -26,7 +26,7 @@ using LinearAlgebra: I, UniformScaling, mul!, lu
 import LinearSolve
 import FastBroadcast: @..
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: ODEVerbosity, _ode_interpolant, _ode_interpolant!, has_stiff_interpolation
+import OrdinaryDiffEqCore: _ode_interpolant, _ode_interpolant!, has_stiff_interpolation
 import FastPower: fastpower
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_config,
     UDerivativeWrapper, calc_J!, dolinsolve, calc_J,

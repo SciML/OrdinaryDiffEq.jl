@@ -1,6 +1,6 @@
 module OrdinaryDiffEqPRK
 
-import OrdinaryDiffEqCore: ODEVerbosity, OrdinaryDiffEqAlgorithm, alg_order, OrdinaryDiffEqMutableCache,
+import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_order, OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache, constvalue, @cache,
     alg_cache, get_fsalfirstlast,
     unwrap_alg, perform_step!, @threaded, initialize!, isthreaded,

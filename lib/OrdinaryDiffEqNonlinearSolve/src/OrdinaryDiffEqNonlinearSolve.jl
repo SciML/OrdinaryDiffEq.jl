@@ -30,10 +30,10 @@ import SciMLStructures: canonicalize, Tunable, isscimlstructure
 import OrdinaryDiffEqCore
 
 import SciMLOperators: islinear
-import OrdinaryDiffEqCore: ODEVerbosity, nlsolve_f, set_new_W!, set_W_γdt!
+import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
 
 @static if isdefined(OrdinaryDiffEqCore, :default_nlsolve)
-    import OrdinaryDiffEqCore: ODEVerbosity, default_nlsolve
+    import OrdinaryDiffEqCore: default_nlsolve
 end
 
 using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
@@ -49,7 +49,7 @@ using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
     MethodType, alg_order, error_constant,
     alg_extrapolates, resize_J_W!, has_autodiff
 
-import OrdinaryDiffEqCore: ODEVerbosity, _initialize_dae!, isnewton, get_W, isfirstcall, isfirststage,
+import OrdinaryDiffEqCore: _initialize_dae!, isnewton, get_W, isfirstcall, isfirststage,
     isJcurrent, get_new_W_γdt_cutoff, resize_nlsolver!, apply_step!,
     postamble!, @SciMLMessage
 

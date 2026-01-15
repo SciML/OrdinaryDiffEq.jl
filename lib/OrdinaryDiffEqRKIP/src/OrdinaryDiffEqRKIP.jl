@@ -8,7 +8,7 @@ using SciMLBase: isinplace
 using DiffEqBase: ExplicitRKTableau
 using DiffEqDevTools: constructVerner6
 
-import OrdinaryDiffEqCore: ODEVerbosity, OrdinaryDiffEqAdaptiveExponentialAlgorithm, alg_adaptive_order,
+import OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveExponentialAlgorithm, alg_adaptive_order,
     alg_order, alg_cache, @cache, SplitFunction, get_fsalfirstlast,
     initialize!, perform_step!,
     has_dtnew_modification, calculate_residuals,

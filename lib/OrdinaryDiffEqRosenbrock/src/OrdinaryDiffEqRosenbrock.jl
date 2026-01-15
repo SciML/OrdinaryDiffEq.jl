@@ -1,6 +1,6 @@
 module OrdinaryDiffEqRosenbrock
 
-import OrdinaryDiffEqCore: ODEVerbosity, alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
+import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
     DEFAULT_PRECS, OrdinaryDiffEqRosenbrockAlgorithm, @cache,
     alg_cache, initialize!,
     calculate_residuals!, OrdinaryDiffEqMutableCache,
@@ -38,7 +38,7 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
 using Reexport
 @reexport using SciMLBase
 
-import OrdinaryDiffEqCore: ODEVerbosity, alg_autodiff
+import OrdinaryDiffEqCore: alg_autodiff
 import OrdinaryDiffEqCore
 
 function rosenbrock_wolfbrandt_docstring(

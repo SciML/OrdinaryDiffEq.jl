@@ -59,7 +59,7 @@ function SciMLBase.__init(
         internalopnorm = opnorm,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-        verbose = ODEVerbosity(),
+        verbose,
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,

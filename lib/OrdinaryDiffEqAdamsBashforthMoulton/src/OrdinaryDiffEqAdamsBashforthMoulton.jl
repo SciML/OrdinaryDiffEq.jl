@@ -1,6 +1,6 @@
 module OrdinaryDiffEqAdamsBashforthMoulton
 
-import OrdinaryDiffEqCore: ODEVerbosity, OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, @cache,
+import OrdinaryDiffEqCore: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, @cache,
     alg_cache,
     initialize!, perform_step!, alg_order, isstandard,
     OrdinaryDiffEqAlgorithm,

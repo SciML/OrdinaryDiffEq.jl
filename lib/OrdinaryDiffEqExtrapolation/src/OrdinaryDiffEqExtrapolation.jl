@@ -1,6 +1,6 @@
 module OrdinaryDiffEqExtrapolation
 
-import OrdinaryDiffEqCore: ODEVerbosity, alg_order, alg_maximum_order, get_current_adaptive_order,
+import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_order,
     get_current_alg_order, calculate_residuals!,
     accept_step_controller,
     default_controller, beta2_default, beta1_default, gamma_default,

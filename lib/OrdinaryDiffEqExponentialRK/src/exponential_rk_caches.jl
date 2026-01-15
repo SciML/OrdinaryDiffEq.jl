@@ -79,7 +79,7 @@ for (Alg, Cache) in [
             alg::$Alg, u, rate_prototype, ::Type{uEltypeNoUnits},
             ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev,
             uprev2, f, t, dt, reltol, p, calck,
-            ::Val{false}, verbose = ODEVerbosity()
+            ::Val{false}, verbose
         ) where {
             uEltypeNoUnits, uBottomEltypeNoUnits,
             tTypeNoUnits,
@@ -169,7 +169,7 @@ function alg_cache(
         alg::LawsonEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                            # uType caches
     rtmp, G, du1 = (zero(rate_prototype) for i in 1:3)             # rateType caches
@@ -228,7 +228,7 @@ function alg_cache(
         alg::NorsettEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                # uType caches
     rtmp, G, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
@@ -263,7 +263,7 @@ function alg_cache(
         alg::ETDRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                 # uType caches
     rtmp, F2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
@@ -300,7 +300,7 @@ function alg_cache(
         alg::ETDRK3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                         # uType caches
     rtmp, Au, F2, F3, du1 = (zero(rate_prototype) for i in 1:5) # rateType caches
@@ -338,7 +338,7 @@ function alg_cache(
         alg::ETDRK4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                             # uType caches
     rtmp, Au, F2, F3, F4, du1 = (zero(rate_prototype) for i in 1:6) # rateType caches
@@ -381,7 +381,7 @@ function alg_cache(
         alg::HochOst4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                                        # uType caches
     rtmp, rtmp2, Au, F2, F3, F4, F5, du1 = (zero(rate_prototype) for i in 1:8) # rateType caches
@@ -429,7 +429,7 @@ for (Alg, Cache) in [
             alg::$Alg, u, rate_prototype, ::Type{uEltypeNoUnits},
             ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev,
             uprev2, f, t, dt, reltol, p, calck,
-            ::Val{false}, verbose = ODEVerbosity()
+            ::Val{false}, verbose
         ) where {
             uEltypeNoUnits, uBottomEltypeNoUnits,
             tTypeNoUnits,
@@ -463,7 +463,7 @@ function alg_cache(
         alg::Exp4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                    # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
@@ -512,7 +512,7 @@ function alg_cache(
         alg::EPIRK4s3A, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                    # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
@@ -560,7 +560,7 @@ function alg_cache(
         alg::EPIRK4s3B, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                    # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
@@ -608,7 +608,7 @@ function alg_cache(
         alg::EPIRK5s3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz, k = (zero(u) for i in 1:3)                 # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
@@ -655,7 +655,7 @@ function alg_cache(
         alg::EXPRB53s3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                    # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
@@ -703,7 +703,7 @@ function alg_cache(
         alg::EPIRK5P1, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                    # uType caches
     rtmp, rtmp2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
@@ -752,7 +752,7 @@ function alg_cache(
         alg::EPIRK5P2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp, dz = (zero(u) for i in 1:2)                        # uType caches
     rtmp, rtmp2, dR, du1 = (zero(rate_prototype) for i in 1:4) # rateType caches
@@ -795,7 +795,7 @@ for (Alg, Cache) in [
             alg::$Alg, u, rate_prototype, ::Type{uEltypeNoUnits},
             ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev,
             uprev2, f, t, dt, reltol, p, calck,
-            ::Val{false}, verbose = ODEVerbosity()
+            ::Val{false}, verbose
         ) where {
             uEltypeNoUnits, uBottomEltypeNoUnits,
             tTypeNoUnits,
@@ -869,7 +869,7 @@ function alg_cache(
         alg::Exprb32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     utilde, tmp, dz = (zero(u) for i in 1:3)         # uType caches
     rtmp, F2, du1 = (zero(rate_prototype) for i in 1:3) # rateType caches
@@ -903,7 +903,7 @@ function alg_cache(
         alg::Exprb43, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     utilde, tmp, dz = (zero(u) for i in 1:3)                 # uType caches
     rtmp, Au, F2, F3, du1 = (zero(rate_prototype) for i in 1:5) # rateType caches
@@ -967,7 +967,7 @@ function alg_cache(
         alg::ETD2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}, verbose = ODEVerbosity()
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
     Phi = phi(dt * A, 2)
@@ -991,7 +991,7 @@ function alg_cache(
         alg::ETD2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}, verbose = ODEVerbosity()
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
     Phi = phi(dt * A, 2)
