@@ -45,12 +45,3 @@ test = ["OrdinaryDiffEqSDIRK", "Test", "Pkg", "SafeTestsets"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
-
-[sources.OrdinaryDiffEqSDIRK]
-path = "../OrdinaryDiffEqSDIRK"
-
-[sources.OrdinaryDiffEqNonlinearSolve]
-path = "../OrdinaryDiffEqNonlinearSolve"
-
-[sources.OrdinaryDiffEqDifferentiation]
-path = "../OrdinaryDiffEqDifferentiation"
