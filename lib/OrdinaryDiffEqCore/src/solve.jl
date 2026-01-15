@@ -11,9 +11,9 @@ function SciMLBase.__solve(
     return integrator.sol
 end
 
-determine_controller_datatype(u, ts::Tuple{<:AbstractFloat, <:AbstractFloat}) = DiffEqBase.value(promote_type(eltype(u), eltype(ts)))
-determine_controller_datatype(::Nothing, ts::Tuple{<:AbstractFloat, <:AbstractFloat}) = DiffEqBase.value(eltype(ts))
-determine_controller_datatype(u, ts) = Float64 # This seems to be an assumption implicitly taken somewhere
+determine_controller_datatype(u, internalnorm, ts::Tuple{<:AbstractFloat, <:AbstractFloat}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(ts))
+determine_controller_datatype(::Nothing, internalnorm, ts::Tuple{<:AbstractFloat, <:AbstractFloat}) = promote_type(typeof(DiffEqBase.value(ts[1])), typeof(DiffEqBase.value(ts[2])))
+determine_controller_datatype(u, internalnorm, ts) = Float64 # This seems to be an assumption implicitly taken somewhere
 
 function SciMLBase.__init(
         prob::Union{
@@ -55,7 +55,6 @@ function SciMLBase.__init(
         beta1 = nothing,
         beta2 = nothing,
         qoldinit = nothing,
-        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(determine_controller_datatype(prob.u0, prob.tspan), alg), # We have to reconstruct the old controller before breaking release.,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
@@ -64,6 +63,7 @@ function SciMLBase.__init(
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
         verbose = Standard(),
+        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(determine_controller_datatype(prob.u0, internalnorm, prob.tspan), alg), # We have to reconstruct the old controller before breaking release.,
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,
