@@ -48,9 +48,3 @@ path = "../OrdinaryDiffEqCore"
 
 [sources.OrdinaryDiffEqSDIRK]
 path = "../OrdinaryDiffEqSDIRK"
-
-[sources.OrdinaryDiffEqNonlinearSolve]
-path = "../OrdinaryDiffEqNonlinearSolve"
-
-[sources.OrdinaryDiffEqDifferentiation]
-path = "../OrdinaryDiffEqDifferentiation"
