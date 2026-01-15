@@ -5,7 +5,7 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_or
     accept_step_controller, default_controller_v7,
     legacy_default_controller, beta2_default, beta1_default, gamma_default,
     initialize!, perform_step!, @cache, unwrap_alg,
-    isthreaded, isadaptive,
+    isthreaded, isadaptive, PIController, AbstractControllerCache,
     step_accept_controller!, calculate_residuals,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     reset_alg_dependent_opts!, AbstractController, AbstractLegacyController,
@@ -13,12 +13,14 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_or
     OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdaptiveImplicitAlgorithm,
     alg_cache, CompiledFloats, @threaded, stepsize_controller!,
-    DEFAULT_PRECS, full_cache, qmin_default,
+    DEFAULT_PRECS, full_cache, qmin_default, qmax_default,
     constvalue, PolyesterThreads, Sequential, BaseThreads,
     _digest_beta1_beta2, timedepentdtmin, _unwrap_val,
     _reshape, _vec, get_fsalfirstlast, generic_solver_docstring,
     differentiation_rk_docstring, _bool_to_ADType,
-    _process_AD_choice, LinearAliasSpecifier, @SciMLMessage, Minimal
+    _process_AD_choice, LinearAliasSpecifier, @SciMLMessage, Minimal,
+    setup_controller_cache
+
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, LinearSolve
 import OrdinaryDiffEqCore
 import FastPower
