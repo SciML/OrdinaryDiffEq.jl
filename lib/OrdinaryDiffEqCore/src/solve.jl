@@ -738,6 +738,25 @@ end
     return tstops_internal
 end
 
+function reinit_tstops!(::Type{T}, tstops_internal, tstops, d_discontinuities, tspan) where {T}
+    empty!(tstops_internal)
+
+    t0, tf = tspan
+    tdir = sign(tf - t0)
+    tdir_t0 = tdir * t0
+    tdir_tf = tdir * tf
+
+    for t in tstops
+        tdir_t = tdir * t
+        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+    end
+    for t in d_discontinuities
+        tdir_t = tdir * t
+        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+    end
+    push!(tstops_internal, tdir_tf)
+end
+
 # saving time points
 function initialize_saveat(::Type{T}, saveat, tspan) where {T}
     saveat_internal = BinaryHeap{T}(DataStructures.FasterForward())
@@ -762,6 +781,27 @@ function initialize_saveat(::Type{T}, saveat, tspan) where {T}
     return saveat_internal
 end
 
+function reinit_saveat!(::Type{T}, saveat_internal, saveat, tspan) where {T}
+    empty!(saveat_internal)
+
+    t0, tf = tspan
+    tdir = sign(tf - t0)
+    tdir_t0 = tdir * t0
+    tdir_tf = tdir * tf
+
+    if saveat isa Number
+        directional_saveat = tdir * abs(saveat)
+        for t in (t0+directional_saveat):directional_saveat:tf
+            push!(saveat_internal, tdir * t)
+        end
+    elseif !isempty(saveat)
+        for t in saveat
+            tdir_t = tdir * t
+            tdir_t0 < tdir_t ≤ tdir_tf && push!(saveat_internal, tdir_t)
+        end
+    end
+end
+
 # discontinuities
 function initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) where {T}
     d_discontinuities_internal = BinaryHeap{T}(DataStructures.FasterForward())
@@ -775,6 +815,17 @@ function initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) where
     end
 
     return d_discontinuities_internal
+end
+
+function reinit_d_discontinuities!(::Type{T}, d_discontinuities_internal, d_discontinuities, tspan) where {T}
+    empty!(d_discontinuities_internal)
+
+    t0, tf = tspan
+    tdir = sign(tf - t0)
+
+    for t in d_discontinuities
+        push!(d_discontinuities_internal, tdir * t)
+    end
 end
 
 function initialize_callbacks!(integrator, initialize_save = true)
