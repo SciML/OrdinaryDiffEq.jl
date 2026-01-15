@@ -1,6 +1,7 @@
-using Mooncake, OrdinaryDiffEq, StaticArrays, Test, FiniteDiff, DiffEqBase
-using ADTypes
+using OrdinaryDiffEq, StaticArrays, Test, FiniteDiff, DiffEqBase
+using ADTypes: AutoForwardDiff, AutoMooncake
 import DifferentiationInterface as DI
+using Mooncake  # Load Mooncake after DI to ensure extension is loaded
 
 # Mooncake is supported on all Julia versions
 
