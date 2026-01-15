@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqNonlinearSolve"
 uuid = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "1.18.1"
+version = "1.19.0"
 
 [deps]
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"

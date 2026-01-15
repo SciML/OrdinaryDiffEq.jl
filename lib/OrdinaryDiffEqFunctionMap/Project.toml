@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqFunctionMap"
 uuid = "d3585ca7-f5d3-4ba6-8057-292ed1abd90f"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.8.0"
+version = "1.9.0"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"

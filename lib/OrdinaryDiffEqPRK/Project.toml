@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqPRK"
 uuid = "5b33eab2-c0f1-4480-b2c3-94bc1e80bda1"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.7.0"
+version = "1.8.0"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"

@@ -1,7 +1,7 @@
 name = "ImplicitDiscreteSolve"
 uuid = "3263718b-31ed-49cf-8a0f-35a466e8af96"
 authors = ["vyudu <vincent.duyuan@gmail.com>"]
-version = "1.5.0"
+version = "1.6.0"
 
 [deps]
 NonlinearSolveBase = "be0214bd-f91f-a760-ac4e-3421ce2b2da0"
