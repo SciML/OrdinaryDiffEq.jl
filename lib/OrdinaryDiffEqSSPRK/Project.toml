@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSSPRK"
 uuid = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.10.0"
+version = "1.11.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"

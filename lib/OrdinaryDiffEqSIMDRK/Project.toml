@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSIMDRK"
 uuid = "dc97f408-7a72-40e4-9b0d-228a53b292f8"
 authors = ["Yingbo Ma <mayingbo5@gmail.com>", "Chris Elrod <elrodc@gmail.com>"]
-version = "1.4.0"
+version = "1.5.0"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
