@@ -4,34 +4,21 @@ import DifferentiationInterface as DI
 
 # Version-dependent AD backend selection
 # Zygote: Julia <= 1.11 only
-# Enzyme: Julia <= 1.11 only
+# Enzyme: Julia <= 1.11 only (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
 # Mooncake: all versions
 # ForwardDiff: all versions
 
 # Define which backends are available based on Julia version
-const JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE = VERSION < v"1.12"
+const JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE = VERSION < v"1.12" && isempty(VERSION.prerelease)
 
-# Load version-dependent packages
-if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE && isempty(VERSION.prerelease)
+# Load version-dependent packages and define helpers
+if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
     using Enzyme
-end
-
-# Helper to get gradient backends for testing
-function get_gradient_backends()
-    backends = [AutoForwardDiff()]
-    if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE && isempty(VERSION.prerelease)
-        push!(backends, AutoEnzyme(mode = Enzyme.Reverse))
-    end
-    return backends
-end
-
-# Helper to get jacobian backends for testing
-function get_jacobian_backends()
-    backends = [AutoForwardDiff()]
-    if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE && isempty(VERSION.prerelease)
-        push!(backends, AutoEnzyme(mode = Enzyme.Forward))
-    end
-    return backends
+    get_gradient_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.Reverse)]
+    get_jacobian_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.Forward)]
+else
+    get_gradient_backends() = [AutoForwardDiff()]
+    get_jacobian_backends() = [AutoForwardDiff()]
 end
 
 function f(du, u, p, t)
@@ -270,7 +257,7 @@ for backend in get_gradient_backends()
     @test !iszero(DI.gradient(of_a, backend, [1.0]))
 end
 @test DI.gradient(of_a, AutoForwardDiff(), [1.0]) ≈
-      FiniteDiff.finite_difference_gradient(t -> of_a(t), [1.0]) rtol = 1.0e-5
+    FiniteDiff.finite_difference_gradient(t -> of_a(t), [1.0]) rtol = 1.0e-5
 
 SOLVERS_FOR_AD = (
     (BS3, 1.0e-12),
@@ -443,16 +430,10 @@ end ≈ [6.765310476296564]
     p_test = [0.5]
     ref_grad = FiniteDiff.finite_difference_gradient(loss_fn, p_test)
 
-    # Test ForwardDiff (all versions)
-    @testset "AutoForwardDiff" begin
-        grad = DI.gradient(loss_fn, AutoForwardDiff(), p_test)
-        @test grad ≈ ref_grad rtol = 1.0e-6
-    end
-
-    # Test Enzyme (Julia <= 1.11 only)
-    if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE && isempty(VERSION.prerelease)
-        @testset "AutoEnzyme" begin
-            grad = DI.gradient(loss_fn, AutoEnzyme(mode = Enzyme.Reverse), p_test)
+    # Test all available backends
+    for backend in get_gradient_backends()
+        @testset "$(typeof(backend))" begin
+            grad = DI.gradient(loss_fn, backend, p_test)
             @test grad ≈ ref_grad rtol = 1.0e-6
         end
     end

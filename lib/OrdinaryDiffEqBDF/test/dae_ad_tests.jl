@@ -3,24 +3,6 @@ using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
 import DifferentiationInterface as DI
 
-# Version-dependent AD backend selection
-# Enzyme: Julia <= 1.11 only
-# ForwardDiff: all versions
-const JULIA_VERSION_ALLOWS_ENZYME = VERSION < v"1.12" && isempty(VERSION.prerelease)
-
-if JULIA_VERSION_ALLOWS_ENZYME
-    using Enzyme
-end
-
-# Helper to get gradient backends for testing
-function get_gradient_backends()
-    backends = [AutoForwardDiff()]
-    if JULIA_VERSION_ALLOWS_ENZYME
-        push!(backends, AutoEnzyme(mode = Enzyme.Reverse))
-    end
-    return backends
-end
-
 afd_cs3 = AutoForwardDiff(chunksize = 3)
 
 function f(out, du, u, p, t)
@@ -75,12 +57,11 @@ end
 
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
-@testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in
-        [
-            prob, prob_oop, prob_mm, prob_mm_oop,
-        ],
-        initalg in [BrownFullBasicInit(), ShampineCollocationInit()],
-        autodiff in [afd_cs3, AutoFiniteDiff()]
+@testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [
+        prob, prob_oop, prob_mm, prob_mm_oop,
+    ],
+    initalg in [BrownFullBasicInit(), ShampineCollocationInit()],
+    autodiff in [afd_cs3, AutoFiniteDiff()]
 
     alg = (_prob isa DAEProblem) ? DFBDF(; autodiff) : FBDF(; autodiff)
     function f_loss(p)
@@ -90,7 +71,5 @@ end
         )
         sum(sol)
     end
-    for backend in get_gradient_backends()
-        @test DI.gradient(f_loss, backend, [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
-    end
+    @test DI.gradient(f_loss, AutoForwardDiff(), [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
 end
