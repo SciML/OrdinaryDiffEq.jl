@@ -32,3 +32,15 @@ SimpleNonlinearSolve = "2.7"
 
 [targets]
 test = ["OrdinaryDiffEqSDIRK", "Test", "Pkg", "SafeTestsets"]
+
+[sources.OrdinaryDiffEqSDIRK]
+path = "../OrdinaryDiffEqSDIRK"
+
+[sources.OrdinaryDiffEqCore]
+path = "../OrdinaryDiffEqCore"
+
+[sources.OrdinaryDiffEqNonlinearSolve]
+path = "../OrdinaryDiffEqNonlinearSolve"
+
+[sources.OrdinaryDiffEqDifferentiation]
+path = "../OrdinaryDiffEqDifferentiation"
