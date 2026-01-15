@@ -59,7 +59,7 @@ function SciMLBase.__init(
         internalopnorm = opnorm,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-        verbose,
+        verbose = Standard(),
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,
@@ -763,7 +763,7 @@ function reinit_tstops!(::Type{T}, tstops_internal, tstops, d_discontinuities, t
         tdir_t = tdir * t
         tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
     end
-    push!(tstops_internal, tdir_tf)
+    return push!(tstops_internal, tdir_tf)
 end
 
 # saving time points
@@ -798,9 +798,9 @@ function reinit_saveat!(::Type{T}, saveat_internal, saveat, tspan) where {T}
     tdir_t0 = tdir * t0
     tdir_tf = tdir * tf
 
-    if saveat isa Number
+    return if saveat isa Number
         directional_saveat = tdir * abs(saveat)
-        for t in (t0+directional_saveat):directional_saveat:tf
+        for t in (t0 + directional_saveat):directional_saveat:tf
             push!(saveat_internal, tdir * t)
         end
     elseif !isempty(saveat)
@@ -835,6 +835,7 @@ function reinit_d_discontinuities!(::Type{T}, d_discontinuities_internal, d_disc
     for t in d_discontinuities
         push!(d_discontinuities_internal, tdir * t)
     end
+    return
 end
 
 function initialize_callbacks!(integrator, initialize_save = true)

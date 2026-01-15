@@ -50,3 +50,6 @@ SafeTestsets = "0.1.0"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "Pkg"]
+
+[sources.OrdinaryDiffEqCore]
+path = "../OrdinaryDiffEqCore"

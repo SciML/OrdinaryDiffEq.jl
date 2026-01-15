@@ -61,3 +61,6 @@ test = ["DiffEqDevTools", "Random", "SafeTestsets", "StructArrays", "Test", "ODE
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
+
+[sources.OrdinaryDiffEqLowStorageRK]
+path = "../OrdinaryDiffEqLowStorageRK"

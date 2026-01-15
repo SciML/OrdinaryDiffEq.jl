@@ -27,7 +27,7 @@ Test = "<0.0.1, 1"
 AllocCheck = "0.2"
 DiffEqBase = "6.176"
 Reexport = "1.2"
-SciMLBase = "2.99"
+SciMLBase = "2.116"
 SimpleNonlinearSolve = "2.7"
 
 [targets]
