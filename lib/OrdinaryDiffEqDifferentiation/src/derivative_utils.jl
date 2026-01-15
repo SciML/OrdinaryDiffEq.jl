@@ -123,6 +123,21 @@ function calc_J(integrator, cache, next_step::Bool = false)
         uprev = integrator.u
     end
 
+    method = if SciMLBase.has_jac(f)
+        "user-provided"
+    else
+        if hasproperty(cache, :jac_config) && cache.jac_config !== nothing
+            "autodiff"
+        else
+            "finite-diff"
+        end
+    end
+
+    @SciMLMessage(
+        lazy"Computing Jacobian at t = $(t) using $(method)",
+        integrator.opts.verbose, :jacobian_update
+    )
+
     if alg isa DAEAlgorithm
         if SciMLBase.has_jac(f)
             duprev = integrator.duprev
@@ -746,10 +761,16 @@ function update_W!(
         repeat_step::Bool, newJW = nothing
     )
     if isnewton(nlsolver)
-        calc_W!(
+        new_jac, new_W = calc_W!(
             get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step,
             newJW
         )
+        if new_W
+            @SciMLMessage(
+                lazy"W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
+                integrator.opts.verbose, :w_factorization
+            )
+        end
     end
     return nothing
 end
@@ -777,6 +798,12 @@ function update_W!(
             set_W_γdt!(nlsolver, nlsolver.α * inv(dtgamma))
         elseif new_W && !isdae
             set_W_γdt!(nlsolver, dtgamma)
+        end
+        if new_W
+            @SciMLMessage(
+                lazy"W matrix factorized: dtgamma = $(dtgamma), new_jac = $(new_jac)",
+                integrator.opts.verbose, :w_factorization
+            )
         end
     end
     return nothing
@@ -895,12 +922,12 @@ build_uf(alg, nf, t, p, ::Val{false}) = UDerivativeWrapper(nf, t, p)
 function LinearSolve.init_cacheval(
         alg::LinearSolve.DefaultLinearSolver, A::WOperator, b, u,
         Pl, Pr,
-        maxiters::Int, abstol, reltol, verbose::Union{LinearVerbosity, Bool},
+        maxiters::Int, abstol, reltol, verbose::LinearVerbosity,
         assumptions::OperatorAssumptions
     )
     return LinearSolve.init_cacheval(
         alg, A.J, b, u, Pl, Pr,
-        maxiters::Int, abstol, reltol, verbose::Union{LinearVerbosity, Bool},
+        maxiters::Int, abstol, reltol, verbose::LinearVerbosity,
         assumptions::OperatorAssumptions
     )
 end
@@ -932,12 +959,12 @@ for alg in [
     ]
     @eval function LinearSolve.init_cacheval(
             alg::$alg, A::WOperator, b, u, Pl, Pr,
-            maxiters::Int, abstol, reltol, verbose::Union{LinearVerbosity, Bool},
+            maxiters::Int, abstol, reltol, verbose::LinearVerbosity,
             assumptions::OperatorAssumptions
         )
         return LinearSolve.init_cacheval(
             alg, A.J, b, u, Pl, Pr,
-            maxiters::Int, abstol, reltol, verbose::Union{LinearVerbosity, Bool},
+            maxiters::Int, abstol, reltol, verbose::LinearVerbosity,
             assumptions::OperatorAssumptions
         )
     end

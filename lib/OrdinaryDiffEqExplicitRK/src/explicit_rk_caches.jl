@@ -17,7 +17,7 @@ function alg_cache(
         alg::ExplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     kk = Vector{typeof(rate_prototype)}(undef, 0)
     for i in 1:(alg.tableau.stages)
@@ -58,7 +58,7 @@ function alg_cache(
         alg::ExplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return ExplicitRKConstantCache(alg.tableau, rate_prototype)
 end

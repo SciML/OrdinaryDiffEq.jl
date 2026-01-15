@@ -123,7 +123,7 @@ dtnew_modification(_, alg::RKIP, dtnew) = dtnew_modification(alg, dtnew)
 
 function alg_cache(
         alg::RKIP, u::uType, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, iip
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, iip, verbose
     ) where {uType}
     tmp = zero(u)
     utilde = zero(u)

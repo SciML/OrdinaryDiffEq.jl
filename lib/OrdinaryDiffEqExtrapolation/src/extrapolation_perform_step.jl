@@ -336,9 +336,14 @@ function perform_step!(
                     # Deuflhard Stability check for initial two sequences
                     @.. broadcast = false diff2[1] = u_tmps[1] - u_tmps2[1]
                     @.. broadcast = false diff2[1] = 0.5 * (diff2[1] - diff1[1])
-                    if integrator.opts.internalnorm(diff1[1], t) <
-                            integrator.opts.internalnorm(diff2[1], t)
+                    norm_diff1 = integrator.opts.internalnorm(diff1[1], t)
+                    norm_diff2 = integrator.opts.internalnorm(diff2[1], t)
+                    if norm_diff1 < norm_diff2
                         # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+                        @SciMLMessage(
+                            lazy"Deuflhard stability check failed: ||diff1|| = $(norm_diff1) < ||diff2|| = $(norm_diff2), divergence detected",
+                            integrator.opts.verbose, :stability_check
+                        )
                         integrator.force_stepfail = true
                         return
                     end

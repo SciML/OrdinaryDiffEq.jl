@@ -146,17 +146,18 @@ SciMLBase.has_jac(f::DAEResidualDerivativeWrapper) = SciMLBase.has_jac(f.f)
 SciMLBase.has_Wfact(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact(f.f)
 SciMLBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact_t(f.f)
 
+
 function build_nlsolver(
         alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, γ, c,
-        iip
+        iip, verbose
     ) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits,
-        tTypeNoUnits, γ, c, 1, iip
+        tTypeNoUnits, γ, c, 1, iip, verbose
     )
 end
 
@@ -165,11 +166,11 @@ function build_nlsolver(
         ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, γ, c, α,
-        iip
+        iip, verbose
     ) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return build_nlsolver(
         alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip, verbose
     )
 end
 
@@ -191,7 +192,7 @@ function build_nlsolver(
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         γ, c, α,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {
         F, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits,
@@ -248,7 +249,8 @@ function build_nlsolver(
             linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
             Pl = Pl, Pr = Pr,
-            assumptions = LinearSolve.OperatorAssumptions(true)
+            assumptions = LinearSolve.OperatorAssumptions(true),
+            verbose = verbose.linear_verbosity
         )
 
         tType = typeof(t)
@@ -269,7 +271,7 @@ function build_nlsolver(
                 end
                 NonlinearProblem(NonlinearFunction{true}(nlf), ztmp, nlp_params)
             end
-            cache = init(prob, nlalg.alg)
+            cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
         else
             nlcache = NLNewtonCache(
@@ -324,7 +326,7 @@ function build_nlsolver(
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         γ, c, α,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {
         F, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits,
@@ -366,7 +368,7 @@ function build_nlsolver(
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
             prob = NonlinearProblem(NonlinearFunction{false}(nlf), copy(ztmp), nlp_params)
-            cache = init(prob, nlalg.alg)
+            cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache
             )

@@ -20,7 +20,7 @@ function alg_cache(
         alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
@@ -76,7 +76,7 @@ function alg_cache(
         alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
@@ -113,7 +113,7 @@ function alg_cache(
     linprob = LinearProblem(W1, _vec(cubuff); u0 = _vec(dw12))
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
@@ -153,7 +153,7 @@ function alg_cache(
         alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
@@ -219,7 +219,7 @@ function alg_cache(
         alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
@@ -266,14 +266,14 @@ function alg_cache(
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
     linprob = LinearProblem(W2, _vec(cubuff); u0 = _vec(dw23))
     linsolve2 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
@@ -315,7 +315,7 @@ function alg_cache(
         alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
@@ -402,7 +402,7 @@ function alg_cache(
         alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
@@ -472,21 +472,21 @@ function alg_cache(
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
     linprob = LinearProblem(W2, _vec(cubuff1); u0 = _vec(dw23))
     linsolve2 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
     linprob = LinearProblem(W3, _vec(cubuff2); u0 = _vec(dw45))
     linsolve3 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
@@ -529,7 +529,7 @@ function alg_cache(
         alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
@@ -616,7 +616,7 @@ function alg_cache(
         alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
@@ -694,7 +694,7 @@ function alg_cache(
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
 
     linsolve2 = [
@@ -703,7 +703,7 @@ function alg_cache(
                 alg.linsolve, alias = LinearAliasSpecifier(
                     alias_A = true, alias_b = true
                 ),
-                assumptions = LinearSolve.OperatorAssumptions(true)
+                assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
             )
             for i in 1:((max_stages - 1) ÷ 2)
     ]

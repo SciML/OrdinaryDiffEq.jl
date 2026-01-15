@@ -12,7 +12,7 @@ import DiffEqBase
 import PreallocationTools: dualcache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
 using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
-    step!
+    step!, NonlinearVerbosity
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 import FastClosures: @closure
@@ -51,7 +51,7 @@ using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
 
 import OrdinaryDiffEqCore: _initialize_dae!, isnewton, get_W, isfirstcall, isfirststage,
     isJcurrent, get_new_W_γdt_cutoff, resize_nlsolver!, apply_step!,
-    postamble!
+    postamble!, @SciMLMessage
 
 import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W,
     WOperator, StaticWOperator, wrapprecs,
@@ -63,6 +63,7 @@ import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, S
 
 include("type.jl")
 include("utils.jl")
+include("deprecated.jl")
 include("nlsolve.jl")
 include("functional.jl")
 include("newton.jl")

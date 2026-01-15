@@ -37,7 +37,7 @@ OrdinaryDiffEqVerner = "1.5.0"
 ExponentialUtilities = "1.27"
 LinearAlgebra = "1.10"
 SciMLBase = "2.99"
-OrdinaryDiffEqCore = "2"
+OrdinaryDiffEqCore = "3"
 Aqua = "0.8.11"
 julia = "1.10"
 JET = "0.9, 0.11"
@@ -59,3 +59,6 @@ path = "../OrdinaryDiffEqCore"
 
 [sources.OrdinaryDiffEqVerner]
 path = "../OrdinaryDiffEqVerner"
+
+[sources.OrdinaryDiffEqRosenbrock]
+path = "../OrdinaryDiffEqRosenbrock"

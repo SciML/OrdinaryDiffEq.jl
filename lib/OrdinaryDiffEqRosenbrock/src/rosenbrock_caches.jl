@@ -140,7 +140,7 @@ function alg_cache(
         alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k₁ = zero(rate_prototype)
     k₂ = zero(rate_prototype)
@@ -177,7 +177,8 @@ function alg_cache(
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true),
+        verbose = verbose.linear_verbosity
     )
 
 
@@ -197,7 +198,7 @@ function alg_cache(
         alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k₁ = zero(rate_prototype)
     k₂ = zero(rate_prototype)
@@ -236,7 +237,8 @@ function alg_cache(
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true),
+        verbose = verbose.linear_verbosity
     )
 
     algebraic_vars = f.mass_matrix === I ? nothing :
@@ -270,7 +272,7 @@ function alg_cache(
         alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
@@ -304,7 +306,7 @@ function alg_cache(
         alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
@@ -370,7 +372,7 @@ function alg_cache(
         alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
@@ -406,7 +408,8 @@ function alg_cache(
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true),
+        verbose = verbose.linear_verbosity
     )
 
     return Rosenbrock33Cache(
@@ -422,7 +425,7 @@ function alg_cache(
         alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
@@ -475,7 +478,7 @@ function alg_cache(
         alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
@@ -513,7 +516,8 @@ function alg_cache(
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true),
+        verbose = verbose.linear_verbosity
     )
 
     return Rosenbrock34Cache(
@@ -539,7 +543,7 @@ function alg_cache(
         alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
@@ -687,7 +691,7 @@ function alg_cache(
         alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dense1 = zero(rate_prototype)
     dense2 = zero(rate_prototype)
@@ -729,7 +733,8 @@ function alg_cache(
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true),
+        verbose = verbose.linear_verbosity
     )
 
     return Rodas23WCache(
@@ -744,7 +749,7 @@ function alg_cache(
         alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dense1 = zero(rate_prototype)
     dense2 = zero(rate_prototype)
@@ -786,7 +791,8 @@ function alg_cache(
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true),
+        verbose = verbose.linear_verbosity
     )
 
     return Rodas3PCache(
@@ -801,7 +807,7 @@ function alg_cache(
         alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
@@ -822,7 +828,7 @@ function alg_cache(
         alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
@@ -856,7 +862,7 @@ function alg_cache(
         u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
@@ -876,7 +882,7 @@ function alg_cache(
         u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     # Initialize vectors
@@ -923,7 +929,8 @@ function alg_cache(
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
-        assumptions = LinearSolve.OperatorAssumptions(true)
+        assumptions = LinearSolve.OperatorAssumptions(true),
+        verbose = verbose.linear_verbosity
     )
 
 

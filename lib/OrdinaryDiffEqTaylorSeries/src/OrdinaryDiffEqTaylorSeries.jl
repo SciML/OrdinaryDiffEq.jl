@@ -17,7 +17,7 @@ import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import LinearAlgebra: norm
 using TruncatedStacktraces: @truncate_stacktrace
-using TaylorDiff, Symbolics, SymbolicUtils
+using TaylorDiff, Symbolics
 using TaylorDiff: make_seed, get_coefficient, append_coefficient, flatten
 import SciMLBase: @def
 import OrdinaryDiffEqCore
