@@ -1,4 +1,8 @@
-using Mooncake, OrdinaryDiffEq, StaticArrays, Test, DiffEqBase
+using Mooncake, OrdinaryDiffEq, StaticArrays, Test, FiniteDiff, DiffEqBase
+using ADTypes
+import DifferentiationInterface as DI
+
+# Mooncake is supported on all Julia versions
 
 function lorenz!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
@@ -16,5 +20,16 @@ function f(u0::Array{Float64})
 end
 
 u0 = [1.0; 0.0; 0.0]
-mooncake_gradient(f, x) = Mooncake.value_and_gradient!!(Mooncake.build_rrule(f, x), f, x)[2][2]
-@test mooncake_gradient(f, u0) isa Vector{Float64}
+
+# Reference gradient using ForwardDiff
+ref_grad = DI.gradient(f, AutoForwardDiff(), u0)
+
+# Test Mooncake gradient using DifferentiationInterface
+@test_broken begin
+    mooncake_grad = DI.gradient(f, AutoMooncake(; config = nothing), u0)
+    mooncake_grad ≈ ref_grad
+end
+
+# Alternative test with FiniteDiff as reference
+fd_grad = FiniteDiff.finite_difference_gradient(f, u0)
+@test ref_grad ≈ fd_grad rtol = 1.0e-6

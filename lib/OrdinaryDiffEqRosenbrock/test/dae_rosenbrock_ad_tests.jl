@@ -1,6 +1,25 @@
-using OrdinaryDiffEqRosenbrock, LinearAlgebra, ForwardDiff, Test
+using OrdinaryDiffEqRosenbrock, LinearAlgebra, Test
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
+import DifferentiationInterface as DI
+
+# Version-dependent AD backend selection
+# Enzyme: Julia <= 1.11 only
+# ForwardDiff: all versions
+const JULIA_VERSION_ALLOWS_ENZYME = VERSION < v"1.12" && isempty(VERSION.prerelease)
+
+if JULIA_VERSION_ALLOWS_ENZYME
+    using Enzyme
+end
+
+# Helper to get gradient backends for testing
+function get_gradient_backends()
+    backends = [AutoForwardDiff()]
+    if JULIA_VERSION_ALLOWS_ENZYME
+        push!(backends, AutoEnzyme(mode = Enzyme.Reverse))
+    end
+    return backends
+end
 
 afd_cs3 = AutoForwardDiff(chunksize = 3)
 function rober(du, u, p, t)
@@ -44,5 +63,7 @@ sol = @inferred solve(prob_mm_oop, Rodas5P(), reltol = 1.0e-8, abstol = 1.0e-8)
         )
         sum(sol)
     end
-    @test ForwardDiff.gradient(f, [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
+    for backend in get_gradient_backends()
+        @test DI.gradient(f, backend, [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
+    end
 end

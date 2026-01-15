@@ -1,6 +1,25 @@
-using OrdinaryDiffEqBDF, LinearAlgebra, ForwardDiff, Test
+using OrdinaryDiffEqBDF, LinearAlgebra, Test
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
+import DifferentiationInterface as DI
+
+# Version-dependent AD backend selection
+# Enzyme: Julia <= 1.11 only
+# ForwardDiff: all versions
+const JULIA_VERSION_ALLOWS_ENZYME = VERSION < v"1.12" && isempty(VERSION.prerelease)
+
+if JULIA_VERSION_ALLOWS_ENZYME
+    using Enzyme
+end
+
+# Helper to get gradient backends for testing
+function get_gradient_backends()
+    backends = [AutoForwardDiff()]
+    if JULIA_VERSION_ALLOWS_ENZYME
+        push!(backends, AutoEnzyme(mode = Enzyme.Reverse))
+    end
+    return backends
+end
 
 afd_cs3 = AutoForwardDiff(chunksize = 3)
 
@@ -64,12 +83,14 @@ end
         autodiff in [afd_cs3, AutoFiniteDiff()]
 
     alg = (_prob isa DAEProblem) ? DFBDF(; autodiff) : FBDF(; autodiff)
-    function f(p)
+    function f_loss(p)
         sol = solve(
             remake(_prob, p = p), alg, abstol = 1.0e-14,
             reltol = 1.0e-14, initializealg = initalg
         )
         sum(sol)
     end
-    @test ForwardDiff.gradient(f, [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
+    for backend in get_gradient_backends()
+        @test DI.gradient(f_loss, backend, [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
+    end
 end

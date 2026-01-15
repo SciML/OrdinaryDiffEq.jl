@@ -4,7 +4,15 @@ if !isempty(VERSION.prerelease)
     exit(0)
 end
 
-using Enzyme, OrdinaryDiffEqTsit5, StaticArrays, DiffEqBase, ForwardDiff, Test
+# Enzyme is only supported on Julia <= 1.11
+if VERSION >= v"1.12"
+    @warn "Skipping Enzyme tests on Julia $(VERSION) - only supported on Julia <= 1.11"
+    exit(0)
+end
+
+using Enzyme, OrdinaryDiffEqTsit5, StaticArrays, DiffEqBase, Test
+using ADTypes
+import DifferentiationInterface as DI
 
 function lorenz!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
@@ -30,18 +38,12 @@ function f_dt(u0)
 end;
 
 u0 = [1.0; 0.0; 0.0]
-fdj = ForwardDiff.jacobian(f_dt, u0)
 
-ezj = stack(
-    map(1:3) do i
-        d_u0 = zeros(3)
-        dy = zeros(13)
-        y = zeros(13)
-        d_u0[i] = 1.0
-        Enzyme.autodiff(Forward, f_dt, Duplicated(y, dy), Duplicated(u0, d_u0))
-        dy
-    end
-)
+# Test jacobian with ForwardDiff via DifferentiationInterface
+fdj = DI.jacobian(f_dt, AutoForwardDiff(), u0)
+
+# Test jacobian with Enzyme forward mode via DifferentiationInterface
+ezj = DI.jacobian(f_dt, AutoEnzyme(mode = Enzyme.Forward), u0)
 
 @test ezj ≈ fdj
 
@@ -52,8 +54,10 @@ function f_dt2(u0)
     return sum(sol[1, :])
 end
 
-fdg = ForwardDiff.gradient(f_dt2, u0)
-d_u0 = zeros(3)
-Enzyme.autodiff(Reverse, f_dt2, Active, Duplicated(u0, d_u0));
+# Test gradient with ForwardDiff via DifferentiationInterface
+fdg = DI.gradient(f_dt2, AutoForwardDiff(), u0)
 
-@test d_u0 ≈ fdg
+# Test gradient with Enzyme reverse mode via DifferentiationInterface
+ezg = DI.gradient(f_dt2, AutoEnzyme(mode = Enzyme.Reverse), u0)
+
+@test ezg ≈ fdg

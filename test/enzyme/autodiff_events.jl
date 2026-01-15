@@ -4,8 +4,17 @@ if !isempty(VERSION.prerelease)
     exit(0)
 end
 
+# Enzyme and Zygote are only supported on Julia <= 1.11
+if VERSION >= v"1.12"
+    @warn "Skipping Enzyme/Zygote tests on Julia $(VERSION) - only supported on Julia <= 1.11"
+    exit(0)
+end
+
 using SciMLSensitivity
 using OrdinaryDiffEq, OrdinaryDiffEqCore, FiniteDiff, Test
+using ADTypes
+import DifferentiationInterface as DI
+using Enzyme
 using Zygote
 
 function f(du, u, p, t)
@@ -37,11 +46,15 @@ end
 findiff = FiniteDiff.finite_difference_jacobian(test_f, p)
 findiff
 
-using ForwardDiff
-ad = ForwardDiff.jacobian(test_f, p)
+# Test with DifferentiationInterface using AutoForwardDiff
+ad = DI.jacobian(test_f, AutoForwardDiff(), p)
 ad
 
 @test ad ≈ findiff
+
+# Test with Enzyme forward mode
+ad_enzyme = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.Forward), p)
+@test ad_enzyme ≈ findiff
 
 function test_f2(
         p, sensealg = ForwardDiffSensitivity(), controller = nothing,
@@ -57,40 +70,45 @@ end
 
 @test test_f2(p) == test_f(p)[end]
 
-g1 = Zygote.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), p)
-g2 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint()), p)
-g3 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(), IController()), p)
-g4 = Zygote.gradient(
+# Use DifferentiationInterface with AutoZygote backend for gradient computations
+g1 = DI.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), AutoZygote(), p)
+g2 = DI.gradient(θ -> test_f2(θ, ReverseDiffAdjoint()), AutoZygote(), p)
+g3 = DI.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(), IController()), AutoZygote(), p)
+g4 = DI.gradient(
     θ -> test_f2(θ, ReverseDiffAdjoint(), PIController(7 // 50, 2 // 25)),
+    AutoZygote(),
     p
 )
-@test_broken g5 = Zygote.gradient(
+@test_broken g5 = DI.gradient(
     θ -> test_f2(
         θ, ReverseDiffAdjoint(),
         PIDController(1 / 18.0, 1 / 9.0, 1 / 18.0)
     ),
+    AutoZygote(),
     p
 )
-g6 = Zygote.gradient(
+g6 = DI.gradient(
     θ -> test_f2(
         θ, ForwardDiffSensitivity(),
         OrdinaryDiffEqCore.PredictiveController(), TRBDF2()
     ),
+    AutoZygote(),
     p
 )
-@test_broken g7 = Zygote.gradient(
+@test_broken g7 = DI.gradient(
     θ -> test_f2(
         θ, ReverseDiffAdjoint(),
         OrdinaryDiffEqCore.PredictiveController(),
         TRBDF2()
     ),
+    AutoZygote(),
     p
 )
 
-@test g1[1] ≈ findiff[2, 1:2]
-@test g2[1] ≈ findiff[2, 1:2]
-@test g3[1] ≈ findiff[2, 1:2]
-@test g4[1] ≈ findiff[2, 1:2]
-@test_broken g5[1] ≈ findiff[2, 1:2]
-@test g6[1] ≈ findiff[2, 1:2]
-@test_broken g7[1] ≈ findiff[2, 1:2]
+@test g1 ≈ findiff[2, 1:2]
+@test g2 ≈ findiff[2, 1:2]
+@test g3 ≈ findiff[2, 1:2]
+@test g4 ≈ findiff[2, 1:2]
+@test_broken g5 ≈ findiff[2, 1:2]
+@test g6 ≈ findiff[2, 1:2]
+@test_broken g7 ≈ findiff[2, 1:2]

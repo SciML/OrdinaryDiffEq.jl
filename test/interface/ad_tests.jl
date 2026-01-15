@@ -1,5 +1,38 @@
 using Test
-using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes, DifferentiationInterface
+using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes
+import DifferentiationInterface as DI
+
+# Version-dependent AD backend selection
+# Zygote: Julia <= 1.11 only
+# Enzyme: Julia <= 1.11 only
+# Mooncake: all versions
+# ForwardDiff: all versions
+
+# Define which backends are available based on Julia version
+const JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE = VERSION < v"1.12"
+
+# Load version-dependent packages
+if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE && isempty(VERSION.prerelease)
+    using Enzyme
+end
+
+# Helper to get gradient backends for testing
+function get_gradient_backends()
+    backends = [AutoForwardDiff()]
+    if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE && isempty(VERSION.prerelease)
+        push!(backends, AutoEnzyme(mode = Enzyme.Reverse))
+    end
+    return backends
+end
+
+# Helper to get jacobian backends for testing
+function get_jacobian_backends()
+    backends = [AutoForwardDiff()]
+    if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE && isempty(VERSION.prerelease)
+        push!(backends, AutoEnzyme(mode = Enzyme.Forward))
+    end
+    return backends
+end
 
 function f(du, u, p, t)
     du[1] = -p[1]
@@ -25,10 +58,12 @@ for x in 0:0.001:5
     called = false
     findiff = FiniteDiff.finite_difference_jacobian(test_f, p)
     @test called
-    called = false
-    fordiff = ForwardDiff.jacobian(test_f, p)
-    @test called
-    @test findiff ≈ fordiff rtol = 1.0e-5
+    for backend in get_jacobian_backends()
+        called = false
+        dijac = DI.jacobian(test_f, backend, p)
+        @test called
+        @test findiff ≈ dijac rtol = 1.0e-5
+    end
 end
 
 function f2(du, u, p, t)
@@ -54,10 +89,12 @@ for x in 2.1:0.001:5
     p = [2.0, x]
     findiff = FiniteDiff.finite_difference_jacobian(test_f2, p)
     @test called
-    called = false
-    fordiff = ForwardDiff.jacobian(test_f2, p)
-    @test called
-    @test findiff ≈ fordiff rtol = 1.0e-5
+    for backend in get_jacobian_backends()
+        called = false
+        dijac = DI.jacobian(test_f2, backend, p)
+        @test called
+        @test findiff ≈ dijac rtol = 1.0e-5
+    end
 end
 
 #=
@@ -116,10 +153,12 @@ for x in 1.0:0.001:2.5
 
     findiff = FiniteDiff.finite_difference_jacobian(test_lotka, p)
     @test called
-    called = false
-    fordiff = ForwardDiff.jacobian(test_lotka, p)
-    @test called
-    @test findiff ≈ fordiff rtol = 1.0e-5
+    for backend in get_jacobian_backends()
+        called = false
+        dijac = DI.jacobian(test_lotka, backend, p)
+        @test called
+        @test findiff ≈ dijac rtol = 1.0e-5
+    end
 end
 
 # Gradients and Hessians
@@ -133,8 +172,10 @@ function myobj(θ)
     return diff'diff
 end
 
-ForwardDiff.gradient(myobj, [1.0])
-ForwardDiff.hessian(myobj, [1.0])
+for backend in get_gradient_backends()
+    DI.gradient(myobj, backend, [1.0])
+end
+DI.hessian(myobj, AutoForwardDiff(), [1.0])
 
 function myobj2(θ)
     f(du, u, p, t) = (du[1] = -θ[1] * u[1])
@@ -145,8 +186,10 @@ function myobj2(θ)
     return diff'diff
 end
 
-ForwardDiff.gradient(myobj2, [1.0])
-ForwardDiff.hessian(myobj2, [1.0])
+for backend in get_gradient_backends()
+    DI.gradient(myobj2, backend, [1.0])
+end
+DI.hessian(myobj2, AutoForwardDiff(), [1.0])
 
 function myobj3(θ)
     f(u, p, t) = -θ[1] * u
@@ -158,8 +201,10 @@ function myobj3(θ)
     return diff'diff
 end
 
-ForwardDiff.gradient(myobj3, [1.0])
-ForwardDiff.hessian(myobj3, [1.0])
+for backend in get_gradient_backends()
+    DI.gradient(myobj3, backend, [1.0])
+end
+DI.hessian(myobj3, AutoForwardDiff(), [1.0])
 
 function myobj4(θ)
     f(du, u, p, t) = (du[1] = -θ[1] * u[1])
@@ -171,8 +216,10 @@ function myobj4(θ)
     return diff'diff
 end
 
-ForwardDiff.gradient(myobj4, [1.0])
-ForwardDiff.hessian(myobj4, [1.0])
+for backend in get_gradient_backends()
+    DI.gradient(myobj4, backend, [1.0])
+end
+DI.hessian(myobj4, AutoForwardDiff(), [1.0])
 
 f1s = function (du, u, p, t)
     du[1] = p[2] * u[1]
@@ -199,7 +246,9 @@ function difffunc(p)
     tmp_prob = remake(prob, p = p)
     return vec(solve(tmp_prob, KenCarp4(), saveat = times))
 end
-ForwardDiff.jacobian(difffunc, ones(5))
+for backend in get_jacobian_backends()
+    DI.jacobian(difffunc, backend, ones(5))
+end
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1221
 
@@ -217,11 +266,11 @@ of_a = p -> begin
     return sum(t -> abs2(t[1]), sol([1.0, 2.0, 3.0]))
 end
 
-@test !iszero(ForwardDiff.gradient(t -> of_a(t), [1.0]))
-@test ForwardDiff.gradient(
-    t -> of_a(t),
-    [1.0]
-) ≈ FiniteDiff.finite_difference_gradient(t -> of_a(t), [1.0]) rtol = 1.0e-5
+for backend in get_gradient_backends()
+    @test !iszero(DI.gradient(of_a, backend, [1.0]))
+end
+@test DI.gradient(of_a, AutoForwardDiff(), [1.0]) ≈
+      FiniteDiff.finite_difference_gradient(t -> of_a(t), [1.0]) rtol = 1.0e-5
 
 SOLVERS_FOR_AD = (
     (BS3, 1.0e-12),
@@ -262,7 +311,7 @@ SOLVERS_FOR_AD = (
         )
         solve(prob, alg(), abstol = 1.0e-14, reltol = 1.0e-14)(last(tspan))[1]
     end
-    @test ForwardDiff.gradient(g, [10.0])[1] ≈ exp(-0.5) rtol = rtol
+    @test DI.gradient(g, AutoForwardDiff(), [10.0])[1] ≈ exp(-0.5) rtol = rtol
 end
 
 @testset "$alg can handle ForwardDiff.Dual in t0 with rtol=$rtol when iip=$iip" for (alg, rtol) in SOLVERS_FOR_AD,
@@ -288,7 +337,7 @@ end
         )
         solve(prob, alg(), abstol = 1.0e-14, reltol = 1.0e-14)(last(tspan))[1]
     end
-    @test ForwardDiff.derivative(g, 0.0) ≈ _u0 / 2 * exp(-0.5) rtol = rtol
+    @test DI.derivative(g, AutoForwardDiff(), 0.0) ≈ _u0 / 2 * exp(-0.5) rtol = rtol
 end
 
 # https://github.com/SciML/DifferentialEquations.jl/issues/903
@@ -322,22 +371,22 @@ prob = ODEProblem{true}(foo!, u0, tspan, p0, saveat = saveat)
 data = solve(prob, Tsit5(), reltol = reltol, abstol = abstol)
 fn(x, solver) = objfun(x, prob, data, solver, reltol, abstol)
 
-@test norm(ForwardDiff.gradient(x -> fn(x, Tsit5()), p0)) < 1.0e-9
-@test norm(ForwardDiff.gradient(x -> fn(x, Vern7()), p0)) < 1.0e-9
-@test norm(ForwardDiff.gradient(x -> fn(x, Rodas4()), p0)) < 1.0e-9
-@test norm(ForwardDiff.gradient(x -> fn(x, Rosenbrock23()), p0)) < 1.0e-6
-@test norm(ForwardDiff.gradient(x -> fn(x, AutoTsit5(Rosenbrock23())), p0)) < 1.0e-9
-@test norm(ForwardDiff.gradient(x -> fn(x, AutoVern9(Rodas4())), p0)) < 1.0e-9
+@test norm(DI.gradient(x -> fn(x, Tsit5()), AutoForwardDiff(), p0)) < 1.0e-9
+@test norm(DI.gradient(x -> fn(x, Vern7()), AutoForwardDiff(), p0)) < 1.0e-9
+@test norm(DI.gradient(x -> fn(x, Rodas4()), AutoForwardDiff(), p0)) < 1.0e-9
+@test norm(DI.gradient(x -> fn(x, Rosenbrock23()), AutoForwardDiff(), p0)) < 1.0e-6
+@test norm(DI.gradient(x -> fn(x, AutoTsit5(Rosenbrock23())), AutoForwardDiff(), p0)) < 1.0e-9
+@test norm(DI.gradient(x -> fn(x, AutoVern9(Rodas4())), AutoForwardDiff(), p0)) < 1.0e-9
 
 # test AD with LinearExponential()
-function f(x)
+function f_linexp(x)
     K = MatrixOperator(x)
     u0 = eltype(x).([1.0, 0.0])
     prob = ODEProblem(K, u0, (0.0, 10.0))
     return sol = solve(prob, LinearExponential(), tstops = [0.0, 10.0])[2, :]
 end
 K_ = [-1.0 0.0; 1.0 -1.0]
-@test isapprox(ForwardDiff.jacobian(f, K_)[2], 0.00226999, atol = 1.0e-6)
+@test isapprox(DI.jacobian(f_linexp, AutoForwardDiff(), K_)[2], 0.00226999, atol = 1.0e-6)
 
 implicit_algs = [
     FBDF,
@@ -371,8 +420,40 @@ end
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2675
 x0 = [0.1]
-DifferentiationInterface.gradient(AutoForwardDiff(), x0) do x
+DI.gradient(AutoForwardDiff(), x0) do x
     prob = ODEProblem{true}((du, u, p, t) -> (du[1] = -u[1]), x, (0.0, 1.0))
     sol = solve(prob, DefaultODEAlgorithm(), reltol = 1.0e-6)
     sum(sol)
 end ≈ [6.765310476296564]
+
+# Test with multiple AD backends
+@testset "DifferentiationInterface multi-backend tests" begin
+    # Simple ODE for testing
+    function simple_ode!(du, u, p, t)
+        du[1] = -p[1] * u[1]
+        return nothing
+    end
+
+    function loss_fn(p)
+        prob = ODEProblem(simple_ode!, [1.0], (0.0, 1.0), p)
+        sol = solve(prob, Tsit5(), abstol = 1.0e-12, reltol = 1.0e-12)
+        return sum(sol[end])
+    end
+
+    p_test = [0.5]
+    ref_grad = FiniteDiff.finite_difference_gradient(loss_fn, p_test)
+
+    # Test ForwardDiff (all versions)
+    @testset "AutoForwardDiff" begin
+        grad = DI.gradient(loss_fn, AutoForwardDiff(), p_test)
+        @test grad ≈ ref_grad rtol = 1.0e-6
+    end
+
+    # Test Enzyme (Julia <= 1.11 only)
+    if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE && isempty(VERSION.prerelease)
+        @testset "AutoEnzyme" begin
+            grad = DI.gradient(loss_fn, AutoEnzyme(mode = Enzyme.Reverse), p_test)
+            @test grad ≈ ref_grad rtol = 1.0e-6
+        end
+    end
+end
