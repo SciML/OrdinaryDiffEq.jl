@@ -8,6 +8,15 @@
         :rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon,
         :stability_check, :near_singular,
         :sensitivity_vjp_choice,
+        # SDE-specific fields
+        :noise_evaluation,
+        # DDE-specific fields
+        :discontinuity_tracking,
+        :delay_evaluation,
+        :constrained_step,
+        :residual_control,
+        :neutral_delay,
+        :state_dependent_delay
     )
 
     presets = (
@@ -37,6 +46,15 @@
             stability_check = Silent(),
             near_singular = Silent(),
             sensitivity_vjp_choice = Silent(),
+            # SDE-specific fields
+            noise_evaluation = Silent(),
+            # DDE-specific fields
+            discontinuity_tracking = Silent(),
+            delay_evaluation = Silent(),
+            constrained_step = Silent(),
+            residual_control = Silent(),
+            neutral_delay = Silent(),
+            state_dependent_delay = Silent()
         ),
         Minimal = (
             linear_verbosity = Minimal(),
@@ -64,6 +82,15 @@
             stability_check = Silent(),
             near_singular = WarnLevel(),
             sensitivity_vjp_choice = Silent(),
+            # SDE-specific fields
+            noise_evaluation = Silent(),
+            # DDE-specific fields
+            discontinuity_tracking = Silent(),
+            delay_evaluation = Silent(),
+            constrained_step = Silent(),
+            residual_control = Silent(),
+            neutral_delay = Silent(),
+            state_dependent_delay = WarnLevel()
         ),
         Standard = (
             linear_verbosity = Minimal(),
@@ -91,6 +118,15 @@
             stability_check = Silent(),
             near_singular = Silent(),
             sensitivity_vjp_choice = Silent(),
+            # SDE-specific fields
+            noise_evaluation = Silent(),
+            # DDE-specific fields
+            discontinuity_tracking = Silent(),
+            delay_evaluation = Silent(),
+            constrained_step = Silent(),
+            residual_control = Silent(),
+            neutral_delay = Silent(),
+            state_dependent_delay = Silent()
         ),
         Detailed = (
             linear_verbosity = Detailed(),
@@ -118,6 +154,15 @@
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
             sensitivity_vjp_choice = WarnLevel(),
+            # SDE-specific fields
+            noise_evaluation = InfoLevel(),
+            # DDE-specific fields
+            discontinuity_tracking = InfoLevel(),
+            delay_evaluation = InfoLevel(),
+            constrained_step = InfoLevel(),
+            residual_control = InfoLevel(),
+            neutral_delay = InfoLevel(),
+            state_dependent_delay = WarnLevel()
         ),
         All = (
             linear_verbosity = All(),
@@ -145,6 +190,15 @@
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
             sensitivity_vjp_choice = WarnLevel(),
+            # SDE-specific fields
+            noise_evaluation = InfoLevel(),
+            # DDE-specific fields
+            discontinuity_tracking = InfoLevel(),
+            delay_evaluation = InfoLevel(),
+            constrained_step = InfoLevel(),
+            residual_control = InfoLevel(),
+            neutral_delay = InfoLevel(),
+            state_dependent_delay = InfoLevel()
         ),
     )
 
@@ -163,6 +217,17 @@
         ),
         sensitivity = (
             :sensitivity_vjp_choice,
+        ),
+        sde_specific = (
+            :noise_evaluation
+        ),
+        dde_specific = (
+            :discontinuity_tracking,
+            :delay_evaluation,
+            :constrained_step,
+            :residual_control,
+            :neutral_delay,
+            :state_dependent_delay
         ),
     )
 end
@@ -210,6 +275,17 @@ diagnostic messages, warnings, and errors during ODE solution.
 ## Sensitivity Group
 - `sensitivity_vjp_choice`: Messages about VJP choice in sensitivity analysis (used by SciMLSensitivity.jl)
 
+## SDE-Specific Group (used by StochasticDiffEq.jl)
+- `noise_evaluation`: Messages about noise term evaluation
+
+## DDE-Specific Group (used by DelayDiffEq.jl)
+- `discontinuity_tracking`: Messages about discontinuity propagation tracking
+- `delay_evaluation`: Messages about delay term evaluation
+- `constrained_step`: Messages when step size is constrained by discontinuities
+- `residual_control`: Messages about residual control in implicit methods
+- `neutral_delay`: Messages specific to neutral delay equations
+- `state_dependent_delay`: Messages when state-dependent delays are detected/evaluated
+
 # Constructors
 
     ODEVerbosity(preset::AbstractVerbosityPreset)
@@ -221,7 +297,7 @@ Create an `ODEVerbosity` using a preset configuration:
 - `SciMLLogging.Detailed()`: Comprehensive debugging information
 - `SciMLLogging.All()`: Maximum verbosity
 
-    ODEVerbosity(; preset=nothing, error_control=nothing, performance=nothing, numerical=nothing, kwargs...)
+    ODEVerbosity(; preset=nothing, error_control=nothing, performance=nothing, numerical=nothing, sde_specific=nothing, dde_specific=nothing, kwargs...)
 
 Create an `ODEVerbosity` with group-level or individual field control.
 
