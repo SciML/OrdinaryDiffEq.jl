@@ -57,3 +57,35 @@ d_u0 = zeros(3)
 Enzyme.autodiff(Reverse, f_dt2, Active, Duplicated(u0, d_u0));
 
 @test d_u0 ≈ fdg
+
+# Reactant tests
+using Reactant
+
+@testset "Reactant + Enzyme Forward Mode" begin
+    u0_r = Reactant.to_rarray(Float64[1.0, 0.0, 0.0])
+
+    function sq_fwd(u0)
+        y = zeros(13)
+        d_u0 = ones(3)
+        dy = zeros(13)
+        Enzyme.autodiff(Forward, f_dt, Duplicated(y, dy), Duplicated(u0, d_u0))
+        return dy
+    end
+
+    result = @jit sq_fwd(u0_r)
+    expected = sum(fdj, dims=2)[:]
+    @test collect(result) ≈ expected
+end
+
+@testset "Reactant + Enzyme Reverse Mode" begin
+    u0_r = Reactant.to_rarray(Float64[1.0, 0.0, 0.0])
+    grad = @jit Enzyme.gradient(Reverse, f_dt2, u0_r)
+    @test collect(grad[1]) ≈ fdg
+end
+
+@testset "Reactant + Enzyme ReverseWithPrimal" begin
+    u0_r = Reactant.to_rarray(Float64[1.0, 0.0, 0.0])
+    result = @jit Enzyme.gradient(ReverseWithPrimal, f_dt2, u0_r)
+    @test result.val ≈ f_dt2(u0)
+    @test collect(result.derivs[1]) ≈ fdg
+end

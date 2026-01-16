@@ -9,6 +9,8 @@ import DocStringExtensions
 import Reexport: @reexport
 using Reexport: @reexport
 @reexport using SciMLBase
+
+using ReactantCore: @trace
 import DiffEqBase
 
 import Logging: @logmsg, LogLevel
