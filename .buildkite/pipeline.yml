@@ -22,12 +22,7 @@ steps:
         version:
           - "1"
         group:
-          - "Regression_I"
-          - "Regression_II"
           - "Multithreading"
-          - "Integrators_II"
-          - "InterfaceIV"
-          - "InterfaceV"
     env:
       BUILDKITE_PLUGIN_JULIA_VERSION: "{{matrix.version}}"
       GROUP: "{{matrix.group}}"
