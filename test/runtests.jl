@@ -116,7 +116,6 @@ end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
-        @time @safetestset "AD Tests" include("interface/ad_tests.jl")
         @time @safetestset "GPU AutoDiff Interface Tests" include("interface/gpu_autodiff_interface_tests.jl")
         @time @safetestset "DAE Initialization Tests" include("interface/dae_initialization_tests.jl")
     end
@@ -189,6 +188,7 @@ end
     # AD tests - Enzyme/Zygote only on Julia <= 1.11 (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
     if !is_APPVEYOR && GROUP == "AD"
         activate_ad_env()
+        @time @safetestset "AD Tests" include("ad/ad_tests.jl")
         @time @safetestset "Autodiff Events Tests" include("ad/autodiff_events.jl")
         @time @safetestset "Discrete Adjoint Tests" include("ad/discrete_adjoints.jl")
         @time @safetestset "Mooncake Tests" include("ad/mooncake.jl")
