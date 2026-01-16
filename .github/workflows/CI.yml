@@ -17,7 +17,10 @@ jobs:
           - InterfaceI
           - InterfaceII
           - InterfaceIII
+          - InterfaceIV
+          - InterfaceV
           - Integrators_I
+          - Integrators_II
           - AlgConvergence_I
           - AlgConvergence_II
           - AlgConvergence_III
@@ -26,6 +29,9 @@ jobs:
           - ODEInterfaceRegression
           - Multithreading
           - QA
+          - Regression_I
+          - Regression_II
+          - Multithreading
 
           # Functional tests for sublibraries (run on all Julia versions)
           - OrdinaryDiffEqAdamsBashforthMoulton
