@@ -12,7 +12,7 @@
     dtmax_tdir = tdir * dtmax
 
     dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
-    smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
+    smalldt = max(dtmin, convert(_tType, oneunit_tType * 1e-6))
 
     if integrator.isdae
         result_dt = tdir * max(smalldt, dtmin)
@@ -152,8 +152,8 @@
     end
 
     dt₀ = ifelse(
-        (d₀ < 1 // 10^(5)) |
-            (d₁ < 1 // 10^(5)), smalldt,
+        (d₀ < 1e-5) |
+            (d₁ < 1e-5), smalldt,
         convert(
             _tType,
             oneunit_tType * DiffEqBase.value(
@@ -219,8 +219,8 @@
     # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
 
     max_d₁d₂ = max(d₁, d₂)
-    if max_d₁d₂ <= 1 // Int64(10)^(15)
-        dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
+    if max_d₁d₂ <= 1e-15
+        dt₁ = max(convert(_tType, oneunit_tType * 1e-6), dt₀ * 1e-3)
     else
         dt₁ = convert(
             _tType,
@@ -280,7 +280,7 @@ end
     dtmax_tdir = tdir * dtmax
 
     dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
-    smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
+    smalldt = max(dtmin, convert(_tType, oneunit_tType * 1e-6))
 
     if integrator.isdae
         return tdir * max(smalldt, dtmin)
@@ -305,7 +305,7 @@ end
 
     d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
 
-    if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
+    if d₀ < 1e-5 || d₁ < 1e-5
         dt₀ = smalldt
     else
         dt₀ = convert(_tType, oneunit_tType * DiffEqBase.value((d₀ / d₁) / 100))
@@ -324,8 +324,8 @@ end
     d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType, t) / dt₀ * oneunit_tType
 
     max_d₁d₂ = max(d₁, d₂)
-    if max_d₁d₂ <= 1 // Int64(10)^(15)
-        dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
+    if max_d₁d₂ <= 1e-15
+        dt₁ = max(smalldt, dt₀ * 1e-3)
     else
         dt₁ = _tType(
             oneunit_tType *
@@ -355,5 +355,5 @@ end
     tspan = prob.tspan
     init_dt = abs(tspan[2] - tspan[1])
     init_dt = isfinite(init_dt) ? init_dt : oneunit(_tType)
-    return convert(_tType, init_dt * 1 // 10^(6))
+    return convert(_tType, init_dt * 1e-6)
 end

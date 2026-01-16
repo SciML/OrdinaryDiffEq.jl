@@ -50,7 +50,7 @@ function SciMLBase.__init(
         qsteady_max = qsteady_max_default(alg),
         beta1 = nothing,
         beta2 = nothing,
-        qoldinit = anyadaptive(alg) ? 1 // 10^4 : 0,
+        qoldinit = anyadaptive(alg) ? 1e-4 : 0,
         controller = nothing,
         fullnormalize = true,
         failfactor = 2,
@@ -273,12 +273,12 @@ function SciMLBase.__init(
                     convert(
                         uBottomEltype,
                         oneunit(uBottomEltype) *
-                            1 // 10^6
+                            1e-6
                     )
                 )
             )
         else
-            abstol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
+            abstol_internal = unitfulvalue.(real.(oneunit.(u) .* 1e-6))
         end
     else
         abstol_internal = real.(abstol)
@@ -292,12 +292,12 @@ function SciMLBase.__init(
                 real(
                     convert(
                         uBottomEltype,
-                        oneunit(uBottomEltype) * 1 // 10^3
+                        oneunit(uBottomEltype) * 1e-3
                     )
                 )
             )
         else
-            reltol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
+            reltol_internal = unitfulvalue.(real.(oneunit.(u) .* 1e-3))
         end
     else
         reltol_internal = real.(reltol)
