@@ -163,5 +163,8 @@ integrator = init(
     @test_nowarn step!(integ, 0.01, true)
     reinit!(integ, reinit_dae = false)
     @test integ.u ≈ [2.0, 0.0]
-    @test_warn ["dt", "forced below floating point epsilon"] step!(integ, 0.01, true)
+    # @test_warn doesn't properly capture LazyString warnings from SciMLBase
+    # Just verify that step! runs (it will fail with Unstable retcode due to violated DAE constraint)
+    step!(integ, 0.01, true)
+    @test integ.sol.retcode == ReturnCode.Unstable
 end
