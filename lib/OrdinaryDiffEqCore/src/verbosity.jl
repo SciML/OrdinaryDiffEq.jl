@@ -1,4 +1,4 @@
-@verbosity_specifier ODEVerbosity begin
+@verbosity_specifier DEVerbosity begin
     toggles = (
         :linear_verbosity, :nonlinear_verbosity,
         :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability,
@@ -233,7 +233,7 @@
 end
 
 """
-    ODEVerbosity <: AbstractVerbositySpecifier
+    DEVerbosity <: AbstractVerbositySpecifier
 
 Verbosity configuration for OrdinaryDiffEq.jl solvers, providing fine-grained control over
 diagnostic messages, warnings, and errors during ODE solution.
@@ -288,54 +288,54 @@ diagnostic messages, warnings, and errors during ODE solution.
 
 # Constructors
 
-    ODEVerbosity(preset::AbstractVerbosityPreset)
+    DEVerbosity(preset::AbstractVerbosityPreset)
 
-Create an `ODEVerbosity` using a preset configuration:
+Create an `DEVerbosity` using a preset configuration:
 - `SciMLLogging.None()`: All messages disabled
 - `SciMLLogging.Minimal()`: Only critical errors and fatal issues
 - `SciMLLogging.Standard()`: Balanced verbosity (default)
 - `SciMLLogging.Detailed()`: Comprehensive debugging information
 - `SciMLLogging.All()`: Maximum verbosity
 
-    ODEVerbosity(; preset=nothing, error_control=nothing, performance=nothing, numerical=nothing, sde_specific=nothing, dde_specific=nothing, kwargs...)
+    DEVerbosity(; preset=nothing, error_control=nothing, performance=nothing, numerical=nothing, sde_specific=nothing, dde_specific=nothing, kwargs...)
 
-Create an `ODEVerbosity` with group-level or individual field control.
+Create an `DEVerbosity` with group-level or individual field control.
 
 # Examples
 
 ```julia
 # Use a preset
-verbose = ODEVerbosity(SciMLLogging.Standard())
+verbose = DEVerbosity(SciMLLogging.Standard())
 
 # Set entire groups
-verbose = ODEVerbosity(
+verbose = DEVerbosity(
     error_control = SciMLLogging.WarnLevel(),
     numerical = SciMLLogging.InfoLevel()
 )
 
 # Set individual fields
-verbose = ODEVerbosity(
+verbose = DEVerbosity(
     dt_NaN = SciMLLogging.ErrorLevel(),
     alg_switch = SciMLLogging.InfoLevel()
 )
 
 # Mix group and individual settings
-verbose = ODEVerbosity(
+verbose = DEVerbosity(
     numerical = SciMLLogging.InfoLevel(),  # Set all numerical to InfoLevel
     unlimited_dt = SciMLLogging.ErrorLevel()  # Override specific field
 )
 ```
 """
-function ODEVerbosity end
+function DEVerbosity end
 
-const DEFAULT_VERBOSE = ODEVerbosity()
+const DEFAULT_VERBOSE = DEVerbosity()
 
 @inline function _process_verbose_param(verbose::SciMLLogging.AbstractVerbosityPreset)
-    return ODEVerbosity(verbose)
+    return DEVerbosity(verbose)
 end
 
 @inline function _process_verbose_param(verbose::Bool)
-    return verbose ? DEFAULT_VERBOSE : ODEVerbosity(SciMLLogging.None())
+    return verbose ? DEFAULT_VERBOSE : DEVerbosity(SciMLLogging.None())
 end
 
-@inline _process_verbose_param(verbose::ODEVerbosity) = verbose
+@inline _process_verbose_param(verbose::DEVerbosity) = verbose
