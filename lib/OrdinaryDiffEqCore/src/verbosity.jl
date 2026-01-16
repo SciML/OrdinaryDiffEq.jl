@@ -11,7 +11,6 @@
         # SDE-specific fields
         :noise_evaluation,
         :adaptive_timestepping,
-        :function_NaN,
         # DDE-specific fields
         :discontinuity_tracking,
         :delay_evaluation,
@@ -51,7 +50,6 @@
             # SDE-specific fields
             noise_evaluation = Silent(),
             adaptive_timestepping = Silent(),
-            function_NaN = Silent(),
             # DDE-specific fields
             discontinuity_tracking = Silent(),
             delay_evaluation = Silent(),
@@ -89,7 +87,6 @@
             # SDE-specific fields
             noise_evaluation = Silent(),
             adaptive_timestepping = Silent(),
-            function_NaN = WarnLevel(),
             # DDE-specific fields
             discontinuity_tracking = Silent(),
             delay_evaluation = Silent(),
@@ -127,7 +124,6 @@
             # SDE-specific fields
             noise_evaluation = Silent(),
             adaptive_timestepping = Silent(),
-            function_NaN = WarnLevel(),
             # DDE-specific fields
             discontinuity_tracking = Silent(),
             delay_evaluation = Silent(),
@@ -165,7 +161,6 @@
             # SDE-specific fields
             noise_evaluation = InfoLevel(),
             adaptive_timestepping = InfoLevel(),
-            function_NaN = WarnLevel(),
             # DDE-specific fields
             discontinuity_tracking = InfoLevel(),
             delay_evaluation = InfoLevel(),
@@ -203,7 +198,6 @@
             # SDE-specific fields
             noise_evaluation = InfoLevel(),
             adaptive_timestepping = InfoLevel(),
-            function_NaN = WarnLevel(),
             # DDE-specific fields
             discontinuity_tracking = InfoLevel(),
             delay_evaluation = InfoLevel(),
@@ -232,8 +226,7 @@
         ),
         sde_specific = (
             :noise_evaluation,
-            :adaptive_timestepping,
-            :function_NaN
+            :adaptive_timestepping
         ),
         dde_specific = (
             :discontinuity_tracking,
@@ -292,7 +285,6 @@ diagnostic messages, warnings, and errors during ODE solution.
 ## SDE-Specific Group (used by StochasticDiffEq.jl)
 - `noise_evaluation`: Messages about noise term evaluation
 - `adaptive_timestepping`: Messages about adaptive timestepping decisions
-- `function_NaN`: Messages when drift or diffusion functions return NaN
 
 ## DDE-Specific Group (used by DelayDiffEq.jl)
 - `discontinuity_tracking`: Messages about discontinuity propagation tracking
