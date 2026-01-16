@@ -10,7 +10,6 @@
         :sensitivity_vjp_choice,
         # SDE-specific fields
         :noise_evaluation,
-        :adaptive_timestepping,
         # DDE-specific fields
         :discontinuity_tracking,
         :delay_evaluation,
@@ -49,7 +48,6 @@
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
-            adaptive_timestepping = Silent(),
             # DDE-specific fields
             discontinuity_tracking = Silent(),
             delay_evaluation = Silent(),
@@ -86,7 +84,6 @@
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
-            adaptive_timestepping = Silent(),
             # DDE-specific fields
             discontinuity_tracking = Silent(),
             delay_evaluation = Silent(),
@@ -123,7 +120,6 @@
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
-            adaptive_timestepping = Silent(),
             # DDE-specific fields
             discontinuity_tracking = Silent(),
             delay_evaluation = Silent(),
@@ -160,7 +156,6 @@
             sensitivity_vjp_choice = WarnLevel(),
             # SDE-specific fields
             noise_evaluation = InfoLevel(),
-            adaptive_timestepping = InfoLevel(),
             # DDE-specific fields
             discontinuity_tracking = InfoLevel(),
             delay_evaluation = InfoLevel(),
@@ -197,7 +192,6 @@
             sensitivity_vjp_choice = WarnLevel(),
             # SDE-specific fields
             noise_evaluation = InfoLevel(),
-            adaptive_timestepping = InfoLevel(),
             # DDE-specific fields
             discontinuity_tracking = InfoLevel(),
             delay_evaluation = InfoLevel(),
@@ -225,8 +219,7 @@
             :sensitivity_vjp_choice,
         ),
         sde_specific = (
-            :noise_evaluation,
-            :adaptive_timestepping
+            :noise_evaluation
         ),
         dde_specific = (
             :discontinuity_tracking,
@@ -284,7 +277,6 @@ diagnostic messages, warnings, and errors during ODE solution.
 
 ## SDE-Specific Group (used by StochasticDiffEq.jl)
 - `noise_evaluation`: Messages about noise term evaluation
-- `adaptive_timestepping`: Messages about adaptive timestepping decisions
 
 ## DDE-Specific Group (used by DelayDiffEq.jl)
 - `discontinuity_tracking`: Messages about discontinuity propagation tracking
