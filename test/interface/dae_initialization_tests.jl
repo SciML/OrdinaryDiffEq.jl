@@ -160,7 +160,8 @@ integrator = init(
     @test integ.u ≈ [2.0, 2.0] atol = 1.0e-8
     reinit!(integ)
     @test integ.u ≈ [2.0, 2.0] atol = 1.0e-8
-    @test_nowarn step!(integ, 0.01, true)
+    step!(integ, 0.01, true)
+    @test SciMLBase.successful_retcode(integ.sol.retcode)
     reinit!(integ, reinit_dae = false)
     @test integ.u ≈ [2.0, 0.0]
     # @test_warn doesn't properly capture LazyString warnings from SciMLBase
