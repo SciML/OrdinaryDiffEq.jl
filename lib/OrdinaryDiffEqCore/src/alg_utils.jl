@@ -174,7 +174,7 @@ isdp8(alg) = false
 isdefaultalg(alg) = false
 
 function qmin_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
-    return isadaptive(alg) ? 0.2 : 0
+    return isadaptive(alg) ? 1 // 5 : 0
 end
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
 
@@ -398,15 +398,15 @@ end
 
 # other special cases in controllers.jl
 function beta2_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
-    return isadaptive(alg) ? 2 / (5 * alg_order(alg)) : 0
+    return isadaptive(alg) ? 2 // (5alg_order(alg)) : 0
 end
 
 function beta1_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, beta2)
-    return isadaptive(alg) ? 7 / (10 * alg_order(alg)) : 0
+    return isadaptive(alg) ? 7 // (10alg_order(alg)) : 0
 end
 
 function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
-    return isadaptive(alg) ? 0.9 : 0
+    return isadaptive(alg) ? 9 // 10 : 0
 end
 gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
 
@@ -414,9 +414,9 @@ fac_default_gamma(alg) = false
 
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 qsteady_max_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
-qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 1.2
+qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6 // 5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
-qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1.0 : 0
+qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 // 1 : 0
 #TODO
 #SciMLBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2
 
