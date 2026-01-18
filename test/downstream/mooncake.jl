@@ -1,4 +1,4 @@
-using Mooncake, OrdinaryDiffEq, StaticArrays
+using Mooncake, OrdinaryDiffEq, StaticArrays, Test, DiffEqBase
 
 function lorenz!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
@@ -11,9 +11,10 @@ const _saveat = SA[0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2
 function f(u0::Array{Float64})
     tspan = (0.0, 3.0)
     prob = ODEProblem{true, SciMLBase.FullSpecialize}(lorenz!, u0, tspan)
-    sol = SciMLBase.solve(prob, Tsit5(), saveat = _saveat, sensealg = SciMLBase.SensitivityADPassThrough())
+    sol = solve(prob, Tsit5(), saveat = _saveat, sensealg = DiffEqBase.SensitivityADPassThrough())
     return sum(sol)
-end;
+end
+
 u0 = [1.0; 0.0; 0.0]
 mooncake_gradient(f, x) = Mooncake.value_and_gradient!!(Mooncake.build_rrule(f, x), f, x)[2][2]
-@test_broken mooncake_gradient(f, u0)
+@test mooncake_gradient(f, u0) isa Vector{Float64}
