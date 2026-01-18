@@ -16,7 +16,7 @@
         :constrained_step,
         :residual_control,
         :neutral_delay,
-        :state_dependent_delay
+        :state_dependent_delay,
     )
 
     presets = (
@@ -219,7 +219,7 @@
             :sensitivity_vjp_choice,
         ),
         sde_specific = (
-            :noise_evaluation
+            :noise_evaluation,
         ),
         dde_specific = (
             :discontinuity_tracking,
@@ -227,7 +227,7 @@
             :constrained_step,
             :residual_control,
             :neutral_delay,
-            :state_dependent_delay
+            :state_dependent_delay,
         ),
     )
 end
