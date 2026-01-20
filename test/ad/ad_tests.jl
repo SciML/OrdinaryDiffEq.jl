@@ -2,7 +2,7 @@ using Test
 using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes
 import DifferentiationInterface as DI
 
-# Version-dependent AD backend selection
+# Version-dependent AD backend selection via DifferentiationInterface
 # Zygote: Julia <= 1.11 only
 # Enzyme: Julia <= 1.11 only (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
 # Mooncake: all versions
