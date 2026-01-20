@@ -27,6 +27,8 @@ function f(du, u, p, t)
     return du[2] = p[2]
 end
 
+# Note: These callback tests use mutable closures (called = true) which Enzyme can't handle,
+# so we only test with ForwardDiff here
 for x in 0:0.001:5
     called = false
     if x in [1.0, 2.0, 3.0, 4.0, 5.0]
@@ -46,12 +48,10 @@ for x in 0:0.001:5
     called = false
     findiff = FiniteDiff.finite_difference_jacobian(test_f, p)
     @test called
-    for backend in get_jacobian_backends()
-        called = false
-        dijac = DI.jacobian(test_f, backend, p)
-        @test called
-        @test findiff ≈ dijac rtol = 1.0e-5
-    end
+    called = false
+    dijac = DI.jacobian(test_f, AutoForwardDiff(), p)
+    @test called
+    @test findiff ≈ dijac rtol = 1.0e-5
 end
 
 function f2(du, u, p, t)
@@ -59,6 +59,8 @@ function f2(du, u, p, t)
     return du[2] = p[2]
 end
 
+# Note: These callback tests use mutable closures (called = true) which Enzyme can't handle,
+# so we only test with ForwardDiff here
 for x in 2.1:0.001:5
     called = false
     if x in [3.0, 4.0, 5.0]
@@ -77,12 +79,10 @@ for x in 2.1:0.001:5
     p = [2.0, x]
     findiff = FiniteDiff.finite_difference_jacobian(test_f2, p)
     @test called
-    for backend in get_jacobian_backends()
-        called = false
-        dijac = DI.jacobian(test_f2, backend, p)
-        @test called
-        @test findiff ≈ dijac rtol = 1.0e-5
-    end
+    called = false
+    dijac = DI.jacobian(test_f2, AutoForwardDiff(), p)
+    @test called
+    @test findiff ≈ dijac rtol = 1.0e-5
 end
 
 #=
@@ -108,6 +108,8 @@ fordiff = ForwardDiff.jacobian(test_f2,p)
 # At that value, it shouldn't be called, but a small perturbation will make it called, so finite difference is wrong!
 =#
 
+# Note: These callback tests use mutable closures (called = true) which Enzyme can't handle,
+# so we only test with ForwardDiff here
 for x in 1.0:0.001:2.5
     if x in [1.5, 2.0, 2.5]
         print("AD Ping $x")
@@ -141,12 +143,10 @@ for x in 1.0:0.001:2.5
 
     findiff = FiniteDiff.finite_difference_jacobian(test_lotka, p)
     @test called
-    for backend in get_jacobian_backends()
-        called = false
-        dijac = DI.jacobian(test_lotka, backend, p)
-        @test called
-        @test findiff ≈ dijac rtol = 1.0e-5
-    end
+    called = false
+    dijac = DI.jacobian(test_lotka, AutoForwardDiff(), p)
+    @test called
+    @test findiff ≈ dijac rtol = 1.0e-5
 end
 
 # Gradients and Hessians
