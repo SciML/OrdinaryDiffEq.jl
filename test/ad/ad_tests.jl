@@ -13,10 +13,12 @@ const JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE = VERSION < v"1.12" && isempty(VERSION.
 
 # Load version-dependent packages and define helpers
 # Note: Mooncake gradient support for ODE solves is currently broken (see discrete_adjoints.jl)
+# Note: Enzyme requires set_runtime_activity for functions with internal closures that capture
+# external variables (throws EnzymeRuntimeActivityError otherwise)
 if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
     using Enzyme
-    get_gradient_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.Reverse)]
-    get_jacobian_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.Forward)]
+    get_gradient_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Reverse))]
+    get_jacobian_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward))]
 else
     get_gradient_backends() = [AutoForwardDiff()]
     get_jacobian_backends() = [AutoForwardDiff()]
@@ -75,7 +77,7 @@ if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
         findiff = FiniteDiff.finite_difference_jacobian(test_f_enzyme, p)
         # EnzymeMutabilityException: Cannot differentiate mutable closures
         @test_broken (
-            dijac = DI.jacobian(test_f_enzyme, AutoEnzyme(mode = Enzyme.Forward), p);
+            dijac = DI.jacobian(test_f_enzyme, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), p);
             isapprox(dijac, findiff, rtol = 1.0e-5)
         )
     end
