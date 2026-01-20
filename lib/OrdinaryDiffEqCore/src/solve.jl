@@ -50,7 +50,7 @@ function SciMLBase.__init(
         qsteady_max = qsteady_max_default(alg),
         beta1 = nothing,
         beta2 = nothing,
-        qoldinit = anyadaptive(alg) ? 1 // 10^4 : 0,
+        qoldinit = qoldinit_default(alg),
         controller = nothing,
         fullnormalize = true,
         failfactor = 2,
@@ -273,12 +273,12 @@ function SciMLBase.__init(
                     convert(
                         uBottomEltype,
                         oneunit(uBottomEltype) *
-                            1 // 10^6
+                            default_abstol_rational()
                     )
                 )
             )
         else
-            abstol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
+            abstol_internal = unitfulvalue.(real.(oneunit.(u) .* default_abstol_rational()))
         end
     else
         abstol_internal = real.(abstol)
@@ -292,12 +292,12 @@ function SciMLBase.__init(
                 real(
                     convert(
                         uBottomEltype,
-                        oneunit(uBottomEltype) * 1 // 10^3
+                        oneunit(uBottomEltype) * default_reltol_rational()
                     )
                 )
             )
         else
-            reltol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
+            reltol_internal = unitfulvalue.(real.(oneunit.(u) .* default_reltol_rational()))
         end
     else
         reltol_internal = real.(reltol)
@@ -631,14 +631,14 @@ function SciMLBase.__init(
         if save_start
             integrator.saveiter += 1 # Starts at 1 so first save is at 2
             integrator.saveiter_dense += 1
-            copyat_or_push!(ts, 1, t)
+            ode_copyat_or_push!(ts, 1, t, integrator.u)
             # N.B.: integrator.u can be modified by initialized_dae!
             if save_idxs === nothing
-                copyat_or_push!(timeseries, 1, integrator.u)
-                copyat_or_push!(ks, 1, [rate_prototype])
+                ode_copyat_or_push!(timeseries, 1, integrator.u, integrator.u)
+                ode_copyat_or_push!(ks, 1, [rate_prototype], integrator.u)
             else
-                copyat_or_push!(timeseries, 1, integrator.u[save_idxs], Val{false})
-                copyat_or_push!(ks, 1, [ks_prototype])
+                ode_copyat_or_push!(timeseries, 1, integrator.u[save_idxs], integrator.u, false)
+                ode_copyat_or_push!(ks, 1, [ks_prototype], integrator.u)
             end
         else
             integrator.saveiter = 0 # Starts at 0 so first save is at 1
@@ -655,7 +655,7 @@ function SciMLBase.__init(
             if save_start
                 # Loop to get all of the extra possible saves in callback initialization
                 for i in 1:(integrator.saveiter)
-                    copyat_or_push!(alg_choice, i, integrator.cache.current)
+                    ode_copyat_or_push!(alg_choice, i, integrator.cache.current, integrator.u)
                 end
             end
         end

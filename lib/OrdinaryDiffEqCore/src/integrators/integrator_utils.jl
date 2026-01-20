@@ -1,3 +1,10 @@
+# Wrapper for copyat_or_push! that can be dispatched on the state type.
+# This allows Reactant extension to override and always use push!
+# to avoid undefined array references from pre-allocated similar() arrays.
+function ode_copyat_or_push!(a, i, x, u, perform_copy = true)
+    copyat_or_push!(a, i, x, perform_copy)
+end
+
 function save_idxsinitialize(
         integrator, cache::OrdinaryDiffEqCache,
         ::Type{uType}
@@ -120,13 +127,13 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
             SciMLBase.addsteps!(integrator)
             Θ = (curt - integrator.tprev) / integrator.dt
             val = ode_interpolant(Θ, integrator, integrator.opts.save_idxs, Val{0}) # out of place, but no force copy later
-            copyat_or_push!(integrator.sol.t, integrator.saveiter, curt)
+            ode_copyat_or_push!(integrator.sol.t, integrator.saveiter, curt, integrator.u)
             save_val = val
-            copyat_or_push!(integrator.sol.u, integrator.saveiter, save_val, false)
+            ode_copyat_or_push!(integrator.sol.u, integrator.saveiter, save_val, integrator.u, false)
             if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
-                copyat_or_push!(
+                ode_copyat_or_push!(
                     integrator.sol.alg_choice, integrator.saveiter,
-                    integrator.cache.current
+                    integrator.cache.current, integrator.u
                 )
             end
         else # ==t, just save
@@ -135,36 +142,36 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 continue
             end
             savedexactly = true
-            copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
+            ode_copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t, integrator.u)
             if integrator.opts.save_idxs === nothing
-                copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
+                ode_copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u, integrator.u)
             else
-                copyat_or_push!(
+                ode_copyat_or_push!(
                     integrator.sol.u, integrator.saveiter,
-                    integrator.u[integrator.opts.save_idxs], false
+                    integrator.u[integrator.opts.save_idxs], integrator.u, false
                 )
             end
             if isdiscretealg(integrator.alg) || integrator.opts.dense
                 integrator.saveiter_dense += 1
                 if integrator.opts.dense
                     if integrator.opts.save_idxs === nothing
-                        copyat_or_push!(
+                        ode_copyat_or_push!(
                             integrator.sol.k, integrator.saveiter_dense,
-                            integrator.k
+                            integrator.k, integrator.u
                         )
                     else
-                        copyat_or_push!(
+                        ode_copyat_or_push!(
                             integrator.sol.k, integrator.saveiter_dense,
                             [k[integrator.opts.save_idxs] for k in integrator.k],
-                            false
+                            integrator.u, false
                         )
                     end
                 end
             end
             if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
-                copyat_or_push!(
+                ode_copyat_or_push!(
                     integrator.sol.alg_choice, integrator.saveiter,
-                    integrator.cache.current
+                    integrator.cache.current, integrator.u
                 )
             end
         end
@@ -180,35 +187,35 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
         integrator.saveiter += 1
         saved, savedexactly = true, true
         if integrator.opts.save_idxs === nothing
-            copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
+            ode_copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u, integrator.u)
         else
-            copyat_or_push!(
+            ode_copyat_or_push!(
                 integrator.sol.u, integrator.saveiter,
-                integrator.u[integrator.opts.save_idxs], false
+                integrator.u[integrator.opts.save_idxs], integrator.u, false
             )
         end
-        copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
+        ode_copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t, integrator.u)
         if isdiscretealg(integrator.alg) || integrator.opts.dense
             integrator.saveiter_dense += 1
             if integrator.opts.dense
                 if integrator.opts.save_idxs === nothing
-                    copyat_or_push!(
+                    ode_copyat_or_push!(
                         integrator.sol.k, integrator.saveiter_dense,
-                        integrator.k
+                        integrator.k, integrator.u
                     )
                 else
-                    copyat_or_push!(
+                    ode_copyat_or_push!(
                         integrator.sol.k, integrator.saveiter_dense,
                         [k[integrator.opts.save_idxs] for k in integrator.k],
-                        false
+                        integrator.u, false
                     )
                 end
             end
         end
         if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
-            copyat_or_push!(
+            ode_copyat_or_push!(
                 integrator.sol.alg_choice, integrator.saveiter,
-                integrator.cache.current
+                integrator.cache.current, integrator.u
             )
         end
     end
@@ -257,36 +264,36 @@ function solution_endpoint_match_cur_integrator!(integrator)
             )
         )
         integrator.saveiter += 1
-        copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
+        ode_copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t, integrator.u)
         if integrator.opts.save_idxs === nothing
-            copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
+            ode_copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u, integrator.u)
         else
-            copyat_or_push!(
+            ode_copyat_or_push!(
                 integrator.sol.u, integrator.saveiter,
-                integrator.u[integrator.opts.save_idxs], false
+                integrator.u[integrator.opts.save_idxs], integrator.u, false
             )
         end
         if isdiscretealg(integrator.alg) || integrator.opts.dense
             integrator.saveiter_dense += 1
             if integrator.opts.dense
                 if integrator.opts.save_idxs === nothing
-                    copyat_or_push!(
+                    ode_copyat_or_push!(
                         integrator.sol.k, integrator.saveiter_dense,
-                        integrator.k
+                        integrator.k, integrator.u
                     )
                 else
-                    copyat_or_push!(
+                    ode_copyat_or_push!(
                         integrator.sol.k, integrator.saveiter_dense,
                         [k[integrator.opts.save_idxs] for k in integrator.k],
-                        false
+                        integrator.u, false
                     )
                 end
             end
         end
         if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
-            copyat_or_push!(
+            ode_copyat_or_push!(
                 integrator.sol.alg_choice, integrator.saveiter,
-                integrator.cache.current
+                integrator.cache.current, integrator.u
             )
         end
         SciMLBase.save_final_discretes!(integrator, integrator.opts.callback)

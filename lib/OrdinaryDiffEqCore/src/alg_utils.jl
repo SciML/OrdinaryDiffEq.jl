@@ -181,6 +181,15 @@ qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
 qmax_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 
+function qoldinit_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
+    return anyadaptive(alg) ? 1 // 10^4 : 0
+end
+
+# Default tolerance values
+# These return Rational{Int64} but have Reactant overlays that return Float64
+default_abstol_rational() = 1 // 10^6
+default_reltol_rational() = 1 // 10^3
+
 function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
     return alg isa Union{
         OrdinaryDiffEqExponentialAlgorithm,
