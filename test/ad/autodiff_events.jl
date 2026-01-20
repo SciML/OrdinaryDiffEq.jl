@@ -1,21 +1,26 @@
-# Skip Enzyme tests on Julia 1.12+ prerelease versions
-if !isempty(VERSION.prerelease)
-    @warn "Skipping Enzyme tests on Julia prerelease version $(VERSION)"
-    exit(0)
-end
+# Version-dependent AD backend selection
+# Enzyme/Zygote: Julia <= 1.11 only (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
+# Mooncake: all versions
+# ForwardDiff: all versions
 
-# Enzyme and Zygote are only supported on Julia <= 1.11
-if VERSION >= v"1.12"
-    @warn "Skipping Enzyme/Zygote tests on Julia $(VERSION) - only supported on Julia <= 1.11"
-    exit(0)
-end
+const JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE = VERSION < v"1.12" && isempty(VERSION.prerelease)
 
 using SciMLSensitivity
 using OrdinaryDiffEq, OrdinaryDiffEqCore, FiniteDiff, Test
 using ADTypes
 import DifferentiationInterface as DI
-using Enzyme
-using Zygote
+using Mooncake  # Load Mooncake after DI to ensure extension is loaded
+
+# Load version-dependent packages
+if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
+    using Enzyme
+    using Zygote
+    get_gradient_backends() = [AutoZygote(), AutoEnzyme(mode = Enzyme.Reverse), AutoMooncake(; config = nothing)]
+    get_jacobian_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.Forward)]
+else
+    get_gradient_backends() = [AutoMooncake(; config = nothing)]
+    get_jacobian_backends() = [AutoForwardDiff()]
+end
 
 function f(du, u, p, t)
     du[1] = u[2]
@@ -46,15 +51,15 @@ end
 findiff = FiniteDiff.finite_difference_jacobian(test_f, p)
 findiff
 
-# Test with DifferentiationInterface using AutoForwardDiff
-ad = DI.jacobian(test_f, AutoForwardDiff(), p)
-ad
-
-@test ad ≈ findiff
-
-# Test with Enzyme forward mode
-ad_enzyme = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.Forward), p)
-@test ad_enzyme ≈ findiff
+# Test jacobians with all available backends
+@testset "Jacobian tests" begin
+    for backend in get_jacobian_backends()
+        @testset "$(typeof(backend))" begin
+            ad = DI.jacobian(test_f, backend, p)
+            @test ad ≈ findiff
+        end
+    end
+end
 
 function test_f2(
         p, sensealg = ForwardDiffSensitivity(), controller = nothing,
@@ -70,45 +75,47 @@ end
 
 @test test_f2(p) == test_f(p)[end]
 
-# Use DifferentiationInterface with AutoZygote backend for gradient computations
-g1 = DI.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), AutoZygote(), p)
-g2 = DI.gradient(θ -> test_f2(θ, ReverseDiffAdjoint()), AutoZygote(), p)
-g3 = DI.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(), IController()), AutoZygote(), p)
-g4 = DI.gradient(
-    θ -> test_f2(θ, ReverseDiffAdjoint(), PIController(7 // 50, 2 // 25)),
-    AutoZygote(),
-    p
-)
-@test_broken g5 = DI.gradient(
-    θ -> test_f2(
-        θ, ReverseDiffAdjoint(),
-        PIDController(1 / 18.0, 1 / 9.0, 1 / 18.0)
-    ),
-    AutoZygote(),
-    p
-)
-g6 = DI.gradient(
-    θ -> test_f2(
-        θ, ForwardDiffSensitivity(),
-        OrdinaryDiffEqCore.PredictiveController(), TRBDF2()
-    ),
-    AutoZygote(),
-    p
-)
-@test_broken g7 = DI.gradient(
-    θ -> test_f2(
-        θ, ReverseDiffAdjoint(),
-        OrdinaryDiffEqCore.PredictiveController(),
-        TRBDF2()
-    ),
-    AutoZygote(),
-    p
-)
+# Test gradients with all available reverse-mode backends
+@testset "Gradient tests with $backend" for backend in get_gradient_backends()
+    g1 = DI.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), backend, p)
+    g2 = DI.gradient(θ -> test_f2(θ, ReverseDiffAdjoint()), backend, p)
+    g3 = DI.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(), IController()), backend, p)
+    g4 = DI.gradient(
+        θ -> test_f2(θ, ReverseDiffAdjoint(), PIController(7 // 50, 2 // 25)),
+        backend,
+        p
+    )
+    @test_broken g5 = DI.gradient(
+        θ -> test_f2(
+            θ, ReverseDiffAdjoint(),
+            PIDController(1 / 18.0, 1 / 9.0, 1 / 18.0)
+        ),
+        backend,
+        p
+    )
+    g6 = DI.gradient(
+        θ -> test_f2(
+            θ, ForwardDiffSensitivity(),
+            OrdinaryDiffEqCore.PredictiveController(), TRBDF2()
+        ),
+        backend,
+        p
+    )
+    @test_broken g7 = DI.gradient(
+        θ -> test_f2(
+            θ, ReverseDiffAdjoint(),
+            OrdinaryDiffEqCore.PredictiveController(),
+            TRBDF2()
+        ),
+        backend,
+        p
+    )
 
-@test g1 ≈ findiff[2, 1:2]
-@test g2 ≈ findiff[2, 1:2]
-@test g3 ≈ findiff[2, 1:2]
-@test g4 ≈ findiff[2, 1:2]
-@test_broken g5 ≈ findiff[2, 1:2]
-@test g6 ≈ findiff[2, 1:2]
-@test_broken g7 ≈ findiff[2, 1:2]
+    @test g1 ≈ findiff[2, 1:2]
+    @test g2 ≈ findiff[2, 1:2]
+    @test g3 ≈ findiff[2, 1:2]
+    @test g4 ≈ findiff[2, 1:2]
+    @test_broken g5 ≈ findiff[2, 1:2]
+    @test g6 ≈ findiff[2, 1:2]
+    @test_broken g7 ≈ findiff[2, 1:2]
+end

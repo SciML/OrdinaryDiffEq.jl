@@ -186,12 +186,12 @@ end
     end
 
     # AD tests - Enzyme/Zygote only on Julia <= 1.11 (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
+    # Mooncake works on all Julia versions
     if !is_APPVEYOR && GROUP == "AD"
         activate_ad_env()
         @time @safetestset "AD Tests" include("ad/ad_tests.jl")
         @time @safetestset "Autodiff Events Tests" include("ad/autodiff_events.jl")
         @time @safetestset "Discrete Adjoint Tests" include("ad/discrete_adjoints.jl")
-        @time @safetestset "Mooncake Tests" include("ad/mooncake.jl")
     end
 
     # Don't run ODEInterface tests on prerelease

@@ -1,6 +1,7 @@
 using Test
 using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes
 import DifferentiationInterface as DI
+using Mooncake  # Load Mooncake after DI to ensure extension is loaded
 
 # Version-dependent AD backend selection via DifferentiationInterface
 # Zygote: Julia <= 1.11 only
@@ -12,12 +13,13 @@ import DifferentiationInterface as DI
 const JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE = VERSION < v"1.12" && isempty(VERSION.prerelease)
 
 # Load version-dependent packages and define helpers
+# Mooncake is available on all versions for reverse mode gradients
 if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
     using Enzyme
-    get_gradient_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.Reverse)]
+    get_gradient_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.Reverse), AutoMooncake(; config = nothing)]
     get_jacobian_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.Forward)]
 else
-    get_gradient_backends() = [AutoForwardDiff()]
+    get_gradient_backends() = [AutoForwardDiff(), AutoMooncake(; config = nothing)]
     get_jacobian_backends() = [AutoForwardDiff()]
 end
 
