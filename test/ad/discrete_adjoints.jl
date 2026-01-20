@@ -4,7 +4,7 @@
 # Mooncake: all versions
 # ForwardDiff: all versions (reference)
 
-using OrdinaryDiffEqTsit5, StaticArrays, DiffEqBase, Test
+using OrdinaryDiffEqTsit5, StaticArrays, DiffEqBase, Test, ForwardDiff
 using ADTypes
 import DifferentiationInterface as DI
 using Mooncake  # Load Mooncake after DI to ensure extension is loaded

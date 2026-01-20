@@ -1,6 +1,6 @@
 # Version-dependent AD backend selection
 # Enzyme/Zygote: Julia <= 1.11 only (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
-# Mooncake: all versions
+# Mooncake: gradient support for ODE solves is currently broken (see discrete_adjoints.jl)
 # ForwardDiff: all versions
 
 const JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE = VERSION < v"1.12" && isempty(VERSION.prerelease)
@@ -9,16 +9,17 @@ using SciMLSensitivity
 using OrdinaryDiffEq, OrdinaryDiffEqCore, FiniteDiff, Test
 using ADTypes
 import DifferentiationInterface as DI
-using Mooncake  # Load Mooncake after DI to ensure extension is loaded
 
 # Load version-dependent packages
 if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
     using Enzyme
     using Zygote
-    get_gradient_backends() = [AutoZygote(), AutoEnzyme(mode = Enzyme.Reverse), AutoMooncake(; config = nothing)]
+    get_gradient_backends() = [AutoZygote(), AutoEnzyme(mode = Enzyme.Reverse)]
     get_jacobian_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.Forward)]
 else
-    get_gradient_backends() = [AutoMooncake(; config = nothing)]
+    # On Julia 1.12+, skip gradient tests since Zygote/Enzyme aren't available
+    # and Mooncake gradient support for ODE solves is broken
+    get_gradient_backends() = []
     get_jacobian_backends() = [AutoForwardDiff()]
 end
 
