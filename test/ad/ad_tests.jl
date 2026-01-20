@@ -27,8 +27,10 @@ function f(du, u, p, t)
     return du[2] = p[2]
 end
 
-# Note: These callback tests use mutable closures (called = true) which Enzyme can't handle,
-# so we only test with ForwardDiff here
+# Callback tests with mutable closures
+# These tests capture and mutate a `called` variable in the callback affect function.
+# Enzyme cannot differentiate mutable closures (throws EnzymeMutabilityException).
+# ForwardDiff works because it doesn't trace through closure mutation.
 for x in 0:0.001:5
     called = false
     if x in [1.0, 2.0, 3.0, 4.0, 5.0]
@@ -54,13 +56,38 @@ for x in 0:0.001:5
     @test findiff ≈ dijac rtol = 1.0e-5
 end
 
+# Enzyme broken test for mutable closure callbacks (representative case)
+# Enzyme throws EnzymeMutabilityException on mutable closures
+if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
+    @testset "Enzyme mutable closure limitation" begin
+        called = false
+        function test_f_enzyme(p)
+            cb = ContinuousCallback(
+                (u, t, i) -> u[1],
+                (integrator) -> (called = true; integrator.p[2] = zero(integrator.p[2]))
+            )
+            prob = ODEProblem(f, eltype(p).([1.0, 0.0]), eltype(p).((0.0, 1.0)), copy(p))
+            integrator = init(prob, Tsit5(), abstol = 1.0e-14, reltol = 1.0e-14, callback = cb)
+            step!(integrator)
+            return solve!(integrator).u[end]
+        end
+        p = [2.0, 3.0]
+        findiff = FiniteDiff.finite_difference_jacobian(test_f_enzyme, p)
+        # EnzymeMutabilityException: Cannot differentiate mutable closures
+        @test_broken (
+            dijac = DI.jacobian(test_f_enzyme, AutoEnzyme(mode = Enzyme.Forward), p);
+            isapprox(dijac, findiff, rtol = 1.0e-5)
+        )
+    end
+end
+
 function f2(du, u, p, t)
     du[1] = -u[2]
     return du[2] = p[2]
 end
 
-# Note: These callback tests use mutable closures (called = true) which Enzyme can't handle,
-# so we only test with ForwardDiff here
+# Callback tests with mutable closures (f2 variant)
+# Same limitation as above: Enzyme cannot differentiate mutable closures.
 for x in 2.1:0.001:5
     called = false
     if x in [3.0, 4.0, 5.0]
@@ -108,8 +135,8 @@ fordiff = ForwardDiff.jacobian(test_f2,p)
 # At that value, it shouldn't be called, but a small perturbation will make it called, so finite difference is wrong!
 =#
 
-# Note: These callback tests use mutable closures (called = true) which Enzyme can't handle,
-# so we only test with ForwardDiff here
+# Lotka-Volterra callback tests with mutable closures
+# Same limitation as above: Enzyme cannot differentiate mutable closures.
 for x in 1.0:0.001:2.5
     if x in [1.5, 2.0, 2.5]
         print("AD Ping $x")
