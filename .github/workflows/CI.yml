@@ -71,7 +71,6 @@ jobs:
 
           - ImplicitDiscreteSolve
           - SimpleImplicitDiscreteSolve
-          # AD tests - Enzyme/Zygote only on Julia <= 1.11 (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
           - AD
 
           # QA tests for sublibraries (JET, Aqua, AllocCheck - run only on Julia 1)
@@ -119,8 +118,6 @@ jobs:
           - '1'
           - 'pre'
         exclude:
-          # AD tests with Enzyme/Zygote only run on Julia <= 1.11
-          # See: https://github.com/EnzymeAD/Enzyme.jl/issues/2699
           - group: AD
             version: '1'
           - group: AD

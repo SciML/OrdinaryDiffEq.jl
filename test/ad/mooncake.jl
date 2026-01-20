@@ -29,6 +29,7 @@ ref_grad = DI.gradient(f, AutoForwardDiff(), u0)
 @test_broken begin
     mooncake_grad = DI.gradient(f, AutoMooncake(; config = nothing), u0)
     mooncake_grad ≈ ref_grad
+    true
 end
 
 # Alternative test with FiniteDiff as reference
