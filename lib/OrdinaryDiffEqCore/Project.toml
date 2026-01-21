@@ -73,6 +73,7 @@ SciMLBase = "2.116"
 SciMLLogging = "1.7.1"
 FastClosures = "0.3"
 DataStructures = "0.19"
+SparseArrays = "1"
 Static = "1.2"
 Aqua = "0.8.11"
 DocStringExtensions = "0.9"
@@ -97,10 +98,12 @@ Reexport = "1.2"
 [weakdeps]
 Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "Pkg"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "Test", "Pkg"]
 
 [extensions]
 OrdinaryDiffEqCoreEnzymeCoreExt = "EnzymeCore"
 OrdinaryDiffEqCoreMooncakeExt = "Mooncake"
+OrdinaryDiffEqCoreSparseArraysExt = "SparseArrays"

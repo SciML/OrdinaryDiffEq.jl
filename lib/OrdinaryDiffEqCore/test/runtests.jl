@@ -7,3 +7,6 @@ if TEST_GROUP != "FUNCTIONAL" && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
     @time @safetestset "Aqua" include("qa.jl")
 end
+
+# Functional tests
+@time @safetestset "Sparse isdiag Performance" include("sparse_isdiag_tests.jl")
