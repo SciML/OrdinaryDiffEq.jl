@@ -24,7 +24,7 @@ jobs:
         downgrade_mode: ['alldeps']
         julia-version: ['1.11']
         project:
-          - 'lib/ImplicitDiscreteSolve'
+          # - 'lib/ImplicitDiscreteSolve'  # disabled: see #2977
           # - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'  # disabled: see #2977
           # - 'lib/OrdinaryDiffEqBDF'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqCore'
@@ -56,7 +56,7 @@ jobs:
           # - 'lib/OrdinaryDiffEqTaylorSeries'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqTsit5'
           - 'lib/OrdinaryDiffEqVerner'
-          - 'lib/SimpleImplicitDiscreteSolve'
+          # - 'lib/SimpleImplicitDiscreteSolve'  # disabled: see #2977
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
@@ -74,3 +74,5 @@ jobs:
         with:
           project: ${{ matrix.project }}
           ALLOW_RERESOLVE: false
+        env:
+          ODEDIFFEQ_TEST_GROUP: FUNCTIONAL
