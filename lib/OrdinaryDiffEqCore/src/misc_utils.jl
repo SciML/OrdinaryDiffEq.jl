@@ -122,7 +122,7 @@ function get_differential_vars(f, u)
             return nothing
         elseif all(!iszero, mm)
             return trues(size(mm, 1))
-        elseif !(mm isa SciMLOperators.AbstractSciMLOperator) && isdiag(mm)
+        elseif !(mm isa SciMLOperators.AbstractSciMLOperator) && _isdiag(mm)
             return reshape(diag(mm) .!= 0, size(u))
         else
             return DifferentialVarsUndefined()
@@ -131,6 +131,10 @@ function get_differential_vars(f, u)
         return nothing
     end
 end
+
+# Fallback for _isdiag - uses LinearAlgebra.isdiag which is O(n²)
+# Sparse specialization is provided in OrdinaryDiffEqCoreSparseArraysExt
+_isdiag(A::AbstractMatrix) = isdiag(A)
 
 isnewton(::Any) = false
 
