@@ -10,7 +10,7 @@ if TEST_GROUP != "QA"
 end
 
 # Run QA tests (JET, Aqua)
-if TEST_GROUP != "FUNCTIONAL"
+if TEST_GROUP != "FUNCTIONAL" && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
     @time @safetestset "Aqua" include("qa.jl")
 end
