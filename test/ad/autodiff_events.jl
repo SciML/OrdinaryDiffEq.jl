@@ -11,11 +11,13 @@ using ADTypes
 import DifferentiationInterface as DI
 
 # Load version-dependent packages
+# Note: Enzyme requires set_runtime_activity for functions with internal closures that capture
+# external variables (throws EnzymeRuntimeActivityError otherwise)
 if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
     using Enzyme
     using Zygote
-    get_gradient_backends() = [AutoZygote(), AutoEnzyme(mode = Enzyme.Reverse)]
-    get_jacobian_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.Forward)]
+    get_gradient_backends() = [AutoZygote(), AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Reverse))]
+    get_jacobian_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward))]
 else
     # On Julia 1.12+, skip gradient tests since Zygote/Enzyme aren't available
     # and Mooncake gradient support for ODE solves is broken
