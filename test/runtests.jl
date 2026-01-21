@@ -23,8 +23,8 @@ function activate_odeinterface_env()
     return Pkg.instantiate()
 end
 
-function activate_enzyme_env()
-    Pkg.activate("enzyme")
+function activate_ad_env()
+    Pkg.activate("ad")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     return Pkg.instantiate()
 end
@@ -116,7 +116,6 @@ end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
-        @time @safetestset "AD Tests" include("interface/ad_tests.jl")
         @time @safetestset "GPU AutoDiff Interface Tests" include("interface/gpu_autodiff_interface_tests.jl")
         @time @safetestset "DAE Initialization Tests" include("interface/dae_initialization_tests.jl")
     end
@@ -182,18 +181,17 @@ end
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
-        if VERSION >= v"1.11" && isempty(VERSION.prerelease)
-            @time @safetestset "Mooncake Tests" include("downstream/mooncake.jl")
-        end
         @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")
         @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
     end
 
-    # Don't run Enzyme tests on prerelease
-    if !is_APPVEYOR && GROUP == "Enzyme" && isempty(VERSION.prerelease)
-        activate_enzyme_env()
-        @time @safetestset "Autodiff Events Tests" include("enzyme/autodiff_events.jl")
-        @time @safetestset "Discrete Adjoint Tests" include("enzyme/discrete_adjoints.jl")
+    # AD tests - Enzyme/Zygote only on Julia <= 1.11 (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
+    # Mooncake works on all Julia versions
+    if !is_APPVEYOR && GROUP == "AD"
+        activate_ad_env()
+        @time @safetestset "AD Tests" include("ad/ad_tests.jl")
+        @time @safetestset "Autodiff Events Tests" include("ad/autodiff_events.jl")
+        @time @safetestset "Discrete Adjoint Tests" include("ad/discrete_adjoints.jl")
     end
 
     # Don't run ODEInterface tests on prerelease

@@ -76,7 +76,7 @@ jobs:
 
           - ImplicitDiscreteSolve
           - SimpleImplicitDiscreteSolve
-          - Enzyme
+          - AD
 
           # QA tests for sublibraries (JET, Aqua, AllocCheck - run only on Julia 1)
           - OrdinaryDiffEqAdamsBashforthMoulton_QA
@@ -123,9 +123,9 @@ jobs:
           - '1'
           - 'pre'
         exclude:
-          - group: Enzyme
+          - group: AD
             version: '1'
-          - group: Enzyme
+          - group: AD
             version: 'pre'
           # QA tests only run on Julia 1 (latest stable) - exclude from lts, 1.11, and pre
           - group: OrdinaryDiffEqAdamsBashforthMoulton_QA

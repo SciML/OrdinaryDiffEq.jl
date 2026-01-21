@@ -1,6 +1,7 @@
-using OrdinaryDiffEqRosenbrock, LinearAlgebra, ForwardDiff, Test
+using OrdinaryDiffEqRosenbrock, LinearAlgebra, Test
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
+import DifferentiationInterface as DI
 
 afd_cs3 = AutoForwardDiff(chunksize = 3)
 function rober(du, u, p, t)
@@ -34,7 +35,8 @@ sol = @inferred solve(prob_mm_oop, Rodas5P(), reltol = 1.0e-8, abstol = 1.0e-8)
 @testset "Inplace: $(isinplace(_prob)), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [
             prob_mm, prob_mm_oop,
         ],
-        initalg in [BrownFullBasicInit(), ShampineCollocationInit()], autodiff in [AutoForwardDiff(chunksize = 3), AutoFiniteDiff()]
+        initalg in [BrownFullBasicInit(), ShampineCollocationInit()],
+        autodiff in [AutoForwardDiff(chunksize = 3), AutoFiniteDiff()]
 
     alg = Rodas5P(; autodiff)
     function f(p)
@@ -44,5 +46,5 @@ sol = @inferred solve(prob_mm_oop, Rodas5P(), reltol = 1.0e-8, abstol = 1.0e-8)
         )
         sum(sol)
     end
-    @test ForwardDiff.gradient(f, [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
+    @test DI.gradient(f, AutoForwardDiff(), [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
 end

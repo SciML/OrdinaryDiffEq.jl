@@ -1,6 +1,7 @@
-using OrdinaryDiffEqBDF, LinearAlgebra, ForwardDiff, Test
+using OrdinaryDiffEqBDF, LinearAlgebra, Test
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
+import DifferentiationInterface as DI
 
 afd_cs3 = AutoForwardDiff(chunksize = 3)
 
@@ -56,20 +57,19 @@ end
 
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
-@testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in
-        [
+@testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [
             prob, prob_oop, prob_mm, prob_mm_oop,
         ],
         initalg in [BrownFullBasicInit(), ShampineCollocationInit()],
         autodiff in [afd_cs3, AutoFiniteDiff()]
 
     alg = (_prob isa DAEProblem) ? DFBDF(; autodiff) : FBDF(; autodiff)
-    function f(p)
+    function f_loss(p)
         sol = solve(
             remake(_prob, p = p), alg, abstol = 1.0e-14,
             reltol = 1.0e-14, initializealg = initalg
         )
         sum(sol)
     end
-    @test ForwardDiff.gradient(f, [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
+    @test DI.gradient(f_loss, AutoForwardDiff(), [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
 end

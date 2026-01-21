@@ -54,7 +54,7 @@
             constrained_step = Silent(),
             residual_control = Silent(),
             neutral_delay = Silent(),
-            state_dependent_delay = Silent()
+            state_dependent_delay = Silent(),
         ),
         Minimal = (
             linear_verbosity = Minimal(),
@@ -90,7 +90,7 @@
             constrained_step = Silent(),
             residual_control = Silent(),
             neutral_delay = Silent(),
-            state_dependent_delay = WarnLevel()
+            state_dependent_delay = WarnLevel(),
         ),
         Standard = (
             linear_verbosity = Minimal(),
@@ -126,7 +126,7 @@
             constrained_step = Silent(),
             residual_control = Silent(),
             neutral_delay = Silent(),
-            state_dependent_delay = Silent()
+            state_dependent_delay = Silent(),
         ),
         Detailed = (
             linear_verbosity = Detailed(),
@@ -162,7 +162,7 @@
             constrained_step = InfoLevel(),
             residual_control = InfoLevel(),
             neutral_delay = InfoLevel(),
-            state_dependent_delay = WarnLevel()
+            state_dependent_delay = WarnLevel(),
         ),
         All = (
             linear_verbosity = All(),
@@ -198,7 +198,7 @@
             constrained_step = InfoLevel(),
             residual_control = InfoLevel(),
             neutral_delay = InfoLevel(),
-            state_dependent_delay = InfoLevel()
+            state_dependent_delay = InfoLevel(),
         ),
     )
 
