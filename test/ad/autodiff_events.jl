@@ -11,13 +11,11 @@ using ADTypes
 import DifferentiationInterface as DI
 
 # Load version-dependent packages
-# Note: Enzyme requires set_runtime_activity for functions with internal closures that capture
-# external variables (throws EnzymeRuntimeActivityError otherwise)
 if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
     using Enzyme
     using Zygote
-    get_gradient_backends() = [AutoZygote(), AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Reverse))]
-    get_jacobian_backends() = [AutoForwardDiff(), AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward))]
+    get_gradient_backends() = [AutoZygote()]
+    get_jacobian_backends() = [AutoForwardDiff()]
 else
     # On Julia 1.12+, skip gradient tests since Zygote/Enzyme aren't available
     # and Mooncake gradient support for ODE solves is broken
@@ -61,6 +59,16 @@ findiff
             ad = DI.jacobian(test_f, backend, p)
             @test ad ≈ findiff
         end
+    end
+end
+
+# Enzyme fails on ContinuousCallback with "mixed activity for jl_new_struct"
+if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
+    @testset "Enzyme callback limitation (jacobian)" begin
+        @test_broken (
+            ad = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), p);
+            ad ≈ findiff
+        )
     end
 end
 
@@ -121,4 +129,14 @@ end
     @test_broken g5 ≈ findiff[2, 1:2]
     @test g6 ≈ findiff[2, 1:2]
     @test_broken g7 ≈ findiff[2, 1:2]
+end
+
+# Enzyme fails on ContinuousCallback with "mixed activity for jl_new_struct"
+if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
+    @testset "Enzyme callback limitation (gradient)" begin
+        @test_broken (
+            g = DI.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Reverse)), p);
+            g ≈ findiff[2, 1:2]
+        )
+    end
 end

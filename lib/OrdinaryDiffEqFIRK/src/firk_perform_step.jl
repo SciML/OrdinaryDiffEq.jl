@@ -539,17 +539,23 @@ end
         k1 = (z2 - z3) / c2m1 #first derivative on [c2, 1]
         tmp = (z1 - z2) / c1mc2 #first derivative on [c1, c2]
         k2 = (tmp - k1) / c1m1 #second derivative on [c1, 1]
-        k3 = k2  - (tmp - z1 / c1) / c2 #third derivative on [0, c2]
+        k3 = k2 - (tmp - z1 / c1) / c2 #third derivative on [0, c2]
 
-        z1= @.. c1′ * (k1 +
-                (c1′ - c2m1) * (k2 + (c1′ - c1m1) * k3))
-        z2= @.. c2′ * (k1 +
-                (c2′ - c2m1) * (k2 + (c2′ - c1m1) * k3))
-        z3= @.. c3′ * (k1 +
-                (c3′ - c2m1) * (k2 + (c3′ - c1m1) * k3))
-        w1= @.. TI11 * z1 + TI12 * z2 + TI13 * z3
-        w2= @.. TI21 * z1 + TI22 * z2 + TI23 * z3
-        w3= @.. TI31 * z1 + TI32 * z2 + TI33 * z3 
+        z1 = @.. c1′ * (
+            k1 +
+                (c1′ - c2m1) * (k2 + (c1′ - c1m1) * k3)
+        )
+        z2 = @.. c2′ * (
+            k1 +
+                (c2′ - c2m1) * (k2 + (c2′ - c1m1) * k3)
+        )
+        z3 = @.. c3′ * (
+            k1 +
+                (c3′ - c2m1) * (k2 + (c3′ - c1m1) * k3)
+        )
+        w1 = @.. TI11 * z1 + TI12 * z2 + TI13 * z3
+        w2 = @.. TI21 * z1 + TI22 * z2 + TI23 * z3
+        w3 = @.. TI31 * z1 + TI32 * z2 + TI33 * z3
     end
 
     # Newton iteration
@@ -738,17 +744,23 @@ end
         @.. k1 = (z2 - z3) / c2m1 #first derivative on [c2, 1]
         @.. tmp = (z1 - z2) / c1mc2 #first derivative on [c1, c2]
         @.. k2 = (tmp - k1) / c1m1 #second derivative on [c1, 1]
-        @.. k3 = k2  - (tmp - z1 / c1) / c2 #third derivative on [0, c2]
+        @.. k3 = k2 - (tmp - z1 / c1) / c2 #third derivative on [0, c2]
 
-        @.. z1=c1′ * (k1 +
-                (c1′ - c2m1) * (k2 + (c1′ - c1m1) * k3))
-        @.. z2=c2′ * (k1 +
-                (c2′ - c2m1) * (k2 + (c2′ - c1m1) * k3))
-        @.. z3=c3′ * (k1 +
-                (c3′ - c2m1) * (k2 + (c3′ - c1m1) * k3))
-        @.. w1=TI11 * z1 + TI12 * z2 + TI13 * z3
-        @.. w2=TI21 * z1 + TI22 * z2 + TI23 * z3
-        @.. w3=TI31 * z1 + TI32 * z2 + TI33 * z3
+        @.. z1 = c1′ * (
+            k1 +
+                (c1′ - c2m1) * (k2 + (c1′ - c1m1) * k3)
+        )
+        @.. z2 = c2′ * (
+            k1 +
+                (c2′ - c2m1) * (k2 + (c2′ - c1m1) * k3)
+        )
+        @.. z3 = c3′ * (
+            k1 +
+                (c3′ - c2m1) * (k2 + (c3′ - c1m1) * k3)
+        )
+        @.. w1 = TI11 * z1 + TI12 * z2 + TI13 * z3
+        @.. w2 = TI21 * z1 + TI22 * z2 + TI23 * z3
+        @.. w3 = TI31 * z1 + TI32 * z2 + TI33 * z3
     end
 
     # Newton iteration
@@ -1038,31 +1050,59 @@ end
         tmp8 = @.. (tmp4 - tmp7) / c2 #second derivative on [0, c2]
         tmp9 = @.. (tmp5 - tmp8) / c3 #third derivative on [0, c3]
         tmp10 = @.. (tmp6 - tmp9) / c4 #fourth derivative on [0,c4]
-        k7 = @.. k6 - tmp10 #fifth derivative on [0,1] 
-        z1 = @.. c1′ * (k3 +
-                  (c1′-c4m1) * (k4 +
-                   (c1′ - c3m1) * (k5 +
-                                   (c1′ - c2m1) * (k6 + (c1′ - c1m1) * k7))))
-        z2 = @.. c2′ * (k3 +
-                  (c2′-c4m1) * (k4 +
-                   (c2′ - c3m1) * (k5 +
-                                   (c2′ - c2m1) * (k6 + (c2′ - c1m1) * k7))))
-        z3 = @.. c3′ * (k3 +
-                  (c3′-c4m1) * (k4 +
-                   (c3′ - c3m1) * (k5 +
-                                   (c3′ - c2m1) * (k6 + (c3′ - c1m1) * k7))))
-        z4 = @.. c4′ * (k3 +
-                  (c4′-c4m1) * (k4 +
-                   (c4′ - c3m1) * (k5 +
-                                   (c4′ - c2m1) * (k6 + (c4′ - c1m1) * k7))))
-        z5 = @.. c5′ * (k3 +
-                  (c5′-c4m1) * (k4 +
-                   (c5′ - c3m1) * (k5 + (c5′ - c2m1) * (k6 + (c5′ - c1m1) * k7))))
-        w1 = @.. TI11*z1+TI12*z2+TI13*z3+TI14*z4+TI15*z5
-        w2 = @.. TI21*z1+TI22*z2+TI23*z3+TI24*z4+TI25*z5
-        w3 = @.. TI31*z1+TI32*z2+TI33*z3+TI34*z4+TI35*z5
-        w4 = @.. TI41*z1+TI42*z2+TI43*z3+TI44*z4+TI45*z5
-        w5 = @.. TI51*z1+TI52*z2+TI53*z3+TI54*z4+TI55*z5
+        k7 = @.. k6 - tmp10 #fifth derivative on [0,1]
+        z1 = @.. c1′ * (
+            k3 +
+                (c1′ - c4m1) * (
+                k4 +
+                    (c1′ - c3m1) * (
+                    k5 +
+                        (c1′ - c2m1) * (k6 + (c1′ - c1m1) * k7)
+                )
+            )
+        )
+        z2 = @.. c2′ * (
+            k3 +
+                (c2′ - c4m1) * (
+                k4 +
+                    (c2′ - c3m1) * (
+                    k5 +
+                        (c2′ - c2m1) * (k6 + (c2′ - c1m1) * k7)
+                )
+            )
+        )
+        z3 = @.. c3′ * (
+            k3 +
+                (c3′ - c4m1) * (
+                k4 +
+                    (c3′ - c3m1) * (
+                    k5 +
+                        (c3′ - c2m1) * (k6 + (c3′ - c1m1) * k7)
+                )
+            )
+        )
+        z4 = @.. c4′ * (
+            k3 +
+                (c4′ - c4m1) * (
+                k4 +
+                    (c4′ - c3m1) * (
+                    k5 +
+                        (c4′ - c2m1) * (k6 + (c4′ - c1m1) * k7)
+                )
+            )
+        )
+        z5 = @.. c5′ * (
+            k3 +
+                (c5′ - c4m1) * (
+                k4 +
+                    (c5′ - c3m1) * (k5 + (c5′ - c2m1) * (k6 + (c5′ - c1m1) * k7))
+            )
+        )
+        w1 = @.. TI11 * z1 + TI12 * z2 + TI13 * z3 + TI14 * z4 + TI15 * z5
+        w2 = @.. TI21 * z1 + TI22 * z2 + TI23 * z3 + TI24 * z4 + TI25 * z5
+        w3 = @.. TI31 * z1 + TI32 * z2 + TI33 * z3 + TI34 * z4 + TI35 * z5
+        w4 = @.. TI41 * z1 + TI42 * z2 + TI43 * z3 + TI44 * z4 + TI45 * z5
+        w5 = @.. TI51 * z1 + TI52 * z2 + TI53 * z3 + TI54 * z4 + TI55 * z5
     end
 
     # Newton iteration
@@ -1233,7 +1273,8 @@ end
     (; dw1, ubuff, dw23, dw45, cubuff1, cubuff2) = cache
     (; k, k1, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5) = cache
     (; J, W1, W2, W3) = cache
-    (;  tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
+    (;
+        tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
         linsolve1, linsolve2, linsolve3, rtol, atol, step_limiter!,
     ) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
@@ -1309,31 +1350,59 @@ end
         @.. tmp8 = (tmp4 - tmp7) / c2 #second derivative on [0, c2]
         @.. tmp9 = (tmp5 - tmp8) / c3 #third derivative on [0, c3]
         @.. tmp10 = (tmp6 - tmp9) / c4 #fourth derivative on [0,c4]
-        @.. k5 = k4 - tmp10 #fifth derivative on [0,1] 
-        @.. z1 = c1′ * (k1 +
-                  (c1′-c4m1) * (k2 +
-                   (c1′ - c3m1) * (k3 +
-                    (c1′ - c2m1) * (k4 + (c1′ - c1m1) * k5))))
-        @.. z2 = c2′ * (k1 +
-                  (c2′-c4m1) * (k2 +
-                   (c2′ - c3m1) * (k3 +
-                    (c2′ - c2m1) * (k4 + (c2′ - c1m1) * k5))))
-        @.. z3 = c3′ * (k1 +
-                  (c3′-c4m1) * (k2 +
-                   (c3′ - c3m1) * (k3 +
-                    (c3′ - c2m1) * (k4 + (c3′ - c1m1) * k5))))
-        @.. z4 = c4′ * (k1 +
-                  (c4′-c4m1) * (k2 +
-                   (c4′ - c3m1) * (k3 +
-                    (c4′ - c2m1) * (k4 + (c4′ - c1m1) * k5))))
-        @.. z5 = c5′ * (k1 +
-                  (c5′-c4m1) * (k2 +
-                   (c5′ - c3m1) * (k3 + (c5′ - c2m1) * (k4 + (c5′ - c1m1) * k5))))
-        @.. w1 = TI11*z1+TI12*z2+TI13*z3+TI14*z4+TI15*z5
-        @.. w2 = TI21*z1+TI22*z2+TI23*z3+TI24*z4+TI25*z5
-        @.. w3 = TI31*z1+TI32*z2+TI33*z3+TI34*z4+TI35*z5
-        @.. w4 = TI41*z1+TI42*z2+TI43*z3+TI44*z4+TI45*z5
-        @.. w5 = TI51*z1+TI52*z2+TI53*z3+TI54*z4+TI55*z5
+        @.. k5 = k4 - tmp10 #fifth derivative on [0,1]
+        @.. z1 = c1′ * (
+            k1 +
+                (c1′ - c4m1) * (
+                k2 +
+                    (c1′ - c3m1) * (
+                    k3 +
+                        (c1′ - c2m1) * (k4 + (c1′ - c1m1) * k5)
+                )
+            )
+        )
+        @.. z2 = c2′ * (
+            k1 +
+                (c2′ - c4m1) * (
+                k2 +
+                    (c2′ - c3m1) * (
+                    k3 +
+                        (c2′ - c2m1) * (k4 + (c2′ - c1m1) * k5)
+                )
+            )
+        )
+        @.. z3 = c3′ * (
+            k1 +
+                (c3′ - c4m1) * (
+                k2 +
+                    (c3′ - c3m1) * (
+                    k3 +
+                        (c3′ - c2m1) * (k4 + (c3′ - c1m1) * k5)
+                )
+            )
+        )
+        @.. z4 = c4′ * (
+            k1 +
+                (c4′ - c4m1) * (
+                k2 +
+                    (c4′ - c3m1) * (
+                    k3 +
+                        (c4′ - c2m1) * (k4 + (c4′ - c1m1) * k5)
+                )
+            )
+        )
+        @.. z5 = c5′ * (
+            k1 +
+                (c5′ - c4m1) * (
+                k2 +
+                    (c5′ - c3m1) * (k3 + (c5′ - c2m1) * (k4 + (c5′ - c1m1) * k5))
+            )
+        )
+        @.. w1 = TI11 * z1 + TI12 * z2 + TI13 * z3 + TI14 * z4 + TI15 * z5
+        @.. w2 = TI21 * z1 + TI22 * z2 + TI23 * z3 + TI24 * z4 + TI25 * z5
+        @.. w3 = TI31 * z1 + TI32 * z2 + TI33 * z3 + TI34 * z4 + TI35 * z5
+        @.. w4 = TI41 * z1 + TI42 * z2 + TI43 * z3 + TI44 * z4 + TI45 * z5
+        @.. w5 = TI51 * z1 + TI52 * z2 + TI53 * z3 + TI54 * z4 + TI55 * z5
     end
 
     # Newton iteration
@@ -1644,11 +1713,15 @@ end
             derivatives[1, j] = @.. (z[j - 1] - z[j]) / (c[j - 1] - c[j]) #first derivatives
         end
         for i in 2:num_stages
-            derivatives[i, i] = @.. (derivatives[i - 1, i] -
-                                        derivatives[i - 1, i - 1]) / c[i] #diagonal vals
+            derivatives[i, i] = @.. (
+                derivatives[i - 1, i] -
+                    derivatives[i - 1, i - 1]
+            ) / c[i] #diagonal vals
             for j in (i + 1):num_stages
-                derivatives[i, j] = @.. (derivatives[i - 1, j - 1] -
-                                            derivatives[i - 1, j]) / (c[j - i] - c[j]) #all others
+                derivatives[i, j] = @.. (
+                    derivatives[i - 1, j - 1] -
+                        derivatives[i - 1, j]
+                ) / (c[j - i] - c[j]) #all others
             end
         end
         for i in 1:(num_stages - 1)
@@ -1903,19 +1976,23 @@ end
             integrator.k[i + 2] = map(zero, u)
         end
     else
-        for i in 1:num_stages 
-            @.. z[i] = integrator.k[i + 2] 
+        for i in 1:num_stages
+            @.. z[i] = integrator.k[i + 2]
         end
         @.. derivatives[1, 1] = z[1] / c[1]
         for j in 2:num_stages
             @.. derivatives[1, j] = (z[j - 1] - z[j]) / (c[j - 1] - c[j]) #first derivatives
         end
         for i in 2:num_stages
-            @.. derivatives[i, i] = (derivatives[i - 1, i] -
-                                        derivatives[i - 1, i - 1]) / c[i]
+            @.. derivatives[i, i] = (
+                derivatives[i - 1, i] -
+                    derivatives[i - 1, i - 1]
+            ) / c[i]
             for j in (i + 1):num_stages
-                @.. derivatives[i, j] = (derivatives[i - 1, j - 1] -
-                                            derivatives[i - 1, j]) / (c[j - i] - c[j]) #all others
+                @.. derivatives[i, j] = (
+                    derivatives[i - 1, j - 1] -
+                        derivatives[i - 1, j]
+                ) / (c[j - i] - c[j]) #all others
             end
         end
         c_prime[num_stages] = dt / cache.dtprev
