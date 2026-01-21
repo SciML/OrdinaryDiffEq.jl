@@ -33,10 +33,10 @@ sol = @inferred solve(prob_mm_oop, Rodas5P(), reltol = 1.0e-8, abstol = 1.0e-8)
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
 @testset "Inplace: $(isinplace(_prob)), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [
-        prob_mm, prob_mm_oop,
-    ],
-    initalg in [BrownFullBasicInit(), ShampineCollocationInit()],
-    autodiff in [AutoForwardDiff(chunksize = 3), AutoFiniteDiff()]
+            prob_mm, prob_mm_oop,
+        ],
+        initalg in [BrownFullBasicInit(), ShampineCollocationInit()],
+        autodiff in [AutoForwardDiff(chunksize = 3), AutoFiniteDiff()]
 
     alg = Rodas5P(; autodiff)
     function f(p)
