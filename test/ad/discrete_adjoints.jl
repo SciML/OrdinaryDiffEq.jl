@@ -55,15 +55,16 @@ fdg = DI.gradient(f_dt_sum, AutoForwardDiff(), u0)
 
 @testset "Discrete Adjoints" begin
     # Enzyme tests (Julia <= 1.11 only)
+    # Note: Enzyme requires set_runtime_activity for ODE solves with closures
     if JULIA_VERSION_ALLOWS_ENZYME
         @testset "Enzyme" begin
             @testset "Jacobian (Forward mode)" begin
-                ezj = DI.jacobian(f_dt, AutoEnzyme(mode = Enzyme.Forward), u0)
+                ezj = DI.jacobian(f_dt, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), u0)
                 @test ezj ≈ fdj
             end
 
             @testset "Gradient (Reverse mode)" begin
-                ezg = DI.gradient(f_dt_sum, AutoEnzyme(mode = Enzyme.Reverse), u0)
+                ezg = DI.gradient(f_dt_sum, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Reverse)), u0)
                 @test ezg ≈ fdg
             end
         end
