@@ -76,7 +76,7 @@ jobs:
 
           - ImplicitDiscreteSolve
           - SimpleImplicitDiscreteSolve
-          - Enzyme
+          - AD
 
           # QA tests for sublibraries (JET, Aqua, AllocCheck - run only on Julia 1)
           - OrdinaryDiffEqAdamsBashforthMoulton_QA
@@ -123,9 +123,9 @@ jobs:
           - '1'
           - 'pre'
         exclude:
-          - group: Enzyme
+          - group: AD
             version: '1'
-          - group: Enzyme
+          - group: AD
             version: 'pre'
           # QA tests only run on Julia 1 (latest stable) - exclude from lts, 1.11, and pre
           - group: OrdinaryDiffEqAdamsBashforthMoulton_QA
@@ -343,6 +343,10 @@ jobs:
           - group: SimpleImplicitDiscreteSolve_QA
             version: '1.11'
           - group: SimpleImplicitDiscreteSolve_QA
+          # Skip OrdinaryDiffEqBDF on pre-release Julia (JET resolution fails)
+          # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2977
+          - group: OrdinaryDiffEqBDF
+            version: 'pre'
           # Skip ODEInterfaceRegression until ODEInterface.jl is fixed upstream
           # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2987
           - group: ODEInterfaceRegression
