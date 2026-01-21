@@ -1,19 +1,12 @@
-# Discrete adjoint tests with Enzyme and Mooncake
-# Version-dependent AD backend selection
-# Enzyme: Julia <= 1.11 only (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
-# Mooncake: all versions
+# Discrete adjoint tests with Mooncake
+# Enzyme: skipped due to segfaults (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
+# Mooncake: all versions (currently broken)
 # ForwardDiff: all versions (reference)
 
 using OrdinaryDiffEqTsit5, StaticArrays, DiffEqBase, Test, ForwardDiff
 using ADTypes
 import DifferentiationInterface as DI
 using Mooncake  # Load Mooncake after DI to ensure extension is loaded
-
-const JULIA_VERSION_ALLOWS_ENZYME = VERSION < v"1.12" && isempty(VERSION.prerelease)
-
-if JULIA_VERSION_ALLOWS_ENZYME
-    using Enzyme
-end
 
 function lorenz!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
@@ -54,25 +47,8 @@ fdj = DI.jacobian(f_dt, AutoForwardDiff(), u0)
 fdg = DI.gradient(f_dt_sum, AutoForwardDiff(), u0)
 
 @testset "Discrete Adjoints" begin
-    # Enzyme tests (Julia <= 1.11 only)
-    # Note: Enzyme segfaults on ODE solves - see https://github.com/EnzymeAD/Enzyme.jl/issues/2699
-    if JULIA_VERSION_ALLOWS_ENZYME
-        @testset "Enzyme" begin
-            @testset "Jacobian (Forward mode)" begin
-                @test_broken begin
-                    ezj = DI.jacobian(f_dt, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), u0)
-                    ezj ≈ fdj
-                end
-            end
-
-            @testset "Gradient (Reverse mode)" begin
-                @test_broken begin
-                    ezg = DI.gradient(f_dt_sum, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Reverse)), u0)
-                    ezg ≈ fdg
-                end
-            end
-        end
-    end
+    # Enzyme tests skipped - Enzyme segfaults on ODE solves which crashes the process
+    # before @test_broken can catch it. See https://github.com/EnzymeAD/Enzyme.jl/issues/2699
 
     # Mooncake tests (all Julia versions)
     @testset "Mooncake" begin
