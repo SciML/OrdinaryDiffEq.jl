@@ -68,7 +68,7 @@ RecursiveArrayTools = "3.36"
 ODEProblemLibrary = "1"
 OrdinaryDiffEqNonlinearSolve = "1.16.0"
 AllocCheck = "0.2"
-DiffEqBase = "6.176"
+DiffEqBase = "6.194"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
 

@@ -25,35 +25,38 @@ jobs:
         julia-version: ['1.11']
         project:
           - 'lib/ImplicitDiscreteSolve'
-          # - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqBDF'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'
+          - 'lib/OrdinaryDiffEqBDF'
           - 'lib/OrdinaryDiffEqCore'
-          # - 'lib/OrdinaryDiffEqDefault'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqDefault'
           - 'lib/OrdinaryDiffEqDifferentiation'
           - 'lib/OrdinaryDiffEqExplicitRK'
-          # - 'lib/OrdinaryDiffEqExponentialRK'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqExtrapolation'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqFIRK'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqExponentialRK'
+          - 'lib/OrdinaryDiffEqExtrapolation'
+          - 'lib/OrdinaryDiffEqFIRK'
           - 'lib/OrdinaryDiffEqFeagin'
           - 'lib/OrdinaryDiffEqFunctionMap'
           - 'lib/OrdinaryDiffEqHighOrderRK'
-          # - 'lib/OrdinaryDiffEqIMEXMultistep'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqLinear'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqIMEXMultistep'
+          - 'lib/OrdinaryDiffEqLinear'
           - 'lib/OrdinaryDiffEqLowOrderRK'
           - 'lib/OrdinaryDiffEqLowStorageRK'
-          # - 'lib/OrdinaryDiffEqNonlinearSolve'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqNewmark'
+          - 'lib/OrdinaryDiffEqNonlinearSolve'
           - 'lib/OrdinaryDiffEqNordsieck'
-          # - 'lib/OrdinaryDiffEqPDIRK'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqPDIRK'
           - 'lib/OrdinaryDiffEqPRK'
           - 'lib/OrdinaryDiffEqQPRK'
-          # - 'lib/OrdinaryDiffEqRKN'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqRosenbrock'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqSDIRK'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqRKIP'
+          - 'lib/OrdinaryDiffEqRKN'
+          - 'lib/OrdinaryDiffEqRosenbrock'
+          - 'lib/OrdinaryDiffEqSDIRK'
+          - 'lib/OrdinaryDiffEqSIMDRK'
           - 'lib/OrdinaryDiffEqSSPRK'
-          # - 'lib/OrdinaryDiffEqStabilizedIRK'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqStabilizedIRK'
           - 'lib/OrdinaryDiffEqStabilizedRK'
           - 'lib/OrdinaryDiffEqSymplecticRK'
-          # - 'lib/OrdinaryDiffEqTaylorSeries'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqTaylorSeries'
           - 'lib/OrdinaryDiffEqTsit5'
           - 'lib/OrdinaryDiffEqVerner'
           - 'lib/SimpleImplicitDiscreteSolve'
@@ -74,3 +77,5 @@ jobs:
         with:
           project: ${{ matrix.project }}
           ALLOW_RERESOLVE: false
+        env:
+          ODEDIFFEQ_TEST_GROUP: FUNCTIONAL

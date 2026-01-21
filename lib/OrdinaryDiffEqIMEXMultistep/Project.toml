@@ -38,7 +38,7 @@ JET = "0.9, 0.11"
 ADTypes = "1.16"
 OrdinaryDiffEqNonlinearSolve = "1.16.0"
 AllocCheck = "0.2"
-DiffEqBase = "6.176"
+DiffEqBase = "6.194"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
 
