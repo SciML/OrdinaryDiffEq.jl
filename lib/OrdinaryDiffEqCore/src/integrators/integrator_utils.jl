@@ -227,8 +227,10 @@ function _postamble!(integrator)
     if !(integrator.sol isa DAESolution)
         resize!(integrator.sol.k, integrator.saveiter_dense)
     end
-    return if integrator.opts.progress
+    if integrator.opts.progress
+        final_progress(integrator)
     end
+    return nothing
 end
 
 function final_progress(integrator)
