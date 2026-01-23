@@ -939,7 +939,7 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
     if qsteady_min <= qacc <= qsteady_max
         qacc = one(qacc)
     end
-    cache.dtacc = integrator.dt
+    cache.dtacc = DiffEqBase.value(integrator.dt)
     cache.erracc = max(1.0e-2, EEst)
 
     return integrator.dt / qacc
