@@ -56,7 +56,6 @@ For Tsit5, the original formulation was:
           = 0 + 0*Θ + r22*Θ² + r23*Θ³ + r24*Θ⁴
 
     ... and so on for all 7 stages
-=
 """
 function construct_tsit5_interp_matrix(::Type{T} = Float64) where T
     # Original Tsit5 interpolation coefficients

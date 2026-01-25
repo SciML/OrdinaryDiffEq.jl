@@ -21,7 +21,7 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("explicit_rk_caches.jl")
 include("explicit_rk_perform_step.jl")
-include("interp_func.jl")
+include("inter_func.jl")
 include("interpolants.jl")
 
 export ExplicitRK

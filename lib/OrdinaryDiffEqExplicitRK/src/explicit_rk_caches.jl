@@ -51,7 +51,7 @@ function ExplicitRKConstantCache(tableau, rate_prototype)
     kk = Array{typeof(rate_prototype)}(undef, stages) # Not ks since that's for integrator.opts.dense
     αEEst = isempty(αEEst) ? αEEst : α .- αEEst
     B_interp = hasproperty(tableau, :B_interp) ? tableau.B_interp : nothing
-    ExplicitRKConstantCache(A, c, α, αEEst, stages, kk)
+    ExplicitRKConstantCache(A, c, α, αEEst, stages, kk, B_interp)
 end
 
 function alg_cache(alg::ExplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},
