@@ -14,8 +14,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     qmax_default, alg_adaptive_order, DEFAULT_PRECS,
     stepsize_controller!, step_accept_controller!,
     step_reject_controller!,
-    PredictiveController, PredictiveControllerCache,
-    NewPredictiveController, alg_can_repeat_jac, NewtonAlgorithm,
+    PredictiveController, alg_can_repeat_jac, NewtonAlgorithm,
     fac_default_gamma,
     get_current_adaptive_order, get_fsalfirstlast,
     isfirk, generic_solver_docstring, _bool_to_ADType,
@@ -36,6 +35,12 @@ using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, Convergence, FastConvergenc
     VerySlowConvergence,
     Divergence, get_new_W_γdt_cutoff
 import ADTypes: AutoForwardDiff, AbstractADType
+
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+    @eval begin
+        import OrdinaryDiffEqCore: PredictiveControllerCache, NewPredictiveController
+    end
+end
 
 using Reexport
 @reexport using SciMLBase
