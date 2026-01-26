@@ -114,7 +114,7 @@ else
         function OrdinaryDiffEqCore.default_controller(
                 alg::IDSolve, cache::IDSolveCache, _1, _2, _3
             )
-            return KantorovichTypeController(; Θmin = 1 // 8, p = 1)
+            return KantorovichTypeController(; Θmin = float(1 // 8), p = 1)
         end
 
         function OrdinaryDiffEqCore.stepsize_controller!(
