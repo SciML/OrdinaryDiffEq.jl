@@ -103,6 +103,16 @@ else
             beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
             return ExtrapolationController(beta1)
         end
+        # FIXME AitkenNeville is missing integration with the extrapolation controller and picks up the PI controller instead.
+        function default_controller(
+                alg::AitkenNeville,
+                cache,
+                qoldinit, _beta1 = nothing, _beta2 = nothing
+            )
+            QT = typeof(qoldinit)
+            beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
+            return PIController(beta1, beta2)
+        end
     end
 end
 
