@@ -34,6 +34,10 @@ import ADTypes: AutoForwardDiff, AbstractADType
         import OrdinaryDiffEqCore: AbstractLegacyController, default_controller_v7,
             legacy_default_controller, setup_controller_cache, AbstractControllerCache
     end
+else
+    @eval begin
+        import OrdinaryDiffEqCore: default_controller
+    end
 end
 
 using Reexport
