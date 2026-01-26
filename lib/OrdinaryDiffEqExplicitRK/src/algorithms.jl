@@ -57,7 +57,7 @@ For Tsit5, the original formulation was:
 
     ... and so on for all 7 stages
 """
-function construct_tsit5_interp_matrix(::Type{T} = Float64) where T
+function construct_tsit5_interp_matrix(::Type{T}) where {T <: CompiledFloats}
     # Original Tsit5 interpolation coefficients
     # From OrdinaryDiffEqTsit5/src/tsit_tableaus.jl
 
