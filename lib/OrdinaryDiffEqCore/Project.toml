@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqCore"
 uuid = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "3.2.0"
+version = "3.3.0"
 
 [deps]
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"

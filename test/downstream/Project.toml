@@ -21,3 +21,6 @@ Measurements = "2.9"
 OrdinaryDiffEq = "6"
 StaticArrays = "1"
 StochasticDiffEq = "6.60.1"
+
+[sources]
+OrdinaryDiffEq = {path = "../../"}

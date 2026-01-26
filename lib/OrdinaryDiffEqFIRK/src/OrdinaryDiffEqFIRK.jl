@@ -36,6 +36,12 @@ using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, Convergence, FastConvergenc
     Divergence, get_new_W_γdt_cutoff
 import ADTypes: AutoForwardDiff, AbstractADType
 
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+    @eval begin
+        import OrdinaryDiffEqCore: PredictiveControllerCache, NewPredictiveController
+    end
+end
+
 using Reexport
 @reexport using SciMLBase
 

@@ -14,8 +14,8 @@ p₀ = [10, 28, 8 / 3]
 
 prob = ODEProblem(lorenz_rule, u₀, (0.0, 100.0), p₀)
 alg = Vern9() # 9-th order adaptive solver
-sol = solve(prob; alg = alg) # works
+sol = solve(prob; alg = alg)
 
 uunc = SVector(10.0 ± 0.1, 10.0 ± 0.1, 10.0 ± 0.1)
 probunc = ODEProblem(lorenz_rule, uunc, (0.0, 10.0), p₀)
-solunc = solve(probunc; alg = alg) # does not work
+solunc = solve(probunc; alg = alg)

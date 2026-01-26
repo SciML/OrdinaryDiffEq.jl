@@ -41,6 +41,10 @@ for τ in tvector
         integ2.u .= integ1.u #.+ (integ2.u .- integ1.u)./a
         u_modified!(integ2, true)
         set_proposed_dt!(integ2, integ1)
+        if hasproperty(integ1, :controller_cache)
+            reinit!(integ1, integ1.controller_cache)
+            reinit!(integ2, integ2.controller_cache)
+        end
         break
     end
 end
@@ -48,6 +52,8 @@ end
 τ = tvector[end]
 push!(integ1.opts.tstops, τ);
 step!(integ1);
+@test integ1.t == τ
 push!(integ2.opts.tstops, τ);
 step!(integ2);
+@test integ2.t == τ
 @test dist = norm(integ1.u .- integ2.u) == 0

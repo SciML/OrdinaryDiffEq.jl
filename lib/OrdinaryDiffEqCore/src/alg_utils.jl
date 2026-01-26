@@ -368,10 +368,44 @@ alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_orde
 
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
-# this is actually incorrect and is purposefully decreased as this tends
-# to track the real error much better
 
-function default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
+function default_controller_v7(QT, alg)
+    if ispredictive(alg)
+        return NewPredictiveController(QT, alg)
+    elseif isstandard(alg)
+        return NewIController(QT, alg)
+    else
+        return NewPIController(QT, alg)
+    end
+end
+
+function default_controller_v7(QT, alg::OrdinaryDiffEqCompositeAlgorithm)
+    return nothing # This forces a fall-back to the legacy implementation
+    # beta2 = convert(QT, beta2_default(alg.algs[1]))
+    # beta1 = convert(QT, beta1_default(alg.algs[1], beta2))
+    # return PIController(beta1, beta2)
+    # TODO Uncomment this code below to when removing the legacy controllers on OrdinaryDiffEq v7.
+    # return CompositeController(
+    #     __default_controller_v7(QT, alg.algs)
+    # )
+end
+
+# @generated function __default_controller_v7(
+#     QT, algs::T
+# ) where {
+#     T <: Tuple
+# }
+#     return Expr(
+#         :tuple,
+#         map(1:length(T.types)) do i
+#             :(
+#                 default_controller_v7(QT, algs[$i])
+#             )
+#         end...
+#     )
+# end
+
+function legacy_default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
     if ispredictive(alg)
         return PredictiveController()
     elseif isstandard(alg)
@@ -382,6 +416,9 @@ function default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = not
         return PIController(beta1, beta2)
     end
 end
+
+# TODO remove this when done
+default_controller(args...) = legacy_default_controller(args...)
 
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
     if alg isa OrdinaryDiffEqCompositeAlgorithm
