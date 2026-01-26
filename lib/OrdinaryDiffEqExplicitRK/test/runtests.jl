@@ -1,7 +1,7 @@
 using SafeTestsets
 
 # Run interpolation tests on all Julia versions
-@time @safetestset "Generic RK Interpolation Tests" include("interpolation_tests.jl")
+@time @safetestset "Generic RK Tests" include("interpolation_tests.jl")
 
 # Only run QA and allocation tests on stable Julia versions
 if isempty(VERSION.prerelease)
