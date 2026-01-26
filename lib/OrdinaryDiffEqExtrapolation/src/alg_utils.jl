@@ -85,6 +85,25 @@ alg_maximum_order(alg::ImplicitEulerBarycentricExtrapolation) = alg.max_order
             return PIController(beta1, beta2)
         end
     end
+else
+    @eval begin
+        function default_controller(
+                alg::Union{
+                    ExtrapolationMidpointDeuflhard,
+                    ImplicitDeuflhardExtrapolation,
+                    ExtrapolationMidpointHairerWanner,
+                    ImplicitHairerWannerExtrapolation,
+                    ImplicitEulerExtrapolation,
+                    ImplicitEulerBarycentricExtrapolation,
+                },
+                cache,
+                qoldinit, _beta1 = nothing, _beta2 = nothing
+            )
+            QT = typeof(qoldinit)
+            beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
+            return ExtrapolationController(beta1)
+        end
+    end
 end
 
 beta2_default(alg::ExtrapolationMidpointDeuflhard) = 0 // 1
