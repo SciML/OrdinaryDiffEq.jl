@@ -668,7 +668,6 @@ end
         end
     end
 
-    local breakpointθ = -1.0
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
@@ -2278,21 +2277,22 @@ function find_discontinuity(u, uprev, integrator, cache::Union{RadauIIA5Constant
     p = integrator.p
     t = integrator.t
     dt = integrator.dt
-    breakpointθ = -1
+    breakpointθ = -one(dt)
     for i in cb.continuous_callbacks
         if (!(i.is_discontinuity)) 
             continue 
         end
         out_prev = nothing
         out_curr = nothing
-        is_inplace = false
-        try
+        is_inplace = DiffEqBase.isinplace(i.condition, 4)
+        @show is_inplace
+        if is_inplace
             out_prev = similar(u)
             i.condition(out_prev, uprev, t, integrator)
             out_curr = similar(u)
             i.condition(out_curr, u, t + dt, integrator)
             is_inplace = true
-        catch
+        else
             out_prev = i.condition(uprev, t, integrator)
             out_curr = i.condition(u, t + dt, integrator)
             is_inplace = false
@@ -2315,7 +2315,9 @@ function find_discontinuity(u, uprev, integrator, cache::Union{RadauIIA5Constant
                 prob = IntervalNonlinearProblem(zero_func, [zero(dt), one(dt)], p)
                 sol = solve(prob)
                 tmp = sol[]
-                if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) breakpointθ = tmp end
+                if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) 
+                    breakpointθ = tmp 
+                end
             end
         end
     end
