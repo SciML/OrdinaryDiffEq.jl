@@ -677,14 +677,14 @@ end
             integrator.k[5] = z3
         end
     else
-        breakpointθ = find_discontinuity(u, uprev, integrator, cache) 
-        @show breakpointθ
-    end
-    if !isnan(breakpointθ) && 1e-6 < breakpointθ < 1.0
-        println("Discontinuity detected at t = ", t + breakpointθ * dt)
-        cache.new_dt = breakpointθ * dt
-        @show t
-        @show cache.new_dt
+        if alg.is_disco
+            breakpointθ = find_discontinuity(u, uprev, integrator, cache) 
+            if !isnan(breakpointθ) && 1e-6 < breakpointθ < 1.0
+                println("Discontinuity detected at t = ", t + breakpointθ * dt)
+                @show t
+                cache.new_dt = breakpointθ * dt
+            end
+        end
     end
     
     integrator.fsallast = f(u, p, t + dt)
@@ -2312,9 +2312,23 @@ function find_discontinuity(u, uprev, integrator, cache::Union{RadauIIA5Constant
     dt = integrator.dt
     breakpointθ = -1
     for i in cb.continuous_callbacks
-        if (!(i.is_discontinuity)) continue end
-        out_prev = i.condition(uprev, t, integrator)
-        out_curr = i.condition(u, t + dt, integrator)
+        if (!(i.is_discontinuity)) 
+            continue 
+        end
+        out_prev = nothing
+        out_curr = nothing
+        is_inplace = false
+        try
+            out_prev = similar(u)
+            i.condition(out_prev, uprev, t, integrator)
+            out_curr = similar(u)
+            i.condition(out_curr, u, t + dt, integrator)
+            is_inplace = true
+        catch
+            out_prev = i.condition(uprev, t, integrator)
+            out_curr = i.condition(u, t + dt, integrator)
+            is_inplace = false
+        end
         for (idx, (f0, f1)) in enumerate(zip(out_prev, out_curr))
             if (f0 * f1 < zero(f0))
                 function zero_func(θ, p)
@@ -2322,7 +2336,12 @@ function find_discontinuity(u, uprev, integrator, cache::Union{RadauIIA5Constant
                     _ode_interpolant!(u₁, θ, dt, uprev, u, integrator.k, cache,
                                     nothing, Val{0}, nothing)
 
-                    out = i.condition(u₁, t + θ * dt, integrator)
+                    if is_inplace
+                        out = similar(u)
+                        i.condition(out, u₁, t + θ * dt, integrator)
+                    else
+                        out = i.condition(u₁, t + θ * dt, integrator)
+                    end
                     out[idx]
                 end
                 prob = IntervalNonlinearProblem(zero_func, [zero(dt), one(dt)], p)
@@ -2333,45 +2352,5 @@ function find_discontinuity(u, uprev, integrator, cache::Union{RadauIIA5Constant
         end
     end
     breakpointθ
-end 
+end
 
-function find_discontinuity(u, uprev, integrator, cache::Union{RadauIIA5ConstantCache, RadauIIA5Cache})
-    cb = integrator.opts.callback
-    cb === nothing && return -1
-    isempty(cb.continuous_callbacks) && return -1
-
-    disco_exists = false;
-    for i in cb.continuous_callbacks
-        if (i.is_discontinuity) 
-            disco_exists = true
-            break
-        end
-    end
-    !disco_exists && return -1
-    p = integrator.p
-    t = integrator.t
-    dt = integrator.dt
-    breakpointθ = -1
-    for i in cb.continuous_callbacks
-        if (!(i.is_discontinuity)) continue end
-        out_prev = i.condition(uprev, t, integrator)
-        out_curr = i.condition(u, t + dt, integrator)
-        for (idx, (f0, f1)) in enumerate(zip(out_prev, out_curr))
-            if (f0 * f1 < zero(f0))
-                function zero_func(θ, p)
-                    u₁ = similar(u)
-                    _ode_interpolant!(u₁, θ, dt, uprev, u, integrator.k, cache,
-                                    nothing, Val{0}, nothing)
-
-                    out = i.condition(u₁, t + θ * dt, integrator)
-                    out[idx]
-                end
-                prob = IntervalNonlinearProblem(zero_func, [zero(dt), one(dt)], p)
-                sol = solve(prob)
-                tmp = sol[]
-                if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) breakpointθ = tmp end
-            end
-        end
-    end
-    breakpointθ
-end 
