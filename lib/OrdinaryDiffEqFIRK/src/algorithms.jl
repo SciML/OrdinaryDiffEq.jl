@@ -92,6 +92,7 @@ struct RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    is_disco::Bool
 end
 
 function RadauIIA5(;
@@ -102,7 +103,7 @@ function RadauIIA5(;
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
-        step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!, is_disco = false
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
@@ -122,7 +123,8 @@ function RadauIIA5(;
         new_W_γdt_cutoff,
         controller,
         step_limiter!,
-        AD_choice
+        AD_choice,
+        is_disco
     )
 end
 

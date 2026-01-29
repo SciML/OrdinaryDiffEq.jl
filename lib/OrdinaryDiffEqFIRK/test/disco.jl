@@ -15,11 +15,9 @@ end
 cb = ContinuousCallback(condition, affect!; is_discontinuity = true)
 
 #disco solve
-sol = solve(prob, RadauIIA5(); callback = cb)
+sol = solve(prob, RadauIIA5(is_disco = true); callback = cb, reltol = 1e-6)
 #fixed order solve
-sol2 = solve(prob, AdaptiveRadau(min_order = 5, max_order = 5))
-#check location of discontinuity
-sol = solve(prob, RadauIIA9(); callback = cb)
+sol2 = solve(prob, RadauIIA5(is_disco = false); callback = cb, reltol = 1e-6)
 
 #two discontinuity functions
 function f(u, p, t)
@@ -51,38 +49,9 @@ cb2 = ContinuousCallback(condition2, affect2!; is_discontinuity = true)
 cb = CallbackSet(cb1, cb2)
 
 #disco solve
-sol = solve(prob, RadauIIA5(); callback = cb)
+sol = solve(prob, RadauIIA5(is_disco = true); callback = cb, reltol = 1e-6)
 #fixed order solve
-sol2 = solve(prob, AdaptiveRadau(min_order = 5, max_order = 5))
-#check location of discontinuity
-sol = solve(prob, RadauIIA9(); callback = cb)
-
-# exponential growth with discontinuity at u[1] = 0.5
-function f_exp_discontinuous!(du, u, p, t)
-    if u[1] < 0.5
-        du[1] = 10 * exp(2 * u[1])  # rapid growth 
-    else
-        du[1] = u[1] + 5     
-    end
-end
-
-u0_exp = [0.1]
-tspan_exp = (0.0, 1.0)
-prob_exp = ODEProblem(f_exp_discontinuous!, u0_exp, tspan_exp)
-
-#define callback
-cond_exp(u, t, integrator) = u[1] - 0.5
-function affect_exp!(integrator)
-    println("Exponential discontinuity callback fired at t=$(integrator.t), u=$(integrator.u[1])")
-end
-cb_exp = ContinuousCallback(cond_exp, affect_exp!; is_discontinuity = true)
-
-#disco solve
-sol_exp_cb = solve(prob_exp, RadauIIA5(); callback=cb_exp, reltol=1e-8, abstol=1e-10)
-#fixed order solve
-sol = solve(prob_exp, AdaptiveRadau(min_order = 5, max_order = 5), reltol=1e-8, abstol=1e-10)
-#check location of discontinuity
-sol = solve(prob_exp, RadauIIA9(); callback=cb_exp, reltol=1e-8, abstol=1e-10)
+sol2 = solve(prob, RadauIIA5(is_disco = false); callback = cb, reltol = 1e-6)
 
 # multiple exponential regions with sharp transitions
 function f_multi_exp!(du, u, p, t)
@@ -114,11 +83,9 @@ cb_multi_2 = ContinuousCallback(cond_multi_2, affect_multi_2!; is_discontinuity 
 cb_multi = CallbackSet(cb_multi_1, cb_multi_2)
 
 #disco solve
-sol_multi_cb_1 = solve(prob_multi, RadauIIA5(); callback=cb_multi, reltol=1e-7, abstol=1e-9)
+sol_multi_cb_1 = solve(prob_multi, RadauIIA5(is_disco = true); callback=cb_multi, reltol=1e-7, abstol=1e-9)
 #fixed order solve
-sol = solve(prob_multi, AdaptiveRadau(min_order = 5, max_order =5), reltol = 1e-7, abstol = 1e-9)
-#check location of discontinuity
-sol = solve(prob_multi, RadauIIA9(); callback=cb_multi, reltol=1e-7, abstol=1e-9)
+sol = solve(prob_multi, RadauIIA5(is_disco = false); callback=cb_multi, reltol = 1e-7, abstol = 1e-9)
 
 # 2D system with exponential coupling and discontinuity
 function f_2d_exp!(du, u, p, t)
@@ -144,11 +111,9 @@ end
 cb_2d = ContinuousCallback(cond_2d, affect_2d!; is_discontinuity = true)
 
 #disco solve
-sol_2d_cb = solve(prob_2d, RadauIIA5(); callback=cb_2d, reltol=1e-8, abstol=1e-10)
+sol_2d_cb = solve(prob_2d, RadauIIA5(is_disco = true); callback=cb_2d, reltol=1e-8, abstol=1e-10)
 #fixed order solve
-sol = solve(prob_2d, AdaptiveRadau(min_order = 5, max_order = 5), reltol = 1e-8, abstol = 1e-10)
-#check location of discontinuity
-sol = solve(prob_2d, RadauIIA9(); callback=cb_2d, reltol=1e-8, abstol=1e-10)
+sol = solve(prob_2d, RadauIIA5(is_disco = false); callback=cb_2d, reltol = 1e-8, abstol = 1e-10)
 
 # very stiff discontinuous system
 function f_stiff_disc!(du, u, p, t)
@@ -172,11 +137,9 @@ end
 cb_stiff = ContinuousCallback(cond_stiff, affect_stiff!; is_discontinuity = true)
 
 #disco solve
-sol_stiff_cb = solve(prob_stiff, RadauIIA5(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
+sol_stiff_cb = solve(prob_stiff, RadauIIA5(is_disco = true); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
 #fixed order solve
-sol = solve(prob_stiff, AdaptiveRadau(min_order = 5, max_order = 5), reltol = 1e-9, abstol = 1e-11)
-#check location of discontinuity
-sol = solve(prob_stiff, RadauIIA9(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
+sol = solve(prob_stiff, RadauIIA5(is_disco = false); callback=cb_stiff, reltol = 1e-9, abstol = 1e-11)
 
 # multiple discontinuities in very small range (1e-6 apart, 5 discontinuities)
 function f_many_disc!(du, u, p, t)
@@ -202,9 +165,28 @@ end
 cb_many = CallbackSet(cbs_many...)
 
 #disco solve
-sol_many_cb = solve(prob_many, RadauIIA5(); callback=cb_many, reltol=1e-10, abstol=1e-12)
+sol_many_cb = solve(prob_many, RadauIIA5(is_disco = true); callback=cb_many, reltol=1e-10, abstol=1e-12)
 #fixed order solve
-sol = solve(prob_many, AdaptiveRadau(min_order = 5, max_order = 5), reltol=1e-10, abstol=1e-12)
-#check location of discontinuity
-sol = solve(prob_many, RadauIIA9(); callback=cb_many, reltol=1e-10, abstol=1e-12)
+sol = solve(prob_many, RadauIIA5(is_disco = false); callback=cb_many, reltol=1e-10, abstol=1e-12)
 
+# discontinuity in u (state jump)
+function f_state_jump!(du, u, p, t)
+    du[1] = 2 * u[1]  # smooth exponential growth until discontinuity
+end
+
+u0_jump = [0.5]
+tspan_jump = (0.0, 2.0)
+prob_jump = ODEProblem(f_state_jump!, u0_jump, tspan_jump)
+
+# define callback that causes a sudden jump in state
+cond_jump(u, t, integrator) = u[1] - 1.0
+function affect_jump!(integrator)
+    integrator.u[1] = 0.2  # sudden jump from ~1.0 down to 0.2
+    println("State discontinuity callback fired at t=$(integrator.t), u jumps to 0.2")
+end
+cb_jump = ContinuousCallback(cond_jump, affect_jump!; is_discontinuity = true)
+
+#disco solve
+sol_jump = solve(prob_jump, RadauIIA5(is_disco = true); callback=cb_jump, reltol=1e-8, abstol=1e-10)
+#fixed order solve
+sol_jump2 = solve(prob_jump, RadauIIA5(is_disco = false); callback=cb_jump, reltol=1e-8, abstol=1e-10)
