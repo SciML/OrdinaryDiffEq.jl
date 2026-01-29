@@ -964,46 +964,14 @@ end
             integrator.k[5] .= z3
         end
     else
-        p = integrator.p
-        t = integrator.t
-        #function condition!(u, p, t)
-        #    return [u[1] - 1.0]
-        #end
-        #function condition!(u, p, t)
-        #    return [u[1] - 1, u[1] - 2]
-        #end
-        function condition!(u, p, t)
-            return [u[1] - 0.5]
-        end
-        #function condition!(u, p, t)
-        #    return [u[1] + u[2] - 1]
-        #end
-        out_prev = condition!(uprev, p, t)
-        out_curr = condition!(u, p, t + dt)
-        for (idx, (f0, f1)) in enumerate(zip(out_prev, out_curr))
-            if (f0 * f1 < zero(f0))
-                function zero_func(θ, p)
-                    u₁ = similar(u)
-                    _ode_interpolant!(u₁, θ, dt, uprev, u, integrator.k, cache,
-                                    nothing, Val{0}, nothing)
-
-                    out = condition!(u₁, p, t + θ * dt)
-                    out[idx]
-                end
-                prob = IntervalNonlinearProblem(zero_func, [zero(dt), one(dt)], p)
-                sol = solve(prob)
-                tmp = sol[]
-                if sol.retcode == ReturnCode.Success && !isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)
-                    breakpointθ = tmp
-                end            
+        if alg.is_disco
+            breakpointθ = find_discontinuity(u, uprev, integrator, cache) 
+            if !isnan(breakpointθ) && 1e-6 < breakpointθ < 1.0
+                println("Discontinuity detected at t = ", t + breakpointθ * dt)
+                @show t
+                cache.new_dt = breakpointθ * dt
             end
         end
-    end
-    if !isnan(breakpointθ) && 0 < breakpointθ < 1.0
-        println("Discontinuity detected at t = ", t + breakpointθ * dt)
-        cache.new_dt = breakpointθ * dt
-        @show t
-        @show cache.new_dt
     end
 
     f(fsallast, u, p, t + dt)

@@ -169,24 +169,35 @@ sol_many_cb = solve(prob_many, RadauIIA5(is_disco = true); callback=cb_many, rel
 #fixed order solve
 sol = solve(prob_many, RadauIIA5(is_disco = false); callback=cb_many, reltol=1e-10, abstol=1e-12)
 
-# discontinuity in u (state jump)
-function f_state_jump!(du, u, p, t)
-    du[1] = 2 * u[1]  # smooth exponential growth until discontinuity
+# discontinuous DAE with mass matrix
+# System: M * du/dt = f(u, p, t)
+# du[1]/dt = u[2] - u[1]
+# 0 = u[1] + u[2] - 1 (algebraic constraint)
+function f_dae_disc!(du, u, p, t)
+    if u[1] < 0.5
+        du[1] = 2 * u[2] - u[1]
+        du[2] = u[1] + u[2] - 1  # algebraic constraint 
+    else
+        du[1] = -u[1] + u[2]
+        du[2] = u[1] + u[2] - 1  # algebraic constraint 
+    end
 end
 
-u0_jump = [0.5]
-tspan_jump = (0.0, 2.0)
-prob_jump = ODEProblem(f_state_jump!, u0_jump, tspan_jump)
+u0_dae = [0.2, 0.8]  # consistent with constraint u[1] + u[2] = 1
+tspan_dae = (0.0, 2.0)
 
-# define callback that causes a sudden jump in state
-cond_jump(u, t, integrator) = u[1] - 1.0
-function affect_jump!(integrator)
-    integrator.u[1] = 0.2  # sudden jump from ~1.0 down to 0.2
-    println("State discontinuity callback fired at t=$(integrator.t), u jumps to 0.2")
+M_dae = [1.0 0.0; 0.0 0.0]
+
+f_dae_func = ODEFunction(f_dae_disc!; mass_matrix=M_dae)
+prob_dae = ODEProblem(f_dae_func, u0_dae, tspan_dae)
+
+cond_dae(u, t, integrator) = u[1] - 0.5
+function affect_dae!(integrator)
+    println("DAE discontinuity callback fired at t=$(integrator.t), u=$(integrator.u)")
 end
-cb_jump = ContinuousCallback(cond_jump, affect_jump!; is_discontinuity = true)
+cb_dae = ContinuousCallback(cond_dae, affect_dae!; is_discontinuity = true)
 
 #disco solve
-sol_jump = solve(prob_jump, RadauIIA5(is_disco = true); callback=cb_jump, reltol=1e-8, abstol=1e-10)
+sol_dae_cb = solve(prob_dae, RadauIIA5(is_disco = true); callback=cb_dae, reltol=1e-8, abstol=1e-10)
 #fixed order solve
-sol_jump2 = solve(prob_jump, RadauIIA5(is_disco = false); callback=cb_jump, reltol=1e-8, abstol=1e-10)
+sol_dae = solve(prob_dae, RadauIIA5(is_disco = false); callback=cb_dae, reltol=1e-8, abstol=1e-10)
