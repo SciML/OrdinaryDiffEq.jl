@@ -162,6 +162,10 @@ function step_reject_controller!(integrator, controller::PredictiveController, a
         integrator.dt = new_dt
         cache.new_dt = -1.0  * one(dt)
     else
-        integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
+        if (success_iter == 0)
+            integrator.dt = 0.1 * dt
+        else
+            integrator.dt = dt / qold
+        end
     end
 end
