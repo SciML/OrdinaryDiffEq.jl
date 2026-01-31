@@ -45,7 +45,7 @@ prob = ODEProblem(lorenz, u0, tspan)
 sol = solve(prob, Tsit5())
 ```
 
-For “refined ODEs”, like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://diffeq.sciml.ai/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/SciML/SciMLTutorials.jl) we show how to solve equations of motion using symplectic methods:
+For “refined ODEs”, like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/SciML/SciMLTutorials.jl) we show how to solve equations of motion using symplectic methods:
 
 ```julia
 function HH_acceleration!(dv, v, u, p, t)
@@ -64,4 +64,4 @@ Other refined forms are IMEX and semi-linear ODEs (for exponential integrators).
 
 ## Available Solvers
 
-For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](https://diffeq.sciml.ai/dev/solvers/ode_solve/), [Dynamical ODE Solvers](https://diffeq.sciml.ai/dev/solvers/dynamical_solve/), and the [Split ODE Solvers](https://diffeq.sciml.ai/dev/solvers/split_ode_solve/) pages.
+For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](https://docs.sciml.ai/DiffEqDocs/stable/solvers/ode_solve/), [Dynamical ODE Solvers](https://docs.sciml.ai/DiffEqDocs/stable/solvers/dynamical_solve/), and the [Split ODE Solvers](https://docs.sciml.ai/DiffEqDocs/stable/solvers/split_ode_solve/) pages.

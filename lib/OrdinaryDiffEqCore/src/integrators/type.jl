@@ -56,11 +56,11 @@ end
 
 Fundamental `struct` allowing interactively stepping through the numerical solving of a differential equation.
 The full documentation is hosted here:
-[https://diffeq.sciml.ai/latest/basics/integrator/](https://diffeq.sciml.ai/latest/basics/integrator/).
+[https://docs.sciml.ai/DiffEqDocs/stable/basics/integrator/](https://docs.sciml.ai/DiffEqDocs/stable/basics/integrator/).
 This docstring describes basic functionality only!
 
 Initialize using `integrator = init(prob::ODEProblem, alg; kwargs...)`. The keyword args which are accepted are the same
-[common solver options](https://diffeq.sciml.ai/latest/basics/common_solver_opts/)
+[common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
 used by `solve`.
 
 For reference, relevant fields of the `ODEIntegrator` are:
