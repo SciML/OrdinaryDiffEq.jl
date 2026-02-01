@@ -679,8 +679,8 @@ end
         if alg.is_disco
             breakpointθ = find_discontinuity(u, uprev, integrator, cache) 
             if !isnan(breakpointθ) && 1e-6 < breakpointθ < 1.0
-                println("Discontinuity detected at t = ", t + breakpointθ * dt)
-                @show t
+                #=println("Discontinuity detected at t = ", t + breakpointθ * dt)
+                @show =#
                 cache.new_dt = breakpointθ * dt
             end
         end
@@ -2278,6 +2278,7 @@ function find_discontinuity(u, uprev, integrator, cache::Union{RadauIIA5Constant
     t = integrator.t
     dt = integrator.dt
     breakpointθ = -one(dt)
+    prob = nothing
     for i in cb.continuous_callbacks
         if (!(i.is_discontinuity)) 
             continue 
@@ -2285,7 +2286,6 @@ function find_discontinuity(u, uprev, integrator, cache::Union{RadauIIA5Constant
         out_prev = nothing
         out_curr = nothing
         is_inplace = DiffEqBase.isinplace(i.condition, 4)
-        @show is_inplace
         if is_inplace
             out_prev = similar(u)
             i.condition(out_prev, uprev, t, integrator)
@@ -2312,7 +2312,11 @@ function find_discontinuity(u, uprev, integrator, cache::Union{RadauIIA5Constant
                     end
                     out[idx]
                 end
-                prob = IntervalNonlinearProblem(zero_func, [zero(dt), one(dt)], p)
+                if prob === nothing
+                    prob = IntervalNonlinearProblem(zero_func, [zero(dt), one(dt)], p)
+                else
+                    prob = remake(prob; f=zero_func)
+                end
                 sol = solve(prob)
                 tmp = sol[]
                 if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) 
