@@ -36,7 +36,7 @@ Base.@kwdef struct KantorovichTypeController{T} <: AbstractController
     strict::Bool = true
 end
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
         mutable struct KantorovichTypeControllerCache{T} <: AbstractControllerCache
             controller::KantorovichTypeController{T}

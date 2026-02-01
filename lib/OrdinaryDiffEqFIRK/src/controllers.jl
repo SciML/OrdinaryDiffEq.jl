@@ -72,7 +72,7 @@ function step_reject_controller!(
         end
     end
 end
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
         function step_accept_controller!(
                 integrator, ccache::PredictiveControllerCache, alg::AdaptiveRadau, q

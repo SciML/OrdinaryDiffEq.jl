@@ -36,7 +36,7 @@ alg_maximum_order(alg::ImplicitHairerWannerExtrapolation) = 2(alg.max_order + 1)
 alg_maximum_order(alg::ImplicitEulerExtrapolation) = 2(alg.max_order + 1)
 alg_maximum_order(alg::ImplicitEulerBarycentricExtrapolation) = alg.max_order
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
         function legacy_default_controller(
                 alg::Union{

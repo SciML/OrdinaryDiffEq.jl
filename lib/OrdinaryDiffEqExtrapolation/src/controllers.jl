@@ -1,4 +1,4 @@
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
         # Extrapolation methods
         mutable struct ExtrapolationController{QT} <: AbstractLegacyController
@@ -25,7 +25,7 @@ function reset_alg_dependent_opts!(controller::ExtrapolationController, alg1, al
     return nothing
 end
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
         function NewExtrapolationController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing)
             return NewExtrapolationController(
@@ -73,7 +73,7 @@ stepsize_predictor!(integrator, alg, n_new) = stepsize_predictor!(integrator, in
     return zero(typeof(integrator.opts.qmax))
 end
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
         @inline function stepsize_controller!(
                 integrator,
@@ -121,7 +121,7 @@ function stepsize_controller_internal!(
     return integrator.cache.Q[integrator.cache.n_curr - alg.min_order + 1] = q
 end
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
         function stepsize_controller_internal!(
                 integrator,
@@ -191,7 +191,7 @@ function stepsize_predictor!(
     return integrator.cache.Q[n_new - alg.min_order + 1] = q
 end
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
         function stepsize_predictor!(
                 integrator,
@@ -389,7 +389,7 @@ function stepsize_controller_internal!(
     end
 end
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
         function stepsize_controller_internal!(
                 integrator,

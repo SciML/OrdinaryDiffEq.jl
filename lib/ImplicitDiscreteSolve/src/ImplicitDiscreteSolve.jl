@@ -12,7 +12,7 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_cache, OrdinaryDiffEqMut
     @muladd, @.., _unwrap_val, OrdinaryDiffEqCore, isadaptive,
     AbstractController
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.3"
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
         import OrdinaryDiffEqCore: AbstractControllerCache
     end
