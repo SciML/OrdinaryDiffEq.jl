@@ -405,9 +405,9 @@ function calc_W!(
     if W isa WOperator
         if isnewton(nlsolver)
             # we will call `update_coefficients!` for u/p/t in NLNewton
-            update_coefficients!(W; gamma=dtgamma)
+            update_coefficients!(W; gamma = dtgamma)
         else
-            update_coefficients!(W, uprev, p, t; gamma=dtgamma)
+            update_coefficients!(W, uprev, p, t; gamma = dtgamma)
         end
         if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
             islin, isode = islinearfunction(integrator)
@@ -417,7 +417,7 @@ function calc_W!(
                 jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J)
         end
     elseif W isa AbstractSciMLOperator && !(W isa StaticWOperator)
-        update_coefficients!(W, uprev, p, t; gamma=dtgamma)
+        update_coefficients!(W, uprev, p, t; gamma = dtgamma)
     else # concrete W using jacobian from `calc_J!`
         islin, isode = islinearfunction(integrator)
         islin ? (J = isode ? f.f : f.f1.f) :
@@ -473,7 +473,7 @@ end
         end
         W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec)
     elseif cache.W isa AbstractSciMLOperator
-        W = update_coefficients(cache.W, uprev, p, t; gamma=dtgamma)
+        W = update_coefficients(cache.W, uprev, p, t; gamma = dtgamma)
     else
         integrator.stats.nw += 1
         J = islin ? isode ? f.f : f.f1.f : calc_J(integrator, cache, next_step)
