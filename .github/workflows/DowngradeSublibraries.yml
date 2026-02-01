@@ -18,6 +18,8 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Disabled: julia-downgrade-compat@v2 removes local path deps from manifest, see #3021
+    if: false
     strategy:
       fail-fast: false
       matrix:
