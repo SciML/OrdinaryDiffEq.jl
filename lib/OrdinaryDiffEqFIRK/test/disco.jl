@@ -37,13 +37,13 @@ prob = ODEProblem(f, u0, tspan)
 #define callbacks
 condition1(u, t, integrator) = u[1] - 1
 function affect1!(integrator)
-    println("Callback 1 fired at t=$(integrator.t), u=$(integrator.u[1])")
+    #println("Callback 1 fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
 cb1 = ContinuousCallback(condition1, affect1!; is_discontinuity = true)
 
 condition2(u, t, integrator) = u[1] - 2
 function affect2!(integrator)
-    println("Callback 2 fired at t=$(integrator.t), u=$(integrator.u[1])")
+    #println("Callback 2 fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
 cb2 = ContinuousCallback(condition2, affect2!; is_discontinuity = true)
 cb = CallbackSet(cb1, cb2)
