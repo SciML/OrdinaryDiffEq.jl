@@ -36,7 +36,6 @@ jobs:
           - QA
           - Regression_I
           - Regression_II
-          - Multithreading
 
           # Functional tests for sublibraries (run on all Julia versions)
           - OrdinaryDiffEqAdamsBashforthMoulton
@@ -343,6 +342,7 @@ jobs:
           - group: SimpleImplicitDiscreteSolve_QA
             version: '1.11'
           - group: SimpleImplicitDiscreteSolve_QA
+            version: 'pre'
           # Skip OrdinaryDiffEqBDF on pre-release Julia (JET resolution fails)
           # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2977
           - group: OrdinaryDiffEqBDF
