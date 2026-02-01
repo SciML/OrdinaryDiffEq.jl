@@ -14,10 +14,7 @@ const ExplicitRKCacheTypes = Union{ExplicitRKCache, ExplicitRKConstantCache}
 # ============================================================================
 # _ode_addsteps! implementations
 # ============================================================================
-# These functions recompute all stage derivatives when dense output (interpolation)
-# is requested. This is necessary because during perform_step!, only k[1] and k[2]
-# (first and last derivatives) are saved to integrator.k, but RK interpolation
-# requires all stage derivatives.
+
 
 """
     _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::ExplicitRKConstantCache, ...)
@@ -50,8 +47,7 @@ end
 """
     _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::ExplicitRKCache, ...)
 
-In-place version: Recomputes all stage derivatives for the ExplicitRK method
-and stores them in k for use by the interpolant.
+In-place version:
 """
 @muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::ExplicitRKCache,
         always_calc_begin = false, allow_calc_end = true,
