@@ -56,8 +56,12 @@ For Tsit5, the original formulation was:
           = 0 + 0*Θ + r22*Θ² + r23*Θ³ + r24*Θ⁴
 
     ... and so on for all 7 stages
+
+Uses dispatch to select appropriate precision:
+- Float32/Float64: Uses standard decimal coefficients
+- Other types (BigFloat, etc.): Uses high-precision coefficients
 """
-function construct_tsit5_interp_matrix(::Type{T} = Float64) where T
+function construct_tsit5_interp_matrix(::Type{T}) where {T <: Union{Float32, Float64}}
     # Original Tsit5 interpolation coefficients
     # From OrdinaryDiffEqTsit5/src/tsit_tableaus.jl
 
@@ -115,13 +119,17 @@ function construct_tsit5_interp_matrix(::Type{T} = Float64) where T
     return B_interp
 end
 
+# Default to Float64
+construct_tsit5_interp_matrix() = construct_tsit5_interp_matrix(Float64)
+
 """
-    construct_tsit5_interp_matrix_highprecision(T::Type)
+    construct_tsit5_interp_matrix(T::Type) where T
 
 High-precision version for BigFloat and other arbitrary-precision types.
+This method is dispatched for types other than Float32/Float64.
 We have not tested this
 """
-function construct_tsit5_interp_matrix_highprecision(::Type{T}) where T
+function construct_tsit5_interp_matrix(::Type{T}) where T
     # Stage 1
     r11 = convert(T, big"0.999999999999999974283372471559910888475488471328")
     r12 = convert(T, big"-2.763706197274825911336735930481400260916070804192")
@@ -171,14 +179,6 @@ function construct_tsit5_interp_matrix_highprecision(::Type{T}) where T
     return B_interp
 end
 
-"""
-    construct_tsit5_interp_matrix_auto(T::Type)
-
-Automatically selects appropriate precision based on type.
-"""
-construct_tsit5_interp_matrix_auto(::Type{T}) where {T <: Union{Float32, Float64}} = construct_tsit5_interp_matrix(T)
-construct_tsit5_interp_matrix_auto(::Type{T}) where T = construct_tsit5_interp_matrix_highprecision(T)
-
 # Convert Tsit5 tableau to ExplicitRK format
 
 """
@@ -189,7 +189,7 @@ This allows using Tsit5 with the generic ExplicitRK solver.
 
 Tsit5 is a 7-stage, 5th-order method with 4th-order embedded error estimate.
 """
-function constructTsit5ExplicitRK(::Type{T} = Float64) where T
+function constructTsit5ExplicitRK(::Type{T}) where T
     # Build the A matrix (Butcher tableau coefficients)
     # 7 stages, lower triangular (explicit method)
     A=[0 0 0 0 0 0 0
@@ -237,7 +237,7 @@ function constructTsit5ExplicitRK(::Type{T} = Float64) where T
     α = map(T, α)
     αEEst = map(T, αEEst)
     c = map(T, c)
-    B_interp=construct_tsit5_interp_matrix_highprecision(T)
+    B_interp=construct_tsit5_interp_matrix(T)
 
     return DiffEqBase.ExplicitRKTableau(A, c, α, 5,
         αEEst = αEEst,
@@ -247,49 +247,26 @@ function constructTsit5ExplicitRK(::Type{T} = Float64) where T
         B_interp = B_interp)
 end
 
-"""
-    constructTsit5ExplicitRKSimple(T::Type = Float64)
+# Default to Float64
+constructTsit5ExplicitRK() = constructTsit5ExplicitRK(Float64)
 
-Simplified version using rational and decimal approximations.
-Faster to construct but slightly less accurate than the full precision version.
 """
-function constructTsit5ExplicitRKSimple(::Type{T} = Float64) where T
-    #Tested a few more variants and leaving them commented out here for future reference
-    # Build the A matrix with simpler rationals/decimals
-    # A = [0          0          0          0          0          0       0
-    #      0.161      0          0          0          0          0       0
-    #      -0.00848   0.3355     0          0          0          0       0
-    #      2.8972     -6.3594    4.3623     0          0          0       0
-    #      5.3259     -11.7489   7.4955     -0.0925    0          0       0
-    #      5.8615     -12.9210   8.1594     -0.0716    -0.0283    0       0
-    #      0.09646    0.01       0.4799     1.3790     -3.2901    2.3247  0]
-#   A = [0         0         0         0         0         0      0
-#          161//1000 0         0         0         0         0      0
-#          -8480655492356989//1000000000000000000 335480655492357//1000000000000000 0 0 0 0 0
-#          2897153057105493//1000000000000000 -6359448489975075//1000000000000000 4362295432869582//1000000000000000 0 0 0 0
-#          5325864828439257//1000000000000000 -11748883564062828//10000000000000000 7495539342889836//1000000000000000 -92495066361755//1000000000000000 0 0 0
-#          5861455442946420//1000000000000000 -12920969317847109//1000000000000000 8159367898576159//1000000000000000 -71584973281401//1000000000000000 -28269050394068//1000000000000000 0 0
-#          96460766818065//1000000000000000 1//100 479889650414500//1000000000000000 1379008574103742//1000000000000000 -3290069515436081//1000000000000000 2324710524099774//1000000000000000 0]
+    constructTsit5ExplicitRK(T::Type) where {T <: Union{Float32, Float64}}
 
-#    A = Float64.(A)
-A=[0 0 0 0 0 0 0
-   14//87 0 0 0 0 0 0
-   -1//117 50//149 0 0 0 0 0
-   310//107 -407//64 301//69 0 0 0 0
-   474//89 -2479//211 817//109 -5//54 0 0 0
-   381//65 -491//38 563//69 -19//265 -3//106 0 0
-   8//83 1//100 107//223 131//95 -329//100 179//77 0]
-# A=[0.0 0.0 0.0 0.0 0.0 0.0 0.0
-#    0.161 0.0 0.0 0.0 0.0 0.0 0.0
-#    -0.008484 0.3354 0.0 0.0 0.0 0.0 0.0
-#    2.896 -6.36 4.363 0.0 0.0 0.0 0.0
-#    5.324 -1.175 7.496 -0.09247 0.0 0.0 0.0
-#    5.863 -12.92 8.16 -0.0716 -0.02827 0.0 0.0
-#    0.09644 0.01 0.48 1.379 -3.291 2.324 0.0]
+"""
+function constructTsit5ExplicitRK(::Type{T}) where {T <: Union{Float32, Float64}}
+    # Use EXACT Tsit5 coefficients - these must match the B_interp coefficients
+    # Using rational approximations here breaks the interpolation order!
+    A = [0.0        0.0         0.0         0.0          0.0          0.0       0.0
+         0.161      0.0         0.0         0.0          0.0          0.0       0.0
+        -0.008480655492356989  0.335480655492357  0.0  0.0  0.0  0.0  0.0
+         2.8971530571054935   -6.359448489975075   4.3622954328695815  0.0  0.0  0.0  0.0
+         5.325864828439257   -11.748883564062828   7.4955393428898365  -0.09249506636175525  0.0  0.0  0.0
+         5.86145544294642    -12.92096931784711    8.159367898576159   -0.071584973281401   -0.028269050394068383  0.0  0.0
+         0.09646076681806523   0.01  0.4798896504144996  1.379008574103742  -3.290069515436081  2.324710524099774  0.0]
 
     # Time nodes
-    c = [0, 0.161, 0.327, 0.9, 0.9800255409045097, 1.0, 1.0]
-
+    c = [0.0, 0.161, 0.327, 0.9, 0.9800255409045097, 1.0, 1.0]
 
     # Solution weights (5th order)
     α = [0.09468075576583945, 0.009183565540343254, 0.4877705284247616,
@@ -308,7 +285,7 @@ A=[0 0 0 0 0 0 0
     α = map(T, α)
     αEEst = map(T, αEEst)
     c = map(T, c)
-    B_interp=construct_tsit5_interp_matrix(T)
+    B_interp = construct_tsit5_interp_matrix(T)
 
     return DiffEqBase.ExplicitRKTableau(A, c, α, 5,
         αEEst = αEEst,

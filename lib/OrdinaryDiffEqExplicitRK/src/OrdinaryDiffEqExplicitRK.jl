@@ -8,6 +8,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, alg_stability_size,
                            CompositeAlgorithm, calculate_residuals!, calculate_residuals,
                            full_cache, get_fsalfirstlast,
                            _ode_interpolant, _ode_interpolant!,
+                           _ode_addsteps!, copyat_or_push!,
                            DerivativeOrderNotPossibleError
 using TruncatedStacktraces: @truncate_stacktrace
 using RecursiveArrayTools, FastBroadcast, MuladdMacro, DiffEqBase
