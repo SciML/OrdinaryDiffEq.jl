@@ -9,4 +9,4 @@ profile.pb.gz
 .*.swp
 LocalPreferences.toml
 
-docs/build
+docs/buildlib/OrdinaryDiffEqExplicitRK/test/standalone_benchmark.jl
