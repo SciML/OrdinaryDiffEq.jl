@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqBDF"
 uuid = "6ad6398a-0878-4a85-9266-38940aa047c8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.15.0"
+version = "1.16.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -56,7 +56,7 @@ OrdinaryDiffEqDifferentiation = "2"
 OrdinaryDiffEqSDIRK = "1.6.0"
 TruncatedStacktraces = "1.4"
 SciMLBase = "2.116"
-OrdinaryDiffEqCore = "3"
+OrdinaryDiffEqCore = "3.4"
 Aqua = "0.8.11"
 ArrayInterface = "7.19"
 Enzyme = "0.13"
