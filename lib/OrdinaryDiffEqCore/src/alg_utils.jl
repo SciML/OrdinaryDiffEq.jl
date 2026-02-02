@@ -417,8 +417,6 @@ function legacy_default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta
     end
 end
 
-# TODO remove this when done
-default_controller(args...) = legacy_default_controller(args...)
 
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
     if alg isa OrdinaryDiffEqCompositeAlgorithm
