@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqIMEXMultistep"
 uuid = "9f002381-b378-40b7-97a6-27a27c83f129"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.11.0"
+version = "1.12.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -29,7 +29,7 @@ Test = "<0.0.1, 1"
 FastBroadcast = "0.3"
 Random = "<0.0.1, 1"
 DiffEqDevTools = "2.44.4"
-OrdinaryDiffEqDifferentiation = "1.12.0"
+OrdinaryDiffEqDifferentiation = "2"
 SciMLBase = "2.116"
 OrdinaryDiffEqCore = "3"
 Aqua = "0.8.11"
