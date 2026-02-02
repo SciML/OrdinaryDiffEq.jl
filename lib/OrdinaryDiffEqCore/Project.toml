@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqCore"
 uuid = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "3.4.0"
+version = "3.4.1"
 
 [deps]
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
@@ -37,6 +37,7 @@ DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
@@ -98,7 +99,6 @@ Reexport = "1.2"
 [weakdeps]
 Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
-SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "Test", "Pkg"]
@@ -106,4 +106,3 @@ test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "Test", "Pkg
 [extensions]
 OrdinaryDiffEqCoreEnzymeCoreExt = "EnzymeCore"
 OrdinaryDiffEqCoreMooncakeExt = "Mooncake"
-OrdinaryDiffEqCoreSparseArraysExt = "SparseArrays"

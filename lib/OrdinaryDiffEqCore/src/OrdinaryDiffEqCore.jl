@@ -17,6 +17,8 @@ using MuladdMacro: @muladd
 
 using LinearAlgebra: opnorm, I, UniformScaling, diag, rank, isdiag
 
+import SparseArrays
+
 import PrecompileTools
 
 import FillArrays: Trues, Falses
