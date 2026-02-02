@@ -4,6 +4,7 @@ authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "1.12.0"
 
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -12,11 +13,10 @@ TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
-DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
@@ -48,9 +48,9 @@ ADTypes = "1.16"
 RecursiveArrayTools = "3.36"
 OrdinaryDiffEqNonlinearSolve = "1.16.0"
 AllocCheck = "0.2"
-DiffEqBase = "6.194"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
+StaticArrays = "1.9"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "Pkg"]
