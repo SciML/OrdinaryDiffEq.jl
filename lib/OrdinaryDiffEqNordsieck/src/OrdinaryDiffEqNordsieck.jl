@@ -18,12 +18,8 @@ import Static: False
 using OrdinaryDiffEqTsit5: Tsit5ConstantCache, Tsit5Cache
 import OrdinaryDiffEqCore
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
-    @eval begin
-        import OrdinaryDiffEqCore: default_controller_v7,
-            legacy_default_controller
-    end
-end
+import OrdinaryDiffEqCore: default_controller_v7,
+    legacy_default_controller
 
 using Reexport
 @reexport using SciMLBase

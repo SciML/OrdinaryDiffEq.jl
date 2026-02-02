@@ -18,16 +18,8 @@ import Static: False
 import RecursiveArrayTools: recursive_unitless_bottom_eltype
 import OrdinaryDiffEqCore
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
-    @eval begin
-        import OrdinaryDiffEqCore: default_controller_v7,
-            legacy_default_controller, NewPIDController
-    end
-else
-    @eval begin
-        import OrdinaryDiffEqCore: default_controller
-    end
-end
+import OrdinaryDiffEqCore: default_controller_v7,
+    legacy_default_controller, NewPIDController
 
 using Reexport
 @reexport using SciMLBase

@@ -1,19 +1,9 @@
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
-    @eval begin
-        function legacy_default_controller(alg::Union{QNDF, FBDF}, args...)
-            return DummyController()
-        end
+function legacy_default_controller(alg::Union{QNDF, FBDF}, args...)
+    return DummyController()
+end
 
-        function default_controller_v7(QT, alg::Union{QNDF, FBDF}, args...)
-            return DummyController()
-        end
-    end
-else
-    @eval begin
-        function default_controller(alg::Union{QNDF, FBDF}, args...)
-            return DummyController()
-        end
-    end
+function default_controller_v7(QT, alg::Union{QNDF, FBDF}, args...)
+    return DummyController()
 end
 
 # QNBDF
