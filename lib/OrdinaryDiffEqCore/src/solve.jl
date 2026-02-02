@@ -40,8 +40,7 @@ function SciMLBase.__init(
             !default_linear_interpolation(prob, alg),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
             (dense) || !isempty(saveat), # and no dense output
-        dt = isdiscretealg(alg) && isempty(tstops) ?
-            eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
+        dt = nothing,
         dtmin = eltype(prob.tspan)(0),
         dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
         force_dtmin = false,
@@ -152,7 +151,7 @@ function SciMLBase.__init(
                         !(alg isa DAEAlgorithm)
                 ) || !adaptive || !isadaptive(alg)
             ) &&
-                dt == tType(0) && isempty(tstops)
+                isnothing(dt) && isempty(tstops)
         ) && dt_required(alg)
         throw(ArgumentError("Fixed timestep methods require a choice of dt or choosing the tstops"))
     end
@@ -404,7 +403,7 @@ function SciMLBase.__init(
     alg_choice = _alg isa CompositeAlgorithm ? Int[] : nothing
 
     if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
-        if dt == 0
+        if isnothing(dt)
             steps = length(tstops)
         else
             # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
@@ -453,16 +452,22 @@ function SciMLBase.__init(
         uprev2 = uprev
     end
 
+    _dt = if isnothing(dt)
+        isdiscretealg(alg) && isempty(tstops) ?
+            eltype(prob.tspan)(1) : eltype(prob.tspan)(0)
+    else
+        dt
+    end
     if prob isa DAEProblem
         cache = alg_cache(
             _alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
+            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, _dt,
             reltol_internal, p, calck, Val(isinplace(prob)), verbose_spec
         )
     else
         cache = alg_cache(
             _alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-            tTypeNoUnits, uprev, uprev2, f, t, dt, reltol_internal, p, calck,
+            tTypeNoUnits, uprev, uprev2, f, t, _dt, reltol_internal, p, calck,
             Val(isinplace(prob)), verbose_spec
         )
     end
@@ -615,8 +620,8 @@ function SciMLBase.__init(
     # we don't want to differentiate through eigenvalue estimation
     eigen_est = inv(one(tType))
     tprev = t
-    dtcache = tType(dt)
-    dtpropose = tType(dt)
+    dtcache = tType(_dt)
+    dtpropose = tType(_dt)
     iter = 0
     kshortsize = 0
     reeval_fsal = false
@@ -656,7 +661,7 @@ function SciMLBase.__init(
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache),
     }(
-        sol, u, du, k, t, tType(dt), f, p,
+        sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
         dtpropose, tdir, eigen_est, EEst,
@@ -727,7 +732,7 @@ function SciMLBase.__init(
         end
     end
 
-    handle_dt!(integrator)
+    handle_dt!(integrator, dt)
     return integrator
 end
 
@@ -767,6 +772,24 @@ end
 
 function handle_dt!(integrator)
     return if iszero(integrator.dt) && integrator.opts.adaptive
+        auto_dt_reset!(integrator)
+        if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
+                !isnan(integrator.dt)
+            error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
+        end
+        if isnan(integrator.dt)
+            @SciMLMessage(
+                "Automatic dt set the starting dt as NaN, causing instability. Exiting.",
+                integrator.opts.verbose, :dt_NaN
+            )
+        end
+    elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
+            integrator.tdir < 0
+        integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
+    end
+end
+function handle_dt!(integrator, dt)
+    return if isnothing(dt) && iszero(integrator.dt) && integrator.opts.adaptive
         auto_dt_reset!(integrator)
         if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
                 !isnan(integrator.dt)
