@@ -330,15 +330,14 @@ function generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs = nothing, o
 
     inv_dt_factor = order <= 1 ? one(dt) : inv(dt)^(order - 1)
 
-    # Fill pre-allocated bi buffer with polynomial weights
-    for i in 1:nstages
-        bi[i] = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
-    end
-
+    # Compute weights inline (Θ may be a ForwardDiff.Dual, so we cannot
+    # store into the pre-allocated Float64 buffer here).
+    b1 = eval_poly_derivative(Θ, @view(B_interp[1, :]), order)
     return if isnothing(idxs)
-        interp_sum = k[1] * bi[1]
+        interp_sum = k[1] * b1
         for i in 2:nstages
-            interp_sum = interp_sum + k[i] * bi[i]
+            bval = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
+            interp_sum = interp_sum + k[i] * bval
         end
         if order == 0
             y₀ + dt * interp_sum
@@ -346,9 +345,10 @@ function generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs = nothing, o
             interp_sum * inv_dt_factor
         end
     else
-        interp_sum = k[1][idxs] * bi[1]
+        interp_sum = k[1][idxs] * b1
         for i in 2:nstages
-            interp_sum = interp_sum + k[i][idxs] * bi[i]
+            bval = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
+            interp_sum = interp_sum + k[i][idxs] * bval
         end
         if order == 0
             y₀[idxs] + dt * interp_sum

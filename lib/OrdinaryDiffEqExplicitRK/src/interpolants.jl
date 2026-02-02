@@ -16,6 +16,10 @@ const ExplicitRKCacheTypes = Union{ExplicitRKCache, ExplicitRKConstantCache}
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false
     )
+    # Only compute all stage vectors when B_interp is available for generic RK
+    # interpolation. Without B_interp, the default Hermite addsteps suffices.
+    isnothing(cache.B_interp) && return nothing
+
     (; A, c, stages) = cache
 
     if length(k) < stages || always_calc_begin
@@ -37,6 +41,10 @@ end
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false
     )
+    # Only compute all stage vectors when B_interp is available for generic RK
+    # interpolation. Without B_interp, the default Hermite addsteps suffices.
+    isnothing(cache.tab.B_interp) && return nothing
+
     (; kk, tmp, tab) = cache
     (; A, c, stages) = tab
 
@@ -94,6 +102,7 @@ end
 end
 
 # Generate interpolant methods for derivative orders 0-3
+# Only dispatch when B_interp is available; otherwise fall through to Hermite default.
 for order in 0:3
     @eval begin
         @muladd function _ode_interpolant(
@@ -102,6 +111,17 @@ for order in 0:3
                 idxs, T::Type{Val{$order}}, differential_vars
             )
             B_interp = get_B_interp(cache)
+            if isnothing(B_interp)
+                # Fall back to Hermite interpolation (the generic default)
+                dv = OrdinaryDiffEqCore.interpolation_differential_vars(
+                    differential_vars, y₀, idxs
+                )
+                return OrdinaryDiffEqCore.hermite_interpolant(
+                    Θ, dt, y₀, y₁, k,
+                    Val{cache isa OrdinaryDiffEqMutableCache},
+                    idxs, T, dv
+                )
+            end
             bi = get_bi(cache)
             return generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs = idxs, order = $order)
         end
@@ -112,6 +132,16 @@ for order in 0:3
                 idxs, T::Type{Val{$order}}, differential_vars
             )
             B_interp = get_B_interp(cache)
+            if isnothing(B_interp)
+                # Fall back to Hermite interpolation (the generic default)
+                dv = OrdinaryDiffEqCore.interpolation_differential_vars(
+                    differential_vars, y₀, idxs
+                )
+                return OrdinaryDiffEqCore.hermite_interpolant!(
+                    out, Θ, dt, y₀, y₁, k,
+                    idxs, T, dv
+                )
+            end
             bi = get_bi(cache)
             return generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp, bi; idxs = idxs, order = $order)
         end
