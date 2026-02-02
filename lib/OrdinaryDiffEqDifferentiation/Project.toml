@@ -1,5 +1,5 @@
 name = "OrdinaryDiffEqDifferentiation"
-version = "1.22.0"
+version = "2.0.0"
 uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 
