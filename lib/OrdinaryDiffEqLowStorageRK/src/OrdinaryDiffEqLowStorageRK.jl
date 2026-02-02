@@ -7,7 +7,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
     OrdinaryDiffEqAlgorithm, ispredictive,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
-    default_controller, PIDController,
+    PIDController,
     alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
     constvalue, _unwrap_val,
     trivial_limiter!, perform_step!, initialize!,
@@ -17,6 +17,17 @@ import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, S
 import Static: False
 import RecursiveArrayTools: recursive_unitless_bottom_eltype
 import OrdinaryDiffEqCore
+
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    @eval begin
+        import OrdinaryDiffEqCore: default_controller_v7,
+            legacy_default_controller, NewPIDController
+    end
+else
+    @eval begin
+        import OrdinaryDiffEqCore: default_controller
+    end
+end
 
 using Reexport
 @reexport using SciMLBase

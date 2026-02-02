@@ -16,7 +16,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     trivial_limiter!,
     issplit, qsteady_min_default, qsteady_max_default,
     get_current_alg_order, get_current_adaptive_order,
-    default_controller, stepsize_controller!,
+    stepsize_controller!,
     step_accept_controller!,
     step_reject_controller!, post_newton_controller!,
     u_modified!, DAEAlgorithm, _unwrap_val, DummyController,
@@ -34,6 +34,18 @@ using LinearAlgebra: mul!, I
 import ArrayInterface
 using ArrayInterface: ismutable
 import OrdinaryDiffEqCore
+
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    @eval begin
+        import OrdinaryDiffEqCore: default_controller_v7,
+            legacy_default_controller
+    end
+else
+    @eval begin
+        import OrdinaryDiffEqCore: default_controller
+    end
+end
+
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
     nlsolve!, nlsolvefail, isnewton, markfirststage!,

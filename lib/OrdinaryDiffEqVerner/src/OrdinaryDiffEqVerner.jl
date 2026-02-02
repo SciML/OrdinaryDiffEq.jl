@@ -4,7 +4,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals, alg_stability_size,
     OrdinaryDiffEqAlgorithm,
-    CompositeAlgorithm, AbstractController, PIDController,
+    CompositeAlgorithm, accept_step_controller,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
     alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
@@ -30,7 +30,6 @@ include("verner_caches.jl")
 include("verner_addsteps.jl")
 include("interp_func.jl")
 include("interpolants.jl")
-include("controllers.jl")
 include("verner_rk_perform_step.jl")
 
 import PrecompileTools

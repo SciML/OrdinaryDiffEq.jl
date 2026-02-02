@@ -84,32 +84,92 @@ uses_uprev(alg::CKLLSRK65_4M_4R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK85_4FM_4R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK75_4M_5R, adaptive::Bool) = adaptive
 
-function default_controller(alg::RDPK3Sp35, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.64, -0.31, 0.04))...)
-end
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    @eval begin
+        function legacy_default_controller(alg::RDPK3Sp35, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.64, -0.31, 0.04))...)
+        end
 
-function default_controller(alg::RDPK3SpFSAL35, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.7, -0.23, 0.0))...)
-end
+        function legacy_default_controller(alg::RDPK3SpFSAL35, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.7, -0.23, 0.0))...)
+        end
 
-function default_controller(alg::RDPK3Sp49, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.25, -0.12, 0.0))...)
-end
+        function legacy_default_controller(alg::RDPK3Sp49, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.25, -0.12, 0.0))...)
+        end
 
-function default_controller(alg::RDPK3SpFSAL49, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.38, -0.18, 0.01))...)
-end
+        function legacy_default_controller(alg::RDPK3SpFSAL49, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.38, -0.18, 0.01))...)
+        end
 
-function default_controller(alg::RDPK3Sp510, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.47, -0.2, 0.06))...)
-end
+        function legacy_default_controller(alg::RDPK3Sp510, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.47, -0.2, 0.06))...)
+        end
 
-function default_controller(alg::RDPK3SpFSAL510, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.45, -0.13, 0.0))...)
+        function legacy_default_controller(alg::RDPK3SpFSAL510, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.45, -0.13, 0.0))...)
+        end
+
+        function default_controller_v7(QT, alg::RDPK3Sp35)
+            return NewPIDController(QT, alg; beta = map(Base.Fix1(convert, QT), (0.64, -0.31, 0.04)))
+        end
+
+        function default_controller_v7(QT, alg::RDPK3SpFSAL35)
+            return NewPIDController(QT, alg; beta = map(Base.Fix1(convert, QT), (0.7, -0.23, 0.0)))
+        end
+
+        function default_controller_v7(QT, alg::RDPK3Sp49)
+            return NewPIDController(QT, alg; beta = map(Base.Fix1(convert, QT), (0.25, -0.12, 0.0)))
+        end
+
+        function default_controller_v7(QT, alg::RDPK3SpFSAL49)
+            return NewPIDController(QT, alg; beta = map(Base.Fix1(convert, QT), (0.38, -0.18, 0.01)))
+        end
+
+        function default_controller_v7(QT, alg::RDPK3Sp510)
+            return NewPIDController(QT, alg; beta = map(Base.Fix1(convert, QT), (0.47, -0.2, 0.06)))
+        end
+
+        function default_controller_v7(QT, alg::RDPK3SpFSAL510)
+            return NewPIDController(QT, alg; beta = map(Base.Fix1(convert, QT), (0.45, -0.13, 0.0)))
+        end
+    end
+else
+    @eval begin
+        function default_controller(alg::RDPK3Sp35, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.64, -0.31, 0.04))...)
+        end
+
+        function default_controller(alg::RDPK3SpFSAL35, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.7, -0.23, 0.0))...)
+        end
+
+        function default_controller(alg::RDPK3Sp49, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.25, -0.12, 0.0))...)
+        end
+
+        function default_controller(alg::RDPK3SpFSAL49, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.38, -0.18, 0.01))...)
+        end
+
+        function default_controller(alg::RDPK3Sp510, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.47, -0.2, 0.06))...)
+        end
+
+        function default_controller(alg::RDPK3SpFSAL510, cache, qoldinit, args...)
+            QT = typeof(qoldinit)
+            return PIDController(map(Base.Fix1(convert, QT), (0.45, -0.13, 0.0))...)
+        end
+    end
 end

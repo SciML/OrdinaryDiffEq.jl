@@ -1,7 +1,7 @@
 module OrdinaryDiffEqNordsieck
 
 import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, qsteady_max_default,
-    get_current_alg_order,
+    get_current_alg_order, DummyController,
     AbstractController, OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,
     alg_cache, OrdinaryDiffEqMutableCache,
@@ -17,6 +17,13 @@ import LinearAlgebra: rmul!
 import Static: False
 using OrdinaryDiffEqTsit5: Tsit5ConstantCache, Tsit5Cache
 import OrdinaryDiffEqCore
+
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    @eval begin
+        import OrdinaryDiffEqCore: default_controller_v7,
+            legacy_default_controller
+    end
+end
 
 using Reexport
 @reexport using SciMLBase
