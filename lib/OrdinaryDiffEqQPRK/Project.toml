@@ -1,45 +1,51 @@
 name = "OrdinaryDiffEqQPRK"
 uuid = "04162be5-8125-4266-98ed-640baecc6514"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.1.0"
-
-[sources]
-OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+version = "1.8.0"
 
 [deps]
-DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
-OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
-RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
-
-[compat]
-DiffEqBase = "6.152.2"
-DiffEqDevTools = "2.44.4"
-FastBroadcast = "0.3.5"
-MuladdMacro = "0.2.4"
-ODEProblemLibrary = "0.1.8"
-OrdinaryDiffEqCore = "1.1"
-Random = "<0.0.1, 1"
-RecursiveArrayTools = "3.27.0"
-Reexport = "1.2.2"
-SafeTestsets = "0.1.0"
-Static = "1.1.1"
-Test = "<0.0.1, 1"
-julia = "1.10"
-JET = "0.9.18, 0.10.4"
-Aqua = "0.8.11"
+FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [extras]
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+
+[compat]
+Pkg = "1"
+Test = "<0.0.1, 1"
+FastBroadcast = "0.3"
+Random = "<0.0.1, 1"
+DiffEqDevTools = "2.44.4"
+MuladdMacro = "0.2"
+SciMLBase = "2.116"
+OrdinaryDiffEqCore = "3"
+Static = "1.2"
+Aqua = "0.8.11"
+julia = "1.10"
+JET = "0.9, 0.11"
+RecursiveArrayTools = "3.36"
+ODEProblemLibrary = "1"
+AllocCheck = "0.2"
+DiffEqBase = "6.194"
+SafeTestsets = "0.1.0"
+Reexport = "1.2"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "JET", "Aqua"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg"]
+
+[sources.OrdinaryDiffEqCore]
+path = "../OrdinaryDiffEqCore"

@@ -6,7 +6,7 @@ struct NLFunctional{K, C} <: AbstractNLSolverAlgorithm
 end
 
 function NLFunctional(; κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5)
-    NLFunctional(κ, fast_convergence_cutoff, max_iter)
+    return NLFunctional(κ, fast_convergence_cutoff, max_iter)
 end
 
 struct NLAnderson{K, D, C} <: AbstractNLSolverAlgorithm
@@ -18,9 +18,11 @@ struct NLAnderson{K, D, C} <: AbstractNLSolverAlgorithm
     droptol::D
 end
 
-function NLAnderson(; κ = 1 // 100, max_iter = 10, max_history::Int = 5, aa_start::Int = 1,
-        droptol = nothing, fast_convergence_cutoff = 1 // 5)
-    NLAnderson(κ, fast_convergence_cutoff, max_iter, max_history, aa_start, droptol)
+function NLAnderson(;
+        κ = 1 // 100, max_iter = 10, max_history::Int = 5, aa_start::Int = 1,
+        droptol = nothing, fast_convergence_cutoff = 1 // 5
+    )
+    return NLAnderson(κ, fast_convergence_cutoff, max_iter, max_history, aa_start, droptol)
 end
 
 struct NLNewton{K, C1, C2, R} <: AbstractNLSolverAlgorithm
@@ -33,15 +35,19 @@ struct NLNewton{K, C1, C2, R} <: AbstractNLSolverAlgorithm
     relax::R
 end
 
-function NLNewton(; κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
+function NLNewton(;
+        κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
         new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
-        relax = nothing)
+        relax = nothing
+    )
     if relax isa Number && !(0 <= relax < 1)
         throw(ArgumentError("The relaxation parameter must be in [0, 1), got `relax = $relax`"))
     end
 
-    NLNewton(κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
-        relax)
+    return NLNewton(
+        κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
+        relax
+    )
 end
 
 struct NonlinearSolveAlg{K, C1, C2, A} <: AbstractNLSolverAlgorithm
@@ -54,18 +60,23 @@ struct NonlinearSolveAlg{K, C1, C2, A} <: AbstractNLSolverAlgorithm
     alg::A
 end
 
-function NonlinearSolveAlg(alg = NewtonRaphson(autodiff = AutoFiniteDiff());
+function NonlinearSolveAlg(
+        alg = NewtonRaphson(autodiff = AutoFiniteDiff());
         κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
-        new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true)
-    NonlinearSolveAlg(
+        new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true
+    )
+    return NonlinearSolveAlg(
         κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
-        alg)
+        alg
+    )
 end
 
 # solver
 
-mutable struct NLSolver{algType, iip, uType, gamType, tmpType, tType,
-    C <: AbstractNLSolverCache, E} <: AbstractNLSolver{algType, iip}
+mutable struct NLSolver{
+        algType, iip, uType, gamType, tmpType, tType,
+        C <: AbstractNLSolverCache, E,
+    } <: AbstractNLSolver{algType, iip}
     z::uType
     tmp::uType # DIRK and multistep methods only use tmp
     tmp2::tmpType # for GLM if necessary
@@ -87,11 +98,13 @@ mutable struct NLSolver{algType, iip, uType, gamType, tmpType, tType,
 end
 
 # default to DIRK
-function NLSolver{iip, tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold,
+function NLSolver{iip, tType}(
+        z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold,
         iter, maxiters, status, cache, method = DIRK, tmp2 = nothing,
-        nfails::Int = 0) where {iip, tType}
+        nfails::Int = 0
+    ) where {iip, tType}
     RT = real(eltype(z))
-    NLSolver{typeof(alg), iip, typeof(z), typeof(γ), typeof(tmp2), tType, typeof(cache), RT}(
+    return NLSolver{typeof(alg), iip, typeof(z), typeof(γ), typeof(tmp2), tType, typeof(cache), RT}(
         z,
         tmp,
         tmp2,
@@ -109,22 +122,23 @@ function NLSolver{iip, tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence
         cache,
         method,
         nfails,
-        one(RT))
+        one(RT)
+    )
 end
 
 # caches
 
 mutable struct NLNewtonCache{
-    uType,
-    tType,
-    tType2,
-    rateType,
-    J,
-    W,
-    ufType,
-    jcType,
-    lsType
-} <: AbstractNLSolverCache
+        uType,
+        tType,
+        tType2,
+        rateType,
+        J,
+        W,
+        ufType,
+        jcType,
+        lsType,
+    } <: AbstractNLSolverCache
     ustep::uType
     tstep::tType
     k::rateType
@@ -173,7 +187,7 @@ mutable struct NLFunctionalConstantCache{tType} <: AbstractNLSolverCache
 end
 
 mutable struct NLAndersonCache{uType, tType, rateType, uEltypeNoUnits} <:
-               AbstractNLSolverCache
+    AbstractNLSolverCache
     ustep::uType
     tstep::tType
     k::rateType
@@ -193,7 +207,7 @@ mutable struct NLAndersonCache{uType, tType, rateType, uEltypeNoUnits} <:
 end
 
 mutable struct NLAndersonConstantCache{uType, tType, uEltypeNoUnits} <:
-               AbstractNLSolverCache
+    AbstractNLSolverCache
     tstep::tType
     dz::uType
     """residuals `g(zprev) - zprev` of previous fixed-point iteration"""
@@ -210,7 +224,7 @@ mutable struct NLAndersonConstantCache{uType, tType, uEltypeNoUnits} <:
 end
 
 mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C} <:
-               AbstractNLSolverCache
+    AbstractNLSolverCache
     ustep::uType
     tstep::tType
     k::rateType

@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::IRKCConstantCache)
-    @unpack uprev, p, t = integrator
-    @unpack f1, f2 = integrator.f
+    (; uprev, p, t) = integrator
+    (; f1, f2) = integrator.f
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     cache.du₁ = f1(uprev, p, t)
@@ -12,13 +12,13 @@ function initialize!(integrator, cache::IRKCConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack minm, du₁, du₂, nlsolver = cache
-    @unpack f1, f2 = integrator.f
+    (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    (; minm, du₁, du₂, nlsolver) = cache
+    (; f1, f2) = integrator.f
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -84,9 +84,7 @@ function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false
         f2ⱼ₋₁ = f2(gprev, p, t + Cⱼ₋₁ * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         integrator.stats.nf2 += 1
-        nlsolver.tmp = (1 - μ - ν) * uprev + μ * gprev + ν * gprev2 + dt * μs * f2ⱼ₋₁ +
-                       dt * νs * du₂ + (νs - (1 - μ - ν) * μs₁) * dt * du₁ -
-                       ν * μs₁ * dt * f1ⱼ₋₂
+        nlsolver.tmp = (1 - μ - ν) * uprev + μ * gprev + ν * gprev2 + dt * μs * f2ⱼ₋₁ + dt * νs * du₂ + (νs - (1 - μ - ν) * μs₁) * dt * du₁ - ν * μs₁ * dt * f1ⱼ₋₂
         nlsolver.z = dt * f1ⱼ₋₁
         nlsolver.c = Cⱼ
         z = nlsolve!(nlsolver, integrator, cache, false)
@@ -119,20 +117,22 @@ function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false
         update_W!(integrator, cache, dt, false)
         tmp = dt * (0.5 * (cache.du₂ - du₂) + (0.5 - μs₁) * (cache.du₁ - du₁))
         tmp = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
-        atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        atmp = calculate_residuals(
+            tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
     integrator.fsallast = cache.du₁ + cache.du₂
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end
 
 function initialize!(integrator, cache::IRKCCache)
-    @unpack uprev, p, t = integrator
-    @unpack f1, f2 = integrator.f
+    (; uprev, p, t) = integrator
+    (; f1, f2) = integrator.f
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -141,15 +141,15 @@ function initialize!(integrator, cache::IRKCCache)
     f2(cache.du₂, uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
-    @.. broadcast=false integrator.fsalfirst=cache.du₁ + cache.du₂
+    return @.. broadcast = false integrator.fsalfirst = cache.du₁ + cache.du₂
 end
 
 function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack gprev, gprev2, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, du₁, du₂, atmp, nlsolver = cache
-    @unpack tmp, z = nlsolver
-    @unpack minm = cache.constantcache
-    @unpack f1, f2 = integrator.f
+    (; t, dt, uprev, u, f, p) = integrator
+    (; gprev, gprev2, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, du₁, du₂, atmp, nlsolver) = cache
+    (; tmp, z) = nlsolver
+    (; minm) = cache.constantcache
+    (; f1, f2) = integrator.f
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -170,7 +170,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
 
     #stage-1
     f1ⱼ₋₂ = du₁
-    @.. broadcast=false gprev2=uprev
+    @.. broadcast = false gprev2 = uprev
     μs = ω₁ * Bⱼ₋₁
     μs₁ = μs
 
@@ -180,16 +180,16 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
     # else # :constant
     #   @.. broadcast=false z = zero(eltype(u))
     # end
-    @.. broadcast=false nlsolver.z=dt * du₁
+    @.. broadcast = false nlsolver.z = dt * du₁
 
-    @.. broadcast=false nlsolver.tmp=uprev + dt * μs₁ * du₂
+    @.. broadcast = false nlsolver.tmp = uprev + dt * μs₁ * du₂
     nlsolver.γ = μs₁
     nlsolver.c = μs
     markfirststage!(nlsolver)
     z = nlsolve!(nlsolver, integrator, cache, false)
     # ignoring newton method's convergence failure
     # nlsolvefail(nlsolver) && return
-    @.. broadcast=false gprev=nlsolver.tmp + μs₁ * nlsolver.z
+    @.. broadcast = false gprev = nlsolver.tmp + μs₁ * nlsolver.z
 
     Cⱼ₋₂ = zero(eltype(u))
     Cⱼ₋₁ = μs
@@ -216,20 +216,17 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
         f2(f2ⱼ₋₁, gprev, p, t + Cⱼ₋₁ * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         integrator.stats.nf2 += 1
-        @.. broadcast=false nlsolver.tmp=(1 - μ - ν) * uprev + μ * gprev + ν * gprev2 +
-                                         dt * μs * f2ⱼ₋₁ + dt * νs * du₂ +
-                                         (νs - (1 - μ - ν) * μs₁) * dt * du₁ -
-                                         ν * μs₁ * dt * f1ⱼ₋₂
-        @.. broadcast=false nlsolver.z=dt * f1ⱼ₋₁
+        @.. broadcast = false nlsolver.tmp = (1 - μ - ν) * uprev + μ * gprev + ν * gprev2 + dt * μs * f2ⱼ₋₁ + dt * νs * du₂ + (νs - (1 - μ - ν) * μs₁) * dt * du₁ - ν * μs₁ * dt * f1ⱼ₋₂
+        @.. broadcast = false nlsolver.z = dt * f1ⱼ₋₁
         nlsolver.c = Cⱼ
 
         z = nlsolve!(nlsolver, integrator, cache, false)
         # nlsolvefail(nlsolver) && return
-        @.. broadcast=false u=nlsolver.tmp + μs₁ * nlsolver.z
+        @.. broadcast = false u = nlsolver.tmp + μs₁ * nlsolver.z
         if (iter < mdeg)
-            @.. broadcast=false f1ⱼ₋₂=f1ⱼ₋₁
-            @.. broadcast=false gprev2=gprev
-            @.. broadcast=false gprev=u
+            @.. broadcast = false f1ⱼ₋₂ = f1ⱼ₋₁
+            @.. broadcast = false gprev2 = gprev
+            @.. broadcast = false gprev = u
             Cⱼ₋₂ = Cⱼ₋₁
             Cⱼ₋₁ = Cⱼ
             Bⱼ₋₂ = Bⱼ₋₁
@@ -243,8 +240,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
         end
     end
 
-    @.. broadcast=false f1ⱼ₋₁=du₁
-    @.. broadcast=false f2ⱼ₋₁=du₂
+    @.. broadcast = false f1ⱼ₋₁ = du₁
+    @.. broadcast = false f2ⱼ₋₁ = du₂
     f1(du₁, u, p, t + dt)
     f2(du₂, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -252,19 +249,20 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
     # error estimate
     if isnewton(nlsolver) && integrator.opts.adaptive
         update_W!(integrator, cache, dt, false)
-        @.. broadcast=false gprev=dt * 0.5 * (du₂ - f2ⱼ₋₁) +
-                                  dt * (0.5 - μs₁) * (du₁ - f1ⱼ₋₁)
+        @.. broadcast = false gprev = dt * 0.5 * (du₂ - f2ⱼ₋₁) + dt * (0.5 - μs₁) * (du₁ - f1ⱼ₋₁)
 
         linsolve = nlsolver.cache.linsolve
         linres = dolinsolve(integrator, linsolve; b = _vec(gprev), linu = _vec(tmp))
 
-        calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        calculate_residuals!(
+            atmp, tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
-    @.. broadcast=false integrator.fsallast=du₁ + du₂
+    @.. broadcast = false integrator.fsallast = du₁ + du₂
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.u = u
+    return integrator.u = u
 end

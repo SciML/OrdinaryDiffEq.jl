@@ -2,7 +2,7 @@ using OrdinaryDiffEq, Test, LinearAlgebra
 
 T = 1000.0;
 Ttr = 0.0;
-d0 = 1e-9;
+d0 = 1.0e-9;
 threshold = 10^4 * d0;
 dt = 0.1;
 diff_eq_kwargs = Dict();
@@ -41,6 +41,10 @@ for τ in tvector
         integ2.u .= integ1.u #.+ (integ2.u .- integ1.u)./a
         u_modified!(integ2, true)
         set_proposed_dt!(integ2, integ1)
+        if hasproperty(integ1, :controller_cache)
+            reinit!(integ1, integ1.controller_cache)
+            reinit!(integ2, integ2.controller_cache)
+        end
         break
     end
 end
@@ -48,6 +52,8 @@ end
 τ = tvector[end]
 push!(integ1.opts.tstops, τ);
 step!(integ1);
+@test integ1.t == τ
 push!(integ2.opts.tstops, τ);
 step!(integ2);
+@test integ2.t == τ
 @test dist = norm(integ1.u .- integ2.u) == 0

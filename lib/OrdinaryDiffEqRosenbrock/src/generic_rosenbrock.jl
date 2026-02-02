@@ -224,13 +224,13 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
     end
 
     quote
-        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}, verbose)
             tf = TimeDerivativeWrapper(f,u,p)
             uf = UDerivativeWrapper(f,t,p)
             J,W = build_J_W(alg,u,uprev,p,t,dt,f, nothing, uEltypeNoUnits,Val(false))
             $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,nothing)
         end
-        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}, verbose)
             du = zero(rate_prototype)
             du1 = zero(rate_prototype)
             du2 = zero(rate_prototype)
@@ -254,7 +254,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
             linsolve = init(linprob,alg.linsolve,alias = LinearAliasSpecifier(alias_A=true,alias_b=true),
                             Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-                            Pr = Diagonal(_vec(weight))) 
+                            Pr = Diagonal(_vec(weight)),
+                            verbose = verbose.linear_verbosity) 
             $cachename($(valsyms...))
         end
     end
@@ -282,7 +283,7 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
 
           function initialize!(integrator, cache::$cachename)
             integrator.kshortsize = 2
-            @unpack fsalfirst,fsallast = cache
+            (; fsalfirst,fsallast) = cache
             integrator.fsalfirst = fsalfirst
             integrator.fsallast = fsallast
             resize!(integrator.k, integrator.kshortsize)
@@ -302,8 +303,8 @@ and then gives the result by `y_{n+1}=y_n+ki*bi`. Terms with 0s (according to ta
 Special steps can be added before calculating `y_{n+1}`. The non-inplace `perform_step!` assumes the mass_matrix==I.
 """
 function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-    unpacktabexpr=:(@unpack ()=cache.tab)
-    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
+    unpacktabexpr=:((;) = cache.tab)
+    unpacktabexpr.args[1].args[1].args=_nonzero_vals(tabmask)
     dtCijexprs=[:($(Symbol(:dtC,Cind[1],Cind[2]))=$(Symbol(:C,Cind[1],Cind[2]))/dt) for Cind in findall(!iszero,tabmask.C)]
     dtdiexprs=[:($(Symbol(:dtd,dind))=dt*$(Symbol(:d,dind))) for dind in eachindex(tabmask.d)]
     iterexprs=[]
@@ -348,8 +349,8 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
     end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @unpack t,dt,uprev,u,f,p = integrator
-            @unpack tf,uf = cache
+            (; t,dt,uprev,u,f,p) = integrator
+            (; tf,uf) = cache
             $unpacktabexpr
 
             $(dtCijexprs...)
@@ -387,8 +388,8 @@ Generate inplace version of `perform_step!` expression emulating those in `perfo
 The inplace `perform_step!` produces the same result as the non-inplace version except that it treats the mass_matrix appropriately.
 """
 function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-    unpacktabexpr=:(@unpack ()=cache.tab)
-    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
+    unpacktabexpr=:((;) = cache.tab)
+    unpacktabexpr.args[1].args[1].args=_nonzero_vals(tabmask)
     dtCij=[:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt) for Cind in findall(!iszero,tabmask.C)]
     dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in eachindex(tabmask.d)]
     iterexprs=[]
@@ -461,8 +462,8 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @unpack t,dt,uprev,u,f,p = integrator
-            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight = cache
+            (; t,dt,uprev,u,f,p) = integrator
+            (; du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight) = cache
             $unpacktabexpr
 
             # Assignments
@@ -891,8 +892,6 @@ function _transformtab(Alpha,Gamma,B,Bhat)
 end
 
 
-
-
 # 2 step ROS Methods
 """
     ROS2Tableau()
@@ -913,303 +912,6 @@ function ROS2Tableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-An Order 2/3 L-Stable Rosenbrock-W method which is good for very stiff equations with oscillations at low tolerances. 2nd order stiff-aware interpolation.
-""",
-"Rosenbrock23",
-references = """
-- Shampine L.F. and Reichelt M., (1997) The MATLAB ODE Suite, SIAM Journal of
-Scientific Computing, 18 (1), pp. 1-22.
-""",
-with_step_limiter = true) Rosenbrock23
-
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-An Order 3/2 A-Stable Rosenbrock-W method which is good for mildly stiff equations without oscillations at low tolerances. Note that this method is prone to instability in the presence of oscillations, so use with caution. 2nd order stiff-aware interpolation.
-""",
-"Rosenbrock32",
-references = """
-- Shampine L.F. and Reichelt M., (1997) The MATLAB ODE Suite, SIAM Journal of
-Scientific Computing, 18 (1), pp. 1-22.
-""",
-with_step_limiter = true) Rosenbrock32
-
-@doc rosenbrock_docstring(
-"""
-3rd order A-stable and stiffly stable Rosenbrock method. Keeps high accuracy on discretizations of nonlinear parabolic PDEs.
-""",
-"ROS3P",
-references = """
-- Lang, J. & Verwer, ROS3P—An Accurate Third-Order Rosenbrock Solver Designed for
-  Parabolic Problems J. BIT Numerical Mathematics (2001) 41: 731. doi:10.1023/A:1021900219772
-""",
-with_step_limiter = true) ROS3P
-
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-An Order 2/3 L-Stable Rosenbrock-W method for stiff ODEs and DAEs in mass matrix form. 2nd order stiff-aware interpolation and additional error test for interpolation.
-""",
-"Rodas23W",
-references = """
-- Steinebach G., Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
-  Preprint 2024
-  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
-""",
-with_step_limiter = true) Rodas23W
-
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-A 4th order L-stable Rosenbrock-W method.
-""",
-"ROS34PW1a",
-references = """
-@article{rang2005new,
-  title={New Rosenbrock W-methods of order 3 for partial differential algebraic equations of index 1},
-  author={Rang, Joachim and Angermann, L},
-  journal={BIT Numerical Mathematics},
-  volume={45},
-  pages={761--787},
-  year={2005},
-  publisher={Springer}}
-""") ROS34PW1a
-
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-A 4th order L-stable Rosenbrock-W method.
-""",
-"ROS34PW1b",
-references = """
-@article{rang2005new,
-  title={New Rosenbrock W-methods of order 3 for partial differential algebraic equations of index 1},
-  author={Rang, Joachim and Angermann, L},
-  journal={BIT Numerical Mathematics},
-  volume={45},
-  pages={761--787},
-  year={2005},
-  publisher={Springer}}
-""") ROS34PW1b
-
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-A 4th order stiffy accurate Rosenbrock-W method for PDAEs.
-""",
-"ROS34PW2",
-references = """
-@article{rang2005new,
-  title={New Rosenbrock W-methods of order 3 for partial differential algebraic equations of index 1},
-  author={Rang, Joachim and Angermann, L},
-  journal={BIT Numerical Mathematics},
-  volume={45},
-  pages={761--787},
-  year={2005},
-  publisher={Springer}}
-""") ROS34PW2
-
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-A 4th order strongly A-stable (Rinf~0.63) Rosenbrock-W method.
-""",
-"ROS34PW3",
-references = """
-@article{rang2005new,
-  title={New Rosenbrock W-methods of order 3 for partial differential algebraic equations of index 1},
-  author={Rang, Joachim and Angermann, L},
-  journal={BIT Numerical Mathematics},
-  volume={45},
-  pages={761--787},
-  year={2005},
-  publisher={Springer}}
-""") ROS34PW3
-
-@doc rosenbrock_docstring(
-"""
-An A-stable 4th order Rosenbrock method.
-""",
-"RosShamp4",
-references = """
-- L. F. Shampine, Implementation of Rosenbrock Methods, ACM Transactions on
-  Mathematical Software (TOMS), 8: 2, 93-113. doi:10.1145/355993.355994
-""") RosShamp4
-
-@doc rosenbrock_docstring(
-"""
-3rd order A-stable and stiffly stable Rosenbrock method.
-""",
-"Rodas3",
-references = """
-- Sandu, Verwer, Van Loon, Carmichael, Potra, Dabdub, Seinfeld, Benchmarking stiff ode solvers for atmospheric chemistry problems-I. 
-    implicit vs explicit, Atmospheric Environment, 31(19), 3151-3166, 1997.
-""",
-with_step_limiter=true) Rodas3
-
-@doc rosenbrock_docstring(
-"""
-3rd order A-stable and stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant
-and additional error test for interpolation. Keeps accuracy on discretizations of linear parabolic PDEs.
-""",
-"Rodas3P",
-references = """
-- Steinebach G., Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
-  Preprint 2024
-  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
-""",
-with_step_limiter=true) Rodas3P
-
-@doc rosenbrock_docstring(
-"""
-A 4th order L-stable Rosenbrock method.
-""",
-"Rodas4",
-references = """
-- E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
-  differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
-""",
-with_step_limiter=true) Rodas4
-
-@doc rosenbrock_docstring(
-"""
-A 4th order A-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant
-""",
-"Ros4LStab",
-references = """
-- E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
-  differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
-""",
-with_step_limiter=true) Ros4LStab
-
-
-@doc rosenbrock_docstring(
-"""
-A 4th order A-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant
-""",
-"Rodas42",
-references = """
-- E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
-  differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
-""",
-with_step_limiter=true) Rodas42
-
-@doc rosenbrock_docstring(
-"""
-4th order A-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant. 4th order
-on linear parabolic problems and 3rd order accurate on nonlinear parabolic problems (as opposed to
-lower if not corrected).
-""",
-"Rodas4P",
-references = """
-- Steinebach, G., Rentrop, P., An adaptive method of lines approach for modelling flow and transport in rivers. 
-    Adaptive method of lines , Wouver, A. Vande, Sauces, Ph., Schiesser, W.E. (ed.),S. 181-205,Chapman & Hall/CRC, 2001,
-- Steinebach, G., Oder-reduction of ROW-methods for DAEs and method of lines  applications. 
-    Preprint-Nr. 1741, FB Mathematik, TH Darmstadt, 1995.
-""",
-with_step_limiter=true) Rodas4P
-
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-A 4th order L-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant. 4th order
-on linear parabolic problems and 3rd order accurate on nonlinear parabolic problems. It is an improvement
-of Roadas4P and in case of inexact Jacobians a second order W method.
-""",
-"Rodas4P2",
-references = """
-- Steinebach G., Improvement of Rosenbrock-Wanner Method RODASP, In: Reis T., Grundel S., Schöps S. (eds) 
-    Progress in Differential-Algebraic Equations II. Differential-Algebraic Equations Forum. Springer, Cham., 165-184, 2020.
-""",
-with_step_limiter=true) Rodas4P2
-
-@doc rosenbrock_docstring(
-"""
-A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
-""",
-"Rodas5",
-references = """
-- Di Marzo G. RODAS5(4) – Méthodes de Rosenbrock d’ordre 5(4) adaptées aux problemes
-  différentiels-algébriques. MSc mathematics thesis, Faculty of Science,
-  University of Geneva, Switzerland.
-""",
-with_step_limiter=true) Rodas5
-
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.
-Has improved stability in the adaptive time stepping embedding.
-""",
-"Rodas5P",
-references = """
-- Steinebach G. Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks
-  within the Julia Differential Equations package.
-  In: BIT Numerical Mathematics, 63(2), 2023
-""",
-with_step_limiter=true) Rodas5P
-
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-Variant of Ropdas5P with additional residual control.
-""",
-"Rodas5Pr",
-references = """
-- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
-  Preprint 2024
-  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
-""",
-with_step_limiter=true) Rodas5Pr
-
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-Variant of Ropdas5P with modified embedded scheme.
-""",
-"Rodas5Pe",
-references = """
-- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
-  Preprint 2024
-  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
-""",
-with_step_limiter=true) Rodas5Pe
-
-@doc rosenbrock_docstring(
-"""
-An efficient 4th order Rosenbrock method.
-""",
-"GRK4T",
-references = """
-- Kaps, P. & Rentrop, Generalized Runge-Kutta methods of order four with stepsize control
-  for stiff ordinary differential equations. P. Numer. Math. (1979) 33: 55. doi:10.1007/BF01396495
-""",
-with_step_limiter=true) GRK4T
-
-@doc rosenbrock_docstring(
-"""
-An A-stable 4th order Rosenbrock method. Essentially "anti-L-stable" but efficient.
-""",
-"GRK4A",
-references = """
-- Kaps, P. & Rentrop, Generalized Runge-Kutta methods of order four with stepsize control
-  for stiff ordinary differential equations. P. Numer. Math. (1979) 33: 55. doi:10.1007/BF01396495
-""",
-with_step_limiter=true) GRK4A
-
-@doc rosenbrock_docstring(
-"""
-A 4th order D-stable Rosenbrock method.
-""",
-"Veldd4",
-references = """
-- van Veldhuizen, D-stability and Kaps-Rentrop-methods, M. Computing (1984) 32: 229.
-  doi:10.1007/BF02243574
-""",
-with_step_limiter=true) Veldd4
-
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-A 4th order A-stable Rosenbrock method.
-""",
-"Velds4",
-references = """
-- van Veldhuizen, D-stability and Kaps-Rentrop-methods, M. Computing (1984) 32: 229.
-  doi:10.1007/BF02243574
-""",
-with_step_limiter=true) Velds4
 
 """
     @ROS2(part)
@@ -1250,15 +952,6 @@ macro ROS2(part)
     end
 end
 
-@doc rosenbrock_docstring(
-"""
-A 2nd order L-stable Rosenbrock method with 2 internal stages.
-""",
-"ROS2",
-references = """
-- J. G. Verwer et al. (1999): A second-order Rosenbrock method applied to photochemical dispersion problems
-  https://doi.org/10.1137/S1064827597326651
-""") ROS2
 
 # 3 step ROS Methods
 """
@@ -1285,21 +978,6 @@ function ROS2PRTableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_docstring(
-"""
-2nd order stiffly accurate Rosenbrock method with 3 internal stages with (Rinf=0).
-For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use
-[`ROS2S`](@ref) instead.
-""",
-"ROS2PR",
-references = """
-- Rang, Joachim (2014): The Prothero and Robinson example:
-  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
-  https://doi.org/10.24355/dbbs.084-201408121139-0
-""")
-ROS2PR
-
-
 
 """
     ROS2STableau()
@@ -1324,18 +1002,6 @@ function ROS2STableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-2nd order stiffly accurate Rosenbrock-Wanner W-method with 3 internal stages with B_PR consistent of order 2 with (Rinf=0).
-""",
-"ROS2S",
-references = """
-- Rang, Joachim (2014): The Prothero and Robinson example:
-  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
-  https://doi.org/10.24355/dbbs.084-201408121139-0
-""")
-ROS2S
-
 
 """
     ROS3Tableau()
@@ -1357,17 +1023,6 @@ function ROS3Tableau() # 3rd order
     a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
-
-@doc rosenbrock_docstring(
-"""
-3rd order L-stable Rosenbrock method with 3 internal stages with an embedded strongly
-A-stable 2nd order method.
-""",
-"ROS3",
-references = """
-- E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
-  differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
-""") ROS3
 
 
 """
@@ -1392,18 +1047,6 @@ function ROS3PRTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_docstring(
-"""
-3nd order stiffly accurate Rosenbrock method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
-""",
-"ROS3PR",
-references = """
-- Rang, Joachim (2014): The Prothero and Robinson example:
-  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
-  https://doi.org/10.24355/dbbs.084-201408121139-0
-""") ROS3PR
-
-
 
 """
     Scholz4_7Tableau()
@@ -1427,18 +1070,6 @@ function Scholz4_7Tableau() # 3rd order
     a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
-
-@doc rosenbrock_docstring(
-"""
-3nd order stiffly accurate Rosenbrock method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
-Convergence with order 4 for the stiff case, but has a poor accuracy.
-""",
-"Scholz4_7",
-references = """
-- Rang, Joachim (2014): The Prothero and Robinson example:
-  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
-  https://doi.org/10.24355/dbbs.084-201408121139-0
-""") Scholz4_7
 
 
 """
@@ -1491,8 +1122,6 @@ macro ROS23(part)
         nothing
     end
 end
-
-
 
 
 # 4 step ROS Methods
@@ -1619,18 +1248,6 @@ function ROS34PRwTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-3rd order stiffly accurate Rosenbrock-Wanner W-method with 4 internal stages,
-B_PR consistent of order 2.
-The order of convergence decreases if medium stiff problems are considered.
-""",
-"ROS34PRw",
-references = """
-- Joachim Rang, Improved traditional Rosenbrock–Wanner methods for stiff ODEs and DAEs,
-  Journal of Computational and Applied Mathematics,
-  https://doi.org/10.1016/j.cam.2015.03.010
-""") ROS34PRw
 
 """
     ROS3PRLTableau()
@@ -1657,19 +1274,6 @@ function ROS3PRLTableau() # 3rd order
     a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
-
-@doc rosenbrock_docstring(
-"""
-3rd order stiffly accurate Rosenbrock method with 4 internal stages,
-B_PR consistent of order 2 with Rinf=0.
-The order of convergence decreases if medium stiff problems are considered, but it has good results for very stiff cases.
-""",
-"ROS3PRL",
-references = """
-- Rang, Joachim (2014): The Prothero and Robinson example:
-  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
-  https://doi.org/10.24355/dbbs.084-201408121139-0
-""") ROS3PRL
 
 
 """
@@ -1698,19 +1302,6 @@ function ROS3PRL2Tableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_docstring(
-"""
-3rd order stiffly accurate Rosenbrock method with 4 internal stages,
-B_PR consistent of order 3.
-The order of convergence does NOT decreases if medium stiff problems are considered as it does for [`ROS3PRL`](@ref).
-""",
-"ROS3PRL2",
-references = """
-- Rang, Joachim (2014): The Prothero and Robinson example:
-  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
-  https://doi.org/10.24355/dbbs.084-201408121139-0
-""") ROS3PRL2
-
 
 """
     ROK4aTableau()
@@ -1736,17 +1327,6 @@ function ROK4aTableau() # 4rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wolfbrandt_docstring(
-"""
-4rd order L-stable Rosenbrock-Krylov method with 4 internal stages,
-with a 3rd order embedded method which is strongly A-stable with Rinf~=0.55. (when using exact Jacobians)
-""",
-"ROK4a",
-references = """
-- Tranquilli, Paul and Sandu, Adrian (2014):
-  Rosenbrock--Krylov Methods for Large Systems of Differential Equations
-  https://doi.org/10.1137/130923336
-""") ROK4a
 
 """
     @ROS34PW(part)

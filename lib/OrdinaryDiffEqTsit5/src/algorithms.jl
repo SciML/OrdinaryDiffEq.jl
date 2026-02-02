@@ -1,6 +1,5 @@
 @doc explicit_rk_docstring(
-    "A fifth-order explicit Runge-Kutta method with embedded error
-    estimator of Tsitouras. Free 4th order interpolant.",
+    "Tsitouras 5/4 Runge-Kutta method. (free 4th order interpolant). Recommended for most non-stiff problems. Good default choice for unknown stiffness. Highly efficient and generic. Very good performance for most non-stiff ODEs. Recommended as default method for unknown stiffness problems.",
     "Tsit5",
     references = "@article{tsitouras2011runge,
     title={Runge--Kutta pairs of order 5 (4) satisfying only the first column simplifying assumption},
@@ -10,18 +9,20 @@
     number={2},
     pages={770--775},
     year={2011},
-    publisher={Elsevier}
-    }")
+    publisher={Elsevier},
+    doi={10.1016/j.camwa.2011.06.002}
+    }"
+)
 Base.@kwdef struct Tsit5{StageLimiter, StepLimiter, Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
-TruncatedStacktraces.@truncate_stacktrace Tsit5 3
+@truncate_stacktrace Tsit5 3
 # for backwards compatibility
 function Tsit5(stage_limiter!, step_limiter! = trivial_limiter!)
-    Tsit5(stage_limiter!, step_limiter!, False())
+    return Tsit5(stage_limiter!, step_limiter!, False())
 end
 
 """

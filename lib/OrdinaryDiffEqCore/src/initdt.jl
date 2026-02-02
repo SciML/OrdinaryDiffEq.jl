@@ -1,7 +1,10 @@
-@muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-        prob::DiffEqBase.AbstractODEProblem{uType, tType, true
+@muladd function ode_determine_initdt(
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
+        prob::SciMLBase.AbstractODEProblem{
+            uType, tType, true,
         },
-        integrator) where {tType, uType}
+        integrator
+    ) where {tType, uType}
     _tType = eltype(tType)
     f = prob.f
     p = integrator.p
@@ -12,7 +15,12 @@
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
-        return tdir * max(smalldt, dtmin)
+        result_dt = tdir * max(smalldt, dtmin)
+        @SciMLMessage(
+            lazy"Using default small timestep for DAE: dt = $(result_dt)",
+            integrator.opts.verbose, :shampine_dt
+        )
+        return result_dt
     end
 
     if eltype(u0) <: Number && !(integrator.alg isa CompositeAlgorithm)
@@ -23,7 +31,7 @@
                 sk[i] = abstol + internalnorm(u0[i], t) * reltol
             end
         else
-            @.. broadcast=false sk=abstol + internalnorm(u0, t) * reltol
+            @.. broadcast = false sk = abstol + internalnorm(u0, t) * reltol
         end
     else
         if u0 isa Array && abstol isa Number && reltol isa Number
@@ -32,12 +40,12 @@
                 sk[i] = abstol + internalnorm(u0[i], t) * reltol
             end
         else
-            sk = @.. broadcast=false abstol+internalnorm(u0, t) * reltol
+            sk = @.. broadcast = false abstol + internalnorm(u0, t) * reltol
         end
     end
 
     if get_current_isfsal(integrator.alg, integrator.cache) &&
-       integrator isa ODEIntegrator
+            integrator isa ODEIntegrator
         # Right now DelayDiffEq has issues with fsallast not being initialized
         f₀ = integrator.fsallast
         f(f₀, u0, p, t)
@@ -67,7 +75,7 @@
             tmp[i] = u0[i] / sk[i]
         end
     else
-        tmp = @.. broadcast=false u0/sk
+        tmp = @.. broadcast = false u0 / sk
     end
 
     d₀ = internalnorm(tmp, t)
@@ -103,14 +111,22 @@
     still works for matrix-free definitions of the mass matrix.
     =#
 
-    if prob.f.mass_matrix != I && (!(prob.f isa DynamicalODEFunction) ||
-        any(mm != I for mm in prob.f.mass_matrix))
+    ftmp = nothing
+    if prob.f.mass_matrix != I && (
+            !(prob.f isa DynamicalODEFunction) ||
+                any(mm != I for mm in prob.f.mass_matrix)
+        )
         ftmp = zero(f₀)
         try
             integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
             copyto!(f₀, ftmp)
         catch
-            return tdir * max(smalldt, dtmin)
+            result_dt = tdir * max(smalldt, dtmin)
+            @SciMLMessage(
+                lazy"Mass matrix appears singular, using default small timestep: dt = $(result_dt)",
+                integrator.opts.verbose, :near_singular
+            )
+            return result_dt
         end
     end
 
@@ -119,7 +135,7 @@
             tmp[i] = f₀[i] / sk[i] * oneunit_tType
         end
     else
-        @.. broadcast=false tmp=f₀ / sk * oneunit_tType
+        @.. broadcast = false tmp = f₀ / sk * oneunit_tType
     end
 
     d₁ = internalnorm(tmp, t)
@@ -128,18 +144,24 @@
     # because it also checks if partials are NaN
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
     if isnan(d₁)
-        if integrator.opts.verbose
-            @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
-        end
-        
+        @SciMLMessage(
+            "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN
+        )
         return tdir * dtmin
     end
 
-    dt₀ = ifelse((d₀ < 1 // 10^(5)) |
-                 (d₁ < 1 // 10^(5)), smalldt,
-        convert(_tType,
-            oneunit_tType * DiffEqBase.value((d₀ / d₁) /
-                                             100)))
+    dt₀ = ifelse(
+        (d₀ < 1 // 10^(5)) |
+            (d₁ < 1 // 10^(5)), smalldt,
+        convert(
+            _tType,
+            oneunit_tType * DiffEqBase.value(
+                (d₀ / d₁) /
+                    100
+            )
+        )
+    )
     # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     #   dt₀ = smalldt
     # else
@@ -150,7 +172,12 @@
     if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType) * oneunit(_tType)
         # This catches Andreas' non-singular example
         # should act like it's singular
-        return tdir * max(smalldt, dtmin)
+        result_dt = tdir * max(smalldt, dtmin)
+        @SciMLMessage(
+            lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
+            integrator.opts.verbose, :dt_epsilon
+        )
+        return result_dt
     end
 
     dt₀_tdir = tdir * dt₀
@@ -162,13 +189,15 @@
             u₁[i] = u0[i] + dt₀_tdir * f₀[i]
         end
     else
-        @.. broadcast=false u₁=u0 + dt₀_tdir * f₀
+        @.. broadcast = false u₁ = u0 + dt₀_tdir * f₀
     end
     f₁ = zero(f₀)
     f(f₁, u₁, p, t + dt₀_tdir)
 
-    if prob.f.mass_matrix != I && (!(prob.f isa DynamicalODEFunction) ||
-        any(mm != I for mm in prob.f.mass_matrix))
+    if prob.f.mass_matrix != I && (
+            !(prob.f isa DynamicalODEFunction) ||
+                any(mm != I for mm in prob.f.mass_matrix)
+        )
         integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
         copyto!(f₁, ftmp)
     end
@@ -183,7 +212,7 @@
             tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
         end
     else
-        @.. broadcast=false tmp=(f₁ - f₀) / sk * oneunit_tType
+        @.. broadcast = false tmp = (f₁ - f₀) / sk * oneunit_tType
     end
 
     d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
@@ -193,27 +222,35 @@
     if max_d₁d₂ <= 1 // Int64(10)^(15)
         dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
     else
-        dt₁ = convert(_tType,
+        dt₁ = convert(
+            _tType,
             oneunit_tType *
-            DiffEqBase.value(10.0^(-(2 + log10(max_d₁d₂)) /
-                                   get_current_alg_order(integrator.alg,
-                integrator.cache))))
+                DiffEqBase.value(
+                10.0^(
+                    -(2 + log10(max_d₁d₂)) /
+                        get_current_alg_order(
+                        integrator.alg,
+                        integrator.cache
+                    )
+                )
+            )
+        )
     end
     return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
 end
 
 const TYPE_NOT_CONSTANT_MESSAGE = """
-                                  Detected non-constant types in an out-of-place ODE solve, i.e. for
-                                  `du = f(u,p,t)` we see `typeof(du) !== typeof(u/t)`. This is not
-                                  supported by OrdinaryDiffEq.jl's solvers. Please either make `f`
-                                  type-constant (i.e. typeof(du) === typeof(u/t)) or use the mutating
-                                  in-place form `f(du,u,p,t)` (which is type-constant by construction).
+Detected non-constant types in an out-of-place ODE solve, i.e. for
+`du = f(u,p,t)` we see `typeof(du) !== typeof(u/t)`. This is not
+supported by OrdinaryDiffEq.jl's solvers. Please either make `f`
+type-constant (i.e. typeof(du) === typeof(u/t)) or use the mutating
+in-place form `f(du,u,p,t)` (which is type-constant by construction).
 
-                                  Note that one common case for this is when computing with GPUs, using
-                                  `Float32` for `u0` and `Float64` for `tspan`. To correct this, ensure
-                                  that the element type of `tspan` matches the preferred compute type,
-                                  for example `ODEProblem(f,0f0,(0f0,1f0))` for `Float32`-based time.
-                                  """
+Note that one common case for this is when computing with GPUs, using
+`Float32` for `u0` and `Float64` for `tspan`. To correct this, ensure
+that the element type of `tspan` matches the preferred compute type,
+for example `ODEProblem(f,0f0,(0f0,1f0))` for `Float32`-based time.
+"""
 
 struct TypeNotConstantError <: Exception
     u0::Type
@@ -225,13 +262,17 @@ function Base.showerror(io::IO, e::TypeNotConstantError)
     print(io, "typeof(u/t) = ")
     println(io, e.u0)
     print(io, "typeof(du) = ")
-    println(io, e.f₀)
+    return println(io, e.f₀)
 end
 
-@muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-        prob::DiffEqBase.AbstractODEProblem{uType, tType,
-            false},
-        integrator) where {uType, tType}
+@muladd function ode_determine_initdt(
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
+        prob::SciMLBase.AbstractODEProblem{
+            uType, tType,
+            false,
+        },
+        integrator
+    ) where {uType, tType}
     _tType = eltype(tType)
     f = prob.f
     p = prob.p
@@ -245,12 +286,16 @@ end
         return tdir * max(smalldt, dtmin)
     end
 
-    sk = @.. broadcast=false abstol+internalnorm(u0, t) * reltol
+    sk = @.. broadcast = false abstol + internalnorm(u0, t) * reltol
     d₀ = internalnorm(u0 ./ sk, t)
 
     f₀ = f(u0, p, t)
-    if integrator.opts.verbose && any(x -> any(isnan, x), f₀)
-        @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
+
+    if any(x -> any(isnan, x), f₀)
+        @SciMLMessage(
+            "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN
+        )
     end
 
     inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
@@ -268,7 +313,7 @@ end
     dt₀ = min(dt₀, dtmax_tdir)
     dt₀_tdir = tdir * dt₀
 
-    u₁ = @.. broadcast=false u0+dt₀_tdir * f₀
+    u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
     f₁ = f(u₁, p, t + dt₀_tdir)
 
     # Constant zone before callback
@@ -282,18 +327,30 @@ end
     if max_d₁d₂ <= 1 // Int64(10)^(15)
         dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
     else
-        dt₁ = _tType(oneunit_tType *
-                     DiffEqBase.value(10^(-(2 + log10(max_d₁d₂)) /
-                                          get_current_alg_order(integrator.alg,
-            integrator.cache))))
+        dt₁ = _tType(
+            oneunit_tType *
+                DiffEqBase.value(
+                10^(
+                    -(2 + log10(max_d₁d₂)) /
+                        get_current_alg_order(
+                        integrator.alg,
+                        integrator.cache
+                    )
+                )
+            )
+        )
     end
     return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
 end
 
-@inline function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-        prob::DiffEqBase.AbstractDAEProblem{duType, uType,
-            tType},
-        integrator) where {duType, uType, tType}
+@inline function ode_determine_initdt(
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
+        prob::SciMLBase.AbstractDAEProblem{
+            duType, uType,
+            tType,
+        },
+        integrator
+    ) where {duType, uType, tType}
     _tType = eltype(tType)
     tspan = prob.tspan
     init_dt = abs(tspan[2] - tspan[1])

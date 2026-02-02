@@ -1,3 +1,7 @@
+# Get mass_matrix from function, defaulting to I if field doesn't exist
+# This allows nlsolver to work with DiscreteFunction which lacks mass_matrix
+get_mass_matrix(f) = hasproperty(f, :mass_matrix) ? f.mass_matrix : I
+
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
 get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cutoff
 # handle FIRK
@@ -23,7 +27,7 @@ isfirstcall(nlsolver::AbstractNLSolver) = nlsolver.cache.firstcall
 isfirststage(nlsolver::AbstractNLSolver) = nlsolver.cache.firststage
 setfirststage!(nlsolver::AbstractNLSolver, val::Bool) = setfirststage!(nlsolver.cache, val)
 function setfirststage!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, val::Bool)
-    (nlcache.firststage = val)
+    return (nlcache.firststage = val)
 end
 setfirststage!(::Any, val::Bool) = nothing
 markfirststage!(nlsolver::AbstractNLSolver) = setfirststage!(nlsolver, true)
@@ -43,7 +47,7 @@ get_W(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}) = nlcache.W
 set_W_γdt!(nlsolver::AbstractNLSolver, W_γdt) = set_W_γdt!(nlsolver.cache, W_γdt)
 function set_W_γdt!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, W_γdt)
     nlcache.W_γdt = W_γdt
-    W_γdt
+    return W_γdt
 end
 
 du_cache(nlsolver::AbstractNLSolver) = du_cache(nlsolver.cache)
@@ -52,16 +56,18 @@ du_cache(nlcache::Union{NLFunctionalCache, NLAndersonCache, NLNewtonCache}) = (n
 
 function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
     _du_cache = du_cache(nlsolver)
-    if _du_cache === nothing
+    return if _du_cache === nothing
         zero(rate_prototype)
     else
         first(_du_cache)
     end
 end
 
-mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaType,
-    gammaType,
-    tmpType, uprevType, tType} <: Function
+mutable struct DAEResidualJacobianWrapper{
+        isAD, F, pType, duType, uType, alphaType,
+        gammaType,
+        tmpType, uprevType, tType,
+    } <: Function
     f::F
     p::pType
     tmp_du::duType
@@ -71,19 +77,23 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
     tmp::tmpType
     uprev::uprevType
     t::tType
-    function DAEResidualJacobianWrapper(alg, f, p, α, invγdt, tmp, uprev, t)
-        ad = ADTypes.dense_ad(alg_autodiff(alg)) 
-        isautodiff = ad isa AutoForwardDiff 
+    function DAEResidualJacobianWrapper(alg, f::F, p, α, invγdt, tmp, uprev, t) where {F}
+        ad = ADTypes.dense_ad(alg_autodiff(alg))
+        isautodiff = ad isa AutoForwardDiff
         if isautodiff
-            tmp_du = PreallocationTools.dualcache(uprev)
-            tmp_u = PreallocationTools.dualcache(uprev)
+            tmp_du = dualcache(uprev)
+            tmp_u = dualcache(uprev)
         else
             tmp_du = similar(uprev)
             tmp_u = similar(uprev)
         end
-        new{isautodiff, typeof(f), typeof(p), typeof(tmp_du), typeof(tmp_u), typeof(α),
-            typeof(invγdt), typeof(tmp), typeof(uprev), typeof(t)}(f, p, tmp_du, tmp_u, α,
-            invγdt, tmp, uprev, t)
+        return new{
+            isautodiff, typeof(f), typeof(p), typeof(tmp_du), typeof(tmp_u), typeof(α),
+            typeof(invγdt), typeof(tmp), typeof(uprev), typeof(t),
+        }(
+            f, p, tmp_du, tmp_u, α,
+            invγdt, tmp, uprev, t
+        )
     end
 end
 
@@ -98,19 +108,21 @@ is_autodiff(m::DAEResidualJacobianWrapper{isAD}) where {isAD} = isAD
 
 function (m::DAEResidualJacobianWrapper)(out, x)
     if is_autodiff(m)
-        tmp_du = PreallocationTools.get_tmp(m.tmp_du, x)
-        tmp_u = PreallocationTools.get_tmp(m.tmp_u, x)
+        tmp_du = get_tmp(m.tmp_du, x)
+        tmp_u = get_tmp(m.tmp_u, x)
     else
         tmp_du = m.tmp_du
         tmp_u = m.tmp_u
     end
     @. tmp_du = (m.α * x + m.tmp) * m.invγdt
     @. tmp_u = x + m.uprev
-    m.f(out, tmp_du, tmp_u, m.p, m.t)
+    return m.f(out, tmp_du, tmp_u, m.p, m.t)
 end
 
-mutable struct DAEResidualDerivativeWrapper{F, pType, alphaType, gammaType, tmpType,
-    uprevType, tType}
+mutable struct DAEResidualDerivativeWrapper{
+        F, pType, alphaType, gammaType, tmpType,
+        uprevType, tType,
+    }
     f::F
     p::pType
     α::alphaType
@@ -123,45 +135,55 @@ end
 function (m::DAEResidualDerivativeWrapper)(x)
     tmp_du = (m.α * x + m.tmp) * m.invγdt
     tmp_u = x + m.uprev
-    m.f(tmp_du, tmp_u, m.p, m.t)
+    return m.f(tmp_du, tmp_u, m.p, m.t)
 end
 
-DiffEqBase.has_jac(f::DAEResidualJacobianWrapper) = DiffEqBase.has_jac(f.f)
-DiffEqBase.has_Wfact(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact(f.f)
-DiffEqBase.has_Wfact_t(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact_t(f.f)
+SciMLBase.has_jac(f::DAEResidualJacobianWrapper) = SciMLBase.has_jac(f.f)
+SciMLBase.has_Wfact(f::DAEResidualJacobianWrapper) = SciMLBase.has_Wfact(f.f)
+SciMLBase.has_Wfact_t(f::DAEResidualJacobianWrapper) = SciMLBase.has_Wfact_t(f.f)
 
-DiffEqBase.has_jac(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_jac(f.f)
-DiffEqBase.has_Wfact(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact(f.f)
-DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t(f.f)
+SciMLBase.has_jac(f::DAEResidualDerivativeWrapper) = SciMLBase.has_jac(f.f)
+SciMLBase.has_Wfact(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact(f.f)
+SciMLBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact_t(f.f)
 
-function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
+
+function build_nlsolver(
+        alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, γ, c,
-        iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        iip, verbose
+    ) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits,
-        tTypeNoUnits, γ, c, 1, iip)
+        tTypeNoUnits, γ, c, 1, iip, verbose
+    )
 end
 
-function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
+function build_nlsolver(
+        alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, γ, c, α,
-        iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    build_nlsolver(alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip)
+        iip, verbose
+    ) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return build_nlsolver(
+        alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip, verbose
+    )
 end
 
 function daenlf(ztmp, z, p)
     tmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f = p
-    _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f, z)[1]
+    return _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f, z)[1]
 end
 
 function odenlf(ztmp, z, p)
     tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f = p
-    _compute_rhs!(
-    tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
+    return _compute_rhs!(
+        tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z
+    )[1]
 end
 
 function build_nlsolver(
@@ -170,10 +192,13 @@ function build_nlsolver(
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         γ, c, α,
-        ::Val{true}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits}
+        ::Val{true}, verbose
+    ) where {
+        F, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits,
+    }
     #TODO
-    #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
+    #nlalg = SciMLBase.handle_defaults(alg, nlalg)
     # define unitless type
     uTolType = real(uBottomEltypeNoUnits)
     isdae = alg isa DAEAlgorithm
@@ -188,6 +213,7 @@ function build_nlsolver(
     tstep = zero(t)
     k = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
+    atmp .= false
     dz = zero(u)
 
     if nlalg isa Union{NLNewton, NonlinearSolveAlg}
@@ -211,34 +237,48 @@ function build_nlsolver(
         end
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
         linprob = LinearProblem(W, _vec(k); u0 = _vec(dz))
-        Pl, Pr = wrapprecs(
-            alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-                nothing)...,
-            weight, dz)
-        linsolve = init(linprob, alg.linsolve,
+        Pl,
+            Pr = wrapprecs(
+            alg.precs(
+                W, nothing, u, p, t, nothing, nothing, nothing,
+                nothing
+            )...,
+            weight, dz
+        )
+        linsolve = init(
+            linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
             Pl = Pl, Pr = Pr,
-            assumptions = LinearSolve.OperatorAssumptions(true))
+            assumptions = LinearSolve.OperatorAssumptions(true),
+            verbose = verbose.linear_verbosity
+        )
 
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
 
         if nlalg isa NonlinearSolveAlg
+            γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
-            nlf = isdae ? daenlf : odenlf
-            nlp_params = if isdae
-                (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+            prob = if f.nlstep_data !== nothing
+                prob = f.nlstep_data.nlprob
             else
-                (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
+                nlf = isdae ? daenlf : odenlf
+                nlp_params = if isdae
+                    (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+                else
+                    (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
+                end
+                NonlinearProblem(NonlinearFunction{true}(nlf), ztmp, nlp_params)
             end
-            prob = NonlinearProblem(NonlinearFunction{true}(nlf), ztmp, nlp_params)
-            cache = init(prob, nlalg.alg)
+            cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
         else
-            nlcache = NLNewtonCache(ustep, tstep, k, atmp, dz, J, W, true,
+            nlcache = NLNewtonCache(
+                ustep, tstep, k, atmp, dz, J, W, true,
                 true, true, tType(dt), du1, uf, jac_config,
-                linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t)
+                linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t
+            )
         end
     elseif nlalg isa NLFunctional
         nlcache = NLFunctionalCache(ustep, tstep, k, atmp, dz)
@@ -252,27 +292,31 @@ function build_nlsolver(
         dzold = zero(z)
         z₊old = zero(z)
 
-        nlcache = NLAndersonCache(ustep, tstep, atmp, k, dz, dzold, z₊old, Δz₊s, Q, R, γs,
+        nlcache = NLAndersonCache(
+            ustep, tstep, atmp, k, dz, dzold, z₊old, Δz₊s, Q, R, γs,
             0,
-            nlalg.aa_start, nlalg.droptol)
+            nlalg.aa_start, nlalg.droptol
+        )
     end
 
     # build non-linear solver
     ηold = one(t)
 
-    NLSolver{true, tTypeNoUnits}(z, tmp, ztmp, γ, c, α, nlalg, nlalg.κ,
+    return NLSolver{true, tTypeNoUnits}(
+        z, tmp, ztmp, tTypeNoUnits(γ), c, α, nlalg, nlalg.κ,
         nlalg.fast_convergence_cutoff, ηold, 0, nlalg.max_iter,
-        Divergence, nlcache)
+        Divergence, nlcache
+    )
 end
 
 function oopdaenlf(z, p)
     tmp, α, tstep, invγdt, _p, dt, uprev, f = p
-    _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
+    return _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
 end
 
 function oopodenlf(z, p)
     tmp, γ, α, tstep, invγdt, method, _p, dt, f = p
-    _compute_rhs(tmp, γ, α, tstep, invγdt, method, _p, dt, f, z)[1]
+    return _compute_rhs(tmp, γ, α, tstep, invγdt, method, _p, dt, f, z)[1]
 end
 
 function build_nlsolver(
@@ -282,10 +326,13 @@ function build_nlsolver(
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         γ, c, α,
-        ::Val{false}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits}
+        ::Val{false}, verbose
+    ) where {
+        F, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits,
+    }
     #TODO
-    #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
+    #nlalg = SciMLBase.handle_defaults(alg, nlalg)
     # define unitless type
     uTolType = real(uBottomEltypeNoUnits)
     isdae = alg isa DAEAlgorithm
@@ -311,6 +358,7 @@ function build_nlsolver(
 
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
         if nlalg isa NonlinearSolveAlg
+            γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
             nlf = isdae ? oopdaenlf : oopodenlf
@@ -320,12 +368,15 @@ function build_nlsolver(
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
             prob = NonlinearProblem(NonlinearFunction{false}(nlf), copy(ztmp), nlp_params)
-            cache = init(prob, nlalg.alg)
+            cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
-                nothing, tstep, nothing, nothing, invγdt, prob, cache)
+                nothing, tstep, nothing, nothing, invγdt, prob, cache
+            )
         else
-            nlcache = NLNewtonConstantCache(tstep, J, W, true, true, true, tType(dt), uf,
-                invγdt, tType(nlalg.new_W_dt_cutoff), t)
+            nlcache = NLNewtonConstantCache(
+                tstep, J, W, true, true, true, tType(dt), uf,
+                invγdt, tType(nlalg.new_W_dt_cutoff), t
+            )
         end
     elseif nlalg isa NLFunctional
         nlcache = NLFunctionalConstantCache(tstep)
@@ -340,16 +391,20 @@ function build_nlsolver(
         dzold = u
         z₊old = u
 
-        nlcache = NLAndersonConstantCache(tstep, dz, dzold, z₊old, Δz₊s, Q, R, γs, 0,
-            nlalg.aa_start, nlalg.droptol)
+        nlcache = NLAndersonConstantCache(
+            tstep, dz, dzold, z₊old, Δz₊s, Q, R, γs, 0,
+            nlalg.aa_start, nlalg.droptol
+        )
     end
 
     # build non-linear solver
     ηold = one(tTypeNoUnits)
-    NLSolver{false, tTypeNoUnits}(z, tmp, ztmp, γ, c, α, nlalg, nlalg.κ,
+    return NLSolver{false, tTypeNoUnits}(
+        z, tmp, ztmp, tTypeNoUnits(γ), c, α, nlalg, nlalg.κ,
         nlalg.fast_convergence_cutoff, ηold, 0, nlalg.max_iter,
         Divergence,
-        nlcache)
+        nlcache
+    )
 end
 
 ## Anderson acceleration
@@ -361,7 +416,7 @@ Return the next iterate of the fixed-point iteration `z = g(z)` by performing An
 acceleration based on the current iterate `z` and the settings and history in the `cache`.
 """
 @muladd function anderson(z, cache)
-    @unpack dz, Δz₊s, z₊old, dzold, R, Q, γs, history, droptol = cache
+    (; dz, Δz₊s, z₊old, dzold, R, Q, γs, history, droptol) = cache
 
     # increase size of history
     history += 1
@@ -382,7 +437,7 @@ acceleration based on the current iterate `z` and the settings and history in th
     end
 
     # update history of differences of z₊
-    Δz₊s[history] = @.. broadcast=false z-z₊old
+    Δz₊s[history] = @.. broadcast = false z - z₊old
 
     # replace/add difference of residuals as right-most column to QR decomposition
     qradd!(Q, R, _vec(dz .- dzold), history)
@@ -399,8 +454,9 @@ acceleration based on the current iterate `z` and the settings and history in th
         while cond(R) > droptol && history > 1
             qrdelete!(Q, R, history)
             history -= 1
-            Qcur, Rcur = view(Q, :, 1:history),
-            UpperTriangular(view(R, 1:history, 1:history))
+            Qcur,
+                Rcur = view(Q, :, 1:history),
+                UpperTriangular(view(R, 1:history, 1:history))
         end
     end
 
@@ -413,7 +469,7 @@ acceleration based on the current iterate `z` and the settings and history in th
 
     # update next iterate
     for i in 1:history
-        z = @.. broadcast=false z-γs[i] * Δz₊s[i]
+        z = @.. broadcast = false z - γs[i] * Δz₊s[i]
     end
 
     z
@@ -426,7 +482,7 @@ Update the current iterate `z` of the fixed-point iteration `z = g(z)` in-place
 by performing Anderson acceleration based on the settings and history in the `cache`.
 """
 @muladd function anderson!(z, cache)
-    @unpack dz, z₊old, dzold, Δz₊s, γs, R, Q, history, droptol = cache
+    (; dz, z₊old, dzold, Δz₊s, γs, R, Q, history, droptol) = cache
 
     # increase size of history
     history += 1
@@ -449,15 +505,15 @@ by performing Anderson acceleration based on the settings and history in the `ca
     end
 
     # update history of differences of z₊
-    @.. broadcast=false Δz₊s[history]=z - z₊old
+    @.. broadcast = false Δz₊s[history] = z - z₊old
 
     # replace/add difference of residuals as right-most column to QR decomposition
-    @.. broadcast=false dzold=dz - dzold
+    @.. broadcast = false dzold = dz - dzold
     qradd!(Q, R, _vec(dzold), history)
 
     # update cached values
-    @.. broadcast=false dzold=dz
-    @.. broadcast=false z₊old=z
+    @.. broadcast = false dzold = dz
+    @.. broadcast = false z₊old = z
 
     # define current Q and R matrices
     Qcur, Rcur = view(Q, :, 1:history), UpperTriangular(view(R, 1:history, 1:history))
@@ -467,8 +523,9 @@ by performing Anderson acceleration based on the settings and history in the `ca
         while cond(R) > droptol && history > 1
             qrdelete!(Q, R, history)
             history -= 1
-            Qcur, Rcur = view(Q, :, 1:history),
-            UpperTriangular(view(R, 1:history, 1:history))
+            Qcur,
+                Rcur = view(Q, :, 1:history),
+                UpperTriangular(view(R, 1:history, 1:history))
         end
     end
 
@@ -481,7 +538,7 @@ by performing Anderson acceleration based on the settings and history in the `ca
 
     # update next iterate
     for i in 1:history
-        @.. broadcast=false z=z - γs[i] * Δz₊s[i]
+        @.. broadcast = false z = z - γs[i] * Δz₊s[i]
     end
 
     nothing
@@ -489,10 +546,10 @@ end
 
 ## resize
 
-function resize_nlsolver!(integrator::DiffEqBase.DEIntegrator, i::Int)
+function resize_nlsolver!(integrator::SciMLBase.DEIntegrator, i::Int)
     isdefined(integrator.cache, :nlsolver) || return
 
-    @unpack nlsolver = integrator.cache
+    (; nlsolver) = integrator.cache
 
     if nlsolver isa AbstractArray
         for idx in eachindex(nlsolver)
@@ -507,7 +564,7 @@ function resize_nlsolver!(integrator::DiffEqBase.DEIntegrator, i::Int)
     # make it reset everything since the caches changed size!
     nlsolver.cache.firstcall = true
 
-    nothing
+    return nothing
 end
 
 function Base.resize!(nlsolver::AbstractNLSolver, integrator, i::Int)
@@ -515,12 +572,12 @@ function Base.resize!(nlsolver::AbstractNLSolver, integrator, i::Int)
     resize!(nlsolver.tmp, i)
     resize!(nlsolver.ztmp, i)
 
-    resize!(nlsolver.cache, nlsolver, integrator, i)
+    return resize!(nlsolver.cache, nlsolver, integrator, i)
 end
 
 ## default: dispatch only on the cache
 function Base.resize!(cache::AbstractNLSolverCache, nlsolver, integrator, i::Int)
-    Base.resize!(cache, i)
+    return Base.resize!(cache, i)
 end
 
 """
@@ -548,7 +605,7 @@ function qrdelete!(Q::AbstractMatrix, R::AbstractMatrix, k::Int)
         end
     end
 
-    Q, R
+    return Q, R
 end
 
 """
@@ -575,10 +632,10 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::AbstractVector, k::Int)
     @inbounds begin
         d = norm(v)
         R[k, k] = d
-        @.. broadcast=false @view(Q[:, k])=v / d
+        @.. broadcast = false @view(Q[:, k]) = v / d
     end
 
-    Q, R
+    return Q, R
 end
 
 function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::Number, k::Int)
@@ -589,5 +646,5 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::Number, k::Int)
     R[1, 1] = abs(v)
     Q[1, 1] = one(v)
 
-    Q, R
+    return Q, R
 end

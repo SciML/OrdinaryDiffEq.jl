@@ -1,9 +1,9 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Test
 
 import ODEProblemLibrary: prob_ode_bigfloatlinear,
-                          prob_ode_linear,
-                          prob_ode_2Dlinear,
-                          prob_ode_bigfloat2Dlinear
+    prob_ode_linear,
+    prob_ode_2Dlinear,
+    prob_ode_bigfloat2Dlinear
 
 probbig = prob_ode_bigfloat2Dlinear
 probnum = prob_ode_linear
@@ -25,17 +25,19 @@ tabalg = ExplicitRK(tableau = constructBogakiShampine3())
 sol1 = solve(probnum, BS3(), dt = 1 / 2^1, adaptive = false, save_everystep = false)
 sol2 = solve(probnum, tabalg, dt = 1 / 2^1, adaptive = false, save_everystep = false)
 
-@test sol1.u[end] - sol2.u[end] < 1e-10
+@test sol1.u[end] - sol2.u[end] < 1.0e-10
 
 sol1 = solve(prob, BS3(), dt = 1 / 2^1, adaptive = false, save_everystep = false)
 sol2 = solve(prob, tabalg, dt = 1 / 2^1, adaptive = false, save_everystep = false)
 
-@test minimum(sol1.u[end] - sol2.u[end] .< 1e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 1.0e-10)
 
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, BS3(), dt = 1 / 2^6)
 
 @test length(sol1) == length(sol2)
+@test SciMLBase.successful_retcode(sol1)
+@test SciMLBase.successful_retcode(sol2)
 
 ### BS5()
 println("BS5")
@@ -49,17 +51,19 @@ tabalg = ExplicitRK(tableau = constructBogakiShampine5())
 sol1 = solve(probnum, BS5(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnum, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
-@test sol1.u[end] - sol2.u[end] < 1e-10
+@test sol1.u[end] - sol2.u[end] < 1.0e-10
 
 sol1 = solve(prob, BS5(), dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(prob, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = false)
 
-@test minimum(sol1.u[end] - sol2.u[end] .< 1e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 1.0e-10)
 
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, BS5(), dt = 1 / 2^6)
 
 @test length(sol1) <= length(sol2) # Dual error estimators is more strict
+@test SciMLBase.successful_retcode(sol1)
+@test SciMLBase.successful_retcode(sol2)
 
 ### Tsit5()
 
@@ -74,17 +78,19 @@ tabalg = ExplicitRK(tableau = constructTsitouras5())
 sol1 = solve(probnum, Tsit5(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnum, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
-@test sol1.u[end] - sol2.u[end] < 1e-10
+@test sol1.u[end] - sol2.u[end] < 1.0e-10
 
 sol1 = solve(prob, Tsit5(), dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(prob, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = false)
 
-@test minimum(sol1.u[end] - sol2.u[end] .< 1e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 1.0e-10)
 
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, Tsit5(), dt = 1 / 2^6)
 
 @test length(sol1) == length(sol2)
+@test SciMLBase.successful_retcode(sol1)
+@test SciMLBase.successful_retcode(sol2)
 
 ### Vern6()
 
@@ -99,17 +105,19 @@ tabalg = ExplicitRK(tableau = constructVernerEfficient6(BigFloat))
 sol1 = solve(probnumbig, Vern6(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
-@test sol1.u[end] - sol2.u[end] < 1e-10
+@test sol1.u[end] - sol2.u[end] < 1.0e-10
 
 sol1 = solve(probbig, Vern6(), dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = false)
 
-@test minimum(sol1.u[end] - sol2.u[end] .< 1e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 1.0e-10)
 
 sol1 = solve(probbig, tabalg, dt = 1 / 2^6)
 sol2 = solve(probbig, Vern6(), dt = 1 / 2^6)
 
 @test length(sol1) == length(sol2)
+@test SciMLBase.successful_retcode(sol1)
+@test SciMLBase.successful_retcode(sol2)
 
 ### Vern7()
 
@@ -124,17 +132,19 @@ tabalg = ExplicitRK(tableau = constructVerner7(BigFloat))
 sol1 = solve(probnumbig, Vern7(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
-@test sol1.u[end] - sol2.u[end] < 1e-10
+@test sol1.u[end] - sol2.u[end] < 1.0e-10
 
 sol1 = solve(probbig, Vern7(), dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = false)
 
-@test minimum(sol1.u[end] - sol2.u[end] .< 1e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 1.0e-10)
 
 sol1 = solve(probbig, tabalg, dt = 1 / 2^6)
 sol2 = solve(probbig, Vern7(), dt = 1 / 2^6)
 
 @test length(sol1) == length(sol2)
+@test SciMLBase.successful_retcode(sol1)
+@test SciMLBase.successful_retcode(sol2)
 
 ### TanYam7()
 
@@ -149,18 +159,20 @@ tabalg = ExplicitRK(tableau = constructTanakaYamashitaEfficient7(Float64))
 sol1 = solve(probnum, TanYam7(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnum, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
-@test sol1.u[end] - sol2.u[end] < 2e-9
+@test sol1.u[end] - sol2.u[end] < 2.0e-9
 
 tabalg = ExplicitRK(tableau = constructTanakaYamashitaEfficient7(BigFloat))
 sol1 = solve(probbig, TanYam7(), dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = false)
 
-@test minimum(sol1.u[end] - sol2.u[end] .< 1e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 1.0e-10)
 
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, TanYam7(), dt = 1 / 2^6)
 
 @test length(sol1) == length(sol2)
+@test SciMLBase.successful_retcode(sol1)
+@test SciMLBase.successful_retcode(sol2)
 
 ### Vern8()
 
@@ -175,17 +187,19 @@ tabalg = ExplicitRK(tableau = constructVerner8(BigFloat))
 sol1 = solve(probnumbig, Vern8(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
-@test sol1.u[end] - sol2.u[end] < 1e-10
+@test sol1.u[end] - sol2.u[end] < 1.0e-10
 
 sol1 = solve(probbig, Vern8(), dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = false)
 
-@test minimum(sol1.u[end] - sol2.u[end] .< 1e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 1.0e-10)
 
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, Vern8(), dt = 1 / 2^6)
 
 @test length(sol1) == length(sol2)
+@test SciMLBase.successful_retcode(sol1)
+@test SciMLBase.successful_retcode(sol2)
 
 ### TsitPap8()
 
@@ -200,17 +214,19 @@ tabalg = ExplicitRK(tableau = constructTsitourasPapakostas8(BigFloat))
 sol1 = solve(probnumbig, TsitPap8(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
-@test sol1.u[end] - sol2.u[end] < 1e-10
+@test sol1.u[end] - sol2.u[end] < 1.0e-10
 
 sol1 = solve(probbig, TsitPap8(), dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = false)
 
-@test minimum(sol1.u[end] - sol2.u[end] .< 1e-10)
+@test minimum(sol1.u[end] - sol2.u[end] .< 1.0e-10)
 
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, TsitPap8(), dt = 1 / 2^6)
 
 @test length(sol1) == length(sol2)
+@test SciMLBase.successful_retcode(sol1)
+@test SciMLBase.successful_retcode(sol2)
 
 ### Vern9()
 
@@ -225,14 +241,16 @@ tabalg = ExplicitRK(tableau = constructVernerEfficient9(BigFloat))
 sol1 = solve(probnumbig, Vern9(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
-@test abs.(sol1.u[end] - sol2.u[end]) < 1e-15
+@test abs.(sol1.u[end] - sol2.u[end]) < 1.0e-15
 
 sol1 = solve(probbig, Vern9(), dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = false)
 
-@test minimum(abs.(sol1.u[end] - sol2.u[end]) .< 1e-15)
+@test minimum(abs.(sol1.u[end] - sol2.u[end]) .< 1.0e-15)
 
 sol1 = solve(probbig, tabalg, dt = 1 / 2^6)
 sol2 = solve(probbig, Vern9(), dt = 1 / 2^6)
 
 @test length(sol1) == length(sol2)
+@test SciMLBase.successful_retcode(sol1)
+@test SciMLBase.successful_retcode(sol2)

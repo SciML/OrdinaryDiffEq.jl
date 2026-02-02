@@ -33,6 +33,7 @@ alg_order(alg::Rodas5) = 5
 alg_order(alg::Rodas5P) = 5
 alg_order(alg::Rodas5Pr) = 5
 alg_order(alg::Rodas5Pe) = 5
+alg_order(alg::Rodas6P) = 6
 
 alg_adaptive_order(alg::Rosenbrock32) = 2
 alg_adaptive_order(alg::Rosenbrock23) = 3
@@ -59,11 +60,16 @@ isfsal(alg::Rodas4) = false
 isfsal(alg::Rodas42) = false
 isfsal(alg::Rodas4P) = false
 isfsal(alg::Rodas4P2) = false
+isfsal(alg::Rodas6P) = false
 
-function has_stiff_interpolation(::Union{Rosenbrock23, Rosenbrock32, Rodas23W,
-        Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5,
-        Rodas5P, Rodas5Pe, Rodas5Pr})
-    true
+function has_stiff_interpolation(
+        ::Union{
+            Rosenbrock23, Rosenbrock32, Rodas23W,
+            Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5,
+            Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P,
+        }
+    )
+    return true
 end
 
 only_diagonal_mass_matrix(alg::Union{Rosenbrock23, Rosenbrock32}) = true

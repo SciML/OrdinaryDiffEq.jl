@@ -1,3 +1,6 @@
+using Pkg
+Pkg.add("Aqua")
+
 using OrdinaryDiffEqCore
 using Aqua
 

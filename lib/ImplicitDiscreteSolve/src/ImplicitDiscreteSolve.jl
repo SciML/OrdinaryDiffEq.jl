@@ -1,24 +1,31 @@
 module ImplicitDiscreteSolve
 
 using SciMLBase
-using SimpleNonlinearSolve
-using UnPack
+using NonlinearSolveBase
+using NonlinearSolveFirstOrder
 using SymbolicIndexingInterface: parameter_symbols
-import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_cache, OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, get_fsalfirstlast, isfsal, initialize!, perform_step!, isdiscretecache, isdiscretealg, alg_order, beta2_default, beta1_default, dt_required, _initialize_dae!, DefaultInit, BrownFullBasicInit, OverrideInit
+import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_cache, OrdinaryDiffEqMutableCache,
+    OrdinaryDiffEqConstantCache, get_fsalfirstlast, isfsal,
+    initialize!, perform_step!, isdiscretecache, isdiscretealg,
+    alg_order, beta2_default, beta1_default, dt_required,
+    _initialize_dae!, DefaultInit, BrownFullBasicInit, OverrideInit,
+    @muladd, @.., _unwrap_val, OrdinaryDiffEqCore, isadaptive,
+    AbstractController
+
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    @eval begin
+        import OrdinaryDiffEqCore: AbstractControllerCache
+    end
+end
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
-"""
-    IDSolve()
-
-Simple solver for `ImplicitDiscreteSystems`. Uses `SimpleNewtonRaphson` to solve for the next state at every timestep.
-"""
-struct IDSolve <: OrdinaryDiffEqAlgorithm end
-
+include("algorithms.jl")
 include("cache.jl")
 include("solve.jl")
 include("alg_utils.jl")
+include("controller.jl")
 
 export IDSolve
 

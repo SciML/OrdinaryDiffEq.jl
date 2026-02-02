@@ -1,9 +1,9 @@
 module OrdinaryDiffEqDefault
 
 using OrdinaryDiffEqCore: alg_stability_size, beta2_default, beta1_default, AutoSwitchCache,
-                          ODEIntegrator, trivial_limiter!,
-                          CompositeAlgorithm, OrdinaryDiffEqAlgorithm,
-                          OrdinaryDiffEqMutableCache, AutoAlgSwitch
+    ODEIntegrator, trivial_limiter!,
+    CompositeAlgorithm, OrdinaryDiffEqAlgorithm,
+    OrdinaryDiffEqMutableCache, AutoAlgSwitch
 using OrdinaryDiffEqVerner: Vern7, Vern8, Vern9, Vern6
 using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas5P
@@ -17,7 +17,7 @@ using LinearAlgebra: I, isdiag
 using EnumX
 
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("default_alg.jl")
 
@@ -30,11 +30,11 @@ PrecompileTools.@compile_workload begin
     prob_list = []
 
     default_ode = [
-        DefaultODEAlgorithm(autodiff = AutoFiniteDiff())
+        DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
     ]
 
     default_autodiff_ode = [
-        DefaultODEAlgorithm()
+        DefaultODEAlgorithm(),
     ]
 
     if Preferences.@load_preference("PrecompileDefault", true)
@@ -51,32 +51,55 @@ PrecompileTools.@compile_workload begin
     end
 
     if Preferences.@load_preference("PrecompileAutoSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0), Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]
+            )
+        )
     end
 
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0), Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]
+            )
+        )
     end
 
     if Preferences.@load_preference("PrecompileNoSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
-                Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0))
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
+                Float64[]
+            )
+        )
     end
 
     for prob in prob_list, solver in solver_list
+
         solve(prob, solver)(5.0)
     end
 

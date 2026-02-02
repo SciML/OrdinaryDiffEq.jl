@@ -1,20 +1,20 @@
 using OrdinaryDiffEq,
-      RecursiveArrayTools, Test, StaticArrays, DiffEqCallbacks,
-      SparseArrays,
-      LinearAlgebra
+    RecursiveArrayTools, Test, StaticArrays, DiffEqCallbacks,
+    SparseArrays,
+    LinearAlgebra
 
 f = function (u, p, t)
-    -u + sin(-t)
+    return -u + sin(-t)
 end
 
 prob = ODEProblem(f, 1.0, (0.0, -10.0))
 
 condition = function (u, t, integrator) # Event when event_f(u,t,k) == 0
-    -t - 2.95
+    return -t - 2.95
 end
 
 affect! = function (integrator)
-    integrator.u = integrator.u + 2
+    return integrator.u = integrator.u + 2
 end
 
 callback = ContinuousCallback(condition, affect!)
@@ -22,12 +22,16 @@ callback = ContinuousCallback(condition, affect!)
 sol = solve(prob, Tsit5(), callback = callback)
 @test length(sol) < 20
 
+# Force integrator to step on event
+sol = solve(prob, Tsit5(), callback = callback, tstops = [-2.95])
+@test sol(-2.95, continuity = :right) ≈ sol(-2.95, continuity = :left) + 2
+
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
-    out[1] = -t - 2.95
+    return out[1] = -t - 2.95
 end
 
 affect! = function (integrator, idx)
-    if idx == 1
+    return if idx == 1
         integrator.u = integrator.u + 2
     end
 end
@@ -36,50 +40,62 @@ callback = VectorContinuousCallback(condition, affect!, 1)
 
 sol = solve(prob, Tsit5(), callback = callback)
 
+# Force integrator to step on event
+sol = solve(prob, Tsit5(), callback = callback, tstops = [-2.95])
+@test sol(-2.95, continuity = :right) ≈ sol(-2.95, continuity = :left) + 2
+
 f = function (du, u, p, t)
-    du[1] = -u[1] + sin(t)
+    return du[1] = -u[1] + sin(t)
 end
 
 prob = ODEProblem(f, [1.0], (0.0, 10.0))
 
 condition = function (u, t, integrator) # Event when event_f(u,t,k) == 0
-    t - 2.95
+    return t - 2.95
 end
 
 affect! = function (integrator)
-    integrator.u = integrator.u .+ 2
+    return integrator.u = integrator.u .+ 2
 end
 
 callback = ContinuousCallback(condition, affect!)
 
-sol = solve(prob, Tsit5(), callback = callback, abstol = 1e-8, reltol = 1e-6)
+sol = solve(prob, Tsit5(), callback = callback, abstol = 1.0e-8, reltol = 1.0e-6)
+
+# Force integrator to step on event
+sol = solve(prob, Tsit5(), callback = callback, abstol = 1.0e-8, reltol = 1.0e-6, tstops = [2.95])
+@test sol(2.95, continuity = :right)[1] ≈ sol(2.95, continuity = :left)[1] + 2
 
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
-    out[1] = t - 2.95
+    return out[1] = t - 2.95
 end
 
 affect! = function (integrator, idx)
-    if idx == 1
+    return if idx == 1
         integrator.u = integrator.u .+ 2
     end
 end
 
 callback = VectorContinuousCallback(condition, affect!, 1)
 
-sol = solve(prob, Tsit5(), callback = callback, abstol = 1e-8, reltol = 1e-6)
+sol = solve(prob, Tsit5(), callback = callback, abstol = 1.0e-8, reltol = 1.0e-6)
+
+# Force integrator to step on event
+sol = solve(prob, Tsit5(), callback = callback, abstol = 1.0e-8, reltol = 1.0e-6, tstops = [2.95])
+@test sol(2.95, continuity = :right)[1] ≈ sol(2.95, continuity = :left)[1] + 2
 
 f = function (du, u, p, t)
     du[1] = u[2]
-    du[2] = -9.81
+    return du[2] = -9.81
 end
 
 condition = function (u, t, integrator) # Event when event_f(u,t,k) == 0
-    u[1]
+    return u[1]
 end
 
 affect! = nothing
 affect_neg! = function (integrator)
-    integrator.u[2] = -integrator.u[2]
+    return integrator.u[2] = -integrator.u[2]
 end
 
 callback = ContinuousCallback(condition, affect!, affect_neg!, interp_points = 100)
@@ -91,12 +107,12 @@ prob = ODEProblem(f, u0, tspan)
 sol = solve(prob, Tsit5(), callback = callback, adaptive = false, dt = 1 / 4)
 
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
-    out[1] = u[1]
+    return out[1] = u[1]
 end
 
 affect! = nothing
 affect_neg! = function (integrator, idx)
-    if idx == 1
+    return if idx == 1
         integrator.u[2] = -integrator.u[2]
     end
 end
@@ -106,16 +122,18 @@ vcb = VectorContinuousCallback(condition, affect!, 1, interp_points = 100)
 sol = solve(prob, Tsit5(), callback = vcb, adaptive = false, dt = 1 / 4)
 
 condition_single = function (u, t, integrator) # Event when event_f(u,t,k) == 0
-    u
+    return u
 end
 
 affect! = nothing
 affect_neg! = function (integrator)
-    integrator.u[2] = -integrator.u[2]
+    return integrator.u[2] = -integrator.u[2]
 end
 
-callback_single = ContinuousCallback(condition_single, affect!, affect_neg!,
-    interp_points = 100, idxs = 1)
+callback_single = ContinuousCallback(
+    condition_single, affect!, affect_neg!,
+    interp_points = 100, idxs = 1
+)
 
 u0 = [50.0, 0.0]
 tspan = (0.0, 15.0)
@@ -135,18 +153,20 @@ sol = solve(prob, Tsit5(), callback = callback_single, saveat = t - eps(t))
 #plot(sol,denseplot=true)
 
 condition_single = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
-    out[1] = u[1]
+    return out[1] = u[1]
 end
 
 affect! = nothing
 affect_neg! = function (integrator, idx)
-    if idx == 1
+    return if idx == 1
         integrator.u[2] = -integrator.u[2]
     end
 end
 
-callback_single = VectorContinuousCallback(condition_single, affect!, affect_neg!, 1,
-    interp_points = 100)
+callback_single = VectorContinuousCallback(
+    condition_single, affect!, affect_neg!, 1,
+    interp_points = 100
+)
 
 sol = solve(prob, Tsit5(), callback = callback_single, adaptive = false, dt = 1 / 4)
 sol = solve(prob, Tsit5(), callback = callback_single, save_everystep = false)
@@ -172,9 +192,15 @@ bounced = ODEProblem(f, sol[8], (0.0, 1.0))
 sol_bounced = solve(bounced, Vern6(), callback = callback, dt = sol.t[9] - sol.t[8])
 #plot(sol_bounced,denseplot=true)
 sol_bounced(0.04) # Complete density
-@test maximum(maximum.(map((i) -> sol.k[9][i] - sol_bounced.k[2][i],
-    1:length(sol.k[9])))) ==
-      0
+@test maximum(
+    maximum.(
+        map(
+            (i) -> sol.k[9][i] - sol_bounced.k[2][i],
+            1:length(sol.k[9])
+        )
+    )
+) ==
+    0
 
 sol2 = solve(prob, Vern6(), callback = callback, adaptive = false, dt = 1 / 2^4)
 #plot(sol2)
@@ -186,7 +212,7 @@ sol3 = solve(prob, Vern6(), saveat = [0.5])
 ## Saving callback
 
 condition = function (u, t, integrator)
-    true
+    return true
 end
 affect! = function (integrator) end
 
@@ -198,7 +224,7 @@ sol4 = solve(prob, Tsit5(), callback = saving_callback)
 @test sol2(3) ≈ sol(3)
 
 affect! = function (integrator)
-    u_modified!(integrator, false)
+    return u_modified!(integrator, false)
 end
 saving_callback2 = DiscreteCallback(condition, affect!, save_positions = save_positions)
 sol4 = solve(prob, Tsit5(), callback = saving_callback2)
@@ -209,15 +235,15 @@ sol4_extra = solve(prob, Tsit5(), callback = cbs)
 @test length(sol4_extra) == 2length(sol4) - 1
 
 condition = function (u, t, integrator)
-    u[1]
+    return u[1]
 end
 
 vcondition = function (out, u, t, integrator)
-    out[1] = u[1]
+    return out[1] = u[1]
 end
 
 affect! = function (integrator, retcode = nothing)
-    if retcode === nothing
+    return if retcode === nothing
         terminate!(integrator)
     else
         terminate!(integrator, retcode)
@@ -225,7 +251,7 @@ affect! = function (integrator, retcode = nothing)
 end
 
 vaffect! = function (integrator, idx, retcode = nothing)
-    if idx == 1
+    return if idx == 1
         if retcode === nothing
             terminate!(integrator)
         else
@@ -235,13 +261,19 @@ vaffect! = function (integrator, idx, retcode = nothing)
 end
 
 terminate_callback = ContinuousCallback(condition, affect!)
-custom_retcode_callback = ContinuousCallback(condition,
-    x -> affect!(x, ReturnCode.MaxIters))
+custom_retcode_callback = ContinuousCallback(
+    condition,
+    x -> affect!(x, ReturnCode.MaxIters)
+)
 vterminate_callback = VectorContinuousCallback(vcondition, vaffect!, 1)
-vcustom_retcode_callback = VectorContinuousCallback(vcondition,
-    (x, idx) -> vaffect!(x, idx,
-        ReturnCode.MaxIters),
-    1)
+vcustom_retcode_callback = VectorContinuousCallback(
+    vcondition,
+    (x, idx) -> vaffect!(
+        x, idx,
+        ReturnCode.MaxIters
+    ),
+    1
+)
 
 tspan2 = (0.0, Inf)
 prob2 = ODEProblem(f, u0, tspan2)
@@ -251,7 +283,7 @@ sol5_1 = solve(prob2, Tsit5(), callback = custom_retcode_callback)
 
 @test sol5.retcode == ReturnCode.Terminated
 @test sol5_1.retcode == ReturnCode.MaxIters
-@test sol5[end][1] < 3e-12
+@test sol5[end][1] < 3.0e-12
 @test sol5.t[end] ≈ sqrt(50 * 2 / 9.81)
 
 sol5 = solve(prob2, Tsit5(), callback = vterminate_callback)
@@ -259,11 +291,11 @@ sol5_1 = solve(prob2, Tsit5(), callback = vcustom_retcode_callback)
 
 @test sol5.retcode == ReturnCode.Terminated
 @test sol5_1.retcode == ReturnCode.MaxIters
-@test sol5[end][1] < 3e-12
+@test sol5[end][1] < 3.0e-12
 @test sol5.t[end] ≈ sqrt(50 * 2 / 9.81)
 
 affect2! = function (integrator)
-    if integrator.t >= 3.5
+    return if integrator.t >= 3.5
         terminate!(integrator)
     else
         integrator.u[2] = -integrator.u[2]
@@ -271,7 +303,7 @@ affect2! = function (integrator)
 end
 
 vaffect2! = function (integrator, idx)
-    if idx == 1
+    return if idx == 1
         if integrator.t >= 3.5
             terminate!(integrator)
         else
@@ -281,8 +313,10 @@ vaffect2! = function (integrator, idx)
 end
 
 terminate_callback2 = ContinuousCallback(condition, nothing, affect2!, interp_points = 100)
-vterminate_callback2 = VectorContinuousCallback(vcondition, nothing, vaffect2!, 1,
-    interp_points = 100)
+vterminate_callback2 = VectorContinuousCallback(
+    vcondition, nothing, vaffect2!, 1,
+    interp_points = 100
+)
 
 sol5 = solve(prob2, Vern7(), callback = terminate_callback2)
 
@@ -295,11 +329,11 @@ sol5 = solve(prob2, Vern7(), callback = vterminate_callback2)
 @test sol5.t[end] ≈ 3 * sqrt(50 * 2 / 9.81)
 
 condition = function (u, t, integrator) # Event when event_f(u,t,k) == 0
-    t - 4
+    return t - 4
 end
 
 affect! = function (integrator)
-    terminate!(integrator)
+    return terminate!(integrator)
 end
 
 terminate_callback3 = ContinuousCallback(condition, affect!, interp_points = 1000)
@@ -319,7 +353,7 @@ event_triggered = false
 condition_simple(u, t, integrator) = t_event - t
 function affect_simple!(integrator)
     global event_triggered
-    event_triggered = true
+    return event_triggered = true
 end
 cb = ContinuousCallback(condition_simple, nothing, affect_simple!)
 prob = ODEProblem(f_simple, [1.0], (0.0, 2.0 * t_event))
@@ -335,7 +369,7 @@ sol1 = solve(ode, Tsit5(), callback = TerminateSteadyState())
 # DiscreteCallback
 f = function (du, u, p, t)
     du[1] = -0.5 * u[1] + 10
-    du[2] = -0.5 * u[2]
+    return du[2] = -0.5 * u[2]
 end
 
 u0 = [10, 10.0]
@@ -357,12 +391,12 @@ sol2 = solve(prob, Tsit5(), callback = cb, tstops = tstop, saveat = prevfloat.(t
 f = (u, p, t) -> -1.0im * u
 prob = ODEProblem(f, complex([1.0]), (0.0, 1.0))
 condition = function (out, u, t, integrator)
-    out[1] = t - 0.5
+    return out[1] = t - 0.5
 end
 n = 0
 affect! = function (integrator, event_index)
     global n
-    n += 1
+    return n += 1
 end
 callback = VectorContinuousCallback(condition, affect!, 1)
 sol = solve(prob, Tsit5(), callback = callback)
@@ -370,15 +404,15 @@ sol = solve(prob, Tsit5(), callback = callback)
 
 # case of immutable partitioned state
 f = function (u, p, t)
-    ArrayPartition(SVector{1}(u[2]), SVector{1}(-9.81))
+    return ArrayPartition(SVector{1}(u[2]), SVector{1}(-9.81))
 end
 
 condition = function (u, t, integrator) # Event when event_f(u,t,k) == 0
-    u[1]
+    return u[1]
 end
 
 affect! = nothingf = affect_neg! = function (integrator)
-    integrator.u = ArrayPartition(SVector{1}(integrator.u[1]), SVector{1}(-integrator.u[2]))
+    return integrator.u = ArrayPartition(SVector{1}(integrator.u[1]), SVector{1}(-integrator.u[2]))
 end
 
 callback = ContinuousCallback(condition, affect!, affect_neg!, interp_points = 100)
@@ -407,7 +441,7 @@ sol = solve(prob, Tsit5(), callback = cb, tstops = [2.5])
 prob = ODEProblem((x, p, t) -> -1.01 * x, ones(2), (0.0, 1.0))
 integrator = init(prob, Tsit5(), save_everystep = false)
 set_u!(integrator, 2 * ones(2))
-step!(integrator, 1e-5, true)
+step!(integrator, 1.0e-5, true)
 @test all(u -> u > 1.5, integrator.u)
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/pull/1777

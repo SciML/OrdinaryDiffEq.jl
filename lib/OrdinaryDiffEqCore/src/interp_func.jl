@@ -1,9 +1,10 @@
 abstract type OrdinaryDiffEqInterpolation{cacheType} <:
-              DiffEqBase.AbstractDiffEqInterpolation end
+SciMLBase.AbstractDiffEqInterpolation end
 
 struct InterpolationData{
-    F, uType, tType, kType, algType <: Union{Nothing, Vector{Int}}, cacheType, DV} <:
-       OrdinaryDiffEqInterpolation{cacheType}
+        F, uType, tType, kType, algType <: Union{Nothing, Vector{Int}}, cacheType, DV,
+    } <:
+    OrdinaryDiffEqInterpolation{cacheType}
     f::F
     timeseries::uType
     ts::tType
@@ -17,72 +18,89 @@ end
 
 @static if isdefined(SciMLBase, :enable_interpolation_sensitivitymode)
     function SciMLBase.enable_interpolation_sensitivitymode(interp::InterpolationData)
-        InterpolationData(interp.f, interp.timeseries, interp.ts, interp.ks,
+        InterpolationData(
+            interp.f, interp.timeseries, interp.ts, interp.ks,
             interp.alg_choice, interp.dense, interp.cache,
-            interp.differential_vars, true)
+            interp.differential_vars, true
+        )
     end
 end
 
-function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{
+function SciMLBase.interp_summary(
+        interp::OrdinaryDiffEqInterpolation{
+            cacheType,
+        }
+    ) where {
         cacheType,
-}) where {
-        cacheType,
-}
-    DiffEqBase.interp_summary(cacheType, interp.dense)
+    }
+    return SciMLBase.interp_summary(cacheType, interp.dense)
 end
-function DiffEqBase.interp_summary(::Type{cacheType}, dense::Bool) where {cacheType}
-    dense ? "3rd order Hermite" : "1st order linear"
+function SciMLBase.interp_summary(::Type{cacheType}, dense::Bool) where {cacheType}
+    return dense ? "3rd order Hermite" : "1st order linear"
 end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {cacheType <: CompositeCache}
+function SciMLBase.interp_summary(
+        ::Type{cacheType},
+        dense::Bool
+    ) where {cacheType <: CompositeCache}
     if !dense
         return "1st order linear"
     end
     caches = fieldtype(cacheType, :caches)
-    join([DiffEqBase.interp_summary(ct, dense) for ct in fieldtypes(caches)], ", ")
+    return join([SciMLBase.interp_summary(ct, dense) for ct in fieldtypes(caches)], ", ")
 end
 
 function (interp::InterpolationData)(tvals, idxs, deriv, p, continuity::Symbol = :left)
-    ode_interpolation(tvals, interp, idxs, deriv, p, continuity)
+    return ode_interpolation(tvals, interp, idxs, deriv, p, continuity)
 end
 function (interp::InterpolationData)(val, tvals, idxs, deriv, p, continuity::Symbol = :left)
-    ode_interpolation!(val, tvals, interp, idxs, deriv, p, continuity)
+    return ode_interpolation!(val, tvals, interp, idxs, deriv, p, continuity)
 end
 
 function InterpolationData(id::InterpolationData, f)
-    InterpolationData(f, id.timeseries,
+    return InterpolationData(
+        f, id.timeseries,
         id.ts,
         id.ks,
         id.alg_choice,
         id.dense,
         id.cache,
         id.differential_vars,
-        id.sensitivitymode)
+        id.sensitivitymode
+    )
 end
 
 # strip interpolation of function information
 function SciMLBase.strip_interpolation(id::InterpolationData)
     cache = strip_cache(id.cache)
 
-    InterpolationData(nothing, id.timeseries,
+    return InterpolationData(
+        nothing, id.timeseries,
         id.ts,
         id.ks,
         id.alg_choice,
         id.dense,
         cache,
         id.differential_vars,
-        id.sensitivitymode)
+        id.sensitivitymode
+    )
 end
 
 function strip_cache(cache)
     if !(cache isa OrdinaryDiffEqCore.DefaultCache)
-        cache = SciMLBase.constructorof(typeof(cache))([nothing
-                                                        for name in fieldnames(typeof(cache))]...)
+        cache = SciMLBase.constructorof(typeof(cache))(
+            [
+                nothing
+                    for name in
+                    fieldnames(typeof(cache))
+            ]...
+        )
     else
         # need to do something special for default cache
-        cache = OrdinaryDiffEqCore.DefaultCache{Nothing, Nothing, Nothing, Nothing,
-            Nothing, Nothing, Nothing, Nothing}(nothing, nothing, 0, nothing)
+        cache = OrdinaryDiffEqCore.DefaultCache{
+            Nothing, Nothing, Nothing, Nothing,
+            Nothing, Nothing, Nothing, Nothing,
+        }(nothing, nothing, 0, nothing)
     end
 
-    cache
+    return cache
 end

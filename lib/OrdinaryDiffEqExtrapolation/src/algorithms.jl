@@ -1,7 +1,7 @@
 abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <:
-              OrdinaryDiffEqAdaptiveAlgorithm end
+OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ} <:
-              OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
 reference = """@inproceedings{elrod2022parallelizing,
   title={Parallelizing explicit and implicit extrapolation methods for ordinary differential equations},
   author={Elrod, Chris and Ma, Yingbo and Althaus, Konstantin and Rackauckas, Christopher and others},
@@ -27,7 +27,8 @@ reference = """@inproceedings{elrod2022parallelizing,
     min_order::Int = 1,
     init_order = 3,
     thread = OrdinaryDiffEq.False(),
-    """)
+    """
+)
 Base.@kwdef struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
     max_order::Int = 10
     min_order::Int = 1
@@ -54,9 +55,10 @@ Similar to Hairer's SEULEX.",
     init_order = 5,
     thread = OrdinaryDiffEq.False(),
     sequence = :harmonic
-    """)
+    """
+)
 struct ImplicitEulerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-       OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
     max_order::Int
@@ -67,17 +69,21 @@ struct ImplicitEulerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
     autodiff::AD
 end
 
-function ImplicitEulerExtrapolation(; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
+function ImplicitEulerExtrapolation(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward}(), linsolve = nothing,
         precs = DEFAULT_PRECS,
         max_order = 12, min_order = 3, init_order = 5,
-        threading = false, sequence = :harmonic)
+        threading = false, sequence = :harmonic
+    )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
-    linsolve = (linsolve === nothing &&
-                (threading == true || threading isa PolyesterThreads)) ?
-               RFLUFactorization(; thread = Val(false)) : linsolve
+    linsolve = (
+            linsolve === nothing &&
+            (threading == true || threading isa PolyesterThreads)
+        ) ?
+        RFLUFactorization(; thread = Val(false)) : linsolve
 
     min_order = max(3, min_order)
     init_order = max(min_order + 1, init_order)
@@ -88,9 +94,9 @@ function ImplicitEulerExtrapolation(; chunk_size = Val{0}(), autodiff = AutoForw
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitEulerExtrapolation` algorithm are not valid and have been changed:
           Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
-              "
+            "
 Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
-              "
+            "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
@@ -102,15 +108,20 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
           :$(sequence) --> :harmonic"
         sequence = :harmonic
     end
-    ImplicitEulerExtrapolation{_unwrap_val(chunk_size), typeof(AD_choice),
+    return ImplicitEulerExtrapolation{
+        _unwrap_val(chunk_size), typeof(AD_choice),
         typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading)}(linsolve, precs, max_order, min_order,
+        typeof(threading),
+    }(
+        linsolve, precs, max_order, min_order,
         init_order,
-        threading, sequence, AD_choice)
+        threading, sequence, AD_choice
+    )
 end
 
-@doc generic_solver_docstring("Midpoint extrapolation using Barycentric coordinates.",
+@doc generic_solver_docstring(
+    "Midpoint extrapolation using Barycentric coordinates.",
     "ExtrapolationMidpointDeuflhard",
     "Parallelized Explicit Extrapolation Method.",
     reference,
@@ -129,9 +140,10 @@ end
     thread = OrdinaryDiffEq.True(),
     sequence = :harmonic,
     sequence_factor = 2,
-    """)
+    """
+)
 struct ExtrapolationMidpointDeuflhard{TO} <:
-       OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+    OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
     min_order::Int # Minimal extrapolation order
     init_order::Int # Initial extrapolation order
     max_order::Int # Maximal extrapolation order
@@ -139,9 +151,11 @@ struct ExtrapolationMidpointDeuflhard{TO} <:
     threading::TO
     sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
 end
-function ExtrapolationMidpointDeuflhard(; min_order = 1, init_order = 5, max_order = 10,
+function ExtrapolationMidpointDeuflhard(;
+        min_order = 1, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = true,
-        sequence_factor = 2)
+        sequence_factor = 2
+    )
     # Enforce 1 <=  min_order <= init_order <= max_order:
     min_order = max(1, min_order)
     init_order = max(min_order, init_order)
@@ -152,9 +166,9 @@ function ExtrapolationMidpointDeuflhard(; min_order = 1, init_order = 5, max_ord
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ExtrapolationMidpointDeuflhard` algorithm are not valid and have been changed:
           Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
-              "
+            "
 Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
-              "
+            "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
@@ -176,11 +190,14 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
     # Initialize algorithm
-    ExtrapolationMidpointDeuflhard(min_order, init_order, max_order, sequence, threading,
-        sequence_factor)
+    return ExtrapolationMidpointDeuflhard(
+        min_order, init_order, max_order, sequence, threading,
+        sequence_factor
+    )
 end
 
-@doc differentiation_rk_docstring("Midpoint extrapolation using Barycentric coordinates.",
+@doc differentiation_rk_docstring(
+    "Midpoint extrapolation using Barycentric coordinates.",
     "ImplicitDeuflhardExtrapolation",
     "Parallelized Explicit Extrapolation Method.",
     references = reference,
@@ -197,9 +214,10 @@ end
     init_order = 5,
     thread = OrdinaryDiffEq.False(),
     sequence = :harmonic,
-    """)
+    """
+)
 struct ImplicitDeuflhardExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-       OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
     min_order::Int # Minimal extrapolation order
@@ -215,7 +233,8 @@ function ImplicitDeuflhardExtrapolation(;
         linsolve = nothing, precs = DEFAULT_PRECS,
         diff_type = Val{:forward}(),
         min_order = 1, init_order = 5, max_order = 10,
-        sequence = :harmonic, threading = false)
+        sequence = :harmonic, threading = false
+    )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     # Enforce 1 <=  min_order <= init_order <= max_order:
@@ -223,18 +242,20 @@ function ImplicitDeuflhardExtrapolation(;
     init_order = max(min_order, init_order)
     max_order = max(init_order, max_order)
 
-    linsolve = (linsolve === nothing &&
-                (threading == true || threading isa PolyesterThreads)) ?
-               RFLUFactorization(; thread = Val(false)) : linsolve
+    linsolve = (
+            linsolve === nothing &&
+            (threading == true || threading isa PolyesterThreads)
+        ) ?
+        RFLUFactorization(; thread = Val(false)) : linsolve
 
     # Warn user if orders have been changed
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitDeuflhardExtrapolation` algorithm are not valid and have been changed:
           Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
-              "
+            "
 Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
-              "
+            "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         chunk_size
     end
@@ -249,15 +270,20 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
     # Initialize algorithm
-    ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), typeof(AD_choice),
+    return ImplicitDeuflhardExtrapolation{
+        _unwrap_val(chunk_size), typeof(AD_choice),
         typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading)}(linsolve, precs, min_order,
+        typeof(threading),
+    }(
+        linsolve, precs, min_order,
         init_order, max_order,
-        sequence, threading, AD_choice)
+        sequence, threading, AD_choice
+    )
 end
 
-@doc generic_solver_docstring("Midpoint extrapolation using Barycentric coordinates,
+@doc generic_solver_docstring(
+    "Midpoint extrapolation using Barycentric coordinates,
     following Hairer's ODEX in the adaptivity behavior.",
     "ExtrapolationMidpointHairerWanner",
     "Parallelized Explicit Extrapolation Method.",
@@ -277,9 +303,10 @@ end
     thread = OrdinaryDiffEq.True(),
     sequence = :harmonic,
     sequence_factor = 2,
-    """)
+    """
+)
 struct ExtrapolationMidpointHairerWanner{TO} <:
-       OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+    OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
     min_order::Int # Minimal extrapolation order
     init_order::Int # Initial extrapolation order
     max_order::Int # Maximal extrapolation order
@@ -287,9 +314,11 @@ struct ExtrapolationMidpointHairerWanner{TO} <:
     threading::TO
     sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
 end
-function ExtrapolationMidpointHairerWanner(; min_order = 2, init_order = 5, max_order = 10,
+function ExtrapolationMidpointHairerWanner(;
+        min_order = 2, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = true,
-        sequence_factor = 2)
+        sequence_factor = 2
+    )
     # Enforce 2 <=  min_order
     # and min_order + 1 <= init_order <= max_order - 1:
     min_order = max(2, min_order)
@@ -301,9 +330,9 @@ function ExtrapolationMidpointHairerWanner(; min_order = 2, init_order = 5, max_
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ExtrapolationMidpointHairerWanner` algorithm are not valid and have been changed:
           Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
-              "
+            "
 Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
-              "
+            "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
@@ -325,12 +354,14 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
     # Initialize algorithm
-    ExtrapolationMidpointHairerWanner(
+    return ExtrapolationMidpointHairerWanner(
         min_order, init_order, max_order, sequence, threading,
-        sequence_factor)
+        sequence_factor
+    )
 end
 
-@doc differentiation_rk_docstring("Midpoint extrapolation using Barycentric coordinates,
+@doc differentiation_rk_docstring(
+    "Midpoint extrapolation using Barycentric coordinates,
     following Hairer's SODEX in the adaptivity behavior.",
     "ImplicitHairerWannerExtrapolation",
     "Parallelized Explicit Extrapolation Method.",
@@ -348,9 +379,10 @@ end
     init_order = 5,
     thread = OrdinaryDiffEq.False(),
     sequence = :harmonic,
-    """)
+    """
+)
 struct ImplicitHairerWannerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-       OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
     min_order::Int # Minimal extrapolation order
@@ -368,7 +400,8 @@ function ImplicitHairerWannerExtrapolation(;
         linsolve = nothing, precs = DEFAULT_PRECS,
         diff_type = Val{:forward}(),
         min_order = 2, init_order = 5, max_order = 10,
-        sequence = :harmonic, threading = false)
+        sequence = :harmonic, threading = false
+    )
 
     # Enforce 2 <=  min_order
     # and min_order + 1 <= init_order <= max_order - 1:
@@ -376,18 +409,20 @@ function ImplicitHairerWannerExtrapolation(;
     init_order = max(min_order + 1, init_order)
     max_order = max(init_order + 1, max_order)
 
-    linsolve = (linsolve === nothing &&
-                (threading == true || threading isa PolyesterThreads)) ?
-               RFLUFactorization(; thread = Val(false)) : linsolve
+    linsolve = (
+            linsolve === nothing &&
+            (threading == true || threading isa PolyesterThreads)
+        ) ?
+        RFLUFactorization(; thread = Val(false)) : linsolve
 
     # Warn user if orders have been changed
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitHairerWannerExtrapolation` algorithm are not valid and have been changed:
           Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
-              "
+            "
 Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
-              "
+            "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
@@ -402,15 +437,20 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
     # Initialize algorithm
-    ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), typeof(AD_choice),
+    return ImplicitHairerWannerExtrapolation{
+        _unwrap_val(chunk_size), typeof(AD_choice),
         typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading)}(linsolve, precs, min_order,
+        typeof(threading),
+    }(
+        linsolve, precs, min_order,
         init_order,
-        max_order, sequence, threading, AD_choice)
+        max_order, sequence, threading, AD_choice
+    )
 end
 
-@doc differentiation_rk_docstring("Euler extrapolation using Barycentric coordinates,
+@doc differentiation_rk_docstring(
+    "Euler extrapolation using Barycentric coordinates,
     following Hairer's SODEX in the adaptivity behavior.",
     "ImplicitEulerBarycentricExtrapolation",
     "Parallelized Explicit Extrapolation Method.",
@@ -430,9 +470,10 @@ end
     thread = OrdinaryDiffEq.False(),
     sequence = :harmonic,
     sequence_factor = 2,
-    """)
+    """
+)
 struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-       OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
     min_order::Int # Minimal extrapolation order
@@ -444,7 +485,8 @@ struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
     autodiff::AD
 end
 
-function ImplicitEulerBarycentricExtrapolation(; chunk_size = Val{0}(),
+function ImplicitEulerBarycentricExtrapolation(;
+        chunk_size = Val{0}(),
         autodiff = AutoForwardDiff(),
         standardtag = Val{true}(),
         concrete_jac = nothing,
@@ -452,25 +494,28 @@ function ImplicitEulerBarycentricExtrapolation(; chunk_size = Val{0}(),
         diff_type = Val{:forward}(),
         min_order = 3, init_order = 5,
         max_order = 12, sequence = :harmonic,
-        threading = false, sequence_factor = 2)
+        threading = false, sequence_factor = 2
+    )
     # Enforce 2 <=  min_order
     # and min_order + 1 <= init_order <= max_order - 1:
     min_order = max(3, min_order)
     init_order = max(min_order + 1, init_order)
     max_order = max(init_order + 1, max_order)
 
-    linsolve = (linsolve === nothing &&
-                (threading == true || threading isa PolyesterThreads)) ?
-               RFLUFactorization(; thread = Val(false)) : linsolve
+    linsolve = (
+            linsolve === nothing &&
+            (threading == true || threading isa PolyesterThreads)
+        ) ?
+        RFLUFactorization(; thread = Val(false)) : linsolve
 
     # Warn user if orders have been changed
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitEulerBarycentricExtrapolation` algorithm are not valid and have been changed:
           Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
-              "
+            "
 Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
-              "
+            "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
@@ -485,10 +530,13 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
     # Initialize algorithm
-    ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), typeof(AD_choice),
+    return ImplicitEulerBarycentricExtrapolation{
+        _unwrap_val(chunk_size), typeof(AD_choice),
         typeof(linsolve), typeof(precs), diff_type,
         _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(threading)}(linsolve,
+        _unwrap_val(concrete_jac), typeof(threading),
+    }(
+        linsolve,
         precs,
         min_order,
         init_order,
@@ -496,5 +544,6 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence,
         threading,
         sequence_factor,
-        AD_choice)
+        AD_choice
+    )
 end

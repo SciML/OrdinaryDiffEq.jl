@@ -15,7 +15,6 @@ ordinary differential equation solvers and utilities. While completely independe
 and usable on its own, users interested in using this
 functionality should check out [DifferentialEquations.jl](https://github.com/SciML/DifferentialEquations.jl).
 
-
 ## Installation
 
 Assuming that you already have Julia correctly installed, it suffices to import
@@ -40,15 +39,15 @@ sol = solve(prob, Tsit5(), reltol = 1e-8, abstol = 1e-8)
 using Plots
 plot(sol, linewidth = 5, title = "Solution to the linear ODE with a thick line",
     xaxis = "Time (t)", yaxis = "u(t) (in μm)", label = "My Thick Line!") # legend=false
-plot!(sol.t, t -> 0.5 * exp(1.01t), lw = 3, ls = :dash, label = "True Solution!")
+plot!(sol.t, t -> 0.5 * exp(1.01 * t), lw = 3, ls = :dash, label = "True Solution!")
 ```
 
-That example uses the out-of-place syntax `f(u,p,t)`, while the inplace syntax (more efficient for systems of equations) is shown in the Lorenz example:
+That example uses the out-of-place syntax `f(u,p,t)`, while the in-place syntax (more efficient for systems of equations) is shown in the Lorenz example:
 
 ```julia
 using OrdinaryDiffEq
 function lorenz!(du, u, p, t)
-    du[1] = 10.0(u[2] - u[1])
+    du[1] = 10.0 * (u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
     du[3] = u[1] * u[2] - (8 / 3) * u[3]
 end
@@ -65,7 +64,7 @@ Very fast static array versions can be specifically compiled to the size of your
 ```julia
 using OrdinaryDiffEq, StaticArrays
 function lorenz(u, p, t)
-    SA[10.0(u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
+    SA[10.0 * (u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
 end
 u0 = SA[1.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
@@ -73,13 +72,38 @@ prob = ODEProblem(lorenz, u0, tspan)
 sol = solve(prob, Tsit5())
 ```
 
-For "refined ODEs", like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://diffeq.sciml.ai/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/SciML/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
+For "refined ODEs", like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/). For example, the harmonic oscillator equations can be solved using symplectic methods. The harmonic oscillator is described by:
+
+$$\ddot{x} + \omega^2 x = 0$$
+
+which is equivalent to the first-order system:
+
+$$\dot{x} = v$$
+$$\dot{v} = -\omega^2 x$$
+
+```julia
+using OrdinaryDiffEq
+function harmonic_oscillator!(dv, v, u, p, t)
+    ω = p[1]
+    dv[1] = -ω^2 * u[1]
+end
+ω = 2.0  # angular frequency
+initial_position = [1.0]
+initial_velocity = [0.0]
+tspan = (0.0, 10.0)
+prob = SecondOrderODEProblem(harmonic_oscillator!, initial_velocity, initial_position, tspan, [ω])
+sol = solve(prob, VelocityVerlet(), dt = 1 / 100)
+using Plots
+plot(sol, idxs = (1, 2), label = "Phase space", xaxis = "Position", yaxis = "Velocity")
+```
+
+For more complex dynamical systems, such as the Hénon-Heiles potential, symplectic integrators preserve the structure of Hamiltonian dynamics. In [DiffEqTutorials.jl](https://github.com/SciML/SciMLTutorials.jl) we show how to solve these equations of motion:
 
 ```julia
 function HH_acceleration!(dv, v, u, p, t)
     x, y = u
     dx, dy = dv
-    dv[1] = -x - 2x * y
+    dv[1] = -x - 2 * x * y
     dv[2] = y^2 - y - x^2
 end
 initial_positions = [0.0, 0.1]
@@ -92,4 +116,4 @@ Other refined forms are IMEX and semi-linear ODEs (for exponential integrators).
 
 ## Available Solvers
 
-For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](https://diffeq.sciml.ai/dev/solvers/ode_solve/), [Dynamical ODE Solvers](http://diffeq.sciml.ai/dev/solvers/dynamical_solve/), and the [Split ODE Solvers](http://diffeq.sciml.ai/dev/solvers/split_ode_solve/) pages.
+For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](https://docs.sciml.ai/DiffEqDocs/stable/solvers/ode_solve/), [Dynamical ODE Solvers](https://docs.sciml.ai/DiffEqDocs/stable/solvers/dynamical_solve/), and the [Split ODE Solvers](https://docs.sciml.ai/DiffEqDocs/stable/solvers/split_ode_solve/) pages.

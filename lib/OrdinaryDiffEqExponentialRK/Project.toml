@@ -1,64 +1,77 @@
 name = "OrdinaryDiffEqExponentialRK"
 uuid = "e0540318-69ee-4070-8777-9e2de6de23de"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.4.0"
-
-[sources]
-OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
-OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
-OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}
-OrdinaryDiffEqVerner = {path = "../OrdinaryDiffEqVerner"}
+version = "1.13.0"
 
 [deps]
-ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
-DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-ExponentialUtilities = "d4d017d3-3776-5f7e-afef-a10c40355c18"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
-OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+ExponentialUtilities = "d4d017d3-3776-5f7e-afef-a10c40355c18"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
-RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-
-[compat]
-ADTypes = "1.11"
-DiffEqBase = "6.152.2"
-DiffEqDevTools = "2.44.4"
-ExponentialUtilities = "1.26.1"
-FastBroadcast = "0.3.5"
-LinearAlgebra = "<0.0.1, 1"
-LinearSolve = "2.32.0, 3"
-MuladdMacro = "0.2.4"
-OrdinaryDiffEqCore = "1.19"
-OrdinaryDiffEqDifferentiation = "<0.0.1, 1.2"
-OrdinaryDiffEqTsit5 = "<0.0.1, 1"
-OrdinaryDiffEqVerner = "<0.0.1, 1"
-OrdinaryDiffEqSDIRK = "<0.0.1, 1"
-Random = "<0.0.1, 1"
-RecursiveArrayTools = "3.27.0"
-Reexport = "1.2.2"
-SafeTestsets = "0.1.0"
-SciMLBase = "2.48.1"
-SparseArrays = "<0.0.1, 1"
-Test = "<0.0.1, 1"
-julia = "1.10"
-JET = "0.9.18, 0.10.4"
-Aqua = "0.8.11"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
-DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
-LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
-OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
-OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
-SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
+LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+
+[compat]
+Pkg = "1"
+OrdinaryDiffEqTsit5 = "1.4.0"
+Test = "<0.0.1, 1"
+FastBroadcast = "0.3"
+Random = "<0.0.1, 1"
+DiffEqDevTools = "2.44.4"
+MuladdMacro = "0.2"
+OrdinaryDiffEqVerner = "1.5.0"
+LinearSolve = "3.46"
+ExponentialUtilities = "1.27"
+LinearAlgebra = "1.10"
+OrdinaryDiffEqDifferentiation = "2"
+OrdinaryDiffEqSDIRK = "1.6.0"
+SciMLBase = "2.116"
+OrdinaryDiffEqCore = "3"
+SparseArrays = "1.10"
+Aqua = "0.8.11"
+julia = "1.10"
+JET = "0.9, 0.11"
+ADTypes = "1.16"
+RecursiveArrayTools = "3.36"
+AllocCheck = "0.2"
+DiffEqBase = "6.194"
+Reexport = "1.2"
+SafeTestsets = "0.1.0"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqTsit5", "LinearSolve", "SparseArrays", "JET", "Aqua", "OrdinaryDiffEqVerner", "OrdinaryDiffEqSDIRK"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqTsit5", "LinearSolve", "SparseArrays", "OrdinaryDiffEqVerner", "OrdinaryDiffEqSDIRK", "Pkg"]
+
+[sources.OrdinaryDiffEqSDIRK]
+path = "../OrdinaryDiffEqSDIRK"
+
+[sources.OrdinaryDiffEqDifferentiation]
+path = "../OrdinaryDiffEqDifferentiation"
+
+[sources.OrdinaryDiffEqCore]
+path = "../OrdinaryDiffEqCore"
+
+[sources.OrdinaryDiffEqVerner]
+path = "../OrdinaryDiffEqVerner"
+
+[sources.OrdinaryDiffEqTsit5]
+path = "../OrdinaryDiffEqTsit5"

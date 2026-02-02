@@ -84,20 +84,22 @@ function FineRKN4ConstantCache(T::Type, T2::Type)
     bbar4 = convert(T, 16 // 45)
     bbar5 = convert(T, 1 // 12)
     btilde1 = convert(T, 25 // 1116)
-    #btilde2 = convert(T, 0 // 1) 
+    #btilde2 = convert(T, 0 // 1)
     btilde3 = convert(T, -63 // 1240)
     btilde4 = convert(T, 64 // 1395)
     btilde5 = convert(T, -13 // 744)
     bptilde1 = convert(T, 2 // 125)
-    #bptilde2 = convert(T, 0 // 1) 
+    #bptilde2 = convert(T, 0 // 1)
     bptilde3 = convert(T, -27 // 625)
     bptilde4 = convert(T, 32 // 625)
     bptilde5 = convert(T, -3 // 125)
-    FineRKN4ConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51,
+    return FineRKN4ConstantCache(
+        c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51,
         a52, a53, a54, abar21, abar31, abar32, abar41, abar42, abar43, abar51,
         abar52, abar53, abar54, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, btilde1,
         btilde3, btilde4, btilde5, bptilde1,
-        bptilde3, bptilde4, bptilde5)
+        bptilde3, bptilde4, bptilde5
+    )
 end
 
 struct FineRKN5ConstantCache{T, T2} <: NystromConstantCache
@@ -245,26 +247,28 @@ function FineRKN5ConstantCache(T::Type, T2::Type)
     bbar6 = convert(T, 53 // 240)
     #bbar7 = convert(T, 0 // 1)
     btilde1 = convert(T, 8151 // 2633750)
-    #btilde2 = convert(T, 0 // 1) 
+    #btilde2 = convert(T, 0 // 1)
     btilde3 = convert(T, -1377519 // 186334750)
     btilde4 = convert(T, 586872 // 28879375)
     btilde5 = convert(T, -36011118 // 2247378875)
-    #btilde6 = convert(T, 0 // 1) 
-    #btilde7 = convert(T, 0 // 1) 
+    #btilde6 = convert(T, 0 // 1)
+    #btilde7 = convert(T, 0 // 1)
     bptilde1 = convert(T, 8151 // 2633750)
-    #bptilde2 = convert(T, 0 // 1) 
+    #bptilde2 = convert(T, 0 // 1)
     bptilde3 = convert(T, -5969249 // 559004250)
     bptilde4 = convert(T, 3521232 // 28879375)
     bptilde5 = convert(T, -846261273 // 4494757750)
     bptilde6 = convert(T, 4187 // 36750)
     bptilde7 = convert(T, -1 // 25)
-    FineRKN5ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51,
+    return FineRKN5ConstantCache(
+        c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51,
         a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75,
         abar21, abar31, abar32, abar41, abar42, abar43, abar51,
         abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65,
         abar71, abar73, abar74, abar75, abar76, b1, b3, b4,
         b5, bbar1, bbar3, bbar4, bbar5, bbar6, btilde1, btilde3, btilde4, btilde5, bptilde1,
-        bptilde3, bptilde4, bptilde5, bptilde6, bptilde7)
+        bptilde3, bptilde4, bptilde5, bptilde6, bptilde7
+    )
 end
 
 struct IRKN3ConstantCache{T, T2} <: NystromConstantCache
@@ -287,7 +291,7 @@ function IRKN3ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
     b2 = convert(T, 0.8333333333333334)
     bbar1 = convert(T, 0.3333333333333333)
     bbar2 = convert(T, 0.4166666666666667)
-    IRKN3ConstantCache(bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2)
+    return IRKN3ConstantCache(bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2)
 end
 
 function IRKN3ConstantCache(T::Type, T2::Type)
@@ -299,7 +303,7 @@ function IRKN3ConstantCache(T::Type, T2::Type)
     b2 = convert(T, 5 // 6)
     bbar1 = convert(T, 1 // 3)
     bbar2 = convert(T, 5 // 12)
-    IRKN3ConstantCache(bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2)
+    return IRKN3ConstantCache(bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2)
 end
 
 struct IRKN4ConstantCache{T, T2} <: NystromConstantCache
@@ -332,7 +336,7 @@ function IRKN4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
     bbar1 = convert(T, -0.05555555555555555)
     bbar2 = convert(T, 0.2916666666666667)
     bbar3 = convert(T, 0.125)
-    IRKN4ConstantCache(bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3)
+    return IRKN4ConstantCache(bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3)
 end
 
 function IRKN4ConstantCache(T::Type, T2::Type)
@@ -349,7 +353,7 @@ function IRKN4ConstantCache(T::Type, T2::Type)
     bbar1 = convert(T, -1 // 18)
     bbar2 = convert(T, 7 // 24)
     bbar3 = convert(T, 1 // 8)
-    IRKN4ConstantCache(bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3)
+    return IRKN4ConstantCache(bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3)
 end
 
 struct Nystrom5VelocityIndependentConstantCache{T, T2} <: NystromConstantCache
@@ -370,8 +374,10 @@ struct Nystrom5VelocityIndependentConstantCache{T, T2} <: NystromConstantCache
     b4::T
 end
 
-function Nystrom5VelocityIndependentConstantCache(T::Type{<:CompiledFloats},
-        T2::Type{<:CompiledFloats})
+function Nystrom5VelocityIndependentConstantCache(
+        T::Type{<:CompiledFloats},
+        T2::Type{<:CompiledFloats}
+    )
     c1 = convert(T2, 0.2)
     c2 = convert(T2, 0.6666666666666666)
     # c3    = convert(T2,1)
@@ -388,8 +394,10 @@ function Nystrom5VelocityIndependentConstantCache(T::Type{<:CompiledFloats},
     b2 = convert(T, 0.37202380952380953)
     b3 = convert(T, 0.48214285714285715)
     b4 = convert(T, 0.10416666666666667)
-    Nystrom5VelocityIndependentConstantCache(c1, c2, a21, a31, a32, a41, a42, a43, bbar1,
-        bbar2, bbar3, b1, b2, b3, b4)
+    return Nystrom5VelocityIndependentConstantCache(
+        c1, c2, a21, a31, a32, a41, a42, a43, bbar1,
+        bbar2, bbar3, b1, b2, b3, b4
+    )
 end
 
 function Nystrom5VelocityIndependentConstantCache(T::Type, T2::Type)
@@ -409,8 +417,10 @@ function Nystrom5VelocityIndependentConstantCache(T::Type, T2::Type)
     b2 = convert(T, 125 // 336)
     b3 = convert(T, 162 // 336)
     b4 = convert(T, 35 // 336)
-    Nystrom5VelocityIndependentConstantCache(c1, c2, a21, a31, a32, a41, a42, a43, bbar1,
-        bbar2, bbar3, b1, b2, b3, b4)
+    return Nystrom5VelocityIndependentConstantCache(
+        c1, c2, a21, a31, a32, a41, a42, a43, bbar1,
+        bbar2, bbar3, b1, b2, b3, b4
+    )
 end
 
 struct ERKN4ConstantCache{T, T2} <: NystromConstantCache
@@ -467,13 +477,16 @@ function ERKN4ConstantCache(T::Type, T2::Type)
     bp2 = convert(T, 32 // 81)
     bp3 = convert(T, 250 // 567)
     bp4 = convert(T, 5 // 54)
-    ERKN4ConstantCache(c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2,
+    return ERKN4ConstantCache(
+        c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2,
         bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2,
-        bptilde3, bptilde4)
+        bptilde3, bptilde4
+    )
 end
 
 function ERKN4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
-    ERKN4ConstantCache(convert(T2, 0.25),
+    return ERKN4ConstantCache(
+        convert(T2, 0.25),
         convert(T2, 0.7),
         convert(T2, 1.0),
         convert(T, 0.03125),
@@ -497,7 +510,8 @@ function ERKN4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
         convert(T, -0.0021645021645021645),
         convert(T, 0.004489337822671156),
         convert(T, -0.004008337341670675),
-        convert(T, 0.0016835016835016834))
+        convert(T, 0.0016835016835016834)
+    )
 end
 
 struct ERKN5ConstantCache{T, T2} <: NystromConstantCache
@@ -554,12 +568,15 @@ function ERKN5ConstantCache(T::Type, T2::Type)
     # bptilde2 = convert(T,0)
     # bptilde3 = convert(T,0)
     # bptilde4 = convert(T,0)
-    ERKN5ConstantCache(c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2,
-        bp3, bp4, btilde1, btilde2, btilde3, btilde4)
+    return ERKN5ConstantCache(
+        c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2,
+        bp3, bp4, btilde1, btilde2, btilde3, btilde4
+    )
 end
 
 function ERKN5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
-    ERKN5ConstantCache(convert(T2, 0.5),
+    return ERKN5ConstantCache(
+        convert(T2, 0.5),
         convert(T2, 0.2714285714285714),
         convert(T2, 0.8627450980392157),
         convert(T, 0.125),
@@ -579,7 +596,8 @@ function ERKN5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
         convert(T, 0.004024782736060931),
         convert(T, 0.011367291781577495),
         convert(T, -0.012845558353486749),
-        convert(T, -0.0025465161641516788))
+        convert(T, -0.0025465161641516788)
+    )
 end
 
 struct ERKN7ConstantCache{T, T2} <: NystromConstantCache
@@ -682,15 +700,18 @@ function ERKN7ConstantCache(T::Type, T2::Type)
     bptilde5 = convert(T, -45498718 // 926142189 - 170795979 // 811534085)
     bptilde6 = convert(T, 1625563237 // 4379140271 + 177906423 // 1116903503)
     bptilde7 = convert(T, 191595797 // 1038702495 + 655510901 // 2077404990)
-    ERKN7ConstantCache(c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53,
+    return ERKN7ConstantCache(
+        c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53,
         a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, b1, b3, b4,
         b5,
         b6, bp1, bp3, bp4, bp5, bp6, bp7, btilde1, btilde3, btilde4, btilde5,
-        btilde6, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7)
+        btilde6, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7
+    )
 end
 
 function ERKN7ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
-    ERKN7ConstantCache(convert(T2, 108816483 // 943181462),
+    return ERKN7ConstantCache(
+        convert(T2, 108816483 // 943181462),
         convert(T2, 0.23074347277618568),
         convert(T2, 0.7558997318449516),
         convert(T2, 1.0799829556599743),
@@ -737,7 +758,8 @@ function ERKN7ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
         convert(T, -0.7067938872093759),
         convert(T, -0.25958777628335805),
         convert(T, 0.5304914229443385),
-        convert(T, 0.5))
+        convert(T, 0.5)
+    )
 end
 
 struct DPRKN4ConstantCache{T, T2} <: NystromConstantCache
@@ -793,9 +815,11 @@ function DPRKN4ConstantCache(T::Type, T2::Type)
     bptilde2 = convert(T, 32 // 81 + 20 // 27)
     bptilde3 = convert(T, 250 // 567 - 275 // 189)
     bptilde4 = convert(T, 5 // 54 + 1 // 3)
-    DPRKN4ConstantCache(c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3,
+    return DPRKN4ConstantCache(
+        c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3,
         bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4,
-        bptilde1, bptilde2, bptilde3, bptilde4)
+        bptilde1, bptilde2, bptilde3, bptilde4
+    )
 end
 
 function DPRKN4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -823,9 +847,11 @@ function DPRKN4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
     bptilde2 = convert(T, 1.1358024691358024)
     bptilde3 = convert(T, -1.0141093474426808)
     bptilde4 = convert(T, 0.42592592592592593)
-    DPRKN4ConstantCache(c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3,
+    return DPRKN4ConstantCache(
+        c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3,
         bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4,
-        bptilde1, bptilde2, bptilde3, bptilde4)
+        bptilde1, bptilde2, bptilde3, bptilde4
+    )
 end
 struct DPRKN5ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
@@ -919,10 +945,12 @@ function DPRKN5ConstantCache(T::Type, T2::Type)
     bptilde4 = convert(T, 2 // 15 + 1 // 3)
     bptilde5 = convert(T, 16 // 45 - 2 // 3)
     bptilde6 = convert(T, 7 // 90)
-    DPRKN5ConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51,
+    return DPRKN5ConstantCache(
+        c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51,
         a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1,
         bp3, bp4, bp5, bp6, btilde1, btilde3, btilde4, btilde5,
-        bptilde1, bptilde3, bptilde4, bptilde5, bptilde6)
+        bptilde1, bptilde3, bptilde4, bptilde5, bptilde6
+    )
 end
 
 function DPRKN5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -936,9 +964,9 @@ function DPRKN5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
     a32 = convert(T, 1 // 48)
     a41 = convert(T, 1 // 24)
     a43 = convert(T, 1 // 12)
-    a51 = convert(T, 7 // 90)
-    a53 = convert(T, 4 // 15)
-    a54 = convert(T, 1 // 15)
+    a51 = convert(T, 0.0703125) # 9/128
+    a53 = convert(T, 0.140625)  # 9/64
+    a54 = convert(T, 0.0703125) # 9/128
     a61 = convert(T, 0.07777777777777778)
     a63 = convert(T, 0.26666666666666666)
     a64 = convert(T, 0.06666666666666667)
@@ -961,10 +989,12 @@ function DPRKN5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
     bptilde4 = convert(T, 0.4666666666666667)
     bptilde5 = convert(T, -0.31111111111111106)
     bptilde6 = convert(T, 0.07777777777777778)
-    DPRKN5ConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51,
+    return DPRKN5ConstantCache(
+        c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51,
         a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1,
         bp3, bp4, bp5, bp6, btilde1, btilde3, btilde4, btilde5,
-        bptilde1, bptilde3, bptilde4, bptilde5, bptilde6)
+        bptilde1, bptilde3, bptilde4, bptilde5, bptilde6
+    )
 end
 
 struct DPRKN6ConstantCache{T, T2} <: NystromConstantCache
@@ -1137,7 +1167,8 @@ function DPRKN6ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
     rp63 = convert(T, -18.704545454545453)
     rp62 = convert(T, 13.763636363636364)
     rp61 = convert(T, -3.190909090909091)
-    DPRKN6ConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51,
+    return DPRKN6ConstantCache(
+        c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51,
         a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1,
         bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4,
         btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6,
@@ -1146,7 +1177,8 @@ function DPRKN6ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
         r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10,
         rp34,
         rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51,
-        rp64, rp63, rp62, rp61)
+        rp64, rp63, rp62, rp61
+    )
 end
 
 function DPRKN6ConstantCache(T::Type, T2::Type)
@@ -1191,12 +1223,16 @@ function DPRKN6ConstantCache(T::Type, T2::Type)
     # btilde6  = convert(T,0)
     bptilde1 = convert(T, 329 // 4212 - 115 // 2106)
     # btildep2 = convert(T,0)
-    bptilde3 = convert(T,
+    bptilde3 = convert(
+        T,
         (389225579 + 96856R) / 10_2405_6540 -
-        (8411_9543 + 366_727R) / 2560_14135)
-    bptilde4 = convert(T,
+            (8411_9543 + 366_727R) / 2560_14135
+    )
+    bptilde4 = convert(
+        T,
         (389225579 - 96856R) / 10_2405_6540 -
-        (8411_9543 - 366_727R) / 2560_14135)
+            (8411_9543 - 366_727R) / 2560_14135
+    )
     bptilde5 = convert(T, 2000 // 17901 - 6950 // 17901)
     bptilde6 = convert(T, 1 // 20 + 1 // 10)
     r14 = convert(T, 900 // 4212)
@@ -1241,7 +1277,8 @@ function DPRKN6ConstantCache(T::Type, T2::Type)
     rp63 = convert(T, -4115 // 220)
     rp62 = convert(T, 3028 // 220)
     rp61 = convert(T, -702 // 220)
-    DPRKN6ConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51,
+    return DPRKN6ConstantCache(
+        c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51,
         a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1,
         bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4,
         btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6,
@@ -1250,7 +1287,8 @@ function DPRKN6ConstantCache(T::Type, T2::Type)
         r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10,
         rp34,
         rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51,
-        rp64, rp63, rp62, rp61)
+        rp64, rp63, rp62, rp61
+    )
 end
 
 struct DPRKN6FMConstantCache{T, T2} <: NystromConstantCache
@@ -1345,10 +1383,12 @@ function DPRKN6FMConstantCache(T::Type, T2::Type)
     bptilde4 = convert(T, 275 // 252 - 521683 // 630000)
     bptilde5 = convert(T, -78125 // 112404 + 2 // 5)
     # bptilde6 = convert(T, 0)
-    DPRKN6FMConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52,
+    return DPRKN6FMConstantCache(
+        c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52,
         a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, bp1, bp2,
         bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5,
-        bptilde1, bptilde2, bptilde3, bptilde4, bptilde5)
+        bptilde1, bptilde2, bptilde3, bptilde4, bptilde5
+    )
 end
 
 function DPRKN6FMConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -1393,10 +1433,12 @@ function DPRKN6FMConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFlo
     bptilde3 = convert(T, 0.0969690058479532)
     bptilde4 = convert(T, 0.26320158730158716)
     bptilde5 = convert(T, -0.2950375431479306)
-    DPRKN6FMConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52,
+    return DPRKN6FMConstantCache(
+        c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52,
         a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, bp1, bp2,
         bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5,
-        bptilde1, bptilde2, bptilde3, bptilde4, bptilde5)
+        bptilde1, bptilde2, bptilde3, bptilde4, bptilde5
+    )
 end
 
 struct DPRKN8ConstantCache{T, T2} <: NystromConstantCache
@@ -1563,17 +1605,20 @@ function DPRKN8ConstantCache(T::Type, T2::Type)
     bptilde7 = convert(T, 5875 // 36288 - 1610_737 // 40207_104)
     bptilde8 = convert(T, 223 // 7938 + 4251_941 // 5497_0650)
     bptilde9 = convert(T, -3 // 20)
-    DPRKN8ConstantCache(c1, c2, c3, c4, c5, c6, c7, c8, a21, a31, a32, a41, a42, a43, a51,
+    return DPRKN8ConstantCache(
+        c1, c2, c3, c4, c5, c6, c7, c8, a21, a31, a32, a41, a42, a43, a51,
         a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75,
         a76, a81, a82, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96,
         a97, b1, b3, b4, b5, b6, b7, bp1, bp3, bp4, bp5, bp6, bp7, bp8,
         btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, bptilde1,
         bptilde3, bptilde4, bptilde5, bptilde6, bptilde7, bptilde8,
-        bptilde9)
+        bptilde9
+    )
 end
 
 function DPRKN8ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
-    DPRKN8ConstantCache(convert(T2, 0.05),
+    return DPRKN8ConstantCache(
+        convert(T2, 0.05),
         convert(T2, 0.1),
         convert(T2, 0.3),
         convert(T2, 0.5),
@@ -1641,7 +1686,8 @@ function DPRKN8ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
         convert(T, -0.2088655633733638),
         convert(T, 0.12183824530112887),
         convert(T, 0.10544201314701572),
-        convert(T, -0.15))
+        convert(T, -0.15)
+    )
 end
 
 struct DPRKN12ConstantCache{T, T2} <: NystromConstantCache
@@ -1934,222 +1980,388 @@ function DPRKN12ConstantCache(T::Type, T2::Type)
     a113 = convert(T, -1143766215625 // 132752960853408)
     a114 = convert(T, -6864570325 // 1185294293334)
     a115 = convert(T, 194348369382310456605879163404183 // 99893545535998594328205911551744)
-    a116 = convert(T,
+    a116 = convert(
+        T,
         -94634958447010580589908066176109375 //
-        27549212808177898050085930321520256)
+            27549212808177898050085930321520256
+    )
     a117 = convert(T, -17006472665356285286219618514 // 155584463413110817059022733377)
     a118 = convert(T, 33530528814694461893884349656345 // 14270506505142656332600844507392)
     a119 = convert(T, -13439782155791134368 // 17777268379678341919)
     a1110 = convert(T, 1441341768767571 // 13159456712985856)
-    a121 = convert(T,
+    a121 = convert(
+        T,
         parse(BigInt, "105854110734231079069010159870911189747853") //
-        parse(BigInt, "5156624149476760916008179453333467046288864"))
+            parse(BigInt, "5156624149476760916008179453333467046288864")
+    )
     # a122 = convert(T,0)
     a123 = convert(T, -144579793509250000 // 19842290513127000261)
     a124 = convert(T, -101935644099967250 // 48188419817594143491)
-    a125 = convert(T,
+    a125 = convert(
+        T,
         parse(BigInt, "1585474394319811696785932424388196965") //
-        parse(BigInt, "1709257457318830856936350991091849456"))
-    a126 = convert(T,
+            parse(BigInt, "1709257457318830856936350991091849456")
+    )
+    a126 = convert(
+        T,
         parse(BigInt, "-843499776333774172853009613469456309715703125") //
-        parse(BigInt, "510505790798199330684809765880013237582597536"))
-    a127 = convert(T,
+            parse(BigInt, "510505790798199330684809765880013237582597536")
+    )
+    a127 = convert(
+        T,
         parse(BigInt, "-15057703799298260121553794369056896088480") //
-        parse(BigInt, "714327132646734138085088291809720015274157"))
-    a128 = convert(T,
+            parse(BigInt, "714327132646734138085088291809720015274157")
+    )
+    a128 = convert(
+        T,
         parse(BigInt, "1749840442221344572962864758990584360232600") //
-        parse(BigInt, "1450300542040339007627300471250037606768743"))
+            parse(BigInt, "1450300542040339007627300471250037606768743")
+    )
     a129 = convert(T, -11255775246405733991656178432768 // 27206626483067760480757659602193)
     a1210 = convert(T, 669010348769579696 // 7368057640845834597)
     a1211 = convert(T, 4598083098752 // 858563707934367)
-    a131 = convert(T,
+    a131 = convert(
+        T,
         parse(BigInt, "-1639758773684715326849438048667467886824967397") //
-        parse(BigInt, "11447568726280607813664651120965112496134881280"))
+            parse(BigInt, "11447568726280607813664651120965112496134881280")
+    )
     # a132 = convert(T,0)
     a133 = convert(T, 3942453384375 // 314673684985856)
     a134 = convert(T, 11737114158175 // 1719466921529856)
-    a135 = convert(T,
+    a135 = convert(
+        T,
         -23710715033675876683332701739887457 //
-        4940189888325748664958546898558976)
-    a136 = convert(T,
+            4940189888325748664958546898558976
+    )
+    a136 = convert(
+        T,
         parse(BigInt, "498150575499633273684774666731162498301909124515625") //
-        parse(BigInt, "87415924307623977386706008889913792042985180430336"))
-    a137 = convert(T,
+            parse(BigInt, "87415924307623977386706008889913792042985180430336")
+    )
+    a137 = convert(
+        T,
         parse(BigInt, "64881557768202140428371179540010005713998551") //
-        parse(BigInt, "85896810580242200654071863296887242202224768"))
-    a138 = convert(T,
+            parse(BigInt, "85896810580242200654071863296887242202224768")
+    )
+    a138 = convert(
+        T,
         parse(BigInt, "-2336309182318568698279006266321563486172654055") //
-        parse(BigInt, "18316109962048972501863441793544179993815810048"))
-    a139 = convert(T,
-        -493399374030747471036018890494175 // 251658285736841065236836942273664)
+            parse(BigInt, "18316109962048972501863441793544179993815810048")
+    )
+    a139 = convert(
+        T,
+        -493399374030747471036018890494175 // 251658285736841065236836942273664
+    )
     a1310 = convert(T, 418285003077108927126515545155 // 455369916679568501838710898688)
     a1311 = convert(T, -15171723902781457 // 63532954684873728)
     a1312 = convert(T, 1501203688494867 // 9434957026426880)
-    a141 = convert(T,
+    a141 = convert(
+        T,
         parse(BigInt, "34188549803371802849576690267872548602326398788953") //
-        parse(BigInt, "42496542183406636759747616530102745233754251202880"))
+            parse(BigInt, "42496542183406636759747616530102745233754251202880")
+    )
     # a142 = convert(T,0)
     a143 = convert(T, -18971246281693750 // 1138830954584356089)
     a144 = convert(T, -59230464334542700 // 2765732318276293359)
-    a145 = convert(T,
+    a145 = convert(
+        T,
         parse(BigInt, "5147939981309774383134903239728881770043") //
-        parse(BigInt, "305929030949718561059100251282184099064"))
-    a146 = convert(T,
-        parse(BigInt,
-            "-3625720213550267723370658302114678215563058405229078120") //
-        parse(BigInt, "324512095420929759624784749347170583153994213035432256"))
-    a147 = convert(T,
+            parse(BigInt, "305929030949718561059100251282184099064")
+    )
+    a146 = convert(
+        T,
+        parse(
+            BigInt,
+            "-3625720213550267723370658302114678215563058405229078120"
+        ) //
+            parse(BigInt, "324512095420929759624784749347170583153994213035432256")
+    )
+    a147 = convert(
+        T,
         parse(BigInt, "-60305503318319653518547439098565661266182518307816") //
-        parse(BigInt, "17856872599361492097414471889911176856851308259643"))
-    a148 = convert(T,
+            parse(BigInt, "17856872599361492097414471889911176856851308259643")
+    )
+    a148 = convert(
+        T,
         parse(BigInt, "-1036461878759982363277481306266144563833492657780645") //
-        parse(BigInt, "67994467493450618815596186448164392374006801924608"))
-    a149 = convert(T,
+            parse(BigInt, "67994467493450618815596186448164392374006801924608")
+    )
+    a149 = convert(
+        T,
         parse(BigInt, "128398681100219349205889126776607047000") //
-        parse(BigInt, "7473801441221286756994805323613917077"))
+            parse(BigInt, "7473801441221286756994805323613917077")
+    )
     a1410 = convert(T, -49156374556350058671822606102117 // 9039888303968618912866414995904)
     a1411 = convert(T, 12253036339964386945 // 8828680926314891943)
     a1412 = convert(T, -647188390508758231059 // 1092148506009694282240)
     a1413 = convert(T, 10915833599872 // 368729913707897)
-    a151 = convert(T,
-        parse(BigInt,
-            "-4939337286263213195547765488387521892799075623007291241961609516532") //
-        parse(BigInt,
-            "5408250052307451520718178852915698257207815452080611897685945761264"))
+    a151 = convert(
+        T,
+        parse(
+            BigInt,
+            "-4939337286263213195547765488387521892799075623007291241961609516532"
+        ) //
+            parse(
+            BigInt,
+            "5408250052307451520718178852915698257207815452080611897685945761264"
+        )
+    )
     # a152 = convert(T,0)
-    a153 = convert(T,
+    a153 = convert(
+        T,
         7588799849596321243074032368290625 //
-        parse(BigInt, "3147217749590114939838670370597819616"))
-    a154 = convert(T,
+            parse(BigInt, "3147217749590114939838670370597819616")
+    )
+    a154 = convert(
+        T,
         16870665568420512953501332587233725 //
-        955405388268427749593882076788623812)
-    a155 = convert(T,
-        parse(BigInt,
-            "-808642515918378014850308582271476014669568437579087796060") //
-        parse(BigInt,
-            "54447992506702009927986632715967769032585338753056786562"))
-    a156 = convert(T,
-        parse(BigInt,
-            "4610328329649866588704236006423149172472141907645890762410296050212") //
-        parse(BigInt,
-            "2135428689710103309390449198881479603148467934048051598947383737508"))
-    a157 = convert(T,
-        parse(BigInt,
-            "4159963831215576225909381034291748993887819834160487158570788681") //
-        parse(BigInt,
-            "1040533184037697645660563795162185415624171583014576682740416336"))
-    a158 = convert(T,
-        parse(BigInt,
-            "7381392142124351279433801934148706553542137071890521365664606664449580") //
-        parse(BigInt,
-            "259596002510757672994472584939953516345975141699869371088925396540699"))
-    a159 = convert(T,
-        parse(BigInt,
-            "-3336834334584052813468828675971359774694437229547862706920") //
-        parse(BigInt,
-            "132102862435303266640535426836147775872819092781208127980"))
-    a1510 = convert(T,
-        parse(BigInt,
-            "426619379967412086875039012957475466130081426048213491790") //
-        parse(BigInt,
-            "55162410119399855550108207148248549410926885937244965785"))
-    a1511 = convert(T,
+            955405388268427749593882076788623812
+    )
+    a155 = convert(
+        T,
+        parse(
+            BigInt,
+            "-808642515918378014850308582271476014669568437579087796060"
+        ) //
+            parse(
+            BigInt,
+            "54447992506702009927986632715967769032585338753056786562"
+        )
+    )
+    a156 = convert(
+        T,
+        parse(
+            BigInt,
+            "4610328329649866588704236006423149172472141907645890762410296050212"
+        ) //
+            parse(
+            BigInt,
+            "2135428689710103309390449198881479603148467934048051598947383737508"
+        )
+    )
+    a157 = convert(
+        T,
+        parse(
+            BigInt,
+            "4159963831215576225909381034291748993887819834160487158570788681"
+        ) //
+            parse(
+            BigInt,
+            "1040533184037697645660563795162185415624171583014576682740416336"
+        )
+    )
+    a158 = convert(
+        T,
+        parse(
+            BigInt,
+            "7381392142124351279433801934148706553542137071890521365664606664449580"
+        ) //
+            parse(
+            BigInt,
+            "259596002510757672994472584939953516345975141699869371088925396540699"
+        )
+    )
+    a159 = convert(
+        T,
+        parse(
+            BigInt,
+            "-3336834334584052813468828675971359774694437229547862706920"
+        ) //
+            parse(
+            BigInt,
+            "132102862435303266640535426836147775872819092781208127980"
+        )
+    )
+    a1510 = convert(
+        T,
+        parse(
+            BigInt,
+            "426619379967412086875039012957475466130081426048213491790"
+        ) //
+            parse(
+            BigInt,
+            "55162410119399855550108207148248549410926885937244965785"
+        )
+    )
+    a1511 = convert(
+        T,
         parse(BigInt, "-630755628691078947314733435975762542732598947") //
-        parse(BigInt, "333503232300511886435069380727586592765317456"))
-    a1512 = convert(T,
+            parse(BigInt, "333503232300511886435069380727586592765317456")
+    )
+    a1512 = convert(
+        T,
         parse(BigInt, "1522350657470125698997653827133798314909646891") //
-        parse(BigInt, "1520094067152619944607524353149267399623188480"))
-    a1513 = convert(T,
+            parse(BigInt, "1520094067152619944607524353149267399623188480")
+    )
+    a1513 = convert(
+        T,
         305575414262755427083262606101825880 //
-        parse(BigInt, "65839748482572312891297405431209259829"))
-    a1514 = convert(T,
+            parse(BigInt, "65839748482572312891297405431209259829")
+    )
+    a1514 = convert(
+        T,
         parse(BigInt, "256624643108055110568255672032710477795") //
-        parse(BigInt, "22874609758516552135947898572671559986304"))
-    a161 = convert(T,
-        parse(BigInt,
-            "-571597862947184314270186718640978947715678864684269066846") //
-        parse(BigInt,
-            "2077055064880303907616135969012720011907767004397744786340"))
+            parse(BigInt, "22874609758516552135947898572671559986304")
+    )
+    a161 = convert(
+        T,
+        parse(
+            BigInt,
+            "-571597862947184314270186718640978947715678864684269066846"
+        ) //
+            parse(
+            BigInt,
+            "2077055064880303907616135969012720011907767004397744786340"
+        )
+    )
     # a162 = convert(T,0)
     a163 = convert(T, 66981514290625 // 1829501741761029)
     a164 = convert(T, 43495576635800 // 4443075658562499)
-    a165 = convert(T,
+    a165 = convert(
+        T,
         -127865248353371207265315478623656127 //
-        10401415428935853634424440540325344)
-    a166 = convert(T,
-        parse(BigInt,
-            "1316565142658075739557231574080234814338066993483960326560") //
-        parse(BigInt,
-            "92668695535091962564795912774190176478892159517481612467"))
-    a167 = convert(T,
-        parse(BigInt,
-            "3881494143728609118531066904799685950051960514138645179820") //
-        parse(BigInt,
-            "2446349095978358868919950548516272963929118212742344026549"))
-    a168 = convert(T,
-        parse(BigInt,
-            "162922667049680755852592453758428194006198229544701786842910") //
-        parse(BigInt,
-            "66288722243155885736983218667976563740242178853010092663614"))
-    a169 = convert(T,
+            10401415428935853634424440540325344
+    )
+    a166 = convert(
+        T,
+        parse(
+            BigInt,
+            "1316565142658075739557231574080234814338066993483960326560"
+        ) //
+            parse(
+            BigInt,
+            "92668695535091962564795912774190176478892159517481612467"
+        )
+    )
+    a167 = convert(
+        T,
+        parse(
+            BigInt,
+            "3881494143728609118531066904799685950051960514138645179820"
+        ) //
+            parse(
+            BigInt,
+            "2446349095978358868919950548516272963929118212742344026549"
+        )
+    )
+    a168 = convert(
+        T,
+        parse(
+            BigInt,
+            "162922667049680755852592453758428194006198229544701786842910"
+        ) //
+            parse(
+            BigInt,
+            "66288722243155885736983218667976563740242178853010092663614"
+        )
+    )
+    a169 = convert(
+        T,
         parse(BigInt, "-43986024977384568043684084266385512680544563954") //
-        parse(BigInt, "4922783599524658241955780540171948284522386185"))
-    a1610 = convert(T,
+            parse(BigInt, "4922783599524658241955780540171948284522386185")
+    )
+    a1610 = convert(
+        T,
         parse(BigInt, "285912200202585226675651763671663063668290787") //
-        parse(BigInt, "65371192072964016939690070594254881767827200"))
+            parse(BigInt, "65371192072964016939690070594254881767827200")
+    )
     a1611 = convert(T, -6776815256667778089672518929 // 3693654613173093729492918708)
-    a1612 = convert(T,
-        398946554885847045598775476868169 // 344154261237450078839899047372800)
+    a1612 = convert(
+        T,
+        398946554885847045598775476868169 // 344154261237450078839899047372800
+    )
     a1613 = convert(T, -76630698033396272 // 4432017119727044925)
     a1614 = convert(T, 28401702316003037 // 1469612686944417840)
-    a1615 = convert(T,
+    a1615 = convert(
+        T,
         66049942462586341419969330578128801 //
-        parse(BigInt, "12691068622536592094919763114637498325"))
-    a171 = convert(T,
-        parse(BigInt,
-            "83940754497395557520874219603241359529066454343054832302344735") //
-        parse(BigInt,
-            "64192596456995578553872477759926464976144474354415663868673233"))
+            parse(BigInt, "12691068622536592094919763114637498325")
+    )
+    a171 = convert(
+        T,
+        parse(
+            BigInt,
+            "83940754497395557520874219603241359529066454343054832302344735"
+        ) //
+            parse(
+            BigInt,
+            "64192596456995578553872477759926464976144474354415663868673233"
+        )
+    )
     # a172 = convert(T,0)
     a173 = convert(T, 892543892035485503125 // 51401651664490002607536)
     a174 = convert(T, -12732238157949399705325 // 686579204375687891972088)
-    a175 = convert(T,
+    a175 = convert(
+        T,
         parse(BigInt, "5290376174838819557032232941734928484252549") //
-        parse(BigInt, "357179779572898187570048915214361602000384"))
-    a176 = convert(T,
-        parse(BigInt,
-            "26873229338017506937199991804717456666650215387938173031932210") //
-        parse(BigInt,
-            "2863980005760296740624015421425947092438943496681472214589916"))
-    a177 = convert(T,
-        parse(BigInt,
-            "-1976497866818803305857417297961598735637414137241493515492778650") //
-        parse(BigInt,
-            "378029217824623393200881653405474359138017953416246216408422692"))
-    a178 = convert(T,
-        parse(BigInt,
-            "-1002860756304839757040188283199900676042073362417943601440986856950") //
-        parse(BigInt,
-            "20486915674765670626893195919603679319429068544972409068469849579"))
-    a179 = convert(T,
-        parse(BigInt,
-            "87398661196965758104117684348440686081062878816711392590") //
-        parse(BigInt, "2282122412587168891929052689609009868137678763277087160"))
-    a1710 = convert(T,
-        parse(BigInt,
-            "-7922242431969626895355493632206885458496418610471389") //
-        parse(BigInt, "748272134517487495468365669337985635214015258726400"))
-    a1711 = convert(T,
+            parse(BigInt, "357179779572898187570048915214361602000384")
+    )
+    a176 = convert(
+        T,
+        parse(
+            BigInt,
+            "26873229338017506937199991804717456666650215387938173031932210"
+        ) //
+            parse(
+            BigInt,
+            "2863980005760296740624015421425947092438943496681472214589916"
+        )
+    )
+    a177 = convert(
+        T,
+        parse(
+            BigInt,
+            "-1976497866818803305857417297961598735637414137241493515492778650"
+        ) //
+            parse(
+            BigInt,
+            "378029217824623393200881653405474359138017953416246216408422692"
+        )
+    )
+    a178 = convert(
+        T,
+        parse(
+            BigInt,
+            "-1002860756304839757040188283199900676042073362417943601440986856950"
+        ) //
+            parse(
+            BigInt,
+            "20486915674765670626893195919603679319429068544972409068469849579"
+        )
+    )
+    a179 = convert(
+        T,
+        parse(
+            BigInt,
+            "87398661196965758104117684348440686081062878816711392590"
+        ) //
+            parse(BigInt, "2282122412587168891929052689609009868137678763277087160")
+    )
+    a1710 = convert(
+        T,
+        parse(
+            BigInt,
+            "-7922242431969626895355493632206885458496418610471389"
+        ) //
+            parse(BigInt, "748272134517487495468365669337985635214015258726400")
+    )
+    a1711 = convert(
+        T,
         parse(BigInt, "2777643183645212014464950387658055285") //
-        parse(BigInt, "1141545470045611737197667093465955392"))
-    a1712 = convert(T,
+            parse(BigInt, "1141545470045611737197667093465955392")
+    )
+    a1712 = convert(
+        T,
         parse(BigInt, "-1372659703515496442825084239977218110461") //
-        parse(BigInt, "1313121960368535725613950174847107891200"))
+            parse(BigInt, "1313121960368535725613950174847107891200")
+    )
     a1713 = convert(T, 6144417902699179309851023 // 85608793932459282773805825)
     a1714 = convert(T, 140294243355138853053241 // 64884622846351585391642880)
-    a1715 = convert(T,
+    a1715 = convert(
+        T,
         parse(BigInt, "168671028523891369934964082754523881107337") //
-        parse(BigInt, "24062875279623260368388427013982199424119600"))
+            parse(BigInt, "24062875279623260368388427013982199424119600")
+    )
     # a1716 = convert(T,0)
     b1 = convert(T, 63818747 // 5262156900)
     # b2 = convert(T,0)
@@ -2165,9 +2377,11 @@ function DPRKN12ConstantCache(T::Type, T2::Type)
     b12 = convert(T, 16089185487681 // 146694672924800)
     b13 = convert(T, 1592709632 // 41841694125)
     b14 = convert(T, 52675701958271 // 4527711056573100)
-    b15 = convert(T,
+    b15 = convert(
+        T,
         parse(BigInt, "12540904472870916741199505796420811396") //
-        parse(BigInt, "2692319557780977037279406889319526430375"))
+            parse(BigInt, "2692319557780977037279406889319526430375")
+    )
     # b16 = convert(T,0)
     # b17 = convert(T,0)
     bp1 = convert(T, 63818747 // 5262156900)
@@ -2184,91 +2398,134 @@ function DPRKN12ConstantCache(T::Type, T2::Type)
     bp12 = convert(T, 144802669389129 // 586778691699200)
     bp13 = convert(T, 6370838528 // 41841694125)
     bp14 = convert(T, 368729913707897 // 4527711056573100)
-    bp15 = convert(T,
+    bp15 = convert(
+        T,
         parse(BigInt, "111940113324845802831946788738852162520696") //
-        parse(BigInt, "1316544263754897771229629968877248424453375"))
+            parse(BigInt, "1316544263754897771229629968877248424453375")
+    )
     bp16 = convert(T, -113178587 // 12362232960)
     bp17 = convert(T, 1 // 40)
 
-    btilde1 = convert(T,
+    btilde1 = convert(
+        T,
         Int64(63818747) // Int64(5262156900) -
-        Int64(27121957) // Int64(1594593000))
+            Int64(27121957) // Int64(1594593000)
+    )
     # btilde2 = convert(T,0)
     # btilde3 = convert(T,0)
     # btilde4 = convert(T,0)
     # btilde5 = convert(T,0)
     # btilde6 = convert(T,0)
-    btilde7 = convert(T,
+    btilde7 = convert(
+        T,
         Int64(22555300000000) // Int64(261366897038247) -
-        Int64(4006163300000) // Int64(55441463008113))
-    btilde8 = convert(T,
+            Int64(4006163300000) // Int64(55441463008113)
+    )
+    btilde8 = convert(
+        T,
         Int64(1696514453125) // Int64(6717619827072) -
-        Int64(9466403125) // Int64(25445529648))
-    btilde9 = convert(T,
+            Int64(9466403125) // Int64(25445529648)
+    )
+    btilde9 = convert(
+        T,
         Int64(-45359872) // Int64(229764843) +
-        Int64(163199648) // Int64(406149975))
-    btilde10 = convert(T,
+            Int64(163199648) // Int64(406149975)
+    )
+    btilde10 = convert(
+        T,
         Int64(19174962087) // Int64(94371046000) -
-        Int64(23359833) // Int64(69636250))
-    btilde11 = convert(T,
+            Int64(23359833) // Int64(69636250)
+    )
+    btilde11 = convert(
+        T,
         Int64(-19310468) // Int64(929468925) +
-        Int64(18491714) // Int64(140828625))
-    btilde12 = convert(T,
+            Int64(18491714) // Int64(140828625)
+    )
+    btilde12 = convert(
+        T,
         Int64(16089185487681) // Int64(146694672924800) -
-        Int64(11052304606701) // Int64(58344472186000))
-    btilde13 = convert(T,
+            Int64(11052304606701) // Int64(58344472186000)
+    )
+    btilde13 = convert(
+        T,
         Int64(1592709632) // Int64(41841694125) -
-        Int64(1191129152) // Int64(44377554375))
-    btilde14 = convert(T,
+            Int64(1191129152) // Int64(44377554375)
+    )
+    btilde14 = convert(
+        T,
         Int64(52675701958271) // Int64(4527711056573100) -
-        Int64(2033811086741) // Int64(124730332137000))
-    btilde15 = convert(T,
+            Int64(2033811086741) // Int64(124730332137000)
+    )
+    btilde15 = convert(
+        T,
         parse(BigInt, "12540904472870916741199505796420811396") //
-        parse(BigInt, "2692319557780977037279406889319526430375") -
-        parse(BigInt, "3616943474975740389660406409450169802") //
-        parse(BigInt, "951830146690244407118982233597812374375"))
+            parse(BigInt, "2692319557780977037279406889319526430375") -
+            parse(BigInt, "3616943474975740389660406409450169802") //
+            parse(BigInt, "951830146690244407118982233597812374375")
+    )
     # btilde16 = convert(T,0)
     # btilde17 = convert(T,0)
-    bptilde1 = convert(T,
+    bptilde1 = convert(
+        T,
         Int64(63818747) // Int64(5262156900) -
-        Int64(27121957) // Int64(1594593000))
+            Int64(27121957) // Int64(1594593000)
+    )
     # bptilde2 = convert(T,0)
     # bptilde3 = convert(T,0)
     # bptilde4 = convert(T,0)
     # bptilde5 = convert(T,0)
     # bptilde6 = convert(T,0)
-    bptilde7 = convert(T,
+    bptilde7 = convert(
+        T,
         Int64(451106000000000) // Int64(4965971043726693) -
-        Int64(4217014000000) // Int64(55441463008113))
-    bptilde8 = convert(T,
+            Int64(4217014000000) // Int64(55441463008113)
+    )
+    bptilde8 = convert(
+        T,
         Int64(8482572265625) // Int64(26870479308288) -
-        Int64(47332015625) // Int64(101782118592))
-    bptilde9 = convert(T,
+            Int64(47332015625) // Int64(101782118592)
+    )
+    bptilde9 = convert(
+        T,
         Int64(-181439488) // Int64(689294529) +
-        Int64(652798592) // Int64(1218449925))
-    bptilde10 = convert(T,
+            Int64(652798592) // Int64(1218449925)
+    )
+    bptilde10 = convert(
+        T,
         Int64(57524886261) // Int64(188742092000) -
-        Int64(70079499) // Int64(139272500))
-    bptilde11 = convert(T,
+            Int64(70079499) // Int64(139272500)
+    )
+    bptilde11 = convert(
+        T,
         Int64(-38620936) // Int64(929468925) +
-        Int64(36983428) // Int64(140828625))
-    bptilde12 = convert(T,
+            Int64(36983428) // Int64(140828625)
+    )
+    bptilde12 = convert(
+        T,
         Int64(144802669389129) // Int64(586778691699200) -
-        Int64(99470741460309) // Int64(233377888744000))
-    bptilde13 = convert(T,
+            Int64(99470741460309) // Int64(233377888744000)
+    )
+    bptilde13 = convert(
+        T,
         Int64(6370838528) // Int64(41841694125) -
-        Int64(4764516608) // Int64(44377554375))
-    bptilde14 = convert(T,
+            Int64(4764516608) // Int64(44377554375)
+    )
+    bptilde14 = convert(
+        T,
         Int64(368729913707897) // Int64(4527711056573100) -
-        Int64(14236677607187) // Int64(124730332137000))
-    bptilde15 = convert(T,
+            Int64(14236677607187) // Int64(124730332137000)
+    )
+    bptilde15 = convert(
+        T,
         parse(BigInt, "111940113324845802831946788738852162520696") //
-        parse(BigInt, "1316544263754897771229629968877248424453375") -
-        parse(BigInt, "198066487470143918516004831967805004004") //
-        parse(BigInt, "2855490440070733221356946700793437123125"))
+            parse(BigInt, "1316544263754897771229629968877248424453375") -
+            parse(BigInt, "198066487470143918516004831967805004004") //
+            parse(BigInt, "2855490440070733221356946700793437123125")
+    )
     bptilde16 = convert(T, Int64(-113178587) // Int64(12362232960) - Int64(1) // Int64(50))
     bptilde17 = convert(T, 1 // 40)
-    DPRKN12ConstantCache(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15,
+    return DPRKN12ConstantCache(
+        c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15,
         c16, a21, a31, a32, a41, a42, a43, a51, a53, a54, a61, a63, a64,
         a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, a91, a93,
         a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108,
@@ -2285,11 +2542,13 @@ function DPRKN12ConstantCache(T::Type, T2::Type)
         btilde1, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12,
         btilde13, btilde14, btilde15, bptilde1, bptilde7, bptilde8,
         bptilde9, bptilde10, bptilde11, bptilde12, bptilde13, bptilde14,
-        bptilde15, bptilde16, bptilde17)
+        bptilde15, bptilde16, bptilde17
+    )
 end
 
 function DPRKN12ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
-    DPRKN12ConstantCache(convert(T2, 2.0e-2),
+    return DPRKN12ConstantCache(
+        convert(T2, 2.0e-2),
         convert(T2, 4.0e-2),
         convert(T2, 1.0e-1),
         convert(T2, 1.33333333333333333333333333333e-1),
@@ -2469,5 +2728,6 @@ function DPRKN12ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloa
         convert(T, -0.03270117761115586),
         convert(T, 0.015662325288859434),
         convert(T, -0.029155189630077964),
-        convert(T, 0.025))
+        convert(T, 0.025)
+    )
 end

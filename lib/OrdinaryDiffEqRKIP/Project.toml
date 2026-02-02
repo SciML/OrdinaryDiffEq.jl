@@ -1,0 +1,43 @@
+name = "OrdinaryDiffEqRKIP"
+uuid = "a4daff8c-1d43-4ff3-8eff-f78720aeecdc"
+authors = ["Azercoco <20425137+Azercoco@users.noreply.github.com>"]
+version = "1.1.0"
+
+[deps]
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MaybeInplace = "bb5d69b7-63fc-4a16-80bd-7e42200c7bdb"
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
+
+[extras]
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+
+[compat]
+Pkg = "1"
+DiffEqDevTools = "2.48"
+SciMLBase = "2.116"
+OrdinaryDiffEqCore = "3"
+Compat = "4.16"
+MaybeInplace = "0.1.4"
+JET = "0.9, 0.11"
+StaticArrays = "1.9.13"
+julia = "1.10"
+DiffEqBase = "6.194"
+SafeTestsets = "0.1.0"
+SciMLOperators = "1.3.1"
+FFTW = "1.8.0"
+
+[targets]
+test = ["FFTW", "Test", "SafeTestsets", "Pkg"]
+
+[sources.OrdinaryDiffEqCore]
+path = "../OrdinaryDiffEqCore"

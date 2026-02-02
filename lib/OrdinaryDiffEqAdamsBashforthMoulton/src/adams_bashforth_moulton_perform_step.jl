@@ -1,10 +1,14 @@
-function initialize!(integrator,
-        cache::Union{AB3ConstantCache,
+function initialize!(
+        integrator,
+        cache::Union{
+            AB3ConstantCache,
             AB4ConstantCache,
             AB5ConstantCache,
             ABM32ConstantCache,
             ABM43ConstantCache,
-            ABM54ConstantCache})
+            ABM54ConstantCache,
+        }
+    )
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.kshortsize = 2
@@ -13,29 +17,33 @@ function initialize!(integrator,
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
-function initialize!(integrator,
-        cache::Union{AB3Cache,
+function initialize!(
+        integrator,
+        cache::Union{
+            AB3Cache,
             AB4Cache,
             AB5Cache,
             ABM32Cache,
             ABM43Cache,
-            ABM54Cache})
-    @unpack fsalfirst, k = cache
+            ABM54Cache,
+        }
+    )
+    (; fsalfirst, k) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # pre-start FSAL
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::AB3ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k2, k3 = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k2, k3) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -67,8 +75,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::AB3Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, fsalfirst, k2, k3, ralk2, k, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tmp, fsalfirst, k2, k3, ralk2, k, thread) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -77,17 +85,17 @@ end
     if cache.step <= 2
         cache.step += 1
         ttmp = t + (2 / 3) * dt
-        @.. broadcast=false thread=thread tmp=uprev + (2 / 3) * dt * k1
+        @.. broadcast = false thread = thread tmp = uprev + (2 / 3) * dt * k1
         f(ralk2, tmp, p, ttmp)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast=false thread=thread u=uprev + (dt / 4) * (k1 + 3 * ralk2)        #Ralston Method
+        @.. broadcast = false thread = thread u = uprev + (dt / 4) * (k1 + 3 * ralk2)        #Ralston Method
         if cnt == 1
             cache.k3 .= k1
         else
             cache.k2 .= k1
         end
     else
-        @.. broadcast=false thread=thread u=uprev + (dt / 12) * (23 * k1 - 16 * k2 + 5 * k3)
+        @.. broadcast = false thread = thread u = uprev + (dt / 12) * (23 * k1 - 16 * k2 + 5 * k3)
         cache.k2, cache.k3 = k3, k2
         cache.k2 .= k1
     end
@@ -96,8 +104,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM32ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k2, k3 = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k2, k3) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -127,8 +135,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM32Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, fsalfirst, k2, k3, ralk2, k, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tmp, fsalfirst, k2, k3, ralk2, k, thread) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -137,21 +145,25 @@ end
     if cache.step == 1
         cache.step += 1
         ttmp = t + (2 / 3) * dt
-        @.. broadcast=false thread=thread tmp=uprev + (2 / 3) * dt * k1
+        @.. broadcast = false thread = thread tmp = uprev + (2 / 3) * dt * k1
         f(ralk2, tmp, p, ttmp)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast=false thread=thread u=uprev + (dt / 4) * (k1 + 3 * ralk2)       #Ralston Method
+        @.. broadcast = false thread = thread u = uprev + (dt / 4) * (k1 + 3 * ralk2)       #Ralston Method
         cache.k2 .= k1
     else
         if cnt == 2
-            perform_step!(integrator,
-                AB3Cache(u, uprev, fsalfirst, copy(k2), k3, ralk2, k, tmp, cnt, thread))  #Here passing copy of k2, otherwise it will change in AB3()
+            perform_step!(
+                integrator,
+                AB3Cache(u, uprev, fsalfirst, copy(k2), k3, ralk2, k, tmp, cnt, thread)
+            )  #Here passing copy of k2, otherwise it will change in AB3()
         else
-            perform_step!(integrator,
-                AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, cnt, thread))
+            perform_step!(
+                integrator,
+                AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, cnt, thread)
+            )
         end
         k = integrator.fsallast
-        @.. broadcast=false thread=thread u=uprev + (dt / 12) * (5 * k + 8 * k1 - k2)
+        @.. broadcast = false thread = thread u = uprev + (dt / 12) * (5 * k + 8 * k1 - k2)
         cache.k2, cache.k3 = k3, k2
         cache.k2 .= k1
     end
@@ -160,8 +172,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::AB4ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k2, k3, k4 = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k2, k3, k4) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -197,8 +209,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::AB4Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, thread) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -208,14 +220,14 @@ end
         cache.step += 1
         halfdt = dt / 2
         ttmp = t + halfdt
-        @.. broadcast=false thread=thread tmp=uprev + halfdt * k1
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * k1
         f(t2, tmp, p, ttmp)
-        @.. broadcast=false thread=thread tmp=uprev + halfdt * t2
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * t2
         f(t3, tmp, p, ttmp)
-        @.. broadcast=false thread=thread tmp=uprev + dt * t3
+        @.. broadcast = false thread = thread tmp = uprev + dt * t3
         f(t4, tmp, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-        @.. broadcast=false thread=thread u=uprev + (dt / 6) * (2 * (t2 + t3) + (k1 + t4))   #RK4
+        @.. broadcast = false thread = thread u = uprev + (dt / 6) * (2 * (t2 + t3) + (k1 + t4))   #RK4
         if cnt == 1
             cache.k4 .= k1
         elseif cnt == 2
@@ -224,9 +236,9 @@ end
             cache.k2 .= k1
         end
     else
-        @.. broadcast=false thread=thread u=uprev +
-                                            (dt / 24) *
-                                            (55 * k1 - 59 * k2 + 37 * k3 - 9 * k4)
+        @.. broadcast = false thread = thread u = uprev +
+            (dt / 24) *
+            (55 * k1 - 59 * k2 + 37 * k3 - 9 * k4)
         cache.k4, cache.k3 = k3, k4
         cache.k3 .= k2
         cache.k2 .= k1
@@ -236,8 +248,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM43ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k2, k3, k4 = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k2, k3, k4) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -273,8 +285,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM43Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, t5, t6, t7, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, t5, t6, t7, thread) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -284,14 +296,14 @@ end
         cache.step += 1
         halfdt = dt / 2
         ttmp = t + halfdt
-        @.. broadcast=false thread=thread tmp=uprev + halfdt * k1
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * k1
         f(t2, tmp, p, ttmp)
-        @.. broadcast=false thread=thread tmp=uprev + halfdt * t2
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * t2
         f(t3, tmp, p, ttmp)
-        @.. broadcast=false thread=thread tmp=uprev + dt * t3
+        @.. broadcast = false thread = thread tmp = uprev + dt * t3
         f(t4, tmp, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-        @.. broadcast=false thread=thread u=uprev + (dt / 6) * (2 * (t2 + t3) + (k1 + t4))   #RK4
+        @.. broadcast = false thread = thread u = uprev + (dt / 6) * (2 * (t2 + t3) + (k1 + t4))   #RK4
         if cnt == 1
             cache.k3 .= k1
         else
@@ -301,12 +313,16 @@ end
         t2 .= k2
         t3 .= k3
         t4 .= k4
-        perform_step!(integrator,
-            AB4Cache(u, uprev, fsalfirst, t2, t3, t4, ralk2, k, tmp, t5, t6, t7,
-                cnt, thread))
+        perform_step!(
+            integrator,
+            AB4Cache(
+                u, uprev, fsalfirst, t2, t3, t4, ralk2, k, tmp, t5, t6, t7,
+                cnt, thread
+            )
+        )
         k = integrator.fsallast
-        @.. broadcast=false thread=thread u=uprev +
-                                            (dt / 24) * (9 * k + 19 * k1 - 5 * k2 + k3)
+        @.. broadcast = false thread = thread u = uprev +
+            (dt / 24) * (9 * k + 19 * k1 - 5 * k2 + k3)
         cache.k4, cache.k3 = k3, k4
         cache.k3 .= k2
         cache.k2 .= k1
@@ -316,8 +332,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::AB5ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k2, k3, k4, k5 = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k2, k3, k4, k5) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -356,8 +372,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::AB5Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4, thread) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -367,14 +383,14 @@ end
         cache.step += 1
         halfdt = dt / 2
         ttmp = t + halfdt
-        @.. broadcast=false thread=thread tmp=uprev + halfdt * k1
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * k1
         f(t2, tmp, p, ttmp)
-        @.. broadcast=false thread=thread tmp=uprev + halfdt * t2
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * t2
         f(t3, tmp, p, ttmp)
-        @.. broadcast=false thread=thread tmp=uprev + dt * t3
+        @.. broadcast = false thread = thread tmp = uprev + dt * t3
         f(t4, tmp, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast=false thread=thread u=uprev + (dt / 6) * (2 * (t2 + t3) + (k1 + t4))   #RK4
+        @.. broadcast = false thread = thread u = uprev + (dt / 6) * (2 * (t2 + t3) + (k1 + t4))   #RK4
         if cnt == 1
             cache.k5 .= k1
         elseif cnt == 2
@@ -385,10 +401,12 @@ end
             cache.k2 .= k1
         end
     else
-        @.. broadcast=false thread=thread u=uprev +
-                                            (dt / 720) *
-                                            (1901 * k1 - 2774 * k2 + 2616 * k3 - 1274 * k4 +
-                                             251 * k5)
+        @.. broadcast = false thread = thread u = uprev +
+            (dt / 720) *
+            (
+            1901 * k1 - 2774 * k2 + 2616 * k3 - 1274 * k4 +
+                251 * k5
+        )
         cache.k5, cache.k4 = k4, k5
         cache.k4 .= k3
         cache.k3 .= k2
@@ -399,8 +417,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM54ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k2, k3, k4, k5 = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k2, k3, k4, k5) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -439,8 +457,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM54Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4, t5, t6, t7, t8, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4, t5, t6, t7, t8, thread) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -450,13 +468,13 @@ end
         cache.step += 1
         halfdt = dt / 2
         ttmp = t + halfdt
-        @.. broadcast=false thread=thread tmp=uprev + halfdt * k1
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * k1
         f(t2, tmp, p, ttmp)
-        @.. broadcast=false thread=thread tmp=uprev + halfdt * t2
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * t2
         f(t3, tmp, p, ttmp)
-        @.. broadcast=false thread=thread tmp=uprev + dt * t3
+        @.. broadcast = false thread = thread tmp = uprev + dt * t3
         f(t4, tmp, p, t + dt)
-        @.. broadcast=false thread=thread u=uprev + (dt / 6) * (2 * (t2 + t3) + (k1 + t4))   #RK4
+        @.. broadcast = false thread = thread u = uprev + (dt / 6) * (2 * (t2 + t3) + (k1 + t4))   #RK4
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
         if cnt == 1
             cache.k4 .= k1
@@ -470,14 +488,20 @@ end
         t3 .= k3
         t4 .= k4
         t5 .= k5
-        perform_step!(integrator,
-            AB5Cache(u, uprev, fsalfirst, t2, t3, t4, t5, k, tmp, t6, t7, t8,
-                cnt, thread))
+        perform_step!(
+            integrator,
+            AB5Cache(
+                u, uprev, fsalfirst, t2, t3, t4, t5, k, tmp, t6, t7, t8,
+                cnt, thread
+            )
+        )
         k = integrator.fsallast
-        @.. broadcast=false thread=thread u=uprev +
-                                            (dt / 720) *
-                                            (251 * k + 646 * k1 - 264 * k2 + 106 * k3 -
-                                             19 * k4)
+        @.. broadcast = false thread = thread u = uprev +
+            (dt / 720) *
+            (
+            251 * k + 646 * k1 - 264 * k2 + 106 * k3 -
+                19 * k4
+        )
         cache.k5, cache.k4 = k4, k5
         cache.k4 .= k3
         cache.k3 .= k2
@@ -497,12 +521,12 @@ function initialize!(integrator, cache::VCAB3ConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::VCAB3ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, tab = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, tab) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -532,9 +556,11 @@ end
         end
         if integrator.opts.adaptive
             utilde = g[k] * ϕstar_n[k]      # Using lower order AB from subset of coefficients
-            atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+            atmp = calculate_residuals(
+                utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
-                t)
+                t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:2
@@ -554,19 +580,19 @@ end
 end
 
 function initialize!(integrator, cache::VCAB3Cache)
-    @unpack fsalfirst, k4 = cache
+    (; fsalfirst, k4) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # pre-start FSAL
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::VCAB3Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k4, dts, g, ϕstar_n, ϕstar_nm1, order, atmp, utilde, bs3cache, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k4, dts, g, ϕstar_n, ϕstar_nm1, order, atmp, utilde, bs3cache, thread) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -588,18 +614,20 @@ end
     ϕ_and_ϕstar!(cache, k1, k)
     if k == 1 || k == 2
         perform_step!(integrator, bs3cache)
-        @unpack k4 = bs3cache
+        (; k4) = bs3cache
         integrator.fsallast .= k4
     else
         g_coefs!(cache, k)
-        @.. broadcast=false thread=thread u=uprev
+        @.. broadcast = false thread = thread u = uprev
         for i in 1:k
-            @.. broadcast=false thread=thread u+=g[i] * ϕstar_n[i]
+            @.. broadcast = false thread = thread u += g[i] * ϕstar_n[i]
         end
         if integrator.opts.adaptive
-            @.. broadcast=false thread=thread utilde=g[k] * ϕstar_n[k]    # Using lower order AB from subset of coefficients
-            calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            @.. broadcast = false thread = thread utilde = g[k] * ϕstar_n[k]    # Using lower order AB from subset of coefficients
+            calculate_residuals!(
+                atmp, utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:2
@@ -624,12 +652,12 @@ function initialize!(integrator, cache::VCAB4ConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::VCAB4ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -665,9 +693,11 @@ end
         end
         if integrator.opts.adaptive
             utilde = g[k] * ϕstar_n[k]
-            atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+            atmp = calculate_residuals(
+                utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
-                t)
+                t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:3
@@ -687,19 +717,22 @@ end
 end
 
 function initialize!(integrator, cache::VCAB4Cache)
-    @unpack fsalfirst, k4 = cache
+    (; fsalfirst, k4) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # pre-start FSAL
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::VCAB4Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k4, dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (;
+        k4, dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache,
+        thread,
+    ) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -731,14 +764,16 @@ end
         integrator.fsallast .= rk4cache.k
     else
         g_coefs!(cache, k)
-        @.. broadcast=false thread=thread u=uprev
+        @.. broadcast = false thread = thread u = uprev
         for i in 1:k
-            @.. broadcast=false thread=thread u+=g[i] * ϕstar_n[i]
+            @.. broadcast = false thread = thread u += g[i] * ϕstar_n[i]
         end
         if integrator.opts.adaptive
-            @.. broadcast=false thread=thread utilde=g[k] * ϕstar_n[k]
-            calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            @.. broadcast = false thread = thread utilde = g[k] * ϕstar_n[k]
+            calculate_residuals!(
+                atmp, utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:3
@@ -765,12 +800,12 @@ function initialize!(integrator, cache::VCAB5ConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::VCAB5ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -813,9 +848,11 @@ end
         end
         if integrator.opts.adaptive
             utilde = g[k] * ϕstar_n[k]
-            atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+            atmp = calculate_residuals(
+                utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
-                t)
+                t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:4
@@ -835,19 +872,22 @@ end
 end
 
 function initialize!(integrator, cache::VCAB5Cache)
-    @unpack fsalfirst, k4 = cache
+    (; fsalfirst, k4) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # pre-start FSAL
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::VCAB5Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k4, dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (;
+        k4, dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache,
+        thread,
+    ) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -886,14 +926,16 @@ end
         integrator.fsallast .= rk4cache.k
     else
         g_coefs!(cache, k)
-        @.. broadcast=false thread=thread u=uprev
+        @.. broadcast = false thread = thread u = uprev
         for i in 1:k
-            @.. broadcast=false thread=thread u+=g[i] * ϕstar_n[i]
+            @.. broadcast = false thread = thread u += g[i] * ϕstar_n[i]
         end
         if integrator.opts.adaptive
-            @.. broadcast=false thread=thread utilde=g[k] * ϕstar_n[k]
-            calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            @.. broadcast = false thread = thread utilde = g[k] * ϕstar_n[k]
+            calculate_residuals!(
+                atmp, utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:4
@@ -920,12 +962,12 @@ function initialize!(integrator, cache::VCABM3ConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::VCABM3ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, tab = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, tab) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -959,9 +1001,11 @@ end
         u += g[end - 1] * ϕ_np1[end - 1]
         if integrator.opts.adaptive
             utilde = (g[end] - g[end - 1]) * ϕ_np1[end]
-            atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+            atmp = calculate_residuals(
+                utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
-                t)
+                t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:2
@@ -981,19 +1025,22 @@ end
 end
 
 function initialize!(integrator, cache::VCABM3Cache)
-    @unpack fsalfirst, k4 = cache
+    (; fsalfirst, k4) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # pre-start FSAL
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::VCABM3Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k4, dts, g, ϕstar_n, ϕ_np1, ϕstar_nm1, order, atmp, utilde, bs3cache, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (;
+        k4, dts, g, ϕstar_n, ϕ_np1, ϕstar_nm1, order, atmp, utilde, bs3cache,
+        thread,
+    ) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -1015,22 +1062,24 @@ end
     ϕ_and_ϕstar!(cache, k1, k)
     if k == 1 || k == 2
         perform_step!(integrator, bs3cache)
-        @unpack k4 = bs3cache
+        (; k4) = bs3cache
         integrator.fsallast .= k4
     else
         g_coefs!(cache, k + 1)
-        @.. broadcast=false thread=thread u=uprev
+        @.. broadcast = false thread = thread u = uprev
         for i in 1:(k - 1)
-            @.. broadcast=false thread=thread u+=g[i] * ϕstar_n[i]
+            @.. broadcast = false thread = thread u += g[i] * ϕstar_n[i]
         end
         f(k4, u, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         ϕ_np1!(cache, k4, k + 1)
-        @.. broadcast=false thread=thread u+=g[end - 1] * ϕ_np1[end - 1]
+        @.. broadcast = false thread = thread u += g[end - 1] * ϕ_np1[end - 1]
         if integrator.opts.adaptive
-            @.. broadcast=false thread=thread utilde=(g[end] - g[end - 1]) * ϕ_np1[end]
-            calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            @.. broadcast = false thread = thread utilde = (g[end] - g[end - 1]) * ϕ_np1[end]
+            calculate_residuals!(
+                atmp, utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:2
@@ -1057,12 +1106,12 @@ function initialize!(integrator, cache::VCABM4ConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::VCABM4ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -1102,9 +1151,11 @@ end
         u += g[end - 1] * ϕ_np1[end - 1]
         if integrator.opts.adaptive
             utilde = (g[end] - g[end - 1]) * ϕ_np1[end]
-            atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+            atmp = calculate_residuals(
+                utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
-                t)
+                t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:3
@@ -1124,19 +1175,22 @@ end
 end
 
 function initialize!(integrator, cache::VCABM4Cache)
-    @unpack fsalfirst, k4 = cache
+    (; fsalfirst, k4) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # pre-start FSAL
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::VCABM4Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k4, dts, g, ϕstar_n, ϕ_np1, ϕstar_nm1, order, atmp, utilde, rk4cache, thread = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (;
+        k4, dts, g, ϕstar_n, ϕ_np1, ϕstar_nm1, order, atmp, utilde, rk4cache,
+        thread,
+    ) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -1168,18 +1222,20 @@ end
         integrator.fsallast .= rk4cache.k
     else
         g_coefs!(cache, k + 1)
-        @.. broadcast=false thread=thread u=uprev
+        @.. broadcast = false thread = thread u = uprev
         for i in 1:(k - 1)
-            @.. broadcast=false thread=thread u+=g[i] * ϕstar_n[i]
+            @.. broadcast = false thread = thread u += g[i] * ϕstar_n[i]
         end
         f(k4, u, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         ϕ_np1!(cache, k4, k + 1)
-        @.. broadcast=false thread=thread u+=g[end - 1] * ϕ_np1[end - 1]
+        @.. broadcast = false thread = thread u += g[end - 1] * ϕ_np1[end - 1]
         if integrator.opts.adaptive
-            @.. broadcast=false thread=thread utilde=(g[end] - g[end - 1]) * ϕ_np1[end]
-            calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            @.. broadcast = false thread = thread utilde = (g[end] - g[end - 1]) * ϕ_np1[end]
+            calculate_residuals!(
+                atmp, utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:3
@@ -1206,12 +1262,12 @@ function initialize!(integrator, cache::VCABM5ConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::VCABM5ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -1258,9 +1314,11 @@ end
         u += g[end - 1] * ϕ_np1[end - 1]
         if integrator.opts.adaptive
             utilde = (g[end] - g[end - 1]) * ϕ_np1[end]
-            atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+            atmp = calculate_residuals(
+                utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
-                t)
+                t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:4
@@ -1280,20 +1338,23 @@ end
 end
 
 function initialize!(integrator, cache::VCABM5Cache)
-    @unpack fsalfirst, k4 = cache
+    (; fsalfirst, k4) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # pre-start FSAL
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::VCABM5Cache, repeat_step = false)
     @inbounds begin
-        @unpack t, dt, uprev, u, f, p = integrator
-        @unpack k4, dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache, thread = cache
+        (; t, dt, uprev, u, f, p) = integrator
+        (;
+            k4, dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1,
+            order, atmp, utilde, rk4cache, thread,
+        ) = cache
         k1 = integrator.fsalfirst
         if integrator.u_modified
             cache.step = 1
@@ -1332,19 +1393,21 @@ end
             integrator.fsallast .= rk4cache.k
         else
             g_coefs!(cache, 6)
-            @.. broadcast=false thread=thread u=muladd(g[1], ϕstar_n[1], uprev)
-            @.. broadcast=false thread=thread u=muladd(g[2], ϕstar_n[2], u)
-            @.. broadcast=false thread=thread u=muladd(g[3], ϕstar_n[3], u)
-            @.. broadcast=false thread=thread u=muladd(g[4], ϕstar_n[4], u)
+            @.. broadcast = false thread = thread u = muladd(g[1], ϕstar_n[1], uprev)
+            @.. broadcast = false thread = thread u = muladd(g[2], ϕstar_n[2], u)
+            @.. broadcast = false thread = thread u = muladd(g[3], ϕstar_n[3], u)
+            @.. broadcast = false thread = thread u = muladd(g[4], ϕstar_n[4], u)
             f(k4, u, p, t + dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             ϕ_np1!(cache, k4, 6)
-            @.. broadcast=false thread=thread u=muladd(g[6 - 1], ϕ_np1[6 - 1], u)
+            @.. broadcast = false thread = thread u = muladd(g[6 - 1], ϕ_np1[6 - 1], u)
             if integrator.opts.adaptive
-                @.. broadcast=false thread=thread utilde=(g[6] - g[6 - 1]) * ϕ_np1[end]
-                calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
+                @.. broadcast = false thread = thread utilde = (g[6] - g[6 - 1]) * ϕ_np1[end]
+                calculate_residuals!(
+                    atmp, utilde, uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol, integrator.opts.internalnorm,
-                    t)
+                    t
+                )
                 integrator.EEst = integrator.opts.internalnorm(atmp, t)
                 if integrator.EEst > one(integrator.EEst)
                     dts[1] = dts[2]
@@ -1377,13 +1440,13 @@ function initialize!(integrator, cache::VCABMConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::VCABMConstantCache, repeat_step = false)
     @inbounds begin
-        @unpack t, dt, uprev, u, f, p = integrator
-        @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, max_order = cache
+        (; t, dt, uprev, u, f, p) = integrator
+        (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, max_order) = cache
         k1 = integrator.fsalfirst
         step = integrator.iter
         k = order
@@ -1404,9 +1467,11 @@ end
         u = muladd(g[k], ϕ_np1[k], u)
         if integrator.opts.adaptive
             utilde = (g[k + 1] - g[k]) * ϕ_np1[k + 1]
-            atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+            atmp = calculate_residuals(
+                utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
-                t)
+                t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:12
@@ -1427,15 +1492,21 @@ end
                 expand_ϕ_and_ϕstar!(cache, k + 1)
                 ϕ_np1!(cache, integrator.fsallast, k + 2)
                 utildep1 = dt * γstar[(k + 1) + 1] * ϕ_np1[k + 2]
-                atmpm2 = calculate_residuals(utildem2, uprev, u, integrator.opts.abstol,
+                atmpm2 = calculate_residuals(
+                    utildem2, uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
-                    integrator.opts.internalnorm, t)
-                atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol,
+                    integrator.opts.internalnorm, t
+                )
+                atmpm1 = calculate_residuals(
+                    utildem1, uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
-                    integrator.opts.internalnorm, t)
-                atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol,
+                    integrator.opts.internalnorm, t
+                )
+                atmpp1 = calculate_residuals(
+                    utildep1, uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
-                    integrator.opts.internalnorm, t)
+                    integrator.opts.internalnorm, t
+                )
                 errm2 = integrator.opts.internalnorm(atmpm2, t)
                 errm1 = integrator.opts.internalnorm(atmpm1, t)
                 errp1 = integrator.opts.internalnorm(atmpp1, t)
@@ -1456,20 +1527,23 @@ end
 end
 
 function initialize!(integrator, cache::VCABMCache)
-    @unpack fsalfirst, k4 = cache
+    (; fsalfirst, k4) = cache
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # pre-start FSAL
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::VCABMCache, repeat_step = false)
     @inbounds begin
-        @unpack t, dt, uprev, u, f, p = integrator
-        @unpack k4, dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, max_order, utilde, utildem2, utildem1, utildep1, atmp, atmpm1, atmpm2, atmpp1, thread = cache
+        (; t, dt, uprev, u, f, p) = integrator
+        (;
+            k4, dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, max_order, utilde,
+            utildem2, utildem1, utildep1, atmp, atmpm1, atmpm2, atmpp1, thread,
+        ) = cache
         k1 = integrator.fsalfirst
         step = integrator.iter
         k = order
@@ -1481,18 +1555,20 @@ end
         ϕ_and_ϕstar!(cache, k1, k)
         g_coefs!(cache, k + 1)
         # unroll the predictor once
-        @.. broadcast=false thread=thread u=muladd(g[1], ϕstar_n[1], uprev)
+        @.. broadcast = false thread = thread u = muladd(g[1], ϕstar_n[1], uprev)
         for i in 2:(k - 1)
-            @.. broadcast=false thread=thread u=muladd(g[i], ϕstar_n[i], u)
+            @.. broadcast = false thread = thread u = muladd(g[i], ϕstar_n[i], u)
         end
         f(k4, u, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         ϕ_np1!(cache, k4, k + 1)
-        @.. broadcast=false thread=thread u=muladd(g[k], ϕ_np1[k], u)
+        @.. broadcast = false thread = thread u = muladd(g[k], ϕ_np1[k], u)
         if integrator.opts.adaptive
-            @.. broadcast=false thread=thread utilde=(g[k + 1] - g[k]) * ϕ_np1[k + 1]
-            calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            @.. broadcast = false thread = thread utilde = (g[k + 1] - g[k]) * ϕ_np1[k + 1]
+            calculate_residuals!(
+                atmp, utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:12
@@ -1507,23 +1583,29 @@ end
                 cache.order = min(order + 1, 3)
             else
                 # @.. broadcast=false thread=thread utildem2 = dt * γstar[(k-2)+1] * ϕ_np1[k-1]
-                @.. broadcast=false thread=thread utildem2=(g[k - 1] - g[k - 2]) *
-                                                           ϕ_np1[k - 1]
+                @.. broadcast = false thread = thread utildem2 = (g[k - 1] - g[k - 2]) *
+                    ϕ_np1[k - 1]
                 # @.. broadcast=false thread=thread utildem1 = dt * γstar[(k-1)+1] * ϕ_np1[k]
-                @.. broadcast=false thread=thread utildem1=(g[k] - g[k - 1]) * ϕ_np1[k]
+                @.. broadcast = false thread = thread utildem1 = (g[k] - g[k - 1]) * ϕ_np1[k]
                 expand_ϕ_and_ϕstar!(cache, k + 1)
                 ϕ_np1!(cache, k4, k + 2)
-                @.. broadcast=false thread=thread utildep1=dt * γstar[(k + 1) + 1] *
-                                                           ϕ_np1[k + 2]
-                calculate_residuals!(atmpm2, utildem2, uprev, u, integrator.opts.abstol,
+                @.. broadcast = false thread = thread utildep1 = dt * γstar[(k + 1) + 1] *
+                    ϕ_np1[k + 2]
+                calculate_residuals!(
+                    atmpm2, utildem2, uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol, integrator.opts.internalnorm,
-                    t)
-                calculate_residuals!(atmpm1, utildem1, uprev, u, integrator.opts.abstol,
+                    t
+                )
+                calculate_residuals!(
+                    atmpm1, utildem1, uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol, integrator.opts.internalnorm,
-                    t)
-                calculate_residuals!(atmpp1, utildep1, uprev, u, integrator.opts.abstol,
+                    t
+                )
+                calculate_residuals!(
+                    atmpp1, utildep1, uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol, integrator.opts.internalnorm,
-                    t)
+                    t
+                )
                 errm2 = integrator.opts.internalnorm(atmpm2, t)
                 errm1 = integrator.opts.internalnorm(atmpm1, t)
                 errp1 = integrator.opts.internalnorm(atmpp1, t)

@@ -2,8 +2,8 @@
 # by Ernst Hairer, Gerhard Wanner, and Syvert P Norsett.
 # III.5 Variable Step Size Multistep Methods: Formulae 5.9
 function ϕ_and_ϕstar!(cache, du, k)
-    @inbounds begin
-        @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n, β = cache
+    return @inbounds begin
+        (; dts, ϕstar_nm1, ϕ_n, ϕstar_n, β) = cache
         ξ = dt = dts[1]
         ξ0 = zero(dt)
         β[1] = one(dt)
@@ -19,8 +19,8 @@ function ϕ_and_ϕstar!(cache, du, k)
             β[i] = β[i - 1] * ξ / ξ0
             ξ += dts[i]
             if cache isa OrdinaryDiffEqMutableCache
-                @.. broadcast=false ϕ_n[i]=ϕ_n[i - 1] - ϕstar_nm1[i - 1]
-                @.. broadcast=false ϕstar_n[i]=β[i] * ϕ_n[i]
+                @.. broadcast = false ϕ_n[i] = ϕ_n[i - 1] - ϕstar_nm1[i - 1]
+                @.. broadcast = false ϕstar_n[i] = β[i] * ϕ_n[i]
             else
                 ϕ_n[i] = ϕ_n[i - 1] - ϕstar_nm1[i - 1]
                 ϕstar_n[i] = β[i] * ϕ_n[i]
@@ -30,8 +30,8 @@ function ϕ_and_ϕstar!(cache, du, k)
 end
 
 function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache, VCABMCache}, du, k)
-    @inbounds begin
-        @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n, β = cache
+    return @inbounds begin
+        (; dts, ϕstar_nm1, ϕ_n, ϕstar_n, β) = cache
         ξ = dt = dts[1]
         ξ0 = zero(dt)
         β[1] = one(dt)
@@ -47,8 +47,8 @@ function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache, VCABMCache}, du, k)
             β[i] = β[i - 1] * ξ / ξ0
             ξ += dts[i]
             if cache isa OrdinaryDiffEqMutableCache
-                @.. broadcast=false ϕ_n[i]=ϕ_n[i - 1] - ϕstar_nm1[i - 1]
-                @.. broadcast=false ϕstar_n[i]=β[i] * ϕ_n[i]
+                @.. broadcast = false ϕ_n[i] = ϕ_n[i - 1] - ϕstar_nm1[i - 1]
+                @.. broadcast = false ϕstar_n[i] = β[i] * ϕ_n[i]
             else
                 ϕ_n[i] = ϕ_n[i - 1] - ϕstar_nm1[i - 1]
                 ϕstar_n[i] = β[i] * ϕ_n[i]
@@ -60,12 +60,12 @@ function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache, VCABMCache}, du, k)
 end
 
 function expand_ϕ_and_ϕstar!(cache, i)
-    @unpack ξ, ξ0, β, dts, ϕstar_nm1, ϕ_n, ϕstar_n = cache
+    (; ξ, ξ0, β, dts, ϕstar_nm1, ϕ_n, ϕstar_n) = cache
     ξ0 += dts[i]
     β[i] = β[i - 1] * ξ / ξ0
-    if cache isa OrdinaryDiffEqMutableCache
-        @.. broadcast=false ϕ_n[i]=ϕ_n[i - 1] - ϕstar_nm1[i - 1]
-        @.. broadcast=false ϕstar_n[i]=β[i] * ϕ_n[i]
+    return if cache isa OrdinaryDiffEqMutableCache
+        @.. broadcast = false ϕ_n[i] = ϕ_n[i - 1] - ϕstar_nm1[i - 1]
+        @.. broadcast = false ϕstar_n[i] = β[i] * ϕ_n[i]
     else
         ϕ_n[i] = ϕ_n[i - 1] - ϕstar_nm1[i - 1]
         ϕstar_n[i] = β[i] * ϕ_n[i]
@@ -73,12 +73,12 @@ function expand_ϕ_and_ϕstar!(cache, i)
 end
 
 function ϕ_np1!(cache, du_np1, k)
-    @inbounds begin
-        @unpack ϕ_np1, ϕstar_n = cache
+    return @inbounds begin
+        (; ϕ_np1, ϕstar_n) = cache
         for i in 1:k
             if i != 1
                 if cache isa OrdinaryDiffEqMutableCache
-                    @.. broadcast=false ϕ_np1[i]=ϕ_np1[i - 1] - ϕstar_n[i - 1]
+                    @.. broadcast = false ϕ_np1[i] = ϕ_np1[i - 1] - ϕstar_n[i - 1]
                 else
                     ϕ_np1[i] = ϕ_np1[i - 1] - ϕstar_n[i - 1]
                 end
@@ -99,8 +99,8 @@ end
 # ------------------------------------------------------------
 # Note that `g` is scaled by `dt` in here
 function g_coefs!(cache, k)
-    @inbounds begin
-        @unpack dts, c, g = cache
+    return @inbounds begin
+        (; dts, c, g) = cache
         ξ = dt = dts[1]
         for i in 1:k
             if i > 2
@@ -137,5 +137,5 @@ const global γstar = [
     -0.00523669,
     -0.0046775,
     -0.00421495,
-    -0.0038269
+    -0.0038269,
 ]

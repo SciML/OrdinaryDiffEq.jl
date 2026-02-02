@@ -1,25 +1,36 @@
 module OrdinaryDiffEqLowStorageRK
 
 import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
-                           beta2_default, beta1_default, gamma_default,
-                           initialize!, perform_step!, @unpack, unwrap_alg,
-                           calculate_residuals, ssp_coefficient,
-                           OrdinaryDiffEqAlgorithm, ispredictive,
-                           OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-                           OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
-                           default_controller, PIDController,
-                           alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-                           constvalue, _unwrap_val,
-                           trivial_limiter!, perform_step!, initialize!,
-                           explicit_rk_docstring, get_fsalfirstlast
+    beta2_default, beta1_default, gamma_default,
+    initialize!, perform_step!, unwrap_alg,
+    calculate_residuals, ssp_coefficient,
+    OrdinaryDiffEqAlgorithm, ispredictive,
+    OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
+    OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
+    PIDController,
+    alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
+    constvalue, _unwrap_val,
+    trivial_limiter!, perform_step!, initialize!,
+    explicit_rk_docstring, get_fsalfirstlast
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, Adapt
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import Static: False
 import RecursiveArrayTools: recursive_unitless_bottom_eltype
 import OrdinaryDiffEqCore
 
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    @eval begin
+        import OrdinaryDiffEqCore: default_controller_v7,
+            legacy_default_controller, NewPIDController
+    end
+else
+    @eval begin
+        import OrdinaryDiffEqCore: default_controller
+    end
+end
+
 using Reexport
-@reexport using DiffEqBase
+@reexport using SciMLBase
 
 include("arrayfuse.jl")
 include("algorithms.jl")
@@ -37,11 +48,11 @@ PrecompileTools.@compile_workload begin
     prob_list = []
 
     low_storage = [
-        RDPK3SpFSAL35(), RDPK3SpFSAL49()
+        RDPK3SpFSAL35(), RDPK3SpFSAL49(),
     ]
 
     low_storage_nonadaptive = [
-        CarpenterKennedy2N54(williamson_condition = false)
+        CarpenterKennedy2N54(williamson_condition = false),
     ]
 
     if Preferences.@load_preference("PrecompileLowStorage", false)
@@ -55,29 +66,51 @@ PrecompileTools.@compile_workload begin
     end
 
     if Preferences.@load_preference("PrecompileAutoSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0), Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]
+            )
+        )
     end
 
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                (0.0, 1.0), Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(
+                lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]
+            )
+        )
     end
 
     if Preferences.@load_preference("PrecompileNoSpecialize", false)
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
-        push!(prob_list,
-            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
-                Float64[]))
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0))
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(
+                lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
+                Float64[]
+            )
+        )
     end
 
     for prob in prob_list, solver in solver_list
@@ -93,16 +126,16 @@ PrecompileTools.@compile_workload begin
 end
 
 export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C,
-       DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144,
-       CFRLDDRK64, TSLDDRK74, CKLLSRK43_2, CKLLSRK54_3C,
-       CKLLSRK95_4S, CKLLSRK95_4C, CKLLSRK95_4M,
-       CKLLSRK54_3C_3R, CKLLSRK54_3M_3R, CKLLSRK54_3N_3R, CKLLSRK85_4C_3R, CKLLSRK85_4M_3R,
-       CKLLSRK85_4P_3R,
-       CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R,
-       ParsaniKetchesonDeconinck3S32, ParsaniKetchesonDeconinck3S82,
-       ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
-       ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
-       ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
-       RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510,
-       RK46NL, SHLDDRK_2N, SHLDDRK52
+    DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144,
+    CFRLDDRK64, TSLDDRK74, CKLLSRK43_2, CKLLSRK54_3C,
+    CKLLSRK95_4S, CKLLSRK95_4C, CKLLSRK95_4M,
+    CKLLSRK54_3C_3R, CKLLSRK54_3M_3R, CKLLSRK54_3N_3R, CKLLSRK85_4C_3R, CKLLSRK85_4M_3R,
+    CKLLSRK85_4P_3R,
+    CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R,
+    ParsaniKetchesonDeconinck3S32, ParsaniKetchesonDeconinck3S82,
+    ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
+    ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
+    ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
+    RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510,
+    RK46NL, SHLDDRK_2N, SHLDDRK52
 end

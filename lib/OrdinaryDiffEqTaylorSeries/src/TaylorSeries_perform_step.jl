@@ -1,17 +1,19 @@
 using TaylorDiff: TaylorDiff, extract_derivative, extract_derivative!
 
 @inline make_taylor(all::Vararg{X, P}) where {P, X <: AbstractArray} = TaylorArray(
-    Base.first(all), Base.tail(all))
+    Base.first(all), Base.tail(all)
+)
 @inline make_taylor(all::Vararg{X, P}) where {P, X} = TaylorScalar(all)
 
 function initialize!(integrator, cache::ExplicitTaylor2ConstantCache)
     integrator.kshortsize = 3
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    return integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 end
 
 @muladd function perform_step!(
-        integrator, cache::ExplicitTaylor2ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+        integrator, cache::ExplicitTaylor2ConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, f, p) = integrator
     k1 = f(uprev, p, t)
     u1 = make_taylor(uprev, k1)
     t1 = TaylorScalar{1}(t, one(t))
@@ -34,8 +36,8 @@ function initialize!(integrator, cache::ExplicitTaylor2Cache)
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitTaylor2Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k1, k2, k3, utilde, tmp = cache
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k1, k2, k3, utilde, tmp) = cache
 
     # The following code is written to be fully non-allocating
     f(k1, uprev, p, t)
@@ -50,19 +52,23 @@ end
 
 function initialize!(integrator, cache::ExplicitTaylorConstantCache{P}) where {P}
     integrator.kshortsize = P
-    integrator.k = typeof(integrator.k)(undef, P)
+    return integrator.k = typeof(integrator.k)(undef, P)
 end
 
 @muladd function perform_step!(
-        integrator, cache::ExplicitTaylorConstantCache{P}, repeat_step = false) where {P}
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack jet = cache
+        integrator, cache::ExplicitTaylorConstantCache{P}, repeat_step = false
+    ) where {P}
+    (; t, dt, uprev, u, f, p) = integrator
+    (; jet) = cache
+    # jet now returns TaylorScalar with concrete numeric types
     utaylor = jet(uprev, t)
-    u = map(x -> evaluate_polynomial(x, dt), utaylor)
+    u = eval_taylor_polynomial(utaylor, dt)
     if integrator.opts.adaptive
         utilde = TaylorDiff.get_coefficient(utaylor, P) * dt^(P + 1)
-        atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        atmp = calculate_residuals(
+            utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, P + 1)
@@ -80,19 +86,22 @@ function initialize!(integrator, cache::ExplicitTaylorCache{P}) where {P}
 end
 
 @muladd function perform_step!(
-        integrator, cache::ExplicitTaylorCache{P}, repeat_step = false) where {P}
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack jet, utaylor, utilde, tmp, atmp, thread = cache
+        integrator, cache::ExplicitTaylorCache{P}, repeat_step = false
+    ) where {P}
+    (; t, dt, uprev, u, f, p) = integrator
+    (; jet, utaylor, utilde, tmp, atmp, thread) = cache
 
     jet(utaylor, uprev, t)
     for i in eachindex(utaylor)
         u[i] = @inline evaluate_polynomial(utaylor[i], dt)
     end
     if integrator.opts.adaptive
-        @.. broadcast=false thread=thread utilde=TaylorDiff.get_coefficient(utaylor, P) *
-                                                 dt^(P + 1)
-        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        @.. broadcast = false thread = thread utilde = TaylorDiff.get_coefficient(utaylor, P) *
+            dt^(P + 1)
+        calculate_residuals!(
+            atmp, utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, P + 1)

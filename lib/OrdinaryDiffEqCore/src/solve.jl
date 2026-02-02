@@ -1,60 +1,69 @@
-function DiffEqBase.__solve(
-        prob::Union{DiffEqBase.AbstractODEProblem,
-            DiffEqBase.AbstractDAEProblem},
+function SciMLBase.__solve(
+        prob::Union{
+            SciMLBase.AbstractODEProblem,
+            SciMLBase.AbstractDAEProblem,
+        },
         alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, args...;
-        kwargs...)
-    integrator = DiffEqBase.__init(prob, alg, args...; kwargs...)
+        kwargs...
+    )
+    integrator = SciMLBase.__init(prob, alg, args...; kwargs...)
     solve!(integrator)
-    integrator.sol
+    return integrator.sol
 end
 
-function DiffEqBase.__init(
-        prob::Union{DiffEqBase.AbstractODEProblem,
-            DiffEqBase.AbstractDAEProblem},
+determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Number, <:Number}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(DiffEqBase.value.(ts)))
+determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = promote_type(typeof(DiffEqBase.value(ts[1])), typeof(DiffEqBase.value(ts[2]))) # This seems to be an assumption implicitly taken somewhere
+determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
+determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
+
+function SciMLBase.__init(
+        prob::Union{
+            SciMLBase.AbstractODEProblem,
+            SciMLBase.AbstractDAEProblem,
+        },
         alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
         timeseries_init = (),
         ts_init = (),
-        ks_init = (),
-        recompile::Type{Val{recompile_flag}} = Val{true};
+        ks_init = ();
         saveat = (),
         tstops = (),
         d_discontinuities = (),
         save_idxs = nothing,
         save_everystep = isempty(saveat),
         save_on = true,
+        save_discretes = true,
         save_start = save_everystep || isempty(saveat) ||
-                         saveat isa Number || prob.tspan[1] in saveat,
+            saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
         callback = nothing,
         dense = save_everystep && isempty(saveat) &&
-                    !default_linear_interpolation(prob, alg),
+            !default_linear_interpolation(prob, alg),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
-                    (dense) || !isempty(saveat), # and no dense output
-        dt = isdiscretealg(alg) && isempty(tstops) ?
-             eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
+            (dense) || !isempty(saveat), # and no dense output
+        dt = nothing,
         dtmin = eltype(prob.tspan)(0),
         dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
         force_dtmin = false,
         adaptive = anyadaptive(alg),
-        gamma = gamma_default(alg),
         abstol = nothing,
         reltol = nothing,
-        qmin = qmin_default(alg),
-        qmax = qmax_default(alg),
-        qsteady_min = qsteady_min_default(alg),
-        qsteady_max = qsteady_max_default(alg),
+        gamma = nothing,
+        qmin = nothing,
+        qmax = nothing,
+        qsteady_min = nothing,
+        qsteady_max = nothing,
         beta1 = nothing,
         beta2 = nothing,
-        qoldinit = anyadaptive(alg) ? 1 // 10^4 : 0,
-        controller = nothing,
+        qoldinit = nothing,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
         internalnorm = ODE_DEFAULT_NORM,
-        internalopnorm = LinearAlgebra.opnorm,
+        internalopnorm = opnorm,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-        verbose = true,
+        verbose = Standard(),
+        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(determine_controller_datatype(prob.u0, internalnorm, prob.tspan), alg), # We have to reconstruct the old controller before breaking release.,
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,
@@ -70,17 +79,18 @@ function DiffEqBase.__init(
         initialize_integrator = true,
         alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
-        kwargs...) where {recompile_flag}
-    if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
+        kwargs...
+    )
+    if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")
     end
 
-    if prob isa DiffEqBase.AbstractODEProblem && alg isa DAEAlgorithm
+    if prob isa SciMLBase.AbstractODEProblem && alg isa DAEAlgorithm
         error("You cannot use an DAE Algorithm with a ODEProblem")
     end
 
-    if prob isa DiffEqBase.ODEProblem
-        if !(prob.f isa DiffEqBase.DynamicalODEFunction) && alg isa PartitionedAlgorithm
+    if prob isa SciMLBase.ODEProblem
+        if !(prob.f isa SciMLBase.DynamicalODEFunction) && alg isa PartitionedAlgorithm
             error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
         end
     end
@@ -90,34 +100,42 @@ function DiffEqBase.__init(
             error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
         end
     elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
-           !(prob isa DiffEqBase.AbstractDAEProblem) &&
-           !is_mass_matrix_alg(alg) &&
-           prob.f.mass_matrix != I
+            !(prob isa SciMLBase.AbstractDAEProblem) &&
+            !is_mass_matrix_alg(alg) &&
+            prob.f.mass_matrix != I
         error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
     end
 
+    verbose_spec = _process_verbose_param(verbose)
+
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
-       # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
-       !only_diagonal_mass_matrix(alg) &&
-       prob.f.mass_matrix isa AbstractMatrix &&
-       all(isequal(0), prob.f.mass_matrix)
+            # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
+            !only_diagonal_mass_matrix(alg) &&
+            prob.f.mass_matrix isa AbstractMatrix &&
+            all(isequal(0), prob.f.mass_matrix)
         # technically this should also warn for zero operators but those are hard to check for
-        if (dense || !isempty(saveat)) && verbose
-            @warn("Rosenbrock methods on equations without differential states do not bound the error on interpolations.")
+        if (dense || !isempty(saveat))
+            @SciMLMessage(
+                "Rosenbrock methods on equations without differential states do not bound the error on interpolations.",
+                verbose_spec, :rosenbrock_no_differential_states
+            )
         end
     end
 
     if only_diagonal_mass_matrix(alg) &&
-       prob.f.mass_matrix isa AbstractMatrix &&
-       !isdiag(prob.f.mass_matrix)
+            prob.f.mass_matrix isa AbstractMatrix &&
+            !isdiag(prob.f.mass_matrix)
         throw(ArgumentError("$(typeof(alg).name.name) only works with diagonal mass matrices. Please choose a solver suitable for your problem (e.g. Rodas5P)"))
     end
 
     if !isempty(saveat) && dense
-        @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
+        @SciMLMessage(
+            "Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.",
+            verbose_spec, :dense_output_saveat
+        )
     end
 
-    progress && @logmsg(LogLevel(-1), progress_name, _id=progress_id, progress=0)
+    progress && @logmsg(LogLevel(-1), progress_name, _id = progress_id, progress = 0)
 
     tType = eltype(prob.tspan)
     tspan = prob.tspan
@@ -125,24 +143,34 @@ function DiffEqBase.__init(
 
     t = tspan[1]
 
-    if (((!(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
-          !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
-          !(alg isa DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
-        dt == tType(0) && isempty(tstops)) && dt_required(alg)
+    if (
+            (
+                (
+                    !(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
+                        !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
+                        !(alg isa DAEAlgorithm)
+                ) || !adaptive || !isadaptive(alg)
+            ) &&
+                isnothing(dt) && isempty(tstops)
+        ) && dt_required(alg)
         throw(ArgumentError("Fixed timestep methods require a choice of dt or choosing the tstops"))
     end
     if !isadaptive(alg) && adaptive
         throw(ArgumentError("Fixed timestep methods can not be run with adaptive=true"))
     end
 
-    isdae = alg isa DAEAlgorithm || (!(prob isa SciMLBase.AbstractDiscreteProblem) &&
-             prob.f.mass_matrix != I &&
-             !(prob.f.mass_matrix isa Tuple) &&
-             ArrayInterface.issingular(prob.f.mass_matrix))
+    isdae = alg isa DAEAlgorithm || (
+        !(prob isa SciMLBase.AbstractDiscreteProblem) &&
+            prob.f.mass_matrix != I &&
+            !(prob.f.mass_matrix isa Tuple) &&
+            ArrayInterface.issingular(prob.f.mass_matrix)
+    )
     if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
         auto = alg.choice_function
-        _alg = CompositeAlgorithm(alg.algs,
-            AutoSwitchCache(0, 0,
+        _alg = CompositeAlgorithm(
+            alg.algs,
+            AutoSwitchCache(
+                0, 0,
                 auto.nonstiffalg,
                 auto.stiffalg,
                 auto.stiffalgfirst,
@@ -152,13 +180,16 @@ function DiffEqBase.__init(
                 auto.stifftol,
                 auto.dtfac,
                 auto.stiffalgfirst,
-                auto.switch_max, 0))
+                auto.switch_max, 0
+            )
+        )
     else
         _alg = alg
     end
 
     use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_du0)
 
+    aliases = nothing
     if use_old_kwargs
         aliases = ODEAliasSpecifier()
         if haskey(kwargs, :alias_u0)
@@ -177,7 +208,8 @@ function DiffEqBase.__init(
             Base.depwarn(message, :init)
             Base.depwarn(message, :solve)
             aliases = ODEAliasSpecifier(
-                alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0)
+                alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0
+            )
         else
             aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = nothing)
         end
@@ -211,6 +243,12 @@ function DiffEqBase.__init(
         u = recursivecopy(prob.u0)
     end
 
+    # Handle null u0 (e.g., MTK systems with only callbacks and no state variables)
+    # Convert to empty Float64 array to allow initialization to proceed
+    if u === nothing
+        u = Float64[]
+    end
+
     if _alg isa DAEAlgorithm
         if !isnothing(aliases.alias_du0) && aliases.alias_du0
             du = prob.du0
@@ -234,9 +272,15 @@ function DiffEqBase.__init(
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            abstol_internal = unitfulvalue(real(convert(uBottomEltype,
-                oneunit(uBottomEltype) *
-                1 // 10^6)))
+            abstol_internal = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype,
+                        oneunit(uBottomEltype) *
+                            1 // 10^6
+                    )
+                )
+            )
         else
             abstol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
         end
@@ -248,8 +292,14 @@ function DiffEqBase.__init(
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            reltol_internal = unitfulvalue(real(convert(uBottomEltype,
-                oneunit(uBottomEltype) * 1 // 10^3)))
+            reltol_internal = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype,
+                        oneunit(uBottomEltype) * 1 // 10^3
+                    )
+                )
+            )
         else
             reltol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
         end
@@ -261,13 +311,13 @@ function DiffEqBase.__init(
     # dtmin is all abs => does not care about sign already.
 
     if !isdae && isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
-       uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
+            uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
         rate_prototype = recursivecopy(u)
     elseif prob isa DAEProblem
         rate_prototype = prob.du0
     else
         if (uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits) ||
-           eltype(u) <: Enum
+                eltype(u) <: Enum
             rate_prototype = u
         else # has units!
             rate_prototype = u / oneunit(tType)
@@ -275,6 +325,7 @@ function DiffEqBase.__init(
     end
     rateType = typeof(rate_prototype) ## Can be different if united
 
+    res_prototype = nothing
     if isdae
         if uBottomEltype == uBottomEltypeNoUnits
             res_prototype = u
@@ -298,8 +349,10 @@ function DiffEqBase.__init(
     end
     tstops_internal = initialize_tstops(tType, tstops, d_discontinuities, tspan)
     saveat_internal = initialize_saveat(tType, saveat, tspan)
-    d_discontinuities_internal = initialize_d_discontinuities(tType, d_discontinuities,
-        tspan)
+    d_discontinuities_internal = initialize_d_discontinuities(
+        tType, d_discontinuities,
+        tspan
+    )
 
     callbacks_internal = CallbackSet(callback)
 
@@ -307,20 +360,27 @@ function DiffEqBase.__init(
     if max_len_cb !== nothing
         uBottomEltypeReal = real(uBottomEltype)
         if isinplace(prob)
-            callback_cache = DiffEqBase.CallbackCache(u, max_len_cb, uBottomEltypeReal,
-                uBottomEltypeReal)
+            callback_cache = DiffEqBase.CallbackCache(
+                u, max_len_cb, uBottomEltypeReal,
+                uBottomEltypeReal
+            )
         else
-            callback_cache = DiffEqBase.CallbackCache(max_len_cb, uBottomEltypeReal,
-                uBottomEltypeReal)
+            callback_cache = DiffEqBase.CallbackCache(
+                max_len_cb, uBottomEltypeReal,
+                uBottomEltypeReal
+            )
         end
     else
         callback_cache = nothing
     end
 
     ### Algorithm-specific defaults ###
-    save_idxs, saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
-        prob, save_idxs)
+    save_idxs,
+        saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(
+        prob, save_idxs
+    )
 
+    ks_prototype = nothing
     if save_idxs === nothing
         ksEltype = Vector{rateType}
     else
@@ -331,11 +391,11 @@ function DiffEqBase.__init(
     # Have to convert in case passed in wrong.
     if save_idxs === nothing
         timeseries = timeseries_init === () ? uType[] :
-                     convert(Vector{uType}, timeseries_init)
+            convert(Vector{uType}, timeseries_init)
     else
         u_initial = u[save_idxs]
         timeseries = timeseries_init === () ? typeof(u_initial)[] :
-                     convert(Vector{uType}, timeseries_init)
+            convert(Vector{uType}, timeseries_init)
     end
 
     ts = ts_init === () ? tType[] : convert(Vector{tType}, ts_init)
@@ -343,7 +403,7 @@ function DiffEqBase.__init(
     alg_choice = _alg isa CompositeAlgorithm ? Int[] : nothing
 
     if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
-        if dt == 0
+        if isnothing(dt)
             steps = length(tstops)
         else
             # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
@@ -377,15 +437,6 @@ function DiffEqBase.__init(
         sizehint!(ks, 2)
     end
 
-    QT, EEstT = if tTypeNoUnits <: Integer
-        typeof(qmin), typeof(qmin)
-    elseif prob isa SciMLBase.AbstractDiscreteProblem
-        # The QT fields are not used for DiscreteProblems
-        constvalue(tTypeNoUnits), constvalue(tTypeNoUnits)
-    else
-        typeof(DiffEqBase.value(internalnorm(u, t))), typeof(internalnorm(u, t))
-    end
-
     k = rateType[]
 
     if uses_uprev(_alg, adaptive) || calck
@@ -401,14 +452,24 @@ function DiffEqBase.__init(
         uprev2 = uprev
     end
 
-    if prob isa DAEProblem
-        cache = alg_cache(_alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-            reltol_internal, p, calck, Val(isinplace(prob)))
+    _dt = if isnothing(dt)
+        isdiscretealg(alg) && isempty(tstops) ?
+            eltype(prob.tspan)(1) : eltype(prob.tspan)(0)
     else
-        cache = alg_cache(_alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-            tTypeNoUnits, uprev, uprev2, f, t, dt, reltol_internal, p, calck,
-            Val(isinplace(prob)))
+        dt
+    end
+    if prob isa DAEProblem
+        cache = alg_cache(
+            _alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
+            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, _dt,
+            reltol_internal, p, calck, Val(isinplace(prob)), verbose_spec
+        )
+    else
+        cache = alg_cache(
+            _alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+            tTypeNoUnits, uprev, uprev2, f, t, _dt, reltol_internal, p, calck,
+            Val(isinplace(prob)), verbose_spec
+        )
     end
 
     # Setting up the step size controller
@@ -416,23 +477,76 @@ function DiffEqBase.__init(
         throw(ArgumentError("Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."))
     end
 
+    # Deprecation warnings for users to break down which parameters they accidentally set.
     if (beta1 !== nothing || beta2 !== nothing)
         message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
         Base.depwarn(message, :init)
         Base.depwarn(message, :solve)
     end
-
-    if controller === nothing
-        controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
+    if (qmin !== nothing || qmax !== nothing)
+        message = "Providing the legacy PID parameters `qmin, qmax` is deprecated. Use the keyword argument `controller` instead."
+        Base.depwarn(message, :init)
+        Base.depwarn(message, :solve)
     end
+    if (qsteady_min !== nothing || qsteady_max !== nothing)
+        message = "Providing the legacy PID parameters `qsteady_min, qsteady_max` is deprecated. Use the keyword argument `controller` instead."
+        Base.depwarn(message, :init)
+        Base.depwarn(message, :solve)
+    end
+    if (qoldinit !== nothing)
+        message = "Providing the legacy PID parameters `qoldinit` is deprecated. Use the keyword argument `controller` instead."
+        Base.depwarn(message, :init)
+        Base.depwarn(message, :solve)
+    end
+
+    QT = determine_controller_datatype(u, internalnorm, tspan)
+
+    # The following code provides an upgrade path for users by preserving the old behavior.
+    legacy_controller_parameters = (gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit)
+    if controller === nothing # We have to reconstruct the old controller before breaking release.
+        if any(legacy_controller_parameters .== nothing)
+            gamma = convert(QT, gamma === nothing ? gamma_default(alg) : gamma)
+            qmin = convert(QT, qmin === nothing ? qmin_default(alg) : qmin)
+            qmax = convert(QT, qmax === nothing ? qmax_default(alg) : qmax)
+            qsteady_min = convert(QT, qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min)
+            qsteady_max = convert(QT, qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max)
+            qoldinit = convert(QT, qoldinit === nothing ? (anyadaptive(alg) ? 1 // 10^4 : 0) : qoldinit)
+        end
+        controller = legacy_default_controller(_alg, cache, qoldinit, beta1, beta2)
+    else # Controller has been passed
+        gamma = hasfield(typeof(controller), :gamma) ? controller.gamma : gamma_default(alg)
+        qmin = hasfield(typeof(controller), :qmin) ? controller.qmin : qmin_default(alg)
+        qmax = hasfield(typeof(controller), :qmax) ? controller.qmax : qmax_default(alg)
+        qsteady_min = hasfield(typeof(controller), :qsteady_min) ? controller.qsteady_min : qsteady_min_default(alg)
+        qsteady_max = hasfield(typeof(controller), :qsteady_max) ? controller.qsteady_max : qsteady_max_default(alg)
+        qoldinit = hasfield(typeof(controller), :qoldinit) ? controller.qoldinit : (anyadaptive(alg) ? 1 // 10^4 : 0)
+    end
+
+    EEstT = if tTypeNoUnits <: Integer
+        promote_type(typeof(qmin), typeof(qmax))
+    elseif prob isa SciMLBase.AbstractDiscreteProblem
+        constvalue(tTypeNoUnits)
+    else
+        typeof(internalnorm(u, t))
+    end
+
+    atmp = if hasfield(typeof(cache), :atmp)
+        cache.atmp
+    else
+        nothing
+    end
+    controller_cache = setup_controller_cache(_alg, atmp, controller)
 
     save_end_user = save_end
     save_end = save_end === nothing ?
-               save_everystep || isempty(saveat) || saveat isa Number ||
-               prob.tspan[2] in saveat : save_end
+        save_everystep || isempty(saveat) || saveat isa Number ||
+        prob.tspan[2] in saveat : save_end
 
-    opts = DEOptions{typeof(abstol_internal), typeof(reltol_internal),
-        QT, tType, typeof(controller),
+    opts = DEOptions{
+        typeof(abstol_internal), typeof(reltol_internal),
+        QT, tType,
+        # typeof(controller),
+        typeof(controller_cache),
         typeof(internalnorm), typeof(internalopnorm),
         typeof(save_end_user),
         typeof(callbacks_internal),
@@ -442,17 +556,25 @@ function DiffEqBase.__init(
         typeof(d_discontinuities_internal), typeof(userdata),
         typeof(save_idxs),
         typeof(maxiters), typeof(tstops),
-        typeof(saveat), typeof(d_discontinuities)}(maxiters, save_everystep,
+        typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
+    }(
+        maxiters, save_everystep,
         adaptive, abstol_internal,
         reltol_internal,
-        QT(gamma), QT(qmax),
+        # TODO vvv remove this block as these are controller and not integrator parameters vvv
+        QT(gamma),
+        QT(qmax),
         QT(qmin),
         QT(qsteady_max),
         QT(qsteady_min),
         QT(qoldinit),
+        # TODO ^^^remove this block as these are controller and not integrator parameters ^^^
         QT(failfactor),
         tType(dtmax), tType(dtmin),
-        controller,
+        # TODO vvv remove this vvv
+        # controller,
+        controller_cache,
+        # TODO ^^^ remove this ^^^
         internalnorm,
         internalopnorm,
         save_idxs, tstops_internal,
@@ -468,50 +590,43 @@ function DiffEqBase.__init(
         timeseries_errors,
         dense_errors, dense,
         save_on, save_start,
-        save_end, save_end_user,
+        save_end, save_discretes, save_end_user,
         callbacks_internal,
         isoutofdomain,
         unstable_check,
-        verbose, calck, force_dtmin,
+        verbose_spec, calck, force_dtmin,
         advance_to_tstop,
-        stop_at_next_tstop)
+        stop_at_next_tstop
+    )
 
     stats = SciMLBase.DEStats(0)
     differential_vars = prob isa DAEProblem ? prob.differential_vars :
-                        get_differential_vars(f, u)
+        get_differential_vars(f, u)
 
     id = InterpolationData(
-        f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
-    sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
+        f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
+    )
+    sol = SciMLBase.build_solution(
+        prob, _alg, ts, timeseries,
         dense = dense, k = ks, interp = id, alg_choice = alg_choice,
-        calculate_error = false, stats = stats, saved_subsystem = saved_subsystem)
+        calculate_error = false, stats = stats, saved_subsystem = saved_subsystem
+    )
 
-    if recompile_flag == true
-        FType = typeof(f)
-        SolType = typeof(sol)
-        cacheType = typeof(cache)
-    else
-        FType = Function
-        if _alg isa OrdinaryDiffEqAlgorithm
-            SolType = DiffEqBase.AbstractODESolution
-            cacheType = OrdinaryDiffEqCache
-        else
-            SolType = DiffEqBase.AbstractDAESolution
-            cacheType = DAECache
-        end
-    end
+    FType = typeof(f)
+    SolType = typeof(sol)
+    cacheType = typeof(cache)
 
     # rate/state = (state/time)/state = 1/t units, internalnorm drops units
     # we don't want to differentiate through eigenvalue estimation
     eigen_est = inv(one(tType))
     tprev = t
-    dtcache = tType(dt)
-    dtpropose = tType(dt)
+    dtcache = tType(_dt)
+    dtpropose = tType(_dt)
     iter = 0
     kshortsize = 0
     reeval_fsal = false
     u_modified = false
-    EEst = EEstT(1)
+    EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
     isout = false
     accept_step = false
@@ -521,8 +636,10 @@ function DiffEqBase.__init(
     event_last_time = 0
     vector_event_last_time = 1
     last_event_error = prob isa SciMLBase.AbstractDiscreteProblem ? false :
-                       (Base.isbitstype(uBottomEltypeNoUnits) ? zero(uBottomEltypeNoUnits) :
-                        0.0)
+        (
+            Base.isbitstype(uBottomEltypeNoUnits) ? zero(uBottomEltypeNoUnits) :
+            0.0
+        )
     dtchangeable = isdtchangeable(_alg)
     q11 = QT(1)
     success_iter = 0
@@ -533,20 +650,27 @@ function DiffEqBase.__init(
     saveiter_dense = 0
     fsalfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
 
-    integrator = ODEIntegrator{typeof(_alg), isinplace(prob), uType, typeof(du),
+    integrator = ODEIntegrator{
+        typeof(_alg), isinplace(prob), uType, typeof(du),
         tType, typeof(p),
-        typeof(eigen_est), typeof(EEst),
+        typeof(eigen_est), EEstT,
         QT, typeof(tdir), typeof(k), SolType,
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),
-        typeof(initializealg), typeof(differential_vars)}(
-        sol, u, du, k, t, tType(dt), f, p,
+        typeof(initializealg), typeof(differential_vars),
+        typeof(controller_cache),
+    }(
+        sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
         dtpropose, tdir, eigen_est, EEst,
+        # TODO vvv remove these
         QT(qoldinit), q11,
-        erracc, dtacc, success_iter,
+        erracc, dtacc,
+        # TODO ^^^ remove these
+        controller_cache,
+        success_iter,
         iter, saveiter, saveiter_dense, cache,
         callback_cache,
         kshortsize, force_stepfail,
@@ -558,10 +682,12 @@ function DiffEqBase.__init(
         isout, reeval_fsal,
         u_modified, reinitiailize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast)
+        fsalfirst, fsallast
+    )
 
     if initialize_integrator
-        if isdae || SciMLBase.has_initializeprob(prob.f) || prob isa SciMLBase.ImplicitDiscreteProblem
+        if isdae || SciMLBase.has_initializeprob(prob.f) ||
+                prob isa SciMLBase.ImplicitDiscreteProblem
             DiffEqBase.initialize_dae!(integrator)
             !isnothing(integrator.u) && update_uprev!(integrator)
         end
@@ -606,11 +732,11 @@ function DiffEqBase.__init(
         end
     end
 
-    handle_dt!(integrator)
-    integrator
+    handle_dt!(integrator, dt)
+    return integrator
 end
 
-function DiffEqBase.solve!(integrator::ODEIntegrator)
+function SciMLBase.solve!(integrator::ODEIntegrator)
     @inbounds while !isempty(integrator.opts.tstops)
         while integrator.tdir * integrator.t < first(integrator.opts.tstops)
             loopheader!(integrator)
@@ -629,33 +755,54 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
 
     f = integrator.sol.prob.f
 
-    if DiffEqBase.has_analytic(f)
-        DiffEqBase.calculate_solution_errors!(integrator.sol;
+    if SciMLBase.has_analytic(f)
+        SciMLBase.calculate_solution_errors!(
+            integrator.sol;
             timeseries_errors = integrator.opts.timeseries_errors,
-            dense_errors = integrator.opts.dense_errors)
+            dense_errors = integrator.opts.dense_errors
+        )
     end
     if integrator.sol.retcode != ReturnCode.Default
         return integrator.sol
     end
-    integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
+    return integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
 end
 
 # Helpers
 
 function handle_dt!(integrator)
-    if iszero(integrator.dt) && integrator.opts.adaptive
+    return if iszero(integrator.dt) && integrator.opts.adaptive
         auto_dt_reset!(integrator)
         if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
-           !isnan(integrator.dt)
+                !isnan(integrator.dt)
             error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
         end
         if isnan(integrator.dt)
-            if integrator.opts.verbose
-                @warn("Automatic dt set the starting dt as NaN, causing instability. Exiting.")
-            end
+            @SciMLMessage(
+                "Automatic dt set the starting dt as NaN, causing instability. Exiting.",
+                integrator.opts.verbose, :dt_NaN
+            )
         end
     elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
-           integrator.tdir < 0
+            integrator.tdir < 0
+        integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
+    end
+end
+function handle_dt!(integrator, dt)
+    return if isnothing(dt) && iszero(integrator.dt) && integrator.opts.adaptive
+        auto_dt_reset!(integrator)
+        if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
+                !isnan(integrator.dt)
+            error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
+        end
+        if isnan(integrator.dt)
+            @SciMLMessage(
+                "Automatic dt set the starting dt as NaN, causing instability. Exiting.",
+                integrator.opts.verbose, :dt_NaN
+            )
+        end
+    elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
+            integrator.tdir < 0
         integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
     end
 end
@@ -682,6 +829,25 @@ end
     return tstops_internal
 end
 
+function reinit_tstops!(::Type{T}, tstops_internal, tstops, d_discontinuities, tspan) where {T}
+    empty!(tstops_internal)
+
+    t0, tf = tspan
+    tdir = sign(tf - t0)
+    tdir_t0 = tdir * t0
+    tdir_tf = tdir * tf
+
+    for t in tstops
+        tdir_t = tdir * t
+        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+    end
+    for t in d_discontinuities
+        tdir_t = tdir * t
+        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+    end
+    return push!(tstops_internal, tdir_tf)
+end
+
 # saving time points
 function initialize_saveat(::Type{T}, saveat, tspan) where {T}
     saveat_internal = BinaryHeap{T}(DataStructures.FasterForward())
@@ -706,6 +872,27 @@ function initialize_saveat(::Type{T}, saveat, tspan) where {T}
     return saveat_internal
 end
 
+function reinit_saveat!(::Type{T}, saveat_internal, saveat, tspan) where {T}
+    empty!(saveat_internal)
+
+    t0, tf = tspan
+    tdir = sign(tf - t0)
+    tdir_t0 = tdir * t0
+    tdir_tf = tdir * tf
+
+    return if saveat isa Number
+        directional_saveat = tdir * abs(saveat)
+        for t in (t0 + directional_saveat):directional_saveat:tf
+            push!(saveat_internal, tdir * t)
+        end
+    elseif !isempty(saveat)
+        for t in saveat
+            tdir_t = tdir * t
+            tdir_t0 < tdir_t ≤ tdir_tf && push!(saveat_internal, tdir_t)
+        end
+    end
+end
+
 # discontinuities
 function initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) where {T}
     d_discontinuities_internal = BinaryHeap{T}(DataStructures.FasterForward())
@@ -719,6 +906,18 @@ function initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) where
     end
 
     return d_discontinuities_internal
+end
+
+function reinit_d_discontinuities!(::Type{T}, d_discontinuities_internal, d_discontinuities, tspan) where {T}
+    empty!(d_discontinuities_internal)
+
+    t0, tf = tspan
+    tdir = sign(tf - t0)
+
+    for t in d_discontinuities
+        push!(d_discontinuities_internal, tdir * t)
+    end
+    return
 end
 
 function initialize_callbacks!(integrator, initialize_save = true)
@@ -747,12 +946,18 @@ function initialize_callbacks!(integrator, initialize_save = true)
         end
 
         if initialize_save &&
-           (any((c) -> c.save_positions[2], callbacks.discrete_callbacks) ||
-            any((c) -> c.save_positions[2], callbacks.continuous_callbacks))
+                (
+                any((c) -> c.save_positions[2], callbacks.discrete_callbacks) ||
+                    any((c) -> c.save_positions[2], callbacks.continuous_callbacks)
+            )
             savevalues!(integrator, true)
         end
     end
 
     # reset this as it is now handled so the integrators should proceed as normal
     integrator.u_modified = false
+
+    return if initialize_save
+        SciMLBase.save_discretes_if_enabled!(integrator, integrator.opts.callback; skip_duplicates = true)
+    end
 end

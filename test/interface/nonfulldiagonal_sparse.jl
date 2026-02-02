@@ -1,12 +1,10 @@
 using OrdinaryDiffEq, SparseArrays, LinearSolve, LinearAlgebra
-using SimpleUnPack
 using ComponentArrays
-using Symbolics
 
 function enclosethetimedifferential(parameters::NamedTuple)::Function
     @info "Enclosing the time differential"
 
-    @unpack Δr, r_space, countorderapprox = parameters.compute
+    (; Δr, r_space, countorderapprox) = parameters.compute
     N = length(r_space)
 
     function first_deriv(N)
@@ -19,7 +17,7 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
         lower[1] = -1.0
         upper[end] = 1.0
         M = hcat(lower, sparse(diagm(-1 => du, 0 => diag, 1 => du2)), upper)
-        MatrixOperator(1 / dx * M)
+        return MatrixOperator(1 / dx * M)
     end
 
     function second_deriv(N)
@@ -32,7 +30,7 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
         lower[1] = 1.0
         upper[end] = 1.0
         M = hcat(lower, sparse(diagm(-1 => du, 0 => diag, 1 => du2)), upper)
-        MatrixOperator(1 / dx^2 * M)
+        return MatrixOperator(1 / dx^2 * M)
     end
 
     function extender(N)
@@ -42,10 +40,12 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
         upper = spzeros(Float64, N)
         lower[1] = 1.0
         upper[end] = 1.0
-        M = vcat(transpose(lower),
+        M = vcat(
+            transpose(lower),
             sparse(diagm(diag)),
-            transpose(upper))
-        MatrixOperator(1 / dx^2 * M)
+            transpose(upper)
+        )
+        return MatrixOperator(1 / dx^2 * M)
     end
 
     bc_handler = extender(N)
@@ -57,8 +57,10 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
     bc_xx = zeros(Real, N)
 
     function timedifferentialclosure!(du, u, p, t)
-        @unpack (α, D, v, k_p, V_c, Q_l, Q_r, V_b,
-        S, Lm, Dm, V_v) = p
+        (;
+            α, D, v, k_p, V_c, Q_l, Q_r, V_b,
+            S, Lm, Dm, V_v,
+        ) = p
 
         c = u[1:(end - 3)]
         c_v = u[end - 2]
@@ -90,7 +92,7 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
         du[end - 1] = dcc_dt
 
         dcb_dt = (Q_l / V_b) * c_c + C / V_b
-        du[end] = dcb_dt
+        return du[end] = dcb_dt
     end
 
     return timedifferentialclosure!
@@ -108,31 +110,45 @@ prior = ComponentArray(;
     S = 52,
     Lm = 0.05,
     Dm = 0.046,
-    V_v = 18.0)
+    V_v = 18.0
+)
 
 r_space = collect(range(0.0, 2.0, length = 15))
-computeparams = (Δr = r_space[2],
+computeparams = (
+    Δr = r_space[2],
     r_space = r_space,
-    countorderapprox = 2)
-parameters = (prior = prior,
-    compute = computeparams)
+    countorderapprox = 2,
+)
+parameters = (
+    prior = prior,
+    compute = computeparams,
+)
 
 dudt = enclosethetimedifferential(parameters)
 IC = ones(length(r_space) + 3)
-odeprob = ODEProblem(dudt,
+odeprob = ODEProblem(
+    dudt,
     IC,
     (0, 2.1),
-    parameters.prior);
+    parameters.prior
+);
 du0 = copy(odeprob.u0);
-jac_sparsity = Symbolics.jacobian_sparsity((du, u) -> dudt(du, u, parameters.prior, 0.0),
-    du0,
-    odeprob.u0);
-f = ODEFunction(dudt;
-    jac_prototype = float.(jac_sparsity));
-sparseodeprob = ODEProblem(f,
+# Hardcoded sparsity pattern for 15 spatial points + 3 state variables (18x18 matrix)
+# Previously computed using: Symbolics.jacobian_sparsity((du, u) -> dudt(du, u, parameters.prior, 0.0), du0, odeprob.u0)
+# This avoids the dependency on Symbolics in tests
+I = [1, 2, 16, 18, 1, 2, 3, 18, 2, 3, 4, 18, 3, 4, 5, 18, 4, 5, 6, 18, 5, 6, 7, 18, 6, 7, 8, 18, 7, 8, 9, 18, 8, 9, 10, 18, 9, 10, 11, 18, 10, 11, 12, 18, 11, 12, 13, 18, 12, 13, 14, 18, 13, 14, 15, 18, 14, 15, 17, 18, 1, 16, 17, 15, 17, 18, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18]
+J = [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18]
+jac_sparsity = sparse(I, J, ones(Bool, length(I)), 18, 18);
+f = ODEFunction(
+    dudt;
+    jac_prototype = float.(jac_sparsity)
+);
+sparseodeprob = ODEProblem(
+    f,
     odeprob.u0,
     (0, 2.1),
-    parameters.prior);
+    parameters.prior
+);
 
 solve(odeprob, TRBDF2());
 solve(sparseodeprob, TRBDF2());

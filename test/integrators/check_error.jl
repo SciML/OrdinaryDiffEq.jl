@@ -4,7 +4,7 @@ f_ec(u, p, t) = exp(u)
 u0 = 0.0 # explosion time is 1.0
 tspan = (0.0, 10.0)
 prob = ODEProblem(f_ec, u0, tspan)
-options = [:reltol => 1e-8, :abstol => 1e-8, :verbose => false]
+options = [:reltol => 1.0e-8, :abstol => 1.0e-8]
 desired_codes = (ReturnCode.MaxIters, ReturnCode.Unstable)
 
 # Test that sol.retcode is set to the correct value by various ways to
@@ -43,7 +43,7 @@ end
 
 let
     function f!(out, u, _, t)
-        out[1] = u[1] + 1 - sin(t)
+        return out[1] = u[1] + 1 - sin(t)
     end
     mprob = ODEProblem(ODEFunction(f!, mass_matrix = [0.0;;]), [0.0], (0, 2.0))
     @test solve(mprob, Rosenbrock23()).retcode == ReturnCode.Success

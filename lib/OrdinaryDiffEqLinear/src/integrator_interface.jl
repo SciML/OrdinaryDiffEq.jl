@@ -1,5 +1,7 @@
-@inline function DiffEqBase.get_tmp_cache(integrator,
+@inline function SciMLBase.get_tmp_cache(
+        integrator,
         alg::LinearExponential,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.tmp,)
+        cache::OrdinaryDiffEqMutableCache
+    )
+    return (cache.tmp,)
 end

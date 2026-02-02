@@ -6,7 +6,7 @@ function test_callback_inplace(alg; kwargs...)
     cb = ContinuousCallback((u, t, int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [1.0], (0.0, 2.0), callback = cb)
     sol = solve(prob, alg; kwargs...)
-    sol.u[end][1] ≈ exp(1)
+    return sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_outofplace(alg; kwargs...)
@@ -14,7 +14,7 @@ function test_callback_outofplace(alg; kwargs...)
     cb = ContinuousCallback((u, t, int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [1.0], (0.0, 2.0), callback = cb)
     sol = solve(prob, alg; kwargs...)
-    sol.u[end][1] ≈ exp(1)
+    return sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_scalar(alg; kwargs...)
@@ -22,7 +22,7 @@ function test_callback_scalar(alg; kwargs...)
     cb = ContinuousCallback((u, t, int) -> u - exp(1), terminate!)
     prob = ODEProblem(f, 1.0, (0.0, 2.0), callback = cb)
     sol = solve(prob, alg; kwargs...)
-    sol.u[end] ≈ exp(1)
+    return sol.u[end] ≈ exp(1)
 end
 
 function test_callback_svector(alg; kwargs...)
@@ -30,7 +30,7 @@ function test_callback_svector(alg; kwargs...)
     cb = ContinuousCallback((u, t, int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, SVector(1.0), (0.0, 2.0), callback = cb)
     sol = solve(prob, alg; kwargs...)
-    sol.u[end][1] ≈ exp(1)
+    return sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_mvector(alg; kwargs...)
@@ -38,19 +38,19 @@ function test_callback_mvector(alg; kwargs...)
     cb = ContinuousCallback((u, t, int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, MVector(1.0), (0.0, 2.0), callback = cb)
     sol = solve(prob, alg; kwargs...)
-    sol.u[end][1] ≈ exp(1)
+    return sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_adaptive_multistep(alg; kwargs...)
     function f(du, u, p, t)
         du[1] = u[2]
-        du[2] = -p
+        return du[2] = -p
     end
     function condition(u, t, integrator) # Event when event_f(u,t) == 0
-        u[1]
+        return u[1]
     end
     function affect!(integrator)
-        integrator.u[2] = -integrator.u[2]
+        return integrator.u[2] = -integrator.u[2]
     end
     cb = ContinuousCallback(condition, affect!)
     u0 = [50.0, 0.0]
@@ -59,7 +59,7 @@ function test_callback_adaptive_multistep(alg; kwargs...)
     prob = ODEProblem(f, u0, tspan, p, callback = cb)
     sol1 = solve(prob, Tsit5(); kwargs...)
     sol2 = solve(prob, alg; kwargs...)
-    sol1.u[end][1] ≈ sol2.u[end][1] && sol1.u[end][2] ≈ sol2.u[end][2]
+    return sol1.u[end][1] ≈ sol2.u[end][1] && sol1.u[end][2] ≈ sol2.u[end][2]
 end
 
 println("inplace")
@@ -265,5 +265,5 @@ println(".")
 @test test_callback_inplace(QNDF())
 
 println("adaptive multistep methods")
-@test test_callback_adaptive_multistep(QNDF(), reltol = 1e-10, abstol = 1e-10)
-@test test_callback_adaptive_multistep(FBDF(), reltol = 1e-10, abstol = 1e-10)
+@test test_callback_adaptive_multistep(QNDF(), reltol = 1.0e-10, abstol = 1.0e-10)
+@test test_callback_adaptive_multistep(FBDF(), reltol = 1.0e-10, abstol = 1.0e-10)

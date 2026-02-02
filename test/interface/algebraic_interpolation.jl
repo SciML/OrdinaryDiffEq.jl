@@ -7,7 +7,7 @@ function rober_ip(du, u, p, t)
     du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
     du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
     du[3] = y₁ + y₂ + y₃ - 1
-    nothing
+    return nothing
 end
 function rober_op(u, p, t)
     du = similar(u)
@@ -16,32 +16,34 @@ function rober_op(u, p, t)
     du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
     du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
     du[3] = y₁ + y₂ + y₃ - 1
-    du
+    return du
 end
-M = [1.0 0 0
-     0 1.0 0
-     0 0 0]
+M = [
+    1.0 0 0
+    0 1.0 0
+    0 0 0
+]
 fip = ODEFunction(rober_ip, mass_matrix = M)
-prob_ip = ODEProblem(fip, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4))
+prob_ip = ODEProblem(fip, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 
 fop = ODEFunction(rober_op, mass_matrix = M)
-prob_op = ODEProblem(fop, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4))
+prob_op = ODEProblem(fop, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 
-ref_ip = solve(prob_ip, Rodas5P(), reltol = 1e-8, abstol = 1e-8)
-ref_op = solve(prob_op, Rodas5P(), reltol = 1e-8, abstol = 1e-8)
+ref_ip = solve(prob_ip, Rodas5P(), reltol = 1.0e-8, abstol = 1.0e-8)
+ref_op = solve(prob_op, Rodas5P(), reltol = 1.0e-8, abstol = 1.0e-8)
 
-sol_ip = solve(prob_ip, FBDF(), reltol = 1e-8, abstol = 1e-8)
-sol_op = solve(prob_op, FBDF(), reltol = 1e-8, abstol = 1e-8)
+sol_ip = solve(prob_ip, FBDF(), reltol = 1.0e-8, abstol = 1.0e-8)
+sol_op = solve(prob_op, FBDF(), reltol = 1.0e-8, abstol = 1.0e-8)
 
 # make sure interpolation changes don't accidentally break this test suite
 # the intention is that ref uses a stiffness-aware interpolation, while sol uses hermite
-@test DiffEqBase.interp_summary(sol_ip) == "3rd order Hermite"
-@test DiffEqBase.interp_summary(sol_op) == "3rd order Hermite"
-@test occursin("stiffness-aware", DiffEqBase.interp_summary(ref_ip))
-@test occursin("stiffness-aware", DiffEqBase.interp_summary(ref_op))
+@test SciMLBase.interp_summary(sol_ip) == "3rd order Hermite"
+@test SciMLBase.interp_summary(sol_op) == "3rd order Hermite"
+@test occursin("stiffness-aware", SciMLBase.interp_summary(ref_ip))
+@test occursin("stiffness-aware", SciMLBase.interp_summary(ref_op))
 
-reltol = 1e-4
-abstol = 1e-4
+reltol = 1.0e-4
+abstol = 1.0e-4
 t = 1
 tv = [1, 10, 100]
 idxs = 3
@@ -56,22 +58,28 @@ idxsv = [2, 3]
 # primal, scalar index
 @test isapprox(ref_ip(t, idxs = idxs), sol_ip(t, idxs = idxs), rtol = reltol, atol = abstol) # ip, t
 @test isapprox(
-    ref_ip(tv, idxs = idxs), sol_ip(tv, idxs = idxs), rtol = reltol, atol = abstol) # ip, tv
+    ref_ip(tv, idxs = idxs), sol_ip(tv, idxs = idxs), rtol = reltol, atol = abstol
+) # ip, tv
 @test isapprox(ref_op(t, idxs = idxs), sol_op(t, idxs = idxs), rtol = reltol, atol = abstol) # op, t
 @test isapprox(
-    ref_op(tv, idxs = idxs), sol_op(tv, idxs = idxs), rtol = reltol, atol = abstol) # op, tv
+    ref_op(tv, idxs = idxs), sol_op(tv, idxs = idxs), rtol = reltol, atol = abstol
+) # op, tv
 
 # primal, vector index
 @test isapprox(
-    ref_ip(t, idxs = idxsv), sol_ip(t, idxs = idxsv), rtol = reltol, atol = abstol)
+    ref_ip(t, idxs = idxsv), sol_ip(t, idxs = idxsv), rtol = reltol, atol = abstol
+)
 @test isapprox(
-    ref_ip(tv, idxs = idxsv), sol_ip(tv, idxs = idxsv), rtol = reltol, atol = abstol)
+    ref_ip(tv, idxs = idxsv), sol_ip(tv, idxs = idxsv), rtol = reltol, atol = abstol
+)
 @test isapprox(
-    ref_op(t, idxs = idxsv), sol_op(t, idxs = idxsv), rtol = reltol, atol = abstol)
+    ref_op(t, idxs = idxsv), sol_op(t, idxs = idxsv), rtol = reltol, atol = abstol
+)
 @test isapprox(
-    ref_op(tv, idxs = idxsv), sol_op(tv, idxs = idxsv), rtol = reltol, atol = abstol)
+    ref_op(tv, idxs = idxsv), sol_op(tv, idxs = idxsv), rtol = reltol, atol = abstol
+)
 
-abstol = 1e-3
+abstol = 1.0e-3
 # derivative, no index
 @test isapprox(ref_ip(t, Val{1}), sol_ip(t, Val{1}), rtol = reltol, atol = abstol)
 @test isapprox(ref_ip(tv, Val{1}), sol_ip(tv, Val{1}), rtol = reltol, atol = abstol)
@@ -79,24 +87,40 @@ abstol = 1e-3
 @test isapprox(ref_op(tv, Val{1}), sol_op(tv, Val{1}), rtol = reltol, atol = abstol)
 
 # derivative, scalar index
-@test isapprox(ref_ip(t, Val{1}, idxs = idxs),
-    sol_ip(t, Val{1}, idxs = idxs), rtol = reltol, atol = abstol)
-@test isapprox(ref_ip(tv, Val{1}, idxs = idxs),
-    sol_ip(tv, Val{1}, idxs = idxs), rtol = reltol, atol = abstol)
-@test isapprox(ref_op(t, Val{1}, idxs = idxs),
-    sol_op(t, Val{1}, idxs = idxs), rtol = reltol, atol = abstol)
-@test isapprox(ref_op(tv, Val{1}, idxs = idxs),
-    sol_op(tv, Val{1}, idxs = idxs), rtol = reltol, atol = abstol)
+@test isapprox(
+    ref_ip(t, Val{1}, idxs = idxs),
+    sol_ip(t, Val{1}, idxs = idxs), rtol = reltol, atol = abstol
+)
+@test isapprox(
+    ref_ip(tv, Val{1}, idxs = idxs),
+    sol_ip(tv, Val{1}, idxs = idxs), rtol = reltol, atol = abstol
+)
+@test isapprox(
+    ref_op(t, Val{1}, idxs = idxs),
+    sol_op(t, Val{1}, idxs = idxs), rtol = reltol, atol = abstol
+)
+@test isapprox(
+    ref_op(tv, Val{1}, idxs = idxs),
+    sol_op(tv, Val{1}, idxs = idxs), rtol = reltol, atol = abstol
+)
 
 # derivative, vector index
-@test isapprox(ref_ip(tv, Val{1}, idxs = idxsv),
-    sol_ip(tv, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol)
-@test isapprox(ref_ip(t, Val{1}, idxs = idxsv),
-    sol_ip(t, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol)
-@test isapprox(ref_op(t, Val{1}, idxs = idxsv),
-    sol_op(t, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol)
-@test isapprox(ref_op(tv, Val{1}, idxs = idxsv),
-    sol_op(tv, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol)
+@test isapprox(
+    ref_ip(tv, Val{1}, idxs = idxsv),
+    sol_ip(tv, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol
+)
+@test isapprox(
+    ref_ip(t, Val{1}, idxs = idxsv),
+    sol_ip(t, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol
+)
+@test isapprox(
+    ref_op(t, Val{1}, idxs = idxsv),
+    sol_op(t, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol
+)
+@test isapprox(
+    ref_op(tv, Val{1}, idxs = idxsv),
+    sol_op(tv, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol
+)
 
 # higher derivatives should be zero
 # second derivative, no index

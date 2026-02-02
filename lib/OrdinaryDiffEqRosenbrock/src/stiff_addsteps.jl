@@ -1,10 +1,14 @@
-function _ode_addsteps!(k, t, uprev, u, dt, f, p,
-        cache::Union{Rosenbrock23ConstantCache,
-            Rosenbrock32ConstantCache},
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p,
+        cache::Union{
+            Rosenbrock23ConstantCache,
+            Rosenbrock32ConstantCache,
+        },
         always_calc_begin = false, allow_calc_end = true,
-        force_calc_end = false)
+        force_calc_end = false
+    )
     if length(k) < 2 || always_calc_begin
-        @unpack tf, uf, d = cache
+        (; tf, uf, d) = cache
         dtγ = dt * d
         neginvdtγ = -inv(dtγ)
         dto2 = dt / 2
@@ -16,7 +20,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
             autodiff_alg = SciMLBase.@set autodiff_alg.dir = sign(dt)
         end
 
-        dT = DI.derivative(tf, autodiff_alg,t)
+        dT = DI.derivative(tf, autodiff_alg, t)
 
         mass_matrix = f.mass_matrix
         if uprev isa Number
@@ -43,12 +47,14 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         copyat_or_push!(k, 1, k₁)
         copyat_or_push!(k, 2, k₂)
     end
-    nothing
+    return nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConstantCache,
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConstantCache,
         always_calc_begin = false, allow_calc_end = true,
-        force_calc_end = false)
+        force_calc_end = false
+    )
     if length(k) < size(cache.tab.H, 1) || always_calc_begin
         (; tf, uf) = cache
         (; A, C, gamma, c, d, H) = cache.tab
@@ -85,9 +91,9 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
         linsolve_tmp = @.. du + dtd[1] * dT
         k1 = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
         # constant number for type stability make sure this is greater than num_stages
-        ks = ntuple(Returns(k1), 10)
-        # Last stage doesn't affect ks
-        for stage in 2:(num_stages - 1)
+        ks = ntuple(Returns(k1), Val(20))
+        # Last stage affect's ks for Rodas5,5P,6P
+        for stage in 2:num_stages
             u = uprev
             for i in 1:(stage - 1)
                 u = @.. u + A[stage, i] * ks[i]
@@ -113,19 +119,21 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConst
 
         for j in 1:size(H, 1)
             kj = zero(ks[1])
-            # Last stage doesn't affect ks
-            for i in 1:(num_stages - 1)
+            # Last stage affect's ks for Rodas5,5P,6P
+            for i in 1:num_stages
                 kj = @.. kj + H[j, i] * ks[i]
             end
             copyat_or_push!(k, j, kj)
         end
     end
-    nothing
+    return nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         always_calc_begin = false, allow_calc_end = true,
-        force_calc_end = false)
+        force_calc_end = false
+    )
     if length(k) < 2 || always_calc_begin
         (; du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
         (; A, C, gamma, c, d, H) = cache.tab
@@ -149,10 +157,11 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
         linsolve = cache.linsolve
 
         linres = dolinsolve(
-            cache, linsolve; A = W, b = _vec(linsolve_tmp), reltol = cache.reltol)
+            cache, linsolve; A = W, b = _vec(linsolve_tmp), reltol = cache.reltol
+        )
         @.. $(_vec(ks[1])) = -linres.u
-        # Last stage doesn't affect ks
-        for stage in 2:(length(ks) - 1)
+        # Last stage affect's ks for Rodas5,5P,6P
+        for stage in 2:length(ks)
             tmp .= uprev
             for i in 1:(stage - 1)
                 @.. tmp += A[stage, i] * _vec(ks[i])
@@ -174,17 +183,18 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
             end
 
             linres = dolinsolve(
-                cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
+                cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol
+            )
             @.. $(_vec(ks[stage])) = -linres.u
         end
 
         for j in 1:size(H, 1)
             copyat_or_push!(k, j, zero(du))
-            # Last stage doesn't affect ks
-            for i in 1:(length(ks) - 1)
+            # Last stage affect's ks for Rodas5,5P,6P
+            for i in 1:length(ks)
                 @.. k[j] += H[j, i] * _vec(ks[i])
             end
         end
     end
-    nothing
+    return nothing
 end

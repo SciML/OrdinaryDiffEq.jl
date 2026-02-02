@@ -16,9 +16,11 @@ f1 = (du, u, p, t) -> du .= M1 * u
 f2 = (du, u, p, t) -> du .= M2 * u
 prob = SplitODEProblem(f1, f2, u0, tspan)
 
-for algname in (:SBDF2,
-    :SBDF3,
-    :KenCarp47)
+for algname in (
+        :SBDF2,
+        :SBDF3,
+        :KenCarp47,
+    )
     @testset "$algname" begin
         alg0 = @eval $algname()
         alg1 = @eval $algname(linsolve = LUFactorization())
@@ -26,8 +28,8 @@ for algname in (:SBDF2,
         kwargs = (dt = dt,)
 
         solve(prob, alg0; kwargs...)
-        @test DiffEqBase.__solve(prob, alg0; kwargs...).retcode == ReturnCode.Success
-        @test DiffEqBase.__solve(prob, alg1; kwargs...).retcode == ReturnCode.Success
+        @test SciMLBase.__solve(prob, alg0; kwargs...).retcode == ReturnCode.Success
+        @test SciMLBase.__solve(prob, alg1; kwargs...).retcode == ReturnCode.Success
     end
 end
 
@@ -35,16 +37,18 @@ f1 = M1 |> MatrixOperator
 f2 = M2 |> MatrixOperator
 prob = SplitODEProblem(f1, f2, u0, tspan)
 
-for algname in (:SBDF2,
-    :SBDF3,
-    :KenCarp47)
+for algname in (
+        :SBDF2,
+        :SBDF3,
+        :KenCarp47,
+    )
     @testset "$algname" begin
         alg0 = @eval $algname()
 
         kwargs = (dt = dt,)
 
         solve(prob, alg0; kwargs...)
-        @test DiffEqBase.__solve(prob, alg0; kwargs...).retcode == ReturnCode.Success
+        @test SciMLBase.__solve(prob, alg0; kwargs...).retcode == ReturnCode.Success
     end
 end
 

@@ -1,22 +1,26 @@
 using OrdinaryDiffEq, Test, DiffEqBase
 using OrdinaryDiffEqCore
-using ForwardDiff, Printf
+using ForwardDiff
 import ODEProblemLibrary: prob_ode_linear,
-                          prob_ode_2Dlinear,
-                          prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
+    prob_ode_2Dlinear,
+    prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 # use `PRINT_TESTS = true` to print the tests, including results
 const PRINT_TESTS = false
 print_results(x) =
-    if PRINT_TESTS
-        @printf("%s \n", x)
-    end
+if PRINT_TESTS
+    println(x)
+end
 
 # points and storage arrays used in the interpolation tests
 const interpolation_points = 0:(1 // 2^(4)):1
-const interpolation_results_1d = fill(zero(prob_ode_linear.u0),
-    length(interpolation_points))
-const interpolation_results_2d = Vector{typeof(prob_ode_2Dlinear.u0)}(undef,
-    length(interpolation_points))
+const interpolation_results_1d = fill(
+    zero(prob_ode_linear.u0),
+    length(interpolation_points)
+)
+const interpolation_results_2d = Vector{typeof(prob_ode_2Dlinear.u0)}(
+    undef,
+    length(interpolation_points)
+)
 for idx in eachindex(interpolation_results_2d)
     interpolation_results_2d[idx] = zero(prob_ode_2Dlinear.u0)
 end
@@ -25,11 +29,16 @@ f_linear_inplace = (du, u, p, t) -> begin
     @. du = 1.01 * u
 end
 prob_ode_linear_inplace = ODEProblem(
-    ODEFunction(f_linear_inplace;
-        analytic = (u0, p, t) -> exp(1.01 * t) * u0),
-    [0.5], (0.0, 1.0))
-const interpolation_results_1d_inplace = Vector{typeof(prob_ode_linear_inplace.u0)}(undef,
-    length(interpolation_points))
+    ODEFunction(
+        f_linear_inplace;
+        analytic = (u0, p, t) -> exp(1.01 * t) * u0
+    ),
+    [0.5], (0.0, 1.0)
+)
+const interpolation_results_1d_inplace = Vector{typeof(prob_ode_linear_inplace.u0)}(
+    undef,
+    length(interpolation_points)
+)
 for idx in eachindex(interpolation_results_1d_inplace)
     interpolation_results_1d_inplace[idx] = zero(prob_ode_linear_inplace.u0)
 end
@@ -38,14 +47,16 @@ const deriv_test_points = range(0, stop = 1, length = 5)
 
 # left continuous derivative \lim{ϵ->0⁺}\frac{f(x)-f(x-ϵ)}{ϵ}
 function LeftDeriv(f, x)
-    ForwardDiff.derivative(t -> -f(-t), -x)
+    return ForwardDiff.derivative(t -> -f(-t), -x)
 end
 # perform the regression tests
 # NOTE: If you want to add new tests (for new algorithms), you have to run the
 #       commands below to get numerical values for `tol_ode_linear` and
 #       `tol_ode_2Dlinear`.
-function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false,
-        nth_der = 1, dertol = 1e-6)
+function regression_test(
+        alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false,
+        nth_der = 1, dertol = 1.0e-6
+    )
     println("\n")
     show(stdout, alg)
     println()
@@ -55,8 +66,10 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
     @inferred sol(interpolation_points[1])
     sol2 = solve(prob_ode_linear, alg, dt = 1 // 2^(4), dense = true, adaptive = false)
     for i in eachindex(sol2)
-        print_results(@test maximum(abs.(sol2[i] - interpolation_results_1d[i])) <
-                            tol_ode_linear)
+        print_results(
+            @test maximum(abs.(sol2[i] - interpolation_results_1d[i])) <
+                tol_ode_linear
+        )
     end
     for N in 1:nth_der
         # prevent CI error
@@ -67,7 +80,7 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
             @test interpolation_results_1d[1] ≈ der
             for t in deriv_test_points
                 deriv = sol(t, Val{N})
-                @test deriv≈LeftDeriv(t -> sol(t, Val{N - 1}), t) rtol=dertol
+                @test deriv ≈ LeftDeriv(t -> sol(t, Val{N - 1}), t) rtol = dertol
             end
         end
     end
@@ -88,7 +101,7 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
             @test interpolation_results_1d_inplace[1] ≈ der
             for t in deriv_test_points
                 deriv = sol(t, Val{N}, idxs = 1)
-                @test deriv≈LeftDeriv(t -> sol(t, Val{N - 1}; idxs = 1), t) rtol=dertol
+                @test deriv ≈ LeftDeriv(t -> sol(t, Val{N - 1}; idxs = 1), t) rtol = dertol
             end
         end
     end
@@ -98,9 +111,12 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
     sol(interpolation_points[1])
     sol2 = solve(prob_ode_2Dlinear, alg, dt = 1 // 2^(4), dense = true, adaptive = false)
     for i in eachindex(sol2)
-        print_results(@test maximum(maximum.(abs.(sol2[i] - interpolation_results_2d[i]))) <
-                            tol_ode_2Dlinear)
+        print_results(
+            @test maximum(maximum.(abs.(sol2[i] - interpolation_results_2d[i]))) <
+                tol_ode_2Dlinear
+        )
     end
+    return
 end
 
 # Some extra tests using Euler()
@@ -126,7 +142,7 @@ end
 
 interpd_idxs = sol(0:(1 // 2^(4)):1, idxs = 1:2:5)
 
-@test minimum([isapprox(interpd_idxs[i], interpd[i][1:2:5], rtol=1e-14) for i in 1:length(interpd)])
+@test minimum([isapprox(interpd_idxs[i], interpd[i][1:2:5], rtol = 1.0e-14) for i in 1:length(interpd)])
 
 interpd_single = sol(0:(1 // 2^(4)):1, idxs = 1)
 
@@ -181,11 +197,11 @@ println("SSPRKs")
 
 # SSPRK22
 @test SSPRK22() == SSPRK22(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(SSPRK22(), 1.5e-2, 2.5e-2; test_diff1 = true, nth_der = 2, dertol = 1e-15)
+regression_test(SSPRK22(), 1.5e-2, 2.5e-2; test_diff1 = true, nth_der = 2, dertol = 1.0e-15)
 
 # SSPRK33
 @test SSPRK33() == SSPRK33(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(SSPRK33(), 7.5e-4, 7.5e-3; test_diff1 = true, nth_der = 2, dertol = 1e-15)
+regression_test(SSPRK33(), 7.5e-4, 7.5e-3; test_diff1 = true, nth_der = 2, dertol = 1.0e-15)
 
 # SSPRK53
 @test SSPRK53() == SSPRK53(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
@@ -213,11 +229,11 @@ regression_test(SSPRK83(), 6.5e-5, 1.5e-4; test_diff1 = true)
 
 # SSPRK43
 @test SSPRK43() == SSPRK43(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(SSPRK43(), 4.0e-4, 8.0e-4; test_diff1 = true, nth_der = 2, dertol = 1e-13)
+regression_test(SSPRK43(), 4.0e-4, 8.0e-4; test_diff1 = true, nth_der = 2, dertol = 1.0e-13)
 
 # SSPRK432
 @test SSPRK432() == SSPRK432(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(SSPRK432(), 4.0e-4, 8.0e-4; test_diff1 = true, nth_der = 2, dertol = 1e-13)
+regression_test(SSPRK432(), 4.0e-4, 8.0e-4; test_diff1 = true, nth_der = 2, dertol = 1.0e-13)
 
 # SSPRK932
 @test SSPRK932() == SSPRK932(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
@@ -229,7 +245,7 @@ regression_test(SSPRK54(), 3.5e-5, 5.5e-5)
 
 # SSPRK104
 @test SSPRK22() == SSPRK22(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(SSPRK104(), 1.5e-5, 3e-5)
+regression_test(SSPRK104(), 1.5e-5, 3.0e-5)
 
 # KYKSSPRK42
 @test KYKSSPRK42() == KYKSSPRK42(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
@@ -325,7 +341,7 @@ regression_test(CKLLSRK54_3N_3R(), 4.0e-5, 7.0e-5)
 
 # CKLLSRK85_4C_3R
 @test CKLLSRK85_4C_3R() == CKLLSRK85_4C_3R(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(CKLLSRK85_4C_3R(), 8.0e-5, 1.60e-4)
+regression_test(CKLLSRK85_4C_3R(), 8.0e-5, 1.6e-4)
 
 # CKLLSRK85_4M_3R
 @test CKLLSRK85_4M_3R() == CKLLSRK85_4M_3R(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
@@ -357,42 +373,42 @@ regression_test(CKLLSRK75_4M_5R(), 8.0e-5, 1.6e-4)
 
 # ParsaniKetchesonDeconinck3S32
 @test ParsaniKetchesonDeconinck3S32() ==
-      ParsaniKetchesonDeconinck3S32(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
+    ParsaniKetchesonDeconinck3S32(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S32(), 1.5e-2, 2.0e-2)
 
 # ParsaniKetchesonDeconinck3S82
 @test ParsaniKetchesonDeconinck3S82() ==
-      ParsaniKetchesonDeconinck3S82(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
+    ParsaniKetchesonDeconinck3S82(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S82(), 1.5e-3, 3.0e-3)
 
 # ParsaniKetchesonDeconinck3S53
 @test ParsaniKetchesonDeconinck3S53() ==
-      ParsaniKetchesonDeconinck3S53(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
+    ParsaniKetchesonDeconinck3S53(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S53(), 2.5e-4, 4.5e-4)
 
 # ParsaniKetchesonDeconinck3S173
 @test ParsaniKetchesonDeconinck3S173() ==
-      ParsaniKetchesonDeconinck3S173(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
+    ParsaniKetchesonDeconinck3S173(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S173(), 3.5e-5, 5.5e-5)
 
 # ParsaniKetchesonDeconinck3S94
 @test ParsaniKetchesonDeconinck3S94() ==
-      ParsaniKetchesonDeconinck3S94(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
+    ParsaniKetchesonDeconinck3S94(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S94(), 1.5e-5, 3.0e-5)
 
 # ParsaniKetchesonDeconinck3S184
 @test ParsaniKetchesonDeconinck3S184() ==
-      ParsaniKetchesonDeconinck3S184(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
+    ParsaniKetchesonDeconinck3S184(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S184(), 1.5e-5, 3.0e-5)
 
 # ParsaniKetchesonDeconinck3S105
 @test ParsaniKetchesonDeconinck3S105() ==
-      ParsaniKetchesonDeconinck3S105(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
+    ParsaniKetchesonDeconinck3S105(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S105(), 1.5e-5, 3.0e-5)
 
 # ParsaniKetchesonDeconinck3S205
 @test ParsaniKetchesonDeconinck3S205() ==
-      ParsaniKetchesonDeconinck3S205(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
+    ParsaniKetchesonDeconinck3S205(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S205(), 1.5e-5, 3.0e-5)
 
 # RDPK3Sp35
@@ -423,155 +439,167 @@ println("RKs")
 
 # RK4
 @test RK4() == RK4(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(RK4(), 4.5e-5, 1e-4)
+regression_test(RK4(), 4.5e-5, 1.0e-4)
 
 # DP5
 @test DP5() == DP5(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(DP5(), 5e-6, 1e-5; test_diff1 = true, nth_der = 4, dertol = 1e-14)
+regression_test(DP5(), 5.0e-6, 1.0e-5; test_diff1 = true, nth_der = 4, dertol = 1.0e-14)
 
 # BS3
 @test BS3() == BS3(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(BS3(), 5e-4, 8e-4)
+regression_test(BS3(), 5.0e-4, 8.0e-4)
 
 # OwrenZen3
 @test OwrenZen3() == OwrenZen3(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(OwrenZen3(), 1.5e-4, 2.5e-4; test_diff1 = true, nth_der = 3, dertol = 1e-9)
+regression_test(OwrenZen3(), 1.5e-4, 2.5e-4; test_diff1 = true, nth_der = 3, dertol = 1.0e-9)
 
 # OwrenZen4
 @test OwrenZen4() == OwrenZen4(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(OwrenZen4(), 6.5e-6, 1.5e-5; test_diff1 = true, nth_der = 4, dertol = 1e-10)
+regression_test(OwrenZen4(), 6.5e-6, 1.5e-5; test_diff1 = true, nth_der = 4, dertol = 1.0e-10)
 
 # OwrenZen5
 @test OwrenZen5() == OwrenZen5(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(OwrenZen5(), 1.5e-6, 2.5e-6; test_diff1 = true, nth_der = 5, dertol = 1e-8)
+regression_test(OwrenZen5(), 1.5e-6, 2.5e-6; test_diff1 = true, nth_der = 5, dertol = 1.0e-8)
 
 # Tsit5
 @test Tsit5() == Tsit5(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(Tsit5(), 2e-6, 4e-6; test_diff1 = true, nth_der = 4, dertol = 1e-6)
+regression_test(Tsit5(), 2.0e-6, 4.0e-6; test_diff1 = true, nth_der = 4, dertol = 1.0e-6)
 
 # TanYam7
 @test TanYam7() == TanYam7(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(TanYam7(), 4e-4, 6e-4)
+regression_test(TanYam7(), 4.0e-4, 6.0e-4)
 
 # TsitPap8
 @test TsitPap8() == TsitPap8(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(TsitPap8(), 1e-3, 3e-3)
+regression_test(TsitPap8(), 1.0e-3, 3.0e-3)
 
 # Feagin10
-regression_test(Feagin10(), 6e-4, 9e-4)
+regression_test(Feagin10(), 6.0e-4, 9.0e-4)
 
 # BS5
 @test BS5() == BS5(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(BS5(), 4e-8, 6e-8; test_diff1 = true, nth_der = 1, dertol = 1e-12)
-regression_test(BS5(lazy = false), 4e-8, 6e-8; test_diff1 = true, nth_der = 1,
-    dertol = 1e-12)
+regression_test(BS5(), 4.0e-8, 6.0e-8; test_diff1 = true, nth_der = 1, dertol = 1.0e-12)
+regression_test(
+    BS5(lazy = false), 4.0e-8, 6.0e-8; test_diff1 = true, nth_der = 1,
+    dertol = 1.0e-12
+)
 
 prob = prob_ode_linear
 sol = solve(prob, BS5(), dt = 1 // 2^(1), dense = true, adaptive = false)
 interpd_1d_long = sol(0:(1 // 2^(7)):1)
 sol2 = solve(prob, BS5(), dt = 1 // 2^(7), dense = true, adaptive = false)
-print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_1d_long)) < 2e-7)
+print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_1d_long)) < 2.0e-7)
 
 # DP8
 @test DP8() == DP8(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(DP8(), 2e-7, 3e-7; test_diff1 = true, nth_der = 1, dertol = 1e-15)
+regression_test(DP8(), 2.0e-7, 3.0e-7; test_diff1 = true, nth_der = 1, dertol = 1.0e-15)
 
 prob = prob_ode_linear
 sol = solve(prob, DP8(), dt = 1 // 2^(2), dense = true)
 sol(interpd_1d_long, 0:(1 // 2^(7)):1) # inplace update
 sol2 = solve(prob, DP8(), dt = 1 // 2^(7), dense = true, adaptive = false)
-print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_1d_long)) < 2e-7)
+print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_1d_long)) < 2.0e-7)
 
 println("Verns")
 
 # Vern6
 @test Vern6() == Vern6(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(Vern6(), 7e-8, 7e-8; test_diff1 = true, nth_der = 1, dertol = 1e-9)
-regression_test(Vern6(lazy = false), 7e-8, 7e-8; test_diff1 = true, nth_der = 1,
-    dertol = 1e-9)
+regression_test(Vern6(), 7.0e-8, 7.0e-8; test_diff1 = true, nth_der = 1, dertol = 1.0e-9)
+regression_test(
+    Vern6(lazy = false), 7.0e-8, 7.0e-8; test_diff1 = true, nth_der = 1,
+    dertol = 1.0e-9
+)
 
 prob = remake(prob_ode_bigfloatlinear; u0 = big(0.5))
 
 sol = solve(prob, Vern6(), dt = 1 // 2^(2), dense = true)
 interpd_1d_big = sol(0:(1 // 2^(7)):1)
 sol2 = solve(prob, Vern6(), dt = 1 // 2^(7), dense = true, adaptive = false)
-print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2[:] - interpd_1d_big)) < 5e-8)
+print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2[:] - interpd_1d_big)) < 5.0e-8)
 
-prob_ode_bigfloatveclinear = ODEProblem((u, p, t) -> p * u, [big(0.5)], (0.0, 1.0),
-    big(1.01))
+prob_ode_bigfloatveclinear = ODEProblem(
+    (u, p, t) -> p * u, [big(0.5)], (0.0, 1.0),
+    big(1.01)
+)
 prob = prob_ode_bigfloatveclinear
 sol = solve(prob, Vern6(), dt = 1 // 2^(2), dense = true)
 interpd_big = sol(0:(1 // 2^(4)):1)
 sol2 = solve(prob, Vern6(), dt = 1 // 2^(4), dense = true, adaptive = false)
-print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_big)) < 5e-8)
+print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_big)) < 5.0e-8)
 
 # Vern7
-regression_test(Vern7(), 3e-9, 5e-9; test_diff1 = true, nth_der = 1, dertol = 1e-10)
-regression_test(Vern7(lazy = false), 3e-9, 5e-9; test_diff1 = true, nth_der = 1,
-    dertol = 1e-10)
+regression_test(Vern7(), 3.0e-9, 5.0e-9; test_diff1 = true, nth_der = 1, dertol = 1.0e-10)
+regression_test(
+    Vern7(lazy = false), 3.0e-9, 5.0e-9; test_diff1 = true, nth_der = 1,
+    dertol = 1.0e-10
+)
 
 # Vern8
 @test Vern8() == Vern8(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(Vern8(), 3e-8, 5e-8; test_diff1 = true, nth_der = 1, dertol = 1e-7)
-regression_test(Vern8(lazy = false), 3e-8, 5e-8; test_diff1 = true, nth_der = 1,
-    dertol = 1e-7)
+regression_test(Vern8(), 3.0e-8, 5.0e-8; test_diff1 = true, nth_der = 1, dertol = 1.0e-7)
+regression_test(
+    Vern8(lazy = false), 3.0e-8, 5.0e-8; test_diff1 = true, nth_der = 1,
+    dertol = 1.0e-7
+)
 
 # Vern9
 @test Vern9() == Vern9(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(Vern9(), 1e-9, 2e-9; test_diff1 = true, nth_der = 4, dertol = 5e-2)
-regression_test(Vern9(lazy = false), 1e-9, 2e-9; test_diff1 = true, nth_der = 4,
-    dertol = 5e-2)
+regression_test(Vern9(), 1.0e-9, 2.0e-9; test_diff1 = true, nth_der = 4, dertol = 5.0e-2)
+regression_test(
+    Vern9(lazy = false), 1.0e-9, 2.0e-9; test_diff1 = true, nth_der = 4,
+    dertol = 5.0e-2
+)
 
 println("Rosenbrocks")
 
 # Rosenbrock23
-regression_test(Rosenbrock23(), 3e-3, 6e-3; test_diff1 = true, nth_der = 1, dertol = 1e-14)
+regression_test(Rosenbrock23(), 3.0e-3, 6.0e-3; test_diff1 = true, nth_der = 1, dertol = 1.0e-14)
 
 # Rosenbrock32
-regression_test(Rosenbrock32(), 6e-4, 9e-4; test_diff1 = true, nth_der = 1, dertol = 1e-14)
+regression_test(Rosenbrock32(), 6.0e-4, 9.0e-4; test_diff1 = true, nth_der = 1, dertol = 1.0e-14)
 
 # Rodas23W
-regression_test(Rodas23W(), 2e-3, 4e-3, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+regression_test(Rodas23W(), 2.0e-3, 4.0e-3, test_diff1 = true, nth_der = 1, dertol = 1.0e-14)
 
 # Rodas3P
-regression_test(Rodas3P(), 2e-4, 4e-4, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+regression_test(Rodas3P(), 2.0e-4, 4.0e-4, test_diff1 = true, nth_der = 1, dertol = 1.0e-14)
 
 # Rodas4
-regression_test(Rodas4(), 8.5e-6, 2e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+regression_test(Rodas4(), 8.5e-6, 2.0e-5, test_diff1 = true, nth_der = 1, dertol = 1.0e-14)
 
 # Rodas42
-regression_test(Rodas42(), 3e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+regression_test(Rodas42(), 3.0e-5, 6.0e-5, test_diff1 = true, nth_der = 1, dertol = 1.0e-14)
 
 # Rodas4P
-regression_test(Rodas4P(), 4e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 1e-13)
+regression_test(Rodas4P(), 4.0e-5, 6.0e-5, test_diff1 = true, nth_der = 1, dertol = 1.0e-13)
 
 # Rodas4P2
-regression_test(Rodas4P2(), 2e-5, 3e-5, test_diff1 = true, nth_der = 1, dertol = 1e-13)
+regression_test(Rodas4P2(), 2.0e-5, 3.0e-5, test_diff1 = true, nth_der = 1, dertol = 1.0e-13)
 
 # Rodas5
-regression_test(Rodas5(), 2e-6, 3e-6, test_diff1 = true, nth_der = 3, dertol = 5e-1)
+regression_test(Rodas5(), 2.0e-6, 3.0e-6, test_diff1 = true, nth_der = 3, dertol = 5.0e-1)
 
 # Rodas5P
-regression_test(Rodas5P(), 2e-5, 3e-5, test_diff1 = true, nth_der = 3, dertol = 5e-1)
+regression_test(Rodas5P(), 2.0e-5, 3.0e-5, test_diff1 = true, nth_der = 3, dertol = 5.0e-1)
 
 # Rodas5Pe
-regression_test(Rodas5Pe(), 2e-5, 3e-5, test_diff1 = true, nth_der = 3, dertol = 5e-1)
+regression_test(Rodas5Pe(), 2.0e-5, 3.0e-5, test_diff1 = true, nth_der = 3, dertol = 5.0e-1)
 
 # Rodas5Pr
-regression_test(Rodas5Pr(), 2e-5, 3e-5, test_diff1 = true, nth_der = 3, dertol = 5e-1)
+regression_test(Rodas5Pr(), 2.0e-5, 3.0e-5, test_diff1 = true, nth_der = 3, dertol = 5.0e-1)
 
 # ExplicitRK
-regression_test(ExplicitRK(), 7e-5, 2e-4)
+regression_test(ExplicitRK(), 7.0e-5, 2.0e-4)
 
 prob = prob_ode_linear
 sol = solve(prob, ExplicitRK(), dt = 1 // 2^(2), dense = true)
 # inplace interp of solution
 sol(interpd_1d_long, 0:(1 // 2^(7)):1)
 sol2 = solve(prob, ExplicitRK(), dt = 1 // 2^(7), dense = true, adaptive = false)
-print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_1d_long)) < 6e-5)
+print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_1d_long)) < 6.0e-5)
 
 prob = prob_ode_2Dlinear
 sol = solve(prob, ExplicitRK(), dt = 1 // 2^(2), dense = true)
 sol(interpd, 0:(1 // 2^(4)):1)
 sol2 = solve(prob, ExplicitRK(), dt = 1 // 2^(4), dense = true, adaptive = false)
-print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd)) < 2e-4)
+print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd)) < 2.0e-4)

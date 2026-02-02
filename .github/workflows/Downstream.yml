@@ -4,7 +4,11 @@ on:
     branches: [master]
     tags: [v*]
   pull_request:
-
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
     name: ${{ matrix.package.repo }}/${{ matrix.package.group }}/${{ matrix.julia-version }}
@@ -39,13 +43,13 @@ jobs:
           - {user: SKopecz, repo: PositiveIntegrators.jl, group: Downstream}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
           arch: x64
       - name: Clone Downstream
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
           path: downstream
@@ -70,3 +74,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
           fail_ci_if_error: false
+          disable_safe_directory: true

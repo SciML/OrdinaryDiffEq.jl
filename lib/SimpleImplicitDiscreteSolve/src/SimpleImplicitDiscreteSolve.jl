@@ -3,7 +3,8 @@ module SimpleImplicitDiscreteSolve
 using SciMLBase
 using SimpleNonlinearSolve
 using Reexport
-@reexport using DiffEqBase
+
+@reexport using SciMLBase
 
 """
     SimpleIDSolve()
@@ -12,7 +13,7 @@ Simple solver for `ImplicitDiscreteSystems`. Uses `SimpleNewtonRaphson` to solve
 """
 struct SimpleIDSolve <: SciMLBase.AbstractODEAlgorithm end
 
-function DiffEqBase.__init(prob::ImplicitDiscreteProblem, alg::SimpleIDSolve; dt = 1)
+function SciMLBase.__init(prob::ImplicitDiscreteProblem, alg::SimpleIDSolve; dt = 1)
     u0 = prob.u0
     p = prob.p
     f = prob.f
@@ -21,23 +22,27 @@ function DiffEqBase.__init(prob::ImplicitDiscreteProblem, alg::SimpleIDSolve; dt
     nlf = isinplace(f) ? (out, u, p) -> f(out, u, u0, p, t) : (u, p) -> f(u, u0, p, t)
     prob = NonlinearProblem{isinplace(f)}(nlf, u0, p)
     sol = solve(prob, SimpleNewtonRaphson())
-    sol, (sol.retcode != ReturnCode.Success)
+    return sol, (sol.retcode != ReturnCode.Success)
 end
 
-function DiffEqBase.solve(prob::ImplicitDiscreteProblem, alg::SimpleIDSolve;
+function SciMLBase.solve(
+        prob::ImplicitDiscreteProblem, alg::SimpleIDSolve;
         dt = 1,
         save_everystep = true,
         save_start = true,
         adaptive = false,
         dense = false,
         save_end = true,
-        kwargs...)
+        kwargs...
+    )
     @assert !adaptive
     @assert !dense
-    (initsol, initfail) = DiffEqBase.__init(prob, alg; dt)
+    (initsol, initfail) = SciMLBase.__init(prob, alg; dt)
     if initfail
-        sol = DiffEqBase.build_solution(prob, alg, prob.tspan[1], u0, k = nothing,
-            stats = nothing, calculate_error = false)
+        sol = SciMLBase.build_solution(
+            prob, alg, prob.tspan[1], prob.u0, k = nothing,
+            stats = nothing, calculate_error = false
+        )
         return SciMLBase.solution_new_retcode(sol, ReturnCode.InitialFailure)
     end
 
@@ -63,7 +68,7 @@ function DiffEqBase.solve(prob::ImplicitDiscreteProblem, alg::SimpleIDSolve;
         uprev = u
         t = ts[i]
         nlf = isinplace(f) ? (out, u, p) -> f(out, u, uprev, p, t) :
-              (u, p) -> f(u, uprev, p, t)
+            (u, p) -> f(u, uprev, p, t)
         nlprob = NonlinearProblem{isinplace(f)}(nlf, uprev, p)
         nlsol = solve(nlprob, SimpleNewtonRaphson())
         u = nlsol.u
@@ -71,22 +76,27 @@ function DiffEqBase.solve(prob::ImplicitDiscreteProblem, alg::SimpleIDSolve;
         convfail = (nlsol.retcode != ReturnCode.Success)
 
         if convfail
-            sol = DiffEqBase.build_solution(prob, alg, ts[1:i], us[1:i], k = nothing,
-                stats = nothing, calculate_error = false)
+            sol = SciMLBase.build_solution(
+                prob, alg, ts[1:i], us[1:i], k = nothing,
+                stats = nothing, calculate_error = false
+            )
             sol = SciMLBase.solution_new_retcode(sol, ReturnCode.ConvergenceFailure)
             return sol
         end
     end
 
     !save_everystep && save_end && (us[end] = u)
-    sol = DiffEqBase.build_solution(prob, alg, ts, us,
+    sol = SciMLBase.build_solution(
+        prob, alg, ts, us,
         k = nothing, stats = nothing,
-        calculate_error = false)
+        calculate_error = false
+    )
 
-    DiffEqBase.has_analytic(prob.f) &&
-        DiffEqBase.calculate_solution_errors!(
-            sol; timeseries_errors = true, dense_errors = false)
-    sol
+    SciMLBase.has_analytic(prob.f) &&
+        SciMLBase.calculate_solution_errors!(
+        sol; timeseries_errors = true, dense_errors = false
+    )
+    return sol
 end
 
 export SimpleIDSolve

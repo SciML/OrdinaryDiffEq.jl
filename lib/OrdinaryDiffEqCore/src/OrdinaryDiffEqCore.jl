@@ -1,85 +1,101 @@
 module OrdinaryDiffEqCore
 
 if isdefined(Base, :Experimental) &&
-   isdefined(Base.Experimental, Symbol("@max_methods"))
+        isdefined(Base.Experimental, Symbol("@max_methods"))
     @eval Base.Experimental.@max_methods 1
 end
 
-using DocStringExtensions
-using Reexport
-@reexport using DiffEqBase
+import DocStringExtensions
+import Reexport: @reexport
+using Reexport: @reexport
+@reexport using SciMLBase
+import DiffEqBase
 
-using Logging
+import Logging: @logmsg, LogLevel
 
-using MuladdMacro, FastClosures
+using MuladdMacro: @muladd
 
-using LinearAlgebra
+using LinearAlgebra: opnorm, I, UniformScaling, diag, rank, isdiag
 
-using PrecompileTools
+import PrecompileTools
 
 import FillArrays: Trues, Falses
 
-import FastPower
+import FastPower: fastpower
 
 # Interfaces
-import DiffEqBase: solve!, step!, initialize!, isadaptive
+import SciMLBase: solve!, step!, isadaptive
+import DiffEqBase: initialize!
+
+# DAE Initialization algorithms
+import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 
 # Internal utils
 import DiffEqBase: ODE_DEFAULT_NORM,
-                   ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
-                   ODE_DEFAULT_UNSTABLE_CHECK
+    ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
+    ODE_DEFAULT_UNSTABLE_CHECK
 
 import SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator,
-                       MatrixOperator, FunctionOperator,
-                       update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
-                       isconstant
+    MatrixOperator, FunctionOperator,
+    update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
+    isconstant
 
 using DiffEqBase: DEIntegrator
 
-import RecursiveArrayTools: chain, recursivecopy!
+import RecursiveArrayTools: chain, recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype, copyat_or_push!, DiffEqArray, recursivefill!
 
-using SimpleUnPack, RecursiveArrayTools, DataStructures, ArrayInterface
+import RecursiveArrayTools
+using DataStructures: BinaryHeap, FasterForward
+import DataStructures
+using ArrayInterface: ArrayInterface, issingular
 
-import TruncatedStacktraces
+import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
 import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
-                         StaticMatrix
+    StaticMatrix
 
 # Integrator Interface
-import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
-                   resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
-                   terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
-                   u_modified!, savevalues!,
-                   add_tstop!, has_tstop, first_tstop, pop_tstop!,
-                   add_saveat!, set_reltol!,
-                   set_abstol!, postamble!, last_step_failed,
-                   isautodifferentiable,
-                   get_tstops, get_tstops_array, get_tstops_max
+import SciMLBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
+    resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
+    terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
+    u_modified!, savevalues!,
+    add_tstop!, has_tstop, first_tstop, pop_tstop!,
+    add_saveat!, set_reltol!,
+    set_abstol!, postamble!, last_step_failed,
+    isautodifferentiable
+import DiffEqBase: get_tstops, get_tstops_array, get_tstops_max
 
 using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., True, False
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
-                 ODEAliasSpecifier
+    ODEAliasSpecifier
 
 import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
 
+import SciMLBase: unwrap_cache,
+    islinear
 import DiffEqBase: calculate_residuals,
-                   calculate_residuals!, unwrap_cache,
-                   @tight_loop_macros,
-                   islinear, timedepentdtmin
+    calculate_residuals!, @tight_loop_macros,
+    timedepentdtmin
 
 import Polyester
-using MacroTools, Adapt
+# MacroTools and Adapt imported but not directly used in OrdinaryDiffEqCore
+# using MacroTools, Adapt
 import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse
 import Accessors: @reset
 
-using SciMLStructures: canonicalize, Tunable, isscimlstructure
+# SciMLStructures symbols imported but not directly used in OrdinaryDiffEqCore
+# using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
-using SymbolicIndexingInterface: state_values, parameter_values, is_variable,
-                                 variable_index,
-                                 symbolic_type, NotSymbolic
+using SciMLLogging: SciMLLogging, @SciMLMessage, AbstractVerbositySpecifier, AbstractVerbosityPreset,
+    None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
+    CustomLevel, AbstractMessageLevel, @verbosity_specifier
+
+using SymbolicIndexingInterface: state_values, parameter_values
+
+using ConcreteStructs: @concrete
 
 const CompiledFloats = Union{Float32, Float64}
 import Preferences
@@ -125,6 +141,7 @@ end
 
 include("doc_utils.jl")
 include("misc_utils.jl")
+include("verbosity.jl")
 
 include("algorithms.jl")
 include("composite_algs.jl")

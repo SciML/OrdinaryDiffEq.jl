@@ -1,10 +1,10 @@
 abstract type DAEBDFMutableCache <: OrdinaryDiffEqMutableCache end
 function get_fsalfirstlast(cache::DAEBDFMutableCache, u)
-    (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
+    return (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
 end
 
 @cache mutable struct DImplicitEulerCache{uType, rateType, uNoUnitsType, N} <:
-                      DAEBDFMutableCache
+    DAEBDFMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -21,62 +21,74 @@ mutable struct DImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
     nlsolver::N
 end
 
-function alg_cache(alg::DImplicitEuler, du, u, res_prototype, rate_prototype,
+function alg_cache(
+        alg::DImplicitEuler, du, u, res_prototype, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1, 1
     α = 1
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, Val(false))
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, Val(false), verbose
+    )
 
-    DImplicitEulerConstantCache(nlsolver)
+    return DImplicitEulerConstantCache(nlsolver)
 end
 
-function alg_cache(alg::DImplicitEuler, du, u, res_prototype, rate_prototype,
+function alg_cache(
+        alg::DImplicitEuler, du, u, res_prototype, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1, 1
     α = 1
     k₁ = zero(rate_prototype)
     k₂ = zero(rate_prototype)
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, Val(true))
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, Val(true), verbose
+    )
 
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    DImplicitEulerCache(u, uprev, uprev2, atmp, k₁, k₂, nlsolver)
+    return DImplicitEulerCache(u, uprev, uprev2, atmp, k₁, k₂, nlsolver)
 end
 
 @cache mutable struct DABDF2ConstantCache{N, dtType, rate_prototype} <:
-                      OrdinaryDiffEqConstantCache
+    OrdinaryDiffEqConstantCache
     nlsolver::N
     eulercache::DImplicitEulerConstantCache
     dtₙ₋₁::dtType
     fsalfirstprev::rate_prototype
 end
 
-function alg_cache(alg::DABDF2, du, u, res_prototype, rate_prototype,
+function alg_cache(
+        alg::DABDF2, du, u, res_prototype, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 1, 1
-    α = 1 // 1
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, Val(false))
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    γ, c = Int64(1) // 1, 1
+    α = Int64(1) // 1
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, Val(false), verbose
+    )
     eulercache = DImplicitEulerConstantCache(nlsolver)
 
     dtₙ₋₁ = one(dt)
     fsalfirstprev = rate_prototype
 
-    DABDF2ConstantCache(nlsolver, eulercache, dtₙ₋₁, fsalfirstprev)
+    return DABDF2ConstantCache(nlsolver, eulercache, dtₙ₋₁, fsalfirstprev)
 end
 
 @cache mutable struct DABDF2Cache{uType, rateType, uNoUnitsType, N, dtType} <:
-                      DAEBDFMutableCache
+    DAEBDFMutableCache
     uₙ::uType
     uₙ₋₁::uType
     uₙ₋₂::uType
@@ -88,14 +100,18 @@ end
     dtₙ₋₁::dtType
 end
 
-function alg_cache(alg::DABDF2, du, u, res_prototype, rate_prototype,
+function alg_cache(
+        alg::DABDF2, du, u, res_prototype, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 1, 1
-    α = 1 // 1
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, Val(true))
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    γ, c = Int64(1) // 1, 1
+    α = Int64(1) // 1
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, res_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, Val(true), verbose
+    )
     fsalfirst = zero(rate_prototype)
 
     fsalfirstprev = zero(rate_prototype)
@@ -109,13 +125,17 @@ function alg_cache(alg::DABDF2, du, u, res_prototype, rate_prototype,
 
     dtₙ₋₁ = one(dt)
 
-    DABDF2Cache(u, uprev, uprev2, fsalfirst, fsalfirstprev, atmp,
-        nlsolver, eulercache, dtₙ₋₁)
+    return DABDF2Cache(
+        u, uprev, uprev2, fsalfirst, fsalfirstprev, atmp,
+        nlsolver, eulercache, dtₙ₋₁
+    )
 end
 
-@cache mutable struct DFBDFConstantCache{MO, N, tsType, tType, uType, uuType, coeffType,
-    EEstType, rType, wType} <:
-                      OrdinaryDiffEqConstantCache
+@cache mutable struct DFBDFConstantCache{
+        MO, N, tsType, tType, uType, uuType, coeffType,
+        EEstType, rType, wType,
+    } <:
+    OrdinaryDiffEqConstantCache
     nlsolver::N
     ts::tsType
     ts_tmp::tsType
@@ -138,18 +158,24 @@ end
     iters_from_event::Int
 end
 
-function alg_cache(alg::DFBDF{MO}, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
+function alg_cache(
+        alg::DFBDF{MO}, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits,
-        uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{false}) where {MO}
+        uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{false}, verbose
+    ) where {MO}
     γ, c = 1.0, 1.0
     max_order = MO
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
-    bdf_coeffs = SA[1 -1 0 0 0 0;
-                    2//3 -4//3 1//3 0 0 0;
-                    6//11 -18//11 9//11 -2//11 0 0;
-                    12//25 -48//25 36//25 -16//25 3//25 0;
-                    60//137 -300//137 300//137 -200//137 75//137 -12//137]
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    )
+    bdf_coeffs = SA[
+        1 -1 0 0 0 0;
+        Int64(2) // 3 -Int64(4) // 3 Int64(1) // 3 0 0 0;
+        Int64(6) // 11 -Int64(18) // 11 Int64(9) // 11 -Int64(2) // 11 0 0;
+        Int64(12) // 25 -Int64(48) // 25 Int64(36) // 25 -Int64(16) // 25 Int64(3) // 25 0;
+        Int64(60) // 137 -Int64(300) // 137 Int64(300) // 137 -Int64(200) // 137 Int64(75) // 137 -Int64(12) // 137
+    ]
     ts = zero(Vector{typeof(t)}(undef, max_order + 2)) #ts is the successful past points, it will be updated after successful step
     ts_tmp = similar(ts)
 
@@ -172,14 +198,18 @@ function alg_cache(alg::DFBDF{MO}, du, u, res_prototype, rate_prototype, uEltype
     iters_from_event = 0
     u₀ = zero(u)
 
-    DFBDFConstantCache(nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order, u₀,
+    return DFBDFConstantCache(
+        nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order, u₀,
         u_corrector, bdf_coeffs, Val(5), nconsteps, consfailcnt, terkm2,
-        terkm1, terk, terkp1, r, weights, iters_from_event)
+        terkm1, terk, terkp1, r, weights, iters_from_event
+    )
 end
 
-@cache mutable struct DFBDFCache{MO, N, rateType, uNoUnitsType, tsType, tType, uType,
-    uuType, coeffType, EEstType, rType, wType} <:
-                      DAEBDFMutableCache
+@cache mutable struct DFBDFCache{
+        MO, N, rateType, uNoUnitsType, tsType, tType, uType,
+        uuType, coeffType, EEstType, rType, wType,
+    } <:
+    DAEBDFMutableCache
     fsalfirst::rateType
     nlsolver::N
     ts::tsType
@@ -208,25 +238,31 @@ end
     iters_from_event::Int
 end
 
-function alg_cache(alg::DFBDF{MO}, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
+function alg_cache(
+        alg::DFBDF{MO}, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits,
         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}) where {MO}
+        ::Val{true}, verbose
+    ) where {MO}
     γ, c = 1.0, 1.0
     fsalfirst = zero(rate_prototype)
     max_order = MO
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
+    )
     #=bdf_coeffs = SA[1 -1 0 0 0 0 ;
                     3//2 -2 1//2 0 0 0 ;
                     11//6 -3 3//2 -1//3  0 0 ;
                     25//12 -4 3 -4//3 1//4 0 ;
                     137//60 -5 5 -10//3 5//4 -1//5]=#
-    bdf_coeffs = SA[1 -1 0 0 0 0;
-                    2//3 -4//3 1//3 0 0 0;
-                    6//11 -18//11 9//11 -2//11 0 0;
-                    12//25 -48//25 36//25 -16//25 3//25 0;
-                    60//137 -300//137 300//137 -200//137 75//137 -12//137]
+    bdf_coeffs = SA[
+        1 -1 0 0 0 0;
+        Int64(2) // 3 -Int64(4) // 3 Int64(1) // 3 0 0 0;
+        Int64(6) // 11 -Int64(18) // 11 Int64(9) // 11 -Int64(2) // 11 0 0;
+        Int64(12) // 25 -Int64(48) // 25 Int64(36) // 25 -Int64(16) // 25 Int64(3) // 25 0;
+        Int64(60) // 137 -Int64(300) // 137 Int64(300) // 137 -Int64(200) // 137 Int64(75) // 137 -Int64(12) // 137
+    ]
     ts = Vector{typeof(t)}(undef, max_order + 2) #ts is the successful past points, it will be updated after successful step
     u_history = Matrix{eltype(u)}(undef, length(u), max_order + 2)
     order = 1
@@ -257,8 +293,10 @@ function alg_cache(alg::DFBDF{MO}, du, u, res_prototype, rate_prototype, uEltype
     ts_tmp = similar(ts)
     iters_from_event = 0
 
-    DFBDFCache(fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
+    return DFBDFCache(
+        fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(5), nconsteps, consfailcnt, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event)
+        iters_from_event
+    )
 end

@@ -10,12 +10,19 @@ dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 ```
 
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
+
+Whether `innertmp` and `outertmp` is used for the evaluation is controlled by setting `nlsolver.method`.
+In both cases the variable name is actually `nlsolver.tmp`.
 """
-function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
-        cache = nothing, repeat_step = false) where {NL <: AbstractNLSolver}
+function nlsolve!(
+        nlsolver::NL, integrator::SciMLBase.DEIntegrator,
+        cache = nothing, repeat_step = false
+    ) where {NL <: AbstractNLSolver}
     always_new = is_always_new(nlsolver)
     check_div′ = check_div(nlsolver)
     @label REDO
+    # Initialize γW for JET
+    γW = one(integrator.dt)
     if isnewton(nlsolver)
         cache === nothing &&
             throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
@@ -27,13 +34,13 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
         always_new || update_W!(nlsolver, integrator, cache, γW, repeat_step)
     end
 
-    @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
+    (; maxiters, κ, fast_convergence_cutoff) = nlsolver
 
     initialize!(nlsolver, integrator)
     nlsolver.status = check_div′ ? Divergence : Convergence
     η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
 
-    local ndz
+    ndz = one(η)
     for iter in 1:maxiters
         if always_new && isnewton(nlsolver)
             if ArrayInterface.ismutable(integrator.u)
@@ -46,7 +53,7 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
         nlsolver.iter = iter
 
         # compute next step and calculate norm of residuals
-        iter > 1 && (ndzprev = ndz)
+        ndzprev = ndz
         if isnewton(nlsolver)
             # Newton solve requires γW in order to update W
             ndz = compute_step!(nlsolver, integrator, γW)
@@ -54,6 +61,10 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
             ndz = compute_step!(nlsolver, integrator)
         end
         if !isfinite(ndz)
+            @SciMLMessage(
+                lazy"Newton iteration diverged: residual norm is not finite (ndz = $(ndz))",
+                integrator.opts.verbose, :newton_convergence
+            )
             nlsolver.status = Divergence
             nlsolver.nfails += 1
             break
@@ -71,6 +82,10 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
             # it convergence/divergence according to `ndz` directly.
             if abs(θ - one(θ)) <= eps_around_one(θ)
                 if ndz <= one(ndz)
+                    @SciMLMessage(
+                        lazy"Newton iteration converged at floating point limit: θ ≈ 1.0, ndz = $(ndz)",
+                        integrator.opts.verbose, :convergence_limit
+                    )
                     nlsolver.status = Convergence
                     nlsolver.nfails = 0
                     break
@@ -83,6 +98,10 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
 
             # divergence
             if check_div′ && θ > 2
+                @SciMLMessage(
+                    lazy"Newton iteration diverging: θ = $(θ) > 2, ndz = $(ndz), ndzprev = $(ndzprev)",
+                    integrator.opts.verbose, :newton_convergence
+                )
                 nlsolver.status = Divergence
                 nlsolver.nfails += 1
                 break
@@ -104,10 +123,16 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
         η = DiffEqBase.value(θ / (1 - θ))
         # don't trust θ for non-adaptive on first iter because the solver doesn't provide feedback
         # for us to know whether our previous nlsolve converged sufficiently well
-        check_η_convergance = (iter > 1 ||
-                               (isnewton(nlsolver) && isadaptive(integrator.alg)))
-        if (iter == 1 && ndz < 1e-5) ||
-           (check_η_convergance && η >= zero(η) && η * ndz < κ)
+        check_η_convergence = (
+            iter > 1 ||
+                (isnewton(nlsolver) && isadaptive(integrator.alg))
+        )
+        if (iter == 1 && ndz < 1.0e-5) ||
+                (check_η_convergence && η >= zero(η) && η * ndz < κ)
+            @SciMLMessage(
+                lazy"Newton iteration converged in $(iter) iterations: η = $(η), ndz = $(ndz)",
+                integrator.opts.verbose, :newton_iterations
+            )
             nlsolver.status = Convergence
             nlsolver.nfails = 0
             break
@@ -115,37 +140,43 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
     end
 
     if isnewton(nlsolver) && nlsolver.status == Divergence &&
-       !isJcurrent(nlsolver, integrator)
+            !isJcurrent(nlsolver, integrator)
+        @SciMLMessage(
+            lazy"Newton iteration failed with stale Jacobian, retrying with fresh Jacobian",
+            integrator.opts.verbose, :newton_convergence
+        )
         nlsolver.status = TryAgain
         nlsolver.nfails += 1
         always_new || @goto REDO
     end
 
     nlsolver.ηold = η
-    postamble!(nlsolver, integrator)
+    return postamble!(nlsolver, integrator)
 end
 
 ## default implementations
 
-initialize!(::AbstractNLSolver, integrator::DiffEqBase.DEIntegrator) = nothing
+initialize!(::AbstractNLSolver, integrator::SciMLBase.DEIntegrator) = nothing
 
 function initial_η(nlsolver::NLSolver, integrator)
-    max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    return max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
 end
 
-function apply_step!(nlsolver::NLSolver{algType, iip},
-        integrator::DiffEqBase.DEIntegrator) where {algType, iip}
+function apply_step!(
+        nlsolver::NLSolver{algType, iip},
+        integrator::SciMLBase.DEIntegrator
+    ) where {algType, iip}
     if iip
-        @.. broadcast=false nlsolver.z=nlsolver.ztmp
+        @.. broadcast = false nlsolver.z = nlsolver.ztmp
     else
         nlsolver.z = nlsolver.ztmp
     end
 
-    nothing
+    return nothing
 end
 
-function postamble!(nlsolver::NLSolver, integrator::DiffEqBase.DEIntegrator)
-    if DiffEqBase.has_stats(integrator)
+function postamble!(nlsolver::NLSolver, integrator::SciMLBase.DEIntegrator)
+    if SciMLBase.has_stats(integrator)
         integrator.stats.nnonliniter += nlsolver.iter
 
         if nlsolvefail(nlsolver)
@@ -156,5 +187,5 @@ function postamble!(nlsolver::NLSolver, integrator::DiffEqBase.DEIntegrator)
     setfirststage!(nlsolver, false)
     isnewton(nlsolver) && (nlsolver.cache.firstcall = false)
 
-    nlsolver.z
+    return nlsolver.z
 end

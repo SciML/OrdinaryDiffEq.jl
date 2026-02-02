@@ -1,13 +1,18 @@
 using Documenter, OrdinaryDiffEq
 
-cp("./docs/Manifest.toml", "./docs/src/assets/Manifest.toml", force = true)
-cp("./docs/Project.toml", "./docs/src/assets/Project.toml", force = true)
+cp(joinpath(@__DIR__, "Manifest.toml"), joinpath(@__DIR__, "src", "assets", "Manifest.toml"), force = true)
+cp(joinpath(@__DIR__, "Project.toml"), joinpath(@__DIR__, "src", "assets", "Project.toml"), force = true)
 
-makedocs(sitename = "OrdinaryDiffEq.jl",
+# Keep pages.jl separate for the DiffEqDocs.jl build
+include("pages.jl")
+
+makedocs(
+    sitename = "OrdinaryDiffEq.jl",
     authors = "Chris Rackauckas et al.",
     clean = true,
     doctest = false,
-    modules = [OrdinaryDiffEq,
+    modules = [
+        OrdinaryDiffEq,
         OrdinaryDiffEq.OrdinaryDiffEqAdamsBashforthMoulton,
         OrdinaryDiffEq.OrdinaryDiffEqBDF,
         OrdinaryDiffEq.OrdinaryDiffEqDefault,
@@ -33,67 +38,23 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         OrdinaryDiffEq.OrdinaryDiffEqStabilizedRK,
         OrdinaryDiffEq.OrdinaryDiffEqSymplecticRK,
         OrdinaryDiffEq.OrdinaryDiffEqTsit5,
-        OrdinaryDiffEq.OrdinaryDiffEqVerner
+        OrdinaryDiffEq.OrdinaryDiffEqVerner,
     ],
+    linkcheck_ignore = [r"https://github.com/JuliaDiff/ForwardDiff.jl"],
     warnonly = [:docs_block, :missing_docs, :eval_block],
-    format = Documenter.HTML(analytics = "UA-90474609-3",
+    format = Documenter.HTML(
+        analytics = "UA-90474609-3",
         assets = ["assets/favicon.ico"],
         canonical = "https://ordinarydiffeq.sciml.ai/stable/",
-        size_threshold_ignore = [joinpath("semiimplicit", "Rosenbrock.md"),
-            joinpath("massmatrixdae", "Rosenbrock.md")]),
-    pages = [
-        "OrdinaryDiffEq.jl: ODE solvers and utilities" => "index.md",
-        "Usage" => "usage.md",
-        "Explicit Solvers" => [
-            "explicit/Tsit5.md",
-            "explicit/Verner.md",
-            "explicit/AdamsBashforthMoulton.md",
-            "explicit/LowStorageRK.md",
-            "explicit/SSPRK.md",
-            "explicit/LowOrderRK.md",
-            "explicit/HighOrderRK.md",
-            "explicit/Feagin.md",
-            "explicit/PRK.md",
-            "explicit/QPRK.md",
-            "explicit/Extrapolation.md"
-        ],
-        "Semi-Implicit Solvers" => [
-            "semiimplicit/Rosenbrock.md",
-            "semiimplicit/StabilizedRK.md",
-            "semiimplicit/ExponentialRK.md"
-        ],
-        "Implicit Solvers" => [
-            "implicit/SDIRK.md",
-            "implicit/FIRK.md",
-            "implicit/BDF.md",
-            "implicit/Extrapolation.md",
-            "implicit/PDIRK.md",
-            "implicit/Nordsieck.md"
-        ],
-        "IMEX Solvers" => [
-            "imex/IMEXMultistep.md",
-            "imex/StabilizedIRK.md",
-            "imex/IMEXBDF.md"
-        ],
-        "Dynamical ODE Explicit Solvers" => [
-            "dynamicalodeexplicit/RKN.md",
-            "dynamicalodeexplicit/SymplecticRK.md"
-        ],
-        "Semilinear ODE Solvers" => [
-            "semilinear/ExponentialRK.md",
-            "semilinear/Linear.md"
-        ],
-        "Mass Matrix DAE Solvers" => [
-            "massmatrixdae/Rosenbrock.md",
-            "massmatrixdae/BDF.md"
-        ],
-        "Fully Implicit DAE Solvers" => [
-            "fullyimplicitdae/BDF.md"
-        ],
-        "Misc Solvers" => [
-            "misc.md"
+        size_threshold_ignore = [
+            joinpath("semiimplicit", "Rosenbrock.md"),
+            joinpath("massmatrixdae", "Rosenbrock.md"),
         ]
-    ])
+    ),
+    pages = pages
+)
 
-deploydocs(repo = "github.com/SciML/OrdinaryDiffEq.jl";
-    push_preview = true)
+deploydocs(
+    repo = "github.com/SciML/OrdinaryDiffEq.jl";
+    push_preview = true
+)

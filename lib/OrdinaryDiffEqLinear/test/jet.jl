@@ -1,7 +1,11 @@
+using Pkg
+Pkg.add("JET")
+
 import OrdinaryDiffEqLinear
 using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqLinear, target_defined_modules = true, mode = :typo)
+        OrdinaryDiffEqLinear, target_defined_modules = true, mode = :typo
+    )
 end
