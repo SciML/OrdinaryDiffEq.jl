@@ -271,3 +271,146 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 end
+
+# ============================================================================
+# Generic RK interpolation utilities
+# ============================================================================
+
+@inline function falling_factorial(n::Integer, k::Integer)
+    result = one(n)
+    for j in 0:(k - 1)
+        result *= (n - j)
+    end
+    return result
+end
+
+"""
+    eval_poly_derivative(Θ, coeffs, order::Int)
+
+Evaluate the k-th derivative of a polynomial at Θ using Horner's method.
+coeffs[j] is the coefficient of Θ^(j-1).
+"""
+function eval_poly_derivative(Θ, coeffs, order::Int)
+    n = length(coeffs)
+    if n <= order
+        return zero(eltype(coeffs)) * zero(Θ)
+    end
+
+    if order == 0
+        result = coeffs[n]
+        for i in (n - 1):-1:1
+            result = muladd(Θ, result, coeffs[i])
+        end
+        return result
+    else
+        result = coeffs[n] * falling_factorial(n - 1, order)
+        for j in (n - 1):-1:(order + 1)
+            multiplier = falling_factorial(j - 1, order)
+            result = muladd(Θ, result, coeffs[j] * multiplier)
+        end
+        return result
+    end
+end
+
+"""
+    generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs=nothing, order=0)
+
+Generic interpolation for Runge-Kutta methods using the B_interp coefficient matrix.
+"""
+function generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs = nothing, order = 0)
+    if isnothing(B_interp)
+        throw(DerivativeOrderNotPossibleError())
+    end
+
+    nstages = size(B_interp, 1)
+
+    if isempty(k) || nstages == 0
+        throw(DerivativeOrderNotPossibleError())
+    end
+
+    b = Vector{eltype(B_interp)}(undef, nstages)
+    for i in 1:nstages
+        coeffs = @view B_interp[i, :]
+        b[i] = eval_poly_derivative(Θ, coeffs, order)
+    end
+
+    @assert order >= 0 "Derivative order must be non-negative"
+    inv_dt_factor = order <= 1 ? one(dt) : inv(dt)^(order - 1)
+
+    return if isnothing(idxs)
+        interp_sum = k[1] * b[1]
+        for i in 2:nstages
+            interp_sum = interp_sum + k[i] * b[i]
+        end
+        if order == 0
+            return y₀ + dt * interp_sum
+        else
+            return interp_sum * inv_dt_factor
+        end
+    else
+        interp_sum = k[1][idxs] * b[1]
+        for i in 2:nstages
+            interp_sum = interp_sum + k[i][idxs] * b[i]
+        end
+        if order == 0
+            return y₀[idxs] + dt * interp_sum
+        else
+            return interp_sum * inv_dt_factor
+        end
+    end
+end
+
+"""
+    generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs=nothing, order=0)
+
+In-place version of generic interpolation for Runge-Kutta methods.
+"""
+function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs = nothing, order = 0)
+    if isnothing(B_interp)
+        throw(DerivativeOrderNotPossibleError())
+    end
+
+    nstages = size(B_interp, 1)
+
+    if isempty(k) || nstages == 0
+        throw(DerivativeOrderNotPossibleError())
+    end
+
+    b = Vector{eltype(B_interp)}(undef, nstages)
+    for i in 1:nstages
+        coeffs = @view B_interp[i, :]
+        b[i] = eval_poly_derivative(Θ, coeffs, order)
+    end
+
+    @assert order >= 0 "Derivative order must be non-negative"
+    inv_dt_factor = order <= 1 ? one(dt) : inv(dt)^(order - 1)
+
+    if isnothing(idxs)
+        if order == 0
+            @.. out = y₀
+            for i in 1:nstages
+                @.. out += dt * k[i] * b[i]
+            end
+        else
+            @.. out = zero(eltype(out))
+            for i in 1:nstages
+                @.. out += k[i] * b[i]
+            end
+            @.. out *= inv_dt_factor
+        end
+    else
+        if order == 0
+            @views @.. out = y₀[idxs]
+            for i in 1:nstages
+                @views @.. out += dt * k[i][idxs] * b[i]
+            end
+        else
+            @.. out = zero(eltype(out))
+            for i in 1:nstages
+                @views @.. out += k[i][idxs] * b[i]
+            end
+            @.. out *= inv_dt_factor
+        end
+    end
+    return out
+end

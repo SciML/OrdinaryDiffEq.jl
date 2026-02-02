@@ -2,6 +2,8 @@ using SafeTestsets
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
+@time @safetestset "Generic RK Tests" include("interpolation_tests.jl")
+
 # Run QA tests (JET, Aqua, AllocCheck)
 if TEST_GROUP != "FUNCTIONAL" && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
