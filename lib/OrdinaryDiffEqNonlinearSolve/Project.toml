@@ -69,7 +69,7 @@ PreallocationTools = "0.4, 1"
 AllocCheck = "0.2"
 DiffEqBase = "6.194"
 SafeTestsets = "0.1.0"
-SciMLOperators = "1.4"
+SciMLOperators = "1.15"
 SciMLStructures = "1.7"
 
 [targets]

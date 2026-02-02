@@ -34,7 +34,7 @@ JET = "0.9, 0.11"
 AllocCheck = "0.2"
 DiffEqBase = "6.194"
 SafeTestsets = "0.1.0"
-SciMLOperators = "1.4"
+SciMLOperators = "1.15"
 
 [weakdeps]
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
