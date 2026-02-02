@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqFIRK"
 uuid = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.21.0"
+version = "1.22.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -46,7 +46,7 @@ Polyester = "0.7"
 LinearAlgebra = "1.10"
 OrdinaryDiffEqDifferentiation = "2"
 SciMLBase = "2.116"
-OrdinaryDiffEqCore = "3"
+OrdinaryDiffEqCore = "3.4"
 Aqua = "0.8.11"
 GenericSchur = "0.5"
 julia = "1.10"
