@@ -37,7 +37,8 @@ function alg_cache(
     return ExplicitRKCache(u, uprev, tmp, utilde, atmp, fsalfirst, fsallast, kk, tab)
 end
 
-struct ExplicitRKConstantCache{MType, VType, KType, BType} <: OrdinaryDiffEqConstantCache
+struct ExplicitRKConstantCache{MType, VType, KType, BType, BiType} <:
+    OrdinaryDiffEqConstantCache
     A::MType
     c::VType
     α::VType
@@ -45,6 +46,7 @@ struct ExplicitRKConstantCache{MType, VType, KType, BType} <: OrdinaryDiffEqCons
     stages::Int
     kk::KType
     B_interp::BType
+    bi::BiType  # Pre-allocated buffer for interpolation polynomial weights
 end
 
 function ExplicitRKConstantCache(tableau, rate_prototype)
@@ -53,7 +55,12 @@ function ExplicitRKConstantCache(tableau, rate_prototype)
     kk = Array{typeof(rate_prototype)}(undef, stages) # Not ks since that's for integrator.opts.dense
     αEEst = isempty(αEEst) ? αEEst : α .- αEEst
     B_interp = hasproperty(tableau, :B_interp) ? tableau.B_interp : nothing
-    return ExplicitRKConstantCache(A, c, α, αEEst, stages, kk, B_interp)
+    bi = if isnothing(B_interp)
+        nothing
+    else
+        Vector{eltype(B_interp)}(undef, size(B_interp, 1))
+    end
+    return ExplicitRKConstantCache(A, c, α, αEEst, stages, kk, B_interp, bi)
 end
 
 function alg_cache(

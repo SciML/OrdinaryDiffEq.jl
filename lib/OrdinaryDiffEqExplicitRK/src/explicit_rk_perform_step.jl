@@ -317,7 +317,7 @@ end
 
 Generic interpolation for Runge-Kutta methods using the B_interp coefficient matrix.
 """
-function generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs = nothing, order = 0)
+function generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs = nothing, order = 0)
     if isnothing(B_interp)
         throw(DerivativeOrderNotPossibleError())
     end
@@ -330,13 +330,15 @@ function generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs = nothing, order
 
     inv_dt_factor = order <= 1 ? one(dt) : inv(dt)^(order - 1)
 
-    # Compute weighted sum inline to avoid allocating a vector of b values
-    b1 = eval_poly_derivative(Θ, @view(B_interp[1, :]), order)
+    # Fill pre-allocated bi buffer with polynomial weights
+    for i in 1:nstages
+        bi[i] = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
+    end
+
     return if isnothing(idxs)
-        interp_sum = k[1] * b1
+        interp_sum = k[1] * bi[1]
         for i in 2:nstages
-            bi = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
-            interp_sum = interp_sum + k[i] * bi
+            interp_sum = interp_sum + k[i] * bi[i]
         end
         if order == 0
             y₀ + dt * interp_sum
@@ -344,10 +346,9 @@ function generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs = nothing, order
             interp_sum * inv_dt_factor
         end
     else
-        interp_sum = k[1][idxs] * b1
+        interp_sum = k[1][idxs] * bi[1]
         for i in 2:nstages
-            bi = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
-            interp_sum = interp_sum + k[i][idxs] * bi
+            interp_sum = interp_sum + k[i][idxs] * bi[i]
         end
         if order == 0
             y₀[idxs] + dt * interp_sum
@@ -362,7 +363,7 @@ end
 
 In-place version of generic interpolation for Runge-Kutta methods.
 """
-function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs = nothing, order = 0)
+function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp, bi; idxs = nothing, order = 0)
     if isnothing(B_interp)
         throw(DerivativeOrderNotPossibleError())
     end
@@ -375,19 +376,21 @@ function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs = nothing,
 
     inv_dt_factor = order <= 1 ? one(dt) : inv(dt)^(order - 1)
 
-    # Compute b values inline to avoid heap allocation
+    # Fill pre-allocated bi buffer with polynomial weights
+    for i in 1:nstages
+        bi[i] = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
+    end
+
     if isnothing(idxs)
         if order == 0
             @.. out = y₀
             for i in 1:nstages
-                bi = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
-                @.. out += dt * k[i] * bi
+                @.. out += dt * k[i] * bi[i]
             end
         else
             @.. out = zero(eltype(out))
             for i in 1:nstages
-                bi = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
-                @.. out += k[i] * bi
+                @.. out += k[i] * bi[i]
             end
             @.. out *= inv_dt_factor
         end
@@ -395,14 +398,12 @@ function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs = nothing,
         if order == 0
             @views @.. out = y₀[idxs]
             for i in 1:nstages
-                bi = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
-                @views @.. out += dt * k[i][idxs] * bi
+                @views @.. out += dt * k[i][idxs] * bi[i]
             end
         else
             @.. out = zero(eltype(out))
             for i in 1:nstages
-                bi = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
-                @views @.. out += k[i][idxs] * bi
+                @views @.. out += k[i][idxs] * bi[i]
             end
             @.. out *= inv_dt_factor
         end

@@ -85,6 +85,14 @@ end
     return cache.tab.B_interp
 end
 
+@inline function get_bi(cache::ExplicitRKConstantCache)
+    return cache.bi
+end
+
+@inline function get_bi(cache::ExplicitRKCache)
+    return cache.tab.bi
+end
+
 # Generate interpolant methods for derivative orders 0-3
 for order in 0:3
     @eval begin
@@ -94,7 +102,8 @@ for order in 0:3
                 idxs, T::Type{Val{$order}}, differential_vars
             )
             B_interp = get_B_interp(cache)
-            return generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs = idxs, order = $order)
+            bi = get_bi(cache)
+            return generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs = idxs, order = $order)
         end
 
         @muladd function _ode_interpolant!(
@@ -103,7 +112,8 @@ for order in 0:3
                 idxs, T::Type{Val{$order}}, differential_vars
             )
             B_interp = get_B_interp(cache)
-            return generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs = idxs, order = $order)
+            bi = get_bi(cache)
+            return generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp, bi; idxs = idxs, order = $order)
         end
     end
 end
