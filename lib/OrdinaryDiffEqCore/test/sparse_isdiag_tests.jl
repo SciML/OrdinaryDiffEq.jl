@@ -1,5 +1,4 @@
 using Test
-# Load SparseArrays first to trigger the extension
 using SparseArrays
 using OrdinaryDiffEqCore: _isdiag
 
