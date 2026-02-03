@@ -53,7 +53,11 @@ function TRBDF2Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, 
     b = @SVector [ω, ω, d]
     c = @SVector [0, γ, 1]
     
-    b_embed = @SVector [(1-ω)/3, (3*ω+1)/3, d/3]
+    # btilde = bhat - b, NOT bhat itself
+    btilde1 = T((1 - sqrt(2)) / 3)
+    btilde2 = T(1 // 3)
+    btilde3 = T((sqrt(2) - 2) / 3)
+    b_embed = @SVector [btilde1, btilde2, btilde3]
     
     α1 = T2(-sqrt(2) / 2)
     α2 = T2(1 + sqrt(2) / 2)
@@ -114,25 +118,35 @@ end
 function SDIRK2Tableau(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
     γT = T(1 - 1/sqrt(2))
     γc = T2(1 - 1/sqrt(2))
-    A = @SMatrix [γT        T(0);
-                  T(1)-γT   γT]
-    b = @SVector [T(1)-γT, γT]
-    c = @SVector [γc, T2(1)]
-    
+    # Master z-space: stage 1 tmp=uprev, stage 2 tmp=uprev-z₁
+    # So A[2,1] = -1 in z-space
+    A = @SMatrix [γT     T(0);
+                  T(-1)  γT]
+    # u = uprev + z₁/2 + z₂/2
+    b = @SVector [T(1//2), T(1//2)]
+    c = @SVector [γc, γc]  # master uses same c for both stages
+    # btilde = z₁/2 - z₂/2
+    b_embed = @SVector [T(1//2), T(-1//2)]
+
     SDIRKTableau(A, b, c, γT, 2;
-                 is_fsal=false, is_stiffly_accurate=true,
+                 b_embed=b_embed, embedded_order=1,
+                 is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
                  predictor_type=:default)
 end
 
 function SSPSDIRK2Tableau(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(1 - 1/sqrt(2))
-    γc = T2(1 - 1/sqrt(2))
-    A = @SMatrix [γT     T(0);
-                  T(1)-T(2)*γT   γT]
-    b = @SVector [T(0.5), T(0.5)]
-    c = @SVector [γc, T2(1)-γc]
-    
+    # Master hardcodes γ = 1/4
+    γT = T(1//4)
+    γc = T2(1//4)
+    # Stage 1: tmp = uprev, c = 1
+    # Stage 2: tmp = uprev + z₁/2, c = 1
+    # u = tmp + z₂/2 = uprev + z₁/2 + z₂/2
+    A = @SMatrix [γT        T(0);
+                  T(1//2)   γT]
+    b = @SVector [T(1//2), T(1//2)]
+    c = @SVector [T2(1), T2(1)]
+
     SDIRKTableau(A, b, c, γT, 2;
                  is_fsal=false, is_stiffly_accurate=false,
                  is_A_stable=true, is_L_stable=false,
@@ -177,89 +191,75 @@ function Cash4Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T
 end
 
 function Kvaerno3Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.4358665215)
-    γc = T2(0.4358665215)
-    
-    A = @SMatrix [γT                       0                        0                      0;
-                  T(0.490563388419108)     γT                       0                      0;
-                  T(0.073570090080892)     0                        γT                     0;
-                  T(0.308809969973036)     T(1.490563388254106)     -T(1.235239879727145)  γT]
-    
-    b = @SVector [T(0.490563388419108), T(0.073570090080892), T(0.4358665215), T(0.0)]
-    c = @SVector [γc, 2γc, T2(1), T2(1)]
-    
-    b_embed = b - A[4, :]
-    
-    # Build Hermite-style predictor coefficients for stage 3 from z₁ and z₂
-    # θ = c3/c2 over interval [0,c2]
-    c2 = 2γc
-    θ = c[3] / c2
-    α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γc)
-    α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γc)
+    # Get correct z-space coefficients from the old tableau
+    tab = Kvaerno3Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK: Stage 1 is explicit (FSAL), A[1,:] = 0
+    # Stage 2: tmp = uprev + γ*z₁
+    # Stage 3: tmp = uprev + a31*z₁ + a32*z₂
+    # Stage 4: tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0);
+                  tab.a41  tab.a42  tab.a43  γT]
+
+    # Stiffly accurate: b = A[4,:] = [a41, a42, a43, γ]
+    b = @SVector [tab.a41, tab.a42, tab.a43, γT]
+    # c values: master uses c=γ for stage 2
+    c = @SVector [T2(0), γc, tab.c3, T2(1)]
+    # btilde from old tableau (= bhat - b)
+    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4]
+
+    # Predictions: stage 3 from Hermite, stage 4 from yhat
     α_pred = @SMatrix T2[
         0 0 0 0;
         0 0 0 0;
-        α31 α32 0 0;
-        0 0 0 0
-    ]
+        tab.α31 tab.α32 0 0;
+        tab.a31 tab.a32 tab.γ 0]
 
     SDIRKTableau(A, b, c, γT, 3;
                  b_embed=b_embed, embedded_order=2,
-                 is_fsal=false, is_stiffly_accurate=false,
-                 is_A_stable=true, is_L_stable=false,
+                 is_fsal=true, is_stiffly_accurate=true,
+                 is_A_stable=true, is_L_stable=true,
                  predictor_type=:hermite,
                  α_pred=α_pred)
 end
 
 function KenCarp3Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.435866521508459)
-    γc = T2(0.435866521508459)
-    
-    A = @SMatrix [γT                         0                        0                       0;
-                  T(0.2576482460664272)      γT                       0                       0;
-                  -T(0.09351476757488625)    0                        γT                      0;
-                  T(0.18764102434672383)     -T(0.595297473576955)    T(0.9717899277217721)   γT]
-    
-    b = @SVector [T(2756255671327//12835298489170), 
-                  -T(10771552573575//22201958757719),
-                  T(9247589265047//10645013368117), 
-                  T(2193209047091//5459859503100)]
-                  
-    c = @SVector [γc, 2γc, T2(0.6), T2(1)]
-    
-    b_embed = A[4, :]
-    
-    A_explicit = @SMatrix [0                          0                        0                      0;
-                           T(0.871733043016918)      0                        0                      0;
-                           T(0.5275890119763004)     T(0.0724109880236996)    0                      0;
-                           T(0.3990960076760701)     -T(0.4375576546135194)   T(1.0384616469374492)  0]
-    
-    b_explicit = @SVector [T(0.18764102434672383), 
-                           -T(0.595297473576955),
-                           T(0.9717899277217721), 
-                           T(0.435866521508459)]
-    
-    c_explicit = @SVector [T2(0), γc, T2(0.6), T2(1)]
-    
-    # Build Hermite-style predictor coefficients for stages 3 and 4
-    c2 = 2γc
-    θ = c[3] / c2
-    α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γc)
-    α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γc)
-    θ4 = c[4] / c2 # == 1
-    α41 = ((1 + (-4θ4 + 3θ4^2)) + (6θ4 * (1 - θ4) / c2) * γc)
-    α42 = ((-2θ4 + 3θ4^2) + (6θ4 * (1 - θ4) / c2) * γc)
+    tab = KenCarp3Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK: Stage 1 explicit, stages 2-4 implicit
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0);
+                  tab.a41  tab.a42  tab.a43  γT]
+
+    b = @SVector [tab.a41, tab.a42, tab.a43, γT]
+    c = @SVector [T2(0), 2γc, tab.c3, T2(1)]
+    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4]
+
+    A_explicit = @SMatrix [T(0)      T(0)      T(0)      T(0);
+                           tab.ea21  T(0)      T(0)      T(0);
+                           tab.ea31  tab.ea32  T(0)      T(0);
+                           tab.ea41  tab.ea42  tab.ea43  T(0)]
+
+    b_explicit = @SVector [tab.eb1, tab.eb2, tab.eb3, tab.eb4]
+    c_explicit = @SVector [T2(0), 2γc, tab.c3, T2(1)]
+
     α_pred = @SMatrix T2[
         0 0 0 0;
         0 0 0 0;
-        α31 α32 0 0;
-        α41 α42 0 0
-    ]
+        tab.α31 tab.α32 0 0;
+        tab.α41 tab.α42 0 0]
 
     SDIRKTableau(A, b, c, γT, 3;
                  b_embed=b_embed, embedded_order=2,
-                 is_fsal=false, is_stiffly_accurate=false,
-                 is_A_stable=true, is_L_stable=false,
+                 is_fsal=true, is_stiffly_accurate=true,
+                 is_A_stable=true, is_L_stable=true,
                  predictor_type=:kencarp_additive,
                  has_additive_splitting=true,
                  A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit,
@@ -267,464 +267,602 @@ function KenCarp3Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T
 end
 
 function Kvaerno4Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.4358665215)
-    γc = T2(0.4358665215)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0;
-                  T(0.490563388419108)     γT                       0                       0                       0;
-                  T(0.073570090080892)     0                        γT                      0                       0;
-                  T(0.308809969973036)     T(1.490563388254106)     -T(1.235239879727145)   γT                      0;
-                  T(0.490563388419108)     T(0.073570090080892)     T(0.4358665215)         T(0.0)                  γT]
-    
-    b = @SVector [T(0.490563388419108), T(0.073570090080892), T(0.4358665215), T(0.0), T(0.0)]
-    c = @SVector [γc, 2γc, T2(1), T2(1), T2(1)]
-    
-    b_embed = A[5, :]
-    
+    tab = Kvaerno4Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 5-stage: stage 1 explicit, stages 2-5 implicit
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT]
+
+    b = @SVector [tab.a51, tab.a52, tab.a53, tab.a54, γT]
+    c = @SVector [T2(0), γc, tab.c3, tab.c4, T2(1)]
+    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, tab.btilde5]
+
+    α_pred = @SMatrix T2[
+        0 0 0 0 0;
+        0 0 0 0 0;
+        tab.α31 tab.α32 0 0 0;
+        tab.α41 tab.α42 0 0 0;
+        tab.a41 tab.a42 tab.a43 tab.γ 0]
+
     SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
-                 is_fsal=false, is_stiffly_accurate=true,
+                 is_fsal=true, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
-                 predictor_type=:hermite)
+                 predictor_type=:hermite,
+                 α_pred=α_pred)
 end
 
 function Kvaerno5Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.26)
-    γc = T2(0.26)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0                       0;
-                  T(0.13)                  γT                       0                       0                       0                       0;
-                  T(0.84079895052208)      T(0.07920104947792)      γT                      0                       0                       0;
-                  T(0.619100897516618)     T(0.066593016584582)     T(0.054305985899400)    γT                      0                       0;
-                  T(0.258023287184119)     T(0.097741417057132)     T(0.464732297848610)    T(1.179502539939939)    γT                      0;
-                  T(0.544974750228521)     T(0.212765981366776)     T(0.164488906111538)    T(0.077770561901165)    T(0.0)                  γT]
-    
-    b = @SVector [T(0.544974750228521), T(0.212765981366776), T(0.164488906111538), T(0.077770561901165), T(0.0), T(0.0)]
-    c = @SVector [γc, T2(0.39), T2(1.0), T2(0.74), T2(1.0), T2(1.0)]
-    
-    b_embed = A[6, :]
-    
+    tab = Kvaerno5Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 7-stage: stage 1 explicit, stages 2-7 implicit
+    # Note: a62=0, a72=0 (omitted from old struct)
+    A = @SMatrix [T(0)     T(0)       T(0)     T(0)     T(0)     T(0)     T(0);
+                  γT       γT         T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32    γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a41  tab.a42    tab.a43  γT       T(0)     T(0)     T(0);
+                  tab.a51  tab.a52    tab.a53  tab.a54  γT       T(0)     T(0);
+                  tab.a61  T(0)       tab.a63  tab.a64  tab.a65  γT       T(0);
+                  tab.a71  T(0)       tab.a73  tab.a74  tab.a75  tab.a76  γT]
+
+    b = @SVector [tab.a71, T(0), tab.a73, tab.a74, tab.a75, tab.a76, γT]
+    c = @SVector [T2(0), γc, T2(tab.c3), T2(tab.c4), T2(tab.c5), T2(tab.c6), T2(1)]
+    b_embed = @SVector [tab.btilde1, T(0), tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7]
+
+    α_pred = @SMatrix T2[
+        0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0;
+        tab.α31 tab.α32 0 0 0 0 0;
+        tab.α41 tab.α42 tab.α43 0 0 0 0;
+        tab.α51 tab.α52 tab.α53 0 0 0 0;
+        tab.α61 tab.α62 tab.α63 0 0 0 0;
+        tab.a61 0 tab.a63 tab.a64 tab.a65 tab.γ 0]
+
     SDIRKTableau(A, b, c, γT, 5;
                  b_embed=b_embed, embedded_order=4,
-                 is_fsal=false, is_stiffly_accurate=true,
+                 is_fsal=true, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
-                 predictor_type=:hermite)
+                 predictor_type=:hermite,
+                 α_pred=α_pred)
 end
 
 function KenCarp4Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(1//4)
-    γc = T2(1//4)
-    
-    A = @SMatrix [γT                            0                             0                            0                            0                            0;
-                  T(1//2)                       γT                            0                            0                            0                            0;
-                  T(83//250)                    T(-13//250)                   γT                           0                            0                            0;
-                  T(31//50)                     T(-11//20)                    T(11//20)                    γT                           0                            0;
-                  T(17//20)                     T(-1//4)                      T(1//4)                      T(1//2)                      γT                           0;
-                  T(755//1728)                  T(755//1728)                  T(-1640//1728)              T(1640//1728)                T(1//4)                      γT]
-    
-    b = @SVector [T(755//1728), T(755//1728), T(-1640//1728), T(1640//1728), T(1//4), T(0)]
-    c = @SVector [γc, T2(3//4), T2(11//20), T2(1//2), T2(1), T2(1)]
-    
-    b_embed = A[6, :]
-    
-    A_explicit = @SMatrix [0                             0                             0                            0                            0                            0;
-                           T(1//2)                       0                             0                            0                            0                            0;
-                           T(13861//62500)               T(6889//62500)                0                            0                            0                            0;
-                           T(-116923316275//2393684061468) T(-2731218467317//15368042101831) T(9408046702089//11113171139209) 0                            0                            0;
-                           T(-451086348788//2902428689909) T(-2682348792572//7519795681897) T(12662868775082//11960479115383) T(3355817975965//11060851509271) 0                            0;
-                           T(647845179188//3216320057751) T(73281519250//8382639484533) T(552539513391//3454668386233) T(3354512671639//8306763924573) T(4040//17871)               0]
-    
-    b_explicit = @SVector [T(82889//524892), T(0), T(15625//83664), T(69875//102672), T(-2260//8211), T(1//4)]
-    c_explicit = @SVector [0, T2(1//2), T2(83//250), T2(31//50), T2(17//20), T2(1)]
-    
+    tab = KenCarp4Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 6-stage: stage 1 explicit, stages 2-6 implicit
+    # Note: a62=0 (omitted from old struct), btilde2=0 (omitted)
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0);
+                  tab.a61  T(0)    tab.a63  tab.a64  tab.a65  γT]
+
+    b = @SVector [tab.a61, T(0), tab.a63, tab.a64, tab.a65, γT]
+    c = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, T2(1)]
+    b_embed = @SVector [tab.btilde1, T(0), tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6]
+
+    A_explicit = @SMatrix [T(0)      T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea21  T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea31  tab.ea32  T(0)      T(0)      T(0)      T(0);
+                           tab.ea41  tab.ea42  tab.ea43  T(0)      T(0)      T(0);
+                           tab.ea51  tab.ea52  tab.ea53  tab.ea54  T(0)      T(0);
+                           tab.ea61  tab.ea62  tab.ea63  tab.ea64  tab.ea65  T(0)]
+
+    b_explicit = @SVector [tab.eb1, T(0), tab.eb3, tab.eb4, tab.eb5, tab.eb6]
+    c_explicit = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, T2(1)]
+
+    α_pred = @SMatrix T2[
+        0 0 0 0 0 0;
+        tab.α21 0 0 0 0 0;
+        tab.α31 tab.α32 0 0 0 0;
+        tab.α41 tab.α42 0 0 0 0;
+        tab.α51 tab.α52 tab.α53 tab.α54 0 0;
+        tab.α61 tab.α62 tab.α63 tab.α64 tab.α65 0]
+
     SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
-                 is_fsal=false, is_stiffly_accurate=false,
-                 is_A_stable=true, is_L_stable=false,
+                 is_fsal=true, is_stiffly_accurate=true,
+                 is_A_stable=true, is_L_stable=true,
                  predictor_type=:kencarp_additive,
                  has_additive_splitting=true,
-                 A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit)
+                 A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit,
+                 α_pred=α_pred)
 end
 
 function KenCarp47Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.1496590219993)
-    γc = T2(0.1496590219993)
-    
-    A = @SMatrix [γT                            0                             0                            0                            0                            0                            0;
-                  T(0.7481896206814)            γT                            0                            0                            0                            0                            0;
-                  T(0.2068513093527)            T(0.2931486906473)            γT                           0                            0                            0                            0;
-                  T(0.7581896206812)            T(-0.2581896206812)           T(0.25)                      γT                           0                            0                            0;
-                  T(0.8765725810946)            T(-0.3765725810946)           T(0.25)                      T(0.25)                      γT                           0                            0;
-                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       γT                           0;
-                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       T(0.0)                       γT]
-    
-    b = @SVector [T(1.6274999742127), T(-1.1274999742127), T(0.25), T(0.25), T(0.0), T(0.0), T(0.0)]
-    c = @SVector [γc, T2(0.8978486300007), T2(0.6496590219993), T2(0.7496590219993), T2(1.1262315616939), T2(1.0), T2(1.0)]
-    
-    b_embed = A[7, :]
-    
-    A_explicit = zeros(SMatrix{7,7,T})
-    b_explicit = zeros(SVector{7,T})
-    c_explicit = c
-    
+    tab = KenCarp47Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 7-stage: stage 1 explicit, a71=0, a72=0
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0)     T(0);
+                  tab.a61  tab.a62  tab.a63  tab.a64  tab.a65  γT       T(0);
+                  T(0)     T(0)     tab.a73  tab.a74  tab.a75  tab.a76  γT]
+
+    b = @SVector [T(0), T(0), tab.a73, tab.a74, tab.a75, tab.a76, γT]
+    c = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6, T2(1)]
+    b_embed = @SVector [T(0), T(0), tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7]
+
+    A_explicit = @SMatrix [T(0)      T(0)      T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea21  T(0)      T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea31  tab.ea32  T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea41  tab.ea42  tab.ea43  T(0)      T(0)      T(0)      T(0);
+                           tab.ea51  tab.ea52  tab.ea53  tab.ea54  T(0)      T(0)      T(0);
+                           tab.ea61  tab.ea62  tab.ea63  tab.ea64  tab.ea65  T(0)      T(0);
+                           tab.ea71  tab.ea72  tab.ea73  tab.ea74  tab.ea75  tab.ea76  T(0)]
+
+    b_explicit = @SVector [T(0), T(0), tab.eb3, tab.eb4, tab.eb5, tab.eb6, tab.eb7]
+    c_explicit = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6, T2(1)]
+
+    α_pred = @SMatrix T2[
+        0 0 0 0 0 0 0;
+        tab.α21 0 0 0 0 0 0;
+        tab.α31 tab.α32 0 0 0 0 0;
+        tab.α41 tab.α42 tab.α43 0 0 0 0;
+        tab.α51 tab.α52 0 0 0 0 0;
+        tab.α61 tab.α62 tab.α63 0 0 0 0;
+        tab.α71 tab.α72 tab.α73 tab.α74 tab.α75 tab.α76 0]
+
     SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
-                 is_fsal=false, is_stiffly_accurate=true,
+                 is_fsal=true, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
                  predictor_type=:kencarp_additive,
                  has_additive_splitting=true,
-                 A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit)
+                 A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit,
+                 α_pred=α_pred)
 end
 
 function KenCarp5Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.2113248654051871)
-    γc = T2(0.2113248654051871)
-    
-    A = @SMatrix [γT                            0                             0                            0                            0                            0                            0                            0;
-                  T(0.5)                        γT                            0                            0                            0                            0                            0                            0;
-                  T(0.453125)                   T(-0.140625)                  γT                           0                            0                            0                            0                            0;
-                  T(0.6828)                     T(-0.2178)                    T(0.3237)                    γT                           0                            0                            0                            0;
-                  T(0.6262)                     T(-0.1848)                    T(0.2477)                    T(0.4998)                    γT                           0                            0                            0;
-                  T(0.3415)                     T(-0.1219)                    T(0.2502)                    T(0.2502)                    T(0.0686)                    γT                           0                            0;
-                  T(0.3415)                     T(-0.1219)                    T(0.2502)                    T(0.2502)                    T(0.0686)                    T(0.0)                       γT                           0;
-                  T(0.6262)                     T(-0.1848)                    T(0.2477)                    T(0.4998)                    T(0.2113)                    T(0.0)                       T(0.0)                       γT]
-    
-    b = @SVector [T(0.3415), T(-0.1219), T(0.2502), T(0.2502), T(0.0686), T(0.0), T(0.0), T(0.0)]
-    c = @SVector [γc, T2(0.7113248654051871), T2(0.5226873345948129), T2(0.7887), T2(0.9773126654051871), T2(1.0), T2(1.0), T2(1.0)]
-    
-    b_embed = A[8, :]
-    
-    A_explicit = zeros(SMatrix{8,8,T})
-    b_explicit = zeros(SVector{8,T})
-    c_explicit = c
-    
+    tab = KenCarp5Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 8-stage: stage 1 explicit, stages 2-8 implicit
+    # Note: a42=0, a82=0, a83=0 (omitted from old struct)
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a41  T(0)    tab.a43  γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a51  T(0)    tab.a53  tab.a54  γT       T(0)     T(0)     T(0);
+                  tab.a61  T(0)    tab.a63  tab.a64  tab.a65  γT       T(0)     T(0);
+                  tab.a71  T(0)    tab.a73  tab.a74  tab.a75  tab.a76  γT       T(0);
+                  tab.a81  T(0)    T(0)    tab.a84  tab.a85  tab.a86  tab.a87  γT]
+
+    b = @SVector [tab.a81, T(0), T(0), tab.a84, tab.a85, tab.a86, tab.a87, γT]
+    c = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, T2(1)]
+    b_embed = @SVector [tab.btilde1, T(0), T(0), tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8]
+
+    A_explicit = @SMatrix [T(0)      T(0)      T(0)      T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea21  T(0)      T(0)      T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea31  tab.ea32  T(0)      T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea41  T(0)      tab.ea43  T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea51  T(0)      tab.ea53  tab.ea54  T(0)      T(0)      T(0)      T(0);
+                           tab.ea61  T(0)      tab.ea63  tab.ea64  tab.ea65  T(0)      T(0)      T(0);
+                           tab.ea71  T(0)      tab.ea73  tab.ea74  tab.ea75  tab.ea76  T(0)      T(0);
+                           tab.ea81  T(0)      tab.ea83  tab.ea84  tab.ea85  tab.ea86  tab.ea87  T(0)]
+
+    b_explicit = @SVector [tab.eb1, T(0), T(0), tab.eb4, tab.eb5, tab.eb6, tab.eb7, tab.eb8]
+    c_explicit = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, T2(1)]
+
+    α_pred = @SMatrix T2[
+        0 0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0;
+        tab.α31 tab.α32 0 0 0 0 0 0;
+        tab.α41 tab.α42 0 0 0 0 0 0;
+        tab.α51 tab.α52 0 0 0 0 0 0;
+        tab.α61 tab.α62 0 0 0 0 0 0;
+        tab.α71 tab.α72 tab.α73 tab.α74 tab.α75 0 0 0;
+        tab.α81 tab.α82 tab.α83 tab.α84 tab.α85 0 0 0]
+
     SDIRKTableau(A, b, c, γT, 5;
                  b_embed=b_embed, embedded_order=4,
-                 is_fsal=false, is_stiffly_accurate=true,
+                 is_fsal=true, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
                  predictor_type=:kencarp_additive,
                  has_additive_splitting=true,
-                 A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit)
+                 A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit,
+                 α_pred=α_pred)
 end
 
 function KenCarp58Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.1496590219993)
-    γc = T2(0.1496590219993)
-    
-    A = @SMatrix [γT                            0                             0                            0                            0                            0                            0                            0;
-                  T(0.7481896206814)            γT                            0                            0                            0                            0                            0                            0;
-                  T(0.2068513093527)            T(0.2931486906473)            γT                           0                            0                            0                            0                            0;
-                  T(0.7581896206812)            T(-0.2581896206812)           T(0.25)                      γT                           0                            0                            0                            0;
-                  T(0.8765725810946)            T(-0.3765725810946)           T(0.25)                      T(0.25)                      γT                           0                            0                            0;
-                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       γT                           0                            0;
-                  T(1.6274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.0)                       T(0.0)                       γT                           0;
-                  T(1.2274999742127)            T(-1.1274999742127)           T(0.25)                      T(0.25)                      T(0.4)                       T(0.0)                       T(0.0)                       γT]
-    
-    b = @SVector [T(1.2274999742127), T(-1.1274999742127), T(0.25), T(0.25), T(0.4), T(0.0), T(0.0), T(0.0)]
-    c = @SVector [γc, T2(0.8978486300007), T2(0.6496590219993), T2(0.7496590219993), T2(1.1262315616939), T2(1.0), T2(1.0), T2(1.0)]
-    
-    b_embed = A[8, :]
-    
-    A_explicit = zeros(SMatrix{8,8,T})
-    b_explicit = zeros(SVector{8,T})
-    c_explicit = c
-    
+    tab = KenCarp58Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 8-stage: stage 1 explicit, a81=0, a82=0
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0)     T(0)     T(0);
+                  tab.a61  tab.a62  tab.a63  tab.a64  tab.a65  γT       T(0)     T(0);
+                  tab.a71  tab.a72  tab.a73  tab.a74  tab.a75  tab.a76  γT       T(0);
+                  T(0)     T(0)     tab.a83  tab.a84  tab.a85  tab.a86  tab.a87  γT]
+
+    b = @SVector [T(0), T(0), tab.a83, tab.a84, tab.a85, tab.a86, tab.a87, γT]
+    c = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, T2(1)]
+    b_embed = @SVector [T(0), T(0), tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8]
+
+    A_explicit = @SMatrix [T(0)      T(0)      T(0)      T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea21  T(0)      T(0)      T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea31  tab.ea32  T(0)      T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea41  tab.ea42  tab.ea43  T(0)      T(0)      T(0)      T(0)      T(0);
+                           tab.ea51  tab.ea52  tab.ea53  tab.ea54  T(0)      T(0)      T(0)      T(0);
+                           tab.ea61  tab.ea62  tab.ea63  tab.ea64  tab.ea65  T(0)      T(0)      T(0);
+                           tab.ea71  tab.ea72  tab.ea73  tab.ea74  tab.ea75  tab.ea76  T(0)      T(0);
+                           tab.ea81  tab.ea82  tab.ea83  tab.ea84  tab.ea85  tab.ea86  tab.ea87  T(0)]
+
+    b_explicit = @SVector [T(0), T(0), tab.eb3, tab.eb4, tab.eb5, tab.eb6, tab.eb7, tab.eb8]
+    c_explicit = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, T2(1)]
+
+    α_pred = @SMatrix T2[
+        0 0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0;
+        tab.α31 tab.α32 0 0 0 0 0 0;
+        tab.α41 tab.α42 0 0 0 0 0 0;
+        tab.α51 tab.α52 0 0 0 0 0 0;
+        tab.α61 tab.α62 tab.α63 0 0 0 0 0;
+        tab.α71 tab.α72 tab.α73 0 0 0 0 0;
+        tab.α81 tab.α82 tab.α83 tab.α84 tab.α85 tab.α86 tab.α87 0]
+
     SDIRKTableau(A, b, c, γT, 5;
                  b_embed=b_embed, embedded_order=4,
-                 is_fsal=false, is_stiffly_accurate=true,
+                 is_fsal=true, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
                  predictor_type=:kencarp_additive,
                  has_additive_splitting=true,
-                 A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit)
+                 A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit,
+                 α_pred=α_pred)
 end
 
 function SFSDIRK4Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.243220255)
-    γc = T2(0.243220255)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0;
-                  T(0.5)                   γT                       0                       0                       0;
-                  T(0.5)                   T(0.0)                   γT                      0                       0;
-                  T(0.25)                  T(0.25)                  T(0.25)                 γT                      0;
-                  T(0.2)                   T(0.2)                   T(0.2)                  T(0.2)                  γT]
-    
-    b = @SVector [T(0.2), T(0.2), T(0.2), T(0.2), T(0.2)]
-    c = @SVector [γc, T2(0.5) + γc, T2(0.5) + γc, T2(0.75) + γc, T2(0.8) + γc]
-    
+    tab = SFSDIRK4Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # Pure SDIRK 5-stage (4 implicit + direct solution stage)
+    A = @SMatrix [γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a21  γT       T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT]
+
+    b = @SVector [tab.a51, tab.a52, tab.a53, tab.a54, γT]
+    c = @SVector [γc, tab.c2, tab.c3, tab.c4, T2(1)]
+
     SDIRKTableau(A, b, c, γT, 4;
-                 is_fsal=false, is_stiffly_accurate=false,
-                 is_A_stable=true, is_L_stable=false,
-                 predictor_type=:hermite)
+                 is_fsal=false, is_stiffly_accurate=true,
+                 is_A_stable=true, is_L_stable=true,
+                 predictor_type=:default)
 end
 
 function SFSDIRK5Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.193883658)
-    γc = T2(0.193883658)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0                       0;
-                  T(0.4)                   γT                       0                       0                       0                       0;
-                  T(0.4)                   T(0.0)                   γT                      0                       0                       0;
-                  T(0.2)                   T(0.2)                   T(0.2)                  γT                      0                       0;
-                  T(0.16)                  T(0.16)                  T(0.16)                 T(0.16)                 γT                      0;
-                  T(2//15)                 T(2//15)                 T(2//15)                T(2//15)                T(2//15)                γT]
-    
-    b = @SVector [T(2//15), T(2//15), T(2//15), T(2//15), T(2//15), T(1//3)]
-    c = @SVector [γc, T2(0.4) + γc, T2(0.4) + γc, T2(0.6) + γc, T2(0.64) + γc, T2(2//3) + γc]
-    
+    tab = SFSDIRK5Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # Pure SDIRK 6-stage
+    A = @SMatrix [γT       T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a21  γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0);
+                  tab.a61  tab.a62  tab.a63  tab.a64  tab.a65  γT]
+
+    b = @SVector [tab.a61, tab.a62, tab.a63, tab.a64, tab.a65, γT]
+    c = @SVector [γc, tab.c2, tab.c3, tab.c4, tab.c5, T2(1)]
+
     SDIRKTableau(A, b, c, γT, 5;
-                 is_fsal=false, is_stiffly_accurate=false,
-                 is_A_stable=true, is_L_stable=false,
-                 predictor_type=:hermite)
+                 is_fsal=false, is_stiffly_accurate=true,
+                 is_A_stable=true, is_L_stable=true,
+                 predictor_type=:default)
 end
 
 function SFSDIRK6Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.161)
-    γc = T2(0.161)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0                       0;
-                  T(1//3)                  γT                       0                       0                       0                       0;
-                  T(1//3)                  T(0.0)                   γT                      0                       0                       0;
-                  T(1//6)                  T(1//6)                  T(1//6)                 γT                      0                       0;
-                  T(0.125)                 T(0.125)                 T(0.125)                T(0.125)                γT                      0;
-                  T(1//7)                  T(1//7)                  T(1//7)                 T(1//7)                 T(1//7)                 γT]
-    
-    b = @SVector [T(1//7), T(1//7), T(1//7), T(1//7), T(1//7), T(2//7)]
-    c = @SVector [γc, T2(1//3) + γc, T2(1//3) + γc, T2(0.5) + γc, T2(0.5) + γc, T2(5//7) + γc]
-    
+    tab = SFSDIRK6Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # Pure SDIRK 7-stage
+    A = @SMatrix [γT       T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a21  γT       T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0)     T(0);
+                  tab.a61  tab.a62  tab.a63  tab.a64  tab.a65  γT       T(0);
+                  tab.a71  tab.a72  tab.a73  tab.a74  tab.a75  tab.a76  γT]
+
+    b = @SVector [tab.a71, tab.a72, tab.a73, tab.a74, tab.a75, tab.a76, γT]
+    c = @SVector [γc, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6, T2(1)]
+
     SDIRKTableau(A, b, c, γT, 6;
-                 is_fsal=false, is_stiffly_accurate=false,
-                 is_A_stable=true, is_L_stable=false,
-                 predictor_type=:hermite)
+                 is_fsal=false, is_stiffly_accurate=true,
+                 is_A_stable=true, is_L_stable=true,
+                 predictor_type=:default)
 end
 
 function SFSDIRK7Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.137)
-    γc = T2(0.137)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0;
-                  T(2//7)                  γT                       0                       0                       0                       0                       0;
-                  T(2//7)                  T(0.0)                   γT                      0                       0                       0                       0;
-                  T(1//7)                  T(1//7)                  T(1//7)                 γT                      0                       0                       0;
-                  T(1//8)                  T(1//8)                  T(1//8)                 T(1//8)                 γT                      0                       0;
-                  T(1//9)                  T(1//9)                  T(1//9)                 T(1//9)                 T(1//9)                 γT                      0;
-                  T(1//10)                 T(1//10)                 T(1//10)                T(1//10)                T(1//10)                T(1//10)                γT]
-    
-    b = @SVector [T(1//10), T(1//10), T(1//10), T(1//10), T(1//10), T(1//10), T(4//10)]
-    c = @SVector [γc, T2(2//7) + γc, T2(2//7) + γc, T2(3//7) + γc, T2(0.5) + γc, T2(5//9) + γc, T2(0.6) + γc]
-    
+    tab = SFSDIRK7Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # Pure SDIRK 8-stage
+    A = @SMatrix [γT       T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a21  γT       T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0)     T(0)     T(0);
+                  tab.a61  tab.a62  tab.a63  tab.a64  tab.a65  γT       T(0)     T(0);
+                  tab.a71  tab.a72  tab.a73  tab.a74  tab.a75  tab.a76  γT       T(0);
+                  tab.a81  tab.a82  tab.a83  tab.a84  tab.a85  tab.a86  tab.a87  γT]
+
+    b = @SVector [tab.a81, tab.a82, tab.a83, tab.a84, tab.a85, tab.a86, tab.a87, γT]
+    c = @SVector [γc, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, T2(1)]
+
     SDIRKTableau(A, b, c, γT, 7;
-                 is_fsal=false, is_stiffly_accurate=false,
-                 is_A_stable=true, is_L_stable=false,
-                 predictor_type=:hermite)
+                 is_fsal=false, is_stiffly_accurate=true,
+                 is_A_stable=true, is_L_stable=true,
+                 predictor_type=:default)
 end
 
 function SFSDIRK8Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.119)
-    γc = T2(0.119)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0                       0;
-                  T(0.25)                  γT                       0                       0                       0                       0                       0                       0;
-                  T(0.25)                  T(0.0)                   γT                      0                       0                       0                       0                       0;
-                  T(1//8)                  T(1//8)                  T(1//8)                 γT                      0                       0                       0                       0;
-                  T(0.1)                   T(0.1)                   T(0.1)                  T(0.1)                  γT                      0                       0                       0;
-                  T(1//12)                 T(1//12)                 T(1//12)                T(1//12)                T(1//12)                γT                      0                       0;
-                  T(1//14)                 T(1//14)                 T(1//14)                T(1//14)                T(1//14)                T(1//14)                γT                      0;
-                  T(1//16)                 T(1//16)                 T(1//16)                T(1//16)                T(1//16)                T(1//16)                T(1//16)                γT]
-    
-    b = @SVector [T(1//16), T(1//16), T(1//16), T(1//16), T(1//16), T(1//16), T(1//16), T(9//16)]
-    c = @SVector [γc, T2(0.25) + γc, T2(0.25) + γc, T2(3//8) + γc, T2(0.4) + γc, T2(5//12) + γc, T2(6//14) + γc, T2(7//16) + γc]
-    
+    tab = SFSDIRK8Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # Pure SDIRK 9-stage
+    A = @SMatrix [γT       T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a21  γT       T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a61  tab.a62  tab.a63  tab.a64  tab.a65  γT       T(0)     T(0)     T(0);
+                  tab.a71  tab.a72  tab.a73  tab.a74  tab.a75  tab.a76  γT       T(0)     T(0);
+                  tab.a81  tab.a82  tab.a83  tab.a84  tab.a85  tab.a86  tab.a87  γT       T(0);
+                  tab.a91  tab.a92  tab.a93  tab.a94  tab.a95  tab.a96  tab.a97  tab.a98  γT]
+
+    b = @SVector [tab.a91, tab.a92, tab.a93, tab.a94, tab.a95, tab.a96, tab.a97, tab.a98, γT]
+    c = @SVector [γc, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, tab.c8, T2(1)]
+
     SDIRKTableau(A, b, c, γT, 8;
-                 is_fsal=false, is_stiffly_accurate=false,
-                 is_A_stable=true, is_L_stable=false,
-                 predictor_type=:hermite)
+                 is_fsal=false, is_stiffly_accurate=true,
+                 is_A_stable=true, is_L_stable=true,
+                 predictor_type=:default)
 end
 
 function ESDIRK54I8L2SATableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.26)
-    γc = T2(0.26)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0                       0;
-                  T(0.13)                  γT                       0                       0                       0                       0                       0                       0;
-                  T(0.84079895052208)      T(0.07920104947792)      γT                      0                       0                       0                       0                       0;
-                  T(0.619100897516618)     T(0.066593016584582)     T(0.054305985899400)    γT                      0                       0                       0                       0;
-                  T(0.258023287184119)     T(0.097741417057132)     T(0.464732297848610)    T(1.179502539939939)    γT                      0                       0                       0;
-                  T(0.544974750228521)     T(0.212765981366776)     T(0.164488906111538)    T(0.077770561901165)    T(0.0)                  γT                      0                       0;
-                  T(0.325)                 T(0.225)                 T(0.175)                T(0.125)                T(0.075)                T(0.075)                γT                      0;
-                  T(0.425)                 T(0.275)                 T(0.150)                T(0.100)                T(0.050)                T(0.0)                  T(0.0)                  γT]
-    
-    b = @SVector [T(0.425), T(0.275), T(0.150), T(0.100), T(0.050), T(0.0), T(0.0), T(0.0)]
-    c = @SVector [γc, T2(0.39), T2(1.0), T2(0.74), T2(1.0), T2(1.0), T2(1.0), T2(1.0)]
-    
-    b_embed = A[8, :]
-    
+    tab = ESDIRK54I8L2SATableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 8-stage: stage 1 explicit
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0)     T(0)     T(0);
+                  tab.a61  tab.a62  tab.a63  tab.a64  tab.a65  γT       T(0)     T(0);
+                  tab.a71  tab.a72  tab.a73  tab.a74  tab.a75  tab.a76  γT       T(0);
+                  tab.a81  tab.a82  tab.a83  tab.a84  tab.a85  tab.a86  tab.a87  γT]
+
+    b = @SVector [tab.a81, tab.a82, tab.a83, tab.a84, tab.a85, tab.a86, tab.a87, γT]
+    c = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, T2(1)]
+    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8]
+
     SDIRKTableau(A, b, c, γT, 5;
                  b_embed=b_embed, embedded_order=4,
-                 is_fsal=false, is_stiffly_accurate=true,
+                 is_fsal=true, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
                  predictor_type=:hermite)
 end
 
 function ESDIRK436L2SA2Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.25)
-    γc = T2(0.25)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0                       0;
-                  T(0.5)                   γT                       0                       0                       0                       0;
-                  T(0.45)                  T(0.05)                  γT                      0                       0                       0;
-                  T(0.2)                   T(0.3)                   T(0.25)                 γT                      0                       0;
-                  T(0.15)                  T(0.35)                  T(0.25)                 T(0.0)                  γT                      0;
-                  T(0.17)                  T(0.33)                  T(0.25)                 T(0.0)                  T(0.0)                  γT]
-    
-    b = @SVector [T(0.17), T(0.33), T(0.25), T(0.0), T(0.0), T(0.25)]
-    c = @SVector [γc, T2(0.75), T2(0.75), T2(0.97), T2(0.75), T2(1.0)]
-    
-    b_embed = A[6, :]
-    
+    tab = ESDIRK436L2SA2Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 6-stage: stage 1 explicit
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0);
+                  tab.a61  tab.a62  tab.a63  tab.a64  tab.a65  γT]
+
+    b = @SVector [tab.a61, tab.a62, tab.a63, tab.a64, tab.a65, γT]
+    c = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6]
+    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6]
+
     SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
-                 is_fsal=false, is_stiffly_accurate=true,
+                 is_fsal=true, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
                  predictor_type=:hermite)
 end
 
 function ESDIRK437L2SATableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.2)
-    γc = T2(0.2)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0;
-                  T(0.4)                   γT                       0                       0                       0                       0                       0;
-                  T(0.35)                  T(0.05)                  γT                      0                       0                       0                       0;
-                  T(0.15)                  T(0.25)                  T(0.20)                 γT                      0                       0                       0;
-                  T(0.12)                  T(0.28)                  T(0.20)                 T(0.0)                  γT                      0                       0;
-                  T(0.10)                  T(0.30)                  T(0.20)                 T(0.0)                  T(0.0)                  γT                      0;
-                  T(0.14)                  T(0.26)                  T(0.20)                 T(0.0)                  T(0.0)                  T(0.0)                  γT]
-    
-    b = @SVector [T(0.14), T(0.26), T(0.20), T(0.0), T(0.0), T(0.0), T(0.40)]
-    c = @SVector [γc, T2(0.6), T2(0.6), T2(0.6), T2(0.6), T2(0.5), T2(1.0)]
-    
-    b_embed = A[7, :]
-    
+    tab = ESDIRK437L2SATableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 7-stage: stage 1 explicit
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0)     T(0);
+                  tab.a61  tab.a62  tab.a63  tab.a64  tab.a65  γT       T(0);
+                  tab.a71  tab.a72  tab.a73  tab.a74  tab.a75  tab.a76  γT]
+
+    b = @SVector [tab.a71, tab.a72, tab.a73, tab.a74, tab.a75, tab.a76, γT]
+    c = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7]
+    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7]
+
     SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
-                 is_fsal=false, is_stiffly_accurate=true,
+                 is_fsal=true, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
                  predictor_type=:hermite)
 end
 
 function ESDIRK547L2SA2Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.18)
-    γc = T2(0.18)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0;
-                  T(0.36)                  γT                       0                       0                       0                       0                       0;
-                  T(0.32)                  T(0.04)                  γT                      0                       0                       0                       0;
-                  T(0.14)                  T(0.22)                  T(0.18)                 γT                      0                       0                       0;
-                  T(0.11)                  T(0.25)                  T(0.18)                 T(0.0)                  γT                      0                       0;
-                  T(0.09)                  T(0.27)                  T(0.18)                 T(0.0)                  T(0.0)                  γT                      0;
-                  T(0.12)                  T(0.24)                  T(0.18)                 T(0.0)                  T(0.0)                  T(0.0)                  γT]
-    
-    b = @SVector [T(0.12), T(0.24), T(0.18), T(0.0), T(0.0), T(0.0), T(0.46)]
-    c = @SVector [γc, T2(0.54), T2(0.54), T2(0.54), T2(0.54), T2(0.54), T2(1.0)]
-    
-    b_embed = A[7, :]
-    
+    tab = ESDIRK547L2SA2Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 7-stage: stage 1 explicit
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0)     T(0);
+                  tab.a61  tab.a62  tab.a63  tab.a64  tab.a65  γT       T(0);
+                  tab.a71  tab.a72  tab.a73  tab.a74  tab.a75  tab.a76  γT]
+
+    b = @SVector [tab.a71, tab.a72, tab.a73, tab.a74, tab.a75, tab.a76, γT]
+    c = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7]
+    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7]
+
     SDIRKTableau(A, b, c, γT, 5;
                  b_embed=b_embed, embedded_order=4,
-                 is_fsal=false, is_stiffly_accurate=true,
+                 is_fsal=true, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
                  predictor_type=:hermite)
 end
 
 function ESDIRK659L2SATableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.15)
-    γc = T2(0.15)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0                       0                       0                       0                       0;
-                  T(0.30)                  γT                       0                       0                       0                       0                       0                       0                       0;
-                  T(0.27)                  T(0.03)                  γT                      0                       0                       0                       0                       0                       0;
-                  T(0.12)                  T(0.18)                  T(0.15)                 γT                      0                       0                       0                       0                       0;
-                  T(0.09)                  T(0.21)                  T(0.15)                 T(0.0)                  γT                      0                       0                       0                       0;
-                  T(0.08)                  T(0.22)                  T(0.15)                 T(0.0)                  T(0.0)                  γT                      0                       0                       0;
-                  T(0.07)                  T(0.23)                  T(0.15)                 T(0.0)                  T(0.0)                  T(0.0)                  γT                      0                       0;
-                  T(0.06)                  T(0.24)                  T(0.15)                 T(0.0)                  T(0.0)                  T(0.0)                  T(0.0)                  γT                      0;
-                  T(0.10)                  T(0.20)                  T(0.15)                 T(0.0)                  T(0.0)                  T(0.0)                  T(0.0)                  T(0.0)                  γT]
-    
-    b = @SVector [T(0.10), T(0.20), T(0.15), T(0.0), T(0.0), T(0.0), T(0.0), T(0.0), T(0.55)]
-    c = @SVector [γc, T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(0.45), T2(1.0)]
-    
-    b_embed = A[9, :]
-    
+    tab = ESDIRK659L2SATableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 9-stage: stage 1 explicit
+    # Note: a91=0, a92=0, a93=0 (omitted from old struct)
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0)     T(0)     T(0)     T(0)     T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a61  tab.a62  tab.a63  tab.a64  tab.a65  γT       T(0)     T(0)     T(0);
+                  tab.a71  tab.a72  tab.a73  tab.a74  tab.a75  tab.a76  γT       T(0)     T(0);
+                  tab.a81  tab.a82  tab.a83  tab.a84  tab.a85  tab.a86  tab.a87  γT       T(0);
+                  T(0)     T(0)     T(0)     tab.a94  tab.a95  tab.a96  tab.a97  tab.a98  γT]
+
+    b = @SVector [T(0), T(0), T(0), tab.a94, tab.a95, tab.a96, tab.a97, tab.a98, γT]
+    c = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, tab.c8, tab.c9]
+    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8, tab.btilde9]
+
     SDIRKTableau(A, b, c, γT, 6;
                  b_embed=b_embed, embedded_order=5,
-                 is_fsal=false, is_stiffly_accurate=true,
+                 is_fsal=true, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
                  predictor_type=:hermite)
 end
 
 function Hairer4Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.4358665215)
-    γc = T2(0.4358665215)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0;
-                  T(0.2576482460664272)    γT                       0                       0                       0;
-                  -T(0.09351476757488625)  0                        γT                      0                       0;
-                  T(0.18764102434672383)   -T(0.595297473576955)    T(0.9717899277217721)   γT                      0;
-                  T(0.490563388419108)     T(0.073570090080892)     T(0.4358665215)         T(0.0)                  γT]
-    
-    b = @SVector [T(0.490563388419108), T(0.073570090080892), T(0.4358665215), T(0.0), T(0.0)]
-    c = @SVector [γc, 2γc, T2(1), T2(1), T2(1)]
-    
-    b_embed = A[5, :]
-    
+    tab = Hairer4Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # Pure SDIRK 5-stage: all stages implicit, A[i,i]=γ
+    A = @SMatrix [γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a21  γT       T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT]
+
+    b = @SVector [tab.a51, tab.a52, tab.a53, tab.a54, γT]
+    c = @SVector [γc, tab.c2, tab.c3, tab.c4, T2(1)]
+    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, tab.btilde5]
+
+    α_pred = @SMatrix T2[
+        0 0 0 0 0;
+        tab.α21 0 0 0 0;
+        tab.α31 tab.α32 0 0 0;
+        tab.α41 0 tab.α43 0 0;
+        tab.a41 tab.a42 tab.a43 tab.γ 0]
+
     SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
                  is_fsal=false, is_stiffly_accurate=true,
                  is_A_stable=true, is_L_stable=true,
-                 predictor_type=:hermite)
+                 predictor_type=:hermite,
+                 α_pred=α_pred)
 end
 
 function Hairer42Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.3995)
-    γc = T2(0.3995)
-    
-    A = @SMatrix [γT                       0                        0                       0                       0;
-                  T(0.25)                  γT                       0                       0                       0;
-                  -T(0.08)                 0                        γT                      0                       0;
-                  T(0.19)                  -T(0.58)                 T(0.97)                 γT                      0;
-                  T(0.48)                  T(0.075)                 T(0.42)                 T(0.0)                  γT]
-    
-    b = @SVector [T(0.48), T(0.075), T(0.42), T(0.0), T(0.025)]
-    c = @SVector [γc, T2(0.6495), T2(0.9995), T2(0.98), T2(1.0)]
-    
-    b_embed = A[5, :]
-    
+    tab = Hairer42Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # Pure SDIRK 5-stage
+    A = @SMatrix [γT       T(0)     T(0)     T(0)     T(0);
+                  tab.a21  γT       T(0)     T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0)     T(0);
+                  tab.a41  tab.a42  tab.a43  γT       T(0);
+                  tab.a51  tab.a52  tab.a53  tab.a54  γT]
+
+    b = @SVector [tab.a51, tab.a52, tab.a53, tab.a54, γT]
+    c = @SVector [γc, tab.c2, tab.c3, tab.c4, T2(1)]
+    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, tab.btilde5]
+
+    α_pred = @SMatrix T2[
+        0 0 0 0 0;
+        tab.α21 0 0 0 0;
+        tab.α31 tab.α32 0 0 0;
+        tab.α41 0 tab.α43 0 0;
+        tab.a41 tab.a42 tab.a43 tab.γ 0]
+
     SDIRKTableau(A, b, c, γT, 4;
                  b_embed=b_embed, embedded_order=3,
-                 is_fsal=false, is_stiffly_accurate=false,
-                 is_A_stable=true, is_L_stable=false,
-                 predictor_type=:hermite)
+                 is_fsal=false, is_stiffly_accurate=true,
+                 is_A_stable=true, is_L_stable=true,
+                 predictor_type=:hermite,
+                 α_pred=α_pred)
 end
 
 function CFNLIRK3Tableau_unified(::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
-    γT = T(0.4358665215)
-    γc = T2(0.4358665215)
-    
-    A = @SMatrix [γT                       0                        0                       0;
-                  T(0.490563388419108)     γT                       0                       0;
-                  T(0.073570090080892)     0                        γT                      0;
-                  T(0.308809969973036)     T(1.490563388254106)     -T(1.235239879727145)   γT]
-    
-    b = @SVector [T(0.490563388419108), T(0.073570090080892), T(0.4358665215), T(0.0)]
-    c = @SVector [γc, 2γc, T2(1), T2(1)]
-    
-    b_embed = A[4, :]
-    
+    tab = CFNLIRK3Tableau(T, T2)
+    γT = T(tab.γ)
+    γc = T2(tab.γ)
+
+    # ESDIRK 4-stage: stage 1 explicit
+    A = @SMatrix [T(0)     T(0)     T(0)     T(0);
+                  γT       γT       T(0)     T(0);
+                  tab.a31  tab.a32  γT       T(0);
+                  tab.a41  tab.a42  tab.a43  γT]
+
+    b = @SVector [tab.a41, tab.a42, tab.a43, γT]
+    c = @SVector [T2(0), tab.c2, tab.c3, T2(1)]
+
+    A_explicit = @SMatrix [T(0)      T(0)      T(0)      T(0);
+                           tab.ea21  T(0)      T(0)      T(0);
+                           tab.ea31  tab.ea32  T(0)      T(0);
+                           tab.ea41  tab.ea42  tab.ea43  T(0)]
+
+    b_explicit = @SVector [tab.eb1, tab.eb2, tab.eb3, tab.eb4]
+    c_explicit = @SVector [T2(0), tab.c2, tab.c3, T2(1)]
+
     SDIRKTableau(A, b, c, γT, 3;
-                 b_embed=b_embed, embedded_order=2,
-                 is_fsal=false, is_stiffly_accurate=false,
-                 is_A_stable=true, is_L_stable=false,
-                 predictor_type=:hermite)
+                 is_fsal=true, is_stiffly_accurate=true,
+                 is_A_stable=true, is_L_stable=true,
+                 predictor_type=:hermite,
+                 has_additive_splitting=true,
+                 A_explicit=A_explicit, b_explicit=b_explicit, c_explicit=c_explicit)
 end
 
 function get_sdirk_tableau(alg::Symbol, ::Type{T}=Float64, ::Type{T2}=Float64) where {T, T2}
