@@ -102,7 +102,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
+struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter, CT <: AbstractControllerType} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -111,7 +111,7 @@ struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
     tol::T
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
+    controller::CT
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -121,17 +121,18 @@ function ABDF2(;
         κ = nothing, tol = nothing, linsolve = nothing, precs = DEFAULT_PRECS,
         nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :Standard, step_limiter! = trivial_limiter!
+        controller = StandardControllerType(), step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    _controller = _controller_type_from_symbol(controller)
 
     return ABDF2{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(step_limiter!),
+        typeof(κ), typeof(tol), typeof(step_limiter!), typeof(_controller),
     }(
         linsolve, nlsolve, precs, κ, tol,
-        smooth_est, extrapolant, controller, step_limiter!, AD_choice
+        smooth_est, extrapolant, _controller, step_limiter!, AD_choice
     )
 end
 
@@ -307,14 +308,14 @@ SBDF4(; kwargs...) = SBDF(4; kwargs...)
     step_limiter! = trivial_limiter!,
     """
 )
-struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
+struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter, CT <: AbstractControllerType} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     kappa::κType
-    controller::Symbol
+    controller::CT
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -324,21 +325,22 @@ function QNDF1(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, kappa = -37 // 200,
-        controller = :Standard, step_limiter! = trivial_limiter!
+        controller = StandardControllerType(), step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    _controller = _controller_type_from_symbol(controller)
 
     return QNDF1{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(kappa), typeof(step_limiter!),
+        typeof(kappa), typeof(step_limiter!), typeof(_controller),
     }(
         linsolve,
         nlsolve,
         precs,
         extrapolant,
         kappa,
-        controller,
+        _controller,
         step_limiter!,
         AD_choice
     )
@@ -372,14 +374,14 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
+struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter, CT <: AbstractControllerType} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     kappa::κType
-    controller::Symbol
+    controller::CT
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -389,21 +391,22 @@ function QNDF2(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, kappa = -1 // 9,
-        controller = :Standard, step_limiter! = trivial_limiter!
+        controller = StandardControllerType(), step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    _controller = _controller_type_from_symbol(controller)
 
     return QNDF2{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(kappa), typeof(step_limiter!),
+        typeof(kappa), typeof(step_limiter!), typeof(_controller),
     }(
         linsolve,
         nlsolve,
         precs,
         extrapolant,
         kappa,
-        controller,
+        _controller,
         step_limiter!,
         AD_choice
     )
@@ -441,7 +444,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType, StepLimiter} <:
+struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType, StepLimiter, CT <: AbstractControllerType} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
     linsolve::F
@@ -451,7 +454,7 @@ struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType, StepLimiter} <:
     tol::T
     extrapolant::Symbol
     kappa::κType
-    controller::Symbol
+    controller::CT
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -465,18 +468,19 @@ function QNDF(;
         extrapolant = :linear, kappa = (
             -37 // 200, -1 // 9, -823 // 10000, -83 // 2000, 0 // 1,
         ),
-        controller = :Standard, step_limiter! = trivial_limiter!
+        controller = StandardControllerType(), step_limiter! = trivial_limiter!
     ) where {MO}
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    _controller = _controller_type_from_symbol(controller)
 
     return QNDF{
         MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(kappa), typeof(step_limiter!),
+        typeof(κ), typeof(tol), typeof(kappa), typeof(step_limiter!), typeof(_controller),
     }(
         max_order, linsolve, nlsolve, precs, κ, tol,
-        extrapolant, kappa, controller, step_limiter!, AD_choice
+        extrapolant, kappa, _controller, step_limiter!, AD_choice
     )
 end
 
@@ -563,7 +567,7 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     max_order::Val{MO} = Val{5}(),
     """
 )
-struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
+struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter, CT <: AbstractControllerType} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
     linsolve::F
@@ -572,7 +576,7 @@ struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
     κ::K
     tol::T
     extrapolant::Symbol
-    controller::Symbol
+    controller::CT
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -583,18 +587,19 @@ function FBDF(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!
+        extrapolant = :linear, controller = StandardControllerType(), step_limiter! = trivial_limiter!
     ) where {MO}
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    _controller = _controller_type_from_symbol(controller)
 
     return FBDF{
         MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(step_limiter!),
+        typeof(κ), typeof(tol), typeof(step_limiter!), typeof(_controller),
     }(
         max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller, step_limiter!, AD_choice
+        _controller, step_limiter!, AD_choice
     )
 end
 
@@ -693,12 +698,12 @@ It uses an apriori error estimator for adaptivity based on a finite differencing
     controller = :Standard,
     """
 )
-struct DImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
+struct DImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
-    controller::Symbol
+    controller::CT
     autodiff::AD
 end
 function DImplicitEuler(;
@@ -706,17 +711,18 @@ function DImplicitEuler(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant,
-        controller = :Standard
+        controller = StandardControllerType()
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    _controller = _controller_type_from_symbol(controller)
 
     return DImplicitEuler{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),
+        _unwrap_val(concrete_jac), typeof(_controller),
     }(
         linsolve,
-        nlsolve, precs, extrapolant, controller, AD_choice
+        nlsolve, precs, extrapolant, _controller, AD_choice
     )
 end
 
@@ -742,12 +748,12 @@ end
     controller = :Standard,
     """
 )
-struct DABDF2{CS, AD, F, F2, P, FDT, ST, CJ} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
+struct DABDF2{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
-    controller::Symbol
+    controller::CT
     autodiff::AD
 end
 function DABDF2(;
@@ -755,17 +761,18 @@ function DABDF2(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant,
-        controller = :Standard
+        controller = StandardControllerType()
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    _controller = _controller_type_from_symbol(controller)
 
     return DABDF2{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),
+        _unwrap_val(concrete_jac), typeof(_controller),
     }(
         linsolve,
-        nlsolve, precs, extrapolant, controller, AD_choice
+        nlsolve, precs, extrapolant, _controller, AD_choice
     )
 end
 
@@ -809,7 +816,7 @@ DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concr
     max_order::Val{MO} = Val{5}(),
     """
 )
-struct DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
+struct DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, CT <: AbstractControllerType} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
     linsolve::F
     nlsolve::F2
@@ -817,7 +824,7 @@ struct DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <: DAEAlgorithm{CS, AD, FD
     κ::K
     tol::T
     extrapolant::Symbol
-    controller::Symbol
+    controller::CT
     autodiff::AD
 end
 function DFBDF(;
@@ -826,18 +833,19 @@ function DFBDF(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard
+        extrapolant = :linear, controller = StandardControllerType()
     ) where {MO}
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    _controller = _controller_type_from_symbol(controller)
 
     return DFBDF{
         MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol),
+        typeof(κ), typeof(tol), typeof(_controller),
     }(
         max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller, AD_choice
+        _controller, AD_choice
     )
 end
 

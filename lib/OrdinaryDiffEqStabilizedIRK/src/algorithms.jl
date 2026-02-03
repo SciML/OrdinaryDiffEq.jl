@@ -9,7 +9,7 @@
     If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.",
     "eigen_est = nothing,"
 )
-struct IRKC{CS, AD, F, F2, P, FDT, ST, CJ, K, T, E} <:
+struct IRKC{CS, AD, F, F2, P, FDT, ST, CJ, K, T, E, CT <: AbstractControllerType} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -17,7 +17,7 @@ struct IRKC{CS, AD, F, F2, P, FDT, ST, CJ, K, T, E} <:
     κ::K
     tol::T
     extrapolant::Symbol
-    controller::Symbol
+    controller::CT
     eigen_est::E
     autodiff::AD
 end
@@ -27,16 +27,17 @@ function IRKC(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard, eigen_est = nothing
+        extrapolant = :linear, controller = StandardControllerType(), eigen_est = nothing
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    _controller = _controller_type_from_symbol(controller)
 
     return IRKC{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(eigen_est),
+        typeof(κ), typeof(tol), typeof(eigen_est), typeof(_controller),
     }(
         linsolve, nlsolve, precs, κ, tol,
-        extrapolant, controller, eigen_est, AD_choice
+        extrapolant, _controller, eigen_est, AD_choice
     )
 end

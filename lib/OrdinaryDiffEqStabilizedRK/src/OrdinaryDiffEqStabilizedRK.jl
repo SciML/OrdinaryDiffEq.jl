@@ -5,12 +5,14 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
     fac_default_gamma, has_dtnew_modification,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals,
-    OrdinaryDiffEqAlgorithm, ispredictive,
+    OrdinaryDiffEqAlgorithm, ispredictive, isstandard,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, calc_dt_propose!,
     alg_cache, _vec, _reshape, @cache,
     constvalue, _unwrap_val, full_cache, get_fsalfirstlast,
-    generic_solver_docstring
+    generic_solver_docstring,
+    AbstractControllerType, PIControllerType, PredictiveControllerType,
+    StandardControllerType, _controller_type_from_symbol
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import OrdinaryDiffEqCore

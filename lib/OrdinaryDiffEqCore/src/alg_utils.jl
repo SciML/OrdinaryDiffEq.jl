@@ -1,3 +1,24 @@
+## Controller Type Tags for Type-Stable Dispatch
+abstract type AbstractControllerType end
+struct PIControllerType <: AbstractControllerType end
+struct PredictiveControllerType <: AbstractControllerType end
+struct StandardControllerType <: AbstractControllerType end
+
+# Type-stable trait dispatch on instances
+ispredictive(::PredictiveControllerType) = true
+ispredictive(::AbstractControllerType) = false
+isstandard(::StandardControllerType) = true
+isstandard(::AbstractControllerType) = false
+
+# Helper to convert Symbol to instance (for backwards compatibility)
+function _controller_type_from_symbol(s::Symbol)
+    s === :PI && return PIControllerType()
+    s === :Predictive && return PredictiveControllerType()
+    s === :Standard && return StandardControllerType()
+    error("Unknown controller type: $s. Use :PI, :Predictive, or :Standard")
+end
+_controller_type_from_symbol(c::AbstractControllerType) = c
+
 ## SciMLBase Trait Definitions
 function SciMLBase.isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return true
@@ -533,10 +554,9 @@ end
 uses_uprev(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, adaptive::Bool) = true
 uses_uprev(alg::OrdinaryDiffEqAdaptiveAlgorithm, adaptive::Bool) = true
 
+# Default: algorithms are not predictive/standard unless they have a controller type parameter
 ispredictive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
 isstandard(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
 
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 

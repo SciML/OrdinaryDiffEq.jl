@@ -39,3 +39,9 @@ alg_order(alg::DABDF2) = 2
 alg_order(alg::DFBDF) = 1 #dummy value
 
 isfsal(alg::DImplicitEuler) = false
+
+# Type-stable controller trait dispatches
+for Alg in [:ABDF2, :QNDF1, :QNDF2, :QNDF, :FBDF, :DImplicitEuler, :DABDF2, :DFBDF]
+    @eval ispredictive(alg::$Alg) = ispredictive(alg.controller)
+    @eval isstandard(alg::$Alg) = isstandard(alg.controller)
+end

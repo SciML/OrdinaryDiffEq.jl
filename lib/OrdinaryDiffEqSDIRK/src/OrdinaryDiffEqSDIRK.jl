@@ -12,9 +12,11 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
     constvalue, _unwrap_val, _ode_interpolant,
     trivial_limiter!, _ode_interpolant!,
-    isesdirk, issplit,
+    isesdirk, issplit, ispredictive, isstandard,
     ssp_coefficient, get_fsalfirstlast, generic_solver_docstring,
-    _bool_to_ADType, _process_AD_choice, current_extrapolant!
+    _bool_to_ADType, _process_AD_choice, current_extrapolant!,
+    AbstractControllerType, PIControllerType, PredictiveControllerType,
+    StandardControllerType, _controller_type_from_symbol
 using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction

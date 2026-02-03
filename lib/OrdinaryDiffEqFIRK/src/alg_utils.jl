@@ -20,3 +20,9 @@ get_current_adaptive_order(alg::AdaptiveRadau, cache) = cache.num_stages
 function has_stiff_interpolation(::Union{RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau})
     return true
 end
+
+# Type-stable controller trait dispatches
+for Alg in [:RadauIIA3, :RadauIIA5, :RadauIIA9, :AdaptiveRadau]
+    @eval ispredictive(alg::$Alg) = ispredictive(alg.controller)
+    @eval isstandard(alg::$Alg) = isstandard(alg.controller)
+end

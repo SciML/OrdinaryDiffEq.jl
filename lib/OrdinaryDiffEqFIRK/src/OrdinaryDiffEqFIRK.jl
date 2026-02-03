@@ -18,7 +18,9 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     fac_default_gamma,
     get_current_adaptive_order, get_fsalfirstlast,
     isfirk, generic_solver_docstring, _bool_to_ADType,
-    _process_AD_choice, LinearAliasSpecifier
+    _process_AD_choice, LinearAliasSpecifier, ispredictive, isstandard,
+    AbstractControllerType, PIControllerType, PredictiveControllerType,
+    StandardControllerType, _controller_type_from_symbol
 using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
 isfirk, generic_solver_docstring
 using SciMLOperators: AbstractSciMLOperator

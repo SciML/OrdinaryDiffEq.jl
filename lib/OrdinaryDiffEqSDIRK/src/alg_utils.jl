@@ -57,3 +57,14 @@ issplit(alg::KenCarp47) = true
 issplit(alg::KenCarp5) = true
 issplit(alg::KenCarp58) = true
 issplit(alg::CFNLIRK3) = true
+
+# Type-stable controller trait dispatches
+for Alg in [
+        :ImplicitEuler, :Trapezoid, :TRBDF2, :SDIRK2, :SDIRK22, :SSPSDIRK2,
+        :Kvaerno3, :KenCarp3, :Cash4, :Hairer4, :Hairer42, :Kvaerno4, :Kvaerno5,
+        :KenCarp4, :KenCarp47, :KenCarp5, :KenCarp58,
+        :ESDIRK54I8L2SA, :ESDIRK436L2SA2, :ESDIRK437L2SA, :ESDIRK547L2SA2, :ESDIRK659L2SA,
+    ]
+    @eval ispredictive(alg::$Alg) = ispredictive(alg.controller)
+    @eval isstandard(alg::$Alg) = isstandard(alg.controller)
+end

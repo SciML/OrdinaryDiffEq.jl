@@ -7,8 +7,10 @@ alg_order(alg::SERK2) = 2
 
 alg_order(alg::RKC) = 2
 
-ispredictive(alg::Union{SERK2}) = alg.controller === :Predictive
-ispredictive(alg::Union{RKC}) = true
+# Type-stable controller trait dispatches
+ispredictive(alg::SERK2) = ispredictive(alg.controller)
+isstandard(alg::SERK2) = isstandard(alg.controller)
+ispredictive(alg::RKC) = true
 
 alg_adaptive_order(alg::RKC) = 2
 

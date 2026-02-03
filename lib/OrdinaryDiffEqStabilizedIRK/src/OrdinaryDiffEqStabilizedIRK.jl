@@ -11,7 +11,10 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
     OrdinaryDiffEqAdaptiveImplicitAlgorithm,
     alg_cache, _unwrap_val, DEFAULT_PRECS, @cache,
     _reshape, _vec, full_cache, get_fsalfirstlast,
-    generic_solver_docstring, _bool_to_ADType, _process_AD_choice
+    generic_solver_docstring, _bool_to_ADType, _process_AD_choice,
+    ispredictive, isstandard,
+    AbstractControllerType, PIControllerType, PredictiveControllerType,
+    StandardControllerType, _controller_type_from_symbol
 
 using OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
 using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver,
