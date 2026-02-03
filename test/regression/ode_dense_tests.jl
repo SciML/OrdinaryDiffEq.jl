@@ -605,8 +605,7 @@ sol2 = solve(prob, ExplicitRK(), dt = 1 // 2^(4), dense = true, adaptive = false
 print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd)) < 2.0e-4)
 
 # ExplicitRK with Tsit5 tableau
-# Use module-qualified access for Julia 1.10 compatibility
-const constructTsit5ExplicitRK = OrdinaryDiffEqExplicitRK.constructTsit5ExplicitRK
+using OrdinaryDiffEqExplicitRK: constructTsit5ExplicitRK
 regression_test(
     ExplicitRK(tableau = constructTsit5ExplicitRK()), 1.0e-5, 1.0e-5;
     test_diff1 = true, nth_der = 3, dertol = 1.0e-2
