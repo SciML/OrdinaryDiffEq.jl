@@ -605,37 +605,33 @@ sol2 = solve(prob, ExplicitRK(), dt = 1 // 2^(4), dense = true, adaptive = false
 print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd)) < 2.0e-4)
 
 # ExplicitRK with Tsit5 tableau
-# On Julia 1.10, [sources] in Project.toml is not supported, so the registry
-# version of OrdinaryDiffEqExplicitRK is used which doesn't have this function yet.
-# Skip these tests if the function is not available.
-if isdefined(OrdinaryDiffEqExplicitRK, :constructTsit5ExplicitRK)
-    const constructTsit5ExplicitRK = OrdinaryDiffEqExplicitRK.constructTsit5ExplicitRK
-    regression_test(
-        ExplicitRK(tableau = constructTsit5ExplicitRK()), 1.0e-5, 1.0e-5;
-        test_diff1 = true, nth_der = 3, dertol = 1.0e-2
-    )
+# Use module-qualified access for Julia 1.10 compatibility
+const constructTsit5ExplicitRK = OrdinaryDiffEqExplicitRK.constructTsit5ExplicitRK
+regression_test(
+    ExplicitRK(tableau = constructTsit5ExplicitRK()), 1.0e-5, 1.0e-5;
+    test_diff1 = true, nth_der = 3, dertol = 1.0e-2
+)
 
-    prob = prob_ode_linear
-    sol = solve(
-        prob, ExplicitRK(tableau = constructTsit5ExplicitRK()),
-        dt = 1 // 2^(2), dense = true
-    )
-    sol(interpd_1d_long, 0:(1 // 2^(7)):1)
-    sol2 = solve(
-        prob, ExplicitRK(tableau = constructTsit5ExplicitRK()),
-        dt = 1 // 2^(7), dense = true, adaptive = false
-    )
-    print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_1d_long)) < 1.0e-5)
+prob = prob_ode_linear
+sol = solve(
+    prob, ExplicitRK(tableau = constructTsit5ExplicitRK()),
+    dt = 1 // 2^(2), dense = true
+)
+sol(interpd_1d_long, 0:(1 // 2^(7)):1)
+sol2 = solve(
+    prob, ExplicitRK(tableau = constructTsit5ExplicitRK()),
+    dt = 1 // 2^(7), dense = true, adaptive = false
+)
+print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_1d_long)) < 1.0e-5)
 
-    prob = prob_ode_2Dlinear
-    sol = solve(
-        prob, ExplicitRK(tableau = constructTsit5ExplicitRK()),
-        dt = 1 // 2^(2), dense = true
-    )
-    sol(interpd, 0:(1 // 2^(4)):1)
-    sol2 = solve(
-        prob, ExplicitRK(tableau = constructTsit5ExplicitRK()),
-        dt = 1 // 2^(4), dense = true, adaptive = false
-    )
-    print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd)) < 1.0e-5)
-end
+prob = prob_ode_2Dlinear
+sol = solve(
+    prob, ExplicitRK(tableau = constructTsit5ExplicitRK()),
+    dt = 1 // 2^(2), dense = true
+)
+sol(interpd, 0:(1 // 2^(4)):1)
+sol2 = solve(
+    prob, ExplicitRK(tableau = constructTsit5ExplicitRK()),
+    dt = 1 // 2^(4), dense = true, adaptive = false
+)
+print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd)) < 1.0e-5)
