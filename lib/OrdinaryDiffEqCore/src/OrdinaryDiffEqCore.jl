@@ -97,6 +97,8 @@ using SymbolicIndexingInterface: state_values, parameter_values
 
 using ConcreteStructs: @concrete
 
+import EnzymeCore
+
 const CompiledFloats = Union{Float32, Float64}
 import Preferences
 
@@ -165,6 +167,8 @@ include("iterator_interface.jl")
 include("solve.jl")
 include("initdt.jl")
 include("interp_func.jl")
+
+include("enzyme_rules.jl")
 
 include("precompilation_setup.jl")
 
