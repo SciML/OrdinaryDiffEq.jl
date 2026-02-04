@@ -37,7 +37,7 @@ function alg_cache(
     return ExplicitRKCache(u, uprev, tmp, utilde, atmp, fsalfirst, fsallast, kk, tab)
 end
 
-struct ExplicitRKConstantCache{MType, VType, KTyp} <: OrdinaryDiffEqConstantCache
+struct ExplicitRKConstantCache{MType, VType, KType} <: OrdinaryDiffEqConstantCache
     A::MType
     c::VType
     α::VType
