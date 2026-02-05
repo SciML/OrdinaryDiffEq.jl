@@ -43,17 +43,13 @@ ref = solve(prob, TaylorMethod(32), abstol = 1e-20)
 
 setups = [Dict(:alg => Vern7())
           Dict(:alg => Vern9())
-          Dict(:alg => ExplicitTaylor(order = Val(13)))
-          Dict(:alg => ExplicitTaylor(order = Val(17)))
-          Dict(:alg => ExplicitTaylor(order = Val(21)))
-          Dict(:alg => ExplicitTaylor(order = Val(25)))
           Dict(:alg => TaylorMethod(12))
           Dict(:alg => TaylorMethod(16))
           Dict(:alg => TaylorMethod(20))
           Dict(:alg => TaylorMethod(24))]
 abstols = 10.0 .^ (-19:-15)
 reltols = 10.0 .^ (-15:-11)
-names = ["Vern7", "Vern9", "Taylor12", "Taylor16", "Taylor20", "Taylor24", "TI12", "TI16",
+names = ["Vern7", "Vern9", "TI12", "TI16",
     "TI20", "TI24"]
 wp = WorkPrecisionSet([prob], abstols, reltols, setups; names = names, appxsol = [ref],
     save_everystep = false, numruns = 100)
