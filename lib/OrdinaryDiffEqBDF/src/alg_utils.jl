@@ -40,8 +40,9 @@ alg_order(alg::DFBDF) = 1 #dummy value
 
 isfsal(alg::DImplicitEuler) = false
 
-# Type-stable controller trait dispatches
-for Alg in [:ABDF2, :QNDF1, :QNDF2, :QNDF, :FBDF, :DImplicitEuler, :DABDF2, :DFBDF]
-    @eval ispredictive(alg::$Alg) = ispredictive(alg.controller)
-    @eval isstandard(alg::$Alg) = isstandard(alg.controller)
+# Type-stable default_controller_v7 dispatches for BDF algorithms
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    for Alg in [:ABDF2, :QNDF1, :QNDF2, :QNDF, :FBDF, :DImplicitEuler, :DABDF2, :DFBDF]
+        @eval default_controller_v7(QT, alg::$Alg) = NewIController(QT, alg)
+    end
 end

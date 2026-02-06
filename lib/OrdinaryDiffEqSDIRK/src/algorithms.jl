@@ -99,13 +99,13 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter, CT <: AbstractControllerType} <:
+struct ImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -116,18 +116,17 @@ function ImplicitEuler(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant,
-        controller = PIControllerType(), step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return ImplicitEuler{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!), typeof(_controller),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve,
-        nlsolve, precs, extrapolant, _controller, step_limiter!, AD_choice
+        nlsolve, precs, extrapolant, controller, step_limiter!, AD_choice
     )
 end
 
@@ -196,13 +195,13 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Trapezoid{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter, CT <: AbstractControllerType} <:
+struct Trapezoid{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -213,21 +212,20 @@ function Trapezoid(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear,
-        controller = PIControllerType(), step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return Trapezoid{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!), typeof(_controller),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve,
         nlsolve,
         precs,
         extrapolant,
-        _controller,
+        controller,
         step_limiter!,
         AD_choice
     )
@@ -258,14 +256,14 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter, CT <: AbstractControllerType} <:
+struct TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -275,18 +273,17 @@ function TRBDF2(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType(), step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return TRBDF2{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!), typeof(_controller),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve, nlsolve, precs,
-        smooth_est, extrapolant, _controller, step_limiter!, AD_choice
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice
     )
 end
 
@@ -317,14 +314,14 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct SDIRK2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter, CT <: AbstractControllerType} <:
+struct SDIRK2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -334,18 +331,18 @@ function SDIRK2(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType(), step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return SDIRK2{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!), typeof(_controller),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve, nlsolve, precs, smooth_est, extrapolant,
-        _controller, step_limiter!,
+        controller,
+        step_limiter!,
         AD_choice
     )
 end
@@ -370,13 +367,13 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct SDIRK22{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter, CT <: AbstractControllerType} <:
+struct SDIRK22{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -386,21 +383,20 @@ function SDIRK22(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear,
-        controller = PIControllerType(), step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
-    return SDIRK22{
+    return Trapezoid{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!), typeof(_controller),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve,
         nlsolve,
         precs,
         extrapolant,
-        _controller,
+        controller,
         step_limiter!,
         AD_choice
     )
@@ -433,14 +429,14 @@ end
     controller = :PI,
     """
 )
-struct SSPSDIRK2{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <:
+struct SSPSDIRK2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ} # Not adaptive
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     autodiff::AD
 end
 
@@ -450,18 +446,17 @@ function SSPSDIRK2(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :constant,
-        controller = PIControllerType()
+        controller = :PI
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return SSPSDIRK2{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(_controller),
+        _unwrap_val(concrete_jac),
     }(
         linsolve, nlsolve, precs, smooth_est, extrapolant,
-        _controller, AD_choice
+        controller, AD_choice
     )
 end
 
@@ -490,14 +485,14 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter, CT <: AbstractControllerType} <:
+struct Kvaerno3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -507,18 +502,17 @@ function Kvaerno3(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType(), step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return Kvaerno3{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!), typeof(_controller),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve, nlsolve, precs,
-        smooth_est, extrapolant, _controller, step_limiter!, AD_choice
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice
     )
 end
 
@@ -543,14 +537,14 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter, CT <: AbstractControllerType} <:
+struct KenCarp3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -560,18 +554,17 @@ function KenCarp3(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType(), step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return KenCarp3{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!), typeof(_controller),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve, nlsolve, precs,
-        smooth_est, extrapolant, _controller, step_limiter!, AD_choice
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice
     )
 end
 
@@ -649,15 +642,15 @@ end
     embedding = 3,
     """
 )
-struct Cash4{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <:
+struct Cash4{CS, AD, F, F2, P, FDT, ST, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
     embedding::Int
+    controller::Symbol
     autodiff::AD
 end
 function Cash4(;
@@ -665,23 +658,21 @@ function Cash4(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType(), embedding = 3
+        controller = :PI, embedding = 3
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return Cash4{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(_controller),
     }(
         linsolve,
         nlsolve,
         precs,
         smooth_est,
         extrapolant,
-        _controller,
         embedding,
+        controller,
         AD_choice
     )
 end
@@ -952,14 +943,14 @@ end
     controller = :PI,
     """
 )
-struct Hairer4{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <:
+struct Hairer4{CS, AD, F, F2, P, FDT, ST, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     autodiff::AD
 end
 function Hairer4(;
@@ -967,18 +958,17 @@ function Hairer4(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType()
+        controller = :PI
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return Hairer4{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(_controller),
+        _unwrap_val(concrete_jac),
     }(
         linsolve, nlsolve, precs, smooth_est, extrapolant,
-        _controller, AD_choice
+        controller, AD_choice
     )
 end
 
@@ -999,14 +989,14 @@ end
     controller = :PI,
     """
 )
-struct Hairer42{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <:
+struct Hairer42{CS, AD, F, F2, P, FDT, ST, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     autodiff::AD
 end
 function Hairer42(;
@@ -1015,18 +1005,17 @@ function Hairer42(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType()
+        controller = :PI
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return Hairer42{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(_controller),
+        _unwrap_val(concrete_jac),
     }(
         linsolve, nlsolve, precs, smooth_est, extrapolant,
-        _controller, AD_choice
+        controller, AD_choice
     )
 end
 
@@ -1055,14 +1044,14 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter, CT <: AbstractControllerType} <:
+struct Kvaerno4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -1072,18 +1061,17 @@ function Kvaerno4(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType(), step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return Kvaerno4{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!), typeof(_controller),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve, nlsolve, precs,
-        smooth_est, extrapolant, _controller, step_limiter!, AD_choice
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice
     )
 end
 
@@ -1112,14 +1100,14 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter, CT <: AbstractControllerType} <:
+struct Kvaerno5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -1129,18 +1117,17 @@ function Kvaerno5(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType(), step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return Kvaerno5{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!), typeof(_controller),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve, nlsolve, precs,
-        smooth_est, extrapolant, _controller, step_limiter!, AD_choice
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice
     )
 end
 
@@ -1165,14 +1152,14 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter, CT <: AbstractControllerType} <:
+struct KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -1182,18 +1169,17 @@ function KenCarp4(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType(), step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return KenCarp4{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!), typeof(_controller),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve, nlsolve, precs,
-        smooth_est, extrapolant, _controller, step_limiter!, AD_choice
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice
     )
 end
 
@@ -1221,14 +1207,14 @@ end
     controller = :PI,
     """
 )
-struct KenCarp47{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <:
+struct KenCarp47{CS, AD, F, F2, P, FDT, ST, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     autodiff::AD
 end
 function KenCarp47(;
@@ -1237,18 +1223,17 @@ function KenCarp47(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType()
+        controller = :PI
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return KenCarp47{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(_controller),
+        _unwrap_val(concrete_jac),
     }(
         linsolve, nlsolve, precs, smooth_est, extrapolant,
-        _controller, AD_choice
+        controller, AD_choice
     )
 end
 
@@ -1273,14 +1258,14 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter, CT <: AbstractControllerType} <:
+struct KenCarp5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -1290,18 +1275,17 @@ function KenCarp5(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType(), step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return KenCarp5{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!), typeof(_controller),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve, nlsolve, precs,
-        smooth_est, extrapolant, _controller, step_limiter!, AD_choice
+        smooth_est, extrapolant, controller, step_limiter!, AD_choice
     )
 end
 
@@ -1327,14 +1311,14 @@ end
     controller = :PI,
     """
 )
-struct KenCarp58{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <:
+struct KenCarp58{CS, AD, F, F2, P, FDT, ST, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     autodiff::AD
 end
 function KenCarp58(;
@@ -1343,18 +1327,17 @@ function KenCarp58(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = PIControllerType()
+        controller = :PI
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return KenCarp58{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(_controller),
+        _unwrap_val(concrete_jac),
     }(
         linsolve, nlsolve, precs, smooth_est, extrapolant,
-        _controller, AD_choice
+        controller, AD_choice
     )
 end
 
@@ -1381,13 +1364,13 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK54I8L2SA{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <:
+struct ESDIRK54I8L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     autodiff::AD
 end
 function ESDIRK54I8L2SA(;
@@ -1395,18 +1378,17 @@ function ESDIRK54I8L2SA(;
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
-        extrapolant = :linear, controller = PIControllerType()
+        extrapolant = :linear, controller = :PI
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return ESDIRK54I8L2SA{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(_controller),
+        _unwrap_val(concrete_jac),
     }(
         linsolve, nlsolve, precs, extrapolant,
-        _controller, AD_choice
+        controller, AD_choice
     )
 end
 
@@ -1432,13 +1414,13 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK436L2SA2{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <:
+struct ESDIRK436L2SA2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     autodiff::AD
 end
 function ESDIRK436L2SA2(;
@@ -1446,18 +1428,17 @@ function ESDIRK436L2SA2(;
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
-        extrapolant = :linear, controller = PIControllerType()
+        extrapolant = :linear, controller = :PI
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return ESDIRK436L2SA2{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(_controller),
+        _unwrap_val(concrete_jac),
     }(
         linsolve, nlsolve, precs, extrapolant,
-        _controller, AD_choice
+        controller, AD_choice
     )
 end
 
@@ -1483,13 +1464,13 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK437L2SA{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <:
+struct ESDIRK437L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     autodiff::AD
 end
 function ESDIRK437L2SA(;
@@ -1497,18 +1478,17 @@ function ESDIRK437L2SA(;
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
-        extrapolant = :linear, controller = PIControllerType()
+        extrapolant = :linear, controller = :PI
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return ESDIRK437L2SA{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(_controller),
+        _unwrap_val(concrete_jac),
     }(
         linsolve, nlsolve, precs, extrapolant,
-        _controller, AD_choice
+        controller, AD_choice
     )
 end
 
@@ -1534,13 +1514,13 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK547L2SA2{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <:
+struct ESDIRK547L2SA2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     autodiff::AD
 end
 function ESDIRK547L2SA2(;
@@ -1548,18 +1528,17 @@ function ESDIRK547L2SA2(;
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
-        extrapolant = :linear, controller = PIControllerType()
+        extrapolant = :linear, controller = :PI
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return ESDIRK547L2SA2{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(_controller),
+        _unwrap_val(concrete_jac),
     }(
         linsolve, nlsolve, precs, extrapolant,
-        _controller, AD_choice
+        controller, AD_choice
     )
 end
 
@@ -1587,13 +1566,13 @@ Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more deta
     controller = :PI,
     """
 )
-struct ESDIRK659L2SA{CS, AD, F, F2, P, FDT, ST, CJ, CT <: AbstractControllerType} <:
+struct ESDIRK659L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
-    controller::CT
+    controller::Symbol
     autodiff::AD
 end
 function ESDIRK659L2SA(;
@@ -1601,17 +1580,16 @@ function ESDIRK659L2SA(;
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
-        extrapolant = :linear, controller = PIControllerType()
+        extrapolant = :linear, controller = :PI
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return ESDIRK659L2SA{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(_controller),
+        _unwrap_val(concrete_jac),
     }(
         linsolve, nlsolve, precs, extrapolant,
-        _controller, AD_choice
+        controller, AD_choice
     )
 end

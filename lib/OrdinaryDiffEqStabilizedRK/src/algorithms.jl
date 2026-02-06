@@ -154,11 +154,8 @@ function ESERK5 end
     eigen_est = nothing,
     """
 )
-struct SERK2{E, CT <: AbstractControllerType} <: OrdinaryDiffEqAdaptiveAlgorithm
-    controller::CT
+struct SERK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    controller::Symbol
     eigen_est::E
 end
-function SERK2(; controller = PIControllerType(), eigen_est = nothing)
-    _controller = _controller_type_from_symbol(controller)
-    return SERK2{typeof(eigen_est), typeof(_controller)}(_controller, eigen_est)
-end
+SERK2(; controller = :PI, eigen_est = nothing) = SERK2(controller, eigen_est)

@@ -5,6 +5,7 @@ alg_can_repeat_jac(alg::IRKC) = false
 issplit(alg::IRKC) = true
 fac_default_gamma(alg::IRKC) = true
 
-# Type-stable controller trait dispatches
-ispredictive(alg::IRKC) = ispredictive(alg.controller)
-isstandard(alg::IRKC) = isstandard(alg.controller)
+# Type-stable default_controller_v7 dispatch for IRKC
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    default_controller_v7(QT, alg::IRKC) = NewIController(QT, alg)
+end

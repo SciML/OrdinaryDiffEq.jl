@@ -5,18 +5,22 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
     fac_default_gamma, has_dtnew_modification,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals,
-    OrdinaryDiffEqAlgorithm, ispredictive, isstandard,
+    OrdinaryDiffEqAlgorithm, ispredictive,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, calc_dt_propose!,
     alg_cache, _vec, _reshape, @cache,
     constvalue, _unwrap_val, full_cache, get_fsalfirstlast,
-    generic_solver_docstring,
-    AbstractControllerType, PIControllerType, PredictiveControllerType,
-    StandardControllerType, _controller_type_from_symbol
+    generic_solver_docstring
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import OrdinaryDiffEqCore
 using DiffEqBase: DiffEqBase, value
+
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    @eval begin
+        import OrdinaryDiffEqCore: default_controller_v7, NewPredictiveController
+    end
+end
 
 using Reexport
 @reexport using SciMLBase

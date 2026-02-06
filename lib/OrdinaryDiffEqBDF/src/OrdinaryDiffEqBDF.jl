@@ -21,9 +21,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     step_reject_controller!, post_newton_controller!,
     u_modified!, DAEAlgorithm, _unwrap_val, DummyController,
     get_fsalfirstlast, generic_solver_docstring, _bool_to_ADType,
-    _process_AD_choice, ispredictive, isstandard,
-    AbstractControllerType, PIControllerType, PredictiveControllerType,
-    StandardControllerType, _controller_type_from_symbol
+    _process_AD_choice
 using OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache
 
 using TruncatedStacktraces: @truncate_stacktrace
@@ -40,7 +38,7 @@ import OrdinaryDiffEqCore
 @static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
         import OrdinaryDiffEqCore: default_controller_v7,
-            legacy_default_controller
+            legacy_default_controller, NewIController
     end
 else
     @eval begin

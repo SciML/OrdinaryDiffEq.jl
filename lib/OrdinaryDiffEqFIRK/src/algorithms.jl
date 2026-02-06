@@ -26,7 +26,7 @@ Similar to Hairer's SEULEX.",
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, CT <: AbstractControllerType} <:
+struct RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
@@ -35,7 +35,7 @@ struct RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, CT <: Abst
     maxiters::Int
     fast_convergence_cutoff::C1
     new_W_γdt_cutoff::C2
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -47,17 +47,16 @@ function RadauIIA3(;
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
-        controller = PredictiveControllerType(), κ = nothing, maxiters = 10,
+        controller = :Predictive, κ = nothing, maxiters = 10,
         step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return RadauIIA3{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!), typeof(_controller),
+        typeof(new_W_γdt_cutoff), typeof(step_limiter!),
     }(
         linsolve,
         precs,
@@ -66,7 +65,7 @@ function RadauIIA3(;
         maxiters,
         fast_convergence_cutoff,
         new_W_γdt_cutoff,
-        _controller,
+        controller,
         step_limiter!,
         AD_choice
     )
@@ -80,7 +79,7 @@ end
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, CT <: AbstractControllerType} <:
+struct RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
@@ -90,7 +89,7 @@ struct RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, CT <: Abst
     maxiters::Int
     fast_convergence_cutoff::C1
     new_W_γdt_cutoff::C2
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -102,17 +101,16 @@ function RadauIIA5(;
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
-        controller = PredictiveControllerType(), κ = nothing, maxiters = 10, smooth_est = true,
+        controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return RadauIIA5{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!), typeof(_controller),
+        typeof(new_W_γdt_cutoff), typeof(step_limiter!),
     }(
         linsolve,
         precs,
@@ -122,7 +120,7 @@ function RadauIIA5(;
         maxiters,
         fast_convergence_cutoff,
         new_W_γdt_cutoff,
-        _controller,
+        controller,
         step_limiter!,
         AD_choice
     )
@@ -137,7 +135,7 @@ Similar to Hairer's SEULEX.",
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA9{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, CT <: AbstractControllerType} <:
+struct RadauIIA9{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
@@ -147,7 +145,7 @@ struct RadauIIA9{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, CT <: Abst
     maxiters::Int
     fast_convergence_cutoff::C1
     new_W_γdt_cutoff::C2
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
 end
@@ -159,17 +157,16 @@ function RadauIIA9(;
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
-        controller = PredictiveControllerType(), κ = nothing, maxiters = 10, smooth_est = true,
+        controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return RadauIIA9{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!), typeof(_controller),
+        typeof(new_W_γdt_cutoff), typeof(step_limiter!),
     }(
         linsolve,
         precs,
@@ -179,13 +176,13 @@ function RadauIIA9(;
         maxiters,
         fast_convergence_cutoff,
         new_W_γdt_cutoff,
-        _controller,
+        controller,
         step_limiter!,
         AD_choice
     )
 end
 
-struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, TO, CT <: AbstractControllerType} <:
+struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, TO} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
@@ -195,7 +192,7 @@ struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, TO, CT
     maxiters::Int
     fast_convergence_cutoff::C1
     new_W_γdt_cutoff::C2
-    controller::CT
+    controller::Symbol
     step_limiter!::StepLimiter
     min_order::Int
     max_order::Int
@@ -210,17 +207,16 @@ function AdaptiveRadau(;
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
-        controller = PredictiveControllerType(), κ = nothing, maxiters = 10, smooth_est = true,
+        controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
-    _controller = _controller_type_from_symbol(controller)
 
     return AdaptiveRadau{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!), typeof(threading), typeof(_controller),
+        typeof(new_W_γdt_cutoff), typeof(step_limiter!), typeof(threading),
     }(
         linsolve,
         precs,
@@ -230,7 +226,7 @@ function AdaptiveRadau(;
         maxiters,
         fast_convergence_cutoff,
         new_W_γdt_cutoff,
-        _controller,
+        controller,
         step_limiter!, min_order, max_order, threading,
         AD_choice
     )

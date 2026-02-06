@@ -11,10 +11,7 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
     OrdinaryDiffEqAdaptiveImplicitAlgorithm,
     alg_cache, _unwrap_val, DEFAULT_PRECS, @cache,
     _reshape, _vec, full_cache, get_fsalfirstlast,
-    generic_solver_docstring, _bool_to_ADType, _process_AD_choice,
-    ispredictive, isstandard,
-    AbstractControllerType, PIControllerType, PredictiveControllerType,
-    StandardControllerType, _controller_type_from_symbol
+    generic_solver_docstring, _bool_to_ADType, _process_AD_choice
 
 using OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
 using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver,
@@ -26,6 +23,12 @@ using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import OrdinaryDiffEqCore
 import ADTypes: AutoForwardDiff, AbstractADType
+
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    @eval begin
+        import OrdinaryDiffEqCore: default_controller_v7, NewIController
+    end
+end
 
 using Reexport
 @reexport using SciMLBase

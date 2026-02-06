@@ -21,8 +21,9 @@ function has_stiff_interpolation(::Union{RadauIIA3, RadauIIA5, RadauIIA9, Adapti
     return true
 end
 
-# Type-stable controller trait dispatches
-for Alg in [:RadauIIA3, :RadauIIA5, :RadauIIA9, :AdaptiveRadau]
-    @eval ispredictive(alg::$Alg) = ispredictive(alg.controller)
-    @eval isstandard(alg::$Alg) = isstandard(alg.controller)
+# Type-stable default_controller_v7 dispatches for FIRK algorithms
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    for Alg in [:RadauIIA3, :RadauIIA5, :RadauIIA9, :AdaptiveRadau]
+        @eval default_controller_v7(QT, alg::$Alg) = NewPredictiveController(QT, alg)
+    end
 end

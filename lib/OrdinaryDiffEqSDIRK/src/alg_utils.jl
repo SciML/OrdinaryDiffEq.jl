@@ -58,13 +58,15 @@ issplit(alg::KenCarp5) = true
 issplit(alg::KenCarp58) = true
 issplit(alg::CFNLIRK3) = true
 
-# Type-stable controller trait dispatches
-for Alg in [
-        :ImplicitEuler, :Trapezoid, :TRBDF2, :SDIRK2, :SDIRK22, :SSPSDIRK2,
-        :Kvaerno3, :KenCarp3, :Cash4, :Hairer4, :Hairer42, :Kvaerno4, :Kvaerno5,
-        :KenCarp4, :KenCarp47, :KenCarp5, :KenCarp58,
-        :ESDIRK54I8L2SA, :ESDIRK436L2SA2, :ESDIRK437L2SA, :ESDIRK547L2SA2, :ESDIRK659L2SA,
+# Type-stable default_controller_v7 dispatches for SDIRK algorithms
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    for Alg in [
+        :ImplicitEuler, :ImplicitMidpoint, :Trapezoid, :TRBDF2, :SDIRK2, :SDIRK22,
+        :SSPSDIRK2, :Kvaerno3, :KenCarp3, :Cash4, :Hairer4, :Hairer42, :Kvaerno4,
+        :Kvaerno5, :KenCarp4, :KenCarp47, :KenCarp5, :KenCarp58, :ESDIRK54I8L2SA,
+        :ESDIRK436L2SA2, :ESDIRK437L2SA, :ESDIRK547L2SA2, :ESDIRK659L2SA,
+        :SFSDIRK4, :SFSDIRK5, :SFSDIRK6, :SFSDIRK7, :SFSDIRK8, :CFNLIRK3,
     ]
-    @eval ispredictive(alg::$Alg) = ispredictive(alg.controller)
-    @eval isstandard(alg::$Alg) = isstandard(alg.controller)
+        @eval default_controller_v7(QT, alg::$Alg) = NewPIController(QT, alg)
+    end
 end

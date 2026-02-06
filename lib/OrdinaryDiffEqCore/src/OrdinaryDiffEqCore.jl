@@ -168,8 +168,4 @@ include("interp_func.jl")
 
 include("precompilation_setup.jl")
 
-# Export controller type tags for type-stable dispatch
-export AbstractControllerType, PIControllerType, PredictiveControllerType, StandardControllerType
-export _controller_type_from_symbol
-
 end

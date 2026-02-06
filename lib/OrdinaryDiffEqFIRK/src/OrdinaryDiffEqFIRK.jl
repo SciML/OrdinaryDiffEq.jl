@@ -18,9 +18,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     fac_default_gamma,
     get_current_adaptive_order, get_fsalfirstlast,
     isfirk, generic_solver_docstring, _bool_to_ADType,
-    _process_AD_choice, LinearAliasSpecifier, ispredictive, isstandard,
-    AbstractControllerType, PIControllerType, PredictiveControllerType,
-    StandardControllerType, _controller_type_from_symbol
+    _process_AD_choice, LinearAliasSpecifier
 using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
 isfirk, generic_solver_docstring
 using SciMLOperators: AbstractSciMLOperator
@@ -40,7 +38,8 @@ import ADTypes: AutoForwardDiff, AbstractADType
 
 @static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
     @eval begin
-        import OrdinaryDiffEqCore: PredictiveControllerCache, NewPredictiveController
+        import OrdinaryDiffEqCore: PredictiveControllerCache, NewPredictiveController,
+            default_controller_v7
     end
 end
 

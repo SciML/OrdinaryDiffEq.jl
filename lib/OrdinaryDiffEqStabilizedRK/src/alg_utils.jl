@@ -7,10 +7,8 @@ alg_order(alg::SERK2) = 2
 
 alg_order(alg::RKC) = 2
 
-# Type-stable controller trait dispatches
-ispredictive(alg::SERK2) = ispredictive(alg.controller)
-isstandard(alg::SERK2) = isstandard(alg.controller)
-ispredictive(alg::RKC) = true
+ispredictive(alg::Union{SERK2}) = alg.controller === :Predictive
+ispredictive(alg::Union{RKC}) = true
 
 alg_adaptive_order(alg::RKC) = 2
 
@@ -54,4 +52,9 @@ function dtnew_modification(integrator, alg::ESERK4, dtnew)
 end
 function dtnew_modification(integrator, alg::ESERK5, dtnew)
     return min(dtnew, typeof(dtnew)((0.98 * 2000 * 2000 / integrator.eigen_est)))
+end
+
+# Type-stable default_controller_v7 dispatch for RKC
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    default_controller_v7(QT, alg::RKC) = NewPredictiveController(QT, alg)
 end

@@ -12,16 +12,20 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
     constvalue, _unwrap_val, _ode_interpolant,
     trivial_limiter!, _ode_interpolant!,
-    isesdirk, issplit, ispredictive, isstandard,
+    isesdirk, issplit,
     ssp_coefficient, get_fsalfirstlast, generic_solver_docstring,
-    _bool_to_ADType, _process_AD_choice, current_extrapolant!,
-    AbstractControllerType, PIControllerType, PredictiveControllerType,
-    StandardControllerType, _controller_type_from_symbol
+    _bool_to_ADType, _process_AD_choice, current_extrapolant!
 using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction
 using LinearAlgebra: mul!, I
 import OrdinaryDiffEqCore
+
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
+    @eval begin
+        import OrdinaryDiffEqCore: default_controller_v7, NewPIController
+    end
+end
 
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, dolinsolve
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlsolver,
