@@ -478,7 +478,7 @@ function SciMLBase.__init(
     end
 
     EEstT = if tTypeNoUnits <: Integer
-        promote_type(typeof(qmin), typeof(qmax))
+        QT
     elseif prob isa SciMLBase.AbstractDiscreteProblem
         constvalue(tTypeNoUnits)
     else
