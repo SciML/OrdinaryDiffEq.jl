@@ -4,7 +4,7 @@ struct ExtrapolationController{QT} <: AbstractController
     qmax::QT
 end
 
-function ExtrapolationController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing)
+function ExtrapolationController(QT, alg; qmin = nothing, qmax = nothing)
     return ExtrapolationController(
         QT(qmin === nothing ? qmin_default(alg) : qmin),
         QT(qmax === nothing ? qmax_default(alg) : qmax),
@@ -43,8 +43,8 @@ function OrdinaryDiffEqCore.sync_controllers!(cache1::ExtrapolationControllerCac
     return nothing
 end
 
-stepsize_controller_internal!(integrator, alg) = stepsize_controller_internal!(integrator, integrator.cache.controller_cache, alg)
-stepsize_predictor!(integrator, alg, n_new) = stepsize_predictor!(integrator, integrator.cache.controller_cache, alg, n_new)
+stepsize_controller_internal!(integrator, alg) = stepsize_controller_internal!(integrator, integrator.controller_cache, alg)
+stepsize_predictor!(integrator, alg, n_new) = stepsize_predictor!(integrator, integrator.controller_cache, alg, n_new)
 
 @inline function stepsize_controller!(
         integrator,
