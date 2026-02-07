@@ -16,6 +16,8 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
+default_controller(args...) = legacy_default_controller(args...)
+
 function SciMLBase.__init(
         prob::Union{
             SciMLBase.AbstractODEProblem,
@@ -63,7 +65,7 @@ function SciMLBase.__init(
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
         verbose = Standard(),
-        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(determine_controller_datatype(prob.u0, internalnorm, prob.tspan), alg), # We have to reconstruct the old controller before breaking release.,
+        controller = nothing,
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,
@@ -512,7 +514,7 @@ function SciMLBase.__init(
             qsteady_max = convert(QT, qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max)
             qoldinit = convert(QT, qoldinit === nothing ? (anyadaptive(alg) ? 1 // 10^4 : 0) : qoldinit)
         end
-        controller = legacy_default_controller(_alg, cache, qoldinit, beta1, beta2)
+        controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
     else # Controller has been passed
         gamma = hasfield(typeof(controller), :gamma) ? controller.gamma : gamma_default(alg)
         qmin = hasfield(typeof(controller), :qmin) ? controller.qmin : qmin_default(alg)
