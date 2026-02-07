@@ -385,6 +385,9 @@ function default_controller(QT, alg::OrdinaryDiffEqCompositeAlgorithm)
     )
 end
 
+# FIXME Downstream needs this if it picks up the 3.4 release.
+default_controller_v7(args...; kwargs...) = default_controller(args...; kwargs...)
+
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
     if alg isa OrdinaryDiffEqCompositeAlgorithm
         beta2 = _beta2 === nothing ?
