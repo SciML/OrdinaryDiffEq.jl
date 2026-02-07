@@ -108,10 +108,9 @@ end
 
 function set_proposed_dt!(integrator::ODEIntegrator, integrator2::ODEIntegrator)
     integrator.dtpropose = integrator2.dtpropose
-    integrator.dtcache = integrator2.dtcache
-    integrator.qold = integrator2.qold
-    integrator.erracc = integrator2.erracc
-    return integrator.dtacc = integrator2.dtacc
+    integrator.dtcache   = integrator2.dtcache
+    sync_controllers!(integrator.controller_cache, integrator2.controller_cache)
+    return nothing
 end
 
 #TODO: Bigger caches for most algorithms
@@ -453,10 +452,6 @@ function SciMLBase.reinit!(
 
     # full re-initialize the PI in timestepping
     reinit!(integrator, integrator.controller_cache)
-    integrator.qold = integrator.opts.qoldinit
-    integrator.q11 = typeof(integrator.q11)(1)
-    integrator.erracc = typeof(integrator.erracc)(1)
-    integrator.dtacc = typeof(integrator.dtacc)(1)
 
     if reset_dt
         auto_dt_reset!(integrator)

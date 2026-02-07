@@ -15,6 +15,7 @@ mutable struct ExtrapolationControllerCache{QT, UT} <: AbstractControllerCache
     controller::ExtrapolationController{QT}
     beta1::QT
     gamma::QT
+    qold::QT
     atmp::UT
 end
 
@@ -23,6 +24,7 @@ function setup_controller_cache(alg, atmp, controller::ExtrapolationController{T
         controller,
         T(1),
         T(1),
+        T(1 // 10^4),
         atmp,
     )
 end
@@ -31,6 +33,13 @@ function reset_alg_dependent_opts!(controller::ExtrapolationControllerCache, alg
     if controller.beta1 == beta1_default(alg1, beta2_default(alg1))
         controller.beta1 = beta1_default(alg2, beta2_default(alg2))
     end
+    return nothing
+end
+
+function OrdinaryDiffEqCore.sync_controllers!(cache1::ExtrapolationControllerCache, cache2::ExtrapolationControllerCache)
+    cache1.beta1 = cache2.beta1
+    cache1.gamma = cache2.gamma
+    cache1.qold = cache2.qold
     return nothing
 end
 

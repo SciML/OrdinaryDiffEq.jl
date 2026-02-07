@@ -182,7 +182,7 @@ end
         qtmp = fastpower(EEst, expo) / gamma
         @fastmath cache.q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
-        cache.dtreject = integrator.qold = DiffEqBase.value(integrator.dt) / cache.q
+        cache.dtreject = DiffEqBase.value(integrator.dt) / cache.q
     end
     return cache.q
 end
@@ -203,6 +203,12 @@ function step_reject_controller!(integrator, cache::IControllerCache, alg)
 end
 
 SciMLBase.reinit!(integrator::ODEIntegrator, cache::IControllerCache{T}) where {T} = cache.q = one(T)
+
+function sync_controllers!(cache1::IControllerCache, cache2::IControllerCache)
+    cache1.q = cache2.q
+    cache1.dtreject = cache2.dtreject
+    return nothing
+end
 
 # PI step size controller
 """
@@ -334,6 +340,13 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIControllerCache{T
     cache.q = one(T)
     cache.q11 = one(T)
     return cache.errold = T(cache.controller.qoldinit)
+end
+
+function sync_controllers!(cache1::PIControllerCache, cache2::PIControllerCache)
+    cache1.q = cache2.q
+    cache1.q11 = cache2.q11
+    cache1.errold = cache2.errold
+    return nothing
 end
 
 # PID step size controller
@@ -532,6 +545,12 @@ function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
     return integrator.dt *= cache.dt_factor
 end
 
+function sync_controllers!(cache1::PIDControllerCache, cache2::PIDControllerCache)
+    cache1.err = cache2.err
+    cache1.dtfactor = cache2.dtfactor
+    return nothing
+end
+
 # Gustafsson predictive step size controller
 """
     PredictiveController()
@@ -623,6 +642,14 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PredictiveControlle
     cache.erracc = one(T)
     cache.qold = one(T)
     return cache.q = one(T)
+end
+
+function sync_controllers!(cache1::PredictiveControllerCache, cache2::PredictiveControllerCache)
+    cache1.dtacc = cache2.dtacc
+    cache1.erracc = cache2.erracc
+    cache1.qold = cache2.qold
+    cache1.q = cache2.q
+    return nothing
 end
 
 function setup_controller_cache(alg, atmp::UT, controller::PredictiveController{T}) where {T, UT}
