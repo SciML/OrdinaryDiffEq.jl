@@ -51,7 +51,11 @@ stepsize_predictor!(integrator, alg, n_new) = stepsize_predictor!(integrator, in
         cache::ExtrapolationControllerCache,
         alg::Union{
             ExtrapolationMidpointDeuflhard,
+            ExtrapolationMidpointHairerWanner,
             ImplicitDeuflhardExtrapolation,
+            ImplicitHairerWannerExtrapolation,
+            ImplicitEulerExtrapolation,
+            ImplicitEulerBarycentricExtrapolation,
         }
     )
     # Dummy function
