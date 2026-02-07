@@ -1,5 +1,4 @@
 abstract type AbstractController end
-abstract type AbstractLegacyController <: AbstractController end
 
 abstract type AbstractControllerCache end
 
@@ -53,33 +52,26 @@ It directly sets the time step length (i.e. `integrator.dt`).
 """
 step_reject_controller!
 
-
-# The legacy controllers do not have this concept.
-setup_controller_cache(alg, atmp, controller::AbstractLegacyController) = controller
-
 # checks whether the controller should accept a step based on the error estimate
-@inline function accept_step_controller(integrator, controller_or_cache::Union{<:AbstractLegacyController, <:AbstractControllerCache})
+@inline function accept_step_controller(integrator, alg)
+    return accept_step_controller(integrator, integrator.controller_cache)
+end
+@inline function accept_step_controller(integrator, cache::AbstractControllerCache)
     return integrator.EEst <= 1
 end
 
 @inline function stepsize_controller!(integrator, alg)
-    # TODO replace this when done - right now this holds the controller cache!
-    return stepsize_controller!(integrator, integrator.opts.controller, alg)
-    # stepsize_controller!(integrator, integrator.controller_cache, alg)
-    # return nothing
+    stepsize_controller!(integrator, integrator.controller_cache, alg)
+    return nothing
 end
 
 @inline function step_accept_controller!(integrator, alg, q)
-    # TODO replace this when done - right now this holds the controller cache!
-    return step_accept_controller!(integrator, integrator.opts.controller, alg, q)
-    # step_accept_controller!(integrator, integrator.controller_cache, alg, q)
-    # return nothing
+    step_accept_controller!(integrator, integrator.controller_cache, alg, q)
+    return nothing
 end
 
 @inline function step_reject_controller!(integrator, alg)
-    # TODO replace this when done - right now this holds the controller cache!
-    step_reject_controller!(integrator, integrator.opts.controller, alg)
-    # step_reject_controller!(integrator, integrator.controller_cache, alg)
+    step_reject_controller!(integrator, integrator.controller_cache, alg)
     cache = integrator.cache
     if hasfield(typeof(cache), :nlsolve)
         nlsolve = cache.nlsolve
@@ -88,22 +80,16 @@ end
     return nothing
 end
 
-reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
 reset_alg_dependent_opts!(controller::AbstractControllerCache, alg1, alg2) = nothing
 
-SciMLBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
 SciMLBase.reinit!(integrator::ODEIntegrator, controller::AbstractControllerCache) = nothing
 
 function post_newton_controller!(integrator, alg)
-    return post_newton_controller!(integrator, integrator.opts.controller, alg)
+    return post_newton_controller!(integrator, integrator.controller_cache, alg)
 end
 function post_newton_controller!(integrator, controller, alg)
     integrator.dt = integrator.dt / integrator.opts.failfactor
     return nothing
-end
-
-# This is a helper for Nordsieck and BDF methods, which come with an integrated controller.
-struct DummyController <: AbstractController
 end
 
 setup_controller_cache(alg, atmp, controller::DummyController) = controller
@@ -139,40 +125,7 @@ the predicted step size.
     Solving Ordinary Differential Equations I Nonstiff Problems
     [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
 """
-struct IController <: AbstractLegacyController
-end
-
-@inline function stepsize_controller!(integrator, controller::IController, alg)
-    (; qmin, qmax, gamma) = integrator.opts
-    EEst = DiffEqBase.value(integrator.EEst)
-
-    if iszero(EEst)
-        q = inv(qmax)
-    else
-        expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qtmp = fastpower(EEst, expo) / gamma
-        @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
-        # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
-        integrator.qold = DiffEqBase.value(integrator.dt) / q
-    end
-    return q
-end
-
-function step_accept_controller!(integrator, controller::IController, alg, q)
-    (; qsteady_min, qsteady_max) = integrator.opts
-
-    if qsteady_min <= q <= qsteady_max
-        q = one(q)
-    end
-    return integrator.dt / q # new dt
-end
-
-function step_reject_controller!(integrator, controller::IController, alg)
-    (; qold) = integrator
-    return integrator.dt = qold
-end
-
-struct NewIController{T} <: AbstractController
+struct IController{T} <: AbstractController
     qmin::T
     qmax::T
     gamma::T
@@ -180,12 +133,12 @@ struct NewIController{T} <: AbstractController
     qsteady_max::T
 end
 
-function NewIController(alg; kwargs...)
-    return NewIController(Float64, alg; kwargs...)
+function IController(alg; kwargs...)
+    return IController(Float64, alg; kwargs...)
 end
 
-function NewIController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
-    return NewIController{QT}(
+function IController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
+    return IController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
         gamma === nothing ? gamma_default(alg) : gamma,
@@ -194,8 +147,8 @@ function NewIController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing
     )
 end
 
-mutable struct IControllerCache{C, T, UT} <: AbstractControllerCache
-    controller::C
+mutable struct IControllerCache{T, UT} <: AbstractControllerCache
+    controller::IController{T}
     q::T
     dtreject::T
     # I believe this should go here or in the algorithm cache, but not in the integrator itself.
@@ -203,7 +156,7 @@ mutable struct IControllerCache{C, T, UT} <: AbstractControllerCache
     atmp::UT
 end
 
-function setup_controller_cache(alg, atmp, controller::NewIController{T}) where {T}
+function setup_controller_cache(alg, atmp, controller::IController{T}) where {T}
     return IControllerCache(
         controller,
         one(T),
@@ -240,10 +193,8 @@ function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
 end
 
 function step_reject_controller!(integrator, cache::IControllerCache, alg)
-    @assert cache.dtreject ≈ integrator.qold "Controller cache went out of sync with time stepping logic."
-    return integrator.dt = cache.dtreject # TODO this does not look right.
+    return integrator.dt = cache.dtreject
 end
-
 
 SciMLBase.reinit!(integrator::ODEIntegrator, cache::IControllerCache{T}) where {T} = cache.q = one(T)
 
@@ -284,57 +235,7 @@ the predicted step size.
     Solving Ordinary Differential Equations I Nonstiff Problems
     [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
 """
-mutable struct PIController{QT} <: AbstractLegacyController
-    beta1::QT
-    beta2::QT
-end
-
-@inline function stepsize_controller!(integrator, controller::PIController, alg)
-    (; qold) = integrator
-    (; qmin, qmax, gamma) = integrator.opts
-    (; beta1, beta2) = controller
-    EEst = DiffEqBase.value(integrator.EEst)
-
-    if iszero(EEst)
-        q = inv(qmax)
-    else
-        q11 = fastpower(EEst, convert(typeof(EEst), beta1))
-        q = q11 / fastpower(qold, convert(typeof(EEst), beta2))
-        integrator.q11 = q11
-        @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
-    end
-    return q
-end
-
-function step_accept_controller!(integrator, controller::PIController, alg, q)
-    (; qsteady_min, qsteady_max, qoldinit) = integrator.opts
-    EEst = DiffEqBase.value(integrator.EEst)
-
-    if qsteady_min <= q <= qsteady_max
-        q = one(q)
-    end
-    integrator.qold = max(EEst, qoldinit)
-    return integrator.dt / q # new dt
-end
-
-function step_reject_controller!(integrator, controller::PIController, alg)
-    (; q11) = integrator
-    (; qmin, gamma) = integrator.opts
-    return integrator.dt /= min(inv(qmin), q11 / gamma)
-end
-
-function reset_alg_dependent_opts!(controller::PIController{QT}, alg1, alg2) where {QT}
-    # These guards here prevent potentially that user-defined betas get overridden.
-    if controller.beta2 == QT(beta2_default(alg1))
-        controller.beta2 = QT(beta2_default(alg2))
-    end
-    if controller.beta1 == QT(beta1_default(alg1, controller.beta2))
-        controller.beta1 = QT(beta1_default(alg2, controller.beta2))
-    end
-    return nothing
-end
-
-struct NewPIController{T} <: AbstractController
+mutable struct PIController{T} <: AbstractController # TODO remove the mutable once AitkenNeville is fixed
     beta1::T
     beta2::T
     qmin::T
@@ -345,15 +246,15 @@ struct NewPIController{T} <: AbstractController
     qoldinit::T
 end
 
-function NewPIController(alg; kwargs...)
-    return NewPIController(Float64, alg; kwargs...)
+function PIController(alg; kwargs...)
+    return PIController(Float64, alg; kwargs...)
 end
 
-function NewPIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
+function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
     beta2 = beta2 === nothing ? beta2_default(alg) : beta2
     beta1 = beta1 === nothing ? beta1_default(alg, beta2) : beta1
     qoldinit = qoldinit === nothing ? 1 // 10^4 : qoldinit
-    return NewPIController{QT}(
+    return PIController{QT}(
         beta1,
         beta2,
         qmin === nothing ? qmin_default(alg) : qmin,
@@ -366,7 +267,7 @@ function NewPIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothi
 end
 
 mutable struct PIControllerCache{T, UT} <: AbstractControllerCache
-    controller::NewPIController{T}
+    controller::PIController{T}
     # Propsoed scaling factor for the time step length
     q::T
     # Cached εₙ₊₁^β₁
@@ -376,7 +277,7 @@ mutable struct PIControllerCache{T, UT} <: AbstractControllerCache
     atmp::UT
 end
 
-function setup_controller_cache(alg, atmp, controller::NewPIController{T}) where {T}
+function setup_controller_cache(alg, atmp, controller::PIController{T}) where {T}
     return PIControllerCache(
         controller,
         one(T),
@@ -395,7 +296,6 @@ end
     if iszero(EEst)
         q = inv(qmax)
     else
-        # Legacy code
         q11 = fastpower(EEst, beta1)
         q = q11 / fastpower(errold, beta2)
         cache.q11 = q11
@@ -498,23 +398,35 @@ Some standard controller parameters suggested in the literature are
     Compressible Computational Fluid Dynamics    # is bigger than this parameter
     [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)    # limiter of the dt factor (before clipping)
 """
-struct PIDController{QT, Limiter} <: AbstractLegacyController
-    beta::MVector{3, QT} # controller coefficients
-    err::MVector{3, QT} # history of the error estimates
-    accept_safety::QT   # accept a step if the predicted change of the step size
+struct PIDController{T, Limiter} <: AbstractController
+    beta::SVector{3, T} # controller coefficients
+    accept_safety::T   # accept a step if the predicted change of the step size
     # is bigger than this parameter
     limiter::Limiter    # limiter of the dt factor (before clipping)
+    qsteady_min::T
+    qsteady_max::T
 end
 
-function PIDController(
-        beta1, beta2, beta3 = zero(beta1);
-        limiter = default_dt_factor_limiter,
-        accept_safety = 0.81
+function PIDController(alg; kwargs...)
+    return PIDController(Float64, alg; kwargs...)
+end
+
+function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = nothing, qsteady_max = nothing)
+    if beta === nothing
+        beta2 = QT(beta2_default(alg))
+        beta1 = QT(beta1_default(alg, beta2))
+        beta3 = QT(zero(beta1))
+    else
+        beta1, beta2, beta3 = beta
+    end
+    beta = SVector(map(float, promote(beta1, beta2, beta3))...)
+    return PIDController{QT, typeof(limiter)}(
+        beta,
+        QT(accept_safety),
+        limiter,
+        QT(qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min),
+        QT(qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max),
     )
-    beta = MVector(map(float, promote(beta1, beta2, beta3))...)
-    QT = eltype(beta)
-    err = MVector{3, QT}(true, true, true)
-    return PIDController(beta, err, convert(QT, accept_safety), limiter)
 end
 
 function Base.show(io::IO, controller::PIDController)
@@ -526,125 +438,8 @@ function Base.show(io::IO, controller::PIDController)
     )
 end
 
-@inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
-
-@inline function stepsize_controller!(integrator, controller::PIDController, alg)
-    beta1, beta2, beta3 = controller.beta
-
-    EEst = DiffEqBase.value(integrator.EEst)
-
-    # If the error estimate is zero, we can increase the step size as much as
-    # desired. This additional check fixes problems of the code below when the
-    # error estimates become zero
-    # -> err1, err2, err3 become Inf
-    # -> err1^positive_number * err2^negative_number becomes NaN
-    # -> dt becomes NaN
-    #
-    # `EEst_min` is smaller than PETSC_SMALL used in the equivalent logic in PETSc.
-    # For example, `eps(Float64) ≈ 2.2e-16` but `PETSC_SMALL ≈ 1.0e-10` for `double`.
-    EEst_min = eps(typeof(EEst))
-    # The code below is a bit more robust than
-    # ```
-    # if iszero(EEst)
-    #   EEst = eps(typeof(EEst))
-    # end
-    # ```
-    EEst = max(EEst, EEst_min)
-
-    controller.err[1] = inv(EEst)
-    err1, err2, err3 = controller.err
-
-    k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
-    dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
-    if isnan(dt_factor)
-        @SciMLMessage(
-            lazy"unlimited dt_factor:
-            err1 = $err1
-            err2 = $err2,
-            err3 = $err3,
-            beta1 = $beta1,
-            beta2 = $beta2,
-            beta3 = $beta3,
-            k = $k",
-            integrator.opts.verbose, :unlimited_dt
-        )
-    end
-    dt_factor = controller.limiter(dt_factor)
-
-    # Note: No additional limiting of the form
-    #   dt_factor = max(qmin, min(qmax, dt_factor))
-    # is necessary since the `limiter` should take care of that. The default limiter
-    # ensures
-    #   0.21 ≈ limiter(0) <= dt_factor <= limiter(Inf) ≈ 2.57
-    # See Söderlind, Wang (2006), Section 6.
-    integrator.qold = dt_factor
-    return dt_factor
-end
-
-@inline function accept_step_controller(integrator, controller::PIDController)
-    return integrator.qold >= controller.accept_safety
-end
-
-function step_accept_controller!(integrator, controller::PIDController, alg, dt_factor)
-    (; qsteady_min, qsteady_max) = integrator.opts
-
-    if qsteady_min <= inv(dt_factor) <= qsteady_max
-        dt_factor = one(dt_factor)
-    end
-    @inbounds begin
-        controller.err[3] = controller.err[2]
-        controller.err[2] = controller.err[1]
-    end
-    return integrator.dt * dt_factor # new dt
-end
-
-function step_reject_controller!(integrator, controller::PIDController, alg)
-    return integrator.dt *= integrator.qold
-end
-
-
-struct NewPIDController{T, Limiter} <: AbstractController
-    beta::SVector{3, T} # controller coefficients
-    accept_safety::T   # accept a step if the predicted change of the step size
-    # is bigger than this parameter
-    limiter::Limiter    # limiter of the dt factor (before clipping)
-    qsteady_min::T
-    qsteady_max::T
-end
-
-function NewPIDController(alg; kwargs...)
-    return NewPIDController(Float64, alg; kwargs...)
-end
-
-function NewPIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = nothing, qsteady_max = nothing)
-    if beta === nothing
-        beta2 = QT(beta2_default(alg))
-        beta1 = QT(beta1_default(alg, beta2))
-        beta3 = QT(zero(beta1))
-    else
-        beta1, beta2, beta3 = beta
-    end
-    beta = SVector(map(float, promote(beta1, beta2, beta3))...)
-    return NewPIDController{QT, typeof(limiter)}(
-        beta,
-        QT(accept_safety),
-        limiter,
-        QT(qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min),
-        QT(qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max),
-    )
-end
-
-function Base.show(io::IO, controller::NewPIDController)
-    return print(
-        io, "NewPIDController(beta=", controller.beta,
-        ", accept_safety=", controller.accept_safety,
-        ", limiter=", controller.limiter,
-        ")"
-    )
-end
-
 mutable struct PIDControllerCache{T, Limiter, UT} <: AbstractControllerCache
-    controller::NewPIDController{T, Limiter}
+    controller::PIDController{T, Limiter}
     err::MVector{3, T} # history of the error estimates
     dt_factor::T
     atmp::UT
@@ -655,7 +450,7 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIDControllerCache{
     return cache.dt_factor = T(1 // 10^4)
 end
 
-function setup_controller_cache(alg, atmp, controller::NewPIDController{QT}) where {QT}
+function setup_controller_cache(alg, atmp, controller::PIDController{QT}) where {QT}
     err = MVector{3, QT}(true, true, true)
     return PIDControllerCache(
         controller,
@@ -788,64 +583,7 @@ else
 end
 ```
 """
-struct PredictiveController <: AbstractLegacyController
-end
-
-@inline function stepsize_controller!(integrator, controller::PredictiveController, alg)
-    (; qmin, qmax, gamma) = integrator.opts
-    EEst = DiffEqBase.value(integrator.EEst)
-    if iszero(EEst)
-        q = inv(qmax)
-    else
-        if fac_default_gamma(alg)
-            fac = gamma
-        else
-            if isfirk(alg)
-                (; iter) = integrator.cache
-                (; maxiters) = alg
-            else
-                (; iter, maxiters) = integrator.cache.nlsolver
-            end
-            fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
-        end
-        expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qtmp = fastpower(EEst, expo) / fac
-        @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
-        integrator.qold = q
-    end
-    return q
-end
-
-function step_accept_controller!(integrator, controller::PredictiveController, alg, q)
-    (; qmin, qmax, gamma, qsteady_min, qsteady_max) = integrator.opts
-
-    EEst = DiffEqBase.value(integrator.EEst)
-
-    if integrator.success_iter > 0
-        expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qgus = (integrator.dtacc / integrator.dt) *
-            fastpower((EEst^2) / integrator.erracc, expo)
-        qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
-        qacc = max(q, qgus)
-    else
-        qacc = q
-    end
-    if qsteady_min <= qacc <= qsteady_max
-        qacc = one(qacc)
-    end
-    integrator.dtacc = integrator.dt
-    integrator.erracc = max(1.0e-2, EEst)
-
-    return integrator.dt / qacc
-end
-
-function step_reject_controller!(integrator, controller::PredictiveController, alg)
-    (; dt, success_iter, qold) = integrator
-    return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
-end
-
-
-struct NewPredictiveController{T} <: AbstractController
+struct PredictiveController{T} <: AbstractController
     qmin::T
     qmax::T
     gamma::T
@@ -853,12 +591,12 @@ struct NewPredictiveController{T} <: AbstractController
     qsteady_max::T
 end
 
-function NewPredictiveController(alg; kwargs...)
-    return NewPredictiveController(Float64, alg; kwargs...)
+function PredictiveController(alg; kwargs...)
+    return PredictiveController(Float64, alg; kwargs...)
 end
 
-function NewPredictiveController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
-    return NewPredictiveController{QT}(
+function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
+    return PredictiveController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
         gamma === nothing ? gamma_default(alg) : gamma,
@@ -868,7 +606,7 @@ function NewPredictiveController(QT, alg; qmin = nothing, qmax = nothing, gamma 
 end
 
 mutable struct PredictiveControllerCache{T, UT} <: AbstractControllerCache
-    controller::NewPredictiveController{T}
+    controller::PredictiveController{T}
     dtacc::T
     erracc::T
     qold::T
@@ -883,7 +621,7 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PredictiveControlle
     return cache.q = one(T)
 end
 
-function setup_controller_cache(alg, atmp::UT, controller::NewPredictiveController{T}) where {T, UT}
+function setup_controller_cache(alg, atmp::UT, controller::PredictiveController{T}) where {T, UT}
     return PredictiveControllerCache{T, UT}(
         controller,
         one(T),

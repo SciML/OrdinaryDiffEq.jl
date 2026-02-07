@@ -452,7 +452,7 @@ function SciMLBase.reinit!(
     integrator.u_modified = false
 
     # full re-initialize the PI in timestepping
-    reinit!(integrator, integrator.opts.controller)
+    reinit!(integrator, integrator.controller_cache)
     integrator.qold = integrator.opts.qoldinit
     integrator.q11 = typeof(integrator.q11)(1)
     integrator.erracc = typeof(integrator.erracc)(1)
