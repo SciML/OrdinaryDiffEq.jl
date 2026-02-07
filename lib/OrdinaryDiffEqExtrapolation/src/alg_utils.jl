@@ -52,9 +52,7 @@ end
 
 # FIXME AitkenNeville is missing integration with the extrapolation controller and picks up the PI controller instead.
 function default_controller(QT, alg::AitkenNeville)
-    beta2 = QT(beta2_default(alg))
-    beta1 = QT(beta1_default(alg, beta2))
-    return PIController(beta1, beta2)
+    return PIController(QT, alg)
 end
 
 beta2_default(alg::ExtrapolationMidpointDeuflhard) = 0 // 1
