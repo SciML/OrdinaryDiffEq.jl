@@ -92,6 +92,10 @@ function post_newton_controller!(integrator, controller, alg)
     return nothing
 end
 
+# This is a temporary helper struct to control the dispatches for Nordsieck and BDF methods, which come with an integrated controller.
+struct DummyController <: AbstractController
+end
+
 setup_controller_cache(alg, atmp, controller::DummyController) = controller
 
 # Standard integral (I) step size controller
