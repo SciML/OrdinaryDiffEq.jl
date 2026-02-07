@@ -700,7 +700,7 @@ function setup_controller_cache(alg, atmp::UT, controller::PredictiveController{
 end
 
 @inline function stepsize_controller!(integrator, cache::PredictiveControllerCache, alg)
-    (; qmin, qmax, gamma) = cache
+    (; qmin, qmax, gamma) = cache.controller
     EEst = DiffEqBase.value(integrator.EEst)
     if iszero(EEst)
         q = inv(qmax)
