@@ -29,7 +29,7 @@ import OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, UDerivativeWrapper,
     build_jac_config, calc_J!, jacobian2W!, dolinsolve
 import ADTypes: AutoForwardDiff, AbstractADType
 
-import OrdinaryDiffEqCore: default_controller, AbstractControllerCache
+import OrdinaryDiffEqCore: default_controller, AbstractControllerCache, setup_controller_cache
 
 using Reexport
 @reexport using SciMLBase

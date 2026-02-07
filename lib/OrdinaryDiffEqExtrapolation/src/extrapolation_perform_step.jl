@@ -100,7 +100,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
 
             beta1 = integrator.controller_cache.beta1
             e = integrator.EEst
-            qold = integrator.qold
+            qold = integrator.controller_cache.qold
 
             integrator.controller_cache.beta1 = 1 / (i + 1)
             integrator.EEst = EEst
@@ -110,7 +110,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
             )
             integrator.EEst = e
             integrator.controller_cache.beta1 = beta1
-            integrator.qold = qold
+            integrator.controller_cache.qold = qold
 
             work = A / dtpropose
 
@@ -225,7 +225,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
 
             beta1 = integrator.controller_cache.beta1
             e = integrator.EEst
-            qold = integrator.qold
+            qold = integrator.controller_cache.qold
 
             integrator.controller_cache.beta1 = 1 / (i + 1)
             integrator.EEst = EEst
@@ -235,7 +235,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
             )
             integrator.EEst = e
             integrator.controller_cache.beta1 = beta1
-            integrator.qold = qold
+            integrator.controller_cache.qold = qold
 
             work = A / dtpropose
 

@@ -106,3 +106,8 @@ function OrdinaryDiffEqCore.accept_step_controller(integrator, cache::Kantorovic
         return true
     end
 end
+
+function OrdinaryDiffEqCore.sync_controllers!(cache1::KantorovichTypeControllerCache, cache2::KantorovichTypeControllerCache)
+    cache1.q = cache2.q
+    return nothing
+end
