@@ -1,19 +1,5 @@
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
-    @eval begin
-        function legacy_default_controller(alg::Union{QNDF, FBDF}, args...)
-            return DummyController()
-        end
-
-        function default_controller_v7(QT, alg::Union{QNDF, FBDF}, args...)
-            return DummyController()
-        end
-    end
-else
-    @eval begin
-        function default_controller(alg::Union{QNDF, FBDF}, args...)
-            return DummyController()
-        end
-    end
+function default_controller(alg::Union{QNDF, FBDF}, args...)
+    return DummyController()
 end
 
 # QNBDF
@@ -32,7 +18,7 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
     integrator.cache.consfailcnt = 0
     integrator.cache.nconsteps += 1
     if iszero(integrator.EEst)
-        return integrator.dt * get_current_qmax(integrator, integrator.opts.qmax)
+        return integrator.dt * get_current_qmax(integrator, alg.qmax)
     else
         est = integrator.EEst
         estₖ₋₁ = integrator.cache.EEst1
@@ -101,7 +87,7 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
             return integrator.dt
         end
     end
-    if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    if q <= alg.qsteady_max && q >= alg.qsteady_min
         return integrator.dt
     end
     return integrator.dt / q
@@ -284,7 +270,7 @@ function stepsize_controller!(
         cache.order = k
     end
     if iszero(terk)
-        q = inv(get_current_qmax(integrator, integrator.opts.qmax))
+        q = inv(get_current_qmax(integrator, alg.qmax))
     else
         q = ((2 * terk / (k + 1))^(1 / (k + 1)))
     end
@@ -301,7 +287,7 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
-    if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    if q <= alg.qsteady_max && q >= alg.qsteady_min
         q = one(q)
     end
     cache.nconsteps += 1
@@ -443,7 +429,7 @@ function stepsize_controller!(
         cache.order = k
     end
     if iszero(terk)
-        q = inv(get_current_qmax(integrator, integrator.opts.qmax))
+        q = inv(get_current_qmax(integrator, alg.qmax))
     else
         q = ((2 * terk / (k + 1))^(1 / (k + 1)))
     end
@@ -460,7 +446,7 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
-    if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    if q <= alg.qsteady_max && q >= alg.qsteady_min
         q = one(q)
     end
     cache.nconsteps += 1

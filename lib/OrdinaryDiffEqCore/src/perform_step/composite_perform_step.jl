@@ -42,35 +42,35 @@ function initialize!(integrator, cache::DefaultCache)
         !isnothing(fsallast) && (integrator.fsallast = fsallast)
         initialize!(integrator, cache.cache2)
         # the controller was initialized by default for algs[1]
-        reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[2])
+        reset_alg_dependent_opts!(integrator.controller_cache, algs[1], algs[2])
     elseif cache.current == 3
         fsalfirst, fsallast = get_fsalfirstlast(cache.cache3, u)
         !isnothing(fsalfirst) && (integrator.fsalfirst = fsalfirst)
         !isnothing(fsallast) && (integrator.fsallast = fsallast)
         initialize!(integrator, cache.cache3)
         # the controller was initialized by default for algs[1]
-        reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[3])
+        reset_alg_dependent_opts!(integrator.controller_cache, algs[1], algs[3])
     elseif cache.current == 4
         fsalfirst, fsallast = get_fsalfirstlast(cache.cache4, u)
         !isnothing(fsalfirst) && (integrator.fsalfirst = fsalfirst)
         !isnothing(fsallast) && (integrator.fsallast = fsallast)
         initialize!(integrator, cache.cache4)
         # the controller was initialized by default for algs[1]
-        reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[4])
+        reset_alg_dependent_opts!(integrator.controller_cache, algs[1], algs[4])
     elseif cache.current == 5
         fsalfirst, fsallast = get_fsalfirstlast(cache.cache5, u)
         !isnothing(fsalfirst) && (integrator.fsalfirst = fsalfirst)
         !isnothing(fsallast) && (integrator.fsallast = fsallast)
         initialize!(integrator, cache.cache5)
         # the controller was initialized by default for algs[1]
-        reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[5])
+        reset_alg_dependent_opts!(integrator.controller_cache, algs[1], algs[5])
     elseif cache.current == 6
         fsalfirst, fsallast = get_fsalfirstlast(cache.cache6, u)
         !isnothing(fsalfirst) && (integrator.fsalfirst = fsalfirst)
         !isnothing(fsallast) && (integrator.fsallast = fsallast)
         initialize!(integrator, cache.cache6)
         # the controller was initialized by default for algs[1]
-        reset_alg_dependent_opts!(integrator.opts.controller, algs[1], algs[6])
+        reset_alg_dependent_opts!(integrator.controller_cache, algs[1], algs[6])
     end
     return resize!(integrator.k, integrator.kshortsize)
 end
@@ -90,7 +90,7 @@ function initialize!(integrator, cache::CompositeCache)
         initialize!(integrator, @inbounds(cache.caches[2]))
         # the controller was initialized by default for integrator.alg.algs[1]
         reset_alg_dependent_opts!(
-            integrator.opts.controller, integrator.alg.algs[1],
+            integrator.controller_cache, integrator.alg.algs[1],
             integrator.alg.algs[2]
         )
     else
@@ -99,7 +99,7 @@ function initialize!(integrator, cache::CompositeCache)
         !isnothing(fsallast) && (integrator.fsallast = fsallast)
         initialize!(integrator, @inbounds(cache.caches[cache.current]))
         reset_alg_dependent_opts!(
-            integrator.opts.controller, integrator.alg.algs[1],
+            integrator.controller_cache, integrator.alg.algs[1],
             integrator.alg.algs[cache.current]
         )
     end
@@ -120,7 +120,7 @@ function initialize!(integrator, cache::CompositeCache{Tuple{T1, T2}, F}) where 
         !isnothing(fsallast) && (integrator.fsallast = fsallast)
         initialize!(integrator, @inbounds(cache.caches[2]))
         reset_alg_dependent_opts!(
-            integrator.opts.controller, integrator.alg.algs[1],
+            integrator.controller_cache, integrator.alg.algs[1],
             integrator.alg.algs[2]
         )
     end
@@ -290,7 +290,7 @@ function reset_alg_dependent_opts!(integrator, alg1, alg2)
     if integrator.opts.adaptive == isadaptive(alg1)
         integrator.opts.adaptive = isadaptive(alg2)
     end
-    reset_alg_dependent_opts!(integrator.opts.controller, alg1, alg2)
+    reset_alg_dependent_opts!(integrator.controller_cache, alg1, alg2)
     return nothing
 end
 

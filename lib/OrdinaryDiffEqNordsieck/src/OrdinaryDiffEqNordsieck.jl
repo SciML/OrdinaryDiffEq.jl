@@ -11,19 +11,12 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, qsteady_max_default,
     calculate_residuals, calculate_residuals!,
     get_current_adaptive_order, get_fsalfirstlast,
     ode_interpolant, ode_interpolant!, trivial_limiter!,
-    generic_solver_docstring
+    generic_solver_docstring, default_controller
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import LinearAlgebra: rmul!
 import Static: False
 using OrdinaryDiffEqTsit5: Tsit5ConstantCache, Tsit5Cache
 import OrdinaryDiffEqCore
-
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
-    @eval begin
-        import OrdinaryDiffEqCore: default_controller_v7,
-            legacy_default_controller
-    end
-end
 
 using Reexport
 @reexport using SciMLBase
