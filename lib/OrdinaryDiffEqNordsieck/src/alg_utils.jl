@@ -6,6 +6,6 @@ qsteady_max_default(alg::AN5) = 3 // 2
 
 get_current_alg_order(alg::JVODE, cache) = get_current_adaptive_order(alg, cache)
 
-function OrdinaryDiffEqCore.default_controller(alg::JVODE, args...)
+function OrdinaryDiffEqCore.default_controller(QT, alg::JVODE, args...)
     return DummyController()
 end

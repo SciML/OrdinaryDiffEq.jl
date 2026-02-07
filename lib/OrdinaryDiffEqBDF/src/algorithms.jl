@@ -307,7 +307,7 @@ SBDF4(; kwargs...) = SBDF(4; kwargs...)
     step_limiter! = trivial_limiter!,
     """
 )
-struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter, QT} <:
+struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -317,7 +317,6 @@ struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter, QT} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    qmax::QT
 end
 
 function QNDF1(;
@@ -442,7 +441,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType, StepLimiter} <:
+struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType, StepLimiter, QT} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
     linsolve::F
@@ -452,9 +451,11 @@ struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType, StepLimiter} <:
     tol::T
     extrapolant::Symbol
     kappa::κType
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    qmax::QT
+    qsteady_min::QT
+    qsteady_max::QT
 end
 
 function QNDF(;
@@ -466,7 +467,8 @@ function QNDF(;
         extrapolant = :linear, kappa = (
             -37 // 200, -1 // 9, -823 // 10000, -83 // 2000, 0 // 1,
         ),
-        controller = :Standard, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!,
+        qsteady_min = 1 // 1, qsteady_max = 2 // 1, qmax = 10 // 1,
     ) where {MO}
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
@@ -475,9 +477,11 @@ function QNDF(;
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
         typeof(κ), typeof(tol), typeof(kappa), typeof(step_limiter!),
+        typeof(qsteady_min),
     }(
         max_order, linsolve, nlsolve, precs, κ, tol,
-        extrapolant, kappa, controller, step_limiter!, AD_choice
+        extrapolant, kappa, step_limiter!, AD_choice,
+        qmax, qsteady_min, qsteady_max,
     )
 end
 
@@ -564,7 +568,7 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     max_order::Val{MO} = Val{5}(),
     """
 )
-struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
+struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter, QT} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
     linsolve::F
@@ -573,9 +577,11 @@ struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
     κ::K
     tol::T
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    qmax::QT
+    qsteady_min::QT
+    qsteady_max::QT
 end
 
 function FBDF(;
@@ -584,7 +590,8 @@ function FBDF(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!
+        extrapolant = :linear, step_limiter! = trivial_limiter!,
+        qsteady_min = 9 // 10, qsteady_max = 2 // 1, qmax = 10 // 1,
     ) where {MO}
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
@@ -593,9 +600,10 @@ function FBDF(;
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
         typeof(κ), typeof(tol), typeof(step_limiter!),
+        typeof(qsteady_min),
     }(
         max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller, step_limiter!, AD_choice
+        step_limiter!, AD_choice, qmax, qsteady_min, qsteady_max,
     )
 end
 
@@ -810,7 +818,7 @@ DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concr
     max_order::Val{MO} = Val{5}(),
     """
 )
-struct DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
+struct DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, QT} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
     linsolve::F
     nlsolve::F2
@@ -818,8 +826,10 @@ struct DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <: DAEAlgorithm{CS, AD, FD
     κ::K
     tol::T
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
+    qmax::QT
+    qsteady_min::QT
+    qsteady_max::QT
 end
 function DFBDF(;
         max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
@@ -827,7 +837,8 @@ function DFBDF(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard
+        extrapolant = :linear,
+        qsteady_min = 1 // 1, qsteady_max = 2 // 1, qmax = 10 // 1,
     ) where {MO}
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
@@ -835,10 +846,10 @@ function DFBDF(;
         MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol),
+        typeof(κ), typeof(tol), typeof(qsteady_min),
     }(
         max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller, AD_choice
+        AD_choice, qmax, qsteady_min, qsteady_max,
     )
 end
 

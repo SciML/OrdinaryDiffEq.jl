@@ -475,7 +475,7 @@ function SciMLBase.__init(
     QT = determine_controller_datatype(u, internalnorm, tspan)
 
     if controller === nothing
-        controller = default_controller(determine_controller_datatype(prob.u0, internalnorm, prob.tspan), alg),
+        controller = default_controller(determine_controller_datatype(prob.u0, internalnorm, prob.tspan), alg)
     end
 
     EEstT = if tTypeNoUnits <: Integer
@@ -502,7 +502,6 @@ function SciMLBase.__init(
     opts = DEOptions{
         typeof(abstol_internal), typeof(reltol_internal),
         QT, tType,
-        typeof(controller_cache),
         typeof(internalnorm), typeof(internalopnorm),
         typeof(save_end_user),
         typeof(callbacks_internal),
@@ -585,6 +584,7 @@ function SciMLBase.__init(
             0.0
         )
     dtchangeable = isdtchangeable(_alg)
+    success_iter = 0
     reinitiailize = true
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
@@ -596,7 +596,7 @@ function SciMLBase.__init(
         typeof(_alg), isinplace(prob), uType, typeof(du),
         tType, typeof(p),
         typeof(eigen_est), EEstT,
-        QT, typeof(tdir), typeof(k), SolType,
+        typeof(tdir), typeof(k), SolType,
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),

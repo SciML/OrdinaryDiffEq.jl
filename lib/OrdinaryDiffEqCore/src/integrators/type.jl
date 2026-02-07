@@ -1,5 +1,5 @@
 mutable struct DEOptions{
-        absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
+        absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
         disccache, verbType,
     }
@@ -11,7 +11,6 @@ mutable struct DEOptions{
     failfactor::QT
     dtmax::tType
     dtmin::tType
-    controller::Controller
     internalnorm::F1
     internalopnorm::F2
     save_idxs::SType
