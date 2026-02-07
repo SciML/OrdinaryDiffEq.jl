@@ -1,8 +1,8 @@
-function default_controller(alg::Union{QNDF, FBDF}, args...)
+function default_controller(QT, alg::Union{QNDF, FBDF, DFBDF}, args...)
     return DummyController()
 end
 
-# QNBDF
+# QNDF
 stepsize_controller!(integrator, alg::QNDF) = nothing
 
 # this stepsize and order controller is taken from
@@ -277,7 +277,6 @@ function stepsize_controller!(
     else
         q = ((2 * terk / (k + 1))^(1 / (k + 1)))
     end
-    integrator.qold = q
     return q
 end
 
@@ -434,7 +433,6 @@ function stepsize_controller!(
     else
         q = ((2 * terk / (k + 1))^(1 / (k + 1)))
     end
-    integrator.qold = q
     return q
 end
 

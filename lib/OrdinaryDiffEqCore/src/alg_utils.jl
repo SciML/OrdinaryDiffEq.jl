@@ -380,7 +380,9 @@ function default_controller(QT, alg)
 end
 
 function default_controller(QT, alg::OrdinaryDiffEqCompositeAlgorithm)
-    return DummyController() # This forces a fall-back to the legacy implementation
+    return CompositeController(
+        map(alg -> default_controller(QT, alg), alg.algs)
+    )
 end
 
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}

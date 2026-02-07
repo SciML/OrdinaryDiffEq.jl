@@ -61,13 +61,15 @@ end
 end
 
 @inline function stepsize_controller!(integrator, alg)
+    return stepsize_controller!(integrator, integrator.controller_cache, alg)
+end
+# Current fallback. This should actually dispatch onto the algorithms caches controller cache
+@inline function stepsize_controller!(integrator, cache::OrdinaryDiffEqCache, alg)
     stepsize_controller!(integrator, integrator.controller_cache, alg)
-    return nothing
 end
 
 @inline function step_accept_controller!(integrator, alg, q)
-    step_accept_controller!(integrator, integrator.controller_cache, alg, q)
-    return nothing
+    return step_accept_controller!(integrator, integrator.controller_cache, alg, q)
 end
 
 @inline function step_reject_controller!(integrator, alg)
@@ -303,7 +305,6 @@ end
         q11 = fastpower(EEst, beta1)
         q = q11 / fastpower(errold, beta2)
         cache.q11 = q11
-        integrator.q11 = q11 # TODO remove
         @fastmath q = clamp(q / gamma, inv(qmax), inv(qmin))
     end
     cache.q = q
@@ -320,7 +321,6 @@ function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
         q = one(q)
     end
     cache.errold = max(EEst, qoldinit)
-    integrator.qold = cache.errold # TODO remove
     return integrator.dt / q # new dt
 end
 
@@ -706,6 +706,13 @@ end
 function setup_controller_cache(alg::CompositeAlgorithm, atmp, cc::CompositeController)
     return CompositeControllerCache(
         map((alg, controller) -> setup_controller_cache(alg, atmp, controller), alg.algs, cc.controllers),
+        atmp,
+    )
+end
+
+function setup_controller_cache(alg::CompositeAlgorithm, atmp::AbstractVector{T}, cc::DummyController) where T
+    return CompositeControllerCache(
+        map(alg -> setup_controller_cache(alg, atmp, default_controller(T, alg)), alg.algs),
         atmp,
     )
 end
