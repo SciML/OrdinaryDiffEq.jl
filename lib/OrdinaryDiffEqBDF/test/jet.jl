@@ -11,7 +11,7 @@ using Test
 @testset "JET Tests" begin
     # Test package for typos - now passing
     test_package(
-        OrdinaryDiffEqBDF, target_defined_modules = true, mode = :typo
+        OrdinaryDiffEqBDF, mode = :typo
     )
 
     # Test individual solver type stability

@@ -140,7 +140,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CarpenterKennedy2N54" begin
@@ -198,12 +198,12 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "HSLDDRK64" begin
     # this method is deprecated
-    alg = HSLDDRK64()
+    alg = @test_deprecated HSLDDRK64()
     @test alg isa SHLDDRK64
 end
 
@@ -262,7 +262,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "DGLDDRK73_C" begin
@@ -320,7 +320,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "DGLDDRK84_C" begin
@@ -378,7 +378,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "DGLDDRK84_F" begin
@@ -436,7 +436,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "NDBLSRK124" begin
@@ -494,7 +494,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "NDBLSRK134" begin
@@ -552,7 +552,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "NDBLSRK144" begin
@@ -610,7 +610,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CFRLDDRK64" begin
@@ -651,7 +651,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "TSLDDRK74" begin
@@ -692,7 +692,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 # Methods from Carpenter, Kennedy, Lewis (2000)
@@ -773,7 +773,7 @@ test_problems_nonlinear_BigFloat = [prob_nonlinear_A, prob_nonlinear_B]
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK54_3C" begin
@@ -819,7 +819,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK95_4S" begin
@@ -865,7 +865,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK95_4C" begin
@@ -911,7 +911,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK95_4M" begin
@@ -957,7 +957,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK54_3C_3R" begin
@@ -1003,7 +1003,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK54_3M_3R" begin
@@ -1049,7 +1049,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK54_3N_3R" begin
@@ -1095,7 +1095,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK85_4C_3R" begin
@@ -1141,7 +1141,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK85_4M_3R" begin
@@ -1187,7 +1187,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK85_4P_3R" begin
@@ -1233,7 +1233,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK54_3N_4R" begin
@@ -1279,7 +1279,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK54_3M_4R" begin
@@ -1325,7 +1325,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK65_4M_4R" begin
@@ -1371,7 +1371,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK85_4FM_4R" begin
@@ -1417,7 +1417,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "CKLLSRK75_4M_5R" begin
@@ -1463,7 +1463,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 # Methods from Parsani, Ketcheson, Deconinck (2013)
@@ -1507,7 +1507,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "ParsaniKetchesonDeconinck3S82" begin
@@ -1549,7 +1549,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "ParsaniKetchesonDeconinck3S53" begin
@@ -1591,7 +1591,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "ParsaniKetchesonDeconinck3S173" begin
@@ -1635,7 +1635,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "ParsaniKetchesonDeconinck3S94" begin
@@ -1676,7 +1676,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "ParsaniKetchesonDeconinck3S184" begin
@@ -1718,7 +1718,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "ParsaniKetchesonDeconinck3S105" begin
@@ -1761,7 +1761,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "ParsaniKetchesonDeconinck3S205" begin
@@ -1804,7 +1804,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 # Methods from Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -1848,7 +1848,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "RDPK3Sp49" begin
@@ -1891,7 +1891,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "RDPK3Sp510" begin
@@ -1932,7 +1932,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "RDPK3SpFSAL35" begin
@@ -1974,7 +1974,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "RDPK3SpFSAL49" begin
@@ -2017,7 +2017,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "RDPK3SpFSAL510" begin
@@ -2058,7 +2058,7 @@ end
         new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
-    @test sol_old[end] ≈ sol_new[end]
+    @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
 @testset "VectorOfArray/StructArray compatibility" begin

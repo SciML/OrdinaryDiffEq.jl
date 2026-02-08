@@ -30,5 +30,5 @@ for alg in algs
     println("GPU Times for $alg")
     @time sol2 = solve(prob2, alg, save_everystep = false, save_start = false, dt = 0.01)
 
-    @test sol[end] ≈ Array(sol2[end])
+    @test sol.u[end] ≈ Array(sol2.u[end])
 end

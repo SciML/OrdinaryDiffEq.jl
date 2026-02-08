@@ -10,7 +10,7 @@ function step_accept_controller!(
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qgus = (integrator.dtacc / integrator.dt) *
-            fastpow((EEst^2) / integrator.erracc, expo)
+            fastpower((EEst^2) / integrator.erracc, expo)
         qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
         qacc = max(q, qgus)
     else
@@ -87,7 +87,7 @@ end
             if integrator.success_iter > 0
                 expo = 1 / (get_current_adaptive_order(alg, cache) + 1)
                 qgus = (ccache.dtacc / integrator.dt) *
-                    fastpow((EEst^2) / ccache.erracc, expo)
+                    fastpower((EEst^2) / ccache.erracc, expo)
                 qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
                 qacc = max(q, qgus)
             else

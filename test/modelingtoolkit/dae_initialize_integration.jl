@@ -39,13 +39,13 @@ p0 = [
 
 prob = ODEProblem(connected, [u0; p0], tspan)
 sol = solve(prob, Rodas5(), initializealg = BrownFullBasicInit())
-@test prob.u0 == sol[1]
+@test prob.u0 == sol.u[1]
 sol = solve(prob, Rodas5(), initializealg = ShampineCollocationInit())
-@test prob.u0 == sol[1]
+@test prob.u0 == sol.u[1]
 #test initialization when given a specific nonlinear solver
 using NonlinearSolve
 sol = solve(prob, Rodas5(), initializealg = BrownFullBasicInit(1.0e-10, RobustMultiNewton()))
-@test prob.u0 == sol[1]
+@test prob.u0 == sol.u[1]
 
 # Initialize on ODEs
 # https://github.com/SciML/ModelingToolkit.jl/issues/2508

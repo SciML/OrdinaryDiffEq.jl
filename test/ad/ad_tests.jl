@@ -421,19 +421,19 @@ implicit_algs = [
 @testset "deprecated AD keyword arguments still work with $alg" for alg in implicit_algs
     f = (du, u, p, t) -> du .= -0.5 * u
     alg1 = alg(autodiff = AutoForwardDiff())
-    alg2 = alg(autodiff = true)
+    alg2 = @test_deprecated alg(autodiff = true)
 
     alg3 = alg(autodiff = AutoFiniteDiff())
-    alg4 = alg(autodiff = false)
+    alg4 = @test_deprecated alg(autodiff = false)
 
     alg5 = alg(autodiff = AutoForwardDiff(chunksize = 5))
-    alg6 = alg(autodiff = true, chunk_size = 5)
+    alg6 = @test_deprecated alg(autodiff = true, chunk_size = 5)
 
     alg7 = alg(autodiff = AutoFiniteDiff(fdtype = Val(:central)))
-    alg8 = alg(autodiff = false, diff_type = Val(:central))
+    alg8 = @test_deprecated alg(autodiff = false, diff_type = Val(:central))
 
     alg9 = alg(autodiff = AutoForwardDiff(chunksize = 1))
-    alg10 = alg(chunk_size = 1)
+    alg10 = @test_deprecated alg(chunk_size = 1)
 
     @test OrdinaryDiffEqCore.alg_autodiff(alg1) == OrdinaryDiffEqCore.alg_autodiff(alg2)
     @test OrdinaryDiffEqCore.alg_autodiff(alg3) == OrdinaryDiffEqCore.alg_autodiff(alg4)
@@ -463,7 +463,7 @@ end ≈ [6.765310476296564]
     function loss_fn(p)
         prob = ODEProblem(simple_ode!, [1.0], (0.0, 1.0), p)
         sol = solve(prob, Tsit5(), abstol = 1.0e-12, reltol = 1.0e-12)
-        return sum(sol[end])
+        return sum(sol.u[end])
     end
 
     p_test = [0.5]

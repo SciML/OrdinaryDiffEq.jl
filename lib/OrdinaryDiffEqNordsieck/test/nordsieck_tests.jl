@@ -27,7 +27,7 @@ probArr = [
         @test length(sol.t) < 11
         @test SciMLBase.successful_retcode(sol)
         exact = prob.f.analytic(prob.u0, prob.p, prob.tspan[end])
-        @test exact ≈ sol[end] atol = 1.0e-5
+        @test exact ≈ sol.u[end] atol = 1.0e-5
     end
 end
 
@@ -40,6 +40,6 @@ end
         @test length(sol.t) < 22
         @test SciMLBase.successful_retcode(sol)
         exact = prob.f.analytic(prob.u0, prob.p, prob.tspan[end])
-        @test norm(exact - sol[end], Inf) < 3.0e-3
+        @test norm(exact - sol.u[end], Inf) < 3.0e-3
     end
 end

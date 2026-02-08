@@ -378,11 +378,11 @@ end
         sol_o = solve(ode_o, alg, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
-        @test sol_i.destats.nf == sol_o.destats.nf
-        @test sol_i.destats.nf2 == sol_o.destats.nf2
-        @test sol_i.destats.naccept == sol_o.destats.naccept
-        @test 19 <= sol_i.destats.naccept <= 21
-        @test abs(sol_i.destats.nf - 4 * sol_i.destats.naccept) < 4
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 4 * sol_i.stats.naccept) < 4
     end
 
     @testset "RKN4" begin
@@ -393,11 +393,11 @@ end
         sol_o = solve(ode_o, alg, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
-        @test sol_i.destats.nf == sol_o.destats.nf
-        @test sol_i.destats.nf2 == sol_o.destats.nf2
-        @test sol_i.destats.naccept == sol_o.destats.naccept
-        @test 19 <= sol_i.destats.naccept <= 21
-        @test abs(sol_i.destats.nf - 2 * sol_i.destats.naccept) < 4
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 2 * sol_i.stats.naccept) < 4
     end
     @testset "FineRKN4" begin
         alg = FineRKN4()
@@ -407,11 +407,11 @@ end
         sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
-        @test sol_i.destats.nf == sol_o.destats.nf
-        @test sol_i.destats.nf2 == sol_o.destats.nf2
-        @test sol_i.destats.naccept == sol_o.destats.naccept
-        @test 19 <= sol_i.destats.naccept <= 21
-        @test abs(sol_i.destats.nf - 5 * sol_i.destats.naccept) < 4
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 5 * sol_i.stats.naccept) < 4
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
@@ -427,11 +427,11 @@ end
         sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
-        @test sol_i.destats.nf == sol_o.destats.nf
-        @test sol_i.destats.nf2 == sol_o.destats.nf2
-        @test sol_i.destats.naccept == sol_o.destats.naccept
-        @test 19 <= sol_i.destats.naccept <= 21
-        @test abs(sol_i.destats.nf - 7 * sol_i.destats.naccept) < 4
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 7 * sol_i.stats.naccept) < 4
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
@@ -447,11 +447,11 @@ end
         sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
-        @test sol_i.destats.nf == sol_o.destats.nf
-        @test sol_i.destats.nf2 == sol_o.destats.nf2
-        @test sol_i.destats.naccept == sol_o.destats.naccept
-        @test 19 <= sol_i.destats.naccept <= 21
-        @test abs(sol_i.destats.nf - 4 * sol_i.destats.naccept) < 4
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 4 * sol_i.stats.naccept) < 4
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
@@ -467,11 +467,11 @@ end
         sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
-        @test sol_i.destats.nf == sol_o.destats.nf
-        @test sol_i.destats.nf2 == sol_o.destats.nf2
-        @test sol_i.destats.naccept == sol_o.destats.naccept
-        @test 19 <= sol_i.destats.naccept <= 21
-        @test abs(sol_i.destats.nf - 6 * sol_i.destats.naccept) < 4
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 6 * sol_i.stats.naccept) < 4
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
@@ -487,11 +487,11 @@ end
         sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test_broken sol_i.u ≈ sol_o.u
-        @test sol_i.destats.nf == sol_o.destats.nf
-        @test sol_i.destats.nf2 == sol_o.destats.nf2
-        @test sol_i.destats.naccept == sol_o.destats.naccept
-        @test 19 <= sol_i.destats.naccept <= 21
-        @test abs(sol_i.destats.nf - 6 * sol_i.destats.naccept) < 4
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 6 * sol_i.stats.naccept) < 4
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
@@ -507,11 +507,11 @@ end
         sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
-        @test sol_i.destats.nf == sol_o.destats.nf
-        @test sol_i.destats.nf2 == sol_o.destats.nf2
-        @test sol_i.destats.naccept == sol_o.destats.naccept
-        @test 19 <= sol_i.destats.naccept <= 21
-        @test abs(sol_i.destats.nf - 6 * sol_i.destats.naccept) < 4
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 6 * sol_i.stats.naccept) < 4
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
@@ -532,11 +532,11 @@ end
         sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
-        @test sol_i.destats.nf == sol_o.destats.nf
-        @test sol_i.destats.nf2 == sol_o.destats.nf2
-        @test sol_i.destats.naccept == sol_o.destats.naccept
-        @test 19 <= sol_i.destats.naccept <= 21
-        @test abs(sol_i.destats.nf - 9 * sol_i.destats.naccept) < 4
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 9 * sol_i.stats.naccept) < 4
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
@@ -557,11 +557,11 @@ end
         sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
-        @test sol_i.destats.nf == sol_o.destats.nf
-        @test sol_i.destats.nf2 == sol_o.destats.nf2
-        @test sol_i.destats.naccept == sol_o.destats.naccept
-        @test 19 <= sol_i.destats.naccept <= 21
-        @test abs(sol_i.destats.nf - 17 * sol_i.destats.naccept) < 4
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 17 * sol_i.stats.naccept) < 4
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)

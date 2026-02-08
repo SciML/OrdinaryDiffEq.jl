@@ -32,19 +32,19 @@ sol2 = solve(prob, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = fals
 
 @test minimum(sol1.u[end] - sol2.u[end] .< 3.0e-10)
 
-sol1 = solve(probnum, DP5(), dt = 1 / 2^6, beta2 = 0.04)
-sol2 = solve(probnum, tabalg, dt = 1 / 2^6, beta2 = 0.04)
+sol1 = solve(probnum, DP5(), dt = 1 / 2^6, controller = PIController(0.14, 0.04))
+sol2 = solve(probnum, tabalg, dt = 1 / 2^6, controller = PIController(0.14, 0.04))
 
 # Should be identical
 sol1 = solve(probnum, DP5())
-sol2 = solve(probnum, tabalg, beta2 = 0.04, beta1 = 0.17)
+sol2 = solve(probnum, tabalg, controller = PIController(0.17, 0.04))
 sol3 = solve(probnum, dopri5())
 
 @test sol1.t ≈ sol2.t
 @test sol1.t ≈ sol3.t atol = 1.0e-6
 
 sol1 = solve(prob, DP5(), dt = 1 / 8)
-sol2 = solve(prob, tabalg, beta2 = 0.04, beta1 = 0.17, dt = 1 / 8)
+sol2 = solve(prob, tabalg, controller = PIController(0.17, 0.04), dt = 1 / 8)
 sol3 = solve(prob, dopri5(), dt = 1 / 8)
 
 @test sol1.t ≈ sol2.t
