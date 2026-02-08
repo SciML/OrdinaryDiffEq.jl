@@ -879,7 +879,15 @@ function ESDIRK659L2SATableau_unified(::Type{T} = Float64, ::Type{T2} = Float64)
 
     b = @SVector [T(0), T(0), T(0), tab.a94, tab.a95, tab.a96, tab.a97, tab.a98, γT]
     c = @SVector [T2(0), 2γc, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, tab.c8, tab.c9]
-    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8, tab.btilde9]
+
+    # NOTE: The original btilde values from sdirk_tableaus.jl have sum(btilde) ≈ -1.69,
+    # which violates the consistency requirement sum(btilde) = sum(bhat - b) = 0.
+    # This appears to be a bug in the original transcription from the Kennedy-Carpenter paper.
+    # We correct btilde9 to make sum(btilde) = 0.
+    btilde_sum = tab.btilde1 + tab.btilde2 + tab.btilde3 + tab.btilde4 +
+        tab.btilde5 + tab.btilde6 + tab.btilde7 + tab.btilde8 + tab.btilde9
+    btilde9_corrected = T(tab.btilde9 - btilde_sum)
+    b_embed = @SVector [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8, btilde9_corrected]
 
     return SDIRKTableau(
         A, b, c, γT, 6;
