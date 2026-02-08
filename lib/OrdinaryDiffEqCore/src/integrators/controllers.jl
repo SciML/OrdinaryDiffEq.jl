@@ -140,7 +140,7 @@ struct IController{T} <: AbstractController
 end
 
 function IController(; qmin = 1 // 5, qmax = 10 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
-    return IController{Float64}(
+    return IController{typeof(qmin)}( # FIXME combined promoted type
         qmin,
         qmax,
         gamma,
@@ -648,6 +648,16 @@ struct PredictiveController{T} <: AbstractController
     gamma::T
     qsteady_min::T
     qsteady_max::T
+end
+
+function PredictiveController(; qmin = 1 // 5, qmax = 10 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
+    return PredictiveController{typeof(qmin)}( # FIXME combined promoted type
+        qmin,
+        qmax,
+        gamma,
+        qsteady_min,
+        qsteady_max,
+    )
 end
 
 function PredictiveController(alg; kwargs...)
