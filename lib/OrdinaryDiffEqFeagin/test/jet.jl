@@ -6,6 +6,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqFeagin, target_defined_modules = true, mode = :typo
+        OrdinaryDiffEqFeagin, target_modules = (OrdinaryDiffEqFeagin,), mode = :typo
     )
 end
