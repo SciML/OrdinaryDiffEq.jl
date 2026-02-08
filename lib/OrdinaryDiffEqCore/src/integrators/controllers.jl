@@ -149,11 +149,11 @@ function IController(; qmin = 1 // 5, qmax = 10 // 1, gamma = 9 // 10, qsteady_m
     )
 end
 
-function IController(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}; kwargs...)
+function IController(alg; kwargs...)
     return IController(Float64, alg; kwargs...)
 end
 
-function IController(QT, alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
+function IController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
     return IController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
@@ -268,7 +268,7 @@ mutable struct PIController{T} <: AbstractController # TODO remove the mutable o
     qoldinit::T
 end
 
-function PIController(beta1, beta2; qmin = 1 // 5, qmax = 10 // 0, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5, qoldinit = 1 // 10^4)
+function PIController(beta1::Real, beta2::Real; qmin = 1 // 5, qmax = 10 // 0, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5, qoldinit = 1 // 10^4)
     return PIController{typeof(beta1)}(
         beta1,
         beta2,
@@ -281,11 +281,11 @@ function PIController(beta1, beta2; qmin = 1 // 5, qmax = 10 // 0, gamma = 9 // 
     )
 end
 
-function PIController(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}; kwargs...)
+function PIController(alg; kwargs...)
     return PIController(Float64, alg; kwargs...)
 end
 
-function PIController(QT, alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
+function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
     beta2 = beta2 === nothing ? beta2_default(alg) : beta2
     beta1 = beta1 === nothing ? beta1_default(alg, beta2) : beta1
     qoldinit = qoldinit === nothing ? 1 // 10^4 : qoldinit
@@ -449,7 +449,7 @@ end
 
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
-function PIDController(beta1, beta2, beta3 = zero(beta1); accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
+function PIDController(beta1::Real, beta2::Real, beta3::Real = zero(beta1); accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
     beta = SVector(map(float, promote(beta1, beta2, beta3))...)
     return PIDController{typeof(beta1), typeof(limiter)}(
         beta,
@@ -460,11 +460,11 @@ function PIDController(beta1, beta2, beta3 = zero(beta1); accept_safety = 0.81, 
     )
 end
 
-function PIDController(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}; kwargs...)
+function PIDController(alg; kwargs...)
     return PIDController(Float64, alg; kwargs...)
 end
 
-function PIDController(QT, alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = nothing, qsteady_max = nothing)
+function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = nothing, qsteady_max = nothing)
     if beta === nothing
         beta2 = QT(beta2_default(alg))
         beta1 = QT(beta1_default(alg, beta2))

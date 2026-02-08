@@ -369,13 +369,25 @@ alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_orde
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 
-function default_controller(QT, alg, qoldinit = nothing, beta1 = nothing, beta2 = nothing)
+# FIXME this is a temporary fix to see what happens in downstream CI
+function default_controller(alg, cache, qoldinit, beta1 = nothing, beta2 = nothing)
+    QT = qoldinit === nothing ? Float64 : typeof(qoldinit)
     if ispredictive(alg)
         return PredictiveController(QT, alg)
     elseif isstandard(alg)
         return IController(QT, alg)
     else
-        return PIController(QT, alg; qoldinit, beta1, beta2)
+        return PIController(QT, alg)
+    end
+end
+
+function default_controller(QT, alg)
+    if ispredictive(alg)
+        return PredictiveController(QT, alg)
+    elseif isstandard(alg)
+        return IController(QT, alg)
+    else
+        return PIController(QT, alg)
     end
 end
 
