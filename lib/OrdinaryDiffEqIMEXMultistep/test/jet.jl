@@ -6,6 +6,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqIMEXMultistep, mode = :typo
+        OrdinaryDiffEqIMEXMultistep, target_modules = (OrdinaryDiffEqIMEXMultistep,), mode = :typo
     )
 end

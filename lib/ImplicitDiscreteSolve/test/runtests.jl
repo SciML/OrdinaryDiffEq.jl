@@ -160,7 +160,7 @@ if TEST_GROUP != "FUNCTIONAL" && isempty(VERSION.prerelease)
     using JET
     @testset "JET Tests" begin
         test_package(
-            ImplicitDiscreteSolve, mode = :typo
+            ImplicitDiscreteSolve, target_modules = (ImplicitDiscreteSolve,), mode = :typo
         )
     end
 

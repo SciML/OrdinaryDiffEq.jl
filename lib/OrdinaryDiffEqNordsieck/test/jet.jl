@@ -6,6 +6,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqNordsieck, mode = :typo
+        OrdinaryDiffEqNordsieck, target_modules = (OrdinaryDiffEqNordsieck,), mode = :typo
     )
 end

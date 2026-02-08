@@ -6,6 +6,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqTaylorSeries, mode = :typo
+        OrdinaryDiffEqTaylorSeries, target_modules = (OrdinaryDiffEqTaylorSeries,), mode = :typo
     )
 end

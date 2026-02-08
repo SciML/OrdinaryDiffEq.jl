@@ -6,6 +6,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqExtrapolation, mode = :typo
+        OrdinaryDiffEqExtrapolation, target_modules = (OrdinaryDiffEqExtrapolation,), mode = :typo
     )
 end

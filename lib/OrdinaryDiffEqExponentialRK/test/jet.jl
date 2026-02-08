@@ -6,6 +6,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqExponentialRK, mode = :typo
+        OrdinaryDiffEqExponentialRK, target_modules = (OrdinaryDiffEqExponentialRK,), mode = :typo
     )
 end

@@ -10,7 +10,7 @@ using Test
 @testset "JET Tests" begin
     # Test package for typos - now passing
     test_package(
-        OrdinaryDiffEqExplicitRK, mode = :typo
+        OrdinaryDiffEqExplicitRK, target_modules = (OrdinaryDiffEqExplicitRK,), mode = :typo
     )
 
     # Test individual solver type stability

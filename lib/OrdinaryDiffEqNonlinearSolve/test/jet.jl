@@ -6,6 +6,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqNonlinearSolve, mode = :typo
+        OrdinaryDiffEqNonlinearSolve, target_modules = (OrdinaryDiffEqNonlinearSolve,), mode = :typo
     )
 end

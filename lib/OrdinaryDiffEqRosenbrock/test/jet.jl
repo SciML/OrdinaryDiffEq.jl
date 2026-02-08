@@ -6,6 +6,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqRosenbrock, mode = :typo
+        OrdinaryDiffEqRosenbrock, target_modules = (OrdinaryDiffEqRosenbrock,), mode = :typo
     )
 end

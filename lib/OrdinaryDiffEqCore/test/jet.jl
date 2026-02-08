@@ -8,7 +8,7 @@ using JET, Test
 
 @testset "JET Tests" begin
     @test test_package(
-        OrdinaryDiffEqCore, mode = :typo
+        OrdinaryDiffEqCore, target_modules = (OrdinaryDiffEqCore,), mode = :typo
     ) === nothing broken = true
 end
 

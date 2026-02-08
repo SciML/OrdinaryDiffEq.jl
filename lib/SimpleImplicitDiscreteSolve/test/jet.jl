@@ -6,6 +6,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        SimpleImplicitDiscreteSolve, mode = :typo
+        SimpleImplicitDiscreteSolve, target_modules = (SimpleImplicitDiscreteSolve,), mode = :typo
     )
 end
