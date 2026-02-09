@@ -95,12 +95,7 @@ macro OnDemandTableauExtract(S_T, T)
 end
 
 macro fold(arg)
-    # https://github.com/JuliaLang/julia/pull/43852
-    return if VERSION < v"1.8.0-DEV.1484"
-        esc(:(@generated $arg))
-    else
-        esc(:(Base.@assume_effects :foldable $arg))
-    end
+    return esc(:(Base.@assume_effects :foldable $arg))
 end
 
 struct DifferentialVarsUndefined end
