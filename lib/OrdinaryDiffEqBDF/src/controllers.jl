@@ -295,11 +295,11 @@ function step_accept_controller!(
     return integrator.dt / q
 end
 
-function step_reject_controller!(integrator, cache, ::DFBDF)
+function step_reject_controller!(integrator, cache::Union{DFBDFCache, DFBDFConstantCache}, ::DFBDF)
     return bdf_step_reject_controller!(integrator, cache, cache.terkm1)
 end
 
-function post_newton_controller!(integrator, cache, alg::DFBDF)
+function post_newton_controller!(integrator, cache::Union{DFBDFCache, DFBDFConstantCache}, alg::DFBDF)
     if cache.order > 1 && cache.nlsolver.nfails >= 3
         cache.order -= 1
     end
