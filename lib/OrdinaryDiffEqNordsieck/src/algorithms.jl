@@ -30,7 +30,7 @@ end
 
 function JVODE(
         algorithm = :Adams; bias1 = 6, bias2 = 6, bias3 = 10,
-        addon = 1 // 10^6, qmin = float(1/5), qmax = float(10), qsteady_min = float(1), qsteady_max = float(3 // 2)
+        addon = 1 // 10^6, qmin = float(1 / 5), qmax = float(10), qsteady_min = float(1), qsteady_max = float(3 // 2)
     )
     return JVODE(algorithm, bias1, bias2, bias3, addon, qmin, qmax, qsteady_min, qsteady_max)
 end
