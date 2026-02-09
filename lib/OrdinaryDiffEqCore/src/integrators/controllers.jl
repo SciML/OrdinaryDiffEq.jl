@@ -99,6 +99,8 @@ struct DummyController <: AbstractController
 end
 
 setup_controller_cache(alg, atmp, controller::DummyController) = controller
+SciMLBase.reinit!(integrator::ODEIntegrator, controller::DummyController) = nothing
+
 
 # Standard integral (I) step size controller
 """
