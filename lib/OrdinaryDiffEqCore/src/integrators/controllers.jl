@@ -652,7 +652,7 @@ struct PredictiveController{T} <: AbstractController
     qsteady_max::T
 end
 
-function PredictiveController(; qmin = 1 // 5, qmax = 10 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
+function PredictiveController(; qmin = float(1 // 5), qmax = 10 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
     return PredictiveController{typeof(qmin)}( # FIXME combined promoted type
         qmin,
         qmax,
