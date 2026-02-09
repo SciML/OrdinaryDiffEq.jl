@@ -98,24 +98,24 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
             )
             EEst = integrator.opts.internalnorm(atmp, t)
 
-            beta1 = integrator.controller_cache.beta1
+            beta1 = integrator.controller_cache.controller.beta1
             e = integrator.EEst
-            qold = integrator.controller_cache.qold
+            qold = integrator.controller_cache.q11
 
-            integrator.controller_cache.beta1 = 1 / (i + 1)
+            integrator.controller_cache.controller.beta1 = 1 / (i + 1)
             integrator.EEst = EEst
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
             integrator.EEst = e
-            integrator.controller_cache.beta1 = beta1
-            integrator.controller_cache.qold = qold
+            integrator.controller_cache.controller.beta1 = beta1
+            integrator.controller_cache.q11 = qold
 
             work = A / dtpropose
 
             if work < minimum_work
-                integrator.controller_cache.beta1 = 1 / (i + 1)
+                integrator.controller_cache.controller.beta1 = 1 / (i + 1)
                 cache.dtpropose = dtpropose
                 cache.cur_order = i
                 minimum_work = work
@@ -223,24 +223,24 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
             )
             EEst = integrator.opts.internalnorm(atmp, t)
 
-            beta1 = integrator.controller_cache.beta1
+            beta1 = integrator.controller_cache.controller.beta1
             e = integrator.EEst
-            qold = integrator.controller_cache.qold
+            qold = integrator.controller_cache.q11
 
-            integrator.controller_cache.beta1 = 1 / (i + 1)
+            integrator.controller_cache.controller.beta1 = 1 / (i + 1)
             integrator.EEst = EEst
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
             integrator.EEst = e
-            integrator.controller_cache.beta1 = beta1
-            integrator.controller_cache.qold = qold
+            integrator.controller_cache.controller.beta1 = beta1
+            integrator.controller_cache.q11 = qold
 
             work = A / dtpropose
 
             if work < minimum_work
-                integrator.controller_cache.beta1 = 1 / (i + 1)
+                integrator.controller_cache.controller.beta1 = 1 / (i + 1)
                 cache.dtpropose = dtpropose
                 cache.cur_order = i
                 minimum_work = work
