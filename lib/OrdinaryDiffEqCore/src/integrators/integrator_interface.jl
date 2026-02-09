@@ -108,7 +108,7 @@ end
 
 function set_proposed_dt!(integrator::ODEIntegrator, integrator2::ODEIntegrator)
     integrator.dtpropose = integrator2.dtpropose
-    integrator.dtcache   = integrator2.dtcache
+    integrator.dtcache = integrator2.dtcache
     sync_controllers!(integrator.controller_cache, integrator2.controller_cache)
     return nothing
 end
