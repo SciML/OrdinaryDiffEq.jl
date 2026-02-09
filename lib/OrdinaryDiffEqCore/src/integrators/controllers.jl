@@ -817,7 +817,8 @@ end
     return post_newton_controller!(integrator, cache.caches[current_idx], alg.algs[current_idx])
 end
 
-# We need this for now as a workaround to make composite controllers work when they have a dummy controller attached
+# We need this for now as a workaround to redispatch from the dummy controller onto the algorithm cache,
+# as DummyController imples the algorithm itself is responsible for the control.
 @inline function accept_step_controller(integrator, controller::DummyController)
     return integrator.EEst <= 1
 end
