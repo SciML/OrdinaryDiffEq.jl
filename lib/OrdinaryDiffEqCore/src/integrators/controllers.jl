@@ -792,29 +792,49 @@ function setup_controller_cache(alg::CompositeAlgorithm, atmp::AbstractVector{T}
     )
 end
 
-@inline function accept_step_controller(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg::CompositeAlgorithm)
+@inline function accept_step_controller(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
     current_idx = integrator.cache.current
-    return accept_step_controller(integrator, cache.caches[current_idx], alg.algs[current_idx])
+    return accept_step_controller(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
+end
+@inline function accept_step_controller(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+    current_idx = integrator.cache.current
+    return accept_step_controller(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
 
-@inline function stepsize_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg::CompositeAlgorithm)
+@inline function stepsize_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
     current_idx = integrator.cache.current
-    return stepsize_controller!(integrator, cache.caches[current_idx], alg.algs[current_idx])
+    return stepsize_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
+end
+@inline function stepsize_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+    current_idx = integrator.cache.current
+    return stepsize_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
 
-@inline function step_accept_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg::CompositeAlgorithm, q)
+@inline function step_accept_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm, q)
     current_idx = integrator.cache.current
-    return step_accept_controller!(integrator, cache.caches[current_idx], alg.algs[current_idx], q)
+    return step_accept_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]), q)
+end
+@inline function step_accept_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg, q)
+    current_idx = integrator.cache.current
+    return step_accept_controller!(integrator, @inbounds(cache.caches[current_idx]), alg, q)
 end
 
-@inline function step_reject_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg::CompositeAlgorithm)
+@inline function step_reject_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
     current_idx = integrator.cache.current
-    return step_reject_controller!(integrator, cache.caches[current_idx], alg.algs[current_idx])
+    return step_reject_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
+end
+@inline function step_reject_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+    current_idx = integrator.cache.current
+    return step_reject_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
 
-@inline function post_newton_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg::CompositeAlgorithm)
+@inline function post_newton_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
     current_idx = integrator.cache.current
-    return post_newton_controller!(integrator, cache.caches[current_idx], alg.algs[current_idx])
+    return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
+end
+@inline function post_newton_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+    current_idx = integrator.cache.current
+    return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
 
 # We need this for now as a workaround to redispatch from the dummy controller onto the algorithm cache,
@@ -883,18 +903,6 @@ function step_reject_controller!(integrator, cache::DefaultCache, alg)
     end
 end
 
-function stepsize_controller!(integrator, cache::CompositeCache, alg)
-    return stepsize_controller!(integrator, @inbounds(cache.caches[cache.current]), alg)
-end
-
-function step_accept_controller!(integrator, cache::CompositeCache, alg, q)
-    return step_accept_controller!(integrator, @inbounds(cache.caches[cache.current]), alg, q)
-end
-
-function step_reject_controller!(integrator, cache::CompositeCache, alg)
-    return step_reject_controller!(integrator, @inbounds(cache.caches[cache.current]), alg)
-end
-
 # This is a workaround to make the BDF methods work with composite algorithms
 function post_newton_controller!(integrator, cache::DefaultCache, alg)
     if cache.current == 1
@@ -910,9 +918,5 @@ function post_newton_controller!(integrator, cache::DefaultCache, alg)
     elseif cache.current == 6
         post_newton_controller!(integrator, @inbounds(cache.cache6), alg)
     end
-    return nothing
-end
-function post_newton_controller!(integrator, cache::CompositeCache, alg)
-    post_newton_controller!(integrator, @inbounds(cache.caches[cache.current]), alg)
     return nothing
 end
