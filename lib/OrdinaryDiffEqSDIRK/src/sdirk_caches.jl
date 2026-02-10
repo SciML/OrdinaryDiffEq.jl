@@ -4,1164 +4,176 @@ function get_fsalfirstlast(cache::SDIRKMutableCache, u)
     return (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
 end
 
-@cache mutable struct ImplicitEulerCache{
-        uType, rateType, uNoUnitsType, N, AV, StepLimiter,
-    } <:
-    SDIRKMutableCache
+# Unified SDIRK caches that work with any SDIRK tableau
+@cache mutable struct SDIRKCache{uType, rateType, uNoUnitsType, Tab, N, AV, StepLimiter} <: SDIRKMutableCache
     u::uType
     uprev::uType
     uprev2::uType
     fsalfirst::rateType
+    zs::Vector{uType}
     atmp::uNoUnitsType
     nlsolver::N
+    tab::Tab
     algebraic_vars::AV
     step_limiter!::StepLimiter
+    # For algorithms that need additional history
+    uprev3::uType
+    tprev2::typeof(1.0)
+    zprev::uType
+    zᵧ::uType
 end
 
+mutable struct SDIRKConstantCacheImpl{N, Tab, uType, tType} <: SDIRKConstantCache
+    nlsolver::N
+    tab::Tab
+    # For algorithms that need additional history
+    uprev3::uType
+    tprev2::tType
+end
+
+const SDIRKConstantCacheType = SDIRKConstantCacheImpl
+
+# Unified alg_cache functions for mutable cache
 function alg_cache(
-        alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        alg::Union{
+            ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22, SSPSDIRK2,
+            Cash4, SFSDIRK4, SFSDIRK5, SFSDIRK6, SFSDIRK7, SFSDIRK8,
+            Hairer4, Hairer42, ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK437L2SA,
+            ESDIRK547L2SA2, ESDIRK659L2SA,
+            Kvaerno3, KenCarp3, CFNLIRK3, Kvaerno4, Kvaerno5, KenCarp4,
+            KenCarp47, KenCarp5, KenCarp58,
+        },
+        u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1, 1
+
+    tab = get_sdirk_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.γ
+    s = length(tab.b)
+
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
     )
     fsalfirst = zero(rate_prototype)
 
+    # Initialize all z stage vectors
+    zs = Vector{typeof(u)}(undef, s)
+    for i in 1:s
+        zs[i] = zero(u)
+    end
+    zs[end] = nlsolver.z # use nlsolver.z for the last stage
+
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
+    # Handle mass matrix for algebraic variables (ImplicitEuler needs this)
     algebraic_vars = f.mass_matrix === I ? nothing :
         [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-    return ImplicitEulerCache(
-        u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, alg.step_limiter!
-    )
-end
+    # Get step limiter
+    step_limiter! = hasproperty(alg, :step_limiter!) ? alg.step_limiter! : trivial_limiter!
 
-mutable struct ImplicitEulerConstantCache{N} <: SDIRKConstantCache
-    nlsolver::N
-end
-
-function alg_cache(
-        alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1, 1
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return ImplicitEulerConstantCache(nlsolver)
-end
-
-mutable struct ImplicitMidpointConstantCache{N} <: SDIRKConstantCache
-    nlsolver::N
-end
-
-function alg_cache(
-        alg::ImplicitMidpoint, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 2, 1 // 2
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return ImplicitMidpointConstantCache(nlsolver)
-end
-
-@cache mutable struct ImplicitMidpointCache{uType, rateType, N, StepLimiter} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    nlsolver::N
-    step_limiter!::StepLimiter
-end
-
-function alg_cache(
-        alg::ImplicitMidpoint, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 2, 1 // 2
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-    return ImplicitMidpointCache(u, uprev, fsalfirst, nlsolver, alg.step_limiter!)
-end
-
-mutable struct TrapezoidConstantCache{uType, tType, N} <: SDIRKConstantCache
-    uprev3::uType
-    tprev2::tType
-    nlsolver::N
-end
-
-function alg_cache(
-        alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 2, 1
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-
-    uprev3 = u
-    tprev2 = t
-
-    return TrapezoidConstantCache(uprev3, tprev2, nlsolver)
-end
-
-@cache mutable struct TrapezoidCache{
-        uType, rateType, uNoUnitsType, tType, N, StepLimiter,
-    } <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    uprev2::uType
-    fsalfirst::rateType
-    atmp::uNoUnitsType
-    uprev3::uType
-    tprev2::tType
-    nlsolver::N
-    step_limiter!::StepLimiter
-end
-
-function alg_cache(
-        alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 2, 1
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
+    # Additional variables for algorithms that need history
     uprev3 = zero(u)
     tprev2 = t
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return TrapezoidCache(
-        u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, alg.step_limiter!
-    )
-end
-
-mutable struct TRBDF2ConstantCache{Tab, N} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::TRBDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = TRBDF2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.d, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return TRBDF2ConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct TRBDF2Cache{uType, rateType, uNoUnitsType, Tab, N, StepLimiter} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    zprev::uType
-    zᵧ::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-    step_limiter!::StepLimiter
-end
-
-function alg_cache(
-        alg::TRBDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = TRBDF2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.d, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
     zprev = zero(u)
     zᵧ = zero(u)
 
-    return TRBDF2Cache(u, uprev, fsalfirst, zprev, zᵧ, atmp, nlsolver, tab, alg.step_limiter!)
+    return SDIRKCache(
+        u, uprev, uprev2, fsalfirst, zs,
+        atmp, nlsolver, tab, algebraic_vars, step_limiter!, uprev3, tprev2, zprev, zᵧ
+    )
 end
 
-mutable struct SDIRK2ConstantCache{N} <: SDIRKConstantCache
-    nlsolver::N
-end
-
+# Unified alg_cache functions for constant cache
 function alg_cache(
-        alg::SDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::Union{
+            ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22, SSPSDIRK2,
+            Cash4, SFSDIRK4, SFSDIRK5, SFSDIRK6, SFSDIRK7, SFSDIRK8,
+            Hairer4, Hairer42, ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK437L2SA,
+            ESDIRK547L2SA2, ESDIRK659L2SA,
+            Kvaerno3, KenCarp3, CFNLIRK3, Kvaerno4, Kvaerno5, KenCarp4,
+            KenCarp47, KenCarp5, KenCarp58,
+        },
+        u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1, 1
+
+    tab = get_sdirk_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.γ
+
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
     )
-    return SDIRK2ConstantCache(nlsolver)
-end
 
-@cache mutable struct SDIRK2Cache{uType, rateType, uNoUnitsType, N, StepLimiter} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    step_limiter!::StepLimiter
-end
-
-function alg_cache(
-        alg::SDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1, 1
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return SDIRK2Cache(u, uprev, fsalfirst, z₁, z₂, atmp, nlsolver, alg.step_limiter!)
-end
-
-struct SDIRK22ConstantCache{uType, tType, N, Tab} <: SDIRKConstantCache
-    uprev3::uType
-    tprev2::tType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{tTypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SDIRK22Tableau(constvalue(uBottomEltypeNoUnits))
+    # Additional variables for algorithms that need history
     uprev3 = u
     tprev2 = t
-    γ, c = 1, 1
 
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    return SDIRKConstantCacheImpl(nlsolver, tab, uprev3, tprev2)
+end
+
+# Keep old caches for backward compatibility for now, will be removed later.
+const ImplicitEulerCacheInner = SDIRKCache
+const ImplicitEulerConstantCacheInner = SDIRKConstantCacheImpl
+
+mutable struct ImplicitEulerCache{C <: ImplicitEulerCacheInner} <: SDIRKMutableCache
+    inner::C
+end
+
+mutable struct ImplicitEulerConstantCache{C <: ImplicitEulerConstantCacheInner} <: SDIRKConstantCache
+    inner::C
+end
+
+function Base.getproperty(cache::ImplicitEulerCache, sym::Symbol)
+    sym === :inner && return getfield(cache, :inner)
+    return getproperty(getfield(cache, :inner), sym)
+end
+
+function Base.getproperty(cache::ImplicitEulerConstantCache, sym::Symbol)
+    sym === :inner && return getfield(cache, :inner)
+    return getproperty(getfield(cache, :inner), sym)
+end
+
+function Base.setproperty!(cache::ImplicitEulerCache, sym::Symbol, val)
+    sym === :inner && return setfield!(cache, :inner, val)
+    return setproperty!(getfield(cache, :inner), sym, val)
+end
+
+function Base.setproperty!(cache::ImplicitEulerConstantCache, sym::Symbol, val)
+    sym === :inner && return setfield!(cache, :inner, val)
+    return setproperty!(getfield(cache, :inner), sym, val)
+end
+
+function ImplicitEulerCache(u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, step_limiter!)
+    T = eltype(u)
+    T2 = eltype(atmp)
+    tab = ImplicitEulerTableau(T === Nothing ? Float64 : T, T2 === Nothing ? Float64 : T2)
+    zs = Vector{typeof(u)}(undef, 1)
+    zs[1] = nlsolver.z
+    inner = SDIRKCache(
+        u, uprev, uprev2, fsalfirst, zs, atmp, nlsolver, tab,
+        algebraic_vars, step_limiter!, zero(u), zero(eltype(tab.c)), zero(u), zero(u)
     )
-
-    return SDIRK22ConstantCache(uprev3, tprev2, nlsolver)
+    return ImplicitEulerCache(inner)
 end
 
-@cache mutable struct SDIRK22Cache{
-        uType, rateType, uNoUnitsType, tType, N, Tab, StepLimiter,
-    } <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    uprev2::uType
-    fsalfirst::rateType
-    atmp::uNoUnitsType
-    uprev3::uType
-    tprev2::tType
-    nlsolver::N
-    tab::Tab
-    step_limiter!::StepLimiter
+function ImplicitEulerConstantCache(nlsolver)
+    tab = ImplicitEulerTableau()
+    inner = SDIRKConstantCacheImpl(nlsolver, tab, zero(nlsolver.tmp), zero(eltype(tab.c)))
+    return ImplicitEulerConstantCache(inner)
 end
 
-function alg_cache(
-        alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SDIRK22Tableau(constvalue(uBottomEltypeNoUnits))
-    γ, c = 1, 1
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    uprev3 = zero(u)
-    tprev2 = t
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return SDIRK22Cache(
-        u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, tab, alg.step_limiter!
-    ) # shouldn't this be SDIRK22Cache instead of SDIRK22?
+@muladd function perform_step!(integrator, cache::ImplicitEulerCache, repeat_step = false)
+    perform_step!(integrator, cache.inner, repeat_step)
 end
 
-mutable struct SSPSDIRK2ConstantCache{N} <: SDIRKConstantCache
-    nlsolver::N
-end
-
-function alg_cache(
-        alg::SSPSDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 4, 1 // 1
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return SSPSDIRK2ConstantCache(nlsolver)
-end
-
-@cache mutable struct SSPSDIRK2Cache{uType, rateType, N} <: SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    nlsolver::N
-end
-
-function alg_cache(
-        alg::SSPSDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1 // 4, 1 // 1
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return SSPSDIRK2Cache(u, uprev, fsalfirst, z₁, z₂, nlsolver)
-end
-
-mutable struct Cash4ConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::Cash4, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = Cash4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return Cash4ConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct Cash4Cache{uType, rateType, uNoUnitsType, N, Tab} <: SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::Cash4, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = Cash4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return Cash4Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, atmp, nlsolver, tab)
-end
-
-mutable struct SFSDIRK4ConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::SFSDIRK4, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SFSDIRK4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return SFSDIRK4ConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct SFSDIRK4Cache{uType, rateType, uNoUnitsType, N, Tab} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::SFSDIRK4, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SFSDIRK4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return SFSDIRK4Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, atmp, nlsolver, tab)
-end
-
-mutable struct SFSDIRK5ConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::SFSDIRK5, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SFSDIRK5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return SFSDIRK5ConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct SFSDIRK5Cache{uType, rateType, uNoUnitsType, N, Tab} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    z₆::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::SFSDIRK5, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SFSDIRK5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = zero(u)
-    z₆ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return SFSDIRK5Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver, tab)
-end
-
-mutable struct SFSDIRK6ConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::SFSDIRK6, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SFSDIRK6Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return SFSDIRK6ConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct SFSDIRK6Cache{uType, rateType, uNoUnitsType, N, Tab} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    z₆::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::SFSDIRK6, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SFSDIRK6Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = zero(u)
-    z₆ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return SFSDIRK6Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver, tab)
-end
-
-mutable struct SFSDIRK7ConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::SFSDIRK7, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SFSDIRK7Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return SFSDIRK7ConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct SFSDIRK7Cache{uType, rateType, uNoUnitsType, N, Tab} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    z₆::uType
-    z₇::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::SFSDIRK7, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SFSDIRK7Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = zero(u)
-    z₆ = zero(u)
-    z₇ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return SFSDIRK7Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver, tab)
-end
-
-mutable struct SFSDIRK8ConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::SFSDIRK8, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SFSDIRK8Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return SFSDIRK8ConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct SFSDIRK8Cache{uType, rateType, uNoUnitsType, N, Tab} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    z₆::uType
-    z₇::uType
-    z₈::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::SFSDIRK8, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SFSDIRK8Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = zero(u)
-    z₆ = zero(u)
-    z₇ = zero(u)
-    z₈ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return SFSDIRK8Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver, tab)
-end
-
-mutable struct Hairer4ConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::Union{Hairer4, Hairer42}, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    if alg isa Hairer4
-        tab = Hairer4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    else
-        tab = Hairer42Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    end
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return Hairer4ConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct Hairer4Cache{uType, rateType, uNoUnitsType, Tab, N} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::Union{Hairer4, Hairer42}, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    if alg isa Hairer4
-        tab = Hairer4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    else # Hairer42
-        tab = Hairer42Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    end
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return Hairer4Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, atmp, nlsolver, tab)
-end
-
-@cache mutable struct ESDIRK54I8L2SACache{uType, rateType, uNoUnitsType, Tab, N} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    z₆::uType
-    z₇::uType
-    z₈::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::ESDIRK54I8L2SA, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ESDIRK54I8L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = zero(u)
-    z₆ = zero(u)
-    z₇ = zero(u)
-    z₈ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return ESDIRK54I8L2SACache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver,
-        tab
-    )
-end
-
-mutable struct ESDIRK54I8L2SAConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::ESDIRK54I8L2SA, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ESDIRK54I8L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return ESDIRK54I8L2SAConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct ESDIRK436L2SA2Cache{uType, rateType, uNoUnitsType, Tab, N} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    z₆::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::ESDIRK436L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ESDIRK436L2SA2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = zero(u)
-    z₆ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return ESDIRK436L2SA2Cache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver,
-        tab
-    )
-end
-
-mutable struct ESDIRK436L2SA2ConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::ESDIRK436L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ESDIRK436L2SA2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return ESDIRK436L2SA2ConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct ESDIRK437L2SACache{uType, rateType, uNoUnitsType, Tab, N} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    z₆::uType
-    z₇::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::ESDIRK437L2SA, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ESDIRK437L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = zero(u)
-    z₆ = zero(u)
-    z₇ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return ESDIRK437L2SACache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver,
-        tab
-    )
-end
-
-mutable struct ESDIRK437L2SAConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::ESDIRK437L2SA, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ESDIRK437L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return ESDIRK437L2SAConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct ESDIRK547L2SA2Cache{uType, rateType, uNoUnitsType, Tab, N} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    z₆::uType
-    z₇::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::ESDIRK547L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ESDIRK547L2SA2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = zero(u)
-    z₆ = zero(u)
-    z₇ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return ESDIRK547L2SA2Cache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver,
-        tab
-    )
-end
-
-mutable struct ESDIRK547L2SA2ConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::ESDIRK547L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ESDIRK547L2SA2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return ESDIRK547L2SA2ConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct ESDIRK659L2SACache{uType, rateType, uNoUnitsType, Tab, N} <:
-    SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    z₅::uType
-    z₆::uType
-    z₇::uType
-    z₈::uType
-    z₉::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::ESDIRK659L2SA, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol,
-        p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ESDIRK659L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
-    )
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = zero(u)
-    z₅ = zero(u)
-    z₆ = zero(u)
-    z₇ = zero(u)
-    z₈ = zero(u)
-    z₉ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    return ESDIRK659L2SACache(
-        u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, z₉, atmp,
-        nlsolver, tab
-    )
-end
-
-mutable struct ESDIRK659L2SAConstantCache{N, Tab} <: SDIRKConstantCache
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(
-        alg::ESDIRK659L2SA, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where
-    {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ESDIRK659L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, tab.γ
-    nlsolver = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
-    )
-    return ESDIRK659L2SAConstantCache(nlsolver, tab)
+@muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache, repeat_step = false)
+    perform_step!(integrator, cache.inner, repeat_step)
 end

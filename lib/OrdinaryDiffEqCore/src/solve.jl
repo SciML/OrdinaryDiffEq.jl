@@ -63,7 +63,7 @@ function SciMLBase.__init(
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
         verbose = Standard(),
-        controller = any((gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit) .!== nothing) ? nothing : default_controller_v7(determine_controller_datatype(prob.u0, internalnorm, prob.tspan), alg), # We have to reconstruct the old controller before breaking release.,
+        controller = default_controller_v7(determine_controller_datatype(prob.u0, internalnorm, prob.tspan), alg),
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,
@@ -503,7 +503,9 @@ function SciMLBase.__init(
 
     # The following code provides an upgrade path for users by preserving the old behavior.
     legacy_controller_parameters = (gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit)
-    if controller === nothing # We have to reconstruct the old controller before breaking release.
+    if controller === nothing # Fallback for composite algorithms or explicit controller=nothing
+        # Use the new controller constructor with legacy parameters for type stability
+        controller = new_controller_from_legacy_params(QT, _alg, beta1, beta2, qmin, qmax, gamma, qsteady_min, qsteady_max, qoldinit)
         if any(legacy_controller_parameters .== nothing)
             gamma = convert(QT, gamma === nothing ? gamma_default(alg) : gamma)
             qmin = convert(QT, qmin === nothing ? qmin_default(alg) : qmin)
@@ -512,7 +514,6 @@ function SciMLBase.__init(
             qsteady_max = convert(QT, qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max)
             qoldinit = convert(QT, qoldinit === nothing ? (anyadaptive(alg) ? 1 // 10^4 : 0) : qoldinit)
         end
-        controller = legacy_default_controller(_alg, cache, qoldinit, beta1, beta2)
     else # Controller has been passed
         gamma = hasfield(typeof(controller), :gamma) ? controller.gamma : gamma_default(alg)
         qmin = hasfield(typeof(controller), :qmin) ? controller.qmin : qmin_default(alg)

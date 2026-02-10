@@ -380,30 +380,26 @@ function default_controller_v7(QT, alg)
 end
 
 function default_controller_v7(QT, alg::OrdinaryDiffEqCompositeAlgorithm)
-    return nothing # This forces a fall-back to the legacy implementation
-    # beta2 = convert(QT, beta2_default(alg.algs[1]))
-    # beta1 = convert(QT, beta1_default(alg.algs[1], beta2))
-    # return PIController(beta1, beta2)
-    # TODO Uncomment this code below to when removing the legacy controllers on OrdinaryDiffEq v7.
-    # return CompositeController(
-    #     __default_controller_v7(QT, alg.algs)
-    # )
+    # Use CompositeController for type stability with composite algorithms
+    return CompositeController(
+        _default_controller_v7_tuple(QT, alg.algs)
+    )
 end
 
-# @generated function __default_controller_v7(
-#     QT, algs::T
-# ) where {
-#     T <: Tuple
-# }
-#     return Expr(
-#         :tuple,
-#         map(1:length(T.types)) do i
-#             :(
-#                 default_controller_v7(QT, algs[$i])
-#             )
-#         end...
-#     )
-# end
+@generated function _default_controller_v7_tuple(
+        QT, algs::T
+    ) where {
+        T <: Tuple
+    }
+    return Expr(
+        :tuple,
+        map(1:length(T.types)) do i
+            :(
+                default_controller_v7(QT, algs[$i])
+            )
+        end...
+    )
+end
 
 function legacy_default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
     if ispredictive(alg)
@@ -419,6 +415,43 @@ end
 
 # TODO remove this when done
 default_controller(args...) = legacy_default_controller(args...)
+
+"""
+    new_controller_from_legacy_params(QT, alg, beta1, beta2, qmin, qmax, gamma, qsteady_min, qsteady_max, qoldinit)
+
+Create a new-style controller from legacy parameters. This is used for type stability
+when the user provides legacy controller parameters instead of a controller object.
+"""
+function new_controller_from_legacy_params(QT, alg, beta1, beta2, qmin, qmax, gamma, qsteady_min, qsteady_max, qoldinit)
+    if ispredictive(alg)
+        return NewPredictiveController(QT, alg;
+            qmin = qmin,
+            qmax = qmax,
+            gamma = gamma,
+            qsteady_min = qsteady_min,
+            qsteady_max = qsteady_max
+        )
+    elseif isstandard(alg)
+        return NewIController(QT, alg;
+            qmin = qmin,
+            qmax = qmax,
+            gamma = gamma,
+            qsteady_min = qsteady_min,
+            qsteady_max = qsteady_max
+        )
+    else # Default is PI-controller
+        return NewPIController(QT, alg;
+            beta1 = beta1,
+            beta2 = beta2,
+            qmin = qmin,
+            qmax = qmax,
+            gamma = gamma,
+            qsteady_min = qsteady_min,
+            qsteady_max = qsteady_max,
+            qoldinit = qoldinit
+        )
+    end
+end
 
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
     if alg isa OrdinaryDiffEqCompositeAlgorithm
