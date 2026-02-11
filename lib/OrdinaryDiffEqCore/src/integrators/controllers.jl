@@ -781,19 +781,6 @@ function setup_controller_cache(alg::CompositeAlgorithm, caches::CompositeCache,
     )
 end
 
-function setup_controller_cache(alg::CompositeAlgorithm, caches::DefaultCache, cc::CompositeController)
-    return CompositeControllerCache(
-        (
-            setup_controller_cache(alg.algs[1], caches.cache1, controller.controllers[1]),
-            setup_controller_cache(alg.algs[2], caches.cache2, controller.controllers[2]),
-            setup_controller_cache(alg.algs[3], caches.cache3, controller.controllers[3]),
-            setup_controller_cache(alg.algs[4], caches.cache4, controller.controllers[4]),
-            setup_controller_cache(alg.algs[5], caches.cache5, controller.controllers[5]),
-            setup_controller_cache(alg.algs[6], caches.cache6, controller.controllers[6]),
-        )
-    )
-end
-
 @inline function accept_step_controller(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
     current_idx = integrator.cache.current
     return accept_step_controller(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
@@ -837,71 +824,4 @@ end
 @inline function post_newton_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
     current_idx = integrator.cache.current
     return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
-end
-
-# Default alg with dummy controller
-function stepsize_controller!(integrator, cache::DefaultCache, alg)
-    return if cache.current == 1
-        stepsize_controller!(integrator, @inbounds(cache.cache1), alg)
-    elseif cache.current == 2
-        stepsize_controller!(integrator, @inbounds(cache.cache2), alg)
-    elseif cache.current == 3
-        stepsize_controller!(integrator, @inbounds(cache.cache3), alg)
-    elseif cache.current == 4
-        stepsize_controller!(integrator, @inbounds(cache.cache4), alg)
-    elseif cache.current == 5
-        stepsize_controller!(integrator, @inbounds(cache.cache5), alg)
-    elseif cache.current == 6
-        stepsize_controller!(integrator, @inbounds(cache.cache6), alg)
-    end
-end
-
-function step_accept_controller!(integrator, cache::DefaultCache, alg, q)
-    return if cache.current == 1
-        step_accept_controller!(integrator, @inbounds(cache.cache1), alg, q)
-    elseif cache.current == 2
-        step_accept_controller!(integrator, @inbounds(cache.cache2), alg, q)
-    elseif cache.current == 3
-        step_accept_controller!(integrator, @inbounds(cache.cache3), alg, q)
-    elseif cache.current == 4
-        step_accept_controller!(integrator, @inbounds(cache.cache4), alg, q)
-    elseif cache.current == 5
-        step_accept_controller!(integrator, @inbounds(cache.cache5), alg, q)
-    elseif cache.current == 6
-        step_accept_controller!(integrator, @inbounds(cache.cache6), alg, q)
-    end
-end
-
-function step_reject_controller!(integrator, cache::DefaultCache, alg)
-    return if cache.current == 1
-        step_reject_controller!(integrator, @inbounds(cache.cache1), alg)
-    elseif cache.current == 2
-        step_reject_controller!(integrator, @inbounds(cache.cache2), alg)
-    elseif cache.current == 3
-        step_reject_controller!(integrator, @inbounds(cache.cache3), alg)
-    elseif cache.current == 4
-        step_reject_controller!(integrator, @inbounds(cache.cache4), alg)
-    elseif cache.current == 5
-        step_reject_controller!(integrator, @inbounds(cache.cache5), alg)
-    elseif cache.current == 6
-        step_reject_controller!(integrator, @inbounds(cache.cache6), alg)
-    end
-end
-
-# This is a workaround to make the BDF methods work with composite algorithms
-function post_newton_controller!(integrator, cache::DefaultCache, alg)
-    if cache.current == 1
-        post_newton_controller!(integrator, @inbounds(cache.cache1), alg)
-    elseif cache.current == 2
-        post_newton_controller!(integrator, @inbounds(cache.cache2), alg)
-    elseif cache.current == 3
-        post_newton_controller!(integrator, @inbounds(cache.cache3), alg)
-    elseif cache.current == 4
-        post_newton_controller!(integrator, @inbounds(cache.cache4), alg)
-    elseif cache.current == 5
-        post_newton_controller!(integrator, @inbounds(cache.cache5), alg)
-    elseif cache.current == 6
-        post_newton_controller!(integrator, @inbounds(cache.cache6), alg)
-    end
-    return nothing
 end
