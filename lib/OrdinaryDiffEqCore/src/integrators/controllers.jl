@@ -478,11 +478,13 @@ end
 mutable struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
     controller::PIDController{T, Limiter}
     err::MVector{3, T} # history of the error estimates
+    dt_factor::T
 end
 
 function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIDControllerCache{T}) where {T}
     cache.err = MVector{3, T}(true, true, true)
-    return cache.dt_factor = T(1 // 10^4)
+    cache.dt_factor = one(T)
+    return nothing
 end
 
 function setup_controller_cache(alg, cache, controller::PIDController{QT}) where {QT}
@@ -490,6 +492,7 @@ function setup_controller_cache(alg, cache, controller::PIDController{QT}) where
     return PIDControllerCache(
         controller,
         err,
+        one(QT),
     )
 end
 
@@ -525,7 +528,7 @@ end
     if isnan(dt_factor)
         @warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k
     end
-    dt_factor_limited = controller.limiter(dt_factor)
+    cache.dt_factor = controller.limiter(dt_factor)
 
     # Note: No additional limiting of the form
     #   dt_factor = max(qmin, min(qmax, dt_factor))
@@ -533,7 +536,7 @@ end
     # ensures
     #   0.21 ≈ limiter(0) <= dt_factor <= limiter(Inf) ≈ 2.57
     # See Söderlind, Wang (2006), Section 6.
-    return dt_factor_limited
+    return cache.dt_factor
 end
 
 @inline function accept_step_controller(integrator, cache::PIDControllerCache, alg)
@@ -560,6 +563,7 @@ end
 
 function sync_controllers!(cache1::PIDControllerCache, cache2::PIDControllerCache)
     cache1.err = cache2.err
+    cache1.dt_factor = cache2.dt_factor
     return nothing
 end
 
