@@ -25,6 +25,6 @@ p = [0.04, 3.0e7, 1.0e4, 1.0]
 prob = DAEProblem(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
 sol = solve(prob, DFBDF(), callback = cb, tstops = [50.0], abstol = 1.0e-12, reltol = 1.0e-12)
 @test sol.t[end] == 100.0
-@test sol.u[end][1] ≈ 0.686300529575259 atol = 1.0e-7
-@test sol.u[end][2] ≈ 2.0797982209353813e-6 atol = 1.0e-7
-@test sol.u[end][3] ≈ 1.31369739062652 atol = 1.0e-7
+@test sol[end][1] ≈ 0.686300529575259 atol = 1.0e-7
+@test sol[end][2] ≈ 2.0797982209353813e-6 atol = 1.0e-7
+@test sol[end][3] ≈ 1.31369739062652 atol = 1.0e-7

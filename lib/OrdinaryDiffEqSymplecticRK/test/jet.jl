@@ -6,6 +6,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqSymplecticRK, target_modules = (OrdinaryDiffEqSymplecticRK,), mode = :typo
+        OrdinaryDiffEqSymplecticRK, target_defined_modules = true, mode = :typo
     )
 end
