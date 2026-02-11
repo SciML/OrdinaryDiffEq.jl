@@ -1,7 +1,7 @@
 module OrdinaryDiffEqDefault
 
 using OrdinaryDiffEqCore: alg_stability_size, beta2_default, beta1_default, AutoSwitchCache,
-    ODEIntegrator, trivial_limiter!,
+    ODEIntegrator, trivial_limiter!, PIController,
     CompositeAlgorithm, OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, AutoAlgSwitch
 using OrdinaryDiffEqVerner: Vern7, Vern8, Vern9, Vern6
