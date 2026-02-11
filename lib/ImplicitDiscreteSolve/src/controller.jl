@@ -97,7 +97,7 @@ function OrdinaryDiffEqCore.step_reject_controller!(
     return
 end
 
-function OrdinaryDiffEqCore.accept_step_controller(integrator, cache::KantorovichTypeControllerCache)
+function OrdinaryDiffEqCore.accept_step_controller(integrator, cache::KantorovichTypeControllerCache, alg)
     (; controller) = cache
     (; Θks) = integrator.cache
     if controller.strict
