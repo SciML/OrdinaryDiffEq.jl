@@ -450,7 +450,7 @@ function SciMLBase.reinit!(
     integrator.success_iter = 0
     integrator.u_modified = false
 
-    # full re-initialize the PI in timestepping
+    # full re-initialize the controller in timestepping
     reinit!(integrator, integrator.controller_cache)
 
     if reset_dt
