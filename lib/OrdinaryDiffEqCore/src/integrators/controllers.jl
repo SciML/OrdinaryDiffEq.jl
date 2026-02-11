@@ -3,7 +3,7 @@ abstract type AbstractController end
 abstract type AbstractControllerCache end
 
 """
-    setup_controller_cache(alg, atmp, controller::AbstractController)::AbstractControllerCache
+    setup_controller_cache(alg, algcache, controller::AbstractController)::AbstractControllerCache
 
 This function takes a controller together with the time stepping algorithm to
 construct and initialize the respective cache for the controller.
@@ -94,12 +94,10 @@ function post_newton_controller!(integrator, controller, alg)
     return nothing
 end
 
-# This is a temporary helper struct to control the dispatches for Nordsieck and BDF methods, which come with an integrated controller.
+# This is a helper struct for algorithms with integrated controllers like Nordsieck and BDF methods.
 struct DummyController <: AbstractController
 end
-
-setup_controller_cache(alg, atmp, controller::DummyController) = controller
-SciMLBase.reinit!(integrator::ODEIntegrator, controller::DummyController) = nothing
+setup_controller_cache(alg, cache, controller::DummyController) = cache
 
 
 # Standard integral (I) step size controller
@@ -773,22 +771,26 @@ struct CompositeController{T} <: AbstractController
     controllers::T
 end
 
-struct CompositeControllerCache{T, UT} <: AbstractControllerCache
+struct CompositeControllerCache{T} <: AbstractControllerCache
     caches::T
-    atmp::UT # This is just here for easy access
 end
 
-function setup_controller_cache(alg::CompositeAlgorithm, atmp, cc::CompositeController)
+function setup_controller_cache(alg::CompositeAlgorithm, caches::CompositeCache, cc::CompositeController)
     return CompositeControllerCache(
-        map((alg, controller) -> setup_controller_cache(alg, atmp, controller), alg.algs, cc.controllers),
-        atmp,
+        map((alg, cache, controller) -> setup_controller_cache(alg, cache, controller), alg.algs, caches.caches, cc.controllers),
     )
 end
 
-function setup_controller_cache(alg::CompositeAlgorithm, atmp::AbstractVector{T}, cc::DummyController) where {T}
+function setup_controller_cache(alg::CompositeAlgorithm, caches::DefaultCache, cc::CompositeController)
     return CompositeControllerCache(
-        map(alg -> setup_controller_cache(alg, atmp, default_controller(T, alg)), alg.algs),
-        atmp,
+        (
+            setup_controller_cache(alg.algs[1], caches.cache1, controller.controllers[1]),
+            setup_controller_cache(alg.algs[2], caches.cache2, controller.controllers[2]),
+            setup_controller_cache(alg.algs[3], caches.cache3, controller.controllers[3]),
+            setup_controller_cache(alg.algs[4], caches.cache4, controller.controllers[4]),
+            setup_controller_cache(alg.algs[5], caches.cache5, controller.controllers[5]),
+            setup_controller_cache(alg.algs[6], caches.cache6, controller.controllers[6]),
+        )
     )
 end
 
@@ -835,23 +837,6 @@ end
 @inline function post_newton_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
     current_idx = integrator.cache.current
     return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
-end
-
-# We need this for now as a workaround to redispatch from the dummy controller onto the algorithm cache,
-# as DummyController imples the algorithm itself is responsible for the control.
-@inline function accept_step_controller(integrator, controller::DummyController)
-    return integrator.EEst <= 1
-end
-@inline stepsize_controller!(integrator, controller::DummyController, alg) = stepsize_controller!(integrator, integrator.cache, alg)
-@inline step_accept_controller!(integrator, controller::DummyController, alg, q) = step_accept_controller!(integrator, integrator.cache, alg, q)
-@inline step_reject_controller!(integrator, controller::DummyController, alg) = step_reject_controller!(integrator, integrator.cache, alg)
-@inline post_newton_controller!(integrator, controller::DummyController, alg) = post_newton_controller!(integrator, integrator.cache, alg)
-
-# TODO remove this for OrdinaryDiffEq v7 . Right now the integrator is expected to carry a controller. Therefore algorithms coming with a custom controller default to a DummyController too.
-# Instead of scattering this function across all subpackages we add the default dispatch here.
-function default_post_newton_controller!(integrator, cache, alg)
-    integrator.dt = integrator.dt / integrator.opts.failfactor
-    return nothing
 end
 
 # Default alg with dummy controller

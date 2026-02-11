@@ -478,13 +478,7 @@ function SciMLBase.__init(
         typeof(internalnorm(u, t))
     end
 
-    atmp = if hasfield(typeof(cache), :atmp)
-        cache.atmp
-    else
-        nothing
-    end
-    # TODO move this into the algorithm setup
-    controller_cache = setup_controller_cache(_alg, atmp, controller)
+    controller_cache = setup_controller_cache(_alg, cache, controller)
 
     save_end_user = save_end
     save_end = save_end === nothing ?

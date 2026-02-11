@@ -48,7 +48,7 @@ function OrdinaryDiffEqCore.default_controller(
     return KantorovichTypeController{QT}(; Θmin = QT(1 // 8), p = 1)
 end
 
-function OrdinaryDiffEqCore.setup_controller_cache(alg, atmp, controller::KantorovichTypeController{T}) where {T}
+function OrdinaryDiffEqCore.setup_controller_cache(alg, cache, controller::KantorovichTypeController{T}) where {T}
     return KantorovichTypeControllerCache(
         controller,
         T(1),
