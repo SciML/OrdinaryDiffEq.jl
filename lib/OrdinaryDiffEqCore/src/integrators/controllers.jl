@@ -195,7 +195,7 @@ function IController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = 
     )
 end
 
-mutable struct IControllerCache{T, UT} <: AbstractControllerCache
+mutable struct IControllerCache{T} <: AbstractControllerCache
     controller::IController{T}
     dtreject::T
 end
