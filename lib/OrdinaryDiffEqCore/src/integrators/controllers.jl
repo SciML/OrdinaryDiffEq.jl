@@ -81,6 +81,11 @@ end
 reset_alg_dependent_opts!(controller::AbstractControllerCache, alg1, alg2) = nothing
 
 SciMLBase.reinit!(integrator::ODEIntegrator, controller::AbstractControllerCache) = nothing
+sync_controllers!(::AbstractControllerCache, ::AbstractControllerCache) = nothing
+
+# Remember: Caches can also hold the control algorithm (see e.g. BDF and Nordsieck methods).
+SciMLBase.reinit!(integrator::ODEIntegrator, cache::OrdinaryDiffEqCache) = nothing
+sync_controllers!(cache::OrdinaryDiffEqCache, cache::OrdinaryDiffEqCache) = nothing
 
 function post_newton_controller!(integrator, alg)
     return post_newton_controller!(integrator, integrator.controller_cache, alg)
