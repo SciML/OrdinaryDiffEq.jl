@@ -11,13 +11,13 @@ f2 = (u, p, t) -> 2u
 prob = SplitODEProblem(f1, f2, 1.0, (0.0, 1.0))
 sol = solve(prob, SplitEuler(), dt = 1 / 10)
 sol2 = solve(prob, Euler(), dt = 1 / 10)
-@test sol2[end] == sol[end]
+@test sol2.u[end] == sol.u[end]
 @test sol2(0.345) == sol(0.345)
 
 f3 = (u, p, t) -> 4u
 prob2 = ODEProblem(f3, 1.0, (0.0, 1.0))
 sol3 = solve(prob2, Euler(), dt = 1 / 10)
-@test sol3[end] == sol[end]
+@test sol3.u[end] == sol.u[end]
 @test sol3(0.345) == sol(0.345)
 
 u = rand(4, 2)
@@ -27,14 +27,14 @@ prob = SplitODEProblem(f1, f2, u, (0.0, 1.0))
 sol = solve(prob, SplitEuler(), dt = 1 / 10)
 sol2 = solve(prob, Euler(), dt = 1 / 10)
 
-@test sol2[end] == sol[end]
+@test sol2.u[end] == sol.u[end]
 @test sol2(0.345) == sol(0.345)
 
 f3 = (du, u, p, t) -> du .= 4u
 prob2 = ODEProblem(f3, u, (0.0, 1.0))
 sol3 = solve(prob2, Euler(), dt = 1 / 10)
 
-@test sol3[end] == sol[end]
+@test sol3.u[end] == sol.u[end]
 @test sol3(0.345) == sol(0.345)
 
 println("OOP Tests")

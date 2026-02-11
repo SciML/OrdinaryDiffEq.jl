@@ -75,7 +75,7 @@ for Alg in (KenCarp3, KenCarp4, KenCarp5, KenCarp47, KenCarp58)
     split_sol = solve(sprob, Alg(), reltol = 1.0e-8)
     @test split_sol.retcode == ReturnCode.Success
 
-    L2 = norm(sol[end] .- split_sol[end]) / sqrt(N)
+    L2 = norm(sol.u[end] .- split_sol.u[end]) / sqrt(N)
     println(" ", L2)
     @test L2 < 1.0e-6
 end

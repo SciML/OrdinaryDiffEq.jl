@@ -20,24 +20,24 @@ prob_mm = ODEProblem(f_oop, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 sol = solve(
     prob_mm, Rosenbrock23(autodiff = AutoFiniteDiff()), reltol = 1.0e-8, abstol = 1.0e-8
 )
-@test sol[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
+@test sol.u[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
 sol = solve(
     prob_mm, Rosenbrock23(), reltol = 1.0e-8, abstol = 1.0e-8,
     initializealg = ShampineCollocationInit()
 )
-@test sol[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
+@test sol.u[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
 
 prob_mm = ODEProblem(f_oop, [1.0, 0.0, 0.2], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 sol = solve(prob_mm, Rosenbrock23(), reltol = 1.0e-8, abstol = 1.0e-8)
-@test sum(sol[1]) ≈ 1
-@test sol[1] ≈ [1.0, 0.0, 0.0]
+@test sum(sol.u[1]) ≈ 1
+@test sol.u[1] ≈ [1.0, 0.0, 0.0]
 for alg in [Rosenbrock23(autodiff = AutoFiniteDiff()), Trapezoid()]
     local sol
     sol = solve(
         prob_mm, alg, reltol = 1.0e-8, abstol = 1.0e-8,
         initializealg = ShampineCollocationInit()
     )
-    @test sum(sol[1]) ≈ 1
+    @test sum(sol.u[1]) ≈ 1
 end
 
 function rober(du, u, p, t)
@@ -56,17 +56,17 @@ M = [
 f = ODEFunction(rober, mass_matrix = M)
 prob_mm = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 sol = solve(prob_mm, Rodas5(autodiff = AutoFiniteDiff()), reltol = 1.0e-8, abstol = 1.0e-8)
-@test sol[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
+@test sol.u[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
 sol = solve(
     prob_mm, Rodas5(), reltol = 1.0e-8, abstol = 1.0e-8,
     initializealg = ShampineCollocationInit()
 )
-@test sol[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
+@test sol.u[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
 
 prob_mm = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 sol = solve(prob_mm, Rodas5(), reltol = 1.0e-8, abstol = 1.0e-8)
-@test sum(sol[1]) ≈ 1
-@test sol[1] ≈ [1.0, 0.0, 0.0]
+@test sum(sol.u[1]) ≈ 1
+@test sol.u[1] ≈ [1.0, 0.0, 0.0]
 
 for alg in [Rodas5(autodiff = AutoFiniteDiff()), Trapezoid()]
     local sol
@@ -74,7 +74,7 @@ for alg in [Rodas5(autodiff = AutoFiniteDiff()), Trapezoid()]
         prob_mm, alg, reltol = 1.0e-8, abstol = 1.0e-8,
         initializealg = ShampineCollocationInit()
     )
-    @test sum(sol[1]) ≈ 1
+    @test sum(sol.u[1]) ≈ 1
 end
 
 function rober_no_p(du, u, p, t)

@@ -28,7 +28,7 @@ if TEST_GROUP != "QA"
         oprob = ODEProblem(lotkavolterra, u0, tspan)
         osol = solve(oprob, ImplicitEuler())
 
-        @test isapprox(idsol[end - 1], osol[end], atol = 0.1)
+        @test isapprox(idsol.u[end - 1], osol.u[end], atol = 0.1)
 
         ### free-fall
         # y, dy
@@ -51,7 +51,7 @@ if TEST_GROUP != "QA"
         oprob = ODEProblem(ff, u0, tspan)
         osol = solve(oprob, ImplicitEuler())
 
-        @test isapprox(idsol[end - 1], osol[end], atol = 0.1)
+        @test isapprox(idsol.u[end - 1], osol.u[end], atol = 0.1)
     end
 
     @testset "Solver initializes" begin

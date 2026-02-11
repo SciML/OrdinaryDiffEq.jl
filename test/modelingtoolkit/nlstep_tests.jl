@@ -12,7 +12,7 @@ eqs = [
     D(y₂) ~ k₁ * y₁ - k₂ * y₂^2 - k₃ * y₂ * y₃,
     D(y₃) ~ k₂ * y₂^2,
 ]
-@mtkcompile rober = ODESystem(eqs, t)
+@mtkcompile rober = System(eqs, t)
 prob = ODEProblem(rober, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3.0e7, 1.0e4)], (0.0, 1.0e5), jac = true)
 prob2 = ODEProblem(rober, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3.0e7, 1.0e4)], (0.0, 1.0e5), jac = true, nlstep = true)
 
@@ -64,7 +64,7 @@ eqs_nonaut = [
     D(y₂) ~ k₁ * y₁ - (t + 1) * k₂ * y₂^2 - (t + 1) * k₃ * y₂ * y₃,
     D(y₃) ~ (t + 1) * k₂ * y₂^2,
 ]
-@mtkcompile rober_nonaut = ODESystem(eqs_nonaut, t)
+@mtkcompile rober_nonaut = System(eqs_nonaut, t)
 prob = ODEProblem(rober_nonaut, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3.0e7, 1.0e4)], (0.0, 1.0e5), jac = true)
 prob2 = ODEProblem(rober_nonaut, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3.0e7, 1.0e4)], (0.0, 1.0e5), jac = true, nlstep = true)
 
