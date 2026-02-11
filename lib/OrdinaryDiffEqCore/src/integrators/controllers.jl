@@ -351,7 +351,6 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIControllerCache{T
 end
 
 function sync_controllers!(cache1::PIControllerCache, cache2::PIControllerCache)
-    cache1.q = cache2.q
     cache1.q11 = cache2.q11
     cache1.errold = cache2.errold
     return nothing
@@ -561,7 +560,6 @@ end
 
 function sync_controllers!(cache1::PIDControllerCache, cache2::PIDControllerCache)
     cache1.err = cache2.err
-    cache1.dtfactor = cache2.dtfactor
     return nothing
 end
 
