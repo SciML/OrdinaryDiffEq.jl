@@ -1,4 +1,4 @@
-function default_controller(QT, alg::Union{QNDF, FBDF, DFBDF}, args...)
+function default_controller(QT, alg::Union{QNDF, FBDF, DFBDF})
     return DummyController()
 end
 
