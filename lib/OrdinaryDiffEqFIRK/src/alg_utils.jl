@@ -5,6 +5,11 @@ alg_order(alg::RadauIIA5) = 5
 alg_order(alg::RadauIIA9) = 9
 alg_order(alg::AdaptiveRadau) = 5 #dummy value
 
+ispredictive(alg::RadauIIA3) = true
+ispredictive(alg::RadauIIA5) = true
+ispredictive(alg::RadauIIA9) = true
+ispredictive(alg::AdaptiveRadau) = true
+
 isfirk(alg::RadauIIA3) = true
 isfirk(alg::RadauIIA5) = true
 isfirk(alg::RadauIIA9) = true

@@ -31,6 +31,12 @@ isadaptive(alg::DFBDF) = true
 
 has_special_newton_error(alg::QNDF) = true
 
+isstandard(::DImplicitEuler) = true
+isstandard(::ABDF2) = true
+isstandard(::QNDF1) = true
+isstandard(::QNDF2) = true
+isstandard(::DABDF2) = true
+
 alg_extrapolates(alg::DImplicitEuler) = true
 alg_extrapolates(alg::DABDF2) = true
 

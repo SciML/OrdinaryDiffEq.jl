@@ -17,7 +17,6 @@ struct IRKC{CS, AD, F, F2, P, FDT, ST, CJ, K, T, E} <:
     κ::K
     tol::T
     extrapolant::Symbol
-    controller::Symbol
     eigen_est::E
     autodiff::AD
 end
@@ -27,7 +26,7 @@ function IRKC(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard, eigen_est = nothing
+        extrapolant = :linear, eigen_est = nothing
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
@@ -37,6 +36,6 @@ function IRKC(;
         typeof(κ), typeof(tol), typeof(eigen_est),
     }(
         linsolve, nlsolve, precs, κ, tol,
-        extrapolant, controller, eigen_est, AD_choice
+        extrapolant, eigen_est, AD_choice
     )
 end

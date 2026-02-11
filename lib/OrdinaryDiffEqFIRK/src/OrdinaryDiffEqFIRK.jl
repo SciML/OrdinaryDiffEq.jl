@@ -2,7 +2,7 @@ module OrdinaryDiffEqFIRK
 
 import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     initialize!, perform_step!, unwrap_alg,
-    calculate_residuals,
+    calculate_residuals, ispredictive,
     OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
