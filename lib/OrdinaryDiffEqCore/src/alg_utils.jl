@@ -369,18 +369,6 @@ alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_orde
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 
-# FIXME this is a temporary fix to see what happens in downstream CI
-function default_controller(alg, cache, qoldinit, beta1 = nothing, beta2 = nothing)
-    QT = qoldinit === nothing ? Float64 : typeof(qoldinit)
-    if ispredictive(alg)
-        return PredictiveController(QT, alg)
-    elseif isstandard(alg)
-        return IController(QT, alg)
-    else
-        return PIController(QT, alg)
-    end
-end
-
 function default_controller(QT, alg)
     if ispredictive(alg)
         return PredictiveController(QT, alg)
@@ -514,9 +502,9 @@ uses_uprev(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, adaptive::Bool) = 
 uses_uprev(alg::OrdinaryDiffEqAdaptiveAlgorithm, adaptive::Bool) = true
 
 ispredictive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
+ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = false
 isstandard(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
+isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = false
 
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 

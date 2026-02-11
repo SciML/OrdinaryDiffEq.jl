@@ -47,7 +47,7 @@ function SciMLBase.__init(
         adaptive = anyadaptive(alg),
         abstol = nothing,
         reltol = nothing,
-        controller = nothing, # Deprecated. Should be passed via algorithm.
+        controller = nothing,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
@@ -462,13 +462,6 @@ function SciMLBase.__init(
             tTypeNoUnits, uprev, uprev2, f, t, _dt, reltol_internal, p, calck,
             Val(isinplace(prob)), verbose_spec
         )
-    end
-
-    # Deprecation warnings for users to break down which parameters they accidentally set.
-    if (controller !== nothing)
-        message = "Providing the legacy input `controller` is deprecated. Please pass the controller via the algorithm."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
     end
 
     QT = determine_controller_datatype(u, internalnorm, tspan)

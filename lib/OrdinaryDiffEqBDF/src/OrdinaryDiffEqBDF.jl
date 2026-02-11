@@ -3,7 +3,7 @@ module OrdinaryDiffEqBDF
 import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals, alg_extrapolates,
-    OrdinaryDiffEqAlgorithm,
+    OrdinaryDiffEqAlgorithm, isstandard,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqNewtonAlgorithm,
