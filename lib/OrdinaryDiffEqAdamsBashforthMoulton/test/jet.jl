@@ -6,6 +6,6 @@ using JET
 
 @testset "JET Tests" begin
     test_package(
-        OrdinaryDiffEqAdamsBashforthMoulton, target_modules = (OrdinaryDiffEqAdamsBashforthMoulton,), mode = :typo
+        OrdinaryDiffEqAdamsBashforthMoulton, target_defined_modules = true, mode = :typo
     )
 end

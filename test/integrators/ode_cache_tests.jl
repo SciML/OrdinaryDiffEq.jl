@@ -64,23 +64,23 @@ end
 
 println("Check some other integrators")
 sol = solve(prob, Rosenbrock23(), callback = callback, dt = 1 / 2)
-@test length(sol.u[end]) > 1
+@test length(sol[end]) > 1
 sol = solve(prob, Rosenbrock32(), callback = callback, dt = 1 / 2)
-@test length(sol.u[end]) > 1
+@test length(sol[end]) > 1
 sol = solve(prob, KenCarp4(), callback = callback, dt = 1 / 2)
-@test length(sol.u[end]) > 1
+@test length(sol[end]) > 1
 sol = solve(prob, TRBDF2(), callback = callback, dt = 1 / 2)
-@test length(sol.u[end]) > 1
+@test length(sol[end]) > 1
 sol = solve(
     prob, TRBDF2(linsolve = LinearSolve.KrylovJL_GMRES()),
     callback = callback
 )
-@test length(sol.u[end]) > 1
+@test length(sol[end]) > 1
 
 for alg in CACHE_TEST_ALGS
     @show alg
     local sol = solve(prob, alg, callback = callback, dt = 1 / 2)
-    @test length(sol.u[end]) > 1
+    @test length(sol[end]) > 1
 end
 
 for alg in broken_CACHE_TEST_ALGS
@@ -92,12 +92,12 @@ sol = solve(
     prob, Rodas4(autodiff = AutoForwardDiff(chunksize = 1)),
     callback = callback, dt = 1 / 2
 )
-@test length(sol.u[end]) > 1
+@test length(sol[end]) > 1
 sol = solve(
     prob, Rodas5(autodiff = AutoForwardDiff(chunksize = 1)),
     callback = callback, dt = 1 / 2
 )
-@test length(sol.u[end]) > 1
+@test length(sol[end]) > 1
 
 # cache tests resizing multidimensional arrays
 println("Check resizing multidimensional arrays")
@@ -116,7 +116,7 @@ for alg in CACHE_TEST_ALGS
     OrdinaryDiffEqCore.isimplicit(alg) && continue # this restriction should be removed in the future
     @show alg
     local sol = solve(prob_matrix, alg, callback = callback_matrix, dt = 1 / 2)
-    @test size(sol.u[end]) == (2, 3)
+    @test size(sol[end]) == (2, 3)
 end
 
 # additional cache tests to find more bugs
@@ -137,9 +137,9 @@ for alg in CACHE_TEST_ALGS
         continue
     @show alg
     local sol = solve(prob_resize3, alg, callback = callback_resize3, dt = 0.125)
-    @test size(sol.u[end]) == (3,)
-    @test all(sol.u[end] .== sol.u[end][1])
-    @test sol.u[end][1] ≈ exp(1) atol = 1.0e-2
+    @test size(sol[end]) == (3,)
+    @test all(sol[end] .== sol[end][1])
+    @test sol[end][1] ≈ exp(1) atol = 1.0e-2
 end
 
 # additional cache tests to find more bugs
@@ -205,4 +205,4 @@ u0 = [0.2]
 tspan = (0.0, 20.0)
 prob = ODEProblem(f2, u0, tspan)
 sol = solve(prob, AutoTsit5(Rosenbrock23()), callback = callback)
-@test length(sol.u[end]) > 1
+@test length(sol[end]) > 1

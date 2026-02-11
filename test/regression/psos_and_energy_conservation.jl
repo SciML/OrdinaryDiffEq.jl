@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, ADTypes, Test, Random, LinearAlgebra, SparseArrays, Statistics
+using OrdinaryDiffEq, ADTypes, Test, Random, LinearAlgebra, SparseArrays
 
 # Parameters
 Nc = 22
@@ -44,9 +44,8 @@ for i in 1:Ntraj
     push!(sol_tot, sol)
 end
 
-# This number has to be η^2/κ^2 in steady-state; the mean over trajectories should converge there
+# This number has to be η^2/κ^2 in steady-state; all trajectories should converge there
 n = [[norm(A * normalize(s.u[j]))^2 for j in 1:length(s.t)] for s in sol_tot]
-endpoints = [k[end] for k in n]
 
 @test isapprox(mean(endpoints), η^2 / κ^2, atol = 1.0e-3)
 
