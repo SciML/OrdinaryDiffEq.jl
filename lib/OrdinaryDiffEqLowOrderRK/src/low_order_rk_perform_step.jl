@@ -407,7 +407,7 @@ end
 
 function initialize!(integrator, cache::BS5ConstantCache)
     alg = unwrap_alg(integrator, false)
-    alg.lazy ? (integrator.kshortsize = 8) : (integrator.kshortsize = 11)
+    _unwrap_val(alg.lazy) ? (integrator.kshortsize = 8) : (integrator.kshortsize = 11)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -420,7 +420,7 @@ function initialize!(integrator, cache::BS5ConstantCache)
     end
     integrator.k[integrator.kshortsize] = integrator.fsallast
 
-    return if !alg.lazy
+    return if !_unwrap_val(alg.lazy)
         @inbounds for i in 9:11
             integrator.k[i] = zero(integrator.fsalfirst)
         end
@@ -479,7 +479,7 @@ end
     integrator.u = u
 
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (
+    if !_unwrap_val(alg.lazy) && (
             integrator.opts.adaptive == false ||
                 accept_step_controller(integrator, integrator.opts.controller)
         )
@@ -520,7 +520,7 @@ end
 get_fsalfirstlast(cache::BS5Cache, u) = (cache.k1, cache.k8)
 function initialize!(integrator, cache::BS5Cache)
     alg = unwrap_alg(integrator, false)
-    alg.lazy ? (integrator.kshortsize = 8) : (integrator.kshortsize = 11)
+    _unwrap_val(alg.lazy) ? (integrator.kshortsize = 8) : (integrator.kshortsize = 11)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k1
     integrator.k[2] = cache.k2
@@ -531,7 +531,7 @@ function initialize!(integrator, cache::BS5Cache)
     integrator.k[7] = cache.k7
     integrator.k[8] = cache.k8
 
-    if !alg.lazy
+    if !_unwrap_val(alg.lazy)
         integrator.k[9] = similar(cache.k1)
         integrator.k[10] = similar(cache.k1)
         integrator.k[11] = similar(cache.k1)
@@ -612,7 +612,7 @@ end
         integrator.EEst = max(EEst1, EEst2)
     end
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (
+    if !_unwrap_val(alg.lazy) && (
             integrator.opts.adaptive == false ||
                 accept_step_controller(integrator, integrator.opts.controller)
         )

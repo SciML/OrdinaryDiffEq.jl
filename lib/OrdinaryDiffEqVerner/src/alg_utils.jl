@@ -15,4 +15,4 @@ alg_stability_size(alg::Vern8) = 5.8641
 alg_stability_size(alg::Vern9) = 4.4762
 alg_stability_size(alg::RKV76IIa) = 4.910807773  # From the file: Real Stability Interval is nearly [ -4.910807773, 0]
 
-SciMLBase.has_lazy_interpolation(alg::Union{Vern6, Vern7, Vern8, Vern9, RKV76IIa}) = true
+SciMLBase.has_lazy_interpolation(alg::Union{Vern6, Vern7, Vern8, Vern9, RKV76IIa}) = _unwrap_val(alg.lazy)

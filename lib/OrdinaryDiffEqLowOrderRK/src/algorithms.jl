@@ -210,11 +210,15 @@ end
     extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.""",
     extra_keyword_default = "lazy = true"
 )
-Base.@kwdef struct BS5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct BS5{StageLimiter, StepLimiter, Thread, L} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
-    lazy::Bool = true
+    lazy::L = Val{true}()
+end
+# Convert Bool lazy to Val for backwards compatibility
+function BS5(stage_limiter!::StageLimiter, step_limiter!::StepLimiter, thread::Thread, lazy::Bool) where {StageLimiter, StepLimiter, Thread}
+    BS5{StageLimiter, StepLimiter, Thread, Val{lazy}}(stage_limiter!, step_limiter!, thread, Val{lazy}())
 end
 # for backwards compatibility
 function BS5(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)

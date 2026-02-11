@@ -2,7 +2,7 @@ function initialize!(integrator, cache::Vern6ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     alg = unwrap_alg(integrator, false)
-    cache.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
@@ -13,7 +13,7 @@ function initialize!(integrator, cache::Vern6ConstantCache)
     end
     integrator.k[integrator.kshortsize] = integrator.fsallast
 
-    return if !cache.lazy
+    return if !_unwrap_val(cache.lazy)
         @inbounds for i in 10:12
             integrator.k[i] = zero(integrator.fsalfirst)
         end
@@ -69,7 +69,7 @@ end
     integrator.k[9] = k9
 
     alg = unwrap_alg(integrator, false)
-    if !cache.lazy && (
+    if !_unwrap_val(cache.lazy) && (
             integrator.opts.adaptive == false ||
                 accept_step_controller(integrator, integrator.opts.controller)
         )
@@ -111,7 +111,7 @@ end
 
 function initialize!(integrator, cache::Vern6Cache)
     alg = unwrap_alg(integrator, false)
-    cache.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
     (; k) = integrator
     resize!(k, integrator.kshortsize)
     k[1] = cache.k1
@@ -124,7 +124,7 @@ function initialize!(integrator, cache::Vern6Cache)
     k[8] = cache.k8
     k[9] = cache.k9 # Set the pointers
 
-    if !cache.lazy
+    if !_unwrap_val(cache.lazy)
         k[10] = similar(cache.k1)
         k[11] = similar(cache.k1)
         k[12] = similar(cache.k1)
@@ -204,7 +204,7 @@ end
     end
 
     alg = unwrap_alg(integrator, false)
-    if !cache.lazy && (
+    if !_unwrap_val(cache.lazy) && (
             integrator.opts.adaptive == false ||
                 accept_step_controller(integrator, integrator.opts.controller)
         )
@@ -244,7 +244,7 @@ end
 
 function initialize!(integrator, cache::Vern7ConstantCache)
     alg = unwrap_alg(integrator, false)
-    cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
@@ -314,7 +314,7 @@ end
     integrator.u = u
 
     alg = unwrap_alg(integrator, false)
-    if !cache.lazy && (
+    if !_unwrap_val(cache.lazy) && (
             integrator.opts.adaptive == false ||
                 accept_step_controller(integrator, integrator.opts.controller)
         )
@@ -386,7 +386,7 @@ function initialize!(integrator, cache::Vern7Cache)
     (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10) = cache
     (; k) = integrator
     alg = unwrap_alg(integrator, false)
-    cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
     resize!(k, integrator.kshortsize)
     k[1] = k1
     k[2] = k2
@@ -399,7 +399,7 @@ function initialize!(integrator, cache::Vern7Cache)
     k[9] = k9
     k[10] = k10 # Setup pointers
 
-    return if !cache.lazy
+    return if !_unwrap_val(cache.lazy)
         k[11] = similar(cache.k1)
         k[12] = similar(cache.k1)
         k[13] = similar(cache.k1)
@@ -501,7 +501,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     alg = unwrap_alg(integrator, false)
-    if !cache.lazy && (
+    if !_unwrap_val(cache.lazy) && (
             integrator.opts.adaptive == false ||
                 accept_step_controller(integrator, integrator.opts.controller)
         )
@@ -571,7 +571,7 @@ end
 
 function initialize!(integrator, cache::Vern8ConstantCache)
     alg = unwrap_alg(integrator, false)
-    cache.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
@@ -675,7 +675,7 @@ end
     integrator.u = u
 
     alg = unwrap_alg(integrator, false)
-    if !cache.lazy && (
+    if !_unwrap_val(cache.lazy) && (
             integrator.opts.adaptive == false ||
                 accept_step_controller(integrator, integrator.opts.controller)
         )
@@ -768,7 +768,7 @@ function initialize!(integrator, cache::Vern8Cache)
     (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13) = cache
     (; k) = integrator
     alg = unwrap_alg(integrator, false)
-    cache.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
     resize!(k, integrator.kshortsize)
     k[1] = k1
     k[2] = k2
@@ -784,7 +784,7 @@ function initialize!(integrator, cache::Vern8Cache)
     k[12] = k12
     k[13] = k13 # Setup pointers
 
-    return if !cache.lazy
+    return if !_unwrap_val(cache.lazy)
         for i in 14:21
             k[i] = similar(cache.k1)
         end
@@ -907,7 +907,7 @@ end
     end
 
     alg = unwrap_alg(integrator, false)
-    if !cache.lazy && (
+    if !_unwrap_val(cache.lazy) && (
             integrator.opts.adaptive == false ||
                 accept_step_controller(integrator, integrator.opts.controller)
         )
@@ -1012,7 +1012,7 @@ end
 
 function initialize!(integrator, cache::Vern9ConstantCache)
     alg = unwrap_alg(integrator, false)
-    cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
@@ -1128,7 +1128,7 @@ end
     integrator.u = u
 
     alg = unwrap_alg(integrator, false)
-    if !cache.lazy && (
+    if !_unwrap_val(cache.lazy) && (
             integrator.opts.adaptive == false ||
                 accept_step_controller(integrator, integrator.opts.controller)
         )
@@ -1247,7 +1247,7 @@ function initialize!(integrator, cache::Vern9Cache)
     (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16) = cache
     (; k) = integrator
     alg = unwrap_alg(integrator, false)
-    cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
     resize!(k, integrator.kshortsize)
     # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we don't need their pointers.
     # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on.
@@ -1262,7 +1262,7 @@ function initialize!(integrator, cache::Vern9Cache)
     k[9] = k15
     k[10] = k16 # Setup pointers
 
-    return if !cache.lazy
+    return if !_unwrap_val(cache.lazy)
         for i in 11:20
             k[i] = similar(cache.k1)
         end
@@ -1410,7 +1410,7 @@ end
     end
 
     alg = unwrap_alg(integrator, false)
-    if !cache.lazy && (
+    if !_unwrap_val(cache.lazy) && (
             integrator.opts.adaptive == false ||
                 accept_step_controller(integrator, integrator.opts.controller)
         )
@@ -1545,7 +1545,7 @@ function initialize!(integrator, cache::RKV76IIaConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     alg = unwrap_alg(integrator, false)
-    cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 10)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 10) : (integrator.kshortsize = 10)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
@@ -1610,7 +1610,7 @@ end
 
 function initialize!(integrator, cache::RKV76IIaCache)
     alg = unwrap_alg(integrator, false)
-    cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 10)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 10) : (integrator.kshortsize = 10)
     (; k) = integrator
     resize!(k, integrator.kshortsize)
     k[1] = cache.k1

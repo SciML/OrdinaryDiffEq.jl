@@ -1,6 +1,6 @@
 @cache struct Vern6Cache{
         uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
-        Thread,
+        Thread, L,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -22,7 +22,7 @@
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
-    lazy::Bool
+    lazy::L
 end
 
 get_fsalfirstlast(cache::Vern6Cache, u) = (cache.k1, cache.k9)
@@ -54,9 +54,9 @@ function alg_cache(
     )
 end
 
-struct Vern6ConstantCache{TabType} <: OrdinaryDiffEqConstantCache
+struct Vern6ConstantCache{TabType, L} <: OrdinaryDiffEqConstantCache
     tab::TabType
-    lazy::Bool
+    lazy::L
 end
 
 function alg_cache(
@@ -71,7 +71,7 @@ end
 
 @cache struct Vern7Cache{
         uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread,
+        Thread, L,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -93,7 +93,7 @@ end
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
-    lazy::Bool
+    lazy::L
 end
 
 # fake values since non-FSAL method
@@ -126,8 +126,8 @@ function alg_cache(
     )
 end
 
-struct Vern7ConstantCache <: OrdinaryDiffEqConstantCache
-    lazy::Bool
+struct Vern7ConstantCache{L} <: OrdinaryDiffEqConstantCache
+    lazy::L
 end
 
 function alg_cache(
@@ -141,7 +141,7 @@ end
 
 @cache struct Vern8Cache{
         uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
-        Thread,
+        Thread, L,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -167,7 +167,7 @@ end
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
-    lazy::Bool
+    lazy::L
 end
 
 # fake values since non-FSAL method
@@ -204,9 +204,9 @@ function alg_cache(
     )
 end
 
-struct Vern8ConstantCache{TabType} <: OrdinaryDiffEqConstantCache
+struct Vern8ConstantCache{TabType, L} <: OrdinaryDiffEqConstantCache
     tab::TabType
-    lazy::Bool
+    lazy::L
 end
 
 function alg_cache(
@@ -221,7 +221,7 @@ end
 
 @cache struct Vern9Cache{
         uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread,
+        Thread, L,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -249,7 +249,7 @@ end
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
-    lazy::Bool
+    lazy::L
 end
 
 # fake values since non-FSAL method
@@ -289,8 +289,8 @@ function alg_cache(
     )
 end
 
-struct Vern9ConstantCache <: OrdinaryDiffEqConstantCache
-    lazy::Bool
+struct Vern9ConstantCache{L} <: OrdinaryDiffEqConstantCache
+    lazy::L
 end
 
 function alg_cache(
@@ -304,7 +304,7 @@ end
 
 @cache struct RKV76IIaCache{
         uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
-        Thread,
+        Thread, L,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -327,7 +327,7 @@ end
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
-    lazy::Bool
+    lazy::L
 end
 
 # fake values since non-FSAL method
@@ -361,9 +361,9 @@ function alg_cache(
     )
 end
 
-struct RKV76IIaConstantCache{TabType} <: OrdinaryDiffEqConstantCache
+struct RKV76IIaConstantCache{TabType, L} <: OrdinaryDiffEqConstantCache
     tab::TabType
-    lazy::Bool
+    lazy::L
 end
 
 function alg_cache(
