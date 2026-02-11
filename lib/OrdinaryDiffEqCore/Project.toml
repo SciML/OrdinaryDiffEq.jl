@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqCore"
 uuid = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "3.4.2"
+version = "3.5.0"
 
 [deps]
 EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
