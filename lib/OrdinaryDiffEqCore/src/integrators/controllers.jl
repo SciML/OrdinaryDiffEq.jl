@@ -85,7 +85,7 @@ sync_controllers!(::AbstractControllerCache, ::AbstractControllerCache) = nothin
 
 # Remember: Caches can also hold the control algorithm (see e.g. BDF and Nordsieck methods).
 SciMLBase.reinit!(integrator::ODEIntegrator, cache::OrdinaryDiffEqCache) = nothing
-sync_controllers!(cache::OrdinaryDiffEqCache, cache::OrdinaryDiffEqCache) = nothing
+sync_controllers!(::OrdinaryDiffEqCache, ::OrdinaryDiffEqCache) = nothing
 
 function post_newton_controller!(integrator, alg)
     return post_newton_controller!(integrator, integrator.controller_cache, alg)
