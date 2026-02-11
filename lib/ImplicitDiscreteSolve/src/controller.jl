@@ -36,10 +36,8 @@ Base.@kwdef struct KantorovichTypeController{T} <: AbstractController
     strict::Bool = true
 end
 
-mutable struct KantorovichTypeControllerCache{T} <: AbstractControllerCache
+struct KantorovichTypeControllerCache{T} <: AbstractControllerCache
     controller::KantorovichTypeController{T}
-    # Proposed scaling factor for the time step length
-    q::T
 end
 
 function OrdinaryDiffEqCore.default_controller(
@@ -51,7 +49,6 @@ end
 function OrdinaryDiffEqCore.setup_controller_cache(alg, cache, controller::KantorovichTypeController{T}) where {T}
     return KantorovichTypeControllerCache(
         controller,
-        T(1),
     )
 end
 
@@ -66,16 +63,15 @@ function OrdinaryDiffEqCore.stepsize_controller!(
     (; Θbar, γ, Θmin, qmin, qmax, p) = controller
 
     Θ₀ = length(Θks) > 0 ? max(first(Θks), Θmin) : Θmin
-    cache.q = clamp(γ * (g(Θbar) / (g(Θ₀)))^(1 / p), qmin, qmax)
+    q = clamp(γ * (g(Θbar) / (g(Θ₀)))^(1 / p), qmin, qmax)
 
-    return cache.q
+    return q
 end
 
 function OrdinaryDiffEqCore.step_accept_controller!(
         integrator, cache::KantorovichTypeControllerCache, alg::IDSolve, q
     )
-    @assert q ≈ cache.q "Controller cache went out of sync with time stepping logic."
-    return cache.q * integrator.dt
+    return q * integrator.dt
 end
 
 function OrdinaryDiffEqCore.step_reject_controller!(
@@ -108,6 +104,5 @@ function OrdinaryDiffEqCore.accept_step_controller(integrator, cache::Kantorovic
 end
 
 function OrdinaryDiffEqCore.sync_controllers!(cache1::KantorovichTypeControllerCache, cache2::KantorovichTypeControllerCache)
-    cache1.q = cache2.q
     return nothing
 end

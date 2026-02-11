@@ -36,10 +36,6 @@ stepsize_controller!
 This function gets called in case of an accepted time step right after [`stepsize_controller!`](@ref).
 It returns the proposed new time step length. Please note that the time step length might not be
 applied as is and subject to further modification to e.g. match the next time stop.
-
-!!! warning
-    The parameter `q` will be removed the next release and will be passed through the
-    controller cache if needed.
 """
 step_accept_controller!
 
@@ -140,7 +136,7 @@ struct IController{T} <: AbstractController
 end
 
 function IController(; qmin = 1 // 5, qmax = 10 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
-    return IController{typeof(qmin)}( # FIXME combined promoted type
+    return IController{typeof(qmin)}(
         qmin,
         qmax,
         gamma,
@@ -165,19 +161,13 @@ end
 
 mutable struct IControllerCache{T, UT} <: AbstractControllerCache
     controller::IController{T}
-    q::T
     dtreject::T
-    # I believe this should go here or in the algorithm cache, but not in the integrator itself.
-    # EEst::T
-    atmp::UT
 end
 
-function setup_controller_cache(alg, atmp, controller::IController{T}) where {T}
+function setup_controller_cache(alg, cache, controller::IController{T}) where {T}
     return IControllerCache(
         controller,
-        one(T),
-        T(1 // 10^4), # TODO which value?
-        atmp,
+        T(1 // 10^4),
     )
 end
 
@@ -186,24 +176,23 @@ end
     EEst = DiffEqBase.value(integrator.EEst)
 
     if iszero(EEst)
-        cache.q = inv(qmax)
+        q = inv(qmax)
     else
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qtmp = fastpower(EEst, expo) / gamma
-        @fastmath cache.q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
+        @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
-        cache.dtreject = DiffEqBase.value(integrator.dt) / cache.q
+        cache.dtreject = DiffEqBase.value(integrator.dt) / q
     end
-    return cache.q
+    return q
 end
 
 # TODO change signature to remove the q input
 function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
     (; qsteady_min, qsteady_max) = cache.controller
-    @assert q ≈ cache.q "Controller cache went out of sync with time stepping logic."
 
     if qsteady_min <= q <= qsteady_max
-        cache.q = q = one(q)
+        q = one(q)
     end
     return integrator.dt / q # new dt
 end
@@ -212,10 +201,9 @@ function step_reject_controller!(integrator, cache::IControllerCache, alg)
     return integrator.dt = cache.dtreject
 end
 
-SciMLBase.reinit!(integrator::ODEIntegrator, cache::IControllerCache{T}) where {T} = cache.q = one(T)
+SciMLBase.reinit!(integrator::ODEIntegrator, cache::IControllerCache) = nothing
 
 function sync_controllers!(cache1::IControllerCache, cache2::IControllerCache)
-    cache1.q = cache2.q
     cache1.dtreject = cache2.dtreject
     return nothing
 end
@@ -301,24 +289,19 @@ function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing,
     )
 end
 
-mutable struct PIControllerCache{T, UT} <: AbstractControllerCache
+mutable struct PIControllerCache{T} <: AbstractControllerCache
     controller::PIController{T}
-    # Propsoed scaling factor for the time step length
-    q::T
     # Cached εₙ₊₁^β₁
     q11::T
     # Previous EEst
     errold::T
-    atmp::UT
 end
 
-function setup_controller_cache(alg, atmp, controller::PIController{T}) where {T}
+function setup_controller_cache(alg, cache, controller::PIController{T}) where {T}
     return PIControllerCache(
         controller,
         one(T),
-        one(T),
         T(controller.qoldinit),
-        atmp,
     )
 end
 
@@ -336,12 +319,10 @@ end
         cache.q11 = q11
         @fastmath q = clamp(q / gamma, inv(qmax), inv(qmin))
     end
-    cache.q = q
     return q
 end
 
 function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
-    @assert q ≈ cache.q "Controller cache went out of sync with time stepping logic (q=$q | cache.q=$(cache.q))."
     (; controller) = cache
     (; qsteady_min, qsteady_max, qoldinit) = controller
     EEst = DiffEqBase.value(integrator.EEst)
@@ -360,7 +341,6 @@ function step_reject_controller!(integrator, cache::PIControllerCache, alg)
 end
 
 function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIControllerCache{T}) where {T}
-    cache.q = one(T)
     cache.q11 = one(T)
     return cache.errold = T(cache.controller.qoldinit)
 end
@@ -494,8 +474,6 @@ end
 mutable struct PIDControllerCache{T, Limiter, UT} <: AbstractControllerCache
     controller::PIDController{T, Limiter}
     err::MVector{3, T} # history of the error estimates
-    dt_factor::T
-    atmp::UT
 end
 
 function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIDControllerCache{T}) where {T}
@@ -503,13 +481,11 @@ function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIDControllerCache{
     return cache.dt_factor = T(1 // 10^4)
 end
 
-function setup_controller_cache(alg, atmp, controller::PIDController{QT}) where {QT}
+function setup_controller_cache(alg, cache, controller::PIDController{QT}) where {QT}
     err = MVector{3, QT}(true, true, true)
     return PIDControllerCache(
         controller,
         err,
-        QT(1 // 10^4),
-        atmp,
     )
 end
 
@@ -545,7 +521,7 @@ end
     if isnan(dt_factor)
         @warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k
     end
-    dt_factor = controller.limiter(dt_factor)
+    dt_factor_limited = controller.limiter(dt_factor)
 
     # Note: No additional limiting of the form
     #   dt_factor = max(qmin, min(qmax, dt_factor))
@@ -553,8 +529,7 @@ end
     # ensures
     #   0.21 ≈ limiter(0) <= dt_factor <= limiter(Inf) ≈ 2.57
     # See Söderlind, Wang (2006), Section 6.
-    cache.dt_factor = dt_factor
-    return dt_factor
+    return dt_factor_limited
 end
 
 @inline function accept_step_controller(integrator, cache::PIDControllerCache, alg)
@@ -562,13 +537,11 @@ end
 end
 
 function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_factor)
-    @assert dt_factor ≈ cache.dt_factor "Controller cache went out of sync with time stepping logic."
     (; controller) = cache
     (; qsteady_min, qsteady_max) = controller
 
     if qsteady_min <= inv(dt_factor) <= qsteady_max
         dt_factor = one(dt_factor)
-        # cache.q = ...?
     end
     @inbounds begin
         cache.err[3] = cache.err[2]
@@ -674,38 +647,33 @@ function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, gamma = n
     )
 end
 
-mutable struct PredictiveControllerCache{T, UT} <: AbstractControllerCache
+mutable struct PredictiveControllerCache{T} <: AbstractControllerCache
     controller::PredictiveController{T}
     dtacc::T
     erracc::T
     qold::T
-    q::T
-    atmp::UT
 end
 
 function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PredictiveControllerCache{T}) where {T}
     cache.dtacc = one(T)
     cache.erracc = one(T)
     cache.qold = one(T)
-    return cache.q = one(T)
+    return nothing
 end
 
 function sync_controllers!(cache1::PredictiveControllerCache, cache2::PredictiveControllerCache)
     cache1.dtacc = cache2.dtacc
     cache1.erracc = cache2.erracc
     cache1.qold = cache2.qold
-    cache1.q = cache2.q
     return nothing
 end
 
-function setup_controller_cache(alg, atmp::UT, controller::PredictiveController{T}) where {T, UT}
-    return PredictiveControllerCache{T, UT}(
+function setup_controller_cache(alg, cache, controller::PredictiveController{T}) where {T}
+    return PredictiveControllerCache(
         controller,
         one(T),
         one(T),
         one(T),
-        one(T),
-        atmp,
     )
 end
 
@@ -731,12 +699,10 @@ end
         @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         cache.qold = q
     end
-    cache.q = q
     return q
 end
 
 function step_accept_controller!(integrator, cache::PredictiveControllerCache, alg, q)
-    @assert q ≈ cache.q "Controller cache went out of sync with time stepping logic."
     (; dtacc, erracc, controller) = cache
     (; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller
 
