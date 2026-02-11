@@ -591,7 +591,7 @@ function SciMLBase.__init(
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
         dtpropose, tdir, eigen_est, EEst,
-        controller_cache, # TODO move this into the algorithm cache
+        controller_cache,
         success_iter,
         iter, saveiter, saveiter_dense, cache,
         callback_cache,

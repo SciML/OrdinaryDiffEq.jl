@@ -604,7 +604,7 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-        - `embedding`: TBD
+    - `embedding`: TBD
     """,
     extra_keyword_default = """
     smooth_est = true,
