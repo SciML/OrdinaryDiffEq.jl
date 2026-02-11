@@ -53,7 +53,7 @@ It directly sets the time step length (i.e. `integrator.dt`).
 step_reject_controller!
 
 # checks whether the controller should accept a step based on the error estimate
-@inline function accept_step_controller(integrator, alg::OrdinaryDiffEqAlgorithm)
+@inline function accept_step_controller(integrator, alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return accept_step_controller(integrator, integrator.controller_cache, alg)
 end
 @inline function accept_step_controller(integrator, cache::Union{AbstractControllerCache, OrdinaryDiffEqCache}, alg)
