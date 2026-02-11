@@ -19,13 +19,13 @@ mutable struct ExtrapolationControllerCache{QT, UT} <: AbstractControllerCache
     atmp::UT
 end
 
-function setup_controller_cache(alg, atmp, controller::ExtrapolationController{T}) where {T}
+function setup_controller_cache(alg, cache, controller::ExtrapolationController{T}) where {T}
     return ExtrapolationControllerCache(
         controller,
         T(1),
         T(1),
         T(1 // 10^4),
-        atmp,
+        cache.atmp,
     )
 end
 
