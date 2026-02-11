@@ -34,12 +34,12 @@ sol2_ruth3 = solve(prob, Ruth3(), dt = 1 / 100)
 
 sol2_verlet(0.1)
 
-@test sol.u[end][1] == sol2.u[end][1]
-@test sol_verlet.u[end][1] == sol2_verlet.u[end][1]
-@test sol_ruth3.u[end][1] == sol2_ruth3.u[end][1]
-@test sol.u[end][3] == sol2.u[end][3]
-@test sol_verlet.u[end][3] == sol2_verlet.u[end][3]
-@test sol_ruth3.u[end][3] == sol2_ruth3.u[end][3]
+@test sol[end][1] == sol2[end][1]
+@test sol_verlet[end][1] == sol2_verlet[end][1]
+@test sol_ruth3[end][1] == sol2_ruth3[end][1]
+@test sol[end][3] == sol2[end][3]
+@test sol_verlet[end][3] == sol2_verlet[end][3]
+@test sol_ruth3[end][3] == sol2_ruth3[end][3]
 
 prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
 println("Convergence tests")

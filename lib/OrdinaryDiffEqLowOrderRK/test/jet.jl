@@ -10,7 +10,7 @@ using Test
 @testset "JET Tests" begin
     # Test package for typos (commented out due to false positive)
     # test_package(
-    #     OrdinaryDiffEqLowOrderRK, target_modules = (OrdinaryDiffEqLowOrderRK,), mode = :typo)
+    #     OrdinaryDiffEqLowOrderRK, target_defined_modules = true, mode = :typo)
 
     # Test individual solver type stability
     @testset "Solver Type Stability Tests" begin

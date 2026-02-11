@@ -188,7 +188,7 @@ sol = solve(prob, BS3(), callback = callback)
 sol33 = solve(prob, Vern7(), callback = callback)
 sol33 = solve(prob, Vern7(), callback = vcb)
 
-bounced = ODEProblem(f, sol.u[8], (0.0, 1.0))
+bounced = ODEProblem(f, sol[8], (0.0, 1.0))
 sol_bounced = solve(bounced, Vern6(), callback = callback, dt = sol.t[9] - sol.t[8])
 #plot(sol_bounced,denseplot=true)
 sol_bounced(0.04) # Complete density
@@ -283,7 +283,7 @@ sol5_1 = solve(prob2, Tsit5(), callback = custom_retcode_callback)
 
 @test sol5.retcode == ReturnCode.Terminated
 @test sol5_1.retcode == ReturnCode.MaxIters
-@test sol5.u[end][1] < 3.0e-12
+@test sol5[end][1] < 3.0e-12
 @test sol5.t[end] ≈ sqrt(50 * 2 / 9.81)
 
 sol5 = solve(prob2, Tsit5(), callback = vterminate_callback)
@@ -291,7 +291,7 @@ sol5_1 = solve(prob2, Tsit5(), callback = vcustom_retcode_callback)
 
 @test sol5.retcode == ReturnCode.Terminated
 @test sol5_1.retcode == ReturnCode.MaxIters
-@test sol5.u[end][1] < 3.0e-12
+@test sol5[end][1] < 3.0e-12
 @test sol5.t[end] ≈ sqrt(50 * 2 / 9.81)
 
 affect2! = function (integrator)
@@ -320,12 +320,12 @@ vterminate_callback2 = VectorContinuousCallback(
 
 sol5 = solve(prob2, Vern7(), callback = terminate_callback2)
 
-@test sol5.u[end][1] < 1.3e-10
+@test sol5[end][1] < 1.3e-10
 @test sol5.t[end] ≈ 3 * sqrt(50 * 2 / 9.81)
 
 sol5 = solve(prob2, Vern7(), callback = vterminate_callback2)
 
-@test sol5.u[end][1] < 1.3e-10
+@test sol5[end][1] < 1.3e-10
 @test sol5.t[end] ≈ 3 * sqrt(50 * 2 / 9.81)
 
 condition = function (u, t, integrator) # Event when event_f(u,t,k) == 0
@@ -342,8 +342,8 @@ bounce_then_exit = CallbackSet(callback, terminate_callback3)
 
 sol6 = solve(prob2, Vern7(), callback = bounce_then_exit)
 
-@test sol6.u[end][1] > 0
-@test sol6.u[end][1] < 100
+@test sol6[end][1] > 0
+@test sol6[end][1] < 100
 @test sol6.t[end] ≈ 4
 
 # Test ContinuousCallback hits values on the steps
