@@ -321,7 +321,7 @@ function _loopfooter!(integrator)
             !integrator.isout &&
                 accept_step_controller(
                 integrator,
-                integrator.controller_cache,
+                integrator.alg
             )
         ) ||
             (
