@@ -13,7 +13,7 @@ using Test
 
     # ForwardDiff is not fully inferable
     autodiff = ADTypes.AutoFiniteDiff()
-    inferred2 = [SDIRK2(;autodiff), TRBDF2(;autodiff), KenCarp4(;autodiff), Rosenbrock23(;autodiff), Rodas4(;autodiff)]
+    inferred2 = [SDIRK2(; autodiff), TRBDF2(; autodiff), KenCarp4(; autodiff), Rosenbrock23(; autodiff), Rodas4(; autodiff)]
     for alg in inferred2
         @inferred init(prob, alg)
         @inferred init(prob2D, alg)
