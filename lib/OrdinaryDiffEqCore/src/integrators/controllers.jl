@@ -511,7 +511,7 @@ function Base.show(io::IO, controller::PIDController)
     )
 end
 
-mutable struct PIDControllerCache{T, Limiter, UT} <: AbstractControllerCache
+mutable struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
     controller::PIDController{T, Limiter}
     err::MVector{3, T} # history of the error estimates
 end
