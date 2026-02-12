@@ -28,7 +28,10 @@ using Test
         inferred3 = [SDIRK2(; autodiff), TRBDF2(; autodiff), KenCarp4(; autodiff), Rosenbrock23(; autodiff), Rodas4(; autodiff)]
         for alg in inferred3
             @inferred init(prob, alg)
-            @inferred init(prob2D, alg)
+            # In Julia < v1.12 only some of these are inferrable
+            if VERSION >= v"1.12"
+                @inferred init(prob2D, alg)
+            end
         end
     end
 
