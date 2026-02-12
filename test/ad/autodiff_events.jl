@@ -96,6 +96,7 @@ end
         backend,
         p
     )
+    if VERSION > v"1.10"
     g5 = DI.gradient(
         θ -> test_f2(
             θ, ReverseDiffAdjoint(),
@@ -104,6 +105,7 @@ end
         backend,
         p
     )
+    end
     g6 = DI.gradient(
         θ -> test_f2(
             θ, ForwardDiffSensitivity(),
@@ -126,7 +128,9 @@ end
     @test g2 ≈ findiff[2, 1:2]
     @test g3 ≈ findiff[2, 1:2]
     @test g4 ≈ findiff[2, 1:2]
-    g5 ≈ findiff[2, 1:2]
+    if VERSION > v"1.10"
+        @test g5 ≈ findiff[2, 1:2]
+    end
     @test g6 ≈ findiff[2, 1:2]
     @test_broken g7 ≈ findiff[2, 1:2]
 end
