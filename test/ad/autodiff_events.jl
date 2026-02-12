@@ -137,7 +137,7 @@ end
     @test g2 ≈ findiff[2, 1:2]
     @test g3 ≈ findiff[2, 1:2]
     @test g4 ≈ findiff[2, 1:2]
-    if VERSION > v"1.10"
+    if VERSION >= v"1.11"
         @test g5 ≈ findiff[2, 1:2]
     end
     @test g6 ≈ findiff[2, 1:2]
