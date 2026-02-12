@@ -1,22 +1,8 @@
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
-    @eval begin
-        function legacy_default_controller(alg::Union{QNDF, FBDF}, args...)
-            return DummyController()
-        end
-
-        function default_controller_v7(QT, alg::Union{QNDF, FBDF}, args...)
-            return DummyController()
-        end
-    end
-else
-    @eval begin
-        function default_controller(alg::Union{QNDF, FBDF}, args...)
-            return DummyController()
-        end
-    end
+function default_controller(QT, alg::Union{QNDF, FBDF, DFBDF})
+    return DummyController()
 end
 
-# QNBDF
+# QNDF
 stepsize_controller!(integrator, alg::QNDF) = nothing
 
 # this stepsize and order controller is taken from
@@ -29,18 +15,17 @@ end
 
 function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstantCache}, alg::QNDF{max_order}, q) where {max_order}
     #step is accepted, reset count of consecutive failed steps
-    integrator.cache.consfailcnt = 0
-    integrator.cache.nconsteps += 1
+    cache.consfailcnt = 0
+    cache.nconsteps += 1
     if iszero(integrator.EEst)
-        return integrator.dt * integrator.opts.qmax
+        return integrator.dt * alg.qmax
     else
         est = integrator.EEst
-        estₖ₋₁ = integrator.cache.EEst1
-        estₖ₊₁ = integrator.cache.EEst2
+        estₖ₋₁ = cache.EEst1
+        estₖ₊₁ = cache.EEst2
         h = integrator.dt
-        k = integrator.cache.order
-        cache = integrator.cache
-        prefer_const_step = integrator.cache.nconsteps < integrator.cache.order + 2
+        k = cache.order
+        prefer_const_step = cache.nconsteps < cache.order + 2
         zₛ = 1.2 # equivalent to integrator.opts.gamma
         zᵤ = 0.1
         Fᵤ = 10
@@ -101,18 +86,18 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
             return integrator.dt
         end
     end
-    if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    if q <= alg.qsteady_max && q >= alg.qsteady_min
         return integrator.dt
     end
     return integrator.dt / q
 end
 
-function bdf_step_reject_controller!(integrator, EEst1)
-    k = integrator.cache.order
+function bdf_step_reject_controller!(integrator, cache, EEst1)
+    k = cache.order
     h = integrator.dt
-    integrator.cache.consfailcnt += 1
-    integrator.cache.nconsteps = 0
-    if integrator.cache.consfailcnt > 1
+    cache.consfailcnt += 1
+    cache.nconsteps = 0
+    if cache.consfailcnt > 1
         h = h / 2
     end
     zₛ = 1.2  # equivalent to integrator.opts.gamma
@@ -135,48 +120,47 @@ function bdf_step_reject_controller!(integrator, EEst1)
         else # zₖ₋₁ > 10
             hₖ₋₁ = 0.1 * h
         end
-        if integrator.cache.consfailcnt > 2 || hₖ₋₁ > hₖ
+        if cache.consfailcnt > 2 || hₖ₋₁ > hₖ
             hₙ = min(h, hₖ₋₁)
             kₙ = k - 1
         end
     end
     # Restart BDf (clear history) when we failed repeatedly
-    if kₙ == 1 && integrator.cache.consfailcnt > 3
+    if kₙ == 1 && cache.consfailcnt > 3
         u_modified!(integrator, true)
     end
     integrator.dt = hₙ
-    return integrator.cache.order = kₙ
+    return cache.order = kₙ
 end
 
-function step_reject_controller!(integrator, ::QNDF)
-    return bdf_step_reject_controller!(integrator, integrator.cache.EEst1)
+function step_reject_controller!(integrator, cache::Union{QNDFCache, QNDFConstantCache}, ::QNDF)
+    return bdf_step_reject_controller!(integrator, cache, cache.EEst1)
 end
 
-function step_reject_controller!(integrator, ::FBDF)
-    return bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
+function step_reject_controller!(integrator, cache::Union{FBDFCache, FBDFConstantCache}, ::FBDF)
+    return bdf_step_reject_controller!(integrator, cache, cache.terkm1)
 end
 
-function post_newton_controller!(integrator, alg::FBDF)
-    (; cache) = integrator
+function post_newton_controller!(integrator, cache::Union{FBDFCache, FBDFConstantCache}, alg::FBDF)
     if cache.order > 1 && cache.nlsolver.nfails >= 3
         cache.order -= 1
     end
     integrator.dt = integrator.dt / integrator.opts.failfactor
-    integrator.cache.consfailcnt += 1
-    integrator.cache.nconsteps = 0
+    cache.consfailcnt += 1
+    cache.nconsteps = 0
     return nothing
 end
 
 function choose_order!(
         alg::FBDF, integrator,
-        cache::OrdinaryDiffEqMutableCache,
+        cache::FBDFCache,
         ::Val{max_order}
     ) where {max_order}
-    (; t, dt, u, cache, uprev) = integrator
+    (; t, dt, u, uprev) = integrator
     (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history) = cache
     k = cache.order
     # only when the order of amount of terk follows the order of step size, and achieve enough constant step size, the order could be increased.
-    if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
+    if k < max_order && cache.nconsteps >= cache.order + 2 &&
             (
             (k == 1 && terk > terkp1) ||
                 (k == 2 && terkm1 > terk > terkp1) ||
@@ -213,13 +197,13 @@ end
 
 function choose_order!(
         alg::FBDF, integrator,
-        cache::OrdinaryDiffEqConstantCache,
+        cache::FBDFConstantCache,
         ::Val{max_order}
     ) where {max_order}
-    (; t, dt, u, cache, uprev) = integrator
+    (; t, dt, u, uprev) = integrator
     (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history) = cache
     k = cache.order
-    if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
+    if k < max_order && cache.nconsteps >= cache.order + 2 &&
             (
             (k == 1 && terk > terkp1) ||
                 (k == 2 && terkm1 > terk > terkp1) ||
@@ -287,11 +271,10 @@ function stepsize_controller!(
         cache.order = k
     end
     if iszero(terk)
-        q = inv(integrator.opts.qmax)
+        q = inv(alg.qmax)
     else
         q = ((2 * terk / (k + 1))^(1 / (k + 1)))
     end
-    integrator.qold = q
     return q
 end
 
@@ -304,7 +287,7 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
-    if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    if q <= alg.qsteady_max && q >= alg.qsteady_min
         q = one(q)
     end
     cache.nconsteps += 1
@@ -312,31 +295,30 @@ function step_accept_controller!(
     return integrator.dt / q
 end
 
-function step_reject_controller!(integrator, ::DFBDF)
-    return bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
+function step_reject_controller!(integrator, cache::Union{DFBDFCache, DFBDFConstantCache}, ::DFBDF)
+    return bdf_step_reject_controller!(integrator, cache, cache.terkm1)
 end
 
-function post_newton_controller!(integrator, alg::DFBDF)
-    (; cache) = integrator
+function post_newton_controller!(integrator, cache::Union{DFBDFCache, DFBDFConstantCache}, alg::DFBDF)
     if cache.order > 1 && cache.nlsolver.nfails >= 3
         cache.order -= 1
     end
     integrator.dt = integrator.dt / integrator.opts.failfactor
-    integrator.cache.consfailcnt += 1
-    integrator.cache.nconsteps = 0
+    cache.consfailcnt += 1
+    cache.nconsteps = 0
     return nothing
 end
 
 function choose_order!(
         alg::DFBDF, integrator,
-        cache::OrdinaryDiffEqMutableCache,
+        cache::DFBDFCache,
         ::Val{max_order}
     ) where {max_order}
-    (; t, dt, u, cache, uprev) = integrator
+    (; t, dt, u, uprev) = integrator
     (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history) = cache
     k = cache.order
     # only when the order of amount of terk follows the order of step size, and achieve enough constant step size, the order could be increased.
-    if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
+    if k < max_order && cache.nconsteps >= cache.order + 2 &&
             (
             (k == 1 && terk > terkp1) ||
                 (k == 2 && terkm1 > terk > terkp1) ||
@@ -373,13 +355,13 @@ end
 
 function choose_order!(
         alg::DFBDF, integrator,
-        cache::OrdinaryDiffEqConstantCache,
+        cache::DFBDFConstantCache,
         ::Val{max_order}
     ) where {max_order}
-    (; t, dt, u, cache, uprev) = integrator
+    (; t, dt, u, uprev) = integrator
     (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history) = cache
     k = cache.order
-    if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
+    if k < max_order && cache.nconsteps >= cache.order + 2 &&
             (
             (k == 1 && terk > terkp1) ||
                 (k == 2 && terkm1 > terk > terkp1) ||
@@ -444,11 +426,10 @@ function stepsize_controller!(
         cache.order = k
     end
     if iszero(terk)
-        q = inv(integrator.opts.qmax)
+        q = inv(alg.qmax)
     else
         q = ((2 * terk / (k + 1))^(1 / (k + 1)))
     end
-    integrator.qold = q
     return q
 end
 
@@ -461,7 +442,7 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
-    if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    if q <= alg.qsteady_max && q >= alg.qsteady_min
         q = one(q)
     end
     cache.nconsteps += 1

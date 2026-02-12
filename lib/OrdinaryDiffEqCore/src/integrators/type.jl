@@ -1,5 +1,5 @@
 mutable struct DEOptions{
-        absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
+        absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
         disccache, verbType,
     }
@@ -8,18 +8,9 @@ mutable struct DEOptions{
     adaptive::Bool
     abstol::absType
     reltol::relType
-    # TODO vvv remove this block as these are controller and not integrator parameters vvv
-    gamma::QT
-    qmax::QT
-    qmin::QT
-    qsteady_max::QT
-    qsteady_min::QT
-    qoldinit::QT
-    # TODO ^^^ remove this block as these are controller and not integrator parameters ^^^
     failfactor::QT
     dtmax::tType
     dtmin::tType
-    controller::Controller
     internalnorm::F1
     internalopnorm::F2
     save_idxs::SType
@@ -87,7 +78,7 @@ For more info see the linked documentation page.
 """
 mutable struct ODEIntegrator{
         algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, IIP,
-        uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
+        uType, duType, tType, pType, eigenType, EEstT, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
         CallbackCacheType, IA, DV, CC,
     } <:
@@ -111,12 +102,6 @@ mutable struct ODEIntegrator{
     tdir::tdirType
     eigen_est::eigenType
     EEst::EEstT
-    # TODO vvv remove these
-    qold::QT
-    q11::QT
-    erracc::QT
-    dtacc::tType
-    # TODO ^^^ remove these
     controller_cache::CC
     success_iter::Int
     iter::Int

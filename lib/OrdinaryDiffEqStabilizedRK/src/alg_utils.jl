@@ -7,7 +7,7 @@ alg_order(alg::SERK2) = 2
 
 alg_order(alg::RKC) = 2
 
-ispredictive(alg::Union{SERK2}) = alg.controller === :Predictive
+ispredictive(alg::Union{SERK2}) = true
 ispredictive(alg::Union{RKC}) = true
 
 alg_adaptive_order(alg::RKC) = 2

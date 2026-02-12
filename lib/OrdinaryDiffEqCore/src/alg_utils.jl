@@ -369,56 +369,21 @@ alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_orde
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 
-function default_controller_v7(QT, alg)
+function default_controller(QT, alg)
     if ispredictive(alg)
-        return NewPredictiveController(QT, alg)
+        return PredictiveController(QT, alg)
     elseif isstandard(alg)
-        return NewIController(QT, alg)
+        return IController(QT, alg)
     else
-        return NewPIController(QT, alg)
+        return PIController(QT, alg)
     end
 end
 
-function default_controller_v7(QT, alg::OrdinaryDiffEqCompositeAlgorithm)
-    return nothing # This forces a fall-back to the legacy implementation
-    # beta2 = convert(QT, beta2_default(alg.algs[1]))
-    # beta1 = convert(QT, beta1_default(alg.algs[1], beta2))
-    # return PIController(beta1, beta2)
-    # TODO Uncomment this code below to when removing the legacy controllers on OrdinaryDiffEq v7.
-    # return CompositeController(
-    #     __default_controller_v7(QT, alg.algs)
-    # )
+function default_controller(QT, alg::OrdinaryDiffEqCompositeAlgorithm)
+    return CompositeController(
+        map(alg -> default_controller(QT, alg), alg.algs)
+    )
 end
-
-# @generated function __default_controller_v7(
-#     QT, algs::T
-# ) where {
-#     T <: Tuple
-# }
-#     return Expr(
-#         :tuple,
-#         map(1:length(T.types)) do i
-#             :(
-#                 default_controller_v7(QT, algs[$i])
-#             )
-#         end...
-#     )
-# end
-
-function legacy_default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
-    if ispredictive(alg)
-        return PredictiveController()
-    elseif isstandard(alg)
-        return IController()
-    else # Default is PI-controller
-        QT = typeof(qoldinit)
-        beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
-        return PIController(beta1, beta2)
-    end
-end
-
-# TODO remove this when done
-default_controller(args...) = legacy_default_controller(args...)
 
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
     if alg isa OrdinaryDiffEqCompositeAlgorithm
@@ -534,9 +499,9 @@ uses_uprev(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, adaptive::Bool) = 
 uses_uprev(alg::OrdinaryDiffEqAdaptiveAlgorithm, adaptive::Bool) = true
 
 ispredictive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
+ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = false
 isstandard(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
+isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = false
 
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 
