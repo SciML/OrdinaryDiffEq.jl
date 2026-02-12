@@ -24,7 +24,7 @@ using Test
 
     @testset "stiff fixed chunksize" begin
         # When choosing a fixed chunksize it works
-        autodiff = ADTypes.AutoForwardDiff(; chunksize=10)
+        autodiff = ADTypes.AutoForwardDiff(; chunksize = 10)
         inferred3 = [SDIRK2(; autodiff), TRBDF2(; autodiff), KenCarp4(; autodiff), Rosenbrock23(; autodiff), Rodas4(; autodiff)]
         for alg in inferred3
             @inferred init(prob, alg)
