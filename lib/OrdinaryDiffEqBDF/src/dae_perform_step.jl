@@ -232,8 +232,8 @@ end
     return
 end
 
-function initialize!(integrator, cache::DFBDFConstantCache)
-    integrator.kshortsize = 2
+function initialize!(integrator, cache::DFBDFConstantCache{max_order}) where {max_order}
+    integrator.kshortsize = max_order
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(
         integrator.du, integrator.uprev, integrator.p,
@@ -242,8 +242,9 @@ function initialize!(integrator, cache::DFBDFConstantCache)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    for i in 1:max_order
+        integrator.k[i] = zero(integrator.fsalfirst)
+    end
 
     u_modified = integrator.u_modified
     integrator.u_modified = true
@@ -382,18 +383,33 @@ function perform_step!(
         end
     end
     integrator.u = u
-    return integrator.fsallast = integrator.du = (nlsolver.α * z + nlsolver.tmp) *
+    integrator.fsallast = integrator.du = (nlsolver.α * z + nlsolver.tmp) *
         inv(nlsolver.γ * dt)
+    if integrator.opts.calck
+        for j in 1:max_order
+            if j <= k
+                c1 = eltype(u)((-1)^1 * binomial(j, 1))
+                bkwd = @.. u + c1 * uprev
+                for i in 2:j
+                    coeff = eltype(u)((-1)^i * binomial(j, i))
+                    bkwd = @.. bkwd + coeff * $(_reshape(view(u_corrector, :, i - 1), axes(u)))
+                end
+                integrator.k[j] = bkwd
+            else
+                integrator.k[j] = zero(u)
+            end
+        end
+    end
+    return nothing
 end
 
-function initialize!(integrator, cache::DFBDFCache)
-    integrator.kshortsize = 2
+function initialize!(integrator, cache::DFBDFCache{max_order}) where {max_order}
+    integrator.kshortsize = max_order
 
     resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-    #integrator.f(integrator.fsalfirst, integrator.du, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    #OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    for i in 1:max_order
+        integrator.k[i] = cache.dense[i]
+    end
 
     u_modified = integrator.u_modified
     integrator.u_modified = true
@@ -511,9 +527,24 @@ function perform_step!(
             cache.terkp1 = zero(cache.terkp1)
         end
     end
-    return @.. broadcast = false integrator.fsallast = integrator.du = (
+    @.. broadcast = false integrator.fsallast = integrator.du = (
         nlsolver.α * z +
             nlsolver.tmp
     ) *
         inv(nlsolver.γ * dt) #TODO Lorenz plot seems not smooth
+    if integrator.opts.calck
+        for j in 1:length(integrator.k)
+            if j <= k
+                c1 = eltype(u)((-1)^1 * binomial(j, 1))
+                @.. broadcast = false integrator.k[j] = u + c1 * uprev
+                for i in 2:j
+                    coeff = eltype(u)((-1)^i * binomial(j, i))
+                    @views @.. broadcast = false integrator.k[j] += coeff * $(_reshape(u_corrector[:, i - 1], axes(u)))
+                end
+            else
+                fill!(integrator.k[j], zero(eltype(u)))
+            end
+        end
+    end
+    return nothing
 end

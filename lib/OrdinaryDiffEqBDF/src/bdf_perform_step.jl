@@ -753,16 +753,18 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     return
 end
 
-function initialize!(integrator, cache::QNDFConstantCache)
-    integrator.kshortsize = 2
+function initialize!(integrator, cache::QNDFConstantCache{max_order}) where {max_order}
+    integrator.kshortsize = max_order
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
-    integrator.k[1] = integrator.fsalfirst
-    return integrator.k[2] = integrator.fsallast
+    for i in 1:max_order
+        integrator.k[i] = zero(integrator.fsalfirst)
+    end
+    return nothing
 end
 
 function perform_step!(
@@ -872,17 +874,25 @@ function perform_step!(
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
     end
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    if integrator.opts.calck
+        for j in 1:max_order
+            if j <= k
+                integrator.k[j] = (u isa Number) ? D[j] : _reshape(D[:, j], axes(u))
+            else
+                integrator.k[j] = zero(u)
+            end
+        end
+    end
     return integrator.u = u
 end
 
-function initialize!(integrator, cache::QNDFCache)
-    integrator.kshortsize = 2
+function initialize!(integrator, cache::QNDFCache{max_order}) where {max_order}
+    integrator.kshortsize = max_order
 
     resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    for i in 1:max_order
+        integrator.k[i] = cache.dense[i]
+    end
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
@@ -1004,6 +1014,15 @@ function perform_step!(
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
     end
+    if integrator.opts.calck
+        for j in 1:length(integrator.k)
+            if j <= k
+                @views copyto!(_vec(integrator.k[j]), D[:, j])
+            else
+                fill!(integrator.k[j], zero(eltype(u)))
+            end
+        end
+    end
     return nothing
 end
 
@@ -1114,16 +1133,17 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
-function initialize!(integrator, cache::FBDFConstantCache)
-    integrator.kshortsize = 2
+function initialize!(integrator, cache::FBDFConstantCache{max_order}) where {max_order}
+    integrator.kshortsize = max_order
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    for i in 1:max_order
+        integrator.k[i] = zero(integrator.fsalfirst)
+    end
 
     u_modified = integrator.u_modified
     integrator.u_modified = true
@@ -1289,17 +1309,31 @@ function perform_step!(
 
     integrator.fsallast = f(u, p, tdt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    if integrator.opts.calck
+        for j in 1:max_order
+            if j <= k
+                c1 = eltype(u)((-1)^1 * binomial(j, 1))
+                bkwd = @.. u + c1 * uprev
+                for i in 2:j
+                    coeff = eltype(u)((-1)^i * binomial(j, i))
+                    bkwd = @.. bkwd + coeff * $(_reshape(view(u_corrector, :, i - 1), axes(u)))
+                end
+                integrator.k[j] = bkwd
+            else
+                integrator.k[j] = zero(u)
+            end
+        end
+    end
     return integrator.u = u
 end
 
-function initialize!(integrator, cache::FBDFCache)
-    integrator.kshortsize = 2
+function initialize!(integrator, cache::FBDFCache{max_order}) where {max_order}
+    integrator.kshortsize = max_order
 
     resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    for i in 1:max_order
+        integrator.k[i] = cache.dense[i]
+    end
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
@@ -1436,5 +1470,20 @@ function perform_step!(
     end
 
     f(integrator.fsallast, u, p, tdt)
-    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    if integrator.opts.calck
+        for j in 1:length(integrator.k)
+            if j <= k
+                c1 = eltype(u)((-1)^1 * binomial(j, 1))
+                @.. broadcast = false integrator.k[j] = u + c1 * uprev
+                for i in 2:j
+                    coeff = eltype(u)((-1)^i * binomial(j, i))
+                    @views @.. broadcast = false integrator.k[j] += coeff * $(_reshape(u_corrector[:, i - 1], axes(u)))
+                end
+            else
+                fill!(integrator.k[j], zero(eltype(u)))
+            end
+        end
+    end
+    return nothing
 end
