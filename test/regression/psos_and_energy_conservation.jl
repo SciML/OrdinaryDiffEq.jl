@@ -48,7 +48,7 @@ end
 n = [[norm(A * normalize(s.u[j]))^2 for j in 1:length(s.t)] for s in sol_tot]
 endpoints = [k[end] for k in n]
 
-@test isapprox(mean(endpoints), η^2 / κ^2, atol = 1e-3)
+@test isapprox(mean(endpoints), η^2 / κ^2, atol = 1.0e-3)
 
 #=
 using Plots
