@@ -388,13 +388,13 @@ function perform_step!(
     if integrator.opts.calck
         for j in 1:max_order
             if j <= k
-                c1 = eltype(u)((-1)^1 * binomial(j, 1))
-                bkwd = @.. u + c1 * uprev
-                for i in 2:j
-                    coeff = eltype(u)((-1)^i * binomial(j, i))
-                    bkwd = @.. bkwd + coeff * $(_reshape(view(u_corrector, :, i - 1), axes(u)))
+                if j == 1
+                    integrator.k[j] = copy(uprev)
+                else
+                    integrator.k[j] = (u isa Number) ? u_corrector[j - 1] :
+                                      _reshape(
+                        copy(view(u_corrector, :, j - 1)), axes(u))
                 end
-                integrator.k[j] = bkwd
             else
                 integrator.k[j] = zero(u)
             end
@@ -535,11 +535,11 @@ function perform_step!(
     if integrator.opts.calck
         for j in 1:length(integrator.k)
             if j <= k
-                c1 = eltype(u)((-1)^1 * binomial(j, 1))
-                @.. broadcast = false integrator.k[j] = u + c1 * uprev
-                for i in 2:j
-                    coeff = eltype(u)((-1)^i * binomial(j, i))
-                    @views @.. broadcast = false integrator.k[j] += coeff * $(_reshape(u_corrector[:, i - 1], axes(u)))
+                if j == 1
+                    copyto!(_vec(integrator.k[j]), _vec(uprev))
+                else
+                    @views copyto!(
+                        _vec(integrator.k[j]), u_corrector[:, j - 1])
                 end
             else
                 fill!(integrator.k[j], zero(eltype(u)))

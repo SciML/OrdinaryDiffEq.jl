@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, DiffEqBase
+using OrdinaryDiffEq, OrdinaryDiffEqBDF, Test, DiffEqBase
 using OrdinaryDiffEqCore
 using ForwardDiff
 import ODEProblemLibrary: prob_ode_linear,
@@ -587,6 +587,14 @@ regression_test(Rodas5Pe(), 2.0e-5, 3.0e-5, test_diff1 = true, nth_der = 3, dert
 
 # Rodas5Pr
 regression_test(Rodas5Pr(), 2.0e-5, 3.0e-5, test_diff1 = true, nth_der = 3, dertol = 5.0e-1)
+
+println("BDFs")
+
+# QNDF
+regression_test(QNDF(), 2.0e-2, 2.0e-2; test_diff1 = true, nth_der = 1, dertol = 1.0e-2)
+
+# FBDF
+regression_test(FBDF(), 1.0e-1, 1.5e-1; test_diff1 = true, nth_der = 1, dertol = 1.0e-2)
 
 # ExplicitRK
 regression_test(ExplicitRK(), 7.0e-5, 2.0e-4)
