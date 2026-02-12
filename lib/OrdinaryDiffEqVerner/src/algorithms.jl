@@ -25,7 +25,7 @@ end
 @truncate_stacktrace Vern6 3
 # Convert Bool lazy to Val for backwards compatibility
 function Vern6(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
-    Vern6{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
+    return Vern6{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
 end
 # for backwards compatibility
 function Vern6(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
@@ -59,7 +59,7 @@ end
 @truncate_stacktrace Vern7 3
 # Convert Bool lazy to Val for backwards compatibility
 function Vern7(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
-    Vern7{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
+    return Vern7{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
 end
 # for backwards compatibility
 function Vern7(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
@@ -93,7 +93,7 @@ end
 @truncate_stacktrace Vern8 3
 # Convert Bool lazy to Val for backwards compatibility
 function Vern8(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
-    Vern8{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
+    return Vern8{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
 end
 # for backwards compatibility
 function Vern8(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
@@ -126,7 +126,7 @@ end
 @truncate_stacktrace Vern9 3
 # Convert Bool lazy to Val for backwards compatibility
 function Vern9(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
-    Vern9{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
+    return Vern9{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
 end
 # for backwards compatibility
 function Vern9(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
@@ -198,7 +198,7 @@ end
 @truncate_stacktrace RKV76IIa 3
 # Convert Bool lazy to Val for backwards compatibility
 function RKV76IIa(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
-    RKV76IIa{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
+    return RKV76IIa{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
 end
 # for backwards compatibility
 function RKV76IIa(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)

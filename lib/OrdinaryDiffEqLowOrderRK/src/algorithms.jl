@@ -218,7 +218,7 @@ Base.@kwdef struct BS5{StageLimiter, StepLimiter, Thread, L} <: OrdinaryDiffEqAd
 end
 # Convert Bool lazy to Val for backwards compatibility
 function BS5(stage_limiter!::StageLimiter, step_limiter!::StepLimiter, thread::Thread, lazy::Bool) where {StageLimiter, StepLimiter, Thread}
-    BS5{StageLimiter, StepLimiter, Thread, Val{lazy}}(stage_limiter!, step_limiter!, thread, Val{lazy}())
+    return BS5{StageLimiter, StepLimiter, Thread, Val{lazy}}(stage_limiter!, step_limiter!, thread, Val{lazy}())
 end
 # for backwards compatibility
 function BS5(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
