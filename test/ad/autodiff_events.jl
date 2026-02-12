@@ -96,8 +96,17 @@ end
         backend,
         p
     )
-    if VERSION > v"1.10"
+    if VERSION >= v"1.11"
         g5 = DI.gradient(
+            θ -> test_f2(
+                θ, ReverseDiffAdjoint(),
+                PIDController(1 / 18.0, 1 / 9.0, 1 / 18.0)
+            ),
+            backend,
+            p
+        )
+    else
+        @test_broken g5 = DI.gradient(
             θ -> test_f2(
                 θ, ReverseDiffAdjoint(),
                 PIDController(1 / 18.0, 1 / 9.0, 1 / 18.0)
