@@ -5,6 +5,10 @@ import AlgebraicMultigrid
 Base.eltype(::IncompleteLU.ILUFactorization{Tv, Ti}) where {Tv, Ti} = Tv
 Base.eltype(::AlgebraicMultigrid.Preconditioner) = Float64
 
+# AlgebraicMultigrid triggers a LAPACK gesdd! bug on Julia 1.10 (lts) when computing
+# pseudoinverse during AMG coarsening. Skip AMG preconditioner tests on Julia < 1.11.
+const TEST_AMG = VERSION >= v"1.11-"
+
 const N = 32
 const xyd_brusselator = range(0, stop = 1, length = N)
 brusselator_f(x, y, t) = (((x - 0.3)^2 + (y - 0.6)^2) <= 0.1^2) * (t >= 1.1) * 5.0
@@ -128,34 +132,38 @@ sol2 = solve(
     ), save_everystep = false
 );
 iter2 = iter[];
-iter[] = 0;
-sol3 = solve(
-    prob_ode_brusselator_2d_sparse,
-    KenCarp47(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter3 = iter[];
-iter[] = 0;
-sol4 = solve(
-    prob_ode_brusselator_2d_sparse,
-    KenCarp47(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter4 = iter[];
-iter[] = 0;
+if TEST_AMG
+    iter[] = 0;
+    sol3 = solve(
+        prob_ode_brusselator_2d_sparse,
+        KenCarp47(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter3 = iter[];
+    iter[] = 0;
+    sol4 = solve(
+        prob_ode_brusselator_2d_sparse,
+        KenCarp47(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter4 = iter[];
+    iter[] = 0;
+end
 
 @test sol1.retcode === ReturnCode.Success
 @test sol2.retcode === ReturnCode.Success
-@test sol3.retcode === ReturnCode.Success
-@test sol4.retcode === ReturnCode.Success
+if TEST_AMG
+    @test sol3.retcode === ReturnCode.Success
+    @test sol4.retcode === ReturnCode.Success
+    @test iter3 < iter1
+    @test iter4 < iter1
+end
 
 @test iter2 < iter1
-@test iter3 < iter1
-@test iter4 < iter1
 
 sol1 = solve(
     prob_ode_brusselator_2d, Rosenbrock23(linsolve = KrylovJL_GMRES()),
@@ -171,34 +179,38 @@ sol2 = solve(
     ), save_everystep = false
 );
 iter2 = iter[];
-iter[] = 0;
-sol3 = solve(
-    prob_ode_brusselator_2d_sparse,
-    Rosenbrock23(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter3 = iter[];
-iter[] = 0;
-sol4 = solve(
-    prob_ode_brusselator_2d_sparse,
-    Rosenbrock23(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter4 = iter[];
-iter[] = 0;
+if TEST_AMG
+    iter[] = 0;
+    sol3 = solve(
+        prob_ode_brusselator_2d_sparse,
+        Rosenbrock23(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter3 = iter[];
+    iter[] = 0;
+    sol4 = solve(
+        prob_ode_brusselator_2d_sparse,
+        Rosenbrock23(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter4 = iter[];
+    iter[] = 0;
+end
 
 @test sol1.retcode === ReturnCode.Success
 @test sol2.retcode === ReturnCode.Success
-@test sol3.retcode === ReturnCode.Success
-@test sol4.retcode === ReturnCode.Success
+if TEST_AMG
+    @test sol3.retcode === ReturnCode.Success
+    @test sol4.retcode === ReturnCode.Success
+    @test iter3 < iter1
+    @test iter4 < iter1
+end
 
 @test iter2 < iter1
-@test iter3 < iter1
-@test iter4 < iter1
 
 sol1 = solve(
     prob_ode_brusselator_2d, Rodas4(linsolve = KrylovJL_GMRES()),
@@ -212,34 +224,38 @@ sol2 = solve(
     save_everystep = false
 );
 iter2 = iter[];
-iter[] = 0;
-sol3 = solve(
-    prob_ode_brusselator_2d_sparse,
-    Rodas4(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter3 = iter[];
-iter[] = 0;
-sol4 = solve(
-    prob_ode_brusselator_2d_sparse,
-    Rodas4(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter4 = iter[];
-iter[] = 0;
+if TEST_AMG
+    iter[] = 0;
+    sol3 = solve(
+        prob_ode_brusselator_2d_sparse,
+        Rodas4(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter3 = iter[];
+    iter[] = 0;
+    sol4 = solve(
+        prob_ode_brusselator_2d_sparse,
+        Rodas4(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter4 = iter[];
+    iter[] = 0;
+end
 
 @test sol1.retcode === ReturnCode.Success
 @test sol2.retcode === ReturnCode.Success
-@test sol3.retcode === ReturnCode.Success
-@test sol4.retcode === ReturnCode.Success
+if TEST_AMG
+    @test sol3.retcode === ReturnCode.Success
+    @test sol4.retcode === ReturnCode.Success
+    @test iter3 < iter1
+    @test iter4 < iter1
+end
 
 @test iter2 < iter1
-@test iter3 < iter1
-@test iter4 < iter1
 
 sol1 = solve(
     prob_ode_brusselator_2d, Rodas5(linsolve = KrylovJL_GMRES()),
@@ -253,34 +269,38 @@ sol2 = solve(
     save_everystep = false
 );
 iter2 = iter[];
-iter[] = 0;
-sol3 = solve(
-    prob_ode_brusselator_2d_sparse,
-    Rodas5(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter3 = iter[];
-iter[] = 0;
-sol4 = solve(
-    prob_ode_brusselator_2d_sparse,
-    Rodas5(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter4 = iter[];
-iter[] = 0;
+if TEST_AMG
+    iter[] = 0;
+    sol3 = solve(
+        prob_ode_brusselator_2d_sparse,
+        Rodas5(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter3 = iter[];
+    iter[] = 0;
+    sol4 = solve(
+        prob_ode_brusselator_2d_sparse,
+        Rodas5(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter4 = iter[];
+    iter[] = 0;
+end
 
 @test sol1.retcode === ReturnCode.Success
 @test sol2.retcode === ReturnCode.Success
-@test sol3.retcode === ReturnCode.Success
-@test sol4.retcode === ReturnCode.Success
+if TEST_AMG
+    @test sol3.retcode === ReturnCode.Success
+    @test sol4.retcode === ReturnCode.Success
+    @test iter3 < iter1
+    @test iter4 < iter1
+end
 
 @test iter2 < iter1
-@test iter3 < iter1
-@test iter4 < iter1
 
 sol1 = solve(
     prob_ode_brusselator_2d, TRBDF2(linsolve = KrylovJL_GMRES()),
@@ -294,34 +314,38 @@ sol2 = solve(
     save_everystep = false
 );
 iter2 = iter[];
-iter[] = 0;
-sol3 = solve(
-    prob_ode_brusselator_2d_sparse,
-    TRBDF2(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter3 = iter[];
-iter[] = 0;
-sol4 = solve(
-    prob_ode_brusselator_2d_sparse,
-    TRBDF2(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter4 = iter[];
-iter[] = 0;
+if TEST_AMG
+    iter[] = 0;
+    sol3 = solve(
+        prob_ode_brusselator_2d_sparse,
+        TRBDF2(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter3 = iter[];
+    iter[] = 0;
+    sol4 = solve(
+        prob_ode_brusselator_2d_sparse,
+        TRBDF2(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter4 = iter[];
+    iter[] = 0;
+end
 
 @test sol1.retcode === ReturnCode.Success
 @test sol2.retcode === ReturnCode.Success
-@test sol3.retcode === ReturnCode.Success
-@test sol4.retcode === ReturnCode.Success
+if TEST_AMG
+    @test sol3.retcode === ReturnCode.Success
+    @test sol4.retcode === ReturnCode.Success
+    @test iter3 < iter1
+    @test iter4 < iter1
+end
 
 @test iter2 < iter1
-@test iter3 < iter1
-@test iter4 < iter1
 
 sol1 = solve(
     prob_ode_brusselator_2d, TRBDF2(linsolve = KrylovJL_GMRES()),
@@ -337,31 +361,35 @@ sol2 = solve(
     ), save_everystep = false
 );
 iter2 = iter[];
-iter[] = 0;
-sol3 = solve(
-    prob_ode_brusselator_2d_sparse,
-    TRBDF2(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter3 = iter[];
-iter[] = 0;
-sol4 = solve(
-    prob_ode_brusselator_2d_sparse,
-    TRBDF2(
-        linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
-        concrete_jac = true
-    ), save_everystep = false
-);
-iter4 = iter[];
-iter[] = 0;
+if TEST_AMG
+    iter[] = 0;
+    sol3 = solve(
+        prob_ode_brusselator_2d_sparse,
+        TRBDF2(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter3 = iter[];
+    iter[] = 0;
+    sol4 = solve(
+        prob_ode_brusselator_2d_sparse,
+        TRBDF2(
+            linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+            concrete_jac = true
+        ), save_everystep = false
+    );
+    iter4 = iter[];
+    iter[] = 0;
+end
 
 @test sol1.retcode === ReturnCode.Success
 @test sol2.retcode === ReturnCode.Success
-@test sol3.retcode === ReturnCode.Success
-@test sol4.retcode === ReturnCode.Success
+if TEST_AMG
+    @test sol3.retcode === ReturnCode.Success
+    @test sol4.retcode === ReturnCode.Success
+    @test iter3 < iter1
+    @test iter4 < iter1
+end
 
 @test iter2 < iter1
-@test iter3 < iter1
-@test iter4 < iter1
