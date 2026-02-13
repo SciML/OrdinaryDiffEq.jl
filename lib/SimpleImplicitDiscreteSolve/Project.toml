@@ -29,7 +29,7 @@ SafeTestsets = "0.1.0"
 Test = "<0.0.1, 1"
 AllocCheck = "0.2"
 DiffEqBase = "6.194"
-Reexport = "1.2"
+Reexport = "1.2.2"
 SciMLBase = "2.128"
 SimpleNonlinearSolve = "2.7"
 

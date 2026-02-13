@@ -51,7 +51,7 @@ AllocCheck = "0.2"
 DiffEqBase = "6.194"
 SafeTestsets = "0.1.0"
 OrdinaryDiffEqRosenbrock = "1.15.1"
-Reexport = "1.2"
+Reexport = "1.2.2"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "OrdinaryDiffEqRosenbrock", "SafeTestsets", "Test", "OrdinaryDiffEqVerner", "OrdinaryDiffEqTsit5", "Pkg"]
