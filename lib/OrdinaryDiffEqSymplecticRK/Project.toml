@@ -15,6 +15,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [weakdeps]
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
+OrdinaryDiffEqRKN = "af6ede74-add8-4cfd-b1df-9a4dbb109d7a"
 
 [extras]
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
