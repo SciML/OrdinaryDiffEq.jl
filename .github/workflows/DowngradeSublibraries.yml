@@ -18,7 +18,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # Workaround for julia-downgrade-compat@v2 dropping local path deps from Manifest.toml (#3021).
+    # Disabled: julia-downgrade-compat@v2 removes local path deps from manifest, see #3021
     if: true
     strategy:
       fail-fast: false
@@ -26,42 +26,39 @@ jobs:
         downgrade_mode: ['alldeps']
         julia-version: ['1.11']
         project:
-          - 'lib/ImplicitDiscreteSolve'
-          - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'
-          - 'lib/OrdinaryDiffEqBDF'
+          # - 'lib/ImplicitDiscreteSolve'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqBDF'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqCore'
-          - 'lib/OrdinaryDiffEqDefault'
+          # - 'lib/OrdinaryDiffEqDefault'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqDifferentiation'
           - 'lib/OrdinaryDiffEqExplicitRK'
-          - 'lib/OrdinaryDiffEqExponentialRK'
-          - 'lib/OrdinaryDiffEqExtrapolation'
-          - 'lib/OrdinaryDiffEqFIRK'
+          # - 'lib/OrdinaryDiffEqExponentialRK'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqExtrapolation'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqFIRK'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqFeagin'
           - 'lib/OrdinaryDiffEqFunctionMap'
           - 'lib/OrdinaryDiffEqHighOrderRK'
-          - 'lib/OrdinaryDiffEqIMEXMultistep'
-          - 'lib/OrdinaryDiffEqLinear'
+          # - 'lib/OrdinaryDiffEqIMEXMultistep'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqLinear'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqLowOrderRK'
           - 'lib/OrdinaryDiffEqLowStorageRK'
-          - 'lib/OrdinaryDiffEqNewmark'
-          - 'lib/OrdinaryDiffEqNonlinearSolve'
+          # - 'lib/OrdinaryDiffEqNonlinearSolve'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqNordsieck'
-          - 'lib/OrdinaryDiffEqPDIRK'
+          # - 'lib/OrdinaryDiffEqPDIRK'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqPRK'
           - 'lib/OrdinaryDiffEqQPRK'
-          - 'lib/OrdinaryDiffEqRKIP'
-          - 'lib/OrdinaryDiffEqRKN'
-          - 'lib/OrdinaryDiffEqRosenbrock'
-          - 'lib/OrdinaryDiffEqSDIRK'
-          - 'lib/OrdinaryDiffEqSIMDRK'
+          # - 'lib/OrdinaryDiffEqRKN'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqRosenbrock'  # disabled: see #2977
+          # - 'lib/OrdinaryDiffEqSDIRK'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqSSPRK'
-          - 'lib/OrdinaryDiffEqStabilizedIRK'
+          # - 'lib/OrdinaryDiffEqStabilizedIRK'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqStabilizedRK'
           - 'lib/OrdinaryDiffEqSymplecticRK'
-          - 'lib/OrdinaryDiffEqTaylorSeries'
+          # - 'lib/OrdinaryDiffEqTaylorSeries'  # disabled: see #2977
           - 'lib/OrdinaryDiffEqTsit5'
           - 'lib/OrdinaryDiffEqVerner'
-          - 'lib/SimpleImplicitDiscreteSolve'
+          # - 'lib/SimpleImplicitDiscreteSolve'  # disabled: see #2977
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
@@ -70,10 +67,8 @@ jobs:
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
           projects: ${{ matrix.project }}
-          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqBDF,OrdinaryDiffEqCore,OrdinaryDiffEqDifferentiation,OrdinaryDiffEqExplicitRK,OrdinaryDiffEqLowOrderRK,OrdinaryDiffEqLowStorageRK,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqRKN,OrdinaryDiffEqRosenbrock,OrdinaryDiffEqSDIRK,OrdinaryDiffEqStabilizedRK,OrdinaryDiffEqTsit5,OrdinaryDiffEqVerner
+          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation
           julia_version: ${{ matrix.julia-version }}
-      - name: Re-resolve manifest after downgrade
-        run: julia --color=yes --project=${{ matrix.project }} -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ matrix.project }}
