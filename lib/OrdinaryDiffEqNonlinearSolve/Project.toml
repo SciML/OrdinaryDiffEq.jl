@@ -25,6 +25,9 @@ DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SciMLStructures = "53ae85a6-f571-4167-b2af-e1d143709226"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
+[weakdeps]
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+
 [extras]
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
