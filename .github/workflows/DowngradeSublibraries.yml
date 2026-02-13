@@ -73,11 +73,7 @@ jobs:
           skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation
           julia_version: ${{ matrix.julia-version }}
       - name: Re-resolve manifest after downgrade
-        shell: julia --color=yes --project=${{ matrix.project }} {0}
-        run: |
-          using Pkg
-          Pkg.resolve()
-          Pkg.instantiate()
+        run: julia --color=yes --project=${{ matrix.project }} -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ matrix.project }}
