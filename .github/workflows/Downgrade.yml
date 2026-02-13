@@ -38,6 +38,7 @@ jobs:
         run: |
           using Pkg
           Pkg.resolve()
+          Pkg.instantiate()
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
