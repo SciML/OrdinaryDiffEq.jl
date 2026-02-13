@@ -67,4 +67,3 @@ path = "../OrdinaryDiffEqVerner"
 
 [sources.OrdinaryDiffEqRosenbrock]
 path = "../OrdinaryDiffEqRosenbrock"
-
