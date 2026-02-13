@@ -18,6 +18,9 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
+[weakdeps]
+OrdinaryDiffEqExplicitRK = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
+
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
@@ -27,7 +30,6 @@ DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
-OrdinaryDiffEqExplicitRK = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]

@@ -17,6 +17,9 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
+[weakdeps]
+OrdinaryDiffEqLowStorageRK = "b0944070-b475-4768-8dec-fb6eb410534d"
+
 [extras]
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
