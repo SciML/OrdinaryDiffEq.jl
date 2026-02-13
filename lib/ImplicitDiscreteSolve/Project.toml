@@ -33,7 +33,7 @@ Test = "1.10.0"
 NonlinearSolveBase = "2.0.0"
 OrdinaryDiffEqSDIRK = "1.6.0"
 SafeTestsets = "0.1.0"
-SciMLBase = "2.116"
+SciMLBase = "2.128"
 OrdinaryDiffEqCore = "3.4"
 ConcreteStructs = "0.2.3"
 Aqua = "0.8.11"
@@ -53,3 +53,4 @@ path = "../OrdinaryDiffEqCore"
 
 [sources.OrdinaryDiffEqSDIRK]
 path = "../OrdinaryDiffEqSDIRK"
+

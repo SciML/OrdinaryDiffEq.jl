@@ -30,7 +30,7 @@ Test = "<0.0.1, 1"
 AllocCheck = "0.2"
 DiffEqBase = "6.194"
 Reexport = "1.2"
-SciMLBase = "2.116"
+SciMLBase = "2.128"
 SimpleNonlinearSolve = "2.7"
 
 [targets]
@@ -38,3 +38,4 @@ test = ["OrdinaryDiffEqSDIRK", "Test", "Pkg", "SafeTestsets"]
 
 [sources.OrdinaryDiffEqSDIRK]
 path = "../OrdinaryDiffEqSDIRK"
+
