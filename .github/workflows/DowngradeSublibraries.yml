@@ -67,7 +67,7 @@ jobs:
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
           projects: ${{ matrix.project }}
-          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation,NonlinearSolveBase
+          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation,NonlinearSolveBase,DifferentiationInterface,SciMLOperators
           julia_version: ${{ matrix.julia-version }}
       - name: Re-resolve manifest after downgrade
         run: julia --color=yes --project=${{ matrix.project }} -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'

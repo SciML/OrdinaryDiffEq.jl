@@ -14,7 +14,6 @@ SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 
 [weakdeps]
-OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 
 [extras]
