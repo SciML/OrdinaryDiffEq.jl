@@ -207,22 +207,29 @@ end
 
     if !is_APPVEYOR && GROUP == "GPU"
         activate_gpu_env()
-        @time @safetestset "Simple GPU" begin
-            import OrdinaryDiffEqCore
-            include(
-                joinpath(
-                    dirname(pathof(OrdinaryDiffEqCore.DiffEqBase)), "..",
-                    "test/gpu/simple_gpu.jl"
+        import CUDA
+        capability = CUDA.capability(CUDA.device())
+        supports_nan_ptx_modifier = capability >= v"8.0"
+        if supports_nan_ptx_modifier
+            @time @safetestset "Simple GPU" begin
+                import OrdinaryDiffEqCore
+                include(
+                    joinpath(
+                        dirname(pathof(OrdinaryDiffEqCore.DiffEqBase)), "..",
+                        "test/gpu/simple_gpu.jl"
+                    )
                 )
-            )
+            end
+            @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
+            @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
+            @time @safetestset "RKIP Semilinear PDE GPU" include("gpu/rkip_semilinear_pde.jl")
+            @time @safetestset "simple dae on GPU" include("gpu/simple_dae.jl")
+        else
+            @info "Skipping adaptive GPU testsets on pre-sm_80 GPUs due PTX .NaN instruction requirements" capability
         end
-        @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
         @time @safetestset "Linear LSRK GPU" include("gpu/linear_lsrk.jl")
         @time @safetestset "Linear Exponential GPU" include("gpu/linear_exp.jl")
-        @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
         @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
-        @time @safetestset "RKIP Semilinear PDE GPU" include("gpu/rkip_semilinear_pde.jl")
-        @time @safetestset "simple dae on GPU" include("gpu/simple_dae.jl")
     end
 
     if !is_APPVEYOR && GROUP == "QA"

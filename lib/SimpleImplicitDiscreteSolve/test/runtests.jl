@@ -1,34 +1,32 @@
 using Test
 using SimpleImplicitDiscreteSolve
-using OrdinaryDiffEqSDIRK
 using SafeTestsets
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
 # Run functional tests
 if TEST_GROUP != "QA"
-    # Test implicit Euler using ImplicitDiscreteProblem
-    @testset "Implicit Euler" begin
-        function lotkavolterra(u, p, t)
-            [1.5 * u[1] - u[1] * u[2], -3.0 * u[2] + u[1] * u[2]]
-        end
-
-        function f!(resid, u_next, u, p, t)
-            lv = lotkavolterra(u_next, p, t)
-            resid[1] = u_next[1] - u[1] - 0.01 * lv[1]
-            resid[2] = u_next[2] - u[2] - 0.01 * lv[2]
-            nothing
-        end
-        u0 = [1.0, 1.0]
+    @testset "Implicit Discrete Stepping" begin
+        dt = 0.01
         tspan = (0.0, 0.5)
 
-        idprob = ImplicitDiscreteProblem(f!, u0, tspan, [])
-        idsol = solve(idprob, SimpleIDSolve(), dt = 0.01)
+        @testset "Linear scalar equation" begin
+            function linear!(resid, u_next, u, p, t)
+                # Implicit Euler for u' = -u:
+                # u_{n+1} - u_n - dt*(-u_{n+1}) = 0
+                resid[1] = u_next[1] - u[1] + dt * u_next[1]
+                nothing
+            end
+            u0 = [1.0]
+            nsteps = Int(round((tspan[2] - tspan[1]) / dt))
+            # SimpleIDSolve initializes by solving one implicit step at t0.
+            expected = u0[1] / (1 + dt)^(nsteps + 1)
 
-        oprob = ODEProblem(lotkavolterra, u0, tspan)
-        osol = solve(oprob, ImplicitEuler())
+            idprob = ImplicitDiscreteProblem(linear!, u0, tspan, [])
+            idsol = solve(idprob, SimpleIDSolve(); dt)
 
-        @test isapprox(idsol.u[end - 1], osol.u[end], atol = 0.1)
+            @test isapprox(idsol.u[end][1], expected, rtol = 1.0e-10)
+        end
 
         ### free-fall
         # y, dy
@@ -43,15 +41,16 @@ if TEST_GROUP != "QA"
             nothing
         end
         u0 = [10.0, 0.0]
-        tspan = (0, 0.5)
+        nsteps = Int(round((tspan[2] - tspan[1]) / dt))
 
         idprob = ImplicitDiscreteProblem(g!, u0, tspan, [])
-        idsol = solve(idprob, SimpleIDSolve(); dt = 0.01)
+        idsol = solve(idprob, SimpleIDSolve(); dt)
 
-        oprob = ODEProblem(ff, u0, tspan)
-        osol = solve(oprob, ImplicitEuler())
-
-        @test isapprox(idsol.u[end - 1], osol.u[end], atol = 0.1)
+        m = nsteps + 1
+        expected_v = u0[2] - 9.8 * dt * m
+        expected_y = u0[1] + m * dt * u0[2] - 9.8 * dt^2 * m * (m + 1) / 2
+        @test isapprox(idsol.u[end][1], expected_y, atol = 1.0e-10)
+        @test isapprox(idsol.u[end][2], expected_v, atol = 1.0e-10)
     end
 
     @testset "Solver initializes" begin
