@@ -19,56 +19,58 @@ jobs:
   test:
     runs-on: ubuntu-latest
     # Disabled: julia-downgrade-compat@v2 removes local path deps from manifest, see #3021
-    if: false
+    if: true
     strategy:
       fail-fast: false
       matrix:
         downgrade_mode: ['alldeps']
         julia-version: ['1.11']
         project:
-          # - 'lib/ImplicitDiscreteSolve'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqBDF'  # disabled: see #2977
+          - 'lib/ImplicitDiscreteSolve'
+          - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'
+          - 'lib/OrdinaryDiffEqBDF'
           - 'lib/OrdinaryDiffEqCore'
-          # - 'lib/OrdinaryDiffEqDefault'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqDefault' 
           - 'lib/OrdinaryDiffEqDifferentiation'
           - 'lib/OrdinaryDiffEqExplicitRK'
-          # - 'lib/OrdinaryDiffEqExponentialRK'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqExtrapolation'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqFIRK'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqExponentialRK'  
+          - 'lib/OrdinaryDiffEqExtrapolation'
+          - 'lib/OrdinaryDiffEqFIRK'
           - 'lib/OrdinaryDiffEqFeagin'
           - 'lib/OrdinaryDiffEqFunctionMap'
           - 'lib/OrdinaryDiffEqHighOrderRK'
-          # - 'lib/OrdinaryDiffEqIMEXMultistep'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqLinear'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqIMEXMultistep'
+          - 'lib/OrdinaryDiffEqLinear'
           - 'lib/OrdinaryDiffEqLowOrderRK'
           - 'lib/OrdinaryDiffEqLowStorageRK'
-          # - 'lib/OrdinaryDiffEqNonlinearSolve'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqNonlinearSolve'
           - 'lib/OrdinaryDiffEqNordsieck'
-          # - 'lib/OrdinaryDiffEqPDIRK'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqPDIRK'
           - 'lib/OrdinaryDiffEqPRK'
           - 'lib/OrdinaryDiffEqQPRK'
-          # - 'lib/OrdinaryDiffEqRKN'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqRosenbrock'  # disabled: see #2977
-          # - 'lib/OrdinaryDiffEqSDIRK'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqRKN'
+          - 'lib/OrdinaryDiffEqRosenbrock'
+          - 'lib/OrdinaryDiffEqSDIRK'
           - 'lib/OrdinaryDiffEqSSPRK'
-          # - 'lib/OrdinaryDiffEqStabilizedIRK'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqStabilizedIRK'
           - 'lib/OrdinaryDiffEqStabilizedRK'
           - 'lib/OrdinaryDiffEqSymplecticRK'
-          # - 'lib/OrdinaryDiffEqTaylorSeries'  # disabled: see #2977
+          - 'lib/OrdinaryDiffEqTaylorSeries'
           - 'lib/OrdinaryDiffEqTsit5'
           - 'lib/OrdinaryDiffEqVerner'
-          # - 'lib/SimpleImplicitDiscreteSolve'  # disabled: see #2977
+          - 'lib/SimpleImplicitDiscreteSolve'
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
         with:
-          version: ${{ matrix.julia-version }}
+          version: ${{ matrix.julia-version }}    
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
           projects: ${{ matrix.project }}
-          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation
+          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation,NonlinearSolveBase,DifferentiationInterface,SciMLOperators
           julia_version: ${{ matrix.julia-version }}
+      - name: Re-resolve manifest after downgrade
+        run: julia --color=yes --project=${{ matrix.project }} -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ matrix.project }}

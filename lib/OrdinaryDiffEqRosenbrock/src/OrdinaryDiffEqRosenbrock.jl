@@ -15,6 +15,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _un
     DerivativeOrderNotPossibleError, _bool_to_ADType,
     _process_AD_choice, LinearAliasSpecifier, copyat_or_push!
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
+import MacroTools
 import MacroTools: namify
 using MacroTools: @capture
 using DiffEqBase: @def

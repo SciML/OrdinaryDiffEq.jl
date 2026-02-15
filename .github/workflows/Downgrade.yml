@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
-    if: false
+    if: true
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -29,10 +29,16 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
+      - name: Verify Julia installation
+        run: |
+          command -v julia
+          julia --version
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
           skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils
           julia_version: ${{ matrix.julia-version }}
+      - name: Re-resolve manifest after downgrade
+        run: julia --color=yes --project=. -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:

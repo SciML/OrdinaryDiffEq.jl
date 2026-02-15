@@ -358,6 +358,10 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
+      - name: Verify Julia installation
+        run: |
+          command -v julia
+          julia --version
       - uses: actions/cache@v5
         env:
           cache-name: cache-artifacts
