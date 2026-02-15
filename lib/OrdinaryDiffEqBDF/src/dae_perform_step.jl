@@ -233,16 +233,17 @@ end
 end
 
 function initialize!(integrator, cache::DFBDFConstantCache{max_order}) where {max_order}
-    integrator.kshortsize = max_order
+    integrator.kshortsize = 2 * (max_order + 1)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(
         integrator.du, integrator.uprev, integrator.p,
         integrator.t
     ) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    # Avoid undefined entries if k is an array of arrays
+    # k[1..half] = solution values, k[half+1..2*half] = Θ positions
+    # where half = max_order + 1
     integrator.fsallast = zero(integrator.fsalfirst)
-    for i in 1:max_order
+    for i in 1:(2 * (max_order + 1))
         integrator.k[i] = zero(integrator.fsalfirst)
     end
 
@@ -258,30 +259,51 @@ function perform_step!(
     ) where {max_order}
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
-        weights, ts_tmp, iters_from_event, nconsteps,
+        ts_tmp, iters_from_event, nconsteps,
     ) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
     k = order
     reinitFBDF!(integrator, cache)
+
+    # Rebuild integrator.k from u_history/ts for predictor/corrector
+    half = max_order + 1
+    if iters_from_event >= 1
+        for j in 1:(max_order + 1)
+            if j <= k + 1
+                if u isa Number
+                    integrator.k[j] = u_history[j]
+                    integrator.k[half + j] = (ts[j] - t) / dt
+                else
+                    integrator.k[j] = _reshape(
+                        copy(view(u_history, :, j)), axes(u)
+                    )
+                    integrator.k[half + j] = fill((ts[j] - t) / dt, size(u))
+                end
+            else
+                integrator.k[j] = zero(u)
+                integrator.k[half + j] = zero(u)
+            end
+        end
+    end
+
     cache.u₀ = zero(u)
     if iters_from_event >= 1
-        cache.u₀ = calc_Lagrange_interp(k, weights, t + dt, ts, u_history, cache.u₀)
+        cache.u₀ = _ode_interpolant(
+            one(t), dt, uprev, uprev,
+            integrator.k, cache, nothing, Val{0}, nothing
+        )
     else
         cache.u₀ = u
     end
     markfirststage!(nlsolver)
-    equi_ts = zeros(k - 1)
-    for i in 1:(k - 1)
-        equi_ts[i] = t - dt * i
-    end
 
     fill!(u_corrector, zero(eltype(u)))
     if u isa Number
         for i in 1:(k - 1)
-            u_corrector[i] = calc_Lagrange_interp(
-                k, weights, equi_ts[i], ts, u_history,
-                u_corrector[i]
+            u_corrector[i] = _ode_interpolant(
+                oftype(t, -i), dt, uprev, uprev,
+                integrator.k, cache, nothing, Val{0}, nothing
             )
         end
         tmp = uprev * bdf_coeffs[k, 2]
@@ -290,16 +312,11 @@ function perform_step!(
         end
     else
         for i in 1:(k - 1)
-            @.. broadcast = false @views u_corrector[:, i] = $calc_Lagrange_interp(
-                k, weights,
-                equi_ts[i],
-                ts,
-                u_history,
-                u_corrector[
-                    :,
-                    i,
-                ]
+            val = _ode_interpolant(
+                oftype(t, -i), dt, uprev, uprev,
+                integrator.k, cache, nothing, Val{0}, nothing
             )
+            u_corrector[:, i] .= _vec(val)
         end
         tmp = uprev * bdf_coeffs[k, 2]
         vc = _vec(tmp)
@@ -386,17 +403,30 @@ function perform_step!(
     integrator.fsallast = integrator.du = (nlsolver.α * z + nlsolver.tmp) *
         inv(nlsolver.γ * dt)
     if integrator.opts.calck
+        # Store dense output data: k[1]=u_new at Θ=1, k[1+j]=u_history[:,j]
+        half = max_order + 1
+        if u isa Number
+            integrator.k[1] = u
+            integrator.k[half + 1] = one(t)
+        else
+            integrator.k[1] = copy(u)
+            integrator.k[half + 1] = fill(one(t), size(u))
+        end
         for j in 1:max_order
             if j <= k
-                if j == 1
-                    integrator.k[j] = copy(uprev)
+                if u isa Number
+                    integrator.k[1 + j] = u_history[j]
                 else
-                    integrator.k[j] = (u isa Number) ? u_corrector[j - 1] :
-                                      _reshape(
-                        copy(view(u_corrector, :, j - 1)), axes(u))
+                    integrator.k[1 + j] = _reshape(
+                        copy(view(u_history, :, j)), axes(u)
+                    )
                 end
+                integrator.k[half + 1 + j] = (u isa Number) ?
+                                              (ts[j] - t) / dt :
+                                              fill((ts[j] - t) / dt, size(u))
             else
-                integrator.k[j] = zero(u)
+                integrator.k[1 + j] = zero(u)
+                integrator.k[half + 1 + j] = zero(u)
             end
         end
     end
@@ -404,10 +434,10 @@ function perform_step!(
 end
 
 function initialize!(integrator, cache::DFBDFCache{max_order}) where {max_order}
-    integrator.kshortsize = max_order
+    integrator.kshortsize = 2 * (max_order + 1)
 
     resize!(integrator.k, integrator.kshortsize)
-    for i in 1:max_order
+    for i in 1:(2 * (max_order + 1))
         integrator.k[i] = cache.dense[i]
     end
 
@@ -422,31 +452,46 @@ function perform_step!(
         repeat_step = false
     ) where {max_order}
     (;
-        ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights,
-        terk_tmp, terkp1_tmp, atmp, tmp, equi_ts, u₀, ts_tmp,
+        ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
+        terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp,
     ) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
     reinitFBDF!(integrator, cache)
     k = order
+
+    # Rebuild integrator.k from u_history/ts for predictor/corrector
+    half = max_order + 1
+    if cache.iters_from_event >= 1
+        for j in 1:(max_order + 1)
+            if j <= k + 1
+                @views copyto!(_vec(integrator.k[j]), u_history[:, j])
+                fill!(integrator.k[half + j], (ts[j] - t) / dt)
+            else
+                fill!(integrator.k[j], zero(eltype(u)))
+                fill!(integrator.k[half + j], zero(eltype(u)))
+            end
+        end
+    end
+
     @.. broadcast = false u₀ = zero(u)
     if cache.iters_from_event >= 1
-        calc_Lagrange_interp!(k, weights, t + dt, ts, u_history, u₀)
+        _ode_interpolant!(
+            u₀, one(t), dt, uprev, uprev,
+            integrator.k, cache, nothing, Val{0}, nothing
+        )
     else
         @.. broadcast = false u₀ = u
     end
     markfirststage!(nlsolver)
 
-    for i in 1:(k - 1)
-        equi_ts[i] = t - dt * i
-    end
-
     fill!(u_corrector, zero(eltype(u)))
     for i in 1:(k - 1)
-        @views calc_Lagrange_interp!(
-            k, weights, equi_ts[i], ts, u_history,
-            u_corrector[:, i]
+        val = _ode_interpolant(
+            oftype(t, -i), dt, uprev, uprev,
+            integrator.k, cache, nothing, Val{0}, nothing
         )
+        @views copyto!(u_corrector[:, i], _vec(val))
     end
 
     @.. broadcast = false tmp = uprev * bdf_coeffs[k, 2]
@@ -533,16 +578,17 @@ function perform_step!(
     ) *
         inv(nlsolver.γ * dt) #TODO Lorenz plot seems not smooth
     if integrator.opts.calck
-        for j in 1:length(integrator.k)
+        # Store dense output data: k[1]=u_new at Θ=1, k[1+j]=u_history[:,j]
+        half = max_order + 1
+        @.. broadcast = false integrator.k[1] = u
+        fill!(integrator.k[half + 1], one(eltype(u)))
+        for j in 1:max_order
             if j <= k
-                if j == 1
-                    copyto!(_vec(integrator.k[j]), _vec(uprev))
-                else
-                    @views copyto!(
-                        _vec(integrator.k[j]), u_corrector[:, j - 1])
-                end
+                @views copyto!(_vec(integrator.k[1 + j]), u_history[:, j])
+                fill!(integrator.k[half + 1 + j], (ts[j] - t) / dt)
             else
-                fill!(integrator.k[j], zero(eltype(u)))
+                fill!(integrator.k[1 + j], zero(eltype(u)))
+                fill!(integrator.k[half + 1 + j], zero(eltype(u)))
             end
         end
     end

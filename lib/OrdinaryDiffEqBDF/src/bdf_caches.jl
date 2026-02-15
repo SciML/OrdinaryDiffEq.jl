@@ -749,7 +749,7 @@ function alg_cache(
     ts_tmp = similar(ts)
     iters_from_event = 0
 
-    dense = [zero(u) for _ in 1:max_order]
+    dense = [zero(u) for _ in 1:(2 * (max_order + 1))]
 
     return FBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,

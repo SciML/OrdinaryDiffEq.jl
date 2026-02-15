@@ -196,35 +196,66 @@ end
 end
 
 ####################################################################
-# FBDF / DFBDF: Lagrange interpolation
+# FBDF / DFBDF: Non-equidistant Lagrange interpolation
 #
-# k stores past solution values at equidistant points:
-#   k[1] = u_{n-1} (= uprev) at normalized position x₁ = 0
-#   k[j] = u_{n-j} at normalized position xⱼ = 1-j
-# y₁ = u_n at normalized position x₀ = 1
+# All data lives in k. y₀ and y₁ are NOT used.
 #
-# Direct Lagrange formula (no barycentric division singularities):
-#   p(Θ) = Σ_{j=0}^n y_j L_j(Θ)
-#   L_j(Θ) = Π_{m≠j} (Θ - x_m) / (x_j - x_m)
+# Layout: k has 2*half entries where half = length(k)÷2.
+#   k[1..half] = solution values at past/current times
+#   k[half+1..2*half] = corresponding Θ positions
 #
-# Since x_m = 1-m, the denominators (x_j - x_m) = (m - j) are constant
-# integers, avoiding division by (Θ - x_j). This ensures compatibility
-# with ForwardDiff dual numbers.
+# For scalar u, k[half+j] is the Θ value directly.
+# For vector u, k[half+j] is filled with the same Θ value; use first().
 #
-# Same polynomial as calc_Lagrange_interp in bdf_utils.jl.
+# For dense output (stored in calck block at step end):
+#   k[1] = u_new (step end solution), Θ₁ = 1
+#   k[1+j] = u_history[:,j],          Θ_{1+j} = (ts[j] - t) / dt
+#   for j = 1..order. Total: order+1 data points.
+#
+# For predictor (rebuilt at step start):
+#   k[j] = u_history[:,j],            Θ_j = (ts[j] - t) / dt
+#   for j = 1..order+1. Total: order+1 data points.
+#
+# General Lagrange formula:
+#   p(Θ) = Σ_{j=1}^n L_j(Θ) * k[j]
+#   L_j(Θ) = Π_{m≠j} (Θ - Θ_m) / (Θ_j - Θ_m)
+#
+# This matches calc_Lagrange_interp: same polynomial through the same
+# actual solution values at their actual times.
 ####################################################################
 
-# Helper: determine active BDF order from k entries
-# (unused entries are set to zero; active entries are past solution values)
+# Helper: determine number of active data points from k entries.
+# Layout: k[1..half] solution values, k[half+1..2*half] Θ positions.
+# Active entries are non-zero (counting from the top).
 function _bdf_active_order(k)
-    n = length(k)
+    half = length(k) ÷ 2
+    n = half
     while n > 0 && iszero(k[n])
         n -= 1
     end
     return max(n, 1)
 end
 
-## FBDF Val{0}: Direct Lagrange function value interpolation
+# Extract scalar Θ from a k entry (which may be a scalar or vector filled
+# with the same value).
+_get_theta(x::Number) = x
+_get_theta(x) = first(x)
+
+# Compute Lagrange basis value L_i(Θ) for node i among n nodes.
+# Node positions: Θ_j = _get_theta(k[half + j]) for j = 1..n.
+@inline function _lagrange_basis(Θ, i, n, k)
+    half = length(k) ÷ 2
+    θ_i = _get_theta(k[half + i])
+    Li = one(Θ)
+    for m in 1:n
+        m == i && continue
+        θ_m = _get_theta(k[half + m])
+        Li *= (Θ - θ_m) / (θ_i - θ_m)
+    end
+    return Li
+end
+
+## FBDF Val{0}: Lagrange function value interpolation (non-equidistant nodes)
 
 # Out-of-place, no idxs
 @muladd function _ode_interpolant(
@@ -232,25 +263,13 @@ end
         cache::FBDF_CACHES,
         idxs::Nothing, T::Type{Val{0}}, differential_vars
     )
-    num_k = _bdf_active_order(k)
-    n = num_k
-    σ = Θ - 1
+    n = _bdf_active_order(k)
 
-    # L_0(Θ) = Π_{m=1}^n (σ + m) / m
-    L0 = one(Θ)
-    for m in 1:n
-        L0 *= (σ + m) / m
-    end
-    out = @.. L0 * y₁
+    L1 = _lagrange_basis(Θ, 1, n, k)
+    out = @.. L1 * k[1]
 
-    # L_j(Θ) for j = 1..n
-    for j in 1:n
-        Lj = one(Θ)
-        for m in 0:n
-            if m != j
-                Lj *= (σ + m) / (m - j)
-            end
-        end
+    for j in 2:n
+        Lj = _lagrange_basis(Θ, j, n, k)
         out = @.. out + Lj * k[j]
     end
 
@@ -263,23 +282,13 @@ end
         cache::FBDF_CACHES,
         idxs, T::Type{Val{0}}, differential_vars
     )
-    num_k = _bdf_active_order(k)
-    n = num_k
-    σ = Θ - 1
+    n = _bdf_active_order(k)
 
-    L0 = one(Θ)
-    for m in 1:n
-        L0 *= (σ + m) / m
-    end
-    out = @.. L0 * y₁[idxs]
+    L1 = _lagrange_basis(Θ, 1, n, k)
+    out = @.. L1 * k[1][idxs]
 
-    for j in 1:n
-        Lj = one(Θ)
-        for m in 0:n
-            if m != j
-                Lj *= (σ + m) / (m - j)
-            end
-        end
+    for j in 2:n
+        Lj = _lagrange_basis(Θ, j, n, k)
         out = @.. out + Lj * k[j][idxs]
     end
 
@@ -292,23 +301,13 @@ end
         cache::FBDF_CACHES,
         idxs::Nothing, T::Type{Val{0}}, differential_vars
     )
-    num_k = _bdf_active_order(k)
-    n = num_k
-    σ = Θ - 1
+    n = _bdf_active_order(k)
 
-    L0 = one(Θ)
-    for m in 1:n
-        L0 *= (σ + m) / m
-    end
-    @.. out = L0 * y₁
+    L1 = _lagrange_basis(Θ, 1, n, k)
+    @.. out = L1 * k[1]
 
-    for j in 1:n
-        Lj = one(Θ)
-        for m in 0:n
-            if m != j
-                Lj *= (σ + m) / (m - j)
-            end
-        end
+    for j in 2:n
+        Lj = _lagrange_basis(Θ, j, n, k)
         @.. out = out + Lj * k[j]
     end
 
@@ -321,39 +320,38 @@ end
         cache::FBDF_CACHES,
         idxs, T::Type{Val{0}}, differential_vars
     )
-    num_k = _bdf_active_order(k)
-    n = num_k
-    σ = Θ - 1
+    n = _bdf_active_order(k)
 
-    L0 = one(Θ)
-    for m in 1:n
-        L0 *= (σ + m) / m
-    end
-    @views @.. out = L0 * y₁[idxs]
+    L1 = _lagrange_basis(Θ, 1, n, k)
+    @views @.. out = L1 * k[1][idxs]
 
-    for j in 1:n
-        Lj = one(Θ)
-        for m in 0:n
-            if m != j
-                Lj *= (σ + m) / (m - j)
-            end
-        end
+    for j in 2:n
+        Lj = _lagrange_basis(Θ, j, n, k)
         @views @.. out = out + Lj * k[j][idxs]
     end
 
     return out
 end
 
-## FBDF Val{1}: First derivative via Newton backward difference conversion
+## FBDF Val{1}: First derivative of Lagrange interpolant
 #
-# Solution values in k are converted to backward differences as scalar
-# coefficients, then the Newton derivative formula is applied.
-#
-# p'(Θ) = (1/dt) * Σ dφ_j * D_j
-# where D_j = y₁ + Σ_{i=1}^j (-1)^i C(j,i) k[i]
-#
-# Expanding: p'(Θ) = (α/dt)*y₁ + Σ (β_i/dt)*k[i]
-# where α = Σ dφ_j, β_i = Σ_{j≥i} dφ_j * (-1)^i * C(j,i)
+# p'(Θ) = (1/dt) * Σ_{i=1}^n k[i] * L'_i(Θ)
+# L'_i(Θ) = L_i(Θ) * Σ_{m≠i} 1/(Θ - Θ_m)
+#   (using logarithmic derivative of the Lagrange basis)
+
+@inline function _lagrange_basis_deriv(Θ, i, n, k)
+    half = length(k) ÷ 2
+    θ_i = _get_theta(k[half + i])
+    Li = one(Θ)
+    dLi_sum = zero(Θ)
+    for m in 1:n
+        m == i && continue
+        θ_m = _get_theta(k[half + m])
+        Li *= (Θ - θ_m) / (θ_i - θ_m)
+        dLi_sum += inv(Θ - θ_m)
+    end
+    return Li * dLi_sum
+end
 
 # Out-of-place, no idxs
 @muladd function _ode_interpolant(
@@ -361,32 +359,16 @@ end
         cache::FBDF_CACHES,
         idxs::Nothing, T::Type{Val{1}}, differential_vars
     )
-    num_k = _bdf_active_order(k)
-    σ = Θ - 1
+    n = _bdf_active_order(k)
     invdt = inv(dt)
 
-    # Pre-compute scalar coefficients
-    φ = σ
-    dφ = one(Θ)
-    α = dφ
-    β = zeros(typeof(Θ), num_k)
-    β[1] += dφ * (-one(Θ))
+    dL1 = _lagrange_basis_deriv(Θ, 1, n, k)
+    out = @.. (dL1 * invdt) * k[1]
 
-    for j in 2:num_k
-        dφ_new = (dφ * (σ + j - 1) + φ) / j
-        φ *= (σ + j - 1) / j
-        dφ = dφ_new
-        α += dφ
-        for i in 1:j
-            β[i] += dφ * ((-1)^i * binomial(j, i))
-        end
-    end
-
-    c_y1 = α * invdt
-    out = @.. c_y1 * y₁
-    for i in 1:num_k
-        ci = β[i] * invdt
-        out = @.. out + ci * k[i]
+    for j in 2:n
+        dLj = _lagrange_basis_deriv(Θ, j, n, k)
+        cj = dLj * invdt
+        out = @.. out + cj * k[j]
     end
     return out
 end
@@ -397,31 +379,16 @@ end
         cache::FBDF_CACHES,
         idxs, T::Type{Val{1}}, differential_vars
     )
-    num_k = _bdf_active_order(k)
-    σ = Θ - 1
+    n = _bdf_active_order(k)
     invdt = inv(dt)
 
-    φ = σ
-    dφ = one(Θ)
-    α = dφ
-    β = zeros(typeof(Θ), num_k)
-    β[1] += dφ * (-one(Θ))
+    dL1 = _lagrange_basis_deriv(Θ, 1, n, k)
+    out = @.. (dL1 * invdt) * k[1][idxs]
 
-    for j in 2:num_k
-        dφ_new = (dφ * (σ + j - 1) + φ) / j
-        φ *= (σ + j - 1) / j
-        dφ = dφ_new
-        α += dφ
-        for i in 1:j
-            β[i] += dφ * ((-1)^i * binomial(j, i))
-        end
-    end
-
-    c_y1 = α * invdt
-    out = @.. c_y1 * y₁[idxs]
-    for i in 1:num_k
-        ci = β[i] * invdt
-        out = @.. out + ci * k[i][idxs]
+    for j in 2:n
+        dLj = _lagrange_basis_deriv(Θ, j, n, k)
+        cj = dLj * invdt
+        out = @.. out + cj * k[j][idxs]
     end
     return out
 end
@@ -432,31 +399,16 @@ end
         cache::FBDF_CACHES,
         idxs::Nothing, T::Type{Val{1}}, differential_vars
     )
-    num_k = _bdf_active_order(k)
-    σ = Θ - 1
+    n = _bdf_active_order(k)
     invdt = inv(dt)
 
-    φ = σ
-    dφ = one(Θ)
-    α = dφ
-    β = zeros(typeof(Θ), num_k)
-    β[1] += dφ * (-one(Θ))
+    dL1 = _lagrange_basis_deriv(Θ, 1, n, k)
+    @.. out = (dL1 * invdt) * k[1]
 
-    for j in 2:num_k
-        dφ_new = (dφ * (σ + j - 1) + φ) / j
-        φ *= (σ + j - 1) / j
-        dφ = dφ_new
-        α += dφ
-        for i in 1:j
-            β[i] += dφ * ((-1)^i * binomial(j, i))
-        end
-    end
-
-    c_y1 = α * invdt
-    @.. out = c_y1 * y₁
-    for i in 1:num_k
-        ci = β[i] * invdt
-        @.. out = out + ci * k[i]
+    for j in 2:n
+        dLj = _lagrange_basis_deriv(Θ, j, n, k)
+        cj = dLj * invdt
+        @.. out = out + cj * k[j]
     end
     return out
 end
@@ -467,31 +419,16 @@ end
         cache::FBDF_CACHES,
         idxs, T::Type{Val{1}}, differential_vars
     )
-    num_k = _bdf_active_order(k)
-    σ = Θ - 1
+    n = _bdf_active_order(k)
     invdt = inv(dt)
 
-    φ = σ
-    dφ = one(Θ)
-    α = dφ
-    β = zeros(typeof(Θ), num_k)
-    β[1] += dφ * (-one(Θ))
+    dL1 = _lagrange_basis_deriv(Θ, 1, n, k)
+    @views @.. out = (dL1 * invdt) * k[1][idxs]
 
-    for j in 2:num_k
-        dφ_new = (dφ * (σ + j - 1) + φ) / j
-        φ *= (σ + j - 1) / j
-        dφ = dφ_new
-        α += dφ
-        for i in 1:j
-            β[i] += dφ * ((-1)^i * binomial(j, i))
-        end
-    end
-
-    c_y1 = α * invdt
-    @views @.. out = c_y1 * y₁[idxs]
-    for i in 1:num_k
-        ci = β[i] * invdt
-        @views @.. out = out + ci * k[i][idxs]
+    for j in 2:n
+        dLj = _lagrange_basis_deriv(Θ, j, n, k)
+        cj = dLj * invdt
+        @views @.. out = out + cj * k[j][idxs]
     end
     return out
 end
