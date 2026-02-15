@@ -146,7 +146,7 @@ resize!(i, 5)
 )
 solve!(i)
 
-function f(du, u, p, t)
+function f_resize_jac(du, u, p, t)
     du[1] = 2.0 * u[1] - 1.2 * u[1] * u[2]
     du[2] = -3 * u[2] + u[1] * u[2]
     for i in 3:length(u)
@@ -170,7 +170,7 @@ function f_jac(J, u, p, t)
     end
     return nothing
 end
-ff = ODEFunction(f; jac = f_jac, jac_prototype = [1.0 1.0; 1.0 1.0])
+ff = ODEFunction(f_resize_jac; jac = f_jac, jac_prototype = [1.0 1.0; 1.0 1.0])
 
 cb = DiscreteCallback((u, t, integ) -> true, integ -> @views(integ.u[3:5]) .= 0)
 prob = ODEProblem(ff, [1.0, 1.0], (0.0, 1.0))
@@ -236,5 +236,7 @@ runSim(Rosenbrock23(autodiff = AutoFiniteDiff()))
     integrator = init(ode, Tsit5())
     @test_nowarn step!(integrator)
     @test_nowarn resize!(integrator, 2)
+    integrator.u[2] = integrator.u[1]
+    u_modified!(integrator, true)
     @test_nowarn step!(integrator)
 end
