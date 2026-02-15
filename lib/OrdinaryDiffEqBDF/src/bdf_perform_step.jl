@@ -1352,8 +1352,8 @@ function perform_step!(
                     )
                 end
                 integrator.k[half + 1 + j] = (u isa Number) ?
-                                              (ts[j] - t) / dt :
-                                              fill((ts[j] - t) / dt, size(u))
+                    (ts[j] - t) / dt :
+                    fill((ts[j] - t) / dt, size(u))
             else
                 integrator.k[1 + j] = zero(u)
                 integrator.k[half + 1 + j] = zero(u)

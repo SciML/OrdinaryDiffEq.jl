@@ -333,7 +333,7 @@ end
     return out
 end
 
-## FBDF Val{1}: First derivative of Lagrange interpolant
+## FBDF Val{1} and Val{2}: Derivatives of Lagrange interpolant
 #
 # p'(Θ) = (1/dt) * Σ_{i=1}^n k[i] * L'_i(Θ)
 # L'_i(Θ) = L_i(Θ) * Σ_{m≠i} 1/(Θ - Θ_m)
@@ -351,6 +351,48 @@ end
         dLi_sum += inv(Θ - θ_m)
     end
     return Li * dLi_sum
+end
+
+# Compute second derivative L''_i(Θ) of Lagrange basis function.
+# L''_i(Θ) = L_i(Θ) * (S1² - S2)
+# where S1 = Σ_{m≠i} 1/(Θ - Θ_m), S2 = Σ_{m≠i} 1/(Θ - Θ_m)²
+@inline function _lagrange_basis_deriv2(Θ, i, n, k)
+    half = length(k) ÷ 2
+    θ_i = _get_theta(k[half + i])
+    Li = one(Θ)
+    S1 = zero(Θ)
+    S2 = zero(Θ)
+    for m in 1:n
+        m == i && continue
+        θ_m = _get_theta(k[half + m])
+        Li *= (Θ - θ_m) / (θ_i - θ_m)
+        inv_diff = inv(Θ - θ_m)
+        S1 += inv_diff
+        S2 += inv_diff * inv_diff
+    end
+    return Li * (S1 * S1 - S2)
+end
+
+# Compute third derivative L'''_i(Θ) of Lagrange basis function.
+# L'''_i(Θ) = L_i(Θ) * (S1³ - 3·S1·S2 + 2·S3)
+# where S1 = Σ_{m≠i} 1/(Θ - Θ_m), S2 = Σ_{m≠i} 1/(Θ - Θ_m)², S3 = Σ_{m≠i} 1/(Θ - Θ_m)³
+@inline function _lagrange_basis_deriv3(Θ, i, n, k)
+    half = length(k) ÷ 2
+    θ_i = _get_theta(k[half + i])
+    Li = one(Θ)
+    S1 = zero(Θ)
+    S2 = zero(Θ)
+    S3 = zero(Θ)
+    for m in 1:n
+        m == i && continue
+        θ_m = _get_theta(k[half + m])
+        Li *= (Θ - θ_m) / (θ_i - θ_m)
+        inv_diff = inv(Θ - θ_m)
+        S1 += inv_diff
+        S2 += inv_diff * inv_diff
+        S3 += inv_diff * inv_diff * inv_diff
+    end
+    return Li * (S1 * S1 * S1 - 3 * S1 * S2 + 2 * S3)
 end
 
 # Out-of-place, no idxs
@@ -430,5 +472,261 @@ end
         cj = dLj * invdt
         @views @.. out = out + cj * k[j][idxs]
     end
+    return out
+end
+
+## FBDF Val{2}: Second derivative of Lagrange interpolant
+#
+# p''(Θ) = (1/dt²) * Σ_{i=1}^n k[i] * L''_i(Θ)
+
+# Out-of-place, no idxs
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k,
+        cache::FBDF_CACHES,
+        idxs::Nothing, T::Type{Val{2}}, differential_vars
+    )
+    n = _bdf_active_order(k)
+    invdt2 = inv(dt)^2
+
+    d2L1 = _lagrange_basis_deriv2(Θ, 1, n, k)
+    out = @.. (d2L1 * invdt2) * k[1]
+
+    for j in 2:n
+        d2Lj = _lagrange_basis_deriv2(Θ, j, n, k)
+        cj = d2Lj * invdt2
+        out = @.. out + cj * k[j]
+    end
+
+    if differential_vars !== nothing
+        for i in eachindex(differential_vars)
+            if !differential_vars[i]
+                if out isa Number
+                    out = zero(out)
+                else
+                    out[i] = zero(eltype(out))
+                end
+            end
+        end
+    end
+
+    return out
+end
+
+# Out-of-place, with idxs
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k,
+        cache::FBDF_CACHES,
+        idxs, T::Type{Val{2}}, differential_vars
+    )
+    n = _bdf_active_order(k)
+    invdt2 = inv(dt)^2
+
+    d2L1 = _lagrange_basis_deriv2(Θ, 1, n, k)
+    out = @.. (d2L1 * invdt2) * k[1][idxs]
+
+    for j in 2:n
+        d2Lj = _lagrange_basis_deriv2(Θ, j, n, k)
+        cj = d2Lj * invdt2
+        out = @.. out + cj * k[j][idxs]
+    end
+
+    if differential_vars !== nothing
+        for (idx_pos, orig_idx) in enumerate(idxs)
+            if !differential_vars[orig_idx]
+                if out isa Number
+                    out = zero(out)
+                else
+                    out[idx_pos] = zero(eltype(out))
+                end
+            end
+        end
+    end
+
+    return out
+end
+
+# In-place, no idxs
+@muladd function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k,
+        cache::FBDF_CACHES,
+        idxs::Nothing, T::Type{Val{2}}, differential_vars
+    )
+    n = _bdf_active_order(k)
+    invdt2 = inv(dt)^2
+
+    d2L1 = _lagrange_basis_deriv2(Θ, 1, n, k)
+    @.. out = (d2L1 * invdt2) * k[1]
+
+    for j in 2:n
+        d2Lj = _lagrange_basis_deriv2(Θ, j, n, k)
+        cj = d2Lj * invdt2
+        @.. out = out + cj * k[j]
+    end
+
+    if differential_vars !== nothing
+        for i in eachindex(differential_vars)
+            if !differential_vars[i]
+                out[i] = zero(eltype(out))
+            end
+        end
+    end
+
+    return out
+end
+
+# In-place, with idxs
+@muladd function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k,
+        cache::FBDF_CACHES,
+        idxs, T::Type{Val{2}}, differential_vars
+    )
+    n = _bdf_active_order(k)
+    invdt2 = inv(dt)^2
+
+    d2L1 = _lagrange_basis_deriv2(Θ, 1, n, k)
+    @views @.. out = (d2L1 * invdt2) * k[1][idxs]
+
+    for j in 2:n
+        d2Lj = _lagrange_basis_deriv2(Θ, j, n, k)
+        cj = d2Lj * invdt2
+        @views @.. out = out + cj * k[j][idxs]
+    end
+
+    if differential_vars !== nothing
+        for (idx_pos, orig_idx) in enumerate(idxs)
+            if !differential_vars[orig_idx]
+                out[idx_pos] = zero(eltype(out))
+            end
+        end
+    end
+
+    return out
+end
+
+## FBDF Val{3}: Third derivative of Lagrange interpolant
+#
+# p'''(Θ) = (1/dt³) * Σ_{i=1}^n k[i] * L'''_i(Θ)
+
+# Out-of-place, no idxs
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k,
+        cache::FBDF_CACHES,
+        idxs::Nothing, T::Type{Val{3}}, differential_vars
+    )
+    n = _bdf_active_order(k)
+    invdt3 = inv(dt)^3
+
+    d3L1 = _lagrange_basis_deriv3(Θ, 1, n, k)
+    out = @.. (d3L1 * invdt3) * k[1]
+
+    for j in 2:n
+        d3Lj = _lagrange_basis_deriv3(Θ, j, n, k)
+        cj = d3Lj * invdt3
+        out = @.. out + cj * k[j]
+    end
+
+    if differential_vars !== nothing
+        for i in eachindex(differential_vars)
+            if !differential_vars[i]
+                if out isa Number
+                    out = zero(out)
+                else
+                    out[i] = zero(eltype(out))
+                end
+            end
+        end
+    end
+
+    return out
+end
+
+# Out-of-place, with idxs
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k,
+        cache::FBDF_CACHES,
+        idxs, T::Type{Val{3}}, differential_vars
+    )
+    n = _bdf_active_order(k)
+    invdt3 = inv(dt)^3
+
+    d3L1 = _lagrange_basis_deriv3(Θ, 1, n, k)
+    out = @.. (d3L1 * invdt3) * k[1][idxs]
+
+    for j in 2:n
+        d3Lj = _lagrange_basis_deriv3(Θ, j, n, k)
+        cj = d3Lj * invdt3
+        out = @.. out + cj * k[j][idxs]
+    end
+
+    if differential_vars !== nothing
+        for (idx_pos, orig_idx) in enumerate(idxs)
+            if !differential_vars[orig_idx]
+                if out isa Number
+                    out = zero(out)
+                else
+                    out[idx_pos] = zero(eltype(out))
+                end
+            end
+        end
+    end
+
+    return out
+end
+
+# In-place, no idxs
+@muladd function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k,
+        cache::FBDF_CACHES,
+        idxs::Nothing, T::Type{Val{3}}, differential_vars
+    )
+    n = _bdf_active_order(k)
+    invdt3 = inv(dt)^3
+
+    d3L1 = _lagrange_basis_deriv3(Θ, 1, n, k)
+    @.. out = (d3L1 * invdt3) * k[1]
+
+    for j in 2:n
+        d3Lj = _lagrange_basis_deriv3(Θ, j, n, k)
+        cj = d3Lj * invdt3
+        @.. out = out + cj * k[j]
+    end
+
+    if differential_vars !== nothing
+        for i in eachindex(differential_vars)
+            if !differential_vars[i]
+                out[i] = zero(eltype(out))
+            end
+        end
+    end
+
+    return out
+end
+
+# In-place, with idxs
+@muladd function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k,
+        cache::FBDF_CACHES,
+        idxs, T::Type{Val{3}}, differential_vars
+    )
+    n = _bdf_active_order(k)
+    invdt3 = inv(dt)^3
+
+    d3L1 = _lagrange_basis_deriv3(Θ, 1, n, k)
+    @views @.. out = (d3L1 * invdt3) * k[1][idxs]
+
+    for j in 2:n
+        d3Lj = _lagrange_basis_deriv3(Θ, j, n, k)
+        cj = d3Lj * invdt3
+        @views @.. out = out + cj * k[j][idxs]
+    end
+
+    if differential_vars !== nothing
+        for (idx_pos, orig_idx) in enumerate(idxs)
+            if !differential_vars[orig_idx]
+                out[idx_pos] = zero(eltype(out))
+            end
+        end
+    end
+
     return out
 end
