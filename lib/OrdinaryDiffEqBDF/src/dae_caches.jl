@@ -236,6 +236,7 @@ end
     weights::wType
     equi_ts::tsType
     iters_from_event::Int
+    dense::Vector{uType}
 end
 
 function alg_cache(
@@ -293,10 +294,12 @@ function alg_cache(
     ts_tmp = similar(ts)
     iters_from_event = 0
 
+    dense = [zero(u) for _ in 1:(2 * (max_order + 1))]
+
     return DFBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(5), nconsteps, consfailcnt, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event
+        iters_from_event, dense
     )
 end

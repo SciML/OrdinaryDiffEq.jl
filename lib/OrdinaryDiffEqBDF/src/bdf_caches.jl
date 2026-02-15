@@ -469,6 +469,7 @@ end
     atmp::uNoUnitsType
     atmpm1::uNoUnitsType
     atmpp1::uNoUnitsType
+    dense::Vector{uType}
     step_limiter!::StepLimiter
 end
 
@@ -520,10 +521,12 @@ function alg_cache(
     RU = Matrix(U)
     γₖ = SVector(ntuple(k -> sum(tTypeNoUnits(Int64(1) // j) for j in 1:k), Val(max_order)))
 
+    dense = [zero(u) for _ in 1:max_order]
+
     return QNDFCache(
         fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, RU, D, Dtmp,
         tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
-        atmpm1, atmpp1, alg.step_limiter!
+        atmpm1, atmpp1, dense, alg.step_limiter!
     )
 end
 
@@ -687,6 +690,7 @@ end
     weights::wType #weights of Lagrangian formula
     equi_ts::tsType
     iters_from_event::Int
+    dense::Vector{uType}
     step_limiter!::StepLimiter
 end
 
@@ -745,10 +749,12 @@ function alg_cache(
     ts_tmp = similar(ts)
     iters_from_event = 0
 
+    dense = [zero(u) for _ in 1:(2 * (max_order + 1))]
+
     return FBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(5), nconsteps, consfailcnt, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event, alg.step_limiter!
+        iters_from_event, dense, alg.step_limiter!
     )
 end

@@ -102,71 +102,6 @@ function error_constant(integrator, alg::QNDF, k)
     return κ * γₖ[k] + inv(k + 1)
 end
 
-function compute_weights!(ts, k, weights)
-    for i in 1:(k + 1)
-        weights[i] = one(eltype(weights))
-        for j in 1:(i - 1)
-            weights[i] *= ts[i] - ts[j]
-        end
-        for j in (i + 1):(k + 1)
-            weights[i] *= ts[i] - ts[j]
-        end
-        weights[i] = 1 / weights[i]
-    end
-    return
-end
-
-#This uses lagrangian interpolation to calculate the predictor
-function calc_Lagrange_interp(k, weights, t, ts, u_history, u::Number)
-    if t in ts
-        i = searchsortedfirst(ts, t, rev = true)
-        return u_history[i]
-    else
-        for i in 1:(k + 1)
-            u += weights[i] / (t - ts[i]) * u_history[i]
-        end
-        for i in 1:(k + 1)
-            u *= t - ts[i]
-        end
-    end
-    return u
-end
-
-function calc_Lagrange_interp(k, weights, t, ts, u_history, u)
-    vc = _vec(u)
-    if t in ts
-        i = searchsortedfirst(ts, t, rev = true)
-        return reshape(u_history[:, i], size(u))
-    else
-        for i in 1:(k + 1)
-            vc += @.. broadcast = false weights[i] / (t - ts[i]) * u_history[:, i]
-            u = reshape(vc, size(u))
-        end
-        for i in 1:(k + 1)
-            u *= @.. broadcast = false t - ts[i]
-        end
-    end
-    return u
-end
-
-function calc_Lagrange_interp!(k, weights, t, ts, u_history, u)
-    vc = _vec(u)
-    # ts is short enough that linear search will be faster
-    i = findfirst(isequal(t), ts)
-    return if i !== nothing
-        @.. broadcast = false @views vc = u_history[:, i]
-    else
-        for i in 1:(k + 1)
-            wdt = weights[i] / (t - ts[i])
-            @.. broadcast = false @views vc = muladd(wdt, u_history[:, i], vc)
-        end
-        for i in 1:(k + 1)
-            dt = t - ts[i]
-            @.. broadcast = false u *= dt
-        end
-    end
-end
-
 #This code refers to https://epubs.siam.org/doi/abs/10.1137/S0036144596322507
 #Compute all derivatives through k of the polynomials of k+1 points
 function calc_finite_difference_weights(ts, t, order, ::Val{N}) where {N}
@@ -199,9 +134,10 @@ function calc_finite_difference_weights(ts, t, order, ::Val{N}) where {N}
 end
 
 function reinitFBDF!(integrator, cache)
-    # This function is used for initialize weights and arrays that store past history information. It will be used in the first-time step advancing and event handling.
+    # This function is used to initialize arrays that store past history information.
+    # It will be used in the first-time step advancing and event handling.
     (;
-        weights, consfailcnt, ts, u_history, u_corrector, iters_from_event,
+        consfailcnt, ts, u_history, u_corrector, iters_from_event,
         order,
     ) = cache
     (; t, dt, uprev) = integrator
@@ -211,7 +147,6 @@ function reinitFBDF!(integrator, cache)
         consfailcnt = cache.consfailcnt = cache.nconsteps = 0
         iters_from_event = cache.iters_from_event = 0
 
-        fill!(weights, zero(eltype(weights)))
         fill!(ts, zero(eltype(ts)))
         fill!(u_history, zero(eltype(u_history)))
         fill!(u_corrector, zero(eltype(u_corrector)))
@@ -219,7 +154,6 @@ function reinitFBDF!(integrator, cache)
 
     vuprev = _vec(uprev)
     @views if iters_from_event == 0
-        weights[1] = 1 / dt
         ts[1] = t
         @.. broadcast = false u_history[:, 1] = vuprev
     elseif iters_from_event == 1 && t != ts[1]
@@ -235,9 +169,7 @@ function reinitFBDF!(integrator, cache)
         ts[1] = t
         @.. broadcast = false u_history[:, 1] = vuprev
     end
-    return if iters_from_event >= 1
-        compute_weights!(ts, order, weights)
-    end
+    return nothing
 end
 
 function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order}
