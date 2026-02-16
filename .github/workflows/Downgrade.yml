@@ -45,3 +45,4 @@ jobs:
           ALLOW_RERESOLVE: false
         env:
           GROUP: ${{ matrix.group }}
+          JULIA_PKG_SERVER_REGISTRY_PREFERENCE: conservative

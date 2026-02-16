@@ -80,3 +80,4 @@ jobs:
           ALLOW_RERESOLVE: false
         env:
           ODEDIFFEQ_TEST_GROUP: FUNCTIONAL
+          JULIA_PKG_SERVER_REGISTRY_PREFERENCE: conservative
