@@ -355,7 +355,7 @@ jobs:
             version: 'pre'
     steps:
       - uses: actions/checkout@v6
-      - name: Setup Julia (first attempt)
+      - name: Setup Julia
         uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
