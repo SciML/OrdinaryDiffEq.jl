@@ -355,9 +355,15 @@ jobs:
             version: 'pre'
     steps:
       - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
+      - name: Setup Julia (first attempt)
+        uses: julia-actions/setup-julia@v2
         with:
-          version: ${{ matrix.version == '1' && '1.12' || matrix.version }}
+          version: ${{ matrix.version }}
+      - name: Verify Julia on PATH
+        id: verify_julia
+        continue-on-error: true
+        run: |
+          julia --version
       - name: Verify Julia installation
         run: |
           command -v julia
