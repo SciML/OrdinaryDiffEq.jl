@@ -5,5 +5,5 @@ through the `verbose` keyword argument for `solve`. The verbosity system allows 
 information is displayed during the solve process. See [SciMLLogging.jl](https://docs.sciml.ai/SciMLLogging/dev/) for more details. 
 
 ```@docs
-DEVerbosity
+OrdinaryDiffEqCore.DEVerbosity
 ```
