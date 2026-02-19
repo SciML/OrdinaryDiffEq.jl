@@ -30,6 +30,9 @@ function loopheader!(integrator)
             apply_step!(integrator)
         end
     elseif integrator.u_modified # && integrator.iter == 0
+        if integrator.isdae
+            DiffEqBase.initialize_dae!(integrator)
+        end
         update_uprev!(integrator)
         update_fsal!(integrator)
     end
