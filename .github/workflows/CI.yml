@@ -361,10 +361,6 @@ jobs:
           version: ${{ matrix.version }}
       - name: Verify Julia on PATH
         id: verify_julia
-        continue-on-error: true
-        run: |
-          julia --version
-      - name: Verify Julia installation
         run: |
           command -v julia
           julia --version
