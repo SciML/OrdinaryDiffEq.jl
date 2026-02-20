@@ -29,6 +29,11 @@ function find_algebraic_vars_eqs(M::SparseMatrixCSC)
     return algebraic_vars, algebraic_eqs
 end
 
+function find_algebraic_vars_eqs(M::LinearAlgebra.Diagonal)
+    _idxs = map(iszero, LinearAlgebra.diag(M))
+    return _idxs, _idxs
+end
+
 # Fallback for non-sparse matrices (original behavior)
 function find_algebraic_vars_eqs(M::AbstractMatrix)
     algebraic_vars = vec(all(iszero, M, dims = 1))
