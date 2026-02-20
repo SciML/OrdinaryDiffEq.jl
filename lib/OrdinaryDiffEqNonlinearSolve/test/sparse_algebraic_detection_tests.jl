@@ -79,4 +79,14 @@ using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs
         @test vars == [false, true]
         @test eqs == [false, true]
     end
+
+    # Test 4: Test Diagonal case
+    @testset "Test Diagonal cast" begin
+        M_diag = Diagonal([1.0, 0.0, 1.0, 1.0, 0.0])
+        vars, eqs = find_algebraic_vars_eqs(M_diag)
+        @test vars == [false, true, false, false, true]
+        @test eqs == [false, true, false, false, true]
+        # compare to dense
+        @test find_algebraic_vars_eqs(M_diag) == find_algebraic_vars_eqs(collect(M_diag))
+    end
 end
