@@ -14,7 +14,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
                 tf.p = p
                 alg = unwrap_alg(integrator, true)
 
-                autodiff_alg = ADTypes.dense_ad(gpu_safe_autodiff(alg_autodiff(alg), u))
+                autodiff_alg = gpu_safe_autodiff(ADTypes.dense_ad(alg_autodiff(alg)), u)
 
                 # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers work
                 t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT), t) : t
@@ -59,7 +59,7 @@ function calc_tderivative(integrator, cache)
         tf.u = uprev
         tf.p = p
 
-        autodiff_alg = ADTypes.dense_ad(gpu_safe_autodiff(alg_autodiff(alg), u))
+        autodiff_alg = gpu_safe_autodiff(ADTypes.dense_ad(alg_autodiff(alg)), u)
 
         if alg_autodiff isa AutoFiniteDiff
             autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
@@ -403,6 +403,12 @@ function jacobian2W!(
             else
                 @.. broadcast = false @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
             end
+        elseif is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
+            # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support broadcasting.
+            # ArrayInterface.fast_scalar_indexing is not specialized for AbstractGPUSparseArray,
+            # so we detect them by checking if the underlying nonzeros storage is a GPU array.
+            # we then fall back to allocating matrix arithmetic
+            copyto!(W, J - invdtgamma * mass_matrix)
         else
             @.. broadcast = false W = muladd(-mass_matrix, invdtgamma, J)
         end
