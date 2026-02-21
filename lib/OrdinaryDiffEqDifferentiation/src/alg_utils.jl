@@ -19,6 +19,15 @@ function _alg_autodiff(
     return alg.autodiff
 end
 
+function _alg_autodiff(
+        alg::Union{
+            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ},
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD, FDT, ST, CJ},
+        }
+    ) where {CS, AD, FDT, ST, CJ}
+    return AD
+end
+
 function alg_autodiff(alg)
     autodiff = _alg_autodiff(alg)
 
@@ -74,6 +83,17 @@ function DiffEqBase.prepare_alg(
     end
 
     return remake(alg, autodiff = autodiff)
+end
+
+function DiffEqBase.prepare_alg(
+        alg::Union{
+            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ},
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD, FDT, ST, CJ},
+        },
+        u0::AbstractArray{T},
+        p, prob
+    ) where {CS, AD, FDT, ST, CJ, T}
+    return alg
 end
 
 function prepare_ADType(autodiff_alg::AutoSparse, prob, u0, p, standardtag)
