@@ -56,7 +56,8 @@ import OrdinaryDiffEqCore: _initialize_dae!, isnewton, get_W, isfirstcall, isfir
 import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W,
     WOperator, StaticWOperator, wrapprecs,
     build_jac_config, dolinsolve, alg_autodiff,
-    resize_jac_config!
+    resize_jac_config!,
+    _JacConfigFiniteDiff
 
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA,
     StaticMatrix

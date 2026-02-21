@@ -1,6 +1,8 @@
 function initialize!(
         integrator, cache::Union{
             Rosenbrock23Cache,
+            Rosenbrock23CacheVF64,
+            Rosenbrock23CacheVF64FiniteDiff,
             Rosenbrock32Cache,
         }
     )
@@ -31,7 +33,7 @@ function initialize!(
     return integrator.k[2] = zero(integrator.fsalfirst)
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::Rosenbrock23CacheType, repeat_step = false)
     (; t, dt, uprev, u, f, p, opts) = integrator
     (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
     (; c₃₂, d) = cache.tab
@@ -1418,7 +1420,7 @@ end
     return nothing
 end
 
-function initialize!(integrator, cache::RosenbrockCache)
+function initialize!(integrator, cache::RosenbrockCacheType)
     integrator.kshortsize = size(cache.tab.H, 1)
     resize!(integrator.k, integrator.kshortsize)
     for i in 1:(integrator.kshortsize)
@@ -1427,7 +1429,7 @@ function initialize!(integrator, cache::RosenbrockCache)
     return
 end
 
-@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCacheType, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
     (; A, C, gamma, c, d, H) = cache.tab

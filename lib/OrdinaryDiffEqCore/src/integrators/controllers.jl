@@ -1010,7 +1010,7 @@ function default_post_newton_controller!(integrator, cache, alg)
 end
 
 # Default alg with dummy controller
-function default_stepsize_controller!(integrator, cache::DefaultCache, alg)
+function default_stepsize_controller!(integrator, cache::DefaultCacheType, alg)
     return if cache.current == 1
         stepsize_controller!(integrator, @inbounds(cache.cache1), alg)
     elseif cache.current == 2
@@ -1026,7 +1026,7 @@ function default_stepsize_controller!(integrator, cache::DefaultCache, alg)
     end
 end
 
-function default_step_accept_controller!(integrator, cache::DefaultCache, alg, q)
+function default_step_accept_controller!(integrator, cache::DefaultCacheType, alg, q)
     return if cache.current == 1
         step_accept_controller!(integrator, @inbounds(cache.cache1), alg, q)
     elseif cache.current == 2
@@ -1042,7 +1042,7 @@ function default_step_accept_controller!(integrator, cache::DefaultCache, alg, q
     end
 end
 
-function default_step_reject_controller!(integrator, cache::DefaultCache, alg)
+function default_step_reject_controller!(integrator, cache::DefaultCacheType, alg)
     return if cache.current == 1
         step_reject_controller!(integrator, @inbounds(cache.cache1), alg)
     elseif cache.current == 2
@@ -1072,7 +1072,7 @@ function default_step_reject_controller!(integrator, cache::CompositeCache, alg)
 end
 
 # This is a workaround to make the BDF methods work with composite algorithms
-function default_post_newton_controller!(integrator, cache::DefaultCache, alg)
+function default_post_newton_controller!(integrator, cache::DefaultCacheType, alg)
     if cache.current == 1
         post_newton_controller!(integrator, @inbounds(cache.cache1), alg)
     elseif cache.current == 2

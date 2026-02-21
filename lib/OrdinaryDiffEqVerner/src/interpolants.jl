@@ -1,6 +1,6 @@
 RK_WITH_SPECIAL_INTERPOLATIONS = Union{
     Vern6ConstantCache, Vern6Cache,
-    Vern7ConstantCache, Vern7Cache,
+    Vern7ConstantCache, Vern7CacheType,
     Vern8ConstantCache, Vern8Cache,
     Vern9ConstantCache, Vern9Cache,
 }
@@ -237,7 +237,7 @@ end
 end
 
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::Vern7Cache, idxs::Nothing,
+        Θ, dt, y₀, y₁, k, cache::Vern7CacheType, idxs::Nothing,
         T::Type{Val{0}}, differential_vars::Nothing
     )
     @vern7pre0
@@ -253,7 +253,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{Vern7ConstantCache, Vern7Cache}, idxs,
+        cache::Union{Vern7ConstantCache, Vern7CacheType}, idxs,
         T::Type{Val{0}}, differential_vars::Nothing
     )
     @vern7pre0
@@ -268,7 +268,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Vern7ConstantCache, Vern7Cache},
+        cache::Union{Vern7ConstantCache, Vern7CacheType},
         idxs::Nothing, T::Type{Val{0}}, differential_vars::Nothing
     )
     @vern7pre0
@@ -285,7 +285,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Vern7ConstantCache, Vern7Cache}, idxs,
+        cache::Union{Vern7ConstantCache, Vern7CacheType}, idxs,
         T::Type{Val{0}}, differential_vars::Nothing
     )
     @vern7pre0
@@ -321,7 +321,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{Vern7ConstantCache, Vern7Cache},
+        cache::Union{Vern7ConstantCache, Vern7CacheType},
         idxs::Nothing, T::Type{Val{1}}, differential_vars::Nothing
     )
     @vern7pre1
@@ -335,7 +335,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{Vern7ConstantCache, Vern7Cache}, idxs,
+        cache::Union{Vern7ConstantCache, Vern7CacheType}, idxs,
         T::Type{Val{1}}, differential_vars::Nothing
     )
     @vern7pre1
@@ -348,7 +348,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Vern7ConstantCache, Vern7Cache},
+        cache::Union{Vern7ConstantCache, Vern7CacheType},
         idxs::Nothing, T::Type{Val{1}}, differential_vars::Nothing
     )
     @vern7pre1
@@ -362,7 +362,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Vern7ConstantCache, Vern7Cache}, idxs,
+        cache::Union{Vern7ConstantCache, Vern7CacheType}, idxs,
         T::Type{Val{1}}, differential_vars::Nothing
     )
     @vern7pre1

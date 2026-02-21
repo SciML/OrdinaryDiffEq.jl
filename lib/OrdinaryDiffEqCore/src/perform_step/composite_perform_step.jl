@@ -1,4 +1,4 @@
-function init_ith_default_cache(cache::DefaultCache, algs, i)
+function init_ith_default_cache(cache::DefaultCacheType, algs, i)
     return if i == 1
         if !isdefined(cache, :cache1)
             cache.cache1 = alg_cache(algs[1], cache.args...)
@@ -26,7 +26,7 @@ function init_ith_default_cache(cache::DefaultCache, algs, i)
     end
 end
 
-function initialize!(integrator, cache::DefaultCache)
+function initialize!(integrator, cache::DefaultCacheType)
     cache.current = cache.choice_function(integrator)
     algs = integrator.alg.algs
     init_ith_default_cache(cache, algs, cache.current)
@@ -134,13 +134,13 @@ the behaviour is consistent.
 In particular, prevents dt ⟶ 0 if starting with non-adaptive alg and opts.adaptive=true,
 and dt=cst if starting with adaptive alg and opts.adaptive=false.
 """
-function ensure_behaving_adaptivity!(integrator, cache::Union{DefaultCache, CompositeCache})
+function ensure_behaving_adaptivity!(integrator, cache::Union{DefaultCacheType, CompositeCache})
     return if anyadaptive(integrator.alg) && !isadaptive(integrator.alg)
         integrator.opts.adaptive = isadaptive(integrator.alg.algs[cache.current])
     end
 end
 
-function perform_step!(integrator, cache::DefaultCache, repeat_step = false)
+function perform_step!(integrator, cache::DefaultCacheType, repeat_step = false)
     algs = integrator.alg.algs
     init_ith_default_cache(cache, algs, cache.current)
     return if cache.current == 1
@@ -212,7 +212,7 @@ function choose_algorithm!(
     end
 end
 
-function choose_algorithm!(integrator, cache::DefaultCache)
+function choose_algorithm!(integrator, cache::DefaultCacheType)
     new_current = cache.choice_function(integrator)
     old_current = cache.current
     u = integrator.u

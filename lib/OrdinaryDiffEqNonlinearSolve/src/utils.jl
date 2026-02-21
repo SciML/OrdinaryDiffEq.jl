@@ -16,7 +16,7 @@ relax(_) = 0 // 1
 
 isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
-isnewton(::Union{NLNewtonCache, NLNewtonConstantCache}) = true
+isnewton(::Union{NLNewtonCacheType, NLNewtonConstantCache}) = true
 
 is_always_new(nlsolver::AbstractNLSolver) = is_always_new(nlsolver.alg)
 check_div(nlsolver::AbstractNLSolver) = check_div(nlsolver.alg)
@@ -26,7 +26,7 @@ isJcurrent(nlsolver::AbstractNLSolver, integrator) = integrator.t == nlsolver.ca
 isfirstcall(nlsolver::AbstractNLSolver) = nlsolver.cache.firstcall
 isfirststage(nlsolver::AbstractNLSolver) = nlsolver.cache.firststage
 setfirststage!(nlsolver::AbstractNLSolver, val::Bool) = setfirststage!(nlsolver.cache, val)
-function setfirststage!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, val::Bool)
+function setfirststage!(nlcache::Union{NLNewtonCacheType, NLNewtonConstantCache}, val::Bool)
     return (nlcache.firststage = val)
 end
 setfirststage!(::Any, val::Bool) = nothing
@@ -36,23 +36,23 @@ getnfails(_) = 0
 getnfails(nlsolver::AbstractNLSolver) = nlsolver.nfails
 
 set_new_W!(nlsolver::AbstractNLSolver, val::Bool)::Bool = set_new_W!(nlsolver.cache, val)
-set_new_W!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, val::Bool)::Bool = nlcache.new_W = val
+set_new_W!(nlcache::Union{NLNewtonCacheType, NLNewtonConstantCache}, val::Bool)::Bool = nlcache.new_W = val
 get_new_W!(nlsolver::AbstractNLSolver)::Bool = get_new_W!(nlsolver.cache)
-get_new_W!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache})::Bool = nlcache.new_W
+get_new_W!(nlcache::Union{NLNewtonCacheType, NLNewtonConstantCache})::Bool = nlcache.new_W
 get_new_W!(::AbstractNLSolverCache)::Bool = true
 
 get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
-get_W(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}) = nlcache.W
+get_W(nlcache::Union{NLNewtonCacheType, NLNewtonConstantCache}) = nlcache.W
 
 set_W_γdt!(nlsolver::AbstractNLSolver, W_γdt) = set_W_γdt!(nlsolver.cache, W_γdt)
-function set_W_γdt!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, W_γdt)
+function set_W_γdt!(nlcache::Union{NLNewtonCacheType, NLNewtonConstantCache}, W_γdt)
     nlcache.W_γdt = W_γdt
     return W_γdt
 end
 
 du_cache(nlsolver::AbstractNLSolver) = du_cache(nlsolver.cache)
 du_cache(::AbstractNLSolverCache) = nothing
-du_cache(nlcache::Union{NLFunctionalCache, NLAndersonCache, NLNewtonCache}) = (nlcache.k,)
+du_cache(nlcache::Union{NLFunctionalCache, NLAndersonCache, NLNewtonCacheType}) = (nlcache.k,)
 
 function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
     _du_cache = du_cache(nlsolver)
@@ -301,6 +301,37 @@ function build_nlsolver(
 
     # build non-linear solver
     ηold = one(t)
+
+    # VF64 path: construct NLSolverVF64 with specialized NLNewtonCache for fewer type params
+    if u isa Vector{Float64} && f isa OrdinaryDiffEqCore._ODEFunctionVF64Type &&
+            nlcache isa NLNewtonCache
+        # Use FiniteDiff variant (2 params) when autodiff is AutoFiniteDiff,
+        # otherwise fall back to generic VF64 (3 params)
+        ad = alg_autodiff(alg)
+        if ADTypes.dense_ad(ad) isa AutoFiniteDiff
+            nlcache_vf64 = NLNewtonCacheVF64FiniteDiff(
+                nlcache.ustep, nlcache.tstep, nlcache.k, nlcache.atmp, nlcache.dz,
+                nlcache.J, nlcache.W, nlcache.new_W, nlcache.firststage, nlcache.firstcall,
+                nlcache.W_γdt, nlcache.du1, nlcache.uf, nlcache.jac_config,
+                nlcache.linsolve, nlcache.weight, nlcache.invγdt,
+                nlcache.new_W_γdt_cutoff, nlcache.J_t
+            )
+        else
+            nlcache_vf64 = NLNewtonCacheVF64(
+                nlcache.ustep, nlcache.tstep, nlcache.k, nlcache.atmp, nlcache.dz,
+                nlcache.J, nlcache.W, nlcache.new_W, nlcache.firststage, nlcache.firstcall,
+                nlcache.W_γdt, nlcache.du1, nlcache.uf, nlcache.jac_config,
+                nlcache.linsolve, nlcache.weight, nlcache.invγdt,
+                nlcache.new_W_γdt_cutoff, nlcache.J_t
+            )
+        end
+        return NLSolverVF64(
+            z, tmp, nothing, ztmp, Float64(tTypeNoUnits(γ)),
+            Float64(c), Float64(α), nlalg, Float64(nlalg.κ),
+            Float64(nlalg.fast_convergence_cutoff), Float64(ηold),
+            0, nlalg.max_iter, Divergence, nlcache_vf64, DIRK, 0, one(Float64)
+        )
+    end
 
     return NLSolver{true, tTypeNoUnits}(
         z, tmp, ztmp, tTypeNoUnits(γ), c, α, nlalg, nlalg.κ,

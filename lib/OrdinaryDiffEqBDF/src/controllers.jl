@@ -275,7 +275,7 @@ end
 
 function stepsize_controller!(
         integrator,
-        cache::Union{FBDFCache, FBDFConstantCache},
+        cache::Union{FBDFCacheType, FBDFConstantCache},
         alg::FBDF{max_order}
     ) where {
         max_order,
@@ -300,7 +300,7 @@ function step_accept_controller!(integrator, alg::FBDF, q)
 end
 
 function step_accept_controller!(
-        integrator, cache::Union{FBDFCache, FBDFConstantCache}, alg::FBDF{max_order},
+        integrator, cache::Union{FBDFCacheType, FBDFConstantCache}, alg::FBDF{max_order},
         q
     ) where {max_order}
     cache.consfailcnt = 0

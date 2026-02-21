@@ -158,12 +158,12 @@ end
 
 initialize!(::AbstractNLSolver, integrator::SciMLBase.DEIntegrator) = nothing
 
-function initial_η(nlsolver::NLSolver, integrator)
+function initial_η(nlsolver::AbstractNLSolver, integrator)
     return max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
 end
 
 function apply_step!(
-        nlsolver::NLSolver{algType, iip},
+        nlsolver::AbstractNLSolver{algType, iip},
         integrator::SciMLBase.DEIntegrator
     ) where {algType, iip}
     if iip
@@ -175,7 +175,7 @@ function apply_step!(
     return nothing
 end
 
-function postamble!(nlsolver::NLSolver, integrator::SciMLBase.DEIntegrator)
+function postamble!(nlsolver::AbstractNLSolver, integrator::SciMLBase.DEIntegrator)
     if SciMLBase.has_stats(integrator)
         integrator.stats.nnonliniter += nlsolver.iter
 

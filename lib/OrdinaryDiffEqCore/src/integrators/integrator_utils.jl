@@ -83,7 +83,7 @@ function update_fsal!(integrator)
     end
 end
 
-function last_step_failed(integrator::ODEIntegrator)
+function last_step_failed(integrator::ODEIntegratorType)
     return integrator.last_stepfail && !integrator.opts.adaptive
 end
 
@@ -106,7 +106,7 @@ function modify_dt_for_tstops!(integrator)
 end
 
 # Want to extend savevalues! for DDEIntegrator
-function savevalues!(integrator::ODEIntegrator, force_save = false, reduce_size = true)
+function savevalues!(integrator::ODEIntegratorType, force_save = false, reduce_size = true)
     return _savevalues!(integrator, force_save, reduce_size)
 end
 
@@ -220,7 +220,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
 end
 
 # Want to extend postamble! for DDEIntegrator
-postamble!(integrator::ODEIntegrator) = _postamble!(integrator)
+postamble!(integrator::ODEIntegratorType) = _postamble!(integrator)
 
 function _postamble!(integrator)
     DiffEqBase.finalize!(integrator.opts.callback, integrator.u, integrator.t, integrator)
@@ -299,7 +299,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
 end
 
 # Want to extend loopfooter! for DDEIntegrator
-loopfooter!(integrator::ODEIntegrator) = _loopfooter!(integrator)
+loopfooter!(integrator::ODEIntegratorType) = _loopfooter!(integrator)
 
 function _loopfooter!(integrator)
     # Carry-over from callback
@@ -571,7 +571,7 @@ function handle_tstop!(integrator)
     return nothing
 end
 
-handle_callback_modifiers!(integrator::ODEIntegrator) = nothing
+handle_callback_modifiers!(integrator::ODEIntegratorType) = nothing
 
 function reset_fsal!(integrator)
     # Under these conditions, these algorithms are not FSAL anymore
@@ -595,18 +595,18 @@ function nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm)
     return f isa SplitFunction && issplit(alg) ? f.f1 : f
 end
 nlsolve_f(f, alg::DAEAlgorithm) = f
-function nlsolve_f(integrator::ODEIntegrator)
+function nlsolve_f(integrator::ODEIntegratorType)
     return nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 end
 
-function (integrator::ODEIntegrator)(
+function (integrator::ODEIntegratorType)(
         t, ::Type{deriv} = Val{0};
         idxs = nothing
     ) where {deriv}
     return current_interpolant(t, integrator, idxs, deriv)
 end
 
-function (integrator::ODEIntegrator)(
+function (integrator::ODEIntegratorType)(
         val::AbstractArray, t::Union{Number, AbstractArray},
         ::Type{deriv} = Val{0}; idxs = nothing
     ) where {deriv}

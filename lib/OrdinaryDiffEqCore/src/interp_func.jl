@@ -1,6 +1,3 @@
-abstract type OrdinaryDiffEqInterpolation{cacheType} <:
-SciMLBase.AbstractDiffEqInterpolation end
-
 struct InterpolationData{
         F, uType, tType, kType, algType <: Union{Nothing, Vector{Int}}, cacheType, DV,
     } <:
@@ -15,6 +12,8 @@ struct InterpolationData{
     differential_vars::DV
     sensitivitymode::Bool
 end
+
+const InterpolationDataVF64Type = Union{InterpolationData, InterpolationDataVF64}
 
 @static if isdefined(SciMLBase, :enable_interpolation_sensitivitymode)
     function SciMLBase.enable_interpolation_sensitivitymode(interp::InterpolationData)
@@ -56,6 +55,31 @@ function (interp::InterpolationData)(val, tvals, idxs, deriv, p, continuity::Sym
     return ode_interpolation!(val, tvals, interp, idxs, deriv, p, continuity)
 end
 
+# InterpolationDataVF64 callable and interface methods
+function (interp::InterpolationDataVF64)(tvals, idxs, deriv, p, continuity::Symbol = :left)
+    return ode_interpolation(tvals, interp, idxs, deriv, p, continuity)
+end
+function (interp::InterpolationDataVF64)(val, tvals, idxs, deriv, p, continuity::Symbol = :left)
+    return ode_interpolation!(val, tvals, interp, idxs, deriv, p, continuity)
+end
+@static if isdefined(SciMLBase, :enable_interpolation_sensitivitymode)
+    function SciMLBase.enable_interpolation_sensitivitymode(interp::InterpolationDataVF64)
+        InterpolationDataVF64(
+            interp.f, interp.timeseries, interp.ts, interp.ks,
+            interp.alg_choice, interp.dense, interp.cache,
+            interp.differential_vars, true
+        )
+    end
+end
+function SciMLBase.strip_interpolation(id::InterpolationDataVF64)
+    cache = strip_cache(id.cache)
+    return InterpolationData(
+        nothing, id.timeseries, id.ts, id.ks,
+        id.alg_choice, id.dense, cache, id.differential_vars,
+        id.sensitivitymode
+    )
+end
+
 function InterpolationData(id::InterpolationData, f)
     return InterpolationData(
         f, id.timeseries,
@@ -86,7 +110,7 @@ function SciMLBase.strip_interpolation(id::InterpolationData)
 end
 
 function strip_cache(cache)
-    if !(cache isa OrdinaryDiffEqCore.DefaultCache)
+    if !(cache isa OrdinaryDiffEqCore.DefaultCacheType)
         cache = SciMLBase.constructorof(typeof(cache))(
             [
                 nothing

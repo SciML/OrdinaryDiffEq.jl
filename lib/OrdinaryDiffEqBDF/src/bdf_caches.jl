@@ -751,6 +751,17 @@ function alg_cache(
 
     dense = [zero(u) for _ in 1:(2 * (max_order + 1))]
 
+    # VF64 path: use FBDFCacheVF64 when conditions are met
+    if u isa Vector{Float64} && f isa OrdinaryDiffEqCore._ODEFunctionVF64Type &&
+            alg.step_limiter! === OrdinaryDiffEqCore.trivial_limiter!
+        return FBDFCacheVF64(
+            fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
+            u_corrector, u₀, bdf_coeffs, Val(5), nconsteps, consfailcnt, tmp, atmp,
+            terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
+            iters_from_event, dense, OrdinaryDiffEqCore.trivial_limiter!
+        )
+    end
+
     return FBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, tmp, atmp,
@@ -758,3 +769,51 @@ function alg_cache(
         iters_from_event, dense, alg.step_limiter!
     )
 end
+
+################################################################################
+
+### VF64 specialized cache type
+
+"""
+    FBDFCacheVF64{MO, NLType, CoeffsType}
+
+Specialized FBDFCache for Vector{Float64} in-place problems with AutoSpecialize.
+3 type parameters instead of 13.
+"""
+mutable struct FBDFCacheVF64{MO, NLType, CoeffsType} <: BDFMutableCache
+    fsalfirst::Vector{Float64}
+    nlsolver::NLType
+    ts::Vector{Float64}
+    ts_tmp::Vector{Float64}
+    t_old::Float64
+    u_history::Matrix{Float64}
+    order::Int
+    prev_order::Int
+    u_corrector::Matrix{Float64}
+    u₀::Vector{Float64}
+    bdf_coeffs::CoeffsType
+    max_order::Val{MO}
+    nconsteps::Int
+    consfailcnt::Int
+    tmp::Vector{Float64}
+    atmp::Vector{Float64}
+    terkm2::Float64
+    terkm1::Float64
+    terk::Float64
+    terkp1::Float64
+    terk_tmp::Vector{Float64}
+    terkp1_tmp::Vector{Float64}
+    r::Vector{Float64}
+    weights::Vector{Float64}
+    equi_ts::Vector{Float64}
+    iters_from_event::Int
+    dense::Vector{Vector{Float64}}
+    step_limiter!::typeof(trivial_limiter!)
+end
+
+function get_fsalfirstlast(cache::FBDFCacheVF64, u)
+    return (cache.fsalfirst,
+        du_alias_or_new(cache.nlsolver, cache.fsalfirst))
+end
+
+const FBDFCacheType = Union{FBDFCache, FBDFCacheVF64}

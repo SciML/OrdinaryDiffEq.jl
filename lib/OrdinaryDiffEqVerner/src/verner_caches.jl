@@ -96,8 +96,36 @@ end
     lazy::L
 end
 
+"""Concrete cache for Vern7 with `Vector{Float64}` and default limiters (0 type parameters)."""
+struct Vern7CacheVF64 <: OrdinaryDiffEqMutableCache
+    u::Vector{Float64}
+    uprev::Vector{Float64}
+    k1::Vector{Float64}
+    k2::Vector{Float64}
+    k3::Vector{Float64}
+    k4::Vector{Float64}
+    k5::Vector{Float64}
+    k6::Vector{Float64}
+    k7::Vector{Float64}
+    k8::Vector{Float64}
+    k9::Vector{Float64}
+    k10::Vector{Float64}
+    utilde::Vector{Float64}
+    tmp::Vector{Float64}
+    rtmp::Vector{Float64}
+    atmp::Vector{Float64}
+    stage_limiter!::typeof(trivial_limiter!)
+    step_limiter!::typeof(trivial_limiter!)
+    thread::False
+    lazy::Val{true}
+end
+
+full_cache(c::Vern7CacheVF64) = (c.u, c.uprev, c.k1, c.k2, c.k3, c.k4, c.k5, c.k6, c.k7, c.k8, c.k9, c.k10, c.utilde, c.tmp, c.rtmp, c.atmp)
+
+const Vern7CacheType = Union{Vern7Cache, Vern7CacheVF64}
+
 # fake values since non-FSAL method
-get_fsalfirstlast(cache::Vern7Cache, u) = (nothing, nothing)
+get_fsalfirstlast(cache::Vern7CacheType, u) = (nothing, nothing)
 
 function alg_cache(
         alg::Vern7, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -120,6 +148,16 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
+    if u isa Vector{Float64} && rate_prototype isa Vector{Float64} &&
+            uEltypeNoUnits === Float64 &&
+            alg.stage_limiter! isa typeof(trivial_limiter!) &&
+            alg.step_limiter! isa typeof(trivial_limiter!) &&
+            alg.thread isa False && alg.lazy isa Val{true}
+        return Vern7CacheVF64(
+            u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp,
+            alg.stage_limiter!, alg.step_limiter!, alg.thread, alg.lazy
+        )
+    end
     return Vern7Cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp,
         alg.stage_limiter!, alg.step_limiter!, alg.thread, alg.lazy

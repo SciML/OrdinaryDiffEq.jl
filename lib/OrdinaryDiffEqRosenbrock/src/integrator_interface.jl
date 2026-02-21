@@ -1,5 +1,5 @@
 function resize_non_user_cache!(
-        integrator::ODEIntegrator,
+        integrator::OrdinaryDiffEqCore.ODEIntegratorType,
         cache::RosenbrockMutableCache, i
     )
     resize_J_W!(cache, integrator, i)

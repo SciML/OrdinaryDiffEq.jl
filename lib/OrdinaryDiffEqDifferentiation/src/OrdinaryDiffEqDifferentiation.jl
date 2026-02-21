@@ -89,5 +89,6 @@ include("linsolve_utils.jl")
 include("derivative_utils.jl")
 include("derivative_wrappers.jl")
 include("operators.jl")
+include("vf64_prep_types.jl")
 
 end

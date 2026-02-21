@@ -89,7 +89,7 @@ end
                 always_calc_begin, allow_calc_end, force_calc_end
             )
         end
-    elseif cache isa DefaultCache
+    elseif cache isa DefaultCacheType
         cache_current = cache.current
         if cache_current == 1
             _ode_addsteps!(
@@ -149,7 +149,7 @@ end
     end
     return nothing
 end
-@inline function SciMLBase.addsteps!(integrator::ODEIntegrator, args...)
+@inline function SciMLBase.addsteps!(integrator::ODEIntegratorType, args...)
     return ode_addsteps!(integrator, args...)
 end
 
@@ -160,7 +160,7 @@ end
             Θ, integrator, integrator.cache.caches,
             integrator.cache.current, idxs, deriv
         )
-    elseif integrator.cache isa DefaultCache
+    elseif integrator.cache isa DefaultCacheType
         val = default_ode_interpolant(
             Θ, integrator, integrator.cache,
             integrator.cache.current, idxs, deriv
@@ -175,7 +175,7 @@ end
 end
 
 function default_ode_interpolant(
-        Θ, integrator, cache::DefaultCache, alg_choice, idxs, deriv
+        Θ, integrator, cache::DefaultCacheType, alg_choice, idxs, deriv
     )
     if alg_choice == 1
         return ode_interpolant(
@@ -254,7 +254,7 @@ end
             integrator.k, integrator.cache.caches[integrator.cache.current],
             idxs, deriv, integrator.differential_vars
         )
-    elseif integrator.cache isa DefaultCache
+    elseif integrator.cache isa DefaultCacheType
         alg_choice = integrator.cache.current
         if alg_choice == 1
             ode_interpolant!(
@@ -304,7 +304,7 @@ end
 end
 
 function default_ode_interpolant!(
-        val, Θ, integrator, cache::DefaultCache, alg_choice, idxs, deriv
+        val, Θ, integrator, cache::DefaultCacheType, alg_choice, idxs, deriv
     )
     if alg_choice == 1
         return ode_interpolant!(
@@ -454,7 +454,7 @@ end
             val, Θ, integrator, integrator.cache.caches,
             integrator.cache.current, idxs, deriv
         )
-    elseif integrator.cache isa DefaultCache
+    elseif integrator.cache isa DefaultCacheType
         default_ode_extrapolant!(
             val, Θ, integrator, integrator.cache,
             integrator.cache.current, idxs, deriv
@@ -468,7 +468,7 @@ end
 end
 
 function default_ode_extrapolant!(
-        val, Θ, integrator, cache::DefaultCache, alg_choice, idxs, deriv
+        val, Θ, integrator, cache::DefaultCacheType, alg_choice, idxs, deriv
     )
     return if alg_choice == 1
         ode_interpolant!(
@@ -546,7 +546,7 @@ end
             Θ, integrator, integrator.cache.caches,
             integrator.cache.current, idxs, deriv
         )
-    elseif integrator.cache isa DefaultCache
+    elseif integrator.cache isa DefaultCacheType
         default_ode_extrapolant(
             Θ, integrator, integrator.cache,
             integrator.cache.current, idxs, deriv
@@ -560,7 +560,7 @@ end
 end
 
 function default_ode_extrapolant(
-        Θ, integrator, cache::DefaultCache, alg_choice, idxs, deriv
+        Θ, integrator, cache::DefaultCacheType, alg_choice, idxs, deriv
     )
     return if alg_choice == 1
         ode_interpolant(
@@ -677,7 +677,7 @@ end
 
 function evaluate_default_cache(
         f::F, Θ, dt, timeseries, i₋, i₊,
-        cache::DefaultCache, idxs, deriv, ks, ts, p, cacheid, differential_vars
+        cache::DefaultCacheType, idxs, deriv, ks, ts, p, cacheid, differential_vars
     ) where {F}
     if cacheid == 1
         return _evaluate_interpolant(
@@ -728,7 +728,7 @@ function evaluate_interpolant(
             f, Θ, dt, timeseries, i₋, i₊, cache.caches, idxs,
             deriv, ks, ts, p, id.alg_choice[i₊], differential_vars
         )
-    elseif cache isa DefaultCache
+    elseif cache isa DefaultCacheType
         return evaluate_default_cache(
             f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
             deriv, ks, ts, p, id.alg_choice[i₊], differential_vars
@@ -807,7 +807,7 @@ function ode_interpolation!(
     if cache isa CompositeCache
         current_alg = id.alg_choice[i₊]
         cache_i₊ = cache.caches[current_alg]
-    elseif cache isa DefaultCache
+    elseif cache isa DefaultCacheType
         current_alg = id.alg_choice[i₊]
     else
         cache_i₊ = cache
@@ -855,7 +855,7 @@ function ode_interpolation!(
                     deriv
                 )
             end
-        elseif cache isa DefaultCache
+        elseif cache isa DefaultCacheType
             if current_alg != id.alg_choice[i₊] # switched algorithm
                 current_alg = id.alg_choice[i₊]
                 if current_alg == 1
@@ -1030,7 +1030,7 @@ function ode_interpolation(
                 Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                 cache.caches[id.alg_choice[i₊]], idxs, deriv, differential_vars
             )
-        elseif cache isa DefaultCache
+        elseif cache isa DefaultCacheType
             alg_choice = id.alg_choice[i₊]
             if alg_choice == 1
                 _ode_addsteps!(
@@ -1150,7 +1150,7 @@ function ode_interpolation!(
                 out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                 cache.caches[id.alg_choice[i₊]], idxs, deriv, differential_vars
             )
-        elseif cache isa DefaultCache
+        elseif cache isa DefaultCacheType
             alg_choice = id.alg_choice[i₊]
             if alg_choice == 1
                 _ode_addsteps!(

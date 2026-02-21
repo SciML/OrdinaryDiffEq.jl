@@ -603,18 +603,40 @@ function SciMLBase.__init(
     differential_vars = prob isa DAEProblem ? prob.differential_vars :
         get_differential_vars(f, u)
 
-    id = InterpolationData(
-        f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
-    )
-    sol = SciMLBase.build_solution(
-        prob, _alg, ts, timeseries,
-        dense = dense, k = ks, interp = id, alg_choice = alg_choice,
-        calculate_error = false, stats = stats, saved_subsystem = saved_subsystem
-    )
+    cacheType = typeof(cache)
+
+    _use_vf64_sol = uType === Vector{Float64} && tType === Float64 &&
+        isinplace(prob) && du isa Nothing &&
+        f isa _ODEFunctionVF64Type && differential_vars isa Nothing &&
+        alg_choice isa Nothing && prob isa _ODEProblemVF64Type &&
+        saved_subsystem isa Nothing
+
+    id = if _use_vf64_sol
+        InterpolationDataVF64(
+            f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
+        )
+    else
+        InterpolationData(
+            f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
+        )
+    end
+
+    sol = if _use_vf64_sol
+        ODESolutionVF64{typeof(_alg), typeof(p), cacheType}(
+            timeseries, nothing, nothing, ts, ks, nothing, prob, _alg, id,
+            dense, 0, stats, nothing, SciMLBase.ReturnCode.Default,
+            nothing, nothing, nothing
+        )
+    else
+        SciMLBase.build_solution(
+            prob, _alg, ts, timeseries,
+            dense = dense, k = ks, interp = id, alg_choice = alg_choice,
+            calculate_error = false, stats = stats, saved_subsystem = saved_subsystem
+        )
+    end
 
     FType = typeof(f)
     SolType = typeof(sol)
-    cacheType = typeof(cache)
 
     # rate/state = (state/time)/state = 1/t units, internalnorm drops units
     # we don't want to differentiate through eigenvalue estimation
@@ -650,40 +672,73 @@ function SciMLBase.__init(
     saveiter_dense = 0
     fsalfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
 
-    integrator = ODEIntegrator{
-        typeof(_alg), isinplace(prob), uType, typeof(du),
-        tType, typeof(p),
-        typeof(eigen_est), EEstT,
-        QT, typeof(tdir), typeof(k), SolType,
-        FType, cacheType,
-        typeof(opts), typeof(fsalfirst),
-        typeof(last_event_error), typeof(callback_cache),
-        typeof(initializealg), typeof(differential_vars),
-        typeof(controller_cache),
-    }(
-        sol, u, du, k, t, tType(_dt), f, p,
-        uprev, uprev2, duprev, tprev,
-        _alg, dtcache, dtchangeable,
-        dtpropose, tdir, eigen_est, EEst,
-        # TODO vvv remove these
-        QT(qoldinit), q11,
-        erracc, dtacc,
-        # TODO ^^^ remove these
-        controller_cache,
-        success_iter,
-        iter, saveiter, saveiter_dense, cache,
-        callback_cache,
-        kshortsize, force_stepfail,
-        last_stepfail,
-        just_hit_tstop, do_error_check,
-        event_last_time,
-        vector_event_last_time,
-        last_event_error, accept_step,
-        isout, reeval_fsal,
-        u_modified, reinitiailize, isdae,
-        opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast
-    )
+    _use_vf64 = _use_vf64_sol &&
+        f isa _ODEFunctionVF64Type && opts isa DEOptionsVF64 &&
+        initializealg isa DiffEqBase.DefaultInit
+
+    integrator = if _use_vf64
+        ODEIntegratorVF64{
+            typeof(_alg), typeof(p), cacheType, typeof(fsalfirst),
+            typeof(controller_cache), typeof(opts.callback),
+            typeof(callback_cache), typeof(opts.saveat_cache),
+        }(
+            sol, u, du, k, t, tType(_dt), f, p,
+            uprev, uprev2, duprev, tprev,
+            _alg, dtcache, dtchangeable,
+            dtpropose, tdir, eigen_est, EEst,
+            QT(qoldinit), q11,
+            erracc, dtacc,
+            controller_cache,
+            success_iter,
+            iter, saveiter, saveiter_dense, cache,
+            callback_cache,
+            kshortsize, force_stepfail,
+            last_stepfail,
+            just_hit_tstop, do_error_check,
+            event_last_time,
+            vector_event_last_time,
+            last_event_error, accept_step,
+            isout, reeval_fsal,
+            u_modified, reinitiailize, isdae,
+            opts, stats, initializealg, differential_vars,
+            fsalfirst, fsallast
+        )
+    else
+        ODEIntegrator{
+            typeof(_alg), isinplace(prob), uType, typeof(du),
+            tType, typeof(p),
+            typeof(eigen_est), EEstT,
+            QT, typeof(tdir), typeof(k), SolType,
+            FType, cacheType,
+            typeof(opts), typeof(fsalfirst),
+            typeof(last_event_error), typeof(callback_cache),
+            typeof(initializealg), typeof(differential_vars),
+            typeof(controller_cache),
+        }(
+            sol, u, du, k, t, tType(_dt), f, p,
+            uprev, uprev2, duprev, tprev,
+            _alg, dtcache, dtchangeable,
+            dtpropose, tdir, eigen_est, EEst,
+            # TODO vvv remove these
+            QT(qoldinit), q11,
+            erracc, dtacc,
+            # TODO ^^^ remove these
+            controller_cache,
+            success_iter,
+            iter, saveiter, saveiter_dense, cache,
+            callback_cache,
+            kshortsize, force_stepfail,
+            last_stepfail,
+            just_hit_tstop, do_error_check,
+            event_last_time,
+            vector_event_last_time,
+            last_event_error, accept_step,
+            isout, reeval_fsal,
+            u_modified, reinitiailize, isdae,
+            opts, stats, initializealg, differential_vars,
+            fsalfirst, fsallast
+        )
+    end
 
     if initialize_integrator
         if isdae || SciMLBase.has_initializeprob(prob.f) ||
@@ -736,7 +791,7 @@ function SciMLBase.__init(
     return integrator
 end
 
-function SciMLBase.solve!(integrator::ODEIntegrator)
+function SciMLBase.solve!(integrator::ODEIntegratorType)
     @inbounds while !isempty(integrator.opts.tstops)
         while integrator.tdir * integrator.t < first(integrator.opts.tstops)
             loopheader!(integrator)

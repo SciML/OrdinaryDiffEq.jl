@@ -14,7 +14,7 @@
 end
 
 @muladd function initialize!(
-        nlsolver::NLSolver{<:NLNewton, true},
+        nlsolver::AbstractNLSolver{<:NLNewton, true},
         integrator::SciMLBase.DEIntegrator
     )
     (; u, uprev, t, dt, opts) = integrator
@@ -237,7 +237,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     ndz
 end
 
-@muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true}, integrator, γW)
+@muladd function compute_step!(nlsolver::AbstractNLSolver{<:NLNewton, true}, integrator, γW)
     (; uprev, t, p, dt, opts) = integrator
     (; z, tmp, ztmp, γ, α, iter, cache, method) = nlsolver
     (; W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight) = cache
@@ -617,7 +617,7 @@ end
 
 ## resize!
 
-function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i::Int)
+function Base.resize!(nlcache::NLNewtonCacheType, ::AbstractNLSolver, integrator, i::Int)
     resize!(nlcache.ustep, i)
     resize!(nlcache.k, i)
     resize!(nlcache.atmp, i)

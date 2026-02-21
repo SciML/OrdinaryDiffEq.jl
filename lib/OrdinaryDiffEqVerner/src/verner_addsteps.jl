@@ -78,7 +78,7 @@
 end
 
 @muladd function _ode_addsteps!(
-        k, t, uprev, u, dt, f, p, cache::Vern7Cache,
+        k, t, uprev, u, dt, f, p, cache::Vern7CacheType,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false
     )

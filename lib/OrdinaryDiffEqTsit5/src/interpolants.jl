@@ -1,4 +1,4 @@
-RK_WITH_SPECIAL_INTERPOLATIONS = Union{Tsit5ConstantCache, Tsit5Cache}
+RK_WITH_SPECIAL_INTERPOLATIONS = Union{Tsit5ConstantCache, Tsit5CacheType}
 
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
@@ -53,7 +53,7 @@ end
 end
 
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::Tsit5Cache, idxs::Nothing,
+        Θ, dt, y₀, y₁, k, cache::Tsit5CacheType, idxs::Nothing,
         T::Type{Val{0}}, differential_vars::Nothing
     )
     @tsit5pre0
@@ -66,7 +66,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache}, idxs,
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType}, idxs,
         T::Type{Val{0}}, differential_vars::Nothing
     )
     @tsit5pre0
@@ -79,7 +79,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache},
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType},
         idxs::Nothing, T::Type{Val{0}}, differential_vars::Nothing
     )
     @tsit5pre0
@@ -94,7 +94,7 @@ end
 
 @muladd function _ode_interpolant!(
         out::Array, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache},
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType},
         idxs::Nothing, T::Type{Val{0}}, differential_vars::Nothing
     )
     @tsit5pre0
@@ -110,7 +110,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache}, idxs,
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType}, idxs,
         T::Type{Val{0}}, differential_vars::Nothing
     )
     @tsit5pre0
@@ -129,7 +129,7 @@ end
 
 @muladd function _ode_interpolant!(
         out::Array, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache}, idxs,
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType}, idxs,
         T::Type{Val{0}}, differential_vars::Nothing
     )
     @tsit5pre0
@@ -165,7 +165,7 @@ end
 end
 
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::Tsit5Cache, idxs::Nothing,
+        Θ, dt, y₀, y₁, k, cache::Tsit5CacheType, idxs::Nothing,
         T::Type{Val{1}}, differential_vars::Nothing
     )
     @tsit5pre1
@@ -175,7 +175,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache}, idxs,
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType}, idxs,
         T::Type{Val{1}}, differential_vars::Nothing
     )
     @tsit5pre1
@@ -187,7 +187,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache},
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType},
         idxs::Nothing, T::Type{Val{1}}, differential_vars::Nothing
     )
     @tsit5pre1
@@ -202,7 +202,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache}, idxs,
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType}, idxs,
         T::Type{Val{1}}, differential_vars::Nothing
     )
     @tsit5pre1
@@ -230,7 +230,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache},
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType},
         idxs::Nothing, T::Type{Val{2}}, differential_vars::Nothing
     )
     @tsit5pre2
@@ -244,7 +244,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache}, idxs,
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType}, idxs,
         T::Type{Val{2}}, differential_vars::Nothing
     )
     @tsit5pre2
@@ -258,7 +258,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache},
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType},
         idxs::Nothing, T::Type{Val{2}}, differential_vars::Nothing
     )
     @tsit5pre2
@@ -275,7 +275,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache}, idxs,
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType}, idxs,
         T::Type{Val{2}}, differential_vars::Nothing
     )
     @tsit5pre2
@@ -305,7 +305,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache},
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType},
         idxs::Nothing, T::Type{Val{3}}, differential_vars::Nothing
     )
     @tsit5pre3
@@ -319,7 +319,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache}, idxs,
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType}, idxs,
         T::Type{Val{3}}, differential_vars::Nothing
     )
     @tsit5pre3
@@ -333,7 +333,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache},
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType},
         idxs::Nothing, T::Type{Val{3}}, differential_vars::Nothing
     )
     @tsit5pre3
@@ -350,7 +350,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache}, idxs,
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType}, idxs,
         T::Type{Val{3}}, differential_vars::Nothing
     )
     @tsit5pre3
@@ -380,7 +380,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache},
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType},
         idxs::Nothing, T::Type{Val{4}}, differential_vars::Nothing
     )
     @tsit5pre4
@@ -394,7 +394,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache}, idxs,
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType}, idxs,
         T::Type{Val{4}}, differential_vars::Nothing
     )
     @tsit5pre4
@@ -408,7 +408,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache},
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType},
         idxs::Nothing, T::Type{Val{4}}, differential_vars::Nothing
     )
     @tsit5pre4
@@ -425,7 +425,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{Tsit5ConstantCache, Tsit5Cache}, idxs,
+        cache::Union{Tsit5ConstantCache, Tsit5CacheType}, idxs,
         T::Type{Val{4}}, differential_vars::Nothing
     )
     @tsit5pre4

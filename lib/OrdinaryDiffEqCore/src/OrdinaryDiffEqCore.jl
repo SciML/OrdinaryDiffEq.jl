@@ -21,6 +21,10 @@ import PrecompileTools
 
 import FillArrays: Trues, Falses
 
+import ForwardDiff
+import FunctionWrappers
+import FunctionWrappersWrappers
+
 import FastPower: fastpower
 
 # Interfaces
@@ -154,6 +158,9 @@ include("caches/basic_caches.jl")
 
 include("integrators/type.jl")
 include("integrators/controllers.jl")
+abstract type OrdinaryDiffEqInterpolation{cacheType} <:
+    SciMLBase.AbstractDiffEqInterpolation end
+include("integrators/type_vf64.jl")
 include("integrators/integrator_interface.jl")
 include("integrators/integrator_utils.jl")
 include("cache_utils.jl")

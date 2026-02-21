@@ -1379,10 +1379,37 @@ function initialize!(integrator, cache::FBDFCache{max_order}) where {max_order}
     return integrator.u_modified = u_modified
 end
 
+function initialize!(integrator, cache::FBDFCacheVF64{max_order}) where {max_order}
+    integrator.kshortsize = 2 * (max_order + 1)
+
+    resize!(integrator.k, integrator.kshortsize)
+    for i in 1:(2 * (max_order + 1))
+        integrator.k[i] = cache.dense[i]
+    end
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    u_modified = integrator.u_modified
+    integrator.u_modified = true
+    reinitFBDF!(integrator, cache)
+    return integrator.u_modified = u_modified
+end
+
 function perform_step!(
         integrator, cache::FBDFCache{max_order},
         repeat_step = false
     ) where {max_order}
+    _perform_step_fbdf!(integrator, cache, max_order, repeat_step)
+end
+
+function perform_step!(
+        integrator, cache::FBDFCacheVF64{max_order},
+        repeat_step = false
+    ) where {max_order}
+    _perform_step_fbdf!(integrator, cache, max_order, repeat_step)
+end
+
+function _perform_step_fbdf!(integrator, cache, max_order, repeat_step)
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp,
         terkp1_tmp, atmp, tmp, u₀, ts_tmp, step_limiter!,

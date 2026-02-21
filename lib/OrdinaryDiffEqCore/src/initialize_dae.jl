@@ -14,7 +14,7 @@ variable, then the system is not Index 1!
 ## Expansion
 
 function DiffEqBase.initialize_dae!(
-        integrator::ODEIntegrator,
+        integrator::ODEIntegratorType,
         initializealg = integrator.initializealg
     )
     return _initialize_dae!(
@@ -27,7 +27,7 @@ end
 ## Default algorithms
 
 function _initialize_dae!(
-        integrator::ODEIntegrator, prob::ODEProblem,
+        integrator::ODEIntegratorType, prob::ODEProblem,
         alg::DefaultInit, x::Union{Val{true}, Val{false}}
     )
     return if SciMLBase.has_initializeprob(prob.f)
@@ -49,7 +49,7 @@ function _initialize_dae!(
 end
 
 function _initialize_dae!(
-        integrator::ODEIntegrator, prob::DAEProblem,
+        integrator::ODEIntegratorType, prob::DAEProblem,
         alg::DefaultInit, x::Union{Val{true}, Val{false}}
     )
     return if SciMLBase.has_initializeprob(prob.f)

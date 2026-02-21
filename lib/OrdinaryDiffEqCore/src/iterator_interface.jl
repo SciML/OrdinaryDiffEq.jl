@@ -1,4 +1,4 @@
-function step!(integrator::ODEIntegrator)
+function step!(integrator::ODEIntegratorType)
     if integrator.opts.advance_to_tstop
         while integrator.tdir * integrator.t < first(integrator.opts.tstops)
             loopheader!(integrator)

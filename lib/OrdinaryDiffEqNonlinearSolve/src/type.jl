@@ -233,3 +233,96 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C} <:
     prob::P
     cache::C
 end
+
+# VF64 specialized types: fewer type parameters for shorter stack traces.
+
+"""
+    NLNewtonCacheVF64{pType, LSType, JCType}
+
+Specialized NLNewtonCache for Vector{Float64} in-place problems with AutoSpecialize.
+3 type parameters instead of 10. jac_config type varies with autodiff choice
+(ForwardDiff vs FiniteDiff). linsolve varies with verbose settings.
+"""
+mutable struct NLNewtonCacheVF64{pType, LSType, JCType} <: AbstractNLSolverCache
+    ustep::Vector{Float64}
+    tstep::Float64
+    k::Vector{Float64}
+    atmp::Vector{Float64}
+    dz::Vector{Float64}
+    J::Matrix{Float64}
+    W::Matrix{Float64}
+    new_W::Bool
+    firststage::Bool
+    firstcall::Bool
+    W_γdt::Float64
+    du1::Vector{Float64}
+    uf::OrdinaryDiffEqCore._UJacobianWrapperVF64Type{pType}
+    jac_config::JCType
+    linsolve::LSType
+    weight::Vector{Float64}
+    invγdt::Float64
+    new_W_γdt_cutoff::Float64
+    J_t::Float64
+end
+
+"""
+    NLNewtonCacheVF64FiniteDiff{pType, LSType}
+
+Specialized NLNewtonCache for Vector{Float64} in-place problems using AutoFiniteDiff.
+2 type parameters instead of 10. The FiniteDiff jacobian prep type is function-independent,
+allowing jac_config to be hardcoded. Used by DefaultODEAlgorithm which selects AutoFiniteDiff.
+"""
+mutable struct NLNewtonCacheVF64FiniteDiff{pType, LSType} <: AbstractNLSolverCache
+    ustep::Vector{Float64}
+    tstep::Float64
+    k::Vector{Float64}
+    atmp::Vector{Float64}
+    dz::Vector{Float64}
+    J::Matrix{Float64}
+    W::Matrix{Float64}
+    new_W::Bool
+    firststage::Bool
+    firstcall::Bool
+    W_γdt::Float64
+    du1::Vector{Float64}
+    uf::OrdinaryDiffEqCore._UJacobianWrapperVF64Type{pType}
+    jac_config::_JacConfigFiniteDiff
+    linsolve::LSType
+    weight::Vector{Float64}
+    invγdt::Float64
+    new_W_γdt_cutoff::Float64
+    J_t::Float64
+end
+
+const NLNewtonCacheType = Union{NLNewtonCache, NLNewtonCacheVF64, NLNewtonCacheVF64FiniteDiff}
+
+"""
+    NLSolverVF64{algType, CacheType}
+
+Specialized NLSolver for Vector{Float64} in-place problems.
+2 type parameters instead of 8.
+"""
+mutable struct NLSolverVF64{
+        algType, CacheType <: AbstractNLSolverCache,
+    } <: AbstractNLSolver{algType, true}
+    z::Vector{Float64}
+    tmp::Vector{Float64}
+    tmp2::Nothing
+    ztmp::Vector{Float64}
+    γ::Float64
+    c::Float64
+    α::Float64
+    alg::algType
+    κ::Float64
+    fast_convergence_cutoff::Float64
+    ηold::Float64
+    iter::Int
+    maxiters::Int
+    status::NLStatus
+    cache::CacheType
+    method::MethodType
+    nfails::Int
+    prev_θ::Float64
+end
+
+const NLSolverType = Union{NLSolver, NLSolverVF64}

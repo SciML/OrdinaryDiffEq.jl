@@ -49,7 +49,36 @@ mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiff
     end
 end
 
-function get_fsalfirstlast(cache::DefaultCache, u)
+"""
+    DefaultCacheVF64{T1, T2, T3, T4, T5, T6, F}
+
+Specialized DefaultCache for Vector{Float64} in-place problems.
+7 type parameters instead of 9. Eliminates A (args tuple type, ~2300 chars)
+and uType by storing args as Any and hardcoding Vector{Float64}.
+"""
+mutable struct DefaultCacheVF64{T1, T2, T3, T4, T5, T6, F} <: OrdinaryDiffEqCache
+    args::Any
+    choice_function::F
+    current::Int
+    u::Vector{Float64}
+    cache1::T1
+    cache2::T2
+    cache3::T3
+    cache4::T4
+    cache5::T5
+    cache6::T6
+    function DefaultCacheVF64{T1, T2, T3, T4, T5, T6, F}(
+            args, choice_function, current, u
+        ) where {T1, T2, T3, T4, T5, T6, F}
+        return new{T1, T2, T3, T4, T5, T6, F}(
+            args, choice_function, current, u
+        )
+    end
+end
+
+const DefaultCacheType = Union{DefaultCache, DefaultCacheVF64}
+
+function get_fsalfirstlast(cache::DefaultCacheType, u)
     return (cache.u, cache.u) # will be overwritten by the cache choice
 end
 
@@ -58,6 +87,14 @@ function ismutablecache(
             T1, T2, T3, T4, T5, T6, A, F, uType,
         }
     ) where {T1, T2, T3, T4, T5, T6, A, F, uType}
+    return T1 <: OrdinaryDiffEqMutableCache
+end
+
+function ismutablecache(
+        cache::DefaultCacheVF64{
+            T1, T2, T3, T4, T5, T6, F,
+        }
+    ) where {T1, T2, T3, T4, T5, T6, F}
     return T1 <: OrdinaryDiffEqMutableCache
 end
 
@@ -95,9 +132,15 @@ function alg_cache(
     T4 = Base.promote_op(alg_cache, A4, argT...)
     T5 = Base.promote_op(alg_cache, A5, argT...)
     T6 = Base.promote_op(alg_cache, A6, argT...)
-    cache = DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
-        args, alg.choice_function, 1, u
-    )
+    cache = if u isa Vector{Float64}
+        DefaultCacheVF64{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function)}(
+            args, alg.choice_function, 1, u
+        )
+    else
+        DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
+            args, alg.choice_function, 1, u
+        )
+    end
     algs = alg.algs
     # If the type is a bitstype we need to initialize it correctly here since isdefined will always return true.
     if isbitstype(T1)

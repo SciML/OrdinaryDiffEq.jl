@@ -382,7 +382,7 @@ end
     end
 end
 
-function initialize!(integrator, cache::Vern7Cache)
+function initialize!(integrator, cache::Vern7CacheType)
     (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10) = cache
     (; k) = integrator
     alg = unwrap_alg(integrator, false)
@@ -409,7 +409,7 @@ function initialize!(integrator, cache::Vern7Cache)
     end
 end
 
-@muladd function perform_step!(integrator, cache::Vern7Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::Vern7CacheType, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))

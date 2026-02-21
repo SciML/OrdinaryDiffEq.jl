@@ -1,5 +1,5 @@
 @muladd function _ode_addsteps!(
-        k, t, uprev, u, dt, f, p, cache::Tsit5Cache,
+        k, t, uprev, u, dt, f, p, cache::Tsit5CacheType,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false
     )
@@ -81,7 +81,7 @@ end
 end
 
 #=
-@muladd function _ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Tsit5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+@muladd function _ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Tsit5CacheType,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<7 || always_calc_begin
     (; c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76) = cache.tab
     (; k1,k2,k3,k4,k5,k6,k7,tmp) = cache
@@ -183,7 +183,7 @@ end
     integrator.u = u
 end
 
-function initialize!(integrator, cache::Tsit5Cache)
+function initialize!(integrator, cache::Tsit5CacheType)
     integrator.kshortsize = 7
     resize!(integrator.k, integrator.kshortsize)
     # Setup k pointers
@@ -199,7 +199,7 @@ function initialize!(integrator, cache::Tsit5Cache)
     return nothing
 end
 
-@muladd function perform_step!(integrator, cache::Tsit5Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::Tsit5CacheType, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
