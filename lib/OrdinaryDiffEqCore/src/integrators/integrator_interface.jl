@@ -71,7 +71,10 @@ end
 @inline function SciMLBase.get_du(integrator::ODEIntegrator)
     isdiscretecache(integrator.cache) &&
         error("Derivatives are not defined for this stepper.")
-    return if isfsal(integrator.alg)
+    return if isfsal(integrator.alg) &&
+            !has_stiff_interpolation(integrator.alg)
+        # Special stiff interpolations do not store the
+        # right value in fsallast
         integrator.fsallast
     else
         integrator(integrator.t, Val{1})

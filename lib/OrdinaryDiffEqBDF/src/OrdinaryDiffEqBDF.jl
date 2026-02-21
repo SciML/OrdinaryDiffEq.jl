@@ -21,7 +21,9 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     step_reject_controller!, post_newton_controller!,
     u_modified!, DAEAlgorithm, _unwrap_val, DummyController,
     get_fsalfirstlast, generic_solver_docstring, _bool_to_ADType,
-    _process_AD_choice
+    _process_AD_choice,
+    _ode_interpolant, _ode_interpolant!, has_stiff_interpolation,
+    _ode_addsteps!, DerivativeOrderNotPossibleError
 using OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache
 
 using TruncatedStacktraces: @truncate_stacktrace
@@ -64,6 +66,9 @@ include("dae_caches.jl")
 include("controllers.jl")
 include("dae_perform_step.jl")
 include("bdf_perform_step.jl")
+include("interp_func.jl")
+include("bdf_interpolants.jl")
+include("stiff_addsteps.jl")
 
 import PrecompileTools
 import Preferences

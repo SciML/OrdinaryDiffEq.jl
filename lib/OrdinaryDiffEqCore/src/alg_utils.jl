@@ -19,7 +19,7 @@ function SciMLBase.forwarddiffs_model(
             OrdinaryDiffEqImplicitAlgorithm, ExponentialAlgorithm,
         }
     )
-    return alg_autodiff(alg) isa AutoForwardDiff
+    return dense_ad(alg_autodiff(alg)) isa AutoForwardDiff
 end
 
 SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true

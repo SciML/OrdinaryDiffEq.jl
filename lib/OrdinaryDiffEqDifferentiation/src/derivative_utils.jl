@@ -244,9 +244,6 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     islin && return false, false # no further JW eval when it's linear
     !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize
     errorfail = integrator.EEst > one(integrator.EEst)
-    if alg isa DAEAlgorithm
-        return true, true
-    end
     # TODO: add `isJcurrent` support for Rosenbrock solvers
     if !isnewton(nlsolver)
         isfreshJ = !(integrator.alg isa CompositeAlgorithm) &&
@@ -257,19 +254,40 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     isfs = isfirststage(nlsolver)
     isfreshJ = isJcurrent(nlsolver, integrator) && !integrator.u_modified
     iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
-    mm = integrator.f.mass_matrix
-    is_varying_mm = !isconstant(mm)
+    isdae = alg isa DAEAlgorithm
+    if !isdae
+        mm = integrator.f.mass_matrix
+        is_varying_mm = !isconstant(mm)
+    end
     if isfreshJ
         jbad = false
         smallstepchange = true
     else
-        W_iγdt = inv(nlsolver.cache.W_γdt)
-        iγdt = inv(nlsolver.γ * integrator.dt)
-        smallstepchange = abs(iγdt / W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
+        if isdae
+            # IDA-style cj ratio test for DAE solvers.
+            # For DAE, W_γdt stores α / (γ * dt) from the last Jacobian eval.
+            # Compare current cj = α / (γ * dt) with stored value.
+            current_cj = nlsolver.α * inv(nlsolver.γ * integrator.dt)
+            old_cj = nlsolver.cache.W_γdt
+            smallstepchange = abs(current_cj / old_cj - 1) <=
+                get_new_W_γdt_cutoff(nlsolver)
+        else
+            W_iγdt = inv(nlsolver.cache.W_γdt)
+            iγdt = inv(nlsolver.γ * integrator.dt)
+            smallstepchange = abs(iγdt / W_iγdt - 1) <=
+                get_new_W_γdt_cutoff(nlsolver)
+        end
         jbad = nlsolver.status === TryAgain && smallstepchange
     end
     wbad = (!smallstepchange) || (isfs && errorfail) || nlsolver.status === Divergence
-    return jbad, (is_varying_mm || jbad || wbad)
+    if isdae
+        # For DAE solvers, W = J (no separate I - γ*dt*J transformation).
+        # Recomputing W without J is a no-op, so new_jac and new_W must match.
+        need_recompute = jbad || wbad
+        return need_recompute, need_recompute
+    else
+        return jbad, (is_varying_mm || jbad || wbad)
+    end
 end
 
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
@@ -540,7 +558,11 @@ function update_W!(
     )
     if isnewton(nlsolver)
         isdae = integrator.alg isa DAEAlgorithm
-        new_jac, new_W = true, true
+        if newJW === nothing
+            new_jac, new_W = do_newJW(integrator, integrator.alg, nlsolver, repeat_step)
+        else
+            new_jac, new_W = newJW
+        end
         if isdae && new_jac
             lcache = nlsolver.cache
             lcache.uf.α = nlsolver.α
@@ -548,8 +570,9 @@ function update_W!(
             lcache.uf.tmp = @. nlsolver.tmp
             lcache.uf.uprev = @. integrator.uprev
         end
-        nlsolver.cache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step)
-        #TODO: jacobian reuse for oop
+        if new_W
+            nlsolver.cache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step)
+        end
         new_jac && (nlsolver.cache.J_t = integrator.t)
         set_new_W!(nlsolver, new_W)
         if new_jac && isdae

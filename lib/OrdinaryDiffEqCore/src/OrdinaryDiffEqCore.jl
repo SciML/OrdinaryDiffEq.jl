@@ -83,7 +83,7 @@ import DiffEqBase: calculate_residuals,
 import Polyester
 # MacroTools and Adapt imported but not directly used in OrdinaryDiffEqCore
 # using MacroTools, Adapt
-import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse
+import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse, dense_ad
 import Accessors: @reset
 
 # SciMLStructures symbols imported but not directly used in OrdinaryDiffEqCore

@@ -39,3 +39,5 @@ alg_order(alg::DABDF2) = 2
 alg_order(alg::DFBDF) = 1 #dummy value
 
 isfsal(alg::DImplicitEuler) = false
+
+has_stiff_interpolation(::Union{QNDF, FBDF, DFBDF}) = true
