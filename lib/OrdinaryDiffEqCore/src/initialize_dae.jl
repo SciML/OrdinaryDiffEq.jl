@@ -197,3 +197,44 @@ function _initialize_dae!(
         prob, integrator, prob.f, alg, isinplace; abstol = integrator.opts.abstol
     )
 end
+
+function _initialize_dae!(
+        integrator, prob::DAEProblem, alg::CheckInit,
+        isinplace::Val{true}
+    )
+    resid = similar(integrator.u)
+    prob.f(resid, integrator.du, integrator.u, integrator.p, integrator.t)
+    abstol = integrator.opts.abstol
+    norm_resid = if abstol isa Number
+        integrator.opts.internalnorm(resid, integrator.t) / abstol
+    else
+        resid_norm = resid ./ abstol
+        integrator.opts.internalnorm(resid_norm, integrator.t)
+    end
+    if norm_resid > 1
+        throw(SciMLBase.CheckInitFailureError(prob, integrator.u, resid))
+    end
+    return SciMLBase.get_initial_values(
+        prob, integrator, prob.f, alg, isinplace; abstol = integrator.opts.abstol
+    )
+end
+
+function _initialize_dae!(
+        integrator, prob::DAEProblem, alg::CheckInit,
+        isinplace::Val{false}
+    )
+    resid = prob.f(integrator.du, integrator.u, integrator.p, integrator.t)
+    abstol = integrator.opts.abstol
+    norm_resid = if abstol isa Number
+        integrator.opts.internalnorm(resid, integrator.t) / abstol
+    else
+        resid_norm = resid ./ abstol
+        integrator.opts.internalnorm(resid_norm, integrator.t)
+    end
+    if norm_resid > 1
+        throw(SciMLBase.CheckInitFailureError(prob, integrator.u, resid))
+    end
+    return SciMLBase.get_initial_values(
+        prob, integrator, prob.f, alg, isinplace; abstol = integrator.opts.abstol
+    )
+end

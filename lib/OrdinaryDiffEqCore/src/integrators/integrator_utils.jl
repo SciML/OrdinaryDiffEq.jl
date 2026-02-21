@@ -29,7 +29,7 @@ function loopheader!(integrator)
             integrator.success_iter += 1
             apply_step!(integrator)
         end
-    elseif integrator.u_modified # && integrator.iter == 0
+    elseif integrator.iter == 0 && integrator.u_modified
         if integrator.isdae
             DiffEqBase.initialize_dae!(integrator)
         end
