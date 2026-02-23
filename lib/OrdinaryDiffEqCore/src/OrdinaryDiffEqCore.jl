@@ -163,6 +163,8 @@ include("initialize_dae.jl")
 
 include("perform_step/composite_perform_step.jl")
 
+include("disco.jl")
+
 include("dense/generic_dense.jl")
 
 include("iterator_interface.jl")

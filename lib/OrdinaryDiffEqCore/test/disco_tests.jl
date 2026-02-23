@@ -1,4 +1,6 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
+using OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqBDF
 
 #test example discontinuous at u = 1
 f(u, p, t) = u[1] < 1 ? [2u[1]] : [-3u[1] + 5]
@@ -15,9 +17,17 @@ end
 cb = ContinuousCallback(condition, affect!; is_discontinuity = true)
 
 #disco solve
-sol = solve(prob, RadauIIA5(is_disco = true); callback = cb, reltol = 1e-6)
+sol_disco = solve(prob, RadauIIA5(is_disco = true); callback = cb, reltol = 1e-6)
 #fixed order solve
-sol2 = solve(prob, RadauIIA5(is_disco = false); callback = cb, reltol = 1e-6)
+sol_no_disco = solve(prob, RadauIIA5(is_disco = false); callback = cb, reltol = 1e-6)
+
+rodas_no_disco = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6)
+
+rodas_disco = solve(prob, Rodas5P(is_disco = true); callback = cb, reltol = 1e-6)
+
+bdf_no_disco = solve(prob, FBDF(); callback = cb, reltol = 1e-6)
+
+bdf_disco = solve(prob, FBDF(is_disco = true); callback = cb, reltol = 1e-6)
 
 #two discontinuity functions
 function f(u, p, t)
@@ -49,9 +59,18 @@ cb2 = ContinuousCallback(condition2, affect2!; is_discontinuity = true)
 cb = CallbackSet(cb1, cb2)
 
 #disco solve
-sol = solve(prob, RadauIIA5(is_disco = true); callback = cb, reltol = 1e-6)
+sol_disco = solve(prob, RadauIIA5(is_disco = true); callback = cb, reltol = 1e-6)
 #fixed order solve
-sol2 = solve(prob, RadauIIA5(is_disco = false); callback = cb, reltol = 1e-6)
+sol_no_disco = solve(prob, RadauIIA5(is_disco = false); callback = cb, reltol = 1e-6)
+
+rodas_no_disco = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6)
+
+rodas_disco = solve(prob, Rodas5P(is_disco = true); callback = cb, reltol = 1e-6)
+
+bdf_no_disco = solve(prob, FBDF(); callback = cb, reltol = 1e-6)
+
+bdf_disco = solve(prob, FBDF(is_disco = true); callback = cb, reltol = 1e-6)
+
 
 # multiple exponential regions with sharp transitions
 function f_multi_exp!(du, u, p, t)
@@ -83,9 +102,9 @@ cb_multi_2 = ContinuousCallback(cond_multi_2, affect_multi_2!; is_discontinuity 
 cb_multi = CallbackSet(cb_multi_1, cb_multi_2)
 
 #disco solve
-sol_multi_cb_1 = solve(prob_multi, RadauIIA5(is_disco = true); callback=cb_multi, reltol=1e-7, abstol=1e-9)
+sol_disco = solve(prob_multi, RadauIIA5(is_disco = true); callback=cb_multi, reltol=1e-7, abstol=1e-9)
 #fixed order solve
-sol = solve(prob_multi, RadauIIA5(is_disco = false); callback=cb_multi, reltol = 1e-7, abstol = 1e-9)
+sol_no_disco = solve(prob_multi, RadauIIA5(is_disco = false); callback=cb_multi, reltol = 1e-7, abstol = 1e-9)
 
 # 2D system with exponential coupling and discontinuity
 function f_2d_exp!(du, u, p, t)
@@ -111,9 +130,9 @@ end
 cb_2d = ContinuousCallback(cond_2d, affect_2d!; is_discontinuity = true)
 
 #disco solve
-sol_2d_cb = solve(prob_2d, RadauIIA5(is_disco = true); callback=cb_2d, reltol=1e-8, abstol=1e-10)
+sol_disco = solve(prob_2d, RadauIIA5(is_disco = true); callback=cb_2d, reltol=1e-8, abstol=1e-10)
 #fixed order solve
-sol = solve(prob_2d, RadauIIA5(is_disco = false); callback=cb_2d, reltol = 1e-8, abstol = 1e-10)
+sol_no_disco = solve(prob_2d, RadauIIA5(is_disco = false); callback=cb_2d, reltol = 1e-8, abstol = 1e-10)
 
 # very stiff discontinuous system
 function f_stiff_disc!(du, u, p, t)
@@ -137,9 +156,9 @@ end
 cb_stiff = ContinuousCallback(cond_stiff, affect_stiff!; is_discontinuity = true)
 
 #disco solve
-sol_stiff_cb = solve(prob_stiff, RadauIIA5(is_disco = true); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
+sol_disco = solve(prob_stiff, RadauIIA5(is_disco = true); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
 #fixed order solve
-sol = solve(prob_stiff, RadauIIA5(is_disco = false); callback=cb_stiff, reltol = 1e-9, abstol = 1e-11)
+sol_no_disco = solve(prob_stiff, RadauIIA5(is_disco = false); callback=cb_stiff, reltol = 1e-9, abstol = 1e-11)
 
 # multiple discontinuities in very small range (1e-6 apart, 5 discontinuities)
 function f_many_disc!(du, u, p, t)
@@ -165,9 +184,9 @@ end
 cb_many = CallbackSet(cbs_many...)
 
 #disco solve
-sol_many_cb = solve(prob_many, RadauIIA5(is_disco = true); callback=cb_many, reltol=1e-10, abstol=1e-12)
+sol_disco = solve(prob_many, RadauIIA5(is_disco = true); callback=cb_many, reltol=1e-10, abstol=1e-12)
 #fixed order solve
-sol = solve(prob_many, RadauIIA5(is_disco = false); callback=cb_many, reltol=1e-10, abstol=1e-12)
+sol_no_disco = solve(prob_many, RadauIIA5(is_disco = false); callback=cb_many, reltol=1e-10, abstol=1e-12)
 
 # discontinuous DAE with mass matrix
 # System: M * du/dt = f(u, p, t)
@@ -193,11 +212,44 @@ prob_dae = ODEProblem(f_dae_func, u0_dae, tspan_dae)
 
 cond_dae(u, t, integrator) = u[1] - 0.5
 function affect_dae!(integrator)
-    println("DAE discontinuity callback fired at t=$(integrator.t), u=$(integrator.u)")
+    #println("DAE discontinuity callback fired at t=$(integrator.t), u=$(integrator.u)")
 end
 cb_dae = ContinuousCallback(cond_dae, affect_dae!; is_discontinuity = true)
 
-#disco solve
-sol_dae_cb = solve(prob_dae, RadauIIA5(is_disco = true); callback=cb_dae, reltol=1e-8, abstol=1e-10)
-#fixed order solve
-sol_dae = solve(prob_dae, RadauIIA5(is_disco = false); callback=cb_dae, reltol=1e-8, abstol=1e-10)
+
+radau_no_disco = solve(prob_dae, RadauIIA5(is_disco = false); callback=cb_dae, reltol=1e-8, abstol=1e-10)
+  #83.500 μs (769 allocations: 35.72 KiB)
+radau_disco = solve(prob_dae, RadauIIA5(is_disco = true); callback=cb_dae, reltol=1e-8, abstol=1e-10)
+  # 119.417 μs (1273 allocations: 55.42 KiB)
+rodas_no_disco = solve(prob_dae, Rodas5P(); callback = cb_dae, reltol = 1e-6)
+#= SciMLBase.DEStats
+Number of function 1 evaluations:                  312
+Number of function 2 evaluations:                  0
+Number of W matrix evaluations:                    34
+Number of linear solves:                           272
+Number of Jacobians created:                       19
+Number of nonlinear solver iterations:             0
+Number of nonlinear solver convergence failures:   0
+Number of fixed-point solver iterations:           0
+Number of fixed-point solver convergence failures: 0
+Number of rootfind condition calls:                213
+Number of accepted steps:                          19
+Number of rejected steps:                          15 =#
+#   98.167 μs (550 allocations: 26.92 KiB)
+rodas_disco = solve(prob_dae, Rodas5P(is_disco = true); callback = cb_dae, reltol = 1e-6)
+#= SciMLBase.DEStats
+Number of function 1 evaluations:                  312
+Number of function 2 evaluations:                  0
+Number of W matrix evaluations:                    34
+Number of linear solves:                           272
+Number of Jacobians created:                       19
+Number of nonlinear solver iterations:             0
+Number of nonlinear solver convergence failures:   0
+Number of fixed-point solver iterations:           0
+Number of fixed-point solver convergence failures: 0
+Number of rootfind condition calls:                213
+Number of accepted steps:                          19
+Number of rejected steps:                          15 =#
+#   97.541 μs (550 allocations: 26.92 KiB)
+bdf_no_disco = solve(prob_dae, FBDF(); callback = cb_dae, reltol = 1e-6)
+bdf_disco = solve(prob_dae, FBDF(is_disco = true); callback = cb_dae, reltol = 1e-6)

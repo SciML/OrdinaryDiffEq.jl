@@ -1276,6 +1276,9 @@ function perform_step!(
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        if (integrator.EEst > one(integrator.EEst) && integrator.alg.is_disco)
+            set_discontinuity(u, uprev, integrator, cache)
+        end
 
         terk = estimate_terk(integrator, cache, k + 1, Val(max_order), u)
         fd_weights = calc_finite_difference_weights(ts_tmp, tdt, k, Val(max_order))
