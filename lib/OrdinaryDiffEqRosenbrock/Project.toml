@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqRosenbrock"
 uuid = "43230ef6-c299-4910-a778-202eb28ce4ce"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.23.0"
+version = "1.24.0"
 
 [deps]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"

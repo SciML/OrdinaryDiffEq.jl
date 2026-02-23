@@ -64,6 +64,41 @@ prob_dae_linear_iip_jac = DAEProblem(
     @test_nowarn solve(prob, DFBDF())
 end
 
+# IIP separated Jacobians: jac_u and jac_du
+function f_dae_linear_jac_u_iip(J, du, u, p, t)
+    fill!(J, 0)
+    J[1, 1] = -1.0
+    J[2, 2] = -1.0
+    nothing
+end
+function f_dae_linear_jac_du_iip(J, du, u, p, t)
+    fill!(J, 0)
+    J[1, 1] = 1.0
+    J[2, 2] = 1.0
+    nothing
+end
+prob_dae_linear_iip_sep = DAEProblem(
+    DAEFunction(
+        (res, du, u, p, t) -> (@. res = du - u);
+        jac_u = f_dae_linear_jac_u_iip,
+        jac_du = f_dae_linear_jac_du_iip,
+        analytic = (du0, u0, p, t) -> @. u0 * exp(t)
+    ),
+    [1.0, 1.0], [1.0, 1.0], (0.0, 1.0)
+)
+
+@testset "DAE Solver Convergence Tests (in-place, separated jac_u/jac_du)" begin
+    prob = prob_dae_linear_iip_sep
+
+    sim11 = test_convergence(dts, prob, DImplicitEuler())
+    @test sim11.𝒪est[:final] ≈ 1 atol = testTol
+
+    sim13 = test_convergence(dts, prob, DABDF2())
+    @test sim13.𝒪est[:final] ≈ 2 atol = testTol
+
+    @test_nowarn solve(prob, DFBDF())
+end
+
 f_dae_linear = (du, u, p, t) -> (@. du - u)
 function f_dae_linear_jac(du, u, p, gamma, t)
     J = zeros(2, 2)
@@ -120,6 +155,31 @@ prob_dae_linear_oop = DAEProblem(
 
     sim24 = test_convergence(dts, prob, DABDF2(; autodiff = AutoFiniteDiff()))
     @test sim24.𝒪est[:final] ≈ 2 atol = testTol
+
+    @test_nowarn solve(prob, DFBDF())
+end
+
+# OOP separated Jacobians: jac_u and jac_du (scalar problem)
+f_dae_linear_jac_u_oop(du, u, p, t) = -1.0
+f_dae_linear_jac_du_oop(du, u, p, t) = 1.0
+prob_dae_linear_oop_sep = DAEProblem(
+    DAEFunction(
+        (du, u, p, t) -> (@. du - u);
+        jac_u = f_dae_linear_jac_u_oop,
+        jac_du = f_dae_linear_jac_du_oop,
+        analytic = (du0, u0, p, t) -> @. u0 * exp(t)
+    ),
+    1.0, 1.0, (0.0, 1.0)
+)
+
+@testset "DAE Solver Convergence Tests (out-of-place, separated jac_u/jac_du)" begin
+    prob = prob_dae_linear_oop_sep
+
+    sim21 = test_convergence(dts, prob, DImplicitEuler())
+    @test sim21.𝒪est[:final] ≈ 1 atol = testTol
+
+    sim23 = test_convergence(dts, prob, DABDF2())
+    @test sim23.𝒪est[:final] ≈ 2 atol = testTol
 
     @test_nowarn solve(prob, DFBDF())
 end

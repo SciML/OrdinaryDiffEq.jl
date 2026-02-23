@@ -138,6 +138,7 @@ mutable struct NLNewtonCache{
         ufType,
         jcType,
         lsType,
+        DC,
     } <: AbstractNLSolverCache
     ustep::uType
     tstep::tType
@@ -158,9 +159,10 @@ mutable struct NLNewtonCache{
     invγdt::tType2
     new_W_γdt_cutoff::tType
     J_t::tType
+    dae_jacobians::DC
 end
 
-mutable struct NLNewtonConstantCache{tType, tType2, J, W, ufType} <: AbstractNLSolverCache
+mutable struct NLNewtonConstantCache{tType, tType2, J, W, ufType, DC} <: AbstractNLSolverCache
     tstep::tType
     J::J
     W::W
@@ -172,6 +174,7 @@ mutable struct NLNewtonConstantCache{tType, tType2, J, W, ufType} <: AbstractNLS
     invγdt::tType2
     new_W_γdt_cutoff::tType
     J_t::tType
+    dae_jacobians::DC
 end
 
 mutable struct NLFunctionalCache{uType, tType, rateType} <: AbstractNLSolverCache

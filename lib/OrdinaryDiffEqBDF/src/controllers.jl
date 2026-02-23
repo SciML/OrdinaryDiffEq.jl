@@ -175,8 +175,8 @@ function choose_order!(
     (; t, dt, u, cache, uprev) = integrator
     (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history) = cache
     k = cache.order
-    # only when the order of amount of terk follows the order of step size, and achieve enough constant step size, the order could be increased.
-    if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
+    # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
+    if k < max_order && integrator.cache.qwait == 0 &&
             (
             (k == 1 && terk > terkp1) ||
                 (k == 2 && terkm1 > terk > terkp1) ||
@@ -219,7 +219,7 @@ function choose_order!(
     (; t, dt, u, cache, uprev) = integrator
     (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history) = cache
     k = cache.order
-    if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
+    if k < max_order && integrator.cache.qwait == 0 &&
             (
             (k == 1 && terk > terkp1) ||
                 (k == 2 && terkm1 > terk > terkp1) ||
@@ -309,6 +309,12 @@ function step_accept_controller!(
     end
     cache.nconsteps += 1
     cache.iters_from_event += 1
+    # CVODE-style qwait countdown for order change gating
+    if cache.order != cache.prev_order
+        cache.qwait = cache.order + 2 # reset after order change, matching nconsteps >= order + 2
+    elseif cache.qwait > 0
+        cache.qwait -= 1 # countdown
+    end
     return integrator.dt / q
 end
 
@@ -335,8 +341,8 @@ function choose_order!(
     (; t, dt, u, cache, uprev) = integrator
     (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history) = cache
     k = cache.order
-    # only when the order of amount of terk follows the order of step size, and achieve enough constant step size, the order could be increased.
-    if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
+    # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
+    if k < max_order && integrator.cache.qwait == 0 &&
             (
             (k == 1 && terk > terkp1) ||
                 (k == 2 && terkm1 > terk > terkp1) ||
@@ -379,7 +385,7 @@ function choose_order!(
     (; t, dt, u, cache, uprev) = integrator
     (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history) = cache
     k = cache.order
-    if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 &&
+    if k < max_order && integrator.cache.qwait == 0 &&
             (
             (k == 1 && terk > terkp1) ||
                 (k == 2 && terkm1 > terk > terkp1) ||
@@ -466,5 +472,11 @@ function step_accept_controller!(
     end
     cache.nconsteps += 1
     cache.iters_from_event += 1
+    # CVODE-style qwait countdown for order change gating
+    if cache.order != cache.prev_order
+        cache.qwait = cache.order + 2 # reset after order change, matching nconsteps >= order + 2
+    elseif cache.qwait > 0
+        cache.qwait -= 1 # countdown
+    end
     return integrator.dt / q
 end

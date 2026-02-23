@@ -12,6 +12,18 @@ end
 function SciMLBase.allowscomplex(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return true
 end
+# Check if an algorithm's autodiff setting indicates ForwardDiff usage.
+# This avoids calling alg_autodiff (defined in OrdinaryDiffEqDifferentiation)
+# and handles algorithms without an autodiff field (e.g. ETD2, SplitEuler).
+function _autodiff_is_forward(alg)
+    hasfield(typeof(alg), :autodiff) || return false
+    ad = alg.autodiff
+    ad == Val(true) && return true
+    ad isa AutoForwardDiff && return true
+    ad isa AutoSparse && return dense_ad(ad) isa AutoForwardDiff
+    return false
+end
+
 function SciMLBase.forwarddiffs_model(
         alg::Union{
             OrdinaryDiffEqAdaptiveImplicitAlgorithm,
@@ -19,10 +31,26 @@ function SciMLBase.forwarddiffs_model(
             OrdinaryDiffEqImplicitAlgorithm, ExponentialAlgorithm,
         }
     )
-    return dense_ad(alg_autodiff(alg)) isa AutoForwardDiff
+    return _autodiff_is_forward(alg)
+end
+function SciMLBase.forwarddiffs_model(alg::CompositeAlgorithm)
+    return any(_autodiff_is_forward, alg.algs)
 end
 
 SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
+
+function SciMLBase.forwarddiff_chunksize(
+        alg::Union{
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD},
+            OrdinaryDiffEqImplicitAlgorithm{CS, AD},
+            DAEAlgorithm{CS, AD},
+            OrdinaryDiffEqExponentialAlgorithm{CS, AD},
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
+            CompositeAlgorithm{CS, AD},
+        }
+    ) where {CS, AD}
+    return _get_fwd_chunksize(AD)
+end
 
 SciMLBase.allows_late_binding_tstops(::OrdinaryDiffEqAlgorithm) = true
 SciMLBase.allows_late_binding_tstops(::DAEAlgorithm) = true
@@ -195,7 +223,9 @@ function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
 
+_get_fwd_chunksize(::Type{<:AutoForwardDiff{nothing}}) = Val(0)
 _get_fwd_chunksize(::Type{<:AutoForwardDiff{CS}}) where {CS} = Val(CS)
+_get_fwd_chunksize_int(::Type{<:AutoForwardDiff{nothing}}) = 0
 _get_fwd_chunksize_int(::Type{<:AutoForwardDiff{CS}}) where {CS} = CS
 _get_fwd_chunksize(AD) = Val(0)
 _get_fwd_chunksize_int(AD) = 0
@@ -257,11 +287,14 @@ has_autodiff(alg::OrdinaryDiffEqAlgorithm) = false
 function has_autodiff(
         alg::Union{
             OrdinaryDiffEqAdaptiveImplicitAlgorithm, OrdinaryDiffEqImplicitAlgorithm,
-            CompositeAlgorithm, OrdinaryDiffEqExponentialAlgorithm, DAEAlgorithm,
+            CompositeAlgorithm, DAEAlgorithm,
         }
     )
     return true
 end
+# ExponentialAlgorithm subtypes may or may not have an autodiff field
+# (e.g. ETD2, SplitEuler, LinearExponential do not)
+has_autodiff(alg::ExponentialAlgorithm) = hasfield(typeof(alg), :autodiff)
 
 # end
 

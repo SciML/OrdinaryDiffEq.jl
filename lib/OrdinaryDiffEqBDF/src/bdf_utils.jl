@@ -145,6 +145,7 @@ function reinitFBDF!(integrator, cache)
     if integrator.u_modified
         order = cache.order = 1
         consfailcnt = cache.consfailcnt = cache.nconsteps = 0
+        cache.qwait = 3 # order + 2, matching nconsteps >= order + 2 for failure-free runs
         iters_from_event = cache.iters_from_event = 0
 
         fill!(ts, zero(eltype(ts)))

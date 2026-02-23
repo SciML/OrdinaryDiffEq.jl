@@ -79,6 +79,7 @@ function SciMLBase.__init(
         initialize_integrator = true,
         alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
+        rng = nothing,
         kwargs...
     )
     if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -650,6 +651,8 @@ function SciMLBase.__init(
     saveiter_dense = 0
     fsalfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
 
+    _rng = rng === nothing ? Random.default_rng() : rng
+
     integrator = ODEIntegrator{
         typeof(_alg), isinplace(prob), uType, typeof(du),
         tType, typeof(p),
@@ -659,7 +662,7 @@ function SciMLBase.__init(
         typeof(opts), typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),
         typeof(initializealg), typeof(differential_vars),
-        typeof(controller_cache),
+        typeof(controller_cache), typeof(_rng),
     }(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
@@ -682,7 +685,7 @@ function SciMLBase.__init(
         isout, reeval_fsal,
         u_modified, reinitiailize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast
+        fsalfirst, fsallast, _rng
     )
 
     if initialize_integrator

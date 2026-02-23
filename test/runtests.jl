@@ -137,6 +137,7 @@ end
 
     if !is_APPVEYOR &&
             (GROUP == "All" || GROUP == "Integrators_II" || GROUP == "Integrators")
+        @time @safetestset "Integrator RNG Tests" include("integrators/integrator_rng_tests.jl")
         @time @safetestset "Reverse Directioned Event Tests" include("integrators/rev_events_tests.jl")
         @time @safetestset "Differentiation Direction Tests" include("integrators/diffdir_tests.jl")
         @time @safetestset "Resize Tests" include("integrators/resize_tests.jl")

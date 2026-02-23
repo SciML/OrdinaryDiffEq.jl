@@ -149,6 +149,7 @@ end
     max_order::Val{MO}
     nconsteps::Int
     consfailcnt::Int
+    qwait::Int # countdown to next order change consideration (CVODE-style)
     terkm2::EEstType
     terkm1::EEstType
     terk::EEstType
@@ -194,13 +195,14 @@ function alg_cache(
     weights[1] = 1
     nconsteps = 0
     consfailcnt = 0
+    qwait = 3 # order + 2, matching nconsteps >= order + 2 for failure-free runs
     t_old = zero(t)
     iters_from_event = 0
     u₀ = zero(u)
 
     return DFBDFConstantCache(
         nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order, u₀,
-        u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, terkm2,
+        u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, terkm2,
         terkm1, terk, terkp1, r, weights, iters_from_event
     )
 end
@@ -224,6 +226,7 @@ end
     max_order::Val{MO}
     nconsteps::Int
     consfailcnt::Int
+    qwait::Int # countdown to next order change consideration (CVODE-style)
     tmp::uType
     atmp::uNoUnitsType
     terkm2::EEstType
@@ -285,6 +288,7 @@ function alg_cache(
     weights[1] = 1
     nconsteps = 0
     consfailcnt = 0
+    qwait = 3 # order + 2, matching nconsteps >= order + 2 for failure-free runs
     t_old = zero(t)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, zero(uEltypeNoUnits))
@@ -298,7 +302,7 @@ function alg_cache(
 
     return DFBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
-        u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, tmp, atmp,
+        u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
         iters_from_event, dense
     )

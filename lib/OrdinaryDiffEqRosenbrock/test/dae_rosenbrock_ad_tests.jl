@@ -27,7 +27,7 @@ roberf_oop = ODEFunction{false, SciMLBase.AutoSpecialize}(rober, mass_matrix = M
 prob_mm = ODEProblem(roberf, [1.0, 0.0, 0.2], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 prob_mm_oop = ODEProblem(roberf_oop, [1.0, 0.0, 0.2], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 # Both should be inferable so long as AutoSpecialize is used...
-@test_broken sol = @inferred solve(prob_mm, Rodas5P(), reltol = 1.0e-8, abstol = 1.0e-8)
+sol = @inferred solve(prob_mm, Rodas5P(), reltol = 1.0e-8, abstol = 1.0e-8)
 sol = @inferred solve(prob_mm_oop, Rodas5P(), reltol = 1.0e-8, abstol = 1.0e-8)
 
 # These tests flex differentiation of the solver and through the initialization

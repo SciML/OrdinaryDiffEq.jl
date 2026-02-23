@@ -89,7 +89,7 @@ mutable struct ODEIntegrator{
         algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, IIP,
         uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
-        CallbackCacheType, IA, DV, CC,
+        CallbackCacheType, IA, DV, CC, RNGType,
     } <:
     SciMLBase.AbstractODEIntegrator{algType, IIP, uType, tType}
     sol::SolType
@@ -144,4 +144,5 @@ mutable struct ODEIntegrator{
     differential_vars::DV
     fsalfirst::FSALType
     fsallast::FSALType
+    rng::RNGType
 end

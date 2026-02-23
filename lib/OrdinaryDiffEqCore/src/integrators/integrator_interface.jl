@@ -360,6 +360,23 @@ end
 
 const EMPTY_ARRAY_OF_PAIRS = Pair[]
 
+SciMLBase.has_rng(::ODEIntegrator) = true
+SciMLBase.get_rng(integrator::ODEIntegrator) = integrator.rng
+function SciMLBase.set_rng!(integrator::ODEIntegrator, rng)
+    R = typeof(integrator.rng)
+    if !isa(rng, R)
+        throw(
+            ArgumentError(
+                "Cannot set RNG of type $(typeof(rng)) on an integrator " *
+                    "whose RNG type parameter is $R. " *
+                    "Construct a new integrator via `init(prob, alg; rng = your_rng)` instead."
+            )
+        )
+    end
+    integrator.rng = rng
+    return nothing
+end
+
 SciMLBase.has_reinit(integrator::ODEIntegrator) = true
 function SciMLBase.reinit!(
         integrator::ODEIntegrator, u0 = integrator.sol.prob.u0;
@@ -374,7 +391,8 @@ function SciMLBase.reinit!(
         reinit_dae = true,
         reinit_callbacks = true, initialize_save = true,
         reinit_cache = true,
-        reinit_retcode = true
+        reinit_retcode = true,
+        rng = nothing
     )
     if reinit_dae && SciMLBase.has_initializeprob(integrator.sol.prob.f)
         # This is `remake` infrastructure. `reinit!` is somewhat like `remake` for
@@ -460,6 +478,10 @@ function SciMLBase.reinit!(
     integrator.q11 = typeof(integrator.q11)(1)
     integrator.erracc = typeof(integrator.erracc)(1)
     integrator.dtacc = typeof(integrator.dtacc)(1)
+
+    if rng !== nothing
+        SciMLBase.set_rng!(integrator, rng)
+    end
 
     if reset_dt
         auto_dt_reset!(integrator)

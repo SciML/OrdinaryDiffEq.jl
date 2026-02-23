@@ -42,6 +42,8 @@ import SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator,
 
 using DiffEqBase: DEIntegrator
 
+import Random
+
 import RecursiveArrayTools: chain, recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype, copyat_or_push!, DiffEqArray, recursivefill!
 
 import RecursiveArrayTools

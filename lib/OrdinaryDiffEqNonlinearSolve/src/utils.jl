@@ -146,6 +146,77 @@ SciMLBase.has_jac(f::DAEResidualDerivativeWrapper) = SciMLBase.has_jac(f.f)
 SciMLBase.has_Wfact(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact(f.f)
 SciMLBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact_t(f.f)
 
+# Wrappers for computing separated DAE Jacobians: dF/du and dF/d(du).
+# These pass the differentiation variable directly to f, so ForwardDiff
+# handles mixed Float64/Dual arithmetic natively. No dualcache needed.
+
+# IIP: varies u only, du held fixed → Jacobian is dF/du
+mutable struct DAEJacobianUWrapper{F, pType, duType, tType} <: Function
+    f::F
+    p::pType
+    du_fixed::duType
+    t::tType
+end
+
+function (m::DAEJacobianUWrapper)(out, u)
+    return m.f(out, m.du_fixed, u, m.p, m.t)
+end
+
+# IIP: varies du only, u held fixed → Jacobian is dF/d(du)
+mutable struct DAEJacobianDuWrapper{F, pType, uType, tType} <: Function
+    f::F
+    p::pType
+    u_fixed::uType
+    t::tType
+end
+
+function (m::DAEJacobianDuWrapper)(out, du)
+    return m.f(out, du, m.u_fixed, m.p, m.t)
+end
+
+# OOP: varies u only → Jacobian is dF/du
+mutable struct DAEJacobianUDerivativeWrapper{F, pType, duType, tType}
+    f::F
+    p::pType
+    du_fixed::duType
+    t::tType
+end
+
+(m::DAEJacobianUDerivativeWrapper)(u) = m.f(m.du_fixed, u, m.p, m.t)
+
+# OOP: varies du only → Jacobian is dF/d(du)
+mutable struct DAEJacobianDuDerivativeWrapper{F, pType, uType, tType}
+    f::F
+    p::pType
+    u_fixed::uType
+    t::tType
+end
+
+(m::DAEJacobianDuDerivativeWrapper)(du) = m.f(du, m.u_fixed, m.p, m.t)
+
+SciMLBase.has_jac(::DAEJacobianUWrapper) = false
+SciMLBase.has_jac(::DAEJacobianDuWrapper) = false
+SciMLBase.has_jac(::DAEJacobianUDerivativeWrapper) = false
+SciMLBase.has_jac(::DAEJacobianDuDerivativeWrapper) = false
+SciMLBase.has_Wfact(::DAEJacobianUWrapper) = false
+SciMLBase.has_Wfact(::DAEJacobianDuWrapper) = false
+SciMLBase.has_Wfact_t(::DAEJacobianUWrapper) = false
+SciMLBase.has_Wfact_t(::DAEJacobianDuWrapper) = false
+
+# Cache structs bundling DAE-specific separated Jacobian state
+struct DAEJacobiansCache{JduType, ufuType, ufduType, jcuType, jcduType}
+    J_du::JduType
+    uf_u::ufuType
+    uf_du::ufduType
+    jac_config_u::jcuType
+    jac_config_du::jcduType
+end
+
+struct DAEJacobiansConstantCache{JduType, ufuType, ufduType}
+    J_du::JduType
+    uf_u::ufuType
+    uf_du::ufduType
+end
 
 function build_nlsolver(
         alg, u, uprev, p, t, dt, f::F, rate_prototype,
@@ -222,7 +293,8 @@ function build_nlsolver(
         # TODO: check if the solver is iterative
         weight = zero(u)
 
-        if islinear(f) || SciMLBase.has_jac(f)
+        if islinear(f) || SciMLBase.has_jac(f) ||
+                (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
             du1 = rate_prototype
             uf = nothing
             jac_config = nothing
@@ -274,10 +346,38 @@ function build_nlsolver(
             cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
         else
+            # Build separated DAE Jacobian cache if applicable
+            if isdae
+                if islinear(f) || SciMLBase.has_jac(f) ||
+                        (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
+                    # User provides Jacobian(s) — no wrappers, but still need J_du storage
+                    J_du = fill!(similar(J), false)
+                    dae_jacobians = DAEJacobiansCache(
+                        J_du, nothing, nothing, nothing, nothing
+                    )
+                else
+                    uf_u = DAEJacobianUWrapper(f, p, zero(uprev), t)
+                    uf_du = DAEJacobianDuWrapper(f, p, copy(uprev), t)
+                    jac_config_u = build_jac_config(
+                        alg, nf, uf_u, du1, uprev, u, ztmp, dz
+                    )
+                    jac_config_du = build_jac_config(
+                        alg, nf, uf_du, du1, uprev, u, ztmp, dz
+                    )
+                    J_du = fill!(similar(J), false)
+                    dae_jacobians = DAEJacobiansCache(
+                        J_du, uf_u, uf_du, jac_config_u, jac_config_du
+                    )
+                end
+            else
+                dae_jacobians = nothing
+            end
+
             nlcache = NLNewtonCache(
                 ustep, tstep, k, atmp, dz, J, W, true,
                 true, true, tType(dt), du1, uf, jac_config,
-                linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t
+                linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t,
+                dae_jacobians
             )
         end
     elseif nlalg isa NLFunctional
@@ -373,9 +473,28 @@ function build_nlsolver(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache
             )
         else
+            # Build separated DAE Jacobian cache if applicable
+            if isdae
+                if SciMLBase.has_jac(f) ||
+                        (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
+                    dae_jacobians = DAEJacobiansConstantCache(
+                        copy(J), nothing, nothing
+                    )
+                else
+                    uf_u = DAEJacobianUDerivativeWrapper(f, p, zero(uprev), t)
+                    uf_du = DAEJacobianDuDerivativeWrapper(f, p, copy(uprev), t)
+                    dae_jacobians = DAEJacobiansConstantCache(
+                        copy(J), uf_u, uf_du
+                    )
+                end
+            else
+                dae_jacobians = nothing
+            end
+
             nlcache = NLNewtonConstantCache(
                 tstep, J, W, true, true, true, tType(dt), uf,
-                invγdt, tType(nlalg.new_W_dt_cutoff), t
+                invγdt, tType(nlalg.new_W_dt_cutoff), t,
+                dae_jacobians
             )
         end
     elseif nlalg isa NLFunctional

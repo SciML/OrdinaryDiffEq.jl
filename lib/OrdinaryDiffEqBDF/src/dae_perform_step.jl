@@ -388,7 +388,7 @@ function perform_step!(
             )
             cache.terkm2 = integrator.opts.internalnorm(atmp, t)
         end
-        if nconsteps > k + 1 && k < max_order
+        if cache.qwait == 0 && k < max_order
             atmp = calculate_residuals(
                 _vec(terkp1), _vec(uprev), _vec(u),
                 integrator.opts.abstol, integrator.opts.reltol,
@@ -561,7 +561,7 @@ function perform_step!(
             )
             cache.terkm2 = integrator.opts.internalnorm(atmp, t)
         end
-        if cache.nconsteps > k + 1 && k < max_order
+        if cache.qwait == 0 && k < max_order
             calculate_residuals!(
                 atmp, _vec(terkp1_tmp), _vec(uprev), _vec(u),
                 integrator.opts.abstol, integrator.opts.reltol,

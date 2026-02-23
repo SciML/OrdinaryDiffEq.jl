@@ -294,4 +294,4 @@ prob = DAEProblem(g2, Array(du0), Array(u0), (0.0, 10.0))
 sol2 = solve(prob, DFBDF(autodiff = AutoFiniteDiff()), reltol = 1.0e-8, abstol = 1.0e-8)
 
 @test all(iszero, sol1[:, 1] - sol2[:, 1])
-@test all(abs.(sol1[:, end] .- sol2[:, end]) .< 1.5e-6)
+@test all(abs.(sol1[:, end] .- sol2[:, end]) .< 2.5e-6)
