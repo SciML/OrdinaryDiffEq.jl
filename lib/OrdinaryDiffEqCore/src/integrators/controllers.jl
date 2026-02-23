@@ -948,6 +948,12 @@ end
 function step_reject_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; dt, success_iter) = integrator
     (; qold) = cache
+    
+    if (integrator.disco_dt_set) 
+        println("using fixed dt from discontinuity handling")
+        integrator.disco_dt_set = false
+        return integrator.dt 
+    end
     return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end
 
