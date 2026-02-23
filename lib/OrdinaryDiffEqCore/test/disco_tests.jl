@@ -1,4 +1,3 @@
-using OrdinaryDiffEqCore
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
 using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqBDF
@@ -13,15 +12,15 @@ prob = ODEProblem(f, u0, tspan)
 condition(u, t, integrator) = u[1] - 1
 function affect!(integrator)
     integrator.u[1] += 10
-    println("Callback fired at t = ", integrator.t)
 end
 cb = ContinuousCallback(condition, affect!; is_discontinuity = true)
 
 #disco solve
 sol_disco = solve(prob, RadauIIA5(is_disco = true); callback = cb, reltol = 1e-6)
+#  291.292 μs (8449 allocations: 266.47 KiB)
 #fixed order solve
 sol_no_disco = solve(prob, RadauIIA5(is_disco = false); callback = cb, reltol = 1e-6)
-
+#  335.417 μs (10008 allocations: 311.08 KiB)
 rodas_no_disco = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6)
 
 rodas_disco = solve(prob, Rodas5P(is_disco = true); callback = cb, reltol = 1e-6)
