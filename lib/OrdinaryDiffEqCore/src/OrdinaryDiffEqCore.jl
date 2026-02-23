@@ -15,7 +15,7 @@ import Logging: @logmsg, LogLevel
 
 using MuladdMacro: @muladd
 
-using LinearAlgebra: opnorm, I, UniformScaling, diag, rank, isdiag
+using LinearAlgebra: opnorm, I, UniformScaling, diag, rank, isdiag, Diagonal
 
 import PrecompileTools
 
