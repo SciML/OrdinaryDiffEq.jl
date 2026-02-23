@@ -575,6 +575,7 @@ struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    is_disco::Bool
 end
 
 function FBDF(;
@@ -583,7 +584,7 @@ function FBDF(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!
+        extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!, is_disco = false
     ) where {MO}
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
@@ -594,7 +595,7 @@ function FBDF(;
         typeof(κ), typeof(tol), typeof(step_limiter!),
     }(
         max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller, step_limiter!, AD_choice
+        controller, step_limiter!, AD_choice, is_disco
     )
 end
 

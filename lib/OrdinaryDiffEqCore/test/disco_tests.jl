@@ -15,20 +15,22 @@ function affect!(integrator)
 end
 cb = ContinuousCallback(condition, affect!; is_discontinuity = true)
 
-#disco solve
 sol_disco = solve(prob, RadauIIA5(is_disco = true); callback = cb, reltol = 1e-6)
 #  291.292 μs (8449 allocations: 266.47 KiB)
-#fixed order solve
 sol_no_disco = solve(prob, RadauIIA5(is_disco = false); callback = cb, reltol = 1e-6)
 #  335.417 μs (10008 allocations: 311.08 KiB)
 rodas_no_disco = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6)
-
+#  410.291 μs (16828 allocations: 594.05 KiB)
 rodas_disco = solve(prob, Rodas5P(is_disco = true); callback = cb, reltol = 1e-6)
-
+#  483.792 μs (17729 allocations: 639.31 KiB)
 bdf_no_disco = solve(prob, FBDF(); callback = cb, reltol = 1e-6)
-
+#   245.917 μs (20703 allocations: 665.16 KiB)
 bdf_disco = solve(prob, FBDF(is_disco = true); callback = cb, reltol = 1e-6)
+#   269.333 μs (20477 allocations: 663.80 KiB)
 
+@profview for i in 1:1000 
+    solve(prob, RadauIIA5(is_disco = true); callback = cb, reltol = 1e-6)
+end
 #two discontinuity functions
 function f(u, p, t)
     if u[1] < 1
