@@ -50,7 +50,7 @@ using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
     FastConvergence, Convergence,
     SlowConvergence, VerySlowConvergence, Divergence, NLStatus,
     MethodType, alg_order, error_constant,
-    alg_extrapolates, resize_J_W!, has_autodiff
+    alg_extrapolates, resize_J_W!, has_autodiff, find_algebraic_vars_eqs
 
 import OrdinaryDiffEqCore: _initialize_dae!, _default_dae_init!,
     isnewton, get_W, isfirstcall, isfirststage,
