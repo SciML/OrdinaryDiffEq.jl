@@ -1,6 +1,6 @@
 using Test
 using SparseArrays
-using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs
+using OrdinaryDiffEqCore: find_algebraic_vars_eqs
 
 @testset "Sparse Algebraic Detection Performance" begin
     # Test 1: Correctness - results should match between sparse and dense methods

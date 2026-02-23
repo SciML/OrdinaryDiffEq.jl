@@ -5,7 +5,6 @@ const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 # Run functional tests
 if TEST_GROUP != "QA"
     @time @safetestset "Newton Tests" include("newton_tests.jl")
-    @time @safetestset "Sparse Algebraic Detection" include("sparse_algebraic_detection_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)
