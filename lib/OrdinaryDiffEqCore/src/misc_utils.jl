@@ -146,8 +146,8 @@ function find_algebraic_vars_eqs(M::Diagonal)
 end
 
 function find_algebraic_vars_eqs(M::AbstractMatrix)
-    algebraic_vars = vec(all(iszero, M, dims=1))
-    algebraic_eqs = vec(all(iszero, M, dims=2))
+    algebraic_vars = vec(all(iszero, M, dims = 1))
+    algebraic_eqs = vec(all(iszero, M, dims = 2))
     return algebraic_vars, algebraic_eqs
 end
 

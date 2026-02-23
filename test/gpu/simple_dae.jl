@@ -41,7 +41,7 @@ tspan = (0.0, 5.0)
 odef = ODEFunction(dae!, mass_matrix = mass_matrix, jac_prototype = jac_prototype)
 prob = ODEProblem(odef, u0, tspan, p)
 sol_ref = solve(prob, Rodas5P())
-sol_ref_krylov = solve(prob, Rodas5P(linsolve=KrylovJL_GMRES()))
+sol_ref_krylov = solve(prob, Rodas5P(linsolve = KrylovJL_GMRES()))
 
 # GPU data -- we use F64 for higher accuracy for comparison
 u0_d = adapt(CuArray{Float64}, u0)
@@ -67,41 +67,41 @@ jac_prots = [
 #   csr_tol        = (; atol, rtol)  – gpu vs cpu (CSR jac_prot)
 # Only specify fields that deviate from the defaults.
 
-const DEFAULT_METHOD_TOL = (; atol = 1e-2, rtol = 1e-2)
-const DEFAULT_GPU_TOL    = (; atol = 1e-4, rtol = 1e-4)
+const DEFAULT_METHOD_TOL = (; atol = 1.0e-2, rtol = 1.0e-2)
+const DEFAULT_GPU_TOL = (; atol = 1.0e-4, rtol = 1.0e-4)
 
 solvers = [
     # ── Rosenbrock 2nd order ──
     Rosenbrock23 => (;
-        csc_tol = (; atol = 2e-4, rtol = 5e-4),
+        csc_tol = (; atol = 2.0e-4, rtol = 5.0e-4),
     ),
     Rosenbrock32 => (;
-        method_tol = (; atol = 2e-2, rtol = 1.5),
-        csc_tol    = (; atol = Inf, rtol = Inf),
+        method_tol = (; atol = 2.0e-2, rtol = 1.5),
+        csc_tol = (; atol = Inf, rtol = Inf),
     ),
     ROS2 => (;),
     ROS2PR => (;
-        csc_tol = (; atol = 3e-4, rtol = 4e-4),
+        csc_tol = (; atol = 3.0e-4, rtol = 4.0e-4),
     ),
-    ROS2S  => (;
-        csc_tol = (; atol = 7e-4, rtol = 1.2e-3),
+    ROS2S => (;
+        csc_tol = (; atol = 7.0e-4, rtol = 1.2e-3),
     ),
     # ── Rosenbrock 3rd order ──
-    ROS3     => (;),
-    ROS3PR   => (;
+    ROS3 => (;),
+    ROS3PR => (;
         method_tol = (; atol = 0.25, rtol = 15.0),
     ),
-    ROS3PRL  => (;
-        csc_tol = (; atol = 2e-3, rtol = 4e-3),
+    ROS3PRL => (;
+        csc_tol = (; atol = 2.0e-3, rtol = 4.0e-3),
     ),
     ROS3PRL2 => (;
-        csc_tol = (; atol = 3e-3, rtol = 4e-3),
+        csc_tol = (; atol = 3.0e-3, rtol = 4.0e-3),
     ),
-    ROS3P    => (;
+    ROS3P => (;
         method_tol = (; atol = 0.25, rtol = 15.0),
     ),
-    Rodas3   => (;
-        csc_tol = (; atol = 2e-3, rtol = 3e-3),
+    Rodas3 => (;
+        csc_tol = (; atol = 2.0e-3, rtol = 3.0e-3),
     ),
     # Rodas23W()  # scalar indexing, requires large changes to `calculate_interpoldiff!`
     # Rodas3P()   # scalar indexing
@@ -113,65 +113,65 @@ solvers = [
     ROS34PW1b => (;
         method_tol = (; atol = 0.25, rtol = 5.0),
     ),
-    ROS34PW2  => (;
+    ROS34PW2 => (;
         csc_tol = (; atol = 1.2e-3, rtol = 2.2e-3),
     ),
-    ROS34PW3  => (;),
-    ROS34PRw  => (;
-        csc_tol = (; atol = 6e-4, rtol = 1e-3),
+    ROS34PW3 => (;),
+    ROS34PRw => (;
+        csc_tol = (; atol = 6.0e-4, rtol = 1.0e-3),
     ),
     RosShamp4 => (;),
-    Veldd4    => (;),
-    Velds4    => (;),
-    GRK4T     => (;),
-    GRK4A     => (;),
+    Veldd4 => (;),
+    Velds4 => (;),
+    GRK4T => (;),
+    GRK4A => (;),
     Ros4LStab => (;),
-    Rodas4    => (;),
-    Rodas42   => (;),
-    Rodas4P   => (;),
-    Rodas4P2  => (;),
-    ROK4a     => (;),
+    Rodas4 => (;),
+    Rodas42 => (;),
+    Rodas4P => (;),
+    Rodas4P2 => (;),
+    ROK4a => (;),
     # ── Rosenbrock 5th order ──
-    Rodas5   => (;),
-    Rodas5P  => (;),
+    Rodas5 => (;),
+    Rodas5P => (;),
     Rodas5Pe => (;),
     Rodas5Pr => (;),
     # ── Rosenbrock 6th order ──
-    Rodas6P  => (;),
+    Rodas6P => (;),
     # ── SDIRK (don't include fixed time step which need explicit dt) ──
     ImplicitEuler => (;),
     Trapezoid => (;
-        csc_tol = (; atol = 8e-3, rtol = 2.5e-2),
+        csc_tol = (; atol = 8.0e-3, rtol = 2.5e-2),
     ),
-    SDIRK2    => (;
+    SDIRK2 => (;
         csc_tol = (; atol = 1.5e-4, rtol = 3.5e-4),
     ),
-    Cash4     => (;
-        csc_tol = (; atol = 5e-3, rtol = 8e-3),
+    Cash4 => (;
+        csc_tol = (; atol = 5.0e-3, rtol = 8.0e-3),
     ),
-    Hairer4   => (;
-        csc_tol = (; atol = 8e-3, rtol = 6e-2),
+    Hairer4 => (;
+        csc_tol = (; atol = 8.0e-3, rtol = 6.0e-2),
     ),
-    Hairer42  => (;
-        csc_tol = (; atol = 7e-3, rtol = 5e-2),
+    Hairer42 => (;
+        csc_tol = (; atol = 7.0e-3, rtol = 5.0e-2),
     ),
     # ── BDF ──
     ABDF2 => (;
         method_csc_tol = (; atol = Inf, rtol = Inf),   # ABDF2 + Krylov diverges vs Rodas5P + Krylov
-        csc_tol        = (; atol = 2e-4, rtol = 7e-4),
+        csc_tol = (; atol = 2.0e-4, rtol = 7.0e-4),
     ),
     QNDF1 => (;),
     QNDF2 => (;
-        csc_tol = (; atol = 4e-3, rtol = 5e-3),
+        csc_tol = (; atol = 4.0e-3, rtol = 5.0e-3),
     ),
     # QNDF()  # 🔧 DeviceMemory error in LinAlg
     QBDF1 => (;
-        method_tol = (; atol = 2e-2, rtol = 0.2),
+        method_tol = (; atol = 2.0e-2, rtol = 0.2),
     ),
     QBDF2 => (;
-        gpu_tol = (; atol = 2e-3, rtol = 2e-3),
-        csc_tol = (; atol = 4e-3, rtol = 7e-3),
-        csr_tol = (; atol = 2e-3, rtol = 2e-3),
+        gpu_tol = (; atol = 2.0e-3, rtol = 2.0e-3),
+        csc_tol = (; atol = 4.0e-3, rtol = 7.0e-3),
+        csr_tol = (; atol = 2.0e-3, rtol = 2.0e-3),
     ),
     # QBDF()  # DeviceMemory error in LinAlg
     # FBDF()  # scalar indexing -> needs extensive work on reinitFBDF!
@@ -222,12 +222,12 @@ function run_dae_tests()
         gtol = _get_tol(overrides, jn)
         mtol = _get_method_tol(overrides, jn)
 
-        # CSC will allways fall back to krylov so the ref solution should do to
+        # CSC will always fall back to krylov so the ref solution should do to
         krylov = (jn == "CSC")
         _sol_ref = krylov ? sol_ref_krylov : sol_ref
 
         # CPU: this solver vs reference
-        cpu_alg = krylov ? sv(linsolve=KrylovJL_GMRES()) : sv()
+        cpu_alg = krylov ? sv(linsolve = KrylovJL_GMRES()) : sv()
         sol_cpu = solve(prob, cpu_alg)
         cpu_abs, cpu_rel = maxerrs(sol_cpu, _sol_ref)
 
@@ -240,10 +240,14 @@ function run_dae_tests()
         gpu_abs, gpu_rel = maxerrs(sol_d, sol_cpu)
 
         method_passed = (cpu_abs < mtol.atol) || (cpu_rel < mtol.rtol)
-        gpu_passed    = (gpu_abs < gtol.atol) || (gpu_rel < gtol.rtol)
+        gpu_passed = (gpu_abs < gtol.atol) || (gpu_rel < gtol.rtol)
         passed = method_passed && gpu_passed
-        push!(results, (; solver = sn, jac = jn, cpu_abs, cpu_rel, gpu_abs, gpu_rel,
-                            gtol, mtol, method_passed, gpu_passed, passed, error = ""))
+        push!(
+            results, (;
+                solver = sn, jac = jn, cpu_abs, cpu_rel, gpu_abs, gpu_rel,
+                gtol, mtol, method_passed, gpu_passed, passed, error = "",
+            )
+        )
         @test passed
     end
 
@@ -251,7 +255,7 @@ function run_dae_tests()
 end
 
 function show_results(results)
-    function _fmt(val; threshold = 1e-3)
+    function _fmt(val; threshold = 1.0e-3)
         isnan(val) && return "   ---  "
         s = @sprintf("%.2e", val)
         if val > threshold
@@ -269,7 +273,7 @@ function show_results(results)
             printstyled(label, "ERROR: ", r.error, "\n"; color = :yellow)
         else
             print(label)
-            print(_fmt(r.cpu_abs, threshold=1e-2), "  ", _fmt(r.cpu_rel, threshold=1e-2), "  ")
+            print(_fmt(r.cpu_abs, threshold = 1.0e-2), "  ", _fmt(r.cpu_rel, threshold = 1.0e-2), "  ")
             print(_fmt(r.gpu_abs), "  ", _fmt(r.gpu_rel), "  ")
             if r.passed
                 printstyled("✓\n"; color = :green)
@@ -282,7 +286,7 @@ function show_results(results)
             end
         end
     end
-    println("-"^85)
+    return println("-"^85)
 end
 
 @testset "GPU DAE solver compatibility" begin
