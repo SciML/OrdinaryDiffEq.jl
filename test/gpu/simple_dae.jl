@@ -59,14 +59,15 @@ jac_prots = [
 
 # ── Solver definitions ────────────────────────────────────────────────────────
 #
-# Each entry: solver => (; tol overrides...)
-#   method_tol = (; atol, rtol)  – cpu solver vs Rodas5P reference (some methods are poor fits)
-#   gpu_tol    = (; atol, rtol)  – gpu vs cpu (none jac_prot)
-#   csc_tol    = (; atol, rtol)  – gpu vs cpu (CSC jac_prot)
-#   csr_tol    = (; atol, rtol)  – gpu vs cpu (CSR jac_prot)
+# Each entry: SolverType => (; tol overrides...)
+#   method_tol     = (; atol, rtol)  – cpu solver vs Rodas5P ref (all jac); some methods are poor fits for DAEs
+#   method_csc_tol = (; atol, rtol)  – cpu solver vs Rodas5P ref (CSC/Krylov path only)
+#   gpu_tol        = (; atol, rtol)  – gpu vs cpu (none/CSR fallback)
+#   csc_tol        = (; atol, rtol)  – gpu vs cpu (CSC jac_prot)
+#   csr_tol        = (; atol, rtol)  – gpu vs cpu (CSR jac_prot)
 # Only specify fields that deviate from the defaults.
 
-const DEFAULT_METHOD_TOL = (; atol = 1e-4, rtol = 1e-4)     # generous: we only care about GPU vs CPU match
+const DEFAULT_METHOD_TOL = (; atol = 1e-2, rtol = 1e-2)
 const DEFAULT_GPU_TOL    = (; atol = 1e-4, rtol = 1e-4)
 
 solvers = [
@@ -75,7 +76,8 @@ solvers = [
         csc_tol = (; atol = 2e-4, rtol = 5e-4),
     ),
     Rosenbrock32 => (;
-        csc_tol = (; atol = Inf, rtol = Inf),
+        method_tol = (; atol = 2e-2, rtol = 1.5),
+        csc_tol    = (; atol = Inf, rtol = Inf),
     ),
     ROS2 => (;),
     ROS2PR => (;
@@ -86,14 +88,18 @@ solvers = [
     ),
     # ── Rosenbrock 3rd order ──
     ROS3     => (;),
-    ROS3PR   => (;),
+    ROS3PR   => (;
+        method_tol = (; atol = 0.25, rtol = 15.0),
+    ),
     ROS3PRL  => (;
         csc_tol = (; atol = 2e-3, rtol = 4e-3),
     ),
     ROS3PRL2 => (;
         csc_tol = (; atol = 3e-3, rtol = 4e-3),
     ),
-    ROS3P    => (;),
+    ROS3P    => (;
+        method_tol = (; atol = 0.25, rtol = 15.0),
+    ),
     Rodas3   => (;
         csc_tol = (; atol = 2e-3, rtol = 3e-3),
     ),
@@ -101,8 +107,12 @@ solvers = [
     # Rodas3P()   # scalar indexing
     Scholz4_7 => (;),
     # ── Rosenbrock 4th order ──
-    ROS34PW1a => (;),
-    ROS34PW1b => (;),
+    ROS34PW1a => (;
+        method_tol = (; atol = 0.25, rtol = 5.0),
+    ),
+    ROS34PW1b => (;
+        method_tol = (; atol = 0.25, rtol = 5.0),
+    ),
     ROS34PW2  => (;
         csc_tol = (; atol = 1.2e-3, rtol = 2.2e-3),
     ),
@@ -147,14 +157,17 @@ solvers = [
     ),
     # ── BDF ──
     ABDF2 => (;
-        csc_tol = (; atol = 2e-4, rtol = 7e-4),
+        method_csc_tol = (; atol = Inf, rtol = Inf),   # ABDF2 + Krylov diverges vs Rodas5P + Krylov
+        csc_tol        = (; atol = 2e-4, rtol = 7e-4),
     ),
     QNDF1 => (;),
     QNDF2 => (;
         csc_tol = (; atol = 4e-3, rtol = 5e-3),
     ),
     # QNDF()  # 🔧 DeviceMemory error in LinAlg
-    QBDF1 => (;),
+    QBDF1 => (;
+        method_tol = (; atol = 2e-2, rtol = 0.2),
+    ),
     QBDF2 => (;
         gpu_tol = (; atol = 2e-3, rtol = 2e-3),
         csc_tol = (; atol = 4e-3, rtol = 7e-3),
@@ -170,6 +183,12 @@ solvers = [
 ]
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+function _get_method_tol(overrides, jac_name)
+    jac_name == "CSC" && hasproperty(overrides, :method_csc_tol) && return overrides.method_csc_tol
+    hasproperty(overrides, :method_tol) && return overrides.method_tol
+    return DEFAULT_METHOD_TOL
+end
 
 function _get_tol(overrides, jac_name)
     _tol_keys = Dict("none" => :gpu_tol, "CSC" => :csc_tol, "CSR" => :csr_tol)
@@ -200,7 +219,8 @@ function run_dae_tests()
     for (sv, overrides) in solvers, (jn, jp) in jac_prots
         println("Test $sv with prototype $jn")
         sn = string(sv)
-        (; atol, rtol) = _get_tol(overrides, jn)
+        gtol = _get_tol(overrides, jn)
+        mtol = _get_method_tol(overrides, jn)
 
         # CSC will allways fall back to krylov so the ref solution should do to
         krylov = (jn == "CSC")
@@ -219,9 +239,11 @@ function run_dae_tests()
         # GPU vs CPU (same solver)
         gpu_abs, gpu_rel = maxerrs(sol_d, sol_cpu)
 
-        passed = (gpu_abs < atol) || (gpu_rel < rtol)
+        method_passed = (cpu_abs < mtol.atol) || (cpu_rel < mtol.rtol)
+        gpu_passed    = (gpu_abs < gtol.atol) || (gpu_rel < gtol.rtol)
+        passed = method_passed && gpu_passed
         push!(results, (; solver = sn, jac = jn, cpu_abs, cpu_rel, gpu_abs, gpu_rel,
-                            tol_abs = atol, tol_rel = rtol, passed, error = ""))
+                            gtol, mtol, method_passed, gpu_passed, passed, error = ""))
         @test passed
     end
 
@@ -247,12 +269,16 @@ function show_results(results)
             printstyled(label, "ERROR: ", r.error, "\n"; color = :yellow)
         else
             print(label)
-            print(_fmt(r.cpu_abs), "  ", _fmt(r.cpu_rel), "  ")
+            print(_fmt(r.cpu_abs, threshold=1e-2), "  ", _fmt(r.cpu_rel, threshold=1e-2), "  ")
             print(_fmt(r.gpu_abs), "  ", _fmt(r.gpu_rel), "  ")
             if r.passed
                 printstyled("✓\n"; color = :green)
+            elseif !r.method_passed && !r.gpu_passed
+                printstyled("✗ method+gpu\n"; color = :red)
+            elseif !r.method_passed
+                printstyled("✗ method\n"; color = :red)
             else
-                printstyled("✗\n"; color = :red)
+                printstyled("✗ gpu\n"; color = :red)
             end
         end
     end
