@@ -94,11 +94,11 @@ See also: https://github.com/SciML/DifferentialEquations.jl/issues/299
 """
 @inline function get_current_qmax(integrator, qmax)
     if integrator.success_iter == 0
-        ctrl = integrator.opts.controller
+        ctrl = integrator.controller_cache
         if hasfield(typeof(ctrl), :controller) &&
                 hasfield(typeof(ctrl.controller), :qmax_first_step)
             return ctrl.controller.qmax_first_step
-        elseif hasfield(typeof(ctrl), :qmax_first_step)
+        elseif hasfield(typeof(ctrl), :qmax_first_step) # Case: Cache is the algorithms cache.
             return ctrl.qmax_first_step
         end
         return typeof(qmax)(10000)
