@@ -1561,3 +1561,330 @@ end
 
 @RosenbrockW6S4OS(:init)
 @RosenbrockW6S4OS(:performstep)
+
+################################################################################
+# Tsit5DA - hybrid explicit/linear-implicit method for DAEs
+################################################################################
+
+function initialize!(integrator, cache::HybridExplicitImplicitConstantCache)
+    integrator.kshortsize = size(cache.tab.H, 1)
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    for i in 1:(integrator.kshortsize)
+        integrator.k[i] = zero(integrator.u)
+    end
+    return
+end
+
+@muladd function perform_step!(
+        integrator, cache::HybridExplicitImplicitConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tf, uf, tab) = cache
+    (; A, C, gamma, b, bhat, c, d, H) = tab
+
+    mass_matrix = integrator.f.mass_matrix
+    num_stages = size(A, 1)
+
+    # Detect algebraic variables
+    if mass_matrix === I
+        has_alg = false
+        alg_vars = Int[]
+        diff_vars = Int[]
+    else
+        n = length(uprev)
+        diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
+        alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
+        has_alg = !isempty(alg_vars)
+    end
+
+    # Compute Jacobian and time derivative for DAE case
+    g_z = g_y = W_z_factored = dT = nothing
+    if has_alg
+        tf.u = uprev
+        dT = calc_tderivative(integrator, cache)
+
+        uf.t = t
+        autodiff_alg = cache.autodiff
+        if autodiff_alg isa AutoFiniteDiff
+            autodiff_alg = SciMLBase.@set autodiff_alg.dir = sign(dt)
+        end
+        J = DI.jacobian(uf, autodiff_alg, uprev)
+
+        n_g = length(alg_vars)
+        n_f = length(diff_vars)
+        g_z = J[alg_vars, alg_vars]
+        g_y = J[alg_vars, diff_vars]
+        W_z_factored = lu(-gamma * g_z)
+    end
+
+    # Stage loop
+    du = f(uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    ks1 = zero(uprev)
+    if mass_matrix === I
+        ks1 = dt .* du
+    else
+        for iv in diff_vars
+            ks1[iv] = dt * du[iv]
+        end
+        if has_alg
+            # rhs = g(U_1) + g_y * γ * l_1 + h * d_1 * g_t
+            rhs_z = du[alg_vars] .+
+                g_y * (C[1, 1] .* ks1[diff_vars]) .+
+                dt * d[1] .* dT[alg_vars]
+            ks1_alg = W_z_factored \ rhs_z
+            for (idx, iv) in enumerate(alg_vars)
+                ks1[iv] = ks1_alg[idx]
+            end
+        end
+    end
+    ks = ntuple(Returns(ks1), Val(12))
+
+    for stage in 2:num_stages
+        # Assemble stage value
+        u_stage = copy(uprev)
+        for j in 1:(stage - 1)
+            u_stage = @.. u_stage + A[stage, j] * ks[j]
+        end
+
+        du = f(u_stage, p, t + c[stage] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+        ks_new = zero(uprev)
+        if mass_matrix === I
+            ks_new = dt .* du
+        else
+            for iv in diff_vars
+                ks_new[iv] = dt * du[iv]
+            end
+            if has_alg
+                # Build coupling: g_y * (sum_{j<i} C[i,j]*ks[j][diff] + C[i,i]*ks_new[diff])
+                gy_coupling = C[stage, stage] .* ks_new[diff_vars]
+                for j in 1:(stage - 1)
+                    gy_coupling = @.. gy_coupling + C[stage, j] * ks[j][diff_vars]
+                end
+                gy_term = g_y * gy_coupling
+
+                # Build coupling: g_z * sum_{j<i} C[i,j]*ks[j][alg]
+                gz_coupling = zeros(eltype(uprev), length(alg_vars))
+                for j in 1:(stage - 1)
+                    gz_coupling = @.. gz_coupling + C[stage, j] * ks[j][alg_vars]
+                end
+                gz_term = g_z * gz_coupling
+
+                rhs_z = du[alg_vars] .+ gy_term .+ gz_term .+ dt * d[stage] .* dT[alg_vars]
+                ks_alg = W_z_factored \ rhs_z
+                for (idx, iv) in enumerate(alg_vars)
+                    ks_new[iv] = ks_alg[idx]
+                end
+            end
+        end
+        ks = Base.setindex(ks, ks_new, stage)
+    end
+
+    # Solution update
+    u = copy(uprev)
+    for i in 1:num_stages
+        u = @.. u + b[i] * ks[i]
+    end
+
+    # Error estimation
+    if integrator.opts.adaptive
+        err_vec = zero(uprev)
+        for i in 1:num_stages
+            err_vec = @.. err_vec + (b[i] - bhat[i]) * ks[i]
+        end
+        atmp = calculate_residuals(
+            err_vec, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+
+    # Dense output
+    if integrator.opts.calck
+        for j in eachindex(integrator.k)
+            integrator.k[j] = zero(integrator.k[1])
+        end
+        for i in 1:num_stages
+            for j in eachindex(integrator.k)
+                integrator.k[j] = @.. integrator.k[j] + H[j, i] * ks[i]
+            end
+        end
+    end
+
+    integrator.u = u
+    return nothing
+end
+
+function initialize!(integrator, cache::HybridExplicitImplicitCache)
+    integrator.kshortsize = size(cache.tab.H, 1)
+    resize!(integrator.k, integrator.kshortsize)
+    for i in 1:(integrator.kshortsize)
+        integrator.k[i] = cache.dense[i]
+    end
+    return
+end
+
+@muladd function perform_step!(integrator, cache::HybridExplicitImplicitCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (;
+        du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight,
+        stage_limiter!, step_limiter!, diff_vars, alg_vars,
+        g_z, g_y, linsolve_tmp_z,
+    ) = cache
+    W_z = cache.W_z
+    (; A, C, gamma, b, bhat, c, d, H) = cache.tab
+
+    mass_matrix = integrator.f.mass_matrix
+    num_stages = size(A, 1)
+    has_alg = !isempty(alg_vars)
+    n_g = length(alg_vars)
+    n_f = length(diff_vars)
+
+    # Compute Jacobian for DAE case
+    if has_alg && !repeat_step
+        # Use existing Rosenbrock differentiation infrastructure
+        dtgamma = dt * gamma
+        calc_rosenbrock_differentiation!(integrator, cache, dt * d[1], dtgamma, repeat_step)
+
+        # Extract algebraic Jacobian blocks from full J
+        for (gi, ai) in enumerate(alg_vars)
+            for (gj, aj) in enumerate(alg_vars)
+                g_z[gi, gj] = J[ai, aj]
+            end
+            for (fj, dj) in enumerate(diff_vars)
+                g_y[gi, fj] = J[ai, dj]
+            end
+        end
+
+        # Form W_z = -gamma * g_z
+        for gi in 1:n_g
+            for gj in 1:n_g
+                W_z[gi, gj] = -gamma * g_z[gi, gj]
+            end
+        end
+    end
+
+    # Evaluate f at initial point
+    f(cache.fsalfirst, uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    # Stage 1
+    for iv in eachindex(ks[1])
+        ks[1][iv] = zero(eltype(u))
+    end
+    if mass_matrix === I
+        @.. ks[1] = dt * cache.fsalfirst
+    else
+        for iv in diff_vars
+            ks[1][iv] = dt * cache.fsalfirst[iv]
+        end
+        if has_alg
+            # rhs = g(U_1) + g_y * γ * l_1 + h * d_1 * g_t
+            for gi in 1:n_g
+                val = cache.fsalfirst[alg_vars[gi]] + dt * d[1] * dT[alg_vars[gi]]
+                for fj in 1:n_f
+                    val += g_y[gi, fj] * C[1, 1] * ks[1][diff_vars[fj]]
+                end
+                linsolve_tmp_z[gi] = val
+            end
+            # Solve W_z * k_alg = rhs  (W_z = -γ*g_z)
+            sol_z = W_z \ linsolve_tmp_z
+            for (gi, ai) in enumerate(alg_vars)
+                ks[1][ai] = sol_z[gi]
+            end
+        end
+    end
+
+    # Stages 2 through num_stages
+    for stage in 2:num_stages
+        # Assemble u_stage
+        u .= uprev
+        for j in 1:(stage - 1)
+            @.. u += A[stage, j] * ks[j]
+        end
+
+        stage_limiter!(u, integrator, p, t + c[stage] * dt)
+        f(du, u, p, t + c[stage] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+        # Set ks[stage] differential part
+        for iv in eachindex(ks[stage])
+            ks[stage][iv] = zero(eltype(u))
+        end
+        if mass_matrix === I
+            @.. ks[stage] = dt * du
+        else
+            for iv in diff_vars
+                ks[stage][iv] = dt * du[iv]
+            end
+            if has_alg
+                # rhs = g(U_i) + g_z*Σ_{j<i} γ_{ij}*k_j + g_y*Σ_{j≤i} γ_{ij}*l_j + h*d_i*g_t
+                for gi in 1:n_g
+                    val = du[alg_vars[gi]] + dt * d[stage] * dT[alg_vars[gi]]
+
+                    # g_y * Σ_{j≤i} γ_{ij} * l_j
+                    for fj in 1:n_f
+                        gy_coupling_fj = C[stage, stage] * ks[stage][diff_vars[fj]]
+                        for j in 1:(stage - 1)
+                            gy_coupling_fj += C[stage, j] * ks[j][diff_vars[fj]]
+                        end
+                        val += g_y[gi, fj] * gy_coupling_fj
+                    end
+
+                    # g_z * Σ_{j<i} γ_{ij} * k_j
+                    for gj in 1:n_g
+                        gz_coupling_gj = zero(eltype(u))
+                        for j in 1:(stage - 1)
+                            gz_coupling_gj += C[stage, j] * ks[j][alg_vars[gj]]
+                        end
+                        val += g_z[gi, gj] * gz_coupling_gj
+                    end
+
+                    linsolve_tmp_z[gi] = val
+                end
+
+                # Solve W_z * k_alg = rhs  (W_z = -γ*g_z)
+                sol_z = W_z \ linsolve_tmp_z
+                for (gi, ai) in enumerate(alg_vars)
+                    ks[stage][ai] = sol_z[gi]
+                end
+            end
+        end
+    end
+
+    # Solution update: u = uprev + sum_i b[i] * ks[i]
+    u .= uprev
+    for i in 1:num_stages
+        @.. u += b[i] * ks[i]
+    end
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    # Error estimation
+    if integrator.opts.adaptive
+        du .= 0
+        for i in 1:num_stages
+            @.. du += (b[i] - bhat[i]) * ks[i]
+        end
+        calculate_residuals!(
+            atmp, du, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+
+    # Dense output
+    if integrator.opts.calck
+        for j in eachindex(integrator.k)
+            integrator.k[j] .= 0
+        end
+        for i in eachindex(ks)
+            for j in eachindex(integrator.k)
+                @.. integrator.k[j] += H[j, i] * ks[i]
+            end
+        end
+    end
+    return nothing
+end

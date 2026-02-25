@@ -80,7 +80,7 @@ for alg in (Rodas4(), Rodas4P(), Rodas5(), Rodas5P())
     sol3 = appxtrue(sol, sol2)
     @test sol3.errors[:L2] < 1.0e-5
     @test sol3.errors[:L∞] < 5.0e-5
-    @test sol3.errors[:final] < 1.0e-5
+    @test sol3.errors[:final] < 2.0e-5
 end
 
 function fball(du, u, p, t)

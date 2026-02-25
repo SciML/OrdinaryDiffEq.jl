@@ -85,11 +85,18 @@ function calc_R(ρ, k, ::Val{N}) where {N}
 end
 
 function update_D!(D, dd, k)
-    dd = _vec(dd)
-    @views @.. broadcast = false D[:, k + 2] = dd - D[:, k + 1]
-    @views @.. broadcast = false D[:, k + 1] = dd
-    for i in k:-1:1
-        @views @.. broadcast = false D[:, i] = D[:, i] + D[:, i + 1]
+    if dd isa AbstractArray && ArrayInterface.ismutable(dd)
+        @.. broadcast = false D[k + 2] = dd - D[k + 1]
+        @.. broadcast = false D[k + 1] = dd
+        for i in k:-1:1
+            @.. broadcast = false D[i] = D[i] + D[i + 1]
+        end
+    else
+        D[k + 2] = dd - D[k + 1]
+        D[k + 1] = dd
+        for i in k:-1:1
+            D[i] = D[i] + D[i + 1]
+        end
     end
     return nothing
 end
@@ -149,26 +156,52 @@ function reinitFBDF!(integrator, cache)
         iters_from_event = cache.iters_from_event = 0
 
         fill!(ts, zero(eltype(ts)))
-        fill!(u_history, zero(eltype(u_history)))
-        fill!(u_corrector, zero(eltype(u_corrector)))
+        for h in u_history
+            if h isa AbstractArray && ArrayInterface.ismutable(h)
+                fill!(h, zero(eltype(h)))
+            end
+        end
+        for h in u_corrector
+            if h isa AbstractArray && ArrayInterface.ismutable(h)
+                fill!(h, zero(eltype(h)))
+            end
+        end
     end
 
-    vuprev = _vec(uprev)
-    @views if iters_from_event == 0
-        ts[1] = t
-        @.. broadcast = false u_history[:, 1] = vuprev
-    elseif iters_from_event == 1 && t != ts[1]
-        ts[2] = ts[1]
-        ts[1] = t
-        @.. broadcast = false u_history[:, 2] = u_history[:, 1]
-        @.. broadcast = false u_history[:, 1] = vuprev
-    elseif consfailcnt == 0
-        for i in (order + 2):-1:2
-            ts[i] = ts[i - 1]
-            @.. broadcast = false u_history[:, i] = u_history[:, i - 1]
+    if uprev isa AbstractArray && ArrayInterface.ismutable(uprev)
+        if iters_from_event == 0
+            ts[1] = t
+            copyto!(u_history[1], uprev)
+        elseif iters_from_event == 1 && t != ts[1]
+            ts[2] = ts[1]
+            ts[1] = t
+            copyto!(u_history[2], u_history[1])
+            copyto!(u_history[1], uprev)
+        elseif consfailcnt == 0
+            for i in (order + 2):-1:2
+                ts[i] = ts[i - 1]
+                copyto!(u_history[i], u_history[i - 1])
+            end
+            ts[1] = t
+            copyto!(u_history[1], uprev)
         end
-        ts[1] = t
-        @.. broadcast = false u_history[:, 1] = vuprev
+    else
+        if iters_from_event == 0
+            ts[1] = t
+            u_history[1] = uprev
+        elseif iters_from_event == 1 && t != ts[1]
+            ts[2] = ts[1]
+            ts[1] = t
+            u_history[2] = u_history[1]
+            u_history[1] = uprev
+        elseif consfailcnt == 0
+            for i in (order + 2):-1:2
+                ts[i] = ts[i - 1]
+                u_history[i] = u_history[i - 1]
+            end
+            ts[1] = t
+            u_history[1] = uprev
+        end
     end
     return nothing
 end
@@ -179,9 +212,8 @@ function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order
     (; t, dt, u) = integrator
     fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 1, Val(max_order))
     @.. broadcast = false terk_tmp = fd_weights[1, k] * u
-    vc = _vec(terk_tmp)
     for i in 2:k
-        @.. broadcast = false @views vc += fd_weights[i, k] * u_history[:, i - 1]
+        @.. broadcast = false terk_tmp += fd_weights[i, k] * u_history[i - 1]
     end
     return @.. broadcast = false terk_tmp *= abs(dt^(k - 1))
 end
@@ -198,18 +230,16 @@ function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where {max_ord
         end
         terk *= abs(dt^(k - 1))
     else
-        vc = _vec(terk)
-        if ArrayInterface.ismutable(vc)
+        if ArrayInterface.ismutable(terk)
             for i in 2:k
-                @.. broadcast = false vc += fd_weights[i, k] * @view(u_history[:, i - 1])
+                @.. broadcast = false terk += fd_weights[i, k] * u_history[i - 1]
             end
         else
             for i in 2:k
-                vc = @. vc + fd_weights[i, k] * @view(u_history[:, i - 1])
+                terk = @. terk + fd_weights[i, k] * u_history[i - 1]
             end
         end
-        terk = reshape(vc, size(terk))
-        terk *= abs(dt^(k - 1))
+        terk = @.. broadcast = false terk * abs(dt^(k - 1))
     end
     return terk
 end

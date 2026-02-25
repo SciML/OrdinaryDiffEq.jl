@@ -32,7 +32,7 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
     integrator.cache.consfailcnt = 0
     integrator.cache.nconsteps += 1
     if iszero(integrator.EEst)
-        return integrator.dt * integrator.opts.qmax
+        return integrator.dt * get_current_qmax(integrator, integrator.opts.qmax)
     else
         est = integrator.EEst
         estₖ₋₁ = integrator.cache.EEst1
@@ -193,14 +193,13 @@ function choose_order!(
                 ts_tmp, t + dt, k - 2,
                 Val(max_order)
             )
-            terk_tmp = @.. broadcast = false fd_weights[k - 2, 1] * u
-            vc = _vec(terk_tmp)
+            @.. broadcast = false terk_tmp = fd_weights[k - 2, 1] * u
             for i in 2:(k - 2)
-                @.. @views vc += fd_weights[i, k - 2] * u_history[:, i - 1]
+                @.. broadcast = false terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
             end
             @.. broadcast = false terk_tmp *= abs(dt^(k - 2))
             calculate_residuals!(
-                atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
+                atmp, terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -246,16 +245,14 @@ function choose_order!(
             else
                 # we need terk_tmp to be mutable.
                 # so it can be updated
-                terk_tmp = similar(u)
-                @.. terk_tmp = fd_weights[k - 2, 1] * _vec(u)
+                terk_tmp = fd_weights[k - 2, 1] * u
                 for i in 2:(k - 2)
-                    @.. terk_tmp += fd_weights[i, k - 2] *
-                        $(_reshape(view(u_history, :, i - 1), axes(u)))
+                    terk_tmp = @.. terk_tmp + fd_weights[i, k - 2] * u_history[i - 1]
                 end
-                @.. terk_tmp *= abs(dt^(k - 2))
+                terk_tmp = @.. terk_tmp * abs(dt^(k - 2))
             end
             atmp = calculate_residuals(
-                terk_tmp, _vec(uprev), _vec(u),
+                terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -287,7 +284,7 @@ function stepsize_controller!(
         cache.order = k
     end
     if iszero(terk)
-        q = inv(integrator.opts.qmax)
+        q = inv(get_current_qmax(integrator, integrator.opts.qmax))
     else
         q = ((2 * terk / (k + 1))^(1 / (k + 1)))
     end
@@ -359,14 +356,13 @@ function choose_order!(
                 ts_tmp, t + dt, k - 2,
                 Val(max_order)
             )
-            terk_tmp = @.. broadcast = false fd_weights[k - 2, 1] * u
-            vc = _vec(terk_tmp)
+            @.. broadcast = false terk_tmp = fd_weights[k - 2, 1] * u
             for i in 2:(k - 2)
-                @.. broadcast = false @views vc += fd_weights[i, k - 2] * u_history[:, i - 1]
+                @.. broadcast = false terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
             end
             @.. broadcast = false terk_tmp *= abs(dt^(k - 2))
             calculate_residuals!(
-                atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
+                atmp, terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -409,16 +405,13 @@ function choose_order!(
                 end
                 terk_tmp *= abs(dt^(k - 2))
             else
-                vc = _vec(terk_tmp)
                 for i in 2:(k - 2)
-                    @.. broadcast = false @views vc += fd_weights[i, k - 2] *
-                        u_history[:, i - 1]
+                    terk_tmp = @.. terk_tmp + fd_weights[i, k - 2] * u_history[i - 1]
                 end
-                terk_tmp = reshape(vc, size(terk_tmp))
-                terk_tmp *= @.. broadcast = false abs(dt^(k - 2))
+                terk_tmp = @.. broadcast = false terk_tmp * abs(dt^(k - 2))
             end
             atmp = calculate_residuals(
-                _vec(terk_tmp), _vec(uprev), _vec(u),
+                terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -450,7 +443,7 @@ function stepsize_controller!(
         cache.order = k
     end
     if iszero(terk)
-        q = inv(integrator.opts.qmax)
+        q = inv(get_current_qmax(integrator, integrator.opts.qmax))
     else
         q = ((2 * terk / (k + 1))^(1 / (k + 1)))
     end

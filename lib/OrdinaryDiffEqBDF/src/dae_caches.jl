@@ -180,12 +180,15 @@ function alg_cache(
     ts = zero(Vector{typeof(t)}(undef, max_order + 2)) #ts is the successful past points, it will be updated after successful step
     ts_tmp = similar(ts)
 
-    u_history = zero(Matrix{eltype(u)}(undef, length(u), max_order + 2))
+    if u isa Number
+        u_history = zeros(eltype(u), max_order + 2)
+        u_corrector = zeros(eltype(u), max_order + 2)
+    else
+        u_history = [zero(u) for _ in 1:(max_order + 2)]
+        u_corrector = [zero(u) for _ in 1:(max_order + 2)]
+    end
     order = 1
     prev_order = 1
-    u_corrector = similar(u_history)
-    recursivefill!(u_corrector, zero(eltype(u)))
-    recursivefill!(u_history, zero(eltype(u_history)))
     terkm2 = tTypeNoUnits(1)
     terkm1 = tTypeNoUnits(1)
     terk = tTypeNoUnits(1)
@@ -268,13 +271,11 @@ function alg_cache(
         Int64(60) // 137 -Int64(300) // 137 Int64(300) // 137 -Int64(200) // 137 Int64(75) // 137 -Int64(12) // 137
     ]
     ts = Vector{typeof(t)}(undef, max_order + 2) #ts is the successful past points, it will be updated after successful step
-    u_history = Matrix{eltype(u)}(undef, length(u), max_order + 2)
+    u_history = [zero(u) for _ in 1:(max_order + 2)]
     order = 1
     prev_order = 1
-    u_corrector = similar(u_history)
+    u_corrector = [zero(u) for _ in 1:(max_order + 2)]
     recursivefill!(ts, zero(t))
-    recursivefill!(u_corrector, zero(eltype(u)))
-    recursivefill!(u_history, zero(eltype(u_history)))
     terkm2 = tTypeNoUnits(1)
     terkm1 = tTypeNoUnits(1)
     terk = tTypeNoUnits(1)

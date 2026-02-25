@@ -231,6 +231,9 @@ end
         @time @safetestset "Linear LSRK GPU" include("gpu/linear_lsrk.jl")
         @time @safetestset "Linear Exponential GPU" include("gpu/linear_exp.jl")
         @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
+        @time @safetestset "RKIP Semilinear PDE GPU" include("gpu/rkip_semilinear_pde.jl")
+        @time @safetestset "simple dae on GPU" include("gpu/simple_dae.jl")
+        @time @safetestset "BDF solvers GPU" include("gpu/bdf_solvers.jl")
     end
 
     if !is_APPVEYOR && GROUP == "QA"

@@ -42,6 +42,17 @@ import ADTypes: AutoForwardDiff, AbstractADType
     end
 end
 
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.10"
+    @eval begin
+        import OrdinaryDiffEqCore: get_current_qmax
+    end
+else
+    @eval begin
+        # Fallback for older OrdinaryDiffEqCore: no first-step qmax behavior
+        @inline get_current_qmax(integrator, qmax) = qmax
+    end
+end
+
 using Reexport
 @reexport using SciMLBase
 

@@ -139,3 +139,68 @@ for (Alg, desc, refs, is_W) in [
         end
     end
 end
+
+################################################################################
+# HybridExplicitImplicitRK — generic tableau-based hybrid explicit/linear-implicit method
+################################################################################
+
+struct HybridExplicitImplicitRK{TabType, CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
+    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    tab::TabType
+    order::Int
+    linsolve::F
+    precs::P
+    step_limiter!::StepLimiter
+    stage_limiter!::StageLimiter
+    autodiff::AD
+end
+
+function HybridExplicitImplicitRK(tab;
+        order,
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
+        standardtag = Val{true}(), concrete_jac = nothing,
+        diff_type = Val{:forward}(), linsolve = nothing,
+        precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
+        stage_limiter! = trivial_limiter!
+    )
+    AD_choice, chunk_size, diff_type = _process_AD_choice(
+        autodiff, chunk_size, diff_type
+    )
+    return HybridExplicitImplicitRK{
+        typeof(tab), _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
+        typeof(precs), diff_type, _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
+        typeof(stage_limiter!),
+    }(
+        tab, order, linsolve, precs, step_limiter!,
+        stage_limiter!, AD_choice
+    )
+end
+
+# Keyword-only constructor for remake support
+function HybridExplicitImplicitRK(;
+        tab,
+        order,
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
+        standardtag = Val{true}(), concrete_jac = nothing,
+        diff_type = Val{:forward}(), linsolve = nothing,
+        precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
+        stage_limiter! = trivial_limiter!
+    )
+    return HybridExplicitImplicitRK(tab;
+        order, chunk_size, autodiff, standardtag, concrete_jac,
+        diff_type, linsolve, precs, step_limiter!, stage_limiter!
+    )
+end
+
+"""
+A 12-stage order 5(4) hybrid explicit/linear-implicit method for semi-explicit index-1 DAEs.
+Differential variables are treated explicitly (like Tsit5), algebraic variables use Rosenbrock-type
+linear-implicit stages. Only the small algebraic Jacobian block needs factorization.
+For pure ODEs (no algebraic constraints), reduces to an explicit Runge-Kutta method.
+
+References:
+- Steinebach G., Rodas6P and Tsit5DA - two new Rosenbrock-type methods for DAEs.
+  arXiv:2511.21252, 2025.
+"""
+Tsit5DA(; kwargs...) = HybridExplicitImplicitRK(Tsit5DATableau; order = 5, kwargs...)

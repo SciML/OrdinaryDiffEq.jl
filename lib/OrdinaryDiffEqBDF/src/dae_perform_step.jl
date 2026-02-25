@@ -275,9 +275,7 @@ function perform_step!(
                     integrator.k[j] = u_history[j]
                     integrator.k[half + j] = (ts[j] - t) / dt
                 else
-                    integrator.k[j] = _reshape(
-                        copy(view(u_history, :, j)), axes(u)
-                    )
+                    integrator.k[j] = copy(u_history[j])
                     integrator.k[half + j] = fill((ts[j] - t) / dt, size(u))
                 end
             else
@@ -298,7 +296,13 @@ function perform_step!(
     end
     markfirststage!(nlsolver)
 
-    fill!(u_corrector, zero(eltype(u)))
+    if u isa Number
+        fill!(u_corrector, zero(eltype(u)))
+    else
+        for i in eachindex(u_corrector)
+            u_corrector[i] = zero(u_corrector[i])
+        end
+    end
     if u isa Number
         for i in 1:(k - 1)
             u_corrector[i] = _ode_interpolant(
@@ -316,14 +320,12 @@ function perform_step!(
                 oftype(t, -i), dt, uprev, uprev,
                 integrator.k, cache, nothing, Val{0}, nothing
             )
-            u_corrector[:, i] .= _vec(val)
+            u_corrector[i] = val
         end
         tmp = uprev * bdf_coeffs[k, 2]
-        vc = _vec(tmp)
         for i in 1:(k - 1)
-            vc += @.. broadcast = false u_corrector[:, i] * bdf_coeffs[k, i + 2]
+            tmp = @.. broadcast = false tmp + u_corrector[i] * bdf_coeffs[k, i + 2]
         end
-        tmp = reshape(vc, size(tmp))
     end
 
     nlsolver.tmp = tmp + cache.u₀
@@ -358,14 +360,14 @@ function perform_step!(
         end
         ts_tmp[1] = t + dt
         atmp = calculate_residuals(
-            _vec(lte), _vec(uprev), _vec(u), integrator.opts.abstol,
+            lte, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
         terk = estimate_terk(integrator, cache, k + 1, Val(max_order), u)
         atmp = calculate_residuals(
-            _vec(terk), _vec(uprev), _vec(u), integrator.opts.abstol,
+            terk, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         cache.terk = integrator.opts.internalnorm(atmp, t)
@@ -373,7 +375,7 @@ function perform_step!(
         if k > 1
             terkm1 = estimate_terk(integrator, cache, k, Val(max_order), u)
             atmp = calculate_residuals(
-                _vec(terkm1), _vec(uprev), _vec(u),
+                terkm1, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -382,7 +384,7 @@ function perform_step!(
         if k > 2
             terkm2 = estimate_terk(integrator, cache, k - 1, Val(max_order), u)
             atmp = calculate_residuals(
-                _vec(terkm2), _vec(uprev), _vec(u),
+                terkm2, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -390,7 +392,7 @@ function perform_step!(
         end
         if cache.qwait == 0 && k < max_order
             atmp = calculate_residuals(
-                _vec(terkp1), _vec(uprev), _vec(u),
+                terkp1, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -417,9 +419,7 @@ function perform_step!(
                 if u isa Number
                     integrator.k[1 + j] = u_history[j]
                 else
-                    integrator.k[1 + j] = _reshape(
-                        copy(view(u_history, :, j)), axes(u)
-                    )
+                    integrator.k[1 + j] = copy(u_history[j])
                 end
                 integrator.k[half + 1 + j] = (u isa Number) ?
                     (ts[j] - t) / dt :
@@ -465,7 +465,7 @@ function perform_step!(
     if cache.iters_from_event >= 1
         for j in 1:(max_order + 1)
             if j <= k + 1
-                @views copyto!(_vec(integrator.k[j]), u_history[:, j])
+                copyto!(integrator.k[j], u_history[j])
                 fill!(integrator.k[half + j], (ts[j] - t) / dt)
             else
                 fill!(integrator.k[j], zero(eltype(u)))
@@ -485,19 +485,20 @@ function perform_step!(
     end
     markfirststage!(nlsolver)
 
-    fill!(u_corrector, zero(eltype(u)))
+    for h in u_corrector
+        fill!(h, zero(eltype(h)))
+    end
     for i in 1:(k - 1)
         _ode_interpolant!(
             terk_tmp, oftype(t, -i), dt, uprev, uprev,
             integrator.k, cache, nothing, Val{0}, nothing
         )
-        @views copyto!(u_corrector[:, i], _vec(terk_tmp))
+        copyto!(u_corrector[i], terk_tmp)
     end
 
     @.. broadcast = false tmp = uprev * bdf_coeffs[k, 2]
-    vc = _vec(tmp)
     for i in 1:(k - 1)
-        @.. broadcast = false @views vc += u_corrector[:, i] * bdf_coeffs[k, i + 2]
+        @.. broadcast = false tmp += u_corrector[i] * bdf_coeffs[k, i + 2]
     end
 
     @.. broadcast = false nlsolver.tmp = tmp + u₀
@@ -532,13 +533,13 @@ function perform_step!(
         end
         ts_tmp[1] = t + dt
         calculate_residuals!(
-            atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol,
+            atmp, terk_tmp, uprev, u, abstol, reltol,
             internalnorm, t
         )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
         estimate_terk!(integrator, cache, k + 1, Val(max_order))
         calculate_residuals!(
-            atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol,
+            atmp, terk_tmp, uprev, u, abstol, reltol,
             internalnorm, t
         )
         cache.terk = integrator.opts.internalnorm(atmp, t)
@@ -546,7 +547,7 @@ function perform_step!(
         if k > 1
             estimate_terk!(integrator, cache, k, Val(max_order))
             calculate_residuals!(
-                atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
+                atmp, terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -555,7 +556,7 @@ function perform_step!(
         if k > 2
             estimate_terk!(integrator, cache, k - 1, Val(max_order))
             calculate_residuals!(
-                atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
+                atmp, terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -563,7 +564,7 @@ function perform_step!(
         end
         if cache.qwait == 0 && k < max_order
             calculate_residuals!(
-                atmp, _vec(terkp1_tmp), _vec(uprev), _vec(u),
+                atmp, terkp1_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -584,7 +585,7 @@ function perform_step!(
         fill!(integrator.k[half + 1], one(eltype(u)))
         for j in 1:max_order
             if j <= k
-                @views copyto!(_vec(integrator.k[1 + j]), u_history[:, j])
+                copyto!(integrator.k[1 + j], u_history[j])
                 fill!(integrator.k[half + 1 + j], (ts[j] - t) / dt)
             else
                 fill!(integrator.k[1 + j], zero(eltype(u)))

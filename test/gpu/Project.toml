@@ -7,6 +7,7 @@ FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 OrdinaryDiffEqRKIP = "a4daff8c-1d43-4ff3-8eff-f78720aeecdc"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
@@ -15,6 +16,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [sources]
+OrdinaryDiffEqBDF = {path = "../../lib/OrdinaryDiffEqBDF"}
 OrdinaryDiffEqNonlinearSolve = {path = "../../lib/OrdinaryDiffEqNonlinearSolve"}
 OrdinaryDiffEqRKIP = {path = "../../lib/OrdinaryDiffEqRKIP"}
 OrdinaryDiffEqRosenbrock = {path = "../../lib/OrdinaryDiffEqRosenbrock"}
@@ -28,6 +30,7 @@ FastBroadcast = "0.3"
 FFTW = "1.8"
 FillArrays = "1"
 OrdinaryDiffEq = "6"
+OrdinaryDiffEqBDF = "1"
 OrdinaryDiffEqNonlinearSolve = "1"
 OrdinaryDiffEqRKIP = "1"
 OrdinaryDiffEqRosenbrock = "1"

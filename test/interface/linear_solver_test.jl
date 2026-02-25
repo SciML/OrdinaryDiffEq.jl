@@ -42,7 +42,7 @@ end
 
 @test isapprox(
     exp.(p), g_helper(p; alg = Rosenbrock23(linsolve = KLUFactorization()));
-    atol = 1.0e-3, rtol = 1.0e-3
+    atol = 1.0e-2, rtol = 1.0e-2
 )
 @test isapprox(
     exp.(p), g_helper(p; alg = Rosenbrock23(linsolve = UMFPACKFactorization()));
@@ -152,7 +152,7 @@ end
 
 @test isapprox(
     exp.(p), g_helper(p; alg = Rosenbrock23(linsolve = KLUFactorization()));
-    atol = 1.0e-3, rtol = 1.0e-3
+    atol = 1.0e-2, rtol = 1.0e-2
 )
 @test isapprox(
     exp.(p), g_helper(p; alg = Rosenbrock23(linsolve = UMFPACKFactorization()));

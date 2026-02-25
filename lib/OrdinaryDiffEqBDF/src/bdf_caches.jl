@@ -414,10 +414,13 @@ function alg_cache(
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
     )
     dtprev = one(dt)
-    D = Matrix{uEltypeNoUnits}(undef, length(u), max_order + 2)
-    recursivefill!(D, zero(uEltypeNoUnits))
-    prevD = similar(D)
-    recursivefill!(prevD, zero(uEltypeNoUnits))
+    if u isa Number
+        D = zeros(uEltypeNoUnits, max_order + 2)
+        prevD = zeros(uEltypeNoUnits, max_order + 2)
+    else
+        D = [zero(u) .* zero(uEltypeNoUnits) for _ in 1:(max_order + 2)]
+        prevD = [zero(u) .* zero(uEltypeNoUnits) for _ in 1:(max_order + 2)]
+    end
     EEst1 = tTypeNoUnits(1)
     EEst2 = tTypeNoUnits(1)
 
@@ -497,11 +500,9 @@ function alg_cache(
     ϕ = zero(u)
     u₀ = zero(u)
     dtprev = one(dt)
-    D = similar(u, uEltypeNoUnits, length(u), max_order + 2)
-    recursivefill!(D, zero(uEltypeNoUnits))
-    Dtmp = similar(D)
-    recursivefill!(Dtmp, zero(uEltypeNoUnits))
-    prevD = zero(similar(D))
+    D = [zero(similar(u, uEltypeNoUnits)) for _ in 1:(max_order + 2)]
+    Dtmp = [zero(similar(u, uEltypeNoUnits)) for _ in 1:(max_order + 2)]
+    prevD = [zero(similar(u, uEltypeNoUnits)) for _ in 1:(max_order + 2)]
     atmp = zero(similar(u, uEltypeNoUnits))
     atmpm1 = zero(similar(u, uEltypeNoUnits))
     atmpp1 = zero(similar(u, uEltypeNoUnits))
@@ -635,12 +636,15 @@ function alg_cache(
     ts = zero(Vector{typeof(t)}(undef, max_order + 2)) #ts is the successful past points, it will be updated after successful step
     ts_tmp = similar(ts)
 
-    u_history = zero(Matrix{eltype(u)}(undef, length(u), max_order + 2))
+    if u isa Number
+        u_history = zeros(eltype(u), max_order + 2)
+        u_corrector = zeros(eltype(u), max_order + 2)
+    else
+        u_history = [zero(u) for _ in 1:(max_order + 2)]
+        u_corrector = [zero(u) for _ in 1:(max_order + 2)]
+    end
     order = 1
     prev_order = 1
-    u_corrector = similar(u_history)
-    recursivefill!(u_corrector, zero(eltype(u)))
-    recursivefill!(u_history, zero(eltype(u_history)))
     terkm2 = tTypeNoUnits(1)
     terkm1 = tTypeNoUnits(1)
     terk = tTypeNoUnits(1)
@@ -723,13 +727,11 @@ function alg_cache(
         Int64(137) // 60 -5 5 -Int64(10) // 3 Int64(5) // 4 -Int64(1) // 5
     ]
     ts = Vector{typeof(t)}(undef, max_order + 2) #ts is the successful past points, it will be updated after successful step
-    u_history = Matrix{eltype(u)}(undef, length(u), max_order + 2)
+    u_history = [zero(u) for _ in 1:(max_order + 2)]
     order = 1
     prev_order = 1
-    u_corrector = similar(u_history)
+    u_corrector = [zero(u) for _ in 1:(max_order + 2)]
     recursivefill!(ts, zero(t))
-    recursivefill!(u_corrector, zero(eltype(u)))
-    recursivefill!(u_history, zero(eltype(u_history)))
     terkm2 = tTypeNoUnits(1)
     terkm1 = tTypeNoUnits(1)
     terk = tTypeNoUnits(1)

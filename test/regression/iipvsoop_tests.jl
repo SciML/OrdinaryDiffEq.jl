@@ -105,14 +105,11 @@ rk_algs = [
     @test sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
 end
 
-working_sdirk_algs = [
+sdirk_algs = [
     ImplicitMidpoint(),
     ImplicitEuler(),
     ImplicitMidpoint(autodiff = AutoFiniteDiff()),
     SSPSDIRK2(),
-]
-
-sdirk_algs = [
     Trapezoid(),
     TRBDF2(), SDIRK2(),
     Kvaerno3(), KenCarp3(),
@@ -120,26 +117,17 @@ sdirk_algs = [
     Kvaerno5(), KenCarp5(), KenCarp47(), KenCarp58(),
 ]
 
-@testset "Algorithm $(nameof(typeof(alg)))" for alg in working_sdirk_algs
+@testset "Algorithm $(nameof(typeof(alg)))" for alg in sdirk_algs
     println(nameof(typeof(alg)))
-    sol_ip = solve(prob_ip, alg, dt = 0.0125)
-    sol_scalar = solve(prob_scalar, alg, dt = 0.0125)
+    sol_ip = solve(prob_ip, alg, dt = 0.0125, adaptive = false)
+    sol_scalar = solve(prob_scalar, alg, dt = 0.0125, adaptive = false)
 
     @test sol_ip(ts, idxs = 1) ≈ sol_scalar(ts)
     @test sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
 end
 
-@testset "Algorithm $(nameof(typeof(alg)))" for alg in sdirk_algs
-    println(nameof(typeof(alg)))
-    sol_ip = solve(prob_ip, alg, dt = 0.0125)
-    sol_scalar = solve(prob_scalar, alg, dt = 0.0125)
-
-    @test_broken sol_ip(ts, idxs = 1) ≈ sol_scalar(ts)
-    @test_broken sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
-end
-
-working_rosenbrock_algs = [
-    Rosenbrock23(), ROS3P(), Rodas3(),
+rosenbrock_algs = [
+    Rosenbrock23(), Rosenbrock32(), ROS3P(), Rodas3(),
     RosShamp4(), Veldd4(), Velds4(), GRK4T(), GRK4A(),
     Ros4LStab(), Rodas4(), Rodas42(), Rodas4P(), Rodas5(),
     Rodas23W(), Rodas3P(), Rodas5Pe(), Rodas5P(),
@@ -148,23 +136,10 @@ working_rosenbrock_algs = [
     ROS34PRw(), ROS3PRL(), ROS3PRL2(), ROK4a(),
 ]
 
-rosenbrock_algs = [
-    Rosenbrock32(),
-]
-
-@testset "Algorithm $(nameof(typeof(alg)))" for alg in working_rosenbrock_algs
-    println(nameof(typeof(alg)))
-    sol_ip = solve(prob_ip, alg, dt = 0.0125)
-    sol_scalar = solve(prob_scalar, alg, dt = 0.0125)
-
-    @test sol_ip(ts, idxs = 1) ≈ sol_scalar(ts)
-    @test sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
-end
-
 @testset "Algorithm $(nameof(typeof(alg)))" for alg in rosenbrock_algs
     println(nameof(typeof(alg)))
-    sol_ip = solve(prob_ip, alg, dt = 0.0125)
-    sol_scalar = solve(prob_scalar, alg, dt = 0.0125)
+    sol_ip = solve(prob_ip, alg, dt = 0.0125, adaptive = false)
+    sol_scalar = solve(prob_scalar, alg, dt = 0.0125, adaptive = false)
 
     @test sol_ip(ts, idxs = 1) ≈ sol_scalar(ts)
     @test sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u

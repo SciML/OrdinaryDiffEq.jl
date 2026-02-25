@@ -959,3 +959,159 @@ end
 ### RosenbrockW6S4O
 
 @RosenbrockW6S4OS(:cache)
+
+################################################################################
+
+### Tsit5DA - hybrid explicit/linear-implicit method for DAEs
+
+struct HybridExplicitImplicitConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
+    tf::TF
+    uf::UF
+    tab::Tab
+    J::JType
+    W::WType
+    linsolve::F
+    autodiff::AD
+    interp_order::Int
+end
+
+mutable struct HybridExplicitImplicitCache{
+        uType, rateType, uNoUnitsType, JType, WType, TabType,
+        TFType, UFType, F, JCType, GCType, RTolType, A,
+        StepLimiter, StageLimiter, DVType, AVType,
+        GZType, GYType, WZType, FZ,
+    } <: RosenbrockMutableCache
+    u::uType
+    uprev::uType
+    dense::Vector{rateType}
+    du::rateType
+    du1::rateType
+    du2::rateType
+    ks::Vector{rateType}
+    fsalfirst::rateType
+    fsallast::rateType
+    dT::rateType
+    J::JType
+    W::WType
+    tmp::rateType
+    atmp::uNoUnitsType
+    weight::uNoUnitsType
+    tab::TabType
+    tf::TFType
+    uf::UFType
+    linsolve_tmp::rateType
+    linsolve::F
+    jac_config::JCType
+    grad_config::GCType
+    reltol::RTolType
+    alg::A
+    step_limiter!::StepLimiter
+    stage_limiter!::StageLimiter
+    interp_order::Int
+    # DAE-specific fields
+    diff_vars::DVType
+    alg_vars::AVType
+    g_z::GZType         # n_g x n_g algebraic Jacobian block
+    g_y::GYType         # n_g x n_f coupling block
+    W_z::WZType         # -gamma * g_z (used for linear solve)
+    linsolve_tmp_z::FZ  # n_g-sized RHS for algebraic solve
+end
+function full_cache(c::HybridExplicitImplicitCache)
+    return [
+        c.u, c.uprev, c.dense..., c.du, c.du1, c.du2,
+        c.ks..., c.fsalfirst, c.fsallast, c.dT, c.tmp, c.atmp, c.weight, c.linsolve_tmp,
+    ]
+end
+
+function alg_cache(
+        alg::HybridExplicitImplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tf = TimeDerivativeWrapper(f, u, p)
+    uf = UDerivativeWrapper(f, t, p)
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
+    tab = alg.tab(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return HybridExplicitImplicitConstantCache(
+        tf, uf, tab, J, W, nothing, alg_autodiff(alg), size(tab.H, 1)
+    )
+end
+
+function alg_cache(
+        alg::HybridExplicitImplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = alg.tab(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    num_stages = size(tab.A, 1)
+    interp_order = size(tab.H, 1)
+
+    # Initialize vectors
+    dense = [zero(rate_prototype) for _ in 1:interp_order]
+    ks = [zero(rate_prototype) for _ in 1:num_stages]
+    du = zero(rate_prototype)
+    du1 = zero(rate_prototype)
+    du2 = zero(rate_prototype)
+    fsalfirst = zero(rate_prototype)
+    fsallast = zero(rate_prototype)
+    dT = zero(rate_prototype)
+    tmp = zero(rate_prototype)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    weight = similar(u, uEltypeNoUnits)
+    recursivefill!(weight, false)
+    linsolve_tmp = zero(rate_prototype)
+
+    tf = TimeGradientWrapper(f, uprev, p)
+    uf = UJacobianWrapper(f, t, p)
+
+    grad_config = build_grad_config(alg, f, tf, du1, t)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+
+    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
+    Pl, Pr = wrapprecs(
+        alg.precs(
+            W, nothing, u, p, t, nothing, nothing, nothing,
+            nothing
+        )..., weight, tmp
+    )
+    linsolve = init(
+        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        Pl = Pl, Pr = Pr,
+        assumptions = LinearSolve.OperatorAssumptions(true),
+        verbose = verbose.linear_verbosity
+    )
+
+    # Detect algebraic variables from mass matrix
+    mass_matrix = f.mass_matrix
+    if mass_matrix === I
+        diff_vars = collect(1:length(u))
+        alg_vars = Int[]
+        g_z = zeros(eltype(u), 0, 0)
+        g_y = zeros(eltype(u), 0, 0)
+        W_z = zeros(eltype(u), 0, 0)
+        linsolve_tmp_z = zeros(eltype(u), 0)
+        linsolve_z = nothing
+    else
+        n = length(u)
+        diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
+        alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
+        n_g = length(alg_vars)
+        n_f = length(diff_vars)
+        g_z = zeros(eltype(u), n_g, n_g)
+        g_y = zeros(eltype(u), n_g, n_f)
+        W_z = zeros(eltype(u), n_g, n_g)
+        linsolve_tmp_z = zeros(eltype(u), n_g)
+    end
+
+    return HybridExplicitImplicitCache(
+        u, uprev, dense, du, du1, du2, ks,
+        fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
+        linsolve_tmp, linsolve, jac_config, grad_config, reltol, alg,
+        alg.step_limiter!, alg.stage_limiter!, interp_order,
+        diff_vars, alg_vars, g_z, g_y, W_z, linsolve_tmp_z
+    )
+end

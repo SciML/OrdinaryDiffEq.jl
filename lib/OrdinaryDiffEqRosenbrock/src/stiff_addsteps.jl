@@ -198,3 +198,76 @@ function _ode_addsteps!(
     end
     return nothing
 end
+
+# Tsit5DA: explicit RK stages for addsteps (pure ODE only, ignores algebraic coupling)
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::HybridExplicitImplicitConstantCache,
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false
+    )
+    if length(k) < size(cache.tab.H, 1) || always_calc_begin
+        (; tf, uf) = cache
+        (; A, C, gamma, b, c, d, H) = cache.tab
+
+        num_stages = size(A, 1)
+
+        # Compute explicit RK stages
+        du = f(uprev, p, t)
+        ks1 = dt .* du
+        ks = ntuple(Returns(ks1), Val(12))
+        for stage in 2:num_stages
+            u_stage = uprev
+            for i in 1:(stage - 1)
+                u_stage = @.. u_stage + A[stage, i] * ks[i]
+            end
+            du = f(u_stage, p, t + c[stage] * dt)
+            ks = Base.setindex(ks, dt .* du, stage)
+        end
+
+        # Dense output
+        for j in 1:size(H, 1)
+            kj = zero(ks[1])
+            for i in 1:num_stages
+                kj = @.. kj + H[j, i] * ks[i]
+            end
+            copyat_or_push!(k, j, kj)
+        end
+    end
+    return nothing
+end
+
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::HybridExplicitImplicitCache,
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false
+    )
+    if length(k) < size(cache.tab.H, 1) || always_calc_begin
+        (; du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
+        (; A, C, gamma, b, c, d, H) = cache.tab
+
+        num_stages = size(A, 1)
+        mass_matrix = f.mass_matrix
+
+        # Compute explicit RK stages
+        f(fsalfirst, uprev, p, t)
+        @.. ks[1] = dt * fsalfirst
+
+        for stage in 2:num_stages
+            tmp .= uprev
+            for i in 1:(stage - 1)
+                @.. tmp += A[stage, i] * ks[i]
+            end
+            f(du, tmp, p, t + c[stage] * dt)
+            @.. ks[stage] = dt * du
+        end
+
+        # Dense output
+        for j in 1:size(H, 1)
+            copyat_or_push!(k, j, zero(du))
+            for i in 1:num_stages
+                @.. k[j] += H[j, i] * _vec(ks[i])
+            end
+        end
+    end
+    return nothing
+end

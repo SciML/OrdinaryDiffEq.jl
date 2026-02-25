@@ -1,5 +1,5 @@
 # This definitely needs cleaning
-using OrdinaryDiffEqBDF, ODEProblemLibrary, DiffEqDevTools, ADTypes, LinearSolve
+using OrdinaryDiffEqBDF, ODEProblemLibrary, DiffEqDevTools, ADTypes, LinearSolve, StaticArrays
 using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NonlinearSolveAlg
 using Test, Random
 Random.seed!(100)
@@ -111,4 +111,30 @@ end
 
     #FBDF
     @test_nowarn solve(prob, FBDF())
+end
+
+@testset "Static Array (SVector) Tests" begin
+    f_oop(u, p, t) = -0.5 * u
+    u0_sv = SVector(1.0, 2.0)
+    prob_sv = ODEProblem(f_oop, u0_sv, (0.0, 1.0))
+
+    for alg in (QNDF(), QNDF1(), QNDF2(), FBDF())
+        name = nameof(typeof(alg))
+        @testset "$name" begin
+            sol = solve(prob_sv, alg, abstol = 1.0e-8, reltol = 1.0e-8)
+            @test sol.u[end] isa SVector
+            @test isapprox(sol.u[end], exp(-0.5) * u0_sv, rtol = 1.0e-3)
+        end
+    end
+
+    # Scalar
+    prob_scalar = ODEProblem(f_oop, 1.0, (0.0, 1.0))
+    for alg in (QNDF(), FBDF())
+        name = nameof(typeof(alg))
+        @testset "$name scalar" begin
+            sol = solve(prob_scalar, alg, abstol = 1.0e-8, reltol = 1.0e-8)
+            @test sol.u[end] isa Number
+            @test isapprox(sol.u[end], exp(-0.5), rtol = 1.0e-5)
+        end
+    end
 end

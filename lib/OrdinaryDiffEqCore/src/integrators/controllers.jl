@@ -88,6 +88,32 @@ end
     return nothing
 end
 
+"""
+    get_current_qmax(integrator, qmax)
+
+Return the effective maximum step size growth factor for the current step.
+On the first step (before any successful steps), returns `qmax_first_step`
+from the controller (defaulting to 10000). This allows a much larger step
+size increase on the first step since the initial dt from the automatic
+step size selection algorithm is only approximate.
+
+This mirrors the behavior of Sundials CVODE, which limits h_new/h_old to 10
+on normal steps but 10^4 on the first step.
+
+See also: https://github.com/SciML/DifferentialEquations.jl/issues/299
+"""
+@inline function get_current_qmax(integrator, qmax)
+    if integrator.success_iter == 0
+        ctrl = integrator.opts.controller
+        if hasfield(typeof(ctrl), :controller) &&
+                hasfield(typeof(ctrl.controller), :qmax_first_step)
+            return ctrl.controller.qmax_first_step
+        end
+        return typeof(qmax)(10000)
+    end
+    return qmax
+end
+
 reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
 reset_alg_dependent_opts!(controller::AbstractControllerCache, alg1, alg2) = nothing
 
@@ -144,6 +170,7 @@ end
 
 @inline function stepsize_controller!(integrator, controller::IController, alg)
     (; qmin, qmax, gamma) = integrator.opts
+    qmax = get_current_qmax(integrator, qmax)
     EEst = DiffEqBase.value(integrator.EEst)
 
     if iszero(EEst)
@@ -175,6 +202,7 @@ end
 struct NewIController{T} <: AbstractController
     qmin::T
     qmax::T
+    qmax_first_step::T
     gamma::T
     qsteady_min::T
     qsteady_max::T
@@ -184,10 +212,11 @@ function NewIController(alg; kwargs...)
     return NewIController(Float64, alg; kwargs...)
 end
 
-function NewIController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
+function NewIController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
     return NewIController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
+        qmax_first_step === nothing ? QT(10000) : QT(qmax_first_step),
         gamma === nothing ? gamma_default(alg) : gamma,
         qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
         qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
@@ -214,6 +243,7 @@ end
 
 @inline function stepsize_controller!(integrator, cache::IControllerCache, alg)
     (; qmin, qmax, gamma) = cache.controller
+    qmax = get_current_qmax(integrator, qmax)
     EEst = DiffEqBase.value(integrator.EEst)
 
     if iszero(EEst)
@@ -292,6 +322,7 @@ end
 @inline function stepsize_controller!(integrator, controller::PIController, alg)
     (; qold) = integrator
     (; qmin, qmax, gamma) = integrator.opts
+    qmax = get_current_qmax(integrator, qmax)
     (; beta1, beta2) = controller
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -339,6 +370,7 @@ struct NewPIController{T} <: AbstractController
     beta2::T
     qmin::T
     qmax::T
+    qmax_first_step::T
     gamma::T
     qsteady_min::T
     qsteady_max::T
@@ -349,7 +381,7 @@ function NewPIController(alg; kwargs...)
     return NewPIController(Float64, alg; kwargs...)
 end
 
-function NewPIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
+function NewPIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
     beta2 = beta2 === nothing ? beta2_default(alg) : beta2
     beta1 = beta1 === nothing ? beta1_default(alg, beta2) : beta1
     qoldinit = qoldinit === nothing ? 1 // 10^4 : qoldinit
@@ -358,6 +390,7 @@ function NewPIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothi
         beta2,
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
+        qmax_first_step === nothing ? QT(10000) : QT(qmax_first_step),
         gamma === nothing ? gamma_default(alg) : gamma,
         qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
         qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
@@ -389,6 +422,7 @@ end
 @inline function stepsize_controller!(integrator, cache::PIControllerCache, alg)
     (; errold, controller) = cache
     (; qmin, qmax, gamma) = controller
+    qmax = get_current_qmax(integrator, qmax)
     (; beta1, beta2) = controller
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -793,6 +827,7 @@ end
 
 @inline function stepsize_controller!(integrator, controller::PredictiveController, alg)
     (; qmin, qmax, gamma) = integrator.opts
+    qmax = get_current_qmax(integrator, qmax)
     EEst = DiffEqBase.value(integrator.EEst)
     if iszero(EEst)
         q = inv(qmax)
@@ -818,6 +853,7 @@ end
 
 function step_accept_controller!(integrator, controller::PredictiveController, alg, q)
     (; qmin, qmax, gamma, qsteady_min, qsteady_max) = integrator.opts
+    qmax = get_current_qmax(integrator, qmax)
 
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -848,6 +884,7 @@ end
 struct NewPredictiveController{T} <: AbstractController
     qmin::T
     qmax::T
+    qmax_first_step::T
     gamma::T
     qsteady_min::T
     qsteady_max::T
@@ -857,10 +894,11 @@ function NewPredictiveController(alg; kwargs...)
     return NewPredictiveController(Float64, alg; kwargs...)
 end
 
-function NewPredictiveController(QT, alg; qmin = nothing, qmax = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
+function NewPredictiveController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
     return NewPredictiveController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
+        qmax_first_step === nothing ? QT(10000) : QT(qmax_first_step),
         gamma === nothing ? gamma_default(alg) : gamma,
         qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
         qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
@@ -895,7 +933,8 @@ function setup_controller_cache(alg, atmp::UT, controller::NewPredictiveControll
 end
 
 @inline function stepsize_controller!(integrator, cache::PredictiveControllerCache, alg)
-    (; qmin, qmax, gamma) = integrator.opts
+    (; qmin, qmax, gamma) = cache.controller
+    qmax = get_current_qmax(integrator, qmax)
     EEst = DiffEqBase.value(integrator.EEst)
     if iszero(EEst)
         q = inv(qmax)
@@ -924,6 +963,7 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
     @assert q ≈ cache.q "Controller cache went out of sync with time stepping logic."
     (; dtacc, erracc, controller) = cache
     (; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller
+    qmax = get_current_qmax(integrator, qmax)
 
     EEst = DiffEqBase.value(integrator.EEst)
 

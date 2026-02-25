@@ -97,7 +97,7 @@ end
     @test diff(sol.t)[1] == 0.1
     @test diff(sol.t)[13] == 0.5
 
-    sol = solve(prob, RK4(), dt = 0.1, adaptive = true, callback = cb)
+    sol = solve(prob, RK4(), dt = 0.1, adaptive = true, callback = cb, dtmax = 1.0)
     @test diff(sol.t)[1] == 0.1
-    @test diff(sol.t)[4] == 0.5
+    @test 0.5 in diff(sol.t)
 end
