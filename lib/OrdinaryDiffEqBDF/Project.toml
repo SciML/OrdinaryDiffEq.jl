@@ -76,3 +76,15 @@ SafeTestsets = "0.1.0"
 
 [targets]
 test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg", "JET", "Aqua", "AllocCheck"]
+
+[sources.OrdinaryDiffEqSDIRK]
+path = "../OrdinaryDiffEqSDIRK"
+
+[sources.OrdinaryDiffEqDifferentiation]
+path = "../OrdinaryDiffEqDifferentiation"
+
+[sources.OrdinaryDiffEqNonlinearSolve]
+path = "../OrdinaryDiffEqNonlinearSolve"
+
+[sources.OrdinaryDiffEqCore]
+path = "../OrdinaryDiffEqCore"
