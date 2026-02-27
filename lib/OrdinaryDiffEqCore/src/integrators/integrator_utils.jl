@@ -81,11 +81,17 @@ function apply_step!(integrator)
         error("The current setup does not allow for changing dt.")
     end
 
+    # Shorten dt to hit the next tstop before any post-step work that depends on
+    # the final dt value (e.g. SDE noise process acceptance via post_apply_step!).
+    # loopheader! also calls this unconditionally afterward, which is a harmless
+    # no-op on the accept path since dt was already adjusted here.
+    modify_dt_for_tstops!(integrator)
+
     post_apply_step!(integrator)
     return nothing
 end
 
-# Hook: called at the end of apply_step! after dt is updated.
+# Hook: called at the end of apply_step! after dt is updated and tstops applied.
 # Default: update FSAL evaluations (ODE behavior).
 # Override for SDE: noise acceptance, RSWM dt readback, sqdt update.
 post_apply_step!(integrator) = update_fsal!(integrator)
