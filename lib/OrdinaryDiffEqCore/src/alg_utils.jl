@@ -204,6 +204,10 @@ anyadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = any(isadaptive, alg.algs)
 has_dtnew_modification(alg) = false
 dtnew_modification(integrator, alg, dtnew) = dtnew
 
+# Whether an algorithm uses a posteriori dt estimates (always accepts, then picks next dt).
+# Default is false. CaoTauLeaping overrides to true.
+isaposteriori(alg) = false
+
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
 

@@ -183,6 +183,13 @@ public _savevalues!, _postamble!,
     interp_at_saveat, post_savevalues!, finalize_solution_storage!,
     finalize_endpoint!, on_callbacks_complete!, is_composite_cache,
     is_composite_algorithm, final_progress, skip_saveat_at_tspan_end,
-    save_dense_at_t!
+    save_dense_at_t!,
+    loopheader!, _loopfooter!,
+    handle_step_rejection!, loopfooter_reset!, handle_force_stepfail!,
+    isaposteriori, fixed_t_for_floatingpoint_error!,
+    increment_accept!, increment_reject!,
+    calc_dt_propose!, fix_dt_at_bounds!, modify_dt_for_tstops!,
+    log_step!, choose_algorithm!, update_uprev!,
+    alg_extrapolates
 
 end

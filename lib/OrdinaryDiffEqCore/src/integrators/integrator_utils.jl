@@ -10,25 +10,25 @@ function loopheader!(integrator)
 
     # Accept or reject the step
     if integrator.iter > 0
-        if (integrator.opts.adaptive && !integrator.accept_step) ||
-                integrator.force_stepfail
-            @SciMLMessage(
-                lazy"Step rejected: t = $(integrator.t), EEst = $(integrator.EEst)",
-                integrator.opts.verbose, :step_rejected
+        if (!integrator.force_stepfail) &&
+                (
+                !integrator.opts.adaptive || integrator.accept_step ||
+                    isaposteriori(integrator.alg)
             )
-            if integrator.isout
-                integrator.dt = integrator.dt * integrator.opts.qmin
-            elseif !integrator.force_stepfail
-                step_reject_controller!(integrator, integrator.alg)
-            end
-            post_step_reject!(integrator)
-        else
+            # ACCEPT
             @SciMLMessage(
                 lazy"Step accepted: t = $(integrator.t), dt = $(integrator.dt), EEst = $(integrator.EEst)",
                 integrator.opts.verbose, :step_accepted
             )
             integrator.success_iter += 1
             apply_step!(integrator)
+        elseif (
+                integrator.opts.adaptive && !integrator.accept_step &&
+                    !isaposteriori(integrator.alg)
+            ) ||
+                integrator.force_stepfail
+            # REJECT
+            handle_step_rejection!(integrator)
         end
     elseif integrator.u_modified # && integrator.iter == 0
         on_u_modified_at_init!(integrator)
@@ -42,7 +42,23 @@ function loopheader!(integrator)
     return nothing
 end
 
-# Hook: called after step rejection in loopheader. Override for SDE noise rejection.
+# Hook: handles step rejection in loopheader.
+# Default ODE behavior: log rejection, adjust dt, and call post_step_reject!.
+# Override for SDE: noise rejection via dtnew intermediate + reject_step!.
+function handle_step_rejection!(integrator)
+    @SciMLMessage(
+        lazy"Step rejected: t = $(integrator.t), EEst = $(integrator.EEst)",
+        integrator.opts.verbose, :step_rejected
+    )
+    if integrator.isout
+        integrator.dt = integrator.dt * integrator.opts.qmin
+    elseif !integrator.force_stepfail
+        step_reject_controller!(integrator, integrator.alg)
+    end
+    return post_step_reject!(integrator)
+end
+
+# Hook: called after step rejection handling. Override for DDE discontinuity handling.
 post_step_reject!(integrator) = nothing
 
 # Hook: called at iter==0 when u was modified by callbacks during init.
@@ -52,7 +68,7 @@ function on_u_modified_at_init!(integrator)
         DiffEqBase.initialize_dae!(integrator)
     end
     update_uprev!(integrator)
-    update_fsal!(integrator)
+    return update_fsal!(integrator)
 end
 
 function apply_step!(integrator)
@@ -257,14 +273,14 @@ end
 # Default (ODE): skip saving at tspan[2] when save_end=false.
 # Override for SDE: always save at explicit saveat times.
 function skip_saveat_at_tspan_end(integrator, curt)
-    curt == integrator.sol.prob.tspan[2] && !integrator.opts.save_end
+    return curt == integrator.sol.prob.tspan[2] && !integrator.opts.save_end
 end
 
 # Hook: save dense output when saving at exact time t.
 # Default: track saveiter_dense and copy k vectors.
 # Override for SDE: no-op (SDE doesn't have dense output storage).
 function save_dense_at_t!(integrator)
-    if isdiscretealg(integrator.alg) || integrator.opts.dense
+    return if isdiscretealg(integrator.alg) || integrator.opts.dense
         integrator.saveiter_dense += 1
         if integrator.opts.dense
             if integrator.opts.save_idxs === nothing
@@ -378,23 +394,19 @@ end
 # Hook: called at the end of solution_endpoint_match_cur_integrator!
 # Default: save final discretes. Override for SDE: noise acceptance + noise saving.
 function finalize_endpoint!(integrator)
-    SciMLBase.save_final_discretes!(integrator, integrator.opts.callback)
+    return SciMLBase.save_final_discretes!(integrator, integrator.opts.callback)
 end
 
 # Want to extend loopfooter! for DDEIntegrator
 loopfooter!(integrator::ODEIntegrator) = _loopfooter!(integrator)
 
 function _loopfooter!(integrator)
-    # Carry-over from callback
-    # This is set to true if u_modified requires callback FSAL reset
-    # But not set to false when reset so algorithms can check if reset occurred
-    integrator.reeval_fsal = false
-    integrator.u_modified = false
+    loopfooter_reset!(integrator)
     integrator.do_error_check = true
     ttmp = integrator.t + integrator.dt
     if integrator.force_stepfail
         if integrator.opts.adaptive
-            post_newton_controller!(integrator, integrator.alg)
+            handle_force_stepfail!(integrator)
         elseif integrator.last_stepfail
             return
         end
@@ -473,6 +485,22 @@ is_composite_cache(cache) = cache isa CompositeCache
 
 # Trait: is this a composite algorithm? Override to include SDE composite algorithms.
 is_composite_algorithm(alg) = alg isa OrdinaryDiffEqCompositeAlgorithm
+
+# Hook: reset integrator flags at the start of loopfooter.
+# Default (ODE): reset reeval_fsal and u_modified flags.
+# Override for SDE: no-op (SDE has no reeval_fsal; u_modified handled by callbacks).
+function loopfooter_reset!(integrator)
+    # Carry-over from callback
+    # This is set to true if u_modified requires callback FSAL reset
+    # But not set to false when reset so algorithms can check if reset occurred
+    integrator.reeval_fsal = false
+    return integrator.u_modified = false
+end
+
+# Hook: handle force_stepfail in adaptive mode within loopfooter.
+# Default (ODE): call post_newton_controller! to reduce dt after Newton failure.
+# Override for SDE: set dtnew = dt / failfactor.
+handle_force_stepfail!(integrator) = post_newton_controller!(integrator, integrator.alg)
 
 function increment_accept!(stats)
     return stats.naccept += 1
@@ -587,7 +615,7 @@ end
 # Default: trigger FSAL re-evaluation and DDE discontinuity handling.
 # Override for SDE: Poisson rate update.
 function on_callbacks_complete!(integrator)
-    integrator.reeval_fsal && handle_callback_modifiers!(integrator)
+    return integrator.reeval_fsal && handle_callback_modifiers!(integrator)
 end
 
 function update_uprev!(integrator)
