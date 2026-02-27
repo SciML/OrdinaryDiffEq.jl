@@ -32,7 +32,7 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
     wrapprecs, calc_tderivative, build_grad_config,
     build_jac_config, issuccess_W, jacobian2W!,
     resize_jac_config!, resize_grad_config!,
-    calc_W, calc_rosenbrock_differentiation!, build_J_W,
+    calc_W, calc_rosenbrock_differentiation!, calc_rosenbrock_differentiation, build_J_W,
     UJacobianWrapper, dolinsolve, WOperator, resize_J_W!
 
 using Reexport
@@ -284,6 +284,7 @@ PrecompileTools.@compile_workload begin
     end
 
     for prob in prob_list, solver in solver_list
+
         solve(prob, solver)(5.0)
     end
 

@@ -38,6 +38,7 @@ function SciMLBase.interp_summary(
             RosenbrockCache,
         },
     }
-    return dense ? "specialized 4th (Rodas6P = 5th) order \"free\" stiffness-aware interpolation" :
+    return dense ?
+        "specialized 4th (Rodas6P = 5th) order \"free\" stiffness-aware interpolation" :
         "1st order linear"
 end
