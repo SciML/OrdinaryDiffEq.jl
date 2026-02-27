@@ -3,11 +3,11 @@ module OrdinaryDiffEqBDF
 import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals, alg_extrapolates,
-    OrdinaryDiffEqAlgorithm,
+    OrdinaryDiffEqAlgorithm, isstandard,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqNewtonAlgorithm,
-    AbstractController, DEFAULT_PRECS,
+    DEFAULT_PRECS,
     CompiledFloats, uses_uprev,
     alg_cache, _vec, _reshape, @cache,
     isfsal, full_cache,
@@ -36,17 +36,7 @@ using LinearAlgebra: mul!, I
 import ArrayInterface
 using ArrayInterface: ismutable
 import OrdinaryDiffEqCore
-
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
-    @eval begin
-        import OrdinaryDiffEqCore: default_controller_v7,
-            legacy_default_controller
-    end
-else
-    @eval begin
-        import OrdinaryDiffEqCore: default_controller
-    end
-end
+import OrdinaryDiffEqCore: default_controller
 
 @static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.10"
     @eval begin
