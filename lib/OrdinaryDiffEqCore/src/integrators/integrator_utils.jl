@@ -193,7 +193,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 )
             end
         else # ==t, just save
-            if curt == integrator.sol.prob.tspan[2] && !integrator.opts.save_end
+            if skip_saveat_at_tspan_end(integrator, curt)
                 integrator.saveiter -= 1
                 continue
             end
@@ -207,23 +207,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                     integrator.u[integrator.opts.save_idxs], false
                 )
             end
-            if isdiscretealg(integrator.alg) || integrator.opts.dense
-                integrator.saveiter_dense += 1
-                if integrator.opts.dense
-                    if integrator.opts.save_idxs === nothing
-                        copyat_or_push!(
-                            integrator.sol.k, integrator.saveiter_dense,
-                            integrator.k
-                        )
-                    else
-                        copyat_or_push!(
-                            integrator.sol.k, integrator.saveiter_dense,
-                            [k[integrator.opts.save_idxs] for k in integrator.k],
-                            false
-                        )
-                    end
-                end
-            end
+            save_dense_at_t!(integrator)
             if is_composite_algorithm(integrator.alg)
                 copyat_or_push!(
                     integrator.sol.alg_choice, integrator.saveiter,
@@ -251,23 +235,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
             )
         end
         copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
-        if isdiscretealg(integrator.alg) || integrator.opts.dense
-            integrator.saveiter_dense += 1
-            if integrator.opts.dense
-                if integrator.opts.save_idxs === nothing
-                    copyat_or_push!(
-                        integrator.sol.k, integrator.saveiter_dense,
-                        integrator.k
-                    )
-                else
-                    copyat_or_push!(
-                        integrator.sol.k, integrator.saveiter_dense,
-                        [k[integrator.opts.save_idxs] for k in integrator.k],
-                        false
-                    )
-                end
-            end
-        end
+        save_dense_at_t!(integrator)
         if is_composite_algorithm(integrator.alg)
             copyat_or_push!(
                 integrator.sol.alg_choice, integrator.saveiter,
@@ -283,6 +251,36 @@ end
 function interp_at_saveat(Θ, integrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
     return ode_interpolant(Θ, integrator, idxs, deriv)
+end
+
+# Hook: skip saveat at tspan end when save_end=false.
+# Default (ODE): skip saving at tspan[2] when save_end=false.
+# Override for SDE: always save at explicit saveat times.
+function skip_saveat_at_tspan_end(integrator, curt)
+    curt == integrator.sol.prob.tspan[2] && !integrator.opts.save_end
+end
+
+# Hook: save dense output when saving at exact time t.
+# Default: track saveiter_dense and copy k vectors.
+# Override for SDE: no-op (SDE doesn't have dense output storage).
+function save_dense_at_t!(integrator)
+    if isdiscretealg(integrator.alg) || integrator.opts.dense
+        integrator.saveiter_dense += 1
+        if integrator.opts.dense
+            if integrator.opts.save_idxs === nothing
+                copyat_or_push!(
+                    integrator.sol.k, integrator.saveiter_dense,
+                    integrator.k
+                )
+            else
+                copyat_or_push!(
+                    integrator.sol.k, integrator.saveiter_dense,
+                    [k[integrator.opts.save_idxs] for k in integrator.k],
+                    false
+                )
+            end
+        end
+    end
 end
 
 # Hook: cleanup after savevalues. Override for SDE which has no k/kshortsize.

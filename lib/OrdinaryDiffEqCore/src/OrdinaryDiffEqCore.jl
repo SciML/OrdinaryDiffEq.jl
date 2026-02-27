@@ -182,6 +182,7 @@ public _savevalues!, _postamble!,
     post_step_reject!, on_u_modified_at_init!, post_apply_step!,
     interp_at_saveat, post_savevalues!, finalize_solution_storage!,
     finalize_endpoint!, on_callbacks_complete!, is_composite_cache,
-    is_composite_algorithm, final_progress
+    is_composite_algorithm, final_progress, skip_saveat_at_tspan_end,
+    save_dense_at_t!
 
 end
