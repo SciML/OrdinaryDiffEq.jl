@@ -174,22 +174,4 @@ include("enzyme_rules.jl")
 
 include("precompilation_setup.jl")
 
-# Public API for shared loop functions and hooks.
-# These are used by StochasticDiffEq to reuse ODE's time loop infrastructure
-# while overriding SDE-specific behavior via hook dispatch.
-public _savevalues!, _postamble!,
-    handle_callbacks!, handle_tstop!, solution_endpoint_match_cur_integrator!,
-    post_step_reject!, on_u_modified_at_init!, post_apply_step!,
-    interp_at_saveat, post_savevalues!, finalize_solution_storage!,
-    finalize_endpoint!, on_callbacks_complete!, is_composite_cache,
-    is_composite_algorithm, final_progress, skip_saveat_at_tspan_end,
-    save_dense_at_t!,
-    loopheader!, _loopfooter!,
-    handle_step_rejection!, loopfooter_reset!, handle_force_stepfail!,
-    isaposteriori, fixed_t_for_floatingpoint_error!,
-    increment_accept!, increment_reject!,
-    calc_dt_propose!, fix_dt_at_bounds!, modify_dt_for_tstops!,
-    log_step!, choose_algorithm!, update_uprev!,
-    alg_extrapolates
-
 end
