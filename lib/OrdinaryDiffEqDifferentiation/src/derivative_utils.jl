@@ -773,7 +773,8 @@ function update_W!(
                     cj = nlsolver.α * inv(dtgamma)
                     if lcache.W isa StaticWOperator
                         W = StaticWOperator(
-                            dae_jacobian2W(lcache.J, dae_jac.J_du, cj))
+                            dae_jacobian2W(lcache.J, dae_jac.J_du, cj)
+                        )
                     else
                         W = dae_jacobian2W(lcache.J, dae_jac.J_du, cj)
                         if !isa(W, Number)

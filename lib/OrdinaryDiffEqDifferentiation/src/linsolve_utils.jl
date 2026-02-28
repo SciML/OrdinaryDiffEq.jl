@@ -62,4 +62,3 @@ function wrapprecs(_Pl, _Pr, weight, u)
     return Pl, Pr
 end
 
-Base.resize!(p::LinearSolve.LinearCache, i) = p

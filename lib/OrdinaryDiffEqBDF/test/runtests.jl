@@ -15,9 +15,11 @@ if TEST_GROUP != "QA"
     @time @safetestset "BDF Regression Tests" include("bdf_regression_tests.jl")
 end
 
-# Run QA tests (JET, Aqua, AllocCheck) - skip on pre-release Julia
+# Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
+# Allocation tests must run before JET because JET's static analysis
+# invalidates compiled code and causes spurious runtime allocations.
 if TEST_GROUP != "FUNCTIONAL" && isempty(VERSION.prerelease)
+    @time @safetestset "Allocation Tests" include("allocation_tests.jl")
     @time @safetestset "JET Tests" include("jet.jl")
     @time @safetestset "Aqua" include("qa.jl")
-    @time @safetestset "Allocation Tests" include("allocation_tests.jl")
 end

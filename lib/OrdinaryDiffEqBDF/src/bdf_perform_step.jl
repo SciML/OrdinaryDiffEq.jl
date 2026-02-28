@@ -1542,8 +1542,19 @@ function perform_step!(
         end
     end
 
-    f(integrator.fsallast, u, p, tdt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    # Compute fsallast algebraically from NL solver convergence condition:
+    #   f(u) = α*invγdt*u - nlsolver.tmp           (mass_matrix === I)
+    #   f(u) = α*invγdt*(M*u) - nlsolver.tmp       (mass_matrix !== I)
+    # This avoids calling f() through FunctionWrapper dispatch which can allocate.
+    invγdt = inv(nlsolver.γ * dt)
+    if mass_matrix === I
+        @.. integrator.fsallast =
+            nlsolver.α * invγdt * u - nlsolver.tmp
+    else
+        mul!(terkp1_tmp, mass_matrix, u)
+        @.. integrator.fsallast =
+            nlsolver.α * invγdt * terkp1_tmp - nlsolver.tmp
+    end
     if integrator.opts.calck
         # Store dense output data: k[1]=u_new at Θ=1, k[1+j]=u_history[:,j]
         half = max_order + 1

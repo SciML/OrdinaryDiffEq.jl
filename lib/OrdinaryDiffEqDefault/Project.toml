@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqDefault"
 uuid = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.12.0"
+version = "1.13.0"
 
 [deps]
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"

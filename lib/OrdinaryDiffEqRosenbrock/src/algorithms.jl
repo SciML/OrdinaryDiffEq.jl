@@ -155,7 +155,8 @@ struct HybridExplicitImplicitRK{TabType, CS, AD, F, P, FDT, ST, CJ, StepLimiter,
     autodiff::AD
 end
 
-function HybridExplicitImplicitRK(tab;
+function HybridExplicitImplicitRK(
+        tab;
         order,
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -187,7 +188,8 @@ function HybridExplicitImplicitRK(;
         precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
         stage_limiter! = trivial_limiter!
     )
-    return HybridExplicitImplicitRK(tab;
+    return HybridExplicitImplicitRK(
+        tab;
         order, chunk_size, autodiff, standardtag, concrete_jac,
         diff_type, linsolve, precs, step_limiter!, stage_limiter!
     )

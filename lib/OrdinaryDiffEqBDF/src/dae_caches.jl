@@ -212,7 +212,7 @@ end
 
 @cache mutable struct DFBDFCache{
         MO, N, rateType, uNoUnitsType, tsType, tType, uType,
-        uuType, coeffType, EEstType, rType, wType,
+        uuType, coeffType, EEstType, rType, wType, fdWeightsType,
     } <:
     DAEBDFMutableCache
     fsalfirst::rateType
@@ -243,6 +243,7 @@ end
     equi_ts::tsType
     iters_from_event::Int
     dense::Vector{uType}
+    fd_weights::fdWeightsType
 end
 
 function alg_cache(
@@ -301,10 +302,12 @@ function alg_cache(
 
     dense = [zero(u) for _ in 1:(2 * (max_order + 1))]
 
+    fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
+
     return DFBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event, dense
+        iters_from_event, dense, fd_weights
     )
 end

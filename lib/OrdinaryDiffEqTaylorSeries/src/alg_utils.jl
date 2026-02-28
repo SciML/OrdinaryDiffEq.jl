@@ -38,6 +38,8 @@ end
 @inline sym_unwrap_taylor(x, ::Type{T}) where {T} = x
 
 function build_jet(f::ODEFunction{iip}, p, order, length = nothing) where {iip}
+    # Unwrap FunctionWrappers since TaylorDiff/Symbolics types don't match wrapper signatures
+    f = unwrapped_f(f)
     return build_jet(f, Val{iip}(), p, order, length)
 end
 
@@ -85,8 +87,14 @@ function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, 
         jet_coeffs = build_function(coeffs_matrix, u0, t0; expression = Val(false), cse = true)
         # Wrap to return array of TaylorScalars
         jet = (
-            jet_coeffs[1], (out, u0_val, t0_val) -> begin
-                coeffs_out = jet_coeffs[2](similar(coeffs_matrix, eltype(u0_val)), u0_val, t0_val)
+            (u0_val, t0_val) -> begin
+                coeffs_out = jet_coeffs[1](u0_val, t0_val)
+                return [TaylorScalar(Tuple(coeffs_out[i, :])) for i in 1:n]
+            end,
+            (out, u0_val, t0_val) -> begin
+                coeffs_out = jet_coeffs[2](
+                    similar(coeffs_matrix, eltype(u0_val)), u0_val, t0_val
+                )
                 for i in 1:n
                     out[i] = TaylorScalar(Tuple(coeffs_out[i, :]))
                 end

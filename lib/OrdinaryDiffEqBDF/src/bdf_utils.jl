@@ -111,9 +111,10 @@ end
 
 #This code refers to https://epubs.siam.org/doi/abs/10.1137/S0036144596322507
 #Compute all derivatives through k of the polynomials of k+1 points
-function calc_finite_difference_weights(ts, t, order, ::Val{N}) where {N}
-    max_order = N
-    c = zero(MMatrix{max_order + 1, max_order + 1, eltype(ts)})
+
+# In-place version: writes into pre-allocated matrix c
+function calc_finite_difference_weights!(c, ts, t, order)
+    fill!(c, zero(eltype(c)))
     c1 = one(t)
     c4 = ts[1] - t
     c[1, 1] = one(t)
@@ -137,6 +138,13 @@ function calc_finite_difference_weights(ts, t, order, ::Val{N}) where {N}
         end
         c1 = c2
     end
+    return c
+end
+
+function calc_finite_difference_weights(ts, t, order, ::Val{N}) where {N}
+    max_order = N
+    c = zero(MMatrix{max_order + 1, max_order + 1, eltype(ts)})
+    calc_finite_difference_weights!(c, ts, t, order)
     return SArray(c)
 end
 
@@ -208,9 +216,9 @@ end
 
 function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order}
     #calculate hᵏ⁻¹yᵏ⁻¹
-    (; ts_tmp, terk_tmp, u_history) = cache
+    (; ts_tmp, terk_tmp, u_history, fd_weights) = cache
     (; t, dt, u) = integrator
-    fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 1, Val(max_order))
+    calc_finite_difference_weights!(fd_weights, ts_tmp, t + dt, k - 1)
     @.. broadcast = false terk_tmp = fd_weights[1, k] * u
     for i in 2:k
         @.. broadcast = false terk_tmp += fd_weights[i, k] * u_history[i - 1]

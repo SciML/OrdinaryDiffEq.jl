@@ -667,7 +667,7 @@ end
 
 @cache mutable struct FBDFCache{
         MO, N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
-        coeffType, EEstType, rType, wType, StepLimiter,
+        coeffType, EEstType, rType, wType, StepLimiter, fdWeightsType,
     } <:
     BDFMutableCache
     fsalfirst::rateType
@@ -699,6 +699,7 @@ end
     iters_from_event::Int
     dense::Vector{uType}
     step_limiter!::StepLimiter
+    fd_weights::fdWeightsType
 end
 
 @truncate_stacktrace FBDFCache 1
@@ -757,10 +758,12 @@ function alg_cache(
 
     dense = [zero(u) for _ in 1:(2 * (max_order + 1))]
 
+    fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
+
     return FBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event, dense, alg.step_limiter!
+        iters_from_event, dense, alg.step_limiter!, fd_weights
     )
 end

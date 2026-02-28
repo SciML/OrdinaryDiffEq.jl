@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqBDF"
 uuid = "6ad6398a-0878-4a85-9266-38940aa047c8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.21.0"
+version = "1.22.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"

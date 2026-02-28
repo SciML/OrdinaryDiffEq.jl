@@ -69,13 +69,13 @@ function f_dae_linear_jac_u_iip(J, du, u, p, t)
     fill!(J, 0)
     J[1, 1] = -1.0
     J[2, 2] = -1.0
-    nothing
+    return nothing
 end
 function f_dae_linear_jac_du_iip(J, du, u, p, t)
     fill!(J, 0)
     J[1, 1] = 1.0
     J[2, 2] = 1.0
-    nothing
+    return nothing
 end
 prob_dae_linear_iip_sep = DAEProblem(
     DAEFunction(

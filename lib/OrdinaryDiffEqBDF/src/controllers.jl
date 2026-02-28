@@ -173,7 +173,7 @@ function choose_order!(
         ::Val{max_order}
     ) where {max_order}
     (; t, dt, u, cache, uprev) = integrator
-    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history) = cache
+    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
     k = cache.order
     # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
     if k < max_order && integrator.cache.qwait == 0 &&
@@ -189,9 +189,8 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            fd_weights = calc_finite_difference_weights(
-                ts_tmp, t + dt, k - 2,
-                Val(max_order)
+            calc_finite_difference_weights!(
+                fd_weights, ts_tmp, t + dt, k - 2
             )
             @.. broadcast = false terk_tmp = fd_weights[k - 2, 1] * u
             for i in 2:(k - 2)
@@ -336,7 +335,7 @@ function choose_order!(
         ::Val{max_order}
     ) where {max_order}
     (; t, dt, u, cache, uprev) = integrator
-    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history) = cache
+    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
     k = cache.order
     # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
     if k < max_order && integrator.cache.qwait == 0 &&
@@ -352,9 +351,8 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            fd_weights = calc_finite_difference_weights(
-                ts_tmp, t + dt, k - 2,
-                Val(max_order)
+            calc_finite_difference_weights!(
+                fd_weights, ts_tmp, t + dt, k - 2
             )
             @.. broadcast = false terk_tmp = fd_weights[k - 2, 1] * u
             for i in 2:(k - 2)
