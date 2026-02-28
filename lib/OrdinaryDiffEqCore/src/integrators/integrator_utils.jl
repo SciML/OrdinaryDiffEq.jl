@@ -81,20 +81,22 @@ function apply_step!(integrator)
         error("The current setup does not allow for changing dt.")
     end
 
-    # Shorten dt to hit the next tstop before any post-step work that depends on
-    # the final dt value (e.g. SDE noise process acceptance via post_apply_step!).
-    # loopheader! also calls this unconditionally afterward, which is a harmless
-    # no-op on the accept path since dt was already adjusted here.
+    update_fsal!(integrator)
+
+    # Shorten dt to hit the next tstop after update_fsal!, which for DDEs calls
+    # handle_discontinuities! using integrator.dt to track propagated discontinuities
+    # in the interval [t, t+dt]. Must come after update_fsal! but before
+    # post_apply_step! so that SDE noise acceptance sees the tstop-adjusted dt.
     modify_dt_for_tstops!(integrator)
 
     post_apply_step!(integrator)
     return nothing
 end
 
-# Hook: called at the end of apply_step! after dt is updated and tstops applied.
-# Default: update FSAL evaluations (ODE behavior).
+# Hook: called at the end of apply_step! after dt is updated, FSAL evaluated,
+# and tstops applied. Default: no-op for ODE (update_fsal! already called above).
 # Override for SDE: noise acceptance, RSWM dt readback, sqdt update.
-post_apply_step!(integrator) = update_fsal!(integrator)
+post_apply_step!(integrator) = nothing
 
 function update_fsal!(integrator)
     return if has_discontinuity(integrator) &&
