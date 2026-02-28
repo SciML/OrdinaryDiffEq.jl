@@ -67,7 +67,7 @@ jobs:
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
           projects: ${{ matrix.project }}
-          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation,NonlinearSolve,NonlinearSolveBase,NonlinearSolveFirstOrder,DifferentiationInterface,SciMLOperators
+          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation
           julia_version: ${{ matrix.julia-version }}
       - uses: julia-actions/julia-buildpkg@v1
         with:
@@ -78,4 +78,3 @@ jobs:
           ALLOW_RERESOLVE: false
         env:
           ODEDIFFEQ_TEST_GROUP: FUNCTIONAL
-          JULIA_PKG_SERVER_REGISTRY_PREFERENCE: conservative
