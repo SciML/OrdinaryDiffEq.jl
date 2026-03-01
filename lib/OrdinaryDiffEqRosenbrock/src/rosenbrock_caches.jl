@@ -126,7 +126,6 @@ end
     algebraic_vars::AV
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
-    jac_reuse::JacReuseState
 end
 
 @cache mutable struct Rosenbrock32Cache{
@@ -162,7 +161,6 @@ end
     algebraic_vars::AV
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
-    jac_reuse::JacReuseState
 end
 
 function alg_cache(
@@ -214,14 +212,12 @@ function alg_cache(
     algebraic_vars = f.mass_matrix === I ? nothing :
         [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-    jac_reuse = JacReuseState(zero(dt))
-
     return Rosenbrock23Cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
-        alg.stage_limiter!, jac_reuse
+        alg.stage_limiter!
     )
 end
 
@@ -276,13 +272,10 @@ function alg_cache(
     algebraic_vars = f.mass_matrix === I ? nothing :
         [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-    jac_reuse = JacReuseState(zero(dt))
-
     return Rosenbrock32Cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
         tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
-        grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!,
-        jac_reuse
+        grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!
     )
 end
 
@@ -296,15 +289,14 @@ struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
     W::WType
     linsolve::F
     autodiff::AD
-    jac_reuse::JacReuseState
 end
 
 function Rosenbrock23ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff, jac_reuse
+        ::Type{T}, tf, uf, J, W, linsolve, autodiff
     ) where {T}
     tab = Rosenbrock23Tableau(T)
     return Rosenbrock23ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff, jac_reuse
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff
     )
 end
 
@@ -319,10 +311,9 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
-    jac_reuse = JacReuseState(zero(dt))
     return Rosenbrock23ConstantCache(
         constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg), jac_reuse
+        alg_autodiff(alg)
     )
 end
 
@@ -336,15 +327,14 @@ struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <:
     W::WType
     linsolve::F
     autodiff::AD
-    jac_reuse::JacReuseState
 end
 
 function Rosenbrock32ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff, jac_reuse
+        ::Type{T}, tf, uf, J, W, linsolve, autodiff
     ) where {T}
     tab = Rosenbrock32Tableau(T)
     return Rosenbrock32ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff, jac_reuse
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff
     )
 end
 
@@ -359,10 +349,9 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
-    jac_reuse = JacReuseState(zero(dt))
     return Rosenbrock32ConstantCache(
         constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg), jac_reuse
+        alg_autodiff(alg)
     )
 end
 
