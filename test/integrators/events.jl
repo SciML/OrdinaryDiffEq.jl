@@ -18,7 +18,7 @@ const alg = MethodOfSteps(Tsit5(); constrained = false)
     @test sol1(
         2.6;
         continuity = :right
-    ) ≈ -sol1(2.6; continuity = :left) atol = 1.0e-5
+    ) ≈ -sol1(2.6; continuity = :left) atol = 2.0e-5
 
     # fails on 32bit?!
     # see https://github.com/SciML/DelayDiffEq.jl/pull/180

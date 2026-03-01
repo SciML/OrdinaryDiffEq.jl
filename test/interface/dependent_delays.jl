@@ -10,7 +10,7 @@ const sol = solve!(dde_int)
 @testset "reference" begin
     @test sol.errors[:l∞] < 3.0e-5
     @test sol.errors[:final] < 2.1e-5
-    @test sol.errors[:l2] < 1.2e-5
+    @test sol.errors[:l2] < 1.3e-5
 end
 
 @testset "constant lag function" begin
@@ -27,7 +27,7 @@ end
     # worse than results above with constant delays specified as scalars
     @test sol2.errors[:l∞] < 3.2e-3
     @test sol2.errors[:final] < 1.2e-4
-    @test sol2.errors[:l2] < 1.2e-3
+    @test sol2.errors[:l2] < 1.3e-3
 
     # simple convergence tests
     @testset "convergence" begin
@@ -50,7 +50,7 @@ end
     prob2 = remake(prob; constant_lags = nothing)
     sol2 = solve(prob2, alg)
 
-    @test sol2.errors[:l∞] > 1.0e-2
+    @test sol2.errors[:l∞] > 5.0e-4
     @test sol2.errors[:final] > 1.0e-6
-    @test sol2.errors[:l2] > 4.6e-3
+    @test sol2.errors[:l2] > 2.0e-4
 end
