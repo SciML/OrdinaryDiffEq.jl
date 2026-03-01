@@ -665,6 +665,7 @@ function SciMLBase.__init(
         typeof(last_event_error), typeof(callback_cache),
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
+        Nothing, Nothing, Nothing,
     }(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
@@ -687,7 +688,8 @@ function SciMLBase.__init(
         isout, reeval_fsal,
         u_modified, reinitiailize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast, _rng
+        fsalfirst, fsallast, _rng,
+        nothing, nothing, nothing
     )
 
     if initialize_integrator

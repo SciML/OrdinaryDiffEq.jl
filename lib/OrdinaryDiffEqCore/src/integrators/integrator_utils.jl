@@ -1,3 +1,15 @@
+# Noise interface functions — no-ops when W/P are nothing (pure ODE).
+# StochasticDiffEq extends these with methods for NoiseProcess types.
+accept_noise!(::Nothing, args...) = nothing
+reject_noise!(::Nothing, args...) = nothing
+save_noise!(::Nothing) = nothing
+noise_curt(::Nothing) = nothing
+is_noise_saveable(::Nothing) = false
+
+# Trait: does the solution type support dense output k-array storage?
+# True for ODESolution (has sol.k), false for RODESolution/DAESolution (no sol.k).
+@inline _has_ks(integrator) = hasfield(typeof(integrator.sol), :k)
+
 function save_idxsinitialize(
         integrator, cache::OrdinaryDiffEqCache,
         ::Type{uType}
@@ -42,9 +54,7 @@ function loopheader!(integrator)
     return nothing
 end
 
-# Hook: handles step rejection in loopheader.
-# Default ODE behavior: log rejection, adjust dt, and call post_step_reject!.
-# Override for SDE: noise rejection via dtnew intermediate + reject_step!.
+# Handles step rejection in loopheader: adjust dt, reject noise, and call post_step_reject!.
 function handle_step_rejection!(integrator)
     @SciMLMessage(
         lazy"Step rejected: t = $(integrator.t), EEst = $(integrator.EEst)",
@@ -55,14 +65,22 @@ function handle_step_rejection!(integrator)
     elseif !integrator.force_stepfail
         step_reject_controller!(integrator, integrator.alg)
     end
+    # Noise rejection (no-op when W/P are nothing for pure ODE)
+    if !isnothing(integrator.W)
+        fix_dt_at_bounds!(integrator)
+        modify_dt_for_tstops!(integrator)
+        reject_noise!(integrator.W, integrator.dt, integrator.u, integrator.p)
+        reject_noise!(integrator.P, integrator.dt, integrator.u, integrator.p)
+        integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
+    end
     return post_step_reject!(integrator)
 end
 
-# Hook: called after step rejection handling. Override for DDE discontinuity handling.
+# Called after step rejection handling. Override for DDE discontinuity handling.
 post_step_reject!(integrator) = nothing
 
-# Hook: called at iter==0 when u was modified by callbacks during init.
-# Override for SDE which doesn't have FSAL or DAE re-initialization.
+# Called at iter==0 when u was modified by callbacks during init.
+# For SDE: isdae=false skips DAE re-init; isfsal=false makes update_fsal! a no-op.
 function on_u_modified_at_init!(integrator)
     if integrator.isdae
         DiffEqBase.initialize_dae!(integrator)
@@ -86,17 +104,19 @@ function apply_step!(integrator)
     # Shorten dt to hit the next tstop after update_fsal!, which for DDEs calls
     # handle_discontinuities! using integrator.dt to track propagated discontinuities
     # in the interval [t, t+dt]. Must come after update_fsal! but before
-    # post_apply_step! so that SDE noise acceptance sees the tstop-adjusted dt.
+    # noise acceptance so that SDE noise sees the tstop-adjusted dt.
     modify_dt_for_tstops!(integrator)
 
-    post_apply_step!(integrator)
+    # Noise acceptance (no-op when W/P are nothing for pure ODE)
+    accept_noise!(integrator.W, integrator.dt, integrator.u, integrator.p, true)
+    accept_noise!(integrator.P, integrator.dt, integrator.u, integrator.p, true)
+    if !isnothing(integrator.W)
+        integrator.dt = integrator.W.dt  # RSWM readback
+        integrator.sqdt = @fastmath integrator.tdir * sqrt(abs(integrator.dt))
+    end
+
     return nothing
 end
-
-# Hook: called at the end of apply_step! after dt is updated, FSAL evaluated,
-# and tstops applied. Default: no-op for ODE (update_fsal! already called above).
-# Override for SDE: noise acceptance, RSWM dt readback, sqdt update.
-post_apply_step!(integrator) = nothing
 
 function update_fsal!(integrator)
     return if has_discontinuity(integrator) &&
@@ -271,24 +291,44 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
     return saved, savedexactly
 end
 
-# Hook: interpolation at saveat points. Override for SDE to use linear interpolation.
+# Interpolation at saveat points.
+# ODE (opts.dense = true): polynomial interpolation via addsteps!/ode_interpolant.
+# SDE (opts.dense = false): linear interpolation between uprev and u.
 function interp_at_saveat(Θ, integrator, idxs, deriv)
-    SciMLBase.addsteps!(integrator)
-    return ode_interpolant(Θ, integrator, idxs, deriv)
+    if integrator.opts.dense
+        SciMLBase.addsteps!(integrator)
+        return ode_interpolant(Θ, integrator, idxs, deriv)
+    else
+        return linear_interpolant(Θ, integrator, idxs, deriv)
+    end
 end
 
-# Hook: skip saveat at tspan end when save_end=false.
-# Default (ODE): skip saving at tspan[2] when save_end=false.
-# Override for SDE: always save at explicit saveat times.
+# Linear interpolation: (1 - Θ) * uprev + Θ * u
+@inline function linear_interpolant(Θ, integrator, idxs::Nothing, ::Type{Val{0}})
+    return @. (1 - Θ) * integrator.uprev + Θ * integrator.u
+end
+@inline function linear_interpolant(Θ, integrator, idxs, ::Type{Val{0}})
+    return @. (1 - Θ) * integrator.uprev[idxs] + Θ * integrator.u[idxs]
+end
+@inline function linear_interpolant(Θ, integrator, idxs::Nothing, ::Type{Val{1}})
+    return @. (integrator.u - integrator.uprev) / integrator.dt
+end
+@inline function linear_interpolant(Θ, integrator, idxs, ::Type{Val{1}})
+    return @. (integrator.u[idxs] - integrator.uprev[idxs]) / integrator.dt
+end
+
+# Skip saveat at tspan end when save_end=false.
+# ODE: skip saving at tspan[2] when save_end=false.
+# SDE: always save at explicit saveat times (never skip).
 function skip_saveat_at_tspan_end(integrator, curt)
-    return curt == integrator.sol.prob.tspan[2] && !integrator.opts.save_end
+    return isnothing(integrator.W) && curt == integrator.sol.prob.tspan[2] &&
+        !integrator.opts.save_end
 end
 
-# Hook: save dense output when saving at exact time t.
-# Default: track saveiter_dense and copy k vectors.
-# Override for SDE: no-op (SDE doesn't have dense output storage).
+# Save dense output when saving at exact time t.
+# Only stores k-array data when the solution supports it (_has_ks).
 function save_dense_at_t!(integrator)
-    return if isdiscretealg(integrator.alg) || integrator.opts.dense
+    return if (isdiscretealg(integrator.alg) || integrator.opts.dense) && _has_ks(integrator)
         integrator.saveiter_dense += 1
         if integrator.opts.dense
             if integrator.opts.save_idxs === nothing
@@ -307,8 +347,12 @@ function save_dense_at_t!(integrator)
     end
 end
 
-# Hook: cleanup after savevalues. Override for SDE which has no k/kshortsize.
-post_savevalues!(integrator, reduce_size) = reduce_size && resize!(integrator.k, integrator.kshortsize)
+# Cleanup after savevalues: resize k for dense output storage.
+# No-op when solution lacks k-array storage (SDE/RODE).
+function post_savevalues!(integrator, reduce_size)
+    return reduce_size && integrator.opts.dense && _has_ks(integrator) &&
+        resize!(integrator.k, integrator.kshortsize)
+end
 
 # Want to extend postamble! for DDEIntegrator
 postamble!(integrator::ODEIntegrator) = _postamble!(integrator)
@@ -325,16 +369,24 @@ function _postamble!(integrator)
     return nothing
 end
 
-# Hook: finalize solution storage in postamble.
-# Default: resize dense output arrays.
-# Override for SDE: noise saving.
+# Finalize solution storage in postamble: resize arrays, save noise.
 function finalize_solution_storage!(integrator)
     sizehint!(integrator.sol.t, integrator.saveiter)
     sizehint!(integrator.sol.u, integrator.saveiter)
-    if !(integrator.sol isa DAESolution)
+    # Dense output arrays (only when solution has k-array storage)
+    if integrator.opts.dense && _has_ks(integrator) && !(integrator.sol isa DAESolution)
         resize!(integrator.sol.k, integrator.saveiter_dense)
         sizehint!(integrator.sol.k, integrator.saveiter_dense)
     end
+    # Noise finalization (SDE only)
+    if !isnothing(integrator.W) && noise_curt(integrator.W) != integrator.t
+        accept_noise!(integrator.W, integrator.dt, integrator.u, integrator.p, false)
+        accept_noise!(integrator.P, integrator.dt, integrator.u, integrator.p, false)
+    end
+    if is_noise_saveable(integrator.W) && !integrator.W.save_everystep
+        save_noise!(integrator.W)
+    end
+    return nothing
 end
 
 function final_progress(integrator)
@@ -372,7 +424,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
                 integrator.u[integrator.opts.save_idxs], false
             )
         end
-        if isdiscretealg(integrator.alg) || integrator.opts.dense
+        if (isdiscretealg(integrator.alg) || integrator.opts.dense) && _has_ks(integrator)
             integrator.saveiter_dense += 1
             if integrator.opts.dense
                 if integrator.opts.save_idxs === nothing
@@ -399,8 +451,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
     end
 end
 
-# Hook: called at the end of solution_endpoint_match_cur_integrator!
-# Default: save final discretes. Override for SDE: noise acceptance + noise saving.
+# Called at the end of solution_endpoint_match_cur_integrator!: save final discretes.
 function finalize_endpoint!(integrator)
     return SciMLBase.save_final_discretes!(integrator, integrator.opts.callback)
 end
@@ -494,9 +545,8 @@ is_composite_cache(cache) = cache isa CompositeCache
 # Trait: is this a composite algorithm? Override to include SDE composite algorithms.
 is_composite_algorithm(alg) = alg isa OrdinaryDiffEqCompositeAlgorithm
 
-# Hook: reset integrator flags at the start of loopfooter.
-# Default (ODE): reset reeval_fsal and u_modified flags.
-# Override for SDE: no-op (SDE has no reeval_fsal; u_modified handled by callbacks).
+# Reset integrator flags at the start of loopfooter.
+# For SDE, reeval_fsal is always false so resetting is a no-op.
 function loopfooter_reset!(integrator)
     # Carry-over from callback
     # This is set to true if u_modified requires callback FSAL reset
@@ -505,9 +555,8 @@ function loopfooter_reset!(integrator)
     return integrator.u_modified = false
 end
 
-# Hook: handle force_stepfail in adaptive mode within loopfooter.
-# Default (ODE): call post_newton_controller! to reduce dt after Newton failure.
-# Override for SDE: set dtnew = dt / failfactor.
+# Handle force_stepfail in adaptive mode: reduce dt after Newton failure.
+# post_newton_controller! does dt = dt / failfactor, which works for both ODE and SDE.
 handle_force_stepfail!(integrator) = post_newton_controller!(integrator, integrator.alg)
 
 function increment_accept!(stats)
@@ -619,11 +668,17 @@ function handle_callbacks!(integrator)
     return nothing
 end
 
-# Hook: called after all callbacks have been applied.
-# Default: trigger FSAL re-evaluation and DDE discontinuity handling.
-# Override for SDE: Poisson rate update.
+# Called after all callbacks have been applied.
+# ODE/FSAL: trigger FSAL re-evaluation and DDE discontinuity handling.
+# SDE: Poisson rate update when u is modified.
 function on_callbacks_complete!(integrator)
-    return integrator.reeval_fsal && handle_callback_modifiers!(integrator)
+    if isfsal(integrator.alg)
+        integrator.reeval_fsal && handle_callback_modifiers!(integrator)
+    elseif integrator.u_modified && !isnothing(integrator.W)
+        integrator.do_error_check = false
+        handle_callback_modifiers!(integrator)
+    end
+    return nothing
 end
 
 function update_uprev!(integrator)
