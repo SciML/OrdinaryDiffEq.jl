@@ -6,6 +6,11 @@ save_noise!(::Nothing) = nothing
 noise_curt(::Nothing) = nothing
 is_noise_saveable(::Nothing) = false
 
+# Noise field accessors — safe for any integrator type.
+# ODEIntegrator has W/P/sqdt; other integrators (DDEIntegrator) don't.
+@inline _get_W(integrator) = hasfield(typeof(integrator), :W) ? getfield(integrator, :W) : nothing
+@inline _get_P(integrator) = hasfield(typeof(integrator), :P) ? getfield(integrator, :P) : nothing
+
 # Trait: does the solution type support dense output k-array storage?
 # True for ODESolution (has sol.k), false for RODESolution/DAESolution (no sol.k).
 @inline _has_ks(integrator) = hasfield(typeof(integrator.sol), :k)
@@ -66,11 +71,12 @@ function handle_step_rejection!(integrator)
         step_reject_controller!(integrator, integrator.alg)
     end
     # Noise rejection (no-op when W/P are nothing for pure ODE)
-    if !isnothing(integrator.W)
+    W = _get_W(integrator)
+    if !isnothing(W)
         fix_dt_at_bounds!(integrator)
         modify_dt_for_tstops!(integrator)
-        reject_noise!(integrator.W, integrator.dt, integrator.u, integrator.p)
-        reject_noise!(integrator.P, integrator.dt, integrator.u, integrator.p)
+        reject_noise!(W, integrator.dt, integrator.u, integrator.p)
+        reject_noise!(_get_P(integrator), integrator.dt, integrator.u, integrator.p)
         integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
     end
     return post_step_reject!(integrator)
@@ -108,10 +114,11 @@ function apply_step!(integrator)
     modify_dt_for_tstops!(integrator)
 
     # Noise acceptance (no-op when W/P are nothing for pure ODE)
-    accept_noise!(integrator.W, integrator.dt, integrator.u, integrator.p, true)
-    accept_noise!(integrator.P, integrator.dt, integrator.u, integrator.p, true)
-    if !isnothing(integrator.W)
-        integrator.dt = integrator.W.dt  # RSWM readback
+    W = _get_W(integrator)
+    accept_noise!(W, integrator.dt, integrator.u, integrator.p, true)
+    accept_noise!(_get_P(integrator), integrator.dt, integrator.u, integrator.p, true)
+    if !isnothing(W)
+        integrator.dt = W.dt  # RSWM readback
         integrator.sqdt = @fastmath integrator.tdir * sqrt(abs(integrator.dt))
     end
 
@@ -321,7 +328,7 @@ end
 # ODE: skip saving at tspan[2] when save_end=false.
 # SDE: always save at explicit saveat times (never skip).
 function skip_saveat_at_tspan_end(integrator, curt)
-    return isnothing(integrator.W) && curt == integrator.sol.prob.tspan[2] &&
+    return isnothing(_get_W(integrator)) && curt == integrator.sol.prob.tspan[2] &&
         !integrator.opts.save_end
 end
 
@@ -379,12 +386,13 @@ function finalize_solution_storage!(integrator)
         sizehint!(integrator.sol.k, integrator.saveiter_dense)
     end
     # Noise finalization (SDE only)
-    if !isnothing(integrator.W) && noise_curt(integrator.W) != integrator.t
-        accept_noise!(integrator.W, integrator.dt, integrator.u, integrator.p, false)
-        accept_noise!(integrator.P, integrator.dt, integrator.u, integrator.p, false)
+    W = _get_W(integrator)
+    if !isnothing(W) && noise_curt(W) != integrator.t
+        accept_noise!(W, integrator.dt, integrator.u, integrator.p, false)
+        accept_noise!(_get_P(integrator), integrator.dt, integrator.u, integrator.p, false)
     end
-    if is_noise_saveable(integrator.W) && !integrator.W.save_everystep
-        save_noise!(integrator.W)
+    if is_noise_saveable(W) && !W.save_everystep
+        save_noise!(W)
     end
     return nothing
 end
@@ -674,7 +682,7 @@ end
 function on_callbacks_complete!(integrator)
     if isfsal(integrator.alg)
         integrator.reeval_fsal && handle_callback_modifiers!(integrator)
-    elseif integrator.u_modified && !isnothing(integrator.W)
+    elseif integrator.u_modified && !isnothing(_get_W(integrator))
         integrator.do_error_check = false
         handle_callback_modifiers!(integrator)
     end
