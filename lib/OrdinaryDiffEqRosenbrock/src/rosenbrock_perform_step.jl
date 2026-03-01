@@ -437,6 +437,90 @@ end
     return nothing
 end
 
+#### Rodas4 type method — Helper functions for type-dispatched update logic
+# These helpers avoid value-based branching on tableau_b/tableau_btilde,
+# which Julia 1.11 cannot narrow through inference in large functions.
+
+# IIP: Update u and du after stage loop, dispatched on tableau type
+@inline function _rosenbrock_update_result!(
+        u, du, uprev, ks, A, tab::RodasTableau, alg
+    )
+    if alg isa Rodas6P
+        du .= ks[16]
+        u .= uprev
+        for i in 1:15
+            @.. u += A[16, i] * ks[i]
+        end
+        u .+= ks[16]
+    else
+        du .= ks[end]
+        u .+= ks[end]
+    end
+end
+
+@inline function _rosenbrock_update_result!(
+        u, du, uprev, ks, A, tab::RosenbrockUnifiedTableau, alg
+    )
+    u .= uprev
+    for i in eachindex(ks)
+        if !iszero(tab.b[i])
+            @.. u += tab.b[i] * ks[i]
+        end
+    end
+    if tab.btilde !== nothing
+        du .= 0
+        for i in eachindex(ks)
+            if !iszero(tab.btilde[i])
+                @.. du += tab.btilde[i] * ks[i]
+            end
+        end
+    end
+end
+
+# OOP: Update u and du after stage loop, dispatched on tableau type
+@inline function _rosenbrock_update_result(
+        u, du, uprev, ks, A, tab::RodasTableau, alg, num_stages
+    )
+    if alg isa Rodas6P
+        du_new = ks[16]
+        u_new = uprev
+        for i in 1:15
+            u_new = @.. u_new + A[16, i] * ks[i]
+        end
+        u_new = u_new .+ ks[16]
+        return u_new, du_new
+    else
+        du_new = ks[num_stages]
+        u_new = u .+ ks[num_stages]
+        return u_new, du_new
+    end
+end
+
+@inline function _rosenbrock_update_result(
+        u, du, uprev, ks, A, tab::RosenbrockUnifiedTableau, alg, num_stages
+    )
+    u_new = copy(uprev)
+    for i in 1:num_stages
+        if !iszero(tab.b[i])
+            u_new = @.. u_new + tab.b[i] * ks[i]
+        end
+    end
+    du_new = du
+    if tab.btilde !== nothing
+        du_new = zero(uprev)
+        for i in 1:num_stages
+            if !iszero(tab.btilde[i])
+                du_new = @.. du_new + tab.btilde[i] * ks[i]
+            end
+        end
+    end
+    return u_new, du_new
+end
+
+# Whether error estimate should be computed (Rodas encoding always computes error)
+@inline _rosenbrock_should_est_error(::RodasTableau) = true
+@inline _rosenbrock_should_est_error(tab::RosenbrockUnifiedTableau) = tab.btilde !== nothing
+
 #### Rodas4 type method
 
 function initialize!(integrator, cache::RosenbrockCombinedConstantCache)
@@ -506,38 +590,7 @@ end
         ks = Base.setindex(ks, _reshape(W \ -_vec(linsolve_tmp), axes(uprev)), stage)
         integrator.stats.nsolve += 1
     end
-    tab_b = tableau_b(cache.tab)
-    tab_btilde = tableau_btilde(cache.tab)
-    if tab_b !== nothing
-        # Explicit b weights: u = uprev + sum(b[i]*ks[i])
-        u = copy(uprev)
-        for i in 1:num_stages
-            if !iszero(tab_b[i])
-                u = @.. u + tab_b[i] * ks[i]
-            end
-        end
-        # Error estimate: du = sum(btilde[i]*ks[i])
-        if tab_btilde !== nothing
-            du = zero(uprev)
-            for i in 1:num_stages
-                if !iszero(tab_btilde[i])
-                    du = @.. du + tab_btilde[i] * ks[i]
-                end
-            end
-        end
-    elseif (integrator.alg isa Rodas6P)
-        # Rodas encoding with special Rodas6P layout
-        du = ks[16]
-        u = uprev
-        for i in 1:15
-            u = @.. u + A[16, i] * ks[i]
-        end
-        u = u .+ ks[16]
-    else
-        # Rodas encoding: du = ks[end], u += ks[end]
-        du = ks[num_stages]
-        u = u .+ ks[num_stages]
-    end
+    u, du = _rosenbrock_update_result(u, du, uprev, ks, A, cache.tab, integrator.alg, num_stages)
 
     if integrator.opts.adaptive
         if (integrator.alg isa Rodas5Pe)
@@ -546,7 +599,7 @@ end
                 -0.7931985603795049 * ks[5] - 1.005448461135913 * ks[6] -
                 0.18044626132120234 * ks[7] + 0.17051519239113755 * ks[8]
         end
-        if tab_btilde !== nothing || tab_b === nothing
+        if _rosenbrock_should_est_error(cache.tab)
             atmp = calculate_residuals(
                 du, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -680,37 +733,7 @@ end
         @.. $(_vec(ks[stage])) = -linres.u
         integrator.stats.nsolve += 1
     end
-    tab_b = tableau_b(cache.tab)
-    tab_btilde = tableau_btilde(cache.tab)
-    if tab_b !== nothing
-        # Explicit b weights: u = uprev + sum(b[i]*ks[i])
-        u .= uprev
-        for i in eachindex(ks)
-            if !iszero(tab_b[i])
-                @.. u += tab_b[i] * ks[i]
-            end
-        end
-        # Error estimate: du = sum(btilde[i]*ks[i])
-        if tab_btilde !== nothing
-            du .= 0
-            for i in eachindex(ks)
-                if !iszero(tab_btilde[i])
-                    @.. du += tab_btilde[i] * ks[i]
-                end
-            end
-        end
-    elseif (integrator.alg isa Rodas6P)
-        du .= ks[16]
-        u .= uprev
-        for i in 1:15
-            @.. u += A[16, i] * ks[i]
-        end
-        u .+= ks[16]
-    else
-        # Rodas encoding: du = ks[end], u += ks[end]
-        du .= ks[end]
-        u .+= ks[end]
-    end
+    _rosenbrock_update_result!(u, du, uprev, ks, A, cache.tab, integrator.alg)
 
     step_limiter!(u, integrator, p, t + dt)
 
@@ -721,7 +744,7 @@ end
                 -0.7931985603795049 * ks[5] - 1.005448461135913 * ks[6] -
                 0.18044626132120234 * ks[7] + 0.17051519239113755 * ks[8]
         end
-        if tab_btilde !== nothing || tab_b === nothing
+        if _rosenbrock_should_est_error(cache.tab)
             calculate_residuals!(
                 atmp, du, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
