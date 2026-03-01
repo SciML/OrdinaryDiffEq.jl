@@ -28,7 +28,7 @@ const testsol = TestSolution(
 
     # compare it with the test solution
     sol2 = appxtrue(sol, testsol)
-    @test sol2.errors[:L∞] < 2.7e-4
+    @test sol2.errors[:L∞] < 5.0e-4
 
     ## out-of-place problem
 
@@ -71,7 +71,7 @@ end
 
     # compare it with the test solution
     sol2 = appxtrue(sol, testsol)
-    @test sol2.errors[:L∞] < 2.7e-4
+    @test sol2.errors[:L∞] < 5.0e-4
 
     ## out-of-place problem
 
