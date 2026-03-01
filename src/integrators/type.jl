@@ -14,7 +14,6 @@ mutable struct SDEIntegrator{
     u::uType
     p::P2
     dt::tType
-    dtnew::tType
     dtpropose::tType
     dtcache::tType
     T::tType
@@ -30,7 +29,10 @@ mutable struct SDEIntegrator{
     force_stepfail::Bool
     dtchangeable::Bool
     u_modified::Bool
+    reeval_fsal::Bool
     saveiter::Int
+    saveiter_dense::Int
+    kshortsize::Int
     alg::algType
     sol::solType
     cache::cacheType
@@ -50,5 +52,6 @@ mutable struct SDEIntegrator{
     stats::DiffEqBase.Stats
     initializealg::IA
     rng::RNGType
+    isdae::Bool
     user_provided_noise::Bool
 end

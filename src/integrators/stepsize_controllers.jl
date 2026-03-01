@@ -20,11 +20,11 @@ end
 
 function step_accept_controller!(integrator::SDEIntegrator, controller::PIController, alg)
     integrator.qold = max(integrator.EEst, integrator.opts.qoldinit)
-    return integrator.dtnew = DiffEqBase.value(integrator.dt / integrator.q) * oneunit(integrator.dt)
+    return DiffEqBase.value(integrator.dt / integrator.q) * oneunit(integrator.dt)
 end
 
 function step_reject_controller!(integrator::SDEIntegrator, controller::PIController, alg)
-    return integrator.dtnew = integrator.dt / min(inv(integrator.opts.qmin), integrator.q11 / integrator.opts.gamma)
+    return integrator.dt = integrator.dt / min(inv(integrator.opts.qmin), integrator.q11 / integrator.opts.gamma)
 end
 
 function stepsize_controller!(integrator::SDEIntegrator, alg::TauLeaping)

@@ -76,9 +76,11 @@ Resolve the RNG and seed for an SDE/RODE integration from the user-provided
 function _resolve_rng(rng, seed, prob)
     if rng !== nothing
         if !(rng isa Random.AbstractRNG)
-            throw(ArgumentError(
-                "`rng` must be an `AbstractRNG`, got $(typeof(rng))."
-            ))
+            throw(
+                ArgumentError(
+                    "`rng` must be an `AbstractRNG`, got $(typeof(rng))."
+                )
+            )
         end
         # TaskLocalRNG is a zero-field singleton pointing to shared task-local
         # state. Storing it directly would cause type mismatches with noise
@@ -851,16 +853,21 @@ function DiffEqBase.__init(
         typeof(initializealg), typeof(_rng),
     }(
         f, g, c, noise, uprev, tprev, t, u, p, tType(dt),
-        tType(dt), tType(dt), dtcache, tspan[2], tdir,
+        tType(dt), dtcache, tspan[2], tdir,
         just_hit_tstop, do_error_check, isout, event_last_time,
         vector_event_last_time, last_event_error, accept_step,
         last_stepfail, force_stepfail,
         dtchangeable, u_modified,
+        false, # reeval_fsal
         saveiter,
+        0, # saveiter_dense
+        0, # kshortsize
         alg, sol,
         cache, callback_cache, tType(dt), W, P, rate_constants,
         opts, iter, success_iter, eigen_est, EEst, q,
-        QT(qoldinit), q11, stats, initializealg, _rng, _user_provided_noise
+        QT(qoldinit), q11, stats, initializealg, _rng,
+        false, # isdae
+        _user_provided_noise
     )
 
     if initialize_integrator

@@ -19,25 +19,22 @@ import OrdinaryDiffEqCore: default_controller, isstandard, ispredictive,
     step_accept_controller!,
     step_reject_controller!, PIController, DummyController, issplit
 
-# Import shared loop functions and hooks from OrdinaryDiffEqCore
-# These allow SDE to reuse ODE's savevalues!, postamble!, handle_callbacks!,
-# handle_tstop!, solution_endpoint_match_cur_integrator!, loopheader!,
-# _loopfooter!, and _step! via hook overrides.
+# Import shared loop functions from OrdinaryDiffEqCore.
+# SDE reuses ODE's unified loop functions directly — no hook overrides needed.
+# SDE-specific behavior is handled via field conditionals (isnothing(integrator.W))
+# and algorithm traits (isfsal, alg_extrapolates, etc.).
 import OrdinaryDiffEqCore: handle_callbacks!, handle_tstop!,
     solution_endpoint_match_cur_integrator!,
     _savevalues!, _postamble!,
-    post_step_reject!, on_u_modified_at_init!, post_apply_step!,
-    interp_at_saveat, post_savevalues!, finalize_solution_storage!,
-    skip_saveat_at_tspan_end, save_dense_at_t!,
-    finalize_endpoint!, on_callbacks_complete!, is_composite_cache,
-    is_composite_algorithm, final_progress,
-    loopheader!, _loopfooter!, _step!, _perform_step!,
-    handle_step_rejection!, loopfooter_reset!, handle_force_stepfail!,
+    is_composite_cache, is_composite_algorithm, final_progress,
+    loopheader!, _loopfooter!, _step!, perform_step!,
     isaposteriori, fixed_t_for_floatingpoint_error!,
     increment_accept!, increment_reject!,
     calc_dt_propose!, fix_dt_at_bounds!, modify_dt_for_tstops!,
     log_step!, choose_algorithm!, update_uprev!,
-    alg_extrapolates, isfsal
+    alg_extrapolates, isfsal,
+    accept_noise!, reject_noise!, save_noise!, noise_curt, is_noise_saveable,
+    handle_callback_modifiers!
 
 using RecursiveArrayTools, DataStructures
 using DiffEqNoiseProcess, Random, ArrayInterface

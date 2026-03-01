@@ -53,9 +53,7 @@ end
 function set_proposed_dt!(integrator::SDEIntegrator, integrator2::SDEIntegrator)
     integrator.dtpropose = integrator2.dtpropose
     integrator.dtcache = integrator2.dtcache
-    integrator.qold = integrator2.qold
-    integrator.erracc = integrator2.erracc
-    return integrator.dtacc = integrator2.dtacc
+    return integrator.qold = integrator2.qold
 end
 
 #TODO: Bigger caches for most algorithms
@@ -501,11 +499,13 @@ parameters).
 function SciMLBase.set_rng!(integrator::SDEIntegrator, rng)
     R = typeof(integrator.rng)
     if !isa(rng, R)
-        throw(ArgumentError(
-            "Cannot set RNG of type $(typeof(rng)) on an integrator " *
-            "whose RNG type parameter is $R. " *
-            "Construct a new integrator via `init(prob, alg; rng = your_rng)` instead."
-        ))
+        throw(
+            ArgumentError(
+                "Cannot set RNG of type $(typeof(rng)) on an integrator " *
+                    "whose RNG type parameter is $R. " *
+                    "Construct a new integrator via `init(prob, alg; rng = your_rng)` instead."
+            )
+        )
     end
     integrator.rng = rng
     # Sync framework-constructed noise processes only
