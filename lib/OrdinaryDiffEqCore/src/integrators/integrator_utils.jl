@@ -460,20 +460,9 @@ function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, ts
 end
 
 function fixed_t_for_tstop_error!(integrator, ttmp)
-    # If we're in tstop snap mode, use exact tstop target
     if _get_next_step_tstop(integrator)
         _set_tstop_flag!(integrator, false)
         return _get_tstop_target(integrator)
-    elseif has_tstop(integrator)
-        # Fallback floating-point correction: snap to tstop if within 100*eps
-        tstop = integrator.tdir * first_tstop(integrator)
-        if abs(ttmp - tstop) <
-                100eps(float(max(integrator.t, tstop) / oneunit(integrator.t))) *
-                oneunit(integrator.t)
-            return tstop
-        else
-            return ttmp
-        end
     else
         return ttmp
     end
