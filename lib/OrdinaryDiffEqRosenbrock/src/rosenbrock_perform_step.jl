@@ -439,7 +439,6 @@ function initialize!(
         cache::Union{
             Rosenbrock33ConstantCache,
             Rosenbrock34ConstantCache,
-            Rosenbrock4ConstantCache,
         }
     )
     integrator.kshortsize = 2
@@ -458,7 +457,6 @@ function initialize!(
         cache::Union{
             Rosenbrock33Cache,
             Rosenbrock34Cache,
-            Rosenbrock4Cache,
         }
     )
     integrator.kshortsize = 2
@@ -877,30 +875,213 @@ end
 
 ################################################################################
 
-#### ROS2 type method
+#### Shared stage loop for all Rosenbrock methods (generic + Rodas)
 
-@ROS2(:init)
-@ROS2(:performstep)
+@muladd function _rosenbrock_stage_loop!(integrator, cache, tab_a, dtC, tab_c, dtd, ks,
+        mass_matrix, linres, _stage_limiter!)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; du, du1, du2, dT, linsolve_tmp) = cache
+    s = length(ks)
+    for stage in 2:s
+        u .= uprev
+        for j in 1:(stage - 1)
+            @.. u += tab_a[stage, j] * ks[j]
+        end
+        _stage_limiter!(u, integrator, p, t + tab_c[stage] * dt)
+        f(du, u, p, t + tab_c[stage] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        du1 .= 0
+        if mass_matrix === I
+            for j in 1:(stage - 1)
+                @.. du1 += dtC[stage, j] * ks[j]
+            end
+        else
+            for j in 1:(stage - 1)
+                @.. du1 += dtC[stage, j] * ks[j]
+            end
+            mul!(_vec(du2), mass_matrix, _vec(du1))
+            du1 .= du2
+        end
+        @.. linsolve_tmp = du + dtd[stage] * dT + du1
+        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+        @.. $(_vec(ks[stage])) = -linres.u
+        integrator.stats.nsolve += 1
+    end
+    return linres
+end
 
 ################################################################################
 
-#### ROS23 type method
+#### Generic Rosenbrock initialize! (replaces generated code from macros)
 
-@ROS23(:init)
-@ROS23(:performstep)
+function initialize!(integrator, cache::GenericRosenbrockConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+end
+
+function initialize!(integrator, cache::GenericRosenbrockMutableCache)
+    integrator.kshortsize = 2
+    (; fsalfirst, fsallast) = cache
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = fsallast
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k .= [fsalfirst, fsallast]
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+end
 
 ################################################################################
 
-#### ROS34PW type method
+#### Generic Rosenbrock perform_step! — inplace (mutable cache)
 
-@ROS34PW(:init)
-@ROS34PW(:performstep)
+@muladd function perform_step!(integrator, cache::GenericRosenbrockMutableCache,
+        repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; du, du1, du2, fsallast, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
+    tab = cache.tab
+    ks = _ks(cache)
+    s = length(ks)
+    mass_matrix = integrator.f.mass_matrix
+
+    # Precalculations — compute dtC and dtd from the full-array tableau
+    dtC = tab.C ./ dt
+    dtd = dt .* tab.d
+    dtgamma = dt * tab.gamma
+
+    calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
+        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+
+    calc_rosenbrock_differentiation!(integrator, cache, dtd[1], dtgamma, repeat_step)
+
+    linsolve = cache.linsolve
+
+    # Stage 1 solve
+    linres = dolinsolve(
+        integrator, linsolve; A = !repeat_step ? W : nothing, b = _vec(linsolve_tmp))
+    @.. $(_vec(ks[1])) = -linres.u
+    integrator.stats.nsolve += 1
+
+    # Stages 2..s (shared loop)
+    linres = _rosenbrock_stage_loop!(integrator, cache, tab.a, dtC, tab.c, dtd, ks,
+        mass_matrix, linres, Returns(nothing))
+
+    # Final solution: u = uprev + sum(b[i]*k[i])
+    u .= uprev
+    for i in 1:s
+        @.. u += tab.b[i] * ks[i]
+    end
+
+    f(fsallast, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    # Adaptive error estimation
+    if tab isa RosenbrockAdaptiveTableau && integrator.opts.adaptive
+        utilde = du
+        @.. utilde = zero(eltype(u))
+        for i in 1:s
+            if !iszero(tab.btilde[i])
+                @.. utilde += tab.btilde[i] * ks[i]
+            end
+        end
+        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+
+    cache.linsolve = linres.cache
+end
 
 ################################################################################
 
-#### ROS4 type method
+#### Generic Rosenbrock perform_step! — non-inplace (constant cache)
 
-@Rosenbrock4(:performstep)
+@muladd function perform_step!(integrator, cache::GenericRosenbrockConstantCache,
+        repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tf, uf) = cache
+    tab = cache.tab
+
+    # Precalculations
+    dtC = tab.C ./ dt
+    dtd = dt .* tab.d
+    dtgamma = dt * tab.gamma
+
+    mass_matrix = integrator.f.mass_matrix
+
+    # Time derivative
+    tf.u = uprev
+    dT = calc_tderivative(integrator, cache)
+
+    W = calc_W(integrator, cache, dtgamma, repeat_step)
+    linsolve_tmp = integrator.fsalfirst + dtd[1] * dT
+
+    # Stage 1
+    k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+    integrator.stats.nsolve += 1
+
+    s = length(tab.b)
+    ks = ntuple(Returns(k1), Val(6))  # max 6 stages for generic methods
+
+    # Stages 2..s
+    for stage in 2:s
+        u = uprev
+        for j in 1:(stage - 1)
+            u = @.. u + tab.a[stage, j] * ks[j]
+        end
+
+        du = f(u, p, t + tab.c[stage] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+        linsolve_tmp = zero(du)
+        if mass_matrix === I
+            for j in 1:(stage - 1)
+                linsolve_tmp = @.. linsolve_tmp + dtC[stage, j] * ks[j]
+            end
+        else
+            for j in 1:(stage - 1)
+                linsolve_tmp = @.. linsolve_tmp + dtC[stage, j] * ks[j]
+            end
+            linsolve_tmp = mass_matrix * linsolve_tmp
+        end
+        linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp
+
+        ks = Base.setindex(ks, _reshape(W \ -_vec(linsolve_tmp), axes(uprev)), stage)
+        integrator.stats.nsolve += 1
+    end
+
+    # Final solution: u = uprev + sum(b[i]*k[i])
+    u = uprev
+    for i in 1:s
+        u = @.. u + tab.b[i] * ks[i]
+    end
+
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+
+    # Adaptive error estimation
+    if tab isa RosenbrockAdaptiveTableau && integrator.opts.adaptive
+        utilde = zero(u)
+        for i in 1:s
+            if !iszero(tab.btilde[i])
+                utilde = @.. utilde + tab.btilde[i] * ks[i]
+            end
+        end
+        atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+end
 
 ################################################################################
 
@@ -1470,34 +1651,8 @@ end
     @.. $(_vec(ks[1])) = -linres.u
     integrator.stats.nsolve += 1
 
-    for stage in 2:length(ks)
-        u .= uprev
-        for i in 1:(stage - 1)
-            @.. u += A[stage, i] * ks[i]
-        end
-
-        stage_limiter!(u, integrator, p, t + c[stage] * dt)
-        f(du, u, p, t + c[stage] * dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-        du1 .= 0
-        if mass_matrix === I
-            for i in 1:(stage - 1)
-                @.. du1 += dtC[stage, i] * ks[i]
-            end
-        else
-            for i in 1:(stage - 1)
-                @.. du1 += dtC[stage, i] * ks[i]
-            end
-            mul!(_vec(du2), mass_matrix, _vec(du1))
-            du1 .= du2
-        end
-        @.. linsolve_tmp = du + dtd[stage] * dT + du1
-
-        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-        @.. $(_vec(ks[stage])) = -linres.u
-        integrator.stats.nsolve += 1
-    end
+    linres = _rosenbrock_stage_loop!(integrator, cache, A, dtC, c, dtd, ks,
+        mass_matrix, linres, stage_limiter!)
     if (integrator.alg isa Rodas6P)
         du .= ks[16]
         u .= uprev
@@ -1558,9 +1713,6 @@ end
     end
     cache.linsolve = linres.cache
 end
-
-@RosenbrockW6S4OS(:init)
-@RosenbrockW6S4OS(:performstep)
 
 ################################################################################
 # Tsit5DA - hybrid explicit/linear-implicit method for DAEs

@@ -166,7 +166,7 @@ because in the end of Rosenbrock's method, we have: `y_{n+1}=y_n+ki*bi`.
 """
 function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachename::Symbol)
     kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
-    constcacheexpr=quote struct $constcachename{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCache
+    constcacheexpr=quote struct $constcachename{TF,UF,Tab,JType,WType,F} <: GenericRosenbrockConstantCache
             tf::TF
             uf::UF
             tab::Tab
@@ -204,11 +204,94 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
 end
 
 """
-    gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tabname::Symbol)
+    _make_rosenbrock_tableau(raw_tab, T, T2)
+
+Convert a raw `RosenbrockTableau` (with potentially undersized arrays for Rosenbrock4
+methods where a4j=a3j) into a properly-sized, type-converted tableau suitable for the
+generic loop-based `perform_step!`.
+"""
+function _make_rosenbrock_tableau(raw_tab::RosenbrockAdaptiveTableau, ::Type{T}, ::Type{T2}) where {T, T2}
+    s = length(raw_tab.b)
+    a_raw = raw_tab.a
+    C_raw = raw_tab.C
+    c_raw = raw_tab.c
+
+    # Build full s×s a matrix (pad with copies of last row if undersized)
+    a = zeros(T, s, s)
+    m_a, n_a = size(a_raw)
+    for i in 1:min(m_a, s), j in 1:min(n_a, s)
+        a[i, j] = T(a_raw[i, j])
+    end
+    if m_a < s
+        for i in (m_a + 1):s, j in 1:min(n_a, s)
+            a[i, j] = T(a_raw[m_a, j])
+        end
+    end
+
+    # Build full s×s C matrix
+    C = zeros(T, s, s)
+    m_C, n_C = size(C_raw)
+    for i in 1:min(m_C, s), j in 1:min(n_C, s)
+        C[i, j] = T(C_raw[i, j])
+    end
+
+    b = T.(raw_tab.b)
+    btilde = T.(raw_tab.btilde)
+    gamma = T2(raw_tab.gamma)
+    d = T.(raw_tab.d)
+
+    # Build full s-length c vector (pad with last element if undersized)
+    c = zeros(T2, s)
+    for i in 1:min(length(c_raw), s)
+        c[i] = T2(c_raw[i])
+    end
+    if length(c_raw) < s
+        for i in (length(c_raw) + 1):s
+            c[i] = T2(c_raw[end])
+        end
+    end
+
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
+end
+
+function _make_rosenbrock_tableau(raw_tab::RosenbrockFixedTableau, ::Type{T}, ::Type{T2}) where {T, T2}
+    s = length(raw_tab.b)
+    a_raw = raw_tab.a
+    C_raw = raw_tab.C
+    c_raw = raw_tab.c
+
+    a = zeros(T, s, s)
+    m_a, n_a = size(a_raw)
+    for i in 1:min(m_a, s), j in 1:min(n_a, s)
+        a[i, j] = T(a_raw[i, j])
+    end
+
+    C = zeros(T, s, s)
+    m_C, n_C = size(C_raw)
+    for i in 1:min(m_C, s), j in 1:min(n_C, s)
+        C[i, j] = T(C_raw[i, j])
+    end
+
+    b = T.(raw_tab.b)
+    gamma = T2(raw_tab.gamma)
+    d = T.(raw_tab.d)
+
+    c = zeros(T2, s)
+    for i in 1:min(length(c_raw), s)
+        c[i] = T2(c_raw[i])
+    end
+
+    RosenbrockFixedTableau(a, C, b, gamma, d, c)
+end
+
+"""
+    gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,raw_tab::RosenbrockTableau)
 
 Generate expressions for `alg_cache(...)` emulating those in `caches/rosenbrock_caches.jl`.
+Takes a raw `RosenbrockTableau` value and uses `_make_rosenbrock_tableau` to produce
+array-based tableaus compatible with the generic loop-based `perform_step!`.
 """
-function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tabname::Symbol)
+function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,raw_tab::RosenbrockTableau)
     @capture(cacheexpr, @cache mutable struct T_ fields__ end) || error("incorrect cache expression")
     cachename = namify(T)
     ksinit = Expr[]
@@ -228,7 +311,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tf = TimeDerivativeWrapper(f,u,p)
             uf = UDerivativeWrapper(f,t,p)
             J,W = build_J_W(alg,u,uprev,p,t,dt,f, nothing, uEltypeNoUnits,Val(false))
-            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,nothing)
+            tab = _make_rosenbrock_tableau($raw_tab,constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+            $constcachename(tf,uf,tab,J,W,nothing)
         end
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}, verbose)
             du = zero(rate_prototype)
@@ -241,12 +325,12 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tmp = zero(rate_prototype)
             atmp = similar(u, uEltypeNoUnits)
             weight = similar(u, uEltypeNoUnits)
-            tab = $tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+            tab = _make_rosenbrock_tableau($raw_tab,constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
             tf = TimeGradientWrapper(f,uprev,p)
             uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
-            
+
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
             J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
@@ -255,243 +339,16 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             linsolve = init(linprob,alg.linsolve,alias = LinearAliasSpecifier(alias_A=true,alias_b=true),
                             Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
                             Pr = Diagonal(_vec(weight)),
-                            verbose = verbose.linear_verbosity) 
+                            verbose = verbose.linear_verbosity)
             $cachename($(valsyms...))
         end
     end
 end
 
-"""
-    gen_initialize(cachename::Symbol,constcachename::Symbol)
 
-Generate expressions for `initialize!(...)` in `perform_step/rosenbrock_perform_step.jl`.
-It only generates a default version of `initialize!` which support 3rd-order Hermite interpolation.
-"""
-function gen_initialize(cachename::Symbol,constcachename::Symbol)
-    quote
-        function initialize!(integrator, cache::$constcachename)
-            integrator.kshortsize = 2
-            integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-            integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-            # Avoid undefined entries if k is an array of arrays
-            integrator.fsallast = zero(integrator.fsalfirst)
-            integrator.k[1] = integrator.fsalfirst
-            integrator.k[2] = integrator.fsallast
-          end
-
-          function initialize!(integrator, cache::$cachename)
-            integrator.kshortsize = 2
-            (; fsalfirst,fsallast) = cache
-            integrator.fsalfirst = fsalfirst
-            integrator.fsallast = fsallast
-            resize!(integrator.k, integrator.kshortsize)
-            integrator.k .= [fsalfirst,fsallast]
-            integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-          end
-    end
-end
-
-"""
-    gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-
-Generate non-inplace version of `perform_step!` expression emulating those in `perform_step/rosenbrock_perform_step.jl`.
-The `perform_step!` function calculates `k1,k2,k3,...` defined by `(-W)ki=f(u+aij*kj,t+ci*dt)+di*dt*dT+Cij*kj*dt, i=1,2,...,n_normalstep`
-and then gives the result by `y_{n+1}=y_n+ki*bi`. Terms with 0s (according to tabmask) are skipped in the expressions.
-Special steps can be added before calculating `y_{n+1}`. The non-inplace `perform_step!` assumes the mass_matrix==I.
-"""
-function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-    unpacktabexpr=:((;) = cache.tab)
-    unpacktabexpr.args[1].args[1].args=_nonzero_vals(tabmask)
-    dtCijexprs=[:($(Symbol(:dtC,Cind[1],Cind[2]))=$(Symbol(:C,Cind[1],Cind[2]))/dt) for Cind in findall(!iszero,tabmask.C)]
-    dtdiexprs=[:($(Symbol(:dtd,dind))=dt*$(Symbol(:d,dind))) for dind in eachindex(tabmask.d)]
-    iterexprs=[]
-    for i in 1:n_normalstep
-        aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.a[i+1,:])]
-        Cijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.C[i+1,:])]
-        push!(iterexprs,
-        quote
-            $(Symbol(:k,i)) = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
-            integrator.stats.nsolve += 1
-            u=+(uprev,$(aijkj...))
-            du = f(u, p, t+$(Symbol(:c,i+1))*dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            if mass_matrix === I
-                linsolve_tmp=+(du,$(Symbol(:dtd,i+1))*dT,$(Cijkj...))
-            else
-                linsolve_tmp=du+$(Symbol(:dtd,i+1))*dT+mass_matrix*(+($(Cijkj...)))
-            end
-        end)
-    end
-    push!(iterexprs,specialstepexpr)
-    n=length(tabmask.b)
-    biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
-    push!(iterexprs,
-    quote
-        $(Symbol(:k,n))=_reshape(W\-_vec(linsolve_tmp), axes(uprev))
-        integrator.stats.nsolve += 1
-        u=+(uprev,$(biki...))
-    end)
-
-    adaptiveexpr=[]
-    if typeof(tabmask)<:RosenbrockAdaptiveTableau
-        btildeiki=[:($(Symbol(:btilde,i))*$(Symbol(:k,i))) for i in findall(!iszero,tabmask.btilde)]
-        push!(adaptiveexpr,quote
-            if integrator.opts.adaptive
-                utilde =  +($(btildeiki...))
-                atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                        integrator.opts.reltol,integrator.opts.internalnorm,t)
-                integrator.EEst = integrator.opts.internalnorm(atmp,t)
-            end
-        end)
-    end
-    quote
-        @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            (; t,dt,uprev,u,f,p) = integrator
-            (; tf,uf) = cache
-            $unpacktabexpr
-
-            $(dtCijexprs...)
-            $(dtdiexprs...)
-            dtgamma = dt*gamma
-
-            mass_matrix = integrator.f.mass_matrix
-
-            # Time derivative
-            tf.u = uprev
-            dT = calc_tderivative(integrator, cache)
-
-            W = calc_W(integrator, cache, dtgamma, repeat_step)
-            linsolve_tmp = integrator.fsalfirst + dtd1*dT #calc_rosenbrock_differentiation!
-
-            $(iterexprs...)
-
-            integrator.fsallast = f(u, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-            integrator.k[1] = integrator.fsalfirst
-            integrator.k[2] = integrator.fsallast
-            integrator.u = u
-
-            $(adaptiveexpr...)
-        end
-    end
-
-end
-
-"""
-    gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-
-Generate inplace version of `perform_step!` expression emulating those in `perform_step/rosenbrock_perform_step.jl`.
-The inplace `perform_step!` produces the same result as the non-inplace version except that it treats the mass_matrix appropriately.
-"""
-function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-    unpacktabexpr=:((;) = cache.tab)
-    unpacktabexpr.args[1].args[1].args=_nonzero_vals(tabmask)
-    dtCij=[:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt) for Cind in findall(!iszero,tabmask.C)]
-    dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in eachindex(tabmask.d)]
-    iterexprs=[]
-    for i in 1:n_normalstep
-        ki=Symbol(:k,i)
-        dtdj=Symbol(:dtd,i+1)
-        aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.a[i+1,:])]
-        dtCijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.C[i+1,:])]
-        repeatstepexpr=[]
-        if i==1
-            repeatstepexpr=[:(!repeat_step)]
-        end
-        push!(iterexprs,quote
-
-            if $(i==1)
-                # Must be a part of the first linsolve for preconditioner step
-                linres = dolinsolve(integrator, linsolve; A = !repeat_step ? W : nothing, b = _vec(linsolve_tmp))
-            else
-                linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
-            end
-
-            linsolve = linres.cache
-            vecu = _vec(linres.u)
-            vecki = _vec($ki)
-
-            @.. broadcast=false vecki = -vecu
-
-            integrator.stats.nsolve += 1
-            @.. broadcast=false u = +(uprev,$(aijkj...))
-            f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            if mass_matrix === I
-                @.. broadcast=false linsolve_tmp = +(du,$dtdj*dT,$(dtCijkj...))
-            else
-                @.. broadcast=false du1 = +($(dtCijkj...))
-                mul!(_vec(du2),mass_matrix,_vec(du1))
-                @.. broadcast=false linsolve_tmp = du + $dtdj*dT + du2
-            end
-        end)
-    end
-    push!(iterexprs,specialstepexpr)
-    n=length(tabmask.b)
-    ks=[Symbol(:k,i) for i in 1:n]
-    klast=Symbol(:k,n)
-    biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
-    push!(iterexprs,quote
-
-        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
-        linsolve = linres.cache
-        vecu = _vec(linres.u)
-        vecklast = _vec($klast)
-        @.. broadcast=false vecklast = -vecu
-
-        integrator.stats.nsolve += 1
-        @.. broadcast=false u = +(uprev,$(biki...))
-    end)
-
-    adaptiveexpr=[]
-    if typeof(tabmask)<:RosenbrockAdaptiveTableau
-        btildeiki=[:($(Symbol(:btilde,i))*$(Symbol(:k,i))) for i in findall(!iszero,tabmask.btilde)]
-        push!(adaptiveexpr,quote
-            utilde=du
-            if integrator.opts.adaptive
-                @.. broadcast=false utilde = +($(btildeiki...))
-                calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                                    integrator.opts.reltol,integrator.opts.internalnorm,t)
-                integrator.EEst = integrator.opts.internalnorm(atmp,t)
-            end
-        end)
-    end
-    quote
-        @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            (; t,dt,uprev,u,f,p) = integrator
-            (; du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight) = cache
-            $unpacktabexpr
-
-            # Assignments
-            sizeu  = size(u)
-            uidx = eachindex(integrator.uprev)
-            mass_matrix = integrator.f.mass_matrix
-
-            # Precalculations
-            $(dtCij...)
-            $(dtdi...)
-            dtgamma = dt*gamma
-
-            calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
-                                 integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-
-            calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
-
-            linsolve = cache.linsolve
-
-            $(iterexprs...)
-
-            f( fsallast,  u, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-
-            $(adaptiveexpr...)
-        end
-    end
-end
+# gen_initialize, gen_constant_perform_step, gen_perform_step have been removed.
+# Generic Rosenbrock methods now use shared dispatch on GenericRosenbrockMutableCache
+# and GenericRosenbrockConstantCache in rosenbrock_perform_step.jl.
 
 """
     RosenbrockW6S4OSTableau()
@@ -523,11 +380,11 @@ end
     @RosenbrockW6S4OS(part)
 
 Generate code for the RosenbrockW6S4OS method.
-`part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
+`part` should be one of `:tableau`, `:cache`.
 `@RosenbrockW6S4OS(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@RosenbrockW6S4OS(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
-`@RosenbrockW6S4OS(:init)` and `@RosenbrockW6S4OS(:performstep)` should be
-placed in `perform_step/rosenbrock_perform_step.jl`.
+`initialize!` and `perform_step!` are handled by generic dispatch on
+`GenericRosenbrockMutableCache` / `GenericRosenbrockConstantCache`.
 """
 macro RosenbrockW6S4OS(part)
     tab=RosenbrockW6S4OSTableau()
@@ -537,27 +394,16 @@ macro RosenbrockW6S4OS(part)
     tabstructname=:RosenbrockW6STableau
     cachename=:RosenbrockW6SCache
     constcachename=:RosenbrockW6SConstantCache
-    n_normalstep=length(tab.b)-1
     if part.value==:tableau
-        #println("Generating const cache")
         tabstructexpr=gen_tableau_struct(tabmask,tabstructname)
         tabexpr=gen_tableau(tab,tabstructexpr,tabname)
         return esc(quote $([tabstructexpr,tabexpr]...) end)
     elseif part.value==:cache
-        #println("Generating cache")
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
-        algcacheexpr=gen_algcache(cacheexpr,constcachename,algname,tabname)
+        algcacheexpr=gen_algcache(cacheexpr,constcachename,algname,tab)
         return esc(quote $([constcacheexpr,cacheexpr,algcacheexpr]...) end)
-    elseif part.value==:init
-        #println("Generating initialize")
-        return esc(gen_initialize(cachename,constcachename))
-    elseif part.value==:performstep
-        #println("Generating perform_step")
-        constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep)
-        performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep)
-        return esc(quote $([constperformstepexpr,performstepexpr]...) end)
     else
-        throw(ArgumentError("Unknown parameter!"))
+        throw(ArgumentError("Unknown parameter! Use :tableau or :cache"))
         nothing
     end
 end
@@ -724,13 +570,11 @@ end
     @Rosenbrock4(part)
 
 Generate code for the Rosenbrock4 methods: RosShamp4, Veldd4, Velds4, GRK4A, GRK4T, Ros4LStab.
-`part` should be one of `:tableau`, `:cache`, `:performstep`.
+`part` should be one of `:tableau`, `:cache`.
 `@Rosenbrock4(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@Rosenbrock4(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
-`@Rosenbrock4(:performstep)` should be placed in `perform_step/rosenbrock_perform_step.jl`.
-The `initialize!` function for Rosenbrock4 methods is already included in `rosenbrock_perform_step.jl`.
-The special property of ROS4 methods that a4j==a3j requires a special step in `perform_step!` that
-calculates `linsolve_tmp` from the previous `du` which reduces a function call.
+`initialize!` and `perform_step!` are handled by generic dispatch on
+`GenericRosenbrockMutableCache` / `GenericRosenbrockConstantCache`.
 """
 macro Rosenbrock4(part)
     tabmask=Ros4dummyTableau()#_masktab(tab)
@@ -742,9 +586,7 @@ macro Rosenbrock4(part)
     GRK4Ttabname=:GRK4TTableau
     GRK4Atabname=:GRK4ATableau
     Ros4LStabname=:Ros4LStabTableau
-    n_normalstep=2 #for the third step a4j=a3j which reduced one function call
     if part.value==:tableau
-        #println("Generating tableau for Rosenbrock4")
         tabstructexpr=gen_tableau_struct(tabmask,:Ros4Tableau)
         tabexprs=Array{Expr,1}()
         push!(tabexprs,tabstructexpr)
@@ -756,54 +598,17 @@ macro Rosenbrock4(part)
         push!(tabexprs,gen_tableau(Ros4LSTableau(),tabstructexpr,Ros4LStabname))
         return esc(quote $(tabexprs...) end)
     elseif part.value==:cache
-        #println("Generating cache for Rosenbrock4")
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
         cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:RosShamp4,RosShamp4tabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Veldd4,Veldd4tabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Velds4,Velds4tabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:GRK4T,GRK4Ttabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:GRK4A,GRK4Atabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Ros4LStab,Ros4LStabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:RosShamp4,RosShamp4Tableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Veldd4,Veldd4Tableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Velds4,Velds4Tableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:GRK4T,GRK4TTableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:GRK4A,GRK4ATableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Ros4LStab,Ros4LSTableau()))
         return esc(quote $(cacheexprs...) end)
-    elseif part.value==:performstep
-        #println("Generating perform_step for Rosenbrock4")
-        specialstepconst=quote
-            k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
-            integrator.stats.nsolve += 1
-            #u = uprev  + a31*k1 + a32*k2 #a4j=a3j
-            #du = f(u, p, t+c3*dt) #reduced function call
-            if mass_matrix === I
-                linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
-            else
-                linsolve_tmp = du + dtd4*dT + mass_matrix * (dtC41*k1 + dtC42*k2 + dtC43*k3)
-            end
-        end
-        specialstep=quote
-
-            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
-            linsolve = linres.cache
-            cache.linsolve = linsolve
-            vecu = _vec(linres.u)
-            veck3 = _vec(k3)
-            @.. broadcast=false veck3 = -vecu
-
-            integrator.stats.nsolve += 1
-            #@.. broadcast=false u = uprev + a31*k1 + a32*k2 #a4j=a3j
-            #f( du,  u, p, t+c3*dt) #reduced function call
-            if mass_matrix === I
-                @.. broadcast=false linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
-            else
-                @.. broadcast=false du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
-                mul!(du2,mass_matrix,du1)
-                @.. broadcast=false linsolve_tmp = du + dtd4*dT + du2
-            end
-        end
-        constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep,specialstepconst)
-        performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep,specialstep)
-        return esc(quote $([constperformstepexpr,performstepexpr]...) end)
     else
-        throw(ArgumentError("Unknown parameter!"))
+        throw(ArgumentError("Unknown parameter! Use :tableau or :cache"))
         nothing
     end
 end
@@ -917,18 +722,17 @@ end
     @ROS2(part)
 
 Generate code for the 2 step ROS methods: ROS2
-`part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
+`part` should be one of `:tableau`, `:cache`.
 `@ROS2(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@ROS2(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
-`@ROS2(:init)` and `@ROS2(:performstep)` should be placed in
-`perform_step/rosenbrock_perform_step.jl`.
+`initialize!` and `perform_step!` are handled by generic dispatch on
+`GenericRosenbrockMutableCache` / `GenericRosenbrockConstantCache`.
 """
 macro ROS2(part)
     tabmask=Ros2dummyTableau()
     cachename=:ROS2Cache
     constcachename=:ROS2ConstantCache
     ROS2tabname=:ROS2Tableau
-    n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
         tabstructexpr=gen_tableau_struct(tabmask,:Ros2Tableau)
         tabexprs=Array{Expr,1}([tabstructexpr])
@@ -937,17 +741,10 @@ macro ROS2(part)
     elseif part.value==:cache
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
         cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2,ROS2tabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2,ROS2Tableau()))
         return esc(quote $(cacheexprs...) end)
-    elseif part.value==:init
-        return esc(gen_initialize(cachename,constcachename))
-    elseif part.value==:performstep
-        performstepexprs=Array{Expr,1}()
-        push!(performstepexprs,gen_constant_perform_step(tabmask,constcachename,n_normalstep))
-        push!(performstepexprs,gen_perform_step(tabmask,cachename,n_normalstep))
-        return esc(quote $(performstepexprs...) end)
     else
-        throw(ArgumentError("Unknown parameter!"))
+        throw(ArgumentError("Unknown parameter! Use :tableau or :cache"))
         nothing
     end
 end
@@ -1076,11 +873,11 @@ end
     @ROS23(part)
 
 Generate code for the 3 step ROS methods: ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
-`part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
+`part` should be one of `:tableau`, `:cache`.
 `@ROS23(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@ROS23(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
-`@ROS23(:init)` and `@ROS23(:performstep)` should be placed in
-`perform_step/rosenbrock_perform_step.jl`.
+`initialize!` and `perform_step!` are handled by generic dispatch on
+`GenericRosenbrockMutableCache` / `GenericRosenbrockConstantCache`.
 """
 macro ROS23(part)
     tabmask=Ros23dummyTableau()
@@ -1091,7 +888,6 @@ macro ROS23(part)
     ROS3tabname=:ROS3Tableau
     ROS3PRtabname=:ROS3PRTableau
     Scholz4_7tabname=:Scholz4_7Tableau
-    n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
         tabstructexpr=gen_tableau_struct(tabmask,:Ros23Tableau)
         tabexprs=Array{Expr,1}([tabstructexpr])
@@ -1104,21 +900,14 @@ macro ROS23(part)
     elseif part.value==:cache
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
         cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2PR,ROS2PRtabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2S,ROS2Stabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3,ROS3tabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PR,ROS3PRtabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Scholz4_7,Scholz4_7tabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2PR,ROS2PRTableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2S,ROS2STableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3,ROS3Tableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PR,ROS3PRTableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Scholz4_7,Scholz4_7Tableau()))
         return esc(quote $(cacheexprs...) end)
-    elseif part.value==:init
-        return esc(gen_initialize(cachename,constcachename))
-    elseif part.value==:performstep
-        performstepexprs=Array{Expr,1}()
-        push!(performstepexprs,gen_constant_perform_step(tabmask,constcachename,n_normalstep))
-        push!(performstepexprs,gen_perform_step(tabmask,cachename,n_normalstep))
-        return esc(quote $(performstepexprs...) end)
     else
-        throw(ArgumentError("Unknown parameter!"))
+        throw(ArgumentError("Unknown parameter! Use :tableau or :cache"))
         nothing
     end
 end
@@ -1332,11 +1121,11 @@ end
     @ROS34PW(part)
 
 Generate code for the 4 steps ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL, ROS3PRL2, ROK4a.
-`part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
+`part` should be one of `:tableau`, `:cache`.
 `@ROS34PW(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@ROS34PW(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
-`@ROS34PW(:init)` and `@ROS34PW(:performstep)` should be placed in
-`perform_step/rosenbrock_perform_step.jl`.
+`initialize!` and `perform_step!` are handled by generic dispatch on
+`GenericRosenbrockMutableCache` / `GenericRosenbrockConstantCache`.
 """
 macro ROS34PW(part)
     tabmask=Ros34dummyTableau()
@@ -1350,7 +1139,6 @@ macro ROS34PW(part)
     ROS3PRLtabname=:ROS3PRLTableau
     ROS3PRL2tabname=:ROS3PRL2Tableau
     ROK4atabname=:ROK4aTableau
-    n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
         tabstructexpr=gen_tableau_struct(tabmask,:Ros34Tableau)
         tabexprs=Array{Expr,1}([tabstructexpr])
@@ -1366,24 +1154,17 @@ macro ROS34PW(part)
     elseif part.value==:cache
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
         cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW1a,ROS34PW1atabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW1b,ROS34PW1btabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW2,ROS34PW2tabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW3,ROS34PW3tabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PRw,ROS34PRwtabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PRL,ROS3PRLtabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PRL2,ROS3PRL2tabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROK4a,ROK4atabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW1a,ROS34PW1aTableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW1b,ROS34PW1bTableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW2,ROS34PW2Tableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW3,ROS34PW3Tableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PRw,ROS34PRwTableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PRL,ROS3PRLTableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PRL2,ROS3PRL2Tableau()))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROK4a,ROK4aTableau()))
         return esc(quote $(cacheexprs...) end)
-    elseif part.value==:init
-        return esc(gen_initialize(cachename,constcachename))
-    elseif part.value==:performstep
-        performstepexprs=Array{Expr,1}()
-        push!(performstepexprs,gen_constant_perform_step(tabmask,constcachename,n_normalstep))
-        push!(performstepexprs,gen_perform_step(tabmask,cachename,n_normalstep))
-        return esc(quote $(performstepexprs...) end)
     else
-        throw(ArgumentError("Unknown parameter!"))
+        throw(ArgumentError("Unknown parameter! Use :tableau or :cache"))
         nothing
     end
 end
