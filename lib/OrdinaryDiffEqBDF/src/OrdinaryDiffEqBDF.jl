@@ -72,6 +72,7 @@ using Reexport
 include("algorithms.jl")
 include("alg_utils.jl")
 include("bdf_utils.jl")
+include("stald.jl")
 include("bdf_caches.jl")
 include("dae_caches.jl")
 include("controllers.jl")

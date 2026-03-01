@@ -277,15 +277,44 @@ function stepsize_controller!(
         max_order,
     }
     cache.prev_order = cache.order
+
+    # CVODE-style Stability Limit Detection (STALD)
+    # Collect data and check BEFORE order selection, using the step's order and norms.
+    # BDF orders 3-5 are only alpha-stable, so eigenvalues near the imaginary axis
+    # can cause instability. STALD detects this and forces order reduction.
+    step_order = cache.prev_order
+    stald_reduce = false
+    if step_order >= 3
+        stald_collect_data!(
+            cache.stald, step_order,
+            cache.terkm2, cache.terkm1, cache.terk
+        )
+        stald_reduce = stald_check!(cache.stald, step_order)
+    end
+
     k, terk = choose_order!(alg, integrator, cache, Val(max_order))
     if k != cache.order
         cache.nconsteps = 0
         cache.order = k
     end
+
+    if stald_reduce
+        # Stability violation detected at the step's order: constrain new order
+        k = min(k, step_order - 1)
+        cache.order = k
+        cache.nconsteps = 0
+        terk = cache.terkm1
+    end
+
     if iszero(terk)
         q = inv(get_current_qmax(integrator, integrator.opts.qmax))
     else
-        q = ((2 * terk / (k + 1))^(1 / (k + 1)))
+        # CVODE-style step size formula: eta = 1 / (BIAS2 * dsm)^(1/(k+1))
+        # where dsm = terk / (alpha0 * (k+1)) and alpha0 is the BDF leading coefficient.
+        # FBDF uses fixed leading coefficients, so alpha0 = bdf_coeffs[k, 1].
+        # BIAS2 = 6 matches CVODE (cvode_impl.h).
+        alpha0 = cache.bdf_coeffs[k, 1]
+        q = ((6 * terk / (alpha0 * (k + 1)))^(1 / (k + 1)))
     end
     integrator.qold = q
     return q
@@ -443,7 +472,9 @@ function stepsize_controller!(
     if iszero(terk)
         q = inv(get_current_qmax(integrator, integrator.opts.qmax))
     else
-        q = ((2 * terk / (k + 1))^(1 / (k + 1)))
+        # CVODE-style step size formula matching FBDF change
+        alpha0 = cache.bdf_coeffs[k, 1]
+        q = ((6 * terk / (alpha0 * (k + 1)))^(1 / (k + 1)))
     end
     integrator.qold = q
     return q

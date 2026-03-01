@@ -162,6 +162,9 @@ function reinitFBDF!(integrator, cache)
         consfailcnt = cache.consfailcnt = cache.nconsteps = 0
         cache.qwait = 3 # order + 2, matching nconsteps >= order + 2 for failure-free runs
         iters_from_event = cache.iters_from_event = 0
+        if hasproperty(cache, :stald)
+            stald_reset!(cache.stald)
+        end
 
         fill!(ts, zero(eltype(ts)))
         for h in u_history
@@ -212,6 +215,132 @@ function reinitFBDF!(integrator, cache)
         end
     end
     return nothing
+end
+
+####################################################################
+# Chebyshev reference nodes and barycentric weights for FBDF/DFBDF
+# dense output. Lagrange interpolation is resampled at these fixed
+# nodes during the step (calck block), then evaluated at arbitrary
+# Θ during post-solve interpolation using the barycentric formula.
+#
+# Chebyshev nodes of the first kind on [0,1]:
+#   xi_j = (1 + cos((2j-1)π/(2n))) / 2,  j = 1,...,n
+#
+# Barycentric weights (type 2):
+#   w_j = (-1)^(j-1) * sin((2j-1)π/(2n))
+#
+# These are compile-time constants; no GPU scalar indexing.
+####################################################################
+
+const _CHEB_NODES = ntuple(
+    n -> ntuple(j -> (1 + cospi((2j - 1) / (2n))) / 2, n), 6
+)
+
+const _BARY_WEIGHTS = ntuple(
+    n -> ntuple(j -> (-1)^(j - 1) * sinpi((2j - 1) / (2n)), n), 6
+)
+
+# Evaluate Lagrange basis L_j(xi) for *actual* (variable) theta nodes.
+# All arguments are scalars. Used only in calck/addsteps to resample
+# the original interpolant at fixed Chebyshev reference nodes.
+@inline function _lagrange_basis_scalar(xi, j, thetas, n)
+    theta_j = thetas[j]
+    L = one(xi)
+    for m in 1:n
+        m == j && continue
+        L *= (xi - thetas[m]) / (theta_j - thetas[m])
+    end
+    return L
+end
+
+# Evaluate Lagrange interpolant through (thetas[j], values[j]) at scalar xi.
+# thetas are scalars, values can be arrays. Out-of-place (allocating).
+function _eval_lagrange_oop(xi, thetas, values, n)
+    L1 = _lagrange_basis_scalar(xi, 1, thetas, n)
+    out = values[1] isa Number ? L1 * values[1] : @.. L1 * values[1]
+    for j in 2:n
+        Lj = _lagrange_basis_scalar(xi, j, thetas, n)
+        if values[1] isa Number
+            out += Lj * values[j]
+        else
+            out = @.. out + Lj * values[j]
+        end
+    end
+    return out
+end
+
+# In-place variant: overwrites `out`.
+function _eval_lagrange_iip!(out, xi, thetas, values, n)
+    L1 = _lagrange_basis_scalar(xi, 1, thetas, n)
+    @.. broadcast = false out = L1 * values[1]
+    for j in 2:n
+        Lj = _lagrange_basis_scalar(xi, j, thetas, n)
+        @.. broadcast = false out = out + Lj * values[j]
+    end
+    return out
+end
+
+# Resample: evaluate the Lagrange interpolant defined by
+# (thetas[j], values[j]) at fixed Chebyshev reference nodes,
+# writing k[i] = p(xi_i). Out-of-place.
+function _resample_at_chebyshev!(k, values, thetas, n)
+    nodes = _CHEB_NODES[n]
+    for i in 1:n
+        xi = nodes[i]
+        L1 = _lagrange_basis_scalar(xi, 1, thetas, n)
+        if values[1] isa Number
+            k[i] = L1 * values[1]
+            for j in 2:n
+                Lj = _lagrange_basis_scalar(xi, j, thetas, n)
+                k[i] += Lj * values[j]
+            end
+        else
+            k[i] = @.. L1 * values[1]
+            for j in 2:n
+                Lj = _lagrange_basis_scalar(xi, j, thetas, n)
+                k[i] = @.. k[i] + Lj * values[j]
+            end
+        end
+    end
+    return
+end
+
+# In-place variant: reads from k[1..n] (the original values),
+# copies to scratch[1..n], then writes resampled values back to k[1..n].
+function _resample_at_chebyshev_iip!(k, thetas, n, scratch)
+    for j in 1:n
+        copyto!(scratch[j], k[j])
+    end
+    nodes = _CHEB_NODES[n]
+    for i in 1:n
+        xi = nodes[i]
+        L1 = _lagrange_basis_scalar(xi, 1, thetas, n)
+        @.. broadcast = false k[i] = L1 * scratch[1]
+        for j in 2:n
+            Lj = _lagrange_basis_scalar(xi, j, thetas, n)
+            @.. broadcast = false k[i] = k[i] + Lj * scratch[j]
+        end
+    end
+    return
+end
+
+# Direct in-place resampling: writes Chebyshev-resampled values to k[1..n]
+# using u (step endpoint) and u_history[1..n-1] (past solution values) as
+# sources, without requiring a scratch buffer.  This avoids type mismatches
+# during ForwardDiff AD where k has Dual element types but pre-allocated
+# scratch buffers are Float64.
+function _resample_at_chebyshev_direct_iip!(k, u, u_history, thetas, n)
+    nodes = _CHEB_NODES[n]
+    for i in 1:n
+        xi = nodes[i]
+        L1 = _lagrange_basis_scalar(xi, 1, thetas, n)
+        @.. broadcast = false k[i] = L1 * u
+        for j in 2:n
+            Lj = _lagrange_basis_scalar(xi, j, thetas, n)
+            @.. broadcast = false k[i] = k[i] + Lj * u_history[j - 1]
+        end
+    end
+    return
 end
 
 function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order}

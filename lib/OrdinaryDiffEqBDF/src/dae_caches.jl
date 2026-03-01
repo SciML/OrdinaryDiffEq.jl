@@ -300,7 +300,7 @@ function alg_cache(
     ts_tmp = similar(ts)
     iters_from_event = 0
 
-    dense = [zero(u) for _ in 1:(2 * (max_order + 1))]
+    dense = [zero(u) for _ in 1:(2 * (max_order + 1))]  # first half for integrator.k, second half as scratch
 
     fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
 

@@ -56,6 +56,13 @@ function apply_step!(integrator)
     end
 
     update_fsal!(integrator)
+
+    # Shorten dt to hit the next tstop after update_fsal!, which for DDEs calls
+    # handle_discontinuities! using integrator.dt to track propagated discontinuities
+    # in the interval [t, t+dt]. Must come after update_fsal! but before the next
+    # perform_step!. loopheader! also calls this unconditionally, which is a harmless
+    # no-op on the accept path since dt was already adjusted here.
+    modify_dt_for_tstops!(integrator)
     return nothing
 end
 
@@ -227,8 +234,11 @@ function _postamble!(integrator)
     solution_endpoint_match_cur_integrator!(integrator)
     resize!(integrator.sol.t, integrator.saveiter)
     resize!(integrator.sol.u, integrator.saveiter)
+    sizehint!(integrator.sol.t, integrator.saveiter)
+    sizehint!(integrator.sol.u, integrator.saveiter)
     if !(integrator.sol isa DAESolution)
         resize!(integrator.sol.k, integrator.saveiter_dense)
+        sizehint!(integrator.sol.k, integrator.saveiter_dense)
     end
     if integrator.opts.progress
         final_progress(integrator)

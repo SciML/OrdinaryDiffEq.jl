@@ -587,7 +587,7 @@ end
 
 @cache mutable struct FBDFConstantCache{
         MO, N, tsType, tType, uType, uuType, coeffType,
-        EEstType, rType, wType,
+        EEstType, rType, wType, staldType,
     } <:
     OrdinaryDiffEqConstantCache
     nlsolver::N
@@ -610,6 +610,7 @@ end
     r::rType
     weights::wType
     iters_from_event::Int
+    stald::staldType
 end
 
 function alg_cache(
@@ -658,16 +659,28 @@ function alg_cache(
     t_old = zero(t)
     iters_from_event = 0
 
+    T_stald = real(uBottomEltypeNoUnits)
+    stald = StabilityLimitDetectionState(
+        T_stald;
+        enabled = alg.stald,
+        rrcut = alg.stald_rrcut,
+        vrrtol = alg.stald_vrrtol,
+        vrrt2 = alg.stald_vrrt2,
+        sqtol = alg.stald_sqtol,
+        rrtol = alg.stald_rrtol,
+        tiny = alg.stald_tiny,
+    )
+
     return FBDFConstantCache(
         nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, terkm2,
-        terkm1, terk, terkp1, r, weights, iters_from_event
+        terkm1, terk, terkp1, r, weights, iters_from_event, stald
     )
 end
 
 @cache mutable struct FBDFCache{
         MO, N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
-        coeffType, EEstType, rType, wType, StepLimiter, fdWeightsType,
+        coeffType, EEstType, rType, wType, StepLimiter, fdWeightsType, staldType,
     } <:
     BDFMutableCache
     fsalfirst::rateType
@@ -700,6 +713,7 @@ end
     dense::Vector{uType}
     step_limiter!::StepLimiter
     fd_weights::fdWeightsType
+    stald::staldType
 end
 
 @truncate_stacktrace FBDFCache 1
@@ -756,14 +770,25 @@ function alg_cache(
     ts_tmp = similar(ts)
     iters_from_event = 0
 
-    dense = [zero(u) for _ in 1:(2 * (max_order + 1))]
+    dense = [zero(u) for _ in 1:(2 * (max_order + 1))]  # first half for integrator.k, second half as scratch
 
     fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
+    T_stald = real(uBottomEltypeNoUnits)
+    stald = StabilityLimitDetectionState(
+        T_stald;
+        enabled = alg.stald,
+        rrcut = alg.stald_rrcut,
+        vrrtol = alg.stald_vrrtol,
+        vrrt2 = alg.stald_vrrt2,
+        sqtol = alg.stald_sqtol,
+        rrtol = alg.stald_rrtol,
+        tiny = alg.stald_tiny,
+    )
 
     return FBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event, dense, alg.step_limiter!, fd_weights
+        iters_from_event, dense, alg.step_limiter!, fd_weights, stald
     )
 end

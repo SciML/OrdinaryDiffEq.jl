@@ -233,17 +233,16 @@ end
 end
 
 function initialize!(integrator, cache::DFBDFConstantCache{max_order}) where {max_order}
-    integrator.kshortsize = 2 * (max_order + 1)
+    integrator.kshortsize = max_order + 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(
         integrator.du, integrator.uprev, integrator.p,
         integrator.t
     ) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    # k[1..half] = solution values, k[half+1..2*half] = Θ positions
-    # where half = max_order + 1
+    # k[1..max_order+1] = solution values at fixed Chebyshev reference nodes
     integrator.fsallast = zero(integrator.fsalfirst)
-    for i in 1:(2 * (max_order + 1))
+    for i in 1:(max_order + 1)
         integrator.k[i] = zero(integrator.fsalfirst)
     end
 
@@ -266,36 +265,22 @@ function perform_step!(
     k = order
     reinitFBDF!(integrator, cache)
 
-    # Rebuild integrator.k from u_history/ts for predictor/corrector
-    half = max_order + 1
-    if iters_from_event >= 1
-        for j in 1:(max_order + 1)
-            if j <= k + 1
-                if u isa Number
-                    integrator.k[j] = u_history[j]
-                    integrator.k[half + j] = (ts[j] - t) / dt
-                else
-                    integrator.k[j] = copy(u_history[j])
-                    integrator.k[half + j] = fill((ts[j] - t) / dt, size(u))
-                end
-            else
-                integrator.k[j] = zero(u)
-                integrator.k[half + j] = zero(u)
-            end
-        end
-    end
-
+    # Predictor: evaluate Lagrange interpolant through u_history at Θ=1
+    # using actual (variable) theta nodes. No need to fill integrator.k.
+    n_pred = k + 1
+    pred_thetas = Vector{typeof(t)}(undef, n_pred)
     cache.u₀ = zero(u)
     if iters_from_event >= 1
-        cache.u₀ = _ode_interpolant(
-            one(t), dt, uprev, uprev,
-            integrator.k, cache, nothing, Val{0}, nothing
-        )
+        for j in 1:n_pred
+            pred_thetas[j] = (ts[j] - t) / dt
+        end
+        cache.u₀ = _eval_lagrange_oop(one(t), pred_thetas, u_history, n_pred)
     else
         cache.u₀ = u
     end
     markfirststage!(nlsolver)
 
+    # Corrector: evaluate Lagrange interpolant at equidistant past points
     if u isa Number
         fill!(u_corrector, zero(eltype(u)))
     else
@@ -304,23 +289,24 @@ function perform_step!(
         end
     end
     if u isa Number
-        for i in 1:(k - 1)
-            u_corrector[i] = _ode_interpolant(
-                oftype(t, -i), dt, uprev, uprev,
-                integrator.k, cache, nothing, Val{0}, nothing
-            )
+        if iters_from_event >= 1
+            for i in 1:(k - 1)
+                u_corrector[i] = _eval_lagrange_oop(
+                    oftype(t, -i), pred_thetas, u_history, n_pred
+                )
+            end
         end
         tmp = uprev * bdf_coeffs[k, 2]
         for i in 1:(k - 1)
             tmp += u_corrector[i] * bdf_coeffs[k, i + 2]
         end
     else
-        for i in 1:(k - 1)
-            val = _ode_interpolant(
-                oftype(t, -i), dt, uprev, uprev,
-                integrator.k, cache, nothing, Val{0}, nothing
-            )
-            u_corrector[i] = val
+        if iters_from_event >= 1
+            for i in 1:(k - 1)
+                u_corrector[i] = _eval_lagrange_oop(
+                    oftype(t, -i), pred_thetas, u_history, n_pred
+                )
+            end
         end
         tmp = uprev * bdf_coeffs[k, 2]
         for i in 1:(k - 1)
@@ -405,39 +391,31 @@ function perform_step!(
     integrator.fsallast = integrator.du = (nlsolver.α * z + nlsolver.tmp) *
         inv(nlsolver.γ * dt)
     if integrator.opts.calck
-        # Store dense output data: k[1]=u_new at Θ=1, k[1+j]=u_history[:,j]
-        half = max_order + 1
-        if u isa Number
-            integrator.k[1] = u
-            integrator.k[half + 1] = one(t)
-        else
-            integrator.k[1] = copy(u)
-            integrator.k[half + 1] = fill(one(t), size(u))
+        # Store dense output: resample Lagrange interpolant at Chebyshev nodes
+        n = min(k + 1, max_order + 1)
+        calck_thetas = Vector{typeof(t)}(undef, n)
+        calck_thetas[1] = one(t)
+        for j in 1:min(k, max_order)
+            calck_thetas[1 + j] = (ts[j] - t) / dt
         end
-        for j in 1:max_order
-            if j <= k
-                if u isa Number
-                    integrator.k[1 + j] = u_history[j]
-                else
-                    integrator.k[1 + j] = copy(u_history[j])
-                end
-                integrator.k[half + 1 + j] = (u isa Number) ?
-                    (ts[j] - t) / dt :
-                    fill((ts[j] - t) / dt, size(u))
-            else
-                integrator.k[1 + j] = zero(u)
-                integrator.k[half + 1 + j] = zero(u)
-            end
+        calck_values = Vector{typeof(u)}(undef, n)
+        calck_values[1] = u isa Number ? u : copy(u)
+        for j in 1:min(k, max_order)
+            calck_values[1 + j] = u isa Number ? u_history[j] : copy(u_history[j])
+        end
+        _resample_at_chebyshev!(integrator.k, calck_values, calck_thetas, n)
+        for j in (n + 1):(max_order + 1)
+            integrator.k[j] = zero(u)
         end
     end
     return nothing
 end
 
 function initialize!(integrator, cache::DFBDFCache{max_order}) where {max_order}
-    integrator.kshortsize = 2 * (max_order + 1)
+    integrator.kshortsize = max_order + 1
 
     resize!(integrator.k, integrator.kshortsize)
-    for i in 1:(2 * (max_order + 1))
+    for i in 1:(max_order + 1)
         integrator.k[i] = cache.dense[i]
     end
 
@@ -453,47 +431,35 @@ function perform_step!(
     ) where {max_order}
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
-        terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp,
+        terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense,
     ) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
     reinitFBDF!(integrator, cache)
     k = order
 
-    # Rebuild integrator.k from u_history/ts for predictor/corrector
-    half = max_order + 1
-    if cache.iters_from_event >= 1
-        for j in 1:(max_order + 1)
-            if j <= k + 1
-                copyto!(integrator.k[j], u_history[j])
-                fill!(integrator.k[half + j], (ts[j] - t) / dt)
-            else
-                fill!(integrator.k[j], zero(eltype(u)))
-                fill!(integrator.k[half + j], zero(eltype(u)))
-            end
-        end
-    end
-
+    # Predictor: evaluate Lagrange interpolant through u_history at Θ=1
+    # using actual (variable) theta nodes. No need to fill integrator.k.
+    n_pred = k + 1
     @.. broadcast = false u₀ = zero(u)
     if cache.iters_from_event >= 1
-        _ode_interpolant!(
-            u₀, one(t), dt, uprev, uprev,
-            integrator.k, cache, nothing, Val{0}, nothing
-        )
+        for j in 1:n_pred
+            equi_ts[j] = (ts[j] - t) / dt
+        end
+        _eval_lagrange_iip!(u₀, one(t), equi_ts, u_history, n_pred)
     else
         @.. broadcast = false u₀ = u
     end
     markfirststage!(nlsolver)
 
+    # Corrector: evaluate Lagrange interpolant at equidistant past points
     for h in u_corrector
         fill!(h, zero(eltype(h)))
     end
-    for i in 1:(k - 1)
-        _ode_interpolant!(
-            terk_tmp, oftype(t, -i), dt, uprev, uprev,
-            integrator.k, cache, nothing, Val{0}, nothing
-        )
-        copyto!(u_corrector[i], terk_tmp)
+    if cache.iters_from_event >= 1
+        for i in 1:(k - 1)
+            _eval_lagrange_iip!(u_corrector[i], oftype(t, -i), equi_ts, u_history, n_pred)
+        end
     end
 
     @.. broadcast = false tmp = uprev * bdf_coeffs[k, 2]
@@ -577,20 +543,19 @@ function perform_step!(
         nlsolver.α * z +
             nlsolver.tmp
     ) *
-        inv(nlsolver.γ * dt) #TODO Lorenz plot seems not smooth
+        inv(nlsolver.γ * dt)
     if integrator.opts.calck
-        # Store dense output data: k[1]=u_new at Θ=1, k[1+j]=u_history[:,j]
-        half = max_order + 1
-        @.. broadcast = false integrator.k[1] = u
-        fill!(integrator.k[half + 1], one(eltype(u)))
-        for j in 1:max_order
-            if j <= k
-                copyto!(integrator.k[1 + j], u_history[j])
-                fill!(integrator.k[half + 1 + j], (ts[j] - t) / dt)
-            else
-                fill!(integrator.k[1 + j], zero(eltype(u)))
-                fill!(integrator.k[half + 1 + j], zero(eltype(u)))
-            end
+        # Store dense output: resample Lagrange interpolant at Chebyshev nodes.
+        # Use _resample_at_chebyshev_direct_iip! to read from u and u_history
+        # directly, avoiding scratch buffer type mismatches during AD.
+        n = min(k + 1, max_order + 1)
+        equi_ts[1] = one(eltype(equi_ts))
+        for j in 1:min(k, max_order)
+            equi_ts[1 + j] = (ts[j] - t) / dt
+        end
+        _resample_at_chebyshev_direct_iip!(integrator.k, u, u_history, equi_ts, n)
+        for j in (n + 1):(max_order + 1)
+            fill!(integrator.k[j], zero(eltype(u)))
         end
     end
     return nothing

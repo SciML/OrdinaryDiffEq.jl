@@ -68,21 +68,18 @@ function _ode_addsteps!(
 end
 
 ####################################################################
-# FBDF / DFBDF: Rebuild Lagrange interpolation nodes
+# FBDF / DFBDF: Rebuild Chebyshev-resampled interpolation data
 #
-# Layout: k has 2*half entries where half = length(k)÷2.
-#   k[1..half]       = solution values at nodes
-#   k[half+1..2*half] = corresponding Θ positions
+# Layout: k has max_order+1 entries.
+#   k[1..n] = solution values at fixed Chebyshev reference nodes
+#   k[n+1..end] = zero
 #
 # After a callback truncates the step to dt (= t_event - t_prev)
-# and modifies u, we rebuild k using the cache's u_history and ts:
-#   k[1] = u (post-callback) at Θ = 1
-#   k[1+j] = u_history[j] (past solutions, still valid)
-#   k[half+1] = 1
-#   k[half+1+j] = (ts[j] - t) / dt  (recomputed for truncated dt)
-#
-# This preserves high-order Lagrange interpolation accuracy through
-# the actual historical solution values with correct Θ normalization.
+# and modifies u, we rebuild k by:
+#   1. Assembling the original Lagrange interpolation data:
+#      values[1] = u at Θ=1, values[1+j] = u_history[j]
+#      thetas[1] = 1, thetas[1+j] = (ts[j] - t) / dt
+#   2. Resampling at fixed Chebyshev nodes via _resample_at_chebyshev!
 ####################################################################
 
 # FBDF/DFBDF ConstantCache: out-of-place k entries
@@ -94,31 +91,23 @@ function _ode_addsteps!(
     )
     always_calc_begin || return nothing
     (; u_history, ts, order) = cache
-    half = length(k) ÷ 2
-    if u isa Number
-        k[1] = u
-        k[half + 1] = one(t)
-        for j in 1:(half - 1)
-            if j <= order
-                k[1 + j] = u_history[j]
-                k[half + 1 + j] = (ts[j] - t) / dt
-            else
-                k[1 + j] = zero(u)
-                k[half + 1 + j] = zero(t)
-            end
-        end
-    else
-        k[1] = copy(u)
-        k[half + 1] = fill(one(t), size(u))
-        for j in 1:(half - 1)
-            if j <= order
-                k[1 + j] = copy(u_history[j])
-                k[half + 1 + j] = fill((ts[j] - t) / dt, size(u))
-            else
-                k[1 + j] = zero(u)
-                k[half + 1 + j] = fill(zero(t), size(u))
-            end
-        end
+    n = order + 1
+
+    thetas = Vector{typeof(t)}(undef, n)
+    thetas[1] = one(t)
+    for j in 1:order
+        thetas[1 + j] = (ts[j] - t) / dt
+    end
+
+    values = Vector{typeof(u)}(undef, n)
+    values[1] = u isa Number ? u : copy(u)
+    for j in 1:order
+        values[1 + j] = u isa Number ? u_history[j] : copy(u_history[j])
+    end
+
+    _resample_at_chebyshev!(k, values, thetas, n)
+    for j in (n + 1):length(k)
+        k[j] = zero(u)
     end
     return nothing
 end
@@ -131,18 +120,20 @@ function _ode_addsteps!(
         force_calc_end = false
     )
     always_calc_begin || return nothing
-    (; u_history, ts, order) = cache
-    half = length(k) ÷ 2
-    @.. broadcast = false k[1] = u
-    fill!(k[half + 1], one(eltype(u)))
-    for j in 1:(half - 1)
-        if j <= order
-            copyto!(k[1 + j], u_history[j])
-            fill!(k[half + 1 + j], (ts[j] - t) / dt)
-        else
-            fill!(k[1 + j], zero(eltype(u)))
-            fill!(k[half + 1 + j], zero(eltype(u)))
-        end
+    (; u_history, ts, order, equi_ts) = cache
+    max_order = length(k) - 1
+    n = order + 1
+
+    # Compute thetas
+    equi_ts[1] = one(eltype(equi_ts))
+    for j in 1:order
+        equi_ts[1 + j] = (ts[j] - t) / dt
+    end
+
+    # Resample at Chebyshev nodes directly from u and u_history
+    _resample_at_chebyshev_direct_iip!(k, u, u_history, equi_ts, n)
+    for j in (n + 1):(max_order + 1)
+        fill!(k[j], zero(eltype(u)))
     end
     return nothing
 end

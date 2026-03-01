@@ -80,6 +80,7 @@ end
         @time @safetestset "Algebraic Interpolation Tests" include("interface/algebraic_interpolation.jl")
         @time @safetestset "Interpolation and Cache Stripping Tests" include("interface/ode_strip_test.jl")
         @time @safetestset "Aliasing Tests" include("interface/aliasing_tests.jl")
+        @time @safetestset "Solution Memory Release" include("interface/solution_memory_tests.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")

@@ -552,6 +552,13 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     - `max_order`: TBD
+    - `stald`: Enable Stability Limit Detection (STALD) for BDF orders 3-5. Default: `true`.
+    - `stald_rrcut`: STALD cutoff for characteristic root magnitude. Default: `0.98`.
+    - `stald_vrrtol`: STALD tolerance for variance of ratios. Default: `1e-4`.
+    - `stald_vrrt2`: STALD secondary variance tolerance. Default: `5e-4`.
+    - `stald_sqtol`: STALD tolerance for quartic residual. Default: `1e-3`.
+    - `stald_rrtol`: STALD tolerance for rr cross-verification. Default: `1e-2`.
+    - `stald_tiny`: STALD tiny value to avoid division by zero. Default: `1e-90`.
     """,
     extra_keyword_default = """
     κ = nothing,
@@ -561,6 +568,13 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     controller = :Standard,
     step_limiter! = trivial_limiter!,
     max_order::Val{MO} = Val{5}(),
+    stald = true,
+    stald_rrcut = 0.98,
+    stald_vrrtol = 1e-4,
+    stald_vrrt2 = 5e-4,
+    stald_sqtol = 1e-3,
+    stald_rrtol = 1e-2,
+    stald_tiny = 1e-90,
     """
 )
 struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
@@ -575,6 +589,13 @@ struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    stald::Bool
+    stald_rrcut::Float64
+    stald_vrrtol::Float64
+    stald_vrrt2::Float64
+    stald_sqtol::Float64
+    stald_rrtol::Float64
+    stald_tiny::Float64
 end
 
 function FBDF(;
@@ -583,7 +604,14 @@ function FBDF(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!
+        extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!,
+        stald = true,
+        stald_rrcut = 0.98,
+        stald_vrrtol = 1.0e-4,
+        stald_vrrt2 = 5.0e-4,
+        stald_sqtol = 1.0e-3,
+        stald_rrtol = 1.0e-2,
+        stald_tiny = 1.0e-90
     ) where {MO}
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
@@ -594,7 +622,9 @@ function FBDF(;
         typeof(κ), typeof(tol), typeof(step_limiter!),
     }(
         max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller, step_limiter!, AD_choice
+        controller, step_limiter!, AD_choice,
+        stald, Float64(stald_rrcut), Float64(stald_vrrtol), Float64(stald_vrrt2),
+        Float64(stald_sqtol), Float64(stald_rrtol), Float64(stald_tiny)
     )
 end
 
