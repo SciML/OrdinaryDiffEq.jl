@@ -44,11 +44,8 @@ end
 
 get_fsalfirstlast(cache::Tsit5Cache, u) = (cache.k1, cache.k7)
 
-# Buffer swap is beneficial for arrays larger than ~1000 elements where memcpy
-# of 7 k-arrays per step dominates. For smaller arrays, allocation overhead
-# of 7 fresh arrays per step outweighs the copy savings.
-const _K_SWAP_THRESHOLD = 1000
-OrdinaryDiffEqCore.supports_k_swap(cache::Tsit5Cache) = length(cache.k1) >= _K_SWAP_THRESHOLD
+# Disabled: buffer swap replaced by Polyester.@batch parallel copy
+OrdinaryDiffEqCore.supports_k_swap(cache::Tsit5Cache) = false
 
 function OrdinaryDiffEqCore.swap_k_buffers!(integrator, cache::Tsit5Cache)
     # Capture FSAL reference before allocating new arrays: old k7 has the
