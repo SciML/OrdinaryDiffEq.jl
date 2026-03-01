@@ -27,13 +27,6 @@ using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm, lu, lu!
 using ADTypes
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
-# Conditionally import aggressive_W_reuse (added in newer OrdinaryDiffEqCore)
-@static if isdefined(OrdinaryDiffEqCore, :aggressive_W_reuse)
-    import OrdinaryDiffEqCore: aggressive_W_reuse
-else
-    aggressive_W_reuse(alg) = false
-end
-
 using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
     UDerivativeWrapper, UJacobianWrapper,
     wrapprecs, calc_tderivative, build_grad_config,

@@ -583,7 +583,6 @@ isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Sta
 
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 aggressive_W_reuse(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-aggressive_W_reuse(alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm) = alg.aggressive_W_reuse
 
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 

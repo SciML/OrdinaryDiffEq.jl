@@ -51,8 +51,6 @@ isWmethod(alg::ROS34PRw) = true
 isWmethod(alg::ROK4a) = true
 isWmethod(alg::RosenbrockW6S4OS) = true
 
-aggressive_W_reuse(alg::RosenbrockW6S4OS) = alg.aggressive_W_reuse
-
 isfsal(alg::Rodas3P) = false
 isfsal(alg::Rodas23W) = false
 isfsal(alg::Rodas5) = false
