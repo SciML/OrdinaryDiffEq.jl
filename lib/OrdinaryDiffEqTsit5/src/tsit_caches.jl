@@ -51,17 +51,20 @@ const _K_SWAP_THRESHOLD = 1000
 OrdinaryDiffEqCore.supports_k_swap(cache::Tsit5Cache) = length(cache.k1) >= _K_SWAP_THRESHOLD
 
 function OrdinaryDiffEqCore.swap_k_buffers!(integrator, cache::Tsit5Cache)
-    # Save reference to old k7 for FSAL data transfer
-    old_k7 = cache.k7
+    # Capture FSAL reference before allocating new arrays: old k7 has the
+    # correct FSAL data from the just-completed step. By pointing fsallast
+    # to it, update_fsal! will naturally copy it into the new k1 (fsalfirst)
+    # via its existing recursivecopy!(fsalfirst, fsallast). No extra copy needed.
+    integrator.fsallast = cache.k7
 
-    # Allocate fresh k arrays and update cache fields
-    cache.k1 = similar(old_k7)
-    cache.k2 = similar(old_k7)
-    cache.k3 = similar(old_k7)
-    cache.k4 = similar(old_k7)
-    cache.k5 = similar(old_k7)
-    cache.k6 = similar(old_k7)
-    cache.k7 = similar(old_k7)
+    # Allocate fresh k arrays for the next step
+    cache.k1 = similar(cache.k7)
+    cache.k2 = similar(cache.k7)
+    cache.k3 = similar(cache.k7)
+    cache.k4 = similar(cache.k7)
+    cache.k5 = similar(cache.k7)
+    cache.k6 = similar(cache.k7)
+    cache.k7 = similar(cache.k7)
 
     # Update integrator.k references to new arrays
     integrator.k[1] = cache.k1
@@ -72,15 +75,8 @@ function OrdinaryDiffEqCore.swap_k_buffers!(integrator, cache::Tsit5Cache)
     integrator.k[6] = cache.k6
     integrator.k[7] = cache.k7
 
-    # Copy FSAL data: old k7 contains f(u_new, p, t_new) which is needed
-    # as fsallast for the next step's update_fsal! to copy into fsalfirst.
-    # We copy it into the new k7 so fsallast (aliased to cache.k7) has the
-    # right data when update_fsal! does recursivecopy!(fsalfirst, fsallast).
-    recursivecopy!(cache.k7, old_k7)
-
-    # Update fsalfirst/fsallast to point to new cache arrays
+    # fsalfirst points to new k1 (update_fsal! will copy fsallast into it)
     integrator.fsalfirst = cache.k1
-    integrator.fsallast = cache.k7
 
     return nothing
 end
