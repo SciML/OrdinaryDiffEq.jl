@@ -186,6 +186,16 @@ isimplicit(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = true
 isimplicit(alg::OrdinaryDiffEqImplicitAlgorithm) = true
 isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
+# Initial dt selection algorithm trait.
+# DefaultInitDt uses the Hairer-Wanner algorithm (suitable for non-stiff and general problems).
+# StiffInitDt uses a component-wise iterative algorithm (more robust for stiff multi-scale problems).
+# All implicit and DAE solvers default to StiffInitDt; explicit solvers use DefaultInitDt.
+initdt_alg(alg::OrdinaryDiffEqAlgorithm) = DefaultInitDt()
+initdt_alg(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = StiffInitDt()
+initdt_alg(alg::OrdinaryDiffEqImplicitAlgorithm) = StiffInitDt()
+initdt_alg(alg::DAEAlgorithm) = StiffInitDt()
+initdt_alg(alg::CompositeAlgorithm) = initdt_alg(alg.algs[1])
+
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
 

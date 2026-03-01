@@ -5,6 +5,20 @@
         },
         integrator
     ) where {tType, uType}
+    # Dispatch to the appropriate initdt algorithm
+    alg_type = initdt_alg(integrator.alg)
+    return _ode_determine_initdt(
+        alg_type, u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob, integrator
+    )
+end
+
+@muladd function _ode_determine_initdt(
+        ::DefaultInitDt, u0, t, tdir, dtmax, abstol, reltol, internalnorm,
+        prob::SciMLBase.AbstractODEProblem{
+            uType, tType, true,
+        },
+        integrator
+    ) where {tType, uType}
     _tType = eltype(tType)
     f = prob.f
     p = integrator.p
@@ -13,15 +27,6 @@
 
     dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
-
-    if integrator.isdae
-        result_dt = tdir * max(smalldt, dtmin)
-        @SciMLMessage(
-            lazy"Using default small timestep for DAE: dt = $(result_dt)",
-            integrator.opts.verbose, :shampine_dt
-        )
-        return result_dt
-    end
 
     if eltype(u0) <: Number && !(integrator.alg isa CompositeAlgorithm)
         cache = get_tmp_cache(integrator)
@@ -60,6 +65,7 @@
         end
         f(f₀, u0, p, t)
     end
+    integrator.stats.nf += 1
 
     # TODO: use more caches
     #tmp = cache[2]
@@ -193,6 +199,7 @@
     end
     f₁ = zero(f₀)
     f(f₁, u₁, p, t + dt₀_tdir)
+    integrator.stats.nf += 1
 
     if prob.f.mass_matrix != I && (
             !(prob.f isa DynamicalODEFunction) ||
@@ -273,6 +280,20 @@ end
         },
         integrator
     ) where {uType, tType}
+    alg_type = initdt_alg(integrator.alg)
+    return _ode_determine_initdt(
+        alg_type, u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob, integrator
+    )
+end
+
+@muladd function _ode_determine_initdt(
+        ::DefaultInitDt, u0, t, tdir, dtmax, abstol, reltol, internalnorm,
+        prob::SciMLBase.AbstractODEProblem{
+            uType, tType,
+            false,
+        },
+        integrator
+    ) where {uType, tType}
     _tType = eltype(tType)
     f = prob.f
     p = prob.p
@@ -282,14 +303,11 @@ end
     dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
-    if integrator.isdae
-        return tdir * max(smalldt, dtmin)
-    end
-
     sk = @.. broadcast = false abstol + internalnorm(u0, t) * reltol
     d₀ = internalnorm(u0 ./ sk, t)
 
     f₀ = f(u0, p, t)
+    integrator.stats.nf += 1
 
     if any(x -> any(isnan, x), f₀)
         @SciMLMessage(
@@ -315,6 +333,7 @@ end
 
     u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
     f₁ = f(u₁, p, t + dt₀_tdir)
+    integrator.stats.nf += 1
 
     # Constant zone before callback
     # Just return first guess
@@ -343,6 +362,481 @@ end
     return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
 end
 
+# Stiff initial step size algorithm (in-place)
+#
+# Component-wise iterative algorithm for initial step size selection, more robust
+# than Hairer-Wanner for stiff multi-scale problems where some state variables
+# start at zero with tiny absolute tolerances.
+#
+# Key differences from the Hairer-Wanner algorithm:
+# 1. Uses component-wise max-norm for the upper bound (most restrictive component constrains)
+# 2. Iteratively refines the estimate (up to 4 iterations)
+# 3. Starts from a geometric mean of lower and upper bounds
+# 4. Detects cancellation in finite-difference second derivative estimates
+# 5. Applies a 0.5 safety bias factor
+#
+# Based on the CVHin algorithm from SUNDIALS CVODE (Hindmarsh et al., 2005).
+@muladd function _ode_determine_initdt(
+        ::StiffInitDt, u0, t, tdir, dtmax, abstol, reltol, internalnorm,
+        prob::SciMLBase.AbstractODEProblem{
+            uType, tType, true,
+        },
+        integrator
+    ) where {tType, uType}
+    _tType = eltype(tType)
+    f = prob.f
+    p = integrator.p
+    oneunit_tType = oneunit(_tType)
+
+    dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
+    smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
+
+    tspan = prob.tspan
+    tdist = abs(tspan[2] - tspan[1])
+
+    # DAE guard: use conservative small dt for mass-matrix DAEs.
+    # Must be before f₀ evaluation to avoid type issues with AD (ForwardDiff Duals).
+    # Uses smalldt (≈1e-6) rather than 0.001*tdist which can be too large for
+    # DAE initialization with inconsistent initial conditions.
+    if integrator.isdae
+        return tdir * max(smalldt, dtmin)
+    end
+
+    # Fall back to DefaultInitDt for non-Array types (GPU arrays need broadcast)
+    # or non-AbstractFloat element types (ForwardDiff Duals, Complex, etc.)
+    if !(u0 isa Array) || !(eltype(u0) <: AbstractFloat)
+        return _ode_determine_initdt(
+            DefaultInitDt(), u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob,
+            integrator
+        )
+    end
+
+    # Evaluate f₀ = f(u0, p, t)
+    if get_current_isfsal(integrator.alg, integrator.cache) &&
+            integrator isa ODEIntegrator
+        f₀ = integrator.fsallast
+        f(f₀, u0, p, t)
+    else
+        if u0 isa Array && eltype(u0) isa Number
+            T = eltype(first(u0) / oneunit_tType)
+            f₀ = similar(u0, T)
+            fill!(f₀, zero(T))
+        else
+            f₀ = zero.(u0 ./ oneunit_tType)
+        end
+        f(f₀, u0, p, t)
+    end
+    integrator.stats.nf += 1
+
+    # Handle mass matrix
+    ftmp = nothing
+    if prob.f.mass_matrix != I && (
+            !(prob.f isa DynamicalODEFunction) ||
+                any(mm != I for mm in prob.f.mass_matrix)
+        )
+        ftmp = zero(f₀)
+        try
+            integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
+            copyto!(f₀, ftmp)
+        catch
+            result_dt = tdir * max(smalldt, dtmin)
+            @SciMLMessage(
+                lazy"Mass matrix appears singular, using default small timestep: dt = $(result_dt)",
+                integrator.opts.verbose, :near_singular
+            )
+            return result_dt
+        end
+    end
+
+    # Check for NaN in f₀
+    if eltype(u0) <: Number && !(integrator.alg isa CompositeAlgorithm)
+        cache = get_tmp_cache(integrator)
+        sk = first(cache)
+    else
+        sk = similar(u0, typeof(internalnorm(first(u0), t) * reltol))
+    end
+
+    if u0 isa Array
+        @inbounds @simd ivdep for i in eachindex(u0)
+            sk[i] = abstol isa Number ? abstol : abstol[i]
+        end
+    else
+        @.. broadcast = false sk = abstol
+    end
+
+    tmp = similar(u0, typeof(zero(eltype(u0)) / zero(eltype(sk)) * oneunit_tType))
+
+    if u0 isa Array
+        @inbounds @simd ivdep for i in eachindex(u0)
+            tmp[i] = f₀[i] / sk[i] * oneunit_tType
+        end
+    else
+        @.. broadcast = false tmp = f₀ / sk * oneunit_tType
+    end
+
+    d₁ = internalnorm(tmp, t)
+
+    if isnan(d₁)
+        @SciMLMessage(
+            "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN
+        )
+        return tdir * dtmin
+    end
+
+    # === CVODE CVHin algorithm ===
+
+    # Step 1: Compute lower and upper bounds on |h|
+    # Lower bound: 100 * machine epsilon
+    hlb = convert(_tType, 100 * eps(_tType) * oneunit_tType)
+
+    # Upper bound: min of component-wise y'/y bound and 0.1 * tdist
+    # hub_i = (0.1 * |y0_i| + tol_i) / |y'0_i|
+    # where tol_i = rtol * |y0_i| + atol_i
+    # hub = min over all i of hub_i (via max-norm of inverse)
+    hub_inv = zero(_tType)
+    if u0 isa Array
+        @inbounds for i in eachindex(u0)
+            atol_i = abstol isa Number ? abstol : abstol[i]
+            rtol_i = reltol isa Number ? reltol : reltol[i]
+            tol_i = rtol_i * abs(u0[i]) + atol_i
+            denom = convert(_tType, 0.1) * abs(u0[i]) + tol_i
+            numer = abs(f₀[i]) * oneunit_tType
+            if denom > 0
+                ratio = numer / denom
+                hub_inv = max(hub_inv, ratio)
+            end
+        end
+    else
+        for i in eachindex(u0)
+            atol_i = abstol isa Number ? abstol : abstol[i]
+            rtol_i = reltol isa Number ? reltol : reltol[i]
+            tol_i = rtol_i * abs(u0[i]) + atol_i
+            denom = convert(_tType, 0.1) * abs(u0[i]) + tol_i
+            numer = abs(f₀[i]) * oneunit_tType
+            if denom > 0
+                ratio = numer / denom
+                hub_inv = max(hub_inv, ratio)
+            end
+        end
+    end
+
+    # Ensure hub_inv stays as _tType (avoid promotion from BigFloat u0 elements)
+    hub_inv = convert(_tType, hub_inv)
+
+    hub = convert(_tType, 0.1) * tdist * oneunit_tType
+    if hub * hub_inv > 1
+        hub = 1 / hub_inv
+    end
+
+    hub = min(hub, tdir * dtmax)
+
+    # If bounds are crossed, return geometric mean
+    if hub < hlb
+        return tdir * sqrt(hlb * hub)
+    end
+
+    # Step 2: Iterative refinement
+    hg = sqrt(hlb * hub)  # geometric mean = initial guess
+    hs = hg               # safeguard value
+
+    MAX_ITERS = 4
+    hnew = hg
+
+    u₁ = zero(u0)
+    f₁ = zero(f₀)
+
+    for count1 in 1:MAX_ITERS
+        # Inner loop: try to evaluate ydd at trial step hg
+        hg_ok = false
+        for count2 in 1:MAX_ITERS
+            hgs = hg * tdir
+
+            # Euler step: u₁ = u0 + hg * f₀
+            if u0 isa Array
+                @inbounds @simd ivdep for i in eachindex(u0)
+                    u₁[i] = u0[i] + hgs * f₀[i]
+                end
+            else
+                @.. broadcast = false u₁ = u0 + hgs * f₀
+            end
+
+            # Evaluate f at stepped point
+            f(f₁, u₁, p, t + convert(_tType, hgs))
+            integrator.stats.nf += 1
+
+            # Handle mass matrix
+            if prob.f.mass_matrix != I && (
+                    !(prob.f isa DynamicalODEFunction) ||
+                        any(mm != I for mm in prob.f.mass_matrix)
+                )
+                integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
+                copyto!(f₁, ftmp)
+            end
+
+            # Check for NaN/Inf in f₁
+            ydd_ok = true
+            if u0 isa Array
+                @inbounds for i in eachindex(f₁)
+                    if !isfinite(f₁[i])
+                        ydd_ok = false
+                        break
+                    end
+                end
+            else
+                for i in eachindex(f₁)
+                    if !isfinite(f₁[i])
+                        ydd_ok = false
+                        break
+                    end
+                end
+            end
+
+            if ydd_ok
+                hg_ok = true
+                break
+            end
+
+            # Reduce step and retry
+            hg *= convert(_tType, 0.2)
+        end
+
+        if !hg_ok
+            if count1 <= 2
+                return tdir * max(smalldt, dtmin)
+            end
+            hnew = hs
+            break
+        end
+
+        hs = hg  # save known-good step
+
+        # Compute WRMS norm of ydd = (f₁ - f₀) / hg
+        # ||ydd||_WRMS = sqrt(1/N * sum((ydd_i * ewt_i)^2))
+        # where ewt_i = 1/(rtol * |y0_i| + atol_i)
+        yddnrm = zero(_tType)
+        N = length(u0)
+        if u0 isa Array
+            @inbounds for i in eachindex(u0)
+                atol_i = abstol isa Number ? abstol : abstol[i]
+                rtol_i = reltol isa Number ? reltol : reltol[i]
+                ewt_i = 1 / (rtol_i * abs(u0[i]) + atol_i)
+                ydd_i = (f₁[i] - f₀[i]) / hg * oneunit_tType
+                yddnrm += (ydd_i * ewt_i)^2
+            end
+        else
+            for i in eachindex(u0)
+                atol_i = abstol isa Number ? abstol : abstol[i]
+                rtol_i = reltol isa Number ? reltol : reltol[i]
+                ewt_i = 1 / (rtol_i * abs(u0[i]) + atol_i)
+                ydd_i = (f₁[i] - f₀[i]) / hg * oneunit_tType
+                yddnrm += (ydd_i * ewt_i)^2
+            end
+        end
+        yddnrm = convert(_tType, sqrt(yddnrm / N))
+
+        # Compute new step proposal
+        if yddnrm * hub^2 > 2
+            hnew = sqrt(convert(_tType, 2) / yddnrm)
+        else
+            hnew = sqrt(hg * hub)
+        end
+
+        if count1 == MAX_ITERS
+            break
+        end
+
+        # Convergence check
+        hrat = hnew / hg
+        if hrat > convert(_tType, 0.5) && hrat < 2
+            break  # converged
+        end
+
+        # Cancellation detection
+        if count1 > 1 && hrat > 2
+            hnew = hg
+            break
+        end
+
+        hg = hnew
+    end
+
+    # Step 3: Apply bias and bounds
+    h0 = convert(_tType, 0.5) * hnew
+    h0 = clamp(h0, hlb, hub)
+
+    return tdir * max(dtmin, min(h0, tdir * dtmax))
+end
+
+# CVODE CVHin-style initial step size algorithm (out-of-place)
+@muladd function _ode_determine_initdt(
+        ::StiffInitDt, u0, t, tdir, dtmax, abstol, reltol, internalnorm,
+        prob::SciMLBase.AbstractODEProblem{
+            uType, tType,
+            false,
+        },
+        integrator
+    ) where {uType, tType}
+    _tType = eltype(tType)
+    f = prob.f
+    p = prob.p
+    oneunit_tType = oneunit(_tType)
+
+    dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
+    smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
+
+    tspan = prob.tspan
+    tdist = abs(tspan[2] - tspan[1])
+
+    # DAE guard: use conservative small dt for mass-matrix DAEs.
+    # Must be before f₀ evaluation to avoid type issues with AD (ForwardDiff Duals).
+    if integrator.isdae
+        return tdir * max(smalldt, dtmin)
+    end
+
+    # Fall back to DefaultInitDt for non-Array types (GPU arrays need broadcast)
+    # or non-AbstractFloat element types (ForwardDiff Duals, Complex, etc.)
+    if !(u0 isa Array) || !(eltype(u0) <: AbstractFloat)
+        return _ode_determine_initdt(
+            DefaultInitDt(), u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob,
+            integrator
+        )
+    end
+
+    f₀ = f(u0, p, t)
+    integrator.stats.nf += 1
+
+    if any(x -> any(isnan, x), f₀)
+        @SciMLMessage(
+            "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN
+        )
+        return tdir * dtmin
+    end
+
+    inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
+    if !(f₀ isa inferredtype)
+        throw(TypeNotConstantError(inferredtype, typeof(f₀)))
+    end
+
+    # === CVODE CVHin algorithm ===
+
+    # Step 1: Compute lower and upper bounds on |h|
+    hlb = convert(_tType, 100 * eps(_tType) * oneunit_tType)
+
+    hub_inv = zero(_tType)
+    for i in eachindex(u0)
+        atol_i = abstol isa Number ? abstol : abstol[i]
+        rtol_i = reltol isa Number ? reltol : reltol[i]
+        tol_i = rtol_i * abs(u0[i]) + atol_i
+        denom = convert(_tType, 0.1) * abs(u0[i]) + tol_i
+        numer = abs(f₀[i]) * oneunit_tType
+        if denom > 0
+            ratio = numer / denom
+            hub_inv = max(hub_inv, ratio)
+        end
+    end
+
+    # Ensure hub_inv stays as _tType (avoid promotion from BigFloat u0 elements)
+    hub_inv = convert(_tType, hub_inv)
+
+    hub = convert(_tType, 0.1) * tdist * oneunit_tType
+    if hub * hub_inv > 1
+        hub = 1 / hub_inv
+    end
+
+    hub = min(hub, tdir * dtmax)
+
+    if hub < hlb
+        return tdir * sqrt(hlb * hub)
+    end
+
+    # Step 2: Iterative refinement
+    hg = sqrt(hlb * hub)
+    hs = hg
+
+    MAX_ITERS = 4
+    hnew = hg
+
+    yddnrm = zero(_tType)
+
+    for count1 in 1:MAX_ITERS
+        hg_ok = false
+        for count2 in 1:MAX_ITERS
+            hgs = hg * tdir
+
+            u₁ = @.. broadcast = false u0 + hgs * f₀
+            f₁ = f(u₁, p, t + convert(_tType, hgs))
+            integrator.stats.nf += 1
+
+            ydd_ok = !any(x -> any(!isfinite, x), f₁)
+
+            if ydd_ok
+                hg_ok = true
+                break
+            end
+
+            hg *= convert(_tType, 0.2)
+        end
+
+        if !hg_ok
+            if count1 <= 2
+                return tdir * max(smalldt, dtmin)
+            end
+            hnew = hs
+            break
+        end
+
+        hs = hg
+
+        hgs = hg * tdir
+        u₁ = @.. broadcast = false u0 + hgs * f₀
+        f₁ = f(u₁, p, t + convert(_tType, hgs))
+        integrator.stats.nf += 1
+
+        yddnrm = zero(_tType)
+        N = length(u0)
+        for i in eachindex(u0)
+            atol_i = abstol isa Number ? abstol : abstol[i]
+            rtol_i = reltol isa Number ? reltol : reltol[i]
+            ewt_i = 1 / (rtol_i * abs(u0[i]) + atol_i)
+            ydd_i = (f₁[i] - f₀[i]) / hg * oneunit_tType
+            yddnrm += (ydd_i * ewt_i)^2
+        end
+        yddnrm = convert(_tType, sqrt(yddnrm / N))
+
+        if yddnrm * hub^2 > 2
+            hnew = sqrt(convert(_tType, 2) / yddnrm)
+        else
+            hnew = sqrt(hg * hub)
+        end
+
+        if count1 == MAX_ITERS
+            break
+        end
+
+        hrat = hnew / hg
+        if hrat > convert(_tType, 0.5) && hrat < 2
+            break
+        end
+
+        if count1 > 1 && hrat > 2
+            hnew = hg
+            break
+        end
+
+        hg = hnew
+    end
+
+    # Step 3: Apply bias and bounds
+    h0 = convert(_tType, 0.5) * hnew
+    h0 = clamp(h0, hlb, hub)
+
+    return tdir * max(dtmin, min(h0, tdir * dtmax))
+end
+
+# Simple initial step size for DAE problems: h = 1e-6 * tdist.
+# Kept simple to avoid type issues with ComplexF64, ForwardDiff Duals, etc.
 @inline function ode_determine_initdt(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob::SciMLBase.AbstractDAEProblem{

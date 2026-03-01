@@ -516,7 +516,7 @@ function SciMLBase.auto_dt_reset!(integrator::ODEIntegrator)
         integrator
     )
     integrator.dtpropose = integrator.dt
-    return increment_nf!(integrator.stats, 2)
+    return nothing
 end
 
 function increment_nf!(stats, amt = 1)

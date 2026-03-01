@@ -1,3 +1,8 @@
+# Initial dt selection algorithms
+abstract type InitDtAlg end
+struct DefaultInitDt <: InitDtAlg end
+struct StiffInitDt <: InitDtAlg end
+
 abstract type OrdinaryDiffEqAlgorithm <: SciMLBase.AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end

@@ -16,5 +16,7 @@ for prob in (prob_ode_lorenz, prob_ode_orego)
         reltol = 1.0e-12, abstol = 1.0e-12
     )
     @test sol2.retcode == SciMLBase.ReturnCode.Success
-    @test sol2.stats.nf <= sol1.stats.nf + 20
+    # BackTracking line search should not significantly increase nf count.
+    # Use 2% tolerance since exact counts depend on initial step size selection.
+    @test sol2.stats.nf <= ceil(Int, sol1.stats.nf * 1.02)
 end
