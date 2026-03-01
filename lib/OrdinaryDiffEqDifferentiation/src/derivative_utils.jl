@@ -480,7 +480,7 @@ end
 function dae_jacobian2W(
         J_u::AbstractMatrix, J_du::AbstractMatrix, cj::Number
     )
-    return @. J_u + cj * J_du
+    return @. muladd(cj, J_du, J_u)
 end
 
 # Scalar variant for OOP scalar DAE problems
