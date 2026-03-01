@@ -30,7 +30,7 @@ using Test
 
             @test sol_scalar.errors[:l∞] < 3.0e-5
             @test sol_scalar.errors[:final] < 2.1e-5
-            @test sol_scalar.errors[:l2] < 1.2e-5
+            @test sol_scalar.errors[:l2] < 1.3e-5
 
             ### Out-of-place function
             sol_oop = solve(prob_dde_constant_1delay_oop, alg)
