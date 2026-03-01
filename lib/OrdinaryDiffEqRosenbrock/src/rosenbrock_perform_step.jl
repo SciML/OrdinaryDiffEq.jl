@@ -445,7 +445,7 @@ end
 @inline function _rosenbrock_update_result!(
         u, du, uprev, ks, A, tab::RodasTableau, alg
     )
-    if alg isa Rodas6P
+    return if alg isa Rodas6P
         du .= ks[16]
         u .= uprev
         for i in 1:15
@@ -467,7 +467,7 @@ end
             @.. u += tab.b[i] * ks[i]
         end
     end
-    if tab.btilde !== nothing
+    return if tab.btilde !== nothing
         du .= 0
         for i in eachindex(ks)
             if !iszero(tab.btilde[i])
