@@ -128,6 +128,8 @@ mutable struct ODEIntegrator{
     force_stepfail::Bool
     last_stepfail::Bool
     just_hit_tstop::Bool
+    next_step_tstop::Bool
+    tstop_target::tType
     do_error_check::Bool
     event_last_time::Int
     vector_event_last_time::Int

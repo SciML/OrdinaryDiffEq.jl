@@ -629,6 +629,8 @@ function SciMLBase.__init(
     u_modified = false
     EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
+    next_step_tstop = false
+    tstop_target = zero(t)
     isout = false
     accept_step = false
     force_stepfail = false
@@ -678,7 +680,7 @@ function SciMLBase.__init(
         callback_cache,
         kshortsize, force_stepfail,
         last_stepfail,
-        just_hit_tstop, do_error_check,
+        just_hit_tstop, next_step_tstop, tstop_target, do_error_check,
         event_last_time,
         vector_event_last_time,
         last_event_error, accept_step,
@@ -741,14 +743,24 @@ end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
     @inbounds while !isempty(integrator.opts.tstops)
-        while integrator.tdir * integrator.t < first(integrator.opts.tstops)
+        first_tstop = first(integrator.opts.tstops)
+        while integrator.tdir * integrator.t < first_tstop
             loopheader!(integrator)
             if integrator.do_error_check && check_error!(integrator) != ReturnCode.Success
                 return integrator.sol
             end
-            perform_step!(integrator, integrator.cache)
+
+            # Use special tstop handling if flag is set, otherwise normal stepping
+            if integrator.next_step_tstop
+                handle_tstop_step!(integrator)
+            else
+                perform_step!(integrator, integrator.cache)
+            end
+
+            should_exit = integrator.next_step_tstop
+
             loopfooter!(integrator)
-            if isempty(integrator.opts.tstops)
+            if isempty(integrator.opts.tstops) || should_exit
                 break
             end
         end
@@ -821,11 +833,11 @@ end
 
     for t in tstops
         tdir_t = tdir * t
-        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+        tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end
     for t in d_discontinuities
         tdir_t = tdir * t
-        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+        tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end
     push!(tstops_internal, tdir_tf)
 
@@ -842,11 +854,11 @@ function reinit_tstops!(::Type{T}, tstops_internal, tstops, d_discontinuities, t
 
     for t in tstops
         tdir_t = tdir * t
-        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+        tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end
     for t in d_discontinuities
         tdir_t = tdir * t
-        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+        tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end
     return push!(tstops_internal, tdir_tf)
 end
