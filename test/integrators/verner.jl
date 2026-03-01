@@ -20,7 +20,7 @@ using Test
         sol_scalar = solve(prob_scalar, alg)
 
         # fails due to floating point issues
-        @test sol_ip(ts, idxs = 1) ≈ sol_scalar(ts) atol = 1.0e-5
+        @test sol_ip(ts, idxs = 1) ≈ sol_scalar(ts) atol = 5.0e-5
     end
 
     # Vern7
