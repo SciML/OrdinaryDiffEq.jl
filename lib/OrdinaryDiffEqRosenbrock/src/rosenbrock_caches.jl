@@ -26,8 +26,10 @@ mutable struct JacReuseState
     cached_W::Any
 end
 
-function JacReuseState(dtgamma)
-    return JacReuseState(Float64(dtgamma), Float64(dtgamma), 0, 50, nothing, nothing, nothing)
+function JacReuseState(_dtgamma = 0.0)
+    # Always initialize with Float64 zero regardless of the caller's dt type.
+    # This avoids failures when dt is a ForwardDiff.Dual during sensitivity analysis.
+    return JacReuseState(0.0, 0.0, 0, 50, nothing, nothing, nothing)
 end
 
 # Fake values since non-FSAL
