@@ -55,6 +55,47 @@ mutable struct DEOptions{
     stop_at_next_tstop::Bool
 end
 
+# Legacy constructor for backwards compatibility with packages (e.g. DelayDiffEq)
+# that construct DEOptions without the delta and save_noise fields and without
+# the DType type parameter. Accepts 21 type params and 46 positional args.
+function DEOptions{
+        absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType,
+    }(
+        maxiters, save_everystep, adaptive, abstol, reltol,
+        gamma, qmax, qmin, qsteady_max, qsteady_min, qoldinit,
+        failfactor, dtmax, dtmin, controller, internalnorm, internalopnorm,
+        save_idxs, tstops, saveat, d_discontinuities,
+        tstops_cache, saveat_cache, d_discontinuities_cache, userdata,
+        progress, progress_steps, progress_name, progress_message, progress_id,
+        timeseries_errors, dense_errors,
+        dense, save_on, save_start, save_end, save_discretes,
+        save_end_user, callback, isoutofdomain, unstable_check,
+        verbose, calck, force_dtmin, advance_to_tstop, stop_at_next_tstop,
+    ) where {
+        absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType,
+    }
+    return DEOptions{
+        absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType, typeof(nothing),
+    }(
+        maxiters, save_everystep, adaptive, abstol, reltol,
+        gamma, qmax, qmin, qsteady_max, qsteady_min, qoldinit,
+        failfactor, dtmax, dtmin, controller, internalnorm, internalopnorm,
+        save_idxs, tstops, saveat, d_discontinuities,
+        tstops_cache, saveat_cache, d_discontinuities_cache, userdata,
+        progress, progress_steps, progress_name, progress_message, progress_id,
+        timeseries_errors, dense_errors,
+        nothing, dense, save_on, save_start, save_end,
+        false, save_discretes, save_end_user, callback, isoutofdomain, unstable_check,
+        verbose, calck, force_dtmin, advance_to_tstop, stop_at_next_tstop,
+    )
+end
+
 """
     ODEIntegrator
 
