@@ -10,9 +10,9 @@
     end
 
     if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
-        noise = integrator.g(u_choice, p, t) * W.dW
+        noise = integrator.f.g(u_choice, p, t) * W.dW
     else
-        noise = integrator.g(u_choice, p, t) .* W.dW
+        noise = integrator.f.g(u_choice, p, t) .* W.dW
     end
 
     if P !== nothing
@@ -37,7 +37,7 @@ end
         u_choice = uprev
     end
 
-    integrator.g(rtmp2, u_choice, p, t)
+    integrator.f.g(rtmp2, u_choice, p, t)
 
     if P !== nothing
         c(tmp, uprev, p, t, P.dW, nothing)
@@ -63,14 +63,14 @@ end
 @muladd function perform_step!(integrator, cache::EulerHeunConstantCache)
     (; t, dt, uprev, u, W, p, f) = integrator
     ftmp = integrator.f(uprev, p, t)
-    gtmp = integrator.g(uprev, p, t)
+    gtmp = integrator.f.g(uprev, p, t)
     if is_diagonal_noise(integrator.sol.prob)
         noise = gtmp .* W.dW
     else
         noise = gtmp * W.dW
     end
     tmp = @.. uprev + dt * ftmp + noise
-    gtmp2 = (gtmp .+ integrator.g(tmp, p, t + dt)) ./ 2
+    gtmp2 = (gtmp .+ integrator.f.g(tmp, p, t + dt)) ./ 2
     if is_diagonal_noise(integrator.sol.prob)
         noise2 = gtmp2 .* W.dW
     else
@@ -84,7 +84,7 @@ end
     (; ftmp1, ftmp2, gtmp1, gtmp2, tmp, nrtmp) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
     integrator.f(ftmp1, uprev, p, t)
-    integrator.g(gtmp1, uprev, p, t)
+    integrator.f.g(gtmp1, uprev, p, t)
 
     if is_diagonal_noise(integrator.sol.prob)
         @.. nrtmp = gtmp1 * W.dW
@@ -95,7 +95,7 @@ end
     @.. tmp = uprev + dt * ftmp1 + nrtmp
 
     integrator.f(ftmp2, tmp, p, t + dt)
-    integrator.g(gtmp2, tmp, p, t + dt)
+    integrator.f.g(gtmp2, tmp, p, t + dt)
 
     if is_diagonal_noise(integrator.sol.prob)
         @.. nrtmp = W.dW * (gtmp1 + gtmp2) / 2
@@ -170,9 +170,9 @@ end
     _dW = map(x -> calc_twopoint_random(integrator.sqdt, x), W.dW)
 
     if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
-        noise = integrator.g(uprev, p, t) * _dW
+        noise = integrator.f.g(uprev, p, t) * _dW
     else
-        noise = integrator.g(uprev, p, t) .* _dW
+        noise = integrator.f.g(uprev, p, t) .* _dW
     end
 
     u = K + noise
@@ -187,7 +187,7 @@ end
 
     @.. u = uprev + dt * rtmp1
 
-    integrator.g(rtmp2, uprev, p, t)
+    integrator.f.g(rtmp2, uprev, p, t)
 
     if W.dW isa Union{SArray, Number}
         _dW = map(x -> calc_twopoint_random(integrator.sqdt, x), W.dW)
@@ -208,16 +208,16 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
     du1 = integrator.f(uprev, p, t)
     K = @.. uprev + dt * du1
-    L = integrator.g(uprev, p, t)
+    L = integrator.f.g(uprev, p, t)
     mil_correction = zero(u)
     if SciMLBase.alg_interpretation(integrator.alg) == SciMLBase.AlgorithmInterpretation.Ito
         utilde = K + L * integrator.sqdt
-        ggprime = (integrator.g(utilde, p, t) .- L) ./ (integrator.sqdt)
+        ggprime = (integrator.f.g(utilde, p, t) .- L) ./ (integrator.sqdt)
         mil_correction = ggprime .* (W.dW .^ 2 .- abs(dt)) ./ 2
     elseif SciMLBase.alg_interpretation(integrator.alg) ==
             SciMLBase.AlgorithmInterpretation.Stratonovich
         utilde = uprev + L * integrator.sqdt
-        ggprime = (integrator.g(utilde, p, t) .- L) ./ (integrator.sqdt)
+        ggprime = (integrator.f.g(utilde, p, t) .- L) ./ (integrator.sqdt)
         mil_correction = ggprime .* (W.dW .^ 2) ./ 2
     else
         error("Algorithm interpretation invalid. Use either SciMLBase.AlgorithmInterpretation.Ito or SciMLBase.AlgorithmInterpretation.Stratonovich")
@@ -243,18 +243,18 @@ end
     (; du1, du2, K, tmp, L) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
     integrator.f(du1, uprev, p, t)
-    integrator.g(L, uprev, p, t)
+    integrator.f.g(L, uprev, p, t)
 
     @.. K = uprev + dt * du1
     @.. du2 = zero(eltype(u)) # This makes it safe to re-use the array
     if SciMLBase.alg_interpretation(integrator.alg) == SciMLBase.AlgorithmInterpretation.Ito
         @.. tmp = K + integrator.sqdt * L
-        integrator.g(du2, tmp, p, t)
+        integrator.f.g(du2, tmp, p, t)
         @.. tmp = (du2 - L) / (2integrator.sqdt) * (W.dW .^ 2 - abs(dt))
     elseif SciMLBase.alg_interpretation(integrator.alg) ==
             SciMLBase.AlgorithmInterpretation.Stratonovich
         @.. tmp = uprev + integrator.sqdt * L
-        integrator.g(du2, tmp, p, t)
+        integrator.f.g(du2, tmp, p, t)
         @.. tmp = (du2 - L) / (2integrator.sqdt) * (W.dW .^ 2)
     else
         error("Algorithm interpretation invalid. Use either SciMLBase.AlgorithmInterpretation.Ito or SciMLBase.AlgorithmInterpretation.Stratonovich")
@@ -294,7 +294,7 @@ end
     end
 
     du1 = integrator.f(uprev, p, t)
-    L = integrator.g(uprev, p, t)
+    L = integrator.f.g(uprev, p, t)
 
     K = uprev + dt * du1
 
@@ -303,7 +303,7 @@ end
             SciMLBase.alg_interpretation(integrator.alg) ==
                 SciMLBase.AlgorithmInterpretation.Ito ? K : uprev
         ) .+ integrator.sqdt .* L
-        gtmp = integrator.g(tmp, p, t)
+        gtmp = integrator.f.g(tmp, p, t)
         Dgj = (gtmp - L) / sqdt
         ggprime_norm = integrator.opts.internalnorm(Dgj, t)
         u = @.. K + L * dW + Dgj * J
@@ -314,7 +314,7 @@ end
             else
                 Kj = K + sqdt * @view(L[:, j])
             end
-            gtmp = integrator.g(Kj, p, t)
+            gtmp = integrator.f.g(Kj, p, t)
             Dgj = (gtmp - L) / sqdt
             if integrator.opts.adaptive
                 ggprime_norm += integrator.opts.internalnorm(Dgj, t)
@@ -367,7 +367,7 @@ end
     end
 
     integrator.f(du1, uprev, p, t)
-    integrator.g(L, uprev, p, t)
+    integrator.f.g(L, uprev, p, t)
 
     @.. K = uprev + dt * du1
 
@@ -376,7 +376,7 @@ end
             SciMLBase.alg_interpretation(integrator.alg) ==
                 SciMLBase.AlgorithmInterpretation.Ito ? K : uprev
         ) .+ integrator.sqdt .* L
-        integrator.g(gtmp, tmp, p, t)
+        integrator.f.g(gtmp, tmp, p, t)
         @.. Dgj = (gtmp - L) / sqdt
         ggprime_norm = integrator.opts.internalnorm(Dgj, t)
         @.. u = K + L * dW + Dgj * J
@@ -384,7 +384,7 @@ end
         for j in 1:length(dW)
             @.. Kj = K + sqdt * @view(L[:, j]) # This works too
             #Kj .= uprev .+ sqdt*L[:,j]
-            integrator.g(gtmp, Kj, p, t)
+            integrator.f.g(gtmp, Kj, p, t)
             @.. Dgj = (gtmp - L) / sqdt
             if integrator.opts.adaptive
                 ggprime_norm += integrator.opts.internalnorm(Dgj, t)
@@ -430,7 +430,7 @@ end
     end
 
     du₁ = integrator.f(uprev, p, t)
-    L = integrator.g(uprev, p, t)
+    L = integrator.f.g(uprev, p, t)
     mil_correction = zero(u)
     ggprime_norm = zero(eltype(u)) #0
     # sqdt = integrator.sqdt
@@ -441,13 +441,13 @@ end
             SciMLBase.alg_interpretation(integrator.alg) ==
                 SciMLBase.AlgorithmInterpretation.Ito ? K : uprev
         ) + L * integrator.sqdt
-        ggprime = (integrator.g(utilde, p, t) .- L) ./ (integrator.sqdt)
+        ggprime = (integrator.f.g(utilde, p, t) .- L) ./ (integrator.sqdt)
         mil_correction = ggprime .* J
         u = K + L .* dW + mil_correction
     else
         for i in 1:length(dW)
             K = uprev + dt * du₁ + integrator.sqdt * @view(L[:, i])
-            gtmp = integrator.g(K, p, t)
+            gtmp = integrator.f.g(K, p, t)
             ggprime = @.. (gtmp - L) / integrator.sqdt
             ggprime_norm = zero(eltype(u))
             if integrator.opts.adaptive
@@ -494,7 +494,7 @@ end
     J = Jalg.J
 
     integrator.f(du₁, uprev, p, t)
-    integrator.g(L, uprev, p, t)
+    integrator.f.g(L, uprev, p, t)
     @.. mil_correction = zero(eltype(u))
     ggprime_norm = zero(eltype(ggprime))
 
@@ -513,14 +513,14 @@ end
             SciMLBase.alg_interpretation(integrator.alg) ==
                 SciMLBase.AlgorithmInterpretation.Ito ? K : uprev
         ) .+ integrator.sqdt .* L
-        integrator.g(du₂, tmp, p, t)
+        integrator.f.g(du₂, tmp, p, t)
         @.. ggprime = (du₂ - L) / sqdt
         ggprime_norm = integrator.opts.internalnorm(ggprime, t)
         @.. u = K + L * dW + ggprime * J
     else
         for i in 1:length(dW)
             @.. K = uprev + dt * du₁ + sqdt * @view(L[:, i])
-            integrator.g(ggprime, K, p, t)
+            integrator.f.g(ggprime, K, p, t)
             @.. ggprime = (ggprime - L) / sqdt
             if integrator.opts.adaptive
                 ggprime_norm += integrator.opts.internalnorm(ggprime, t)

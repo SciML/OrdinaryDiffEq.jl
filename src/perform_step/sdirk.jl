@@ -18,13 +18,13 @@
     # TODO: Stochastic extrapolants?
     u = uprev
 
-    L = integrator.g(uprev, p, t)
+    L = integrator.f.g(uprev, p, t)
     ftmp = integrator.f(uprev, p, t)
     gtmp = L .* integrator.W.dW
 
     if cache isa ImplicitEulerHeunConstantCache
         utilde = uprev + gtmp
-        gtmp = ((integrator.g(utilde, p, t) + L) / 2) * integrator.W.dW
+        gtmp = ((integrator.f.g(utilde, p, t) + L) / 2) * integrator.W.dW
     end
 
     if cache isa ImplicitRKMilConstantCache || integrator.opts.adaptive == true
@@ -32,14 +32,14 @@
                 cache isa ImplicitEMConstantCache
             K = @.. uprev + dt * ftmp
             utilde = K + L * integrator.sqdt
-            ggprime = (integrator.g(utilde, p, t) .- L) ./ (integrator.sqdt)
+            ggprime = (integrator.f.g(utilde, p, t) .- L) ./ (integrator.sqdt)
             mil_correction = ggprime .* (integrator.W.dW .^ 2 .- abs(dt)) ./ 2
             gtmp += mil_correction
         elseif SciMLBase.alg_interpretation(alg) ==
                 SciMLBase.AlgorithmInterpretation.Stratonovich ||
                 cache isa ImplicitEulerHeunConstantCache
             utilde = uprev + L * integrator.sqdt
-            ggprime = (integrator.g(utilde, p, t) .- L) ./ (integrator.sqdt)
+            ggprime = (integrator.f.g(utilde, p, t) .- L) ./ (integrator.sqdt)
             mil_correction = ggprime .* (integrator.W.dW .^ 2) ./ 2
             gtmp += mil_correction
         else
@@ -144,7 +144,7 @@ end
 
     # Handle noise computations
 
-    integrator.g(gtmp, uprev, p, t)
+    integrator.f.g(gtmp, uprev, p, t)
     integrator.f(tmp, uprev, p, t)
     copyto!(fsalfirst, tmp) # Save f(uprev) for error estimation before tmp is overwritten
 
@@ -157,7 +157,7 @@ end
     if cache isa ImplicitEulerHeunCache
         gtmp3 = cache.gtmp3
         @.. z = uprev + gtmp2
-        integrator.g(gtmp3, z, p, t)
+        integrator.f.g(gtmp3, z, p, t)
         @.. gtmp = (gtmp3 + gtmp) / 2
         if is_diagonal_noise(integrator.sol.prob)
             @.. gtmp2 = gtmp * dW
@@ -170,13 +170,13 @@ end
         gtmp3 = cache.gtmp3
         if SciMLBase.alg_interpretation(alg) == SciMLBase.AlgorithmInterpretation.Ito
             @.. z = uprev + dt * tmp + integrator.sqdt * gtmp
-            integrator.g(gtmp3, z, p, t)
+            integrator.f.g(gtmp3, z, p, t)
             @.. gtmp3 = (gtmp3 - gtmp) / (integrator.sqdt) # ggprime approximation
             @.. gtmp2 += gtmp3 * (dW .^ 2 - abs(dt)) / 2
         elseif SciMLBase.alg_interpretation(alg) ==
                 SciMLBase.AlgorithmInterpretation.Stratonovich
             @.. z = uprev + integrator.sqdt * gtmp
-            integrator.g(gtmp3, z, p, t)
+            integrator.f.g(gtmp3, z, p, t)
             @.. gtmp3 = (gtmp3 - gtmp) / (integrator.sqdt) # ggprime approximation
             @.. gtmp2 += gtmp3 * (dW .^ 2) / 2
         else
@@ -246,14 +246,14 @@ end
                 @.. z = uprev + dt * fsalfirst + integrator.sqdt * g_sized
 
                 if !is_diagonal_noise(integrator.sol.prob)
-                    integrator.g(gtmp, z, p, t)
+                    integrator.f.g(gtmp, z, p, t)
                     g_sized2 = norm(gtmp, 2)
                     @.. dW_cache = dW .^ 2 - dt
                     diff_tmp = integrator.opts.internalnorm(dW_cache, t)
                     En = (g_sized2 - g_sized) / (2integrator.sqdt) * diff_tmp
                     @.. dz = En
                 else
-                    integrator.g(gtmp2, z, p, t)
+                    integrator.f.g(gtmp2, z, p, t)
                     g_sized2 = gtmp2
                     @.. dz = (g_sized2 - g_sized) / (2integrator.sqdt) * (dW .^ 2 - dt)
                 end
@@ -262,14 +262,14 @@ end
                 @.. z = uprev + integrator.sqdt * g_sized
 
                 if !is_diagonal_noise(integrator.sol.prob)
-                    integrator.g(gtmp, z, p, t)
+                    integrator.f.g(gtmp, z, p, t)
                     g_sized2 = norm(gtmp, 2)
                     @.. dW_cache = dW .^ 2
                     diff_tmp = integrator.opts.internalnorm(dW_cache, t)
                     En = (g_sized2 - g_sized) / (2integrator.sqdt) * diff_tmp
                     @.. dz = En
                 else
-                    integrator.g(gtmp2, z, p, t)
+                    integrator.f.g(gtmp2, z, p, t)
                     g_sized2 = gtmp2
                     @.. dz = (g_sized2 - g_sized) / (2integrator.sqdt) * (dW .^ 2)
                 end

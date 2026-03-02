@@ -19,7 +19,7 @@
 
     # compute stage values
     k1 = integrator.f(uprev, p, t)
-    g1 = integrator.g(uprev, p, t)
+    g1 = integrator.f.g(uprev, p, t)
 
     # H_i^(0), stage 1
     # H01 = uprev
@@ -68,12 +68,12 @@
     # H^_i^(k), stage 2 and 3
 
     if W.dW isa Number
-        g2 = integrator.g(H12, p, t + c12 * dt)
-        g3 = integrator.g(H13, p, t + c13 * dt)
+        g2 = integrator.f.g(H12, p, t + c12 * dt)
+        g3 = integrator.f.g(H13, p, t + c13 * dt)
         # for m=1:  H22 = uprev
     else
-        g2 = [integrator.g(H12[k], p, t + c12 * dt) for k in 1:m]
-        g3 = [integrator.g(H13[k], p, t + c13 * dt) for k in 1:m]
+        g2 = [integrator.f.g(H12[k], p, t + c12 * dt) for k in 1:m]
+        g3 = [integrator.f.g(H13[k], p, t + c13 * dt) for k in 1:m]
         H22 = [copy(uprev) for k in 1:m]
         H23 = [copy(uprev) for k in 1:m]
         # add inbounds for speed if working properly
@@ -112,9 +112,9 @@
                 for l in 1:m
                     if l != k
                         ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, k, l)
-                        tmpg = integrator.g(H22[l], p, t)
+                        tmpg = integrator.f.g(H22[l], p, t)
                         u[k] += tmpg[k] * (_dW[k] * beta32 + ihat2 * beta42 / integrator.sqdt)
-                        tmpg = integrator.g(H23[l], p, t)
+                        tmpg = integrator.f.g(H23[l], p, t)
                         u[k] += tmpg[k] * (_dW[k] * beta33 + ihat2 * beta43 / integrator.sqdt)
                     end
                 end
@@ -132,10 +132,10 @@
                 for l in 1:m
                     if l != k
                         ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, k, l)
-                        tmpg = integrator.g(H22[l], p, t)
+                        tmpg = integrator.f.g(H22[l], p, t)
                         tmpgk = @view tmpg[:, k]
                         @.. u = u + tmpgk * (_dW[k] * beta32 + ihat2 * beta42 / integrator.sqdt)
-                        tmpg = integrator.g(H23[l], p, t)
+                        tmpg = integrator.f.g(H23[l], p, t)
                         tmpgk = @view tmpg[:, k]
                         @.. u = u + tmpgk * (_dW[k] * beta33 + ihat2 * beta43 / integrator.sqdt)
                     end
@@ -210,7 +210,7 @@ end
 
     # compute stage values
     integrator.f(k1, uprev, p, t)
-    integrator.g(g1, uprev, p, t)
+    integrator.f.g(g1, uprev, p, t)
 
     # H_i^(0), stage 1
     # H01 = uprev
@@ -244,8 +244,8 @@ end
             @.. H12[k] = uprev + a121 * k1 * dt + b121 * g1k * integrator.sqdt
             @.. H13[k] = uprev + a131 * k1 * dt + b131 * g1k * integrator.sqdt
         end
-        integrator.g(g2[k], H12[k], p, t + c12 * dt)
-        integrator.g(g3[k], H13[k], p, t + c13 * dt)
+        integrator.f.g(g2[k], H12[k], p, t + c12 * dt)
+        integrator.f.g(g3[k], H13[k], p, t + c13 * dt)
     end
 
     # H^_i^(k), stages (rewritten)
@@ -280,9 +280,9 @@ end
                 for l in 1:m
                     if l != k
                         ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, k, l)
-                        integrator.g(tmpg, H22[l], p, t)
+                        integrator.f.g(tmpg, H22[l], p, t)
                         u[k] = u[k] + tmpg[k] * (_dW[k] * beta32 + ihat2 * beta42 / integrator.sqdt)
-                        integrator.g(tmpg, H23[l], p, t)
+                        integrator.f.g(tmpg, H23[l], p, t)
                         u[k] = u[k] + tmpg[k] * (_dW[k] * beta33 + ihat2 * beta43 / integrator.sqdt)
                     end
                 end
@@ -301,9 +301,9 @@ end
             for l in 1:m
                 if l != k
                     ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, k, l)
-                    integrator.g(tmpg, H22[l], p, t)
+                    integrator.f.g(tmpg, H22[l], p, t)
                     @.. u = u + tmpgk * (_dW[k] * beta32 + ihat2 * beta42 / integrator.sqdt)
-                    integrator.g(tmpg, H23[l], p, t)
+                    integrator.f.g(tmpg, H23[l], p, t)
                     @.. u = u + tmpgk * (_dW[k] * beta33 + ihat2 * beta43 / integrator.sqdt)
                 end
             end
@@ -369,7 +369,7 @@ end
 
     # compute stage values
     integrator.f(k1, uprev, p, t)
-    integrator.g(g1, uprev, p, t)
+    integrator.f.g(g1, uprev, p, t)
 
     # H_i^(0), stage 1
     # H01 = uprev
@@ -403,8 +403,8 @@ end
     end
 
     # H^_i^(k), stages
-    integrator.g(g2, H12, p, t + c12 * dt)
-    integrator.g(g3, H13, p, t + c13 * dt)
+    integrator.f.g(g2, H12, p, t + c12 * dt)
+    integrator.f.g(g3, H13, p, t + c13 * dt)
 
     # add stages together Eq. (3)
     @.. u = uprev + α1 * k1 * dt + α2 * k2 * dt + α3 * k3 * dt
@@ -465,7 +465,7 @@ end
 
     # compute stage values
     k1 = integrator.f(uprev, p, t)
-    g1 = integrator.g(uprev, p, t)
+    g1 = integrator.f.g(uprev, p, t)
 
     # H_i^(0), stage 1
     # H01 = uprev
@@ -520,7 +520,7 @@ end
 
     # compute stage values
     integrator.f(k1, uprev, p, t)
-    integrator.g(g1, uprev, p, t)
+    integrator.f.g(g1, uprev, p, t)
 
     # H_i^(0), stage 1
     # H01 = uprev
@@ -569,7 +569,7 @@ end
     end
     # compute stage values
     k1 = integrator.f(uprev, p, t)
-    g1 = integrator.g(uprev, p, t)
+    g1 = integrator.f.g(uprev, p, t)
 
     # H_1^(0)
     # H01 = uprev
@@ -588,9 +588,9 @@ end
     end
 
     if W.dW isa Number
-        g2 = integrator.g(H12, p, t)
+        g2 = integrator.f.g(H12, p, t)
     else
-        g2 = [integrator.g(H12[k], p, t) for k in 1:m]
+        g2 = [integrator.f.g(H12[k], p, t) for k in 1:m]
     end
 
     # H_3^(k)
@@ -619,9 +619,9 @@ end
     end
 
     if W.dW isa Number
-        g3 = integrator.g(H13, p, t + c13 * dt)
+        g3 = integrator.f.g(H13, p, t + c13 * dt)
     else
-        g3 = [integrator.g(H13[k], p, t + c13 * dt) for k in 1:m]
+        g3 = [integrator.f.g(H13[k], p, t + c13 * dt) for k in 1:m]
     end
     # H_3^(k)
     if W.dW isa Number
@@ -650,9 +650,9 @@ end
     end
 
     if W.dW isa Number
-        g4 = integrator.g(H14, p, t + c14 * dt)
+        g4 = integrator.f.g(H14, p, t + c14 * dt)
     else
-        g4 = [integrator.g(H14[k], p, t + c14 * dt) for k in 1:m]
+        g4 = [integrator.f.g(H14[k], p, t + c14 * dt) for k in 1:m]
     end
 
     # H_3^(0) (requires H_2^(k))
@@ -718,9 +718,9 @@ end
             u += g1 .* _dW * beta11
             for k in 1:m
                 u[k] += (g2[k][k] * beta12 + g3[k][k] * beta13 + g4[k][k] * beta14) * _dW[k]
-                tmpg = integrator.g(H22[k], p, t)
+                tmpg = integrator.f.g(H22[k], p, t)
                 u[k] = u[k] + tmpg[k] * beta22 * integrator.sqdt
-                tmpg = integrator.g(H23[k], p, t)
+                tmpg = integrator.f.g(H23[k], p, t)
                 u[k] = u[k] + tmpg[k] * beta23 * integrator.sqdt
             end
         else
@@ -731,9 +731,9 @@ end
                 g3k = @view g3[k][:, k]
                 g4k = @view g4[k][:, k]
                 @.. u = u + (g1k * beta11 + g2k * beta12 + g3k * beta13 + g4k * beta14) * _dW[k]
-                tmpg = integrator.g(H22[k], p, t)
+                tmpg = integrator.f.g(H22[k], p, t)
                 @.. u = u + tmpg * beta22 * integrator.sqdt
-                tmpg = integrator.g(H23[k], p, t)
+                tmpg = integrator.f.g(H23[k], p, t)
                 @.. u = u + tmpg * beta23 * integrator.sqdt
             end
         end
@@ -774,7 +774,7 @@ end
 
     # compute stage values
     integrator.f(k1, uprev, p, t)
-    integrator.g(g1, uprev, p, t)
+    integrator.f.g(g1, uprev, p, t)
 
     # H_1^(0)
     # H01 = uprev
@@ -797,7 +797,7 @@ end
     end
 
     for k in 1:m
-        integrator.g(g2[k], H12[k], p, t)
+        integrator.f.g(g2[k], H12[k], p, t)
     end
 
     # H_3^(k)
@@ -825,7 +825,7 @@ end
     end
 
     for k in 1:m
-        integrator.g(g3[k], H13[k], p, t + c13 * dt)
+        integrator.f.g(g3[k], H13[k], p, t + c13 * dt)
     end
 
     # H_3^(k)
@@ -855,7 +855,7 @@ end
     end
 
     for k in 1:m
-        integrator.g(g4[k], H14[k], p, t + c14 * dt)
+        integrator.f.g(g4[k], H14[k], p, t + c14 * dt)
     end
 
     # H_3^(0) (requires H_2^(k))
@@ -920,9 +920,9 @@ end
         for k in 1:m
             u[k] = u[k] + (g2[k][k] * beta12 + g3[k][k] * beta13 + g4[k][k] * beta14) * _dW[k]
             if m != 1
-                integrator.g(tmpg, H22[k], p, t)
+                integrator.f.g(tmpg, H22[k], p, t)
                 u[k] = u[k] + tmpg[k] * beta22 * integrator.sqdt
-                integrator.g(tmpg, H23[k], p, t)
+                integrator.f.g(tmpg, H23[k], p, t)
                 u[k] = u[k] + tmpg[k] * beta23 * integrator.sqdt
             end
         end
@@ -935,9 +935,9 @@ end
             g4k = @view g4[k][:, k]
             tmpgk = @view tmpg[:, k]
             @.. u = u + (g1k * beta11 + g2k * beta12 + g3k * beta13 + g4k * beta14) * _dW[k]
-            integrator.g(tmpg, H22[k], p, t)
+            integrator.f.g(tmpg, H22[k], p, t)
             @.. u = u + tmpgk * beta22 * integrator.sqdt
-            integrator.g(tmpg, H23[k], p, t)
+            integrator.f.g(tmpg, H23[k], p, t)
             @.. u = u + tmpgk * beta23 * integrator.sqdt
         end
     end
@@ -960,7 +960,7 @@ end
     end
     # compute stage values
     k1 = integrator.f(uprev, p, t)
-    g1 = integrator.g(uprev, p, t)
+    g1 = integrator.f.g(uprev, p, t)
 
     # Y, Yp, Ym
     if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
@@ -995,14 +995,14 @@ end
 
     # add noise
     if W.dW isa Number
-        g2p = integrator.g(Yp, p, t)
-        g2m = integrator.g(Ym, p, t)
+        g2p = integrator.f.g(Yp, p, t)
+        g2m = integrator.f.g(Ym, p, t)
         u += 1 // 4 * (g2p + g2m + 2 * g1) * _dW + (g2p - g2m) * chi1 / integrator.sqdt #(1.1)
     else
         if is_diagonal_noise(integrator.sol.prob)
             for k in 1:m
-                tmpg1 = integrator.g(Yp[k], p, t)
-                tmpg2 = integrator.g(Ym[k], p, t)
+                tmpg1 = integrator.f.g(Yp[k], p, t)
+                tmpg2 = integrator.f.g(Ym[k], p, t)
                 @.. u += 1 // 4 * (tmpg1[k] + tmpg2[k] + 2 * g1[k]) * _dW[k]
                 @.. u += (tmpg1[k] - tmpg2[k]) * chi1[k] / integrator.sqdt
                 for l in 1:m
@@ -1012,8 +1012,8 @@ end
                         Ulp = @.. uprev + g1[l] * integrator.sqdt
                         Ulm = @.. uprev - g1[l] * integrator.sqdt
 
-                        tmpg1 = integrator.g(Ulp, p, t)
-                        tmpg2 = integrator.g(Ulm, p, t)
+                        tmpg1 = integrator.f.g(Ulp, p, t)
+                        tmpg2 = integrator.f.g(Ulm, p, t)
                         @.. u += 1 // 4 * (tmpg1[k] + tmpg2[k] - 2 * g1[k]) * _dW[k]
                         @.. u += 1 // 4 * (tmpg1[k] - tmpg2[k]) * (
                             _dW[k] * _dW[l] +
@@ -1025,8 +1025,8 @@ end
         else
             # non-diag noise
             for k in 1:m
-                tmpg1 = integrator.g(Yp[k], p, t)
-                tmpg2 = integrator.g(Ym[k], p, t)
+                tmpg1 = integrator.f.g(Yp[k], p, t)
+                tmpg2 = integrator.f.g(Ym[k], p, t)
 
                 u += 1 // 4 * (tmpg1[:, k] + tmpg2[:, k] + 2 * g1[:, k]) * _dW[k]
                 u += (tmpg1[:, k] - tmpg2[:, k]) * chi1[k] / integrator.sqdt
@@ -1037,8 +1037,8 @@ end
                         Ulp = uprev + g1[:, l] * integrator.sqdt
                         Ulm = uprev - g1[:, l] * integrator.sqdt
 
-                        tmpg1 = integrator.g(Ulp, p, t)
-                        tmpg2 = integrator.g(Ulm, p, t)
+                        tmpg1 = integrator.f.g(Ulp, p, t)
+                        tmpg2 = integrator.f.g(Ulm, p, t)
                         u += 1 // 4 * (tmpg1[:, k] + tmpg2[:, k] - 2 * g1[:, k]) * _dW[k]
                         u += 1 // 4 * (tmpg1[:, k] - tmpg2[:, k]) * (
                             _dW[k] * _dW[l] +
@@ -1069,7 +1069,7 @@ end
     end
     # compute stage values
     integrator.f(k1, uprev, p, t)
-    integrator.g(g1, uprev, p, t)
+    integrator.f.g(g1, uprev, p, t)
 
     # Y, Yp, Ym
     if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
@@ -1100,15 +1100,15 @@ end
 
     # add noise
     if W.dW isa Number
-        integrator.g(tmpg1, Yp, p, t)
-        integrator.g(tmpg2, Ym, p, t)
+        integrator.f.g(tmpg1, Yp, p, t)
+        integrator.f.g(tmpg2, Ym, p, t)
         @.. u = u + 1 // 4 * (tmpg1 + tmpg2 + 2 * g1) * _dW + 1 // 4 * (tmpg1 - tmpg2) * chi1[k] / integrator.sqdt #(1.1)
     else
         if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
             # non-diag noise
             for k in 1:m
-                integrator.g(tmpg1, Yp[k], p, t)
-                integrator.g(tmpg2, Ym[k], p, t)
+                integrator.f.g(tmpg1, Yp[k], p, t)
+                integrator.f.g(tmpg2, Ym[k], p, t)
                 tmpg1k = @view tmpg1[:, k]
                 tmpg2k = @view tmpg2[:, k]
                 g1k = @view g1[:, k]
@@ -1122,8 +1122,8 @@ end
                         @.. Ulp = uprev + g1l * integrator.sqdt
                         @.. Ulm = uprev - g1l * integrator.sqdt
 
-                        integrator.g(tmpg1, Ulp, p, t)
-                        integrator.g(tmpg2, Ulm, p, t)
+                        integrator.f.g(tmpg1, Ulp, p, t)
+                        integrator.f.g(tmpg2, Ulm, p, t)
                         tmpg1k = @view tmpg1[:, k]
                         tmpg2k = @view tmpg2[:, k]
                         u += 1 // 4 * (tmpg1k + tmpg2k - 2 * g1k) * _dW[k]
@@ -1133,8 +1133,8 @@ end
             end
         else
             for k in 1:m
-                integrator.g(tmpg1, Yp[k], p, t)
-                integrator.g(tmpg2, Ym[k], p, t)
+                integrator.f.g(tmpg1, Yp[k], p, t)
+                integrator.f.g(tmpg2, Ym[k], p, t)
                 @.. u = u + 1 // 4 * (tmpg1[k] + tmpg2[k] + 2 * g1[k]) * _dW[k]
                 @.. u = u + (tmpg1[k] - tmpg2[k]) * chi1[k] / integrator.sqdt
                 for l in 1:m
@@ -1144,8 +1144,8 @@ end
                         @.. Ulp = uprev + g1[l] * integrator.sqdt
                         @.. Ulm = uprev - g1[l] * integrator.sqdt
 
-                        integrator.g(tmpg1, Ulp, p, t)
-                        integrator.g(tmpg2, Ulm, p, t)
+                        integrator.f.g(tmpg1, Ulp, p, t)
+                        integrator.f.g(tmpg2, Ulm, p, t)
                         @.. u = u + 1 // 4 * (tmpg1[k] + tmpg2[k] - 2 * g1[k]) * _dW[k]
                         @.. u = u +
                             1 // 4 * (tmpg1[k] - tmpg2[k]) * (
@@ -1171,7 +1171,7 @@ end
 
     # compute stage values
     k1 = integrator.f(uprev, p, t)
-    g1 = integrator.g(uprev, p, t)
+    g1 = integrator.f.g(uprev, p, t)
 
     # Y
     if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
@@ -1201,7 +1201,7 @@ end
 
     # compute stage values
     integrator.f(k1, uprev, p, t)
-    integrator.g(g1, uprev, p, t)
+    integrator.f.g(g1, uprev, p, t)
 
     # Y, Yp, Ym
     if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
@@ -1243,7 +1243,7 @@ end
     # compute stage values
     # stage 1
     ktmp = integrator.f(uprev, p, t)
-    gtmp = integrator.g(uprev, p, t)
+    gtmp = integrator.f.g(uprev, p, t)
 
     Y100 = ktmp * dt
     Y1jajb = [zero(u) for ja in 1:m, jb in 1:m]
@@ -1279,7 +1279,7 @@ end
 
     if W.dW isa Number
         Y200 += a0j21 * Y1jajb
-        Y2jajb = integrator.g(uprev + aj021 * Y100 + ajj21 * Y1jajb[1], p, t) * _dW
+        Y2jajb = integrator.f.g(uprev + aj021 * Y100 + ajj21 * Y1jajb[1], p, t) * _dW
     else
         if !is_diagonal_noise(integrator.sol.prob)
             for ja in 1:m
@@ -1294,7 +1294,7 @@ end
                     else
                         tmpu = uprev + aj021 * Y100 + ajj21 * Y1jajb[ja, ja]
                     end
-                    gtmp = integrator.g(tmpu, p, t)
+                    gtmp = integrator.f.g(tmpu, p, t)
                     tmpjb = @view gtmp[:, jb]
                     ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
                     @.. Y2jajb[ja, jb] = Ihat2 * tmpjb
@@ -1313,7 +1313,7 @@ end
                     else
                         tmpu = uprev + aj021 * Y100 + ajj21 * Y1jajb[ja, ja]
                     end
-                    gtmp = integrator.g(tmpu, p, t)
+                    gtmp = integrator.f.g(tmpu, p, t)
                     tmpu = zero(integrator.u)
                     tmpu[jb] = gtmp[jb]
                     ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
@@ -1329,7 +1329,7 @@ end
     Y300 = uprev + a0032 * Y200
     if W.dW isa Number
         Y300 += a0j31 * Y1jajb + a0j32 * Y2jajb
-        Y3jajb = integrator.g(uprev + ajj31 * Y1jajb[1] + ajj32 * Y2jajb[1], p, t) * _dW
+        Y3jajb = integrator.f.g(uprev + ajj31 * Y1jajb[1] + ajj32 * Y2jajb[1], p, t) * _dW
     else
         if !is_diagonal_noise(integrator.sol.prob)
             for ja in 1:m
@@ -1349,7 +1349,7 @@ end
                             end
                         end
                     end
-                    gtmp = integrator.g(tmpu, p, t)
+                    gtmp = integrator.f.g(tmpu, p, t)
                     tmpjb = @view gtmp[:, jb]
                     ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
                     @.. Y3jajb[ja, jb] = ihat2 * tmpjb
@@ -1373,7 +1373,7 @@ end
                             end
                         end
                     end
-                    gtmp = integrator.g(tmpu, p, t)
+                    gtmp = integrator.f.g(tmpu, p, t)
                     tmpu = zero(integrator.u)
                     tmpu[jb] = gtmp[jb]
                     ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
@@ -1389,7 +1389,7 @@ end
     Y400 = uprev + a0043 * Y300
     if W.dW isa Number
         Y400 += a0j41 * Y1jajb
-        Y4jajb = integrator.g(
+        Y4jajb = integrator.f.g(
             uprev + ajj41 * Y1jajb[1] + ajj42 * Y2jajb[1] + ajj43 * Y3jajb[1] + aj041 * Y100, p, t
         ) * _dW
     else
@@ -1403,7 +1403,7 @@ end
                         tmpu += ajl41 * Y1jajb[l, l] + ajl42 * Y2jajb[l, l]
                     end
                 end
-                gtmp = integrator.g(tmpu, p, t)
+                gtmp = integrator.f.g(tmpu, p, t)
                 tmpjb = @view gtmp[:, ja]
                 ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, ja)
                 @.. Y4jajb[ja, ja] = ihat2 * tmpjb
@@ -1419,7 +1419,7 @@ end
                         tmpu += ajl41 * Y1jajb[l, l] + ajl42 * Y2jajb[l, l]
                     end
                 end
-                gtmp = integrator.g(tmpu, p, t)
+                gtmp = integrator.f.g(tmpu, p, t)
                 tmpu = zero(integrator.u)
                 tmpu[ja] = gtmp[ja]
                 ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, ja)
@@ -1497,7 +1497,7 @@ end
     # compute stage values
     # stage 1
     integrator.f(ktmp, uprev, p, t)
-    integrator.g(gtmp, uprev, p, t)
+    integrator.f.g(gtmp, uprev, p, t)
 
     @.. Y100 = ktmp * dt
     for ja in 1:m
@@ -1536,7 +1536,7 @@ end
                 else
                     @.. tmpu = uprev + aj021 * Y100 + ajj21 * Y1jajb[ja, ja]
                 end
-                integrator.g(gtmp, tmpu, p, t)
+                integrator.f.g(gtmp, tmpu, p, t)
                 tmpjb = @view gtmp[:, jb]
                 ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
                 @.. Y2jajb[ja, jb] = ihat2 * tmpjb
@@ -1555,7 +1555,7 @@ end
                 else
                     @.. tmpu = uprev + aj021 * Y100 + ajj21 * Y1jajb[ja, ja]
                 end
-                integrator.g(gtmp, tmpu, p, t)
+                integrator.f.g(gtmp, tmpu, p, t)
                 fill!(tmpu, zero(eltype(integrator.u)))
                 tmpu[jb] = gtmp[jb]
                 ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
@@ -1587,7 +1587,7 @@ end
                         end
                     end
                 end
-                integrator.g(gtmp, tmpu, p, t)
+                integrator.f.g(gtmp, tmpu, p, t)
                 tmpjb = @view gtmp[:, jb]
                 ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
                 @.. Y3jajb[ja, jb] = ihat2 * tmpjb
@@ -1611,7 +1611,7 @@ end
                         end
                     end
                 end
-                integrator.g(gtmp, tmpu, p, t)
+                integrator.f.g(gtmp, tmpu, p, t)
                 fill!(tmpu, zero(eltype(integrator.u)))
                 tmpu[jb] = gtmp[jb]
                 ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
@@ -1637,7 +1637,7 @@ end
                     @.. tmpu = tmpu + ajl41 * Y1jajb[l, l] + ajl42 * Y2jajb[l, l]
                 end
             end
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             tmpjb = @view gtmp[:, ja]
             ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, ja)
             @.. Y4jajb[ja, ja] = ihat2 * tmpjb
@@ -1653,7 +1653,7 @@ end
                     @.. tmpu = tmpu + ajl41 * Y1jajb[l, l] + ajl42 * Y2jajb[l, l]
                 end
             end
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             fill!(tmpu, zero(eltype(integrator.u)))
             tmpu[ja] = gtmp[ja]
             ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, ja)
@@ -1721,7 +1721,7 @@ end
     # compute stage values
     # stage 1
     ktmp = integrator.f(uprev, p, t)
-    gtmp = integrator.g(uprev, p, t)
+    gtmp = integrator.f.g(uprev, p, t)
 
     Y10 = ktmp * dt
 
@@ -1740,14 +1740,14 @@ end
 
     if W.dW isa Number
         Y20 += a0j21 * Y1j
-        Y2j = integrator.g(uprev + aj021 * Y10 + ajj21 * Y1j, p, t) * _dW
+        Y2j = integrator.f.g(uprev + aj021 * Y10 + ajj21 * Y1j, p, t) * _dW
     else
         if !is_diagonal_noise(integrator.sol.prob)
             Y2j = similar(integrator.sol.prob.noise_rate_prototype)
             for j in 1:m
                 Y20 += a0j21 * Y1j[:, j]
                 tmpu = uprev + aj021 * Y10 + ajj21 * Y1j[:, j]
-                Y2j[:, j] = integrator.g(tmpu, p, t)[:, j] * _dW[j]
+                Y2j[:, j] = integrator.f.g(tmpu, p, t)[:, j] * _dW[j]
             end
         else
             Y20 += a0j21 * Y1j
@@ -1755,7 +1755,7 @@ end
             for j in 1:m
                 tmpu = uprev + aj021 * Y10
                 tmpu[j] += ajj21 * Y1j[j]
-                Y2j[j] = integrator.g(tmpu, p, t)[j] * _dW[j]
+                Y2j[j] = integrator.f.g(tmpu, p, t)[j] * _dW[j]
             end
         end
     end
@@ -1766,7 +1766,7 @@ end
     Y30 = uprev + a0032 * Y20
     if W.dW isa Number
         Y30 += a0j31 * Y1j + a0j32 * Y2j
-        Y3j = integrator.g(uprev + ajj31 * Y1j + ajj32 * Y2j, p, t) * _dW
+        Y3j = integrator.f.g(uprev + ajj31 * Y1j + ajj32 * Y2j, p, t) * _dW
     else
         if !is_diagonal_noise(integrator.sol.prob)
             Y3j = similar(integrator.sol.prob.noise_rate_prototype)
@@ -1778,7 +1778,7 @@ end
                         tmpu += (ajl31 * Y1j[:, l] + ajl32 * Y2j[:, l])
                     end
                 end
-                Y3j[:, j] = integrator.g(tmpu, p, t)[:, j] * _dW[j]
+                Y3j[:, j] = integrator.f.g(tmpu, p, t)[:, j] * _dW[j]
             end
         else
             Y30 += a0j31 * Y1j + a0j32 * Y2j
@@ -1787,7 +1787,7 @@ end
             for j in 1:m
                 tmpu = copy(tmpu2)
                 tmpu[j] += ajj31 * Y1j[j] + ajj32 * Y2j[j] - (ajl31 * Y1j[j] + ajl32 * Y2j[j])
-                Y3j[j] = integrator.g(tmpu, p, t)[j] * _dW[j]
+                Y3j[j] = integrator.f.g(tmpu, p, t)[j] * _dW[j]
             end
         end
     end
@@ -1798,7 +1798,7 @@ end
     Y40 = uprev + a0043 * Y30
     if W.dW isa Number
         Y40 += a0j41 * Y1j
-        Y4j = integrator.g(uprev + ajj41 * Y1j + ajj42 * Y2j + ajj43 * Y3j + aj041 * Y10, p, t) * _dW
+        Y4j = integrator.f.g(uprev + ajj41 * Y1j + ajj42 * Y2j + ajj43 * Y3j + aj041 * Y10, p, t) * _dW
     else
         if !is_diagonal_noise(integrator.sol.prob)
             Y4j = similar(integrator.sol.prob.noise_rate_prototype)
@@ -1811,7 +1811,7 @@ end
                         tmpu += (ajl41 * Y1j[:, l] + ajl42 * Y2j[:, l])
                     end
                 end
-                Y4j[:, j] = integrator.g(tmpu, p, t)[:, j] * _dW[j]
+                Y4j[:, j] = integrator.f.g(tmpu, p, t)[:, j] * _dW[j]
             end
         else
             Y40 += a0j41 * Y1j
@@ -1821,7 +1821,7 @@ end
                 tmpu = copy(tmpu2)
                 tmpu[j] += ajj41 * Y1j[j] + ajj42 * Y2j[j] + ajj43 * Y3j[j] -
                     (ajl41 * Y1j[j] + ajl42 * Y2j[j])
-                Y4j[j] = integrator.g(tmpu, p, t)[j] * _dW[j]
+                Y4j[j] = integrator.f.g(tmpu, p, t)[j] * _dW[j]
             end
         end
     end
@@ -1869,7 +1869,7 @@ end
     # compute stage values
     # stage 1
     integrator.f(ktmp, uprev, p, t)
-    integrator.g(gtmp, uprev, p, t)
+    integrator.f.g(gtmp, uprev, p, t)
 
     @.. Y10 = ktmp * dt
 
@@ -1893,7 +1893,7 @@ end
             Y2jj = @view Y2j[:, j]
             @.. Y20 = Y20 + a0j21 * Y1jj
             @.. tmpu = uprev + aj021 * Y10 + ajj21 * Y1jj
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             gtmpj = @view gtmp[:, j]
             @.. Y2jj = gtmpj * _dW[j]
         end
@@ -1905,7 +1905,7 @@ end
             fill!(tmpu2, zero(eltype(integrator.u)))
             tmpu2[j] = ajj21 * Y1j[j]
             @.. tmpu2 = tmpu + tmpu2
-            integrator.g(gtmp, tmpu2, p, t)
+            integrator.f.g(gtmp, tmpu2, p, t)
             Y2j[j] = gtmp[j] * _dW[j]
         end
     end
@@ -1930,7 +1930,7 @@ end
                     @.. tmpu = tmpu + (ajl31 * Y1jl + ajl32 * Y2jl)
                 end
             end
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             gtmpj = @view gtmp[:, j]
             @.. Y3jj = gtmpj * _dW[j]
         end
@@ -1941,7 +1941,7 @@ end
         for j in 1:m
             @.. tmpu = tmpu2
             tmpu[j] += ajj31 * Y1j[j] + ajj32 * Y2j[j] - (ajl31 * Y1j[j] + ajl32 * Y2j[j])
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             Y3j[j] = gtmp[j] * _dW[j]
         end
     end
@@ -1967,7 +1967,7 @@ end
                     @.. tmpu = tmpu + (ajl41 * Y1jl + ajl42 * Y2jl)
                 end
             end
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             gtmpj = @view gtmp[:, j]
             @.. Y4jj = gtmpj * _dW[j]
         end
@@ -1979,7 +1979,7 @@ end
             @.. tmpu = tmpu2
             tmpu[j] += ajj41 * Y1j[j] + ajj42 * Y2j[j] + ajj43 * Y3j[j] -
                 (ajl41 * Y1j[j] + ajl42 * Y2j[j])
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             Y4j[j] = gtmp[j] * _dW[j]
         end
     end
@@ -2033,7 +2033,7 @@ end
     # compute stage values
     # stage 1
     ktmp = integrator.f(uprev, p, t)
-    gtmp = integrator.g(uprev, p, t)
+    gtmp = integrator.f.g(uprev, p, t)
 
     # store gtmp for stage values Y^(k(j)j)
     gtmp1 = copy(gtmp)
@@ -2055,14 +2055,14 @@ end
 
     if W.dW isa Number
         Y20 += a0j21 * Y1j
-        Y2j = integrator.g(uprev + aj021 * Y10 + ajj21 * Y1j, p, t) * _dW
+        Y2j = integrator.f.g(uprev + aj021 * Y10 + ajj21 * Y1j, p, t) * _dW
     else
         if !is_diagonal_noise(integrator.sol.prob)
             Y2j = similar(integrator.sol.prob.noise_rate_prototype)
             for j in 1:m
                 Y20 += a0j21 * Y1j[:, j]
                 tmpu = uprev + aj021 * Y10 + ajj21 * Y1j[:, j]
-                Y2j[:, j] = integrator.g(tmpu, p, t)[:, j] * _dW[j]
+                Y2j[:, j] = integrator.f.g(tmpu, p, t)[:, j] * _dW[j]
             end
         else
             Y20 += a0j21 * Y1j
@@ -2070,7 +2070,7 @@ end
             for j in 1:m
                 tmpu = uprev + aj021 * Y10
                 tmpu[j] += ajj21 * Y1j[j]
-                Y2j[j] = integrator.g(tmpu, p, t)[j] * _dW[j]
+                Y2j[j] = integrator.f.g(tmpu, p, t)[j] * _dW[j]
             end
         end
     end
@@ -2081,7 +2081,7 @@ end
     Y30 = uprev + a0032 * Y20
     if W.dW isa Number
         Y30 += a0j31 * Y1j + a0j32 * Y2j
-        Y3j = integrator.g(uprev + ajj31 * Y1j + ajj32 * Y2j, p, t) * _dW
+        Y3j = integrator.f.g(uprev + ajj31 * Y1j + ajj32 * Y2j, p, t) * _dW
     else
         if !is_diagonal_noise(integrator.sol.prob)
             Y3j = similar(integrator.sol.prob.noise_rate_prototype)
@@ -2093,7 +2093,7 @@ end
                         tmpu += (ajl31 * Y1j[:, l] + ajl32 * Y2j[:, l])
                     end
                 end
-                Y3j[:, j] = integrator.g(tmpu, p, t)[:, j] * _dW[j]
+                Y3j[:, j] = integrator.f.g(tmpu, p, t)[:, j] * _dW[j]
             end
         else
             Y30 += a0j31 * Y1j + a0j32 * Y2j
@@ -2102,7 +2102,7 @@ end
             for j in 1:m
                 tmpu = copy(tmpu2)
                 tmpu[j] += ajj31 * Y1j[j] + ajj32 * Y2j[j] - (ajl31 * Y1j[j] + ajl32 * Y2j[j])
-                Y3j[j] = integrator.g(tmpu, p, t)[j] * _dW[j]
+                Y3j[j] = integrator.f.g(tmpu, p, t)[j] * _dW[j]
             end
         end
     end
@@ -2113,7 +2113,7 @@ end
     Y40 = uprev + a0043 * Y30
     if W.dW isa Number
         Y40 += a0j41 * Y1j
-        Y4j = integrator.g(uprev + ajj41 * Y1j + ajj42 * Y2j + ajj43 * Y3j + aj041 * Y10, p, t) * _dW
+        Y4j = integrator.f.g(uprev + ajj41 * Y1j + ajj42 * Y2j + ajj43 * Y3j + aj041 * Y10, p, t) * _dW
     else
         if !is_diagonal_noise(integrator.sol.prob)
             Y4j = similar(integrator.sol.prob.noise_rate_prototype)
@@ -2126,7 +2126,7 @@ end
                         tmpu += (ajl41 * Y1j[:, l] + ajl42 * Y2j[:, l])
                     end
                 end
-                Y4j[:, j] = integrator.g(tmpu, p, t)[:, j] * _dW[j]
+                Y4j[:, j] = integrator.f.g(tmpu, p, t)[:, j] * _dW[j]
             end
         else
             Y40 += a0j41 * Y1j
@@ -2136,7 +2136,7 @@ end
                 tmpu = copy(tmpu2)
                 tmpu[j] += ajj41 * Y1j[j] + ajj42 * Y2j[j] + ajj43 * Y3j[j] -
                     (ajl41 * Y1j[j] + ajl42 * Y2j[j])
-                Y4j[j] = integrator.g(tmpu, p, t)[j] * _dW[j]
+                Y4j[j] = integrator.f.g(tmpu, p, t)[j] * _dW[j]
             end
         end
     end
@@ -2158,8 +2158,8 @@ end
                 for k in 1:m
                     η2 = @view Ihat2[k, :]
                     tmp = gtmp1 * η2 / (4 * γ)
-                    Y3kj = integrator.sqdt * integrator.g(uprev + tmp, p, t)
-                    Y4kj = integrator.sqdt * integrator.g(uprev - tmp, p, t)
+                    Y3kj = integrator.sqdt * integrator.f.g(uprev + tmp, p, t)
+                    Y4kj = integrator.sqdt * integrator.f.g(uprev - tmp, p, t)
                     u += @. γ * Y3kj[:, k] - γ * Y4kj[:, k]
                 end
             end
@@ -2202,7 +2202,7 @@ end
     # compute stage values
     # stage 1
     integrator.f(ktmp, uprev, p, t)
-    integrator.g(gtmp, uprev, p, t)
+    integrator.f.g(gtmp, uprev, p, t)
 
     copyto!(gtmp1, gtmp)
 
@@ -2228,7 +2228,7 @@ end
             Y2jj = @view Y2j[:, j]
             @.. Y20 = Y20 + a0j21 * Y1jj
             @.. tmpu = uprev + aj021 * Y10 + ajj21 * Y1jj
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             gtmpj = @view gtmp[:, j]
             @.. Y2jj = gtmpj * _dW[j]
         end
@@ -2240,7 +2240,7 @@ end
             fill!(tmpu2, zero(eltype(integrator.u)))
             tmpu2[j] = ajj21 * Y1j[j]
             @.. tmpu2 = tmpu + tmpu2
-            integrator.g(gtmp, tmpu2, p, t)
+            integrator.f.g(gtmp, tmpu2, p, t)
             Y2j[j] = gtmp[j] * _dW[j]
         end
     end
@@ -2265,7 +2265,7 @@ end
                     @.. tmpu = tmpu + (ajl31 * Y1jl + ajl32 * Y2jl)
                 end
             end
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             gtmpj = @view gtmp[:, j]
             @.. Y3jj = gtmpj * _dW[j]
         end
@@ -2276,7 +2276,7 @@ end
         for j in 1:m
             @.. tmpu = tmpu2
             tmpu[j] += ajj31 * Y1j[j] + ajj32 * Y2j[j] - (ajl31 * Y1j[j] + ajl32 * Y2j[j])
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             Y3j[j] = gtmp[j] * _dW[j]
         end
     end
@@ -2302,7 +2302,7 @@ end
                     @.. tmpu = tmpu + (ajl41 * Y1jl + ajl42 * Y2jl)
                 end
             end
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             gtmpj = @view gtmp[:, j]
             @.. Y4jj = gtmpj * _dW[j]
         end
@@ -2314,7 +2314,7 @@ end
             @.. tmpu = tmpu2
             tmpu[j] += ajj41 * Y1j[j] + ajj42 * Y2j[j] + ajj43 * Y3j[j] -
                 (ajl41 * Y1j[j] + ajl42 * Y2j[j])
-            integrator.g(gtmp, tmpu, p, t)
+            integrator.f.g(gtmp, tmpu, p, t)
             Y4j[j] = gtmp[j] * _dW[j]
         end
     end
@@ -2341,10 +2341,10 @@ end
                 mul!(tmpu2, gtmp1, η2)
                 @.. tmpu2 = tmpu2 / (4 * γ)
                 @.. tmpu = uprev + tmpu2
-                integrator.g(gtmp, tmpu, p, t)
+                integrator.f.g(gtmp, tmpu, p, t)
                 @.. u = u + γ * integrator.sqdt * gtmpk
                 @.. tmpu = uprev - tmpu2
-                integrator.g(gtmp, tmpu, p, t)
+                integrator.f.g(gtmp, tmpu, p, t)
                 @.. u = u - @. γ * integrator.sqdt * gtmpk
             end
         end
@@ -2364,16 +2364,16 @@ end
 
     # compute stage values
     k0 = integrator.f(uprev, p, t)
-    g0 = integrator.g(uprev, p, t)
+    g0 = integrator.f.g(uprev, p, t)
 
     # k1, g1, g2
     if is_diagonal_noise(integrator.sol.prob)
         k1 = integrator.f(uprev + λ0 * k0 * dt + ν1 * g0 .* W.dW + g0 .* W3, p, t + µ0 * dt)
-        g1 = integrator.g(
+        g1 = integrator.f.g(
             uprev + λbar0 * k0 * dt + β2 * g0 * integrator.sqdt + β3 * g0 .* W2, p, t +
                 µbar0 * dt
         )
-        g2 = integrator.g(
+        g2 = integrator.f.g(
             uprev + λbar0 * k0 * dt + δ2 * g0 * integrator.sqdt + δ3 * g0 .* W2, p, t +
                 µbar0 * dt
         )
@@ -2381,11 +2381,11 @@ end
     else
         # W.dW isa Number
         k1 = integrator.f(uprev + λ0 * k0 * dt + ν1 * g0 * W.dW + g0 * W3, p, t + µ0 * dt)
-        g1 = integrator.g(
+        g1 = integrator.f.g(
             uprev + λbar0 * k0 * dt + β2 * g0 * integrator.sqdt + β3 * g0 * W2, p, t +
                 µbar0 * dt
         )
-        g2 = integrator.g(
+        g2 = integrator.f.g(
             uprev + λbar0 * k0 * dt + δ2 * g0 * integrator.sqdt + δ3 * g0 * W2, p, t +
                 µbar0 * dt
         )
@@ -2419,16 +2419,16 @@ end
 
     # compute stage values
     integrator.f(k0, uprev, p, t)
-    integrator.g(g0, uprev, p, t)
+    integrator.f.g(g0, uprev, p, t)
 
     # k1, g1, g2
     if is_diagonal_noise(integrator.sol.prob)
         @.. tmpu = uprev + λ0 * k0 * dt + ν1 * g0 * W.dW + g0 * W3
         integrator.f(k1, tmpu, p, t + µ0 * dt)
         @.. tmpu = uprev + λbar0 * k0 * dt + β2 * g0 * integrator.sqdt + β3 * g0 * W2
-        integrator.g(g1, tmpu, p, t + µbar0 * dt)
+        integrator.f.g(g1, tmpu, p, t + µbar0 * dt)
         @.. tmpu = uprev + λbar0 * k0 * dt + δ2 * g0 * integrator.sqdt + δ3 * g0 * W2
-        integrator.g(g2, tmpu, p, t + µbar0 * dt)
+        integrator.f.g(g2, tmpu, p, t + µbar0 * dt)
     end
 
     # add stages together
@@ -2474,7 +2474,7 @@ end
 
     # compute stage values
     k1 = integrator.f(uprev, p, t)
-    g1 = integrator.g(uprev, p, t)
+    g1 = integrator.f.g(uprev, p, t)
 
     # H_1^(0) (stage 1)
     # H01 = uprev
@@ -2534,15 +2534,15 @@ end
     end
 
     if W.dW isa Number
-        g2 = integrator.g(H12, p, t)
-        g3 = integrator.g(H13, p, t)
+        g2 = integrator.f.g(H12, p, t)
+        g3 = integrator.f.g(H13, p, t)
     else
         if is_diagonal_noise(integrator.sol.prob)
-            g2 = [integrator.g(H12[k], p, t)[k] for k in 1:m]
-            g3 = [integrator.g(H13[k], p, t)[k] for k in 1:m]
+            g2 = [integrator.f.g(H12[k], p, t)[k] for k in 1:m]
+            g3 = [integrator.f.g(H13[k], p, t)[k] for k in 1:m]
         else
-            g2 = hcat([integrator.g(H12[k], p, t)[:, k] for k in 1:m] ...)
-            g3 = hcat([integrator.g(H13[k], p, t)[:, k] for k in 1:m] ...)
+            g2 = hcat([integrator.f.g(H12[k], p, t)[:, k] for k in 1:m] ...)
+            g3 = hcat([integrator.f.g(H13[k], p, t)[:, k] for k in 1:m] ...)
         end
     end
 
@@ -2622,7 +2622,7 @@ end
 
     # compute stage values
     integrator.f(k1, uprev, p, t)
-    integrator.g(g1, uprev, p, t)
+    integrator.f.g(g1, uprev, p, t)
 
     # H_i^(0), stage 1
     # H01 = uprev
@@ -2659,9 +2659,9 @@ end
                     @.. H12[k] = H12[k] + b221 * tmpg * WikJ
                 end
             end
-            integrator.g(tmpg, H12[k], p, t)
+            integrator.f.g(tmpg, H12[k], p, t)
             g2[k] = tmpg[k]
-            integrator.g(tmpg, H13[k], p, t)
+            integrator.f.g(tmpg, H13[k], p, t)
             g3[k] = tmpg[k]
         else
             g1k = @view g1[:, k]
@@ -2674,11 +2674,11 @@ end
                     @.. H12[k] = H12[k] + b221 * g1l * WikJ
                 end
             end
-            integrator.g(tmpg, H12[k], p, t)
+            integrator.f.g(tmpg, H12[k], p, t)
             tmpgk = @view tmpg[:, k]
             g2k = @view g2[:, k]
             copyto!(g2k, tmpgk)
-            integrator.g(tmpg, H13[k], p, t)
+            integrator.f.g(tmpg, H13[k], p, t)
             tmpgk = @view tmpg[:, k]
             g3k = @view g3[:, k]
             copyto!(g3k, tmpgk)

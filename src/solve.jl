@@ -820,7 +820,6 @@ function DiffEqBase.__init(
     end
 
     FType = typeof(f)
-    GType = typeof(g)
     CType = typeof(c)
     SolType = typeof(sol)
     cacheType = typeof(cache)
@@ -852,11 +851,11 @@ function DiffEqBase.__init(
         uBottomEltype, tType, typeof(tdir), typeof(p),
         typeof(eigen_est), QT,
         uEltypeNoUnits, typeof(W), typeof(P), rateType, typeof(sol), typeof(cache),
-        FType, GType, CType, typeof(opts), typeof(noise), typeof(last_event_error),
+        FType, CType, typeof(opts), typeof(noise), typeof(last_event_error),
         typeof(callback_cache), typeof(rate_constants),
         typeof(initializealg), typeof(_rng), typeof(ks),
     }(
-        f, g, c, noise, uprev, tprev, t, u, p, tType(dt),
+        f, c, noise, uprev, tprev, t, u, p, tType(dt),
         tType(dt), dtcache, tspan[2], tdir,
         just_hit_tstop, do_error_check, isout, event_last_time,
         vector_event_last_time, last_event_error, accept_step,

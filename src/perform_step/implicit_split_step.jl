@@ -15,7 +15,7 @@
 
     repeat_step = false
 
-    L = integrator.g(uprev, p, t)
+    L = integrator.f.g(uprev, p, t)
     ftmp = integrator.f(uprev, p, t)
 
     if alg.symplectic
@@ -55,9 +55,9 @@
     if cache isa ISSEulerHeunConstantCache
         utilde = u + gtmp
         if !is_diagonal_noise(integrator.sol.prob)
-            gtmp = ((integrator.g(utilde, p, t) + L) / 2) * integrator.W.dW
+            gtmp = ((integrator.f.g(utilde, p, t) + L) / 2) * integrator.W.dW
         else
-            gtmp = ((integrator.g(utilde, p, t) + L) / 2) .* integrator.W.dW
+            gtmp = ((integrator.f.g(utilde, p, t) + L) / 2) .* integrator.W.dW
         end
     end
 
@@ -77,7 +77,7 @@
             if !is_diagonal_noise(integrator.sol.prob)
                 g_sized = norm(L, 2)
                 utilde = @.. K + integrator.sqdt * g_sized
-                gtmp2 = integrator.g(utilde, p, t)
+                gtmp2 = integrator.f.g(utilde, p, t)
                 g_sized2 = norm(gtmp2, 2)
                 ggprime = (g_sized2 - g_sized) / (integrator.sqdt)
                 dW_cache = integrator.W.dW .^ 2 .- dt
@@ -85,14 +85,14 @@
                 En = ggprime * diff_tmp / 2
             else
                 utilde = @.. K + integrator.sqdt * L
-                ggprime = (integrator.g(utilde, p, t) .- L) ./ (integrator.sqdt)
+                ggprime = (integrator.f.g(utilde, p, t) .- L) ./ (integrator.sqdt)
                 En = ggprime .* (integrator.W.dW .^ 2 .- dt) ./ 2
             end
         elseif cache isa ISSEulerHeunConstantCache
             if !is_diagonal_noise(integrator.sol.prob)
                 g_sized = norm(L, 2)
                 utilde = @.. uprev + g_sized * integrator.sqdt
-                gtmp2 = integrator.g(utilde, p, t)
+                gtmp2 = integrator.f.g(utilde, p, t)
                 g_sized2 = norm(gtmp2, 2)
                 ggprime = (g_sized2 - g_sized) / (integrator.sqdt)
                 dW_cache = integrator.W.dW .^ 2
@@ -100,7 +100,7 @@
                 En = ggprime * diff_tmp / 2
             else
                 utilde = @.. uprev + L * integrator.sqdt
-                ggprime = (integrator.g(utilde, p, t) .- L) ./ (integrator.sqdt)
+                ggprime = (integrator.f.g(utilde, p, t) .- L) ./ (integrator.sqdt)
                 En = ggprime .* (integrator.W.dW .^ 2) ./ 2
             end
         end
@@ -141,7 +141,7 @@ end
     end
 
     integrator.f(tmp, uprev, p, t)
-    integrator.g(gtmp, uprev, p, t)
+    integrator.f.g(gtmp, uprev, p, t)
 
     if alg.symplectic
         @.. z = zero(eltype(u)) # Justified by ODE solvers, constraint extrapolation when IM
@@ -186,27 +186,27 @@ end
 
         if cache isa ISSEMCache
             if !is_diagonal_noise(integrator.sol.prob)
-                integrator.g(gtmp, z, p, t)
+                integrator.f.g(gtmp, z, p, t)
                 g_sized2 = norm(gtmp, 2)
                 @.. dW_cache = dW .^ 2 - dt
                 diff_tmp = integrator.opts.internalnorm(dW_cache, t)
                 En = (g_sized2 - g_sized) / (2integrator.sqdt) * diff_tmp
                 @.. dz = En
             else
-                integrator.g(gtmp2, z, p, t)
+                integrator.f.g(gtmp2, z, p, t)
                 g_sized2 = gtmp2
                 @.. dz = (g_sized2 - g_sized) / (2integrator.sqdt) * (dW .^ 2 - dt)
             end
         elseif cache isa ISSEulerHeunCache
             if !is_diagonal_noise(integrator.sol.prob)
-                integrator.g(gtmp, z, p, t)
+                integrator.f.g(gtmp, z, p, t)
                 g_sized2 = norm(gtmp, 2)
                 @.. dW_cache = dW .^ 2
                 diff_tmp = integrator.opts.internalnorm(dW_cache, t)
                 En = (g_sized2 - g_sized) / (2integrator.sqdt) * diff_tmp
                 @.. dz = En
             else
-                integrator.g(gtmp2, z, p, t)
+                integrator.f.g(gtmp2, z, p, t)
                 g_sized2 = gtmp2
                 @.. dz = (g_sized2 - g_sized) / (2integrator.sqdt) * (dW .^ 2)
             end
@@ -238,7 +238,7 @@ end
     if cache isa ISSEulerHeunCache
         gtmp3 = cache.gtmp3
         @.. z = u + gtmp2
-        integrator.g(gtmp3, z, p, t)
+        integrator.f.g(gtmp3, z, p, t)
         @.. gtmp = (gtmp3 + gtmp) / 2
         if is_diagonal_noise(integrator.sol.prob)
             @.. gtmp2 = gtmp * dW

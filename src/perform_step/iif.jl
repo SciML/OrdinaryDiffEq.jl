@@ -42,9 +42,9 @@ end
     if cache isa IIF1MilConstantCache
         error("Milstein correction does not work.")
     elseif cache isa IIF1MConstantCache
-        tmp = exp(A * dt) * (uprev + integrator.g(uprev, p, t) * W.dW)
+        tmp = exp(A * dt) * (uprev + integrator.f.g(uprev, p, t) * W.dW)
     elseif cache isa IIF2MConstantCache
-        tmp = exp(A * dt) * (uprev + 0.5dt * integrator.f.f2(uprev, p, t) + integrator.g(uprev, p, t) * W.dW)
+        tmp = exp(A * dt) * (uprev + 0.5dt * integrator.f.f2(uprev, p, t) + integrator.f.g(uprev, p, t) * W.dW)
     end
 
     if integrator.iter > 1 && !integrator.u_modified
@@ -99,7 +99,7 @@ end
     alg = unwrap_alg(integrator, true)
     uidx = eachindex(u)
 
-    integrator.g(rtmp2, uprev, p, t)
+    integrator.f.g(rtmp2, uprev, p, t)
 
     if is_diagonal_noise(integrator.sol.prob)
         rmul!(rtmp2, W.dW) # rtmp2 === rtmp3
@@ -141,13 +141,13 @@ end
     dW = W.dW
     sqdt = integrator.sqdt
     f = integrator.f
-    g = integrator.g
+    g = integrator.f.g
 
     A = integrator.f.f1(t, uprev, rtmp1)
     M = exp(A * dt)
 
     uidx = eachindex(u)
-    integrator.g(rtmp2, uprev, p, t)
+    integrator.f.g(rtmp2, uprev, p, t)
     if cache isa Union{IIF1MCache, IIF2MCache}
         if is_diagonal_noise(integrator.sol.prob)
             rmul!(rtmp2, W.dW) # rtmp2 === rtmp3

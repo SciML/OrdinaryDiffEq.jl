@@ -52,7 +52,7 @@ based on the RI1 scheme with theta-method implicitization of the drift.
     k1 = integrator.f(Y1, p, t)  # Evaluate drift at implicit stage
 
     # Compute g1 at uprev (diffusion remains explicit)
-    g1 = integrator.g(uprev, p, t)
+    g1 = integrator.f.g(uprev, p, t)
 
     # H^(0) Stage 2
     if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
@@ -111,11 +111,11 @@ based on the RI1 scheme with theta-method implicitization of the drift.
 
     # Compute g2 and g3 at H12 and H13
     if W.dW isa Number
-        g2 = integrator.g(H12, p, t + c12 * dt)
-        g3 = integrator.g(H13, p, t + c13 * dt)
+        g2 = integrator.f.g(H12, p, t + c12 * dt)
+        g3 = integrator.f.g(H13, p, t + c13 * dt)
     else
-        g2 = [integrator.g(H12[k], p, t + c12 * dt) for k in 1:m]
-        g3 = [integrator.g(H13[k], p, t + c13 * dt) for k in 1:m]
+        g2 = [integrator.f.g(H12[k], p, t + c12 * dt) for k in 1:m]
+        g3 = [integrator.f.g(H13[k], p, t + c13 * dt) for k in 1:m]
         H22 = [copy(uprev) for k in 1:m]
         H23 = [copy(uprev) for k in 1:m]
         for k in 1:m
@@ -152,10 +152,10 @@ based on the RI1 scheme with theta-method implicitization of the drift.
                 for l in 1:m
                     if l != k
                         ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, k, l)
-                        tmpg = integrator.g(H22[l], p, t)
+                        tmpg = integrator.f.g(H22[l], p, t)
                         u[k] += tmpg[k] *
                             (_dW[k] * beta32 + ihat2 * beta42 / integrator.sqdt)
-                        tmpg = integrator.g(H23[l], p, t)
+                        tmpg = integrator.f.g(H23[l], p, t)
                         u[k] += tmpg[k] *
                             (_dW[k] * beta33 + ihat2 * beta43 / integrator.sqdt)
                     end
@@ -173,11 +173,11 @@ based on the RI1 scheme with theta-method implicitization of the drift.
                 for l in 1:m
                     if l != k
                         ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, k, l)
-                        tmpg = integrator.g(H22[l], p, t)
+                        tmpg = integrator.f.g(H22[l], p, t)
                         tmpgk = @view tmpg[:, k]
                         @.. u = u +
                             tmpgk * (_dW[k] * beta32 + ihat2 * beta42 / integrator.sqdt)
-                        tmpg = integrator.g(H23[l], p, t)
+                        tmpg = integrator.f.g(H23[l], p, t)
                         tmpgk = @view tmpg[:, k]
                         @.. u = u +
                             tmpgk * (_dW[k] * beta33 + ihat2 * beta43 / integrator.sqdt)
@@ -271,7 +271,7 @@ IRI1 perform_step! implementation (mutable cache, in-place)
     end
 
     # Compute g1 (diffusion is explicit)
-    integrator.g(g1, uprev, p, t)
+    integrator.f.g(g1, uprev, p, t)
 
     # Stage 1: Implicit solve for k1
     @.. z = zero(eltype(u))
@@ -342,8 +342,8 @@ IRI1 perform_step! implementation (mutable cache, in-place)
 
     # Compute g2 and g3
     for k in 1:m
-        integrator.g(g2[k], H12[k], p, t + c12 * dt)
-        integrator.g(g3[k], H13[k], p, t + c13 * dt)
+        integrator.f.g(g2[k], H12[k], p, t + c12 * dt)
+        integrator.f.g(g3[k], H13[k], p, t + c13 * dt)
     end
 
     # H22 and H23 for non-diagonal noise
@@ -380,9 +380,9 @@ IRI1 perform_step! implementation (mutable cache, in-place)
             for l in 1:m
                 if l != k
                     ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, k, l)
-                    integrator.g(tmpg, H22[l], p, t)
+                    integrator.f.g(tmpg, H22[l], p, t)
                     u[k] += tmpg[k] * (_dW[k] * beta32 + ihat2 * beta42 / integrator.sqdt)
-                    integrator.g(tmpg, H23[l], p, t)
+                    integrator.f.g(tmpg, H23[l], p, t)
                     u[k] += tmpg[k] * (_dW[k] * beta33 + ihat2 * beta43 / integrator.sqdt)
                 end
             end
@@ -399,10 +399,10 @@ IRI1 perform_step! implementation (mutable cache, in-place)
             for l in 1:m
                 if l != k
                     ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, k, l)
-                    integrator.g(tmpg, H22[l], p, t)
+                    integrator.f.g(tmpg, H22[l], p, t)
                     tmpgk = @view tmpg[:, k]
                     @.. u = u + tmpgk * (_dW[k] * beta32 + ihat2 * beta42 / integrator.sqdt)
-                    integrator.g(tmpg, H23[l], p, t)
+                    integrator.f.g(tmpg, H23[l], p, t)
                     tmpgk = @view tmpg[:, k]
                     @.. u = u + tmpgk * (_dW[k] * beta33 + ihat2 * beta43 / integrator.sqdt)
                 end
