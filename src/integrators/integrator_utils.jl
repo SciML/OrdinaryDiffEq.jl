@@ -31,6 +31,9 @@ function last_step_failed(integrator::SDEIntegrator)
     return integrator.last_stepfail && !integrator.opts.adaptive
 end
 
+# SDEIntegrator has no k field — post_savevalues! (k-array resize) is always a no-op.
+@inline post_savevalues!(integrator::SDEIntegrator, reduce_size) = nothing
+
 # Use OrdinaryDiffEqCore's _savevalues! via hooks (interp_at_saveat, is_composite_algorithm, post_savevalues!)
 @inline function DiffEqBase.savevalues!(
         integrator::SDEIntegrator, force_save = false, reduce_size = true,
