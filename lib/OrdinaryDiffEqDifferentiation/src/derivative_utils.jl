@@ -31,6 +31,13 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
         return nothing
     end
 
+    # Disable jac_reuse during ForwardDiff sensitivity analysis.
+    # When u or dtgamma contain Dual numbers, caching and reusing a stale Jacobian
+    # breaks the derivative chain (the cached J carries stale partial derivatives).
+    if eltype(integrator.uprev) <: Dual || dtgamma isa Dual
+        return nothing
+    end
+
     jac_reuse = get_jac_reuse(cache)
     # If no reuse state (e.g. OOP cache without jac_reuse), delegate to do_newJW
     if jac_reuse === nothing

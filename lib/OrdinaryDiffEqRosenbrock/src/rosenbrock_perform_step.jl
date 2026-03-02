@@ -638,11 +638,15 @@ end
                 integrator.EEst = max(EEst, integrator.EEst)
             end
         else
-            # No H matrix: use basic Hermite interpolation (kshortsize=2)
-            integrator.k[1] = f(uprev, p, t)
+            # No H matrix: compute Hermite-compatible coefficients for the
+            # Rosenbrock interpolant y(Θ) = (1-Θ)y₀ + Θ(y₁ + (1-Θ)(k₁ + Θ k₂)).
+            # Generic Hermite: k₁ = dt*f₀ - (y₁-y₀), k₂ = 2(y₁-y₀) - dt*(f₀+f₁)
+            f0 = f(uprev, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            integrator.k[2] = f(u, p, t + dt)
+            f1 = f(u, p, t + dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            integrator.k[1] = @.. dt * f0 - (u - uprev)
+            integrator.k[2] = @.. 2 * (u - uprev) - dt * (f0 + f1)
         end
     end
 
@@ -787,11 +791,15 @@ end
                 integrator.EEst = max(EEst, integrator.EEst)
             end
         else
-            # No H matrix: use basic Hermite interpolation (kshortsize=2)
-            f(integrator.k[1], uprev, p, t)
+            # No H matrix: compute Hermite-compatible coefficients for the
+            # Rosenbrock interpolant y(Θ) = (1-Θ)y₀ + Θ(y₁ + (1-Θ)(k₁ + Θ k₂)).
+            # Generic Hermite: k₁ = dt*f₀ - (y₁-y₀), k₂ = 2(y₁-y₀) - dt*(f₀+f₁)
+            f(du, uprev, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            f(integrator.k[2], u, p, t + dt)
+            f(du1, u, p, t + dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            @.. integrator.k[1] = dt * du - (u - uprev)
+            @.. integrator.k[2] = 2 * (u - uprev) - dt * (du + du1)
         end
     end
     cache.linsolve = linres.cache
