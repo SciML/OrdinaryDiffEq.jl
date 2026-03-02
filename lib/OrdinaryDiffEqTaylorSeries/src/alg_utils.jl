@@ -1,3 +1,5 @@
+get_value(::Val{T}) where {T} = T
+
 alg_order(::ExplicitTaylor2) = 2
 alg_stability_size(alg::ExplicitTaylor2) = 1
 
