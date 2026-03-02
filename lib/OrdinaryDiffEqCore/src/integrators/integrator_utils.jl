@@ -11,9 +11,10 @@ is_noise_saveable(::Nothing) = false
 @inline _get_W(integrator) = hasfield(typeof(integrator), :W) ? getfield(integrator, :W) : nothing
 @inline _get_P(integrator) = hasfield(typeof(integrator), :P) ? getfield(integrator, :P) : nothing
 
-# Trait: does the solution type support dense output k-array storage?
-# True for ODESolution (has sol.k), false for RODESolution/DAESolution (no sol.k).
-@inline _has_ks(integrator) = hasfield(typeof(integrator.sol), :k)
+# Trait: does the integrator+solution support dense output k-array storage?
+# True for ODEIntegrator (has integrator.k and sol.k), false for SDEIntegrator
+# (no integrator.k) and RODESolution/DAESolution (no sol.k).
+@inline _has_ks(integrator) = hasfield(typeof(integrator), :k) && hasfield(typeof(integrator.sol), :k)
 
 function save_idxsinitialize(
         integrator, cache::OrdinaryDiffEqCache,
