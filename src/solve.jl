@@ -845,6 +845,8 @@ function DiffEqBase.__init(
     success_iter = 0
     q = tTypeNoUnits(1)
 
+    ks = Vector{rateType}(undef, 0)
+
     integrator = SDEIntegrator{
         typeof(alg), isinplace(prob), uType,
         uBottomEltype, tType, typeof(tdir), typeof(p),
@@ -852,7 +854,7 @@ function DiffEqBase.__init(
         uEltypeNoUnits, typeof(W), typeof(P), rateType, typeof(sol), typeof(cache),
         FType, GType, CType, typeof(opts), typeof(noise), typeof(last_event_error),
         typeof(callback_cache), typeof(rate_constants),
-        typeof(initializealg), typeof(_rng),
+        typeof(initializealg), typeof(_rng), typeof(ks),
     }(
         f, g, c, noise, uprev, tprev, t, u, p, tType(dt),
         tType(dt), dtcache, tspan[2], tdir,
@@ -864,6 +866,7 @@ function DiffEqBase.__init(
         saveiter,
         0, # saveiter_dense
         0, # kshortsize
+        ks,
         alg, sol,
         cache, callback_cache, tType(dt), W, P, rate_constants,
         opts, iter, success_iter, eigen_est, EEst, q,

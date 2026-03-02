@@ -25,7 +25,7 @@ import OrdinaryDiffEqCore: default_controller, isstandard, ispredictive,
 # and algorithm traits (isfsal, alg_extrapolates, etc.).
 import OrdinaryDiffEqCore: handle_callbacks!, handle_tstop!,
     solution_endpoint_match_cur_integrator!,
-    _savevalues!, _postamble!, post_savevalues!,
+    _savevalues!, _postamble!,
     is_composite_cache, is_composite_algorithm, final_progress,
     loopheader!, _loopfooter!, _step!, perform_step!,
     isaposteriori, fixed_t_for_floatingpoint_error!,
