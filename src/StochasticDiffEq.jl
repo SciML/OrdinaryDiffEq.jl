@@ -130,7 +130,6 @@ end
 
 include("misc_utils.jl")
 include("algorithms.jl")
-include("options_type.jl")
 include("interp_func.jl")
 include("caches/cache_types.jl")
 include("caches/basic_method_caches.jl")

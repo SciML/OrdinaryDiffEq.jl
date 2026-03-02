@@ -771,7 +771,7 @@ function DiffEqBase.__init(
         tstops = _tstops_callable
     end
 
-    opts = SDEOptions(
+    opts = OrdinaryDiffEqCore.DEOptions(
         maxiters, save_everystep,
         adaptive, abstol_internal,
         reltol_internal,
@@ -782,7 +782,8 @@ function DiffEqBase.__init(
         QT(failfactor),
         tType(dtmax), tType(dtmin),
         controller,
-        internalnorm, save_idxs,
+        internalnorm, LinearAlgebra.opnorm,
+        save_idxs,
         tstops_internal, saveat_internal,
         d_discontinuities_internal,
         tstops, saveat, d_discontinuities,
@@ -791,7 +792,8 @@ function DiffEqBase.__init(
         progress_name, progress_message, progress_id,
         timeseries_errors, dense_errors,
         convert.(uBottomEltypeNoUnits, delta),
-        dense, save_on, save_start, save_end, save_end_user, save_noise,
+        dense, save_on, save_start,
+        save_end, save_noise, false, save_end_user,
         callbacks_internal, isoutofdomain, unstable_check,
         verbose_internal, calck, force_dtmin,
         advance_to_tstop, stop_at_next_tstop
