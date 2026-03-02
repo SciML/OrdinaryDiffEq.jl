@@ -299,13 +299,16 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
 end
 
 # Interpolation at saveat points.
-# ODE (opts.dense = true): polynomial interpolation via addsteps!/ode_interpolant.
-# SDE (opts.dense = false): linear interpolation between uprev and u.
+# ODE: polynomial interpolation via addsteps!/ode_interpolant (always available,
+#   regardless of opts.dense which only controls post-solve k-array storage).
+# SDE: linear interpolation between uprev and u.
 function interp_at_saveat(Θ, integrator, idxs, deriv)
-    if integrator.opts.dense
+    if isnothing(_get_W(integrator))
+        # ODE/DDE: polynomial interpolation
         SciMLBase.addsteps!(integrator)
         return ode_interpolant(Θ, integrator, idxs, deriv)
     else
+        # SDE: linear interpolation
         return linear_interpolant(Θ, integrator, idxs, deriv)
     end
 end
@@ -357,7 +360,7 @@ end
 # Cleanup after savevalues: resize k for dense output storage.
 # No-op when solution lacks k-array storage (SDE/RODE).
 function post_savevalues!(integrator, reduce_size)
-    return reduce_size && integrator.opts.dense && _has_ks(integrator) &&
+    return reduce_size && _has_ks(integrator) &&
         resize!(integrator.k, integrator.kshortsize)
 end
 
