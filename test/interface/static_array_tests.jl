@@ -297,4 +297,4 @@ prob = DAEProblem(g2, Array(du0), Array(u0), (0.0, 1.0))
 sol2 = solve(prob, DFBDF(autodiff = AutoFiniteDiff()), reltol = 1.0e-8, abstol = 1.0e-8)
 
 @test all(iszero, sol1[:, 1] - sol2[:, 1])
-@test isapprox(sol1[:, end], sol2[:, end], rtol = 1e-4)
+@test isapprox(sol1[:, end], sol2[:, end], rtol = 1.0e-4)
