@@ -227,9 +227,14 @@ function Base.resize!(integrator::DDEIntegrator, cache, i)
     end
 
     # resize DDE integrator
+    # Skip arrays already at the target length to avoid redundant resize!
+    # calls on aliased arrays (e.g., cache.u === ode_integrator.u,
+    # cache.fsalfirst === integrator.k[1]), which can fail with
+    # "cannot resize array with shared data" on some platforms.
     for c in full_cache(cache)
-        resize!(c, i)
+        length(c) != i && resize!(c, i)
     end
+
     OrdinaryDiffEqCore.resize_nlsolver!(integrator, i)
     OrdinaryDiffEqCore.resize_J_W!(cache, integrator, i)
     resize_non_user_cache!(integrator, cache, i)
