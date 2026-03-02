@@ -1,5 +1,6 @@
 @muladd function perform_step!(integrator, cache::SKenCarpConstantCache)
-    (; t, dt, uprev, u, g, p, f) = integrator
+    (; t, dt, uprev, u, p, f) = integrator
+    g = integrator.f.g
     (; nlsolver) = cache
     (;
         γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31,
@@ -146,7 +147,8 @@
 end
 
 @muladd function perform_step!(integrator, cache::SKenCarpCache)
-    (; t, dt, uprev, u, g, p, f) = integrator
+    (; t, dt, uprev, u, p, f) = integrator
+    g = integrator.f.g
     (; z₁, z₂, z₃, z₄, k1, k2, k3, k4, atmp) = cache
     (; g1, g4, chi2, nlsolver) = cache
     (; z, tmp) = nlsolver
