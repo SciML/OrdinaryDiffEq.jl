@@ -87,9 +87,8 @@ prob = SDEProblem(f, g, u0, tspan)
 
     @testset "Concrete RNG type parameter" begin
         integ = init(prob, EM(); dt = 0.01, rng = Xoshiro(42))
-        T = typeof(integ)
-        # The RNGType parameter should be Xoshiro, not Any
-        @test T.parameters[end] === Xoshiro
+        # The rng field should be a concrete Xoshiro, not Any
+        @test typeof(integ.rng) === Xoshiro
     end
 
     @testset "Solution seed when rng provided" begin
