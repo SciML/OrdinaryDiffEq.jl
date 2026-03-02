@@ -92,7 +92,7 @@ end
 
     # compute solutions
     # Only test Rodas5P: OOP TRBDF2 hangs with OrdinaryDiffEqCore >= 3.10
-    for alg in (Rodas5P(),)
+    for alg in (Rodas5P(), TRBDF2())
         sol = solve(prob, MethodOfSteps(alg))
 
         ## Jacobian
