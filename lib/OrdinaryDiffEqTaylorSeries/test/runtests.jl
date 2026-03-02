@@ -7,7 +7,7 @@ const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
 # Run functional tests
 if TEST_GROUP != "QA"
-    @testset "Taylor2 Convergence Tests" begin
+    @testset "ExplicitTaylor2 Convergence Tests" begin
         # Test convergence
         dts = 2.0 .^ (-8:-4)
         testTol = 0.2
@@ -17,7 +17,7 @@ if TEST_GROUP != "QA"
         @test sim.𝒪est[:final] ≈ 2 atol = testTol
     end
 
-    @testset "TaylorN Convergence Tests" begin
+    @testset "ExplicitTaylorN Convergence Tests" begin
         # Test convergence
         dts = 2.0 .^ (-8:-4)
         testTol = 0.2
@@ -30,8 +30,8 @@ if TEST_GROUP != "QA"
         end
     end
 
-    @testset "TaylorN Adaptive Tests" begin
-        sol = solve(prob_ode_linear, ExplicitTaylor(order = Val(2)))
+    @testset "ExplicitTaylorAdaptiveOrder Tests" begin
+        sol = solve(prob_ode_linear, ExplicitTaylorAdaptiveOrder(min_order = Val(6), max_order = Val(10)))
         @test length(sol) < 20
         @test SciMLBase.successful_retcode(sol)
     end

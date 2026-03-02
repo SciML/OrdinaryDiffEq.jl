@@ -89,7 +89,7 @@ struct ExplicitTaylorConstantCache{P, taylorType, uType, tType} <:
     jet::FunctionWrapper{taylorType, Tuple{uType, tType}}
 end
 function alg_cache(
-        ::ExplicitTaylor{P}, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::ExplicitTaylor{P}, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{false}, verbose
@@ -99,7 +99,9 @@ function alg_cache(
     else
         jet = build_jet(f, p, alg.order)
     end
-    return ExplicitTaylorConstantCache(alg.order, jet)
+    utaylor = TaylorDiff.make_seed(u, zero(u), alg.order)
+    jet_wrapped = FunctionWrapper{typeof(utaylor), Tuple{typeof(u), typeof(t)}}(jet)
+    return ExplicitTaylorConstantCache(alg.order, jet_wrapped)
 end
 
 @cache struct ExplicitTaylorAdaptiveOrderCache{
@@ -126,14 +128,14 @@ function alg_cache(
         alg::ExplicitTaylorAdaptiveOrder, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{true}
+        ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     utaylor = TaylorDiff.make_seed(u, zero(u), alg.max_order)
     jets = FunctionWrapper{Nothing, Tuple{typeof(utaylor), typeof(u), typeof(t)}}[]
     min_order_value = get_value(alg.min_order)
     max_order_value = get_value(alg.max_order)
     for order in min_order_value:max_order_value
-        jet_iip = build_jet(f, p, order, length(u))[2]
+        jet_iip = build_jet(f, p, Val(order), length(u))[2]
         push!(jets, jet_iip)
     end
     utilde = zero(u)
@@ -162,7 +164,7 @@ function alg_cache(
         alg::ExplicitTaylorAdaptiveOrder, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
-        ::Val{false}
+        ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     utaylor = TaylorDiff.make_seed(u, zero(u), alg.max_order) # not used, but needed for type
     jets = FunctionWrapper{typeof(utaylor), Tuple{typeof(u), typeof(t)}}[]
@@ -170,9 +172,9 @@ function alg_cache(
     max_order_value = get_value(alg.max_order)
     for order in min_order_value:max_order_value
         if u isa AbstractArray
-            jet, _ = build_jet(f, p, order, length(u))
+            jet, _ = build_jet(f, p, Val(order), length(u))
         else
-            jet = build_jet(f, p, order)
+            jet = build_jet(f, p, Val(order))
         end
         push!(jets, jet)
     end
