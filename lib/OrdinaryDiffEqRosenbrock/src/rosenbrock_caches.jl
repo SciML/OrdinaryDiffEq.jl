@@ -17,8 +17,8 @@ Fields:
 - `cached_W`: Cached factorized W matrix for OOP reuse
 """
 mutable struct JacReuseState
-    last_dtgamma::Float64
-    pending_dtgamma::Float64
+    last_dtgamma::Any
+    pending_dtgamma::Any
     last_naccept::Int
     max_jac_age::Int
     cached_J::Any
@@ -27,8 +27,6 @@ mutable struct JacReuseState
 end
 
 function JacReuseState(_dtgamma = 0.0)
-    # Always initialize with Float64 zero regardless of the caller's dt type.
-    # This avoids failures when dt is a ForwardDiff.Dual during sensitivity analysis.
     return JacReuseState(0.0, 0.0, 0, 50, nothing, nothing, nothing)
 end
 
