@@ -162,11 +162,13 @@ strict_rosenbrock = [
     # ========================================================================
     @testset "Jacobian count reduced for W-methods on stiff problems" begin
         # W-methods should reuse Jacobians, resulting in njacs < naccept
+        # On Julia 1.10, [sources] is not supported so the registry version of
+        # calc_rosenbrock_differentiation! (without J reuse) is used; skip this test.
         for alg in [Rosenbrock23(), Rodas23W(), ROS34PW3()]
             sol = solve(vdp_prob, alg, reltol = 1.0e-6, abstol = 1.0e-8)
             @test SciMLBase.successful_retcode(sol)
             # W-methods should have fewer Jacobian evaluations than accepted steps
-            if sol.stats.naccept > 10
+            if sol.stats.naccept > 10 && VERSION >= v"1.11-"
                 @test sol.stats.njacs < sol.stats.naccept
             end
         end
