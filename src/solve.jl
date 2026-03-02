@@ -518,9 +518,6 @@ function DiffEqBase.__init(
         callback_cache = nothing
     end
 
-    # isa check is defensive here; prob should always be an AbstractRODEProblem.
-    _user_provided_noise = prob isa DiffEqBase.AbstractRODEProblem && prob.noise !== nothing
-
     if prob isa DiffEqBase.AbstractRODEProblem && prob.noise === nothing
         rswm = isadaptive(alg) ? RSWM(adaptivealg = :RSwM3) : RSWM(adaptivealg = :RSwM1)
         if isinplace(prob)
@@ -856,7 +853,7 @@ function DiffEqBase.__init(
         typeof(initializealg), typeof(_rng), typeof(ks),
     }(
         f, c, noise, uprev, tprev, t, u, p, tType(dt),
-        tType(dt), dtcache, tspan[2], tdir,
+        tType(dt), dtcache, tdir,
         just_hit_tstop, do_error_check, isout, event_last_time,
         vector_event_last_time, last_event_error, accept_step,
         last_stepfail, force_stepfail,
@@ -870,8 +867,7 @@ function DiffEqBase.__init(
         cache, callback_cache, tType(dt), W, P, rate_constants,
         opts, iter, success_iter, eigen_est, EEst, q,
         QT(qoldinit), q11, stats, initializealg, _rng,
-        false, # isdae
-        _user_provided_noise
+        false # isdae
     )
 
     if initialize_integrator

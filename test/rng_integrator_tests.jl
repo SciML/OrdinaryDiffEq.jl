@@ -60,7 +60,7 @@ prob = SDEProblem(f, g, u0, tspan)
         W = WienerProcess(0.0, 0.0; rng = user_rng)
         prob_noise = SDEProblem(f, g, u0, tspan; noise = W)
         integ = init(prob_noise, EM(); dt = 0.01, rng = Xoshiro(42))
-        @test integ.user_provided_noise == true
+        @test integ.noise !== nothing  # user-provided noise
 
         orig_W_rng = integ.W.rng
         new_rng = Xoshiro(99)
@@ -118,14 +118,14 @@ prob = SDEProblem(f, g, u0, tspan)
         @test vals_integ != vals_task
     end
 
-    @testset "user_provided_noise flag" begin
+    @testset "user-provided noise detection" begin
         integ = init(prob, EM(); dt = 0.01)
-        @test integ.user_provided_noise == false
+        @test integ.noise === nothing  # no user-provided noise
 
         W = WienerProcess(0.0, 0.0)
         prob_noise = SDEProblem(f, g, u0, tspan; noise = W)
         integ2 = init(prob_noise, EM(); dt = 0.01)
-        @test integ2.user_provided_noise == true
+        @test integ2.noise !== nothing  # user-provided noise
     end
 
     @testset "rng kwarg type validation" begin

@@ -509,7 +509,7 @@ function SciMLBase.set_rng!(integrator::SDEIntegrator, rng)
     end
     integrator.rng = rng
     # Sync framework-constructed noise processes only
-    if !integrator.user_provided_noise && integrator.W !== nothing
+    if integrator.noise === nothing && integrator.W !== nothing
         integrator.W.rng = rng
     end
     # P (CompoundPoissonProcess) is always framework-constructed when present

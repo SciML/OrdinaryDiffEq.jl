@@ -16,7 +16,6 @@ mutable struct SDEIntegrator{
     dt::tType
     dtpropose::tType
     dtcache::tType
-    T::tType
     tdir::tdirType
     just_hit_tstop::Bool
     do_error_check::Bool
@@ -54,5 +53,4 @@ mutable struct SDEIntegrator{
     initializealg::IA
     rng::RNGType
     isdae::Bool
-    user_provided_noise::Bool
 end
