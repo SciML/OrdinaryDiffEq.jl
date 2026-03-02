@@ -1,7 +1,7 @@
 mutable struct DEOptions{
         absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-        disccache, verbType,
+        disccache, verbType, DType,
     }
     maxiters::MI
     save_everystep::Bool
@@ -37,10 +37,12 @@ mutable struct DEOptions{
     progress_id::Symbol
     timeseries_errors::Bool
     dense_errors::Bool
+    delta::DType
     dense::Bool
     save_on::Bool
     save_start::Bool
     save_end::Bool
+    save_noise::Bool
     save_discretes::Bool
     save_end_user::F3
     callback::F4
