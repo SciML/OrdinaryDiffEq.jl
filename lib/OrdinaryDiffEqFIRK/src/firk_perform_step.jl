@@ -675,10 +675,6 @@ end
             integrator.k[4] = z2
             integrator.k[5] = z3
         end
-    else 
-        if alg.is_disco
-            set_discontinuity(u, uprev, integrator, cache)
-        end
     end
 
     integrator.fsallast = f(u, p, t + dt)
@@ -955,10 +951,6 @@ end
             integrator.k[3] .= z1
             integrator.k[4] .= z2
             integrator.k[5] .= z3
-        end
-    else 
-        if alg.is_disco
-            set_discontinuity(u, uprev, integrator, cache)
         end
     end
 
