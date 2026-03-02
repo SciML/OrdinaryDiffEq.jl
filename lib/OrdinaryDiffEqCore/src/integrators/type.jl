@@ -1,7 +1,7 @@
 mutable struct DEOptions{
         absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-        disccache, verbType,
+        disccache, verbType, DType,
     }
     maxiters::MI
     save_everystep::Bool
@@ -37,10 +37,12 @@ mutable struct DEOptions{
     progress_id::Symbol
     timeseries_errors::Bool
     dense_errors::Bool
+    delta::DType
     dense::Bool
     save_on::Bool
     save_start::Bool
     save_end::Bool
+    save_noise::Bool
     save_discretes::Bool
     save_end_user::F3
     callback::F4
@@ -89,7 +91,7 @@ mutable struct ODEIntegrator{
         algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, IIP,
         uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
-        CallbackCacheType, IA, DV, CC, RNGType,
+        CallbackCacheType, IA, DV, CC, RNGType, WType, PType, SqdtType,
     } <:
     SciMLBase.AbstractODEIntegrator{algType, IIP, uType, tType}
     sol::SolType
@@ -128,6 +130,8 @@ mutable struct ODEIntegrator{
     force_stepfail::Bool
     last_stepfail::Bool
     just_hit_tstop::Bool
+    next_step_tstop::Bool
+    tstop_target::tType
     do_error_check::Bool
     event_last_time::Int
     vector_event_last_time::Int
@@ -145,4 +149,7 @@ mutable struct ODEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     rng::RNGType
+    W::WType
+    P::PType
+    sqdt::SqdtType
 end

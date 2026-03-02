@@ -61,4 +61,3 @@ function wrapprecs(_Pl, _Pr, weight, u)
     Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pr
     return Pl, Pr
 end
-
