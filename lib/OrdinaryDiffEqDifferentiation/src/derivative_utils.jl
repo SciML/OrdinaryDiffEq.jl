@@ -792,7 +792,13 @@ function update_W!(
                 lcache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step)
             end
         end
-        new_jac && (lcache.J_t = integrator.t)
+        if isdae
+            new_jac && (lcache.J_t = integrator.t)
+        else
+            # OOP calc_W always recomputes J via calc_J (no mutable J to reuse),
+            # so J_t should be updated whenever calc_W is called (i.e., new_W).
+            (new_jac || new_W) && (lcache.J_t = integrator.t)
+        end
         set_new_W!(nlsolver, new_W)
         if isdae && new_W
             set_W_γdt!(nlsolver, nlsolver.α * inv(dtgamma))

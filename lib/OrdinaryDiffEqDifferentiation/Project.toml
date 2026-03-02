@@ -4,7 +4,7 @@ uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "SparseArrays", "Pkg"]
+test = ["DiffEqDevTools", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "Test", "SparseArrays", "Pkg"]
 
 [compat]
 Pkg = "1"
@@ -22,6 +22,7 @@ ConstructionBase = "1.5.8"
 LinearAlgebra = "1.10"
 SciMLBase = "2.141"
 OrdinaryDiffEqCore = "3"
+OrdinaryDiffEqSDIRK = "1"
 SparseArrays = "1.10"
 ConcreteStructs = "0.2"
 Aqua = "0.8.11"
@@ -68,10 +69,14 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
+
+[sources.OrdinaryDiffEqSDIRK]
+path = "../OrdinaryDiffEqSDIRK"
 
 [extensions]
 OrdinaryDiffEqDifferentiationSparseArraysExt = "SparseArrays"
