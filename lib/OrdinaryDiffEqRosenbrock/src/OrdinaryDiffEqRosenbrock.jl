@@ -32,8 +32,22 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
     wrapprecs, calc_tderivative, build_grad_config,
     build_jac_config, issuccess_W, jacobian2W!,
     resize_jac_config!, resize_grad_config!,
-    calc_W, calc_rosenbrock_differentiation!, calc_rosenbrock_differentiation, build_J_W,
+    calc_W, calc_rosenbrock_differentiation!, build_J_W,
     UJacobianWrapper, dolinsolve, WOperator, resize_J_W!
+
+# On Julia 1.11+, [sources] in Project.toml provides the local OrdinaryDiffEqDifferentiation
+# which has calc_rosenbrock_differentiation (OOP version with J reuse).
+# On Julia 1.10, [sources] is not supported, so the registry version is used which
+# doesn't have this function. Define a simple fallback without J reuse.
+@static if VERSION >= v"1.11-"
+    using OrdinaryDiffEqDifferentiation: calc_rosenbrock_differentiation
+else
+    function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
+        dT = calc_tderivative(integrator, cache)
+        W = calc_W(integrator, cache, dtgamma, repeat_step)
+        return dT, W
+    end
+end
 
 using Reexport
 @reexport using SciMLBase
