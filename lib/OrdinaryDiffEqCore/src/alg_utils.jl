@@ -579,6 +579,8 @@ end
 # Whether `uprev` is used in the algorithm directly.
 uses_uprev(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, adaptive::Bool) = true
 uses_uprev(alg::OrdinaryDiffEqAdaptiveAlgorithm, adaptive::Bool) = true
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+uses_uprev(alg, adaptive) = true
 
 ispredictive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
@@ -605,3 +607,5 @@ end
 
 # Defaults in the current system: currently opt out DAEAlgorithms until complete
 default_linear_interpolation(alg, prob) = alg isa DAEAlgorithm || prob isa DiscreteProblem
+# RODE/SDE always uses linear interpolation (no dense output)
+default_linear_interpolation(prob::SciMLBase.AbstractRODEProblem, alg) = true
