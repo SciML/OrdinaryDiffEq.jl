@@ -1483,7 +1483,6 @@ function perform_step!(
             internalnorm, t
         )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
-
         estimate_terk!(integrator, cache, k + 1, Val(max_order))
         calculate_residuals!(
             atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol,
