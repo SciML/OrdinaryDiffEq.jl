@@ -169,6 +169,7 @@ end
 _set_tstop_flag!(integrator, is_tstop::Bool, target = nothing) = nothing
 
 _get_tstop_target(integrator::ODEIntegrator) = integrator.tstop_target
+_get_tstop_target(integrator) = integrator.t  # fallback, helps inference for non-ODE integrators
 
 function modify_dt_for_tstops!(integrator)
     return if has_tstop(integrator)
