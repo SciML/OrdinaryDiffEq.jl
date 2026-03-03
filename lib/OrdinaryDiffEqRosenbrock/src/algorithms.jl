@@ -41,7 +41,7 @@ for (Alg, desc, refs, is_W) in [
                 _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
                 typeof(precs), diff_type, _unwrap_val(standardtag),
                 _unwrap_val(concrete_jac), typeof(step_limiter!),
-                typeof(stage_limiter!)
+                typeof(stage_limiter!),
             }(
                 linsolve, precs, step_limiter!,
                 stage_limiter!, AD_choice
