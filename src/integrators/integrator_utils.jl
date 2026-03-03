@@ -65,68 +65,6 @@ end
 # handle_tstop! is now imported from OrdinaryDiffEqCore.
 # SDE benefits from ODE's while-loop fix for multiple matching tstops.
 
-@inline function update_noise!(integrator, scaling_factor = integrator.sqdt)
-    return if isinplace(integrator.noise)
-        integrator.noise(integrator.ΔW, integrator)
-        rmul!(integrator.ΔW, scaling_factor)
-        if alg_needs_extra_process(integrator.alg)
-            integrator.noise(integrator.ΔZ, integrator)
-            rmul!(integrator.ΔZ, scaling_factor)
-        end
-    else
-        if integrator.u isa AbstractArray
-            integrator.ΔW .= scaling_factor .* integrator.noise(size(integrator.u), integrator)
-            if alg_needs_extra_process(integrator.alg)
-                integrator.ΔZ .= scaling_factor .* integrator.noise(size(integrator.u), integrator)
-            end
-        else
-            integrator.ΔW = scaling_factor * integrator.noise(integrator)
-            if alg_needs_extra_process(integrator.alg)
-                integrator.ΔZ = scaling_factor * integrator.noise(integrator)
-            end
-        end
-    end
-end
-
-@inline function generate_tildes(integrator, add1, add2, scaling)
-    return if isinplace(integrator.noise)
-        integrator.noise(integrator.ΔWtilde, integrator)
-        if add1 != 0
-            @.. integrator.ΔWtilde = add1 + scaling * integrator.ΔWtilde
-        else
-            @.. integrator.ΔWtilde = scaling * integrator.ΔWtilde
-        end
-        if alg_needs_extra_process(integrator.alg)
-            integrator.noise(integrator.ΔZtilde, integrator)
-            if add2 != 0
-                @.. integrator.ΔZtilde = add2 + scaling * integrator.ΔZtilde
-            else
-                @.. integrator.ΔZtilde = scaling * integrator.ΔZtilde
-            end
-        end
-    else
-        if integrator.u isa AbstractArray
-            if add1 != 0
-                integrator.ΔWtilde = add1 .+ scaling .* integrator.noise(size(integrator.u), integrator)
-            else
-                integrator.ΔWtilde = scaling .* integrator.noise(size(integrator.u), integrator)
-            end
-            if alg_needs_extra_process(integrator.alg)
-                if add2 != 0
-                    integrator.ΔZtilde = add2 .+ scaling .* integrator.noise(size(integrator.u), integrator)
-                else
-                    integrator.ΔZtilde = scaling .* integrator.noise(size(integrator.u), integrator)
-                end
-            end
-        else
-            integrator.ΔWtilde = add1 + scaling * integrator.noise(integrator)
-            if alg_needs_extra_process(integrator.alg)
-                integrator.ΔZtilde = add2 + scaling * integrator.noise(integrator)
-            end
-        end
-    end
-end
-
 @inline initialize!(integrator, cache::StochasticDiffEqCache, f = integrator.f) = nothing
 
 function nlsolve!(integrator, cache)
