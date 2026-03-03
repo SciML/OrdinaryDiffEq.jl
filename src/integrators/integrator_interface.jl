@@ -39,17 +39,6 @@ function (integrator::SDEIntegrator)(
     return current_interpolant!(val, t, integrator, idxs, deriv)
 end
 
-function u_modified!(integrator::SDEIntegrator, bool::Bool)
-    return integrator.u_modified = bool
-end
-
-function get_proposed_dt(integrator::SDEIntegrator)
-    return ifelse(integrator.opts.adaptive, integrator.dtpropose, integrator.dtcache)
-end
-function set_proposed_dt!(integrator::SDEIntegrator, dt::Number)
-    (integrator.dtpropose = dt; integrator.dtcache = dt)
-end
-
 function set_proposed_dt!(integrator::SDEIntegrator, integrator2::SDEIntegrator)
     integrator.dtpropose = integrator2.dtpropose
     integrator.dtcache = integrator2.dtcache
@@ -57,9 +46,6 @@ function set_proposed_dt!(integrator::SDEIntegrator, integrator2::SDEIntegrator)
 end
 
 #TODO: Bigger caches for most algorithms
-@inline DiffEqBase.get_tmp_cache(integrator::SDEIntegrator) = get_tmp_cache(
-    integrator, integrator.alg, integrator.cache
-)
 # avoid method ambiguity
 for typ in (StochasticDiffEqAlgorithm, StochasticDiffEqNewtonAdaptiveAlgorithm)
     @eval @inline DiffEqBase.get_tmp_cache(
@@ -77,7 +63,6 @@ end
     cache
 ) = get_tmp_cache(integrator, alg.algs[1], cache.caches[1])
 
-full_cache(integrator::SDEIntegrator) = full_cache(integrator.cache)
 function full_cache(integrator::StochasticCompositeCache)
     return Iterators.flatten(full_cache(c) for c in integrator.caches)
 end
@@ -97,31 +82,6 @@ function jac_iter(integrator::StochasticCompositeCache)
     return Iterators.flatten(jac_iter(c) for c in integrator.caches)
 end
 
-@inline function add_tstop!(integrator::SDEIntegrator, t)
-    integrator.tdir * (t - integrator.t) < 0 &&
-        error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
-    return push!(integrator.opts.tstops, integrator.tdir * t)
-end
-
-DiffEqBase.has_tstop(integrator::SDEIntegrator) = !isempty(integrator.opts.tstops)
-DiffEqBase.first_tstop(integrator::SDEIntegrator) = first(integrator.opts.tstops)
-DiffEqBase.pop_tstop!(integrator::SDEIntegrator) = pop!(integrator.opts.tstops)
-
-function DiffEqBase.add_saveat!(integrator::SDEIntegrator, t)
-    integrator.tdir * (t - integrator.t) < 0 &&
-        error("Tried to add a saveat that is behind the current time. This is strictly forbidden")
-    return push!(integrator.opts.saveat, integrator.tdir * t)
-end
-
-function resize_non_user_cache!(integrator::SDEIntegrator, i::Int)
-    return resize_non_user_cache!(integrator, integrator.cache, i)
-end
-function deleteat_non_user_cache!(integrator::SDEIntegrator, i)
-    return deleteat_non_user_cache!(integrator, integrator.cache, i)
-end
-function addat_non_user_cache!(integrator::SDEIntegrator, i)
-    return addat_non_user_cache!(integrator, integrator.cache, i)
-end
 resize!(integrator::SDEIntegrator, i::Int) = resize!(integrator, integrator.cache, i)
 
 function resize!(integrator::SDEIntegrator, cache, i)
@@ -323,12 +283,6 @@ function addat_noise!(integrator, cache, idxs)
     end
 end
 
-function terminate!(integrator::SDEIntegrator, retcode = ReturnCode.Terminated)
-    integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, retcode)
-    return integrator.opts.tstops.valtree = typeof(integrator.opts.tstops.valtree)()
-end
-
-DiffEqBase.has_reinit(integrator::SDEIntegrator) = true
 function DiffEqBase.reinit!(
         integrator::SDEIntegrator, u0 = integrator.sol.prob.u0;
         t0 = integrator.sol.prob.tspan[1], tf = integrator.sol.prob.tspan[2],
@@ -457,24 +411,6 @@ function DiffEqBase.set_t!(integrator::SDEIntegrator, t::Real)
     end
 end
 
-function DiffEqBase.set_u!(integrator::SDEIntegrator, u)
-    if integrator.opts.save_everystep
-        error(
-            "Integrator state cannot be reset unless it is initialized",
-            " with save_everystep=false"
-        )
-    end
-    integrator.u = u
-    return u_modified!(integrator, true)
-end
-
-DiffEqBase.get_tstops(integ::SDEIntegrator) = integ.opts.tstops
-DiffEqBase.get_tstops_array(integ::SDEIntegrator) = get_tstops(integ).valtree
-DiffEqBase.get_tstops_max(integ::SDEIntegrator) = maximum(get_tstops_array(integ))
-
-SciMLBase.has_rng(::SDEIntegrator) = true
-SciMLBase.get_rng(integrator::SDEIntegrator) = integrator.rng
-
 """
     SciMLBase.set_rng!(integrator::SDEIntegrator, rng) -> nothing
 
@@ -509,7 +445,7 @@ function SciMLBase.set_rng!(integrator::SDEIntegrator, rng)
     end
     integrator.rng = rng
     # Sync framework-constructed noise processes only
-    if !integrator.user_provided_noise && integrator.W !== nothing
+    if integrator.noise === nothing && integrator.W !== nothing
         integrator.W.rng = rng
     end
     # P (CompoundPoissonProcess) is always framework-constructed when present

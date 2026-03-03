@@ -1,4 +1,2 @@
-@inline function step!(integrator::SDEIntegrator)
-    _step!(integrator)
-    return nothing
-end
+# step!(::ODEIntegrator) from OrdinaryDiffEqCore handles SDE integrators
+# since SDEIntegrator is now a type alias for ODEIntegrator{<:SDEAlgTypes}.

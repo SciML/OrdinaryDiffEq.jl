@@ -518,9 +518,6 @@ function DiffEqBase.__init(
         callback_cache = nothing
     end
 
-    # isa check is defensive here; prob should always be an AbstractRODEProblem.
-    _user_provided_noise = prob isa DiffEqBase.AbstractRODEProblem && prob.noise !== nothing
-
     if prob isa DiffEqBase.AbstractRODEProblem && prob.noise === nothing
         rswm = isadaptive(alg) ? RSWM(adaptivealg = :RSwM3) : RSWM(adaptivealg = :RSwM1)
         if isinplace(prob)
@@ -820,7 +817,6 @@ function DiffEqBase.__init(
     end
 
     FType = typeof(f)
-    GType = typeof(g)
     CType = typeof(c)
     SolType = typeof(sol)
     cacheType = typeof(cache)
@@ -847,32 +843,38 @@ function DiffEqBase.__init(
 
     ks = Vector{rateType}(undef, 0)
 
-    integrator = SDEIntegrator{
-        typeof(alg), isinplace(prob), uType,
-        uBottomEltype, tType, typeof(tdir), typeof(p),
-        typeof(eigen_est), QT,
-        uEltypeNoUnits, typeof(W), typeof(P), rateType, typeof(sol), typeof(cache),
-        FType, GType, CType, typeof(opts), typeof(noise), typeof(last_event_error),
-        typeof(callback_cache), typeof(rate_constants),
-        typeof(initializealg), typeof(_rng), typeof(ks),
+    integrator = OrdinaryDiffEqCore.ODEIntegrator{
+        typeof(alg), isinplace(prob),
+        uType, Nothing, tType, typeof(p), typeof(eigen_est), tTypeNoUnits,
+        QT, typeof(tdir),
+        typeof(ks), typeof(sol), FType, typeof(cache), typeof(opts), Nothing,
+        typeof(last_event_error), typeof(callback_cache),
+        typeof(initializealg), Nothing, typeof(controller), typeof(_rng),
+        typeof(W), typeof(P), tType,
+        typeof(noise), CType, typeof(rate_constants),
     }(
-        f, g, c, noise, uprev, tprev, t, u, p, tType(dt),
-        tType(dt), dtcache, tspan[2], tdir,
-        just_hit_tstop, do_error_check, isout, event_last_time,
-        vector_event_last_time, last_event_error, accept_step,
-        last_stepfail, force_stepfail,
-        dtchangeable, u_modified,
-        false, # reeval_fsal
-        saveiter,
-        0, # saveiter_dense
-        0, # kshortsize
-        ks,
-        alg, sol,
-        cache, callback_cache, tType(dt), W, P, rate_constants,
-        opts, iter, success_iter, eigen_est, EEst, q,
-        QT(qoldinit), q11, stats, initializealg, _rng,
-        false, # isdae
-        _user_provided_noise
+        sol, u, nothing, ks, t, tType(dt), f, p,
+        uprev, uprev, nothing, tprev,
+        alg, dtcache, dtchangeable,
+        tType(dt), tdir, eigen_est, EEst,
+        QT(qoldinit), q11,
+        QT(1), tType(1),
+        controller,
+        success_iter,
+        iter, saveiter, 0, cache,
+        callback_cache,
+        0, force_stepfail,
+        last_stepfail,
+        just_hit_tstop, false, zero(t), do_error_check,
+        event_last_time,
+        vector_event_last_time,
+        last_event_error, accept_step,
+        isout, false,
+        u_modified, true, false,
+        opts, stats, initializealg, nothing,
+        nothing, nothing, _rng,
+        W, P, tType(dt),
+        noise, c, rate_constants, q
     )
 
     if initialize_integrator

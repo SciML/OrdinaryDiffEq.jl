@@ -24,32 +24,6 @@ end
     return !isnothing(integrator.P) && DiffEqNoiseProcess.save_noise!(integrator.P)
 end
 
-# SDE's loopfooter! dispatches to ODE's shared _loopfooter!.
-@inline loopfooter!(integrator::SDEIntegrator) = _loopfooter!(integrator)
-
-function last_step_failed(integrator::SDEIntegrator)
-    return integrator.last_stepfail && !integrator.opts.adaptive
-end
-
-# Use OrdinaryDiffEqCore's _savevalues! via hooks (interp_at_saveat, is_composite_algorithm, post_savevalues!)
-@inline function DiffEqBase.savevalues!(
-        integrator::SDEIntegrator, force_save = false, reduce_size = true,
-    )::Tuple{Bool, Bool}
-    return _savevalues!(integrator, force_save, reduce_size)
-end
-
-# solution_endpoint_match_cur_integrator! is now imported from OrdinaryDiffEqCore.
-# SDE-specific behavior (noise acceptance, noise saving) handled via
-# finalize_endpoint! and finalize_solution_storage! hooks.
-
-# Use OrdinaryDiffEqCore's _postamble! via hooks (finalize_solution_storage!, finalize_endpoint!)
-@inline function DiffEqBase.postamble!(integrator::SDEIntegrator)
-    return _postamble!(integrator)
-end
-
-# handle_callbacks! is now imported from OrdinaryDiffEqCore.
-# SDE-specific behavior handled via on_callbacks_complete! hook.
-
 @inline function handle_callback_modifiers!(integrator::SDEIntegrator)
     #integrator.reeval_fsal = true
     return if integrator.P !== nothing && integrator.opts.adaptive
@@ -62,72 +36,15 @@ end
     end
 end
 
-# handle_tstop! is now imported from OrdinaryDiffEqCore.
-# SDE benefits from ODE's while-loop fix for multiple matching tstops.
-
-@inline function update_noise!(integrator, scaling_factor = integrator.sqdt)
-    return if isinplace(integrator.noise)
-        integrator.noise(integrator.ΔW, integrator)
-        rmul!(integrator.ΔW, scaling_factor)
-        if alg_needs_extra_process(integrator.alg)
-            integrator.noise(integrator.ΔZ, integrator)
-            rmul!(integrator.ΔZ, scaling_factor)
-        end
-    else
-        if integrator.u isa AbstractArray
-            integrator.ΔW .= scaling_factor .* integrator.noise(size(integrator.u), integrator)
-            if alg_needs_extra_process(integrator.alg)
-                integrator.ΔZ .= scaling_factor .* integrator.noise(size(integrator.u), integrator)
-            end
-        else
-            integrator.ΔW = scaling_factor * integrator.noise(integrator)
-            if alg_needs_extra_process(integrator.alg)
-                integrator.ΔZ = scaling_factor * integrator.noise(integrator)
-            end
-        end
-    end
-end
-
-@inline function generate_tildes(integrator, add1, add2, scaling)
-    return if isinplace(integrator.noise)
-        integrator.noise(integrator.ΔWtilde, integrator)
-        if add1 != 0
-            @.. integrator.ΔWtilde = add1 + scaling * integrator.ΔWtilde
-        else
-            @.. integrator.ΔWtilde = scaling * integrator.ΔWtilde
-        end
-        if alg_needs_extra_process(integrator.alg)
-            integrator.noise(integrator.ΔZtilde, integrator)
-            if add2 != 0
-                @.. integrator.ΔZtilde = add2 + scaling * integrator.ΔZtilde
-            else
-                @.. integrator.ΔZtilde = scaling * integrator.ΔZtilde
-            end
-        end
-    else
-        if integrator.u isa AbstractArray
-            if add1 != 0
-                integrator.ΔWtilde = add1 .+ scaling .* integrator.noise(size(integrator.u), integrator)
-            else
-                integrator.ΔWtilde = scaling .* integrator.noise(size(integrator.u), integrator)
-            end
-            if alg_needs_extra_process(integrator.alg)
-                if add2 != 0
-                    integrator.ΔZtilde = add2 .+ scaling .* integrator.noise(size(integrator.u), integrator)
-                else
-                    integrator.ΔZtilde = scaling .* integrator.noise(size(integrator.u), integrator)
-                end
-            end
-        else
-            integrator.ΔWtilde = add1 + scaling * integrator.noise(integrator)
-            if alg_needs_extra_process(integrator.alg)
-                integrator.ΔZtilde = add2 + scaling * integrator.noise(integrator)
-            end
-        end
-    end
-end
-
 @inline initialize!(integrator, cache::StochasticDiffEqCache, f = integrator.f) = nothing
+
+# No-op: SDE uses linear interpolation, not Hermite, so no k values needed.
+@inline function OrdinaryDiffEqCore._ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::StochasticDiffEqCache,
+        always_calc_begin = false, allow_calc_end = true, force_calc_end = false,
+    )
+    return nothing
+end
 
 function nlsolve!(integrator, cache)
     return DiffEqBase.nlsolve!(cache.nlsolver, cache.nlsolver.cache, integrator)
@@ -163,7 +80,8 @@ function (td::TauLeapingDrift{C, R, RateCache, true})(du, u, p, t) where {C, R, 
 end
 
 # nlsolve_f override for ImplicitTauLeaping: return TauLeapingDrift wrapper
-function OrdinaryDiffEqCore.nlsolve_f(integrator::SDEIntegrator{A}) where {A <: ImplicitTauLeaping}
+# Uses ODEIntegrator{A} directly since parameterized type aliases don't work.
+function OrdinaryDiffEqCore.nlsolve_f(integrator::OrdinaryDiffEqCore.ODEIntegrator{A}) where {A <: ImplicitTauLeaping}
     # Determine if the cache is in-place or constant (out-of-place) based on cache type
     cache = integrator.cache
     if cache isa ImplicitTauLeapingCache
@@ -181,7 +99,8 @@ function OrdinaryDiffEqCore.nlsolve_f(integrator::SDEIntegrator{A}) where {A <: 
 end
 
 # nlsolve_f override for ThetaTrapezoidalTauLeaping: return TauLeapingDrift wrapper
-function OrdinaryDiffEqCore.nlsolve_f(integrator::SDEIntegrator{A}) where {A <: ThetaTrapezoidalTauLeaping}
+# Uses ODEIntegrator{A} directly since parameterized type aliases don't work.
+function OrdinaryDiffEqCore.nlsolve_f(integrator::OrdinaryDiffEqCore.ODEIntegrator{A}) where {A <: ThetaTrapezoidalTauLeaping}
     # Determine if the cache is in-place or constant (out-of-place) based on cache type
     cache = integrator.cache
     if cache isa ThetaTrapezoidalTauLeapingCache

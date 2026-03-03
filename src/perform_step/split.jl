@@ -4,7 +4,7 @@
         integrator.f.f1(uprev, p, t) +
             integrator.f.f2(uprev, p, t)
     ) +
-        integrator.g(uprev, p, t) .* W.dW + uprev
+        integrator.f.g(uprev, p, t) .* W.dW + uprev
     integrator.u = u
 end
 
@@ -12,7 +12,7 @@ end
     (; rtmp1, rtmp2) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
 
-    integrator.g(rtmp2, uprev, p, t)
+    integrator.f.g(rtmp2, uprev, p, t)
     if is_diagonal_noise(integrator.sol.prob)
         rmul!(rtmp2, W.dW) # rtmp2 === rtmp3
         @.. u = uprev + rtmp2

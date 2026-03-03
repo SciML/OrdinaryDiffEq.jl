@@ -17,7 +17,7 @@
     fill!(B1temp,zero(eltype(integrator.u)))
     for j = 1:i-1
       integrator.f((t + c₀[j]*dt),H0[j],ftemp)
-      integrator.g((t + c₁[j]*dt),H1[j],gtemp)
+      integrator.f.g((t + c₁[j]*dt),H1[j],gtemp)
       @.. A0temp = A0temp + A₀[j,i] * ftemp
       @.. B0temp = B0temp + B₀[j,i] * gtemp
       @.. A1temp = A1temp + A₁[j,i] * ftemp
@@ -32,7 +32,7 @@
   fill!(E₁temp,zero(eltype(integrator.u)))
   for i = 1:stages
     integrator.f((t+c₀[i]*dt),H0[i],ftemp)
-    integrator.g((t+c₁[i]*dt),H1[i],gtemp)
+    integrator.f.g((t+c₁[i]*dt),H1[i],gtemp)
     @.. atemp = atemp + α[i] * ftemp
     @.. btemp = btemp + (β₁[i] * W.dW + β₂[i] * chi1) * gtemp
     @.. E₂    = E₂    + (β₃[i] * chi2 + β₄[i] * chi3) * gtemp
@@ -85,7 +85,7 @@ end
         fill!(B1temp, zero(eltype(integrator.u)))
         for j in 1:(i - 1)
             integrator.f(ftemp, H0[j], p, t + c₀[j] * dt)
-            integrator.g(gtemp, H1[j], p, t + c₁[j] * dt)
+            integrator.f.g(gtemp, H1[j], p, t + c₁[j] * dt)
             @.. A0temp = A0temp + A₀[j, i] * ftemp
             @.. B0temp = B0temp + B₀[j, i] * gtemp
             @.. A1temp = A1temp + A₁[j, i] * ftemp
@@ -100,7 +100,7 @@ end
     fill!(E₁temp, zero(eltype(integrator.u)))
     for i in 1:stages
         integrator.f(ftemp, H0[i], p, t + c₀[i] * dt)
-        integrator.g(gtemp, H1[i], p, t + c₁[i] * dt)
+        integrator.f.g(gtemp, H1[i], p, t + c₁[i] * dt)
         @.. atemp = atemp + α[i] * ftemp
         @.. btemp = btemp + (β₁[i] * W.dW + β₂[i] * chi1) * gtemp
         @.. E₂ = E₂ + (β₃[i] * chi2 + β₄[i] * chi3) * gtemp
@@ -132,18 +132,18 @@ end
   @.. chi3 = (W.dW.^3 - 3W.dW*dt)/6dt #I_(1,1,1)/h
   integrator.f(fH01,uprev,p,t)
   @.. fH01 = dt*fH01
-  integrator.g(t,uprev,g₁)
+  integrator.f.g(t,uprev,g₁)
   dto4 = dt/4
   @.. fH01o4 = fH01/4
   @.. g₁o2 = g₁/2
   @.. H0 =  uprev + 3 * (fH01o4 + chi2 * g₁o2)
   @.. H11 = uprev + fH01o4 + integrator.sqdt * g₁o2
   @.. H12 = uprev + fH01 - integrator.sqdt * g₁
-  integrator.g(t+dto4,H11,g₂)
-  integrator.g(t+dt,H12,g₃)
+  integrator.f.g(t+dto4,H11,g₂)
+  integrator.f.g(t+dt,H12,g₃)
   @.. H13 = uprev + fH01o4 + integrator.sqdt * (-5 * g₁ + 3 * g₂ + g₃ / 2)
 
-  integrator.g(t+dto4,H13,g₄)
+  integrator.f.g(t+dto4,H13,g₄)
   integrator.f(fH02,H0,p,t+3dto4)
 
   @.. fH02 = fH02*dt
@@ -188,7 +188,7 @@ end
 
     integrator.f(fH01, uprev, p, t)
     @.. fH01 = dt * fH01
-    integrator.g(g₁, uprev, p, t)
+    integrator.f.g(g₁, uprev, p, t)
     dto4 = dt / 4
 
     @.. fH01o4 = fH01 / 4
@@ -197,12 +197,12 @@ end
     @.. H11 = uprev + fH01o4 + integrator.sqdt * g₁o2
     @.. H12 = uprev + fH01 - integrator.sqdt * g₁
 
-    integrator.g(g₂, H11, p, t + dto4)
-    integrator.g(g₃, H12, p, t + dt)
+    integrator.f.g(g₂, H11, p, t + dto4)
+    integrator.f.g(g₃, H12, p, t + dt)
 
     @.. H13 = uprev + fH01o4 + integrator.sqdt * (-5g₁ + 3g₂ + g₃ / 2)
 
-    integrator.g(g₄, H13, p, t + dto4)
+    integrator.f.g(g₄, H13, p, t + dto4)
     integrator.f(fH02, H0, p, t + 3dto4)
 
     @.. fH02 = fH02 * dt
@@ -236,18 +236,18 @@ end
     chi3 = @.. (W.dW .^ 3 - 3W.dW * dt) / 6dt #I_(1,1,1)/h
     fH01 = dt * integrator.f(uprev, p, t)
 
-    g₁ = integrator.g(uprev, p, t)
+    g₁ = integrator.f.g(uprev, p, t)
     fH01o4 = fH01 / 4
     dto4 = dt / 4
     g₁o2 = g₁ / 2
     H0 = @.. uprev + 3 * (fH01o4 + chi2 * g₁o2)
     H11 = @.. uprev + fH01o4 + integrator.sqdt * g₁o2
     H12 = @.. uprev + fH01 - integrator.sqdt * g₁
-    g₂ = integrator.g(H11, p, t + dto4)
-    g₃ = integrator.g(H12, p, t + dt)
+    g₂ = integrator.f.g(H11, p, t + dto4)
+    g₃ = integrator.f.g(H12, p, t + dt)
     H13 = @.. uprev + fH01o4 + integrator.sqdt * (-5 * g₁ + 3 * g₂ + g₃ / 2)
 
-    g₄ = integrator.g(H13, p, t + dto4)
+    g₄ = integrator.f.g(H13, p, t + dto4)
     fH02 = dt * integrator.f(H0, p, t + 3dto4)
 
     g₂o3 = g₂ / 3
@@ -291,7 +291,7 @@ end
             A0temp = @.. A0temp + A₀[j, i] * ftmp
             A1temp = @.. A1temp + A₁[j, i] * ftmp
 
-            gtmp = integrator.g(H1[j], p, t + c₁[j] * dt)
+            gtmp = integrator.f.g(H1[j], p, t + c₁[j] * dt)
             B0temp = @.. B0temp + B₀[j, i] * gtmp
             B1temp = @.. B1temp + B₁[j, i] * gtmp
         end
@@ -306,7 +306,7 @@ end
         ftmp = integrator.f(H0[i], p, t + c₀[i] * dt)
         atemp = @.. atemp + α[i] * ftmp
 
-        gtmp = integrator.g(H1[i], p, t + c₁[i] * dt)
+        gtmp = integrator.f.g(H1[i], p, t + c₁[i] * dt)
         btemp = @.. btemp + (β₁[i] * W.dW + β₂[i] * chi1) * gtmp
         E₂ = @.. E₂ + (β₃[i] * chi2 + β₄[i] * chi3) * gtmp
         if i <= error_terms #1 or 2
@@ -345,25 +345,25 @@ end
     chi3 = (W.dW .^ 3 .- 3 * W.dW * dt) / (6dt) #I_(1,1,1)/h
 
     k1 = integrator.f(uprev, p, t)
-    g1 = integrator.g(uprev, p, t + c11 * dt)
+    g1 = integrator.f.g(uprev, p, t + c11 * dt)
 
     H01 = uprev + dt * a021 * k1 + b021 * chi2 .* g1
     H11 = uprev + dt * a121 * k1 + integrator.sqdt * b121 * g1
 
     k2 = integrator.f(H01, p, t + c02 * dt)
-    g2 = integrator.g(H11, p, t + c12 * dt)
+    g2 = integrator.f.g(H11, p, t + c12 * dt)
 
     H02 = uprev + dt * (a031 * k1 + a032 * k2) + chi2 .* (b031 * g1 + b032 * g2)
     H12 = uprev + dt * (a131 * k1 + a132 * k2) + integrator.sqdt * (b131 * g1 + b132 * g2)
 
     k3 = integrator.f(H02, p, t + c03 * dt)
-    g3 = integrator.g(H12, p, t + c13 * dt)
+    g3 = integrator.f.g(H12, p, t + c13 * dt)
 
     H03 = uprev + dt * (a041 * k1 + a042 * k2 + a043 * k3) + chi2 .* (b041 * g1 + b042 * g2 + b043 * g3)
     H13 = uprev + dt * (a141 * k1 + a142 * k2 + a143 * k3) + integrator.sqdt * (b141 * g1 + b142 * g2 + b143 * g3)
 
     k4 = integrator.f(H03, p, t + c04 * dt)
-    g4 = integrator.g(H13, p, t + c14 * dt)
+    g4 = integrator.f.g(H13, p, t + c14 * dt)
 
     E₂ = chi2 .* (beta31 * g1 + beta32 * g2 + beta33 * g3 + beta34 * g4) + chi3 .* (beta41 * g1 + beta42 * g2 + beta43 * g3 + beta44 * g4)
 
@@ -417,24 +417,24 @@ end
     end
 
     integrator.f(k1, uprev, p, t)
-    integrator.g(g1, uprev, p, t + c11 * dt)
+    integrator.f.g(g1, uprev, p, t + c11 * dt)
 
     @.. tmp = uprev + dt * a021 * k1 + chi2 * b021 * g1
     integrator.f(k2, tmp, p, t + c02 * dt)
 
     @.. tmp = uprev + dt * a121 * k1 + sqdt * b121 * g1
-    integrator.g(g2, tmp, p, t + c12 * dt)
+    integrator.f.g(g2, tmp, p, t + c12 * dt)
 
     @.. H02 = uprev + dt * (a031 * k1 + a032 * k2) + chi2 * (b031 * g1 + b032 * g2)
     integrator.f(k3, H02, p, t + c03 * dt)
     @.. tmp = uprev + dt * (a131 * k1 + a132 * k2) + sqdt * (b131 * g1 + b132 * g2)
-    integrator.g(g3, tmp, p, t + c13 * dt)
+    integrator.f.g(g3, tmp, p, t + c13 * dt)
 
     @.. H03 = uprev + dt * (a041 * k1 + a042 * k2 + a043 * k3) + chi2 * (b041 * g1 + b042 * g2 + b043 * g3)
     integrator.f(k4, H03, p, t + c04 * dt)
 
     @.. tmp = uprev + dt * (a141 * k1 + a142 * k2 + a143 * k3) + sqdt * (b141 * g1 + b142 * g2 + b143 * g3)
-    integrator.g(g4, tmp, p, t + c14 * dt)
+    integrator.f.g(g4, tmp, p, t + c14 * dt)
 
     if integrator.alg isa StochasticCompositeAlgorithm && integrator.alg.algs[1] isa SOSRI2
         @.. tmp = k4 - k3

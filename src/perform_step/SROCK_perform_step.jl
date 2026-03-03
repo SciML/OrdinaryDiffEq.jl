@@ -47,14 +47,14 @@
                 SciMLBase.alg_interpretation(integrator.alg) ==
                 SciMLBase.AlgorithmInterpretation.Stratonovich
             if i == mdeg - 1
-                gₘ₋₂ = integrator.g(uᵢ₋₁, p, tᵢ₋₁)
+                gₘ₋₂ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
                 if W.dW isa Number || !is_diagonal_noise(integrator.sol.prob)
                     u += α * (gₘ₋₂ * W.dW)
                 else
                     u .+= α .* gₘ₋₂ .* W.dW
                 end
             else
-                gₘ₋₁ = integrator.g(uᵢ₋₁, p, tᵢ₋₁)
+                gₘ₋₁ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
                 if W.dW isa Number || !is_diagonal_noise(integrator.sol.prob)
                     u += β * (gₘ₋₂ * W.dW) + γ * (gₘ₋₁ * W.dW)
                 else
@@ -65,18 +65,18 @@
                 SciMLBase.alg_interpretation(integrator.alg) ==
                 SciMLBase.AlgorithmInterpretation.Ito
             if W.dW isa Number
-                gₘ₋₂ = integrator.g(uᵢ₋₁, p, tᵢ₋₁)
+                gₘ₋₂ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
                 uᵢ₋₂ = uᵢ₋₁ + sqrt(abs(dt)) * gₘ₋₂
-                gₘ₋₁ = integrator.g(uᵢ₋₂, p, tᵢ₋₁)
+                gₘ₋₁ = integrator.f.g(uᵢ₋₂, p, tᵢ₋₁)
                 u += gₘ₋₂ * W.dW + 1 / (2 * sqrt(abs(dt))) * (gₘ₋₁ - gₘ₋₂) * (W.dW^2 - abs(dt))
             elseif is_diagonal_noise(integrator.sol.prob)
-                gₘ₋₂ = integrator.g(uᵢ₋₁, p, tᵢ₋₁)
+                gₘ₋₂ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
                 uᵢ₋₂ .= uᵢ₋₁ .+ sqrt(abs(dt)) .* gₘ₋₂
-                gₘ₋₁ = integrator.g(uᵢ₋₂, p, tᵢ₋₁)
+                gₘ₋₁ = integrator.f.g(uᵢ₋₂, p, tᵢ₋₁)
                 u .+= gₘ₋₂ .* W.dW .+
                     (1 / (2 * sqrt(abs(dt)))) .* (gₘ₋₁ .- gₘ₋₂) .* (W.dW .^ 2 .- abs(dt))
             else
-                gₘ₋₂ = integrator.g(uᵢ₋₁, p, tᵢ₋₁)
+                gₘ₋₂ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
                 u += gₘ₋₂ * W.dW
             end
         end
@@ -143,7 +143,7 @@ end
                 SciMLBase.alg_interpretation(integrator.alg) ==
                 SciMLBase.AlgorithmInterpretation.Stratonovich
             if i == mdeg - 1
-                integrator.g(gₘ₋₂, uᵢ₋₁, p, tᵢ₋₁)
+                integrator.f.g(gₘ₋₂, uᵢ₋₁, p, tᵢ₋₁)
                 if W.dW isa Number || is_diagonal_noise(integrator.sol.prob)
                     @.. u += α * gₘ₋₂ * W.dW
                 else
@@ -151,7 +151,7 @@ end
                     @.. u += α * k
                 end
             else
-                integrator.g(gₘ₋₁, uᵢ₋₁, p, tᵢ₋₁)
+                integrator.f.g(gₘ₋₁, uᵢ₋₁, p, tᵢ₋₁)
                 if W.dW isa Number || is_diagonal_noise(integrator.sol.prob)
                     @.. u += (β * gₘ₋₂ + γ * gₘ₋₁) * W.dW
                 else
@@ -165,12 +165,12 @@ end
                 SciMLBase.alg_interpretation(integrator.alg) ==
                 SciMLBase.AlgorithmInterpretation.Ito
             if W.dW isa Number || is_diagonal_noise(integrator.sol.prob)
-                integrator.g(gₘ₋₂, uᵢ₋₁, p, tᵢ₋₁)
+                integrator.f.g(gₘ₋₂, uᵢ₋₁, p, tᵢ₋₁)
                 @.. uᵢ₋₂ = uᵢ₋₁ + sqrt(abs(dt)) * gₘ₋₂
-                integrator.g(gₘ₋₁, uᵢ₋₂, p, tᵢ₋₁)
+                integrator.f.g(gₘ₋₁, uᵢ₋₂, p, tᵢ₋₁)
                 @.. u += gₘ₋₂ * W.dW + 1 / (2 * sqrt(abs(dt))) * (gₘ₋₁ - gₘ₋₂) * (W.dW^2 - abs(dt))
             else
-                integrator.g(gₘ₋₂, uᵢ₋₁, p, tᵢ₋₁)
+                integrator.f.g(gₘ₋₂, uᵢ₋₁, p, tᵢ₋₁)
                 mul!(uᵢ₋₁, gₘ₋₂, W.dW)
                 @.. u += uᵢ₋₁
             end
@@ -266,33 +266,33 @@ end
     # Similarly tᵢ₋₂ = tₛ₋₂, tᵢ₋₁ = tₛ₋₁, tᵢ = tₛ
 
     if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
-        Gₛ = integrator.g(uᵢ₋₁, p, tᵢ₋₁)
+        Gₛ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
         u += Gₛ .* W.dW
-        Gₛ = integrator.g(uᵢ, p, tᵢ)
+        Gₛ = integrator.f.g(uᵢ, p, tᵢ)
         uₓ += Gₛ .* W.dW
 
         uₓ = integrator.f(uₓ, p, tₓ)
         u += (1 // 2 * dt) * uₓ
         uₓ = 1 // 2 .* Gₛ .* (W.dW .^ 2 .- abs(dt))
         uᵢ₋₂ = uᵢ + uₓ
-        Gₛ₁ = integrator.g(uᵢ₋₂, p, tᵢ)
+        Gₛ₁ = integrator.f.g(uᵢ₋₂, p, tᵢ)
         u += (1 // 2) * Gₛ₁
         uᵢ₋₂ = uᵢ - uₓ
-        Gₛ₁ = integrator.g(uᵢ₋₂, p, tᵢ)
+        Gₛ₁ = integrator.f.g(uᵢ₋₂, p, tᵢ)
         u -= (1 // 2) * Gₛ₁
 
         uₓ = Gₛ * sqrt_dt
         uᵢ₋₂ = uᵢ + uₓ
-        Gₛ₁ = integrator.g(uᵢ₋₂, p, tᵢ)
+        Gₛ₁ = integrator.f.g(uᵢ₋₂, p, tᵢ)
         u += 1 // 4 .* W.dW .* (Gₛ₁ .- 2 .* Gₛ)
         uᵢ₋₂ = uᵢ - uₓ
-        Gₛ₁ = integrator.g(uᵢ₋₂, p, tᵢ)
+        Gₛ₁ = integrator.f.g(uᵢ₋₂, p, tᵢ)
         u += 1 // 4 .* W.dW .* Gₛ₁
     else
-        Gₛ = integrator.g(uᵢ₋₁, p, tᵢ₋₁)
+        Gₛ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
         u += Gₛ * W.dW
 
-        Gₛ = integrator.g(uᵢ, p, tᵢ)
+        Gₛ = integrator.f.g(uᵢ, p, tᵢ)
         uₓ += Gₛ * W.dW
 
         uₓ = integrator.f(uₓ, p, tₓ)
@@ -304,20 +304,20 @@ end
             uₓ = Gₛ * WikRange
             WikRange = 1 // 2 .* (1:length(W.dW) .== i)
             uᵢ₋₂ = uᵢ + uₓ
-            Gₛ₁ = integrator.g(uᵢ₋₂, p, tᵢ)
+            Gₛ₁ = integrator.f.g(uᵢ₋₂, p, tᵢ)
             u += (Gₛ₁ * WikRange)
             uᵢ₋₂ = uᵢ - uₓ
-            Gₛ₁ = integrator.g(uᵢ₋₂, p, tᵢ)
+            Gₛ₁ = integrator.f.g(uᵢ₋₂, p, tᵢ)
             u -= (Gₛ₁ * WikRange)
         end
 
         uₓ = sqrt_dt * (Gₛ * vec_χ)
         uᵢ₋₂ = uᵢ + uₓ
-        Gₛ₁ = integrator.g(uᵢ₋₂, p, tᵢ)
+        Gₛ₁ = integrator.f.g(uᵢ₋₂, p, tᵢ)
         u += 1 // 4 * (Gₛ₁ * W.dW) - 1 // 2 * (Gₛ * W.dW)
 
         uᵢ₋₂ = uᵢ - uₓ
-        Gₛ₁ = integrator.g(uᵢ₋₂, p, tᵢ)
+        Gₛ₁ = integrator.f.g(uᵢ₋₂, p, tᵢ)
         u += 1 // 4 * (Gₛ₁ * W.dW)
     end
 
@@ -419,34 +419,34 @@ end
     # Similarly tᵢ₋₂ = tₛ₋₂, tᵢ₋₁ = tₛ₋₁, tᵢ = tₛ
 
     if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
-        integrator.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
+        integrator.f.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
         @.. u += Gₛ * W.dW
-        integrator.g(Gₛ, uᵢ, p, tᵢ)
+        integrator.f.g(Gₛ, uᵢ, p, tᵢ)
         @.. uₓ += Gₛ * W.dW
         integrator.f(k, uₓ, p, tₓ)
         @.. u += (1 // 2) * dt * k
 
         @.. uₓ = Gₛ * ((W.dW^2 - abs(dt)) / 2)
         @.. uᵢ₋₂ = uᵢ + uₓ
-        integrator.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
+        integrator.f.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
         @.. u += (1 // 2) * Gₛ₁
         @.. uᵢ₋₂ = uᵢ - uₓ
-        integrator.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
+        integrator.f.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
         @.. u -= (1 // 2) * Gₛ₁
 
         @.. uₓ = sqrt_dt * Gₛ
         @.. uᵢ₋₂ = uᵢ + uₓ
-        integrator.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
+        integrator.f.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
         @.. u += (1 // 4 * W.dW) * (Gₛ₁ - 2 * Gₛ)
         @.. uᵢ₋₂ = uᵢ - uₓ
-        integrator.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
+        integrator.f.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
         @.. u += (1 // 4 * W.dW) * Gₛ₁
     else
-        integrator.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
+        integrator.f.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
         mul!(uᵢ₋₂, Gₛ, W.dW)
         @.. u += uᵢ₋₂
 
-        integrator.g(Gₛ, uᵢ, p, tᵢ)
+        integrator.f.g(Gₛ, uᵢ, p, tᵢ)
         mul!(uᵢ₋₁, Gₛ, W.dW)
         @.. uₓ += uᵢ₋₁
 
@@ -462,11 +462,11 @@ end
             mul!(uₓ, Gₛ, WikRange)
             @.. uᵢ₋₂ = uᵢ + uₓ
             @.. WikRange = 1 // 2 * (dwrange == i)
-            integrator.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
+            integrator.f.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
             mul!(uᵢ₋₂, Gₛ₁, WikRange)
             @.. u += uᵢ₋₂
             @.. uᵢ₋₂ = uᵢ - uₓ
-            integrator.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
+            integrator.f.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
             mul!(uᵢ₋₂, Gₛ₁, WikRange)
             @.. u -= uᵢ₋₂
         end
@@ -474,13 +474,13 @@ end
         mul!(uₓ, Gₛ, WikRange)
 
         @.. uᵢ₋₂ = uᵢ + uₓ
-        integrator.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
+        integrator.f.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
         mul!(uᵢ₋₂, Gₛ₁, W.dW)
         # mul!(uᵢ₋₁,Gₛ,W.dW) This is already been calculated
         @.. u += 1 // 4 * (uᵢ₋₂ - 2 * uᵢ₋₁)
 
         @.. uᵢ₋₂ = uᵢ - uₓ
-        integrator.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
+        integrator.f.g(Gₛ₁, uᵢ₋₂, p, tᵢ)
         mul!(uᵢ₋₂, Gₛ₁, W.dW)
         @.. u += 1 // 4 * uᵢ₋₂
     end
@@ -541,7 +541,7 @@ end
         end
     end
 
-    Gₛ = integrator.g(u, p, tᵢ)
+    Gₛ = integrator.f.g(u, p, tᵢ)
     if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
         u += Gₛ .* W.dW
     else
@@ -553,10 +553,10 @@ end
                 (is_diagonal_noise(integrator.sol.prob))
             uᵢ₋₂ = @. 1 // 2 * Gₛ * (W.dW^2 - abs(dt))
             tmp = @. u + uᵢ₋₂
-            Gₛ = integrator.g(tmp, p, tᵢ)
+            Gₛ = integrator.f.g(tmp, p, tᵢ)
             uᵢ₋₁ = @. 1 // 2 * Gₛ
             tmp = @. u - uᵢ₋₂
-            Gₛ = integrator.g(tmp, p, tᵢ)
+            Gₛ = integrator.f.g(tmp, p, tᵢ)
             uᵢ₋₁ = @. uᵢ₋₁ - 1 // 2 * Gₛ
             u = @. u + uᵢ₋₁
         else
@@ -566,10 +566,10 @@ end
                 uᵢ₋₂ = Gₛ * WikRange
                 WikRange = 1 // 2 .* (1:length(W.dW) .== i)
                 tmp = u + uᵢ₋₂
-                Gₛ₁ = integrator.g(tmp, p, tᵢ)
+                Gₛ₁ = integrator.f.g(tmp, p, tᵢ)
                 uᵢ₋₁ = Gₛ₁ * WikRange
                 tmp = u - uᵢ₋₂
-                Gₛ₁ = integrator.g(tmp, p, tᵢ)
+                Gₛ₁ = integrator.f.g(tmp, p, tᵢ)
                 uᵢ₋₁ -= Gₛ₁ * WikRange
                 u += uᵢ₋₁
             end
@@ -632,7 +632,7 @@ end
         end
     end
 
-    integrator.g(Gₛ, u, p, tᵢ)
+    integrator.f.g(Gₛ, u, p, tᵢ)
     if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
         @.. u += Gₛ * W.dW
     else
@@ -645,10 +645,10 @@ end
                 (is_diagonal_noise(integrator.sol.prob))
             @.. uᵢ₋₂ = 1 // 2 * Gₛ * (W.dW^2 - abs(dt))
             @.. tmp = u + uᵢ₋₂
-            integrator.g(Gₛ, tmp, p, tᵢ)
+            integrator.f.g(Gₛ, tmp, p, tᵢ)
             @.. uᵢ₋₁ = 1 // 2 * Gₛ
             @.. tmp = u - uᵢ₋₂
-            integrator.g(Gₛ, tmp, p, tᵢ)
+            integrator.f.g(Gₛ, tmp, p, tᵢ)
             @.. uᵢ₋₁ -= 1 // 2 * Gₛ
             u += uᵢ₋₁
         else
@@ -660,10 +660,10 @@ end
                 mul!(uᵢ₋₂, Gₛ, WikRange)
                 @.. WikRange = 1 // 2 * (dwrange == i)
                 @.. tmp = u + uᵢ₋₂
-                integrator.g(Gₛ₁, tmp, p, tᵢ)
+                integrator.f.g(Gₛ₁, tmp, p, tᵢ)
                 mul!(uᵢ₋₁, Gₛ₁, WikRange)
                 @.. tmp = u - uᵢ₋₂
-                integrator.g(Gₛ₁, tmp, p, tᵢ)
+                integrator.f.g(Gₛ₁, tmp, p, tᵢ)
                 @.. u += uᵢ₋₁
                 mul!(uᵢ₋₁, Gₛ₁, WikRange)
                 @.. u -= uᵢ₋₁
@@ -707,7 +707,7 @@ end
     tᵢ₋₂ = t
 
     #stage 1
-    Gₛ = integrator.g(uprev, p, t)
+    Gₛ = integrator.f.g(uprev, p, t)
     if (W.dW isa Number) || !is_diagonal_noise(integrator.sol.prob)
         u = Gₛ * W.dW
     else
@@ -750,7 +750,7 @@ end
         end
     end
     if integrator.alg.post_processing && (t + dt >= integrator.sol.prob.tspan[2])
-        Gₛ = integrator.g(u, p, tᵢ)
+        Gₛ = integrator.f.g(u, p, tᵢ)
         if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
             uᵢ₋₁ = Gₛ
         else
@@ -802,7 +802,7 @@ end
     tᵢ₋₂ = t
 
     #stage 1
-    integrator.g(Gₛ, uprev, p, t)
+    integrator.f.g(Gₛ, uprev, p, t)
     if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         @.. u = Gₛ * W.dW
     else
@@ -847,7 +847,7 @@ end
     end
 
     if integrator.alg.post_processing && (t + dt >= integrator.sol.prob.tspan[2])
-        integrator.g(Gₛ, u, p, tᵢ)
+        integrator.f.g(Gₛ, u, p, tᵢ)
         # println(Gₛ/length(W.dW))
         if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
             @.. uᵢ₋₁ = Gₛ
@@ -983,7 +983,7 @@ end
     end
 
     if (W.dW isa Number) || (length(W.dW) == 1)
-        Gₛ = integrator.g(Û₁, p, t̂₁)
+        Gₛ = integrator.f.g(Û₁, p, t̂₁)
         uₓ += Gₛ * W.dW
 
         uₓ = integrator.f(uₓ, p, tₓ)
@@ -991,13 +991,13 @@ end
         Û₁ -= (η₁ * sqrt_dt / 2) * Gₛ
         Û₂ += (η₁ * sqrt_dt / 2) * Gₛ
 
-        Gₛ = integrator.g(Û₂, p, t̂₂)
+        Gₛ = integrator.f.g(Û₂, p, t̂₂)
         u += Gₛ * W.dW
 
-        Gₛ = integrator.g(Û₁, p, t̂₁)
+        Gₛ = integrator.f.g(Û₁, p, t̂₁)
         u += Gₛ * (W.dW - (W.dW^2 - abs(dt)) / (η₁ * sqrt_dt))
     elseif is_diagonal_noise(integrator.sol.prob)
-        Gₛ = integrator.g(Û₁, p, t̂₁)
+        Gₛ = integrator.f.g(Û₁, p, t̂₁)
         uᵢ₋₁ = Gₛ .* W.dW
 
         Û₁ -= (1 // 2 * η₁ * sqrt_dt) * Gₛ
@@ -1009,13 +1009,13 @@ end
 
         u .+= Gₛ .* ((W.dW .^ 2 .- abs(dt)) ./ (η₁ * sqrt_dt) .- W.dW)
 
-        Gₛ = integrator.g(Û₂, p, t̂₂)
+        Gₛ = integrator.f.g(Û₂, p, t̂₂)
         u .+= Gₛ .* W.dW
 
-        Gₛ = integrator.g(Û₁, p, t̂₁)
+        Gₛ = integrator.f.g(Û₁, p, t̂₁)
         u .-= Gₛ .* ((W.dW .^ 2 .- abs(dt)) ./ (η₁ * sqrt_dt) .- W.dW)
     else
-        Gₛ = integrator.g(Û₁, p, t̂₁)
+        Gₛ = integrator.f.g(Û₁, p, t̂₁)
 
         for i in 1:length(W.dW)
             (i == 1) && (uᵢ₋₁ = @view(Gₛ[:, i]) * W.dW[i])
@@ -1029,7 +1029,7 @@ end
 
         for i in 1:length(W.dW)
             uᵢ₋₁ = Û₁ - (1 // 2 * η₁ * sqrt_dt) * @view(Gₛ[:, i])
-            Gₛ₁ = integrator.g(uᵢ₋₁, p, t̂₁)
+            Gₛ₁ = integrator.f.g(uᵢ₋₁, p, t̂₁)
             u += @view(Gₛ₁[:, i]) * W.dW[i] +
                 (@view(Gₛ[:, i]) - @view(Gₛ₁[:, i])) * ((W.dW[i]^2 - abs(dt)) / (η₁ * sqrt_dt))
         end
@@ -1042,7 +1042,7 @@ end
 
                 uᵢ₋₁ += @view(Gₛ[:, j]) * WikJ
             end
-            Gₛ₁ = integrator.g(uᵢ₋₁, p, t̂₂)
+            Gₛ₁ = integrator.f.g(uᵢ₋₁, p, t̂₂)
             u += @view(Gₛ₁[:, i]) * W.dW[i]
         end
     end
@@ -1169,7 +1169,7 @@ end
     end
 
     if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
-        integrator.g(Gₛ, Û₁, p, t̂₁)
+        integrator.f.g(Gₛ, Û₁, p, t̂₁)
         @.. uₓ += Gₛ * W.dW
 
         integrator.f(k, uₓ, p, tₓ)
@@ -1177,13 +1177,13 @@ end
         @.. Û₁ -= (η₁ * sqrt_dt / 2) * Gₛ
         @.. Û₂ += (η₁ * sqrt_dt / 2) * Gₛ
 
-        integrator.g(Gₛ, Û₂, p, t̂₂)
+        integrator.f.g(Gₛ, Û₂, p, t̂₂)
         @.. u += Gₛ * W.dW
 
-        integrator.g(Gₛ, Û₁, p, t̂₁)
+        integrator.f.g(Gₛ, Û₁, p, t̂₁)
         @.. u += Gₛ * (W.dW - (W.dW^2 - abs(dt)) / (η₁ * sqrt_dt))
     else
-        integrator.g(Gₛ, Û₁, p, t̂₁)
+        integrator.f.g(Gₛ, Û₁, p, t̂₁)
 
         for i in 1:length(W.dW)
             (i == 1) && (@.. uᵢ₋₁ = @view(Gₛ[:, i]) * W.dW[i])
@@ -1197,7 +1197,7 @@ end
 
         for i in 1:length(W.dW)
             @.. uᵢ₋₁ = Û₁ - (1 // 2 * η₁ * sqrt_dt) * @view(Gₛ[:, i])
-            integrator.g(Gₛ₁, uᵢ₋₁, p, t̂₁)
+            integrator.f.g(Gₛ₁, uᵢ₋₁, p, t̂₁)
             @.. u += @view(Gₛ₁[:, i]) * W.dW[i] +
                 (
                 @view(Gₛ[:, i]) -
@@ -1214,7 +1214,7 @@ end
                 @.. uᵢ₋₁ += @view(Gₛ[:, j]) * WikJ
             end
             @.. uᵢ₋₁ += Û₂
-            integrator.g(Gₛ₁, uᵢ₋₁, p, t̂₂)
+            integrator.f.g(Gₛ₁, uᵢ₋₁, p, t̂₂)
             @.. u += @view(Gₛ₁[:, i]) * W.dW[i]
         end
     end
@@ -1294,7 +1294,7 @@ end
         yₛ₋₃ = integrator.f(uᵢ₋₁, p, tᵢ₋₁)
         utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃
         ttmp = tᵢ₋₁ + μₛ₋₃
-        Xₛ₋₃ = integrator.g(utmp, p, ttmp)
+        Xₛ₋₃ = integrator.f.g(utmp, p, ttmp)
         u += C₁ * yₛ₋₃ + 1 // 8 .* W.dW .* Xₛ₋₃
 
         #stage s-2
@@ -1304,7 +1304,7 @@ end
 
         utmp = uᵢ₋₂ + C₁ * yₛ₋₃ + 2 // 3 .* W.dW .* Xₛ₋₃
         ttmp = tᵢ₋₂ + C₁
-        Xₛ₋₂ = integrator.g(utmp, p, ttmp)
+        Xₛ₋₂ = integrator.f.g(utmp, p, ttmp)
         u += μₛ₋₂ * yₛ₋₂ + 3 // 8 .* W.dW .* Xₛ₋₂
 
         #stage s-1
@@ -1314,7 +1314,7 @@ end
 
         utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃ + δ₁ * yₛ₋₂ + 1 // 12 .* W.dW .* Xₛ₋₃ + 1 // 4 .* W.dW .* Xₛ₋₂
         ttmp = tᵢ₋₁ + μₛ₋₃ + δ₁
-        Xₛ₋₁ = integrator.g(utmp, p, ttmp)
+        Xₛ₋₁ = integrator.f.g(utmp, p, ttmp)
         u += (σ - τ) * dt * yₛ₋₁ + 3 // 8 .* W.dW .* Xₛ₋₁
 
         #stage s
@@ -1327,14 +1327,14 @@ end
         utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃ + δ₂ * yₛ₋₂ + δ₃ * yₛ₋₁ - 5 // 4 .* W.dW .* Xₛ₋₃ +
             1 // 4 .* W.dW .* Xₛ₋₂ + 2 .* W.dW .* Xₛ₋₁
         ttmp = tᵢ₋₁ + μₛ₋₃ + δ₂ + δ₃
-        Xₛ₋₁ = integrator.g(utmp, p, ttmp)
+        Xₛ₋₁ = integrator.f.g(utmp, p, ttmp)
         u += 1 // 8 .* W.dW .* Xₛ₋₁
     else
         # stage s-3
         yₛ₋₃ = integrator.f(uᵢ₋₁, p, tᵢ₋₁)
         utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃
         ttmp = tᵢ₋₁ + μₛ₋₃
-        Xₛ₋₃ = integrator.g(utmp, p, ttmp)
+        Xₛ₋₃ = integrator.f.g(utmp, p, ttmp)
         SXₛ₋₃ = Xₛ₋₃ * W.dW
 
         u += C₁ * yₛ₋₃ + 1 // 8 * SXₛ₋₃
@@ -1350,7 +1350,7 @@ end
             # utmp = uᵢ₋₂ + C₁*yₛ₋₃ + 2//3*@view(Xₛ₋₃[:,i])*W.dW[i]
             utmp = uᵢ₋₂ + C₁ * yₛ₋₃ + 2 // 3 * (Xₛ₋₃ * WikRange)
             ttmp = tᵢ₋₂ + C₁
-            Gₛ = integrator.g(utmp, p, ttmp)
+            Gₛ = integrator.f.g(utmp, p, ttmp)
             WikRange = 1 .* (1:length(W.dW) .== i)
             # @view(Xₛ₋₂[:,i]) .=  @view(Gₛ[:,i])
             Xₛ₋₂ .+= Gₛ .* WikRange
@@ -1370,7 +1370,7 @@ end
             utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃ + δ₁ * yₛ₋₂ + 1 // 4 * SXₛ₋₃ + 3 // 4 * SXₛ₋₂ -
                 1 // 6 * (Xₛ₋₃ * WikRange) - 1 // 2 * (Xₛ₋₂ * WikRange)
             ttmp = tᵢ₋₁ + μₛ₋₃ + δ₁
-            Gₛ = integrator.g(utmp, p, ttmp)
+            Gₛ = integrator.f.g(utmp, p, ttmp)
             WikRange = 1 .* (1:length(W.dW) .== i)
             #@view(Xₛ₋₁[:,i]) .= @view(Gₛ[:,i])
             Xₛ₋₁ .+= Gₛ .* WikRange
@@ -1391,7 +1391,7 @@ end
             utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃ + δ₂ * yₛ₋₂ + δ₃ * yₛ₋₁ + 1 // 4 * SXₛ₋₃ + 3 // 4 * SXₛ₋₂ -
                 3 // 2 * (Xₛ₋₃ * WikRange) - 1 // 2 * (Xₛ₋₂ * WikRange) + 2 * (Xₛ₋₁ * WikRange)
             ttmp = tᵢ₋₁ + μₛ₋₃ + δ₂ + δ₃
-            Gₛ = integrator.g(utmp, p, ttmp)
+            Gₛ = integrator.f.g(utmp, p, ttmp)
             # SXₛ₋₁ += W.dW[i]*@view(Gₛ[:,i])
             SXₛ₋₁ += Gₛ * WikRange
         end
@@ -1408,9 +1408,9 @@ end
             end
             ttmp = tᵢ₋₁ + μₛ₋₃
             utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃ - 1 // 4 * SXₛ₋₁
-            Gₛ = integrator.g(utmp, p, ttmp)
+            Gₛ = integrator.f.g(utmp, p, ttmp)
             utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃ + 1 // 4 * SXₛ₋₁
-            Xₛ₋₁ = integrator.g(utmp, p, ttmp)
+            Xₛ₋₁ = integrator.f.g(utmp, p, ttmp)
             sqrt_dt *= (length(W.dW) - 1)
             WikRange = 1 .* (1:length(W.dW) .== i)
             # u += sqrt_dt*(@view(Xₛ₋₁[:,i]) - @view(Gₛ[:,i]))
@@ -1507,7 +1507,7 @@ end
         integrator.f(yₛ₋₃, uᵢ₋₁, p, tᵢ₋₁)
         @.. utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃
         ttmp = tᵢ₋₁ + μₛ₋₃
-        integrator.g(Xₛ₋₃, utmp, p, ttmp)
+        integrator.f.g(Xₛ₋₃, utmp, p, ttmp)
         @.. u += C₁ * yₛ₋₃ + 1 // 8 * W.dW * Xₛ₋₃
 
         #stage s-2
@@ -1517,7 +1517,7 @@ end
 
         @.. utmp = uᵢ₋₂ + C₁ * yₛ₋₃ + 2 // 3 * W.dW * Xₛ₋₃
         ttmp = tᵢ₋₂ + C₁
-        integrator.g(Xₛ₋₂, utmp, p, ttmp)
+        integrator.f.g(Xₛ₋₂, utmp, p, ttmp)
         @.. u += μₛ₋₂ * yₛ₋₂ + 3 // 8 * W.dW * Xₛ₋₂
 
         #stage s-1
@@ -1527,7 +1527,7 @@ end
 
         @.. utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃ + δ₁ * yₛ₋₂ + 1 // 12 * W.dW * Xₛ₋₃ + 1 // 4 * W.dW * Xₛ₋₂
         ttmp = tᵢ₋₁ + μₛ₋₃ + δ₁
-        integrator.g(Xₛ₋₁, utmp, p, ttmp)
+        integrator.f.g(Xₛ₋₁, utmp, p, ttmp)
         @.. u += (σ - τ) * dt * yₛ₋₁ + 3 // 8 * W.dW * Xₛ₋₁
 
         #stage s
@@ -1540,14 +1540,14 @@ end
         tᵢ₋₁ = tᵢ₋₁ + μₛ₋₃ + δ₂ + δ₃
 
         integrator.f(yₛ₋₁, utmp, p, ttmp)
-        integrator.g(Xₛ₋₁, uᵢ₋₁, p, tᵢ₋₁)
+        integrator.f.g(Xₛ₋₁, uᵢ₋₁, p, tᵢ₋₁)
         @.. u += (σ + τ) * dt * yₛ₋₁ + 1 // 8 * W.dW * Xₛ₋₁
     else
         # stage s-3
         integrator.f(yₛ₋₃, uᵢ₋₁, p, tᵢ₋₁)
         @.. utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃
         ttmp = tᵢ₋₁ + μₛ₋₃
-        integrator.g(Xₛ₋₃, utmp, p, ttmp)
+        integrator.f.g(Xₛ₋₃, utmp, p, ttmp)
         mul!(SXₛ₋₃, Xₛ₋₃, W.dW)
         @.. u += C₁ * yₛ₋₃ + 1 // 8 * SXₛ₋₃
 
@@ -1561,7 +1561,7 @@ end
             mul!(SXₛ₋₂, Xₛ₋₃, WikRange)
             @.. utmp = uᵢ₋₂ + C₁ * yₛ₋₃ + 2 // 3 * SXₛ₋₂
             ttmp = tᵢ₋₂ + C₁
-            integrator.g(Gₛ, utmp, p, ttmp)
+            integrator.f.g(Gₛ, utmp, p, ttmp)
             WikRange .= 1 .* (1:length(W.dW) .== i)
             # @.. @view(Xₛ₋₂[:,i]) =  @view(Gₛ[:,i])
             @.. Xₛ₋₂ = Gₛ * W.dW
@@ -1582,7 +1582,7 @@ end
             mul!(SXₛ₋₁, Xₛ₋₂, WikRange)
             @.. utmp += 1 // 2 * SXₛ₋₁
             ttmp = tᵢ₋₁ + μₛ₋₃ + δ₁
-            integrator.g(Gₛ, utmp, p, ttmp)
+            integrator.f.g(Gₛ, utmp, p, ttmp)
             WikRange .= 1 .* (1:length(W.dW) .== i)
             # @.. @view(Xₛ₋₁[:,i]) = @view(Gₛ[:,i])
             @.. Xₛ₋₁ = Gₛ * WikRange
@@ -1601,7 +1601,7 @@ end
         #   utmp = uᵢ₋₁ + θₛ₋₃*(uᵢ₋₁ - uᵢ₋₂) + μₛ₋₃*yₛ₋₃ + δ₂*yₛ₋₂ + δ₃*yₛ₋₁ - 3//2*W.dW[i]*@view(Xₛ₋₃[:,i]) -
         #           1//2*W.dW[i]*@view(Xₛ₋₂[:,i]) + 2*W.dW[i]*@view(Xₛ₋₁[:,i]) + 1//4*SXₛ₋₃ + 3//4*SXₛ₋₂
         #   ttmp = tᵢ₋₁ + θₛ₋₃*(tᵢ₋₁ - tᵢ₋₂) + μₛ₋₃ + δ₂ + δ₃
-        #   Gₛ = integrator.g(utmp,p,ttmp)
+        #   Gₛ = integrator.f.g(utmp,p,ttmp)
         #   SXₛ₋₁ += W.dW[i]*@view(Gₛ[:,i])
         # end
         # u += 1//8*SXₛ₋₁
@@ -1624,7 +1624,7 @@ end
             @.. uᵢ₋₂ += 2 * utmp
 
             tᵢ₋₂ = tᵢ₋₁ + δ₂ + δ₃
-            integrator.g(Gₛ, uᵢ₋₂, p, tᵢ₋₂)
+            integrator.f.g(Gₛ, uᵢ₋₂, p, tᵢ₋₂)
             # @.. SXₛ₋₁ += W.dW[i]*@view(Gₛ[:,i])
             mul!(utmp, Gₛ, WikRange)
             @.. SXₛ₋₁ += utmp
@@ -1645,9 +1645,9 @@ end
             end
             ttmp = tᵢ₋₁
             @.. utmp = uᵢ₋₁ - 1 // 4 * SXₛ₋₁
-            integrator.g(Gₛ, utmp, p, ttmp)
+            integrator.f.g(Gₛ, utmp, p, ttmp)
             @.. utmp = uᵢ₋₁ + 1 // 4 * SXₛ₋₁
-            integrator.g(Xₛ₋₁, utmp, p, ttmp)
+            integrator.f.g(Xₛ₋₁, utmp, p, ttmp)
             sqrt_dt *= (length(W.dW) - 1)
             # @.. u += sqrt_dt*(@view(Xₛ₋₁[:,i]) - @view(Gₛ[:,i]))
             WikRange .= 1 .* (1:length(W.dW) .== i)
@@ -1714,19 +1714,19 @@ end
     u += dt * (σ + τ) * uᵢ₋₂
 
     if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
-        Gₛ = integrator.g(uᵢ₋₁, p, tᵢ₋₁)
+        Gₛ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
         u += Gₛ .* W.dW
 
         uᵢ₋₂ = uᵢ₋₁ .+ ((W.dW .^ 2 .- dt) ./ (2 .* sqrt_dt)) .* Gₛ
-        Gₛ₁ = integrator.g(uᵢ₋₂, p, tᵢ₋₁)
+        Gₛ₁ = integrator.f.g(uᵢ₋₂, p, tᵢ₋₁)
         u += 1 // 2 .* sqrt_dt .* Gₛ₁
 
         uᵢ₋₂ = uᵢ₋₁ .- ((W.dW .^ 2 .- dt) ./ (2 .* sqrt_dt)) .* Gₛ
-        Gₛ₁ = integrator.g(uᵢ₋₂, p, tᵢ₋₁)
+        Gₛ₁ = integrator.f.g(uᵢ₋₂, p, tᵢ₋₁)
         u -= 1 // 2 .* sqrt_dt .* Gₛ₁
 
     else
-        Gₛ = integrator.g(uᵢ₋₁, p, tᵢ₋₁)
+        Gₛ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
         uᵢ₋₂ = Gₛ * W.dW
         u += uᵢ₋₂
 
@@ -1734,10 +1734,10 @@ end
             WikRange = 1 .* (1:length(W.dW) .== i)
             uᵢ = Gₛ * WikRange
             tmp = uᵢ₋₁ - 1 // 2 * sqrt_dt * uᵢ + 1 // 2 * (W.dW[i] / sqrt_dt) * uᵢ₋₂
-            Gₛ₁ = integrator.g(tmp, p, tᵢ₋₁)
+            Gₛ₁ = integrator.f.g(tmp, p, tᵢ₋₁)
             u += 1 // 2 * sqrt_dt * (Gₛ₁ * WikRange)
             tmp = uᵢ₋₁ + 1 // 2 * sqrt_dt * uᵢ - 1 // 2 * (W.dW[i] / sqrt_dt) * uᵢ₋₂
-            Gₛ₁ = integrator.g(tmp, p, tᵢ₋₁)
+            Gₛ₁ = integrator.f.g(tmp, p, tᵢ₋₁)
             u -= 1 // 2 * sqrt_dt * (Gₛ₁ * WikRange)
         end
     end
@@ -1809,18 +1809,18 @@ end
     @.. u += dt * (σ + τ) * k
 
     if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
-        integrator.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
+        integrator.f.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
         @.. u += Gₛ * W.dW
 
         @.. uᵢ₋₂ = uᵢ₋₁ + ((W.dW^2 - dt) / (2 * sqrt_dt)) * Gₛ
-        integrator.g(Gₛ₁, uᵢ₋₂, p, tᵢ₋₁)
+        integrator.f.g(Gₛ₁, uᵢ₋₂, p, tᵢ₋₁)
         @.. u += 1 // 2 * sqrt_dt * Gₛ₁
 
         @.. uᵢ₋₂ = uᵢ₋₁ - ((W.dW^2 - dt) / (2 * sqrt_dt)) * Gₛ
-        integrator.g(Gₛ₁, uᵢ₋₂, p, tᵢ₋₁)
+        integrator.f.g(Gₛ₁, uᵢ₋₂, p, tᵢ₋₁)
         @.. u -= 1 // 2 * sqrt_dt * Gₛ₁
     else
-        integrator.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
+        integrator.f.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
         mul!(uᵢ₋₂, Gₛ, W.dW)
         @.. u += uᵢ₋₂
 
@@ -1829,12 +1829,12 @@ end
             mul!(uᵢ, Gₛ, WikRange)
 
             @.. tmp = uᵢ₋₁ - 1 // 2 * sqrt_dt * uᵢ + 1 // 2 * (W.dW[i] / sqrt_dt) * uᵢ₋₂
-            integrator.g(Gₛ₁, tmp, p, tᵢ₋₁)
+            integrator.f.g(Gₛ₁, tmp, p, tᵢ₋₁)
             mul!(tmp, Gₛ₁, WikRange)
             @.. u += 1 // 2 * sqrt_dt * tmp
 
             @.. tmp = uᵢ₋₁ + 1 // 2 * sqrt_dt * uᵢ - 1 // 2 * (W.dW[i] / sqrt_dt) * uᵢ₋₂
-            integrator.g(Gₛ₁, tmp, p, tᵢ₋₁)
+            integrator.f.g(Gₛ₁, tmp, p, tᵢ₋₁)
             mul!(tmp, Gₛ₁, WikRange)
             @.. u -= 1 // 2 * sqrt_dt * tmp
         end

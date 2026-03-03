@@ -1,5 +1,6 @@
 @muladd function perform_step!(integrator, cache::PCEulerConstantCache)
-    (; t, dt, uprev, u, W, p, f, g) = integrator
+    (; t, dt, uprev, u, W, p, f) = integrator
+    g = integrator.f.g
     (; theta, eta, ggprime) = integrator.alg
     dW = W.dW
     if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
@@ -28,7 +29,8 @@ end
 
 @muladd function perform_step!(integrator, cache::PCEulerCache)
     (; utmp, ftmp, gtmp, gdWtmp, bbprimetmp) = cache
-    (; t, dt, uprev, u, W, p, f, g) = integrator
+    (; t, dt, uprev, u, W, p, f) = integrator
+    g = integrator.f.g
     (; theta, eta, ggprime) = integrator.alg
     dW = W.dW
 

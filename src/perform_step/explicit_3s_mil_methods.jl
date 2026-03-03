@@ -6,16 +6,16 @@
     u = uprev + dt * k
 
     #stage 2
-    k = integrator.g(u, p, t)
+    k = integrator.f.g(u, p, t)
     tmp = u + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / (integrator.sqdt)
     u = u - (dt / 2) * k₁
 
     #stage 3
-    k = integrator.g(u, p, t)
+    k = integrator.f.g(u, p, t)
     tmp = u + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / abs(integrator.sqdt)
     u = u .+ k .* W.dW .+ 0.5 .* (W.dW .^ 2) .* k₁
     integrator.u = u
@@ -30,16 +30,16 @@ end
     @.. u = uprev + dt * k
 
     #stage 2
-    integrator.g(k, u, p, t)
+    integrator.f.g(k, u, p, t)
     @.. tmp = u + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / (integrator.sqdt)
     @.. u = u - (dt / 2) * k₁
 
     #stage 3
-    integrator.g(k, u, p, t)
+    integrator.f.g(k, u, p, t)
     @.. tmp = u + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / abs(integrator.sqdt)
     @.. u = u + k * W.dW + (W.dW^2 / 2) * k₁
     integrator.u = u
@@ -48,9 +48,9 @@ end
 @muladd function perform_step!(integrator, cache::WangLi3SMil_BConstantCache)
     (; t, dt, uprev, u, W, p, f) = integrator
     #stage 1
-    k = integrator.g(uprev, p, t)
+    k = integrator.f.g(uprev, p, t)
     tmp = uprev + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / integrator.sqdt
     u = uprev .+ k .* W.dW .+ 0.5 .* (W.dW .^ 2) .* k₁
 
@@ -59,9 +59,9 @@ end
     u = u + dt * k
 
     #stage 3
-    k = integrator.g(u, p, t)
+    k = integrator.f.g(u, p, t)
     tmp = u + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / abs(integrator.sqdt)
     u = u - (dt / 2) * k₁
     integrator.u = u
@@ -72,9 +72,9 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
 
     #stage 1
-    integrator.g(k, uprev, p, t)
+    integrator.f.g(k, uprev, p, t)
     @.. tmp = uprev + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / integrator.sqdt
     @.. u = uprev + W.dW * k + (W.dW^2 / 2) * k₁
 
@@ -83,9 +83,9 @@ end
     @.. u = u + dt * k
 
     #stage 3
-    integrator.g(k, u, p, t)
+    integrator.f.g(k, u, p, t)
     @.. tmp = u + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / abs(integrator.sqdt)
     @.. u = u - (dt / 2) * k₁
 
@@ -99,16 +99,16 @@ end
     u = uprev + dt * k
 
     #stage 2
-    k = integrator.g(u, p, t)
+    k = integrator.f.g(u, p, t)
     tmp = u + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / (integrator.sqdt)
     u = u .+ k .* W.dW .+ 0.5 .* (W.dW .^ 2) .* k₁
 
     #stage 3
-    k = integrator.g(u, p, t)
+    k = integrator.f.g(u, p, t)
     tmp = u + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / abs(integrator.sqdt)
     u = u - (dt / 2) * k₁
     integrator.u = u
@@ -123,16 +123,16 @@ end
     @.. u = uprev + dt * k
 
     #stage 2
-    integrator.g(k, u, p, t)
+    integrator.f.g(k, u, p, t)
     @.. tmp = u + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / (integrator.sqdt)
     @.. u = u + k * W.dW + (W.dW^2 / 2) * k₁
 
     #stage 3
-    integrator.g(k, u, p, t)
+    integrator.f.g(k, u, p, t)
     @.. tmp = u + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / abs(integrator.sqdt)
     @.. u = u - (dt / 2) * k₁
     integrator.u = u
@@ -141,9 +141,9 @@ end
 @muladd function perform_step!(integrator, cache::WangLi3SMil_DConstantCache)
     (; t, dt, uprev, u, W, p, f) = integrator
     #stage 1
-    k = integrator.g(uprev, p, t)
+    k = integrator.f.g(uprev, p, t)
     tmp = uprev + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / (integrator.sqdt)
     u = uprev - (dt / 2) * k₁
 
@@ -152,9 +152,9 @@ end
     u = u + dt * k
 
     #stage 3
-    k = integrator.g(u, p, t)
+    k = integrator.f.g(u, p, t)
     tmp = u + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / abs(integrator.sqdt)
     u = u .+ k .* W.dW .+ 0.5 .* (W.dW .^ 2) .* k₁
     integrator.u = u
@@ -165,9 +165,9 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
 
     #stage 1
-    integrator.g(k, uprev, p, t)
+    integrator.f.g(k, uprev, p, t)
     @.. tmp = uprev + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / (integrator.sqdt)
     @.. u = uprev - (dt / 2) * k₁
 
@@ -176,9 +176,9 @@ end
     @.. u = u + dt * k
 
     #stage 3
-    integrator.g(k, u, p, t)
+    integrator.f.g(k, u, p, t)
     @.. tmp = u + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / abs(integrator.sqdt)
     @.. u = u + k * W.dW + (W.dW^2 / 2) * k₁
     integrator.u = u
@@ -187,16 +187,16 @@ end
 @muladd function perform_step!(integrator, cache::WangLi3SMil_EConstantCache)
     (; t, dt, uprev, u, W, p, f) = integrator
     #stage 1
-    k = integrator.g(uprev, p, t)
+    k = integrator.f.g(uprev, p, t)
     tmp = uprev + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / (integrator.sqdt)
     u = uprev - (dt / 2) * k₁
 
     #stage 2
-    k = integrator.g(u, p, t)
+    k = integrator.f.g(u, p, t)
     tmp = u + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / abs(integrator.sqdt)
     u = u .+ k .* W.dW .+ 0.5 .* (W.dW .^ 2) .* k₁
 
@@ -211,16 +211,16 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
 
     #stage 1
-    integrator.g(k, uprev, p, t)
+    integrator.f.g(k, uprev, p, t)
     @.. tmp = uprev + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / (integrator.sqdt)
     @.. u = uprev - (dt / 2) * k₁
 
     #stage 2
-    integrator.g(k, u, p, t)
+    integrator.f.g(k, u, p, t)
     @.. tmp = u + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / abs(integrator.sqdt)
     @.. u = u + k * W.dW + (W.dW^2 / 2) * k₁
 
@@ -233,16 +233,16 @@ end
 @muladd function perform_step!(integrator, cache::WangLi3SMil_FConstantCache)
     (; t, dt, uprev, u, W, p, f) = integrator
     #stage 1
-    k = integrator.g(uprev, p, t)
+    k = integrator.f.g(uprev, p, t)
     tmp = uprev + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / integrator.sqdt
     u = uprev .+ k .* W.dW .+ 0.5 .* (W.dW .^ 2) .* k₁
 
     #stage 2
-    k = integrator.g(u, p, t)
+    k = integrator.f.g(u, p, t)
     tmp = u + k * integrator.sqdt
-    k₁ = integrator.g(tmp, p, t)
+    k₁ = integrator.f.g(tmp, p, t)
     k₁ = (k₁ - k) / abs(integrator.sqdt)
     u = u - (dt / 2) * k₁
 
@@ -257,16 +257,16 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
 
     #stage 1
-    integrator.g(k, uprev, p, t)
+    integrator.f.g(k, uprev, p, t)
     @.. tmp = uprev + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / integrator.sqdt
     @.. u = uprev + W.dW * k + (W.dW^2 / 2) * k₁
 
     #stage 2
-    integrator.g(k, u, p, t)
+    integrator.f.g(k, u, p, t)
     @.. tmp = u + k * integrator.sqdt
-    integrator.g(k₁, tmp, p, t)
+    integrator.f.g(k₁, tmp, p, t)
     @.. k₁ = (k₁ - k) / abs(integrator.sqdt)
     @.. u = u - (dt / 2) * k₁
 

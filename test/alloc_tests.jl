@@ -10,6 +10,15 @@ These tests ensure that the hot path functions (perform_step!, loopheader!, loop
 don't allocate memory during stepping, which is critical for performance.
 """
 
+# Wrapper that discards the return value of step!.
+# ODE's _step! returns integrator.sol.retcode, and on Julia 1.10 boxing that
+# ReturnCode.T return value inside @allocated costs 16 bytes. Discarding it
+# avoids measuring return-value boxing as a false positive.
+@inline function step_void!(integrator)
+    step!(integrator)
+    return nothing
+end
+
 @testset "Allocation Tests" begin
     Random.seed!(12345)
 
@@ -26,11 +35,11 @@ don't allocate memory during stepping, which is critical for performance.
 
         # Warm up to ensure JIT compilation
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
         # Test allocation per step
-        allocs_per_step = @allocated step!(integrator)
+        allocs_per_step = @allocated step_void!(integrator)
         @test allocs_per_step == 0
     end
 
@@ -39,10 +48,10 @@ don't allocate memory during stepping, which is critical for performance.
 
         # Warm up
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
-        allocs_per_step = @allocated step!(integrator)
+        allocs_per_step = @allocated step_void!(integrator)
         @test allocs_per_step == 0
     end
 
@@ -51,10 +60,10 @@ don't allocate memory during stepping, which is critical for performance.
 
         # Warm up
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
-        allocs_per_step = @allocated step!(integrator)
+        allocs_per_step = @allocated step_void!(integrator)
         @test allocs_per_step == 0
     end
 
@@ -63,10 +72,10 @@ don't allocate memory during stepping, which is critical for performance.
 
         # Warm up
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
-        allocs_per_step = @allocated step!(integrator)
+        allocs_per_step = @allocated step_void!(integrator)
         @test allocs_per_step == 0
     end
 
@@ -75,10 +84,10 @@ don't allocate memory during stepping, which is critical for performance.
 
         # Warm up
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
-        allocs_per_step = @allocated step!(integrator)
+        allocs_per_step = @allocated step_void!(integrator)
         @test allocs_per_step == 0
     end
 
@@ -92,10 +101,10 @@ don't allocate memory during stepping, which is critical for performance.
 
         # Warm up
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
-        allocs_per_step = @allocated step!(integrator)
+        allocs_per_step = @allocated step_void!(integrator)
         @test allocs_per_step == 0
     end
 
