@@ -35,7 +35,7 @@ end
 
         # Warm up to ensure JIT compilation
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
         # Test allocation per step
@@ -48,7 +48,7 @@ end
 
         # Warm up
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
         allocs_per_step = @allocated step_void!(integrator)
@@ -60,7 +60,7 @@ end
 
         # Warm up
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
         allocs_per_step = @allocated step_void!(integrator)
@@ -72,7 +72,7 @@ end
 
         # Warm up
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
         allocs_per_step = @allocated step_void!(integrator)
@@ -84,7 +84,7 @@ end
 
         # Warm up
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
         allocs_per_step = @allocated step_void!(integrator)
@@ -101,7 +101,7 @@ end
 
         # Warm up
         for _ in 1:10
-            step!(integrator)
+            step_void!(integrator)
         end
 
         allocs_per_step = @allocated step_void!(integrator)
