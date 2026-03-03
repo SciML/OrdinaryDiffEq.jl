@@ -158,10 +158,15 @@ function default_controller(
     return DummyController()
 end
 
-# For whether an algorithm uses a priori dt estimates or utilizes an error estimate
-isaposteriori(alg) = false
-isaposteriori(alg::CaoTauLeaping) = true
-isaposteriori(alg::ThetaTrapezoidalTauLeaping) = false
+# Extend ODE's isaposteriori for SDE algorithms.
+# CaoTauLeaping always accepts (a posteriori dt), others use error estimates.
+OrdinaryDiffEqCore.isaposteriori(alg::CaoTauLeaping) = true
+
+# SDE algorithms never extrapolate (no uprev2 storage).
+OrdinaryDiffEqCore.alg_extrapolates(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}) = false
+
+# SDE algorithms are never FSAL (update_fsal! is a no-op for SDE).
+OrdinaryDiffEqCore.isfsal(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}) = false
 
 alg_order(alg::EM) = 1 // 2
 alg_order(alg::LambaEM) = 1 // 2

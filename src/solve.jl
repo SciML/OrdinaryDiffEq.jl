@@ -76,9 +76,11 @@ Resolve the RNG and seed for an SDE/RODE integration from the user-provided
 function _resolve_rng(rng, seed, prob)
     if rng !== nothing
         if !(rng isa Random.AbstractRNG)
-            throw(ArgumentError(
-                "`rng` must be an `AbstractRNG`, got $(typeof(rng))."
-            ))
+            throw(
+                ArgumentError(
+                    "`rng` must be an `AbstractRNG`, got $(typeof(rng))."
+                )
+            )
         end
         # TaskLocalRNG is a zero-field singleton pointing to shared task-local
         # state. Storing it directly would cause type mismatches with noise
@@ -769,7 +771,7 @@ function DiffEqBase.__init(
         tstops = _tstops_callable
     end
 
-    opts = SDEOptions(
+    opts = OrdinaryDiffEqCore.DEOptions(
         maxiters, save_everystep,
         adaptive, abstol_internal,
         reltol_internal,
@@ -780,7 +782,8 @@ function DiffEqBase.__init(
         QT(failfactor),
         tType(dtmax), tType(dtmin),
         controller,
-        internalnorm, save_idxs,
+        internalnorm, LinearAlgebra.opnorm,
+        save_idxs,
         tstops_internal, saveat_internal,
         d_discontinuities_internal,
         tstops, saveat, d_discontinuities,
@@ -789,7 +792,8 @@ function DiffEqBase.__init(
         progress_name, progress_message, progress_id,
         timeseries_errors, dense_errors,
         convert.(uBottomEltypeNoUnits, delta),
-        dense, save_on, save_start, save_end, save_end_user, save_noise,
+        dense, save_on, save_start,
+        save_end, save_noise, false, save_end_user,
         callbacks_internal, isoutofdomain, unstable_check,
         verbose_internal, calck, force_dtmin,
         advance_to_tstop, stop_at_next_tstop
@@ -841,6 +845,8 @@ function DiffEqBase.__init(
     success_iter = 0
     q = tTypeNoUnits(1)
 
+    ks = Vector{rateType}(undef, 0)
+
     integrator = SDEIntegrator{
         typeof(alg), isinplace(prob), uType,
         uBottomEltype, tType, typeof(tdir), typeof(p),
@@ -848,19 +854,25 @@ function DiffEqBase.__init(
         uEltypeNoUnits, typeof(W), typeof(P), rateType, typeof(sol), typeof(cache),
         FType, GType, CType, typeof(opts), typeof(noise), typeof(last_event_error),
         typeof(callback_cache), typeof(rate_constants),
-        typeof(initializealg), typeof(_rng),
+        typeof(initializealg), typeof(_rng), typeof(ks),
     }(
         f, g, c, noise, uprev, tprev, t, u, p, tType(dt),
-        tType(dt), tType(dt), dtcache, tspan[2], tdir,
+        tType(dt), dtcache, tspan[2], tdir,
         just_hit_tstop, do_error_check, isout, event_last_time,
         vector_event_last_time, last_event_error, accept_step,
         last_stepfail, force_stepfail,
         dtchangeable, u_modified,
+        false, # reeval_fsal
         saveiter,
+        0, # saveiter_dense
+        0, # kshortsize
+        ks,
         alg, sol,
         cache, callback_cache, tType(dt), W, P, rate_constants,
         opts, iter, success_iter, eigen_est, EEst, q,
-        QT(qoldinit), q11, stats, initializealg, _rng, _user_provided_noise
+        QT(qoldinit), q11, stats, initializealg, _rng,
+        false, # isdae
+        _user_provided_noise
     )
 
     if initialize_integrator
