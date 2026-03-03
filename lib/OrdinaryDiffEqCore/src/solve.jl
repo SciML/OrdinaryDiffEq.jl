@@ -80,6 +80,13 @@ function SciMLBase.__init(
         alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
         rng = nothing,
+        # SDE/RODE fields: accepted here so that SDE packages can delegate to
+        # this __init and construct an ODEIntegrator with noise populated.
+        save_noise = false,
+        delta = nothing,
+        W = nothing,
+        P = nothing,
+        sqdt = nothing,
         kwargs...
     )
     if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -558,7 +565,7 @@ function SciMLBase.__init(
         typeof(save_idxs),
         typeof(maxiters), typeof(tstops),
         typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
-        typeof(nothing),
+        typeof(delta),
     }(
         maxiters, save_everystep,
         adaptive, abstol_internal,
@@ -590,9 +597,9 @@ function SciMLBase.__init(
         progress_message,
         progress_id,
         timeseries_errors,
-        dense_errors, nothing, dense,
+        dense_errors, delta, dense,
         save_on, save_start,
-        save_end, false, save_discretes, save_end_user,
+        save_end, save_noise, save_discretes, save_end_user,
         callbacks_internal,
         isoutofdomain,
         unstable_check,
@@ -666,7 +673,7 @@ function SciMLBase.__init(
         typeof(last_event_error), typeof(callback_cache),
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
-        Nothing, Nothing, Nothing,
+        typeof(W), typeof(P), typeof(sqdt),
     }(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
@@ -690,7 +697,7 @@ function SciMLBase.__init(
         u_modified, reinitiailize, isdae,
         opts, stats, initializealg, differential_vars,
         fsalfirst, fsallast, _rng,
-        nothing, nothing, nothing
+        W, P, sqdt
     )
 
     if initialize_integrator
