@@ -1,6 +1,5 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
-using OrdinaryDiffEqRosenbrock
-using OrdinaryDiffEqBDF
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner
 
 #test example discontinuous at u = 1
 f(u, p, t) = u[1] < 1 ? [2u[1]] : [-3u[1] + 5]
@@ -12,22 +11,36 @@ prob = ODEProblem(f, u0, tspan)
 condition(u, t, integrator) = u[1] - 1
 function affect!(integrator)
     integrator.u[1] += 10
-    println("Callback fired at t = ", integrator.t)
 end
 cb = ContinuousCallback(condition, affect!; is_discontinuity = true)
+cb2 = ContinuousCallback(condition, affect!; is_discontinuity = false)
 
-#disco solve
-sol_disco = solve(prob, RadauIIA5(is_disco = true); callback = cb, reltol = 1e-6)
-#fixed order solve
-sol_no_disco = solve(prob, RadauIIA5(is_disco = false); callback = cb, reltol = 1e-6)
+sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
+#  291.292 μs (8449 allocations: 266.47 KiB)
+sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
+#  335.417 μs (10008 allocations: 311.08 KiB)
 
-rodas_no_disco = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6)
+rodas_disco = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6)
+#  410.291 μs (16828 allocations: 594.05 KiB)
+rodas_no_disco = solve(prob, Rodas5P(); callback = cb2, reltol = 1e-6)
+#  483.792 μs (17729 allocations: 639.31 KiB)
 
-rodas_disco = solve(prob, Rodas5P(is_disco = true); callback = cb, reltol = 1e-6)
+bdf_disco = solve(prob, FBDF(); callback = cb, reltol = 1e-6)
+#   245.917 μs (20703 allocations: 665.16 KiB)
+bdf_no_disco = solve(prob, FBDF(); callback = cb2, reltol = 1e-6)
+#   269.333 μs (20477 allocations: 663.80 KiB)
 
-bdf_no_disco = solve(prob, FBDF(); callback = cb, reltol = 1e-6)
+tsit_disco = solve(prob, Tsit5(); callback = cb, reltol = 1e-6)
+# same either way for some reason? check about this
+tsit_no_disco = solve(prob, Tsit5(); callback = cb2, reltol = 1e-6)
 
-bdf_disco = solve(prob, FBDF(is_disco = true); callback = cb, reltol = 1e-6)
+vern_disco = solve(prob, Vern7(); callback = cb, reltol = 1e-6)
+#   111.125 μs (15629 allocations: 493.66 KiB)
+vern_no_disco = solve(prob, Vern7(); callback = cb2, reltol = 1e-6)
+#   83.666 μs (13326 allocations: 420.31 KiB)
+@profview for i in 1:1000 
+    solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
+end
 
 #two discontinuity functions
 function f(u, p, t)

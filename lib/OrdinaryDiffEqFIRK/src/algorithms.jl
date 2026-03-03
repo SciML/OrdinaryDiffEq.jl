@@ -123,8 +123,7 @@ function RadauIIA5(;
         new_W_γdt_cutoff,
         controller,
         step_limiter!,
-        AD_choice,
-        is_disco
+        AD_choice
     )
 end
 

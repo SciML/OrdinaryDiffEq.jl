@@ -23,7 +23,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     get_fsalfirstlast, generic_solver_docstring, _bool_to_ADType,
     _process_AD_choice, set_discontinuity,
     _ode_interpolant, _ode_interpolant!, has_stiff_interpolation,
-    _ode_addsteps!, DerivativeOrderNotPossibleError
+    _ode_addsteps!, DerivativeOrderNotPossibleError, set_discontinuity
 using OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache
 
 using TruncatedStacktraces: @truncate_stacktrace

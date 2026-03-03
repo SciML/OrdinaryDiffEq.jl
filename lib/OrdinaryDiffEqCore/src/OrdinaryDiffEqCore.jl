@@ -162,6 +162,7 @@ include("cache_utils.jl")
 include("initialize_dae.jl")
 
 include("perform_step/composite_perform_step.jl")
+include("disco.jl")
 
 include("disco.jl")
 

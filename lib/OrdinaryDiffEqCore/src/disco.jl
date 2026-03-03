@@ -4,24 +4,16 @@ function set_discontinuity(u, uprev, integrator, cache) #need to pick algs to te
     t = integrator.t
     if !isnan(breakpointθ) && 1e-6 < breakpointθ < 1.0
         #println("Discontinuity detected at t = ", t + breakpointθ * dt)
-        integrator.dt = breakpointθ * dt
-        integrator.disco_dt_set = true
+        return breakpointθ * dt
     end
+    return -1
 end
 
 function find_discontinuity(u, uprev, integrator, cache)
+    println("Finding discontinuity...")
     cb = integrator.opts.callback
     cb === nothing && return -1
     isempty(cb.continuous_callbacks) && return -1
-
-    disco_exists = false;
-    for i in cb.continuous_callbacks
-        if (i.is_discontinuity) 
-            disco_exists = true
-            break
-        end
-    end
-    !disco_exists && return -1
     p = integrator.p
     t = integrator.t
     dt = integrator.dt
@@ -49,9 +41,7 @@ function find_discontinuity(u, uprev, integrator, cache)
             if (f0 * f1 < zero(f0))
                 function zero_func(θ, p)
                     u₁ = similar(u)
-                    _ode_interpolant!(u₁, θ, dt, uprev, u, integrator.k, cache,
-                                    nothing, Val{0}, nothing)
-
+                    ode_interpolant!(u₁, θ, integrator, integrator.opts.save_idxs, Val{0})
                     if is_inplace
                         out = similar(u)
                         i.condition(out, u₁, t + θ * dt, integrator)
@@ -75,4 +65,3 @@ function find_discontinuity(u, uprev, integrator, cache)
     end
     breakpointθ
 end
-
