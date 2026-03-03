@@ -94,9 +94,8 @@ function SciMLBase.__init(
         noise = nothing,
         c = nothing,
         rate_constants = nothing,
-        # Pre-built cache/interp for SDE delegation (skip alg_cache/InterpolationData)
+        # Pre-built cache for SDE delegation (skip alg_cache call)
         _cache = nothing,
-        _build_interp = nothing,
         seed = UInt64(0),
         kwargs...
     )
@@ -637,13 +636,9 @@ function SciMLBase.__init(
         get_differential_vars(f, u)
     end
 
-    id = if _build_interp !== nothing
-        _build_interp(timeseries, ts)
-    else
-        InterpolationData(
-            f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
-        )
-    end
+    id = InterpolationData(
+        f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
+    )
 
     _sol_kwargs = if !isnothing(W)
         (;
