@@ -1,5 +1,5 @@
 function DiffEqBase.initialize_dae!(
-        integrator::Union{AbstractSDEIntegrator, AbstractSDDEIntegrator},
+        integrator::Union{SDEIntegrator, AbstractSDDEIntegrator},
         initializealg = integrator.initializealg
     )
     return OrdinaryDiffEqCore._initialize_dae!(
@@ -9,7 +9,7 @@ function DiffEqBase.initialize_dae!(
 end
 
 function OrdinaryDiffEqCore._initialize_dae!(
-        integrator::Union{AbstractSDEIntegrator, AbstractSDDEIntegrator},
+        integrator::Union{SDEIntegrator, AbstractSDDEIntegrator},
         prob::Union{SciMLBase.AbstractRODEProblem, SciMLBase.AbstractSDDEProblem},
         ::OrdinaryDiffEqCore.DefaultInit, isinplace
     )

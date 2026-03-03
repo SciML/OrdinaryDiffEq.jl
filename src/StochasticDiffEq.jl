@@ -11,7 +11,8 @@ using Reexport
 import ADTypes
 
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: default_controller, isstandard, ispredictive,
+import OrdinaryDiffEqCore: ODEIntegrator,
+    default_controller, isstandard, ispredictive,
     beta2_default, beta1_default, gamma_default,
     qmin_default, qmax_default, qsteady_min_default,
     qsteady_max_default,
@@ -27,7 +28,7 @@ import OrdinaryDiffEqCore: handle_callbacks!, handle_tstop!,
     solution_endpoint_match_cur_integrator!,
     _savevalues!, _postamble!,
     is_composite_cache, is_composite_algorithm, final_progress,
-    loopheader!, _loopfooter!, _step!, perform_step!,
+    loopheader!, loopfooter!, _loopfooter!, _step!, perform_step!,
     isaposteriori, fixed_t_for_floatingpoint_error!,
     increment_accept!, increment_reject!,
     calc_dt_propose!, fix_dt_at_bounds!, modify_dt_for_tstops!,
