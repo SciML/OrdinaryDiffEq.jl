@@ -129,10 +129,11 @@ integrator.opts.abstol = 1e-9
 For more info see the linked documentation page.
 """
 mutable struct ODEIntegrator{
-        algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, IIP,
+        algType, IIP,
         uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
         CallbackCacheType, IA, DV, CC, RNGType, WType, PType, SqdtType,
+        NoiseType, CType, RCType,
     } <:
     SciMLBase.AbstractODEIntegrator{algType, IIP, uType, tType}
     sol::SolType
@@ -193,4 +194,9 @@ mutable struct ODEIntegrator{
     W::WType
     P::PType
     sqdt::SqdtType
+    # SDE/RODE fields: populated by SDE packages, Nothing for pure ODE.
+    noise::NoiseType
+    c::CType
+    rate_constants::RCType
+    q::QT
 end

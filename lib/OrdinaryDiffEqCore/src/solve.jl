@@ -87,6 +87,9 @@ function SciMLBase.__init(
         W = nothing,
         P = nothing,
         sqdt = nothing,
+        noise = nothing,
+        c = nothing,
+        rate_constants = nothing,
         kwargs...
     )
     if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -674,6 +677,7 @@ function SciMLBase.__init(
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
         typeof(W), typeof(P), typeof(sqdt),
+        typeof(noise), typeof(c), typeof(rate_constants),
     }(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
@@ -697,7 +701,8 @@ function SciMLBase.__init(
         u_modified, reinitiailize, isdae,
         opts, stats, initializealg, differential_vars,
         fsalfirst, fsallast, _rng,
-        W, P, sqdt
+        W, P, sqdt,
+        noise, c, rate_constants, QT(1)
     )
 
     if initialize_integrator
