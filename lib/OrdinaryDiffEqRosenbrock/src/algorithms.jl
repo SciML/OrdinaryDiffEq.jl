@@ -26,14 +26,13 @@ for (Alg, desc, refs, is_W) in [
             step_limiter!::StepLimiter
             stage_limiter!::StageLimiter
             autodiff::AD
-            is_disco::Bool
         end
         function $Alg(;
                 chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
                 diff_type = Val{:forward}(), linsolve = nothing,
                 precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
-                stage_limiter! = trivial_limiter!, is_disco = false
+                stage_limiter! = trivial_limiter!
             )
             AD_choice, chunk_size, diff_type = _process_AD_choice(
                 autodiff, chunk_size, diff_type
@@ -45,7 +44,7 @@ for (Alg, desc, refs, is_W) in [
                 typeof(stage_limiter!)
             }(
                 linsolve, precs, step_limiter!,
-                stage_limiter!, AD_choice, is_disco
+                stage_limiter!, AD_choice
             )
         end
     end

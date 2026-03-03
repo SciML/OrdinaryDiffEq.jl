@@ -1384,10 +1384,6 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
-
-        if integrator.EEst > one(eltype(integrator.EEst)) && integrator.alg.is_disco
-            set_discontinuity(u, uprev, integrator, cache)
-        end
     end
 
     if integrator.opts.calck
@@ -1528,9 +1524,6 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
-        if integrator.EEst > one(eltype(integrator.EEst)) && integrator.alg.is_disco
-            set_discontinuity(u, uprev, integrator, cache)
-        end
     end
 
     if integrator.opts.calck
