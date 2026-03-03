@@ -127,7 +127,7 @@ function apply_step!(integrator)
 end
 
 function update_fsal!(integrator)
-    return if has_discontinuity(integrator) &&
+    if has_discontinuity(integrator) &&
             first_discontinuity(integrator) == integrator.tdir * integrator.t
         handle_discontinuities!(integrator)
         get_current_isfsal(integrator.alg, integrator.cache) && reset_fsal!(integrator)
@@ -148,6 +148,7 @@ function update_fsal!(integrator)
             end
         end
     end
+    return nothing
 end
 
 function last_step_failed(integrator::ODEIntegrator)
@@ -172,7 +173,7 @@ _get_tstop_target(integrator::ODEIntegrator) = integrator.tstop_target
 _get_tstop_target(integrator) = integrator.t  # fallback, helps inference for non-ODE integrators
 
 function modify_dt_for_tstops!(integrator)
-    return if has_tstop(integrator)
+    if has_tstop(integrator)
         tdir_t = integrator.tdir * integrator.t
         tdir_tstop = first_tstop(integrator)
         distance_to_tstop = abs(tdir_tstop - tdir_t)
@@ -211,6 +212,7 @@ function modify_dt_for_tstops!(integrator)
     else
         _set_tstop_flag!(integrator, false)
     end
+    return nothing
 end
 
 function handle_tstop_step!(integrator)
