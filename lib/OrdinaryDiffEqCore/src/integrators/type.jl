@@ -129,7 +129,7 @@ integrator.opts.abstol = 1e-9
 For more info see the linked documentation page.
 """
 mutable struct ODEIntegrator{
-        algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, IIP,
+        algType, IIP,
         uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
         CallbackCacheType, IA, DV, CC, RNGType, WType, PType, SqdtType,
