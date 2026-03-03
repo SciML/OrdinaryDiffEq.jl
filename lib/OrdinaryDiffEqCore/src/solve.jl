@@ -20,8 +20,12 @@ function SciMLBase.__init(
         prob::Union{
             SciMLBase.AbstractODEProblem,
             SciMLBase.AbstractDAEProblem,
+            SciMLBase.AbstractRODEProblem,
         },
-        alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
+        alg::Union{
+            OrdinaryDiffEqAlgorithm, DAEAlgorithm,
+            SciMLBase.AbstractRODEAlgorithm, SciMLBase.AbstractSDEAlgorithm,
+        },
         timeseries_init = (),
         ts_init = (),
         ks_init = ();
@@ -90,31 +94,38 @@ function SciMLBase.__init(
         noise = nothing,
         c = nothing,
         rate_constants = nothing,
+        # Pre-built cache/interp for SDE delegation (skip alg_cache/InterpolationData)
+        _cache = nothing,
+        _build_interp = nothing,
+        seed = UInt64(0),
         kwargs...
     )
-    if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
-        error("You cannot use an ODE Algorithm with a DAEProblem")
-    end
-
-    if prob isa SciMLBase.AbstractODEProblem && alg isa DAEAlgorithm
-        error("You cannot use an DAE Algorithm with a ODEProblem")
-    end
-
-    if prob isa SciMLBase.ODEProblem
-        if !(prob.f isa SciMLBase.DynamicalODEFunction) && alg isa PartitionedAlgorithm
-            error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
+    # ODE/DAE-specific validation (skip for RODE/SDE problems)
+    if !(prob isa SciMLBase.AbstractRODEProblem)
+        if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
+            error("You cannot use an ODE Algorithm with a DAEProblem")
         end
-    end
 
-    if prob.f isa DynamicalODEFunction && prob.f.mass_matrix isa Tuple
-        if any(mm != I for mm in prob.f.mass_matrix)
+        if prob isa SciMLBase.AbstractODEProblem && alg isa DAEAlgorithm
+            error("You cannot use an DAE Algorithm with a ODEProblem")
+        end
+
+        if prob isa SciMLBase.ODEProblem
+            if !(prob.f isa SciMLBase.DynamicalODEFunction) && alg isa PartitionedAlgorithm
+                error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
+            end
+        end
+
+        if prob.f isa DynamicalODEFunction && prob.f.mass_matrix isa Tuple
+            if any(mm != I for mm in prob.f.mass_matrix)
+                error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
+            end
+        elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
+                !(prob isa SciMLBase.AbstractDAEProblem) &&
+                !is_mass_matrix_alg(alg) &&
+                prob.f.mass_matrix != I
             error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
         end
-    elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
-            !(prob isa SciMLBase.AbstractDAEProblem) &&
-            !is_mass_matrix_alg(alg) &&
-            prob.f.mass_matrix != I
-        error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
     end
 
     verbose_spec = _process_verbose_param(verbose)
@@ -170,12 +181,16 @@ function SciMLBase.__init(
         throw(ArgumentError("Fixed timestep methods can not be run with adaptive=true"))
     end
 
-    isdae = alg isa DAEAlgorithm || (
-        !(prob isa SciMLBase.AbstractDiscreteProblem) &&
-            prob.f.mass_matrix != I &&
-            !(prob.f.mass_matrix isa Tuple) &&
-            ArrayInterface.issingular(prob.f.mass_matrix)
-    )
+    isdae = if !isnothing(W)
+        false # RODE/SDE — never DAE
+    else
+        alg isa DAEAlgorithm || (
+            !(prob isa SciMLBase.AbstractDiscreteProblem) &&
+                prob.f.mass_matrix != I &&
+                !(prob.f.mass_matrix isa Tuple) &&
+                ArrayInterface.issingular(prob.f.mass_matrix)
+        )
+    end
     if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
         auto = alg.choice_function
         _alg = CompositeAlgorithm(
@@ -469,7 +484,9 @@ function SciMLBase.__init(
     else
         dt
     end
-    if prob isa DAEProblem
+    if _cache !== nothing
+        cache = _cache
+    elseif prob isa DAEProblem
         cache = alg_cache(
             _alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
             uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, _dt,
@@ -612,17 +629,34 @@ function SciMLBase.__init(
     )
 
     stats = SciMLBase.DEStats(0)
-    differential_vars = prob isa DAEProblem ? prob.differential_vars :
+    differential_vars = if prob isa DAEProblem
+        prob.differential_vars
+    elseif !isnothing(W)
+        nothing
+    else
         get_differential_vars(f, u)
+    end
 
-    id = InterpolationData(
-        f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
-    )
-    sol = SciMLBase.build_solution(
-        prob, _alg, ts, timeseries,
-        dense = dense, k = ks, interp = id, alg_choice = alg_choice,
-        calculate_error = false, stats = stats, saved_subsystem = saved_subsystem
-    )
+    id = if _build_interp !== nothing
+        _build_interp(timeseries, ts)
+    else
+        InterpolationData(
+            f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
+        )
+    end
+
+    _sol_kwargs = if !isnothing(W)
+        (;
+            W = W, seed = seed, interp = id, dense = dense, alg_choice = alg_choice,
+            calculate_error = false, stats = stats, saved_subsystem = saved_subsystem,
+        )
+    else
+        (;
+            dense = dense, k = ks, interp = id, alg_choice = alg_choice,
+            calculate_error = false, stats = stats, saved_subsystem = saved_subsystem,
+        )
+    end
+    sol = SciMLBase.build_solution(prob, _alg, ts, timeseries; _sol_kwargs...)
 
     FType = typeof(f)
     SolType = typeof(sol)
@@ -662,7 +696,8 @@ function SciMLBase.__init(
     reinitiailize = true
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
-    fsalfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
+    fsalfirst, fsallast = _cache !== nothing ? (nothing, nothing) :
+        get_fsalfirstlast(cache, rate_prototype)
 
     _rng = rng === nothing ? Random.default_rng() : rng
 
@@ -719,10 +754,14 @@ function SciMLBase.__init(
             # N.B.: integrator.u can be modified by initialized_dae!
             if save_idxs === nothing
                 copyat_or_push!(timeseries, 1, integrator.u)
-                copyat_or_push!(ks, 1, [rate_prototype])
+                if isnothing(W)
+                    copyat_or_push!(ks, 1, [rate_prototype])
+                end
             else
                 copyat_or_push!(timeseries, 1, integrator.u[save_idxs], Val{false})
-                copyat_or_push!(ks, 1, [ks_prototype])
+                if isnothing(W)
+                    copyat_or_push!(ks, 1, [ks_prototype])
+                end
             end
         else
             integrator.saveiter = 0 # Starts at 0 so first save is at 1
@@ -753,6 +792,15 @@ function SciMLBase.__init(
     end
 
     handle_dt!(integrator, dt)
+
+    # Noise process initialization for SDE/RODE integrators
+    if !isnothing(integrator.W)
+        modify_dt_for_tstops!(integrator)
+        integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
+        integrator.W.dt = integrator.dt
+        !isnothing(integrator.P) && (integrator.P.dt = integrator.dt)
+    end
+
     return integrator
 end
 
