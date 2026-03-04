@@ -22,13 +22,26 @@ function SciMLBase.__init(
             SciMLBase.AbstractDAEProblem,
             SciMLBase.AbstractRODEProblem,
         },
-        alg::Union{
-            OrdinaryDiffEqAlgorithm, DAEAlgorithm,
-            SciMLBase.AbstractRODEAlgorithm, SciMLBase.AbstractSDEAlgorithm,
-        },
+        alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
         timeseries_init = (),
         ts_init = (),
         ks_init = ();
+        kwargs...
+    )
+    return _ode_init(
+        prob, alg;
+        timeseries_init, ts_init, ks_init, kwargs...
+    )
+end
+
+# Internal initialization function. SDE/RODE packages call this directly
+# (bypassing __init dispatch) to avoid method ambiguity with JumpProblem.
+function _ode_init(
+        prob,
+        alg;
+        timeseries_init = (),
+        ts_init = (),
+        ks_init = (),
         saveat = (),
         tstops = (),
         d_discontinuities = (),
@@ -85,7 +98,7 @@ function SciMLBase.__init(
         initializealg = DefaultInit(),
         rng = nothing,
         # SDE/RODE fields: accepted here so that SDE packages can delegate to
-        # this __init and construct an ODEIntegrator with noise populated.
+        # _ode_init and construct an ODEIntegrator with noise populated.
         save_noise = false,
         delta = nothing,
         W = nothing,
