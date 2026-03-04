@@ -21,27 +21,12 @@ function SciMLBase.__init(
             SciMLBase.AbstractODEProblem,
             SciMLBase.AbstractDAEProblem,
             SciMLBase.AbstractRODEProblem,
+            SciMLBase.AbstractJumpProblem,
         },
-        alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
+        alg::SciMLBase.DEAlgorithm,
         timeseries_init = (),
         ts_init = (),
         ks_init = ();
-        kwargs...
-    )
-    return _ode_init(
-        prob, alg;
-        timeseries_init, ts_init, ks_init, kwargs...
-    )
-end
-
-# Internal initialization function. SDE/RODE packages call this directly
-# (bypassing __init dispatch) to avoid method ambiguity with JumpProblem.
-function _ode_init(
-        prob,
-        alg;
-        timeseries_init = (),
-        ts_init = (),
-        ks_init = (),
         saveat = (),
         tstops = (),
         d_discontinuities = (),
