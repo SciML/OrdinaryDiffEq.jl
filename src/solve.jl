@@ -105,13 +105,17 @@ function _resolve_rng(rng, seed, prob)
     return Random.Xoshiro(_seed), _seed, false
 end
 
+# Quick fix: replace ::Union{DiffEqBase.AbstractRODEProblem, JumpProblem} with a
+# concrete arguments using an eval loop to avoid ambiguities.
+for Prob ∈ (DiffEqBase.AbstractRODEProblem, JumpProblem)
+    @eval begin
 # rng kwarg: Pre-constructed AbstractRNG for all framework-managed randomness
 # (noise processes, integrator.rng). Takes priority over `seed` when provided.
 # When omitted, an Xoshiro is constructed from `seed` (or a random seed if
 # `seed` is also omitted). Only controls framework-constructed randomness;
 # user-provided noise processes (`prob.noise`) keep their own RNG.
 function DiffEqBase.__init(
-        _prob::Union{DiffEqBase.AbstractRODEProblem, JumpProblem},
+        _prob::$Prob,
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
         saveat = (),
         tstops = (),
@@ -909,6 +913,8 @@ function DiffEqBase.__init(
     DiffEqNoiseProcess.setup_next_step!(integrator::SDEIntegrator)
 
     return integrator
+end
+end
 end
 
 function DiffEqBase.solve!(integrator::SDEIntegrator)
