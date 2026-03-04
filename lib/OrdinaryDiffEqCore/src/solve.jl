@@ -23,7 +23,30 @@ function SciMLBase.__init(
             SciMLBase.AbstractRODEProblem,
             SciMLBase.AbstractJumpProblem,
         },
-        alg::SciMLBase.DEAlgorithm,
+        alg::Union{
+            OrdinaryDiffEqAlgorithm,
+            DAEAlgorithm,
+            StochasticDiffEqAlgorithm,
+            StochasticDiffEqRODEAlgorithm,
+        },
+        timeseries_init = (),
+        ts_init = (),
+        ks_init = ();
+        kwargs...
+    )
+    _ode_init(prob, alg, timeseries_init, ts_init, ks_init; kwargs...)
+end
+
+"""
+    _ode_init(prob, alg, timeseries_init=(), ts_init=(), ks_init=(); kwargs...)
+
+Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
+separated from `__init` so that SDE packages can call it directly, bypassing
+method dispatch (which would otherwise re-enter SDE's more specific `__init`).
+"""
+function _ode_init(
+        prob,
+        alg,
         timeseries_init = (),
         ts_init = (),
         ks_init = ();

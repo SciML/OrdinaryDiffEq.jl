@@ -2,6 +2,15 @@ abstract type OrdinaryDiffEqAlgorithm <: SciMLBase.AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
+# SDE/RODE algorithm type hierarchy (used by StochasticDiffEq)
+abstract type StochasticDiffEqAlgorithm <: SciMLBase.AbstractSDEAlgorithm end
+abstract type StochasticDiffEqAdaptiveAlgorithm <: StochasticDiffEqAlgorithm end
+abstract type StochasticDiffEqCompositeAlgorithm <: StochasticDiffEqAlgorithm end
+
+abstract type StochasticDiffEqRODEAlgorithm <: SciMLBase.AbstractRODEAlgorithm end
+abstract type StochasticDiffEqRODEAdaptiveAlgorithm <: StochasticDiffEqRODEAlgorithm end
+abstract type StochasticDiffEqRODECompositeAlgorithm <: StochasticDiffEqRODEAlgorithm end
+
 abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} <:
 OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} <:
