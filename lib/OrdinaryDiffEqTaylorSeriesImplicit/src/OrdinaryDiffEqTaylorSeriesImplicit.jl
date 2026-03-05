@@ -32,7 +32,6 @@ using FunctionWrappers
 import FunctionWrappers: FunctionWrapper
 using TaylorDiff
 using TaylorDiff: make_seed, get_coefficient, append_coefficient, flatten
-import ForwardDiff #TODO: REMOVEME
 import LinearSolve
 import ArrayInterface
 

@@ -1,4 +1,4 @@
-import OrdinaryDiffEqTaylorSeries: build_jet
+import OrdinaryDiffEqTaylorSeries: build_jet, build_propagator
 
 abstract type ImplicitTaylorMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type ImplicitTaylorConstantCache <: OrdinaryDiffEqConstantCache end
@@ -7,15 +7,17 @@ function get_fsalfirstlast(cache::ImplicitTaylorMutableCache, u)
 end
 
 @cache mutable struct ImplicitTaylor1Cache{
-        T, uType, jetType, taylorType, rateType, uNoUnitsType, F1, Tol, StepLimiter,
+        T, uType, propagatorType, d_propagatorType, jacobianType, rateType, uNoUnitsType, F1, Tol, StepLimiter,
     } <:
     ImplicitTaylorMutableCache
     μ::T
-    jet::jetType
+    propagator::propagatorType
+    d_propagator::d_propagatorType
     u::uType
     uprev::uType
     uprev2::uType
-    utaylor::taylorType
+    ut::uType
+    J::jacobianType
     utilde::uType
     tmp::uType
     atmp::uNoUnitsType
@@ -34,15 +36,16 @@ function alg_cache(
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    jet_oop, jet_iip = build_jet(f, p, Val(1), length(u))
-    utaylor = TaylorDiff.make_seed(u, zero(u), Val(1))
-    # jet_wrapped = FunctionWrapper{typeof(utaylor), Tuple{typeof(u), typeof(t)}}(jet_oop)
+    propagator_all, d_propagator_all = build_propagator(f, p, Val(1), length(u))
+    propagator, _ = propagator_all
+    d_propagator, _ = d_propagator_all
     fsalfirst = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     utilde = zero(u)
     tmp = zero(u)
     uToltype = constvalue(uBottomEltypeNoUnits)
+    ut = zero(u)
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = ArrayInterface.zeromatrix(_vec(u))
@@ -57,7 +60,7 @@ function alg_cache(
     status = Convergence
 
     return ImplicitTaylor1Cache(
-        alg.μ, jet_oop, u, uprev, uprev2, utaylor, utilde, tmp, atmp, fsalfirst, linsolve,
+        alg.μ, propagator, d_propagator, u, uprev, uprev2, ut, J, utilde, tmp, atmp, fsalfirst, linsolve,
         κ, ηold, status, iter, alg.step_limiter!
     )
 end
