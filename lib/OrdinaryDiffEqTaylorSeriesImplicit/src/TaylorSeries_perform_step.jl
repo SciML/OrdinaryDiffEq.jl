@@ -77,38 +77,33 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitTaylor1Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; μ, κ, tmp, atmp, step_limiter!) = cache
+    (; μ, κ, tmp, atmp, ηold, propagator, d_propagator, linsolve) = cache
     alg = unwrap_alg(integrator, true)
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     (; maxiters) = alg
 
-    # the reshape should really be moved to build_jet
+    # the reshape might be moved to build_jet
     nlf = (u_next_vec) -> begin
         u_next = reshape(u_next_vec, size(uprev))
-        utaylor = reshape(cache.jet(u_next, t + μ * dt), size(uprev))
-        du = get_coefficient(utaylor, 1)
-        _vec(u_next .- uprev .- μ * dt .* du)
+        ut_vec = propagator(u_next, t + μ * dt, -μ * dt)
+        ut = reshape(ut_vec, size(uprev))
+        _vec(ut .- uprev)
     end
-    #=cache.tmp .= u
-    nlprob = NonlinearProblem(nlf, cache.tmp, u)
-    sol = solve(nlprob)=#
-
 
     # Newton iteration
     local ndw
-    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))
+    η = max(ηold, eps(eltype(integrator.opts.reltol)))
     fail_convergence = true
     iter = 0
-    dw = cache.linsolve.u
+    dw = linsolve.u
     while iter < maxiters
         iter += 1
         integrator.stats.nnonliniter += 1
         # evaluate function
         tmp .= reshape(nlf(_vec(u)), size(tmp))
         #@show tmp
-        linsolve = cache.linsolve
         needfactor = iter == 1 # && newW once we aren't using ForwardDiff
-        A =  needfactor ? ForwardDiff.jacobian(nlf, _vec(u)) : nothing
+        A =  needfactor ? d_propagator(_vec(u), t + μ * dt, -μ * dt) : nothing
         needfactor && @assert A isa Matrix
         linres = dolinsolve(integrator, linsolve; A, b = _vec(tmp),
             linu = _vec(dw))
@@ -148,9 +143,9 @@ end
     cache.iter = iter
 
     if μ != one(μ)
-        utaylor = reshape(cache.jet(u, t + μ * dt), size(u))
-        u1 = get_coefficient(utaylor, 1)
-        u .+= (1 - μ) * dt * u1
+        ut_vec = propagator(u, t + μ * dt, (1 - μ) * dt)
+        ut = reshape(ut_vec, size(u))
+        u .= ut
     end
     # step_limiter!(u, integrator, p, t + dt)
 
