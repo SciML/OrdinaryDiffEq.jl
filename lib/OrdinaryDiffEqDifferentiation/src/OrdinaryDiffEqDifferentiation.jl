@@ -25,10 +25,15 @@ import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, S
 using DiffEqBase: TimeGradientWrapper,
     UJacobianWrapper, TimeDerivativeWrapper,
     UDerivativeWrapper
-import SciMLBase: SciMLBase, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction, DAEFunction, islinear, remake, solve!, isconstant
+import SciMLBase: SciMLBase, constructorof, @set, isinplace, has_jvp, unwrapped_f,
+    DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction,
+    DAEFunction, islinear, remake, solve!, isconstant
 using SciMLBase: @set, @reset
-import SciMLOperators: SciMLOperators, IdentityOperator, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator, ScalarOperator
-import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
+import SciMLOperators: SciMLOperators, IdentityOperator, update_coefficients,
+    update_coefficients!, MatrixOperator, AbstractSciMLOperator,
+    ScalarOperator
+import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm,
+    ColoringProblem,
     ncolors, column_colors, coloring, sparsity_pattern
 import OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
@@ -41,10 +46,11 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     isnewton, _unwrap_val,
     set_new_W!, set_W_γdt!, alg_difftype, unwrap_cache, diffdir,
     get_W, isfirstcall, isfirststage, isJcurrent,
-    get_new_W_γdt_cutoff,
+    get_new_W_γdt_cutoff, isWmethod,
     TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM,
     FastConvergence, Convergence, SlowConvergence,
-    VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue, @SciMLMessage
+    VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue,
+    @SciMLMessage
 
 import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff,
     _get_fwd_tag
@@ -79,10 +85,18 @@ function get_nzval end
 function set_all_nzval! end
 
 # Provide error messages if these are called without extension
-nonzeros(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
-spzeros(args...) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
-get_nzval(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
-set_all_nzval!(A, val) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+function nonzeros(A)
+    error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+end
+function spzeros(args...)
+    error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+end
+function get_nzval(A)
+    error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+end
+function set_all_nzval!(A, val)
+    error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+end
 
 include("alg_utils.jl")
 include("linsolve_utils.jl")
