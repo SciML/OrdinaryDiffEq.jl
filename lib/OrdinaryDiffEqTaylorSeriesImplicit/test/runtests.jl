@@ -33,6 +33,9 @@ testTol = 0.2
     sim22 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = 0.5, extrapolant = :linear))
     @test sim22.𝒪est[:final]≈2 atol=testTol
 
+    sim23 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = complex(0.5, √3 / 6), extrapolant = :linear))
+    @test sim23.𝒪est[:final]≈4 atol=testTol
+
     sim31 = test_convergence(dts, prob, ImplicitTaylor(order = Val(3), μ = 0.5, extrapolant = :linear))
     @test sim31.𝒪est[:final]≈4 atol=testTol
 
