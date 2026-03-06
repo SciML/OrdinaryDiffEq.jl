@@ -10,7 +10,8 @@ import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
     perform_step!, OrdinaryDiffEqAlgorithm,
     CompositeAlgorithm, _ode_addsteps!, copyat_or_push!,
     AutoAlgSwitch, get_fsalfirstlast,
-    full_cache, DerivativeOrderNotPossibleError
+    full_cache, DerivativeOrderNotPossibleError, unwrap_alg, step_accept_controller!,
+    stepsize_controller!, get_current_adaptive_order, get_current_alg_order
 import Static: False
 import MuladdMacro: @muladd
 import FastBroadcast: @..
@@ -21,6 +22,8 @@ using TaylorDiff, Symbolics
 using TaylorDiff: make_seed, get_coefficient, append_coefficient, flatten
 import SciMLBase: @def, unwrapped_f
 import OrdinaryDiffEqCore
+using FunctionWrappers
+import FunctionWrappers: FunctionWrapper
 
 using Reexport
 @reexport using SciMLBase
@@ -62,6 +65,6 @@ PrecompileTools.@compile_workload begin
     solver_list = nothing
 end
 
-export ExplicitTaylor2, ExplicitTaylor, DAETS
+export ExplicitTaylor2, ExplicitTaylor, ExplicitTaylorAdaptiveOrder
 
 end
