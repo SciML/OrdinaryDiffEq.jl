@@ -81,7 +81,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitTaylorCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; μ, κ, tmp, atmp, ηold, propagator, d_propagator, linsolve, ut, J) = cache
+    (; μ, κ, tmp, atmp, ηold, propagator, d_propagator, linsolve, J, uintermediate) = cache
     alg = unwrap_alg(integrator, true)
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     (; maxiters) = alg
@@ -95,15 +95,17 @@ end
     fail_convergence = true
     iter = 0
     dw = linsolve.u
+    uintermediate .= u
     while iter < maxiters
         iter += 1
         integrator.stats.nnonliniter += 1
-        # calculate residuals and Jacobian
-        propagator(ut, u, tc, -μ * dt)
-        tmp .= ut .- uprev
+        # calculate rhs and Jacobian
+        # tmp holds the rhs of the linear system
+        propagator(tmp, uintermediate, tc, -μ * dt)
+        tmp .-= uprev
         needfactor = iter == 1
         if needfactor
-            d_propagator(J, u, tc, -μ * dt)
+            d_propagator(J, uintermediate, tc, -μ * dt)
             A = J
         else
             A = nothing
@@ -114,10 +116,10 @@ end
 
         # compute norm of residuals
         iter > 1 && (ndwprev = ndw)
-        calculate_residuals!(atmp, dw, uprev, u, abstol, reltol, internalnorm, t)
+        calculate_residuals!(atmp, dw, uprev, uintermediate, abstol, reltol, internalnorm, t)
         ndw = internalnorm(atmp, t)
 
-        u .-= reshape(dw, size(u))
+        uintermediate .-= reshape(dw, size(uintermediate))
         # check divergence (not in initial step)
         if iter > 1
             θ = ndw / ndwprev
@@ -144,8 +146,10 @@ end
     cache.iter = iter
 
     if μ != one(μ)
-        propagator(ut, u, tc, (1 - μ) * dt)
-        u .= ut
+        propagator(tmp, uintermediate, tc, (1 - μ) * dt)
+        u .= real.(tmp)
+    else
+        u .= real.(uintermediate)
     end
     # step_limiter!(u, integrator, p, t + dt)
 
@@ -162,7 +166,7 @@ end
         c = 7 / 12 # default correction factor in SPICE (LTE overestimated by DD)
         r = c * dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-        @.. broadcast = false tmp = r * integrator.opts.internalnorm(
+        @.. tmp = r * integrator.opts.internalnorm(
             (u - uprev) / dt1 -
                 (uprev - uprev2) / dt2, t
         )
