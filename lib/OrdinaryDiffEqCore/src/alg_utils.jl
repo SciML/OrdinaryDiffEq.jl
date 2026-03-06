@@ -188,6 +188,8 @@ isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+isdtchangeable(alg) = true
 
 ismultistep(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
@@ -195,11 +197,15 @@ ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
 isadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
 isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+isadaptive(alg) = false
 
 has_special_newton_error(alg) = false
 
 anyadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = isadaptive(alg)
 anyadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = any(isadaptive, alg.algs)
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+anyadaptive(alg) = isadaptive(alg)
 
 has_dtnew_modification(alg) = false
 dtnew_modification(integrator, alg, dtnew) = dtnew
@@ -219,9 +225,13 @@ function qmin_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return isadaptive(alg) ? 1 // 5 : 0
 end
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+qmin_default(alg) = 1 // 5
 
 qmax_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+qmax_default(alg) = 10
 
 function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
     return alg isa Union{
@@ -380,6 +390,8 @@ end
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+alg_extrapolates(alg) = false
 function alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     error("Order is not defined for this algorithm")
 end
@@ -493,11 +505,16 @@ function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return isadaptive(alg) ? 9 // 10 : 0
 end
 gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+gamma_default(alg) = isadaptive(alg) ? 9 // 10 : 0
 
 fac_default_gamma(alg) = false
 
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 qsteady_max_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
+# Generic fallbacks for non-ODE algorithms (SDE, RODE) calling __init
+qsteady_min_default(alg) = 1
+qsteady_max_default(alg) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6 // 5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 // 1 : 0

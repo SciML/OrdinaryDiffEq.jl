@@ -21,11 +21,32 @@ function SciMLBase.__init(
             SciMLBase.AbstractODEProblem,
             SciMLBase.AbstractDAEProblem,
             SciMLBase.AbstractRODEProblem,
+            SciMLBase.AbstractJumpProblem,
         },
         alg::Union{
-            OrdinaryDiffEqAlgorithm, DAEAlgorithm,
-            SciMLBase.AbstractRODEAlgorithm, SciMLBase.AbstractSDEAlgorithm,
+            OrdinaryDiffEqAlgorithm,
+            DAEAlgorithm,
+            StochasticDiffEqAlgorithm,
+            StochasticDiffEqRODEAlgorithm,
         },
+        timeseries_init = (),
+        ts_init = (),
+        ks_init = ();
+        kwargs...
+    )
+    _ode_init(prob, alg, timeseries_init, ts_init, ks_init; kwargs...)
+end
+
+"""
+    _ode_init(prob, alg, timeseries_init=(), ts_init=(), ks_init=(); kwargs...)
+
+Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
+separated from `__init` so that SDE packages can call it directly, bypassing
+method dispatch (which would otherwise re-enter SDE's more specific `__init`).
+"""
+function _ode_init(
+        prob,
+        alg,
         timeseries_init = (),
         ts_init = (),
         ks_init = ();
@@ -85,7 +106,7 @@ function SciMLBase.__init(
         initializealg = DefaultInit(),
         rng = nothing,
         # SDE/RODE fields: accepted here so that SDE packages can delegate to
-        # this __init and construct an ODEIntegrator with noise populated.
+        # _ode_init and construct an ODEIntegrator with noise populated.
         save_noise = false,
         delta = nothing,
         W = nothing,
@@ -96,6 +117,9 @@ function SciMLBase.__init(
         rate_constants = nothing,
         # Pre-built cache for SDE delegation (skip alg_cache call)
         _cache = nothing,
+        # Pre-built u/uprev for SDE delegation (cache holds references to these)
+        _u = nothing,
+        _uprev = nothing,
         seed = UInt64(0),
         kwargs...
     )
@@ -164,16 +188,8 @@ function SciMLBase.__init(
 
     t = tspan[1]
 
-    if (
-            (
-                (
-                    !(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
-                        !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
-                        !(alg isa DAEAlgorithm)
-                ) || !adaptive || !isadaptive(alg)
-            ) &&
-                isnothing(dt) && isempty(tstops)
-        ) && dt_required(alg)
+    if (!isadaptive(alg) || !adaptive) &&
+            isnothing(dt) && isempty(tstops) && dt_required(alg)
         throw(ArgumentError("Fixed timestep methods require a choice of dt or choosing the tstops"))
     end
     if !isadaptive(alg) && adaptive
@@ -272,6 +288,11 @@ function SciMLBase.__init(
     # Convert to empty Float64 array to allow initialization to proceed
     if u === nothing
         u = Float64[]
+    end
+
+    # SDE delegation: use pre-built u if provided (cache holds references to it)
+    if _u !== nothing
+        u = _u
     end
 
     if _alg isa DAEAlgorithm
@@ -470,6 +491,10 @@ function SciMLBase.__init(
         # Some algorithms do not use `uprev` explicitly. In that case, we can save
         # some memory by aliasing `uprev = u`, e.g. for "2N" low storage methods.
         uprev = u
+    end
+    # SDE delegation: use pre-built uprev if provided (cache holds references to it)
+    if _uprev !== nothing
+        uprev = _uprev
     end
     if allow_extrapolation
         uprev2 = recursivecopy(u)
