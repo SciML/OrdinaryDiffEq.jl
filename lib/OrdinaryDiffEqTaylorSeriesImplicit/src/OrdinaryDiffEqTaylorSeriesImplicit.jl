@@ -43,5 +43,5 @@ include("alg_utils.jl")
 include("TaylorSeries_caches.jl")
 include("TaylorSeries_perform_step.jl")
 
-export ImplicitTaylor1
+export ImplicitTaylor
 end
