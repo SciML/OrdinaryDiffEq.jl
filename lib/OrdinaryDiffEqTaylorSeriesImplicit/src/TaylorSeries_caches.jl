@@ -1,7 +1,7 @@
 import OrdinaryDiffEqTaylorSeries: build_jet, build_propagator
 
 @cache mutable struct ImplicitTaylorCache{
-        T, uType, propagatorType, d_propagatorType, jacobianType, rateType, uNoUnitsType, F1, Tol, StepLimiter,
+        T, uType, propagatorType, d_propagatorType, jacobianType, uIntermediateType, rateType, uNoUnitsType, F1, Tol, StepLimiter,
     } <:
     OrdinaryDiffEqMutableCache
     μ::T
@@ -10,10 +10,10 @@ import OrdinaryDiffEqTaylorSeries: build_jet, build_propagator
     u::uType
     uprev::uType
     uprev2::uType
-    ut::uType
     J::jacobianType
     utilde::uType
-    tmp::uType
+    uintermediate::uIntermediateType
+    tmp::uIntermediateType
     atmp::uNoUnitsType
     fsalfirst::rateType
     linsolve::F1
@@ -35,16 +35,19 @@ function alg_cache(
     _, propagator = propagator_all
     _, d_propagator = d_propagator_all
     fsalfirst = zero(rate_prototype)
-    atmp = similar(u, uEltypeNoUnits)
+    atmp = similar(u, promote_type(uEltypeNoUnits, typeof(alg.μ)))
     recursivefill!(atmp, false)
     utilde = zero(u)
-    tmp = zero(u)
     uToltype = constvalue(uBottomEltypeNoUnits)
-    ut = zero(u)
+    promoted_eltype = promote_type(eltype(u), typeof(alg.μ))
 
+    tmp = similar(u, promoted_eltype)
+    uintermediate = similar(u, promoted_eltype)
+    tmp_vec = _vec(tmp)
+    linsolve_u0 = copy(tmp_vec)
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
-    J = ArrayInterface.zeromatrix(_vec(u))
-    linprob = LinearProblem(J, _vec(tmp); u0 = _vec(copy(u)))
+    J = ArrayInterface.zeromatrix(tmp_vec)
+    linprob = LinearProblem(J, tmp_vec; u0 = linsolve_u0)
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true)
@@ -55,7 +58,7 @@ function alg_cache(
     status = Convergence
 
     return ImplicitTaylorCache(
-        alg.μ, propagator, d_propagator, u, uprev, uprev2, ut, J, utilde, tmp, atmp, fsalfirst, linsolve,
+        alg.μ, propagator, d_propagator, u, uprev, uprev2, J, utilde, uintermediate, tmp, atmp, fsalfirst, linsolve,
         κ, ηold, status, iter, alg.step_limiter!
     )
 end
