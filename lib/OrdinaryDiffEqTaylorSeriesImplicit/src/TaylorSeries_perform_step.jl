@@ -7,20 +7,22 @@ function initialize!(integrator, cache::ImplicitTaylorConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
-function initialize!(integrator, cache::ImplicitTaylorMutableCache)
+function initialize!(integrator, cache::ImplicitTaylorCache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
-@muladd function perform_step!(integrator, cache::ImplicitTaylor1ConstantCache,
-        repeat_step = false)
+@muladd function perform_step!(
+        integrator, cache::ImplicitTaylorConstantCache,
+        repeat_step = false
+    )
     (; t, dt, uprev, u, f, p) = integrator
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
@@ -53,9 +55,11 @@ end
         r = c * dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
         tmp = r *
-              integrator.opts.internalnorm.((u - uprev) / dt1 - (uprev - uprev2) / dt2, t)
-        atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.internalnorm.((u - uprev) / dt1 - (uprev - uprev2) / dt2, t)
+        atmp = calculate_residuals(
+            tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     else
         integrator.EEst = 1
@@ -65,7 +69,7 @@ end
 
     if integrator.opts.adaptive && integrator.differential_vars !== nothing
         atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
-                  integrator.opts.abstol
+            integrator.opts.abstol
         integrator.EEst += integrator.opts.internalnorm(atmp, t)
     end
 
@@ -75,20 +79,15 @@ end
     integrator.u = u
 end
 
-@muladd function perform_step!(integrator, cache::ImplicitTaylor1Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::ImplicitTaylorCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; μ, κ, tmp, atmp, ηold, propagator, d_propagator, linsolve) = cache
+    (; μ, κ, tmp, atmp, ηold, propagator, d_propagator, linsolve, ut, J) = cache
     alg = unwrap_alg(integrator, true)
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     (; maxiters) = alg
 
-    # the reshape might be moved to build_jet
-    nlf = (u_next_vec) -> begin
-        u_next = reshape(u_next_vec, size(uprev))
-        ut_vec = propagator(u_next, t + μ * dt, -μ * dt)
-        ut = reshape(ut_vec, size(uprev))
-        _vec(ut .- uprev)
-    end
+    # expansion center
+    tc = t + μ * dt
 
     # Newton iteration
     local ndw
@@ -99,15 +98,17 @@ end
     while iter < maxiters
         iter += 1
         integrator.stats.nnonliniter += 1
-        # evaluate function
-        tmp .= reshape(nlf(_vec(u)), size(tmp))
-        #@show tmp
-        needfactor = iter == 1 # && newW once we aren't using ForwardDiff
-        A =  needfactor ? d_propagator(_vec(u), t + μ * dt, -μ * dt) : nothing
-        needfactor && @assert A isa Matrix
-        linres = dolinsolve(integrator, linsolve; A, b = _vec(tmp),
-            linu = _vec(dw))
-        #@show dw
+        # calculate residuals and Jacobian
+        propagator(ut, u, tc, -μ * dt)
+        tmp .= ut .- uprev
+        needfactor = iter == 1
+        if needfactor
+            d_propagator(J, u, tc, -μ * dt)
+            A = J
+        else
+            A = nothing
+        end
+        linres = dolinsolve(integrator, linsolve; A, b = _vec(tmp), linu = dw)
         cache.linsolve = linres.cache
         integrator.stats.nsolve += 1
 
@@ -143,8 +144,7 @@ end
     cache.iter = iter
 
     if μ != one(μ)
-        ut_vec = propagator(u, t + μ * dt, (1 - μ) * dt)
-        ut = reshape(ut_vec, size(u))
+        propagator(ut, u, tc, (1 - μ) * dt)
         u .= ut
     end
     # step_limiter!(u, integrator, p, t + dt)
@@ -162,11 +162,14 @@ end
         c = 7 / 12 # default correction factor in SPICE (LTE overestimated by DD)
         r = c * dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-        @.. broadcast=false tmp=r * integrator.opts.internalnorm(
+        @.. broadcast = false tmp = r * integrator.opts.internalnorm(
             (u - uprev) / dt1 -
-            (uprev - uprev2) / dt2, t)
-        calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
+                (uprev - uprev2) / dt2, t
+        )
+        calculate_residuals!(
+            atmp, tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     else
         integrator.EEst = 1

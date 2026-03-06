@@ -21,12 +21,21 @@ testTol = 0.2
 
     dts = 1 .// 2 .^ (9:-1:5)
 
-    μ = 1.0
-
-    # sol = solve(prob, ImplicitTaylor1(μ = μ, extrapolant = :linear))
-
-    # @show sol.stats
-
-    sim11 = test_convergence(dts, prob, ImplicitTaylor1(μ = μ, extrapolant = :linear))
+    sim11 = test_convergence(dts, prob, ImplicitTaylor(μ = 1.0, extrapolant = :linear))
     @test sim11.𝒪est[:final]≈1 atol=testTol
+
+    sim12 = test_convergence(dts, prob, ImplicitTaylor(μ = 0.5, extrapolant = :linear))
+    @test sim12.𝒪est[:final]≈2 atol=testTol
+
+    sim21 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = 1.0, extrapolant = :linear))
+    @test sim21.𝒪est[:final]≈2 atol=testTol
+
+    sim22 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = 0.5, extrapolant = :linear))
+    @test sim22.𝒪est[:final]≈2 atol=testTol
+
+    sim31 = test_convergence(dts, prob, ImplicitTaylor(order = Val(3), μ = 0.5, extrapolant = :linear))
+    @test sim31.𝒪est[:final]≈4 atol=testTol
+
+    sim41 = test_convergence(dts, prob, ImplicitTaylor(order = Val(4), μ = 0.5, extrapolant = :linear))
+    @test sim41.𝒪est[:final]≈4 atol=testTol
 end
