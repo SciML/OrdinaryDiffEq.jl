@@ -1,5 +1,5 @@
-alg_extrapolates(alg::ImplicitTaylor1) = true
+alg_extrapolates(::ImplicitTaylor) = true
 
-alg_order(alg::ImplicitTaylor1) = 1
+alg_order(::ImplicitTaylor{P}) where {P} = P
 
-alg_adaptive_order(alg::ImplicitTaylor1) = 0
+alg_adaptive_order(::ImplicitTaylor) = 0
