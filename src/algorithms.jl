@@ -1,10 +1,7 @@
-abstract type StochasticDiffEqAlgorithm <: AbstractSDEAlgorithm end
-abstract type StochasticDiffEqAdaptiveAlgorithm <: StochasticDiffEqAlgorithm end
-abstract type StochasticDiffEqCompositeAlgorithm <: StochasticDiffEqAlgorithm end
-
-abstract type StochasticDiffEqRODEAlgorithm <: AbstractRODEAlgorithm end
-abstract type StochasticDiffEqRODEAdaptiveAlgorithm <: StochasticDiffEqRODEAlgorithm end
-abstract type StochasticDiffEqRODECompositeAlgorithm <: StochasticDiffEqRODEAlgorithm end
+# Abstract types are defined in OrdinaryDiffEqCore and imported via StochasticDiffEq.jl:
+# StochasticDiffEqAlgorithm, StochasticDiffEqAdaptiveAlgorithm,
+# StochasticDiffEqCompositeAlgorithm, StochasticDiffEqRODEAlgorithm,
+# StochasticDiffEqRODEAdaptiveAlgorithm, StochasticDiffEqRODECompositeAlgorithm
 
 abstract type StochasticDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ, Controller} <:
 StochasticDiffEqAdaptiveAlgorithm end
