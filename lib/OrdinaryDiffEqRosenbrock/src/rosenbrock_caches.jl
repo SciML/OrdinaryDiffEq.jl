@@ -1,6 +1,7 @@
 abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type GenericRosenbrockMutableCache <: RosenbrockMutableCache end
 abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
+abstract type GenericRosenbrockConstantCache <: RosenbrockConstantCache end
 
 # Fake values since non-FSAL
 get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (nothing, nothing)
@@ -947,7 +948,6 @@ function get_fsalfirstlast(
         cache::Union{
             Rosenbrock23Cache, Rosenbrock32Cache, Rosenbrock33Cache,
             Rosenbrock34Cache,
-            Rosenbrock4Cache,
         },
         u
     )
@@ -959,6 +959,13 @@ end
 ### RosenbrockW6S4O
 
 @RosenbrockW6S4OS(:cache)
+
+# Accessors to get stage vectors as a tuple from generic caches
+@inline _ks(c::ROS2Cache) = (c.k1, c.k2)
+@inline _ks(c::ROS23Cache) = (c.k1, c.k2, c.k3)
+@inline _ks(c::ROS34PWCache) = (c.k1, c.k2, c.k3, c.k4)
+@inline _ks(c::Rosenbrock4Cache) = (c.k1, c.k2, c.k3, c.k4)
+@inline _ks(c::RosenbrockW6SCache) = (c.k1, c.k2, c.k3, c.k4, c.k5, c.k6)
 
 ################################################################################
 
