@@ -17,12 +17,12 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
-    if: false
+    if: true
     runs-on: ubuntu-latest
     strategy:
       matrix:
         downgrade_mode: ['alldeps']
-        julia-version: ['1.11']
+        julia-version: ['1.12']
         group: ['InterfaceI']
     steps:
       - uses: actions/checkout@v6
@@ -31,11 +31,13 @@ jobs:
           version: ${{ matrix.julia-version }}
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
-          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils
+          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation
+          mode: ${{ matrix.downgrade_mode }}
           julia_version: ${{ matrix.julia-version }}
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
-          ALLOW_RERESOLVE: false
+          allow_reresolve: false
+          force_latest_compatible_version: false
         env:
           GROUP: ${{ matrix.group }}
