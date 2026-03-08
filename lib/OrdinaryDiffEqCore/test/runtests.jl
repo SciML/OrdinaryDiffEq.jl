@@ -10,3 +10,4 @@ end
 
 # Functional tests
 @time @safetestset "Sparse isdiag Performance" include("sparse_isdiag_tests.jl")
+@time @safetestset "DynamicQuantities + Measurements" include("dynamicquantities_measurements.jl")
