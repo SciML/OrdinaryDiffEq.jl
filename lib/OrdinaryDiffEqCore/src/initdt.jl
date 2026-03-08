@@ -12,7 +12,7 @@
     )
     f = prob.f
     p = integrator.p
-    oneunit_tType = oneunit(_tType)
+    oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
     dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
@@ -312,7 +312,7 @@ end
     )
     f = prob.f
     p = prob.p
-    oneunit_tType = oneunit(_tType)
+    oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
     dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))

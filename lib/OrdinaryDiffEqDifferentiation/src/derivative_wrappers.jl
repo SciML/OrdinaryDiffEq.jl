@@ -124,14 +124,38 @@ function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where {F}
         autodiff_alg = dense
     end
 
-    if integrator.iter == 1
-        try
-            jac = DI.jacobian(f, autodiff_alg, x)
-        catch e
-            throw(FirstAutodiffJacError(e))
+    if autodiff_alg isa AutoFiniteDiff && x isa AbstractArray && !isempty(x)
+        # For some scalar-like types (notably runtime-unit quantities), FiniteDiff’s
+        # step-size selection mixes a dimensionless `relstep` with a dimensionful state
+        # `x[i]`, triggering DimensionErrors in `max(relstep*abs(x[i]), absstep)`.
+        # Work around this by differentiating w.r.t. primitive values and rescaling.
+        U = oneunit.(x)
+        vx = SciMLBase.value.(x)
+        f_scaled(v) = f(U .* v)
+
+        if integrator.iter == 1
+            try
+                jac = DI.jacobian(f_scaled, autodiff_alg, vx)
+            catch e
+                throw(FirstAutodiffJacError(e))
+            end
+        else
+            jac = DI.jacobian(f_scaled, autodiff_alg, vx)
+        end
+
+        @inbounds for j in axes(jac, 2)
+            jac[:, j] ./= U[j]
         end
     else
-        jac = DI.jacobian(f, autodiff_alg, x)
+        if integrator.iter == 1
+            try
+                jac = DI.jacobian(f, autodiff_alg, x)
+            catch e
+                throw(FirstAutodiffJacError(e))
+            end
+        else
+            jac = DI.jacobian(f, autodiff_alg, x)
+        end
     end
 
     return jac
