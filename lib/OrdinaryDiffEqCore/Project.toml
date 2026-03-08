@@ -107,7 +107,7 @@ Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "Test", "Pkg", "DynamicQuantities", "Measurements", "OrdinaryDiffEqTsit5"]
+test = ["DiffEqDevTools", "SafeTestsets", "SparseArrays", "Test", "Pkg", "DynamicQuantities", "Measurements", "OrdinaryDiffEqTsit5"]
 
 [extensions]
 OrdinaryDiffEqCoreMooncakeExt = "Mooncake"

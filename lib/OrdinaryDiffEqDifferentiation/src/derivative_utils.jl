@@ -16,58 +16,31 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 
                 autodiff_alg = ADTypes.dense_ad(gpu_safe_autodiff(alg_autodiff(alg), u))
 
-                # If `t` isn't dual-able by ForwardDiff (e.g. some unitful scalar types),
-                # differentiate w.r.t. its underlying primitive value and rescale.
-                # This avoids constructing `Dual{...,t}`.
-                vt = SciMLBase.value(t)
-                is_forwarddiff_backend = autodiff_alg isa AutoForwardDiff ||
-                    (autodiff_alg isa DI.AutoForwardFromPrimitive && autodiff_alg.backend isa AutoForwardDiff)
+                # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers work
+                t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT), t) : t
 
-                # If `t` isn’t directly differentiable by the backend (ForwardDiff can’t dualize it,
-                # or FiniteDiff would mix dimensionless `relstep` with dimensionful `absstep` at t=0),
-                # differentiate w.r.t. the primitive value `vt = value(t)` and rescale.
-                if (is_forwarddiff_backend && !ForwardDiff.can_dual(typeof(t)) && vt isa Real) ||
-                        (autodiff_alg isa AutoFiniteDiff && vt isa Real && typeof(vt) != typeof(t))
-                    ut = oneunit(t)
-                    tf_scaled!(y, τ) = tf(y, τ * ut)
-                    if integrator.iter == 1
-                        try
-                            DI.derivative!(tf_scaled!, linsolve_tmp, dT, autodiff_alg, vt)
-                        catch e
-                            throw(FirstAutodiffTgradError(e))
-                        end
-                    else
-                        DI.derivative!(tf_scaled!, linsolve_tmp, dT, autodiff_alg, vt)
-                    end
-                    dT ./= ut
-                    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+                grad_config_tup = cache.grad_config
+
+                if autodiff_alg isa AutoFiniteDiff
+                    grad_config = diffdir(integrator) > 0 ? grad_config_tup[1] :
+                        grad_config_tup[2]
                 else
-                    # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers work
-                    t = autodiff_alg isa AutoForwardDiff ? convert(eltype(dT), t) : t
-
-                    grad_config_tup = cache.grad_config
-
-                    if autodiff_alg isa AutoFiniteDiff
-                        grad_config = diffdir(integrator) > 0 ? grad_config_tup[1] :
-                            grad_config_tup[2]
-                    else
-                        grad_config = grad_config_tup[1]
-                    end
-
-                    if integrator.iter == 1
-                        try
-                            DI.derivative!(
-                                tf, linsolve_tmp, dT, grad_config, autodiff_alg, t
-                            )
-                        catch e
-                            throw(FirstAutodiffTgradError(e))
-                        end
-                    else
-                        DI.derivative!(tf, linsolve_tmp, dT, grad_config, autodiff_alg, t)
-                    end
-
-                    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+                    grad_config = grad_config_tup[1]
                 end
+
+                if integrator.iter == 1
+                    try
+                        DI.derivative!(
+                            tf, linsolve_tmp, dT, grad_config, autodiff_alg, t
+                        )
+                    catch e
+                        throw(FirstAutodiffTgradError(e))
+                    end
+                else
+                    DI.derivative!(tf, linsolve_tmp, dT, grad_config, autodiff_alg, t)
+                end
+
+                OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             end
         end
 
@@ -92,33 +65,14 @@ function calc_tderivative(integrator, cache)
             autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
         end
 
-        vt = SciMLBase.value(t)
-        is_forwarddiff_backend = autodiff_alg isa AutoForwardDiff ||
-            (autodiff_alg isa DI.AutoForwardFromPrimitive && autodiff_alg.backend isa AutoForwardDiff)
-
-        if (is_forwarddiff_backend && !ForwardDiff.can_dual(typeof(t)) && vt isa Real) ||
-                (autodiff_alg isa AutoFiniteDiff && vt isa Real && typeof(vt) != typeof(t))
-            ut = oneunit(t)
-            tf_scaled(τ) = tf(τ * ut)
-            if integrator.iter == 1
-                try
-                    dT = DI.derivative(tf_scaled, autodiff_alg, vt) ./ ut
-                catch e
-                    throw(FirstAutodiffTgradError(e))
-                end
-            else
-                dT = DI.derivative(tf_scaled, autodiff_alg, vt) ./ ut
+        if integrator.iter == 1
+            try
+                dT = DI.derivative(tf, autodiff_alg, t)
+            catch e
+                throw(FirstAutodiffTgradError(e))
             end
         else
-            if integrator.iter == 1
-                try
-                    dT = DI.derivative(tf, autodiff_alg, t)
-                catch e
-                    throw(FirstAutodiffTgradError(e))
-                end
-            else
-                dT = DI.derivative(tf, autodiff_alg, t)
-            end
+            dT = DI.derivative(tf, autodiff_alg, t)
         end
 
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -972,30 +926,7 @@ function build_J_W(
         elseif J isa StaticMatrix
             StaticWOperator(J, false)
         else
-            # For unitful eltypes (e.g. DynamicQuantities quantities), the downstream
-            # `calc_W` path uses `DiffEqBase.default_factorize(W)` which returns a
-            # wrapper factorization type. Seed the cache with the same factorization
-            # type to avoid type-instability / assignment conversion errors.
-            # Heuristic: DynamicQuantities quantity eltypes intentionally do not
-            # define `zero(::Type{<:Quantity})` (dimensions unknown at type-level).
-            # In that case, seed W using `default_factorize` so the cache type matches
-            # what `calc_W` will later produce.
-            unitful_eltype = try
-                zero(eltype(J))
-                false
-            catch
-                true
-            end
-            if unitful_eltype
-                # Seed an instance whose unit metadata matches the W/J matrices in
-                # Rosenbrock/SDIRK methods (units ~ 1/time). We only need the *type*
-                # here; the actual factorization is computed later in `calc_W`.
-                Aproto = Matrix{eltype(J)}(undef, 1, 1)
-                Aproto[1] = inv(oneunit(t))
-                DiffEqBase.default_factorize(Aproto)
-            else
-                ArrayInterface.lu_instance(J)
-            end
+            ArrayInterface.lu_instance(J)
         end
     end
     return J, W
