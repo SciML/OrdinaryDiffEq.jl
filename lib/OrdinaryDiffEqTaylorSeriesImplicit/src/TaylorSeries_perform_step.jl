@@ -84,7 +84,7 @@ end
     (; μ, κ, tmp, atmp, ηold, propagator, d_propagator, linsolve, J, uintermediate) = cache
     alg = unwrap_alg(integrator, true)
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
-    (; maxiters) = alg
+    (; maxiters, real_function) = alg
 
     # expansion center
     tc = t + μ * dt
@@ -147,9 +147,14 @@ end
 
     if μ != one(μ)
         propagator(tmp, uintermediate, tc, (1 - μ) * dt)
-        u .= real.(tmp)
+        if real_function
+            u .= real.(tmp)
+        else
+            u .= tmp # should be automatically converted with convert(eltype(u), tmp)
+        end
     else
-        u .= real.(uintermediate)
+        @assert isreal(μ) # using 1.0+0.0im does not make any sense
+        u .= uintermediate
     end
     # step_limiter!(u, integrator, p, t + dt)
 
