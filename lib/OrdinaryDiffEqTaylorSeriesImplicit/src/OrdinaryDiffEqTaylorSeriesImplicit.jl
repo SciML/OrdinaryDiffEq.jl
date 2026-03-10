@@ -1,20 +1,20 @@
 module OrdinaryDiffEqTaylorSeriesImplicit
 
-import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-                           initialize!, perform_step!, unwrap_alg,
-                           calculate_residuals, alg_extrapolates,
-                           OrdinaryDiffEqAlgorithm,
-                           OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-                           OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-                           OrdinaryDiffEqNewtonAlgorithm,
-                           DEFAULT_PRECS,
-                           OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
-                           alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-                           constvalue, _unwrap_val, _ode_interpolant,
-                           trivial_limiter!, _ode_interpolant!,
-                           isesdirk, issplit,
-                           ssp_coefficient, get_fsalfirstlast, generic_solver_docstring,
-                           _bool_to_ADType, _process_AD_choice
+import OrdinaryDiffEqCore: alg_order, alg_autodiff, calculate_residuals!,
+    initialize!, perform_step!, unwrap_alg,
+    calculate_residuals, alg_extrapolates,
+    OrdinaryDiffEqAlgorithm,
+    OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+    OrdinaryDiffEqNewtonAlgorithm,
+    DEFAULT_PRECS,
+    OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
+    alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
+    constvalue, _unwrap_val, _ode_interpolant,
+    trivial_limiter!, _ode_interpolant!,
+    isesdirk, issplit,
+    ssp_coefficient, get_fsalfirstlast, generic_solver_docstring,
+    _bool_to_ADType, _process_AD_choice
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction
 using LinearAlgebra: mul!, I
@@ -22,11 +22,11 @@ import OrdinaryDiffEqCore
 
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, dolinsolve
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlsolver,
-                                    nlsolve!, nlsolvefail, isnewton, get_W, set_new_W!,
-                                    NLNewton, COEFFICIENT_MULTISTEP, Convergence,
-                                    FastConvergence, NLStatus,
-                                    VerySlowConvergence,
-                                    Divergence, get_new_W_γdt_cutoff
+    nlsolve!, nlsolvefail, isnewton, get_W, set_new_W!,
+    NLNewton, COEFFICIENT_MULTISTEP, Convergence,
+    FastConvergence, NLStatus,
+    VerySlowConvergence,
+    Divergence, get_new_W_γdt_cutoff
 import ADTypes: AutoForwardDiff
 using FunctionWrappers
 import FunctionWrappers: FunctionWrapper
