@@ -164,8 +164,10 @@ integrator = init(
     @test SciMLBase.successful_retcode(integ.sol.retcode)
     reinit!(integ, reinit_dae = false)
     @test integ.u ≈ [2.0, 0.0]
-    # @test_warn doesn't properly capture LazyString warnings from SciMLBase
-    # Just verify that step! runs (it will fail with Unstable retcode due to violated DAE constraint)
+    # With reinit_dae=false the algebraic constraint u[1]^2 - u[2]^2 = 0 is violated.
+    # Rosenbrock methods (Rodas5P) linearize and don't iterate, so the step succeeds
+    # but the constraint remains violated — u[2] stays near 0 instead of tracking u[1].
     step!(integ, 0.01, true)
-    @test integ.sol.retcode == ReturnCode.Unstable
+    @test abs(integ.u[2]) < 1e-10  # u[2] stuck near 0, not reinitialized
+    @test abs(integ.u[1]) > 1.5    # u[1] still evolving
 end
