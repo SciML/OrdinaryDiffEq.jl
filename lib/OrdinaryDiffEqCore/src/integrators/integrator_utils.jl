@@ -179,7 +179,7 @@ function modify_dt_for_tstops!(integrator)
 
         if integrator.opts.adaptive
             original_dt = abs(integrator.dt)
-            integrator.dtpropose = original_dt
+            integrator.dtpropose = integrator.tdir * original_dt
             if original_dt < distance_to_tstop
                 _set_tstop_flag!(integrator, false)
             else
