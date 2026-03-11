@@ -164,6 +164,7 @@ function DiffEqBase.__init(
         progress_message = ODE_DEFAULT_PROG_MESSAGE,
         progress_id = :StochasticDiffEq,
         userdata = nothing,
+        save_discretes = true,
         initialize_integrator = true,
         seed = UInt64(0),
         rng = nothing,
@@ -794,7 +795,7 @@ function DiffEqBase.__init(
         timeseries_errors, dense_errors,
         convert.(uBottomEltypeNoUnits, delta),
         dense, save_on, save_start,
-        save_end, save_noise, false, save_end_user,
+        save_end, save_noise, save_discretes, save_end_user,
         callbacks_internal, isoutofdomain, unstable_check,
         verbose_internal, calck, force_dtmin,
         advance_to_tstop, stop_at_next_tstop

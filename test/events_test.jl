@@ -189,3 +189,16 @@ using Random
     diffs_saveat = diff(phase_saveat)
     @test all(abs.(diffs_saveat) .< 10 * expected_std)
 end
+
+###
+# Test that save_discretes defaults to true for SDE integrators,
+# matching ODE behavior.
+###
+
+@testset "save_discretes defaults to true" begin
+    f_sd(u, p, t) = 0.5u
+    g_sd(u, p, t) = 0.1u
+    sprob = SDEProblem(f_sd, g_sd, 1.0, (0.0, 1.0))
+    si = init(sprob, ImplicitEM(); dt = 0.01)
+    @test si.opts.save_discretes == true
+end
