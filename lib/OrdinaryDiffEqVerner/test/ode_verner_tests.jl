@@ -128,3 +128,50 @@ println("RKV76IIa")
 dts = [2, 1, 0.5, 0.25]
 
 check_convergence(dts, prob_oop, RKV76IIa(), 7)
+
+# -------------------------------------------------------------
+### Backward solve lazy interpolation dt sign regression test
+# Tests that lazy interpolation during a backward solve produces correct results.
+# Previously, modify_dt_for_tstops! stored dtpropose without the sign, causing
+# addsteps! to evaluate at times outside the step interval on the last step.
+println("Backward solve lazy interpolation")
+
+function backward_ode!(du, u, p, t)
+    du[1] = -u[1]
+    du[2] = -2 * u[2]
+end
+
+prob_back = ODEProblem(backward_ode!, [1.0, 1.0], (1.0, 0.0))
+
+interp_lazy = Float64[]
+interp_nolazy = Float64[]
+
+cb_lazy = DiscreteCallback(
+    (u, t, int) -> true,
+    integrator -> begin
+        t_mid = (integrator.tprev + integrator.t) / 2
+        curu = similar(integrator.u)
+        integrator(curu, t_mid)
+        push!(interp_lazy, curu[1])
+        u_modified!(integrator, false)
+    end,
+    save_positions = (false, false))
+
+cb_nolazy = DiscreteCallback(
+    (u, t, int) -> true,
+    integrator -> begin
+        t_mid = (integrator.tprev + integrator.t) / 2
+        curu = similar(integrator.u)
+        integrator(curu, t_mid)
+        push!(interp_nolazy, curu[1])
+        u_modified!(integrator, false)
+    end,
+    save_positions = (false, false))
+
+solve(prob_back, Vern9(lazy = true), abstol = 1e-12, reltol = 1e-12,
+    callback = cb_lazy, save_everystep = false)
+solve(prob_back, Vern9(lazy = false), abstol = 1e-12, reltol = 1e-12,
+    callback = cb_nolazy, save_everystep = false)
+
+@test length(interp_lazy) == length(interp_nolazy)
+@test maximum(abs.(interp_lazy .- interp_nolazy)) < 1e-10
