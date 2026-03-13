@@ -166,17 +166,18 @@ because in the end of Rosenbrock's method, we have: `y_{n+1}=y_n+ki*bi`.
 """
 function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachename::Symbol)
     kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
-    constcacheexpr=quote struct $constcachename{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCache
+    constcacheexpr=quote struct $constcachename{TF,UF,Tab,JType,WType,F,JRType} <: OrdinaryDiffEqConstantCache
             tf::TF
             uf::UF
             tab::Tab
             J::JType
             W::WType
             linsolve::F
+            jac_reuse::JRType
         end
     end
     cacheexpr=quote
-        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: GenericRosenbrockMutableCache
+        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType,JRType} <: GenericRosenbrockMutableCache
             u::uType
             uprev::uType
             du::rateType
@@ -198,6 +199,7 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
             linsolve::F
             jac_config::JCType
             grad_config::GCType
+            jac_reuse::JRType
         end
     end
     constcacheexpr,cacheexpr
@@ -228,7 +230,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tf = TimeDerivativeWrapper(f,u,p)
             uf = UDerivativeWrapper(f,t,p)
             J,W = build_J_W(alg,u,uprev,p,t,dt,f, nothing, uEltypeNoUnits,Val(false))
-            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,nothing)
+            jac_reuse = JacReuseState(zero(dt))
+            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,nothing,jac_reuse)
         end
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}, verbose)
             du = zero(rate_prototype)
@@ -246,7 +249,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tf = TimeGradientWrapper(f,uprev,p)
             uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
-            
+
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
             J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
@@ -255,7 +258,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             linsolve = init(linprob,alg.linsolve,alias = LinearAliasSpecifier(alias_A=true,alias_b=true),
                             Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
                             Pr = Diagonal(_vec(weight)),
-                            verbose = verbose.linear_verbosity) 
+                            verbose = verbose.linear_verbosity)
+            jac_reuse = JacReuseState(zero(dt))
             $cachename($(valsyms...))
         end
     end
@@ -359,12 +363,9 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
 
             mass_matrix = integrator.f.mass_matrix
 
-            # Time derivative
-            tf.u = uprev
-            dT = calc_tderivative(integrator, cache)
-
-            W = calc_W(integrator, cache, dtgamma, repeat_step)
-            linsolve_tmp = integrator.fsalfirst + dtd1*dT #calc_rosenbrock_differentiation!
+            # Time derivative and W (with Jacobian reuse for W-methods)
+            dT, W = calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
+            linsolve_tmp = integrator.fsalfirst + dtd1*dT
 
             $(iterexprs...)
 

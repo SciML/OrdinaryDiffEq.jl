@@ -33,7 +33,10 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, opts) = integrator
-    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
+    (;
+        k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf,
+        linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!,
+    ) = cache
     (; c₃₂, d) = cache.tab
 
     # Assignments
@@ -154,7 +157,10 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, opts) = integrator
-    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
+    (;
+        k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf,
+        linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!,
+    ) = cache
     (; c₃₂, d) = cache.tab
 
     # Assignments
@@ -282,10 +288,8 @@ end
 
     mass_matrix = integrator.f.mass_matrix
 
-    # Time derivative
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtγ, repeat_step)
+    # Time derivative and W (with Jacobian reuse for W-methods)
+    dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
@@ -369,10 +373,8 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
-    # Time derivative
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtγ, repeat_step)
+    # Time derivative and W (with Jacobian reuse for W-methods)
+    dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
@@ -423,7 +425,8 @@ end
 
         if mass_matrix !== I
             invatol = inv(integrator.opts.abstol)
-            atmp = ifelse(integrator.differential_vars, false, integrator.fsallast) .* invatol
+            atmp = ifelse(integrator.differential_vars, false, integrator.fsallast) .*
+                invatol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
@@ -476,7 +479,10 @@ end
     )
     (; t, dt, uprev, u, f, p) = integrator
     (; tf, uf) = cache
-    (; a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma, c2, c3, d1, d2, d3) = cache.tab
+    (;
+        a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1,
+        btilde2, btilde3, gamma, c2, c3, d1, d2, d3,
+    ) = cache.tab
 
     # Precalculations
     dtC21 = C21 / dt
@@ -548,8 +554,14 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; du, du1, du2, fsalfirst, fsallast, k1, k2, k3, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
-    (; a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma, c2, c3, d1, d2, d3) = cache.tab
+    (;
+        du, du1, du2, fsalfirst, fsallast, k1, k2, k3, dT, J, W, uf, tf,
+        linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!,
+    ) = cache
+    (;
+        a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1,
+        btilde2, btilde3, gamma, c2, c3, d1, d2, d3,
+    ) = cache.tab
 
     # Assignments
     mass_matrix = integrator.f.mass_matrix
@@ -662,7 +674,10 @@ end
     )
     (; t, dt, uprev, u, f, p) = integrator
     (; tf, uf) = cache
-    (; a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4) = cache.tab
+    (;
+        a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4,
+        btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4,
+    ) = cache.tab
 
     # Precalculations
     dtC21 = C21 / dt
@@ -749,8 +764,14 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock34Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
-    (; a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4) = cache.tab
+    (;
+        du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf,
+        linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!,
+    ) = cache
+    (;
+        a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4,
+        btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4,
+    ) = cache.tab
 
     # Assignments
     uidx = eachindex(integrator.uprev)
@@ -921,7 +942,10 @@ end
     )
     (; t, dt, uprev, u, f, p) = integrator
     (; tf, uf) = cache
-    (; a21, a41, a42, a43, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, gamma, c2, c3, d1, d2, d3) = cache.tab
+    (;
+        a21, a41, a42, a43, C21, C31, C32, C41, C42, C43, C51,
+        C52, C53, C54, gamma, c2, c3, d1, d2, d3,
+    ) = cache.tab
 
     # Precalculations
     dtC21 = C21 / dt
@@ -942,11 +966,8 @@ end
 
     mass_matrix = integrator.f.mass_matrix
 
-    # Time derivative
-    tf.u = uprev
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtgamma, repeat_step)
+    # Time derivative and W (with Jacobian reuse for W-methods)
+    dT, W = calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
@@ -1008,13 +1029,17 @@ end
 
     EEst = 0.0
     if integrator.opts.calck
-        (; h21, h22, h23, h24, h25, h31, h32, h33, h34, h35, h2_21, h2_22, h2_23, h2_24, h2_25) = cache.tab
+        (;
+            h21, h22, h23, h24, h25, h31, h32, h33, h34, h35,
+            h2_21, h2_22, h2_23, h2_24, h2_25,
+        ) = cache.tab
         integrator.k[1] = h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5
         integrator.k[2] = h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 + h35 * k5
         integrator.k[3] = h2_21 * k1 + h2_22 * k2 + h2_23 * k3 + h2_24 * k4 + h2_25 * k5
         if integrator.opts.adaptive
             if isa(linsolve_tmp, AbstractFloat)
-                u_int, u_diff = calculate_interpoldiff(
+                u_int,
+                    u_diff = calculate_interpoldiff(
                     uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3]
                 )
             else
@@ -1068,8 +1093,14 @@ end
         integrator, cache::Union{Rodas23WCache, Rodas3PCache}, repeat_step = false
     )
     (; t, dt, uprev, u, f, p) = integrator
-    (; du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
-    (; a21, a41, a42, a43, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, gamma, c2, c3, d1, d2, d3) = cache.tab
+    (;
+        du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, linsolve_tmp,
+        jac_config, atmp, weight, stage_limiter!, step_limiter!,
+    ) = cache
+    (;
+        a21, a41, a42, a43, C21, C31, C32, C41, C42, C43, C51,
+        C52, C53, C54, gamma, c2, c3, d1, d2, d3,
+    ) = cache.tab
 
     # Assignments
     sizeu = size(u)
@@ -1190,7 +1221,10 @@ end
 
     EEst = 0.0
     if integrator.opts.calck
-        (; h21, h22, h23, h24, h25, h31, h32, h33, h34, h35, h2_21, h2_22, h2_23, h2_24, h2_25) = cache.tab
+        (;
+            h21, h22, h23, h24, h25, h31, h32, h33, h34, h35,
+            h2_21, h2_22, h2_23, h2_24, h2_25,
+        ) = cache.tab
         @.. broadcast = false integrator.k[1] = h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 +
             h25 * k5
         @.. broadcast = false integrator.k[2] = h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 +
@@ -1315,11 +1349,8 @@ end
 
     mass_matrix = integrator.f.mass_matrix
 
-    # Time derivative
-    tf.u = uprev
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtgamma, repeat_step)
+    # Time derivative and W (with Jacobian reuse for W-methods)
+    dT, W = calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
@@ -1429,7 +1460,10 @@ end
 
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!) = cache
+    (;
+        du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, linsolve_tmp,
+        jac_config, atmp, weight, stage_limiter!, step_limiter!,
+    ) = cache
     (; A, C, gamma, c, d, H) = cache.tab
 
     # Assignments
