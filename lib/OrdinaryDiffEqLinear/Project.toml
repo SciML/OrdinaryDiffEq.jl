@@ -13,6 +13,11 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
+[weakdeps]
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
+
 [extras]
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
@@ -27,7 +32,7 @@ AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [compat]
-SciMLOperators = "1.4"
+SciMLOperators = "1.15"
 Pkg = "1"
 OrdinaryDiffEqTsit5 = "1.4.0"
 Test = "<0.0.1, 1"
@@ -36,17 +41,17 @@ DiffEqDevTools = "2.44.4"
 OrdinaryDiffEqVerner = "1.5.0"
 ExponentialUtilities = "1.27"
 LinearAlgebra = "1.10"
-SciMLBase = "2.116"
+SciMLBase = "2.128"
 OrdinaryDiffEqCore = "3"
 Aqua = "0.8.11"
 julia = "1.10"
 JET = "0.9, 0.11"
-RecursiveArrayTools = "3.36"
+RecursiveArrayTools = "3.37"
 AllocCheck = "0.2"
 DiffEqBase = "6.194"
 SafeTestsets = "0.1.0"
 OrdinaryDiffEqRosenbrock = "1.15.1"
-Reexport = "1.2"
+Reexport = "1.2.2"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "OrdinaryDiffEqRosenbrock", "SafeTestsets", "Test", "OrdinaryDiffEqVerner", "OrdinaryDiffEqTsit5", "Pkg"]
