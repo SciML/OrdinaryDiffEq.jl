@@ -34,7 +34,7 @@ function SciMLBase.__init(
         ks_init = ();
         kwargs...
     )
-    _ode_init(prob, alg, timeseries_init, ts_init, ks_init; kwargs...)
+    return _ode_init(prob, alg, timeseries_init, ts_init, ks_init; kwargs...)
 end
 
 """
@@ -314,7 +314,7 @@ function _ode_init(
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(one(tType))
 
-    if prob isa SciMLBase.AbstractDiscreteProblem
+    if prob isa SciMLBase.AbstractDiscreteProblem && abstol === nothing
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -334,7 +334,7 @@ function _ode_init(
         abstol_internal = real.(abstol)
     end
 
-    if prob isa SciMLBase.AbstractDiscreteProblem
+    if prob isa SciMLBase.AbstractDiscreteProblem && reltol === nothing
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -388,9 +388,9 @@ function _ode_init(
     end
 
     if tstops isa AbstractArray || tstops isa Tuple || tstops isa Number
-        _tstops = nothing
+        _tstops_cache = tstops
     else
-        _tstops = tstops
+        _tstops_cache = tstops
         tstops = ()
     end
     tstops_internal = initialize_tstops(tType, tstops, d_discontinuities, tspan)
@@ -446,7 +446,11 @@ function _ode_init(
 
     ts = ts_init === () ? tType[] : convert(Vector{tType}, ts_init)
     ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype}, ks_init)
-    alg_choice = _alg isa CompositeAlgorithm ? Int[] : nothing
+    alg_choice = (
+            _alg isa CompositeAlgorithm ||
+            _alg isa StochasticDiffEqCompositeAlgorithm ||
+            _alg isa StochasticDiffEqRODECompositeAlgorithm
+        ) ? Int[] : nothing
 
     if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
         if isnothing(dt)
@@ -607,7 +611,7 @@ function _ode_init(
         typeof(tstops_internal),
         typeof(d_discontinuities_internal), typeof(userdata),
         typeof(save_idxs),
-        typeof(maxiters), typeof(tstops),
+        typeof(maxiters), typeof(_tstops_cache),
         typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
         typeof(delta),
     }(
@@ -633,7 +637,7 @@ function _ode_init(
         save_idxs, tstops_internal,
         saveat_internal,
         d_discontinuities_internal,
-        tstops, saveat,
+        _tstops_cache, saveat,
         d_discontinuities,
         userdata, progress,
         progress_steps,
@@ -794,18 +798,17 @@ function _ode_init(
         if _alg isa OrdinaryDiffEqCompositeAlgorithm
             # in case user mixes adaptive and non-adaptive algorithms
             ensure_behaving_adaptivity!(integrator, integrator.cache)
-
-            if save_start
-                # Loop to get all of the extra possible saves in callback initialization
-                for i in 1:(integrator.saveiter)
-                    copyat_or_push!(alg_choice, i, integrator.cache.current)
-                end
+        end
+        if alg_choice !== nothing && save_start
+            # Loop to get all of the extra possible saves in callback initialization
+            for i in 1:(integrator.saveiter)
+                copyat_or_push!(alg_choice, i, integrator.cache.current)
             end
         end
     end
 
-    if _tstops !== nothing
-        tstops = _tstops(parameter_values(integrator), prob.tspan)
+    if !(_tstops_cache isa AbstractArray || _tstops_cache isa Tuple || _tstops_cache isa Number)
+        tstops = _tstops_cache(parameter_values(integrator), prob.tspan)
         for tstop in tstops
             add_tstop!(integrator, tstop)
         end
@@ -927,15 +930,26 @@ end
     return tstops_internal
 end
 
-function reinit_tstops!(::Type{T}, tstops_internal, tstops, d_discontinuities, tspan) where {T}
+function reinit_tstops!(
+        ::Type{T}, tstops_internal, tstops, d_discontinuities, tspan; p = nothing
+) where {T}
     empty!(tstops_internal)
+
+    # Evaluate callable tstops
+    _tstops = if tstops isa AbstractArray || tstops isa Tuple || tstops isa Number
+        tstops
+    elseif p !== nothing
+        tstops(p, tspan)
+    else
+        ()
+    end
 
     t0, tf = tspan
     tdir = sign(tf - t0)
     tdir_t0 = tdir * t0
     tdir_tf = tdir * tf
 
-    for t in tstops
+    for t in _tstops
         tdir_t = tdir * t
         tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end

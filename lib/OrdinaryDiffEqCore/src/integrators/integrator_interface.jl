@@ -435,7 +435,8 @@ function SciMLBase.reinit!(
 
     tType = typeof(integrator.t)
     tspan = (tType(t0), tType(tf))
-    reinit_tstops!(tType, integrator.opts.tstops, tstops, d_discontinuities, tspan)
+    reinit_tstops!(tType, integrator.opts.tstops, tstops, d_discontinuities, tspan;
+        p = parameter_values(integrator))
     reinit_saveat!(tType, integrator.opts.saveat, saveat, tspan)
     reinit_d_discontinuities!(tType, integrator.opts.d_discontinuities, d_discontinuities, tspan)
     if erase_sol
