@@ -930,15 +930,26 @@ end
     return tstops_internal
 end
 
-function reinit_tstops!(::Type{T}, tstops_internal, tstops, d_discontinuities, tspan) where {T}
+function reinit_tstops!(
+        ::Type{T}, tstops_internal, tstops, d_discontinuities, tspan; p = nothing
+) where {T}
     empty!(tstops_internal)
+
+    # Evaluate callable tstops
+    _tstops = if tstops isa AbstractArray || tstops isa Tuple || tstops isa Number
+        tstops
+    elseif p !== nothing
+        tstops(p, tspan)
+    else
+        ()
+    end
 
     t0, tf = tspan
     tdir = sign(tf - t0)
     tdir_t0 = tdir * t0
     tdir_tf = tdir * tf
 
-    for t in tstops
+    for t in _tstops
         tdir_t = tdir * t
         tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end
