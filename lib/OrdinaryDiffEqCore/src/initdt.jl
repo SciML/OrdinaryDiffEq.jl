@@ -10,7 +10,7 @@
     p = integrator.p
     oneunit_tType = oneunit(_tType)
     # a number that's about 1 that we multiply by to prevent numerical coincedences
-    arbitrary_const = oneunit_tType*(84//83)
+    arbitrary_const = oneunit_tType*(93//83)
     dtmax_tdir = tdir * dtmax
 
     dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
@@ -275,7 +275,7 @@ end
     p = prob.p
     oneunit_tType = oneunit(_tType)
     # a number that's about 1 that we multiply by to prevent numerical coincedences
-    arbitrary_const = oneunit_tType*(84//83)
+    arbitrary_const = oneunit_tType*(93//83)
     dtmax_tdir = tdir * dtmax
 
     dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
