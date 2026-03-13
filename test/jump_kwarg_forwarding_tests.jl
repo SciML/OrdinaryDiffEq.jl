@@ -6,11 +6,11 @@ using StochasticDiffEq, JumpProcesses, DiffEqBase, Test
 # --- Shared setup ---
 # Zero-drift, zero-noise SDE so u stays constant (deterministic for testing).
 function f!(du, u, p, t)
-    du[1] = 0.0
+    return du[1] = 0.0
 end
 
 function g!(du, u, p, t)
-    du[1] = 0.0
+    return du[1] = 0.0
 end
 
 # A jump that never fires (rate = 0).
@@ -101,13 +101,15 @@ noop_jump = ConstantRateJump(never_rate, noop_affect!)
 
         cb_a = DiscreteCallback(
             (u, t, integrator) -> t == 2.0,
-            integrator -> (fire_a[] += 1))
+            integrator -> (fire_a[] += 1)
+        )
 
         jprob = JumpProblem(prob, Direct(), noop_jump; callback = cb_a)
 
         cb_b = DiscreteCallback(
             (u, t, integrator) -> t == 4.0,
-            integrator -> (fire_b[] += 1))
+            integrator -> (fire_b[] += 1)
+        )
 
         fire_a[] = 0
         fire_b[] = 0
@@ -176,8 +178,10 @@ noop_jump = ConstantRateJump(never_rate, noop_affect!)
         cb = DiscreteCallback(condition, affect!)
 
         # Both tstops and callback stored in jprob.kwargs — nothing extra to solve
-        jprob = JumpProblem(prob, Direct(), noop_jump;
-            tstops = [2.0], callback = cb)
+        jprob = JumpProblem(
+            prob, Direct(), noop_jump;
+            tstops = [2.0], callback = cb
+        )
         sol = solve(jprob, EM(); dt = 0.01)
         @test 2.0 ∈ sol.t
         idx = findfirst(==(2.0), sol.t)

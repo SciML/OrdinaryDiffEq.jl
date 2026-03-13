@@ -105,17 +105,21 @@ function _resolve_rng(rng, seed, prob)
     return Random.Xoshiro(_seed), _seed, false
 end
 
-# Quick fix: replace ::Union{DiffEqBase.AbstractRODEProblem, JumpProblem} with a
-# concrete arguments using an eval loop to avoid ambiguities.
-for Prob ∈ (DiffEqBase.AbstractRODEProblem, JumpProblem)
-    @eval begin
 # rng kwarg: Pre-constructed AbstractRNG for all framework-managed randomness
 # (noise processes, integrator.rng). Takes priority over `seed` when provided.
 # When omitted, an Xoshiro is constructed from `seed` (or a random seed if
 # `seed` is also omitted). Only controls framework-constructed randomness;
 # user-provided noise processes (`prob.noise`) keep their own RNG.
 function DiffEqBase.__init(
-        _prob::$Prob,
+        _prob::Union{DiffEqBase.AbstractRODEProblem, JumpProblem},
+        alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
+        kwargs...
+    )
+    return _sde_init(_prob, alg; kwargs...)
+end
+
+function _sde_init(
+        _prob::Union{DiffEqBase.AbstractRODEProblem, JumpProblem},
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
         saveat = (),
         tstops = (),
@@ -172,13 +176,14 @@ function DiffEqBase.__init(
         initializealg = OrdinaryDiffEqCore.DefaultInit(),
         kwargs...
     )
-    # Merge JumpProblem kwargs (tstops, callbacks, etc.) for direct init() callers.
-    if _prob isa JumpProblem
-        kwargs = DiffEqBase.merge_problem_kwargs(_prob; kwargs...)
-    end
+    # NOTE: JumpProblem kwargs merge is already done by init_call / __solve
+    # before reaching _sde_init. DO NOT call merge_problem_kwargs again here,
+    # as it would re-introduce jprob.kwargs into the splatted kwargs and
+    # override the already-merged named parameters (e.g. tstops).
 
     is_sde = _prob isa SDEProblem
 
+    # ── Alias resolution (SDE/RODE-specific specifier types) ─────────────
     use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_jumps) ||
         haskey(kwargs, :alias_noise)
 
@@ -223,7 +228,6 @@ function DiffEqBase.__init(
         end
 
     else
-        # If alias isa Bool, all fields of SDEAliasSpecifier set to alias
         if alias isa Bool
             aliases = is_sde ? SciMLBase.SDEAliasSpecifier(; alias) :
                 SciMLBase.RODEAliasSpecifier(; alias)
@@ -232,7 +236,6 @@ function DiffEqBase.__init(
         elseif alias isa SciMLBase.RODEAliasSpecifier
             aliases = alias
         else
-            # Default case (including isnothing(alias))
             aliases = is_sde ? SciMLBase.SDEAliasSpecifier() :
                 SciMLBase.RODEAliasSpecifier()
         end
@@ -240,8 +243,10 @@ function DiffEqBase.__init(
 
     prob = concrete_prob(_prob)
 
+    # ── RNG resolution ───────────────────────────────────────────────────
     _rng, _seed, _rng_provided = _resolve_rng(rng, seed, prob)
 
+    # ── JumpProblem reset ────────────────────────────────────────────────
     if _prob isa JumpProblem
         alias_jumps = isnothing(aliases.alias_jumps) ? Threads.threadid() == 1 :
             aliases.alias_jumps
@@ -252,10 +257,9 @@ function DiffEqBase.__init(
             JumpProcesses.reset_jump_problem!(_prob, _jump_seed)
         end
     end
-
-    # Grab the deepcopied version for caching reasons.
     prob = concrete_prob(_prob)
 
+    # ── SDE-specific validation ──────────────────────────────────────────
     if typeof(prob.f) <: Tuple
         if any(mm != I for mm in prob.f.mass_matrix)
             error("This solver is not able to use mass matrices.")
@@ -263,10 +267,6 @@ function DiffEqBase.__init(
     elseif prob isa DiffEqBase.AbstractRODEProblem && prob.f.mass_matrix != I &&
             !alg_mass_matrix_compatible(alg)
         error("This solver is not able to use mass matrices.")
-    end
-
-    if !isempty(saveat) && dense
-        @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
     end
 
     if prob isa DiffEqBase.AbstractRODEProblem && typeof(prob.noise) <: NoiseProcess &&
@@ -282,20 +282,7 @@ function DiffEqBase.__init(
         error("The given solver is a Fixed timestep method and does not support adaptivity.")
     end
 
-    progress && @logmsg(LogLevel(-1), progress_name, _id = progress_id, progress = 0)
-
-    tType = eltype(prob.tspan)
-    noise = prob isa DiffEqBase.AbstractRODEProblem ? prob.noise : nothing
-    tspan = prob.tspan
-    tdir = sign(tspan[end] - tspan[1])
-
-    t = tspan[1]
-
-    if !adaptive && iszero(dt) &&
-            (tstops isa AbstractArray || tstops isa Tuple) && isempty(tstops)
-        error("Fixed timestep methods require a choice of dt or choosing the tstops")
-    end
-
+    # ── StochasticCompositeAlgorithm AutoSwitch → AutoSwitchCache ────────
     if alg isa StochasticCompositeAlgorithm && alg.choice_function isa AutoSwitch
         auto = alg.choice_function
         alg = StochasticCompositeAlgorithm(
@@ -316,6 +303,7 @@ function DiffEqBase.__init(
         )
     end
 
+    # ── f/p/u aliasing (needed before cache construction) ────────────────
     if isnothing(aliases.alias_f) || aliases.alias_f
         f = prob.f
     else
@@ -334,50 +322,45 @@ function DiffEqBase.__init(
         u = recursivecopy(prob.u0)
     end
 
-    g = prob isa DiffEqBase.AbstractSDEProblem ? prob.g : nothing
-
     if prob.u0 isa Tuple
         u = ArrayPartition(prob.u0, Val{true})
     end
 
+    # ── Type computations (needed for cache) ─────────────────────────────
+    tType = eltype(prob.tspan)
     uType = typeof(u)
     uBottomEltype = recursive_bottom_eltype(u)
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
-
-    ks = ()
-
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(one(tType))
+    noise = prob isa DiffEqBase.AbstractRODEProblem ? prob.noise : nothing
+    tspan = prob.tspan
+    t = tspan[1]
 
+    # ── SDE-specific abstol/reltol defaults (1//10^2 vs ODE's 1//10^6) ──
     if abstol === nothing
         if uBottomEltypeNoUnits === uBottomEltype && !(uBottomEltype <: Integer)
-            abstol_internal = real(convert(uBottomEltype, oneunit(uBottomEltype) * 1 // 10^2))
+            abstol = real(convert(uBottomEltype, oneunit(uBottomEltype) * 1 // 10^2))
         elseif uBottomEltype <: Integer
-            abstol_internal = real(oneunit(uBottomEltype) * 1 // 10^2)
+            abstol = real(oneunit(uBottomEltype) * 1 // 10^2)
         else
-            abstol_internal = 0
+            abstol = 0
         end
-    else
-        abstol_internal = real.(abstol)
     end
 
     if reltol === nothing
         if uBottomEltypeNoUnits === uBottomEltype && !(uBottomEltype <: Integer)
-            reltol_internal = real(convert(uBottomEltype, oneunit(uBottomEltype) * 1 // 10^2))
+            reltol = real(convert(uBottomEltype, oneunit(uBottomEltype) * 1 // 10^2))
         elseif uBottomEltype <: Integer
-            reltol_internal = real(oneunit(uBottomEltype) * 1 // 10^2)
+            reltol = real(oneunit(uBottomEltype) * 1 // 10^2)
         else
-            reltol_internal = 0
+            reltol = 0
         end
-    else
-        reltol_internal = real.(reltol)
     end
 
-    dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
-    # dtmin is all abs => does not care about sign already.
-
+    # ── rate_prototype / noise_rate_prototype (needed for cache) ─────────
     if isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
-            uBottomEltypeNoUnits == uBottomEltype # Could this be more efficient for other arrays?
+            uBottomEltypeNoUnits == uBottomEltype
         if !(u isa ArrayPartition)
             rate_prototype = recursivecopy(u)
         else
@@ -391,11 +374,11 @@ function DiffEqBase.__init(
     else
         if uBottomEltypeNoUnits == uBottomEltype
             rate_prototype = u
-        else # has units!
+        else
             rate_prototype = u / oneunit(tType)
         end
     end
-    rateType = typeof(rate_prototype) ## Can be different if united
+    rateType = typeof(rate_prototype)
 
     if prob.f isa DynamicalSDEFunction
         noise_rate_prototype = rate_prototype.x[1]
@@ -411,86 +394,19 @@ function DiffEqBase.__init(
         noise_rate_prototype = nothing
     end
 
-    # Stash callable tstops (e.g. SymbolicTstops) and use empty tuple for heap init.
-    if tstops isa AbstractArray || tstops isa Tuple || tstops isa Number
-        _tstops_callable = nothing
-    else
-        _tstops_callable = tstops
-        tstops = ()
-    end
-
-    tstops_internal = OrdinaryDiffEqCore.initialize_tstops(tType, tstops, d_discontinuities, tspan)
-    saveat_internal = OrdinaryDiffEqCore.initialize_saveat(tType, saveat, tspan)
-    d_discontinuities_internal = OrdinaryDiffEqCore.initialize_d_discontinuities(
-        tType, d_discontinuities, tspan
-    )
-
-    ### Algorithm-specific defaults ###
-    save_idxs,
-        saved_subsystem = SciMLBase.get_save_idxs_and_saved_subsystem(prob, save_idxs)
-    # if save_idxs === nothing
-    #   ksEltype = Vector{rateType}
-    # else
-    #   ks_prototype = rate_prototype[save_idxs]
-    #   ksEltype = Vector{typeof(ks_prototype)}
-    # end
-
-    # Initialize timeseries and ts vectors
-    u_initial = save_idxs === nothing ? u : u[save_idxs]
-    if save_idxs === nothing
-        timeseries = Vector{uType}()
-    else
-        timeseries = Vector{typeof(u_initial)}()
-    end
-    ts = Vector{tType}()
-
-    alg_choice = alg isa StochasticDiffEqCompositeAlgorithm ? Int[] : ()
-
-    if !adaptive && save_everystep && tspan[2] - tspan[1] != Inf
-        iszero(dt) ? steps = length(tstops) :
-            steps = ceil(Int, internalnorm((tspan[2] - tspan[1]) / dt, tspan[1]))
-        sizehint!(timeseries, steps + 1)
-        sizehint!(ts, steps + 1)
-    elseif save_everystep
-        sizehint!(timeseries, 50)
-        sizehint!(ts, 50)
-    elseif !isempty(saveat_internal)
-        sizehint!(timeseries, length(saveat_internal) + 1)
-        sizehint!(ts, length(saveat_internal) + 1)
-    else
-        sizehint!(timeseries, 2)
-        sizehint!(ts, 2)
-    end
-
-    if save_start
-        saveiter = 1 # Starts at 1 so first save is at 2
-        copyat_or_push!(ts, 1, t)
-        if save_idxs === nothing
-            copyat_or_push!(timeseries, 1, u)
-        else
-            copyat_or_push!(timeseries, 1, u_initial, Val{false})
-        end
-        if alg isa StochasticDiffEqCompositeAlgorithm
-            copyat_or_push!(alg_choice, 1, 1)
-        end
-    else
-        saveiter = 0
-    end
-
-    QT = tTypeNoUnits <: Integer ? typeof(qmin) : tTypeNoUnits
-
+    # ── uprev (needed for cache) ─────────────────────────────────────────
     uprev = recursivecopy(u)
 
+    # ── rand_prototype (needed for noise creation) ───────────────────────
     if !(uType <: AbstractArray)
-        rand_prototype = zero(u ./ u) # Strip units and type info
-        randType = typeof(rand_prototype)
+        rand_prototype = zero(u ./ u)
     else
-        randElType = uBottomEltypeNoUnits # Strip units and type info
+        randElType = uBottomEltypeNoUnits
         if prob.f isa DynamicalSDEFunction
             rand_prototype = copy(noise_rate_prototype)
         elseif is_diagonal_noise(prob)
             if u isa SArray
-                rand_prototype = zero(u) # TODO: Array{randElType} for units
+                rand_prototype = zero(u)
             else
                 rand_prototype = (u .- u) ./ sqrt(oneunit(t))
             end
@@ -507,26 +423,16 @@ function DiffEqBase.__init(
         else
             rand_prototype = nothing
         end
-        randType = typeof(rand_prototype) # Strip units and type info
     end
 
-    if _prob isa JumpProblem
-        callbacks_internal = CallbackSet(callback, _prob.jump_callback)
-    else
-        callbacks_internal = CallbackSet(callback)
-    end
+    # ── Callback merging for JumpProblem ─────────────────────────────────
+    _callback = _prob isa JumpProblem ?
+        CallbackSet(callback, _prob.jump_callback) : callback
 
-    max_len_cb = DiffEqBase.max_vector_callback_length(callbacks_internal)
-    if max_len_cb isa DiffEqBase.VectorContinuousCallback
-        callback_cache = DiffEqBase.CallbackCache(max_len_cb.len, uBottomEltype, uBottomEltype)
-    else
-        callback_cache = nothing
-    end
-
+    # ── Noise creation (WienerProcess / user noise handling) ─────────────
     if prob isa DiffEqBase.AbstractRODEProblem && prob.noise === nothing
         rswm = isadaptive(alg) ? RSWM(adaptivealg = :RSwM3) : RSWM(adaptivealg = :RSwM1)
         if isinplace(prob)
-            #if isadaptive(alg) || callback !== nothing
             if alg_needs_extra_process(alg)
                 if alg === PL1WM()
                     m = length(rand_prototype)
@@ -572,21 +478,7 @@ function DiffEqBase.__init(
                     rng = _rng
                 )
             end
-            #=
-            else
-              if alg_needs_extra_process(alg)
-                W = SimpleWienerProcess!(t,rand_prototype,rand_prototype,
-                                   save_everystep=save_noise,
-                                   rng = _rng)
-              else
-                W = SimpleWienerProcess!(t,rand_prototype,
-                                   save_everystep=save_noise,
-                                   rng = _rng)
-              end
-            end
-            =#
         else
-            #if isadaptive(alg) || callback !== nothing
             if alg_needs_extra_process(alg)
                 if alg === PL1WM()
                     m = length(rand_prototype)
@@ -636,19 +528,6 @@ function DiffEqBase.__init(
                     rng = _rng
                 )
             end
-            #=
-            else
-              if alg_needs_extra_process(alg)
-                W = SimpleWienerProcess(t,rand_prototype,rand_prototype,
-                                   save_everystep=save_noise,
-                                   rng = _rng)
-              else
-                W = SimpleWienerProcess(t,rand_prototype,
-                                   save_everystep=save_noise,
-                                   rng = _rng)
-              end
-            end
-            =#
         end
     elseif prob isa DiffEqBase.AbstractRODEProblem
         _alias_noise = if hasproperty(aliases, :alias_noise) && aliases.alias_noise !== nothing
@@ -663,26 +542,23 @@ function DiffEqBase.__init(
         end
 
         if W.reset
-            # Reseed (skip when user explicitly provided an RNG — reseeding
-            # would mutate the shared _rng object, affecting the integrator
-            # and any other noise processes using it)
             if !_rng_provided && W isa Union{NoiseProcess, NoiseTransport} && W.reseed
                 Random.seed!(W.rng, _seed)
             end
             if W.curt != t
                 reinit!(W, t, t0 = t)
             end
-
         elseif W.curt != t
             error("Starting time in the noise process is not the starting time of the simulation. The noise process should be re-initialized for repeated use")
         end
-    else # Only a jump problem
+    else
         @assert _prob isa JumpProblem
         W = nothing
     end
 
+    # ── CompoundPoissonProcess for tau-leaping ───────────────────────────
     if _prob isa JumpProblem && _prob.regular_jump !== nothing
-        if !isnothing(_prob.regular_jump.mark_dist) == nothing # https://github.com/JuliaDiffEq/DifferentialEquations.jl/issues/250
+        if !isnothing(_prob.regular_jump.mark_dist) == nothing
             error("Mark distributions are currently not supported in SimpleTauLeaping")
         end
 
@@ -711,7 +587,6 @@ function DiffEqBase.__init(
             alg_control_rate(alg) && adaptive &&
                 (P.cache.currate = P.cache.rate(u, p, tspan[1]))
         end
-
     else
         jump_prototype = nothing
         c = nothing
@@ -719,9 +594,9 @@ function DiffEqBase.__init(
         rate_constants = nothing
     end
 
+    # ── dW/dZ extraction, verbose conversion, alg_cache ──────────────────
     dW, dZ = isnothing(W) ? (nothing, nothing) : (W.dW, W.dZ)
 
-    # Convert verbose argument to DEVerbosity
     verbose_internal = if verbose isa Bool
         verbose ? DEVerbosity(Standard()) : DEVerbosity(None())
     elseif verbose isa AbstractVerbosityPreset
@@ -738,18 +613,9 @@ function DiffEqBase.__init(
         tTypeNoUnits, uprev, f, t, dt, Val{isinplace(_prob)}, verbose_internal
     )
 
-    if _prob isa JumpProblem && prob isa DiscreteProblem && prob isa Integer
-        id = DiffEqBase.ConstantInterpolation(ts, timeseries)
-    else
-        id = LinearInterpolationData(timeseries, ts)
-    end
+    # ── Controller computation ───────────────────────────────────────────
+    QT = tTypeNoUnits <: Integer ? typeof(qmin) : tTypeNoUnits
 
-    save_end_user = save_end
-    save_end = save_end === nothing ?
-        save_everystep || isempty(saveat) || saveat isa Number ||
-        prob.tspan[2] in saveat : save_end
-
-    # Setting up the step size controller
     if (beta1 !== nothing || beta2 !== nothing) && controller !== nothing
         throw(
             ArgumentError(
@@ -768,154 +634,59 @@ function DiffEqBase.__init(
         controller = default_controller(alg, cache, QT(qoldinit), beta1, beta2)
     end
 
-    # Restore callable for tstops_cache so reinit! can re-evaluate it.
-    if _tstops_callable !== nothing
-        tstops = _tstops_callable
-    end
+    # ── Delegate to ODE's _ode_init directly ─────────────────────────────
+    # Call _ode_init instead of __init to bypass method dispatch (SDE's __init
+    # is more specific and would cause infinite recursion via invoke).
+    # SDE already handled f/p/u aliasing, so tell ODE to alias (don't re-copy).
+    ode_alias = ODEAliasSpecifier(alias_u0 = true, alias_f = true, alias_p = true)
 
-    opts = OrdinaryDiffEqCore.DEOptions(
-        maxiters, save_everystep,
-        adaptive, abstol_internal,
-        reltol_internal,
-        QT(gamma),
-        QT(qmax), QT(qmin),
-        QT(qsteady_max), QT(qsteady_min),
-        QT(qoldinit),
-        QT(failfactor),
-        tType(dtmax), tType(dtmin),
-        controller,
-        internalnorm, LinearAlgebra.opnorm,
-        save_idxs,
-        tstops_internal, saveat_internal,
-        d_discontinuities_internal,
-        tstops, saveat, d_discontinuities,
-        userdata,
-        progress, progress_steps,
-        progress_name, progress_message, progress_id,
+    tType = eltype(prob.tspan)
+
+    integrator = OrdinaryDiffEqCore._ode_init(
+        prob, alg;
+        # Pre-built objects
+        _cache = cache,
+        _u = u,
+        _uprev = uprev,
+        W = W, P = P,
+        sqdt = tType(dt),
+        noise = noise, c = c, rate_constants = rate_constants,
+        seed = _seed,
+        rng = _rng,
+        controller = controller,
+        # SDE-specific defaults (passed through from SDE's kwargs)
+        saveat, tstops, d_discontinuities,
+        save_idxs, save_everystep, save_noise, save_on,
+        save_start, save_end, callback = _callback,
+        dense, calck, dt = iszero(dt) ? nothing : dt, adaptive,
+        abstol, reltol,
+        # Pass nothing for legacy PID params — ODE's _ode_init extracts values
+        # from the pre-built controller (lines 572-578). Passing concrete values
+        # would trigger Base.depwarn backtrace overhead on every trajectory.
+        gamma = nothing, qmin = nothing, qmax = nothing,
+        qsteady_min = nothing, qsteady_max = nothing,
+        beta1 = nothing, beta2 = nothing, qoldinit = nothing,
+        fullnormalize, failfactor,
+        delta = convert.(uBottomEltypeNoUnits, delta),
+        maxiters, dtmax, dtmin,
+        internalnorm, isoutofdomain, unstable_check,
+        verbose, force_dtmin,
         timeseries_errors, dense_errors,
-        convert.(uBottomEltypeNoUnits, delta),
-        dense, save_on, save_start,
-        save_end, save_noise, save_discretes, save_end_user,
-        callbacks_internal, isoutofdomain, unstable_check,
-        verbose_internal, calck, force_dtmin,
-        advance_to_tstop, stop_at_next_tstop
+        advance_to_tstop, stop_at_next_tstop,
+        initialize_save, progress, progress_steps,
+        progress_name, progress_message, progress_id,
+        userdata, save_discretes, initialize_integrator,
+        alias = ode_alias,
+        initializealg,
+        kwargs...
     )
 
-    stats = DiffEqBase.Stats(0)
-    if alg isa Union{
-            StochasticDiffEqCompositeAlgorithm,
-            StochasticDiffEqRODECompositeAlgorithm,
-        }
-        sol = DiffEqBase.build_solution(
-            prob, alg, ts, timeseries, W = W,
-            stats = stats, saved_subsystem = saved_subsystem,
-            calculate_error = false, alg_choice = alg_choice,
-            interp = id, dense = dense, seed = _seed
-        )
-    else
-        sol = DiffEqBase.build_solution(
-            prob, alg, ts, timeseries, W = W,
-            stats = stats, saved_subsystem = saved_subsystem,
-            calculate_error = false,
-            interp = id, dense = dense, seed = _seed
-        )
-    end
-
-    FType = typeof(f)
-    CType = typeof(c)
-    SolType = typeof(sol)
-    cacheType = typeof(cache)
-
-    tprev = t
-    dtcache = tType(dt)
-    iter = 0
-    u_modified = false
-    eigen_est = inv(one(tType)) # rate/state = (state/time)/state = 1/t units
-    EEst = tTypeNoUnits(1)
-    just_hit_tstop = false
-    do_error_check = true
-    isout = false
-    accept_step = false
-    force_stepfail = false
-    last_stepfail = false
-    event_last_time = 0
-    vector_event_last_time = 1
-    last_event_error = zero(uBottomEltypeNoUnits)
-    dtchangeable = true
-    q11 = tTypeNoUnits(1)
-    success_iter = 0
-    q = tTypeNoUnits(1)
-
-    ks = Vector{rateType}(undef, 0)
-
-    integrator = OrdinaryDiffEqCore.ODEIntegrator{
-        typeof(alg), isinplace(prob),
-        uType, Nothing, tType, typeof(p), typeof(eigen_est), tTypeNoUnits,
-        QT, typeof(tdir),
-        typeof(ks), typeof(sol), FType, typeof(cache), typeof(opts), Nothing,
-        typeof(last_event_error), typeof(callback_cache),
-        typeof(initializealg), Nothing, typeof(controller), typeof(_rng),
-        typeof(W), typeof(P), tType,
-        typeof(noise), CType, typeof(rate_constants),
-    }(
-        sol, u, nothing, ks, t, tType(dt), f, p,
-        uprev, uprev, nothing, tprev,
-        alg, dtcache, dtchangeable,
-        tType(dt), tdir, eigen_est, EEst,
-        QT(qoldinit), q11,
-        QT(1), tType(1),
-        controller,
-        success_iter,
-        iter, saveiter, 0, cache,
-        callback_cache,
-        0, force_stepfail,
-        last_stepfail,
-        just_hit_tstop, false, zero(t), do_error_check,
-        event_last_time,
-        vector_event_last_time,
-        last_event_error, accept_step,
-        isout, false,
-        u_modified, true, false,
-        opts, stats, initializealg, nothing,
-        nothing, nothing, _rng,
-        W, P, tType(dt),
-        noise, c, rate_constants, q
-    )
-
-    if initialize_integrator
-        DiffEqBase.initialize_dae!(integrator)
-        initialize_callbacks!(integrator, initialize_save)
-        initialize!(integrator, integrator.cache)
-        save_start &&
-            alg isa Union{
-            StochasticDiffEqCompositeAlgorithm,
-            StochasticDiffEqRODECompositeAlgorithm,
-        } &&
-            copyat_or_push!(alg_choice, 1, integrator.cache.current)
-    end
-
-    # Evaluate callable tstops now that callbacks are initialized and parameters finalized.
-    if _tstops_callable !== nothing
-        for ts in _tstops_callable(integrator.p, prob.tspan)
-            add_tstop!(integrator, ts)
-        end
-    end
-
-    handle_dt!(integrator)
-
-    ## Modify the first dt for tstops
-    modify_dt_for_tstops!(integrator)
-    ### Needs to be done before first rand
-    integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
-
-    !isnothing(integrator.W) && (integrator.W.dt = integrator.dt)
-    !isnothing(integrator.P) && (integrator.P.dt = integrator.dt)
-
+    # ── Post-delegation: noise process next-step setup ───────────────────
+    # DiffEqNoiseProcess is not in OrdinaryDiffEqCore's dependencies, so
+    # setup_next_step! must be called here in SDE's wrapper.
     DiffEqNoiseProcess.setup_next_step!(integrator::SDEIntegrator)
 
     return integrator
-end
-end
 end
 
 function DiffEqBase.solve!(integrator::SDEIntegrator)
@@ -949,57 +720,4 @@ function DiffEqBase.solve!(integrator::SDEIntegrator)
     return integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
 end
 
-# Helpers
-
-function handle_dt!(integrator)
-    return if iszero(integrator.dt) && integrator.opts.adaptive
-        auto_dt_reset!(integrator)
-        if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
-                !isnan(integrator.dt)
-            error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
-        end
-        if isnan(integrator.dt)
-            @SciMLMessage(
-                "Automatic dt set the starting dt as NaN, causing instability.",
-                integrator.opts.verbose, :dt_NaN
-            )
-        end
-    elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
-            integrator.tdir < 0
-        integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
-    end
-end
-
-function initialize_callbacks!(integrator, initialize_save = true)
-    t = integrator.t
-    u = integrator.u
-    callbacks = integrator.opts.callback
-    integrator.u_modified = true
-
-    u_modified = initialize!(callbacks, u, t, integrator)
-
-    # if the user modifies u, we need to fix previous values before initializing
-    # FSAL in order for the starting derivatives to be correct
-    if u_modified
-        if isinplace(integrator.sol.prob)
-            recursivecopy!(integrator.uprev, integrator.u)
-        else
-            integrator.uprev = integrator.u
-        end
-
-        if initialize_save &&
-                (
-                any((c) -> c.save_positions[2], callbacks.discrete_callbacks) ||
-                    any((c) -> c.save_positions[2], callbacks.continuous_callbacks)
-            )
-            savevalues!(integrator, true)
-        end
-    end
-
-    # reset this as it is now handled so the integrators should proceed as normal
-    integrator.u_modified = false
-
-    return if initialize_save
-        SciMLBase.save_discretes_if_enabled!(integrator, integrator.opts.callback; skip_duplicates = true)
-    end
-end
+# handle_dt! and initialize_callbacks! are now provided by OrdinaryDiffEqCore

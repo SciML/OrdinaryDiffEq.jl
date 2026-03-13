@@ -12,6 +12,10 @@ import ADTypes
 
 import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: ODEIntegrator,
+    StochasticDiffEqAlgorithm, StochasticDiffEqAdaptiveAlgorithm,
+    StochasticDiffEqCompositeAlgorithm,
+    StochasticDiffEqRODEAlgorithm, StochasticDiffEqRODEAdaptiveAlgorithm,
+    StochasticDiffEqRODECompositeAlgorithm,
     default_controller, isstandard, ispredictive,
     beta2_default, beta1_default, gamma_default,
     qmin_default, qmax_default, qsteady_min_default,
@@ -35,7 +39,8 @@ import OrdinaryDiffEqCore: handle_callbacks!, handle_tstop!,
     log_step!, choose_algorithm!, update_uprev!,
     alg_extrapolates, isfsal,
     accept_noise!, reject_noise!, save_noise!, noise_curt, is_noise_saveable,
-    handle_callback_modifiers!
+    handle_callback_modifiers!,
+    initialize_callbacks!
 
 using RecursiveArrayTools, DataStructures
 using DiffEqNoiseProcess, Random, ArrayInterface

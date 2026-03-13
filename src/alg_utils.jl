@@ -134,6 +134,12 @@ end
 delta_default(alg) = 1 // 1
 delta_default(alg::SRIW1) = 1 // 6
 
+function OrdinaryDiffEqCore.gamma_default(
+        alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}
+    )
+    return isadaptive(alg) ? 9 // 10 : 0
+end
+
 ispredictive(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}) = false
 isstandard(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}) = false
 function qsteady_min_default(
