@@ -39,11 +39,8 @@ function (integrator::SDEIntegrator)(
     return current_interpolant!(val, t, integrator, idxs, deriv)
 end
 
-function set_proposed_dt!(integrator::SDEIntegrator, integrator2::SDEIntegrator)
-    integrator.dtpropose = integrator2.dtpropose
-    integrator.dtcache = integrator2.dtcache
-    return integrator.qold = integrator2.qold
-end
+# set_proposed_dt!(::SDEIntegrator, ::SDEIntegrator) now provided by ODE's
+# set_proposed_dt!(::ODEIntegrator, ::ODEIntegrator)
 
 #TODO: Bigger caches for most algorithms
 # avoid method ambiguity
@@ -383,13 +380,9 @@ function DiffEqBase.auto_dt_reset!(integrator::SDEIntegrator)
     )
 end
 
-@inline function DiffEqBase.get_du(integrator::SDEIntegrator)
-    return (integrator.u - integrator.uprev) / integrator.dt
-end
-
-@inline function DiffEqBase.get_du!(out, integrator::SDEIntegrator)
-    return @.. out = (integrator.u - integrator.uprev) / integrator.dt
-end
+# get_du and get_du! now provided by ODE's SciMLBase.get_du(::ODEIntegrator).
+# For SDE (isfsal=false), ODE's version falls through to integrator(t, Val{1})
+# which calls SDE's linear interpolation, returning (u - uprev) / dt.
 
 function DiffEqBase.set_t!(integrator::SDEIntegrator, t::Real)
     if integrator.opts.save_everystep

@@ -602,12 +602,11 @@ is_split_step(::LambaEM{split}) where {split} = split
 alg_stability_size(alg::SOSRI2) = 10.6
 alg_stability_size(alg::SOSRA2) = 5.3
 
-is_composite(alg) = false
-is_composite(alg::StochasticDiffEqCompositeAlgorithm) = true
-is_composite(alg::StochasticDiffEqRODECompositeAlgorithm) = true
+# is_composite_algorithm trait is defined in OrdinaryDiffEqCore and extended in
+# integrator_utils.jl for SDE composite algorithm types.
 function unwrap_alg(integrator, is_nlsolve)
     alg = integrator.alg
-    if !is_composite(alg)
+    if !is_composite_algorithm(alg)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
         num = is_nlsolve ? 2 : 1
@@ -632,29 +631,8 @@ end
 issplit(::StochasticDiffEqAlgorithm) = false
 issplit(::SplitSDEAlgorithms) = true
 
-function OrdinaryDiffEqCore.unwrap_alg(integrator::SDEIntegrator, is_stiff)
-    alg = integrator.alg
-    if !is_composite(alg)
-        return alg
-    elseif alg.choice_function isa AutoSwitchCache
-        num = is_stiff ? 2 : 1
-        if num == 1
-            return alg.algs[1]
-        elseif num == 2
-            return alg.algs[2]
-        else
-            return alg.algs[num]
-        end
-    else
-        if integrator.cache.current == 1
-            return alg.algs[1]
-        elseif integrator.cache.current == 2
-            return alg.algs[2]
-        else
-            return alg.algs[integrator.cache.current]
-        end
-    end
-end
+# unwrap_alg(::SDEIntegrator, is_stiff) is now handled by ODE's generic
+# unwrap_alg(integrator, is_stiff) which uses the is_composite_algorithm trait.
 
 alg_control_rate(::StochasticDiffEqAlgorithm) = false
 alg_control_rate(::StochasticDiffEqRODEAlgorithm) = false

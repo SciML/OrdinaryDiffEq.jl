@@ -689,35 +689,5 @@ function _sde_init(
     return integrator
 end
 
-function DiffEqBase.solve!(integrator::SDEIntegrator)
-    @inbounds while !isempty(integrator.opts.tstops)
-        while integrator.tdir * integrator.t < first(integrator.opts.tstops)
-            loopheader!(integrator)
-            if integrator.do_error_check && check_error!(integrator) != ReturnCode.Success
-                return integrator.sol
-            end
-            perform_step!(integrator, integrator.cache)
-            loopfooter!(integrator)
-            if isempty(integrator.opts.tstops)
-                break
-            end
-        end
-        handle_tstop!(integrator)
-    end
-    postamble!(integrator)
-
-    f = integrator.sol.prob.f isa Tuple ? integrator.sol.prob.f[1] : integrator.sol.prob.f
-
-    if DiffEqBase.has_analytic(f)
-        DiffEqBase.calculate_solution_errors!(
-            integrator.sol; timeseries_errors = integrator.opts.timeseries_errors,
-            dense_errors = integrator.opts.dense_errors
-        )
-    end
-    if integrator.sol.retcode != ReturnCode.Default
-        return integrator.sol
-    end
-    return integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
-end
-
+# solve! is now provided by OrdinaryDiffEqCore (SciMLBase.solve!(::ODEIntegrator))
 # handle_dt! and initialize_callbacks! are now provided by OrdinaryDiffEqCore
