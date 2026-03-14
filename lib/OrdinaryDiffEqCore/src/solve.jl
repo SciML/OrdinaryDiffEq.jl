@@ -855,6 +855,8 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
     postamble!(integrator)
 
     f = integrator.sol.prob.f
+    # SDE split problems may store f as a Tuple; unwrap to check for analytic solution
+    f = f isa Tuple ? f[1] : f
 
     if SciMLBase.has_analytic(f)
         SciMLBase.calculate_solution_errors!(
@@ -932,7 +934,7 @@ end
 
 function reinit_tstops!(
         ::Type{T}, tstops_internal, tstops, d_discontinuities, tspan; p = nothing
-) where {T}
+    ) where {T}
     empty!(tstops_internal)
 
     # Evaluate callable tstops

@@ -546,7 +546,7 @@ alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 
 function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
-    if !(alg isa CompositeAlgorithm)
+    if !is_composite_algorithm(alg)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
         if length(alg.algs) > 2
@@ -568,7 +568,7 @@ end
 
 function unwrap_alg(integrator, is_stiff)
     alg = integrator.alg
-    if !(alg isa CompositeAlgorithm)
+    if !is_composite_algorithm(alg)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
         if length(alg.algs) > 2
