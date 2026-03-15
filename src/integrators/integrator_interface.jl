@@ -28,16 +28,8 @@
     end
 end
 
-function (integrator::SDEIntegrator)(t, deriv::Type = Val{0}; idxs = nothing)
-    return current_interpolant(t, integrator, idxs, deriv)
-end
-
-function (integrator::SDEIntegrator)(
-        val::AbstractArray, t::Union{Number, AbstractArray},
-        deriv::Type = Val{0}; idxs = nothing
-    )
-    return current_interpolant!(val, t, integrator, idxs, deriv)
-end
+# Integrator callable now provided by ODE's (::ODEIntegrator)(t, ...) which
+# routes through _ode_interpolant → isempty(k) → linear_interpolant.
 
 # set_proposed_dt!(::SDEIntegrator, ::SDEIntegrator) now provided by ODE's
 # set_proposed_dt!(::ODEIntegrator, ::ODEIntegrator)
@@ -384,25 +376,9 @@ end
 # For SDE (isfsal=false), ODE's version falls through to integrator(t, Val{1})
 # which calls SDE's linear interpolation, returning (u - uprev) / dt.
 
-function DiffEqBase.set_t!(integrator::SDEIntegrator, t::Real)
-    if integrator.opts.save_everystep
-        error(
-            "Integrator time cannot be reset unless it is initialized",
-            " with save_everystep=false"
-        )
-    end
-    return if !isdtchangeable(integrator.alg)
-        reinit!(
-            integrator, integrator.u;
-            t0 = t,
-            reset_dt = false,
-            reinit_callbacks = false,
-            reinit_cache = false
-        )
-    else
-        integrator.t = t
-    end
-end
+# set_t! now provided by ODE's set_t!(::ODEIntegrator, ::Real).
+# ODE additionally checks alg_extrapolates(alg) which is always false for SDE algs,
+# so the behavior is identical.
 
 """
     SciMLBase.set_rng!(integrator::SDEIntegrator, rng) -> nothing

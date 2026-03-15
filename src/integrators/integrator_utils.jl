@@ -12,18 +12,6 @@ end
         reject_step!(integrator.P, dtnew, integrator.u, integrator.p)
 end
 
-@inline function DiffEqNoiseProcess.accept_step!(integrator::SDEIntegrator, setup)
-    !isnothing(integrator.W) &&
-        accept_step!(integrator.W, integrator.dt, integrator.u, integrator.p, setup)
-    return !isnothing(integrator.P) &&
-        accept_step!(integrator.P, integrator.dt, integrator.u, integrator.p, setup)
-end
-
-@inline function DiffEqNoiseProcess.save_noise!(integrator::SDEIntegrator)
-    !isnothing(integrator.W) && DiffEqNoiseProcess.save_noise!(integrator.W)
-    return !isnothing(integrator.P) && DiffEqNoiseProcess.save_noise!(integrator.P)
-end
-
 @inline function handle_callback_modifiers!(integrator::SDEIntegrator)
     #integrator.reeval_fsal = true
     return if integrator.P !== nothing && integrator.opts.adaptive

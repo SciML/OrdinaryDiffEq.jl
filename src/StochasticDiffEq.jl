@@ -40,7 +40,8 @@ import OrdinaryDiffEqCore: handle_callbacks!, handle_tstop!,
     alg_extrapolates, isfsal,
     accept_noise!, reject_noise!, save_noise!, noise_curt, is_noise_saveable,
     handle_callback_modifiers!,
-    initialize_callbacks!
+    initialize_callbacks!,
+    current_extrapolant, current_extrapolant!
 
 using RecursiveArrayTools, DataStructures
 using DiffEqNoiseProcess, Random, ArrayInterface
@@ -73,7 +74,6 @@ import FastPower
 
 import DiffEqBase: step!, initialize!, DEAlgorithm,
     AbstractSDEAlgorithm, AbstractRODEAlgorithm, DEIntegrator,
-    AbstractDiffEqInterpolation,
     DECache, AbstractSDEIntegrator, AbstractRODEIntegrator,
     AbstractContinuousCallback,
     Tableau, AbstractSDDEIntegrator
@@ -136,7 +136,6 @@ end
 
 include("misc_utils.jl")
 include("algorithms.jl")
-include("interp_func.jl")
 include("caches/cache_types.jl")
 include("caches/basic_method_caches.jl")
 include("caches/explicit_3s_mil_methods.jl")
@@ -154,7 +153,6 @@ include("caches/SROCK_caches.jl")
 include("caches/tau_caches.jl")
 include("caches/dynamical_caches.jl")
 include("integrators/type.jl")
-include("dense.jl")
 include("alg_utils.jl")
 include("integrators/stepsize_controllers.jl")
 include("integrators/integrator_utils.jl")
