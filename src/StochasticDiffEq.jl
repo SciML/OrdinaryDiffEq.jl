@@ -39,6 +39,7 @@ import OrdinaryDiffEqCore: handle_callbacks!, handle_tstop!,
     log_step!, choose_algorithm!, update_uprev!,
     alg_extrapolates, isfsal,
     accept_noise!, reject_noise!, save_noise!, noise_curt, is_noise_saveable,
+    reinit_noise!, _determine_initdt, is_constant_cache,
     handle_callback_modifiers!,
     initialize_callbacks!,
     current_extrapolant, current_extrapolant!
