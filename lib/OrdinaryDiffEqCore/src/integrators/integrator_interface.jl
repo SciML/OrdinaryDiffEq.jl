@@ -466,7 +466,9 @@ function SciMLBase.reinit!(
         end
         resize!(integrator.sol.u, resize_start)
         resize!(integrator.sol.t, resize_start)
-        resize!(integrator.sol.k, resize_start)
+        if _has_ks(integrator)
+            resize!(integrator.sol.k, resize_start)
+        end
 
         if integrator.opts.save_start || (!isempty(saveat) && saveat[1] == tType(t0))
             copyat_or_push!(integrator.sol.t, 1, t0)
