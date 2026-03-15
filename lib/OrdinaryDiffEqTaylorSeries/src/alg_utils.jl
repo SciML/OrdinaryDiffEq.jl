@@ -113,6 +113,40 @@ function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, 
     return jet
 end
 
+function build_propagator(f::ODEFunction{iip}, p, order, length = nothing) where {iip}
+    f = unwrapped_f(f)
+    return build_propagator(f, Val{iip}(), p, order, length)
+end
+
+function build_propagator(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, iip}
+    @variables t0::Real dt::Real
+    u0 = isnothing(length) ? Symbolics.variable(:u0) : Symbolics.variables(:u0, 1:length)
+    if iip
+        f0 = similar(u0)
+        f(f0, u0, p, t0)
+    else
+        f0 = f(u0, p, t0)
+    end
+    u = TaylorDiff.make_seed(u0, f0, Val(1))
+    for index in 2:P
+        t = TaylorScalar{index - 1}(t0, one(t0))
+        if iip
+            fu = similar(u)
+            f(fu, u, p, t)
+        else
+            fu = f(u, p, t)
+        end
+        d = get_coefficient(fu, index - 1) / index
+        u = append_coefficient(u, d)
+    end
+    # ut is u evaluated at t0 + dt, which is all we need for the Taylor expansion evaluation
+    ut = eval_taylor_polynomial(u, dt)
+    propagator = build_function(ut, u0, t0, dt; expression = Val(false), cse = true)
+    jacobian = Symbolics.jacobian(ut, u0)
+    d_propagator = build_function(jacobian, u0, t0, dt; expression = Val(false), cse = true)
+    return propagator, d_propagator
+end
+
 # evaluate using Qin Jiushao's algorithm
 @generated function evaluate_polynomial(t::TaylorScalar{T, P}, z) where {T, P}
     ex = :(v[$(P + 1)])
