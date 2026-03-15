@@ -48,6 +48,9 @@ DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+DynamicQuantities = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
+Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 
 [compat]
 SafeTestsets = "0.1.0"
@@ -92,6 +95,9 @@ Logging = "1.10"
 Mooncake = "0.4, 0.5"
 AllocCheck = "0.2"
 DiffEqBase = "6.209"
+DynamicQuantities = "1"
+Measurements = "2"
+OrdinaryDiffEqTsit5 = "1"
 FillArrays = "1.13"
 Adapt = "4.3"
 Reexport = "1.2"
@@ -101,7 +107,7 @@ Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [targets]
-test = ["DiffEqDevTools", "SafeTestsets", "SparseArrays", "Test", "Pkg"]
+test = ["DiffEqDevTools", "SafeTestsets", "SparseArrays", "Test", "Pkg", "DynamicQuantities", "Measurements", "OrdinaryDiffEqTsit5"]
 
 [extensions]
 OrdinaryDiffEqCoreMooncakeExt = "Mooncake"
