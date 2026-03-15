@@ -1321,11 +1321,16 @@ function interpolation_differential_vars(differential_vars, y₀, idxs)
     end
 end
 
-# If no dispatch found, assume Hermite
+# If no dispatch found, assume Hermite (or linear when k is empty, e.g. SDE)
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
     ) where {TI}
     TI > 3 && throw(DerivativeOrderNotPossibleError())
+
+    # Linear fallback when no dense output vectors (e.g. SDE)
+    if isempty(k)
+        return linear_interpolant(Θ, dt, y₀, y₁, idxs, T)
+    end
 
     differential_vars = interpolation_differential_vars(differential_vars, y₀, idxs)
     return hermite_interpolant(
@@ -1338,6 +1343,10 @@ function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
     ) where {TI}
     TI > 3 && throw(DerivativeOrderNotPossibleError())
+
+    if isempty(k)
+        return linear_interpolant!(out, Θ, dt, y₀, y₁, idxs, T)
+    end
 
     differential_vars = interpolation_differential_vars(differential_vars, y₀, idxs)
     return hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)

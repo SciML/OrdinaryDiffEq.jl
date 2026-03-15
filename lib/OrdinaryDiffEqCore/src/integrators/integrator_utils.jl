@@ -5,6 +5,7 @@ reject_noise!(::Nothing, args...) = nothing
 save_noise!(::Nothing) = nothing
 noise_curt(::Nothing) = nothing
 is_noise_saveable(::Nothing) = false
+reinit_noise!(::Nothing, dt) = nothing
 
 # Noise field accessors — safe for any integrator type.
 # ODEIntegrator has W/P/sqdt; other integrators (DDEIntegrator) don't.
