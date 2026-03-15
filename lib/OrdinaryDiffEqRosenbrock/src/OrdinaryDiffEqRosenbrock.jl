@@ -35,6 +35,18 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
     calc_W, calc_rosenbrock_differentiation!, build_J_W,
     UJacobianWrapper, dolinsolve, WOperator, resize_J_W!
 
+# Conditionally import OOP calc_rosenbrock_differentiation (added in newer OrdinaryDiffEqDifferentiation)
+@static if isdefined(OrdinaryDiffEqDifferentiation, :calc_rosenbrock_differentiation)
+    using OrdinaryDiffEqDifferentiation: calc_rosenbrock_differentiation
+else
+    # Fallback: standard path without Jacobian reuse for OOP
+    function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
+        dT = calc_tderivative(integrator, cache)
+        W = calc_W(integrator, cache, dtgamma, repeat_step)
+        return dT, W
+    end
+end
+
 using Reexport
 @reexport using SciMLBase
 
@@ -284,6 +296,7 @@ PrecompileTools.@compile_workload begin
     end
 
     for prob in prob_list, solver in solver_list
+
         solve(prob, solver)(5.0)
     end
 

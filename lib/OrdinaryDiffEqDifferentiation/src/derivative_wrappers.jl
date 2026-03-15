@@ -451,6 +451,9 @@ function sparsity_colorvec(f::F, x) where {F}
     col_alg = GreedyColoringAlgorithm()
     col_prob = ColoringProblem()
     colorvec = SciMLBase.has_colorvec(f) ? f.colorvec :
-        (isnothing(sparsity) ? (1:length(x)) : column_colors(coloring(sparsity, col_prob, col_alg)))
+        (
+            isnothing(sparsity) ? (1:length(x)) :
+            column_colors(coloring(sparsity, col_prob, col_alg))
+        )
     return sparsity, colorvec
 end

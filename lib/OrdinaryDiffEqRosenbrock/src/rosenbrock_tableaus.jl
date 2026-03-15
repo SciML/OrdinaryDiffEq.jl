@@ -236,6 +236,24 @@ struct RodasTableau{T, T2}
     H::Matrix{T}
 end
 
+# Unified tableau for consolidated Rosenbrock methods that have explicit b/btilde weights
+struct RosenbrockUnifiedTableau{T, T2, bType, btType}
+    A::Matrix{T}
+    C::Matrix{T}
+    gamma::T2
+    c::Vector{T2}
+    d::Vector{T}
+    H::Matrix{T}
+    b::bType       # explicit b weights
+    btilde::btType  # explicit btilde for error estimation (nothing = fixed-step method)
+end
+
+# Accessors: RodasTableau uses Rodas encoding (no explicit b/btilde)
+tableau_b(::RodasTableau) = nothing
+tableau_btilde(::RodasTableau) = nothing
+tableau_b(tab::RosenbrockUnifiedTableau) = tab.b
+tableau_btilde(tab::RosenbrockUnifiedTableau) = tab.btilde
+
 const RODAS4A = [
     0 0 0 0 0 0
     1.544 0 0 0 0 0
@@ -262,7 +280,6 @@ function Rodas4Tableau(T, T2)
     gamma = 0.25
     return RodasTableau{T, T2}(RODAS4A, RODAS4C, gamma, RODAS4c, RODAS4d, RODAS4H)
 end
-
 
 const RODAS42A = [
     0 0 0 0 0 0
@@ -462,8 +479,20 @@ const RODAS6PC = [
     -164.17333724090065 -123.20834760012879 41.95443520088893 -239.77049586199965 -114.21790985713952 -12.341946126859007 15.750890701780254 39.790586318490696 -15.10728752295998 -12.824535901748304 16.73312629333741 -11.045750202895642 -14.639022723428816 -4.819493713790297 0.12987727446051117 0.04274137296376776 1.204312390836273 0.0 0.0
     461.9368267656361 52.53840694165619 144.8183760448168 455.9093893534564 35.81740627464267 40.776479432911195 17.76376684531324 -7.606209560029927 -15.381956921574087 3.9317973949968428 -41.37771137941743 -44.920577584346 53.37495929469229 10.211466474320808 -15.84128439059478 -19.507483543094224 1.884309895179932 5.745356704710484 0.0
 ]
-const RODAS6Pc = [0.0, 0.4449064090300329, 0.5391930604628539, 0.3920739557917205, 0.5393851240464334, 0.7496615946466092, 0.09171052879621677, 0.716762001806476, 0.9201684737037024, 0.7017495611178288, 0.5587152179138446, 0.10896187906446, 0.5073827520419607, 0.9999999999999999, 0.9999999999999999, 1.0000000000000002, 0.19999999999999996, 0.4999999999999998, 0.8]
-const RODAS6Pd = [0.26, -0.18490640903003291, -0.5445316852875675, -0.03230297796648507, -0.05985832397786847, 0.08292573124960323, 0.4158601113780379, -0.4887636036121086, -0.5305551731438798, 0.12166683722729399, -0.14899579330238244, 0.20995126195089908, -0.06287825975966793, -1.1102230246251565e-16, 1.1102230246251565e-16, 2.220446049250313e-16, 8.520155173756681, -7.34858003171262, 1.5593201340906078]
+const RODAS6Pc = [
+    0.0, 0.4449064090300329, 0.5391930604628539, 0.3920739557917205,
+    0.5393851240464334, 0.7496615946466092, 0.09171052879621677,
+    0.716762001806476, 0.9201684737037024, 0.7017495611178288, 0.5587152179138446,
+    0.10896187906446, 0.5073827520419607, 0.9999999999999999, 0.9999999999999999,
+    1.0000000000000002, 0.19999999999999996, 0.4999999999999998, 0.8,
+]
+const RODAS6Pd = [
+    0.26, -0.18490640903003291, -0.5445316852875675, -0.03230297796648507,
+    -0.05985832397786847, 0.08292573124960323, 0.4158601113780379, -0.4887636036121086,
+    -0.5305551731438798, 0.12166683722729399, -0.14899579330238244, 0.20995126195089908,
+    -0.06287825975966793, -1.1102230246251565e-16, 1.1102230246251565e-16,
+    2.220446049250313e-16, 8.520155173756681, -7.34858003171262, 1.5593201340906078,
+]
 const RODAS6PH = [
     17.587737160518465 -4.506717064391614 3.246011776864481 -5.070180845870549 -6.923968603369673 -1.6592466655000042 0.8383525386642399 1.2720777724693832 2.2171542815286456 1.2791183755209752 3.3596716472022443 -0.5508890465808383 -2.0565074886981494 -2.6056952102687827 -2.100871100634552 -1.8776167550373888 -0.022326222735958842 0.25936621048769365 -0.12973178185863266
     -27.32817833553187 2.3528275077734033 7.155223685651038 10.820120934865187 -25.034320788396975 -8.268316122429903 -11.20195859714455 -5.95292555000712 -4.350123484395559 -3.4923279797567224 -7.522667509591013 6.313357154108988 3.434436480929646 4.500204746140061 3.6478467450775045 2.888705712728512 -0.031277730738519756 -1.0511708104283997 0.7378677397843861
@@ -476,6 +505,267 @@ function Rodas6PTableau(T, T2)
 end
 
 @RosenbrockW6S4OS(:tableau)
+
+################################################################################
+# RodasTableau constructors for consolidated Rosenbrock methods
+#
+# These convert from the named-field tableaus (ROS3PTableau, Rodas3Tableau, etc.)
+# and from the macro-generated RosenbrockAdaptiveTableau/RosenbrockFixedTableau
+# into the matrix-based RodasTableau format used by RosenbrockCache.
+################################################################################
+
+"""
+    _rosenbrock_to_rodas(tab_fn, T, T2)
+
+Convert a RosenbrockAdaptiveTableau or RosenbrockFixedTableau (returned by `tab_fn()`)
+into a RodasTableau. Handles the special case of ROS4 methods where the `a` matrix
+is (n-1)×(n-1) because a_{n,j} = a_{n-1,j}.
+
+H is set to zeros(0, n) since these methods use basic Hermite interpolation (kshortsize=2).
+"""
+function _rosenbrock_to_rodas(tab_fn, T, T2)
+    tab = tab_fn()
+    n = length(tab.b)
+    a_rows = size(tab.a, 1)
+    a_cols = size(tab.a, 2)
+
+    # Build A matrix (n×n)
+    A = zeros(T, n, n)
+    for i in 1:a_rows, j in 1:a_cols
+        A[i, j] = convert(T, tab.a[i, j])
+    end
+    if a_rows < n
+        # ROS4 case: a_{n,j} = a_{n-1,j}, duplicate last stored row
+        for j in 1:a_cols
+            A[n, j] = A[a_rows, j]
+        end
+    end
+
+    # Build C matrix (n×n)
+    C_rows = size(tab.C, 1)
+    C_cols = size(tab.C, 2)
+    C = zeros(T, n, n)
+    for i in 1:C_rows, j in 1:min(C_cols, n)
+        C[i, j] = convert(T, tab.C[i, j])
+    end
+
+    gamma = convert(T2, tab.gamma)
+
+    # Build c vector (length n)
+    c_len = length(tab.c)
+    c = Vector{T2}(undef, n)
+    for i in 1:c_len
+        c[i] = convert(T2, tab.c[i])
+    end
+    # ROS4 case: c has n-1 entries, c_n = c_{n-1}
+    for i in (c_len + 1):n
+        c[i] = c[c_len]
+    end
+
+    d = T[convert(T, tab.d[i]) for i in 1:n]
+    b_vec = T[convert(T, tab.b[i]) for i in 1:n]
+    H = zeros(T, 0, n)
+
+    if tab isa RosenbrockAdaptiveTableau
+        btilde_vec = T[convert(T, tab.btilde[i]) for i in 1:n]
+        return RosenbrockUnifiedTableau(A, C, gamma, c, d, H, b_vec, btilde_vec)
+    else
+        # RosenbrockFixedTableau — no error estimator
+        return RosenbrockUnifiedTableau(A, C, gamma, c, d, H, b_vec, nothing)
+    end
+end
+
+# --- ROS2 family (2-stage) ---
+ROS2RodasTableau(T, T2) = _rosenbrock_to_rodas(ROS2Tableau, T, T2)
+
+# --- ROS23 family (3-stage) ---
+ROS2PRRodasTableau(T, T2) = _rosenbrock_to_rodas(ROS2PRTableau, T, T2)
+ROS2SRodasTableau(T, T2) = _rosenbrock_to_rodas(ROS2STableau, T, T2)
+ROS3RodasTableau(T, T2) = _rosenbrock_to_rodas(ROS3Tableau, T, T2)
+ROS3PRRodasTableau(T, T2) = _rosenbrock_to_rodas(ROS3PRTableau, T, T2)
+Scholz4_7RodasTableau(T, T2) = _rosenbrock_to_rodas(Scholz4_7Tableau, T, T2)
+
+# --- ROS34PW family (4-stage) ---
+ROS34PW1aRodasTableau(T, T2) = _rosenbrock_to_rodas(ROS34PW1aTableau, T, T2)
+ROS34PW1bRodasTableau(T, T2) = _rosenbrock_to_rodas(ROS34PW1bTableau, T, T2)
+ROS34PW2RodasTableau(T, T2) = _rosenbrock_to_rodas(ROS34PW2Tableau, T, T2)
+ROS34PW3RodasTableau(T, T2) = _rosenbrock_to_rodas(ROS34PW3Tableau, T, T2)
+ROS34PRwRodasTableau(T, T2) = _rosenbrock_to_rodas(ROS34PRwTableau, T, T2)
+ROS3PRLRodasTableau(T, T2) = _rosenbrock_to_rodas(ROS3PRLTableau, T, T2)
+ROS3PRL2RodasTableau(T, T2) = _rosenbrock_to_rodas(ROS3PRL2Tableau, T, T2)
+ROK4aRodasTableau(T, T2) = _rosenbrock_to_rodas(ROK4aTableau, T, T2)
+
+# --- Rosenbrock4 family (4-stage, a4j=a3j special case) ---
+RosShamp4RodasTableau(T, T2) = _rosenbrock_to_rodas(RosShamp4Tableau, T, T2)
+Veldd4RodasTableau(T, T2) = _rosenbrock_to_rodas(Veldd4Tableau, T, T2)
+Velds4RodasTableau(T, T2) = _rosenbrock_to_rodas(Velds4Tableau, T, T2)
+GRK4TRodasTableau(T, T2) = _rosenbrock_to_rodas(GRK4TTableau, T, T2)
+GRK4ARodasTableau(T, T2) = _rosenbrock_to_rodas(GRK4ATableau, T, T2)
+Ros4LStabRodasTableau(T, T2) = _rosenbrock_to_rodas(Ros4LSTableau, T, T2)
+
+# --- RosenbrockW6S4OS (6-stage, fixed/non-adaptive) ---
+RosenbrockW6S4OSRodasTableau(T, T2) = _rosenbrock_to_rodas(RosenbrockW6S4OSTableau, T, T2)
+
+# --- ROS3P (3-stage, hand-written named-field tableau) ---
+function ROS3PRodasTableau(T, T2)
+    tab = ROS3PTableau(T, T2)
+    A = zeros(T, 3, 3)
+    A[2, 1] = tab.a21
+    A[3, 1] = tab.a31
+    A[3, 2] = tab.a32
+
+    C = zeros(T, 3, 3)
+    C[2, 1] = tab.C21
+    C[3, 1] = tab.C31
+    C[3, 2] = tab.C32
+
+    gamma = tab.gamma
+    c = T2[convert(T2, 0), tab.c2, tab.c3]
+    d = T[tab.d1, tab.d2, tab.d3]
+    b = T[tab.b1, tab.b2, tab.b3]
+    btilde = T[tab.btilde1, tab.btilde2, tab.btilde3]
+    H = zeros(T, 0, 3)
+
+    return RosenbrockUnifiedTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+# --- Rodas3 (4-stage, hand-written named-field tableau) ---
+function Rodas3RodasTableau(T, T2)
+    tab = Rodas3Tableau(T, T2)
+    A = zeros(T, 4, 4)
+    A[2, 1] = tab.a21
+    A[3, 1] = tab.a31
+    A[3, 2] = tab.a32
+    A[4, 1] = tab.a41
+    A[4, 2] = tab.a42
+    A[4, 3] = tab.a43
+
+    C = zeros(T, 4, 4)
+    C[2, 1] = tab.C21
+    C[3, 1] = tab.C31
+    C[3, 2] = tab.C32
+    C[4, 1] = tab.C41
+    C[4, 2] = tab.C42
+    C[4, 3] = tab.C43
+
+    gamma = tab.gamma
+    c = T2[convert(T2, 0), tab.c2, tab.c3, convert(T2, 1)]
+    d = T[tab.d1, tab.d2, tab.d3, tab.d4]
+    b = T[tab.b1, tab.b2, tab.b3, tab.b4]
+    btilde = T[tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4]
+    H = zeros(T, 0, 4)
+
+    return RosenbrockUnifiedTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+# --- Rodas3P (5-stage, hand-written tableau with dense output H matrix) ---
+# Stage 3 reuses f(uprev) (c3=0, A[3,:]=0). Stages 4 and 5 share the f evaluation
+# (A[5,:]=A[4,:], c5=1=c4). d4=d5=0 (no dT term in stages 4,5).
+# Solution: u = uprev + sum(b[i]*ks[i]), error = sum(btilde[i]*ks[i])
+# For Rodas3P: 3rd order solution, b=[a41,a42,a43,0,1], btilde=[0,0,0,-1,1]
+function Rodas3PRodasTableau(T, T2)
+    tab = Rodas3PTableau(T, T2)
+    A = zeros(T, 5, 5)
+    A[2, 1] = tab.a21
+    # A[3,:] = 0 (stage 3 evaluates f at uprev)
+    A[4, 1] = tab.a41
+    A[4, 2] = tab.a42
+    A[4, 3] = tab.a43
+    A[5, 1] = tab.a41  # stage 5 uses same u as stage 4
+    A[5, 2] = tab.a42
+    A[5, 3] = tab.a43
+
+    C = zeros(T, 5, 5)
+    C[2, 1] = tab.C21
+    C[3, 1] = tab.C31
+    C[3, 2] = tab.C32
+    C[4, 1] = tab.C41
+    C[4, 2] = tab.C42
+    C[4, 3] = tab.C43
+    C[5, 1] = tab.C51
+    C[5, 2] = tab.C52
+    C[5, 3] = tab.C53
+    C[5, 4] = tab.C54
+
+    gamma = convert(T2, tab.gamma)
+    c = T2[convert(T2, 0), tab.c2, tab.c3, convert(T2, 1), convert(T2, 1)]
+    d = T[tab.d1, tab.d2, tab.d3, zero(T), zero(T)]
+
+    # Rodas3P: 3rd order solution uses k5
+    b = T[tab.a41, tab.a42, tab.a43, zero(T), one(T)]
+    btilde = T[zero(T), zero(T), zero(T), -one(T), one(T)]
+
+    H = zeros(T, 3, 5)
+    H[1, 1] = tab.h21
+    H[1, 2] = tab.h22
+    H[1, 3] = tab.h23
+    H[1, 4] = tab.h24
+    H[1, 5] = tab.h25
+    H[2, 1] = tab.h31
+    H[2, 2] = tab.h32
+    H[2, 3] = tab.h33
+    H[2, 4] = tab.h34
+    H[2, 5] = tab.h35
+    H[3, 1] = tab.h2_21
+    H[3, 2] = tab.h2_22
+    H[3, 3] = tab.h2_23
+    H[3, 4] = tab.h2_24
+    H[3, 5] = tab.h2_25
+
+    return RosenbrockUnifiedTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+# --- Rodas23W (5-stage, same tableau data as Rodas3P but uses 2nd order solution) ---
+# Rodas23W swaps: u = 2nd order solution (k4), du = 3rd order (k5).
+# b=[a41,a42,a43,1,0], btilde=[0,0,0,1,-1] (error = k4-k5)
+# H row 1 uses h2_ coefficients (from swap), row 2 = 0
+function Rodas23WRodasTableau(T, T2)
+    tab = Rodas3PTableau(T, T2)
+    A = zeros(T, 5, 5)
+    A[2, 1] = tab.a21
+    A[4, 1] = tab.a41
+    A[4, 2] = tab.a42
+    A[4, 3] = tab.a43
+    A[5, 1] = tab.a41
+    A[5, 2] = tab.a42
+    A[5, 3] = tab.a43
+
+    C = zeros(T, 5, 5)
+    C[2, 1] = tab.C21
+    C[3, 1] = tab.C31
+    C[3, 2] = tab.C32
+    C[4, 1] = tab.C41
+    C[4, 2] = tab.C42
+    C[4, 3] = tab.C43
+    C[5, 1] = tab.C51
+    C[5, 2] = tab.C52
+    C[5, 3] = tab.C53
+    C[5, 4] = tab.C54
+
+    gamma = convert(T2, tab.gamma)
+    c = T2[convert(T2, 0), tab.c2, tab.c3, convert(T2, 1), convert(T2, 1)]
+    d = T[tab.d1, tab.d2, tab.d3, zero(T), zero(T)]
+
+    # Rodas23W: 2nd order solution uses k4
+    b = T[tab.a41, tab.a42, tab.a43, one(T), zero(T)]
+    btilde = T[zero(T), zero(T), zero(T), one(T), -one(T)]
+
+    # H: after Rodas23W swap, k[1]=h2_ row, k[2]=0, k[3]=h2_ row
+    H = zeros(T, 3, 5)
+    H[1, 1] = tab.h2_21
+    H[1, 2] = tab.h2_22
+    H[1, 3] = tab.h2_23
+    H[1, 4] = tab.h2_24
+    H[1, 5] = tab.h2_25
+    # H[2,:] = 0 (k[2] is zeroed for Rodas23W)
+    H[3, 1] = tab.h2_21
+    H[3, 2] = tab.h2_22
+    H[3, 3] = tab.h2_23
+    H[3, 4] = tab.h2_24
+    H[3, 5] = tab.h2_25
+
+    return RosenbrockUnifiedTableau(A, C, gamma, c, d, H, b, btilde)
+end
 
 ################################################################################
 # Tsit5DA - 12-stage order 5(4) hybrid explicit/linear-implicit method for DAEs
