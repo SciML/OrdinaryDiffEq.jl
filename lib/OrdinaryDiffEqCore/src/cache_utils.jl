@@ -8,8 +8,7 @@ end
 function SciMLBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
     alg = integrator.alg
     cache = integrator.cache
-    iscomp = alg isa CompositeAlgorithm
-    if !iscomp
+    if !is_composite_algorithm(alg)
         return cache
     elseif cache isa DefaultCache
         current = integrator.cache.current
