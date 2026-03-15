@@ -57,6 +57,7 @@ function _ode_init(
         save_everystep = isempty(saveat),
         save_on = true,
         save_discretes = true,
+        disco_dt_set = false,
         save_start = save_everystep || isempty(saveat) ||
             saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
@@ -741,7 +742,7 @@ function _ode_init(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
-        dtpropose, tdir, eigen_est, EEst,
+        dtpropose, disco_dt_set, tdir, eigen_est, EEst,
         # TODO vvv remove these
         QT(qoldinit), q11,
         erracc, dtacc,

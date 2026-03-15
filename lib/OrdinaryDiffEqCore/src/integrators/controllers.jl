@@ -196,6 +196,11 @@ end
 
 function step_reject_controller!(integrator, controller::IController, alg)
     (; qold) = integrator
+    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+    if disco_dt != -1
+        integrator.dt = disco_dt
+        return integrator.dt
+    end
     return integrator.dt = qold
 end
 
@@ -271,6 +276,11 @@ end
 
 function step_reject_controller!(integrator, cache::IControllerCache, alg)
     @assert cache.dtreject ≈ integrator.qold "Controller cache went out of sync with time stepping logic."
+    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+    if disco_dt != -1
+        integrator.dt = disco_dt
+        return integrator.dt
+    end
     return integrator.dt = cache.dtreject # TODO this does not look right.
 end
 
@@ -351,6 +361,11 @@ end
 function step_reject_controller!(integrator, controller::PIController, alg)
     (; q11) = integrator
     (; qmin, gamma) = integrator.opts
+    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+    if disco_dt != -1
+        integrator.dt = disco_dt
+        return integrator.dt
+    end
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
@@ -457,6 +472,11 @@ end
 function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; controller, q11) = cache
     (; qmin, gamma) = controller
+    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+    if disco_dt != -1
+        integrator.dt = disco_dt
+        return integrator.dt
+    end
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
@@ -633,6 +653,11 @@ function step_accept_controller!(integrator, controller::PIDController, alg, dt_
 end
 
 function step_reject_controller!(integrator, controller::PIDController, alg)
+    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+    if disco_dt != -1
+        integrator.dt = disco_dt
+        return integrator.dt
+    end
     return integrator.dt *= integrator.qold
 end
 
@@ -764,6 +789,11 @@ function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_
 end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
+    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+    if disco_dt != -1
+        integrator.dt = disco_dt
+        return integrator.dt
+    end
     return integrator.dt *= cache.dt_factor
 end
 
@@ -877,6 +907,12 @@ end
 
 function step_reject_controller!(integrator, controller::PredictiveController, alg)
     (; dt, success_iter, qold) = integrator
+    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+    if disco_dt != -1
+        integrator.dt = disco_dt
+        return integrator.dt
+    end
+
     return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end
 
@@ -988,6 +1024,11 @@ end
 function step_reject_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; dt, success_iter) = integrator
     (; qold) = cache
+    if (integrator.disco_dt_set) 
+        println("using fixed dt from discontinuity handling")
+        integrator.disco_dt_set = false
+        return integrator.dt 
+    end
     return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end
 
