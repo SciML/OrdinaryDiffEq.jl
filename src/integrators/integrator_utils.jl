@@ -138,8 +138,6 @@ function OrdinaryDiffEqCore.reinit_noise!(W::DiffEqNoiseProcess.AbstractNoisePro
 end
 
 # _determine_initdt: SDE extension (called from ODE's auto_dt_reset!)
-# Only use SDE's initdt for AbstractRODEProblem; TauLeaping uses DiscreteProblem
-# and should fall through to ODE's default ode_determine_initdt.
 function OrdinaryDiffEqCore._determine_initdt(integrator::SDEIntegrator)
     prob = integrator.sol.prob
     if prob isa SciMLBase.AbstractRODEProblem
@@ -152,12 +150,8 @@ function OrdinaryDiffEqCore._determine_initdt(integrator::SDEIntegrator)
             integrator
         )
     else
-        return OrdinaryDiffEqCore.ode_determine_initdt(
-            integrator.u, integrator.t,
-            integrator.tdir, integrator.opts.dtmax,
-            integrator.opts.abstol, integrator.opts.reltol,
-            integrator.opts.internalnorm, prob,
-            integrator
-        )
+        # TauLeaping/CaoTauLeaping use DiscreteProblem (no f.g or f.mass_matrix),
+        # so neither sde_ nor ode_determine_initdt applies. Return a small dt.
+        return integrator.tdir * integrator.opts.dtmax / convert(typeof(integrator.t), 1e6)
     end
 end
