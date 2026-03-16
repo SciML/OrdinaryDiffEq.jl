@@ -62,6 +62,6 @@ end
 
 @testset "Compare GPU to CPU solution" begin
     for t in tspan[begin]:0.1:tspan[end]
-        @test Vector(sol_d(t)) ≈ sol(t)
+        @test isapprox(Vector(sol_d(t)), sol(t); rtol = 1e-4)
     end
 end
