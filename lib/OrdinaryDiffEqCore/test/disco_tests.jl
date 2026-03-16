@@ -1,6 +1,7 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner
 
+#TEST 1: SIMPLE DISCONTINUITY
 #test example discontinuous at u = 1
 f(u, p, t) = u[1] < 1 ? [2u[1]] : [-3u[1] + 5]
 u0 = [0.1]           
@@ -10,38 +11,22 @@ prob = ODEProblem(f, u0, tspan)
 #define callback
 condition(u, t, integrator) = u[1] - 1
 function affect!(integrator)
+    #println("fired callback at t=$(integrator.t), u=$(integrator.u[1])")
     integrator.u[1] += 10
 end
 cb = ContinuousCallback(condition, affect!; is_discontinuity = true)
 cb2 = ContinuousCallback(condition, affect!; is_discontinuity = false)
 
 sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
-#  291.292 μs (8449 allocations: 266.47 KiB)
+#  277.833 μs (8033 allocations: 251.14 KiB)
 sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
-#  335.417 μs (10008 allocations: 311.08 KiB)
+#  343.041 μs (10008 allocations: 311.02 KiB)
 
-rodas_disco = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6)
-#  410.291 μs (16828 allocations: 594.05 KiB)
-rodas_no_disco = solve(prob, Rodas5P(); callback = cb2, reltol = 1e-6)
-#  483.792 μs (17729 allocations: 639.31 KiB)
-
-bdf_disco = solve(prob, FBDF(); callback = cb, reltol = 1e-6)
-#   245.917 μs (20703 allocations: 665.16 KiB)
-bdf_no_disco = solve(prob, FBDF(); callback = cb2, reltol = 1e-6)
-#   269.333 μs (20477 allocations: 663.80 KiB)
-
-tsit_disco = solve(prob, Tsit5(); callback = cb, reltol = 1e-6)
-# same either way for some reason? check about this
-tsit_no_disco = solve(prob, Tsit5(); callback = cb2, reltol = 1e-6)
-
-vern_disco = solve(prob, Vern7(); callback = cb, reltol = 1e-6)
-#   111.125 μs (15629 allocations: 493.66 KiB)
-vern_no_disco = solve(prob, Vern7(); callback = cb2, reltol = 1e-6)
-#   83.666 μs (13326 allocations: 420.31 KiB)
 @profview for i in 1:1000 
     solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
 end
 
+#TEST 2: TWO DISCONTINUITIES
 #two discontinuity functions
 function f(u, p, t)
     if u[1] < 1
@@ -49,7 +34,7 @@ function f(u, p, t)
     elseif u[1] < 2
         [u[1] + 0.2]            # region 2: continues increasing to hit u = 2
     else
-        [-4u[1] + 12]           # region 3: after 2, moves toward u ≈ 3
+        [-4u[1] + 12]           
     end
 end
 
@@ -63,28 +48,27 @@ function affect1!(integrator)
     #println("Callback 1 fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
 cb1 = ContinuousCallback(condition1, affect1!; is_discontinuity = true)
+cb1f = ContinuousCallback(condition1, affect1!; is_discontinuity = false)
 
 condition2(u, t, integrator) = u[1] - 2
 function affect2!(integrator)
     #println("Callback 2 fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
 cb2 = ContinuousCallback(condition2, affect2!; is_discontinuity = true)
+cb2f = ContinuousCallback(condition2, affect2!; is_discontinuity = false)
 cb = CallbackSet(cb1, cb2)
+cb2 = CallbackSet(cb1f, cb2f)
 
 #disco solve
-sol_disco = solve(prob, RadauIIA5(is_disco = true); callback = cb, reltol = 1e-6)
+sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
+#  1.664 ms (43703 allocations: 1.35 MiB)
 #fixed order solve
-sol_no_disco = solve(prob, RadauIIA5(is_disco = false); callback = cb, reltol = 1e-6)
-
-rodas_no_disco = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6)
-
-rodas_disco = solve(prob, Rodas5P(is_disco = true); callback = cb, reltol = 1e-6)
-
-bdf_no_disco = solve(prob, FBDF(); callback = cb, reltol = 1e-6)
-
-bdf_disco = solve(prob, FBDF(is_disco = true); callback = cb, reltol = 1e-6)
+sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
+#   1.266 ms (37019 allocations: 1.12 MiB)
 
 
+
+#TEST 3: EXPONENTIAL DISCONTINUITY
 # multiple exponential regions with sharp transitions
 function f_multi_exp!(du, u, p, t)
     if u[1] < 0.3
@@ -103,50 +87,32 @@ prob_multi = ODEProblem(f_multi_exp!, u0_multi, tspan_multi)
 #define callbacks
 cond_multi_1(u, t, integrator) = u[1] - 0.3
 function affect_multi_1!(integrator)
-    println("Multi-exponential discontinuity 1 callback fired at t=$(integrator.t), u=$(integrator.u[1])")
+    #println("Multi-exponential discontinuity 1 callback fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
 cb_multi_1 = ContinuousCallback(cond_multi_1, affect_multi_1!; is_discontinuity = true)
+cb_multi_1f = ContinuousCallback(cond_multi_1, affect_multi_1!; is_discontinuity = false)
 
 cond_multi_2(u, t, integrator) = u[1] - 0.8
 function affect_multi_2!(integrator)
-    println("Multi-exponential discontinuity 2 callback fired at t=$(integrator.t), u=$(integrator.u[1])")
+    #println("Multi-exponential discontinuity 2 callback fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
 cb_multi_2 = ContinuousCallback(cond_multi_2, affect_multi_2!; is_discontinuity = true)
+cb_multi_2f = ContinuousCallback(cond_multi_2, affect_multi_2!; is_discontinuity = false)
 cb_multi = CallbackSet(cb_multi_1, cb_multi_2)
+cb_multi2 = CallbackSet(cb_multi_1f, cb_multi_2f)
 
 #disco solve
-sol_disco = solve(prob_multi, RadauIIA5(is_disco = true); callback=cb_multi, reltol=1e-7, abstol=1e-9)
+sol_disco = solve(prob_multi, RadauIIA5(); callback=cb_multi, reltol=1e-7, abstol=1e-9)
+#    202.834 μs (2770 allocations: 93.23 KiB)
 #fixed order solve
-sol_no_disco = solve(prob_multi, RadauIIA5(is_disco = false); callback=cb_multi, reltol = 1e-7, abstol = 1e-9)
+sol_no_disco = solve(prob_multi, RadauIIA5(); callback=cb_multi2, reltol = 1e-7, abstol = 1e-9)
+#  122.875 μs (1136 allocations: 54.52 KiB)
 
-# 2D system with exponential coupling and discontinuity
-function f_2d_exp!(du, u, p, t)
-    if u[1] + u[2] < 1.0
-        du[1] = 2 * exp(u[1]) - u[2]
-        du[2] = -3 * u[1] + 4 * exp(u[2])
-    else
-        du[1] = u[1]
-        du[2] = u[2]
-    end
+@profview for i in 1:1000 
+    solve(prob_multi, RadauIIA5(); callback = cb_multi, reltol = 1e-6)
 end
 
-u0_2d = [0.1, 0.2]
-tspan_2d = (0.0, 2.0)
-prob_2d = ODEProblem(f_2d_exp!, u0_2d, tspan_2d)
-
-#define callback
-cond_2d(u, t, integrator) = u[1] + u[2] - 1.0
-function affect_2d!(integrator)
-    println("2D exponential discontinuity callback fired at t=$(integrator.t), u=$(integrator.u)")
-    @test 0.98 < integrator.u[1] + integrator.u[2] < 1.02
-end
-cb_2d = ContinuousCallback(cond_2d, affect_2d!; is_discontinuity = true)
-
-#disco solve
-sol_disco = solve(prob_2d, RadauIIA5(is_disco = true); callback=cb_2d, reltol=1e-8, abstol=1e-10)
-#fixed order solve
-sol_no_disco = solve(prob_2d, RadauIIA5(is_disco = false); callback=cb_2d, reltol = 1e-8, abstol = 1e-10)
-
+#TEST 4: STIFF DISCONTINUITY
 # very stiff discontinuous system
 function f_stiff_disc!(du, u, p, t)
     λ = p[1]  # stiffness parameter
@@ -164,15 +130,20 @@ prob_stiff = ODEProblem(f_stiff_disc!, u0_stiff, tspan_stiff, [100.0])
 #define callback
 cond_stiff(u, t, integrator) = u[1] - 0.5
 function affect_stiff!(integrator)
-    println("Stiff discontinuity callback fired at t=$(integrator.t), u=$(integrator.u[1])")
+    #println("Stiff discontinuity callback fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
 cb_stiff = ContinuousCallback(cond_stiff, affect_stiff!; is_discontinuity = true)
+cb_stiff_f = ContinuousCallback(cond_stiff, affect_stiff!; is_discontinuity = false)
 
 #disco solve
-sol_disco = solve(prob_stiff, RadauIIA5(is_disco = true); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
+sol_disco = solve(prob_stiff, RadauIIA5(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
+#  131.875 μs (1956 allocations: 74.03 KiB)
 #fixed order solve
-sol_no_disco = solve(prob_stiff, RadauIIA5(is_disco = false); callback=cb_stiff, reltol = 1e-9, abstol = 1e-11)
+sol_no_disco = solve(prob_stiff, RadauIIA5(); callback=cb_stiff_f, reltol = 1e-9, abstol = 1e-11)
+#  119.417 μs (1480 allocations: 59.55 KiB)
 
+
+#TEST 5: MULTIPLE DISCONTINUITIES IN SMALL RANGE
 # multiple discontinuities in very small range (1e-6 apart, 5 discontinuities)
 function f_many_disc!(du, u, p, t)
     du[1] = u[1] + 1  # simple linear growth
@@ -187,20 +158,26 @@ disc_values = [0.1 + i * 1e-6 for i = 0:4]
 
 # define callbacks for each discontinuity
 cbs_many = []
+cbs_many_f = []
 for (i, disc_val) in enumerate(disc_values)
     local cond_func(u, t, integrator) = u[1] - disc_val
     function affect_func!(integrator)
-        println("Dense discontinuity $i fired at t=$(integrator.t), u=$(integrator.u[1])")
+        #println("Dense discontinuity $i fired at t=$(integrator.t), u=$(integrator.u[1])")
     end
     push!(cbs_many, ContinuousCallback(cond_func, affect_func!; is_discontinuity = true))
+    push!(cbs_many_f, ContinuousCallback(cond_func, affect_func!; is_discontinuity = false))
 end
 cb_many = CallbackSet(cbs_many...)
+cb_many_f = CallbackSet(cbs_many_f...)
 
 #disco solve
-sol_disco = solve(prob_many, RadauIIA5(is_disco = true); callback=cb_many, reltol=1e-10, abstol=1e-12)
+sol_disco = solve(prob_many, RadauIIA5(); callback=cb_many, reltol=1e-10, abstol=1e-12)
+#   111.333 μs (907 allocations: 36.94 KiB)
 #fixed order solve
-sol_no_disco = solve(prob_many, RadauIIA5(is_disco = false); callback=cb_many, reltol=1e-10, abstol=1e-12)
+sol_no_disco = solve(prob_many, RadauIIA5(); callback=cb_many_f, reltol=1e-10, abstol=1e-12)
+#   111.666 μs (907 allocations: 36.94 KiB)
 
+#TEST 6: DISCONTINUOUS DAE
 # discontinuous DAE with mass matrix
 # System: M * du/dt = f(u, p, t)
 # du[1]/dt = u[2] - u[1]
@@ -228,41 +205,44 @@ function affect_dae!(integrator)
     #println("DAE discontinuity callback fired at t=$(integrator.t), u=$(integrator.u)")
 end
 cb_dae = ContinuousCallback(cond_dae, affect_dae!; is_discontinuity = true)
+cb_daef = ContinuousCallback(cond_dae, affect_dae!; is_discontinuity = false)
 
+radau_no_disco = solve(prob_dae, RadauIIA5(); callback=cb_daef, reltol=1e-8, abstol=1e-10)
+#  83.500 μs (769 allocations: 35.72 KiB)
+radau_disco = solve(prob_dae, RadauIIA5(); callback=cb_dae, reltol=1e-8, abstol=1e-10)
+#  101.542 μs (1230 allocations: 48.16 KiB)
+ 
+#TEST 7: VECTOR CALLBACK
+function f!(du, u, p, t)
+    du[1] = -u[1]
+    du[2] =  0.2*u[1] - 0.1*u[2]
+end
 
-radau_no_disco = solve(prob_dae, RadauIIA5(is_disco = false); callback=cb_dae, reltol=1e-8, abstol=1e-10)
-  #83.500 μs (769 allocations: 35.72 KiB)
-radau_disco = solve(prob_dae, RadauIIA5(is_disco = true); callback=cb_dae, reltol=1e-8, abstol=1e-10)
-  # 119.417 μs (1273 allocations: 55.42 KiB)
-rodas_no_disco = solve(prob_dae, Rodas5P(); callback = cb_dae, reltol = 1e-6)
-#= SciMLBase.DEStats
-Number of function 1 evaluations:                  312
-Number of function 2 evaluations:                  0
-Number of W matrix evaluations:                    34
-Number of linear solves:                           272
-Number of Jacobians created:                       19
-Number of nonlinear solver iterations:             0
-Number of nonlinear solver convergence failures:   0
-Number of fixed-point solver iterations:           0
-Number of fixed-point solver convergence failures: 0
-Number of rootfind condition calls:                213
-Number of accepted steps:                          19
-Number of rejected steps:                          15 =#
-#   98.167 μs (550 allocations: 26.92 KiB)
-rodas_disco = solve(prob_dae, Rodas5P(is_disco = true); callback = cb_dae, reltol = 1e-6)
-#= SciMLBase.DEStats
-Number of function 1 evaluations:                  312
-Number of function 2 evaluations:                  0
-Number of W matrix evaluations:                    34
-Number of linear solves:                           272
-Number of Jacobians created:                       19
-Number of nonlinear solver iterations:             0
-Number of nonlinear solver convergence failures:   0
-Number of fixed-point solver iterations:           0
-Number of fixed-point solver convergence failures: 0
-Number of rootfind condition calls:                213
-Number of accepted steps:                          19
-Number of rejected steps:                          15 =#
-#   97.541 μs (550 allocations: 26.92 KiB)
-bdf_no_disco = solve(prob_dae, FBDF(); callback = cb_dae, reltol = 1e-6)
-bdf_disco = solve(prob_dae, FBDF(is_disco = true); callback = cb_dae, reltol = 1e-6)
+u0    = [3.0, 0.0]
+tspan = (0.0, 10.0)
+prob  = ODEProblem(f!, u0, tspan)
+
+# Two event surfaces: u[1] == 2.0 and u[1] == 1.0
+function condition!(out, u, t, integrator)
+    out[1] = u[1] - 2.0
+    out[2] = u[1] - 1.0
+end
+
+# Discontinuous update to the state when an event fires
+function affect!(integrator, idx)
+    if idx == 1
+        # when u[1] crosses 2, kick u[2] up (jump discontinuity)
+        integrator.u[2] += 5.0
+    elseif idx == 2
+        # when u[1] crosses 1, reset u[2]
+        integrator.u[2] = 0.0
+    end
+end
+
+cb = VectorContinuousCallback(condition!, affect!, 2;) 
+cb2 = VectorContinuousCallback(condition!, affect!, 2; is_discontinuity = false) 
+
+sol_disco = solve(prob, RadauIIA5(); callback = cb)
+#   62.041 μs (849 allocations: 41.64 KiB)
+sol_no_disco = solve(prob, RadauIIA5(); callback = cb2)
+#   37.375 μs (531 allocations: 25.23 KiB)

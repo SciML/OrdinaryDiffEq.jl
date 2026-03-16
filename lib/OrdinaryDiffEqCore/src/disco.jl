@@ -1,4 +1,4 @@
-function set_discontinuity(u, uprev, integrator, cache) #need to pick algs to test
+function set_discontinuity(u, uprev, integrator, cache) 
     breakpointθ = find_discontinuity(u, uprev, integrator, cache) 
     dt = integrator.dt
     t = integrator.t
@@ -10,7 +10,6 @@ function set_discontinuity(u, uprev, integrator, cache) #need to pick algs to te
 end
 
 function find_discontinuity(u, uprev, integrator, cache)
-    println("Finding discontinuity...")
     cb = integrator.opts.callback
     cb === nothing && return -1
     isempty(cb.continuous_callbacks) && return -1
@@ -18,49 +17,45 @@ function find_discontinuity(u, uprev, integrator, cache)
     t = integrator.t
     dt = integrator.dt
     breakpointθ = -one(dt)
-    prob = nothing
+    idx = 1
     for i in cb.continuous_callbacks
         if (!(i.is_discontinuity)) 
             continue 
         end
-        out_prev = nothing
-        out_curr = nothing
-        is_inplace = DiffEqBase.isinplace(i.condition, 4)
-        if is_inplace
+        if (i isa VectorContinuousCallback)
             out_prev = similar(u)
+            out_curr = similar(u)  
             i.condition(out_prev, uprev, t, integrator)
-            out_curr = similar(u)
             i.condition(out_curr, u, t + dt, integrator)
-            is_inplace = true
+            for (ind, (f0, f1)) in enumerate(zip(out_prev, out_curr))
+                if (f0 * f1 < zero(f0))
+                    u₁ = similar(u)
+                    out = similar(u)
+                    function zero_func(θ, p)
+                        ode_interpolant!(u₁, θ, integrator, integrator.opts.save_idxs, Val{0})
+                        i.condition(out, u₁, t + θ * integrator.dt, integrator)
+                        out[ind]
+                    end
+                    prob = IntervalNonlinearProblem(zero_func, [zero(dt), one(dt)], p)
+                    sol = solve(prob; bracket=[zero(dt), one(dt)], abstol = 0, reltol = 0)                
+                    tmp = sol[]
+                    if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) 
+                        breakpointθ = tmp 
+                    end
+                end
+            end
         else
             out_prev = i.condition(uprev, t, integrator)
             out_curr = i.condition(u, t + dt, integrator)
-            is_inplace = false
-        end
-        for (idx, (f0, f1)) in enumerate(zip(out_prev, out_curr))
-            if (f0 * f1 < zero(f0))
-                function zero_func(θ, p)
-                    u₁ = similar(u)
-                    ode_interpolant!(u₁, θ, integrator, integrator.opts.save_idxs, Val{0})
-                    if is_inplace
-                        out = similar(u)
-                        i.condition(out, u₁, t + θ * dt, integrator)
-                    else
-                        out = i.condition(u₁, t + θ * dt, integrator)
-                    end
-                    out[idx]
-                end
-                if prob === nothing
-                    prob = IntervalNonlinearProblem(zero_func, [zero(dt), one(dt)], p)
-                else
-                    prob = remake(prob; f=zero_func)
-                end
-                sol = solve(prob; bracket=[zero(dt), one(dt)])                
+            if (out_prev * out_curr < zero(out_prev))
+                prob = integrator.disco_probs[idx]
+                sol = solve(prob; bracket=[zero(dt), one(dt)], abstol = 0, reltol = 0)                
                 tmp = sol[]
                 if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) 
                     breakpointθ = tmp 
                 end
             end
+            idx += 1
         end
     end
     breakpointθ

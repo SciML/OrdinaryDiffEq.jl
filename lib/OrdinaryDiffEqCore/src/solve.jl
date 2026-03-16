@@ -81,6 +81,7 @@ function SciMLBase.__init(
         alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
         rng = nothing,
+        disco_probs = nothing,
         kwargs...
     )
     if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -653,6 +654,26 @@ function SciMLBase.__init(
     fsalfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
 
     _rng = rng === nothing ? Random.default_rng() : rng
+    num_cb = 0
+    for i in callbacks_internal.continuous_callbacks
+        num_cb += 1
+    end
+    disco_probs = Vector{IntervalNonlinearProblem}(undef, num_cb)
+    idx = 1
+    for (ind, i) in enumerate(callbacks_internal.continuous_callbacks)
+        if i.is_discontinuity && !(i isa VectorContinuousCallback)
+            #VCC problems handled in disco itself
+            u₁ = similar(u)
+            function zero_func(θ, p)
+                ode_interpolant!(u₁, θ, integrator, integrator.opts.save_idxs, Val{0})
+                out = i.condition(u₁, t + θ * integrator.dt, integrator)
+                out
+            end
+            disco_prob = IntervalNonlinearProblem(zero_func, [zero(tType), one(tType)], p)
+            disco_probs[idx] = disco_prob
+        end
+        idx+=1
+    end
 
     integrator = ODEIntegrator{
         typeof(_alg), isinplace(prob), uType, typeof(du),
@@ -686,7 +707,7 @@ function SciMLBase.__init(
         isout, reeval_fsal,
         u_modified, reinitiailize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast, _rng
+        fsalfirst, fsallast, _rng, disco_probs
     )
 
     if initialize_integrator
