@@ -654,11 +654,13 @@ function SciMLBase.__init(
     fsalfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
 
     _rng = rng === nothing ? Random.default_rng() : rng
-    num_cb = 0
+    disco_cb_num = 0
     for i in callbacks_internal.continuous_callbacks
-        num_cb += 1
+        if i.is_discontinuity
+            disco_cb_num += 1
+        end
     end
-    disco_probs = Vector{IntervalNonlinearProblem}(undef, num_cb)
+    disco_probs = Vector{IntervalNonlinearProblem}(undef, disco_cb_num)
     idx = 1
     for (ind, i) in enumerate(callbacks_internal.continuous_callbacks)
         if i.is_discontinuity && !(i isa VectorContinuousCallback)
