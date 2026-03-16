@@ -628,7 +628,7 @@ function unwrap_alg(integrator, is_nlsolve)
     end
 end
 
-issplit(::StochasticDiffEqAlgorithm) = false
+# issplit(::StochasticDiffEqAlgorithm) = false  # now in OrdinaryDiffEqCore
 issplit(::SplitSDEAlgorithms) = true
 
 # unwrap_alg(::SDEIntegrator, is_stiff) is now handled by ODE's generic

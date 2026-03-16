@@ -22,24 +22,15 @@ end
 
 @inline initialize!(integrator, cache::StochasticDiffEqCache, f = integrator.f) = nothing
 
-# No-op: SDE uses linear interpolation, not Hermite, so no k values needed.
-@inline function OrdinaryDiffEqCore._ode_addsteps!(
-        k, t, uprev, u, dt, f, p, cache::StochasticDiffEqCache,
-        always_calc_begin = false, allow_calc_end = true, force_calc_end = false,
-    )
-    return nothing
-end
+# _ode_addsteps!(... cache::StochasticDiffEqCache ...) now in OrdinaryDiffEqCore.
 
 function nlsolve!(integrator, cache)
     return DiffEqBase.nlsolve!(cache.nlsolver, cache.nlsolver.cache, integrator)
 end
 
-function OrdinaryDiffEqCore.nlsolve_f(f, alg::StochasticDiffEqAlgorithm)
-    return f isa SplitSDEFunction && issplit(alg) ? f.f1 : f
-end
-function OrdinaryDiffEqCore.nlsolve_f(integrator::SDEIntegrator)
-    return nlsolve_f(integrator.f, unwrap_alg(integrator, true))
-end
+# nlsolve_f(f, alg::StochasticDiffEqAlgorithm) now in OrdinaryDiffEqCore.
+# nlsolve_f(integrator::SDEIntegrator) now handled by ODE's generic
+# nlsolve_f(integrator::ODEIntegrator).
 
 # TauLeapingDrift: wrapper for tau-leaping drift function used by nlsolver
 # Computes drift(u, p, t) = c(u, p, t, rate(u, p, t), nothing)

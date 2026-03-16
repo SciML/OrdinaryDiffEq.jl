@@ -7,22 +7,16 @@
 # set_proposed_dt!(::SDEIntegrator, ::SDEIntegrator) now provided by ODE's
 # set_proposed_dt!(::ODEIntegrator, ::ODEIntegrator)
 
-#TODO: Bigger caches for most algorithms
-# avoid method ambiguity
-for typ in (StochasticDiffEqAlgorithm, StochasticDiffEqNewtonAdaptiveAlgorithm)
-    @eval @inline DiffEqBase.get_tmp_cache(
-        integrator::SDEIntegrator, alg::$typ,
-        cache::StochasticDiffEqConstantCache
-    ) = nothing
-end
-@inline DiffEqBase.get_tmp_cache(integrator::SDEIntegrator, alg, cache) = (cache.tmp,)
+# get_tmp_cache constant cache fallbacks + generic mutable fallback now in OrdinaryDiffEqCore.
+# Keep Newton adaptive mutable variant (SDE-specific nlsolver fields):
 @inline DiffEqBase.get_tmp_cache(
-    integrator::SDEIntegrator, alg::StochasticDiffEqNewtonAdaptiveAlgorithm,
-    cache
+    integrator, alg::StochasticDiffEqNewtonAdaptiveAlgorithm,
+    cache::StochasticDiffEqMutableCache
 ) = (cache.nlsolver.tmp, cache.nlsolver.ztmp)
+# Keep composite variant (uses SDE-specific StochasticCompositeCache):
 @inline DiffEqBase.get_tmp_cache(
-    integrator::SDEIntegrator, alg::StochasticCompositeAlgorithm,
-    cache
+    integrator, alg::StochasticCompositeAlgorithm,
+    cache::StochasticCompositeCache
 ) = get_tmp_cache(integrator, alg.algs[1], cache.caches[1])
 
 function full_cache(integrator::StochasticCompositeCache)
