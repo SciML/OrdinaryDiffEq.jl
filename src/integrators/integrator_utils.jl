@@ -83,71 +83,6 @@ function OrdinaryDiffEqCore.nlsolve_f(integrator::OrdinaryDiffEqCore.ODEIntegrat
     end
 end
 
-function iip_generate_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits)
-    if alg.nlsolve isa NLNewton
-        nf = nlsolve_f(f, alg)
-        islin = f isa Union{SDEFunction, SplitSDEFunction} && islinear(nf.f)
-        if islin
-            J = nf.f
-            W = WOperator{true}(f.mass_matrix, dt, J, _vec(u))
-        else
-            if ArrayInterface.isstructured(f.jac_prototype) ||
-                    f.jac_prototype isa SparseMatrixCSC
-                J = similar(f.jac_prototype)
-                W = similar(J)
-            elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) &&
-                    f.jac_prototype !== nothing
-                J = deepcopy(f.jac_prototype)
-                if J isa AbstractMatrix
-                    J = MatrixOperator(J; update_func! = f.jac)
-                end
-                W = WOperator{true}(f.mass_matrix, dt, J, _vec(u))
-            else
-                J = false .* vec(u) .* vec(u)'
-                W = similar(J)
-            end
-        end
-    else
-        J = nothing
-        W = nothing
-    end
-    return J, W
-end
-
-function oop_generate_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits)
-    nf = nlsolve_f(f, alg)
-    islin = f isa Union{SDEFunction, SplitSDEFunction} && islinear(nf.f)
-    if islin || DiffEqBase.has_jac(f)
-        # get the operator
-        J = islin ? nf.f : f.jac(uprev, p, t)
-        if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-            J = MatrixOperator(J)
-        end
-        W = WOperator{false}(f.mass_matrix, dt, J, _vec(u))
-    else
-        if u isa StaticArray
-            # get a "fake" `J`
-            J = if u isa AbstractMatrix && size(u, 1) > 1 # `u` is already a matrix
-                u
-            elseif size(u, 1) == 1 # `u` is a row vector
-                vcat(u, u)
-            else # `u` is a column vector
-                hcat(u, u)
-            end
-            W = lu(J)
-        else
-            W = u isa Number ? u :
-                LU{LinearAlgebra.lutype(uEltypeNoUnits)}(
-                    Matrix{uEltypeNoUnits}(undef, 0, 0),
-                    Vector{LinearAlgebra.BlasInt}(undef, 0),
-                    zero(LinearAlgebra.BlasInt)
-                )
-            J = u isa Number ? u : (false .* vec(u) .* vec(u)')
-        end
-    end
-    return J, W
-end
-
 # ============================================================================
 # Traits for SDE composite algorithms/caches
 # ============================================================================
@@ -202,12 +137,9 @@ function OrdinaryDiffEqCore.reinit_noise!(W::DiffEqNoiseProcess.AbstractNoisePro
     return DiffEqNoiseProcess.reinit!(W, dt)
 end
 
-# ============================================================================
 # _determine_initdt: SDE extension (called from ODE's auto_dt_reset!)
-# ============================================================================
-
 function OrdinaryDiffEqCore._determine_initdt(integrator::SDEIntegrator)
-    return sde_determine_initdt(
+    return OrdinaryDiffEqCore.sde_determine_initdt(
         integrator.u, integrator.t,
         integrator.tdir, integrator.opts.dtmax,
         integrator.opts.abstol, integrator.opts.reltol,
