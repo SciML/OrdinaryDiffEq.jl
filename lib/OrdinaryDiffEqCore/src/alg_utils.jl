@@ -114,6 +114,7 @@ all_fsal(alg::CompositeAlgorithm, cache) = _all_fsal(alg.algs)
 end
 
 issplit(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
+issplit(alg::StochasticDiffEqAlgorithm) = false
 
 function _composite_beta1_default(
         algs::Tuple{T1, T2}, current, ::Val{QT},

@@ -11,6 +11,11 @@ abstract type StochasticDiffEqRODEAlgorithm <: SciMLBase.AbstractRODEAlgorithm e
 abstract type StochasticDiffEqRODEAdaptiveAlgorithm <: StochasticDiffEqRODEAlgorithm end
 abstract type StochasticDiffEqRODECompositeAlgorithm <: StochasticDiffEqRODEAlgorithm end
 
+# SDE/RODE cache type hierarchy (used by StochasticDiffEq)
+abstract type StochasticDiffEqCache <: SciMLBase.DECache end
+abstract type StochasticDiffEqConstantCache <: StochasticDiffEqCache end
+abstract type StochasticDiffEqMutableCache <: StochasticDiffEqCache end
+
 abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} <:
 OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} <:

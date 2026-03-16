@@ -221,6 +221,22 @@ end
     return (cache.nlsolver.cache.dz, cache.atmp)
 end
 
+# SDE cache fallbacks — mirror ODE's pattern for SDE types
+for AlgType in (StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm)
+    @eval @inline function SciMLBase.get_tmp_cache(
+            integrator, alg::$AlgType,
+            cache::StochasticDiffEqConstantCache
+        )
+        return nothing
+    end
+    @eval @inline function SciMLBase.get_tmp_cache(
+            integrator, alg::$AlgType,
+            cache::StochasticDiffEqMutableCache
+        )
+        return (cache.tmp,)
+    end
+end
+
 function full_cache(integrator::ODEIntegrator)
     # for DefaultCache, we need to make sure to initialize all the caches in case they get switched to later
     if integrator.cache isa DefaultCache
