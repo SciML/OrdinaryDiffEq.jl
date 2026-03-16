@@ -441,6 +441,10 @@ println("RKs")
 @test RK4() == RK4(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(RK4(), 4.5e-5, 1.0e-4)
 
+# Ralston4
+@test Ralston4() == Ralston4(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
+regression_test(Ralston4(), 4.5e-5, 1.0e-4)
+
 # DP5
 @test DP5() == DP5(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(DP5(), 5.0e-6, 1.0e-5; test_diff1 = true, nth_der = 4, dertol = 1.0e-14)

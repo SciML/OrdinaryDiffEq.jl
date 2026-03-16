@@ -1964,3 +1964,37 @@ function Alshina6ConstantCache(T, T2)
         b1, b5, b6, b7, c2, c3, c4, c5, c6, c7
     )
 end
+
+struct Ralston4ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    c2::T2
+    c3::T2
+    b1::T
+    b2::T
+    b3::T
+    b4::T
+end
+
+function Ralston4ConstantCache(T, T2)
+    s5 = sqrt(convert(T, 5))
+    b1 = (263 + 24 * s5) / 1812
+    b4 = (30 - 4 * s5) / 123
+    b2 = (125 - 1000 * s5) / 3828
+    b3 = 1 - b1 - b2 - b4
+    c2 = convert(T2, 2 // 5)
+    c3 = convert(T2, (14 - 3 * s5) / 16)
+    a21 = convert(T, c2)
+    Ac3 = 2 / (3 * b3 * (2 + 3 * s5))
+    a32 = (5 // 2) * Ac3
+    a31 = c3 - a32
+    a43 = b3 * (2 + 3 * s5) / (16 * b4)
+    Ac4 = (1 // 6 - b3 * Ac3) / b4
+    a42 = (5 // 2) * (Ac4 - a43 * c3)
+    a41 = 1 - a42 - a43
+    return Ralston4ConstantCache(a21, a31, a32, a41, a42, a43, c2, c3, b1, b2, b3, b4)
+end

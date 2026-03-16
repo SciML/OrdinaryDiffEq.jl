@@ -2209,3 +2209,65 @@ function perform_step!(integrator, cache::Alshina6Cache, repeat_step = false)
     integrator.fsallast = k7
     return nothing
 end
+
+function initialize!(integrator, cache::Ralston4ConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    return integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(
+        integrator, cache::Ralston4ConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, f, p) = integrator
+    (; a21, a31, a32, a41, a42, a43, c2, c3, b1, b2, b3, b4) = cache
+    k1 = integrator.fsalfirst
+    k2 = f(uprev + dt * a21 * k1, p, t + c2 * dt)
+    k3 = f(uprev + dt * (a31 * k1 + a32 * k2), p, t + c3 * dt)
+    k4 = f(uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3), p, t + dt)
+    u = uprev + dt * (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4)
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+end
+
+get_fsalfirstlast(cache::Ralston4Cache, u) = (cache.fsalfirst, cache.k)
+function initialize!(integrator, cache::Ralston4Cache)
+    (; fsalfirst, k) = cache
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = k
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+end
+
+@muladd function perform_step!(integrator, cache::Ralston4Cache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; fsalfirst, k2, k3, k4, k, tmp, tab, stage_limiter!, step_limiter!, thread) = cache
+    (; a21, a31, a32, a41, a42, a43, c2, c3, b1, b2, b3, b4) = tab
+    k1 = fsalfirst
+    @.. broadcast = false thread = thread tmp = uprev + dt * a21 * k1
+    stage_limiter!(tmp, integrator, p, t + c2 * dt)
+    f(k2, tmp, p, t + c2 * dt)
+    @.. broadcast = false thread = thread tmp = uprev + dt * (a31 * k1 + a32 * k2)
+    stage_limiter!(tmp, integrator, p, t + c3 * dt)
+    f(k3, tmp, p, t + c3 * dt)
+    @.. broadcast = false thread = thread tmp = uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    stage_limiter!(tmp, integrator, p, t + dt)
+    f(k4, tmp, p, t + dt)
+    @.. broadcast = false thread = thread u = uprev + dt * (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4)
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
+    f(k, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
+    return nothing
+end
