@@ -628,11 +628,7 @@ function unwrap_alg(integrator, is_nlsolve)
     end
 end
 
-# issplit(::StochasticDiffEqAlgorithm) = false  # now in OrdinaryDiffEqCore
 issplit(::SplitSDEAlgorithms) = true
-
-# unwrap_alg(::SDEIntegrator, is_stiff) is now handled by ODE's generic
-# unwrap_alg(integrator, is_stiff) which uses the is_composite_algorithm trait.
 
 alg_control_rate(::StochasticDiffEqAlgorithm) = false
 alg_control_rate(::StochasticDiffEqRODEAlgorithm) = false

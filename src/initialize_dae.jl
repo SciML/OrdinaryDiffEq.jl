@@ -1,6 +1,4 @@
-# initialize_dae!(::SDEIntegrator) now provided by ODE's
-# initialize_dae!(::ODEIntegrator) since SDEIntegrator is a type alias.
-# Keep _initialize_dae! for RODE/SDDE problem types that ODE doesn't know about.
+# _initialize_dae! for RODE/SDDE problem types that ODE doesn't know about.
 
 function OrdinaryDiffEqCore._initialize_dae!(
         integrator::Union{SDEIntegrator, AbstractSDDEIntegrator},
