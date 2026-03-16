@@ -127,11 +127,11 @@ end
 @inline function _sde_linear_interpolant(
         Θ, dt, u0, u1, idxs::Nothing, ::Type{Val{1}}
     )
-    @.. (u1 - u0) / dt
+    return @.. (u1 - u0) / dt
 end
 
 @inline function _sde_linear_interpolant(Θ, dt, u0, u1, idxs, ::Type{Val{1}})
-    @.. (u1[idxs] - u0[idxs]) / dt
+    return @.. (u1[idxs] - u0[idxs]) / dt
 end
 
 @muladd @inline function _sde_linear_interpolant!(
@@ -148,7 +148,7 @@ end
 @inline function _sde_linear_interpolant!(
         out, Θ, dt, u0, u1, idxs, ::Type{Val{1}}
     )
-    if idxs === nothing
+    return if idxs === nothing
         @.. out = (u1 - u0) / dt
     else
         @views @.. out = (u1[idxs] - u0[idxs]) / dt
