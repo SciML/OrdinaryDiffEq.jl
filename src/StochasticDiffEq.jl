@@ -137,6 +137,7 @@ else
 end
 
 include("misc_utils.jl")
+include("linear_interpolation.jl")
 include("algorithms.jl")
 include("caches/cache_types.jl")
 include("caches/basic_method_caches.jl")
