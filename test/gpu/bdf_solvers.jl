@@ -1,4 +1,4 @@
-#fixing gpu tolerance
+#fixing gpu tolerances
 using OrdinaryDiffEqBDF, CUDA, Test
 CUDA.allowscalar(false)
 
