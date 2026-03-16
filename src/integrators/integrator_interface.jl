@@ -1,19 +1,8 @@
-# change_t_via_interpolation! now provided by ODE's _change_t_via_interpolation!
-# which handles SDE via noise rejection gating (!isnothing(W)).
-
-# Integrator callable now provided by ODE's (::ODEIntegrator)(t, ...) which
-# routes through _ode_interpolant → isempty(k) → linear_interpolant.
-
-# set_proposed_dt!(::SDEIntegrator, ::SDEIntegrator) now provided by ODE's
-# set_proposed_dt!(::ODEIntegrator, ::ODEIntegrator)
-
-# get_tmp_cache constant cache fallbacks + generic mutable fallback now in OrdinaryDiffEqCore.
-# Keep Newton adaptive mutable variant (SDE-specific nlsolver fields):
+# Newton adaptive get_tmp_cache (SDE-specific nlsolver fields):
 @inline DiffEqBase.get_tmp_cache(
     integrator, alg::StochasticDiffEqNewtonAdaptiveAlgorithm,
     cache::StochasticDiffEqMutableCache
 ) = (cache.nlsolver.tmp, cache.nlsolver.ztmp)
-# Keep composite variant (uses SDE-specific StochasticCompositeCache):
 @inline DiffEqBase.get_tmp_cache(
     integrator, alg::StochasticCompositeAlgorithm,
     cache::StochasticCompositeCache
@@ -238,21 +227,3 @@ function addat_noise!(integrator, cache, idxs)
         fill!(@view(integrator.W.curZ[idxs]), zero(eltype(integrator.u)))
     end
 end
-
-# reinit! now provided by ODE's SciMLBase.reinit!(::ODEIntegrator, ...) which handles:
-# - is_composite_algorithm trait for alg_choice resize
-# - reinit_noise! at end for W noise process reinit
-
-# auto_dt_reset! now provided by ODE's SciMLBase.auto_dt_reset!(::ODEIntegrator)
-# which delegates to _determine_initdt (extended below for SDE algorithms).
-
-# get_du and get_du! now provided by ODE's SciMLBase.get_du(::ODEIntegrator).
-# For SDE (isfsal=false), ODE's version falls through to integrator(t, Val{1})
-# which calls SDE's linear interpolation, returning (u - uprev) / dt.
-
-# set_t! now provided by ODE's set_t!(::ODEIntegrator, ::Real).
-# ODE additionally checks alg_extrapolates(alg) which is always false for SDE algs,
-# so the behavior is identical.
-
-# set_rng! now provided by ODE's SciMLBase.set_rng!(::ODEIntegrator, rng)
-# which syncs W.rng and P.rng for framework-constructed noise processes.

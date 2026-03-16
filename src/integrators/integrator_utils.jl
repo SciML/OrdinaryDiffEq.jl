@@ -5,9 +5,6 @@
         DiffEqNoiseProcess.setup_next_step!(integrator.P, integrator.u, integrator.p)
 end
 
-# DiffEqNoiseProcess.reject_step! on SDEIntegrator deleted — was only called from
-# SDE's change_t_via_interpolation! (now handled by ODE via reject_noise! gating).
-
 @inline function handle_callback_modifiers!(integrator::SDEIntegrator)
     #integrator.reeval_fsal = true
     return if integrator.P !== nothing && integrator.opts.adaptive
@@ -22,15 +19,9 @@ end
 
 @inline initialize!(integrator, cache::StochasticDiffEqCache, f = integrator.f) = nothing
 
-# _ode_addsteps!(... cache::StochasticDiffEqCache ...) now in OrdinaryDiffEqCore.
-
 function nlsolve!(integrator, cache)
     return DiffEqBase.nlsolve!(cache.nlsolver, cache.nlsolver.cache, integrator)
 end
-
-# nlsolve_f(f, alg::StochasticDiffEqAlgorithm) now in OrdinaryDiffEqCore.
-# nlsolve_f(integrator::SDEIntegrator) now handled by ODE's generic
-# nlsolve_f(integrator::ODEIntegrator).
 
 # TauLeapingDrift: wrapper for tau-leaping drift function used by nlsolver
 # Computes drift(u, p, t) = c(u, p, t, rate(u, p, t), nothing)

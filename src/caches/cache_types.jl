@@ -1,6 +1,3 @@
-# StochasticDiffEqCache, StochasticDiffEqConstantCache, StochasticDiffEqMutableCache
-# are now defined in OrdinaryDiffEqCore and imported in StochasticDiffEq.jl.
-
 mutable struct StochasticCompositeCache{T, F} <: StochasticDiffEqCache
     caches::T
     choice_function::F

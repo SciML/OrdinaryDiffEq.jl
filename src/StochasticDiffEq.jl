@@ -34,7 +34,7 @@ import OrdinaryDiffEqCore: handle_callbacks!, handle_tstop!,
     _savevalues!, _postamble!,
     is_composite_cache, is_composite_algorithm, final_progress,
     loopheader!, loopfooter!, _loopfooter!, _step!, perform_step!,
-    isaposteriori, fixed_t_for_floatingpoint_error!,
+    isaposteriori,
     increment_accept!, increment_reject!,
     calc_dt_propose!, fix_dt_at_bounds!, modify_dt_for_tstops!,
     log_step!, choose_algorithm!, update_uprev!,
@@ -137,7 +137,6 @@ else
 end
 
 include("misc_utils.jl")
-include("linear_interpolation.jl")
 include("algorithms.jl")
 include("caches/cache_types.jl")
 include("caches/basic_method_caches.jl")
@@ -159,9 +158,7 @@ include("integrators/type.jl")
 include("alg_utils.jl")
 include("integrators/stepsize_controllers.jl")
 include("integrators/integrator_utils.jl")
-include("cache_utils.jl")
 include("integrators/integrator_interface.jl")
-include("iterator_interface.jl")
 include("initialize_dae.jl")
 include("solve.jl")
 include("initdt.jl")
