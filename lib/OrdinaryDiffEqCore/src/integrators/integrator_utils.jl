@@ -801,6 +801,9 @@ function nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm)
     return f isa SplitFunction && issplit(alg) ? f.f1 : f
 end
 nlsolve_f(f, alg::DAEAlgorithm) = f
+function nlsolve_f(f, alg::StochasticDiffEqAlgorithm)
+    return f isa SplitSDEFunction && issplit(alg) ? f.f1 : f
+end
 function nlsolve_f(integrator::ODEIntegrator)
     return nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 end

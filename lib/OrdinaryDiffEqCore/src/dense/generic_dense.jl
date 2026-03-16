@@ -1224,6 +1224,14 @@ function ode_interpolation!(
     return out
 end
 
+# No-op: SDE uses linear interpolation, not Hermite, so no k values needed.
+@inline function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::StochasticDiffEqCache,
+        always_calc_begin = false, allow_calc_end = true, force_calc_end = false
+    )
+    return nothing
+end
+
 """
 By default, Hermite interpolant so update the derivative at the two ends
 """
