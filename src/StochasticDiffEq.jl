@@ -16,6 +16,7 @@ import OrdinaryDiffEqCore: ODEIntegrator,
     StochasticDiffEqCompositeAlgorithm,
     StochasticDiffEqRODEAlgorithm, StochasticDiffEqRODEAdaptiveAlgorithm,
     StochasticDiffEqRODECompositeAlgorithm,
+    StochasticDiffEqCache, StochasticDiffEqConstantCache, StochasticDiffEqMutableCache,
     default_controller, isstandard, ispredictive,
     beta2_default, beta1_default, gamma_default,
     qmin_default, qmax_default, qsteady_min_default,
@@ -39,8 +40,10 @@ import OrdinaryDiffEqCore: handle_callbacks!, handle_tstop!,
     log_step!, choose_algorithm!, update_uprev!,
     alg_extrapolates, isfsal,
     accept_noise!, reject_noise!, save_noise!, noise_curt, is_noise_saveable,
+    reinit_noise!, _determine_initdt, is_constant_cache,
     handle_callback_modifiers!,
-    initialize_callbacks!
+    initialize_callbacks!,
+    current_extrapolant, current_extrapolant!
 
 using RecursiveArrayTools, DataStructures
 using DiffEqNoiseProcess, Random, ArrayInterface
@@ -73,7 +76,6 @@ import FastPower
 
 import DiffEqBase: step!, initialize!, DEAlgorithm,
     AbstractSDEAlgorithm, AbstractRODEAlgorithm, DEIntegrator,
-    AbstractDiffEqInterpolation,
     DECache, AbstractSDEIntegrator, AbstractRODEIntegrator,
     AbstractContinuousCallback,
     Tableau, AbstractSDDEIntegrator
@@ -135,8 +137,8 @@ else
 end
 
 include("misc_utils.jl")
+include("linear_interpolation.jl")
 include("algorithms.jl")
-include("interp_func.jl")
 include("caches/cache_types.jl")
 include("caches/basic_method_caches.jl")
 include("caches/explicit_3s_mil_methods.jl")
@@ -154,7 +156,6 @@ include("caches/SROCK_caches.jl")
 include("caches/tau_caches.jl")
 include("caches/dynamical_caches.jl")
 include("integrators/type.jl")
-include("dense.jl")
 include("alg_utils.jl")
 include("integrators/stepsize_controllers.jl")
 include("integrators/integrator_utils.jl")

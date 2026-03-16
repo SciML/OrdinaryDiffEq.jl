@@ -5,24 +5,8 @@
         DiffEqNoiseProcess.setup_next_step!(integrator.P, integrator.u, integrator.p)
 end
 
-@inline function DiffEqNoiseProcess.reject_step!(integrator::SDEIntegrator, dtnew = integrator.dt)
-    !isnothing(integrator.W) &&
-        reject_step!(integrator.W, dtnew, integrator.u, integrator.p)
-    return !isnothing(integrator.P) &&
-        reject_step!(integrator.P, dtnew, integrator.u, integrator.p)
-end
-
-@inline function DiffEqNoiseProcess.accept_step!(integrator::SDEIntegrator, setup)
-    !isnothing(integrator.W) &&
-        accept_step!(integrator.W, integrator.dt, integrator.u, integrator.p, setup)
-    return !isnothing(integrator.P) &&
-        accept_step!(integrator.P, integrator.dt, integrator.u, integrator.p, setup)
-end
-
-@inline function DiffEqNoiseProcess.save_noise!(integrator::SDEIntegrator)
-    !isnothing(integrator.W) && DiffEqNoiseProcess.save_noise!(integrator.W)
-    return !isnothing(integrator.P) && DiffEqNoiseProcess.save_noise!(integrator.P)
-end
+# DiffEqNoiseProcess.reject_step! on SDEIntegrator deleted — was only called from
+# SDE's change_t_via_interpolation! (now handled by ODE via reject_noise! gating).
 
 @inline function handle_callback_modifiers!(integrator::SDEIntegrator)
     #integrator.reeval_fsal = true
@@ -38,24 +22,15 @@ end
 
 @inline initialize!(integrator, cache::StochasticDiffEqCache, f = integrator.f) = nothing
 
-# No-op: SDE uses linear interpolation, not Hermite, so no k values needed.
-@inline function OrdinaryDiffEqCore._ode_addsteps!(
-        k, t, uprev, u, dt, f, p, cache::StochasticDiffEqCache,
-        always_calc_begin = false, allow_calc_end = true, force_calc_end = false,
-    )
-    return nothing
-end
+# _ode_addsteps!(... cache::StochasticDiffEqCache ...) now in OrdinaryDiffEqCore.
 
 function nlsolve!(integrator, cache)
     return DiffEqBase.nlsolve!(cache.nlsolver, cache.nlsolver.cache, integrator)
 end
 
-function OrdinaryDiffEqCore.nlsolve_f(f, alg::StochasticDiffEqAlgorithm)
-    return f isa SplitSDEFunction && issplit(alg) ? f.f1 : f
-end
-function OrdinaryDiffEqCore.nlsolve_f(integrator::SDEIntegrator)
-    return nlsolve_f(integrator.f, unwrap_alg(integrator, true))
-end
+# nlsolve_f(f, alg::StochasticDiffEqAlgorithm) now in OrdinaryDiffEqCore.
+# nlsolve_f(integrator::SDEIntegrator) now handled by ODE's generic
+# nlsolve_f(integrator::ODEIntegrator).
 
 # TauLeapingDrift: wrapper for tau-leaping drift function used by nlsolver
 # Computes drift(u, p, t) = c(u, p, t, rate(u, p, t), nothing)
@@ -218,3 +193,35 @@ OrdinaryDiffEqCore.noise_curt(W::DiffEqNoiseProcess.AbstractNoiseProcess) = W.cu
 
 OrdinaryDiffEqCore.is_noise_saveable(W::NoiseProcess) = true
 OrdinaryDiffEqCore.is_noise_saveable(W::DiffEqNoiseProcess.AbstractNoiseProcess) = false
+
+# ============================================================================
+# is_constant_cache for SDE cache types (needed by ODE's change_t_via_interpolation!)
+# ============================================================================
+
+OrdinaryDiffEqCore.is_constant_cache(::StochasticDiffEqConstantCache) = true
+OrdinaryDiffEqCore.is_constant_cache(::StochasticDiffEqMutableCache) = false
+OrdinaryDiffEqCore.is_constant_cache(cache::StochasticCompositeCache) =
+    OrdinaryDiffEqCore.is_constant_cache(cache.caches[1])
+
+# ============================================================================
+# reinit_noise!: reinitialize noise process (called from ODE's reinit!)
+# ============================================================================
+
+function OrdinaryDiffEqCore.reinit_noise!(W::DiffEqNoiseProcess.AbstractNoiseProcess, dt)
+    return DiffEqNoiseProcess.reinit!(W, dt)
+end
+
+# ============================================================================
+# _determine_initdt: SDE extension (called from ODE's auto_dt_reset!)
+# ============================================================================
+
+function OrdinaryDiffEqCore._determine_initdt(integrator::SDEIntegrator)
+    return sde_determine_initdt(
+        integrator.u, integrator.t,
+        integrator.tdir, integrator.opts.dtmax,
+        integrator.opts.abstol, integrator.opts.reltol,
+        integrator.opts.internalnorm, integrator.sol.prob,
+        get_current_alg_order(integrator.alg, integrator.cache),
+        integrator
+    )
+end
