@@ -37,6 +37,16 @@ jobs:
           - Regression_I
           - Regression_II
           - AD
+          - StochasticDiffEqCore
+          - StochasticDiffEqLowOrder
+          - StochasticDiffEqRODE
+          - StochasticDiffEqHighOrder
+          - StochasticDiffEqMilstein
+          - StochasticDiffEqROCK
+          - StochasticDiffEqImplicit
+          - StochasticDiffEqWeak
+          - StochasticDiffEqIIF
+          - StochasticDiffEqJump
         version:
           - 'lts'
           - '1.11'
