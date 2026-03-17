@@ -1,6 +1,7 @@
 module DelayDiffEq
 
 import Reexport: @reexport, Reexport
+@reexport using SciMLBase
 import OrdinaryDiffEqCore, OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqDifferentiation,
     OrdinaryDiffEqRosenbrock
 import OrdinaryDiffEqDefault: OrdinaryDiffEqDefault
