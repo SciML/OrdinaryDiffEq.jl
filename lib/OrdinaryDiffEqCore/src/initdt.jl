@@ -1,11 +1,15 @@
-@muladd function ode_determine_initdt(
-        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-        prob::SciMLBase.AbstractODEProblem{
-            uType, tType, true,
-        },
-        integrator
-    ) where {tType, uType}
-    _tType = eltype(tType)
+# =============================================================================
+# Hairer-Wanner initial timestep estimation.
+# Internal functions _ode_initdt_iip/_ode_initdt_oop implement the algorithm.
+# When g !== nothing, stochastic diffusion terms are folded into the estimate:
+#   d₁ uses max(|f₀±3g₀|)/sk instead of f₀/sk
+#   d₂ uses max(|Δf±ΔgMax|)/sk instead of Δf/sk
+# =============================================================================
+
+@muladd function _ode_initdt_iip(
+        u0, t, _tType, tdir, dtmax, abstol, reltol, internalnorm,
+        prob, g, noise_prototype, order, integrator
+    )
     f = prob.f
     p = integrator.p
     oneunit_tType = oneunit(_tType)
@@ -130,15 +134,30 @@
         end
     end
 
-    if u0 isa Array
-        @inbounds @simd ivdep for i in eachindex(u0)
-            tmp[i] = f₀[i] / sk[i] * oneunit_tType
+    # d₁: fold in diffusion terms when g !== nothing
+    # Pre-initialize g₀ so JET doesn't flag it as potentially undefined in the d₂ block
+    g₀ = nothing
+    if g !== nothing
+        if noise_prototype !== nothing
+            g₀ = zero(noise_prototype)
+        else
+            g₀ = zero(u0)
         end
+        g(g₀, u0, p, t)
+        g₀ .*= 3
+        d₁ = internalnorm(
+            max.(internalnorm.(f₀ .+ g₀, t), internalnorm.(f₀ .- g₀, t)) ./ sk, t
+        )
     else
-        @.. broadcast = false tmp = f₀ / sk * oneunit_tType
+        if u0 isa Array
+            @inbounds @simd ivdep for i in eachindex(u0)
+                tmp[i] = f₀[i] / sk[i] * oneunit_tType
+            end
+        else
+            @.. broadcast = false tmp = f₀ / sk * oneunit_tType
+        end
+        d₁ = internalnorm(tmp, t)
     end
-
-    d₁ = internalnorm(tmp, t)
 
     # Better than checking any(x->any(isnan, x), f₀)
     # because it also checks if partials are NaN
@@ -207,15 +226,30 @@
     # Avoids AD issues
     length(u0) > 0 && f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
 
-    if u0 isa Array
-        @inbounds @simd ivdep for i in eachindex(u0)
-            tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
+    # d₂: fold in diffusion terms when g !== nothing
+    if g !== nothing
+        if noise_prototype !== nothing
+            g₁ = zero(noise_prototype)
+        else
+            g₁ = zero(u0)
         end
+        g(g₁, u₁, p, t + dt₀_tdir)
+        g₁ .*= 3
+        ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
+        d₂ = internalnorm(
+            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
+            t
+        ) / dt₀
     else
-        @.. broadcast = false tmp = (f₁ - f₀) / sk * oneunit_tType
+        if u0 isa Array
+            @inbounds @simd ivdep for i in eachindex(u0)
+                tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
+            end
+        else
+            @.. broadcast = false tmp = (f₁ - f₀) / sk * oneunit_tType
+        end
+        d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
     end
-
-    d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
     # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
 
     max_d₁d₂ = max(d₁, d₂)
@@ -226,17 +260,24 @@
             _tType,
             oneunit_tType *
                 DiffEqBase.value(
-                10.0^(
-                    -(2 + log10(max_d₁d₂)) /
-                        get_current_alg_order(
-                        integrator.alg,
-                        integrator.cache
-                    )
-                )
+                10.0^(-(2 + log10(max_d₁d₂)) / order)
             )
         )
     end
     return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+end
+
+# ODE iip entry point
+function ode_determine_initdt(
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
+        prob::SciMLBase.AbstractODEProblem{uType, tType, true},
+        integrator
+    ) where {tType, uType}
+    return _ode_initdt_iip(
+        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        prob, nothing, nothing,
+        get_current_alg_order(integrator.alg, integrator.cache), integrator
+    )
 end
 
 const TYPE_NOT_CONSTANT_MESSAGE = """
@@ -265,15 +306,10 @@ function Base.showerror(io::IO, e::TypeNotConstantError)
     return println(io, e.f₀)
 end
 
-@muladd function ode_determine_initdt(
-        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-        prob::SciMLBase.AbstractODEProblem{
-            uType, tType,
-            false,
-        },
-        integrator
-    ) where {uType, tType}
-    _tType = eltype(tType)
+@muladd function _ode_initdt_oop(
+        u0, t, _tType, tdir, dtmax, abstol, reltol, internalnorm,
+        prob, g, order, integrator
+    )
     f = prob.f
     p = prob.p
     oneunit_tType = oneunit(_tType)
@@ -303,7 +339,23 @@ end
         throw(TypeNotConstantError(inferredtype, typeof(f₀)))
     end
 
-    d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
+    # d₁: fold in diffusion terms when g !== nothing
+    # Pre-initialize g₀ so JET doesn't flag it as potentially undefined in the d₂ block
+    g₀ = nothing
+    if g !== nothing
+        g₀ = 3g(u0, p, t)
+        if any(x -> any(isnan, x), g₀)
+            @SciMLMessage(
+                "First function call for g produced NaNs. Exiting.",
+                integrator.opts.verbose, :init_NaN
+            )
+        end
+        d₁ = internalnorm(
+            max.(internalnorm.(f₀ .+ g₀, t), internalnorm.(f₀ .- g₀, t)) ./ sk, t
+        )
+    else
+        d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
+    end
 
     if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
         dt₀ = smalldt
@@ -321,7 +373,17 @@ end
     # Avoids AD issues
     f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
 
-    d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType, t) / dt₀ * oneunit_tType
+    # d₂: fold in diffusion terms when g !== nothing
+    if g !== nothing
+        g₁ = 3g(u₁, p, t + dt₀_tdir)
+        ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
+        d₂ = internalnorm(
+            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
+            t
+        ) / dt₀
+    else
+        d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType, t) / dt₀ * oneunit_tType
+    end
 
     max_d₁d₂ = max(d₁, d₂)
     if max_d₁d₂ <= 1 // Int64(10)^(15)
@@ -330,17 +392,24 @@ end
         dt₁ = _tType(
             oneunit_tType *
                 DiffEqBase.value(
-                10^(
-                    -(2 + log10(max_d₁d₂)) /
-                        get_current_alg_order(
-                        integrator.alg,
-                        integrator.cache
-                    )
-                )
+                10^(-(2 + log10(max_d₁d₂)) / order)
             )
         )
     end
     return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+end
+
+# ODE oop entry point
+function ode_determine_initdt(
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
+        prob::SciMLBase.AbstractODEProblem{uType, tType, false},
+        integrator
+    ) where {uType, tType}
+    return _ode_initdt_oop(
+        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        prob, nothing,
+        get_current_alg_order(integrator.alg, integrator.cache), integrator
+    )
 end
 
 @inline function ode_determine_initdt(
@@ -356,4 +425,40 @@ end
     init_dt = abs(tspan[2] - tspan[1])
     init_dt = isfinite(init_dt) ? init_dt : oneunit(_tType)
     return convert(_tType, init_dt * 1 // 10^(6))
+end
+
+# RODE/SDE iip entry: folds noise terms into the Hairer-Wanner estimate
+function ode_determine_initdt(
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
+        prob::SciMLBase.AbstractRODEProblem{uType, tType, true},
+        order, integrator
+    ) where {tType, uType}
+    if _get_P(integrator) !== nothing
+        return tdir * dtmax / 1.0e6
+    end
+    g = prob.f.g
+    noise_proto = hasproperty(prob, :noise_rate_prototype) ? prob.noise_rate_prototype :
+        nothing
+    effective_order = g !== nothing ? order + 1 // 2 : order
+    return _ode_initdt_iip(
+        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        prob, g, noise_proto, effective_order, integrator
+    )
+end
+
+# RODE/SDE oop entry: folds noise terms into the Hairer-Wanner estimate
+function ode_determine_initdt(
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
+        prob::SciMLBase.AbstractRODEProblem{uType, tType, false},
+        order, integrator
+    ) where {tType, uType}
+    if _get_P(integrator) !== nothing
+        return tdir * dtmax / 1.0e6
+    end
+    g = prob.f.g
+    effective_order = g !== nothing ? order + 1 // 2 : order
+    return _ode_initdt_oop(
+        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        prob, g, effective_order, integrator
+    )
 end

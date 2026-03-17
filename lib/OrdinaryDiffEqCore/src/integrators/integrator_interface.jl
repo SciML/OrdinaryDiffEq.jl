@@ -550,7 +550,7 @@ function SciMLBase.reinit!(
 end
 
 # Extensible initdt hook: ODE defaults to ode_determine_initdt.
-# SDE extends for SDE algorithm types to call sde_determine_initdt.
+# SDE extends this in StochasticDiffEq to pass the stochastic order.
 function _determine_initdt(integrator)
     return ode_determine_initdt(
         integrator.u, integrator.t,
