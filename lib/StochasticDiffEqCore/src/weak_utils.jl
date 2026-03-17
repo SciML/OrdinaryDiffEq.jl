@@ -16,4 +16,5 @@ end
     return ifelse(abs(dW_scaled) > -quantile, ifelse(dW_scaled < quantile, -sq3dt, sq3dt), zero(sq3dt))
 end
 
-# Ihat2 methods are defined in StochasticDiffEqWeak alongside their cache types.
+# Ihat2 function stub: methods are defined in StochasticDiffEqWeak alongside their cache types.
+function Ihat2 end
