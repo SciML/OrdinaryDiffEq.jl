@@ -36,7 +36,11 @@ Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
+OrdinaryDiffEqFIRK = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
 Pkg = "1"
@@ -51,7 +55,11 @@ LinearSolve = "3.46"
 LineSearches = "7.4"
 LinearAlgebra = "1.10"
 OrdinaryDiffEqDifferentiation = "2"
+OrdinaryDiffEqBDF = "1"
+OrdinaryDiffEqFIRK = "1"
+OrdinaryDiffEqRosenbrock = "1"
 OrdinaryDiffEqSDIRK = "1.6.0"
+Statistics = "1"
 SciMLBase = "2.141"
 OrdinaryDiffEqCore = "3.8"
 SimpleNonlinearSolve = "2.7"
@@ -73,13 +81,22 @@ SciMLOperators = "1.15"
 SciMLStructures = "1.7"
 
 [targets]
-test = ["DiffEqDevTools", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "Test", "Pkg"]
+test = ["DiffEqDevTools", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "Statistics", "Test", "Pkg"]
 
 [sources.OrdinaryDiffEqDifferentiation]
 path = "../OrdinaryDiffEqDifferentiation"
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
+
+[sources.OrdinaryDiffEqBDF]
+path = "../OrdinaryDiffEqBDF"
+
+[sources.OrdinaryDiffEqFIRK]
+path = "../OrdinaryDiffEqFIRK"
+
+[sources.OrdinaryDiffEqRosenbrock]
+path = "../OrdinaryDiffEqRosenbrock"
 
 [sources.OrdinaryDiffEqSDIRK]
 path = "../OrdinaryDiffEqSDIRK"

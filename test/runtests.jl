@@ -73,7 +73,6 @@ end
         @time @safetestset "Backwards Tests" include("interface/ode_backwards_test.jl")
         @time @safetestset "Initdt Tests" include("interface/ode_initdt_tests.jl")
         @time @safetestset "Linear Tests" include("interface/ode_twodimlinear_tests.jl")
-        @time @safetestset "Differentiation Trait Tests" include("interface/differentiation_traits_tests.jl")
         @time @safetestset "Inf Tests" include("interface/inf_handling.jl")
         @time @safetestset "saveat Tests" include("interface/ode_saveat_tests.jl")
         @time @safetestset "save_idxs Tests" include("interface/ode_saveidxs_tests.jl")
@@ -99,15 +98,9 @@ end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
         #@time @safetestset "No Recompile Tests" include("interface/norecompile.jl") # doesn't work on CI?
-        @time @safetestset "Linear Nonlinear Solver Tests" include("interface/linear_nonlinear_tests.jl")
-        @time @safetestset "Linear Solver Tests" include("interface/linear_solver_test.jl")
-        @time @safetestset "Linear Solver Split ODE Tests" include("interface/linear_solver_split_ode_test.jl")
         @time @safetestset "AutoSparse Detection Tests" include("interface/autosparse_detection_tests.jl")
         @time @safetestset "Enum Tests" include("interface/enums.jl")
-        @time @safetestset "CheckInit Tests" include("interface/checkinit_tests.jl")
         @time @safetestset "Get du Tests" include("interface/get_du.jl")
-        @time @safetestset "Mass Matrix Tests" include("interface/mass_matrix_tests.jl")
-        @time @safetestset "W-Operator prototype tests" include("interface/wprototype_tests.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIII" || GROUP == "Interface")
@@ -115,14 +108,12 @@ end
         @time @safetestset "stats Tests" include("interface/stats_tests.jl")
         @time @safetestset "No Index Tests" include("interface/noindex_tests.jl")
         @time @safetestset "Events + DAE addsteps Tests" include("interface/event_dae_addsteps.jl")
-        @time @safetestset "No Jac Tests" include("interface/nojac.jl")
         @time @safetestset "Units Tests" include("interface/units_tests.jl")
         @time @safetestset "Non-Full Diagonal Sparsity Tests" include("interface/nonfulldiagonal_sparse.jl")
         @time @safetestset "DEVerbosity Tests" include("interface/verbosity.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIV" || GROUP == "Interface")
-        @time @safetestset "Autodiff Error Tests" include("interface/autodiff_error_tests.jl")
         @time @safetestset "Ambiguity Tests" include("interface/ambiguity_tests.jl")
         @time @safetestset "Precision Mixing Tests" include("interface/precision_mixing.jl")
         @time @safetestset "Sized Matrix Tests" include("interface/sized_matrix_tests.jl")
@@ -132,7 +123,6 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "GPU AutoDiff Interface Tests" include("interface/gpu_autodiff_interface_tests.jl")
-        @time @safetestset "DAE Initialization Tests" include("interface/dae_initialization_tests.jl")
     end
 
     if !is_APPVEYOR &&
