@@ -15,6 +15,8 @@ using Reexport: @reexport
 @reexport using StochasticDiffEqWeak
 @reexport using StochasticDiffEqIIF
 @reexport using StochasticDiffEqJump
+@reexport using DiffEqNoiseProcess
+using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
 import SciMLBase
 
@@ -26,6 +28,7 @@ AutoSOSRA2(alg; kwargs...) = AutoAlgSwitch(SOSRA2(), alg; kwargs...)
 include("default_sde_alg.jl")
 
 export AutoSOSRI2, AutoSOSRA2
+export NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
 # Re-export general functions
 export solve, init, solve!, step!

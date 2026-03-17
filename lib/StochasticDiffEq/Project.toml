@@ -5,7 +5,9 @@ authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
@@ -30,10 +32,13 @@ StochasticDiffEqMilstein = {path = "../StochasticDiffEqMilstein"}
 StochasticDiffEqROCK = {path = "../StochasticDiffEqROCK"}
 StochasticDiffEqRODE = {path = "../StochasticDiffEqRODE"}
 StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
+OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
 
 [compat]
 DiffEqBase = "6.187"
+DiffEqNoiseProcess = "5.13"
 LinearAlgebra = "1.6"
+OrdinaryDiffEqNonlinearSolve = "1"
 Reexport = "0.2, 1.0"
 SciMLBase = "2.146"
 StochasticDiffEqCore = "0.1"
@@ -49,6 +54,7 @@ StochasticDiffEqWeak = "0.1"
 julia = "1.10"
 
 [extras]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
@@ -70,4 +76,4 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DiffEqCallbacks", "DiffEqDevTools", "DiffEqNoiseProcess", "ForwardDiff", "JumpProcesses", "LevyArea", "LinearSolve", "ModelingToolkit", "OrdinaryDiffEq", "OrdinaryDiffEqDifferentiation", "Pkg", "Random", "SciMLOperators", "SDEProblemLibrary", "SafeTestsets", "SparseArrays", "Statistics", "StaticArrays", "Test"]
+test = ["AllocCheck", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqNoiseProcess", "ForwardDiff", "JumpProcesses", "LevyArea", "LinearSolve", "ModelingToolkit", "OrdinaryDiffEq", "OrdinaryDiffEqDifferentiation", "Pkg", "Random", "SciMLOperators", "SDEProblemLibrary", "SafeTestsets", "SparseArrays", "Statistics", "StaticArrays", "Test"]

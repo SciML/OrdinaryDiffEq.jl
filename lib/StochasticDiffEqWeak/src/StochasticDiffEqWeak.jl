@@ -7,7 +7,7 @@ import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: perform_step!, initialize!, issplit
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
-    alg_needs_extra_process, is_split_step, Ihat2,
+    alg_needs_extra_process, is_split_step, Ihat2, _z_prototype,
     StochasticDiffEqAlgorithm, StochasticDiffEqAdaptiveAlgorithm,
     StochasticDiffEqNewtonAdaptiveAlgorithm, StochasticDiffEqNewtonAlgorithm,
     StochasticDiffEqCache, StochasticDiffEqConstantCache, StochasticDiffEqMutableCache,
@@ -20,6 +20,7 @@ import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
 import DiffEqBase: is_diagonal_noise, @..
 import DiffEqBase: calculate_residuals, calculate_residuals!
 import DiffEqBase: full_cache, rand_cache, ratenoise_cache
+import DiffEqBase: Tableau
 
 import MuladdMacro: @muladd
 import SciMLBase
@@ -36,6 +37,7 @@ using RecursiveArrayTools
 using ForwardDiff, FiniteDiff
 import ADTypes
 
+include("tableaus.jl")
 include("algorithms.jl")
 include("alg_utils.jl")
 
@@ -53,5 +55,13 @@ export DRI1, DRI1NM, RI1, RI3, RI5, RI6,
     NON, NON2, COM,
     SIEA, SIEB, SMEA, SMEB,
     IRI1
+
+# Tableau types and constructors
+export RoesslerRI, RoesslerRS, KomoriNON, KomoriNON2,
+    constructDRI1, constructRI1, constructRI3, constructRI5, constructRI6,
+    constructRDI1WM, constructRDI2WM, constructRDI3WM, constructRDI4WM,
+    constructRS1, constructRS2,
+    constructNON, constructNON2,
+    checkRIOrder, checkRSOrder, checkNONOrder
 
 end # module

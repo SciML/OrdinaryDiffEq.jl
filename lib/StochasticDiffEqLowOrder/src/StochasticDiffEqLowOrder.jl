@@ -7,7 +7,7 @@ import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: perform_step!, initialize!, issplit
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
-    alg_needs_extra_process, is_split_step,
+    alg_needs_extra_process, is_split_step, supports_regular_jumps,
     StochasticDiffEqAlgorithm, StochasticDiffEqAdaptiveAlgorithm,
     StochasticDiffEqCache, StochasticDiffEqConstantCache, StochasticDiffEqMutableCache,
     get_Jalg, get_iterated_I, get_iterated_I!,

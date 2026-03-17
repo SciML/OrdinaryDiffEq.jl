@@ -165,7 +165,7 @@ export StochasticDiffEqCache, StochasticDiffEqConstantCache, StochasticDiffEqMut
 
 # Export core utility functions used by solver subpackages
 export alg_cache, alg_order, get_current_alg_order, isadaptive,
-    alg_compatible, alg_needs_extra_process,
+    alg_compatible, alg_needs_extra_process, supports_regular_jumps,
     alg_mass_matrix_compatible, alg_can_repeat_jac,
     is_split_step, alg_control_rate, delta_default,
     alg_stability_size, unwrap_alg, issplit,

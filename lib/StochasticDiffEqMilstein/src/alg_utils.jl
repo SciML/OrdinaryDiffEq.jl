@@ -18,7 +18,13 @@ alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::WangLi3SMil_F) = true
 
 alg_needs_extra_process(alg::RKMilGeneral) = true
 
-# Override Z prototype for RKMilGeneral - needs matrix Z for non-diagonal noise
+# Override Z prototype for RKMilGeneral — needs extra Z when p is specified
 function StochasticDiffEqCore._z_prototype(alg::RKMilGeneral, rand_prototype, iip::Bool)
-    return rand_prototype  # default behavior, override if needed
+    if alg.p === nothing || rand_prototype isa Number
+        return nothing
+    end
+    m = length(rand_prototype)
+    rp2 = similar(rand_prototype, Int(m + alg.p * m * 2))
+    rp2 .= false
+    return rp2
 end

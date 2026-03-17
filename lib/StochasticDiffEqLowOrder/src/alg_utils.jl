@@ -19,6 +19,7 @@ function SciMLBase.alg_interpretation(alg::RKMil{interpretation}) where {interpr
 end
 SciMLBase.alg_interpretation(alg::RKMilCommute) = alg.interpretation
 
+supports_regular_jumps(::EM) = true
 alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::EM) = true
 alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::LambaEM) = true
 alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::EulerHeun) = true

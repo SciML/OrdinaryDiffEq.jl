@@ -457,3 +457,125 @@ function checkSRAOrder(SRA; tol = 1.0e-6)
     conditions[8] = abs(dot(β₂, c₁) + 1) < tol
     return (conditions)
 end
+
+"""
+    constructSKenCarp()
+
+Constructs the tableau type for the implicit SKenCarp method as a RosslerSRA tableau.
+"""
+function constructSKenCarp(T = Float64, T2 = Float64)
+    γ = convert(T, 0.435866521508459)
+    a31 = convert(T, 0.2576482460664272)
+    a32 = -convert(T, 0.09351476757488625)
+    a41 = convert(T, 0.18764102434672383)
+    a42 = -convert(T, 0.595297473576955)
+    a43 = convert(T, 0.9717899277217721)
+    # bhat1 = convert(T,2756255671327//12835298489170)
+    # bhat2 = -convert(T,10771552573575//22201958757719)
+    # bhat3 = convert(T,9247589265047//10645013368117)
+    # bhat4 = convert(T,2193209047091//5459859503100)
+    btilde1 = convert(T, 0.027099261876665316) # bhat1-a41
+    btilde2 = convert(T, 0.11013520969201586) # bhat2-a42
+    btilde3 = convert(T, -0.10306492520138458) # bhat3-a43
+    btilde4 = convert(T, -0.0341695463672966) # bhat4-γ
+    c3 = convert(T2, 0.6)
+    c2 = 2γ
+    θ = c3 / c2
+    α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ)
+    α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ)
+    θ = 1 / c2
+    α41 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ)
+    α42 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ)
+
+    nb021 = convert(T, -12.246764387585056)
+    nb043 = convert(T, -14.432096958608753)
+    α = [a41; a42; a43; γ]
+    β₁ = [0, 0, 0, 1]
+    β₂ = [1, 0, 0, -1]
+    A₀ = [
+        0 0 0 0
+        γ γ 0 0
+        a31 a32 γ 0
+        a41 a42 a43 γ
+    ]
+    B₀ = [
+        0 0 0 0
+        nb021 0 0 0
+        0 0 0 0
+        0 0 nb043 0
+    ]
+    c₀ = [0, c2, c3, 1]
+    c₁ = [0, 0, 0, 1]
+    return RosslerSRA(
+        map(T2, c₀), map(T2, c₁),
+        map(T, A₀), map(T, B₀),
+        map(T, α), map(T, β₁), map(T, β₂), 4 // 2
+    )
+end
+
+"""
+    constructExplicitSKenCarp()
+
+Constructs the tableau type for the explicit part of SKenCarp as a RosslerSRA tableau.
+"""
+function constructExplicitSKenCarp(T = Float64, T2 = Float64)
+    γ = convert(T, 0.435866521508459)
+    a31 = convert(T, 0.2576482460664272)
+    a32 = -convert(T, 0.09351476757488625)
+    a41 = convert(T, 0.18764102434672383)
+    a42 = -convert(T, 0.595297473576955)
+    a43 = convert(T, 0.9717899277217721)
+    # bhat1 = convert(T,2756255671327//12835298489170)
+    # bhat2 = -convert(T,10771552573575//22201958757719)
+    # bhat3 = convert(T,9247589265047//10645013368117)
+    # bhat4 = convert(T,2193209047091//5459859503100)
+    btilde1 = convert(T, 0.027099261876665316) # bhat1-a41
+    btilde2 = convert(T, 0.11013520969201586) # bhat2-a42
+    btilde3 = convert(T, -0.10306492520138458) # bhat3-a43
+    btilde4 = convert(T, -0.0341695463672966) # bhat4-γ
+    c3 = convert(T2, 0.6)
+    c2 = 2γ
+    θ = c3 / c2
+    α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ)
+    α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ)
+    θ = 1 / c2
+    α41 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ)
+    α42 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ)
+
+    ea21 = convert(T, 1767732205903 // 2027836641118)
+    ea31 = convert(T, 5535828885825 // 10492691773637)
+    ea32 = convert(T, 788022342437 // 10882634858940)
+    ea41 = convert(T, 6485989280629 // 16251701735622)
+    ea42 = -convert(T, 4246266847089 // 9704473918619)
+    ea43 = convert(T, 10755448449292 // 10357097424841)
+    eb1 = convert(T, 1471266399579 // 7840856788654)
+    eb2 = convert(T, -4482444167858 // 7529755066697)
+    eb3 = convert(T, 11266239266428 // 11593286722821)
+    eb4 = convert(T, 1767732205903 // 4055673282236)
+
+    nb021 = convert(T, -12.246764387585056)
+    nb043 = convert(T, -14.432096958608753)
+
+    α = [eb1; eb2; eb3; eb4]
+    β₁ = [0, 0, 0, 1]
+    β₂ = [1, 0, 0, -1]
+    A₀ = [
+        0 0 0 0
+        ea21 0 0 0
+        ea31 ea32 0 0
+        ea41 ea42 ea43 0
+    ]
+    B₀ = [
+        0 0 0 0
+        nb021 0 0 0
+        0 0 0 0
+        0 0 nb043 0
+    ]
+    c₀ = [0, c2, c3, 1]
+    c₁ = [0, 0, 0, 1]
+    return RosslerSRA(
+        map(T2, c₀), map(T2, c₁),
+        map(T, A₀), map(T, B₀),
+        map(T, α), map(T, β₁), map(T, β₂), 4 // 2
+    )
+end

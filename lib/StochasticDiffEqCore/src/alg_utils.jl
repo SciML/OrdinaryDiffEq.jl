@@ -217,9 +217,14 @@ function alg_compatible(
     return max((alg_compatible(prob, a) for a in alg.algs)...)
 end
 
+# Trait: whether an algorithm supports regular jumps in a JumpProblem.
+# Default is false; EM and ImplicitEM override to true in their subpackages.
+supports_regular_jumps(alg) = false
+
 # JumpProblem compatibility defaults
 function alg_compatible(prob::JumpProblem, alg::StochasticDiffEqAlgorithm)
-    return alg_compatible(prob.prob, alg) && prob.regular_jump === nothing &&
+    return alg_compatible(prob.prob, alg) &&
+        (supports_regular_jumps(alg) || prob.regular_jump === nothing) &&
         prob.prob isa DiffEqBase.AbstractSDEProblem
 end
 

@@ -82,3 +82,21 @@ alg_needs_extra_process(alg::RS2) = true
 alg_needs_extra_process(alg::PL1WM) = true
 alg_needs_extra_process(alg::NON) = true
 alg_needs_extra_process(alg::NON2) = true
+
+## _z_prototype overrides (Z process sizing for algorithms with extra noise)
+
+# PL1WM needs m*(m-1)/2 auxiliary random variables for iterated integrals
+function _z_prototype(alg::PL1WM, rand_prototype, iip::Bool)
+    if !iip && rand_prototype isa Number
+        return nothing
+    end
+    m = length(rand_prototype)
+    rp2 = similar(rand_prototype, Int(m * (m - 1) / 2))
+    rp2 .= false
+    return rp2
+end
+
+# W2Ito1 always needs exactly 2 auxiliary random variables
+function _z_prototype(alg::W2Ito1, rand_prototype, iip::Bool)
+    return zeros(eltype(rand_prototype), 2)
+end

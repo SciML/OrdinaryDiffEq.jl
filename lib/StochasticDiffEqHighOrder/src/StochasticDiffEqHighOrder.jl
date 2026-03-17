@@ -41,4 +41,11 @@ include("perform_step/sra.jl")
 
 export SRI, SRIW1, SRIW2, SOSRI, SOSRI2, SRA, SRA1, SRA2, SRA3, SOSRA, SOSRA2
 
+# Tableau types, constructors and order checkers
+export RosslerSRI, RosslerSRA,
+    constructSRIW1, constructSRIW2, constructSRIOpt1, constructSRIOpt2,
+    constructSRA1, constructSRA2, constructSRA3, constructSOSRA, constructSOSRA2,
+    constructSKenCarp, constructExplicitSKenCarp,
+    checkSRIOrder, checkSRAOrder
+
 end # module
