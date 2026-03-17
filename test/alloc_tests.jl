@@ -91,6 +91,20 @@ end
         @test allocs_per_step == 0
     end
 
+    @testset "SKenCarp stepping allocation" begin
+        integrator = init(prob_iip, SKenCarp(), dt = 0.01, adaptive = false, save_on = false)
+
+        for _ in 1:50
+            step_void!(integrator)
+        end
+
+        allocs_per_step = minimum(@allocated(step_void!(integrator)) for _ in 1:5)
+        # Pkg.test runs with --check-bounds=yes which causes small allocations
+        # (144 bytes) in the NL solver's broadcast/bounds-checking paths.
+        # Without --check-bounds=yes, this is zero.
+        @test allocs_per_step <= 200
+    end
+
     # Test with scalar SDE (out-of-place)
     @testset "Scalar SDE allocations" begin
         f_scalar(u, p, t) = 0.1 * u

@@ -150,7 +150,7 @@ end
     (; t, dt, uprev, u, p, f) = integrator
     g = integrator.f.g
     (; z₁, z₂, z₃, z₄, k1, k2, k3, k4, atmp) = cache
-    (; g1, g4, chi2, nlsolver) = cache
+    (; g1, g4, gtmp, chi2, nlsolver) = cache
     (; z, tmp) = nlsolver
     (; k, dz) = nlsolver.cache # alias to reduce memory
     (;
@@ -195,8 +195,9 @@ end
 
     ##### Step 2
 
-    # TODO: Add a cache so this isn't overwritten near the end, so it can not repeat on fail
-    g(g1, uprev, p, t)
+    if !repeat_step && !integrator.last_stepfail
+        g(g1, uprev, p, t)
+    end
 
     if is_diagonal_noise(integrator.sol.prob)
         @.. z₄ = chi2 * g1 # use z₄ as storage for the g1*chi2
@@ -255,11 +256,9 @@ end
         @.. u = tmp + γ * z₃
         f2(k3, u, p, t + c3 * dt)
         k3 .*= dt
-        # z₄ is storage for the g1*chi2 from earlier
         @.. tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 + ea42 * k2 + ea43 * k3 + nb043 * z₄
     else
         (; α41, α42) = cache.tab
-        # z₄ is storage for the g1*chi2
         @.. tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + nb043 * z₄
     end
 
@@ -285,8 +284,8 @@ end
             @.. u = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * k1 + eb2 * k2 + eb3 * k3 +
                 eb4 * k4 + integrator.W.dW * g4 + E₂
         else
-            g1 .-= g4
-            mul!(E₂, g1, chi2)
+            @.. gtmp = g1 - g4
+            mul!(E₂, gtmp, chi2)
             mul!(tmp, g4, integrator.W.dW)
             @.. u = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * k1 + eb2 * k2 + eb3 * k3 +
                 eb4 * k4 + tmp + E₂
@@ -296,8 +295,8 @@ end
             @.. E₂ = chi2 * (g1 - g4)
             @.. u = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + integrator.W.dW * g4 + E₂
         else
-            g1 .-= g4
-            mul!(E₂, g1, chi2)
+            @.. gtmp = g1 - g4
+            mul!(E₂, gtmp, chi2)
             mul!(tmp, g4, integrator.W.dW)
             @.. u = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + tmp + E₂
         end
