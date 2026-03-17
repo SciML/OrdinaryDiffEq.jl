@@ -1,9 +1,15 @@
 # =============================================================================
-# Hairer-Wanner initial timestep estimation.
+# Initial timestep estimation.
 # Internal functions _ode_initdt_iip/_ode_initdt_oop implement the algorithm.
-# When g !== nothing, stochastic diffusion terms are folded into the estimate:
+#
+# When g !== nothing (stochastic), uses Hairer-Wanner with diffusion terms:
 #   d₁ uses max(|f₀±3g₀|)/sk instead of f₀/sk
 #   d₂ uses max(|Δf±ΔgMax|)/sk instead of Δf/sk
+#
+# When g === nothing (deterministic), uses CVODE CVHin algorithm
+# (Hindmarsh et al., 2005) with order-dependent refinement:
+#   Component-wise iterative with geometric mean of bounds,
+#   step size formula h ~ (2/yddnrm)^(1/(p+1))
 # =============================================================================
 
 @muladd function _ode_initdt_iip(
@@ -75,14 +81,9 @@
             T = promote_type(eltype(u0), eltype(sk))
         end
         tmp = similar(u0, T)
-        @inbounds @simd ivdep for i in eachindex(u0)
-            tmp[i] = u0[i] / sk[i]
-        end
     else
         tmp = @.. broadcast = false u0 / sk
     end
-
-    d₀ = internalnorm(tmp, t)
 
     #=
     Try/catch around the linear solving. This will catch singular matrices defined
@@ -134,10 +135,23 @@
         end
     end
 
-    # d₁: fold in diffusion terms when g !== nothing
-    # Pre-initialize g₀ so JET doesn't flag it as potentially undefined in the d₂ block
-    g₀ = nothing
     if g !== nothing
+        # =================================================================
+        # STOCHASTIC PATH: Hairer-Wanner with diffusion terms
+        # =================================================================
+
+        if u0 isa Array
+            @inbounds @simd ivdep for i in eachindex(u0)
+                tmp[i] = u0[i] / sk[i]
+            end
+        else
+            @.. broadcast = false tmp = u0 / sk
+        end
+        d₀ = internalnorm(tmp, t)
+
+        # d₁: fold in diffusion terms
+        # Pre-initialize g₀ so JET doesn't flag it as potentially undefined
+        g₀ = nothing
         if noise_prototype !== nothing
             g₀ = zero(noise_prototype)
         else
@@ -148,86 +162,70 @@
         d₁ = internalnorm(
             max.(internalnorm.(f₀ .+ g₀, t), internalnorm.(f₀ .- g₀, t)) ./ sk, t
         )
-    else
-        if u0 isa Array
-            @inbounds @simd ivdep for i in eachindex(u0)
-                tmp[i] = f₀[i] / sk[i] * oneunit_tType
-            end
-        else
-            @.. broadcast = false tmp = f₀ / sk * oneunit_tType
+
+        # Better than checking any(x->any(isnan, x), f₀)
+        # because it also checks if partials are NaN
+        # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
+        if isnan(d₁)
+            @SciMLMessage(
+                "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+                integrator.opts.verbose, :init_NaN
+            )
+            return tdir * dtmin
         end
-        d₁ = internalnorm(tmp, t)
-    end
 
-    # Better than checking any(x->any(isnan, x), f₀)
-    # because it also checks if partials are NaN
-    # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
-    if isnan(d₁)
-        @SciMLMessage(
-            "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
-            integrator.opts.verbose, :init_NaN
-        )
-        return tdir * dtmin
-    end
-
-    dt₀ = ifelse(
-        (d₀ < 1 // 10^(5)) |
-            (d₁ < 1 // 10^(5)), smalldt,
-        convert(
-            _tType,
-            oneunit_tType * DiffEqBase.value(
-                (d₀ / d₁) /
-                    100
+        dt₀ = ifelse(
+            (d₀ < 1 // 10^(5)) |
+                (d₁ < 1 // 10^(5)), smalldt,
+            convert(
+                _tType,
+                oneunit_tType * DiffEqBase.value(
+                    (d₀ / d₁) /
+                        100
+                )
             )
         )
-    )
-    # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    #   dt₀ = smalldt
-    # else
-    #   dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
-    # end
-    dt₀ = min(dt₀, dtmax_tdir)
+        dt₀ = min(dt₀, dtmax_tdir)
 
-    if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType) * oneunit(_tType)
-        # This catches Andreas' non-singular example
-        # should act like it's singular
-        result_dt = tdir * max(smalldt, dtmin)
-        @SciMLMessage(
-            lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
-            integrator.opts.verbose, :dt_epsilon
-        )
-        return result_dt
-    end
-
-    dt₀_tdir = tdir * dt₀
-
-    u₁ = zero(u0) # required by DEDataArray
-
-    if u0 isa Array
-        @inbounds @simd ivdep for i in eachindex(u0)
-            u₁[i] = u0[i] + dt₀_tdir * f₀[i]
+        if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType) * oneunit(_tType)
+            # This catches Andreas' non-singular example
+            # should act like it's singular
+            result_dt = tdir * max(smalldt, dtmin)
+            @SciMLMessage(
+                lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
+                integrator.opts.verbose, :dt_epsilon
+            )
+            return result_dt
         end
-    else
-        @.. broadcast = false u₁ = u0 + dt₀_tdir * f₀
-    end
-    f₁ = zero(f₀)
-    f(f₁, u₁, p, t + dt₀_tdir)
 
-    if prob.f.mass_matrix != I && (
-            !(prob.f isa DynamicalODEFunction) ||
-                any(mm != I for mm in prob.f.mass_matrix)
-        )
-        integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
-        copyto!(f₁, ftmp)
-    end
+        dt₀_tdir = tdir * dt₀
 
-    # Constant zone before callback
-    # Just return first guess
-    # Avoids AD issues
-    length(u0) > 0 && f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
+        u₁ = zero(u0) # required by DEDataArray
 
-    # d₂: fold in diffusion terms when g !== nothing
-    if g !== nothing
+        if u0 isa Array
+            @inbounds @simd ivdep for i in eachindex(u0)
+                u₁[i] = u0[i] + dt₀_tdir * f₀[i]
+            end
+        else
+            @.. broadcast = false u₁ = u0 + dt₀_tdir * f₀
+        end
+        f₁ = zero(f₀)
+        f(f₁, u₁, p, t + dt₀_tdir)
+
+        if prob.f.mass_matrix != I && (
+                !(prob.f isa DynamicalODEFunction) ||
+                    any(mm != I for mm in prob.f.mass_matrix)
+            )
+            integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
+            copyto!(f₁, ftmp)
+        end
+
+        # Constant zone before callback
+        # Just return first guess
+        # Avoids AD issues
+        length(u0) > 0 && f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
+
+        # d₂: fold in diffusion terms
         if noise_prototype !== nothing
             g₁ = zero(noise_prototype)
         else
@@ -237,34 +235,197 @@
         g₁ .*= 3
         ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
         d₂ = internalnorm(
-            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
+            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t),
+                internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
             t
         ) / dt₀
+        # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
+
+        max_d₁d₂ = max(d₁, d₂)
+        if max_d₁d₂ <= 1 // Int64(10)^(15)
+            dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
+        else
+            dt₁ = convert(
+                _tType,
+                oneunit_tType *
+                    DiffEqBase.value(
+                    10.0^(-(2 + log10(max_d₁d₂)) / order)
+                )
+            )
+        end
+        return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
     else
+        # =================================================================
+        # DETERMINISTIC PATH: CVHin with order dependence
+        # Based on SUNDIALS CVODE's CVHin algorithm (Hindmarsh et al., 2005)
+        # Component-wise iterative estimation with geometric mean of bounds
+        # and order-dependent refinement: h ~ (2/yddnrm)^(1/(p+1))
+        # =================================================================
+
+        # NaN check via d₁ = norm(f₀/sk)
         if u0 isa Array
             @inbounds @simd ivdep for i in eachindex(u0)
-                tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
+                tmp[i] = f₀[i] / sk[i] * oneunit_tType
             end
         else
-            @.. broadcast = false tmp = (f₁ - f₀) / sk * oneunit_tType
+            @.. broadcast = false tmp = f₀ / sk * oneunit_tType
         end
-        d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
-    end
-    # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
+        d₁ = internalnorm(tmp, t)
 
-    max_d₁d₂ = max(d₁, d₂)
-    if max_d₁d₂ <= 1 // Int64(10)^(15)
-        dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
-    else
-        dt₁ = convert(
-            _tType,
-            oneunit_tType *
-                DiffEqBase.value(
-                10.0^(-(2 + log10(max_d₁d₂)) / order)
+        if isnan(d₁)
+            @SciMLMessage(
+                "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+                integrator.opts.verbose, :init_NaN
             )
-        )
+            return tdir * dtmin
+        end
+
+        # CVHin Step 1: Compute lower and upper bounds on |h|
+        tspan = prob.tspan
+        tdist = abs(tspan[2] - tspan[1])
+        eps_tType = eps(_tType)
+        hlb = convert(_tType, 100 * eps_tType * oneunit_tType)
+
+        # Upper bound: most restrictive component of |f₀| / (0.1*|u0| + tol)
+        hub_inv = zero(_tType)
+        if u0 isa Array
+            @inbounds for i in eachindex(u0)
+                atol_i = abstol isa Number ? abstol : abstol[i]
+                rtol_i = reltol isa Number ? reltol : reltol[i]
+                tol_i = rtol_i * internalnorm(u0[i], t) + atol_i
+                denom = convert(_tType, 0.1) * internalnorm(u0[i], t) + tol_i
+                numer = internalnorm(f₀[i], t) * oneunit_tType
+                if denom > 0
+                    hub_inv = max(hub_inv, numer / denom)
+                end
+            end
+        else
+            for i in eachindex(u0)
+                atol_i = abstol isa Number ? abstol : abstol[i]
+                rtol_i = reltol isa Number ? reltol : reltol[i]
+                tol_i = rtol_i * internalnorm(u0[i], t) + atol_i
+                denom = convert(_tType, 0.1) * internalnorm(u0[i], t) + tol_i
+                numer = internalnorm(f₀[i], t) * oneunit_tType
+                if denom > 0
+                    hub_inv = max(hub_inv, numer / denom)
+                end
+            end
+        end
+
+        hub = convert(_tType, 0.1) * tdist
+        if hub * hub_inv > 1
+            hub = oneunit_tType / hub_inv
+        end
+        hub = min(hub, dtmax_tdir)
+
+        if hub < hlb
+            return tdir * max(dtmin, sqrt(hlb * hub))
+        end
+
+        # CVHin Step 2: Iterative refinement
+        hg = sqrt(hlb * hub)
+        hs = hg
+        hnew = hg
+        p_order = order
+        u₁ = zero(u0)
+        f₁ = zero(f₀)
+
+        for count1 in 1:4
+            # Inner loop: try hg, shrink by 0.2 if f₁ has NaN/Inf
+            hg_ok = false
+            for count2 in 1:4
+                hgs = hg * tdir
+                if u0 isa Array
+                    @inbounds @simd ivdep for i in eachindex(u0)
+                        u₁[i] = u0[i] + hgs * f₀[i]
+                    end
+                else
+                    @.. broadcast = false u₁ = u0 + hgs * f₀
+                end
+                f(f₁, u₁, p, t + convert(_tType, hgs))
+
+                if prob.f.mass_matrix != I && ftmp !== nothing && (
+                        !(prob.f isa DynamicalODEFunction) ||
+                            any(mm != I for mm in prob.f.mass_matrix)
+                    )
+                    integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
+                    copyto!(f₁, ftmp)
+                end
+
+                ydd_ok = true
+                if u0 isa Array
+                    @inbounds for i in eachindex(f₁)
+                        if !isfinite(f₁[i])
+                            ydd_ok = false
+                            break
+                        end
+                    end
+                else
+                    for i in eachindex(f₁)
+                        if !isfinite(f₁[i])
+                            ydd_ok = false
+                            break
+                        end
+                    end
+                end
+
+                if ydd_ok
+                    hg_ok = true
+                    break
+                end
+                hg *= convert(_tType, 0.2)
+            end
+
+            if !hg_ok
+                if count1 <= 2
+                    return tdir * max(smalldt, dtmin)
+                end
+                hnew = hs
+                break
+            end
+            hs = hg
+
+            # Second derivative estimate: yddnrm = norm((f₁-f₀)/sk)/hg
+            if u0 isa Array
+                @inbounds @simd ivdep for i in eachindex(u0)
+                    tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
+                end
+            else
+                @.. broadcast = false tmp = (f₁ - f₀) / sk * oneunit_tType
+            end
+            yddnrm = internalnorm(tmp, t) / hg * oneunit_tType
+
+            # Order-dependent step proposal: h ~ (2/yddnrm)^(1/(p+1))
+            if DiffEqBase.value(yddnrm) *
+               DiffEqBase.value(hub / oneunit_tType)^(p_order + 1) > 2
+                hnew = convert(
+                    _tType,
+                    oneunit_tType * DiffEqBase.value(
+                        (2 / yddnrm)^(1 / (p_order + 1))
+                    )
+                )
+            else
+                hnew = sqrt(hg * hub)
+            end
+
+            count1 == 4 && break
+            hrat = hnew / hg
+            if hrat > convert(_tType, 0.5) && hrat < 2
+                break
+            end
+            if count1 > 1 && hrat > 2
+                hnew = hg
+                break
+            end
+            hg = hnew
+        end
+
+        # CVHin Step 3: Apply 0.5 safety factor and bounds
+        h0 = convert(_tType, 0.5) * hnew
+        h0 = clamp(h0, hlb, hub)
+
+        return tdir * max(dtmin, min(h0, dtmax_tdir))
     end
-    return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
 end
 
 # ODE iip entry point
@@ -323,7 +484,6 @@ end
     end
 
     sk = @.. broadcast = false abstol + internalnorm(u0, t) * reltol
-    d₀ = internalnorm(u0 ./ sk, t)
 
     f₀ = f(u0, p, t)
 
@@ -339,10 +499,15 @@ end
         throw(TypeNotConstantError(inferredtype, typeof(f₀)))
     end
 
-    # d₁: fold in diffusion terms when g !== nothing
-    # Pre-initialize g₀ so JET doesn't flag it as potentially undefined in the d₂ block
-    g₀ = nothing
     if g !== nothing
+        # =================================================================
+        # STOCHASTIC PATH: Hairer-Wanner with diffusion terms
+        # =================================================================
+
+        d₀ = internalnorm(u0 ./ sk, t)
+
+        # d₁: fold in diffusion terms
+        # Pre-initialize g₀ so JET doesn't flag it as potentially undefined
         g₀ = 3g(u0, p, t)
         if any(x -> any(isnan, x), g₀)
             @SciMLMessage(
@@ -353,50 +518,154 @@ end
         d₁ = internalnorm(
             max.(internalnorm.(f₀ .+ g₀, t), internalnorm.(f₀ .- g₀, t)) ./ sk, t
         )
-    else
-        d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
-    end
 
-    if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
-        dt₀ = smalldt
-    else
-        dt₀ = convert(_tType, oneunit_tType * DiffEqBase.value((d₀ / d₁) / 100))
-    end
-    dt₀ = min(dt₀, dtmax_tdir)
-    dt₀_tdir = tdir * dt₀
+        if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
+            dt₀ = smalldt
+        else
+            dt₀ = convert(_tType, oneunit_tType * DiffEqBase.value((d₀ / d₁) / 100))
+        end
+        dt₀ = min(dt₀, dtmax_tdir)
+        dt₀_tdir = tdir * dt₀
 
-    u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
-    f₁ = f(u₁, p, t + dt₀_tdir)
+        u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
+        f₁ = f(u₁, p, t + dt₀_tdir)
 
-    # Constant zone before callback
-    # Just return first guess
-    # Avoids AD issues
-    f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
+        # Constant zone before callback
+        # Just return first guess
+        # Avoids AD issues
+        f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
 
-    # d₂: fold in diffusion terms when g !== nothing
-    if g !== nothing
+        # d₂: fold in diffusion terms
         g₁ = 3g(u₁, p, t + dt₀_tdir)
         ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
         d₂ = internalnorm(
-            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
+            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t),
+                internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
             t
         ) / dt₀
-    else
-        d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType, t) / dt₀ * oneunit_tType
-    end
 
-    max_d₁d₂ = max(d₁, d₂)
-    if max_d₁d₂ <= 1 // Int64(10)^(15)
-        dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
-    else
-        dt₁ = _tType(
-            oneunit_tType *
-                DiffEqBase.value(
-                10^(-(2 + log10(max_d₁d₂)) / order)
+        max_d₁d₂ = max(d₁, d₂)
+        if max_d₁d₂ <= 1 // Int64(10)^(15)
+            dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
+        else
+            dt₁ = _tType(
+                oneunit_tType *
+                    DiffEqBase.value(
+                    10^(-(2 + log10(max_d₁d₂)) / order)
+                )
             )
-        )
+        end
+        return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+    else
+        # =================================================================
+        # DETERMINISTIC PATH: CVHin with order dependence
+        # Based on SUNDIALS CVODE's CVHin algorithm (Hindmarsh et al., 2005)
+        # =================================================================
+
+        # NaN check via d₁ = norm(f₀/sk)
+        d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
+        if isnan(d₁)
+            @SciMLMessage(
+                "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+                integrator.opts.verbose, :init_NaN
+            )
+            return tdir * dtmin
+        end
+
+        # CVHin Step 1: Compute lower and upper bounds
+        tspan = prob.tspan
+        tdist = abs(tspan[2] - tspan[1])
+        eps_tType = eps(_tType)
+        hlb = convert(_tType, 100 * eps_tType * oneunit_tType)
+
+        # Upper bound: most restrictive component of |f₀| / (0.1*|u0| + tol)
+        hub_inv = zero(_tType)
+        for i in eachindex(u0)
+            atol_i = abstol isa Number ? abstol : abstol[i]
+            rtol_i = reltol isa Number ? reltol : reltol[i]
+            tol_i = rtol_i * internalnorm(u0[i], t) + atol_i
+            denom = convert(_tType, 0.1) * internalnorm(u0[i], t) + tol_i
+            numer = internalnorm(f₀[i], t) * oneunit_tType
+            if denom > 0
+                hub_inv = max(hub_inv, numer / denom)
+            end
+        end
+
+        hub = convert(_tType, 0.1) * tdist
+        if hub * hub_inv > 1
+            hub = oneunit_tType / hub_inv
+        end
+        hub = min(hub, dtmax_tdir)
+
+        if hub < hlb
+            return tdir * max(dtmin, sqrt(hlb * hub))
+        end
+
+        # CVHin Step 2: Iterative refinement
+        hg = sqrt(hlb * hub)
+        hs = hg
+        hnew = hg
+        p_order = order
+
+        for count1 in 1:4
+            hg_ok = false
+            f₁ = f₀  # will be overwritten if inner loop succeeds
+            for count2 in 1:4
+                hgs = hg * tdir
+                u₁ = @.. broadcast = false u0 + hgs * f₀
+                f₁ = f(u₁, p, t + convert(_tType, hgs))
+
+                if !any(x -> any(!isfinite, x), f₁)
+                    hg_ok = true
+                    break
+                end
+                hg *= convert(_tType, 0.2)
+            end
+
+            if !hg_ok
+                if count1 <= 2
+                    return tdir * max(smalldt, dtmin)
+                end
+                hnew = hs
+                break
+            end
+            hs = hg
+
+            # Second derivative estimate
+            yddnrm = internalnorm(
+                (f₁ .- f₀) ./ sk .* oneunit_tType, t) / hg * oneunit_tType
+
+            # Order-dependent step proposal: h ~ (2/yddnrm)^(1/(p+1))
+            if DiffEqBase.value(yddnrm) *
+               DiffEqBase.value(hub / oneunit_tType)^(p_order + 1) > 2
+                hnew = convert(
+                    _tType,
+                    oneunit_tType * DiffEqBase.value(
+                        (2 / yddnrm)^(1 / (p_order + 1))
+                    )
+                )
+            else
+                hnew = sqrt(hg * hub)
+            end
+
+            count1 == 4 && break
+            hrat = hnew / hg
+            if hrat > convert(_tType, 0.5) && hrat < 2
+                break
+            end
+            if count1 > 1 && hrat > 2
+                hnew = hg
+                break
+            end
+            hg = hnew
+        end
+
+        # CVHin Step 3: Apply 0.5 safety factor and bounds
+        h0 = convert(_tType, 0.5) * hnew
+        h0 = clamp(h0, hlb, hub)
+
+        return tdir * max(dtmin, min(h0, dtmax_tdir))
     end
-    return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
 end
 
 # ODE oop entry point
