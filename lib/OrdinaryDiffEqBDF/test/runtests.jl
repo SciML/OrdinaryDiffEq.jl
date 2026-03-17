@@ -30,6 +30,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "BDF Inference Tests" include("inference_tests.jl")
     @time @safetestset "BDF Convergence Tests" include("bdf_convergence_tests.jl")
     @time @safetestset "BDF Regression Tests" include("bdf_regression_tests.jl")
+    @time @safetestset "CVHin InitDt Tests" include("stiff_initdt_tests.jl")
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
