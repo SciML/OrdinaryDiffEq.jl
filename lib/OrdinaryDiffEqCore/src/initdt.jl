@@ -135,6 +135,8 @@
     end
 
     # d₁: fold in diffusion terms when g !== nothing
+    # Pre-initialize g₀ so JET doesn't flag it as potentially undefined in the d₂ block
+    g₀ = nothing
     if g !== nothing
         if noise_prototype !== nothing
             g₀ = zero(noise_prototype)
@@ -338,6 +340,8 @@ end
     end
 
     # d₁: fold in diffusion terms when g !== nothing
+    # Pre-initialize g₀ so JET doesn't flag it as potentially undefined in the d₂ block
+    g₀ = nothing
     if g !== nothing
         g₀ = 3g(u0, p, t)
         if any(x -> any(isnan, x), g₀)
