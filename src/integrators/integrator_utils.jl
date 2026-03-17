@@ -141,7 +141,7 @@ end
 function OrdinaryDiffEqCore._determine_initdt(integrator::SDEIntegrator)
     prob = integrator.sol.prob
     if prob isa SciMLBase.AbstractRODEProblem
-        return OrdinaryDiffEqCore.sde_determine_initdt(
+        return OrdinaryDiffEqCore.ode_determine_initdt(
             integrator.u, integrator.t,
             integrator.tdir, integrator.opts.dtmax,
             integrator.opts.abstol, integrator.opts.reltol,
