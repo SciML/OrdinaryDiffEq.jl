@@ -1,4 +1,4 @@
-module StochasticDiffEqJump
+module StochasticDiffEqLeaping
 
 using Reexport
 @reexport using StochasticDiffEqCore

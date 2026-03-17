@@ -4,7 +4,7 @@ const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
     @time @safetestset "Module loads and constructors" begin
-        using StochasticDiffEqJump
+        using StochasticDiffEqLeaping
         using Test
 
         @test TauLeaping() isa StochasticDiffEqJumpAdaptiveAlgorithm

@@ -14,7 +14,7 @@ using Reexport: @reexport
 @reexport using StochasticDiffEqImplicit
 @reexport using StochasticDiffEqWeak
 @reexport using StochasticDiffEqIIF
-@reexport using StochasticDiffEqJump
+@reexport using StochasticDiffEqLeaping
 @reexport using DiffEqNoiseProcess
 using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 

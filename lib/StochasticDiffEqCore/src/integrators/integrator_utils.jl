@@ -46,7 +46,7 @@ function (td::TauLeapingDrift{C, R, RateCache, true})(du, u, p, t) where {C, R, 
 end
 
 # nlsolve_f overrides for ImplicitTauLeaping/ThetaTrapezoidalTauLeaping
-# are defined in StochasticDiffEqJump alongside their concrete types.
+# are defined in StochasticDiffEqLeaping alongside their concrete types.
 
 # ============================================================================
 # Traits for SDE composite algorithms/caches
