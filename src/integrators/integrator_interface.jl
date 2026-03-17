@@ -27,20 +27,6 @@ function jac_iter(integrator::StochasticCompositeCache)
     return Iterators.flatten(jac_iter(c) for c in integrator.caches)
 end
 
-resize!(integrator::SDEIntegrator, i::Int) = resize!(integrator, integrator.cache, i)
-
-function resize!(integrator::SDEIntegrator, cache, i)
-    # This has to go first!
-    resize_non_user_cache!(integrator, cache, i)
-    for c in full_cache(integrator)
-        resize!(c, i)
-    end
-    for c in ratenoise_cache(integrator)
-        resize!(c, i)
-    end
-    return
-end
-
 function resize_noise!(integrator, cache, bot_idx, i)
     for c in integrator.W.S₁
         resize!(c[2], i)
@@ -110,52 +96,42 @@ end
 
 function resize_non_user_cache!(integrator::SDEIntegrator, cache, i)
     bot_idx = length(integrator.u) + 1
-    return if is_diagonal_noise(integrator.sol.prob)
+    if is_diagonal_noise(integrator.sol.prob)
         resize_noise!(integrator, cache, bot_idx, i)
         for c in rand_cache(integrator)
             resize!(c, i)
         end
     end
-end
-
-function deleteat!(integrator::SDEIntegrator, idxs)
-    deleteat_non_user_cache!(integrator, integrator.cache, idxs)
-    for c in full_cache(integrator)
-        deleteat!(c, idxs)
-    end
     for c in ratenoise_cache(integrator)
-        deleteat!(c, idxs)
-    end
-    return
-end
-
-function addat!(integrator::SDEIntegrator, idxs)
-    addat_non_user_cache!(integrator, integrator.cache, idxs)
-    for c in full_cache(integrator)
-        addat!(c, idxs)
-    end
-    for c in ratenoise_cache(integrator)
-        addat!(c, idxs)
+        resize!(c, i)
     end
     return
 end
 
 function deleteat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
-    return if is_diagonal_noise(integrator.sol.prob)
+    if is_diagonal_noise(integrator.sol.prob)
         deleteat_noise!(integrator, cache, idxs)
         for c in rand_cache(integrator)
             deleteat!(c, idxs)
         end
     end
+    for c in ratenoise_cache(integrator)
+        deleteat!(c, idxs)
+    end
+    return
 end
 
 function addat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
-    return if is_diagonal_noise(integrator.sol.prob)
+    if is_diagonal_noise(integrator.sol.prob)
         addat_noise!(integrator, cache, idxs)
         for c in rand_cache(integrator)
             addat!(c, idxs)
         end
     end
+    for c in ratenoise_cache(integrator)
+        addat!(c, idxs)
+    end
+    return
 end
 
 function deleteat_noise!(integrator, cache, idxs)

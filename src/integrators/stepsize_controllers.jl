@@ -1,10 +1,3 @@
-# PIController stepsize methods now provided by ODE's generic versions
-# (stepsize_controller!, step_accept_controller!, step_reject_controller! for PIController)
-# which are functionally equivalent for SDE (with better iszero(EEst) handling).
-
-# TauLeaping and CaoTauLeaping use algorithm-specific stepsize logic.
-# Bridge: ODE calls step_accept_controller!(integrator, alg, q) with 3 args,
-# but TauLeaping's versions take 2 args. These bridges handle the conversion.
 @inline function step_accept_controller!(integrator::SDEIntegrator, alg::TauLeaping, q)
     return step_accept_controller!(integrator, alg)
 end
