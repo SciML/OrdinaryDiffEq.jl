@@ -235,8 +235,10 @@
         g₁ .*= 3
         ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
         d₂ = internalnorm(
-            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t),
-                internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
+            max.(
+                internalnorm.(f₁ .- f₀ .+ ΔgMax, t),
+                internalnorm.(f₁ .- f₀ .- ΔgMax, t)
+            ) ./ sk,
             t
         ) / dt₀
         # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
@@ -300,23 +302,20 @@
                 end
             end
         else
-            for i in eachindex(u0)
-                atol_i = abstol isa Number ? abstol : abstol[i]
-                rtol_i = reltol isa Number ? reltol : reltol[i]
-                tol_i = rtol_i * internalnorm(u0[i], t) + atol_i
-                denom = convert(_tType, 0.1) * internalnorm(u0[i], t) + tol_i
-                numer = internalnorm(f₀[i], t) * oneunit_tType
-                if denom > 0
-                    hub_inv = max(hub_inv, numer / denom)
-                end
-            end
+            u0_norms = internalnorm.(u0, t)
+            f₀_norms = internalnorm.(f₀, t)
+            tols = @.. broadcast = false reltol * u0_norms + abstol
+            denoms = @.. broadcast = false convert(_tType, 0.1) * u0_norms + tols
+            numers = @.. broadcast = false f₀_norms * oneunit_tType
+            hub_inv_vals = ifelse.(denoms .> 0, numers ./ denoms, zero(_tType))
+            hub_inv = maximum(hub_inv_vals)
         end
 
         hub = convert(_tType, 0.1) * tdist
         if hub * hub_inv > 1
             hub = oneunit_tType / hub_inv
         end
-        hub = min(hub, dtmax_tdir)
+        hub = min(hub, abs(dtmax_tdir))
 
         if hub < hlb
             return tdir * max(dtmin, sqrt(hlb * hub))
@@ -361,12 +360,7 @@
                         end
                     end
                 else
-                    for i in eachindex(f₁)
-                        if !isfinite(f₁[i])
-                            ydd_ok = false
-                            break
-                        end
-                    end
+                    ydd_ok = !any(x -> any(!isfinite, x), f₁)
                 end
 
                 if ydd_ok
@@ -397,7 +391,7 @@
 
             # Order-dependent step proposal: h ~ (2/yddnrm)^(1/(p+1))
             if DiffEqBase.value(yddnrm) *
-               DiffEqBase.value(hub / oneunit_tType)^(p_order + 1) > 2
+                    DiffEqBase.value(hub / oneunit_tType)^(p_order + 1) > 2
                 hnew = convert(
                     _tType,
                     oneunit_tType * DiffEqBase.value(
@@ -424,7 +418,7 @@
         h0 = convert(_tType, 0.5) * hnew
         h0 = clamp(h0, hlb, hub)
 
-        return tdir * max(dtmin, min(h0, dtmax_tdir))
+        return tdir * max(dtmin, min(h0, abs(dtmax_tdir)))
     end
 end
 
@@ -539,8 +533,10 @@ end
         g₁ = 3g(u₁, p, t + dt₀_tdir)
         ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
         d₂ = internalnorm(
-            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t),
-                internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
+            max.(
+                internalnorm.(f₁ .- f₀ .+ ΔgMax, t),
+                internalnorm.(f₁ .- f₀ .- ΔgMax, t)
+            ) ./ sk,
             t
         ) / dt₀
 
@@ -579,23 +575,19 @@ end
         hlb = convert(_tType, 100 * eps_tType * oneunit_tType)
 
         # Upper bound: most restrictive component of |f₀| / (0.1*|u0| + tol)
-        hub_inv = zero(_tType)
-        for i in eachindex(u0)
-            atol_i = abstol isa Number ? abstol : abstol[i]
-            rtol_i = reltol isa Number ? reltol : reltol[i]
-            tol_i = rtol_i * internalnorm(u0[i], t) + atol_i
-            denom = convert(_tType, 0.1) * internalnorm(u0[i], t) + tol_i
-            numer = internalnorm(f₀[i], t) * oneunit_tType
-            if denom > 0
-                hub_inv = max(hub_inv, numer / denom)
-            end
-        end
+        u0_norms = internalnorm.(u0, t)
+        f₀_norms = internalnorm.(f₀, t)
+        tols = @.. broadcast = false reltol * u0_norms + abstol
+        denoms = @.. broadcast = false convert(_tType, 0.1) * u0_norms + tols
+        numers = @.. broadcast = false f₀_norms * oneunit_tType
+        hub_inv_vals = ifelse.(denoms .> 0, numers ./ denoms, zero(_tType))
+        hub_inv = maximum(hub_inv_vals)
 
         hub = convert(_tType, 0.1) * tdist
         if hub * hub_inv > 1
             hub = oneunit_tType / hub_inv
         end
-        hub = min(hub, dtmax_tdir)
+        hub = min(hub, abs(dtmax_tdir))
 
         if hub < hlb
             return tdir * max(dtmin, sqrt(hlb * hub))
@@ -633,11 +625,12 @@ end
 
             # Second derivative estimate
             yddnrm = internalnorm(
-                (f₁ .- f₀) ./ sk .* oneunit_tType, t) / hg * oneunit_tType
+                (f₁ .- f₀) ./ sk .* oneunit_tType, t
+            ) / hg * oneunit_tType
 
             # Order-dependent step proposal: h ~ (2/yddnrm)^(1/(p+1))
             if DiffEqBase.value(yddnrm) *
-               DiffEqBase.value(hub / oneunit_tType)^(p_order + 1) > 2
+                    DiffEqBase.value(hub / oneunit_tType)^(p_order + 1) > 2
                 hnew = convert(
                     _tType,
                     oneunit_tType * DiffEqBase.value(
@@ -664,7 +657,7 @@ end
         h0 = convert(_tType, 0.5) * hnew
         h0 = clamp(h0, hlb, hub)
 
-        return tdir * max(dtmin, min(h0, dtmax_tdir))
+        return tdir * max(dtmin, min(h0, abs(dtmax_tdir)))
     end
 end
 
