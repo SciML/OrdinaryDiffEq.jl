@@ -360,7 +360,7 @@
                         end
                     end
                 else
-                    ydd_ok = !any(x -> any(!isfinite, x), f₁)
+                    ydd_ok = all(isfinite, f₁)
                 end
 
                 if ydd_ok
@@ -390,16 +390,20 @@
             yddnrm = internalnorm(tmp, t) / hg * oneunit_tType
 
             # Order-dependent step proposal: h ~ (2/yddnrm)^(1/(p+1))
-            if DiffEqBase.value(yddnrm) *
-                    DiffEqBase.value(hub / oneunit_tType)^(p_order + 1) > 2
+            # Always use the formula and clamp to hub, rather than falling back
+            # to the conservative geometric mean sqrt(hg*hub). This prevents
+            # overly small initdt for high-order explicit methods where the
+            # formula naturally gives hnew > hub.
+            if DiffEqBase.value(yddnrm) > 0
                 hnew = convert(
                     _tType,
                     oneunit_tType * DiffEqBase.value(
                         (2 / yddnrm)^(1 / (p_order + 1))
                     )
                 )
+                hnew = min(hnew, hub)
             else
-                hnew = sqrt(hg * hub)
+                hnew = hub
             end
 
             count1 == 4 && break
@@ -629,16 +633,16 @@ end
             ) / hg * oneunit_tType
 
             # Order-dependent step proposal: h ~ (2/yddnrm)^(1/(p+1))
-            if DiffEqBase.value(yddnrm) *
-                    DiffEqBase.value(hub / oneunit_tType)^(p_order + 1) > 2
+            if DiffEqBase.value(yddnrm) > 0
                 hnew = convert(
                     _tType,
                     oneunit_tType * DiffEqBase.value(
                         (2 / yddnrm)^(1 / (p_order + 1))
                     )
                 )
+                hnew = min(hnew, hub)
             else
-                hnew = sqrt(hg * hub)
+                hnew = hub
             end
 
             count1 == 4 && break
