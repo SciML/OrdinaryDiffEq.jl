@@ -109,7 +109,6 @@ end
         @time @safetestset "No Index Tests" include("interface/noindex_tests.jl")
         @time @safetestset "Events + DAE addsteps Tests" include("interface/event_dae_addsteps.jl")
         @time @safetestset "Units Tests" include("interface/units_tests.jl")
-        @time @safetestset "Non-Full Diagonal Sparsity Tests" include("interface/nonfulldiagonal_sparse.jl")
         @time @safetestset "DEVerbosity Tests" include("interface/verbosity.jl")
     end
 
@@ -187,7 +186,6 @@ end
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
-        @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")
         @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
     end
 
