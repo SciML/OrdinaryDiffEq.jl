@@ -1,15 +1,12 @@
-using StochasticDiffEqJump
-using Test
+using SafeTestsets
 
-@testset "StochasticDiffEqJump" begin
-    @testset "Module loading" begin
-        @test @isdefined(TauLeaping)
-        @test @isdefined(CaoTauLeaping)
-        @test @isdefined(ImplicitTauLeaping)
-        @test @isdefined(ThetaTrapezoidalTauLeaping)
-    end
+const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
-    @testset "Algorithm construction" begin
+if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
+    @time @safetestset "Module loads and constructors" begin
+        using StochasticDiffEqJump
+        using Test
+
         @test TauLeaping() isa StochasticDiffEqJumpAdaptiveAlgorithm
         @test CaoTauLeaping() isa StochasticDiffEqJumpAdaptiveAlgorithm
         @test ImplicitTauLeaping() isa StochasticDiffEqJumpAdaptiveAlgorithm

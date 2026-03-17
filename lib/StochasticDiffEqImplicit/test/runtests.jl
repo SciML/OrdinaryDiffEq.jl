@@ -1,19 +1,19 @@
-using StochasticDiffEqImplicit
-using Test
+using SafeTestsets
 
-@testset "StochasticDiffEqImplicit" begin
-    @testset "Module loads" begin
-        @test true
-    end
+const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
-    @testset "Algorithm construction" begin
-        @test ImplicitEM() isa StochasticDiffEqImplicit.StochasticDiffEqNewtonAdaptiveAlgorithm
-        @test ImplicitEulerHeun() isa StochasticDiffEqImplicit.StochasticDiffEqNewtonAdaptiveAlgorithm
-        @test ImplicitRKMil() isa StochasticDiffEqImplicit.StochasticDiffEqNewtonAdaptiveAlgorithm
-        @test STrapezoid() isa StochasticDiffEqImplicit.ImplicitEM
-        @test SImplicitMidpoint() isa StochasticDiffEqImplicit.ImplicitEM
-        @test ISSEM() isa StochasticDiffEqImplicit.StochasticDiffEqNewtonAdaptiveAlgorithm
-        @test ISSEulerHeun() isa StochasticDiffEqImplicit.StochasticDiffEqNewtonAdaptiveAlgorithm
-        @test SKenCarp() isa StochasticDiffEqImplicit.StochasticDiffEqNewtonAdaptiveAlgorithm
+if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
+    @time @safetestset "Module loads and constructors" begin
+        using StochasticDiffEqImplicit
+        using Test
+
+        @test ImplicitEM() isa StochasticDiffEqNewtonAdaptiveAlgorithm
+        @test ImplicitEulerHeun() isa StochasticDiffEqNewtonAdaptiveAlgorithm
+        @test ImplicitRKMil() isa StochasticDiffEqNewtonAdaptiveAlgorithm
+        @test STrapezoid() isa ImplicitEM
+        @test SImplicitMidpoint() isa ImplicitEM
+        @test ISSEM() isa StochasticDiffEqNewtonAdaptiveAlgorithm
+        @test ISSEulerHeun() isa StochasticDiffEqNewtonAdaptiveAlgorithm
+        @test SKenCarp() isa StochasticDiffEqNewtonAdaptiveAlgorithm
     end
 end
