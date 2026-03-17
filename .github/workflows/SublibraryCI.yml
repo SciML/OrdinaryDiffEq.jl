@@ -33,7 +33,7 @@ jobs:
             CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || git diff --name-only HEAD~1 HEAD)
           else
             # For pull requests, compare against the base branch
-            git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+            git fetch origin ${{ github.event.pull_request.base.ref }}
             CHANGED=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD)
           fi
 
