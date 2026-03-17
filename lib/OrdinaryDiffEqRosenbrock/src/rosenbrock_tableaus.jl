@@ -565,6 +565,35 @@ function Tsit5DATableau(T, T2)
     )
 end
 
+struct IMEXRKR_3_2_Tableau{T}
+    γ::T
+    a₂₁::T
+    a₃₁::T
+    a₃₂::T
+    γ₂₁_over_γ::T
+    γ₃₁_over_γ::T
+    γ₃₂_over_γ::T
+    b₁::T
+    b₃::T
+end
+
+function IMEXRKR_3_2_Tableau(T, c₂ = convert(T, 1 // 2))
+    γ = convert(T, 1 // 2)
+    c₂ = convert(T, c₂)
+    a₂₁ = c₂
+    a₃₂ = inv(2 * c₂)
+    a₃₁ = 1 - a₃₂
+    γ₂₁ = -c₂
+    γ₃₂ = -a₃₂
+    γ₃₁ = a₃₂ - 1
+    γ₂₁_over_γ = γ₂₁ / γ
+    γ₃₁_over_γ = γ₃₁ / γ
+    γ₃₂_over_γ = γ₃₂ / γ
+    b₁ = convert(T, 1 // 2)
+    b₃ = convert(T, 1 // 2)
+    return IMEXRKR_3_2_Tableau(γ, a₂₁, a₃₁, a₃₂, γ₂₁_over_γ, γ₃₁_over_γ, γ₃₂_over_γ, b₁, b₃)
+end
+
 #=
 # alpha_ij
 A = [0 0 0 0 0 0 0 0

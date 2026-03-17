@@ -1,6 +1,6 @@
 module OrdinaryDiffEqRosenbrock
 
-import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
+import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, issplit, _unwrap_val,
     DEFAULT_PRECS, OrdinaryDiffEqRosenbrockAlgorithm, @cache,
     alg_cache, initialize!,
     calculate_residuals!, OrdinaryDiffEqMutableCache,
@@ -32,7 +32,7 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
     wrapprecs, calc_tderivative, build_grad_config,
     build_jac_config, issuccess_W, jacobian2W!,
     resize_jac_config!, resize_grad_config!,
-    calc_W, calc_rosenbrock_differentiation!, build_J_W,
+    calc_W, calc_W!, calc_rosenbrock_differentiation!, build_J_W,
     UJacobianWrapper, dolinsolve, WOperator, resize_J_W!
 
 using Reexport
@@ -296,6 +296,7 @@ export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
     Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P, HybridExplicitImplicitRK, Tsit5DA,
     RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL,
     ROS3PRL2, ROK4a,
-    ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
+    ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7,
+    IMEXRKR_3_2
 
 end

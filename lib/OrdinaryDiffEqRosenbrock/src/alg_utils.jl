@@ -76,3 +76,7 @@ function has_stiff_interpolation(
 end
 
 only_diagonal_mass_matrix(alg::Union{Rosenbrock23, Rosenbrock32}) = true
+
+alg_order(alg::IMEXRKR_3_2) = 2
+isfsal(alg::IMEXRKR_3_2) = false
+issplit(alg::IMEXRKR_3_2) = true

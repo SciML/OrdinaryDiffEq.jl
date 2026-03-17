@@ -1563,6 +1563,157 @@ end
 @RosenbrockW6S4OS(:performstep)
 
 ################################################################################
+################################################################################
+# IMEXRKR_3_2 — IMEX Runge-Kutta-Rosenbrock (Huang, Xiao, Zhang 2021, Eq. 4.16)
+################################################################################
+
+function initialize!(integrator, cache::IMEXRKR_3_2ConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = zero(integrator.fsalfirst)
+    integrator.k[2] = zero(integrator.fsalfirst)
+end
+
+function initialize!(integrator, cache::IMEXRKR_3_2Cache)
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = cache.k₁
+    integrator.k[2] = cache.k₃
+end
+
+@muladd function perform_step!(
+        integrator, cache::IMEXRKR_3_2ConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tab) = cache
+    (; γ, a₂₁, a₃₁, a₃₂, γ₂₁_over_γ, γ₃₁_over_γ, γ₃₂_over_γ, b₁, b₃) = tab
+
+    f_stiff = f.f1
+    f_nonstiff = f.f2
+
+    dtγ = dt * γ
+    neginvdtγ = -inv(dtγ)
+
+    W = calc_W(integrator, cache, dtγ, repeat_step)
+    if !issuccess_W(W)
+        integrator.EEst = 2
+        return nothing
+    end
+
+    # Stage 1: Y₁ = uprev
+    F₁ = f_stiff(uprev, p, t) + f_nonstiff(uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    k₁ = _reshape(W \ _vec(F₁), axes(uprev)) * neginvdtγ
+    integrator.stats.nsolve += 1
+
+    # Stage 2: Y₂ = uprev + dt * a₂₁ * k₁
+    Y₂ = @.. uprev + dt * a₂₁ * k₁
+    F₂ = f_stiff(Y₂, p, t + a₂₁ * dt) + f_nonstiff(Y₂, p, t + a₂₁ * dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    rhs₂ = @.. F₂ + γ₂₁_over_γ * (k₁ - F₁)
+    k₂ = _reshape(W \ _vec(rhs₂), axes(uprev)) * neginvdtγ
+    integrator.stats.nsolve += 1
+
+    # Stage 3: Y₃ = uprev + dt * (a₃₁ * k₁ + a₃₂ * k₂)
+    Y₃ = @.. uprev + dt * (a₃₁ * k₁ + a₃₂ * k₂)
+    F₃ = f_stiff(Y₃, p, t + dt) + f_nonstiff(Y₃, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    rhs₃ = @.. F₃ + γ₃₁_over_γ * (k₁ - F₁) + γ₃₂_over_γ * (k₂ - rhs₂)
+    k₃ = _reshape(W \ _vec(rhs₃), axes(uprev)) * neginvdtγ
+    integrator.stats.nsolve += 1
+
+    u = @.. uprev + dt * (b₁ * k₁ + b₃ * k₃)
+
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.k[1] = k₁
+    integrator.k[2] = k₃
+    integrator.u = u
+    return nothing
+end
+
+@muladd function perform_step!(
+        integrator, cache::IMEXRKR_3_2Cache, repeat_step = false
+    )
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k₁, k₂, k₃, du1, rhs₁, rhs₂, J, W, tmp, atmp, weight, tf, uf,
+        jac_config, linsolve_tmp, tab, alg) = cache
+    (; γ, a₂₁, a₃₁, a₃₂, γ₂₁_over_γ, γ₃₁_over_γ, γ₃₂_over_γ, b₁, b₃) = tab
+
+    f_stiff = f.f1
+    f_nonstiff = f.f2
+
+    dtγ = dt * γ
+    neginvdtγ = -inv(dtγ)
+
+    calc_W!(cache.W, integrator, nothing, cache, dtγ, repeat_step)
+
+    calculate_residuals!(
+        weight, fill!(weight, one(eltype(u))), uprev, uprev,
+        integrator.opts.abstol, integrator.opts.reltol,
+        integrator.opts.internalnorm, t
+    )
+
+    # Stage 1: Y₁ = uprev
+    f_stiff(linsolve_tmp, uprev, p, t)
+    f_nonstiff(du1, uprev, p, t)
+    @.. linsolve_tmp = linsolve_tmp + du1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    @.. rhs₁ = linsolve_tmp
+
+    if repeat_step
+        linres = dolinsolve(
+            integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
+            du = nothing, u = u, p = p, t = t, weight = weight,
+            solverdata = (; gamma = dtγ)
+        )
+    else
+        linres = dolinsolve(
+            integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
+            du = nothing, u = u, p = p, t = t, weight = weight,
+            solverdata = (; gamma = dtγ)
+        )
+    end
+    veck₁ = _vec(k₁)
+    @.. veck₁ = _vec(linres.u) * neginvdtγ
+    integrator.stats.nsolve += 1
+
+    # Stage 2: Y₂ = uprev + dt * a₂₁ * k₁
+    @.. u = uprev + dt * a₂₁ * k₁
+    f_stiff(linsolve_tmp, u, p, t + a₂₁ * dt)
+    f_nonstiff(du1, u, p, t + a₂₁ * dt)
+    @.. linsolve_tmp = linsolve_tmp + du1 + γ₂₁_over_γ * (k₁ - rhs₁)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    @.. rhs₂ = linsolve_tmp
+
+    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+    veck₂ = _vec(k₂)
+    @.. veck₂ = _vec(linres.u) * neginvdtγ
+    integrator.stats.nsolve += 1
+
+    # Stage 3: Y₃ = uprev + dt * (a₃₁ * k₁ + a₃₂ * k₂)
+    @.. u = uprev + dt * (a₃₁ * k₁ + a₃₂ * k₂)
+    f_stiff(linsolve_tmp, u, p, t + dt)
+    f_nonstiff(du1, u, p, t + dt)
+    @.. linsolve_tmp = linsolve_tmp + du1 + γ₃₁_over_γ * (k₁ - rhs₁) +
+        γ₃₂_over_γ * (k₂ - rhs₂)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+    veck₃ = _vec(k₃)
+    @.. veck₃ = _vec(linres.u) * neginvdtγ
+    integrator.stats.nsolve += 1
+
+    @.. u = uprev + dt * (b₁ * k₁ + b₃ * k₃)
+
+    cache.linsolve = linres.cache
+    return nothing
+end
+
+################################################################################
 # Tsit5DA - hybrid explicit/linear-implicit method for DAEs
 ################################################################################
 

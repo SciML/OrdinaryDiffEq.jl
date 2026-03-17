@@ -206,3 +206,22 @@ References:
   arXiv:2511.21252, 2025.
 """
 Tsit5DA(; kwargs...) = HybridExplicitImplicitRK(Tsit5DATableau; order = 5, kwargs...)
+
+struct IMEXRKR_3_2{CS, AD, F, P, FDT, ST, CJ} <:
+    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    linsolve::F
+    precs::P
+    autodiff::AD
+end
+
+function IMEXRKR_3_2(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
+        standardtag = Val{true}(), concrete_jac = nothing,
+        diff_type = Val{:forward}(), linsolve = nothing, precs = DEFAULT_PRECS
+    )
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    return IMEXRKR_3_2{
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
+        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
+    }(linsolve, precs, AD_choice)
+end

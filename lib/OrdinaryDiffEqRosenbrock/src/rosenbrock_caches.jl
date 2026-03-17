@@ -1023,6 +1023,108 @@ function full_cache(c::HybridExplicitImplicitCache)
     ]
 end
 
+################################################################################
+### IMEXRKR_3_2 — IMEX Runge-Kutta-Rosenbrock method (Huang, Xiao, Zhang 2021, Eq. 4.16)
+################################################################################
+
+struct IMEXRKR_3_2ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: RosenbrockConstantCache
+    tf::TF
+    uf::UF
+    tab::Tab
+    J::JType
+    W::WType
+    linsolve::F
+    autodiff::AD
+end
+
+@cache mutable struct IMEXRKR_3_2Cache{
+        uType, rateType, uNoUnitsType, JType, WType,
+        TabType, TFType, UFType, F, JCType, GCType, RTolType, A,
+    } <: RosenbrockMutableCache
+    u::uType
+    uprev::uType
+    k₁::rateType
+    k₂::rateType
+    k₃::rateType
+    du1::rateType
+    rhs₁::rateType
+    rhs₂::rateType
+    dT::rateType
+    J::JType
+    W::WType
+    tmp::rateType
+    atmp::uNoUnitsType
+    weight::uNoUnitsType
+    tab::TabType
+    tf::TFType
+    uf::UFType
+    linsolve_tmp::rateType
+    linsolve::F
+    jac_config::JCType
+    grad_config::GCType
+    reltol::RTolType
+    alg::A
+end
+
+function alg_cache(
+        alg::IMEXRKR_3_2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck, ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    f_stiff = f.f1
+    tf = TimeDerivativeWrapper(f_stiff, u, p)
+    uf = UDerivativeWrapper(f_stiff, t, p)
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
+    tab = IMEXRKR_3_2_Tableau(constvalue(uBottomEltypeNoUnits))
+    return IMEXRKR_3_2ConstantCache(tf, uf, tab, J, W, nothing, alg_autodiff(alg))
+end
+
+function alg_cache(
+        alg::IMEXRKR_3_2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck, ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    k₁ = zero(rate_prototype)
+    k₂ = zero(rate_prototype)
+    k₃ = zero(rate_prototype)
+    du1 = zero(rate_prototype)
+    rhs₁ = zero(rate_prototype)
+    rhs₂ = zero(rate_prototype)
+    dT = zero(rate_prototype)
+    tmp = zero(rate_prototype)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    weight = similar(u, uEltypeNoUnits)
+    recursivefill!(weight, false)
+    linsolve_tmp = zero(rate_prototype)
+    tab = IMEXRKR_3_2_Tableau(constvalue(uBottomEltypeNoUnits))
+
+    f_stiff = f.f1
+    tf = TimeGradientWrapper(f_stiff, uprev, p)
+    uf = UJacobianWrapper(f_stiff, t, p)
+
+    grad_config = build_grad_config(alg, f_stiff, tf, du1, t)
+    jac_config = build_jac_config(alg, f_stiff, uf, du1, uprev, u, tmp, du1)
+    J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+
+    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
+    Pl, Pr = wrapprecs(
+        alg.precs(W, nothing, u, p, t, nothing, nothing, nothing, nothing)...,
+        weight, tmp
+    )
+    linsolve = init(
+        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        Pl = Pl, Pr = Pr,
+        assumptions = LinearSolve.OperatorAssumptions(true),
+        verbose = verbose.linear_verbosity
+    )
+
+    return IMEXRKR_3_2Cache(
+        u, uprev, k₁, k₂, k₃, du1, rhs₁, rhs₂, dT, J, W, tmp, atmp, weight,
+        tab, tf, uf, linsolve_tmp, linsolve, jac_config, grad_config, reltol, alg
+    )
+end
+
 function alg_cache(
         alg::HybridExplicitImplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
