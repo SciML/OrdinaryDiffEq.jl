@@ -43,20 +43,19 @@ end
     # "{sublibrary}_{TEST_GROUP}" for any custom group (e.g., QA, GPU, etc.).
     # Sublibraries declare their groups in test/test_groups.toml.
     lib_dir = joinpath(dirname(@__DIR__), "lib")
-    base_group = GROUP
-    test_group = "Core"
 
     # Check if GROUP matches a sublibrary, possibly with a _SUFFIX for the test group.
     # Scan underscores right-to-left to find the longest matching sublibrary prefix.
-    if !isdir(joinpath(lib_dir, GROUP))
-        for i in length(GROUP):-1:1
-            if GROUP[i] == '_' && isdir(joinpath(lib_dir, GROUP[1:(i - 1)]))
-                base_group = GROUP[1:(i - 1)]
-                test_group = GROUP[(i + 1):end]
-                break
+    function _detect_sublibrary_group(group, lib_dir)
+        isdir(joinpath(lib_dir, group)) && return (group, "Core")
+        for i in length(group):-1:1
+            if group[i] == '_' && isdir(joinpath(lib_dir, group[1:(i - 1)]))
+                return (group[1:(i - 1)], group[(i + 1):end])
             end
         end
+        return (group, "Core")
     end
+    base_group, test_group = _detect_sublibrary_group(GROUP, lib_dir)
 
     if isdir(joinpath(lib_dir, base_group))
         Pkg.activate(joinpath(lib_dir, base_group))
