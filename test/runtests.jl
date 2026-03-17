@@ -38,14 +38,29 @@ end
 #Start Test Script
 
 @time begin
-    # Handle sublibrary QA groups (e.g., OrdinaryDiffEqBDF_QA)
-    is_qa_group = endswith(GROUP, "_QA")
-    base_group = is_qa_group ? GROUP[1:(end - 3)] : GROUP
+    # Detect sublibrary test groups.
+    # GROUP can be a bare sublibrary name (Core test group) or
+    # "{sublibrary}_{TEST_GROUP}" for any custom group (e.g., QA, GPU, etc.).
+    # Sublibraries declare their groups in test/test_groups.toml.
+    lib_dir = joinpath(dirname(@__DIR__), "lib")
+    base_group = GROUP
+    test_group = "Core"
 
-    if contains(base_group, "OrdinaryDiffEq") || base_group == "ImplicitDiscreteSolve" || base_group == "SimpleImplicitDiscreteSolve"
-        Pkg.activate(joinpath(dirname(@__DIR__), "lib", base_group))
-        # Set QA_ONLY env var to tell sublibrary tests whether to run only QA tests
-        withenv("ODEDIFFEQ_TEST_GROUP" => (is_qa_group ? "QA" : "FUNCTIONAL")) do
+    # Check if GROUP matches a sublibrary, possibly with a _SUFFIX for the test group.
+    # Scan underscores right-to-left to find the longest matching sublibrary prefix.
+    if !isdir(joinpath(lib_dir, GROUP))
+        for i in length(GROUP):-1:1
+            if GROUP[i] == '_' && isdir(joinpath(lib_dir, GROUP[1:(i - 1)]))
+                base_group = GROUP[1:(i - 1)]
+                test_group = GROUP[(i + 1):end]
+                break
+            end
+        end
+    end
+
+    if isdir(joinpath(lib_dir, base_group))
+        Pkg.activate(joinpath(lib_dir, base_group))
+        withenv("ODEDIFFEQ_TEST_GROUP" => test_group) do
             Pkg.test(base_group, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
         end
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"

@@ -77,4 +77,4 @@ jobs:
           project: ${{ matrix.project }}
           ALLOW_RERESOLVE: false
         env:
-          ODEDIFFEQ_TEST_GROUP: FUNCTIONAL
+          ODEDIFFEQ_TEST_GROUP: Core
