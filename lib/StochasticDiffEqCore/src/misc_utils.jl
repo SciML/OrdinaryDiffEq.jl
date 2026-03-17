@@ -91,11 +91,11 @@ macro cache(expr)
             push!(ratenoise_vars, :(c.$(x.args[1])))
         end
     end
-    return quote
+    return esc(quote
         $expr
-        $(esc(:full_cache))(c::$name) = tuple($(cache_vars...))
-        $(esc(:jac_iter))($(esc(:c))::$name) = tuple($(jac_vars...))
-        $(esc(:rand_cache))($(esc(:c))::$name) = tuple($(rand_vars...))
-        $(esc(:ratenoise_cache))($(esc(:c))::$name) = tuple($(ratenoise_vars...))
-    end
+        full_cache(c::$name) = tuple($(cache_vars...))
+        jac_iter(c::$name) = tuple($(jac_vars...))
+        rand_cache(c::$name) = tuple($(rand_vars...))
+        ratenoise_cache(c::$name) = tuple($(ratenoise_vars...))
+    end)
 end
