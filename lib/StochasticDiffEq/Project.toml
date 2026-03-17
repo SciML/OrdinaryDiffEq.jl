@@ -67,6 +67,7 @@ LevyArea = "2d8b4e74-eb68-11e8-0fb9-d5eb67b50637"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
@@ -79,4 +80,4 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["AllocCheck", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqNoiseProcess", "ForwardDiff", "JumpProcesses", "LevyArea", "LinearSolve", "ModelingToolkit", "OrdinaryDiffEq", "OrdinaryDiffEqDifferentiation", "Pkg", "Random", "SciMLOperators", "SDEProblemLibrary", "SafeTestsets", "SparseArrays", "Statistics", "StaticArrays", "Test"]
+test = ["AllocCheck", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqNoiseProcess", "ForwardDiff", "JumpProcesses", "LevyArea", "LinearSolve", "ModelingToolkit", "OrdinaryDiffEq", "OrdinaryDiffEqDifferentiation", "Pkg", "Random", "RecursiveArrayTools", "SciMLOperators", "SDEProblemLibrary", "SafeTestsets", "SparseArrays", "Statistics", "StaticArrays", "Test"]

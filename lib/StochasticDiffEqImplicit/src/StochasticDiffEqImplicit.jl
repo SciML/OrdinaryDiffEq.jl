@@ -28,6 +28,7 @@ using OrdinaryDiffEqNonlinearSolve: NLSolver, nlsolvefail, nlsolve!, build_nlsol
     markfirststage!, NLNewton
 using OrdinaryDiffEqDifferentiation: calc_J, calc_J!, dolinsolve, get_W
 
+using JumpProcesses: JumpProblem
 using LinearAlgebra
 using StaticArrays
 using RecursiveArrayTools
