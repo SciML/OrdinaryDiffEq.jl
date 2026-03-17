@@ -34,6 +34,7 @@ TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+DynamicQuantities = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 FlexUnits = "76e01b6b-c995-4ce6-8559-91e72a3d4e95"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -51,6 +52,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 [extensions]
 DiffEqBaseCUDAExt = "CUDA"
 DiffEqBaseChainRulesCoreExt = "ChainRulesCore"
+DiffEqBaseDynamicQuantitiesExt = "DynamicQuantities"
 DiffEqBaseEnzymeExt = ["ChainRulesCore", "Enzyme"]
 DiffEqBaseFlexUnitsExt = "FlexUnits"
 DiffEqBaseForwardDiffExt = ["ForwardDiff"]
@@ -74,6 +76,7 @@ ChainRulesCore = "1"
 ConcreteStructs = "0.2.3"
 DifferentiationInterface = "0.7"
 Distributions = "0.25"
+DynamicQuantities = "1"
 DocStringExtensions = "0.9"
 Enzyme = "0.13.100"
 FastBroadcast = "0.3.5"
@@ -119,6 +122,7 @@ ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+DynamicQuantities = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 FlexUnits = "76e01b6b-c995-4ce6-8559-91e72a3d4e95"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -138,4 +142,4 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Distributed", "Measurements", "Unitful", "FlexUnits", "LabelledArrays", "ForwardDiff", "SparseArrays", "InteractiveUtils", "Pkg", "Random", "ReverseDiff", "StaticArrays", "SafeTestsets", "Test", "Distributions", "Aqua"]
+test = ["Distributed", "Measurements", "Unitful", "FlexUnits", "LabelledArrays", "ForwardDiff", "SparseArrays", "InteractiveUtils", "Pkg", "Random", "ReverseDiff", "StaticArrays", "SafeTestsets", "Test", "Distributions", "DynamicQuantities", "Aqua"]
