@@ -18,6 +18,9 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
+[weakdeps]
+OrdinaryDiffEqExplicitRK = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
+
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
@@ -46,7 +49,7 @@ SciMLBase = "2.116"
 OrdinaryDiffEqCore = "3"
 Static = "1.2"
 Aqua = "0.8.11"
-Preferences = "1.4"
+Preferences = "1.5"
 julia = "1.10"
 JET = "0.9, 0.11"
 RecursiveArrayTools = "3.36"
