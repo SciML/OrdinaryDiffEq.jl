@@ -173,14 +173,8 @@ end
         @time @safetestset "Split Methods Tests" include("algconvergence/split_methods_tests.jl")
     end
 
-    # Don't run ModelingToolkit tests on prerelease
-    if !is_APPVEYOR && GROUP == "ModelingToolkit" && isempty(VERSION.prerelease)
-        activate_modelingtoolkit_env()
-        @time @safetestset "NLStep Tests" include("modelingtoolkit/nlstep_tests.jl")
-        @time @safetestset "Jacobian Tests" include("modelingtoolkit/jacobian_tests.jl")
-        @time @safetestset "Preconditioner Tests" include("modelingtoolkit/preconditioners.jl")
-        @time @safetestset "DAE Initialize Integration" include("modelingtoolkit/dae_initialize_integration.jl")
-    end
+    # ModelingToolkit tests moved to OrdinaryDiffEqDifferentiation and
+    # OrdinaryDiffEqNonlinearSolve subpackage test groups (ModelingToolkit group).
 
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
