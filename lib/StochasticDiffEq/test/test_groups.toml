@@ -1,0 +1,53 @@
+[Interface1]
+versions = ["lts", "1.11", "1", "pre"]
+
+[Interface2]
+versions = ["lts", "1.11", "1", "pre"]
+
+[Interface3]
+versions = ["lts", "1.11", "1", "pre"]
+
+[AlgConvergence]
+versions = ["1"]
+
+[AlgConvergence2]
+versions = ["1"]
+
+[AlgConvergence3]
+versions = ["1"]
+
+[WeakConvergence1]
+versions = ["1"]
+
+[WeakConvergence2]
+versions = ["1"]
+
+[WeakConvergence3]
+versions = ["1"]
+
+[WeakConvergence4]
+versions = ["1"]
+
+[WeakConvergence5]
+versions = ["1"]
+
+[WeakConvergence6]
+versions = ["1"]
+
+[OOPWeakConvergence]
+versions = ["1"]
+
+[IIPWeakConvergence]
+versions = ["1"]
+
+[SROCKC2WeakConvergence]
+versions = ["1"]
+
+[WeakAdaptiveCPU]
+versions = ["1"]
+
+[Allocations]
+versions = ["1"]
+
+[QA]
+versions = ["1"]
