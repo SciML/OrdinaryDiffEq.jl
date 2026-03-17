@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, LinearSolve, Test, IncompleteLU, ModelingToolkit
+using OrdinaryDiffEq, LinearSolve, Test, IncompleteLU, SparseArrays
 
 # Required due to https://github.com/JuliaSmoothOptimizers/Krylov.jl/pull/477
 Base.eltype(::IncompleteLU.ILUFactorization{Tv, Ti}) where {Tv, Ti} = Tv
@@ -39,14 +39,42 @@ end
 u0 = init_brusselator_2d(xyd_brusselator)
 prob_ode_brusselator_2d = ODEProblem(brusselator_2d_loop, u0, (0.0, 11.5), p)
 
-du0 = copy(u0)
-jac = ModelingToolkit.Symbolics.jacobian_sparsity(
-    (du, u) -> brusselator_2d_loop(
-        du, u, p,
-        0.0
-    ), du0,
-    u0
-)
+# Build the Jacobian sparsity pattern for the 2D Brusselator directly.
+# Each (i,j) grid point with 2 species couples to its 4 neighbors (diffusion)
+# and to itself (reaction terms involving both species at the same point).
+function brusselator_jac_sparsity(N)
+    nvar = N * N * 2
+    I = Int[]
+    J = Int[]
+    for i in 1:N, j in 1:N
+        # Linear indices for species 1 and 2 at grid point (i,j)
+        idx1 = (j - 1) * N + i          # species 1
+        idx2 = idx1 + N * N             # species 2
+
+        # Self-coupling (reaction): both species at (i,j) depend on each other
+        for s in (idx1, idx2), d in (idx1, idx2)
+            push!(I, d); push!(J, s)
+        end
+
+        # Diffusion stencil: 4 neighbors for each species
+        for di in (-1, 1)
+            ni = limit(i + di, N)
+            nidx1 = (j - 1) * N + ni
+            nidx2 = nidx1 + N * N
+            push!(I, idx1); push!(J, nidx1)
+            push!(I, idx2); push!(J, nidx2)
+        end
+        for dj in (-1, 1)
+            nj = limit(j + dj, N)
+            nidx1 = (nj - 1) * N + i
+            nidx2 = nidx1 + N * N
+            push!(I, idx1); push!(J, nidx1)
+            push!(I, idx2); push!(J, nidx2)
+        end
+    end
+    return sparse(I, J, ones(length(I)), nvar, nvar)
+end
+jac = brusselator_jac_sparsity(N)
 
 prob_ode_brusselator_2d_sparse = ODEProblem(
     ODEFunction(

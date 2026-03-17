@@ -2,6 +2,7 @@
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 IncompleteLU = "40713840-3770-5561-ab4c-a76e7d0d7895"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
