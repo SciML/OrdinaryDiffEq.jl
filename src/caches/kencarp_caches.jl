@@ -39,6 +39,7 @@ end
     chi2::randType
     g1::rateNoiseType
     g4::rateNoiseType
+    gtmp::rateNoiseType
 end
 
 u_cache(c::SKenCarpCache) = (c.z₁, c.z₂, c.z₃, c.z₄, c.nlsolver.dz)
@@ -83,12 +84,13 @@ function alg_cache(
 
     g1 = zero(noise_rate_prototype)
     g4 = zero(noise_rate_prototype)
+    gtmp = zero(noise_rate_prototype)
 
     return SKenCarpCache{
         typeof(u), typeof(rate_prototype), typeof(atmp), typeof(nlsolver),
         typeof(tab), typeof(k1), typeof(chi2), typeof(g1),
     }(
         u, uprev, fsalfirst, z₁, z₂, z₃, z₄, k1, k2,
-        k3, k4, atmp, nlsolver, tab, chi2, g1, g4
+        k3, k4, atmp, nlsolver, tab, chi2, g1, g4, gtmp
     )
 end

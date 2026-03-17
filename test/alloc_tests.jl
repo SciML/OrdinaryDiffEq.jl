@@ -91,6 +91,18 @@ end
         @test allocs_per_step == 0
     end
 
+    @testset "SKenCarp stepping allocation" begin
+        integrator = init(prob_iip, SKenCarp(), dt = 0.01, adaptive = false, save_on = false)
+
+        # Warm up
+        for _ in 1:10
+            step_void!(integrator)
+        end
+
+        allocs_per_step = @allocated step_void!(integrator)
+        @test allocs_per_step == 0
+    end
+
     # Test with scalar SDE (out-of-place)
     @testset "Scalar SDE allocations" begin
         f_scalar(u, p, t) = 0.1 * u
