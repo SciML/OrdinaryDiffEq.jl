@@ -9,8 +9,8 @@ end
 
 u0_cpu = [1.0, 2.0]
 p_cpu = [-0.5, -1.5]
-u0_gpu = cu(u0_cpu)
-p_gpu = cu(p_cpu)
+u0_gpu = CuArray(u0_cpu)
+p_gpu = CuArray(p_cpu)
 tspan = (0.0, 1.0)
 
 prob_cpu = ODEProblem(f_gpu!, copy(u0_cpu), tspan, p_cpu)

@@ -1,4 +1,4 @@
-@cache struct EulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+@cache struct EulerCache{uType, rateType} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -6,7 +6,7 @@
     fsalfirst::rateType
 end
 
-@cache struct SplitEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+@cache struct SplitEulerCache{uType, rateType} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -15,95 +15,47 @@ end
 end
 
 function alg_cache(
-    alg::SplitEuler,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::SplitEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SplitEulerCache(u, uprev, zero(u), zero(rate_prototype), zero(rate_prototype))
 end
 
 struct SplitEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(
-    alg::SplitEuler,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::SplitEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SplitEulerConstantCache()
 end
 
 function alg_cache(
-    alg::Euler,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Euler, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return EulerCache(u, uprev, zero(u), zero(rate_prototype), zero(rate_prototype))
 end
 
 struct EulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(
-    alg::Euler,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Euler, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return EulerConstantCache()
 end
 
-@cache struct HeunCache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct HeunCache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -115,8 +67,14 @@ end
     thread::Thread
 end
 
-@cache struct RalstonCache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct RalstonCache{
+        uType,
+        rateType,
+        uNoUnitsType,
+        StageLimiter,
+        StepLimiter,
+        Thread,
+    } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -129,119 +87,63 @@ end
 end
 
 function alg_cache(
-    alg::Heun,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Heun, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     return HeunCache(
-        u,
-        uprev,
-        zero(u),
-        atmp,
-        zero(rate_prototype),
-        zero(rate_prototype),
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, zero(u), atmp, zero(rate_prototype),
+        zero(rate_prototype), alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
 function alg_cache(
-    alg::Ralston,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Ralston, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     return RalstonCache(
-        u,
-        uprev,
-        zero(u),
-        atmp,
-        zero(rate_prototype),
-        zero(rate_prototype),
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, zero(u), atmp, zero(rate_prototype),
+        zero(rate_prototype), alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
 struct HeunConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(
-    alg::Heun,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Heun, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return HeunConstantCache()
 end
 
 struct RalstonConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(
-    alg::Ralston,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Ralston, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return RalstonConstantCache()
 end
 
-@cache struct MidpointCache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct MidpointCache{
+        uType,
+        rateType,
+        uNoUnitsType,
+        StageLimiter,
+        StepLimiter,
+        Thread,
+    } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -256,64 +158,33 @@ end
 struct MidpointConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(
-    alg::Midpoint,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Midpoint, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     return MidpointCache(
-        u,
-        uprev,
-        k,
-        tmp,
-        atmp,
-        fsalfirst,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k, tmp, atmp, fsalfirst, alg.stage_limiter!, alg.step_limiter!,
+        alg.thread
     )
 end
 
 function alg_cache(
-    alg::Midpoint,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Midpoint, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return MidpointConstantCache()
 end
 
-@cache struct RK4Cache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct RK4Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -331,23 +202,11 @@ end
 struct RK4ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(
-    alg::RK4,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::RK4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k₁ = zero(rate_prototype)
     k₂ = zero(rate_prototype)
     k₃ = zero(rate_prototype)
@@ -357,51 +216,24 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     return RK4Cache(
-        u,
-        uprev,
-        k₁,
-        k₂,
-        k₃,
-        k₄,
-        k,
-        tmp,
-        atmp,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k₁, k₂, k₃, k₄, k, tmp, atmp, alg.stage_limiter!, alg.step_limiter!,
+        alg.thread
     )
 end
 
 function alg_cache(
-    alg::RK4,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::RK4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return RK4ConstantCache()
 end
 
 @cache struct BS3Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread,
-} <: OrdinaryDiffEqMutableCache
+        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
+        Thread,
+    } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -418,23 +250,11 @@ end
 end
 
 function alg_cache(
-    alg::BS3,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::BS3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = BS3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -445,52 +265,25 @@ function alg_cache(
     recursivefill!(atmp, false)
     tmp = zero(u)
     return BS3Cache(
-        u,
-        uprev,
-        k1,
-        k2,
-        k3,
-        k4,
-        utilde,
-        tmp,
-        atmp,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k1, k2, k3, k4, utilde, tmp, atmp, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
     )
 end
 
 function alg_cache(
-    alg::BS3,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::BS3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return BS3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct OwrenZen3Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread,
-} <: OrdinaryDiffEqMutableCache
+        uType, rateType, uNoUnitsType, TabType, StageLimiter,
+        StepLimiter, Thread,
+    } <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -507,23 +300,11 @@ end
 end
 
 function alg_cache(
-    alg::OwrenZen3,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::OwrenZen3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = OwrenZen3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -534,55 +315,25 @@ function alg_cache(
     recursivefill!(atmp, false)
     tmp = zero(u)
     return OwrenZen3Cache(
-        u,
-        uprev,
-        k1,
-        k2,
-        k3,
-        k4,
-        utilde,
-        tmp,
-        atmp,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k1, k2, k3, k4, utilde, tmp, atmp, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
     )
 end
 
 function alg_cache(
-    alg::OwrenZen3,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-    return OwrenZen3ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits),
-    )
+        alg::OwrenZen3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return OwrenZen3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct OwrenZen4Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread,
-} <: OrdinaryDiffEqMutableCache
+        uType, rateType, uNoUnitsType, TabType, StageLimiter,
+        StepLimiter, Thread,
+    } <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -601,23 +352,11 @@ end
 end
 
 function alg_cache(
-    alg::OwrenZen4,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::OwrenZen4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = OwrenZen4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -630,57 +369,25 @@ function alg_cache(
     recursivefill!(atmp, false)
     tmp = zero(u)
     return OwrenZen4Cache(
-        u,
-        uprev,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        utilde,
-        tmp,
-        atmp,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k1, k2, k3, k4, k5, k6, utilde, tmp, atmp, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
 function alg_cache(
-    alg::OwrenZen4,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-    return OwrenZen4ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits),
-    )
+        alg::OwrenZen4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return OwrenZen4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct OwrenZen5Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread,
-} <: OrdinaryDiffEqMutableCache
+        uType, rateType, uNoUnitsType, TabType, StageLimiter,
+        StepLimiter, Thread,
+    } <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -701,23 +408,11 @@ end
 end
 
 function alg_cache(
-    alg::OwrenZen5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::OwrenZen5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = OwrenZen5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -732,59 +427,24 @@ function alg_cache(
     recursivefill!(atmp, false)
     tmp = zero(u)
     return OwrenZen5Cache(
-        u,
-        uprev,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        k7,
-        k8,
-        utilde,
-        tmp,
-        atmp,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
 function alg_cache(
-    alg::OwrenZen5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-    return OwrenZen5ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits),
-    )
+        alg::OwrenZen5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return OwrenZen5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct BS5Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread,
-} <: OrdinaryDiffEqMutableCache
+        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
+        Thread,
+    } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -805,23 +465,11 @@ end
 end
 
 function alg_cache(
-    alg::BS5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::BS5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = BS5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -836,49 +484,24 @@ function alg_cache(
     recursivefill!(atmp, false)
     tmp = zero(u)
     return BS5Cache(
-        u,
-        uprev,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        k7,
-        k8,
-        utilde,
-        tmp,
-        atmp,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
 function alg_cache(
-    alg::BS5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::BS5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return BS5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct DP5Cache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct DP5Cache{
+        uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
+        Thread,
+    } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -901,23 +524,11 @@ end
 end
 
 function alg_cache(
-    alg::DP5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::DP5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -942,59 +553,32 @@ function alg_cache(
     end
 
     cache = DP5Cache(
-        u,
-        uprev,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        k7,
-        dense_tmp3,
-        dense_tmp4,
-        update,
-        bspl,
-        utilde,
-        tmp,
-        atmp,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update,
+        bspl, utilde, tmp, atmp, alg.stage_limiter!, alg.step_limiter!,
+        alg.thread
     )
     return cache
 end
 
 function alg_cache(
-    alg::DP5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::DP5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return DP5ConstantCache()
 end
 
 @cache struct Anas5Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread,
-} <: OrdinaryDiffEqMutableCache
+        uType,
+        rateType,
+        uNoUnitsType,
+        TabType,
+        StageLimiter,
+        StepLimiter,
+        Thread,
+    } <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -1014,23 +598,11 @@ end
 end
 
 function alg_cache(
-    alg::Anas5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Anas5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = Anas5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -1059,33 +631,21 @@ function alg_cache(
         tab,
         alg.stage_limiter!,
         alg.step_limiter!,
-        alg.thread,
+        alg.thread
     )
 end
 
 function alg_cache(
-    alg::Anas5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Anas5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return Anas5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct RKO65Cache{uType,rateType,TabType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct RKO65Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -1106,7 +666,7 @@ end
 u_cache(c::RKO65Cache) = ()
 du_cache(c::RKO65Cache) = (c.k, c.du, c.fsalfirst)
 
-struct RKO65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
+struct RKO65ConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
     α21::T1
     α31::T1
     α41::T1
@@ -1172,75 +732,28 @@ struct RKO65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
         c4 = T2(1 // 1)
         c5 = T2(4 // 5)
         c6 = T2(1 // 1)
-        return new{T1,T2}(
-            α21,
-            α31,
-            α41,
-            α51,
-            α32,
-            α42,
-            α52,
-            α62,
-            α43,
-            α53,
-            α63,
-            α54,
-            α64,
-            α65,
-            β2,
-            β3,
-            β4,
-            β5,
-            β6,
-            c1,
-            c2,
-            c3,
-            c4,
-            c5,
-            c6,
+        return new{T1, T2}(
+            α21, α31, α41, α51, α32, α42, α52, α62, α43, α53, α63, α54, α64, α65,
+            β2, β3, β4, β5, β6, c1, c2, c3, c4, c5, c6
         )
     end
 end
 
 function alg_cache(
-    alg::RKO65,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::RKO65, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return RKO65ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)) # why not real(tTypeNoUnits)?
 end
 
 function alg_cache(
-    alg::RKO65,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::RKO65, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
 
     k = zero(rate_prototype)
@@ -1255,33 +768,16 @@ function alg_cache(
 
     tab = RKO65ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return RKO65Cache(
-        u,
-        uprev,
-        k,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        tmp,
-        fsalfirst,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k, k1, k2, k3, k4, k5, k6, tmp, fsalfirst, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
     )
 end
 
 @cache struct FRK65Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread,
-} <: OrdinaryDiffEqMutableCache
+        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
+        Thread,
+    } <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     utilde::uType
@@ -1302,7 +798,7 @@ end
     thread::Thread
 end
 
-struct FRK65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
+struct FRK65ConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
     α21::T1
     α31::T1
     α41::T1
@@ -1504,132 +1000,32 @@ struct FRK65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
         f10 = T1(-711049 // 7105160932)
         f11 = T1(267 // 333462710)
 
-        return new{T1,T2}(
-            α21,
-            α31,
-            α41,
-            α51,
-            α61,
-            α71,
-            α81,
-            α91,
-            α32,
-            α43,
-            α53,
-            α63,
-            α73,
-            α83,
-            α54,
-            α64,
-            α74,
-            α84,
-            α94,
-            α65,
-            α75,
-            α85,
-            α95,
-            α76,
-            α86,
-            α96,
-            α87,
-            α97,
-            α98,
-            β1,
-            β7,
-            β8,
-            β1tilde,
-            β4tilde,
-            β5tilde,
-            β6tilde,
-            β7tilde,
-            β8tilde,
-            β9tilde,
-            c2,
-            c3,
-            c4,
-            c5,
-            c6,
-            c7,
-            c8,
-            c9,
-            d1,
-            d2,
-            d3,
-            d4,
-            d5,
-            d6,
-            d7,
-            d8,
-            d9,
-            d10,
-            d11,
-            d12,
-            d13,
-            e1,
-            e2,
-            e3,
-            e4,
-            e5,
-            e6,
-            e7,
-            e8,
-            e9,
-            e10,
-            e11,
-            f1,
-            f2,
-            f3,
-            f4,
-            f5,
-            f6,
-            f7,
-            f8,
-            f9,
-            f10,
-            f11,
+        return new{T1, T2}(
+            α21, α31, α41, α51, α61, α71, α81, α91, α32, α43, α53, α63, α73, α83,
+            α54, α64, α74, α84, α94, α65, α75, α85, α95, α76, α86, α96, α87, α97,
+            α98, β1, β7, β8, β1tilde, β4tilde, β5tilde, β6tilde, β7tilde, β8tilde,
+            β9tilde, c2, c3, c4, c5, c6, c7, c8, c9, d1, d2, d3, d4, d5, d6, d7, d8,
+            d9, d10, d11, d12, d13, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11,
+            f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11
         )
     end
 end
 
 function alg_cache(
-    alg::FRK65,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::FRK65, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return FRK65ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function alg_cache(
-    alg::FRK65,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::FRK65, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = FRK65ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -1645,29 +1041,13 @@ function alg_cache(
     recursivefill!(atmp, false)
     tmp = zero(u)
     return FRK65Cache(
-        u,
-        uprev,
-        utilde,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        k7,
-        k8,
-        k9,
-        tmp,
-        atmp,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, utilde, k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, atmp, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
-@cache struct RKMCache{uType,rateType,TabType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct RKMCache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -1685,7 +1065,7 @@ end
     thread::Thread
 end
 
-struct RKMConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct RKMConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     α2::T
     α3::T
     α4::T
@@ -1702,7 +1082,7 @@ struct RKMConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
     c5::T2
     c6::T2
 
-    function RKMConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    function RKMConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         # α2 = T(0.16791846623918)
         # α3 = T(0.48298439719700)
         # α4 = T(0.70546072965982)
@@ -1735,49 +1115,25 @@ struct RKMConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
         c5 = T2(0.082069535961948)
         c6 = T2(0.853923000035347)
 
-        return new{T,T2}(α2, α3, α4, α5, α6, β1, β2, β3, β4, β6, c2, c3, c4, c5, c6)
+        return new{T, T2}(α2, α3, α4, α5, α6, β1, β2, β3, β4, β6, c2, c3, c4, c5, c6)
     end
 end
 
 function alg_cache(
-    alg::RKM,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::RKM, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return RKMConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function alg_cache(
-    alg::RKM,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::RKM, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = RKMConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k = zero(rate_prototype)
     k1 = zero(rate_prototype)
@@ -1789,26 +1145,13 @@ function alg_cache(
     tmp = zero(u)
     fsalfirst = zero(rate_prototype)
     return RKMCache(
-        u,
-        uprev,
-        k,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        tmp,
-        fsalfirst,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k, k1, k2, k3, k4, k5, k6, tmp, fsalfirst, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
     )
 end
 
-@cache struct MSRK5Cache{uType,rateType,TabType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct MSRK5Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -1830,44 +1173,20 @@ end
 end
 
 function alg_cache(
-    alg::MSRK5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::MSRK5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return MSRK5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function alg_cache(
-    alg::MSRK5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::MSRK5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -1882,29 +1201,13 @@ function alg_cache(
     fsalfirst = zero(u)
     tab = MSRK5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return MSRK5Cache(
-        u,
-        uprev,
-        tmp,
-        fsalfirst,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        k7,
-        k8,
-        k9,
-        k,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, tmp, fsalfirst, k1, k2, k3, k4, k5, k6, k7, k8, k9, k, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
-@cache struct MSRK6Cache{uType,rateType,TabType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct MSRK6Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -1926,44 +1229,20 @@ end
 end
 
 function alg_cache(
-    alg::MSRK6,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::MSRK6, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return MSRK6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function alg_cache(
-    alg::MSRK6,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::MSRK6, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -1978,29 +1257,13 @@ function alg_cache(
     fsalfirst = zero(u)
     tab = MSRK6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return MSRK6Cache(
-        u,
-        uprev,
-        tmp,
-        fsalfirst,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        k7,
-        k8,
-        k9,
-        k,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, tmp, fsalfirst, k1, k2, k3, k4, k5, k6, k7, k8, k9, k, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
-@cache struct PSRK4p7q6Cache{uType,rateType,TabType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct PSRK4p7q6Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -2017,47 +1280,22 @@ end
 end
 
 function alg_cache(
-    alg::PSRK4p7q6,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::PSRK4p7q6, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return PSRK4p7q6ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits),
+        constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
     )
 end
 
 function alg_cache(
-    alg::PSRK4p7q6,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::PSRK4p7q6, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -2067,24 +1305,13 @@ function alg_cache(
     tmp = zero(u)
     tab = PSRK4p7q6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return PSRK4p7q6Cache(
-        u,
-        uprev,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        tmp,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k1, k2, k3, k4, k5, k6, tmp, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
-@cache struct PSRK3p6q5Cache{uType,rateType,TabType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct PSRK3p6q5Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -2100,47 +1327,22 @@ end
 end
 
 function alg_cache(
-    alg::PSRK3p6q5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::PSRK3p6q5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return PSRK3p6q5ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits),
+        constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
     )
 end
 
 function alg_cache(
-    alg::PSRK3p6q5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::PSRK3p6q5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -2149,23 +1351,13 @@ function alg_cache(
     tmp = zero(u)
     tab = PSRK3p6q5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return PSRK3p6q5Cache(
-        u,
-        uprev,
-        tmp,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, tmp, k1, k2, k3, k4, k5, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
-@cache struct PSRK3p5q4Cache{uType,rateType,TabType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct PSRK3p5q4Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -2180,47 +1372,22 @@ end
 end
 
 function alg_cache(
-    alg::PSRK3p5q4,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::PSRK3p5q4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return PSRK3p5q4ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits),
+        constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
     )
 end
 
 function alg_cache(
-    alg::PSRK3p5q4,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::PSRK3p5q4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -2228,22 +1395,13 @@ function alg_cache(
     tmp = zero(u)
     tab = PSRK3p5q4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return PSRK3p5q4Cache(
-        u,
-        uprev,
-        tmp,
-        k1,
-        k2,
-        k3,
-        k4,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, tmp, k1, k2, k3, k4, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
-@cache struct Stepanov5Cache{uType,rateType,TabType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct Stepanov5Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -2263,47 +1421,23 @@ end
 end
 
 function alg_cache(
-    alg::Stepanov5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Stepanov5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return Stepanov5ConstantCache(
         constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits),
+        constvalue(tTypeNoUnits)
     )
 end
 
 function alg_cache(
-    alg::Stepanov5,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Stepanov5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -2331,19 +1465,14 @@ function alg_cache(
         tab,
         alg.stage_limiter!,
         alg.step_limiter!,
-        alg.thread,
+        alg.thread
     )
 end
 
 @cache struct SIR54Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread,
-} <: OrdinaryDiffEqMutableCache
+        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
+        Thread,
+    } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -2364,44 +1493,20 @@ end
 end
 
 function alg_cache(
-    alg::SIR54,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::SIR54, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SIR54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function alg_cache(
-    alg::SIR54,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::SIR54, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -2416,35 +1521,15 @@ function alg_cache(
     tmp = zero(u)
     tab = SIR54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return SIR54Cache(
-        u,
-        uprev,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        k7,
-        k8,
-        utilde,
-        tmp,
-        atmp,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
 @cache struct Alshina2Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread,
-} <: OrdinaryDiffEqMutableCache
+        uType, rateType, uNoUnitsType, TabType, StageLimiter,
+        StepLimiter, Thread,
+    } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     utilde::uType
@@ -2459,44 +1544,20 @@ end
 end
 
 function alg_cache(
-    alg::Alshina2,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Alshina2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return Alshina2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function alg_cache(
-    alg::Alshina2,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Alshina2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     utilde = zero(u)
@@ -2505,29 +1566,15 @@ function alg_cache(
     recursivefill!(atmp, false)
     tab = Alshina2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return Alshina2Cache(
-        u,
-        uprev,
-        utilde,
-        k1,
-        k2,
-        atmp,
-        tmp,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, utilde, k1, k2, atmp, tmp, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
     )
 end
 
 @cache struct Alshina3Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread,
-} <: OrdinaryDiffEqMutableCache
+        uType, rateType, uNoUnitsType, TabType, StageLimiter,
+        StepLimiter, Thread,
+    } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     utilde::uType
@@ -2543,44 +1590,20 @@ end
 end
 
 function alg_cache(
-    alg::Alshina3,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Alshina3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return Alshina3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function alg_cache(
-    alg::Alshina3,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Alshina3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -2590,23 +1613,13 @@ function alg_cache(
     recursivefill!(atmp, false)
     tab = Alshina3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return Alshina3Cache(
-        u,
-        uprev,
-        utilde,
-        k1,
-        k2,
-        k3,
-        atmp,
-        tmp,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, utilde, k1, k2, k3, atmp, tmp, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
     )
 end
 
-@cache struct Alshina6Cache{uType,rateType,TabType,StageLimiter,StepLimiter,Thread} <:
-              OrdinaryDiffEqMutableCache
+@cache struct Alshina6Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -2624,44 +1637,20 @@ end
 end
 
 function alg_cache(
-    alg::Alshina6,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Alshina6, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return Alshina6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function alg_cache(
-    alg::Alshina6,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+        alg::Alshina6, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -2672,95 +1661,49 @@ function alg_cache(
     tmp = zero(u)
     tab = Alshina6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return Alshina6Cache(
-        u,
-        uprev,
-        k1,
-        k2,
-        k3,
-        k4,
-        k5,
-        k6,
-        k7,
-        tmp,
-        tab,
-        alg.stage_limiter!,
-        alg.step_limiter!,
-        alg.thread,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, tmp, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
     )
 end
 
 # ── MREEF caches ──────────────────────────────────────────────────────────────
 
-@cache mutable struct MREEFCache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+struct MREEFConstantCache <: OrdinaryDiffEqConstantCache end
+
+@cache mutable struct MREEFCache{uType, rateType, uNoUnitsType} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
     atmp::uNoUnitsType
     k_slow::rateType
     k_fast::rateType
-    T::Array{uType,1}   # extrapolation tableau column, T[j] = base result with ns[j] macro steps
+    T::Array{uType, 1}
     fsalfirst::rateType
     k::rateType
 end
 
 get_fsalfirstlast(cache::MREEFCache, u) = (cache.fsalfirst, cache.k)
 
-function alg_cache(
-    alg::MREEF,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{true},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+function alg_cache(alg::MREEF, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
-    T = Array{typeof(u),1}(undef, alg.order)
-    for j = 1:alg.order
-        T[j] = zero(u)
-    end
-    return MREEFCache(
-        u,
-        uprev,
-        zero(u),
-        atmp,
-        zero(rate_prototype),
-        zero(rate_prototype),
-        T,
-        zero(rate_prototype),
-        zero(rate_prototype),
-    )
+    k_slow = zero(rate_prototype)
+    k_fast = zero(rate_prototype)
+    T = [zero(u) for _ in 1:(alg.order)]
+    fsalfirst = zero(rate_prototype)
+    k = zero(rate_prototype)
+    MREEFCache(u, uprev, tmp, atmp, k_slow, k_fast, T, fsalfirst, k)
 end
 
-struct MREEFConstantCache <: OrdinaryDiffEqConstantCache end
-
-function alg_cache(
-    alg::MREEF,
-    u,
-    rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits},
-    uprev,
-    uprev2,
-    f,
-    t,
-    dt,
-    reltol,
-    p,
-    calck,
-    ::Val{false},
-    verbose,
-) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-    return MREEFConstantCache()
+function alg_cache(alg::MREEF, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    MREEFConstantCache()
 end

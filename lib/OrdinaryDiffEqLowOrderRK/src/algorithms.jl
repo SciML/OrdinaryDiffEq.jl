@@ -4,9 +4,7 @@
     "Explicit Runge-Kutta Method.",
     """E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
     Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
-    Springer-Verlag.""",
-    "",
-    "",
+    Springer-Verlag.""", "", ""
 )
 struct Euler <: OrdinaryDiffEqAlgorithm end
 
@@ -14,21 +12,20 @@ struct Euler <: OrdinaryDiffEqAlgorithm end
     "1st order fully explicit method for testing split accuracy",
     "SplitEuler",
     "Split Method.",
-    "",
-    "",
-    "",
+    "", "", ""
 )
 struct SplitEuler <:
-       OrdinaryDiffEqExponentialAlgorithm{0,false,Val{:forward},Val{true},nothing} end
+    OrdinaryDiffEqExponentialAlgorithm{0, false, Val{:forward}, Val{true}, nothing} end
 
 @doc explicit_rk_docstring(
     "The second order Heun's method. Uses embedded Euler method for adaptivity.",
     "Heun",
     references = """E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
     Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
-    Springer-Verlag.""",
+    Springer-Verlag."""
 )
-Base.@kwdef struct Heun{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct Heun{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -43,10 +40,10 @@ end
     "Ralston",
     references = """E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
     Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
-    Springer-Verlag.""",
+    Springer-Verlag."""
 )
-Base.@kwdef struct Ralston{StageLimiter,StepLimiter,Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct Ralston{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -61,10 +58,10 @@ end
     "Midpoint",
     references = """E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
     Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
-    Springer-Verlag.""",
+    Springer-Verlag."""
 )
-Base.@kwdef struct Midpoint{StageLimiter,StepLimiter,Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct Midpoint{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -86,9 +83,9 @@ end
       pages={113--127},
       year={2005},
       publisher={Elsevier}
-      }",
+      }"
 )
-Base.@kwdef struct RK4{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct RK4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -110,9 +107,9 @@ end
     pages={321--325},
     year={1989},
     publisher={Elsevier}
-    }",
+    }"
 )
-Base.@kwdef struct BS3{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct BS3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -134,10 +131,10 @@ end
     pages={1488--1501},
     year={1992},
     publisher={SIAM}
-    }",
+    }"
 )
-Base.@kwdef struct OwrenZen3{StageLimiter,StepLimiter,Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct OwrenZen3{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -159,10 +156,10 @@ end
     pages={1488--1501},
     year={1992},
     publisher={SIAM}
-    }",
+    }"
 )
-Base.@kwdef struct OwrenZen4{StageLimiter,StepLimiter,Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct OwrenZen4{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -184,10 +181,10 @@ end
     pages={1488--1501},
     year={1992},
     publisher={SIAM}
-    }",
+    }"
 )
-Base.@kwdef struct OwrenZen5{StageLimiter,StepLimiter,Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct OwrenZen5{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -211,27 +208,17 @@ end
     publisher={Elsevier}
     }",
     extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.""",
-    extra_keyword_default = "lazy = true",
+    extra_keyword_default = "lazy = true"
 )
-Base.@kwdef struct BS5{StageLimiter,StepLimiter,Thread,L} <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct BS5{StageLimiter, StepLimiter, Thread, L} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
     lazy::L = Val{true}()
 end
 # Convert Bool lazy to Val for backwards compatibility
-function BS5(
-    stage_limiter!::StageLimiter,
-    step_limiter!::StepLimiter,
-    thread::Thread,
-    lazy::Bool,
-) where {StageLimiter,StepLimiter,Thread}
-    return BS5{StageLimiter,StepLimiter,Thread,Val{lazy}}(
-        stage_limiter!,
-        step_limiter!,
-        thread,
-        Val{lazy}(),
-    )
+function BS5(stage_limiter!::StageLimiter, step_limiter!::StepLimiter, thread::Thread, lazy::Bool) where {StageLimiter, StepLimiter, Thread}
+    return BS5{StageLimiter, StepLimiter, Thread, Val{lazy}}(stage_limiter!, step_limiter!, thread, Val{lazy}())
 end
 # for backwards compatibility
 function BS5(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
@@ -250,9 +237,9 @@ end
     pages={19--26},
     year={1980},
     publisher={Elsevier}
-    }",
+    }"
 )
-Base.@kwdef struct DP5{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct DP5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -278,9 +265,9 @@ AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
     number={1},
     pages={1--9},
     year={2005},
-    publisher={Elsevier}}""",
+    publisher={Elsevier}}"""
 )
-Base.@kwdef struct Anas5{StageLimiter,StepLimiter,Thread,T} <: OrdinaryDiffEqAlgorithm
+Base.@kwdef struct Anas5{StageLimiter, StepLimiter, Thread, T} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -292,13 +279,12 @@ function Anas5(stage_limiter!, step_limiter! = trivial_limiter!; w = 1)
 end
 
 @doc explicit_rk_docstring(
-    "Tsitouras' Runge-Kutta-Oliver 6 stage 5th order method.",
-    "RKO65",
+    "Tsitouras' Runge-Kutta-Oliver 6 stage 5th order method.", "RKO65",
     references = "Tsitouras, Ch. \"Explicit Runge–Kutta methods for starting integration of
     Lane–Emden problem.\" Applied Mathematics and Computation 354 (2019): 353-364.
-    doi: https://doi.org/10.1016/j.amc.2019.02.047",
+    doi: https://doi.org/10.1016/j.amc.2019.02.047"
 )
-Base.@kwdef struct RKO65{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
+Base.@kwdef struct RKO65{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -309,8 +295,7 @@ function RKO65(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "Zero Dissipation Runge-Kutta of 6th order.",
-    "FRK65",
+    "Zero Dissipation Runge-Kutta of 6th order.", "FRK65",
     extra_keyword_description = """- `omega`: a periodicity phase estimate,
     when accurate this method results in zero numerical dissipation.""",
     extra_keyword_default = "omega = 0.0",
@@ -322,10 +307,10 @@ end
     number={16},
     pages={6184--6194},
     year={2018},
-    publisher={Wiley Online Library}}""",
+    publisher={Wiley Online Library}}"""
 )
-Base.@kwdef struct FRK65{StageLimiter,StepLimiter,Thread,T} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct FRK65{StageLimiter, StepLimiter, Thread, T} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -351,9 +336,9 @@ end
       pages={404--419},
       year={1999},
       publisher={Elsevier}
-    }""",
+    }"""
 )
-Base.@kwdef struct RKM{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
+Base.@kwdef struct RKM{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -364,11 +349,10 @@ function RKM(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "5th order method.",
-    "MSRK5",
-    references = "Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Figure 3.",
+    "5th order method.", "MSRK5",
+    references = "Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Figure 3."
 )
-Base.@kwdef struct MSRK5{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
+Base.@kwdef struct MSRK5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -379,11 +363,10 @@ function MSRK5(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "6th order method.",
-    "MSRK6",
-    references = "Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Table4",
+    "6th order method.", "MSRK6",
+    references = "Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Table4"
 )
-Base.@kwdef struct MSRK6{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
+Base.@kwdef struct MSRK6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -394,8 +377,7 @@ function MSRK6(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "6-stage Pseudo-Symplectic method.",
-    "PSRK4p7q6",
+    "6-stage Pseudo-Symplectic method.", "PSRK4p7q6",
     references = "@article{Aubry1998,
     author = {A. Aubry and P. Chartier},
     journal = {BIT Numer. Math.},
@@ -412,17 +394,16 @@ end
     year = {2017},
     issn = {0021-9991},
     doi = {https://doi.org/10.1016/j.jcp.2016.10.040},
-    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}",
+    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}"
 )
-Base.@kwdef struct PSRK4p7q6{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
+Base.@kwdef struct PSRK4p7q6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
 
 @doc explicit_rk_docstring(
-    "4-stage Pseudo-Symplectic method.",
-    "PSRK3p5q4",
+    "4-stage Pseudo-Symplectic method.", "PSRK3p5q4",
     references = "@article{Aubry1998,
     author = {A. Aubry and P. Chartier},
     journal = {BIT Numer. Math.},
@@ -433,17 +414,16 @@ end
     title = {Explicit {R}unge–{K}utta schemes for incompressible flow with improved energy-conservation properties},
     journal = {J. Comput. Phys.},
     year = {2017},
-    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}",
+    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}"
 )
-Base.@kwdef struct PSRK3p5q4{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
+Base.@kwdef struct PSRK3p5q4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
 
 @doc explicit_rk_docstring(
-    "5-stage Pseudo-Symplectic method.",
-    "PSRK3p6q5",
+    "5-stage Pseudo-Symplectic method.", "PSRK3p6q5",
     references = "@article{Aubry1998,
     author = {A. Aubry and P. Chartier},
     journal = {BIT Numer. Math.},
@@ -454,9 +434,9 @@ end
     title = {Explicit {R}unge–{K}utta schemes for incompressible flow with improved energy-conservation properties},
     journal = {J. Comput. Phys.},
     year = {2017},
-    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}",
+    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}"
 )
-Base.@kwdef struct PSRK3p6q5{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
+Base.@kwdef struct PSRK3p6q5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -471,10 +451,10 @@ end
     journal={Calcolo},
     year={2021},
     volume={59}
-    }",
+    }"
 )
-Base.@kwdef struct Stepanov5{StageLimiter,StepLimiter,Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct Stepanov5{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -494,9 +474,10 @@ end
     year={2020},
     volume={44},
     pages={5210 - 5216}
-    }",
+    }"
 )
-Base.@kwdef struct SIR54{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct SIR54{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -521,10 +502,10 @@ end
     author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
     title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
     journal = {Computational Mathematics and Mathematical Physics}
-    }",
+    }"
 )
-Base.@kwdef struct Alshina2{StageLimiter,StepLimiter,Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct Alshina2{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -549,10 +530,10 @@ end
     author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
     title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
     journal = {Computational Mathematics and Mathematical Physics}
-    }",
+    }"
 )
-Base.@kwdef struct Alshina3{StageLimiter,StepLimiter,Thread} <:
-                   OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct Alshina3{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -577,9 +558,9 @@ end
     author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
     title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
     journal = {Computational Mathematics and Mathematical Physics}
-    }",
+    }"
 )
-Base.@kwdef struct Alshina6{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
+Base.@kwdef struct Alshina6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -589,27 +570,6 @@ function Alshina6(stage_limiter!, step_limiter! = trivial_limiter!)
     return Alshina6(stage_limiter!, step_limiter!, False())
 end
 
-"""
-    MREEF(; m=4, order=4, seq=:harmonic)
-
-Extrapolated Multirate Explicit Euler method for additive split ODEs.
-
-Requires a `SplitODEProblem` where `f.f1` is the slow component and `f.f2` is
-the fast component. Takes one frozen slow evaluation per macro interval and `m`
-fast substeps, then applies Richardson extrapolation (Aitken–Neville) over
-different numbers of macro intervals to achieve order `order`.
-
-## Arguments
-- `m`: number of fast substeps per macro interval (default: 4)
-- `order`: extrapolation order — number of tableau rows (default: 4)
-- `seq`: step-count sequence. `:harmonic` uses nⱼ = j (1,2,3,...);
-  `:romberg` uses nⱼ = 2^(j-1) (1,2,4,8,...).
-
-## References
-E.M. Constantinescu and A. Sandu (2010). Extrapolated multirate methods for
-differential equations with multiple time scales. SIAM J. Sci. Comput., 31(6),
-4452–4477.
-"""
 Base.@kwdef struct MREEF <: OrdinaryDiffEqAdaptiveAlgorithm
     m::Int = 4
     order::Int = 4

@@ -1,8 +1,7 @@
 function initialize!(integrator, cache::SplitEulerConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-    integrator.fsalfirst =
-        integrator.f.f1(integrator.uprev, integrator.p, integrator.t) +
+    integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.p, integrator.t) +
         integrator.f.f2(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
@@ -14,10 +13,9 @@ function initialize!(integrator, cache::SplitEulerConstantCache)
 end
 
 @muladd function perform_step!(
-    integrator,
-    cache::SplitEulerConstantCache,
-    repeat_step = false,
-)
+        integrator, cache::SplitEulerConstantCache,
+        repeat_step = false
+    )
     (; t, dt, uprev, u, f, p) = integrator
     u = @.. broadcast = false uprev + dt * integrator.fsalfirst
     integrator.fsallast = f.f1(u, p, t + dt) + f.f2(u, p, t + dt)  # For the interpolation, needs k at the updated point
@@ -26,18 +24,6 @@ end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
-end
-
-# ── MREEF: step-count sequence ────────────────────────────────────────────────
-
-@inline function _mreef_sequence(seq::Symbol, order::Int)
-    if seq === :harmonic
-        return ntuple(j -> j, order)
-    elseif seq === :romberg
-        return ntuple(j -> 1 << (j - 1), order)
-    else
-        throw(ArgumentError("MREEF: unknown sequence `$seq`, choose :harmonic or :romberg"))
-    end
 end
 
 get_fsalfirstlast(cache::SplitEulerCache, u) = (cache.fsalfirst, cache.k)
@@ -66,6 +52,18 @@ end
     integrator.fsallast .+= cache.tmp
 end
 
+# ── MREEF: step-count sequence ────────────────────────────────────────────────
+
+@inline function _mreef_sequence(seq::Symbol, order::Int)
+    if seq === :harmonic
+        return ntuple(j -> j, order)
+    elseif seq === :romberg
+        return ntuple(j -> 1 << (j - 1), order)
+    else
+        throw(ArgumentError("MREEF: unknown sequence `$seq`, choose :harmonic or :romberg"))
+    end
+end
+
 # ── MREEF initialize! ─────────────────────────────────────────────────────────
 
 function initialize!(integrator, cache::MREEFCache)
@@ -86,8 +84,7 @@ end
 function initialize!(integrator, cache::MREEFConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-    integrator.fsalfirst =
-        integrator.f.f1(integrator.uprev, integrator.p, integrator.t) +
+    integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.p, integrator.t) +
         integrator.f.f2(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
