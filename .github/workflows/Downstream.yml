@@ -21,9 +21,6 @@ jobs:
         julia-version: ['1.10']
         os: [ubuntu-latest]
         package:
-          - {user: SciML, repo: DelayDiffEq.jl, group: Interface}
-          - {user: SciML, repo: DelayDiffEq.jl, group: Integrators}
-          - {user: SciML, repo: DelayDiffEq.jl, group: Regression}
           - {user: SciML, repo: StochasticDiffEq.jl, group: Interface1}
           - {user: SciML, repo: StochasticDiffEq.jl, group: Interface2}
           - {user: SciML, repo: StochasticDiffEq.jl, group: Interface3}
