@@ -1,4 +1,5 @@
 using DelayDiffEq
+using OrdinaryDiffEqTsit5
 using Test
 
 # Test parameterized delayed logistic equation
