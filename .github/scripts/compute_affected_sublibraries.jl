@@ -128,6 +128,13 @@ function compute_affected(changed_files::Vector{String},
     return affected
 end
 
+# Entries to exclude from the matrix.
+# Each entry is (group, version) where group is the CI GROUP string.
+# See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2977
+const EXCLUDES = Set([
+    ("OrdinaryDiffEqBDF", "pre"),  # JET resolution fails on pre-release Julia
+])
+
 function build_matrix(affected::Set{String}, lib_dir::String)
     entries = Vector{@NamedTuple{group::String, version::String}}()
     for pkg in sort!(collect(affected))
@@ -137,6 +144,7 @@ function build_matrix(affected::Set{String}, lib_dir::String)
             # All other groups append _GROUPNAME (e.g., OrdinaryDiffEqCore_QA)
             ci_group = group_name == "Core" ? pkg : "$(pkg)_$(group_name)"
             for ver in versions
+                (ci_group, ver) in EXCLUDES && continue
                 push!(entries, (; group = ci_group, version = ver))
             end
         end

@@ -59,11 +59,6 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
-        exclude:
-          # Skip OrdinaryDiffEqBDF on pre-release Julia (JET resolution fails)
-          # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2977
-          - group: OrdinaryDiffEqBDF
-            version: 'pre'
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
