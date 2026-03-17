@@ -215,9 +215,12 @@ end
 
 # Helper: determine number of active data points from k entries.
 # Active entries are non-zero (counting from the top).
+_is_all_zero(x::Number) = iszero(x)
+_is_all_zero(x::AbstractArray) = all(iszero, x)
+
 function _bdf_active_order(k)
     n = length(k)
-    while n > 0 && iszero(k[n])
+    while n > 0 && _is_all_zero(k[n])
         n -= 1
     end
     return max(n, 1)
@@ -548,14 +551,12 @@ end
     end
 
     if differential_vars !== nothing
-        for i in eachindex(differential_vars)
-            if !differential_vars[i]
-                if out isa Number
-                    out = zero(out)
-                else
-                    out[i] = zero(eltype(out))
-                end
+        if out isa Number
+            if !differential_vars[]
+                out = zero(out)
             end
+        else
+            out = @.. ifelse(differential_vars, out, zero(eltype(out)))
         end
     end
 
@@ -581,14 +582,13 @@ end
     end
 
     if differential_vars !== nothing
-        for (idx_pos, orig_idx) in enumerate(idxs)
-            if !differential_vars[orig_idx]
-                if out isa Number
-                    out = zero(out)
-                else
-                    out[idx_pos] = zero(eltype(out))
-                end
+        if out isa Number
+            if !differential_vars[first(idxs)]
+                out = zero(out)
             end
+        else
+            dv = @view differential_vars[idxs]
+            out = @.. ifelse(dv, out, zero(eltype(out)))
         end
     end
 
@@ -614,11 +614,7 @@ end
     end
 
     if differential_vars !== nothing
-        for i in eachindex(differential_vars)
-            if !differential_vars[i]
-                out[i] = zero(eltype(out))
-            end
-        end
+        @.. out = ifelse(differential_vars, out, zero(eltype(out)))
     end
 
     return out
@@ -643,11 +639,8 @@ end
     end
 
     if differential_vars !== nothing
-        for (idx_pos, orig_idx) in enumerate(idxs)
-            if !differential_vars[orig_idx]
-                out[idx_pos] = zero(eltype(out))
-            end
-        end
+        dv = @view differential_vars[idxs]
+        @.. out = ifelse(dv, out, zero(eltype(out)))
     end
 
     return out
@@ -678,14 +671,12 @@ end
     end
 
     if differential_vars !== nothing
-        for i in eachindex(differential_vars)
-            if !differential_vars[i]
-                if out isa Number
-                    out = zero(out)
-                else
-                    out[i] = zero(eltype(out))
-                end
+        if out isa Number
+            if !differential_vars[]
+                out = zero(out)
             end
+        else
+            out = @.. ifelse(differential_vars, out, zero(eltype(out)))
         end
     end
 
@@ -711,14 +702,13 @@ end
     end
 
     if differential_vars !== nothing
-        for (idx_pos, orig_idx) in enumerate(idxs)
-            if !differential_vars[orig_idx]
-                if out isa Number
-                    out = zero(out)
-                else
-                    out[idx_pos] = zero(eltype(out))
-                end
+        if out isa Number
+            if !differential_vars[first(idxs)]
+                out = zero(out)
             end
+        else
+            dv = @view differential_vars[idxs]
+            out = @.. ifelse(dv, out, zero(eltype(out)))
         end
     end
 
@@ -744,11 +734,7 @@ end
     end
 
     if differential_vars !== nothing
-        for i in eachindex(differential_vars)
-            if !differential_vars[i]
-                out[i] = zero(eltype(out))
-            end
-        end
+        @.. out = ifelse(differential_vars, out, zero(eltype(out)))
     end
 
     return out
@@ -773,11 +759,8 @@ end
     end
 
     if differential_vars !== nothing
-        for (idx_pos, orig_idx) in enumerate(idxs)
-            if !differential_vars[orig_idx]
-                out[idx_pos] = zero(eltype(out))
-            end
-        end
+        dv = @view differential_vars[idxs]
+        @.. out = ifelse(dv, out, zero(eltype(out)))
     end
 
     return out
