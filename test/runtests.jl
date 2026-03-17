@@ -46,18 +46,13 @@ end
     base_group = GROUP
     test_group = "Core"
 
-    # Check if GROUP is exactly a sublibrary name
+    # Check if GROUP matches a sublibrary, possibly with a _SUFFIX for the test group.
+    # Scan underscores right-to-left to find the longest matching sublibrary prefix.
     if !isdir(joinpath(lib_dir, GROUP))
-        # Try progressively shorter prefixes to find a sublibrary name
-        # by stripping suffixes at each '_' from right to left
-        idx = length(GROUP)
-        while true
-            idx = something(findprev('_', GROUP, idx - 1), 0)
-            idx == 0 && break
-            candidate = GROUP[1:(idx - 1)]
-            if isdir(joinpath(lib_dir, candidate))
-                base_group = candidate
-                test_group = GROUP[(idx + 1):end]
+        for i in length(GROUP):-1:1
+            if GROUP[i] == '_' && isdir(joinpath(lib_dir, GROUP[1:(i - 1)]))
+                base_group = GROUP[1:(i - 1)]
+                test_group = GROUP[(i + 1):end]
                 break
             end
         end
