@@ -117,6 +117,6 @@ function OrdinaryDiffEqCore._determine_initdt(integrator::SDEIntegrator)
     else
         # TauLeaping/CaoTauLeaping use DiscreteProblem (no f.g or f.mass_matrix),
         # so neither sde_ nor ode_determine_initdt applies. Return a small dt.
-        return integrator.tdir * integrator.opts.dtmax / convert(typeof(integrator.t), 1e6)
+        return integrator.tdir * integrator.opts.dtmax / convert(typeof(integrator.t), 1.0e6)
     end
 end

@@ -7,6 +7,7 @@ authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
@@ -32,12 +33,14 @@ StochasticDiffEqMilstein = {path = "../StochasticDiffEqMilstein"}
 StochasticDiffEqROCK = {path = "../StochasticDiffEqROCK"}
 StochasticDiffEqRODE = {path = "../StochasticDiffEqRODE"}
 StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
 
 [compat]
 DiffEqBase = "6.187"
 DiffEqNoiseProcess = "5.13"
 LinearAlgebra = "1.6"
+OrdinaryDiffEqCore = "3.22"
 OrdinaryDiffEqNonlinearSolve = "1"
 Reexport = "0.2, 1.0"
 SciMLBase = "2.146"

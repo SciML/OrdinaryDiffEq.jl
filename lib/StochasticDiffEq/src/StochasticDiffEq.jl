@@ -19,6 +19,7 @@ using Reexport: @reexport
 using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
 import SciMLBase
+import OrdinaryDiffEqCore: perform_step!, loopheader!, loopfooter!
 
 # AutoSOSRI2/AutoSOSRA2 reference concrete types from multiple solver subpackages
 # (SOSRI2 from HighOrder, implicit algs from Implicit), so they live here in the umbrella.
