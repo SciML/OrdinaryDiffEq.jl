@@ -154,7 +154,7 @@ if TEST_GROUP != "QA"
 end
 
 # Run QA tests (JET, Aqua)
-if TEST_GROUP != "FUNCTIONAL" && isempty(VERSION.prerelease)
+if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
     using Pkg
     Pkg.add("JET")
     using JET

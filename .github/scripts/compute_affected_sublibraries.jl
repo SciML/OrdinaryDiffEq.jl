@@ -10,7 +10,7 @@
 #
 # Each sublibrary can optionally define test groups in test/test_groups.toml:
 #
-#   [FUNCTIONAL]
+#   [Core]
 #   versions = ["lts", "1.11", "1", "pre"]
 #
 #   [QA]
@@ -20,7 +20,7 @@
 #   versions = ["1"]
 #
 # If no test/test_groups.toml exists, the default is:
-#   FUNCTIONAL on ["lts", "1.11", "1", "pre"]
+#   Core on ["lts", "1.11", "1", "pre"]
 #   QA on ["1"]
 #
 # Usage:
@@ -32,7 +32,7 @@
 using TOML
 
 const DEFAULT_TEST_GROUPS = Dict(
-    "FUNCTIONAL" => ["lts", "1.11", "1", "pre"],
+    "Core" => ["lts", "1.11", "1", "pre"],
     "QA" => ["1"],
 )
 
@@ -133,9 +133,9 @@ function build_matrix(affected::Set{String}, lib_dir::String)
     for pkg in sort!(collect(affected))
         groups = load_test_groups(lib_dir, pkg)
         for (group_name, versions) in sort(collect(groups))
-            # FUNCTIONAL group uses the bare sublibrary name as GROUP
+            # Core group uses the bare sublibrary name as GROUP
             # All other groups append _GROUPNAME (e.g., OrdinaryDiffEqCore_QA)
-            ci_group = group_name == "FUNCTIONAL" ? pkg : "$(pkg)_$(group_name)"
+            ci_group = group_name == "Core" ? pkg : "$(pkg)_$(group_name)"
             for ver in versions
                 push!(entries, (; group = ci_group, version = ver))
             end

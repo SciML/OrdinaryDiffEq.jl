@@ -39,12 +39,12 @@ end
 
 @time begin
     # Detect sublibrary test groups.
-    # GROUP can be a bare sublibrary name (FUNCTIONAL test group) or
+    # GROUP can be a bare sublibrary name (Core test group) or
     # "{sublibrary}_{TEST_GROUP}" for any custom group (e.g., QA, GPU, etc.).
     # Sublibraries declare their groups in test/test_groups.toml.
     lib_dir = joinpath(dirname(@__DIR__), "lib")
     base_group = GROUP
-    test_group = "FUNCTIONAL"
+    test_group = "Core"
 
     # Check if GROUP is exactly a sublibrary name
     if !isdir(joinpath(lib_dir, GROUP))
