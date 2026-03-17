@@ -1,0 +1,133 @@
+name: Sublibrary CI
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      # JSON array of affected sublibrary names
+      affected: ${{ steps.compute.outputs.affected }}
+      # Whether any sublibraries are affected
+      has_changes: ${{ steps.compute.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Compute affected sublibraries from dependency graph
+        id: compute
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # For push events, compare against the previous commit
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || git diff --name-only HEAD~1 HEAD)
+          else
+            # For pull requests, compare against the base branch
+            git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+            CHANGED=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD)
+          fi
+
+          AFFECTED=$(echo "$CHANGED" | python3 .github/scripts/compute_affected_sublibraries.py .)
+
+          echo "Changed files in lib/:"
+          echo "$CHANGED" | grep "^lib/" || echo "(none)"
+          echo ""
+          echo "Affected sublibraries: $AFFECTED"
+
+          echo "affected=$AFFECTED" >> "$GITHUB_OUTPUT"
+          if [ "$AFFECTED" = "[]" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        group: ${{ fromJson(needs.detect-changes.outputs.affected) }}
+        version:
+          - 'lts'
+          - '1.11'
+          - '1'
+          - 'pre'
+        exclude:
+          # Skip OrdinaryDiffEqBDF on pre-release Julia (JET resolution fails)
+          # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2977
+          - group: OrdinaryDiffEqBDF
+            version: 'pre'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: actions/cache@v5
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-sublib-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-sublib-${{ env.cache-name }}-
+            ${{ runner.os }}-sublib-
+            ${{ runner.os }}-
+      - uses: julia-actions/julia-runtest@v1
+        with:
+          coverage: false
+          check_bounds: auto
+        env:
+          GROUP: ${{ matrix.group }}
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lcov.info
+          fail_ci_if_error: false
+          disable_safe_directory: true
+
+  qa:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        group: ${{ fromJson(needs.detect-changes.outputs.affected) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - uses: actions/cache@v5
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-qa-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-qa-${{ env.cache-name }}-
+            ${{ runner.os }}-qa-
+            ${{ runner.os }}-
+      - uses: julia-actions/julia-runtest@v1
+        with:
+          coverage: false
+          check_bounds: auto
+        env:
+          GROUP: ${{ matrix.group }}_QA
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lcov.info
+          fail_ci_if_error: false
+          disable_safe_directory: true
