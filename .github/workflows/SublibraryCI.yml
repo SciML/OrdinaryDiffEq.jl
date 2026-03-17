@@ -14,8 +14,8 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      # JSON array of affected sublibrary names
-      affected: ${{ steps.compute.outputs.affected }}
+      # JSON array of {group, version} objects for matrix include
+      matrix: ${{ steps.compute.outputs.matrix }}
       # Whether any sublibraries are affected
       has_changes: ${{ steps.compute.outputs.has_changes }}
     steps:
@@ -37,15 +37,15 @@ jobs:
             CHANGED=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD)
           fi
 
-          AFFECTED=$(echo "$CHANGED" | julia .github/scripts/compute_affected_sublibraries.jl .)
+          MATRIX=$(echo "$CHANGED" | julia .github/scripts/compute_affected_sublibraries.jl .)
 
           echo "Changed files in lib/:"
           echo "$CHANGED" | grep "^lib/" || echo "(none)"
           echo ""
-          echo "Affected sublibraries: $AFFECTED"
+          echo "Matrix entries: $MATRIX"
 
-          echo "affected=$AFFECTED" >> "$GITHUB_OUTPUT"
-          if [ "$AFFECTED" = "[]" ]; then
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          if [ "$MATRIX" = "[]" ]; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
@@ -58,12 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: ${{ fromJson(needs.detect-changes.outputs.affected) }}
-        version:
-          - 'lts'
-          - '1.11'
-          - '1'
-          - 'pre'
+        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
         exclude:
           # Skip OrdinaryDiffEqBDF on pre-release Julia (JET resolution fails)
           # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2977
@@ -90,43 +85,6 @@ jobs:
           check_bounds: auto
         env:
           GROUP: ${{ matrix.group }}
-      - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: lcov.info
-          fail_ci_if_error: false
-          disable_safe_directory: true
-
-  qa:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.has_changes == 'true'
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        group: ${{ fromJson(needs.detect-changes.outputs.affected) }}
-    steps:
-      - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: '1'
-      - uses: actions/cache@v5
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-qa-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-qa-${{ env.cache-name }}-
-            ${{ runner.os }}-qa-
-            ${{ runner.os }}-
-      - uses: julia-actions/julia-runtest@v1
-        with:
-          coverage: false
-          check_bounds: auto
-        env:
-          GROUP: ${{ matrix.group }}_QA
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v5
         with:

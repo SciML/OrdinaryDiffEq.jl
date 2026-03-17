@@ -1,19 +1,40 @@
 #!/usr/bin/env julia
 #
-# Compute which sublibrary tests need to run based on changed files.
+# Compute which sublibrary test jobs need to run based on changed files.
 #
 # Reads the dependency graph from lib/*/Project.toml [deps] and [extras]
 # sections, identifies internal dependencies by matching dep names against
 # known sublibrary directory names, computes the transitive reverse-dependency
-# map, then given a list of changed files outputs affected sublibraries.
+# map, then given a list of changed files outputs a GitHub Actions matrix
+# include list as JSON.
+#
+# Each sublibrary can optionally define test groups in test/test_groups.toml:
+#
+#   [FUNCTIONAL]
+#   versions = ["lts", "1.11", "1", "pre"]
+#
+#   [QA]
+#   versions = ["1"]
+#
+#   [GPU]
+#   versions = ["1"]
+#
+# If no test/test_groups.toml exists, the default is:
+#   FUNCTIONAL on ["lts", "1.11", "1", "pre"]
+#   QA on ["1"]
 #
 # Usage:
 #   git diff --name-only origin/master...HEAD | julia compute_affected_sublibraries.jl /path/to/repo
 #
-#   Output: JSON array of affected sublibrary names, e.g.
-#   ["OrdinaryDiffEqCore","OrdinaryDiffEqTsit5"]
+# Output: JSON array of {group, version} objects for GitHub Actions matrix include, e.g.
+#   [{"group":"OrdinaryDiffEqCore","version":"lts"},{"group":"OrdinaryDiffEqCore_QA","version":"1"},...]
 
 using TOML
+
+const DEFAULT_TEST_GROUPS = Dict(
+    "FUNCTIONAL" => ["lts", "1.11", "1", "pre"],
+    "QA" => ["1"],
+)
 
 function build_dependency_graph(lib_dir::String)
     # Collect all sublibrary names (directories with a Project.toml)
@@ -76,6 +97,19 @@ function compute_reverse_deps(graph::Dict{String, Vector{String}})
     return transitive
 end
 
+function load_test_groups(lib_dir::String, pkg::String)
+    groups_file = joinpath(lib_dir, pkg, "test", "test_groups.toml")
+    if isfile(groups_file)
+        toml = TOML.parsefile(groups_file)
+        groups = Dict{String, Vector{String}}()
+        for (name, config) in toml
+            groups[name] = convert(Vector{String}, config["versions"])
+        end
+        return groups
+    end
+    return DEFAULT_TEST_GROUPS
+end
+
 function compute_affected(changed_files::Vector{String},
                           graph::Dict{String, Vector{String}},
                           reverse_deps::Dict{String, Set{String}})
@@ -92,6 +126,32 @@ function compute_affected(changed_files::Vector{String},
         end
     end
     return affected
+end
+
+function build_matrix(affected::Set{String}, lib_dir::String)
+    entries = Vector{@NamedTuple{group::String, version::String}}()
+    for pkg in sort!(collect(affected))
+        groups = load_test_groups(lib_dir, pkg)
+        for (group_name, versions) in sort(collect(groups))
+            # FUNCTIONAL group uses the bare sublibrary name as GROUP
+            # All other groups append _GROUPNAME (e.g., OrdinaryDiffEqCore_QA)
+            ci_group = group_name == "FUNCTIONAL" ? pkg : "$(pkg)_$(group_name)"
+            for ver in versions
+                push!(entries, (; group = ci_group, version = ver))
+            end
+        end
+    end
+    return entries
+end
+
+# Minimal JSON serialization (no external dependency needed)
+function print_json(entries)
+    print("[")
+    for (i, entry) in enumerate(entries)
+        i > 1 && print(",")
+        print("{\"group\":\"", entry.group, "\",\"version\":\"", entry.version, "\"}")
+    end
+    println("]")
 end
 
 function main()
@@ -114,14 +174,8 @@ function main()
     changed_files = split(read(stdin, String), '\n')
     affected = compute_affected(collect(String, changed_files), graph, reverse_deps)
 
-    # Output as JSON array (sorted for determinism)
-    result = sort!(collect(affected))
-    print("[")
-    for (i, name) in enumerate(result)
-        i > 1 && print(",")
-        print("\"", name, "\"")
-    end
-    println("]")
+    matrix = build_matrix(affected, lib_dir)
+    print_json(matrix)
 end
 
 main()
