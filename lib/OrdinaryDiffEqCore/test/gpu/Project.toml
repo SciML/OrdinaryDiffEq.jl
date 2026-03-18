@@ -13,6 +13,9 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[sources.OrdinaryDiffEq]
+path = "../../../.."
+
 [sources.OrdinaryDiffEqCore]
 path = "../../../OrdinaryDiffEqCore"
 
@@ -25,6 +28,6 @@ DiffEqBase = "6"
 FastBroadcast = "0.3"
 FillArrays = "1"
 OrdinaryDiffEq = "6"
-OrdinaryDiffEqCore = "1"
+OrdinaryDiffEqCore = "1, 2, 3"
 RecursiveArrayTools = "3"
 StaticArrays = "1"
