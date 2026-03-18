@@ -26,6 +26,7 @@ using OrdinaryDiffEqCore: _vec, _reshape, current_extrapolant, current_extrapola
     isnewton, set_new_W!, get_W
 using OrdinaryDiffEqNonlinearSolve: NLSolver, nlsolvefail, nlsolve!, build_nlsolver,
     markfirststage!, NLNewton
+import OrdinaryDiffEqDifferentiation
 using OrdinaryDiffEqDifferentiation: calc_J, calc_J!, dolinsolve, get_W
 
 using JumpProcesses: JumpProblem
@@ -44,6 +45,7 @@ include("caches/kencarp_caches.jl")
 include("perform_step/sdirk.jl")
 include("perform_step/implicit_split_step.jl")
 include("perform_step/kencarp.jl")
+include("alg_autodiff.jl")
 
 export ImplicitEM, ImplicitEulerHeun, ImplicitRKMil, STrapezoid, SImplicitMidpoint,
     ISSEM, ISSEulerHeun, SKenCarp

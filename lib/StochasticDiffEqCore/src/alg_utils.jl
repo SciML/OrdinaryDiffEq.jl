@@ -250,35 +250,6 @@ function alg_needs_extra_process(
     return max((alg_needs_extra_process(a) for a in alg.algs)...)
 end
 
-function OrdinaryDiffEqDifferentiation._alg_autodiff(
-        alg::StochasticDiffEqNewtonAlgorithm{
-            CS, AD, FDT, ST, CJ, Controller,
-        }
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val{AD}()
-end
-function OrdinaryDiffEqDifferentiation._alg_autodiff(
-        alg::StochasticDiffEqNewtonAdaptiveAlgorithm{
-            CS, AD, FDT, ST, CJ, Controller,
-        }
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val{AD}()
-end
-function OrdinaryDiffEqDifferentiation._alg_autodiff(
-        alg::StochasticDiffEqJumpNewtonAdaptiveAlgorithm{
-            CS, AD, FDT, ST, CJ, Controller,
-        }
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val{AD}()
-end
-function OrdinaryDiffEqDifferentiation._alg_autodiff(
-        alg::StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm{
-            CS, AD, FDT, ST, CJ, Controller,
-        }
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val{AD}()
-end
-
 function OrdinaryDiffEqCore.get_current_alg_autodiff(alg::StochasticDiffEqCompositeAlgorithm, cache)
     return OrdinaryDiffEqCore.alg_autodiff(alg.algs[cache.current])
 end

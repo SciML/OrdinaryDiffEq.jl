@@ -83,13 +83,7 @@ import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, 
 
 using DiffEqBase: check_error!, is_diagonal_noise, @..
 
-using OrdinaryDiffEqNonlinearSolve: nlsolvefail, isnewton
 using OrdinaryDiffEqCore: set_new_W!, get_W, _vec, _reshape
-
-using OrdinaryDiffEqNonlinearSolve: NLSolver
-
-import OrdinaryDiffEqDifferentiation
-import OrdinaryDiffEqNonlinearSolve
 
 if isdefined(OrdinaryDiffEqCore, :FastConvergence)
     using OrdinaryDiffEqCore:
@@ -99,8 +93,6 @@ if isdefined(OrdinaryDiffEqCore, :FastConvergence)
     import OrdinaryDiffEqCore:
         calculate_residuals, calculate_residuals!, nlsolve_f,
         unwrap_cache, islinear
-
-    using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NLNewton
 else
     using DiffEqBase:
         FastConvergence, Convergence, SlowConvergence, VerySlowConvergence,
@@ -188,9 +180,6 @@ export resize_noise!, fill_new_noise_caches!,
 
 # Export Z prototype dispatch for noise creation
 export _z_prototype, concrete_prob, _resolve_rng, _sde_init
-
-# Export nlsolve utility
-export nlsolve!
 
 # Export TauLeapingDrift for Jump subpackage
 export TauLeapingDrift

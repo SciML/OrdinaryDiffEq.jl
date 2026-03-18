@@ -19,10 +19,6 @@ end
 
 @inline initialize!(integrator, cache::StochasticDiffEqCache, f = integrator.f) = nothing
 
-function nlsolve!(integrator, cache)
-    return DiffEqBase.nlsolve!(cache.nlsolver, cache.nlsolver.cache, integrator)
-end
-
 # TauLeapingDrift: wrapper for tau-leaping drift function used by nlsolver
 # Computes drift(u, p, t) = c(u, p, t, rate(u, p, t), nothing)
 # where c is the stoichiometry function and rate is the propensity function

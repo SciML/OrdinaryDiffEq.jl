@@ -30,6 +30,7 @@ using OrdinaryDiffEqNonlinearSolve: NLSolver, nlsolvefail, nlsolve!, build_nlsol
     markfirststage!, NLNewton
 
 import OrdinaryDiffEqNonlinearSolve
+import OrdinaryDiffEqDifferentiation
 
 using LinearAlgebra
 using StaticArrays
@@ -48,6 +49,7 @@ include("weak_utils.jl")
 
 include("perform_step/srk_weak.jl")
 include("perform_step/implicit_weak.jl")
+include("alg_autodiff.jl")
 
 export DRI1, DRI1NM, RI1, RI3, RI5, RI6,
     RDI1WM, RDI2WM, RDI3WM, RDI4WM,
