@@ -102,15 +102,13 @@ function load_test_groups(lib_dir::String, pkg::String)
     groups_file = joinpath(lib_dir, pkg, "test", "test_groups.toml")
     if isfile(groups_file)
         toml = TOML.parsefile(groups_file)
-        groups = Dict{String, Any}()
+        groups = Dict{String, Vector{String}}()
         for (name, config) in toml
-            groups[name] = config
+            groups[name] = convert(Vector{String}, config["versions"])
         end
         return groups
     end
-    return Dict{String, Any}(
-        k => Dict("versions" => v) for (k, v) in DEFAULT_TEST_GROUPS
-    )
+    return DEFAULT_TEST_GROUPS
 end
 
 function compute_affected(
@@ -143,18 +141,16 @@ const EXCLUDES = Set(
 )
 
 function build_matrix(affected::Set{String}, lib_dir::String)
-    entries = Vector{@NamedTuple{group::String, version::String, runner::String}}()
+    entries = Vector{@NamedTuple{group::String, version::String}}()
     for pkg in sort!(collect(affected))
         groups = load_test_groups(lib_dir, pkg)
-        for (group_name, config) in sort(collect(groups))
-            versions = convert(Vector{String}, config["versions"])
-            runner = get(config, "runner", "ubuntu-latest")::String
+        for (group_name, versions) in sort(collect(groups))
             # Core group uses the bare sublibrary name as GROUP
             # All other groups append _GROUPNAME (e.g., OrdinaryDiffEqCore_QA)
             ci_group = group_name == "Core" ? pkg : "$(pkg)_$(group_name)"
             for ver in versions
                 (ci_group, ver) in EXCLUDES && continue
-                push!(entries, (; group = ci_group, version = ver, runner = runner))
+                push!(entries, (; group = ci_group, version = ver))
             end
         end
     end
@@ -166,7 +162,7 @@ function print_json(entries)
     print("[")
     for (i, entry) in enumerate(entries)
         i > 1 && print(",")
-        print("{\"group\":\"", entry.group, "\",\"version\":\"", entry.version, "\",\"runner\":\"", entry.runner, "\"}")
+        print("{\"group\":\"", entry.group, "\",\"version\":\"", entry.version, "\"}")
     end
     return println("]")
 end
