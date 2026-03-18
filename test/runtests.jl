@@ -11,12 +11,6 @@ function activate_downstream_env()
     return Pkg.instantiate()
 end
 
-function activate_gpu_env()
-    Pkg.activate("gpu")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
-end
-
 function activate_odeinterface_env()
     Pkg.activate("odeinterface")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
@@ -200,20 +194,7 @@ end
     end
 
     # Multithreading tests moved to OrdinaryDiffEqExtrapolation subpackage (SublibraryCI).
-    # GPU tests for individual solvers moved to their respective subpackages (SublibraryCI).
-    # Only DiffEqBase Simple GPU remains here.
-    if !is_APPVEYOR && GROUP == "GPU"
-        activate_gpu_env()
-        @time @safetestset "Simple GPU" begin
-            import OrdinaryDiffEqCore
-            include(
-                joinpath(
-                    dirname(pathof(OrdinaryDiffEqCore.DiffEqBase)), "..",
-                    "test/gpu/simple_gpu.jl"
-                )
-            )
-        end
-    end
+    # GPU tests moved to their respective subpackages (SublibraryCI).
 
     if !is_APPVEYOR && GROUP == "QA"
         @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")

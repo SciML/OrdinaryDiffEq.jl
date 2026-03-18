@@ -11,6 +11,7 @@ end
 # Run GPU tests
 if TEST_GROUP == "GPU"
     activate_gpu_env()
+    @time @safetestset "Simple GPU" include("gpu/simple_gpu.jl")
     @time @safetestset "Hermite Interpolation GPU" include("gpu/hermite_test.jl")
 end
 
