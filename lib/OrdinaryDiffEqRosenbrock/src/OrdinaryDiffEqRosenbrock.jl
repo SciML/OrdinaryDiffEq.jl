@@ -213,7 +213,6 @@ end
 
 include("algorithms.jl")
 include("alg_utils.jl")
-include("generic_rosenbrock.jl")
 include("rosenbrock_caches.jl")
 include("rosenbrock_tableaus.jl")
 include("interp_func.jl")
@@ -284,6 +283,7 @@ PrecompileTools.@compile_workload begin
     end
 
     for prob in prob_list, solver in solver_list
+
         solve(prob, solver)(5.0)
     end
 

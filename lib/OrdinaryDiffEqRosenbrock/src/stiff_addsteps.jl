@@ -117,13 +117,22 @@ function _ode_addsteps!(
             ks = Base.setindex(ks, _reshape(W \ _vec(linsolve_tmp), axes(uprev)), stage)
         end
 
-        for j in 1:size(H, 1)
-            kj = zero(ks[1])
-            # Last stage affect's ks for Rodas5,5P,6P
-            for i in 1:num_stages
-                kj = @.. kj + H[j, i] * ks[i]
+        if size(H, 1) > 0
+            for j in 1:size(H, 1)
+                kj = zero(ks[1])
+                # Last stage affect's ks for Rodas5,5P,6P
+                for i in 1:num_stages
+                    kj = @.. kj + H[j, i] * ks[i]
+                end
+                copyat_or_push!(k, j, kj)
             end
-            copyat_or_push!(k, j, kj)
+        else
+            # No H matrix: compute Hermite-compatible coefficients
+            # k₁ = dt*f₀ - (y₁-y₀), k₂ = 2(y₁-y₀) - dt*(f₀+f₁)
+            f0 = f(uprev, p, t)
+            f1 = f(u, p, t + dt)
+            copyat_or_push!(k, 1, @.. dt * f0 - (u - uprev))
+            copyat_or_push!(k, 2, @.. 2 * (u - uprev) - dt * (f0 + f1))
         end
     end
     return nothing
@@ -135,7 +144,10 @@ function _ode_addsteps!(
         force_calc_end = false
     )
     if length(k) < 2 || always_calc_begin
-        (; du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
+        (;
+            du, du1, du2, tmp, ks, dT, J, W, uf, tf,
+            linsolve_tmp, jac_config, fsalfirst, weight,
+        ) = cache
         (; A, C, gamma, c, d, H) = cache.tab
 
         # Assignments
@@ -188,12 +200,21 @@ function _ode_addsteps!(
             @.. $(_vec(ks[stage])) = -linres.u
         end
 
-        for j in 1:size(H, 1)
-            copyat_or_push!(k, j, zero(du))
-            # Last stage affect's ks for Rodas5,5P,6P
-            for i in 1:length(ks)
-                @.. k[j] += H[j, i] * _vec(ks[i])
+        if size(H, 1) > 0
+            for j in 1:size(H, 1)
+                copyat_or_push!(k, j, zero(du))
+                # Last stage affect's ks for Rodas5,5P,6P
+                for i in 1:length(ks)
+                    @.. k[j] += H[j, i] * _vec(ks[i])
+                end
             end
+        else
+            # No H matrix: compute Hermite-compatible coefficients
+            # k₁ = dt*f₀ - (y₁-y₀), k₂ = 2(y₁-y₀) - dt*(f₀+f₁)
+            f(du, uprev, p, t)
+            f(du1, u, p, t + dt)
+            copyat_or_push!(k, 1, @.. dt * du - (u - uprev))
+            copyat_or_push!(k, 2, @.. 2 * (u - uprev) - dt * (du + du1))
         end
     end
     return nothing

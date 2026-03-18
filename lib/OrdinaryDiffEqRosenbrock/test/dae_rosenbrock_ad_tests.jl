@@ -40,7 +40,7 @@ sol = @inferred solve(prob_mm_oop, Rodas5P(), reltol = 1.0e-8, abstol = 1.0e-8)
 
     alg = Rodas5P(; autodiff)
     function f(p)
-        sol = @inferred solve(
+        sol = solve(
             remake(_prob, p = p), alg, abstol = 1.0e-14,
             reltol = 1.0e-14, initializealg = initalg
         )
