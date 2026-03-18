@@ -269,6 +269,14 @@
         # iteration f calls are tracked individually inside the loop.
         integrator.stats.nf -= 1
 
+        # Zero-length vectors: no state to evolve, use default small dt
+        if length(u0) == 0
+            return tdir * max(smalldt, dtmin)
+        end
+
+        # Dimensionless float type for scalar constants (handles Unitful)
+        _fType = typeof(real(one(_tType)))
+
         # NaN check via d₁ = norm(f₀/sk)
         if u0 isa Array
             @inbounds @simd ivdep for i in eachindex(u0)
@@ -290,33 +298,29 @@
         # CVHin Step 1: Compute lower and upper bounds on |h|
         tspan = prob.tspan
         tdist = abs(tspan[2] - tspan[1])
-        eps_tType = eps(_tType)
-        hlb = convert(_tType, 100 * eps_tType * oneunit_tType)
+        hlb = 100 * eps(_fType) * oneunit_tType
 
         # Upper bound: most restrictive component of |f₀| / (0.1*|u0| + tol)
-        hub_inv = zero(_tType)
+        hub_inv = zero(_fType)
         if u0 isa Array
             @inbounds for i in eachindex(u0)
-                atol_i = abstol isa Number ? abstol : abstol[i]
-                rtol_i = reltol isa Number ? reltol : reltol[i]
-                tol_i = rtol_i * internalnorm(u0[i], t) + atol_i
-                denom = convert(_tType, 0.1) * internalnorm(u0[i], t) + tol_i
-                numer = internalnorm(f₀[i], t) * oneunit_tType
-                if denom > 0
-                    hub_inv = max(hub_inv, numer / denom)
+                denom_i = convert(_fType, 0.1) * abs(u0[i]) + sk[i]
+                numer_i = abs(f₀[i]) * oneunit_tType
+                if denom_i > zero(denom_i)
+                    hub_inv = max(hub_inv, DiffEqBase.value(numer_i / denom_i))
                 end
             end
         else
             # GPU-compatible: use abs/max broadcasts instead of scalar indexing
-            denoms = @.. broadcast = false convert(_tType, 0.1) * abs(u0) + sk
+            denoms = @.. broadcast = false convert(_fType, 0.1) * abs(u0) + sk
             numers = @.. broadcast = false abs(f₀) * oneunit_tType
-            hub_inv = maximum(numers ./ max.(denoms, eps(eltype(denoms))))
+            hub_inv = maximum(numers ./ max.(denoms, eps(_fType) .* oneunit.(denoms)))
         end
         # Strip ForwardDiff.Dual tracking — step size bounds don't need AD
         hub_inv = DiffEqBase.value(hub_inv)
 
-        hub = convert(_tType, 0.1) * tdist
-        if hub * hub_inv > 1
+        hub = convert(_fType, 0.1) * tdist
+        if hub * hub_inv > oneunit_tType
             hub = oneunit_tType / hub_inv
         end
         hub = min(hub, abs(dtmax_tdir))
@@ -372,7 +376,7 @@
                     hg_ok = true
                     break
                 end
-                hg *= convert(_tType, 0.2)
+                hg *= convert(_fType, 0.2)
             end
 
             if !hg_ok
@@ -409,7 +413,7 @@
 
             count1 == 4 && break
             hrat = hnew / hg
-            if hrat > convert(_tType, 0.5) && hrat < 2
+            if hrat > convert(_fType, 0.5) && hrat < 2
                 break
             end
             if count1 > 1 && hrat > 2
@@ -420,7 +424,7 @@
         end
 
         # CVHin Step 3: Apply 0.5 safety factor and bounds
-        h0 = convert(_tType, 0.5) * hnew
+        h0 = convert(_fType, 0.5) * hnew
         h0 = clamp(h0, hlb, hub)
 
         return tdir * max(dtmin, min(h0, abs(dtmax_tdir)))
@@ -568,6 +572,14 @@ end
         # iteration f calls are tracked individually inside the loop.
         integrator.stats.nf -= 1
 
+        # Zero-length vectors: no state to evolve, use default small dt
+        if length(u0) == 0
+            return tdir * max(smalldt, dtmin)
+        end
+
+        # Dimensionless float type for scalar constants (handles Unitful)
+        _fType = typeof(real(one(_tType)))
+
         # NaN check via d₁ = norm(f₀/sk)
         d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
         if isnan(d₁)
@@ -581,16 +593,15 @@ end
         # CVHin Step 1: Compute lower and upper bounds
         tspan = prob.tspan
         tdist = abs(tspan[2] - tspan[1])
-        eps_tType = eps(_tType)
-        hlb = convert(_tType, 100 * eps_tType * oneunit_tType)
+        hlb = 100 * eps(_fType) * oneunit_tType
 
         # Upper bound: most restrictive component of |f₀| / (0.1*|u0| + tol)
-        denoms = @.. broadcast = false convert(_tType, 0.1) * abs(u0) + sk
+        denoms = @.. broadcast = false convert(_fType, 0.1) * abs(u0) + sk
         numers = @.. broadcast = false abs(f₀) * oneunit_tType
-        hub_inv = DiffEqBase.value(maximum(numers ./ max.(denoms, eps(eltype(denoms)))))
+        hub_inv = DiffEqBase.value(maximum(numers ./ max.(denoms, eps(_fType) .* oneunit.(denoms))))
 
-        hub = convert(_tType, 0.1) * tdist
-        if hub * hub_inv > 1
+        hub = convert(_fType, 0.1) * tdist
+        if hub * hub_inv > oneunit_tType
             hub = oneunit_tType / hub_inv
         end
         hub = min(hub, abs(dtmax_tdir))
@@ -618,7 +629,7 @@ end
                     hg_ok = true
                     break
                 end
-                hg *= convert(_tType, 0.2)
+                hg *= convert(_fType, 0.2)
             end
 
             if !hg_ok
@@ -650,7 +661,7 @@ end
 
             count1 == 4 && break
             hrat = hnew / hg
-            if hrat > convert(_tType, 0.5) && hrat < 2
+            if hrat > convert(_fType, 0.5) && hrat < 2
                 break
             end
             if count1 > 1 && hrat > 2
@@ -661,7 +672,7 @@ end
         end
 
         # CVHin Step 3: Apply 0.5 safety factor and bounds
-        h0 = convert(_tType, 0.5) * hnew
+        h0 = convert(_fType, 0.5) * hnew
         h0 = clamp(h0, hlb, hub)
 
         return tdir * max(dtmin, min(h0, abs(dtmax_tdir)))
