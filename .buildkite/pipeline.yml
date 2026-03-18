@@ -60,6 +60,7 @@ steps:
   - label: "{{matrix}}"
     matrix:
         - "StochasticDiffEq_IIPWeakConvergence"
+        - "StochasticDiffEq_OOPWeakConvergence"
         - "StochasticDiffEqWeak_WeakConvergence2"
         - "StochasticDiffEqWeak_WeakConvergence3"
         - "StochasticDiffEqWeak_WeakConvergence6"

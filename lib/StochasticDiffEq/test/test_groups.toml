@@ -19,9 +19,7 @@ versions = ["1"]
 [WeakConvergence1]
 versions = ["1"]
 
-[OOPWeakConvergence]
-versions = ["1"]
-
+# OOPWeakConvergence runs on buildkite (needs self-hosted runner, high memory)
 # IIPWeakConvergence runs on buildkite (needs self-hosted runner, high memory)
 
 [Allocations]
