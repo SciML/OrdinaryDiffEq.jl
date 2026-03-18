@@ -65,20 +65,8 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-      - uses: actions/cache@v5
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-sublib-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-sublib-${{ env.cache-name }}-
-            ${{ runner.os }}-sublib-
-            ${{ runner.os }}-
-      - name: Update package registry
-        run: julia -e 'import Pkg; Pkg.Registry.update()'
-        env:
-          JULIA_PKG_SERVER: ""
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
           coverage: false
@@ -86,7 +74,6 @@ jobs:
         env:
           GROUP: ${{ matrix.group }}
           JULIA_NUM_THREADS: ${{ matrix.num_threads }}
-          JULIA_PKG_SERVER: ""
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v5
         with:
