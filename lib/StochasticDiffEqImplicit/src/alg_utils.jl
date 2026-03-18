@@ -6,7 +6,7 @@ alg_order(alg::ISSEulerHeun) = 1 // 2
 alg_order(alg::SKenCarp) = 2 // 1
 
 supports_regular_jumps(::ImplicitEM) = true
-SciMLBase.isadaptive(prob::JumpProblem, alg::ImplicitEM) = false
+isadaptive(prob::JumpProblem, alg::ImplicitEM) = false
 alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::ImplicitEM) = true
 alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::ImplicitEulerHeun) = true
 alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::ISSEM) = true
