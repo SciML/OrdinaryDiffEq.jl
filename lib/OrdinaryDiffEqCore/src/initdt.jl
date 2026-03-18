@@ -304,17 +304,17 @@
         hub_inv = zero(_fType)
         if u0 isa Array
             @inbounds for i in eachindex(u0)
-                denom_i = convert(_fType, 0.1) * abs(u0[i]) + sk[i]
+                denom_i = convert(_fType, 0.1) * abs(u0[i]) + abs(sk[i])
                 numer_i = abs(f₀[i]) * oneunit_tType
-                if denom_i > zero(denom_i)
-                    hub_inv = max(hub_inv, DiffEqBase.value(numer_i / denom_i))
+                if internalnorm(denom_i, t) > 0
+                    hub_inv = max(hub_inv, internalnorm(numer_i, t) / internalnorm(denom_i, t))
                 end
             end
         else
             # GPU-compatible: use abs/max broadcasts instead of scalar indexing
             denoms = @.. broadcast = false convert(_fType, 0.1) * abs(u0) + sk
-            numers = @.. broadcast = false abs(f₀) * oneunit_tType
-            hub_inv = maximum(numers ./ max.(denoms, eps(_fType) .* oneunit.(denoms)))
+            nums = @.. broadcast = false abs(f₀) * oneunit_tType
+            hub_inv = maximum(nums ./ max.(denoms, eps(_fType) .* oneunit.(denoms)))
         end
         # Strip ForwardDiff.Dual tracking — step size bounds don't need AD
         hub_inv = DiffEqBase.value(hub_inv)
@@ -597,8 +597,8 @@ end
 
         # Upper bound: most restrictive component of |f₀| / (0.1*|u0| + tol)
         denoms = @.. broadcast = false convert(_fType, 0.1) * abs(u0) + sk
-        numers = @.. broadcast = false abs(f₀) * oneunit_tType
-        hub_inv = DiffEqBase.value(maximum(numers ./ max.(denoms, eps(_fType) .* oneunit.(denoms))))
+        nums = @.. broadcast = false abs(f₀) * oneunit_tType
+        hub_inv = DiffEqBase.value(maximum(nums ./ max.(denoms, eps(_fType) .* oneunit.(denoms))))
 
         hub = convert(_fType, 0.1) * tdist
         if hub * hub_inv > oneunit_tType
