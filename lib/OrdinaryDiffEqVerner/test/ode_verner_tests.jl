@@ -138,7 +138,7 @@ println("Backward solve lazy interpolation")
 
 function backward_ode!(du, u, p, t)
     du[1] = -u[1]
-    du[2] = -2 * u[2]
+    return du[2] = -2 * u[2]
 end
 
 prob_back = ODEProblem(backward_ode!, [1.0, 1.0], (1.0, 0.0))
@@ -155,7 +155,8 @@ cb_lazy = DiscreteCallback(
         push!(interp_lazy, curu[1])
         u_modified!(integrator, false)
     end,
-    save_positions = (false, false))
+    save_positions = (false, false)
+)
 
 cb_nolazy = DiscreteCallback(
     (u, t, int) -> true,
@@ -166,12 +167,17 @@ cb_nolazy = DiscreteCallback(
         push!(interp_nolazy, curu[1])
         u_modified!(integrator, false)
     end,
-    save_positions = (false, false))
+    save_positions = (false, false)
+)
 
-solve(prob_back, Vern9(lazy = true), abstol = 1e-12, reltol = 1e-12,
-    callback = cb_lazy, save_everystep = false)
-solve(prob_back, Vern9(lazy = false), abstol = 1e-12, reltol = 1e-12,
-    callback = cb_nolazy, save_everystep = false)
+solve(
+    prob_back, Vern9(lazy = true), abstol = 1.0e-12, reltol = 1.0e-12,
+    callback = cb_lazy, save_everystep = false
+)
+solve(
+    prob_back, Vern9(lazy = false), abstol = 1.0e-12, reltol = 1.0e-12,
+    callback = cb_nolazy, save_everystep = false
+)
 
 @test length(interp_lazy) == length(interp_nolazy)
-@test maximum(abs.(interp_lazy .- interp_nolazy)) < 1e-10
+@test maximum(abs.(interp_lazy .- interp_nolazy)) < 1.0e-10

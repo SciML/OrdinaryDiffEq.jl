@@ -169,6 +169,6 @@ integrator = init(
     # Rosenbrock methods (Rodas5P) linearize and don't iterate, so the step succeeds
     # but the constraint remains violated — u[2] stays near 0 instead of tracking u[1].
     step!(integ, 0.01, true)
-    @test abs(integ.u[2]) < 1e-10  # u[2] stuck near 0, not reinitialized
+    @test abs(integ.u[2]) < 1.0e-10  # u[2] stuck near 0, not reinitialized
     @test abs(integ.u[1]) > 1.5    # u[1] still evolving
 end
