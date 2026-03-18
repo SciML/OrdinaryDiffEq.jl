@@ -81,3 +81,11 @@ MTK = "MTK"
 ODE = "ODE"
 PDE = "PDE"
 SDE = "SDE"
+
+# SDE-specific terms
+IIF = "IIF"  # Integrating Factor method (IIF1M, IIF2M, IIF1Mil)
+iif = "iif"
+currate = "currate"  # current rate variable in tau-leaping
+SIE = "SIE"  # SIEA/SIEB algorithm name prefix
+resetted = "resetted"  # variable name in stepsize control
+strat = "strat"  # Stratonovich abbreviation

@@ -1,0 +1,5 @@
+[Core]
+versions = ["1.11", "1", "pre"]
+
+[QA]
+versions = ["1"]
