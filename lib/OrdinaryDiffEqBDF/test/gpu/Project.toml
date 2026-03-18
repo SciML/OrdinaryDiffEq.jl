@@ -1,0 +1,11 @@
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources.OrdinaryDiffEqBDF]
+path = "../../../OrdinaryDiffEqBDF"
+
+[compat]
+CUDA = "5"
+OrdinaryDiffEqBDF = "1"

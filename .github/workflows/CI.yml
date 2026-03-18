@@ -55,15 +55,12 @@ jobs:
             version: 'pre'
         include:
           # GPU tests on self-hosted runners with GPU
+          # Only DiffEqBase Simple GPU test remains here; subpackage GPU tests
+          # are in their respective test_groups.toml (SublibraryCI).
           - group: GPU
             version: '1'
             runner: ["self-hosted", "Linux", "X64", "gpu"]
             timeout: 60
-          # Multithreading on self-hosted runners
-          - group: Multithreading
-            version: '1'
-            runner: ["self-hosted", "Linux", "X64"]
-            timeout: 240
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2

@@ -1,6 +1,18 @@
+using Pkg
 using SafeTestsets
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+
+function activate_gpu_env()
+    Pkg.activate(joinpath(@__DIR__, "gpu"))
+    return Pkg.instantiate()
+end
+
+# Run GPU tests
+if TEST_GROUP == "GPU"
+    activate_gpu_env()
+    @time @safetestset "Hermite Interpolation GPU" include("gpu/hermite_test.jl")
+end
 
 # Run QA tests (JET, Aqua)
 if TEST_GROUP != "Core" && isempty(VERSION.prerelease)

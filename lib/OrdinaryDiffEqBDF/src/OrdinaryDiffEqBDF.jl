@@ -1,5 +1,4 @@
 module OrdinaryDiffEqBDF
-# trigger sublibrary CI
 
 import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     initialize!, perform_step!, unwrap_alg,

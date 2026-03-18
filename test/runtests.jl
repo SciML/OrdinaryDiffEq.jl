@@ -199,10 +199,9 @@ end
         @time @safetestset "ODEInterface Regression Tests" include("odeinterface/odeinterface_regression.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "Multithreading"
-        @time @safetestset "Extrapolation Tests" include("multithreading/ode_extrapolation_tests.jl")
-    end
-
+    # Multithreading tests moved to OrdinaryDiffEqExtrapolation subpackage (SublibraryCI).
+    # GPU tests for individual solvers moved to their respective subpackages (SublibraryCI).
+    # Only DiffEqBase Simple GPU remains here.
     if !is_APPVEYOR && GROUP == "GPU"
         activate_gpu_env()
         @time @safetestset "Simple GPU" begin
@@ -214,14 +213,6 @@ end
                 )
             )
         end
-        @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
-        @time @safetestset "Linear LSRK GPU" include("gpu/linear_lsrk.jl")
-        @time @safetestset "Linear Exponential GPU" include("gpu/linear_exp.jl")
-        @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
-        @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
-        @time @safetestset "RKIP Semilinear PDE GPU" include("gpu/rkip_semilinear_pde.jl")
-        @time @safetestset "simple dae on GPU" include("gpu/simple_dae.jl")
-        @time @safetestset "BDF solvers GPU" include("gpu/bdf_solvers.jl")
     end
 
     if !is_APPVEYOR && GROUP == "QA"

@@ -1,0 +1,10 @@
+[Core]
+versions = ["lts", "1.11", "1", "pre"]
+
+[GPU]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "gpu"]
+timeout = 60
+
+[QA]
+versions = ["1"]
