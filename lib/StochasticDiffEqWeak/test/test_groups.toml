@@ -4,17 +4,9 @@ versions = ["1.11", "1", "pre"]
 [WeakConvergence1]
 versions = ["1"]
 
-[WeakConvergence2]
-versions = ["1"]
-
-[WeakConvergence3]
-versions = ["1"]
-
+# WeakConvergence2, 3, 6 run on buildkite (heavy Monte Carlo, 240min timeout)
 # WeakConvergence4 runs on buildkite (needs 360min timeout)
 # WeakConvergence5 runs on buildkite (needs exclusive runner)
-
-[WeakConvergence6]
-versions = ["1"]
 
 [IRI1WeakConvergence]
 versions = ["1"]

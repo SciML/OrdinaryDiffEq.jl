@@ -60,10 +60,28 @@ steps:
   - label: "{{matrix}}"
     matrix:
         - "StochasticDiffEq_IIPWeakConvergence"
-        - "StochasticDiffEqWeak_WeakConvergence4"
+        - "StochasticDiffEqWeak_WeakConvergence2"
+        - "StochasticDiffEqWeak_WeakConvergence3"
+        - "StochasticDiffEqWeak_WeakConvergence6"
     env:
       BUILDKITE_PLUGIN_JULIA_VERSION: "1"
       GROUP: "{{matrix}}"
+    plugins:
+      - JuliaCI/julia#v1
+      - JuliaCI/julia-test#v1:
+          coverage: false
+    agents:
+      os: "linux"
+      queue: "juliaecosystem"
+      arch: "x86_64"
+    timeout_in_minutes: 240
+    if: build.message !~ /\[skip tests\]/
+
+  # StochasticDiffEq: WeakConvergence4 needs extended timeout
+  - label: "StochasticDiffEqWeak_WeakConvergence4"
+    env:
+      BUILDKITE_PLUGIN_JULIA_VERSION: "1"
+      GROUP: "StochasticDiffEqWeak_WeakConvergence4"
     plugins:
       - JuliaCI/julia#v1
       - JuliaCI/julia-test#v1:
