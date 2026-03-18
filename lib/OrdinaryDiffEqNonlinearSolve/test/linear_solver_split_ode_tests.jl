@@ -1,7 +1,6 @@
 using Test
 using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK
 using LinearAlgebra, LinearSolve
-using OrdinaryDiffEqCore: dolinsolve
 
 n = 8
 dt = 1 / 1000
