@@ -22,7 +22,7 @@ path = "../../../OrdinaryDiffEqCore"
 [compat]
 ADTypes = "1"
 Adapt = "4"
-CUDA = "5"
+CUDA = "4, 5"
 ComponentArrays = "0.15"
 DiffEqBase = "6"
 FastBroadcast = "0.3"

@@ -23,7 +23,7 @@ OrdinaryDiffEqRosenbrock = {path = "../../lib/OrdinaryDiffEqRosenbrock"}
 
 [compat]
 Adapt = "4"
-CUDA = "5"
+CUDA = "4, 5"
 ComponentArrays = "0.15"
 DiffEqBase = "6.182"
 FastBroadcast = "0.3"

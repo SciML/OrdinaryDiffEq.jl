@@ -11,7 +11,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 path = "../../../OrdinaryDiffEqRKIP"
 
 [compat]
-CUDA = "5"
+CUDA = "4, 5"
 FFTW = "1.8"
 OrdinaryDiffEqRKIP = "1"
 SciMLBase = "2.99"

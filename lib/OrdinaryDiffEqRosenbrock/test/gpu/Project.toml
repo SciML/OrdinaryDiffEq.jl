@@ -13,6 +13,6 @@ OrdinaryDiffEqRosenbrock = {path = "../../../OrdinaryDiffEqRosenbrock"}
 
 [compat]
 Adapt = "4"
-CUDA = "5"
+CUDA = "4, 5"
 OrdinaryDiffEqNonlinearSolve = "1"
 OrdinaryDiffEqRosenbrock = "1"
