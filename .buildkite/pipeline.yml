@@ -39,6 +39,23 @@ steps:
     # Don't run Buildkite if the commit message includes the text [skip tests]
     if: build.message !~ /\[skip tests\]/
 
+  # StochasticDiffEq: multithreaded jump tests
+  - label: "SDE Multithreaded"
+    env:
+      BUILDKITE_PLUGIN_JULIA_VERSION: "1"
+      GROUP: "StochasticDiffEq_Multithreaded"
+      JULIA_NUM_THREADS: 2
+    plugins:
+      - JuliaCI/julia#v1
+      - JuliaCI/julia-test#v1:
+          coverage: false
+    agents:
+      os: "linux"
+      queue: "juliaecosystem"
+      arch: "x86_64"
+    timeout_in_minutes: 240
+    if: build.message !~ /\[skip tests\]/
+
   # StochasticDiffEq: GPU weak adaptive tests
   - label: "SDE WeakAdaptiveGPU"
     plugins:

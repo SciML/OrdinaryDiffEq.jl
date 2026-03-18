@@ -25,9 +25,6 @@ versions = ["1"]
 [IIPWeakConvergence]
 versions = ["1"]
 
-[Multithreaded]
-versions = ["1"]
-
 [Allocations]
 versions = ["1"]
 
