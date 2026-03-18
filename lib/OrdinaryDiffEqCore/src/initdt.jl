@@ -312,6 +312,8 @@
             numers = @.. broadcast = false abs(f₀) * oneunit_tType
             hub_inv = maximum(numers ./ max.(denoms, eps(eltype(denoms))))
         end
+        # Strip ForwardDiff.Dual tracking — step size bounds don't need AD
+        hub_inv = DiffEqBase.value(hub_inv)
 
         hub = convert(_tType, 0.1) * tdist
         if hub * hub_inv > 1
@@ -589,7 +591,7 @@ end
         # Upper bound: most restrictive component of |f₀| / (0.1*|u0| + tol)
         denoms = @.. broadcast = false convert(_tType, 0.1) * abs(u0) + sk
         numers = @.. broadcast = false abs(f₀) * oneunit_tType
-        hub_inv = maximum(numers ./ max.(denoms, eps(eltype(denoms))))
+        hub_inv = DiffEqBase.value(maximum(numers ./ max.(denoms, eps(eltype(denoms)))))
 
         hub = convert(_tType, 0.1) * tdist
         if hub * hub_inv > 1
