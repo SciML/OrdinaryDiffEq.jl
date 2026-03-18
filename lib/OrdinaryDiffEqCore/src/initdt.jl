@@ -395,10 +395,6 @@
             yddnrm = internalnorm(tmp, t) / hg * oneunit_tType
 
             # Order-dependent step proposal: h ~ (2/yddnrm)^(1/(p+1))
-            # Always use the formula and clamp to hub, rather than falling back
-            # to the conservative geometric mean sqrt(hg*hub). This prevents
-            # overly small initdt for high-order explicit methods where the
-            # formula naturally gives hnew > hub.
             if DiffEqBase.value(yddnrm) > 0
                 hnew = convert(
                     _tType,
