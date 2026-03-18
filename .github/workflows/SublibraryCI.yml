@@ -75,6 +75,8 @@ jobs:
             ${{ runner.os }}-sublib-${{ env.cache-name }}-
             ${{ runner.os }}-sublib-
             ${{ runner.os }}-
+      - name: Update package registry
+        run: julia -e 'import Pkg; Pkg.Registry.update()'
       - uses: julia-actions/julia-runtest@v1
         with:
           coverage: false
