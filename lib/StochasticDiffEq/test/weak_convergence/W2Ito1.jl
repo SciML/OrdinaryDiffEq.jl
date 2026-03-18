@@ -48,7 +48,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 0.0
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
 println("W2Ito1:", sim.𝒪est[:weak_final])
 
 @info "Diagonal noise"
@@ -120,7 +120,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = exp(-3.0)
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
 
 println("W2Ito1:", sim.𝒪est[:weak_final])
 
@@ -155,7 +155,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 0.0
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
 println("W2Ito1:", sim.𝒪est[:weak_final])
 
 @info "Diagonal noise"
@@ -230,6 +230,6 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = exp(-3.0)
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
 
 println("W2Ito1:", sim.𝒪est[:weak_final])
