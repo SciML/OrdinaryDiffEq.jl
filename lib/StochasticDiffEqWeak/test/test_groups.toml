@@ -1,5 +1,29 @@
 [Core]
 versions = ["1.11", "1", "pre"]
 
+[WeakConvergence1]
+versions = ["1"]
+
+[WeakConvergence2]
+versions = ["1"]
+
+[WeakConvergence3]
+versions = ["1"]
+
+[WeakConvergence4]
+versions = ["1"]
+
+[WeakConvergence5]
+versions = ["1"]
+
+[WeakConvergence6]
+versions = ["1"]
+
+[IRI1WeakConvergence]
+versions = ["1"]
+
+[WeakAdaptiveCPU]
+versions = ["1"]
+
 [QA]
 versions = ["1"]

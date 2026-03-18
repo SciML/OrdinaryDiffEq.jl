@@ -16,3 +16,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         @test TangXiaoSROCK2() isa StochasticDiffEqAlgorithm
     end
 end
+
+if TEST_GROUP == "ALL" || TEST_GROUP == "SROCKC2WeakConvergence"
+    @time @safetestset "SROCKC2 Weak Convergence Tests" begin
+        include("weak_convergence/weak_srockc2.jl")
+    end
+end

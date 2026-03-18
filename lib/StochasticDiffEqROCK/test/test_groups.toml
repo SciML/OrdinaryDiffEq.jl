@@ -1,5 +1,8 @@
 [Core]
 versions = ["1.11", "1", "pre"]
 
+[SROCKC2WeakConvergence]
+versions = ["1"]
+
 [QA]
 versions = ["1"]

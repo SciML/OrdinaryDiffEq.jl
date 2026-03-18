@@ -15,7 +15,10 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
 
 [extras]
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bbd966d"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SDEProblemLibrary = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
@@ -30,12 +33,14 @@ Reexport = "0.2, 1.0"
 SciMLBase = "2.146"
 StaticArrays = "1.9.14"
 StochasticDiffEqCore = "0.1"
+DiffEqDevTools = "2.44"
+SDEProblemLibrary = "0.1"
 Test = "<0.0.1, 1"
 SafeTestsets = "0.1.0"
 julia = "1.10"
 
 [targets]
-test = ["Test", "Pkg", "SafeTestsets"]
+test = ["Test", "Pkg", "SafeTestsets", "DiffEqDevTools", "SDEProblemLibrary", "Random"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

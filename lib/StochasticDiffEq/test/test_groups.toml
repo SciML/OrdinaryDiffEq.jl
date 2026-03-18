@@ -19,6 +19,15 @@ versions = ["1"]
 [WeakConvergence1]
 versions = ["1"]
 
+[OOPWeakConvergence]
+versions = ["1"]
+
+[IIPWeakConvergence]
+versions = ["1"]
+
+[Multithreaded]
+versions = ["1"]
+
 [Allocations]
 versions = ["1"]
 
