@@ -6,12 +6,14 @@ const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 function activate_modelingtoolkit_env()
     Pkg.activate(joinpath(@__DIR__, "modelingtoolkit"))
     lib_dir = dirname(dirname(@__DIR__))
-    Pkg.develop([
-        PackageSpec(path = dirname(dirname(dirname(@__DIR__)))),
-        PackageSpec(path = dirname(@__DIR__)),
-        PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqBDF")),
-        PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqSDIRK")),
-    ])
+    Pkg.develop(
+        [
+            PackageSpec(path = dirname(dirname(dirname(@__DIR__)))),
+            PackageSpec(path = dirname(@__DIR__)),
+            PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqBDF")),
+            PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqSDIRK")),
+        ]
+    )
     return Pkg.instantiate()
 end
 
