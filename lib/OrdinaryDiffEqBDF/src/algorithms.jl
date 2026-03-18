@@ -1,3 +1,4 @@
+"""Helper to generate docstrings for BDF-family algorithms."""
 function BDF_docstring(
         description::String,
         name::String;

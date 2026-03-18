@@ -193,9 +193,6 @@ end
         @time @safetestset "ODEInterface Regression Tests" include("odeinterface/odeinterface_regression.jl")
     end
 
-    # Multithreading tests moved to OrdinaryDiffEqExtrapolation subpackage (SublibraryCI).
-    # GPU tests moved to their respective subpackages (SublibraryCI).
-
     if !is_APPVEYOR && GROUP == "QA"
         @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
     end
