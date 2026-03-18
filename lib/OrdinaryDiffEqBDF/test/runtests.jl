@@ -15,7 +15,7 @@ if TEST_GROUP == "GPU"
 end
 
 # Run functional tests
-if TEST_GROUP != "QA"
+if TEST_GROUP != "QA" && TEST_GROUP != "GPU"
     @time @safetestset "DAE Convergence Tests" include("dae_convergence_tests.jl")
     @time @safetestset "DAE AD Tests" include("dae_ad_tests.jl")
     @time @safetestset "DAE Event Tests" include("dae_event.jl")
@@ -30,7 +30,7 @@ end
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
 # Allocation tests must run before JET because JET's static analysis
 # invalidates compiled code and causes spurious runtime allocations.
-if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
+if TEST_GROUP != "Core" && TEST_GROUP != "GPU" && isempty(VERSION.prerelease)
     @time @safetestset "Allocation Tests" include("allocation_tests.jl")
     @time @safetestset "JET Tests" include("jet.jl")
     @time @safetestset "Aqua" include("qa.jl")

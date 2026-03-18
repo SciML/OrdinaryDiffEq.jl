@@ -16,10 +16,12 @@ if TEST_GROUP == "GPU"
 end
 
 # Run QA tests (JET, Aqua)
-if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
+if TEST_GROUP != "Core" && TEST_GROUP != "GPU" && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
     @time @safetestset "Aqua" include("qa.jl")
 end
 
 # Functional tests
-@time @safetestset "Sparse isdiag Performance" include("sparse_isdiag_tests.jl")
+if TEST_GROUP != "QA" && TEST_GROUP != "GPU"
+    @time @safetestset "Sparse isdiag Performance" include("sparse_isdiag_tests.jl")
+end

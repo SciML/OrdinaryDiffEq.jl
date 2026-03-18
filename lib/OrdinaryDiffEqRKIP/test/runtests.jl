@@ -15,13 +15,13 @@ if TEST_GROUP == "GPU"
 end
 
 # Run functional tests
-if TEST_GROUP != "QA"
+if TEST_GROUP != "QA" && TEST_GROUP != "GPU"
     @safetestset "Type Safety Tests" include("type_test.jl")
     @safetestset "Cache Test" include("cache_recycling_test.jl")
     @safetestset "Fourier Semilinear PDE Tests" include("semilinear_pde_test_cpu.jl")
 end
 
 # Run QA tests (JET)
-if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
+if TEST_GROUP != "Core" && TEST_GROUP != "GPU" && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
 end
