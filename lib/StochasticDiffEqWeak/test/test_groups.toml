@@ -10,11 +10,8 @@ versions = ["1"]
 [WeakConvergence3]
 versions = ["1"]
 
-[WeakConvergence4]
-versions = ["1"]
-
-[WeakConvergence5]
-versions = ["1"]
+# WeakConvergence4 runs on buildkite (needs 360min timeout)
+# WeakConvergence5 runs on buildkite (needs exclusive runner)
 
 [WeakConvergence6]
 versions = ["1"]

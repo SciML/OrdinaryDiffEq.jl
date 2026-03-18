@@ -1,8 +1,7 @@
 [Core]
 versions = ["1.11", "1", "pre"]
 
-[SROCKC2WeakConvergence]
-versions = ["1"]
+# SROCKC2WeakConvergence runs on buildkite (needs exclusive runner, high memory)
 
 [QA]
 versions = ["1"]

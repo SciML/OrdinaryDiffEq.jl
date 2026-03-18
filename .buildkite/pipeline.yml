@@ -56,6 +56,45 @@ steps:
     timeout_in_minutes: 240
     if: build.message !~ /\[skip tests\]/
 
+  # StochasticDiffEq: heavy convergence tests (need self-hosted runners)
+  - label: "{{matrix}}"
+    matrix:
+        - "StochasticDiffEq_IIPWeakConvergence"
+        - "StochasticDiffEqWeak_WeakConvergence4"
+    env:
+      BUILDKITE_PLUGIN_JULIA_VERSION: "1"
+      GROUP: "{{matrix}}"
+    plugins:
+      - JuliaCI/julia#v1
+      - JuliaCI/julia-test#v1:
+          coverage: false
+    agents:
+      os: "linux"
+      queue: "juliaecosystem"
+      arch: "x86_64"
+    timeout_in_minutes: 360
+    if: build.message !~ /\[skip tests\]/
+
+  # StochasticDiffEq: convergence tests needing exclusive runner
+  - label: "{{matrix}}"
+    matrix:
+        - "StochasticDiffEqROCK_SROCKC2WeakConvergence"
+        - "StochasticDiffEqWeak_WeakConvergence5"
+    env:
+      BUILDKITE_PLUGIN_JULIA_VERSION: "1"
+      GROUP: "{{matrix}}"
+    plugins:
+      - JuliaCI/julia#v1
+      - JuliaCI/julia-test#v1:
+          coverage: false
+    agents:
+      os: "linux"
+      queue: "juliaecosystem"
+      arch: "x86_64"
+      exclusive: true
+    timeout_in_minutes: 240
+    if: build.message !~ /\[skip tests\]/
+
   # StochasticDiffEq: GPU weak adaptive tests
   - label: "SDE WeakAdaptiveGPU"
     plugins:
