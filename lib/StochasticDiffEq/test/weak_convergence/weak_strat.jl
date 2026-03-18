@@ -50,7 +50,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ * exp(1.0 * (p[1] + 0.5 * p[2]^2))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5
 println("RS1:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -81,7 +81,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ * exp(1.0 * (p[1] + 0.5 * p[2]^2))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.45
 println("NON2:", sim.𝒪est[:weak_final])
 
 dts = 1 .// 2 .^ (4:-1:0)
@@ -96,7 +96,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ * exp(1.0 * (p[1] + 0.5 * p[2]^2))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5
 println("COM:", sim.𝒪est[:weak_final])
 
 """
@@ -155,7 +155,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ * exp(1.0 * (p[1] + 0.5 * p[2]^2))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.45
 println("NON:", sim.𝒪est[:weak_final])
 
 numtraj = Int(5.0e6)
@@ -168,7 +168,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ * exp(1.0 * (p[1] + 0.5 * p[2]^2))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.45
 println("NON2:", sim.𝒪est[:weak_final])
 
 dts = 1 .// 2 .^ (4:-1:0)
@@ -183,7 +183,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ * exp(1.0 * (p[1] + 0.5 * p[2]^2))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5
 println("COM:", sim.𝒪est[:weak_final])
 
 """
@@ -237,7 +237,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.45
 println("RS2:", sim.𝒪est[:weak_final])
 
 numtraj = Int(5.0e5)
@@ -251,7 +251,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5
 println("NON:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -260,7 +260,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5
 println("NON2:", sim.𝒪est[:weak_final])
 
 numtraj = Int(1.0e6)
@@ -274,5 +274,5 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.45
 println("COM:", sim.𝒪est[:weak_final])

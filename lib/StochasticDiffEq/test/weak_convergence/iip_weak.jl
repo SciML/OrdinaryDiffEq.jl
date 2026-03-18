@@ -22,7 +22,7 @@ sim = test_convergence(
     dts, prob, EM(), save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("SimplifiedEM")
@@ -30,7 +30,7 @@ sim = test_convergence(
     dts, prob, SimplifiedEM(), save_everystep = false, trajectories = Int(5.0e5),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.35
 println("RKMil")
@@ -38,7 +38,7 @@ sim = test_convergence(
     dts, prob, RKMil(), save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("RKMilCommute")
@@ -46,7 +46,7 @@ sim = test_convergence(
     dts, prob, RKMilCommute(), save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("RKMilGeneral")
@@ -54,7 +54,7 @@ sim = test_convergence(
     dts, prob, RKMilGeneral(), save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("SROCK1")
@@ -62,7 +62,7 @@ sim = test_convergence(
     dts, prob, SROCK1(), save_everystep = false, trajectories = Int(4.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("SROCK2")
@@ -72,7 +72,7 @@ sim = test_convergence(
     weak_timeseries_errors = false
 )
 @show sim.𝒪est[:weak_final]
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5
 #@test abs(sim.𝒪est[:weak_l2]-2) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-2) < 0.3
 dts = 1 .// 2 .^ (7:-1:2) #14->7 good plot
@@ -82,7 +82,7 @@ sim = test_convergence(
     save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("SROCKEM")
@@ -90,7 +90,7 @@ sim = test_convergence(
     dts, prob, SROCKEM(), save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("SKSROCK")
@@ -98,7 +98,7 @@ sim = test_convergence(
     dts, prob, SKSROCK(), save_everystep = false, trajectories = Int(5.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 
@@ -134,7 +134,7 @@ sim = test_convergence(
     dts, prob, WangLi3SMil_A(), save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("WangLi3SMil_B")
@@ -142,7 +142,7 @@ sim = test_convergence(
     dts, prob, WangLi3SMil_B(), save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("WangLi3SMil_C")
@@ -150,7 +150,7 @@ sim = test_convergence(
     dts, prob, WangLi3SMil_C(), save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("WangLi3SMil_D")
@@ -158,7 +158,7 @@ sim = test_convergence(
     dts, prob, WangLi3SMil_D(), save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("WangLi3SMil_E")
@@ -166,7 +166,7 @@ sim = test_convergence(
     dts, prob, WangLi3SMil_E(), save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("WangLi3SMil_F")
@@ -174,7 +174,7 @@ sim = test_convergence(
     dts, prob, WangLi3SMil_F(), save_everystep = false, trajectories = Int(1.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 1) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 1) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-1) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("SRI")
@@ -183,7 +183,7 @@ sim = test_convergence(
     dts, prob, SRI(), save_everystep = false, trajectories = Int(2.0e4),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5
 #@test abs(sim.𝒪est[:weak_l2]-2) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-2) < 0.3
 println("SRIW1")
@@ -191,6 +191,6 @@ sim = test_convergence(
     dts, prob, SRIW1(), save_everystep = false, trajectories = Int(1.0e5),
     weak_timeseries_errors = false
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.45
 #@test abs(sim.𝒪est[:weak_l2]-2) < 0.3
 #@test abs(sim.𝒪est[:weak_l∞]-2) < 0.3

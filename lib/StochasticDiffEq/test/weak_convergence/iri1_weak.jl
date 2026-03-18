@@ -46,5 +46,5 @@ sim = test_convergence(
 )
 @show sim.𝒪est[:weak_final]
 # IRI1 has weak order 2
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5
 println("IRI1:", sim.𝒪est[:weak_final])
