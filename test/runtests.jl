@@ -11,12 +11,6 @@ function activate_downstream_env()
     return Pkg.instantiate()
 end
 
-function activate_gpu_env()
-    Pkg.activate("gpu")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
-end
-
 function activate_odeinterface_env()
     Pkg.activate("odeinterface")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
@@ -197,31 +191,6 @@ end
         activate_odeinterface_env()
         @time @safetestset "Init dt vs dorpri tests" include("odeinterface/init_dt_vs_dopri_tests.jl")
         @time @safetestset "ODEInterface Regression Tests" include("odeinterface/odeinterface_regression.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "Multithreading"
-        @time @safetestset "Extrapolation Tests" include("multithreading/ode_extrapolation_tests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "GPU"
-        activate_gpu_env()
-        @time @safetestset "Simple GPU" begin
-            import OrdinaryDiffEqCore
-            include(
-                joinpath(
-                    dirname(pathof(OrdinaryDiffEqCore.DiffEqBase)), "..",
-                    "test/gpu/simple_gpu.jl"
-                )
-            )
-        end
-        @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
-        @time @safetestset "Linear LSRK GPU" include("gpu/linear_lsrk.jl")
-        @time @safetestset "Linear Exponential GPU" include("gpu/linear_exp.jl")
-        @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
-        @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
-        @time @safetestset "RKIP Semilinear PDE GPU" include("gpu/rkip_semilinear_pde.jl")
-        @time @safetestset "simple dae on GPU" include("gpu/simple_dae.jl")
-        @time @safetestset "BDF solvers GPU" include("gpu/bdf_solvers.jl")
     end
 
     if !is_APPVEYOR && GROUP == "QA"

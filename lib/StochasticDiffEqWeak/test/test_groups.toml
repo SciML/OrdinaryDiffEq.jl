@@ -4,15 +4,36 @@ versions = ["1.11", "1", "pre"]
 [WeakConvergence1]
 versions = ["1"]
 
-# WeakConvergence2 (10M traj), 3 (10M traj), 6 (30M traj) run on buildkite
-# WeakConvergence4 (100M traj, 360min timeout) runs on buildkite
-# WeakConvergence5 (20M traj, exclusive runner) runs on buildkite
+[WeakConvergence2]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 240
 
 [W2Ito1WeakConvergence]
 versions = ["1"]
 
+[WeakConvergence3]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 240
+
 [SIESMEWeakConvergence]
 versions = ["1"]
+
+[WeakConvergence4]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 360
+
+[WeakConvergence5]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 240
+
+[WeakConvergence6]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 240
 
 [IRI1WeakConvergence]
 versions = ["1"]

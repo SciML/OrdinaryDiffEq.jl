@@ -14,7 +14,7 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      # JSON array of {group, version} objects for matrix include
+      # JSON array of {group, version, runner, timeout, num_threads} objects for matrix include
       matrix: ${{ steps.compute.outputs.matrix }}
       # Whether any sublibraries are affected
       has_changes: ${{ steps.compute.outputs.has_changes }}
@@ -54,7 +54,8 @@ jobs:
   test:
     needs: detect-changes
     if: needs.detect-changes.outputs.has_changes == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
       matrix:
@@ -64,22 +65,15 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-      - uses: actions/cache@v5
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-sublib-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-sublib-${{ env.cache-name }}-
-            ${{ runner.os }}-sublib-
-            ${{ runner.os }}-
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
           coverage: false
           check_bounds: auto
         env:
           GROUP: ${{ matrix.group }}
+          JULIA_NUM_THREADS: ${{ matrix.num_threads }}
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v5
         with:

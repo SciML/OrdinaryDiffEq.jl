@@ -18,16 +18,25 @@
 #
 #   [GPU]
 #   versions = ["1"]
+#   runner = ["self-hosted", "Linux", "X64", "gpu"]
+#
+# Optional fields per group:
+#   runner      — string or array of labels (default: "ubuntu-latest")
+#   timeout     — integer, job timeout in minutes (default: 120)
+#   num_threads — integer, JULIA_NUM_THREADS (default: 1)
 #
 # If no test/test_groups.toml exists, the default is:
 #   Core on ["lts", "1.11", "1", "pre"]
 #   QA on ["1"]
 #
+# Directly changed packages get their full version matrix.
+# Transitively affected packages (reverse deps) only run on version "1".
+#
 # Usage:
 #   git diff --name-only origin/master...HEAD | julia compute_affected_sublibraries.jl /path/to/repo
 #
-# Output: JSON array of {group, version} objects for GitHub Actions matrix include, e.g.
-#   [{"group":"OrdinaryDiffEqCore","version":"lts"},{"group":"OrdinaryDiffEqCore_QA","version":"1"},...]
+# Output: JSON array of {group, version, runner, timeout, num_threads} objects
+#   for GitHub Actions matrix include.
 
 using TOML
 
@@ -98,25 +107,46 @@ function compute_reverse_deps(graph::Dict{String, Vector{String}})
     return transitive
 end
 
+struct TestGroupConfig
+    versions::Vector{String}
+    runner::Any  # String or Vector{String}
+    timeout::Int
+    num_threads::Int
+end
+
 function load_test_groups(lib_dir::String, pkg::String)
     groups_file = joinpath(lib_dir, pkg, "test", "test_groups.toml")
     if isfile(groups_file)
         toml = TOML.parsefile(groups_file)
-        groups = Dict{String, Vector{String}}()
+        groups = Dict{String, TestGroupConfig}()
         for (name, config) in toml
-            groups[name] = convert(Vector{String}, config["versions"])
+            versions = convert(Vector{String}, config["versions"])
+            runner_raw = get(config, "runner", "ubuntu-latest")
+            runner = runner_raw isa Vector ? convert(Vector{String}, runner_raw) : runner_raw::String
+            timeout = Int(get(config, "timeout", 120))
+            num_threads = Int(get(config, "num_threads", 1))
+            groups[name] = TestGroupConfig(versions, runner, timeout, num_threads)
         end
         return groups
     end
-    return DEFAULT_TEST_GROUPS
+    return Dict{String, TestGroupConfig}(
+        k => TestGroupConfig(v, "ubuntu-latest", 120, 1) for (k, v) in DEFAULT_TEST_GROUPS
+    )
 end
 
+"""
+Return (directly_changed, transitively_affected) package sets.
+
+Directly changed packages get their full version matrix from test_groups.toml.
+Transitively affected packages (reverse deps) only run on version "1".
+"""
 function compute_affected(
         changed_files::Vector{String},
         graph::Dict{String, Vector{String}},
         reverse_deps::Dict{String, Set{String}}
     )
-    affected = Set{String}()
+    direct = Set{String}()
+    transitive = Set{String}()
     for filepath in changed_files
         filepath = strip(filepath)
         isempty(filepath) && continue
@@ -124,11 +154,18 @@ function compute_affected(
         parts = split(filepath, '/')
         if length(parts) >= 2 && parts[1] == "lib" && haskey(graph, String(parts[2]))
             pkg = String(parts[2])
-            push!(affected, pkg)
-            union!(affected, get(reverse_deps, pkg, Set{String}()))
+            push!(direct, pkg)
+            # Only propagate to reverse deps for src/ or Project.toml changes.
+            # Test-only changes don't affect dependents.
+            if length(parts) >= 3 &&
+                    (parts[3] == "src" || (parts[3] == "Project.toml" && length(parts) == 3))
+                union!(transitive, get(reverse_deps, pkg, Set{String}()))
+            end
         end
     end
-    return affected
+    # Packages that are both direct and transitive get the full matrix (direct wins).
+    setdiff!(transitive, direct)
+    return (direct, transitive)
 end
 
 # Entries to exclude from the matrix.
@@ -140,17 +177,29 @@ const EXCLUDES = Set(
     ]
 )
 
-function build_matrix(affected::Set{String}, lib_dir::String)
-    entries = Vector{@NamedTuple{group::String, version::String}}()
-    for pkg in sort!(collect(affected))
+const DOWNSTREAM_VERSION = "1"
+
+function build_matrix(
+        direct::Set{String}, transitive::Set{String}, lib_dir::String
+    )
+    entries = []
+    for pkg in sort!(collect(union(direct, transitive)))
         groups = load_test_groups(lib_dir, pkg)
-        for (group_name, versions) in sort(collect(groups))
-            # Core group uses the bare sublibrary name as GROUP
-            # All other groups append _GROUPNAME (e.g., OrdinaryDiffEqCore_QA)
+        is_downstream = pkg in transitive
+        for group_name in sort!(collect(keys(groups)))
+            config = groups[group_name]
             ci_group = group_name == "Core" ? pkg : "$(pkg)_$(group_name)"
+            # Downstream (transitive) deps only run on latest stable.
+            versions = is_downstream ? [DOWNSTREAM_VERSION] : config.versions
             for ver in versions
                 (ci_group, ver) in EXCLUDES && continue
-                push!(entries, (; group = ci_group, version = ver))
+                push!(
+                    entries,
+                    (;
+                        group = ci_group, version = ver, runner = config.runner,
+                        timeout = config.timeout, num_threads = config.num_threads,
+                    )
+                )
             end
         end
     end
@@ -158,11 +207,28 @@ function build_matrix(affected::Set{String}, lib_dir::String)
 end
 
 # Minimal JSON serialization (no external dependency needed)
+function json_value(v::String)
+    return print("\"", v, "\"")
+end
+function json_value(v::Vector)
+    print("[")
+    for (j, item) in enumerate(v)
+        j > 1 && print(",")
+        json_value(item)
+    end
+    return print("]")
+end
+function json_value(v::Int)
+    return print(v)
+end
+
 function print_json(entries)
     print("[")
     for (i, entry) in enumerate(entries)
         i > 1 && print(",")
-        print("{\"group\":\"", entry.group, "\",\"version\":\"", entry.version, "\"}")
+        print("{\"group\":\"", entry.group, "\",\"version\":\"", entry.version, "\",\"runner\":")
+        json_value(entry.runner)
+        print(",\"timeout\":", entry.timeout, ",\"num_threads\":", entry.num_threads, "}")
     end
     return println("]")
 end
@@ -185,9 +251,9 @@ function main()
     reverse_deps = compute_reverse_deps(graph)
 
     changed_files = split(read(stdin, String), '\n')
-    affected = compute_affected(collect(String, changed_files), graph, reverse_deps)
+    direct, transitive = compute_affected(collect(String, changed_files), graph, reverse_deps)
 
-    matrix = build_matrix(affected, lib_dir)
+    matrix = build_matrix(direct, transitive, lib_dir)
     return print_json(matrix)
 end
 
