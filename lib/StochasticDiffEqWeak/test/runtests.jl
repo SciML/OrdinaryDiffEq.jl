@@ -45,21 +45,27 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "WeakConvergence2"
     end
 end
 
-if TEST_GROUP == "ALL" || TEST_GROUP == "WeakConvergence3"
+if TEST_GROUP == "ALL" || TEST_GROUP == "W2Ito1WeakConvergence"
     @time @safetestset "Tang & Xiao weak SRK Tests" begin
         include("weak_convergence/W2Ito1.jl")
     end
+end
+
+if TEST_GROUP == "ALL" || TEST_GROUP == "WeakConvergence3"
     @time @safetestset "Roessler weak SRK (non-diagonal) Tests" begin
         include("weak_convergence/srk_weak_final_non_diagonal.jl")
+    end
+end
+
+if TEST_GROUP == "ALL" || TEST_GROUP == "SIESMEWeakConvergence"
+    @time @safetestset "SIE SME weak Tests" begin
+        include("weak_convergence/SIE_SME.jl")
     end
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "WeakConvergence4"
     @time @safetestset "Weak Stratonovich (non-diagonal) Tests" begin
         include("weak_convergence/weak_strat_non_diagonal.jl")
-    end
-    @time @safetestset "SIE SME weak Tests" begin
-        include("weak_convergence/SIE_SME.jl")
     end
 end
 

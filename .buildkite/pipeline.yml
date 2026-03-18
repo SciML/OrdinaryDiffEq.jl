@@ -56,11 +56,9 @@ steps:
     timeout_in_minutes: 240
     if: build.message !~ /\[skip tests\]/
 
-  # StochasticDiffEq: heavy convergence tests (need self-hosted runners)
+  # StochasticDiffEq: heavy weak convergence tests (1M-30M trajectories, need self-hosted runners)
   - label: "{{matrix}}"
     matrix:
-        - "StochasticDiffEq_IIPWeakConvergence"
-        - "StochasticDiffEq_OOPWeakConvergence"
         - "StochasticDiffEqWeak_WeakConvergence2"
         - "StochasticDiffEqWeak_WeakConvergence3"
         - "StochasticDiffEqWeak_WeakConvergence6"
