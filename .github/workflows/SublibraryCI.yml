@@ -77,6 +77,8 @@ jobs:
             ${{ runner.os }}-
       - name: Update package registry
         run: julia -e 'import Pkg; Pkg.Registry.update()'
+        env:
+          JULIA_PKG_SERVER: ""
       - uses: julia-actions/julia-runtest@v1
         with:
           coverage: false
