@@ -19,8 +19,26 @@ versions = ["1"]
 [WeakConvergence1]
 versions = ["1"]
 
-# OOPWeakConvergence runs on buildkite (max 1M traj, needs self-hosted runner)
-# IIPWeakConvergence runs on buildkite (max 500K traj, needs self-hosted runner)
+[OOPWeakConvergence]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 240
+
+[IIPWeakConvergence]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 240
+
+[Multithreaded]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64"]
+num_threads = 2
+timeout = 240
+
+[WeakAdaptiveGPU]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "gpu"]
+timeout = 240
 
 [Allocations]
 versions = ["1"]

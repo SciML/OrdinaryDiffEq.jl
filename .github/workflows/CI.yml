@@ -13,7 +13,8 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner || 'ubuntu-latest' }}
+    timeout-minutes: ${{ matrix.timeout || 120 }}
     continue-on-error: ${{ matrix.group == 'Downstream' }}
     strategy:
       fail-fast: false
@@ -32,7 +33,6 @@ jobs:
           - ModelingToolkit
           - Downstream
           - ODEInterfaceRegression
-          - Multithreading
           - QA
           - Regression_I
           - Regression_II
@@ -53,6 +53,17 @@ jobs:
             version: '1'
           - group: ODEInterfaceRegression
             version: 'pre'
+        include:
+          # GPU tests on self-hosted runners with GPU
+          - group: GPU
+            version: '1'
+            runner: ["self-hosted", "Linux", "X64", "gpu"]
+            timeout: 60
+          # Multithreading on self-hosted runners
+          - group: Multithreading
+            version: '1'
+            runner: ["self-hosted", "Linux", "X64"]
+            timeout: 240
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
@@ -74,6 +85,8 @@ jobs:
           check_bounds: auto
         env:
           GROUP: ${{ matrix.group }}
+          JULIA_NUM_THREADS: ${{ matrix.num_threads || 1 }}
+          JULIA_PKG_SERVER: ""
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v5
         with:

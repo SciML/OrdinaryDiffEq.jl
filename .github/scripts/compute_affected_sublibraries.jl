@@ -18,12 +18,12 @@
 #
 #   [GPU]
 #   versions = ["1"]
+#   runner = ["self-hosted", "Linux", "X64", "gpu"]
 #
-# Each group can also specify an optional `runner` key (defaults to "ubuntu-latest"):
-#
-#   [HeavyTest]
-#   versions = ["1"]
-#   runner = "ubuntu-latest-16-cores"
+# Optional fields per group:
+#   runner      — string or array of labels (default: "ubuntu-latest")
+#   timeout     — integer, job timeout in minutes (default: 120)
+#   num_threads — integer, JULIA_NUM_THREADS (default: 1)
 #
 # If no test/test_groups.toml exists, the default is:
 #   Core on ["lts", "1.11", "1", "pre"]
@@ -32,8 +32,8 @@
 # Usage:
 #   git diff --name-only origin/master...HEAD | julia compute_affected_sublibraries.jl /path/to/repo
 #
-# Output: JSON array of {group, version, runner} objects for GitHub Actions matrix include, e.g.
-#   [{"group":"OrdinaryDiffEqCore","version":"lts","runner":"ubuntu-latest"},...]
+# Output: JSON array of {group, version, runner, timeout, num_threads} objects
+#   for GitHub Actions matrix include.
 
 using TOML
 
@@ -106,7 +106,9 @@ end
 
 struct TestGroupConfig
     versions::Vector{String}
-    runner::String
+    runner::Any  # String or Vector{String}
+    timeout::Int
+    num_threads::Int
 end
 
 function load_test_groups(lib_dir::String, pkg::String)
@@ -116,13 +118,16 @@ function load_test_groups(lib_dir::String, pkg::String)
         groups = Dict{String, TestGroupConfig}()
         for (name, config) in toml
             versions = convert(Vector{String}, config["versions"])
-            runner = get(config, "runner", "ubuntu-latest")::String
-            groups[name] = TestGroupConfig(versions, runner)
+            runner_raw = get(config, "runner", "ubuntu-latest")
+            runner = runner_raw isa Vector ? convert(Vector{String}, runner_raw) : runner_raw::String
+            timeout = Int(get(config, "timeout", 120))
+            num_threads = Int(get(config, "num_threads", 1))
+            groups[name] = TestGroupConfig(versions, runner, timeout, num_threads)
         end
         return groups
     end
     return Dict{String, TestGroupConfig}(
-        k => TestGroupConfig(v, "ubuntu-latest") for (k, v) in DEFAULT_TEST_GROUPS
+        k => TestGroupConfig(v, "ubuntu-latest", 120, 1) for (k, v) in DEFAULT_TEST_GROUPS
     )
 end
 
@@ -156,17 +161,17 @@ const EXCLUDES = Set(
 )
 
 function build_matrix(affected::Set{String}, lib_dir::String)
-    entries = Vector{@NamedTuple{group::String, version::String, runner::String}}()
+    entries = []
     for pkg in sort!(collect(affected))
         groups = load_test_groups(lib_dir, pkg)
         for group_name in sort!(collect(keys(groups)))
             config = groups[group_name]
-            # Core group uses the bare sublibrary name as GROUP
-            # All other groups append _GROUPNAME (e.g., OrdinaryDiffEqCore_QA)
             ci_group = group_name == "Core" ? pkg : "$(pkg)_$(group_name)"
             for ver in config.versions
                 (ci_group, ver) in EXCLUDES && continue
-                push!(entries, (; group = ci_group, version = ver, runner = config.runner))
+                push!(entries,
+                    (; group = ci_group, version = ver, runner = config.runner,
+                        timeout = config.timeout, num_threads = config.num_threads))
             end
         end
     end
@@ -174,11 +179,28 @@ function build_matrix(affected::Set{String}, lib_dir::String)
 end
 
 # Minimal JSON serialization (no external dependency needed)
+function json_value(v::String)
+    print("\"", v, "\"")
+end
+function json_value(v::Vector)
+    print("[")
+    for (j, item) in enumerate(v)
+        j > 1 && print(",")
+        json_value(item)
+    end
+    print("]")
+end
+function json_value(v::Int)
+    print(v)
+end
+
 function print_json(entries)
     print("[")
     for (i, entry) in enumerate(entries)
         i > 1 && print(",")
-        print("{\"group\":\"", entry.group, "\",\"version\":\"", entry.version, "\",\"runner\":\"", entry.runner, "\"}")
+        print("{\"group\":\"", entry.group, "\",\"version\":\"", entry.version, "\",\"runner\":")
+        json_value(entry.runner)
+        print(",\"timeout\":", entry.timeout, ",\"num_threads\":", entry.num_threads, "}")
     end
     return println("]")
 end

@@ -14,7 +14,7 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      # JSON array of {group, version, runner} objects for matrix include
+      # JSON array of {group, version, runner, timeout, num_threads} objects for matrix include
       matrix: ${{ steps.compute.outputs.matrix }}
       # Whether any sublibraries are affected
       has_changes: ${{ steps.compute.outputs.has_changes }}
@@ -54,7 +54,8 @@ jobs:
   test:
     needs: detect-changes
     if: needs.detect-changes.outputs.has_changes == 'true'
-    runs-on: ${{ matrix.runner || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
       matrix:
@@ -80,6 +81,8 @@ jobs:
           check_bounds: auto
         env:
           GROUP: ${{ matrix.group }}
+          JULIA_NUM_THREADS: ${{ matrix.num_threads }}
+          JULIA_PKG_SERVER: ""
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v5
         with:
