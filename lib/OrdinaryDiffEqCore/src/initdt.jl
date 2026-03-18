@@ -264,6 +264,11 @@
         # and order-dependent refinement: h ~ (2/yddnrm)^(1/(p+1))
         # =================================================================
 
+        # auto_dt_reset! adds 2 to stats.nf (for H-W's f₀+f₁), but CVHin
+        # only shares f₀ with that assumption. Compensate by subtracting 1;
+        # iteration f calls are tracked individually inside the loop.
+        integrator.stats.nf -= 1
+
         # NaN check via d₁ = norm(f₀/sk)
         if u0 isa Array
             @inbounds @simd ivdep for i in eachindex(u0)
@@ -302,13 +307,10 @@
                 end
             end
         else
-            u0_norms = internalnorm.(u0, t)
-            f₀_norms = internalnorm.(f₀, t)
-            tols = @.. broadcast = false reltol * u0_norms + abstol
-            denoms = @.. broadcast = false convert(_tType, 0.1) * u0_norms + tols
-            numers = @.. broadcast = false f₀_norms * oneunit_tType
-            hub_inv_vals = ifelse.(denoms .> 0, numers ./ denoms, zero(_tType))
-            hub_inv = maximum(hub_inv_vals)
+            # GPU-compatible: use abs/max broadcasts instead of scalar indexing
+            denoms = @.. broadcast = false convert(_tType, 0.1) * abs(u0) + sk
+            numers = @.. broadcast = false abs(f₀) * oneunit_tType
+            hub_inv = maximum(numers ./ max.(denoms, eps(eltype(denoms))))
         end
 
         hub = convert(_tType, 0.1) * tdist
@@ -342,6 +344,7 @@
                     @.. broadcast = false u₁ = u0 + hgs * f₀
                 end
                 f(f₁, u₁, p, t + convert(_tType, hgs))
+                integrator.stats.nf += 1
 
                 if prob.f.mass_matrix != I && ftmp !== nothing && (
                         !(prob.f isa DynamicalODEFunction) ||
@@ -562,6 +565,11 @@ end
         # Based on SUNDIALS CVODE's CVHin algorithm (Hindmarsh et al., 2005)
         # =================================================================
 
+        # auto_dt_reset! adds 2 to stats.nf (for H-W's f₀+f₁), but CVHin
+        # only shares f₀ with that assumption. Compensate by subtracting 1;
+        # iteration f calls are tracked individually inside the loop.
+        integrator.stats.nf -= 1
+
         # NaN check via d₁ = norm(f₀/sk)
         d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
         if isnan(d₁)
@@ -579,13 +587,9 @@ end
         hlb = convert(_tType, 100 * eps_tType * oneunit_tType)
 
         # Upper bound: most restrictive component of |f₀| / (0.1*|u0| + tol)
-        u0_norms = internalnorm.(u0, t)
-        f₀_norms = internalnorm.(f₀, t)
-        tols = @.. broadcast = false reltol * u0_norms + abstol
-        denoms = @.. broadcast = false convert(_tType, 0.1) * u0_norms + tols
-        numers = @.. broadcast = false f₀_norms * oneunit_tType
-        hub_inv_vals = ifelse.(denoms .> 0, numers ./ denoms, zero(_tType))
-        hub_inv = maximum(hub_inv_vals)
+        denoms = @.. broadcast = false convert(_tType, 0.1) * abs(u0) + sk
+        numers = @.. broadcast = false abs(f₀) * oneunit_tType
+        hub_inv = maximum(numers ./ max.(denoms, eps(eltype(denoms))))
 
         hub = convert(_tType, 0.1) * tdist
         if hub * hub_inv > 1
@@ -610,6 +614,7 @@ end
                 hgs = hg * tdir
                 u₁ = @.. broadcast = false u0 + hgs * f₀
                 f₁ = f(u₁, p, t + convert(_tType, hgs))
+                integrator.stats.nf += 1
 
                 if !any(x -> any(!isfinite, x), f₁)
                     hg_ok = true
