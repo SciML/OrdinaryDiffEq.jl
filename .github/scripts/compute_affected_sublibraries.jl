@@ -29,6 +29,9 @@
 #   Core on ["lts", "1.11", "1", "pre"]
 #   QA on ["1"]
 #
+# Directly changed packages get their full version matrix.
+# Transitively affected packages (reverse deps) only run on version "1".
+#
 # Usage:
 #   git diff --name-only origin/master...HEAD | julia compute_affected_sublibraries.jl /path/to/repo
 #
@@ -131,12 +134,19 @@ function load_test_groups(lib_dir::String, pkg::String)
     )
 end
 
+"""
+Return (directly_changed, transitively_affected) package sets.
+
+Directly changed packages get their full version matrix from test_groups.toml.
+Transitively affected packages (reverse deps) only run on version "1".
+"""
 function compute_affected(
         changed_files::Vector{String},
         graph::Dict{String, Vector{String}},
         reverse_deps::Dict{String, Set{String}}
     )
-    affected = Set{String}()
+    direct = Set{String}()
+    transitive = Set{String}()
     for filepath in changed_files
         filepath = strip(filepath)
         isempty(filepath) && continue
@@ -144,16 +154,18 @@ function compute_affected(
         parts = split(filepath, '/')
         if length(parts) >= 2 && parts[1] == "lib" && haskey(graph, String(parts[2]))
             pkg = String(parts[2])
-            push!(affected, pkg)
+            push!(direct, pkg)
             # Only propagate to reverse deps for src/ or Project.toml changes.
             # Test-only changes don't affect dependents.
             if length(parts) >= 3 &&
                     (parts[3] == "src" || (parts[3] == "Project.toml" && length(parts) == 3))
-                union!(affected, get(reverse_deps, pkg, Set{String}()))
+                union!(transitive, get(reverse_deps, pkg, Set{String}()))
             end
         end
     end
-    return affected
+    # Packages that are both direct and transitive get the full matrix (direct wins).
+    setdiff!(transitive, direct)
+    return (direct, transitive)
 end
 
 # Entries to exclude from the matrix.
@@ -165,14 +177,21 @@ const EXCLUDES = Set(
     ]
 )
 
-function build_matrix(affected::Set{String}, lib_dir::String)
+const DOWNSTREAM_VERSION = "1"
+
+function build_matrix(
+        direct::Set{String}, transitive::Set{String}, lib_dir::String
+    )
     entries = []
-    for pkg in sort!(collect(affected))
+    for pkg in sort!(collect(union(direct, transitive)))
         groups = load_test_groups(lib_dir, pkg)
+        is_downstream = pkg in transitive
         for group_name in sort!(collect(keys(groups)))
             config = groups[group_name]
             ci_group = group_name == "Core" ? pkg : "$(pkg)_$(group_name)"
-            for ver in config.versions
+            # Downstream (transitive) deps only run on latest stable.
+            versions = is_downstream ? [DOWNSTREAM_VERSION] : config.versions
+            for ver in versions
                 (ci_group, ver) in EXCLUDES && continue
                 push!(
                     entries,
@@ -232,9 +251,9 @@ function main()
     reverse_deps = compute_reverse_deps(graph)
 
     changed_files = split(read(stdin, String), '\n')
-    affected = compute_affected(collect(String, changed_files), graph, reverse_deps)
+    direct, transitive = compute_affected(collect(String, changed_files), graph, reverse_deps)
 
-    matrix = build_matrix(affected, lib_dir)
+    matrix = build_matrix(direct, transitive, lib_dir)
     return print_json(matrix)
 end
 
