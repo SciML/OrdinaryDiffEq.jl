@@ -145,7 +145,12 @@ function compute_affected(
         if length(parts) >= 2 && parts[1] == "lib" && haskey(graph, String(parts[2]))
             pkg = String(parts[2])
             push!(affected, pkg)
-            union!(affected, get(reverse_deps, pkg, Set{String}()))
+            # Only propagate to reverse deps for src/ or Project.toml changes.
+            # Test-only changes don't affect dependents.
+            if length(parts) >= 3 &&
+                    (parts[3] == "src" || (parts[3] == "Project.toml" && length(parts) == 3))
+                union!(affected, get(reverse_deps, pkg, Set{String}()))
+            end
         end
     end
     return affected
@@ -169,9 +174,13 @@ function build_matrix(affected::Set{String}, lib_dir::String)
             ci_group = group_name == "Core" ? pkg : "$(pkg)_$(group_name)"
             for ver in config.versions
                 (ci_group, ver) in EXCLUDES && continue
-                push!(entries,
-                    (; group = ci_group, version = ver, runner = config.runner,
-                        timeout = config.timeout, num_threads = config.num_threads))
+                push!(
+                    entries,
+                    (;
+                        group = ci_group, version = ver, runner = config.runner,
+                        timeout = config.timeout, num_threads = config.num_threads,
+                    )
+                )
             end
         end
     end
@@ -180,7 +189,7 @@ end
 
 # Minimal JSON serialization (no external dependency needed)
 function json_value(v::String)
-    print("\"", v, "\"")
+    return print("\"", v, "\"")
 end
 function json_value(v::Vector)
     print("[")
@@ -188,10 +197,10 @@ function json_value(v::Vector)
         j > 1 && print(",")
         json_value(item)
     end
-    print("]")
+    return print("]")
 end
 function json_value(v::Int)
-    print(v)
+    return print(v)
 end
 
 function print_json(entries)
