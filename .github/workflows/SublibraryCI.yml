@@ -14,7 +14,7 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      # JSON array of {group, version} objects for matrix include
+      # JSON array of {group, version, runner} objects for matrix include
       matrix: ${{ steps.compute.outputs.matrix }}
       # Whether any sublibraries are affected
       has_changes: ${{ steps.compute.outputs.has_changes }}
@@ -54,7 +54,7 @@ jobs:
   test:
     needs: detect-changes
     if: needs.detect-changes.outputs.has_changes == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:

@@ -19,6 +19,12 @@
 #   [GPU]
 #   versions = ["1"]
 #
+# Each group can also specify an optional `runner` key (defaults to "ubuntu-latest"):
+#
+#   [HeavyTest]
+#   versions = ["1"]
+#   runner = "ubuntu-latest-16-cores"
+#
 # If no test/test_groups.toml exists, the default is:
 #   Core on ["lts", "1.11", "1", "pre"]
 #   QA on ["1"]
@@ -26,8 +32,8 @@
 # Usage:
 #   git diff --name-only origin/master...HEAD | julia compute_affected_sublibraries.jl /path/to/repo
 #
-# Output: JSON array of {group, version} objects for GitHub Actions matrix include, e.g.
-#   [{"group":"OrdinaryDiffEqCore","version":"lts"},{"group":"OrdinaryDiffEqCore_QA","version":"1"},...]
+# Output: JSON array of {group, version, runner} objects for GitHub Actions matrix include, e.g.
+#   [{"group":"OrdinaryDiffEqCore","version":"lts","runner":"ubuntu-latest"},...]
 
 using TOML
 
@@ -98,17 +104,26 @@ function compute_reverse_deps(graph::Dict{String, Vector{String}})
     return transitive
 end
 
+struct TestGroupConfig
+    versions::Vector{String}
+    runner::String
+end
+
 function load_test_groups(lib_dir::String, pkg::String)
     groups_file = joinpath(lib_dir, pkg, "test", "test_groups.toml")
     if isfile(groups_file)
         toml = TOML.parsefile(groups_file)
-        groups = Dict{String, Vector{String}}()
+        groups = Dict{String, TestGroupConfig}()
         for (name, config) in toml
-            groups[name] = convert(Vector{String}, config["versions"])
+            versions = convert(Vector{String}, config["versions"])
+            runner = get(config, "runner", "ubuntu-latest")::String
+            groups[name] = TestGroupConfig(versions, runner)
         end
         return groups
     end
-    return DEFAULT_TEST_GROUPS
+    return Dict{String, TestGroupConfig}(
+        k => TestGroupConfig(v, "ubuntu-latest") for (k, v) in DEFAULT_TEST_GROUPS
+    )
 end
 
 function compute_affected(
@@ -141,16 +156,17 @@ const EXCLUDES = Set(
 )
 
 function build_matrix(affected::Set{String}, lib_dir::String)
-    entries = Vector{@NamedTuple{group::String, version::String}}()
+    entries = Vector{@NamedTuple{group::String, version::String, runner::String}}()
     for pkg in sort!(collect(affected))
         groups = load_test_groups(lib_dir, pkg)
-        for (group_name, versions) in sort(collect(groups))
+        for group_name in sort!(collect(keys(groups)))
+            config = groups[group_name]
             # Core group uses the bare sublibrary name as GROUP
             # All other groups append _GROUPNAME (e.g., OrdinaryDiffEqCore_QA)
             ci_group = group_name == "Core" ? pkg : "$(pkg)_$(group_name)"
-            for ver in versions
+            for ver in config.versions
                 (ci_group, ver) in EXCLUDES && continue
-                push!(entries, (; group = ci_group, version = ver))
+                push!(entries, (; group = ci_group, version = ver, runner = config.runner))
             end
         end
     end
@@ -162,7 +178,7 @@ function print_json(entries)
     print("[")
     for (i, entry) in enumerate(entries)
         i > 1 && print(",")
-        print("{\"group\":\"", entry.group, "\",\"version\":\"", entry.version, "\"}")
+        print("{\"group\":\"", entry.group, "\",\"version\":\"", entry.version, "\",\"runner\":\"", entry.runner, "\"}")
     end
     return println("]")
 end
