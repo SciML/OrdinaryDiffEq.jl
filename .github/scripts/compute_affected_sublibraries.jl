@@ -84,6 +84,7 @@ function compute_reverse_deps(graph::Dict{String, Vector{String}})
         for rdep in get(rev, pkg, Set{String}())
             get_all_rdeps!(visited, rdep)
         end
+        return
     end
 
     transitive = Dict{String, Set{String}}()
@@ -110,9 +111,11 @@ function load_test_groups(lib_dir::String, pkg::String)
     return DEFAULT_TEST_GROUPS
 end
 
-function compute_affected(changed_files::Vector{String},
-                          graph::Dict{String, Vector{String}},
-                          reverse_deps::Dict{String, Set{String}})
+function compute_affected(
+        changed_files::Vector{String},
+        graph::Dict{String, Vector{String}},
+        reverse_deps::Dict{String, Set{String}}
+    )
     affected = Set{String}()
     for filepath in changed_files
         filepath = strip(filepath)
@@ -131,9 +134,11 @@ end
 # Entries to exclude from the matrix.
 # Each entry is (group, version) where group is the CI GROUP string.
 # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2977
-const EXCLUDES = Set([
-    ("OrdinaryDiffEqBDF", "pre"),  # JET resolution fails on pre-release Julia
-])
+const EXCLUDES = Set(
+    [
+        ("OrdinaryDiffEqBDF", "pre"),  # JET resolution fails on pre-release Julia
+    ]
+)
 
 function build_matrix(affected::Set{String}, lib_dir::String)
     entries = Vector{@NamedTuple{group::String, version::String}}()
@@ -159,7 +164,7 @@ function print_json(entries)
         i > 1 && print(",")
         print("{\"group\":\"", entry.group, "\",\"version\":\"", entry.version, "\"}")
     end
-    println("]")
+    return println("]")
 end
 
 function main()
@@ -183,7 +188,7 @@ function main()
     affected = compute_affected(collect(String, changed_files), graph, reverse_deps)
 
     matrix = build_matrix(affected, lib_dir)
-    print_json(matrix)
+    return print_json(matrix)
 end
 
 main()
