@@ -312,7 +312,8 @@
             end
         else
             # GPU-compatible: use abs/max broadcasts instead of scalar indexing
-            denoms = @.. broadcast = false convert(_fType, 0.1) * abs(u0) + sk
+            # abs.(sk) handles ComplexF64 caches (sk can be complex when u0 is complex)
+            denoms = @.. broadcast = false convert(_fType, 0.1) * abs(u0) + abs(sk)
             nums = @.. broadcast = false abs(f₀) * oneunit_tType
             hub_inv = maximum(nums ./ max.(denoms, eps(_fType) .* oneunit.(denoms)))
         end
@@ -596,7 +597,8 @@ end
         hlb = 100 * eps(_fType) * oneunit_tType
 
         # Upper bound: most restrictive component of |f₀| / (0.1*|u0| + tol)
-        denoms = @.. broadcast = false convert(_fType, 0.1) * abs(u0) + sk
+        # abs.(sk) handles ComplexF64 caches (sk can be complex when u0 is complex)
+        denoms = @.. broadcast = false convert(_fType, 0.1) * abs(u0) + abs(sk)
         nums = @.. broadcast = false abs(f₀) * oneunit_tType
         hub_inv = DiffEqBase.value(maximum(nums ./ max.(denoms, eps(_fType) .* oneunit.(denoms))))
 
