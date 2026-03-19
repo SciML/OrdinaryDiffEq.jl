@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, LinearAlgebra
+using OrdinaryDiffEqLowOrderRK, Test, LinearAlgebra
 
 @testset "MREEF" begin
     @testset "Construction" begin
@@ -8,13 +8,14 @@ using OrdinaryDiffEq, Test, LinearAlgebra
 
     @testset "Scalar out-of-place" begin
         prob = SplitODEProblem(
-            (u, p, t) -> -0.1 * u, (u, p, t) -> -0.9 * u, 1.0, (0.0, 1.0))
+            (u, p, t) -> -0.1 * u, (u, p, t) -> -0.9 * u, 1.0, (0.0, 1.0)
+        )
 
         sol = solve(prob, MREEF(m = 10, order = 4), dt = 0.1, adaptive = false)
-        @test abs(sol.u[end] - exp(-1.0)) < 1e-6
+        @test abs(sol.u[end] - exp(-1.0)) < 1.0e-6
 
-        sol_a = solve(prob, MREEF(m = 10, order = 4), reltol = 1e-8, abstol = 1e-8)
-        @test abs(sol_a.u[end] - exp(-1.0)) < 1e-6
+        sol_a = solve(prob, MREEF(m = 10, order = 4), reltol = 1.0e-8, abstol = 1.0e-8)
+        @test abs(sol_a.u[end] - exp(-1.0)) < 1.0e-6
     end
 
     @testset "Vector in-place" begin
@@ -24,10 +25,10 @@ using OrdinaryDiffEq, Test, LinearAlgebra
         prob = SplitODEProblem(f1!, f2!, u0, (0.0, 1.0))
 
         sol = solve(prob, MREEF(m = 10, order = 4), dt = 0.1, adaptive = false)
-        @test norm(sol.u[end] - u0 .* exp(-1.0)) < 1e-6
+        @test norm(sol.u[end] - u0 .* exp(-1.0)) < 1.0e-6
 
-        sol_a = solve(prob, MREEF(m = 10, order = 4), reltol = 1e-8, abstol = 1e-8)
-        @test norm(sol_a.u[end] - u0 .* exp(-1.0)) < 1e-6
+        sol_a = solve(prob, MREEF(m = 10, order = 4), reltol = 1.0e-8, abstol = 1.0e-8)
+        @test norm(sol_a.u[end] - u0 .* exp(-1.0)) < 1.0e-6
     end
 
     @testset "Order convergence (harmonic)" begin
@@ -39,11 +40,15 @@ using OrdinaryDiffEq, Test, LinearAlgebra
 
         for target_order in [2, 3, 4]
             alg = MREEF(m = 10, order = target_order)
-            errs = [begin
-                sol = solve(SplitODEProblem(f1!, f2!, u0, (0.0, 1.0)),
-                    alg, dt = d, adaptive = false)
-                norm(sol.u[end] - exact)
-            end for d in dts]
+            errs = [
+                begin
+                    sol = solve(
+                        SplitODEProblem(f1!, f2!, u0, (0.0, 1.0)),
+                        alg, dt = d, adaptive = false
+                    )
+                    norm(sol.u[end] - exact)
+                end for d in dts
+            ]
 
             ratios = [errs[i] / errs[i + 1] for i in 1:3]
             expected = 2.0^target_order
@@ -62,11 +67,15 @@ using OrdinaryDiffEq, Test, LinearAlgebra
 
         for target_order in [2, 3]
             alg = MREEF(m = 10, order = target_order, seq = :romberg)
-            errs = [begin
-                sol = solve(SplitODEProblem(f1!, f2!, u0, (0.0, 1.0)),
-                    alg, dt = d, adaptive = false)
-                norm(sol.u[end] - exact)
-            end for d in dts]
+            errs = [
+                begin
+                    sol = solve(
+                        SplitODEProblem(f1!, f2!, u0, (0.0, 1.0)),
+                        alg, dt = d, adaptive = false
+                    )
+                    norm(sol.u[end] - exact)
+                end for d in dts
+            ]
 
             ratios = [errs[i] / errs[i + 1] for i in 1:3]
             expected = 2.0^target_order
@@ -86,13 +95,13 @@ using OrdinaryDiffEq, Test, LinearAlgebra
             du[2] = 20.0 * (2.0 * u[1] - u[1]^2 * u[2])
         end
         prob = SplitODEProblem(fs!, ff!, [1.5, 3.0], (0.0, 0.5))
-        ref = solve(prob, SplitEuler(), dt = 1e-6, adaptive = false)
+        ref = solve(prob, SplitEuler(), dt = 1.0e-6, adaptive = false)
 
         sol = solve(prob, MREEF(m = 20, order = 4), dt = 0.01, adaptive = false)
-        @test norm(sol.u[end] - ref.u[end]) < 1e-3
+        @test norm(sol.u[end] - ref.u[end]) < 1.0e-3
 
-        sol_a = solve(prob, MREEF(m = 20, order = 4), reltol = 1e-6, abstol = 1e-6)
-        @test norm(sol_a.u[end] - ref.u[end]) < 1e-3
+        sol_a = solve(prob, MREEF(m = 20, order = 4), reltol = 1.0e-6, abstol = 1.0e-6)
+        @test norm(sol_a.u[end] - ref.u[end]) < 1.0e-3
     end
 
     @testset "Stats tracking" begin
@@ -110,9 +119,10 @@ using OrdinaryDiffEq, Test, LinearAlgebra
         prob = SplitODEProblem(
             (u, p, t) -> -0.1im .* u,
             (u, p, t) -> -0.9im .* u,
-            [1.0 + 0.0im], (0.0, 1.0))
+            [1.0 + 0.0im], (0.0, 1.0)
+        )
         sol = solve(prob, MREEF(m = 10, order = 4), dt = 0.1, adaptive = false)
-        @test abs(sol.u[end][1] - exp(-1.0im)) < 1e-6
+        @test abs(sol.u[end][1] - exp(-1.0im)) < 1.0e-6
     end
 
     @testset "SplitFunction wrapper" begin
@@ -121,6 +131,6 @@ using OrdinaryDiffEq, Test, LinearAlgebra
         ff = SplitFunction(f1!, f2!)
         prob = ODEProblem(ff, [1.0, 2.0], (0.0, 1.0))
         sol = solve(prob, MREEF(m = 10, order = 4), dt = 0.1, adaptive = false)
-        @test norm(sol.u[end] - [1.0, 2.0] .* exp(-1.0)) < 1e-6
+        @test norm(sol.u[end] - [1.0, 2.0] .* exp(-1.0)) < 1.0e-6
     end
 end
