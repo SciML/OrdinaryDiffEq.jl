@@ -407,4 +407,17 @@ proboop = ODEProblem(f, x0, tspan)
     adalg = AutoForwardDiff(chunksize = 2)
     sol = solve(prob, Rodas5P(autodiff = adalg), initializealg = BrownFullBasicInit())
     @test sol.retcode == SciMLBase.ReturnCode.InitialFailure # previously, errored instead
+
+    # Have more parameters than there are algebraic unknowns: parameters should not be 
+    # considered in the chunksize for initialization.
+    function dae_p(du, u, p, t)
+        du[1] = u[2]*p[1]
+        du[2] = exp(u[1]*p[2]) + exp(u[2]*p[3]) # deliberately not satisfiable
+        return nothing
+    end
+    dae_p_f = ODEFunction(dae_p, mass_matrix = Diagonal([1.0, 0.0]))
+    prob = ODEProblem(dae_p_f, [0.0, 1.0], (0.0, 1.0), (1.0, 1.0, 1.0))
+    adalg = AutoForwardDiff(chunksize = 2)
+    sol = solve(prob, Rodas5P(autodiff = adalg), initializealg = BrownFullBasicInit())
+    @test sol.retcode == SciMLBase.ReturnCode.InitialFailure # previously, errored instead
 end
