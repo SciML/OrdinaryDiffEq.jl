@@ -123,7 +123,7 @@ end
             get_du(integrator)
         catch e
             dae_errored[] = isa(e, ErrorException) &&
-                            contains(e.msg, "DAE problems")
+                contains(e.msg, "DAE problems")
         end
     end
     cb_dae = DiscreteCallback(
