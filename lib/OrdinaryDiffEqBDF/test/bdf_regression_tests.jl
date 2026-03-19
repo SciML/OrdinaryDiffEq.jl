@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, ForwardDiff, Test
+using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test
 
 foop = (u, p, t) -> u * p
 proboop = ODEProblem(foop, ones(2), (0.0, 1000.0), 1.0)
@@ -65,6 +65,62 @@ end
         )
         @test sol.t[end] > 0
     end
+end
+
+@testset "get_du during init callback (issue #3117)" begin
+    # get_du must not crash when called before the first step, e.g. from a
+    # callback that fires during init. Before the fix, k was empty at that
+    # point and the stiff interpolation threw a BoundsError.
+    f_ode!(du, u, p, t) = (du[1] = -u[1])
+    prob_ode = ODEProblem(f_ode!, [1.0], (0.0, 1.0))
+
+    du_at_init = Ref{Vector{Float64}}()
+    function init_cb(c, u, t, integrator)
+        du_at_init[] = get_du(integrator)
+    end
+    cb = DiscreteCallback((u, t, integrator) -> false, identity;
+        initialize = init_cb)
+
+    for alg in (QNDF(), FBDF())
+        du_at_init[] = Float64[]
+        integrator = init(prob_ode, alg; callback = cb, save_everystep = false)
+        @test du_at_init[][1] ≈ -1.0
+        solve!(integrator)
+    end
+
+    # Also test get_du! (in-place variant)
+    du_buf = [0.0]
+    function init_cb_ip(c, u, t, integrator)
+        get_du!(du_buf, integrator)
+    end
+    cb_ip = DiscreteCallback((u, t, integrator) -> false, identity;
+        initialize = init_cb_ip)
+
+    for alg in (QNDF(), FBDF())
+        du_buf[1] = 0.0
+        integrator = init(prob_ode, alg; callback = cb_ip, save_everystep = false)
+        @test du_buf[1] ≈ -1.0
+        solve!(integrator)
+    end
+
+    # DFBDF (DAE) should return the initial du
+    function dae_f!(resid, du, u, p, t)
+        resid[1] = du[1] + u[1]
+    end
+    dae_prob = DAEProblem(dae_f!, [-1.0], [1.0], (0.0, 1.0);
+        differential_vars = [true])
+
+    du_at_init_dae = Ref{Vector{Float64}}()
+    function init_cb_dae(c, u, t, integrator)
+        du_at_init_dae[] = get_du(integrator)
+    end
+    cb_dae = DiscreteCallback((u, t, integrator) -> false, identity;
+        initialize = init_cb_dae)
+
+    du_at_init_dae[] = Float64[]
+    integrator = init(dae_prob, DFBDF(); callback = cb_dae, save_everystep = false)
+    @test du_at_init_dae[][1] ≈ -1.0
+    solve!(integrator)
 end
 
 if VERSION >= v"1.12"
