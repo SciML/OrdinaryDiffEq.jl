@@ -619,6 +619,8 @@ function _initialize_dae!(
         uu = isAD ? get_tmp(_tmp, T) : _tmp
         du_tmp = isAD ? get_tmp(_du_tmp, T) : _du_tmp
         copyto!(uu, _u)
+        alg_uu = @view uu[algebraic_vars]
+        alg_uu .= x
         f(du_tmp, uu, p, t)
         out .= @view du_tmp[algebraic_eqs]
         return nothing
@@ -687,6 +689,8 @@ function _initialize_dae!(
     nlequation = @closure (x, _) -> begin
         uu = isAD ? get_tmp(_tmp, x) : _tmp
         copyto!(uu, integrator.u)
+        alg_uu = @view uu[algebraic_vars]
+        alg_uu .= x
         du = f(uu, p, t)
         du[algebraic_eqs]
     end
