@@ -623,7 +623,6 @@ function _initialize_dae!(
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
-    csize != count(algebraic_vars) && @info "odd" u _u csize count(algebraic_vars) length(p)
 
     nlsol = solve(
         nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol,
