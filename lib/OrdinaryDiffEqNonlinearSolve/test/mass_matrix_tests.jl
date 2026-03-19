@@ -393,18 +393,18 @@ proboop = ODEProblem(f, x0, tspan)
         du[2] = exp(u[1]) + exp(u[2]) # deliberately not satisfiable
         return nothing
     end
-    dae_func = ODEFunction(dae, mass_matrix=Diagonal([1.0, 0.0]))
+    dae_func = ODEFunction(dae, mass_matrix = Diagonal([1.0, 0.0]))
     prob = ODEProblem(dae_func, [0.0, 1.0], (0.0, 1.0))
-    adalg = AutoForwardDiff(chunksize=2)
+    adalg = AutoForwardDiff(chunksize = 2)
     sol = solve(prob, Rodas5P(autodiff = adalg), initializealg = BrownFullBasicInit())
     @test sol.retcode == SciMLBase.ReturnCode.InitialFailure # previously, errored instead
 
     function dae_oop(u, p, t)
         return [u[2], exp(u[1]) + exp(u[2])]
     end
-    dae_f_oop = ODEFunction(dae_oop, mass_matrix=Diagonal([1.0, 0.0]))
+    dae_f_oop = ODEFunction(dae_oop, mass_matrix = Diagonal([1.0, 0.0]))
     prob = ODEProblem(dae_f_oop, [0.0, 1.0], (0.0, 1.0))
-    adalg = AutoForwardDiff(chunksize=2)
+    adalg = AutoForwardDiff(chunksize = 2)
     sol = solve(prob, Rodas5P(autodiff = adalg), initializealg = BrownFullBasicInit())
     @test sol.retcode == SciMLBase.ReturnCode.InitialFailure # previously, errored instead
 end
