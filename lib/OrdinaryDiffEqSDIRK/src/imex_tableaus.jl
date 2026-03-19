@@ -137,8 +137,10 @@ function KenCarp3IMEXTableau(T, T2)
     α_mat[4, 1] = α41
     α_mat[4, 2] = α42
 
-    return IMEXTableau(Ai, bi_vec, Ae, be_vec, c_vec,
-        btilde_vec, ebtilde_vec, α_mat, 3, s)
+    return IMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, ebtilde_vec, α_mat, 3, s
+    )
 end
 
 function ARS343Tableau(T, T2)
@@ -189,6 +191,8 @@ function ARS343Tableau(T, T2)
 
     α_mat = zeros(T2, s, s)
 
-    return IMEXTableau(Ai, bi_vec, Ae, be_vec, c_vec,
-        btilde_vec, ebtilde_vec, α_mat, 3, s)
+    return IMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, ebtilde_vec, α_mat, 3, s
+    )
 end
