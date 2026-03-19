@@ -39,6 +39,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Static Array Tests" begin
             include("static_array_tests.jl")
         end
+        @time @safetestset "StaticArrays Callback Tests (issue #1129)" begin
+            include("staticarrays_callback_test.jl")
+        end
         @time @safetestset "Noise Type Tests" begin
             include("noise_type_test.jl")
         end
