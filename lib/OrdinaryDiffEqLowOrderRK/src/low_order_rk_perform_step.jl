@@ -2217,7 +2217,8 @@ function initialize!(integrator, cache::Ralston4ConstantCache)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    return integrator.k[2] = integrator.fsallast
+    integrator.k[2] = integrator.fsallast
+    return nothing
 end
 
 @muladd function perform_step!(
