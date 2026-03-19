@@ -385,3 +385,26 @@ proboop = ODEProblem(f, x0, tspan)
 @test_broken sol = @inferred solve(prob, Rodas4(autodiff = adalg), initializealg = ShampineCollocationInit())
 @test_broken sol = @inferred solve(proboop, Rodas5())
 @test_broken sol = @inferred solve(proboop, Rodas4(), initializealg = ShampineCollocationInit())
+
+# InitialFailure with chunksize matching ODE size (> alg vars), #3157
+@testset "Mass Matrix: less alg vars than ODE AD chunksize" begin
+    function dae(du, u, p, t)
+        du[1] = u[2]
+        du[2] = exp(u[1]) + exp(u[2]) # deliberately not satisfiable
+        return nothing
+    end
+    dae_func = ODEFunction(dae, mass_matrix=Diagonal([1.0, 0.0]))
+    prob = ODEProblem(dae_func, [0.0, 1.0], (0.0, 1.0))
+    adalg = AutoForwardDiff(chunksize=2)
+    sol = solve(prob, Rodas5P(autodiff = adalg), initializealg = BrownFullBasicInit())
+    @test sol.retcode == SciMLBase.ReturnCode.InitialFailure # previously, errored instead
+
+    function dae_oop(u, p, t)
+        return [u[2], exp(u[1]) + exp(u[2])]
+    end
+    dae_f_oop = ODEFunction(dae_oop, mass_matrix=Diagonal([1.0, 0.0]))
+    prob = ODEProblem(dae_f_oop, [0.0, 1.0], (0.0, 1.0))
+    adalg = AutoForwardDiff(chunksize=2)
+    sol = solve(prob, Rodas5P(autodiff = adalg), initializealg = BrownFullBasicInit())
+    @test sol.retcode == SciMLBase.ReturnCode.InitialFailure # previously, errored instead
+end

@@ -603,8 +603,10 @@ function _initialize_dae!(
         chunk = ForwardDiff.pickchunksize(csize)
         _tmp = dualcache(tmp, chunk)
         _du_tmp = dualcache(similar(tmp), chunk)
+        nlchunk = Val(chunk)
     else
         _tmp, _du_tmp = tmp, similar(tmp)
+        nlchunk = SciMLBase.forwarddiff_chunksize(integrator.alg)
     end
 
     nlequation! = @closure (out, x, p) -> begin
@@ -627,10 +629,7 @@ function _initialize_dae!(
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
-    nlsolve = default_nlsolve(
-        alg.nlsolve, isinplace, u, nlprob, isAD,
-        SciMLBase.forwarddiff_chunksize(integrator.alg)
-    )
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
 
     nlsol = solve(
         nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol,
@@ -673,8 +672,11 @@ function _initialize_dae!(
     if isAD
         chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
         _tmp = dualcache(similar(u0), chunk)
+        nlchunk = Val(chunk)
     else
         _tmp = similar(u0)
+        # This was called anyway as an argument to default_nlsolve
+        nlchunk = SciMLBase.forwarddiff_chunksize(integrator.alg)
     end
 
     if u0 isa Number
@@ -696,10 +698,9 @@ function _initialize_dae!(
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
     nlfunc = NonlinearFunction(nlequation; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, u0[algebraic_vars])
-    nlsolve = default_nlsolve(
-        alg.nlsolve, isinplace, u0, nlprob, isAD,
-        SciMLBase.forwarddiff_chunksize(integrator.alg)
-    )
+    # nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD, nlchunk)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD, nlchunk)
+    @info "check" nlchunk SciMLBase.forwarddiff_chunksize(integrator.alg) chunk
 
     nlsol = solve(nlprob, nlsolve, verbose = integrator.opts.verbose.nonlinear_verbosity)
 
