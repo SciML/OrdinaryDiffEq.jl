@@ -197,8 +197,11 @@ const RODAS5H = [
 
 function Rodas5Tableau(T, T2)
     gamma = 0.19
-    b = T[RODAS5A[6, 1], RODAS5A[6, 2], RODAS5A[6, 3], RODAS5A[6, 4], RODAS5A[6, 5], one(T), zero(T), zero(T)]
-    btilde = T[zero(T), zero(T), zero(T), zero(T), zero(T), one(T), zero(T), zero(T)]
+    s = size(RODAS5A, 1)
+    b = T[RODAS5A[s, i] for i in 1:(s - 1)]
+    push!(b, one(T))
+    btilde = zeros(T, s)
+    btilde[s] = one(T)
     return RodasTableau{T, T2, Vector{T}}(RODAS5A, RODAS5C, gamma, RODAS5c, RODAS5d, RODAS5H, b, btilde)
 end
 
@@ -237,15 +240,20 @@ const RODAS5PH = [
 ]
 function Rodas5PTableau(T, T2)
     gamma = 0.21193756319429014
-    b = T[RODAS5PA[6, 1], RODAS5PA[6, 2], RODAS5PA[6, 3], RODAS5PA[6, 4], RODAS5PA[6, 5], one(T), zero(T), zero(T)]
-    btilde = T[zero(T), zero(T), zero(T), zero(T), zero(T), one(T), zero(T), zero(T)]
+    s = size(RODAS5PA, 1)
+    b = T[RODAS5PA[s, i] for i in 1:(s - 1)]
+    push!(b, one(T))
+    btilde = zeros(T, s)
+    btilde[s] = one(T)
     return RodasTableau{T, T2, Vector{T}}(RODAS5PA, RODAS5PC, gamma, RODAS5Pc, RODAS5Pd, RODAS5PH, b, btilde)
 end
 
 # Rodas5Pe uses the same tableau as Rodas5P but with a custom btilde
 function Rodas5PeTableau(T, T2)
     gamma = 0.21193756319429014
-    b = T[RODAS5PA[6, 1], RODAS5PA[6, 2], RODAS5PA[6, 3], RODAS5PA[6, 4], RODAS5PA[6, 5], one(T), zero(T), zero(T)]
+    s = size(RODAS5PA, 1)
+    b = T[RODAS5PA[s, i] for i in 1:(s - 1)]
+    push!(b, one(T))
     btilde = T[
         0.2606326497975715, -0.005158627295444251, 1.3038988631109731,
         1.235000722062074, -0.7931985603795049, -1.005448461135913,
