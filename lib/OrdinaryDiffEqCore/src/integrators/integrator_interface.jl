@@ -86,8 +86,27 @@ end
         # Special stiff interpolations do not store the
         # right value in fsallast
         integrator.fsallast
+    elseif isempty(integrator.k)
+        # Before cache initialization, k is empty and interpolation
+        # cannot be used. Compute du directly.
+        _get_du_fallback(integrator)
     else
         integrator(integrator.t, Val{1})
+    end
+end
+
+@inline function _get_du_fallback(integrator::ODEIntegrator)
+    return if integrator.isdae
+        error(
+            "get_du is not available for DAE problems before the first step. " *
+                "The derivative is not initialized until the solver has taken a step."
+        )
+    elseif isinplace(integrator.sol.prob)
+        du = similar(integrator.u)
+        integrator.f(du, integrator.u, integrator.p, integrator.t)
+        du
+    else
+        integrator.f(integrator.u, integrator.p, integrator.t)
     end
 end
 
@@ -102,9 +121,26 @@ end
             # Special stiff interpolations do not store the
             # right value in fsallast
             out .= integrator.fsallast
+        elseif isempty(integrator.k)
+            # Before cache initialization, k is empty and interpolation
+            # cannot be used. Compute du directly.
+            _get_du_fallback!(out, integrator)
         else
             integrator(out, integrator.t, Val{1})
         end
+    end
+end
+
+@inline function _get_du_fallback!(out, integrator::ODEIntegrator)
+    return if integrator.isdae
+        error(
+            "get_du! is not available for DAE problems before the first step. " *
+                "The derivative is not initialized until the solver has taken a step."
+        )
+    elseif isinplace(integrator.sol.prob)
+        integrator.f(out, integrator.u, integrator.p, integrator.t)
+    else
+        out .= integrator.f(integrator.u, integrator.p, integrator.t)
     end
 end
 
