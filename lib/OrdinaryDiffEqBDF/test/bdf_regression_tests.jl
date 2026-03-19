@@ -67,6 +67,9 @@ end
     end
 end
 
+# [sources] in Project.toml requires Julia ≥ 1.11 so the local OrdinaryDiffEqCore
+# fix is only picked up in CI on 1.11+.
+if VERSION >= v"1.11"
 @testset "get_du during init callback (issue #3117)" begin
     # get_du must not crash when called before the first step, e.g. from a
     # callback that fires during init. Before the fix, k was empty at that
@@ -135,6 +138,7 @@ end
     @test dae_errored[]
     solve!(integrator)
 end
+end # VERSION >= v"1.11"
 
 if VERSION >= v"1.12"
     @testset "FBDF in-place perform_step! non-allocating" begin
