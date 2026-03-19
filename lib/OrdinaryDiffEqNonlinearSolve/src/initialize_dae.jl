@@ -593,13 +593,6 @@ function _initialize_dae!(
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
     if isAD
         csize = count(algebraic_vars)
-        if !(p isa SciMLBase.NullParameters) && typeof(_u) !== typeof(u)
-            if isscimlstructure(p)
-                csize = max(csize, length(canonicalize(Tunable(), p)[1]))
-            else
-                csize = max(csize, length(p))
-            end
-        end
         chunk = ForwardDiff.pickchunksize(csize)
         _tmp = dualcache(tmp, chunk)
         _du_tmp = dualcache(similar(tmp), chunk)
@@ -630,6 +623,7 @@ function _initialize_dae!(
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
+    csize != count(algebraic_vars) && @info "odd" u _u csize count(algebraic_vars) length(p)
 
     nlsol = solve(
         nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol,
