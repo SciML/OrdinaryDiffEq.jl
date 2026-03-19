@@ -15,12 +15,12 @@ if TEST_GROUP == "GPU"
 end
 
 # Run functional tests
-if TEST_GROUP != "QA"
+if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Default Solver Tests" include("default_solver_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)
-if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
+if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
     @time @safetestset "Aqua" include("qa.jl")
 end
