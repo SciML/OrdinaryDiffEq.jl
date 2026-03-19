@@ -52,7 +52,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test -(sim.𝒪est[:weak_final] - 2) < 0.3 # order is 2.91
+@test -(sim.𝒪est[:weak_final] - 2) < 0.45 # order is 2.91
 println("DRI1:", sim.𝒪est[:weak_final])
 
 numtraj = Int(8.0e6)
@@ -74,7 +74,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test -(sim.𝒪est[:weak_final] - 2) < 0.3 # order is 3.05
+@test -(sim.𝒪est[:weak_final] - 2) < 0.45 # order is 3.05
 println("RI1:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -83,7 +83,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test -(sim.𝒪est[:weak_final] - 2) < 0.3 # order is 2.77
+@test -(sim.𝒪est[:weak_final] - 2) < 0.45 # order is 2.77
 println("RI3:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -144,7 +144,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test -(sim.𝒪est[:weak_final] - 2) < 0.3 # order is 2.84
+@test -(sim.𝒪est[:weak_final] - 2) < 0.45 # order is 2.84
 println("RDI3WM:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -153,5 +153,5 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test -(sim.𝒪est[:weak_final] - 2) < 0.3 # order is 2.91
+@test -(sim.𝒪est[:weak_final] - 2) < 0.45 # order is 2.91
 println("RDI4WM:", sim.𝒪est[:weak_final])

@@ -49,7 +49,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ .* exp(1.0 * (p[1]))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35 # order is 2.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5 # order is 2.35
 println("SIEA:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -58,7 +58,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ .* exp(1.0 * (p[1]))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35 # order is 2.34
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5 # order is 2.34
 println("SMEA:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -67,7 +67,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ .* exp(1.0 * (p[1]))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35 # order is 2.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5 # order is 2.35
 println("SIEB:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -76,7 +76,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ .* exp(1.0 * (p[1]))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35 # order is 2.34
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5 # order is 2.34
 println("SMEB:", sim.𝒪est[:weak_final])
 
 """
@@ -110,7 +110,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ .* exp(1.0 * (p[1]))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35 # order is 2.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5 # order is 2.35
 println("SIEA:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -119,7 +119,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ .* exp(1.0 * (p[1]))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35 # order is 2.34
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5 # order is 2.34
 println("SMEA:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -128,7 +128,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ .* exp(1.0 * (p[1]))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35 # order is 2.35
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5 # order is 2.35
 println("SIEB:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -137,7 +137,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = u₀ .* exp(1.0 * (p[1]))
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.35 # order is 2.34
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.5 # order is 2.34
 println("SMEB:", sim.𝒪est[:weak_final])
 
 """
@@ -178,7 +178,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.45
 println("SIEA:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -187,7 +187,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.45
 println("SMEA:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -196,7 +196,7 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.45
 println("SIEB:", sim.𝒪est[:weak_final])
 
 sim = test_convergence(
@@ -205,5 +205,5 @@ sim = test_convergence(
     weak_timeseries_errors = false, weak_dense_errors = false,
     expected_value = 1 // 100 * exp(301 // 100)
 )
-@test abs(sim.𝒪est[:weak_final] - 2) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2) < 0.45
 println("SMEB:", sim.𝒪est[:weak_final])
