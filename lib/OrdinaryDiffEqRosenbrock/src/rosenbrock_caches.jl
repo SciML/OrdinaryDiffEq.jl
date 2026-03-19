@@ -405,7 +405,7 @@ function alg_cache(
     H_rows = size(tab.H, 1)
     # Rodas3P/Rodas23W: H has 3 rows but only 2 are for interpolation;
     # the 3rd row is for interpoldiff error estimation
-    if alg isa Union{Rodas3P, Rodas23W}
+    if alg isa Union{Rodas3P, Rodas23W, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
         interp_order = 2
     else
         interp_order = H_rows > 0 ? H_rows : 2
@@ -430,7 +430,7 @@ function alg_cache(
     kshortsize = H_rows > 0 ? H_rows : 2
     # Rodas3P/Rodas23W: H has 3 rows but only 2 are for interpolation;
     # the 3rd row is for interpoldiff error estimation
-    if alg isa Union{Rodas3P, Rodas23W}
+    if alg isa Union{Rodas3P, Rodas23W, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
         interp_order = 2
     else
         interp_order = kshortsize
