@@ -15,13 +15,13 @@ if TEST_GROUP == "GPU"
 end
 
 # Run functional tests
-if TEST_GROUP != "QA" && TEST_GROUP != "GPU"
+if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "DAE Rosenbrock AD Tests" include("dae_rosenbrock_ad_tests.jl")
     @time @safetestset "Rosenbrock Convergence Tests" include("ode_rosenbrock_tests.jl")
 end
 
 # Run QA tests (JET, Aqua, AllocCheck)
-if TEST_GROUP != "Core" && TEST_GROUP != "GPU" && isempty(VERSION.prerelease)
+if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
     @time @safetestset "Aqua" include("qa.jl")
     @time @safetestset "Allocation Tests" include("allocation_tests.jl")
