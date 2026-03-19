@@ -107,7 +107,8 @@ end
         solve!(integrator)
     end
 
-    # DFBDF (DAE) should return the initial du
+    # DFBDF (DAE): get_du before first step should throw a clear error
+    # because integrator.du is not initialized until the solver steps.
     function dae_f!(resid, du, u, p, t)
         resid[1] = du[1] + u[1]
     end
@@ -116,18 +117,22 @@ end
         differential_vars = [true]
     )
 
-    du_at_init_dae = Ref{Vector{Float64}}()
+    dae_errored = Ref(false)
     function init_cb_dae(c, u, t, integrator)
-        du_at_init_dae[] = get_du(integrator)
+        try
+            get_du(integrator)
+        catch e
+            dae_errored[] = isa(e, ErrorException) &&
+                            contains(e.msg, "DAE problems")
+        end
     end
     cb_dae = DiscreteCallback(
         (u, t, integrator) -> false, identity;
         initialize = init_cb_dae
     )
 
-    du_at_init_dae[] = Float64[]
     integrator = init(dae_prob, DFBDF(); callback = cb_dae, save_everystep = false)
-    @test du_at_init_dae[][1] ≈ -1.0
+    @test dae_errored[]
     solve!(integrator)
 end
 

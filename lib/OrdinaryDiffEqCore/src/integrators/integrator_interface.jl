@@ -97,7 +97,8 @@ end
 
 @inline function _get_du_fallback(integrator::ODEIntegrator)
     return if integrator.isdae
-        copy(integrator.du)
+        error("get_du is not available for DAE problems before the first step. " *
+              "The derivative is not initialized until the solver has taken a step.")
     elseif isinplace(integrator.sol.prob)
         du = similar(integrator.u)
         integrator.f(du, integrator.u, integrator.p, integrator.t)
@@ -130,7 +131,8 @@ end
 
 @inline function _get_du_fallback!(out, integrator::ODEIntegrator)
     return if integrator.isdae
-        out .= integrator.du
+        error("get_du! is not available for DAE problems before the first step. " *
+              "The derivative is not initialized until the solver has taken a step.")
     elseif isinplace(integrator.sol.prob)
         integrator.f(out, integrator.u, integrator.p, integrator.t)
     else
