@@ -700,7 +700,6 @@ function _initialize_dae!(
     nlprob = NonlinearProblem(nlfunc, u0[algebraic_vars])
     # nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD, nlchunk)
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD, nlchunk)
-    @info "check" nlchunk SciMLBase.forwarddiff_chunksize(integrator.alg) chunk
 
     nlsol = solve(nlprob, nlsolve, verbose = integrator.opts.verbose.nonlinear_verbosity)
 
