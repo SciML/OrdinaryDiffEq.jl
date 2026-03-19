@@ -688,7 +688,7 @@ function _initialize_dae!(
         uu = isAD ? get_tmp(_tmp, x) : _tmp
         copyto!(uu, integrator.u)
         du = f(uu, p, t)
-        @views du[algebraic_eqs]
+        du[algebraic_eqs]
     end
 
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
