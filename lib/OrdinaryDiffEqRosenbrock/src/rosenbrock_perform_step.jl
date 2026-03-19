@@ -1574,14 +1574,14 @@ function initialize!(integrator, cache::IMEXRKR_3_2ConstantCache)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = zero(integrator.fsalfirst)
-    integrator.k[2] = zero(integrator.fsalfirst)
+    return integrator.k[2] = zero(integrator.fsalfirst)
 end
 
 function initialize!(integrator, cache::IMEXRKR_3_2Cache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k₁
-    integrator.k[2] = cache.k₃
+    return integrator.k[2] = cache.k₃
 end
 
 @muladd function perform_step!(
@@ -1639,8 +1639,10 @@ end
         integrator, cache::IMEXRKR_3_2Cache, repeat_step = false
     )
     (; t, dt, uprev, u, f, p) = integrator
-    (; k₁, k₂, k₃, du1, rhs₁, rhs₂, J, W, tmp, atmp, weight, tf, uf,
-        jac_config, linsolve_tmp, tab, alg) = cache
+    (;
+        k₁, k₂, k₃, du1, rhs₁, rhs₂, J, W, tmp, atmp, weight, tf, uf,
+        jac_config, linsolve_tmp, tab, alg,
+    ) = cache
     (; γ, a₂₁, a₃₁, a₃₂, γ₂₁_over_γ, γ₃₁_over_γ, γ₃₂_over_γ, b₁, b₃) = tab
 
     f_stiff = f.f1
