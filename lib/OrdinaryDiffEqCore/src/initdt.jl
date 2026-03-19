@@ -597,10 +597,15 @@ end
         hlb = 100 * eps(_fType) * oneunit_tType
 
         # Upper bound: most restrictive component of |f₀| / (0.1*|u0| + tol)
-        # abs.(sk) handles ComplexF64 caches (sk can be complex when u0 is complex)
-        denoms = @.. broadcast = false convert(_fType, 0.1) * abs(u0) + abs(sk)
-        nums = @.. broadcast = false abs(f₀) * oneunit_tType
-        hub_inv = DiffEqBase.value(maximum(nums ./ max.(denoms, eps(_fType) .* oneunit.(denoms))))
+        # Unit-safe: divide by sk first, then use norm to strip any Unitful dimensions.
+        # Reformulation: |f₀*Δt| / (0.1*|u| + |sk|) = |f₀*Δt/sk| / (0.1*|u/sk| + 1)
+        # This avoids adding u0 and sk when they have incompatible units
+        # (e.g., Unitful u0 with explicit dimensionless tolerances).
+        d₁_cv = internalnorm(f₀ ./ sk .* oneunit_tType, t)
+        d₀_cv = internalnorm(u0 ./ sk, t)
+        hub_inv = DiffEqBase.value(
+            d₁_cv / max(convert(_fType, 0.1) * d₀_cv + one(_fType), eps(_fType))
+        )
 
         hub = convert(_fType, 0.1) * tdist
         if hub * hub_inv > oneunit_tType
