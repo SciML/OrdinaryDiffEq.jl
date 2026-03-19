@@ -78,8 +78,10 @@ end
     function init_cb(c, u, t, integrator)
         du_at_init[] = get_du(integrator)
     end
-    cb = DiscreteCallback((u, t, integrator) -> false, identity;
-        initialize = init_cb)
+    cb = DiscreteCallback(
+        (u, t, integrator) -> false, identity;
+        initialize = init_cb
+    )
 
     for alg in (QNDF(), FBDF())
         du_at_init[] = Float64[]
@@ -93,8 +95,10 @@ end
     function init_cb_ip(c, u, t, integrator)
         get_du!(du_buf, integrator)
     end
-    cb_ip = DiscreteCallback((u, t, integrator) -> false, identity;
-        initialize = init_cb_ip)
+    cb_ip = DiscreteCallback(
+        (u, t, integrator) -> false, identity;
+        initialize = init_cb_ip
+    )
 
     for alg in (QNDF(), FBDF())
         du_buf[1] = 0.0
@@ -107,15 +111,19 @@ end
     function dae_f!(resid, du, u, p, t)
         resid[1] = du[1] + u[1]
     end
-    dae_prob = DAEProblem(dae_f!, [-1.0], [1.0], (0.0, 1.0);
-        differential_vars = [true])
+    dae_prob = DAEProblem(
+        dae_f!, [-1.0], [1.0], (0.0, 1.0);
+        differential_vars = [true]
+    )
 
     du_at_init_dae = Ref{Vector{Float64}}()
     function init_cb_dae(c, u, t, integrator)
         du_at_init_dae[] = get_du(integrator)
     end
-    cb_dae = DiscreteCallback((u, t, integrator) -> false, identity;
-        initialize = init_cb_dae)
+    cb_dae = DiscreteCallback(
+        (u, t, integrator) -> false, identity;
+        initialize = init_cb_dae
+    )
 
     du_at_init_dae[] = Float64[]
     integrator = init(dae_prob, DFBDF(); callback = cb_dae, save_everystep = false)

@@ -96,7 +96,7 @@ end
 end
 
 @inline function _get_du_fallback(integrator::ODEIntegrator)
-    if integrator.isdae
+    return if integrator.isdae
         copy(integrator.du)
     elseif isinplace(integrator.sol.prob)
         du = similar(integrator.u)
@@ -129,7 +129,7 @@ end
 end
 
 @inline function _get_du_fallback!(out, integrator::ODEIntegrator)
-    if integrator.isdae
+    return if integrator.isdae
         out .= integrator.du
     elseif isinplace(integrator.sol.prob)
         integrator.f(out, integrator.u, integrator.p, integrator.t)
