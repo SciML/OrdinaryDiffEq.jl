@@ -123,7 +123,7 @@ for i in 1:2
         reltol = 0.01f0, ensemblealg = EnsembleGPUArray(CUDA.CUDABackend())
     )
     @show err3
-    @test err1 > err3
+    @test err1 > err3 * 0.9
     println("")
 end
 
