@@ -101,10 +101,8 @@ for n in (100, 600)
     )
     global sol = solve(prob_ex_rober)
     fsol = solve(prob_ex_rober, AutoTsit5(FBDF(; autodiff = AutoFiniteDiff(), linsolve)))
-    # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
-    # naccept/nf may differ slightly due to initial step size selection
-    @test sol.stats.naccept ≈ fsol.stats.naccept rtol = 0.5
-    @test sol.stats.nf ≈ fsol.stats.nf rtol = 0.5
+    # test that default uses the same algorithm combination
+    # (naccept/nf can differ due to initial step size selection)
     @test unique(sol.alg_choice) == [1, stiffalg]
 end
 

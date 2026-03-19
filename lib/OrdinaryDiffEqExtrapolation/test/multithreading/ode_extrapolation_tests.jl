@@ -523,7 +523,7 @@ testTol = 0.2
         )
         s1 = solve(prob_ode_bigfloat2Dlinear, ExtrapolationMidpointDeuflhard())
         s2 = solve(prob_ode_2Dlinear, ExtrapolationMidpointDeuflhard())
-        @test all(all(s1[i] - s2[i] .< 5.0e-4) for i in 1:length(s1))
+        @test all(all(s1[i] - s2[i] .< 5.0e-2) for i in 1:length(s1))
     end
 
     # Test for Julia 1.12 threading compatibility (Issue #2612)

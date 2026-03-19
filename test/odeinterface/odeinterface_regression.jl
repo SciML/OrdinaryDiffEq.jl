@@ -41,7 +41,8 @@ sol2 = solve(probnum, tabalg, controller = PIController(0.17, 0.04))
 sol3 = solve(probnum, dopri5())
 
 @test sol1.t ≈ sol2.t
-@test sol1.t ≈ sol3.t atol = 1.0e-6
+# CVHin uses a different initial step than DOPRI's Hairer-Wanner, so timesteps diverge
+@test sol1.u[end] ≈ sol3.u[end] atol = 1.0e-6
 
 sol1 = solve(prob, DP5(), dt = 1 / 8)
 sol2 = solve(prob, tabalg, controller = PIController(0.17, 0.04), dt = 1 / 8)

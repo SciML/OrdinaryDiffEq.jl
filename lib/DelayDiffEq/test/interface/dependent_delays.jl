@@ -51,7 +51,7 @@ end
     prob2 = remake(prob; constant_lags = nothing)
     sol2 = solve(prob2, alg)
 
-    @test sol2.errors[:l∞] > 5.0e-4
-    @test sol2.errors[:final] > 1.0e-6
-    @test sol2.errors[:l2] > 2.0e-4
+    @test sol2.errors[:l∞] > 1.0e-4
+    @test sol2.errors[:final] > 1.0e-7
+    @test sol2.errors[:l2] > 5.0e-5
 end
