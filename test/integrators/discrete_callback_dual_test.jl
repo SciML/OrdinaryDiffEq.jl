@@ -23,7 +23,7 @@ function test_fun(tstop)
     return sol(1.0)
 end
 
-@test ForwardDiff.derivative(test_fun, 0.5) ≈ exp(0.5) * u0 atol = 1e-6 # Analytical solution: exp(tstop)*u0
+@test ForwardDiff.derivative(test_fun, 0.5) ≈ exp(0.5) * u0 atol = 1.0e-6 # Analytical solution: exp(tstop)*u0
 @test times_finalize_called == 1 # test that finalize callback ran exactly once
 test_fun(0.5)
 @test times_finalize_called == 2 # test that finalize callback ran again
