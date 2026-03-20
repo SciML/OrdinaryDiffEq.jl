@@ -2,8 +2,8 @@
 #
 # Compute which sublibrary test jobs need to run based on changed files.
 #
-# Reads the dependency graph from lib/*/Project.toml [deps] and [extras]
-# sections, identifies internal dependencies by matching dep names against
+# Reads the dependency graph from lib/*/Project.toml [deps] section only
+# (NOT [extras]/test deps), identifies internal dependencies by matching dep names against
 # known sublibrary directory names, computes the transitive reverse-dependency
 # map, then given a list of changed files outputs a GitHub Actions matrix
 # include list as JSON.
@@ -54,17 +54,17 @@ function build_dependency_graph(lib_dir::String)
         end
     end
 
-    # Parse each sublibrary's Project.toml for internal deps
+    # Parse each sublibrary's Project.toml for internal deps.
+    # Only use [deps], NOT [extras]/[targets] — those are test-only dependencies
+    # and should not propagate downstream test triggering.
     graph = Dict{String, Vector{String}}()
     for pkg in known_sublibs
         toml = TOML.parsefile(joinpath(lib_dir, pkg, "Project.toml"))
         internal_deps = String[]
-        for section in ("deps", "extras")
-            if haskey(toml, section)
-                for dep_name in keys(toml[section])
-                    if dep_name in known_sublibs
-                        push!(internal_deps, dep_name)
-                    end
+        if haskey(toml, "deps")
+            for dep_name in keys(toml["deps"])
+                if dep_name in known_sublibs
+                    push!(internal_deps, dep_name)
                 end
             end
         end

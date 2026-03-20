@@ -53,6 +53,22 @@ end
 
     if isdir(joinpath(lib_dir, base_group))
         Pkg.activate(joinpath(lib_dir, base_group))
+        # On Julia < 1.11, the [sources] section in Project.toml is not supported.
+        # Manually Pkg.develop local path dependencies so CI tests the PR branch code.
+        if VERSION < v"1.11.0-DEV.0"
+            toml = Pkg.TOML.parsefile(joinpath(lib_dir, base_group, "Project.toml"))
+            if haskey(toml, "sources")
+                for (dep_name, source_spec) in toml["sources"]
+                    if source_spec isa Dict && haskey(source_spec, "path")
+                        dep_path = normpath(joinpath(lib_dir, base_group, source_spec["path"]))
+                        if isdir(dep_path)
+                            @info "Developing local source dependency" dep_name dep_path
+                            Pkg.develop(Pkg.PackageSpec(path = dep_path))
+                        end
+                    end
+                end
+            end
+        end
         withenv("ODEDIFFEQ_TEST_GROUP" => test_group) do
             Pkg.test(base_group, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
         end
