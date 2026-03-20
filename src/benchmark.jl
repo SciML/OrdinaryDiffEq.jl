@@ -6,9 +6,6 @@ using Statistics
 # StructArrays 0.7 requires parameterized NamedTuple types (NamedTuple{names}), so we
 # must ensure all NamedTuples share the same key ordering.
 function _dicts_to_structarray(dicts)
-    if isempty(dicts) || isempty(first(dicts))
-        return StructArray(NamedTuple{(), Tuple{}}[])
-    end
     ks = Tuple(sort(collect(keys(first(dicts)))))
     V = valtype(first(dicts))
     NT = NamedTuple{ks, NTuple{length(ks), V}}
