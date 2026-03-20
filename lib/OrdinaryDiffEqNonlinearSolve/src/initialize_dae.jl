@@ -564,8 +564,8 @@ function _initialize_dae!(
         integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
         alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true}
     )
-    (; p, t, f) = integrator
-    f = SciMLBase.unwrapped_f(f)
+    (; p, t) = integrator
+    f = SciMLBase.unwrapped_f(integrator.f)
     u = integrator.u
     M = integrator.f.mass_matrix
     M isa UniformScaling && return
@@ -592,8 +592,10 @@ function _initialize_dae!(
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
     if isAD
-        csize = count(algebraic_vars)
-        chunk = ForwardDiff.pickchunksize(csize)
+        # A larger chunksize, calibrated according to count(algebraic_vars),
+        # would be more efficient but cannot be inferred from types
+        # chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
+        chunk = 1
         _tmp = dualcache(tmp, chunk)
         _du_tmp = dualcache(similar(tmp), chunk)
         nlchunk = Val(chunk)
@@ -620,7 +622,8 @@ function _initialize_dae!(
     end
 
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
-    nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
+    # Set nonlinear function to operate in-place since the ODE function is in-place
+    nlfunc = NonlinearFunction{true}(nlequation!; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
 
@@ -663,7 +666,10 @@ function _initialize_dae!(
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
     if isAD
-        chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
+        # A larger chunksize, calibrated according to count(algebraic_vars),
+        # would be more efficient but cannot be inferred from types
+        # chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
+        chunk = 1
         _tmp = dualcache(similar(u0), chunk)
         nlchunk = Val(chunk)
     else
@@ -684,12 +690,13 @@ function _initialize_dae!(
         copyto!(uu, integrator.u)
         alg_uu = @view uu[algebraic_vars]
         alg_uu .= x
-        du = f(uu, p, t)
-        du[algebraic_eqs]
+        _du = f(uu, p, t)
+        _du[algebraic_eqs]
     end
 
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
-    nlfunc = NonlinearFunction(nlequation; jac_prototype = J)
+    # Operate out of place since the ODE function is out of place
+    nlfunc = NonlinearFunction{false}(nlequation; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, u0[algebraic_vars])
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD, nlchunk)
 
