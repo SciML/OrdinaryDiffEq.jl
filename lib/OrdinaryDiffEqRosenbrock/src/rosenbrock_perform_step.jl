@@ -451,8 +451,6 @@ function initialize!(integrator, cache::RosenbrockCombinedConstantCache)
     for i in 1:(integrator.kshortsize)
         integrator.k[i] = zero(integrator.u)
     end
-    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return
 end
 
@@ -483,6 +481,7 @@ end
     num_stages = size(A, 1)
     du = f(uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    fsalfirst_cache = du  # save for interpolation (du gets overwritten in stage loop)
     linsolve_tmp = @.. du + dtd[1] * dT
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     # constant number for type stability make sure this is greater than num_stages
@@ -494,8 +493,15 @@ end
             u = @.. u + A[stage, i] * ks[i]
         end
 
-        du = f(u, p, t + c[stage] * dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        # Skip redundant f evaluation when a[stage,:]=a[stage-1,:] and c[stage]=c[stage-1]
+        # (Rosenbrock4 methods: stage 4 reuses du from stage 3)
+        if stage > 2 && c[stage] == c[stage - 1] &&
+                all(j -> A[stage, j] == A[stage - 1, j], 1:(stage - 1))
+            # du is already correct from previous stage
+        else
+            du = f(u, p, t + c[stage] * dt)
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        end
 
         # Compute linsolve_tmp for current stage
         linsolve_tmp = zero(du)
@@ -567,19 +573,12 @@ end
                     norm(integrator.opts.abstol .+ integrator.opts.reltol .* k2)
                 integrator.EEst = max(EEst, integrator.EEst)
             end
-            integrator.fsallast = f(u, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         else
-            # No H matrix: set k[1]=fsalfirst, k[2]=fsallast for Hermite interpolation
-            integrator.k[1] = integrator.fsalfirst
+            # No H matrix: set k[1]=f(uprev), k[2]=f(u_new) for Hermite interpolation
+            integrator.k[1] = fsalfirst_cache
             integrator.k[2] = f(u, p, t + dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            integrator.fsallast = integrator.k[2]
         end
-    else
-        # calck disabled: still need fsallast for FSAL
-        integrator.fsallast = f(u, p, t + dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
     integrator.u = u
@@ -648,8 +647,15 @@ end
         end
 
         stage_limiter!(u, integrator, p, t + c[stage] * dt)
-        f(du, u, p, t + c[stage] * dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        # Skip redundant f evaluation when a[stage,:]=a[stage-1,:] and c[stage]=c[stage-1]
+        # (Rosenbrock4 methods: stage 4 reuses du from stage 3)
+        if stage > 2 && c[stage] == c[stage - 1] &&
+                all(j -> A[stage, j] == A[stage - 1, j], 1:(stage - 1))
+            # du is already correct from previous stage
+        else
+            f(du, u, p, t + c[stage] * dt)
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        end
 
         du1 .= 0
         if mass_matrix === I
@@ -731,9 +737,9 @@ end
         else
             # No H matrix: set k[1]=fsalfirst, k[2]=f(u_new) for interpolation
             integrator.k[1] .= cache.fsalfirst
-            f(du1, u, p, t + dt)
+            f(du, u, p, t + dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            integrator.k[2] .= du1
+            integrator.k[2] .= du
         end
     end
     cache.linsolve = linres.cache
