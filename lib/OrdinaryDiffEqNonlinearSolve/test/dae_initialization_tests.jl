@@ -108,7 +108,7 @@ for f in (
     for initializealg in (ShampineCollocationInit(), BrownFullBasicInit())
         isapprox(
             init(prob, Rodas5(), abstol = 1.0e-10; initializealg).u,
-            init(prob, Rodas5(), abstol = 1.0e-10; initializealg).u
+            init(probp, Rodas5(), abstol = 1.0e-10; initializealg).u
         )
     end
 end
