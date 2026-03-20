@@ -7,3 +7,6 @@ if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
     @time @safetestset "Aqua" include("qa.jl")
 end
+
+@time @safetestset include("dae_esdirk_test.jl")
+@time @safetestset include("sdirk_convergence_tests.jl")
