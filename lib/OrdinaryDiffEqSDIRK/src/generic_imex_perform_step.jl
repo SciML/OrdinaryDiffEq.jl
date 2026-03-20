@@ -79,7 +79,8 @@ function initialize!(integrator, cache::IMEXConstantCache)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    return integrator.k[2] = integrator.fsallast
+    integrator.k[2] = integrator.fsallast
+    return nothing
 end
 
 function initialize!(integrator, cache::IMEXCache)
@@ -88,7 +89,8 @@ function initialize!(integrator, cache::IMEXCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return nothing
 end
 
 @muladd function perform_step!(
