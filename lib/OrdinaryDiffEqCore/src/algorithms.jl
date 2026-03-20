@@ -83,7 +83,7 @@ function SciMLBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
     return T(; SciMLBase.struct_as_namedtuple(thing)..., kwargs...)
 end
 
-function SciMLBase.remake(
+@inline function SciMLBase.remake(
         thing::Union{
             OrdinaryDiffEqAdaptiveImplicitAlgorithm{
                 CS, AD, FDT,
