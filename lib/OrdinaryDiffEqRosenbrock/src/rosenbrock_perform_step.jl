@@ -451,6 +451,8 @@ function initialize!(integrator, cache::RosenbrockCombinedConstantCache)
     for i in 1:(integrator.kshortsize)
         integrator.k[i] = zero(integrator.u)
     end
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return
 end
 
@@ -565,12 +567,19 @@ end
                     norm(integrator.opts.abstol .+ integrator.opts.reltol .* k2)
                 integrator.EEst = max(EEst, integrator.EEst)
             end
+            integrator.fsallast = f(u, p, t + dt)
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         else
             # No H matrix: set k[1]=fsalfirst, k[2]=fsallast for Hermite interpolation
             integrator.k[1] = integrator.fsalfirst
             integrator.k[2] = f(u, p, t + dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            integrator.fsallast = integrator.k[2]
         end
+    else
+        # calck disabled: still need fsallast for FSAL
+        integrator.fsallast = f(u, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
     integrator.u = u
