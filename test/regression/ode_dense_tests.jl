@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, OrdinaryDiffEqBDF, Test, DiffEqBase
 using OrdinaryDiffEqCore
+using OrdinaryDiffEqLowOrderRK: Ralston4
 using ForwardDiff
 import ODEProblemLibrary: prob_ode_linear,
     prob_ode_2Dlinear,

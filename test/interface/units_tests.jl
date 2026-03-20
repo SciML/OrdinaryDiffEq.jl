@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, RecursiveArrayTools, Unitful
+using OrdinaryDiffEqLowOrderRK: Ralston4
 using LinearAlgebra, Test, ADTypes
 
 @testset "Algorithms" begin

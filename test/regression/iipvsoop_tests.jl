@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, Test
 using OrdinaryDiffEqCore, ADTypes
+using OrdinaryDiffEqLowOrderRK: Ralston4
 
 f(u, p, t) = 0.98u
 u0 = 1.0
