@@ -59,7 +59,7 @@ function build_dependency_graph(lib_dir::String)
     for pkg in known_sublibs
         toml = TOML.parsefile(joinpath(lib_dir, pkg, "Project.toml"))
         internal_deps = String[]
-        for section in ("deps", "extras")
+        for section in ("deps",)
             if haskey(toml, section)
                 for dep_name in keys(toml[section])
                     if dep_name in known_sublibs
