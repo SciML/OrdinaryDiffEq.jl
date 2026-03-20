@@ -19,7 +19,7 @@ using Test
 end
 
 # Regression test for https://github.com/SciML/OrdinaryDiffEq.jl/issues/3200
-# AutoVern7 + Rodas5P with both autodiff and linsolve should be inferrable
+# AutoVern7 + Rodas5P with both autodiff and linsolve should be inferable
 @testset "AutoVern7 + Rodas5P inference with autodiff and linsolve (#3200)" begin
     using StaticArrays, ADTypes, LinearSolve
     f(u, p, t) = SVector(-p.Ka * u[1], p.Ka * u[1] - p.CL * u[2] / p.Vc)
