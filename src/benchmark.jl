@@ -1,5 +1,20 @@
 using Statistics
 
+# Convert a vector of error Dicts to a StructArray with consistent NamedTuple key ordering.
+# Dict iteration order is not guaranteed, so NamedTuple.(dicts) can produce NamedTuples
+# with different type parameters, causing the element type to widen to bare `NamedTuple`.
+# StructArrays 0.7 requires parameterized NamedTuple types (NamedTuple{names}), so we
+# must ensure all NamedTuples share the same key ordering.
+function _dicts_to_structarray(dicts)
+    if isempty(dicts) || isempty(first(dicts))
+        return StructArray(NamedTuple{(), Tuple{}}[])
+    end
+    ks = Tuple(sort(collect(keys(first(dicts)))))
+    V = valtype(first(dicts))
+    NT = NamedTuple{ks, NTuple{length(ks), V}}
+    return StructArray([NT(Tuple(d[k] for k in ks)) for d in dicts])
+end
+
 # Default names of algorithms:
 # Workaround for `MethodOfSteps` algorithms, otherwise they are all called "MethodOfSteps"
 # Ideally this would be a trait (in SciMLBase?), so packages could implement it
@@ -404,7 +419,7 @@ function WorkPrecision(
         end
     end
     return WorkPrecision(
-        prob, abstols, reltols, StructArray(NamedTuple.(errors)),
+        prob, abstols, reltols, _dicts_to_structarray(errors),
         times, dts, stats, name, error_estimate, N
     )
 end
@@ -534,7 +549,7 @@ function WorkPrecision(
         end
     end
     return WorkPrecision(
-        prob, abstols, reltols, StructArray(NamedTuple.(errors)),
+        prob, abstols, reltols, _dicts_to_structarray(errors),
         times, dts, stats, name, error_estimate, N
     )
 end
@@ -599,7 +614,7 @@ function WorkPrecision(
     end
 
     return WorkPrecision(
-        prob, abstols, reltols, StructArray(NamedTuple.(errors)),
+        prob, abstols, reltols, _dicts_to_structarray(errors),
         times, dts, stats, name, error_estimate, N
     )
 end
@@ -779,7 +794,7 @@ function WorkPrecisionSet(
     stats = nothing
     wps = [WorkPrecision(
                prob, _abstols[i], _reltols[i],
-               StructArray(NamedTuple.(errors[i])),
+               _dicts_to_structarray(errors[i]),
                times[:, i], _dts[i], stats, names[i], error_estimate, N
            )
            for i in 1:N]
