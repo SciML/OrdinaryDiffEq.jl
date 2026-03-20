@@ -1684,7 +1684,8 @@ end
 
 get_fsalfirstlast(cache::MREEFCache, u) = (cache.fsalfirst, cache.k)
 
-function alg_cache(alg::MREEF, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::MREEF, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}, verbose
@@ -1697,13 +1698,14 @@ function alg_cache(alg::MREEF, u, rate_prototype, ::Type{uEltypeNoUnits},
     T = [zero(u) for _ in 1:(alg.order)]
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    MREEFCache(u, uprev, tmp, atmp, k_slow, k_fast, T, fsalfirst, k)
+    return MREEFCache(u, uprev, tmp, atmp, k_slow, k_fast, T, fsalfirst, k)
 end
 
-function alg_cache(alg::MREEF, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::MREEF, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    MREEFConstantCache()
+    return MREEFConstantCache()
 end

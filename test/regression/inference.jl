@@ -28,9 +28,11 @@ end
 
     @inferred solve(
         prob,
-        AutoVern7(Rodas5P(
-            autodiff = AutoForwardDiff(chunksize = 1),
-            linsolve = GenericLUFactorization()
-        ))
+        AutoVern7(
+            Rodas5P(
+                autodiff = AutoForwardDiff(chunksize = 1),
+                linsolve = GenericLUFactorization()
+            )
+        )
     )
 end

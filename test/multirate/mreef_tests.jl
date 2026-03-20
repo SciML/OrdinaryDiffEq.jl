@@ -42,12 +42,12 @@ using OrdinaryDiffEqLowOrderRK, Test, LinearAlgebra
             alg = MREEF(m = 10, order = target_order)
             errs = [
                 begin
-                    sol = solve(
-                        SplitODEProblem(f1!, f2!, u0, (0.0, 1.0)),
-                        alg, dt = d, adaptive = false
-                    )
-                    norm(sol.u[end] - exact)
-                end for d in dts
+                        sol = solve(
+                            SplitODEProblem(f1!, f2!, u0, (0.0, 1.0)),
+                            alg, dt = d, adaptive = false
+                        )
+                        norm(sol.u[end] - exact)
+                    end for d in dts
             ]
 
             ratios = [errs[i] / errs[i + 1] for i in 1:3]
@@ -69,12 +69,12 @@ using OrdinaryDiffEqLowOrderRK, Test, LinearAlgebra
             alg = MREEF(m = 10, order = target_order, seq = :romberg)
             errs = [
                 begin
-                    sol = solve(
-                        SplitODEProblem(f1!, f2!, u0, (0.0, 1.0)),
-                        alg, dt = d, adaptive = false
-                    )
-                    norm(sol.u[end] - exact)
-                end for d in dts
+                        sol = solve(
+                            SplitODEProblem(f1!, f2!, u0, (0.0, 1.0)),
+                            alg, dt = d, adaptive = false
+                        )
+                        norm(sol.u[end] - exact)
+                    end for d in dts
             ]
 
             ratios = [errs[i] / errs[i + 1] for i in 1:3]
