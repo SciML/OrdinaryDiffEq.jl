@@ -1594,8 +1594,36 @@ function ESDIRK659L2SA(;
     )
 end
 
+abstract type OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ} <:
+OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} end
+
+@doc SDIRK_docstring(
+    "3rd order L-stable IMEX ARK method. Uses a generic tableau-driven implementation that supports both split and non-split forms.",
+    "ARS343";
+    references = "@article{ascher1997implicit,
+    title={Implicit-explicit Runge-Kutta methods for time-dependent partial differential equations},
+    author={Ascher, Uri M and Ruuth, Steven J and Spiteri, Raymond J},
+    journal={Applied Numerical Mathematics},
+    volume={25},
+    number={2-3},
+    pages={151--167},
+    year={1997},
+    publisher={Elsevier}}",
+    extra_keyword_description = """
+    - `smooth_est`: TBD
+    - `extrapolant`: TBD
+    - `controller`: TBD
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+    step_limiter! = trivial_limiter!,
+    """
+)
 struct ARS343{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P

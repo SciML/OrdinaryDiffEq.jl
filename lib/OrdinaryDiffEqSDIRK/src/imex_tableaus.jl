@@ -11,6 +11,113 @@ struct IMEXTableau{T, T2}
     s::Int
 end
 
+# Dispatch: each algorithm type maps to its tableau constructor
+IMEXTableau(::ARS343, T, T2) = ARS343Tableau(T, T2)
+
+#
+# KenCarp3 IMEX Tableau
+#
+
+function KenCarp3IMEXTableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+    γ = convert(T, 0.435866521508459)
+
+    a31 = convert(T, 0.2576482460664272)
+    a32 = -convert(T, 0.09351476757488625)
+    a41 = convert(T, 0.18764102434672383)
+    a42 = -convert(T, 0.595297473576955)
+    a43 = convert(T, 0.9717899277217721)
+
+    btilde1 = convert(T, 0.027099261876665316)
+    btilde2 = convert(T, 0.11013520969201586)
+    btilde3 = -convert(T, 0.10306492520138458)
+    btilde4 = -convert(T, 0.0341695463672966)
+
+    c3 = convert(T2, 0.6)
+    c2 = 2γ
+    θ = c3 / c2
+    α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ)
+    α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ)
+    θ = 1 / c2
+    α41 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ)
+    α42 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ)
+
+    ea21 = convert(T, 0.871733043016918)
+    ea31 = convert(T, 0.5275890119763004)
+    ea32 = convert(T, 0.0724109880236996)
+    ea41 = convert(T, 0.3990960076760701)
+    ea42 = -convert(T, 0.4375576546135194)
+    ea43 = convert(T, 1.0384616469374492)
+    eb1 = convert(T, 0.18764102434672383)
+    eb2 = -convert(T, 0.595297473576955)
+    eb3 = convert(T, 0.9717899277217721)
+    eb4 = convert(T, 0.435866521508459)
+    ebtilde1 = convert(T, 0.027099261876665316)
+    ebtilde2 = convert(T, 0.11013520969201586)
+    ebtilde3 = -convert(T, 0.10306492520138458)
+    ebtilde4 = -convert(T, 0.0341695463672966)
+
+    s = 4
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = a31
+    Ai[3, 2] = a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = a41
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = γ
+
+    bi_vec = zeros(T, s)
+    bi_vec[1] = a41
+    bi_vec[2] = a42
+    bi_vec[3] = a43
+    bi_vec[4] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ea21
+    Ae[3, 1] = ea31
+    Ae[3, 2] = ea32
+    Ae[4, 1] = ea41
+    Ae[4, 2] = ea42
+    Ae[4, 3] = ea43
+
+    be_vec = zeros(T, s)
+    be_vec[1] = eb1
+    be_vec[2] = eb2
+    be_vec[3] = eb3
+    be_vec[4] = eb4
+
+    c_vec = zeros(T2, s)
+    c_vec[1] = zero(T2)
+    c_vec[2] = convert(T2, 2γ)
+    c_vec[3] = c3
+    c_vec[4] = one(T2)
+
+    btilde_vec = zeros(T, s)
+    btilde_vec[1] = btilde1
+    btilde_vec[2] = btilde2
+    btilde_vec[3] = btilde3
+    btilde_vec[4] = btilde4
+
+    ebtilde_vec = zeros(T, s)
+    ebtilde_vec[1] = ebtilde1
+    ebtilde_vec[2] = ebtilde2
+    ebtilde_vec[3] = ebtilde3
+    ebtilde_vec[4] = ebtilde4
+
+    α_mat = zeros(T2, s, s)
+    α_mat[3, 1] = α31
+    α_mat[3, 2] = α32
+    α_mat[4, 1] = α41
+    α_mat[4, 2] = α42
+
+    return IMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, ebtilde_vec, α_mat, 3, s
+    )
+end
+
 function KenCarp3IMEXTableau(T, T2)
     γ = convert(T, 1767732205903 // 4055673282236)
 
@@ -143,19 +250,23 @@ function KenCarp3IMEXTableau(T, T2)
     )
 end
 
-function ARS343Tableau(T, T2)
-    γ = convert(T, 4358665215084590 // 10000000000000000)
+#
+# ARS343 Tableau
+#
+
+function ARS343Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+    γ = convert(T, 0.435866521508459)
 
     s = 4
 
-    c2 = γ
-    c3 = (one(T2) + convert(T2, γ)) / 2
+    c2 = convert(T2, 0.435866521508459)
+    c3 = convert(T2, 0.7179332607542295)
     c4 = one(T2)
 
-    a32_i = (one(T) - γ) / 2
+    a32_i = convert(T, 0.2820667392457705)
 
-    b3_i = (one(T) / 2 - 2γ + γ^2) / ((one(T) - γ) / 2)
-    b2_i = one(T) - γ - b3_i
+    b3_i = convert(T, -0.644363170684469)
+    b2_i = convert(T, 1.20849664917601)
 
     Ai = zeros(T, s, s)
     Ai[2, 2] = γ
@@ -167,7 +278,67 @@ function ARS343Tableau(T, T2)
 
     bi_vec = T[zero(T), b2_i, b3_i, γ]
 
-    ae21 = γ
+    ae21 = convert(T, 0.435866521508459)
+    ae31 = convert(T, 0.321278886)
+    ae32 = convert(T, 0.3966543748)
+    ae41 = -convert(T, 0.105858296)
+    ae42 = convert(T, 0.5529291479)
+    ae43 = convert(T, 0.5529291479)
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ae21
+    Ae[3, 1] = ae31
+    Ae[3, 2] = ae32
+    Ae[4, 1] = ae41
+    Ae[4, 2] = ae42
+    Ae[4, 3] = ae43
+
+    be_vec = T[zero(T), b2_i, b3_i, γ]
+
+    c_vec = T2[zero(T2), c2, c3, c4]
+
+    btilde_vec = T[
+        zero(T), convert(T, 1.20849664917601), convert(T, -0.644363170684469),
+        convert(T, -0.564133478491541),
+    ]
+    ebtilde_vec = T[
+        zero(T), convert(T, 1.20849664917601), convert(T, -0.644363170684469),
+        convert(T, -0.564133478491541),
+    ]
+
+    α_mat = zeros(T2, s, s)
+
+    return IMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, ebtilde_vec, α_mat, 3, s
+    )
+end
+
+function ARS343Tableau(T, T2)
+    γ = convert(T, 4358665215084590 // 10000000000000000)
+
+    s = 4
+
+    c2 = convert(T2, γ)
+    c3 = (one(T2) + convert(T2, γ)) / 2
+    c4 = one(T2)
+
+    a32_i = (one(T) - γ) / 2
+
+    b3_i = (one(T) / 2 - 2γ + γ^2) / ((one(T) - γ) / 2)
+    b2_i = one(T) - γ - b3_i
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = convert(T, γ)
+    Ai[3, 2] = convert(T, a32_i)
+    Ai[3, 3] = convert(T, γ)
+    Ai[4, 2] = convert(T, b2_i)
+    Ai[4, 3] = convert(T, b3_i)
+    Ai[4, 4] = convert(T, γ)
+
+    bi_vec = T[zero(T), convert(T, b2_i), convert(T, b3_i), convert(T, γ)]
+
+    ae21 = convert(T, γ)
     ae31 = convert(T, 3212788860 // 10000000000)
     ae32 = convert(T, 3966543748 // 10000000000)
     ae41 = -convert(T, 1058582960 // 10000000000)
@@ -182,9 +353,9 @@ function ARS343Tableau(T, T2)
     Ae[4, 2] = ae42
     Ae[4, 3] = ae43
 
-    be_vec = T[zero(T), b2_i, b3_i, γ]
+    be_vec = T[zero(T), convert(T, b2_i), convert(T, b3_i), convert(T, γ)]
 
-    c_vec = T2[zero(T2), convert(T2, c2), c3, c4]
+    c_vec = T2[zero(T2), convert(T2, c2), convert(T2, c3), convert(T2, c4)]
 
     btilde_vec = bi_vec .- T[zero(T), zero(T), zero(T), one(T)]
     ebtilde_vec = be_vec .- T[zero(T), zero(T), zero(T), one(T)]

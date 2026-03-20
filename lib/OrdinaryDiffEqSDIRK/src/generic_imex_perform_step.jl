@@ -25,12 +25,12 @@ function full_cache(c::IMEXCache)
 end
 
 function alg_cache(
-        alg::ARS343, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ARS343Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tab = IMEXTableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ = tab.Ai[2, 2]
     c = tab.c[2]
     nlsolver = build_nlsolver(
@@ -41,12 +41,12 @@ function alg_cache(
 end
 
 function alg_cache(
-        alg::ARS343, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ARS343Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tab = IMEXTableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ = tab.Ai[2, 2]
     c = tab.c[2]
     nlsolver = build_nlsolver(
