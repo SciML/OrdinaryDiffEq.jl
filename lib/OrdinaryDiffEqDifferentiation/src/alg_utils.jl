@@ -83,7 +83,7 @@ function prepare_ADType(autodiff_alg::AutoSparse, prob, u0, p, standardtag)
 end
 
 function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag::Bool)
-    prepare_ADType(autodiff_alg, prob, u0, p, Val(standardtag))
+    return prepare_ADType(autodiff_alg, prob, u0, p, Val(standardtag))
 end
 
 function _prepare_ADType_fwd(autodiff_alg::AutoForwardDiff, prob, u0, tag)

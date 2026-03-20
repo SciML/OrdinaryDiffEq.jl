@@ -12,9 +12,9 @@ using OrdinaryDiffEqRosenbrock, SciMLBase, Test, LinearAlgebra
     dts = [0.005, 0.0025, 0.00125, 0.000625]
     errs = [
         begin
-            sol = solve(prob, IMEXRKR_3_2(), dt = dt, adaptive = false)
-            abs(sol.u[end][1] - uref)
-        end for dt in dts
+                sol = solve(prob, IMEXRKR_3_2(), dt = dt, adaptive = false)
+                abs(sol.u[end][1] - uref)
+            end for dt in dts
     ]
 
     orders = [log(errs[i - 1] / errs[i]) / log(dts[i - 1] / dts[i]) for i in 2:length(dts)]
