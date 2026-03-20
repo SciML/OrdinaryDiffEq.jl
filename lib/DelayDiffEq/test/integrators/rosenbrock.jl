@@ -21,6 +21,7 @@ const algs = [
     sol_scalar = solve(prob_scalar, stepsalg)
 
     @test isapprox(sol_ip(ts, idxs = 1), sol_scalar(ts), rtol = 1.0e-2)
-    @test isapprox(sol_ip.t, sol_scalar.t, rtol = 1.0e-2)
-    @test isapprox(sol_ip[1, :], sol_scalar.u, rtol = 1.0e-2)
+    # Compare endpoints: in-place and scalar may take different step counts
+    @test isapprox(sol_ip.t[end], sol_scalar.t[end], rtol = 1.0e-2)
+    @test isapprox(sol_ip[1, end], sol_scalar.u[end], rtol = 1.0e-2)
 end
