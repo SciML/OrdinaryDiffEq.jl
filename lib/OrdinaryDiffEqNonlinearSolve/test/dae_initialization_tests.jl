@@ -24,7 +24,7 @@ sol = @inferred solve(
 )
 @test sol.u[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
 
-integrator = @inferred init(prob_mm, Rodas5(autodiff = AutoForwardDiff(chunksize=3)))
+integrator = @inferred init(prob_mm, Rodas5(autodiff = AutoForwardDiff(chunksize = 3)))
 # It would be nice if this could test that the initialization is fully inferred,
 # but since the return is just the integrator, this doesn't meet that goal.
 @inferred SciMLBase.initialize_dae!(integrator)
@@ -61,7 +61,7 @@ sol = solve(
 )
 @test sol.u[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
 
-integrator = @inferred init(prob_mm, Rodas5(autodiff = AutoForwardDiff(chunksize=3)))
+integrator = @inferred init(prob_mm, Rodas5(autodiff = AutoForwardDiff(chunksize = 3)))
 # It would be nice if this could test that the initialization is fully inferred,
 # but since the return is just the integrator, this doesn't meet that goal.
 @inferred SciMLBase.initialize_dae!(integrator)
