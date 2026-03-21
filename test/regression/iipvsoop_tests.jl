@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, Test
 using OrdinaryDiffEqCore, ADTypes
-using OrdinaryDiffEqLowOrderRK: Ralston4
+using OrdinaryDiffEqLowOrderRK
+const _has_Ralston4 = isdefined(OrdinaryDiffEqLowOrderRK, :Ralston4)
 
 f(u, p, t) = 0.98u
 u0 = 1.0
@@ -84,7 +85,7 @@ prob_scalar = ODEProblem(f_scalar, 1.0, tspan)
 ts = 0:0.1:10.0
 
 rk_algs = [
-    Euler(), Midpoint(), Heun(), Ralston(), Ralston4(), RK4(), SSPRK104(), SSPRK22(), SSPRK33(),
+    Euler(), Midpoint(), Heun(), Ralston(), (_has_Ralston4 ? (OrdinaryDiffEqLowOrderRK.Ralston4(),) : ())..., RK4(), SSPRK104(), SSPRK22(), SSPRK33(),
     SSPRK43(), SSPRK432(), BS3(), BS5(), DP5(), DP8(), Feagin10(), Feagin12(),
     Feagin14(), TanYam7(), Tsit5(), TsitPap8(), Vern6(), Vern7(), Vern8(), Vern9(),
 ]
