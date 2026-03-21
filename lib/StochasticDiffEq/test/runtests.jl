@@ -75,6 +75,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Solver Reversal Tests" begin
             include("reversal_tests.jl")
         end
+        @time @safetestset "Aliasing Tests" begin
+            include("aliasing_tests.jl")
+        end
     end
 
     if TEST_GROUP == "ALL" || TEST_GROUP == "Interface2"
@@ -147,6 +150,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Stochastic iterated integrals" begin
             include("levy_areas.jl")
         end
+        @time @safetestset "Sparse Diff Tests" begin
+            include("sparsediff_tests.jl")
+        end
     end
 
     if !is_APPVEYOR && (TEST_GROUP == "ALL" || TEST_GROUP == "AlgConvergence")
@@ -155,6 +161,12 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         end
         @time @safetestset "Dynamical SDE Tests" begin
             include("sde/sde_dynamical.jl")
+        end
+        @time @safetestset "Noncommutative Noise Tests" begin
+            include("noncommutative_tests.jl")
+        end
+        @time @safetestset "Unrolled Comparison Tests" begin
+            include("unrolled_comparison_tests.jl")
         end
     end
 
@@ -167,6 +179,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         end
         @time @safetestset "Multivariate Geometric Tests" begin
             include("multivariate_geometric.jl")
+        end
+        @time @safetestset "Split SDE Tests" begin
+            include("split_tests.jl")
         end
     end
 
