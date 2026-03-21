@@ -8,7 +8,7 @@ using OrdinaryDiffEqLowOrderRK, Test, LinearAlgebra
 
     @testset "Scalar out-of-place" begin
         prob = SplitODEProblem(
-            (u, p, t) -> -0.1 * u, (u, p, t) -> -0.9 * u, 1.0, (0.0, 1.0)
+            (u, p, t) -> -0.9 * u, (u, p, t) -> -0.1 * u, 1.0, (0.0, 1.0)
         )
 
         sol = solve(prob, MREEF(m = 10, order = 4), dt = 0.1, adaptive = false)
@@ -19,8 +19,8 @@ using OrdinaryDiffEqLowOrderRK, Test, LinearAlgebra
     end
 
     @testset "Vector in-place" begin
-        f1!(du, u, p, t) = (du .= -0.1 .* u)
-        f2!(du, u, p, t) = (du .= -0.9 .* u)
+        f1!(du, u, p, t) = (du .= -0.9 .* u)
+        f2!(du, u, p, t) = (du .= -0.1 .* u)
         u0 = [1.0, 2.0, 3.0]
         prob = SplitODEProblem(f1!, f2!, u0, (0.0, 1.0))
 
@@ -32,8 +32,8 @@ using OrdinaryDiffEqLowOrderRK, Test, LinearAlgebra
     end
 
     @testset "Order convergence (harmonic)" begin
-        f1!(du, u, p, t) = (du .= -0.1 .* u)
-        f2!(du, u, p, t) = (du .= -0.9 .* u)
+        f1!(du, u, p, t) = (du .= -0.9 .* u)
+        f2!(du, u, p, t) = (du .= -0.1 .* u)
         u0 = [1.0]
         exact = u0 .* exp(-1.0)
         dts = [0.2, 0.1, 0.05, 0.025]
@@ -59,8 +59,8 @@ using OrdinaryDiffEqLowOrderRK, Test, LinearAlgebra
     end
 
     @testset "Order convergence (romberg)" begin
-        f1!(du, u, p, t) = (du .= -0.1 .* u)
-        f2!(du, u, p, t) = (du .= -0.9 .* u)
+        f1!(du, u, p, t) = (du .= -0.9 .* u)
+        f2!(du, u, p, t) = (du .= -0.1 .* u)
         u0 = [1.0]
         exact = u0 .* exp(-1.0)
         dts = [0.2, 0.1, 0.05, 0.025]
@@ -86,15 +86,15 @@ using OrdinaryDiffEqLowOrderRK, Test, LinearAlgebra
     end
 
     @testset "Nonlinear coupled system" begin
-        function fs!(du, u, p, t)
-            du[1] = 1.0 + u[1]^2 * u[2] - 3.0 * u[1]
-            du[2] = 0.0
-        end
         function ff!(du, u, p, t)
             du[1] = 0.0
             du[2] = 20.0 * (2.0 * u[1] - u[1]^2 * u[2])
         end
-        prob = SplitODEProblem(fs!, ff!, [1.5, 3.0], (0.0, 0.5))
+        function fs!(du, u, p, t)
+            du[1] = 1.0 + u[1]^2 * u[2] - 3.0 * u[1]
+            du[2] = 0.0
+        end
+        prob = SplitODEProblem(ff!, fs!, [1.5, 3.0], (0.0, 0.5))
         ref = solve(prob, SplitEuler(), dt = 1.0e-6, adaptive = false)
 
         sol = solve(prob, MREEF(m = 20, order = 4), dt = 0.01, adaptive = false)
@@ -105,20 +105,20 @@ using OrdinaryDiffEqLowOrderRK, Test, LinearAlgebra
     end
 
     @testset "Stats tracking" begin
-        f1!(du, u, p, t) = (du .= -0.1 .* u)
-        f2!(du, u, p, t) = (du .= -0.9 .* u)
+        f1!(du, u, p, t) = (du .= -0.9 .* u)
+        f2!(du, u, p, t) = (du .= -0.1 .* u)
         prob = SplitODEProblem(f1!, f2!, [1.0], (0.0, 0.5))
         sol = solve(prob, MREEF(m = 5, order = 3), dt = 0.1, adaptive = false)
 
         @test sol.stats.nf > 0
         @test sol.stats.nf2 > 0
-        @test sol.stats.nf2 > sol.stats.nf  # fast has more evals than slow
+        @test sol.stats.nf > sol.stats.nf2  # f1 (fast) has more evals than f2 (slow)
     end
 
     @testset "Complex numbers" begin
         prob = SplitODEProblem(
-            (u, p, t) -> -0.1im .* u,
             (u, p, t) -> -0.9im .* u,
+            (u, p, t) -> -0.1im .* u,
             [1.0 + 0.0im], (0.0, 1.0)
         )
         sol = solve(prob, MREEF(m = 10, order = 4), dt = 0.1, adaptive = false)
@@ -126,8 +126,8 @@ using OrdinaryDiffEqLowOrderRK, Test, LinearAlgebra
     end
 
     @testset "SplitFunction wrapper" begin
-        f1!(du, u, p, t) = (du .= -0.1 .* u)
-        f2!(du, u, p, t) = (du .= -0.9 .* u)
+        f1!(du, u, p, t) = (du .= -0.9 .* u)
+        f2!(du, u, p, t) = (du .= -0.1 .* u)
         ff = SplitFunction(f1!, f2!)
         prob = ODEProblem(ff, [1.0, 2.0], (0.0, 1.0))
         sol = solve(prob, MREEF(m = 10, order = 4), dt = 0.1, adaptive = false)

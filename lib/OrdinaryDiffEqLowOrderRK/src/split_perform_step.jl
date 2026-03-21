@@ -76,8 +76,8 @@ function initialize!(integrator, cache::MREEFCache)
     integrator.k[2] = integrator.fsallast
     integrator.f.f1(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     integrator.f.f2(cache.tmp, integrator.uprev, integrator.p, integrator.t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    integrator.stats.nf2 += 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)  # f1
+    integrator.stats.nf2 += 1  # f2
     return integrator.fsalfirst .+= cache.tmp
 end
 
@@ -96,8 +96,9 @@ end
 # ── MREEF perform_step! (in-place, MutableCache) ──────────────────────────────
 #
 # Base multirate Euler with nj macro intervals, m fast substeps each:
-#   1. k_slow = f.f1(u, p, t_mac)  — frozen slow rate for the macro interval
-#   2. m fast substeps: u += h_fast*(k_slow + f.f2(u, p, t_fast))
+#   1. k_slow = f.f2(u, p, t_mac)  — frozen slow rate for the macro interval
+#   2. m fast substeps: u += h_fast*(k_slow + f.f1(u, p, t_fast))
+# f1 = fast/stiff (large eigenvalues), f2 = slow/non-stiff (SciML convention).
 # Then apply Aitken–Neville Richardson extrapolation over T[1..order].
 
 function perform_step!(integrator, cache::MREEFCache, repeat_step = false)
@@ -119,14 +120,14 @@ function perform_step!(integrator, cache::MREEFCache, repeat_step = false)
         for i_mac in 1:nj
             t_mac = t + (i_mac - 1) * h_mac
 
-            # Slow evaluation: frozen for all m fast substeps
-            f.f1(k_slow, T[j], p, t_mac)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            # Slow evaluation (f2): frozen for all m fast substeps
+            f.f2(k_slow, T[j], p, t_mac)
+            integrator.stats.nf2 += 1
 
             for i_fast in 1:m
                 t_fast = t_mac + (i_fast - 1) * h_fast
-                f.f2(k_fast, T[j], p, t_fast)
-                integrator.stats.nf2 += 1
+                f.f1(k_fast, T[j], p, t_fast)
+                OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
                 @.. broadcast = false T[j] = T[j] + h_fast * k_slow + h_fast * k_fast
             end
         end
@@ -179,12 +180,12 @@ end
         u_cur = uprev
         for i_mac in 1:nj
             t_mac = t + (i_mac - 1) * h_mac
-            k_slow = f.f1(u_cur, p, t_mac)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            k_slow = f.f2(u_cur, p, t_mac)
+            integrator.stats.nf2 += 1
             for i_fast in 1:m
                 t_fast = t_mac + (i_fast - 1) * h_fast
-                k_fast = f.f2(u_cur, p, t_fast)
-                integrator.stats.nf2 += 1
+                k_fast = f.f1(u_cur, p, t_fast)
+                OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
                 u_cur = @.. broadcast = false u_cur + h_fast * k_slow + h_fast * k_fast
             end
         end
