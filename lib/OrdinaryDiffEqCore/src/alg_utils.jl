@@ -309,17 +309,19 @@ function DiffEqBase.prepare_alg(alg::CompositeAlgorithm, u0, p, prob)
     if cf isa AutoSwitch
         nonstiffalg = _prepare_autoswitch_alg(cf.nonstiffalg, u0, p, prob)
         stiffalg = _prepare_autoswitch_alg(cf.stiffalg, u0, p, prob)
-        cf = AutoSwitch(nonstiffalg, stiffalg,
+        cf = AutoSwitch(
+            nonstiffalg, stiffalg,
             cf.maxstiffstep, cf.maxnonstiffstep,
             cf.nonstifftol, cf.stifftol,
-            cf.dtfac, cf.stiffalgfirst, cf.switch_max)
+            cf.dtfac, cf.stiffalgfirst, cf.switch_max
+        )
     end
     return CompositeAlgorithm(algs, cf)
 end
 
 _prepare_autoswitch_alg(alg, u0, p, prob) = DiffEqBase.prepare_alg(alg, u0, p, prob)
 function _prepare_autoswitch_alg(algs::Tuple, u0, p, prob)
-    map(a -> DiffEqBase.prepare_alg(a, u0, p, prob), algs)
+    return map(a -> DiffEqBase.prepare_alg(a, u0, p, prob), algs)
 end
 
 has_autodiff(alg::OrdinaryDiffEqAlgorithm) = false
