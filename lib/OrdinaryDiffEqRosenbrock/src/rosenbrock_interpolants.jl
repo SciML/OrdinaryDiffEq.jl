@@ -7,7 +7,6 @@ ROSENBROCKS_WITH_INTERPOLATIONS = Union{
     RosenbrockCombinedConstantCache,
     RosenbrockCache,
     HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
-    IMEXRKR_3_2ConstantCache, IMEXRKR_3_2Cache,
 }
 
 function _ode_interpolant(
@@ -580,76 +579,5 @@ end
                 24 * Θ * k[3][idxs]
         ) / dt^3
     end
-    out
-end
-
-# IMEXRKR_3_2 stores Rosenbrock stage vectors (not ODE derivatives) in k[1]/k[2], so the
-# generic Hermite fallback would give incorrect dense output. These overrides provide
-# correct linear interpolation (order 1) that ignores k entirely.
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::Union{IMEXRKR_3_2ConstantCache, IMEXRKR_3_2Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars
-    )
-    @.. y₀ + Θ * (y₁ - y₀)
-end
-
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::Union{IMEXRKR_3_2ConstantCache, IMEXRKR_3_2Cache},
-        idxs, T::Type{Val{0}}, differential_vars
-    )
-    y₀[idxs] .+ Θ .* (y₁[idxs] .- y₀[idxs])
-end
-
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::Union{IMEXRKR_3_2ConstantCache, IMEXRKR_3_2Cache},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars
-    )
-    @.. out = y₀ + Θ * (y₁ - y₀)
-    out
-end
-
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::Union{IMEXRKR_3_2ConstantCache, IMEXRKR_3_2Cache},
-        idxs, T::Type{Val{0}}, differential_vars
-    )
-    @views @.. out = y₀[idxs] + Θ * (y₁[idxs] - y₀[idxs])
-    out
-end
-
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::Union{IMEXRKR_3_2ConstantCache, IMEXRKR_3_2Cache},
-        idxs::Nothing, T::Type{Val{1}}, differential_vars
-    )
-    @.. (y₁ - y₀) / dt
-end
-
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::Union{IMEXRKR_3_2ConstantCache, IMEXRKR_3_2Cache},
-        idxs, T::Type{Val{1}}, differential_vars
-    )
-    (y₁[idxs] .- y₀[idxs]) ./ dt
-end
-
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::Union{IMEXRKR_3_2ConstantCache, IMEXRKR_3_2Cache},
-        idxs::Nothing, T::Type{Val{1}}, differential_vars
-    )
-    @.. out = (y₁ - y₀) / dt
-    out
-end
-
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::Union{IMEXRKR_3_2ConstantCache, IMEXRKR_3_2Cache},
-        idxs, T::Type{Val{1}}, differential_vars
-    )
-    @views @.. out = (y₁[idxs] - y₀[idxs]) / dt
     out
 end

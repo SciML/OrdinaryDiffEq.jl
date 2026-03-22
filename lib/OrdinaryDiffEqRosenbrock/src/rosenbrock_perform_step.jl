@@ -1568,21 +1568,16 @@ end
 ################################################################################
 
 function initialize!(integrator, cache::IMEXRKR_3_2ConstantCache)
-    integrator.kshortsize = 2
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.kshortsize = 0
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = zero(integrator.fsalfirst)
-    integrator.k[1] = zero(integrator.fsalfirst)
-    integrator.k[2] = zero(integrator.fsalfirst)
     return nothing
 end
 
 function initialize!(integrator, cache::IMEXRKR_3_2Cache)
-    integrator.kshortsize = 2
+    integrator.kshortsize = 0
     resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = cache.k₁
-    integrator.k[2] = cache.k₃
     return nothing
 end
 
@@ -1631,8 +1626,6 @@ end
 
     integrator.fsallast = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    integrator.k[1] = k₁
-    integrator.k[2] = k₃
     integrator.u = u
     return nothing
 end
