@@ -6,3 +6,5 @@ const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
 end
+
+@time @safetestset "Convergence Tests" include("pdirk_convergence_tests.jl")

@@ -626,7 +626,7 @@ isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::CompositeAlgorithm) = all(is_mass_matrix_alg, alg.algs)
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
-is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
+is_mass_matrix_alg(alg::NewtonAlgorithm) = isfsal(alg) || !isesdirk(alg)
 
 # All algorithms should be shown using their keyword definition, and not as structs
 function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)

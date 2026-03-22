@@ -2061,6 +2061,20 @@ end
     @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
+## Convergence Testing
+testTol = 0.2
+
+@testset "Implicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
+    prob = (
+        prob_ode_linear,
+        prob_ode_2Dlinear,
+    )[i]
+    sim20 = test_convergence(dts, prob, RK46NL())
+    @test sim20.𝒪est[:final] ≈ 4 atol = testTol
+    @test sim20.𝒪est[:l2] ≈ 4 atol = testTol
+    @test sim20.𝒪est[:l∞] ≈ 4 atol = testTol
+end
+
 @testset "VectorOfArray/StructArray compatibility" begin
     using RecursiveArrayTools, StaticArrays, StructArrays
 

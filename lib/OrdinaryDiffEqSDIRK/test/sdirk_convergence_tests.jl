@@ -1,5 +1,6 @@
 # This definitely needs cleaning
 using OrdinaryDiffEqSDIRK, ODEProblemLibrary, DiffEqDevTools, ADTypes
+using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NonlinearSolveAlg
 using Test, Random
 Random.seed!(100)
 
@@ -89,12 +90,6 @@ testTol = 0.2
     sim019 = test_convergence(dts, prob, CFNLIRK3())
     @test sim019.𝒪est[:final] ≈ 3 atol = testTol
 
-    sim18 = test_convergence(dts, prob, PDIRK44())
-    @test sim18.𝒪est[:final] ≈ 4 atol = testTol
-
-    sim182 = test_convergence(dts, prob, PDIRK44(; threading = false))
-    @test sim182.𝒪est[:final] ≈ 4 atol = testTol
-
     dts = (1 / 2) .^ (5:-1:1)
     sim13 = test_convergence(dts, prob, SFSDIRK8())
     @test sim13.𝒪est[:final] ≈ 4 atol = testTol
@@ -120,11 +115,6 @@ testTol = 0.2
 
     sim19 = test_convergence(dts, prob, Hairer4())
     @test sim19.𝒪est[:final] ≈ 4 atol = testTol
-
-    sim20 = test_convergence(dts, prob, RK46NL())
-    @test sim20.𝒪est[:final] ≈ 4 atol = testTol
-    @test sim20.𝒪est[:l2] ≈ 4 atol = testTol
-    @test sim20.𝒪est[:l∞] ≈ 4 atol = testTol
 
     sim110 = test_convergence(dts, prob, Hairer42())
     @test sim110.𝒪est[:final] ≈ 4 atol = testTol
