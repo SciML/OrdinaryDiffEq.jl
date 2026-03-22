@@ -7,4 +7,4 @@ if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
 end
 
-@time @safetestset "Convergance Tests" include("pdirk_convergance_tests.jl")
+@time @safetestset "Convergence Tests" include("pdirk_convergence_tests.jl")
