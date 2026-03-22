@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqMultirate"
 uuid = "d4b830b4-ac80-426b-8507-16693d424963"
-authors = ["singhharsh1708 <singhharsh1708@gmail.com>"]
-version = "1.0.0"
+authors = ["singhharsh1708 <hs1663531@gmail.com>"]
+version = "0.1.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
