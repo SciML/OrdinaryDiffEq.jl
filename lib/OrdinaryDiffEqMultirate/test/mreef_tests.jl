@@ -1,4 +1,4 @@
-using OrdinaryDiffEqMultirate, Test, LinearAlgebra
+using OrdinaryDiffEqMultirate, OrdinaryDiffEqLowOrderRK, DiffEqDevTools, Test, LinearAlgebra
 
 @testset "MREEF" begin
     @testset "Construction" begin
@@ -31,57 +31,30 @@ using OrdinaryDiffEqMultirate, Test, LinearAlgebra
         @test norm(sol_a.u[end] - u0 .* exp(-1.0)) < 1.0e-6
     end
 
-    @testset "Order convergence (harmonic)" begin
-        f1!(du, u, p, t) = (du .= -0.9 .* u)
-        f2!(du, u, p, t) = (du .= -0.1 .* u)
-        u0 = [1.0]
-        exact = u0 .* exp(-1.0)
-        dts = [0.2, 0.1, 0.05, 0.025]
+    @testset "Order convergence" begin
+        f1_analytic = (u0, p, t) -> u0 * exp(-t)
+        f1_inplace = (du, u, p, t) -> (du .= -0.9 .* u)
+        f2_inplace = (du, u, p, t) -> (du .= -0.1 .* u)
+
+        f1_func = ODEFunction(f1_inplace; analytic = f1_analytic)
+        prob = SplitODEProblem(f1_func, f2_inplace, [1.0], (0.0, 1.0))
+
+        dts = 1 .// 2 .^ (6:-1:2)
+        testTol = 0.3
 
         for target_order in [2, 3, 4]
-            alg = MREEF(m = 10, order = target_order)
-            errs = [
-                begin
-                        sol = solve(
-                            SplitODEProblem(f1!, f2!, u0, (0.0, 1.0)),
-                            alg, dt = d, adaptive = false
-                        )
-                        norm(sol.u[end] - exact)
-                    end for d in dts
-            ]
-
-            ratios = [errs[i] / errs[i + 1] for i in 1:3]
-            expected = 2.0^target_order
-            for r in ratios
-                @test abs(r - expected) / expected < 0.15
-            end
+            sim = test_convergence(
+                dts, prob, MREEF(m = 10, order = target_order), adaptive = false
+            )
+            @test sim.𝒪est[:final] ≈ target_order atol = testTol
         end
-    end
-
-    @testset "Order convergence (romberg)" begin
-        f1!(du, u, p, t) = (du .= -0.9 .* u)
-        f2!(du, u, p, t) = (du .= -0.1 .* u)
-        u0 = [1.0]
-        exact = u0 .* exp(-1.0)
-        dts = [0.2, 0.1, 0.05, 0.025]
 
         for target_order in [2, 3]
-            alg = MREEF(m = 10, order = target_order, seq = :romberg)
-            errs = [
-                begin
-                        sol = solve(
-                            SplitODEProblem(f1!, f2!, u0, (0.0, 1.0)),
-                            alg, dt = d, adaptive = false
-                        )
-                        norm(sol.u[end] - exact)
-                    end for d in dts
-            ]
-
-            ratios = [errs[i] / errs[i + 1] for i in 1:3]
-            expected = 2.0^target_order
-            for r in ratios
-                @test abs(r - expected) / expected < 0.15
-            end
+            sim = test_convergence(
+                dts, prob, MREEF(m = 10, order = target_order, seq = :romberg),
+                adaptive = false
+            )
+            @test sim.𝒪est[:final] ≈ target_order atol = testTol
         end
     end
 
@@ -105,9 +78,10 @@ using OrdinaryDiffEqMultirate, Test, LinearAlgebra
     end
 
     @testset "Stats tracking" begin
-        # For MREEF(m, order, seq=:harmonic): f1 evals = m * f2 evals (per step)
-        # The initialize! call contributes 1 to each counter equally,
-        # so nf - 1 == m * (nf2 - 1)
+        # For MREEF(m, order, seq=:harmonic): ns[j] = j
+        # f1 evals per step = m * sum(1:order)
+        # f2 evals per step = sum(1:order)
+        # So nf / nf2 ≈ m (the extra init eval shifts it slightly)
         f1!(du, u, p, t) = (du .= -0.9 .* u)
         f2!(du, u, p, t) = (du .= -0.1 .* u)
         prob = SplitODEProblem(f1!, f2!, [1.0], (0.0, 0.5))

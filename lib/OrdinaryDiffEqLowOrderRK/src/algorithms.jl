@@ -569,9 +569,3 @@ end
 function Alshina6(stage_limiter!, step_limiter! = trivial_limiter!)
     return Alshina6(stage_limiter!, step_limiter!, False())
 end
-
-Base.@kwdef struct MREEF <: OrdinaryDiffEqAdaptiveAlgorithm
-    m::Int = 4
-    order::Int = 4
-    seq::Symbol = :harmonic
-end
