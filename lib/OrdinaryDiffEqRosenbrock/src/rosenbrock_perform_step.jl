@@ -443,85 +443,6 @@ end
 
 #### Rodas4 type method — unified perform_step for all Rosenbrock/Rodas methods
 
-# Compile-time stage computation for IIP (in-place) Rosenbrock methods.
-# Uses @generated + Base.@nexprs to unroll the stage loop, eliminating
-# dynamic loop overhead. Follows the ExplicitRK pattern.
-
-@generated function rosenbrock_iip_stages!(
-        f::F, A, C, c, d, ks, du, du1, du2, linsolve_tmp, dtd, dtC, dT,
-        u, uprev, p, t, dt, mass_matrix, stage_limiter!, integrator,
-        linres, ::Val{num_stages}
-    ) where {F, num_stages}
-    stage_exprs = []
-    for stage in 2:num_stages
-        # Build skip condition at generation time (no closures)
-        if stage > 2
-            eq_checks = [:(A[$stage, $j] == A[$(stage - 1), $j]) for j in 1:(stage - 1)]
-            skip_cond = Expr(:&&, :(c[$stage] == c[$(stage - 1)]), eq_checks...)
-        else
-            skip_cond = false
-        end
-
-        # Build u accumulation: u .= uprev; for j=1:stage-1: u .+= A[stage,j]*ks[j]
-        u_acc = [:(u .= uprev)]
-        for j in 1:(stage - 1)
-            push!(u_acc, :(@.. broadcast = false u = u + A[$stage, $j] * ks[$j]))
-        end
-
-        # Build C accumulation: du1 .= 0; for j=1:stage-1: du1 .+= dtC[stage,j]*ks[j]
-        c_acc = [:(du1 .= 0)]
-        for j in 1:(stage - 1)
-            push!(c_acc, :(@.. broadcast = false du1 = du1 + dtC[$stage, $j] * ks[$j]))
-        end
-
-        push!(stage_exprs, quote
-            $(u_acc...)
-            stage_limiter!(u, integrator, p, t + c[$stage] * dt)
-
-            if $skip_cond
-                # du unchanged from previous stage (Rosenbrock4 a4j=a3j)
-            else
-                f(du, u, p, t + c[$stage] * dt)
-                OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            end
-
-            if mass_matrix === I
-                $(c_acc...)
-            else
-                $(c_acc...)
-                mul!(_vec(du2), mass_matrix, _vec(du1))
-                du1 .= du2
-            end
-            @.. broadcast = false linsolve_tmp = du + dtd[$stage] * dT + du1
-
-            linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-            veck = _vec(ks[$stage])
-            @.. broadcast = false veck = -linres.u
-            integrator.stats.nsolve += 1
-        end)
-    end
-
-    return quote
-        $(stage_exprs...)
-        return linres
-    end
-end
-
-# Runtime dispatch for IIP stages: specialize for 2-19 stages via @nif
-function rosenbrock_iip_dispatch_stages!(
-        f::F, A, C, c, d, ks, du, du1, du2, linsolve_tmp, dtd, dtC, dT,
-        u, uprev, p, t, dt, mass_matrix, stage_limiter!, integrator,
-        linres, num_stages::Int
-    ) where {F}
-    Base.@nif 19 (s -> (s == num_stages)) (
-        s -> rosenbrock_iip_stages!(
-            f, A, C, c, d, ks, du, du1, du2, linsolve_tmp, dtd, dtC, dT,
-            u, uprev, p, t, dt, mass_matrix, stage_limiter!, integrator,
-            linres, Val(s)
-        )
-    ) (s -> error("Rosenbrock method with $num_stages stages not supported (max 19)"))
-end
-
 function initialize!(integrator, cache::RosenbrockCombinedConstantCache)
     H_rows = size(cache.tab.H, 1)
     integrator.kshortsize = H_rows > 0 ? H_rows : 2
@@ -720,13 +641,41 @@ end
     @.. $(_vec(ks[1])) = -linres.u
     integrator.stats.nsolve += 1
 
-    # Compute stages 2..num_stages with compile-time unrolled accumulations
-    num_stages = length(ks)
-    linres = rosenbrock_iip_dispatch_stages!(
-        f, A, C, c, d, ks, du, du1, du2, linsolve_tmp, dtd, dtC, dT,
-        u, uprev, p, t, dt, mass_matrix, stage_limiter!, integrator,
-        linres, num_stages
-    )
+    for stage in 2:length(ks)
+        u .= uprev
+        for i in 1:(stage - 1)
+            @.. u += A[stage, i] * ks[i]
+        end
+
+        stage_limiter!(u, integrator, p, t + c[stage] * dt)
+        # Skip redundant f evaluation when a[stage,:]=a[stage-1,:] and c[stage]=c[stage-1]
+        # (Rosenbrock4 methods: stage 4 reuses du from stage 3)
+        if stage > 2 && c[stage] == c[stage - 1] &&
+                all(j -> A[stage, j] == A[stage - 1, j], 1:(stage - 1))
+            # du is already correct from previous stage
+        else
+            f(du, u, p, t + c[stage] * dt)
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        end
+
+        du1 .= 0
+        if mass_matrix === I
+            for i in 1:(stage - 1)
+                @.. du1 += dtC[stage, i] * ks[i]
+            end
+        else
+            for i in 1:(stage - 1)
+                @.. du1 += dtC[stage, i] * ks[i]
+            end
+            mul!(_vec(du2), mass_matrix, _vec(du1))
+            du1 .= du2
+        end
+        @.. linsolve_tmp = du + dtd[stage] * dT + du1
+
+        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+        @.. $(_vec(ks[stage])) = -linres.u
+        integrator.stats.nsolve += 1
+    end
 
     # Solution update using explicit b weights
     tab = cache.tab
