@@ -54,6 +54,9 @@ export test_convergence, analyticless_test_convergence, appxtrue!, appxtrue, def
 
 export get_sample_errors
 
+#Tagging and Filtering
+export filter_by_tags, exclude_by_tags, get_tags, unique_tags, merge_wp_sets
+
 #Tab Functions
 export stability_region, residual_order_condition, check_tableau,
     imaginary_stability_interval
