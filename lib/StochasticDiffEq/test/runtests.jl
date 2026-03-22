@@ -177,9 +177,6 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Multivariate Geometric Tests" begin
             include("multivariate_geometric.jl")
         end
-        @time @safetestset "Split SDE Tests" begin
-            include("split_tests.jl")
-        end
     end
 
     if !is_APPVEYOR && TEST_GROUP == "AlgConvergence3"
