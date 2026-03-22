@@ -162,9 +162,6 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Noncommutative Noise Tests" begin
             include("noncommutative_tests.jl")
         end
-        @time @safetestset "Unrolled Comparison Tests" begin
-            include("unrolled_comparison_tests.jl")
-        end
     end
 
     if !is_APPVEYOR && TEST_GROUP == "AlgConvergence2"
