@@ -441,7 +441,7 @@ end
     return nothing
 end
 
-#### Rodas4 type method
+#### Rodas4 type method — unified perform_step for all Rosenbrock/Rodas methods
 
 function initialize!(integrator, cache::RosenbrockCombinedConstantCache)
     H_rows = size(cache.tab.H, 1)
@@ -486,6 +486,7 @@ end
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     # constant number for type stability make sure this is greater than num_stages
     ks = ntuple(Returns(k1), Val(20))
+
     # Loop for stages
     for stage in 2:num_stages
         u = uprev
