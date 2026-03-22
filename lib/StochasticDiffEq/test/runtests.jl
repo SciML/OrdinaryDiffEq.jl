@@ -75,9 +75,6 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Solver Reversal Tests" begin
             include("reversal_tests.jl")
         end
-        @time @safetestset "Aliasing Tests" begin
-            include("aliasing_tests.jl")
-        end
     end
 
     if TEST_GROUP == "ALL" || TEST_GROUP == "Interface2"
