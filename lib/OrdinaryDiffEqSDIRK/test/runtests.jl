@@ -8,5 +8,5 @@ if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
     @time @safetestset "Aqua" include("qa.jl")
 end
 
-@time @safetestset "Convergance" include("sdirk_convergence_tests.jl")
+@time @safetestset "Convergence" include("sdirk_convergence_tests.jl")
 @time @safetestset "DAE tests" include("dae_esdirk_test.jl")
