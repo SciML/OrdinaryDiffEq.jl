@@ -271,11 +271,3 @@ function _ode_addsteps!(
     end
     return nothing
 end
-
-function _ode_addsteps!(
-        k, t, uprev, u, dt, f, p,
-        cache::Union{IMEXRKR_3_2ConstantCache, IMEXRKR_3_2Cache},
-        always_calc_begin = false, allow_calc_end = true, force_calc_end = false
-    )
-    return nothing
-end

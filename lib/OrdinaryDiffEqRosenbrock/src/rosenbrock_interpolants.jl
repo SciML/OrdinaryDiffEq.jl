@@ -583,6 +583,9 @@ end
     out
 end
 
+# IMEXRKR_3_2 stores Rosenbrock stage vectors (not ODE derivatives) in k[1]/k[2], so the
+# generic Hermite fallback would give incorrect dense output. These overrides provide
+# correct linear interpolation (order 1) that ignores k entirely.
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
         cache::Union{IMEXRKR_3_2ConstantCache, IMEXRKR_3_2Cache},
