@@ -206,3 +206,62 @@ References:
   arXiv:2511.21252, 2025.
 """
 Tsit5DA(; kwargs...) = HybridExplicitImplicitRK(Tsit5DATableau; order = 5, kwargs...)
+
+# ============================================================================
+# GenericRosenbrock - Generic Rosenbrock solver with custom tableau
+# ============================================================================
+
+"""
+    GenericRosenbrock(; tableau, order = 5, kwargs...)
+
+A generic Rosenbrock method that allows you to define a custom tableau.
+This solver accepts any `RodasTableau` and uses the generic Rosenbrock stepping algorithm.
+
+# Parameters
+- `tableau`: A `RodasTableau{T, T2}` object defining the Rosenbrock tableau coefficients.
+  Can be constructed using functions like `constructRodas5P()`.
+- `order`: The order of the method (default: 5)
+- Other keyword arguments are passed to the underlying algorithm configuration.
+
+# Example
+```julia
+using OrdinaryDiffEqRosenbrock
+prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+sol = solve(prob, GenericRosenbrock(tableau = constructRodas5P()))
+```
+
+For most applications, prefer the named methods like `Rodas5P()`, `Rodas4P()`, etc.
+"""
+struct GenericRosenbrock{CS, AD, F, P, FDT, ST, CJ, TabType, StepLimiter, StageLimiter} <:
+    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    tableau::TabType
+    order::Int
+    num_solution_stages::Int
+    linsolve::F
+    precs::P
+    step_limiter!::StepLimiter
+    stage_limiter!::StageLimiter
+    autodiff::AD
+end
+
+function GenericRosenbrock(;
+        tableau, order = 5, num_solution_stages = size(tableau.A, 1),
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
+        standardtag = Val{true}(), concrete_jac = nothing,
+        diff_type = Val{:forward}(), linsolve = nothing,
+        precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
+        stage_limiter! = trivial_limiter!
+    )
+    AD_choice, chunk_size, diff_type = _process_AD_choice(
+        autodiff, chunk_size, diff_type
+    )
+    return GenericRosenbrock{
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
+        typeof(precs), diff_type, _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac), typeof(tableau), typeof(step_limiter!),
+        typeof(stage_limiter!),
+    }(
+        tableau, order, num_solution_stages, linsolve, precs, step_limiter!,
+        stage_limiter!, AD_choice
+    )
+end

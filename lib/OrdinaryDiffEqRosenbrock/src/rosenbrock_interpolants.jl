@@ -6,6 +6,8 @@ ROSENBROCKS_WITH_INTERPOLATIONS = Union{
     Rodas23WCache, Rodas3PCache,
     RosenbrockCombinedConstantCache,
     RosenbrockCache,
+    GenericRosenbrockRuntimeConstantCache,
+    GenericRosenbrockRuntimeCache,
     HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
 }
 
@@ -169,6 +171,7 @@ From MATLAB ODE Suite by Shampine
         cache::Union{
             RosenbrockCombinedConstantCache, Rodas23WConstantCache,
             Rodas3PConstantCache, RosenbrockCache, Rodas23WCache, Rodas3PCache,
+            GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache,
             HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
         },
         idxs::Nothing, T::Type{Val{0}}, differential_vars
@@ -188,6 +191,7 @@ end
         cache::Union{
             RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache,
+            GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache,
             HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
         },
         idxs, T::Type{Val{0}}, differential_vars
@@ -213,6 +217,7 @@ end
         cache::Union{
             RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache,
+            GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache,
             HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
         },
         idxs::Nothing, T::Type{Val{0}}, differential_vars
@@ -233,6 +238,7 @@ end
         cache::Union{
             RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache,
+            GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache,
             HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
         },
         idxs, T::Type{Val{0}}, differential_vars
@@ -266,6 +272,7 @@ end
         cache::Union{
             RosenbrockCache, Rodas23WCache, Rodas3PCache, RosenbrockCombinedConstantCache,
             Rodas23WConstantCache, Rodas3PConstantCache,
+            GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache,
             HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
         },
         idxs::Nothing, T::Type{Val{1}}, differential_vars
@@ -298,6 +305,7 @@ end
         cache::Union{
             RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache,
+            GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache,
             HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
         },
         idxs, T::Type{Val{1}}, differential_vars
@@ -336,6 +344,7 @@ end
         cache::Union{
             RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache,
+            GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache,
             HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
         },
         idxs::Nothing, T::Type{Val{1}}, differential_vars
@@ -370,6 +379,7 @@ end
         cache::Union{
             RosenbrockCombinedConstantCache, RosenbrockCache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache,
+            GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache,
             HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
         },
         idxs, T::Type{Val{1}}, differential_vars
@@ -414,7 +424,7 @@ end
 
 # Second Derivative
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::RosenbrockCombinedConstantCache,
+        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCombinedConstantCache, GenericRosenbrockRuntimeConstantCache},
         idxs::Nothing, T::Type{Val{2}}, differential_vars
     )
     if cache.interp_order == 4
@@ -430,7 +440,7 @@ end
 end
 
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::RosenbrockCache, idxs::Nothing,
+        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCache, GenericRosenbrockRuntimeCache}, idxs::Nothing,
         T::Type{Val{2}}, differential_vars
     )
     if cache.interp_order == 4
@@ -450,7 +460,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
+        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
         idxs, T::Type{Val{2}}, differential_vars
     )
     if cache.interp_order == 4
@@ -470,7 +480,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
+        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
         idxs::Nothing, T::Type{Val{2}}, differential_vars
     )
     if cache.interp_order == 4
@@ -491,7 +501,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
+        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
         idxs, T::Type{Val{2}}, differential_vars
     )
     if cache.interp_order == 4
@@ -514,7 +524,7 @@ end
 
 # Third Derivative
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::RosenbrockCombinedConstantCache,
+        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCombinedConstantCache, GenericRosenbrockRuntimeConstantCache},
         idxs::Nothing, T::Type{Val{3}}, differential_vars
     )
     if cache.interp_order == 4
@@ -525,7 +535,7 @@ end
 end
 
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::RosenbrockCache, idxs::Nothing,
+        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCache, GenericRosenbrockRuntimeCache}, idxs::Nothing,
         T::Type{Val{3}}, differential_vars
     )
     if cache.interp_order == 4
@@ -537,7 +547,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
+        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
         idxs, T::Type{Val{3}}, differential_vars
     )
     if cache.interp_order == 4
@@ -552,7 +562,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
+        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
         idxs::Nothing, T::Type{Val{3}}, differential_vars
     )
     if cache.interp_order == 4
@@ -565,7 +575,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
+        cache::Union{RosenbrockCombinedConstantCache, RosenbrockCache, GenericRosenbrockRuntimeConstantCache, GenericRosenbrockRuntimeCache, HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
         idxs, T::Type{Val{3}}, differential_vars
     )
     if cache.interp_order == 4

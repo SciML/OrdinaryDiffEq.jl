@@ -64,10 +64,10 @@ function rosenbrock_wolfbrandt_docstring(
             ForwardDiff default function-specific tags. For more information, see
             [this blog post](https://www.stochasticlifestyle.com/improved-forwarddiff-jl-stacktraces-with-package-tags/).
             Defaults to `Val{true}()`.
-        - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/) 
+        - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/)
             to specify whether to use automatic differentiation via
             [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) or finite
-            differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl). 
+            differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl).
             Defaults to `AutoForwardDiff()` for automatic differentiation, which by default uses
             `chunksize = 0`, and thus uses the internal ForwardDiff.jl algorithm for the choice.
             To use `FiniteDiff.jl`, the `AutoFiniteDiff()` ADType can be used, which has a keyword argument
@@ -139,10 +139,10 @@ function rosenbrock_docstring(
             ForwardDiff default function-specific tags. For more information, see
             [this blog post](https://www.stochasticlifestyle.com/improved-forwarddiff-jl-stacktraces-with-package-tags/).
             Defaults to `Val{true}()`.
-        - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/) 
+        - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/)
             to specify whether to use automatic differentiation via
             [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) or finite
-            differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl). 
+            differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl).
             Defaults to `AutoForwardDiff()` for automatic differentiation, which by default uses
             `chunksize = 0`, and thus uses the internal ForwardDiff.jl algorithm for the choice.
             To use `FiniteDiff.jl`, the `AutoFiniteDiff()` ADType can be used, which has a keyword argument
@@ -216,6 +216,7 @@ include("alg_utils.jl")
 include("generic_rosenbrock.jl")
 include("rosenbrock_caches.jl")
 include("rosenbrock_tableaus.jl")
+include("generic_rosenbrock_runtime.jl")
 include("interp_func.jl")
 include("rosenbrock_interpolants.jl")
 include("stiff_addsteps.jl")
@@ -296,6 +297,9 @@ export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
     Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P, HybridExplicitImplicitRK, Tsit5DA,
     RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL,
     ROS3PRL2, ROK4a,
-    ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
+    ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7,
+    GenericRosenbrock, RodasTableau,
+    constructRodas4, constructRodas42, constructRodas4P, constructRodas4P2,
+    constructRodas5, constructRodas5P, constructRodas6P
 
 end
