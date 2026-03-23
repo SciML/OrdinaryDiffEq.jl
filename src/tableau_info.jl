@@ -70,11 +70,22 @@ function stability_region(
         tab_or_alg::Union{ODERKTableau, AbstractODEAlgorithm};
         initial_guess = -3.0, kw...
     )
-    residual! = function (resid, x)
-        return resid[1] = abs(stability_region(x[1], tab_or_alg)) - 1
+    f = (x, p) -> abs(stability_region(x, tab_or_alg)) - 1
+    T = typeof(initial_guess)
+    # Bracket between a point near 0 (inside stability region) and a point
+    # far from 0 (outside stability region). Solvers are 0-stable (|r(0)|=1)
+    # and not ∞-stable, so a sign change must exist between these points.
+    near_zero = sign(initial_guess) * one(T) / T(10)
+    far = initial_guess * T(10)
+    left, right = minmax(near_zero, far)
+    if f(left, nothing) * f(right, nothing) >= 0
+        # No sign change on same side of 0 (e.g. A-stable methods).
+        # Try bracket spanning 0: boundary is at z=0 for A-stable methods.
+        left, right = minmax(far, -near_zero)
     end
-    sol = nlsolve(residual!, [initial_guess]; kw...)
-    return sol.zero[1]
+    prob = IntervalNonlinearProblem{false}(f, (left, right))
+    sol = solve(prob, Bisection(); kw...)
+    return sol.u
 end
 
 """
@@ -90,11 +101,13 @@ function imaginary_stability_interval(
         initial_guess = length(tab) - one(eltype(tab.A)),
         kw...
     )
-    residual! = function (resid, x)
-        return resid[1] = abs(stability_region(im * x[1], tab)) - 1
-    end
-    sol = nlsolve(residual!, [initial_guess]; kw...)
-    return sol.zero[1]
+    f = (x, p) -> abs(stability_region(im * x, tab)) - 1
+    T = typeof(initial_guess)
+    near_zero = one(T) / T(10)
+    far = initial_guess * T(10)
+    prob = IntervalNonlinearProblem{false}(f, (near_zero, far))
+    sol = solve(prob, Bisection(); kw...)
+    return sol.u
 end
 
 """
@@ -110,11 +123,13 @@ function imaginary_stability_interval(
         initial_guess = 20.0,
         kw...
     )
-    residual! = function (resid, x)
-        return resid[1] = abs(stability_region(im * x[1], alg)) - 1
-    end
-    sol = nlsolve(residual!, [initial_guess]; kw...)
-    return sol.zero[1]
+    f = (x, p) -> abs(stability_region(im * x, alg)) - 1
+    T = typeof(initial_guess)
+    near_zero = one(T) / T(10)
+    far = initial_guess * T(10)
+    prob = IntervalNonlinearProblem{false}(f, (near_zero, far))
+    sol = solve(prob, Bisection(); kw...)
+    return sol.u
 end
 
 function RootedTrees.residual_order_condition(

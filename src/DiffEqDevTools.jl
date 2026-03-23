@@ -5,14 +5,14 @@ using RecipesBase: RecipesBase, @recipe, @series
 using RecursiveArrayTools: RecursiveArrayTools, recursive_mean, vecvecapply
 using DiffEqNoiseProcess: DiffEqNoiseProcess, NoiseGrid, NoiseWrapper
 using StructArrays: StructArrays, StructArray
-using NLsolve: NLsolve, nlsolve
+using BracketingNonlinearSolve: BracketingNonlinearSolve, Bisection
 using LinearAlgebra: LinearAlgebra, norm, I, /, \
 using RootedTrees: RootedTrees, RootedTreeIterator, RungeKuttaMethod, residual_order_condition
 using Distributed: Distributed
 using Statistics: Statistics, mean, std
 using SciMLBase: SciMLBase, DAEProblem, DESolution, EnsembleProblem, EnsembleSolution,
-    EnsembleThreads, NonlinearProblem, ODEProblem, ReturnCode, SDDEProblem,
-    SDEProblem, remake
+    EnsembleThreads, IntervalNonlinearProblem, NonlinearProblem,
+    ODEProblem, ReturnCode, SDDEProblem, SDEProblem, remake
 using CommonSolve: init, solve, step!
 
 import Base: length, convert, transpose
