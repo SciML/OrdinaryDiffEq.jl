@@ -79,6 +79,9 @@ function SDIRK_docstring(
     )
 end
 
+abstract type OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ} <:
+OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} end
+
 @doc SDIRK_docstring(
     "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
     "ImplicitEuler";
@@ -486,7 +489,7 @@ end
     """
 )
 struct Kvaerno3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -538,7 +541,7 @@ end
     """
 )
 struct KenCarp3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1045,7 +1048,7 @@ end
     """
 )
 struct Kvaerno4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1101,7 +1104,7 @@ end
     """
 )
 struct Kvaerno5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1153,7 +1156,7 @@ end
     """
 )
 struct KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1207,14 +1210,15 @@ end
     controller = :PI,
     """
 )
-struct KenCarp47{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct KenCarp47{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
+    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
     autodiff::AD
 end
 function KenCarp47(;
@@ -1223,17 +1227,17 @@ function KenCarp47(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     return KenCarp47{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller, AD_choice
+        controller, step_limiter!, AD_choice
     )
 end
 
@@ -1259,7 +1263,7 @@ end
     """
 )
 struct KenCarp5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1311,14 +1315,15 @@ end
     controller = :PI,
     """
 )
-struct KenCarp58{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct KenCarp58{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
+    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
     autodiff::AD
 end
 function KenCarp58(;
@@ -1327,17 +1332,17 @@ function KenCarp58(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
     return KenCarp58{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller, AD_choice
+        controller, step_limiter!, AD_choice
     )
 end
 
@@ -1593,9 +1598,6 @@ function ESDIRK659L2SA(;
         controller, AD_choice
     )
 end
-
-abstract type OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ} <:
-OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} end
 
 @doc SDIRK_docstring(
     "3rd order L-stable IMEX ARK method. Uses a generic tableau-driven implementation that supports both split and non-split forms.",
