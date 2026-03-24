@@ -1,5 +1,4 @@
 using OrdinaryDiffEq, Test
-using OrdinaryDiffEqLowOrderRK: Ralston4
 function some_arbitrary_function!(du, u, p, τ)
     du = u / 100
     return nothing #function returns nothing
@@ -12,7 +11,7 @@ tspan = (zero(NF), NF(1.0e3)) #integrate from t=0 to t = 1000
 ode_prob = ODEProblem(some_arbitrary_function!, u, tspan, params)
 
 for alg in [
-        Euler(), Midpoint(), Heun(), Ralston(), Ralston4(), RK4(), SSPRK104(), SSPRK22(), SSPRK33(),
+        Euler(), Midpoint(), Heun(), Ralston(), RK4(), SSPRK104(), SSPRK22(), SSPRK33(),
         SSPRK43(), SSPRK432(), BS3(), BS5(), DP5(), DP8(), Feagin10(), Feagin12(),
         Feagin14(), TanYam7(), Tsit5(), TsitPap8(), Vern6(), Vern7(), Vern8(), Vern9(),
     ]

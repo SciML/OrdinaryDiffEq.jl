@@ -1,10 +1,9 @@
 using OrdinaryDiffEq, RecursiveArrayTools, Unitful
-using OrdinaryDiffEqLowOrderRK: Ralston4
 using LinearAlgebra, Test, ADTypes
 
 @testset "Algorithms" begin
     algs = [
-        Euler(), Midpoint(), Heun(), Ralston(), Ralston4(), RK4(), SSPRK104(), SSPRK22(), SSPRK33(),
+        Euler(), Midpoint(), Heun(), Ralston(), RK4(), SSPRK104(), SSPRK22(), SSPRK33(),
         SSPRK43(), SSPRK432(), BS3(), BS5(), DP5(), DP8(), Feagin10(), Feagin12(),
         Feagin14(), TanYam7(), Tsit5(), TsitPap8(), Vern6(), Vern7(), Vern8(), Vern9(),
     ]

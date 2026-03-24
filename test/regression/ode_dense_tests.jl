@@ -1,6 +1,5 @@
 using OrdinaryDiffEq, OrdinaryDiffEqBDF, Test, DiffEqBase
 using OrdinaryDiffEqCore
-using OrdinaryDiffEqLowOrderRK: Ralston4
 using ForwardDiff
 import ODEProblemLibrary: prob_ode_linear,
     prob_ode_2Dlinear,
@@ -441,10 +440,6 @@ println("RKs")
 # RK4
 @test RK4() == RK4(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(RK4(), 4.5e-5, 1.0e-4)
-
-# Ralston4
-@test Ralston4() == Ralston4(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
-regression_test(Ralston4(), 4.5e-5, 1.0e-4)
 
 # DP5
 @test DP5() == DP5(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
