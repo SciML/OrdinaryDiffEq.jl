@@ -153,37 +153,40 @@ function condition(out, u, t, integrator)
     return
 end
 
-function collision_affect!(integrator, idx)
-    i = 0
+function collision_affect!(integrator, events)
     u = integrator.u
     n = length(u.nodes)
-    return for k in 1:n
-        for l in (k + 1):n
-            i += 1
-            if idx == i
-                x₁ = u.nodes[k][1:2]
-                v₁ = u.nodes[k][3:4]
-                x₂ = u.nodes[l][1:2]
-                v₂ = u.nodes[l][3:4]
-                # https://stackoverflow.com/a/35212639
-                v₁ = (v₁ - 2 / (1 + 1) * (dot(v₁ - v₂, x₁ - x₂) / sum(abs2, x₁ - x₂) * (x₁ - x₂)))
-                v₂ = -(v₂ - 2 / (1 + 1) * (dot(v₂ - v₁, x₂ - x₁) / sum(abs2, x₂ - x₁) * (x₂ - x₁)))
+    for (event_idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        i = 0
+        for k in 1:n
+            for l in (k + 1):n
+                i += 1
+                if event_idx == i
+                    x₁ = u.nodes[k][1:2]
+                    v₁ = u.nodes[k][3:4]
+                    x₂ = u.nodes[l][1:2]
+                    v₂ = u.nodes[l][3:4]
+                    # https://stackoverflow.com/a/35212639
+                    v₁ = (v₁ - 2 / (1 + 1) * (dot(v₁ - v₂, x₁ - x₂) / sum(abs2, x₁ - x₂) * (x₁ - x₂)))
+                    v₂ = -(v₂ - 2 / (1 + 1) * (dot(v₂ - v₁, x₂ - x₁) / sum(abs2, x₂ - x₁) * (x₂ - x₁)))
 
-                println("Collision handled.")
+                    println("Collision handled.")
 
-                m = (x₁ + x₂) / 2
+                    m = (x₁ + x₂) / 2
 
-                u.nodes[k][3:4] .= v₁
-                u.nodes[l][3:4] .= v₂
+                    u.nodes[k][3:4] .= v₁
+                    u.nodes[l][3:4] .= v₂
 
-                set_u!(integrator, u)
-                println(sqrt(sum(abs2, x₁ .- x₂)) - 100, ":", v₁ ./ v₂)
-                println(
-                    norm(v₁), ":", norm(v₂), ":", integrator.t, ":",
-                    integrator.t - t_last
-                )
-                global t_last = integrator.t
-                break
+                    set_u!(integrator, u)
+                    println(sqrt(sum(abs2, x₁ .- x₂)) - 100, ":", v₁ ./ v₂)
+                    println(
+                        norm(v₁), ":", norm(v₂), ":", integrator.t, ":",
+                        integrator.t - t_last
+                    )
+                    global t_last = integrator.t
+                    break
+                end
             end
         end
     end
@@ -217,8 +220,8 @@ function cond!(out, u, t, i)
     out[1] = u[3]
     return nothing
 end
-function terminate_affect!(int, idx)
-    return terminate!(int)
+function terminate_affect!(int, events)
+    any(!iszero, events) && terminate!(int)
 end
 cb = VectorContinuousCallback(cond!, terminate_affect!, nothing, 1)
 

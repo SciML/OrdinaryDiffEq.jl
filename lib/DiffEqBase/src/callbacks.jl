@@ -474,6 +474,31 @@ function is_event_occurence(prev_sign::Number, next_sign::Number, affect!::F1, a
     ) && prev_sign * next_sign <= 0
 end
 
+"""
+    apply_callback!(integrator, callback, cb_time, prev_sign, event_idx)
+
+Apply a continuous callback at the determined event time.
+
+For `ContinuousCallback`, the `affect!` or `affect_neg!` function is called based on the
+crossing direction (`prev_sign`):
+  - `prev_sign < 0` (upcrossing): `callback.affect!(integrator)` is called
+  - `prev_sign > 0` (downcrossing): `callback.affect_neg!(integrator)` is called
+
+For `VectorContinuousCallback`, `callback.affect!` is called once with the full
+`simultaneous_events::Vector{Int8}` array from the callback cache:
+
+    callback.affect!(integrator, simultaneous_events)
+
+Each element of `simultaneous_events` encodes both whether the event triggered and
+its crossing direction:
+  - `0`: event did not trigger
+  - `-1`: event triggered via upcrossing (condition went from negative to positive)
+  - `+1`: event triggered via downcrossing (condition went from positive to negative)
+
+Multiple events may be nonzero simultaneously when they occur at the same time.
+The `affect_neg!` field is not called for `VectorContinuousCallback`; the user's
+`affect!` function should handle both crossing directions using the sign information.
+"""
 function apply_callback!(
         integrator,
         callback::Union{ContinuousCallback, VectorContinuousCallback},
