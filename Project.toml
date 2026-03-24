@@ -104,6 +104,7 @@ OrdinaryDiffEqStabilizedRK = {path = "lib/OrdinaryDiffEqStabilizedRK"}
 OrdinaryDiffEqSymplecticRK = {path = "lib/OrdinaryDiffEqSymplecticRK"}
 OrdinaryDiffEqTsit5 = {path = "lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
+DiffEqBase = {path = "lib/DiffEqBase"}
 
 [compat]
 ADTypes = "1.16"

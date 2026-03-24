@@ -22,6 +22,9 @@ SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+
 [compat]
 DiffEqBase = "6.187"
 LinearAlgebra = "1.10"
