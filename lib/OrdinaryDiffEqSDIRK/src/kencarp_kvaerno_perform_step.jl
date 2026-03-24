@@ -137,7 +137,7 @@ end
         z₁ .*= dt
     else
         # FSAL Step 1
-        @.. broadcast = false z₁ = dt * integrator.fsalfirst
+        @..z₁ = dt * integrator.fsalfirst
     end
 
     ##### Step 2
@@ -146,12 +146,12 @@ end
     copyto!(z₂, z₁)
     nlsolver.z = z₂
 
-    @.. broadcast = false tmp = uprev
+    @..tmp = uprev
 
     if integrator.f isa SplitFunction
         # This assumes the implicit part is cheaper than the explicit part
-        @.. broadcast = false k1 = dt * integrator.fsalfirst - z₁
-        @.. broadcast = false tmp += ea21 * k1
+        @..k1 = dt * integrator.fsalfirst - z₁
+        @..tmp += ea21 * k1
     end
 
     nlsolver.c = c2
@@ -163,14 +163,14 @@ end
 
     if integrator.f isa SplitFunction
         z₃ .= z₂
-        @.. broadcast = false u = tmp + γ * z₂
+        @..u = tmp + γ * z₂
         f2(k2, u, p, t + c2 * dt)
         k2 .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast = false tmp = uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
+        @..tmp = uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
-        @.. broadcast = false z₃ = z₂
-        @.. broadcast = false tmp = uprev + a31 * z₁ + a32 * z₂
+        @..z₃ = z₂
+        @..tmp = uprev + a31 * z₁ + a32 * z₂
     end
     nlsolver.z = z₃
 
@@ -182,15 +182,15 @@ end
 
     if integrator.f isa SplitFunction
         z₄ .= z₂
-        @.. broadcast = false u = tmp + γ * z₃
+        @..u = tmp + γ * z₃
         f2(k3, u, p, t + c3 * dt)
         k3 .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast = false tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 +
+        @..tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 +
             ea42 * k2 + ea43 * k3
     else
-        @.. broadcast = false z₄ = z₂
-        @.. broadcast = false tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃
+        @..z₄ = z₂
+        @..tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃
     end
     nlsolver.z = z₄
 
@@ -198,18 +198,18 @@ end
     z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
-    @.. broadcast = false u = tmp + γ * z₄
+    @..u = tmp + γ * z₄
     if integrator.f isa SplitFunction
         f2(k4, u, p, t + dt)
         k4 .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast = false u = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * k1 +
+        @..u = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * k1 +
             eb2 * k2 + eb3 * k3 + eb4 * k4
     end
 
     if integrator.f isa SplitFunction
         integrator.f(integrator.fsallast, u, p, t + dt)
     else
-        @.. broadcast = false integrator.fsallast = z₄ / dt
+        @..integrator.fsallast = z₄ / dt
     end
 end
