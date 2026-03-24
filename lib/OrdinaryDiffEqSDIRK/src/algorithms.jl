@@ -79,8 +79,6 @@ function SDIRK_docstring(
     )
 end
 
-abstract type OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ} <:
-OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} end
 
 @doc SDIRK_docstring(
     "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
@@ -489,7 +487,7 @@ end
     """
 )
 struct Kvaerno3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -541,7 +539,7 @@ end
     """
 )
 struct KenCarp3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1048,7 +1046,7 @@ end
     """
 )
 struct Kvaerno4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1104,7 +1102,7 @@ end
     """
 )
 struct Kvaerno5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1156,7 +1154,7 @@ end
     """
 )
 struct KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1211,7 +1209,7 @@ end
     """
 )
 struct KenCarp47{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1263,7 +1261,7 @@ end
     """
 )
 struct KenCarp5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1316,7 +1314,7 @@ end
     """
 )
 struct KenCarp58{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1625,7 +1623,7 @@ end
     """
 )
 struct ARS343{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
