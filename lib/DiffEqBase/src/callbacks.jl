@@ -196,8 +196,8 @@ end
     bottom_condition = get_condition(integrator, callback, integrator.tprev)
     @. bottom_sign = sign(bottom_condition)
 
+    prev_simultaneous_events = integrator.callback_cache.prev_simultaneous_events
     if integrator.event_last_time == callback_idx
-        nudged_idx = integrator.vector_event_last_time
         # If there was a previous event, nudge tprev on the right
         # side of the root (if necessary) to avoid repeat detection
 
@@ -205,19 +205,42 @@ end
             addsteps!(integrator)
         end
 
+        # Find the condition value closest to zero across all triggered events
+        min_condition_val = zero(eltype(bottom_condition))
+        min_abs_condition = typemax(eltype(bottom_condition))
+        for idx in 1:callback.len
+            if prev_simultaneous_events[idx]
+                cond_val = ArrayInterface.allowed_getindex(bottom_condition, idx)
+                if abs(cond_val) < min_abs_condition
+                    min_abs_condition = abs(cond_val)
+                    min_condition_val = cond_val
+                end
+            end
+        end
+
         # Evaluate condition slightly in future
-        nudged_t = nudge_tprev(integrator, callback, ArrayInterface.allowed_getindex(bottom_condition, nudged_idx))
+        nudged_t = nudge_tprev(integrator, callback, min_condition_val)
         tmp_condition = get_condition(integrator, callback, nudged_t)
 
-        ArrayInterface.allowed_setindex!(bottom_sign, sign(ArrayInterface.allowed_getindex(tmp_condition, nudged_idx)), nudged_idx)
+        for idx in 1:callback.len
+            if prev_simultaneous_events[idx]
+                ArrayInterface.allowed_setindex!(bottom_sign, sign(ArrayInterface.allowed_getindex(tmp_condition, idx)), idx)
+            end
+        end
     else
-        nudged_idx = -1
         nudged_t = bottom_t
     end
 
     # Check if an event occured
     event_occurred, event_idx, top_t, top_sign =
         check_event_occurence(integrator, callback, bottom_sign)
+
+    # Track simultaneous events
+    (; simultaneous_events) = integrator.callback_cache
+    if event_occurred
+        prev_simultaneous_events .= simultaneous_events
+        simultaneous_events .= false
+    end
 
     # Find callback time if occurence
     if !event_occurred
@@ -226,11 +249,13 @@ end
         residual = zero(eltype(bottom_condition))
     elseif isdiscrete(integrator.alg) || callback.rootfind == SciMLBase.NoRootFind
         callback_t = top_t
-        min_event_idx = 1
+        min_event_idx = -1
         for i in 1:length(event_idx)
             if ArrayInterface.allowed_getindex(event_idx, i) == 1
-                min_event_idx = i
-                break
+                if min_event_idx < 0
+                    min_event_idx = i
+                end
+                simultaneous_events[i] = true
             end
         end
         residual = zero(eltype(bottom_condition))
@@ -251,16 +276,20 @@ end
                 if iszero(ArrayInterface.allowed_getindex(top_sign, idx))
                     cbi_t = top_t
                 else
-                    if idx == nudged_idx
+                    if integrator.event_last_time == callback_idx && prev_simultaneous_events[idx]
                         cbi_t = find_root(zero_func, (nudged_t, top_t), callback.rootfind)
                     else
                         cbi_t = find_root(zero_func, (bottom_t, top_t), callback.rootfind)
                     end
                 end
                 if integrator.tdir * cbi_t < integrator.tdir * callback_t
+                    simultaneous_events .= false
+                end
+                if integrator.tdir * cbi_t <= integrator.tdir * callback_t
                     min_event_idx = idx
                     callback_t = cbi_t
                     residual = zero_func(cbi_t)
+                    simultaneous_events[idx] = true
                 end
             end
         end
@@ -270,7 +299,8 @@ end
         end
     end
 
-    return callback_t, ArrayInterface.allowed_getindex(bottom_sign, min_event_idx),
+    # We still pass around the min_event_idx for now because some stuff in OrdinaryDiffEqCore expects it to be an Int
+    return callback_t, bottom_sign,
         event_occurred::Bool, min_event_idx::Int, residual
 end
 
@@ -446,7 +476,7 @@ end
 
 function apply_callback!(
         integrator,
-        callback::Union{ContinuousCallback, VectorContinuousCallback},
+        callback::ContinuousCallback,
         cb_time, prev_sign, event_idx
     )
     if isadaptive(integrator)
@@ -478,15 +508,13 @@ function apply_callback!(
         if callback.affect! === nothing
             integrator.u_modified = false
         else
-            callback isa VectorContinuousCallback ?
-                callback.affect!(integrator, event_idx) : callback.affect!(integrator)
+            callback.affect!(integrator)
         end
     elseif prev_sign > 0
         if callback.affect_neg! === nothing
             integrator.u_modified = false
         else
-            callback isa VectorContinuousCallback ?
-                callback.affect_neg!(integrator, event_idx) : callback.affect_neg!(integrator)
+            callback.affect_neg!(integrator)
         end
     end
 
@@ -498,10 +526,66 @@ function apply_callback!(
         @inbounds if callback.save_positions[2]
             savevalues!(integrator, true)
             if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
-                if callback isa VectorContinuousCallback
-                    SciMLBase.save_discretes!(integrator, callback, event_idx)
-                else
-                    SciMLBase.save_discretes!(integrator, callback)
+                SciMLBase.save_discretes!(integrator, callback)
+            end
+            saved_in_cb = true
+        end
+        return true, saved_in_cb
+    end
+    return false, saved_in_cb
+end
+
+function apply_callback!(
+        integrator,
+        callback::VectorContinuousCallback,
+        cb_time, prev_sign, min_event_idx
+    )
+    if isadaptive(integrator)
+        set_proposed_dt!(
+            integrator,
+            integrator.tdir * max(
+                nextfloat(integrator.opts.dtmin),
+                integrator.tdir * callback.dtrelax * integrator.dt
+            )
+        )
+    end
+
+    change_t_via_interpolation!(
+        integrator, cb_time, Val{:false}, callback.initializealg
+    )
+
+    # handle saveat
+    _, savedexactly = savevalues!(integrator)
+    saved_in_cb = true
+
+    @inbounds if callback.save_positions[1]
+        # if already saved then skip saving
+        savedexactly || savevalues!(integrator, true)
+    end
+
+    u_modified = false
+    for (i, triggered) ∈ enumerate(integrator.callback_cache.simultaneous_events)
+        if triggered
+            if prev_sign[i] < 0 && callback.affect! !== nothing
+                callback.affect!(integrator, i)
+                u_modified = true
+            elseif prev_sign[i] > 0 && callback.affect_neg! !== nothing
+                callback.affect_neg!(integrator, i)
+                u_modified = true
+            end
+        end
+    end
+    integrator.u_modified = u_modified
+    if u_modified
+        reeval_internals_due_to_modification!(
+            integrator, callback_initializealg = callback.initializealg
+        )
+
+        @inbounds if callback.save_positions[2]
+            savevalues!(integrator, true)
+            if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
+                for i ∈ integrator.callback_cache.simultaneous_events
+                    SciMLBase.save_discretes!(integrator, callback, i)
                 end
             end
             saved_in_cb = true
@@ -610,6 +694,8 @@ mutable struct CallbackCache{conditionType, signType}
     next_condition::conditionType
     next_sign::signType
     prev_sign::signType
+    simultaneous_events::Vector{Bool}
+    prev_simultaneous_events::Vector{Bool}
 end
 
 function CallbackCache(
@@ -620,7 +706,10 @@ function CallbackCache(
     next_condition = similar(u, conditionType, max_len)
     next_sign = similar(u, signType, max_len)
     prev_sign = similar(u, signType, max_len)
-    return CallbackCache(tmp_condition, next_condition, next_sign, prev_sign)
+    simultaneous_events = zeros(Bool, max_len)
+    prev_simultaneous_events = zeros(Bool, max_len)
+    return CallbackCache(tmp_condition, next_condition, next_sign, prev_sign,
+        simultaneous_events, prev_simultaneous_events)
 end
 
 function CallbackCache(
@@ -631,5 +720,8 @@ function CallbackCache(
     next_condition = zeros(conditionType, max_len)
     next_sign = zeros(signType, max_len)
     prev_sign = zeros(signType, max_len)
-    return CallbackCache(tmp_condition, next_condition, next_sign, prev_sign)
+    simultaneous_events = zeros(Bool, max_len)
+    prev_simultaneous_events = zeros(Bool, max_len)
+    return CallbackCache(tmp_condition, next_condition, next_sign, prev_sign,
+        simultaneous_events, prev_simultaneous_events)
 end
