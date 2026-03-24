@@ -72,8 +72,11 @@ function DiffEqBase.find_callback_time(
     return 1.0 + counter, 0.9 + counter, true, counter, 0.0
 end
 find_first_integrator = EmptyIntegrator([1.0, 2.0], 1, 0.0)
-vector_affect! = function (integrator, idx)
-    return integrator.u = integrator.u + idx
+vector_affect! = function (integrator, events)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        integrator.u = integrator.u .+ idx
+    end
 end
 
 cond_1(u, t, integrator) = t - 1.0
