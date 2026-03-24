@@ -30,9 +30,12 @@ condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
     return out[1] = -t - 2.95
 end
 
-affect! = function (integrator, idx)
-    return if idx == 1
-        integrator.u = integrator.u + 2
+affect! = function (integrator, events)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        if idx == 1
+            integrator.u = integrator.u + 2
+        end
     end
 end
 
@@ -70,9 +73,12 @@ condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
     return out[1] = t - 2.95
 end
 
-affect! = function (integrator, idx)
-    return if idx == 1
-        integrator.u = integrator.u .+ 2
+affect! = function (integrator, events)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        if idx == 1
+            integrator.u = integrator.u .+ 2
+        end
     end
 end
 
@@ -110,11 +116,15 @@ condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
     return out[1] = u[1]
 end
 
-affect! = nothing
-affect_neg! = function (integrator, idx)
-    return if idx == 1
-        integrator.u[2] = -integrator.u[2]
+affect! = function (integrator, events)
+    for (idx, dir) in enumerate(events)
+        if dir == 1 && idx == 1 # downcrossing
+            integrator.u[2] = -integrator.u[2]
+        end
     end
+end
+affect_neg! = function (integrator)
+    return integrator.u[2] = -integrator.u[2]
 end
 
 vcb = VectorContinuousCallback(condition, affect!, 1, interp_points = 100)
@@ -156,15 +166,16 @@ condition_single = function (out, u, t, integrator) # Event when event_f(u,t,k) 
     return out[1] = u[1]
 end
 
-affect! = nothing
-affect_neg! = function (integrator, idx)
-    return if idx == 1
-        integrator.u[2] = -integrator.u[2]
+affect! = function (integrator, events)
+    for (idx, dir) in enumerate(events)
+        if dir == 1 && idx == 1 # downcrossing
+            integrator.u[2] = -integrator.u[2]
+        end
     end
 end
 
 callback_single = VectorContinuousCallback(
-    condition_single, affect!, affect_neg!, 1,
+    condition_single, affect!, 1,
     interp_points = 100
 )
 
@@ -250,12 +261,15 @@ affect! = function (integrator, retcode = nothing)
     end
 end
 
-vaffect! = function (integrator, idx, retcode = nothing)
-    return if idx == 1
-        if retcode === nothing
-            terminate!(integrator)
-        else
-            terminate!(integrator, retcode)
+vaffect! = function (integrator, events, retcode = nothing)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        if idx == 1
+            if retcode === nothing
+                terminate!(integrator)
+            else
+                terminate!(integrator, retcode)
+            end
         end
     end
 end
@@ -268,8 +282,8 @@ custom_retcode_callback = ContinuousCallback(
 vterminate_callback = VectorContinuousCallback(vcondition, vaffect!, 1)
 vcustom_retcode_callback = VectorContinuousCallback(
     vcondition,
-    (x, idx) -> vaffect!(
-        x, idx,
+    (x, events) -> vaffect!(
+        x, events,
         ReturnCode.MaxIters
     ),
     1
@@ -302,19 +316,21 @@ affect2! = function (integrator)
     end
 end
 
-vaffect2! = function (integrator, idx)
-    return if idx == 1
-        if integrator.t >= 3.5
-            terminate!(integrator)
-        else
-            integrator.u[2] = -integrator.u[2]
+vaffect2! = function (integrator, events)
+    for (idx, dir) in enumerate(events)
+        if dir == 1 && idx == 1 # downcrossing
+            if integrator.t >= 3.5
+                terminate!(integrator)
+            else
+                integrator.u[2] = -integrator.u[2]
+            end
         end
     end
 end
 
 terminate_callback2 = ContinuousCallback(condition, nothing, affect2!, interp_points = 100)
 vterminate_callback2 = VectorContinuousCallback(
-    vcondition, nothing, vaffect2!, 1,
+    vcondition, vaffect2!, 1,
     interp_points = 100
 )
 
@@ -394,9 +410,12 @@ condition = function (out, u, t, integrator)
     return out[1] = t - 0.5
 end
 n = 0
-affect! = function (integrator, event_index)
+affect! = function (integrator, events)
     global n
-    return n += 1
+    for (_, dir) in enumerate(events)
+        iszero(dir) && continue
+        n += 1
+    end
 end
 callback = VectorContinuousCallback(condition, affect!, 1)
 sol = solve(prob, Tsit5(), callback = callback)
