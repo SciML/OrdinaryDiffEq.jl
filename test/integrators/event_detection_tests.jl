@@ -103,24 +103,48 @@ function condition(out, u, t, integrator)
     return out[2] = (10.0 - u[3])u[3]
 end
 
-function affect!(integrator, idx)
-    return if idx == 1
-        x[] += 1
-        integrator.u[2] = -0.9integrator.u[2]
-    elseif idx == 2
-        y[] += 1
-        integrator.u[4] = -0.9integrator.u[4]
+function affect!(integrator, events)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        if idx == 1
+            x[] += 1
+            integrator.u[2] = -0.9integrator.u[2]
+        elseif idx == 2
+            y[] += 1
+            integrator.u[4] = -0.9integrator.u[4]
+        end
     end
 end
 
-function affect_neg!(integrator, idx)
-    z[] += 1
-    @show integrator.u[1]
-    return @show integrator.u[3]
+function affect_neg!(integrator, events)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        z[] += 1
+        @show integrator.u[1]
+        @show integrator.u[3]
+    end
+end
+
+function affect_combined!(integrator, events)
+    for (idx, dir) in enumerate(events)
+        if dir == -1 # upcrossing — old affect! path
+            z[] += 1
+            @show integrator.u[1]
+            @show integrator.u[3]
+        elseif dir == 1 # downcrossing — old affect_neg! path
+            if idx == 1
+                x[] += 1
+                integrator.u[2] = -0.9integrator.u[2]
+            elseif idx == 2
+                y[] += 1
+                integrator.u[4] = -0.9integrator.u[4]
+            end
+        end
+    end
 end
 
 cb = VectorContinuousCallback(condition, affect!, 2)
-cb2 = VectorContinuousCallback(condition, affect_neg!, affect!, 2)
+cb2 = VectorContinuousCallback(condition, affect_combined!, 2)
 
 sol = solve(prob, Tsit5(), callback = cb, dt = 1.0e-3, adaptive = false)
 @test x[] == 3
