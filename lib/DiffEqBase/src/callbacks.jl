@@ -476,7 +476,7 @@ end
 
 function apply_callback!(
         integrator,
-        callback::ContinuousCallback,
+        callback::Union{ContinuousCallback, VectorContinuousCallback},
         cb_time, prev_sign, event_idx
     )
     if isadaptive(integrator)
@@ -504,17 +504,25 @@ function apply_callback!(
 
     integrator.u_modified = true
 
-    if prev_sign < 0
+    if callback isa VectorContinuousCallback
         if callback.affect! === nothing
             integrator.u_modified = false
         else
-            callback.affect!(integrator)
+            callback.affect!(integrator, integrator.callback_cache.simultaneous_events)
         end
-    elseif prev_sign > 0
-        if callback.affect_neg! === nothing
-            integrator.u_modified = false
-        else
-            callback.affect_neg!(integrator)
+    else
+        if prev_sign < 0
+            if callback.affect! === nothing
+                integrator.u_modified = false
+            else
+                callback.affect!(integrator)
+            end
+        elseif prev_sign > 0
+            if callback.affect_neg! === nothing
+                integrator.u_modified = false
+            else
+                callback.affect_neg!(integrator)
+            end
         end
     end
 
@@ -526,66 +534,10 @@ function apply_callback!(
         @inbounds if callback.save_positions[2]
             savevalues!(integrator, true)
             if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
-                SciMLBase.save_discretes!(integrator, callback)
-            end
-            saved_in_cb = true
-        end
-        return true, saved_in_cb
-    end
-    return false, saved_in_cb
-end
-
-function apply_callback!(
-        integrator,
-        callback::VectorContinuousCallback,
-        cb_time, prev_sign, min_event_idx
-    )
-    if isadaptive(integrator)
-        set_proposed_dt!(
-            integrator,
-            integrator.tdir * max(
-                nextfloat(integrator.opts.dtmin),
-                integrator.tdir * callback.dtrelax * integrator.dt
-            )
-        )
-    end
-
-    change_t_via_interpolation!(
-        integrator, cb_time, Val{:false}, callback.initializealg
-    )
-
-    # handle saveat
-    _, savedexactly = savevalues!(integrator)
-    saved_in_cb = true
-
-    @inbounds if callback.save_positions[1]
-        # if already saved then skip saving
-        savedexactly || savevalues!(integrator, true)
-    end
-
-    u_modified = false
-    for (i, triggered) ∈ enumerate(integrator.callback_cache.simultaneous_events)
-        if triggered
-            if prev_sign[i] < 0 && callback.affect! !== nothing
-                callback.affect!(integrator, i)
-                u_modified = true
-            elseif prev_sign[i] > 0 && callback.affect_neg! !== nothing
-                callback.affect_neg!(integrator, i)
-                u_modified = true
-            end
-        end
-    end
-    integrator.u_modified = u_modified
-    if u_modified
-        reeval_internals_due_to_modification!(
-            integrator, callback_initializealg = callback.initializealg
-        )
-
-        @inbounds if callback.save_positions[2]
-            savevalues!(integrator, true)
-            if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
-                for i ∈ integrator.callback_cache.simultaneous_events
-                    SciMLBase.save_discretes!(integrator, callback, i)
+                if callback isa VectorContinuousCallback
+                    SciMLBase.save_discretes!(integrator, callback, event_idx)
+                else
+                    SciMLBase.save_discretes!(integrator, callback)
                 end
             end
             saved_in_cb = true
