@@ -238,8 +238,8 @@ end
     # Track simultaneous events
     (; simultaneous_events) = integrator.callback_cache
     if event_occurred
-        prev_simultaneous_events .= simultaneous_events
-        simultaneous_events .= false
+        @. prev_simultaneous_events = !iszero(simultaneous_events)
+        simultaneous_events .= Int8(0)
     end
 
     # Find callback time if occurence
@@ -255,7 +255,7 @@ end
                 if min_event_idx < 0
                     min_event_idx = i
                 end
-                simultaneous_events[i] = true
+                simultaneous_events[i] = Int8(sign(ArrayInterface.allowed_getindex(bottom_sign, i)))
             end
         end
         residual = zero(eltype(bottom_condition))
@@ -283,13 +283,13 @@ end
                     end
                 end
                 if integrator.tdir * cbi_t < integrator.tdir * callback_t
-                    simultaneous_events .= false
+                    simultaneous_events .= Int8(0)
                 end
                 if integrator.tdir * cbi_t <= integrator.tdir * callback_t
                     min_event_idx = idx
                     callback_t = cbi_t
                     residual = zero_func(cbi_t)
-                    simultaneous_events[idx] = true
+                    simultaneous_events[idx] = Int8(sign(ArrayInterface.allowed_getindex(bottom_sign, idx)))
                 end
             end
         end
@@ -646,7 +646,7 @@ mutable struct CallbackCache{conditionType, signType}
     next_condition::conditionType
     next_sign::signType
     prev_sign::signType
-    simultaneous_events::Vector{Bool}
+    simultaneous_events::Vector{Int8}
     prev_simultaneous_events::Vector{Bool}
 end
 
@@ -658,7 +658,7 @@ function CallbackCache(
     next_condition = similar(u, conditionType, max_len)
     next_sign = similar(u, signType, max_len)
     prev_sign = similar(u, signType, max_len)
-    simultaneous_events = zeros(Bool, max_len)
+    simultaneous_events = zeros(Int8, max_len)
     prev_simultaneous_events = zeros(Bool, max_len)
     return CallbackCache(tmp_condition, next_condition, next_sign, prev_sign,
         simultaneous_events, prev_simultaneous_events)
@@ -672,7 +672,7 @@ function CallbackCache(
     next_condition = zeros(conditionType, max_len)
     next_sign = zeros(signType, max_len)
     prev_sign = zeros(signType, max_len)
-    simultaneous_events = zeros(Bool, max_len)
+    simultaneous_events = zeros(Int8, max_len)
     prev_simultaneous_events = zeros(Bool, max_len)
     return CallbackCache(tmp_condition, next_condition, next_sign, prev_sign,
         simultaneous_events, prev_simultaneous_events)
