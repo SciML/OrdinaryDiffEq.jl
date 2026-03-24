@@ -1,5 +1,6 @@
 using Test
-using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes
+using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes,
+    StaticArrays
 import DifferentiationInterface as DI
 
 # Version-dependent AD backend selection via DifferentiationInterface
@@ -550,9 +551,11 @@ end
         return du[2] = -p[3] * u[2] + p[4] * u[1] * u[2]
     end
 
+    # Short tspan to avoid chaotic sensitivity divergence between ForwardDiff
+    # and finite differences.
     p_lv = [1.5, 1.0, 3.0, 1.0]
     u0_lv = [1.0, 1.0]
-    prob_lv = ODEProblem(lv!, u0_lv, (0.0, 10.0), p_lv)
+    prob_lv = ODEProblem(lv!, u0_lv, (0.0, 1.0), p_lv)
 
     function sum_of_solution_ens(x)
         _prob = remake(prob_lv, u0 = x[1:2], p = x[3:end])
