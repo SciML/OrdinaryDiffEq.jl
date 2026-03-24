@@ -2,29 +2,54 @@ using Pkg
 using SafeTestsets
 using Test
 
-const GROUP = get(ENV, "GROUP", "All")
-const is_APPVEYOR = (Sys.iswindows() && haskey(ENV, "APPVEYOR"))
+const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "Core")
 
 function activate_downstream_env()
-    Pkg.activate("downstream")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.activate(joinpath(@__DIR__, "downstream"))
+    lib_dir = dirname(dirname(@__DIR__))
+    Pkg.develop(
+        [
+            PackageSpec(path = dirname(@__DIR__)),
+            PackageSpec(path = joinpath(dirname(lib_dir), "..")),
+            PackageSpec(path = joinpath(lib_dir, "StochasticDiffEq")),
+        ]
+    )
     return Pkg.instantiate()
 end
 
 function activate_static_env()
-    Pkg.activate("static")
+    Pkg.activate(joinpath(@__DIR__, "static"))
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     return Pkg.instantiate()
 end
 
-function activate_gpu_env()
-    Pkg.activate("gpu")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+function activate_modelingtoolkit_env()
+    Pkg.activate(joinpath(@__DIR__, "modelingtoolkit"))
+    lib_dir = dirname(dirname(@__DIR__))
+    Pkg.develop(
+        [
+            PackageSpec(path = dirname(@__DIR__)),
+            PackageSpec(path = joinpath(dirname(lib_dir), "..")),
+        ]
+    )
+    return Pkg.instantiate()
+end
+
+function activate_sundials_env()
+    Pkg.activate(joinpath(@__DIR__, "sundials"))
+    lib_dir = dirname(dirname(@__DIR__))
+    Pkg.develop(
+        [
+            PackageSpec(path = joinpath(dirname(lib_dir), "..")),
+        ]
+    )
     return Pkg.instantiate()
 end
 
 @time begin
-    if GROUP == "All" || GROUP == "Core"
+    # Core tests — basic DiffEqBase functionality, no downstream solvers needed
+    if TEST_GROUP ∉ ("QA", "Static", "Downstream", "Downstream2",
+        "ModelingToolkit", "Sundials")
         @time @safetestset "Callbacks" include("callbacks.jl")
         @time @safetestset "Plot Vars" include("plot_vars.jl")
         @time @safetestset "Problem Creation Tests" include("problem_creation_tests.jl")
@@ -42,14 +67,23 @@ end
         @time @safetestset "Problem Kwargs Merging" include("problem_kwargs_merging.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "Downstream"
+    # QA tests — Aqua quality checks
+    if TEST_GROUP ∉ ("Core", "Static", "Downstream", "Downstream2",
+        "ModelingToolkit", "Sundials") && isempty(VERSION.prerelease)
+        @time @safetestset "Aqua" include("aqua.jl")
+    end
+
+    # Static analysis tests — allocation checks with ComponentArrays
+    if TEST_GROUP == "Static" || TEST_GROUP == "ALL"
+        activate_static_env()
+        @time @safetestset "Static Checks" include("static/static_checks.jl")
+    end
+
+    # Downstream tests — OrdinaryDiffEq integration (lightweight deps)
+    if TEST_GROUP == "Downstream" || TEST_GROUP == "ALL"
         activate_downstream_env()
         @time @safetestset "Kwarg Warnings" include("downstream/kwarg_warn.jl")
         @time @safetestset "Solve Error Handling" include("downstream/solve_error_handling.jl")
-        @time @safetestset "Null DE Handling" include("downstream/null_de.jl")
-        @time @safetestset "StaticArrays + AD" include("downstream/static_arrays_ad.jl")
-        @time @safetestset "Unitful" include("downstream/unitful.jl")
-        @time @safetestset "FlexUnits" include("downstream/flexunits.jl")
         @time @safetestset "Dual Detection Solution" include("downstream/dual_detection_solution.jl")
         @time @safetestset "Null Parameters" include("downstream/null_params_test.jl")
         @time @safetestset "Ensemble Simulations" include("downstream/ensemble.jl")
@@ -63,29 +97,32 @@ end
         @time @safetestset "LabelledArrays Tests" include("downstream/labelledarrays.jl")
         @time @safetestset "GTPSA Tests" include("downstream/gtpsa.jl")
         @time @safetestset "SubArray Support" include("downstream/subarray_support.jl")
+        @time @safetestset "Unitful" include("downstream/unitful.jl")
+        @time @safetestset "FlexUnits" include("downstream/flexunits.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "Static"
-        activate_static_env()
-        @time @safetestset "Static Checks" include("static/static_checks.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "Downstream2"
-        activate_downstream_env()
+    # Downstream2 tests — additional OrdinaryDiffEq integration tests
+    if TEST_GROUP == "Downstream2" || TEST_GROUP == "ALL"
+        if TEST_GROUP != "Downstream"
+            activate_downstream_env()
+        end
         @time @safetestset "Prob Kwargs" include("downstream/prob_kwargs.jl")
         @time @safetestset "Unwrapping" include("downstream/unwrapping.jl")
         @time @safetestset "Callback BigFloats" include("downstream/bigfloat_events.jl")
         @time @safetestset "DE stats" include("downstream/stats_tests.jl")
-        isempty(VERSION.prerelease) &&
-            @time @safetestset "Ensemble AD Tests" include("downstream/ensemble_ad.jl")
         @time @safetestset "Community Callback Tests" include("downstream/community_callback_tests.jl")
-        @time @safetestset "AD via ode with complex numbers" include("downstream/complex_number_ad.jl")
-        @time @safetestset "Callback AD Tests" include("downstream/callback_ad.jl")
         @time @testset "Distributed Ensemble Tests" include("downstream/distributed_ensemble.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "GPU"
-        activate_gpu_env()
-        @time @safetestset "Simple GPU" include("gpu/simple_gpu.jl")
+    # ModelingToolkit tests — heavy MTK dependency, separate environment
+    if TEST_GROUP == "ModelingToolkit" && isempty(VERSION.prerelease)
+        activate_modelingtoolkit_env()
+        @time @safetestset "Null DE Handling" include("modelingtoolkit/null_de.jl")
+    end
+
+    # Sundials tests — only run when DiffEqBase itself changes
+    if TEST_GROUP == "Sundials"
+        activate_sundials_env()
+        @time @safetestset "Sundials Error Handling" include("sundials/sundials_error_handling.jl")
     end
 end

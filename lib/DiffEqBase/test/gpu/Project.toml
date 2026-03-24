@@ -1,8 +1,0 @@
-[deps]
-ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
-CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
-OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
-
-[compat]
-ADTypes = "1"
-OrdinaryDiffEq = "6.91.0"

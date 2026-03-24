@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, StochasticDiffEq, Test, Sundials
+using OrdinaryDiffEq, StochasticDiffEq, Test
 
 f_oop(u, p, t) = 2u
 u0 = 0.5
@@ -17,10 +17,6 @@ sol = solve(prob, Tsit5())
 sol = solve(prob, nothing, alg = Tsit5())
 sol = init(prob, nothing, alg = Tsit5())
 
-prob = ODEProblem{false}(f_oop, 1.0 + im, tspan)
-@test_throws SciMLBase.ComplexSupportError solve(prob, CVODE_Adams())
-
-@test_throws SciMLBase.ProblemSolverPairingError solve(prob, DFBDF())
 @test_throws SciMLBase.NonSolverError solve(prob, 5.0)
 
 prob = ODEProblem{false}(f_oop, u0, (nothing, nothing))

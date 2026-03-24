@@ -14,9 +14,10 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [sources]
-OrdinaryDiffEq = {path = "/home/dogiermann/Repos/OrdinaryDiffEq.jl-fork"}
+OrdinaryDiffEq = {path = "../.."}
 OrdinaryDiffEqCore = {path = "../../lib/OrdinaryDiffEqCore"}
 OrdinaryDiffEqTsit5 = {path = "../../lib/OrdinaryDiffEqTsit5"}
+DiffEqBase = {path = "../../lib/DiffEqBase"}
 
 [compat]
 ADTypes = "1.16"

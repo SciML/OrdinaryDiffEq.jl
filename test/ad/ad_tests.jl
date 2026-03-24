@@ -473,3 +473,93 @@ end ≈ [6.765310476296564]
     grad = DI.gradient(loss_fn, AutoForwardDiff(), p_test)
     @test grad ≈ ref_grad rtol = 1.0e-6
 end
+
+# Tests migrated from DiffEqBase downstream to cover complex numbers, StaticArrays,
+# and ensemble AD scenarios (previously tested via SciMLSensitivity integration).
+
+@testset "Complex number ODE AD" begin
+    # Complex ODE: verify ForwardDiff gradient through complex-valued solve matches
+    # the same problem reformulated in reals.
+    pd = 3
+    H0 = rand(ComplexF64, pd, pd)
+    A = rand(ComplexF64, pd, pd)
+    function f_complex!(du, u, p, t)
+        a, b, c = p
+        du .= (A * u) * (a * cos(b * t + c))
+        du .+= H0 * u
+        return nothing
+    end
+    u0_c = hcat(normalize(rand(ComplexF64, pd)), normalize(rand(pd)))
+    prob_c = ODEProblem(f_complex!, u0_c, (0.0, 1.0), rand(3);
+        saveat = range(0.0, 1.0, length = 3), reltol = 1.0e-6, alg = Tsit5())
+    cost_c(u) = abs2(tr(first(u)' * u[2])) - abs2(tr(first(u)' * last(u)))
+
+    function loss_complex(p)
+        prob = remake(prob_c; p)
+        sol = solve(prob)
+        return cost_c(sol.u) + sum(p) / 10
+    end
+
+    # Same problem via reals
+    function real_f!(du, u, p, t)
+        complex_u = complex.(selectdim(u, 3, 1), selectdim(u, 3, 2))
+        complex_du = copy(complex_u)
+        prob_c.f(complex_du, complex_u, p, t)
+        selectdim(du, 3, 1) .= real(complex_du)
+        selectdim(du, 3, 2) .= imag(complex_du)
+        return nothing
+    end
+    prob_real = remake(prob_c; f = real_f!,
+        u0 = cat(real(prob_c.u0), imag(prob_c.u0); dims = 3))
+
+    function loss_real(p)
+        prob = remake(prob_real; p)
+        sol = solve(prob)
+        u = [complex.(selectdim(u, 3, 1), selectdim(u, 3, 2)) for u in sol.u]
+        return cost_c(u) + sum(p) / 10
+    end
+
+    p0 = rand(3)
+    grad_real = DI.gradient(loss_real, AutoForwardDiff(), p0)
+    grad_complex = DI.gradient(loss_complex, AutoForwardDiff(), p0)
+    @test all(isfinite, grad_complex)
+    @test grad_complex ≈ grad_real rtol = 1.0e-4
+end
+
+@testset "StaticArrays AD through solve" begin
+    f_sa(u, p, t) = copy(u)
+
+    du1 = DI.derivative(AutoForwardDiff(), 5.0) do x
+        prob = ODEProblem(f_sa, [x], (0.0, 1.0), nothing)
+        sol = solve(prob, Tsit5())
+        sol.u[end][1]
+    end
+
+    du2 = DI.derivative(AutoForwardDiff(), 5.0) do x
+        prob = ODEProblem(f_sa, SVector(x), (0.0, 1.0), nothing)
+        sol = solve(prob, Tsit5())
+        sol.u[end][1]
+    end
+
+    @test du1 ≈ du2
+end
+
+@testset "Ensemble AD" begin
+    function lv!(du, u, p, t)
+        du[1] = p[1] * u[1] - p[2] * u[1] * u[2]
+        return du[2] = -p[3] * u[2] + p[4] * u[1] * u[2]
+    end
+
+    p_lv = [1.5, 1.0, 3.0, 1.0]
+    u0_lv = [1.0, 1.0]
+    prob_lv = ODEProblem(lv!, u0_lv, (0.0, 10.0), p_lv)
+
+    function sum_of_solution_ens(x)
+        _prob = remake(prob_lv, u0 = x[1:2], p = x[3:end])
+        return sum(solve(_prob, Tsit5(), saveat = 0.1))
+    end
+
+    gs = DI.gradient(sum_of_solution_ens, AutoForwardDiff(), [u0_lv; p_lv])
+    ref = FiniteDiff.finite_difference_gradient(sum_of_solution_ens, [u0_lv; p_lv])
+    @test gs ≈ ref rtol = 1.0e-4
+end
