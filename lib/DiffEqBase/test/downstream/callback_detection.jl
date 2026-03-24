@@ -9,7 +9,12 @@ using OrdinaryDiffEq
 
     vcb = VectorContinuousCallback(
         (out, u, t, integrator) -> out .= (t - 1.0e-8, t - 2.0e-8, t - 2.0e-7),
-        (integrator, event_index) -> push!(record, event_index),
+        (integrator, events) -> begin
+            for (idx, dir) in enumerate(events)
+                iszero(dir) && continue
+                push!(record, idx)
+            end
+        end,
         3;
         abstol = 0.0
     )
