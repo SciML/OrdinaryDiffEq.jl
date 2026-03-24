@@ -27,6 +27,9 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+
 [compat]
 ADTypes = "1.16"
 AllocCheck = "0.2"

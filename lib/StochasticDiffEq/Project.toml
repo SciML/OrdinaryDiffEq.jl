@@ -23,6 +23,7 @@ StochasticDiffEqRODE = "49714585-0aa1-4f53-b1e6-a9b8c0d5e03f"
 StochasticDiffEqWeak = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
 
 [sources]
+DiffEqBase = {path = "../DiffEqBase"}
 StochasticDiffEqCore = {path = "../StochasticDiffEqCore"}
 StochasticDiffEqHighOrder = {path = "../StochasticDiffEqHighOrder"}
 StochasticDiffEqIIF = {path = "../StochasticDiffEqIIF"}

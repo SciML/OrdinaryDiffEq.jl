@@ -31,6 +31,9 @@ JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+
 [compat]
 Pkg = "1"
 OrdinaryDiffEqTsit5 = "1.4.0"

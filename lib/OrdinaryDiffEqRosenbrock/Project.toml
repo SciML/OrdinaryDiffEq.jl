@@ -25,6 +25,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 
 [sources]
+DiffEqBase = {path = "../DiffEqBase"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}

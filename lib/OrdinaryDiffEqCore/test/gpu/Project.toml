@@ -19,6 +19,9 @@ path = "../../../.."
 [sources.OrdinaryDiffEqCore]
 path = "../../../OrdinaryDiffEqCore"
 
+[sources.DiffEqBase]
+path = "../../../DiffEqBase"
+
 [compat]
 ADTypes = "1"
 Adapt = "4"

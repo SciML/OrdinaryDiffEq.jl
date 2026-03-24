@@ -6,6 +6,9 @@ authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <maying
 [targets]
 test = ["DiffEqDevTools", "OrdinaryDiffEqBDF", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "RecursiveFactorization", "SafeTestsets", "Test", "SparseArrays", "Pkg"]
 
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+
 [compat]
 Pkg = "1"
 ForwardDiff = "0.10.38, 1"

@@ -30,6 +30,9 @@ AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 OrdinaryDiffEqLowStorageRK = "b0944070-b475-4768-8dec-fb6eb410534d"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+
 [compat]
 Pkg = "1"
 Test = "<0.0.1, 1"
