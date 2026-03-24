@@ -349,6 +349,28 @@ function RKM(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
+    "4th order Ralston method with minimum truncation error for 4-stage explicit Runge-Kutta.",
+    "Ralston4",
+    references = "@article{ralston1962runge,
+    title={Runge-Kutta methods with minimum error bounds},
+    author={Ralston, Anthony},
+    journal={Mathematics of Computation},
+    volume={16},
+    number={80},
+    pages={431--437},
+    year={1962}
+    }"
+)
+Base.@kwdef struct Ralston4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+function Ralston4(stage_limiter!, step_limiter! = trivial_limiter!)
+    return Ralston4(stage_limiter!, step_limiter!, False())
+end
+
+@doc explicit_rk_docstring(
     "5th order method.", "MSRK5",
     references = "Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Figure 3."
 )
