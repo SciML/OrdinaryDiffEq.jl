@@ -137,18 +137,57 @@ end
 """
     compute_iterated_I_from_noise(W, t, dt)
 
-Compute Stratonovich iterated integrals J_{jk} = ∫∫ ∘dW_j ∘dW_k over [t, t+dt]
-from the sub-grid W values stored in the noise process. Returns the m×m matrix J
-where J_{jk} = (1/2)*dW_j*dW_k + dt*A_{jk} (A = Lévy area).
+Compute Stratonovich iterated integrals J_{jk} over [t, t+dt] from sub-step
+dW increments available in the noise process. Returns m×m matrix J or `nothing`.
 
-This is computed via the Riemann sum over sub-grid increments:
-  I_{jk}^{Ito} = Σ_{n} dW_k^{(n)} * Σ_{l<n} dW_j^{(l)}
-then converted to Stratonovich: J_{jk} = I_{jk} + (1/2)*δ_{jk}*dt.
+Two sources of sub-step data are checked:
 
-Falls back to `nothing` if the noise process doesn't have accessible sub-grid data.
+1. **RSwM3 S₂ stack** (adaptive stepping): During `setup_next_step!`, RSwM3
+   decomposes the current step's dW into sub-intervals stored in S₂. These
+   are the finest available decomposition of the current noise increment.
+
+2. **Saved trajectory grid** (NoiseWrapper/NoiseGrid): When re-solving on a
+   previously generated noise path, the source process has fine-grid W values
+   stored in W.t/W.W from the original solve.
+
+The Stratonovich integral is computed as:
+  J_{jk} = I_{jk}^{Ito} + (1/2)*δ_{jk}*dt
+where I_{jk}^{Ito} = Σ_{n} dW_k^{(n)} * Σ_{l<n} dW_j^{(l)} (Riemann sum).
 """
 function compute_iterated_I_from_noise(W, t, dt)
-    # Only works for NoiseGrid and NoiseWrapper with accessible grid
+    # Strategy 1: Use RSwM3 S₂ stack sub-intervals (adaptive stepping)
+    J = _compute_II_from_S2(W, dt)
+    J !== nothing && return J
+
+    # Strategy 2: Use saved trajectory grid (NoiseWrapper/NoiseGrid)
+    return _compute_II_from_grid(W, t, dt)
+end
+
+"""
+Compute iterated integrals from RSwM3's S₂ stack, which holds the sub-interval
+decomposition (dt_i, dW_i, dZ_i) of the current step's noise increment.
+"""
+function _compute_II_from_S2(W, dt)
+    # S₂ is only populated for RSwM3
+    !hasproperty(W, :S₂) && return nothing
+    S₂ = W.S₂
+    n_sub = length(S₂)
+    n_sub < 2 && return nothing
+
+    # Extract sub-interval dW values from S₂
+    # S₂.data[1:S₂.cur] contains (dt_i, dW_i, dZ_i) in time order
+    first_dW = S₂.data[1][2]
+    m = length(first_dW)
+    T = eltype(first_dW)
+
+    return _iterated_I_from_increments(S₂.data, n_sub, m, T, dt)
+end
+
+"""
+Compute iterated integrals from saved trajectory W values on a fine grid.
+Used for NoiseWrapper/NoiseGrid convergence testing.
+"""
+function _compute_II_from_grid(W, t, dt)
     source = _get_noise_source(W)
     source === nothing && return nothing
 
@@ -162,15 +201,13 @@ function compute_iterated_I_from_noise(W, t, dt)
     i_start = searchsortedfirst(t_grid, t)
     i_end = searchsortedlast(t_grid, t_end)
 
-    # Need at least 2 sub-steps to get useful iterated integrals
-    if i_end - i_start < 2
-        return nothing
-    end
+    # Need at least 2 sub-steps
+    n_sub = i_end - i_start
+    n_sub < 2 && return nothing
 
-    # Compute Ito iterated integrals from sub-grid increments
     T = eltype(eltype(W_grid))
     I = zeros(T, m, m)
-    W_cumsum = zeros(T, m)  # running sum of dW from t_start
+    W_cumsum = zeros(T, m)
 
     for n in (i_start + 1):i_end
         dWn = W_grid[n] .- W_grid[n - 1]
@@ -182,17 +219,39 @@ function compute_iterated_I_from_noise(W, t, dt)
         W_cumsum .+= dWn
     end
 
-    # Convert Ito to Stratonovich: J_{jk} = I_{jk} + (1/2)*δ_{jk}*dt
+    # Ito → Stratonovich
     for j in 1:m
         I[j, j] += dt / 2
     end
+    return I
+end
 
+"""
+Compute Stratonovich iterated integrals from a sequence of (dt_i, dW_i, dZ_i) tuples.
+"""
+function _iterated_I_from_increments(data, n_sub, m, T, dt)
+    I = zeros(T, m, m)
+    W_cumsum = zeros(T, m)
+
+    for n in 1:n_sub
+        dWn = data[n][2]  # dW_i from the tuple
+        for k in 1:m
+            for j in 1:m
+                I[j, k] += W_cumsum[j] * dWn[k]
+            end
+        end
+        W_cumsum .+= dWn
+    end
+
+    # Ito → Stratonovich
+    for j in 1:m
+        I[j, j] += dt / 2
+    end
     return I
 end
 
 function _get_noise_source(W)
     if hasproperty(W, :source)
-        # NoiseWrapper — get the underlying source
         return _get_noise_source(W.source)
     elseif W isa DiffEqNoiseProcess.NoiseGrid || W isa DiffEqNoiseProcess.NoiseProcess
         return W
