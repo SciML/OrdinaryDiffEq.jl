@@ -231,22 +231,22 @@ end
         f_impl(zs[1], integrator.uprev, p, integrator.t)
         zs[1] .*= dt
     else
-        @.. broadcast = false zs[1] = dt * integrator.fsalfirst
+        @..zs[1] = dt * integrator.fsalfirst
     end
 
     if integrator.f isa SplitFunction
-        @.. broadcast = false ks[1] = dt * integrator.fsalfirst - zs[1]
+        @..ks[1] = dt * integrator.fsalfirst - zs[1]
     end
 
     for i in 2:s
-        @.. broadcast = false tmp = uprev
+        @..tmp = uprev
         for j in 1:(i - 1)
-            @.. broadcast = false tmp += Ai[i, j] * zs[j]
+            @..tmp += Ai[i, j] * zs[j]
         end
 
         if integrator.f isa SplitFunction
             for j in 1:(i - 1)
-                @.. broadcast = false tmp += Ae[i, j] * ks[j]
+                @..tmp += Ae[i, j] * ks[j]
             end
         end
 
@@ -255,7 +255,7 @@ end
         elseif α !== nothing && !iszero(α[i, 1])
             fill!(zs[i], zero(eltype(u)))
             for j in 1:(i - 1)
-                @.. broadcast = false zs[i] += α[i, j] * zs[j]
+                @..zs[i] += α[i, j] * zs[j]
             end
         else
             fill!(zs[i], zero(eltype(u)))
@@ -271,34 +271,34 @@ end
         end
 
         if integrator.f isa SplitFunction && i < s
-            @.. broadcast = false u = tmp + γ * zs[i]
+            @..u = tmp + γ * zs[i]
             f2(ks[i], u, p, t + c[i] * dt)
             ks[i] .*= dt
             integrator.stats.nf2 += 1
         end
     end
 
-    @.. broadcast = false u = tmp + γ * zs[s]
+    @..u = tmp + γ * zs[s]
     if integrator.f isa SplitFunction
         f2(ks[s], u, p, t + dt)
         ks[s] .*= dt
         integrator.stats.nf2 += 1
-        @.. broadcast = false u = uprev
+        @..u = uprev
         for i in 1:s
-            @.. broadcast = false u += bi[i] * zs[i] + be[i] * ks[i]
+            @..u += bi[i] * zs[i] + be[i] * ks[i]
         end
     end
 
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
-        @.. broadcast = false tmp = zero(eltype(u))
+        @..tmp = zero(eltype(u))
         for i in 1:s
-            @.. broadcast = false tmp += btilde[i] * zs[i]
+            @..tmp += btilde[i] * zs[i]
         end
         if integrator.f isa SplitFunction && ebtilde !== nothing
             for i in 1:s
-                @.. broadcast = false tmp += ebtilde[i] * ks[i]
+                @..tmp += ebtilde[i] * ks[i]
             end
         end
         if isnewton(nlsolver) && alg.smooth_est
@@ -321,6 +321,6 @@ end
     if integrator.f isa SplitFunction
         integrator.f(integrator.fsallast, u, p, t + dt)
     else
-        @.. broadcast = false integrator.fsallast = zs[s] / dt
+        @..integrator.fsallast = zs[s] / dt
     end
 end
