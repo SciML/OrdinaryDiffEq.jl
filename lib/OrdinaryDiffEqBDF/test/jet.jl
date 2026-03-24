@@ -33,51 +33,39 @@ using Test
         # Regular BDF solvers (ODEProblem)
         regular_bdf_solvers = [
             ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(),
-            MEBDF2(), IMEXEuler(), IMEXEulerARK(),
+            MEBDF2()
         ]
+        # Some of these are type-stable for the initialization step, but not all
+        stable_bdf_solvers = [QNDF(), QBDF(), FBDF(), MEBDF2()]
 
         # DAE solvers (DAEProblem)
         dae_solvers = [DABDF2(), DImplicitEuler(), DFBDF()]
 
         # Test SBDF solvers separately with required order parameter and SplitODEProblem
-        sbdf_solvers = [SBDF(order = 2), SBDF(order = 3), SBDF(order = 4), SBDF2(), SBDF3(), SBDF4()]
+        sbdf_solvers = [IMEXEuler(), IMEXEulerARK(), SBDF(order = 2), SBDF(order = 3), SBDF(order = 4), SBDF2(), SBDF3(), SBDF4()]
 
         for solver in regular_bdf_solvers
             @testset "$(typeof(solver)) type stability" begin
-                try
-                    @test_opt broken = true init(linear_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
-                    integrator = init(linear_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
-                    @test_opt broken = true step!(integrator)
-                catch e
-                    @test_broken false # Mark as broken if solver fails to initialize
-                    println("$(typeof(solver)) failed with: $e")
-                end
+                sbroken = solver ∉ stable_bdf_solvers
+                @test_opt broken = sbroken init(linear_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
+                integrator = init(linear_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
+                @test_opt broken = true step!(integrator)
             end
         end
 
         for solver in dae_solvers
             @testset "$(typeof(solver)) DAE type stability" begin
-                try
-                    @test_opt broken = true init(dae_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
-                    integrator = init(dae_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
-                    @test_opt broken = true step!(integrator)
-                catch e
-                    @test_broken false # Mark as broken if solver fails to initialize
-                    println("$(typeof(solver)) failed with: $e")
-                end
+                @test_opt broken = true init(dae_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
+                integrator = init(dae_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
+                @test_opt broken = true step!(integrator)
             end
         end
 
         for solver in sbdf_solvers
             @testset "$(typeof(solver)) type stability" begin
-                try
-                    @test_opt broken = true init(split_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
-                    integrator = init(split_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
-                    @test_opt broken = true step!(integrator)
-                catch e
-                    @test_broken false # Mark as broken if solver fails to initialize
-                    println("$(typeof(solver)) failed with: $e")
-                end
+                @test_opt init(split_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
+                integrator = init(split_prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
+                @test_opt broken = true step!(integrator)
             end
         end
     end
