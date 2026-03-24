@@ -1,9 +1,9 @@
-mutable struct IMEXConstantCache{Tab, N} <: OrdinaryDiffEqConstantCache
+mutable struct ESDIRKIMEXConstantCache{Tab, N} <: OrdinaryDiffEqConstantCache
     nlsolver::N
     tab::Tab
 end
 
-mutable struct IMEXCache{uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter} <:
+mutable struct ESDIRKIMEXCache{uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter} <:
     SDIRKMutableCache
     u::uType
     uprev::uType
@@ -16,7 +16,7 @@ mutable struct IMEXCache{uType, rateType, uNoUnitsType, N, Tab, kType, StepLimit
     step_limiter!::StepLimiter
 end
 
-function full_cache(c::IMEXCache)
+function full_cache(c::ESDIRKIMEXCache)
     base = (c.u, c.uprev, c.fsalfirst, c.zs..., c.atmp)
     if eltype(c.ks) !== Nothing
         return tuple(base..., c.ks...)
@@ -25,28 +25,28 @@ function full_cache(c::IMEXCache)
 end
 
 function alg_cache(
-        alg::OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = IMEXTableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tab = ESDIRKIMEXTableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ = tab.Ai[2, 2]
     c = tab.c[2]
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
     )
-    return IMEXConstantCache(nlsolver, tab)
+    return ESDIRKIMEXConstantCache(nlsolver, tab)
 end
 
 function alg_cache(
-        alg::OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = IMEXTableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tab = ESDIRKIMEXTableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ = tab.Ai[2, 2]
     c = tab.c[2]
     nlsolver = build_nlsolver(
@@ -67,12 +67,12 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return IMEXCache(
+    return ESDIRKIMEXCache(
         u, uprev, fsalfirst, zs, ks, atmp, nlsolver, tab, alg.step_limiter!
     )
 end
 
-function initialize!(integrator, cache::IMEXConstantCache)
+function initialize!(integrator, cache::ESDIRKIMEXConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -83,7 +83,7 @@ function initialize!(integrator, cache::IMEXConstantCache)
     return nothing
 end
 
-function initialize!(integrator, cache::IMEXCache)
+function initialize!(integrator, cache::ESDIRKIMEXCache)
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -94,7 +94,7 @@ function initialize!(integrator, cache::IMEXCache)
 end
 
 @muladd function perform_step!(
-        integrator, cache::IMEXConstantCache, repeat_step = false
+        integrator, cache::ESDIRKIMEXConstantCache, repeat_step = false
     )
     (; t, dt, uprev, u, p) = integrator
     nlsolver = cache.nlsolver
@@ -208,7 +208,7 @@ end
     integrator.u = u
 end
 
-@muladd function perform_step!(integrator, cache::IMEXCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::ESDIRKIMEXCache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     (; zs, ks, atmp, nlsolver, step_limiter!) = cache
     (; tmp) = nlsolver

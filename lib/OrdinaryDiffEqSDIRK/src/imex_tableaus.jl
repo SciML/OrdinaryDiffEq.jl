@@ -1,4 +1,4 @@
-struct IMEXTableau{T, T2}
+struct ESDIRKIMEXTableau{T, T2}
     Ai::Matrix{T}
     bi::Vector{T}
     Ae::Matrix{T}
@@ -12,21 +12,21 @@ struct IMEXTableau{T, T2}
 end
 
 # Dispatch: each algorithm type maps to its tableau constructor
-IMEXTableau(::ARS343, T, T2) = ARS343Tableau(T, T2)
-IMEXTableau(::KenCarp3, T, T2) = KenCarp3IMEXTableau(T, T2)
-IMEXTableau(::Kvaerno3, T, T2) = Kvaerno3IMEXTableau(T, T2)
-IMEXTableau(::Kvaerno4, T, T2) = Kvaerno4IMEXTableau(T, T2)
-IMEXTableau(::Kvaerno5, T, T2) = Kvaerno5IMEXTableau(T, T2)
-IMEXTableau(::KenCarp4, T, T2) = KenCarp4IMEXTableau(T, T2)
-IMEXTableau(::KenCarp5, T, T2) = KenCarp5IMEXTableau(T, T2)
-IMEXTableau(::KenCarp47, T, T2) = KenCarp47IMEXTableau(T, T2)
-IMEXTableau(::KenCarp58, T, T2) = KenCarp58IMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ARS343, T, T2) = ARS343Tableau(T, T2)
+ESDIRKIMEXTableau(::KenCarp3, T, T2) = KenCarp3ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::Kvaerno3, T, T2) = Kvaerno3ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::Kvaerno4, T, T2) = Kvaerno4ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::Kvaerno5, T, T2) = Kvaerno5ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::KenCarp4, T, T2) = KenCarp4ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::KenCarp5, T, T2) = KenCarp5ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::KenCarp47, T, T2) = KenCarp47ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::KenCarp58, T, T2) = KenCarp58ESDIRKIMEXTableau(T, T2)
 
 #
 # KenCarp3 IMEX Tableau
 #
 
-function KenCarp3IMEXTableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+function KenCarp3ESDIRKIMEXTableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     γ = convert(T, 0.435866521508459)
 
     a31 = convert(T, 0.2576482460664272)
@@ -120,13 +120,13 @@ function KenCarp3IMEXTableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
     α_mat[4, 1] = α41
     α_mat[4, 2] = α42
 
-    return IMEXTableau(
+    return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_mat, 3, s
     )
 end
 
-function KenCarp3IMEXTableau(T, T2)
+function KenCarp3ESDIRKIMEXTableau(T, T2)
     γ = convert(T, 1767732205903 // 4055673282236)
 
     a31 = convert(T, 2746238789719 // 10658868560708)
@@ -252,7 +252,7 @@ function KenCarp3IMEXTableau(T, T2)
     α_mat[4, 1] = α41
     α_mat[4, 2] = α42
 
-    return IMEXTableau(
+    return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_mat, 3, s
     )
@@ -316,7 +316,7 @@ function ARS343Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
 
     α_mat = zeros(T2, s, s)
 
-    return IMEXTableau(
+    return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_mat, 3, s
     )
@@ -326,7 +326,7 @@ end
 # KenCarp4 IMEX Tableau
 #
 
-function KenCarp4IMEXTableau(T, T2)
+function KenCarp4ESDIRKIMEXTableau(T, T2)
     γ = convert(T2, 1 // 4)
 
     a31 = convert(T, 8611 // 62500)
@@ -487,7 +487,7 @@ function KenCarp4IMEXTableau(T, T2)
     α_mat[6, 4] = α64
     α_mat[6, 5] = α65
 
-    return IMEXTableau(
+    return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_mat, 4, s
     )
@@ -497,7 +497,7 @@ end
 # KenCarp5 IMEX Tableau
 #
 
-function KenCarp5IMEXTableau(T, T2)
+function KenCarp5ESDIRKIMEXTableau(T, T2)
     γ = convert(T2, 41 // 200)
 
     a31 = convert(T, 41 // 400)
@@ -711,7 +711,7 @@ function KenCarp5IMEXTableau(T, T2)
     α_mat[8, 4] = α84
     α_mat[8, 5] = α85
 
-    return IMEXTableau(
+    return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_mat, 5, s
     )
@@ -765,7 +765,7 @@ function ARS343Tableau(T, T2)
 
     α_mat = zeros(T2, s, s)
 
-    return IMEXTableau(
+    return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_mat, 3, s
     )
@@ -775,7 +775,7 @@ end
 # Kvaerno3 IMEX Tableau
 #
 
-function Kvaerno3IMEXTableau(T, T2)
+function Kvaerno3ESDIRKIMEXTableau(T, T2)
     γ = convert(T, 0.4358665215)
 
     a31 = convert(T, 0.490563388419108)
@@ -836,7 +836,7 @@ function Kvaerno3IMEXTableau(T, T2)
     α_mat[4, 1] = α41
     α_mat[4, 2] = α42
 
-    return IMEXTableau(
+    return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, nothing, α_mat, 3, s
     )
@@ -846,7 +846,7 @@ end
 # Kvaerno4 IMEX Tableau
 #
 
-function Kvaerno4IMEXTableau(T, T2)
+function Kvaerno4ESDIRKIMEXTableau(T, T2)
     γ = convert(T, 0.4358665215)
 
     a31 = convert(T, 0.140737774731968)
@@ -923,7 +923,7 @@ function Kvaerno4IMEXTableau(T, T2)
     α_mat[4, 1] = α41
     α_mat[4, 2] = α42
 
-    return IMEXTableau(
+    return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, nothing, α_mat, 4, s
     )
@@ -933,7 +933,7 @@ end
 # Kvaerno5 IMEX Tableau
 #
 
-function Kvaerno5IMEXTableau(T, T2)
+function Kvaerno5ESDIRKIMEXTableau(T, T2)
     γ = convert(T, 0.26)
 
     a31 = convert(T, 0.13)
@@ -1051,7 +1051,7 @@ function Kvaerno5IMEXTableau(T, T2)
     α_mat[6, 2] = α62
     α_mat[6, 3] = α63
 
-    return IMEXTableau(
+    return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, nothing, α_mat, 5, s
     )
@@ -1061,7 +1061,7 @@ end
 # KenCarp47 IMEX Tableau
 #
 
-function KenCarp47IMEXTableau(T, T2)
+function KenCarp47ESDIRKIMEXTableau(T, T2)
     γ = convert(T2, 1235 // 10000)
 
     a31 = convert(T, 624185399699 // 4186980696204)
@@ -1253,7 +1253,7 @@ function KenCarp47IMEXTableau(T, T2)
     α_mat[7, 5] = α75
     α_mat[7, 6] = α76
 
-    return IMEXTableau(
+    return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_mat, 4, s
     )
@@ -1263,7 +1263,7 @@ end
 # KenCarp58 IMEX Tableau
 #
 
-function KenCarp58IMEXTableau(T, T2)
+function KenCarp58ESDIRKIMEXTableau(T, T2)
     γ = convert(T2, 2 // 9)
 
     a31 = convert(T, 2366667076620 // 8822750406821)
@@ -1497,7 +1497,7 @@ function KenCarp58IMEXTableau(T, T2)
     α_mat[8, 6] = α86
     α_mat[8, 7] = α87
 
-    return IMEXTableau(
+    return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_mat, 5, s
     )

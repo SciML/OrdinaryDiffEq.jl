@@ -6,6 +6,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm,
     OrdinaryDiffEqNewtonAlgorithm,
     OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
     alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
@@ -45,7 +46,7 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
     SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
     SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
     SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA,
-    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm, ARS343
+    ARS343
 
 import PrecompileTools
 import Preferences
