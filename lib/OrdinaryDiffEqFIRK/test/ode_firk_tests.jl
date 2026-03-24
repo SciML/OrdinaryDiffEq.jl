@@ -117,3 +117,27 @@ for iip in (true, false)
     @test length(sol) < 5000 # the error estimate is not very good
     @test SciMLBase.successful_retcode(sol)
 end
+
+# Test sparse Jacobian with KLUFactorization (issue #2892)
+# KLU does not support complex sparse matrices, so FIRK methods must
+# fall back to a compatible solver for the complex linear systems.
+using SparseArrays, LinearSolve, KLU
+let
+    function f_sparse(du, u, p, t)
+        return du .= u
+    end
+    u0 = [1.0, 2.0]
+    jac_prototype = sparse([1, 2], [1, 2], ones(2))
+    ode_fun = ODEFunction(f_sparse, jac_prototype = jac_prototype)
+    prob = ODEProblem(ode_fun, u0, (0.0, 1.0))
+
+    for alg in (
+            RadauIIA3(linsolve = KLUFactorization()),
+            RadauIIA5(linsolve = KLUFactorization()),
+            RadauIIA9(linsolve = KLUFactorization()),
+            AdaptiveRadau(linsolve = KLUFactorization()),
+        )
+        sol = solve(prob, alg)
+        @test SciMLBase.successful_retcode(sol)
+    end
+end

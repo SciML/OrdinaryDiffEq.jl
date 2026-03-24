@@ -1,4 +1,48 @@
 abstract type FIRKMutableCache <: OrdinaryDiffEqMutableCache end
+
+"""
+    _make_sparse_compatible_W(J, ::Type{CT})
+
+Create a complex-valued W matrix from Jacobian J with element type CT.
+For sparse matrices, fills structural nonzeros with ones to ensure
+factorization-based linear solvers can initialize properly.
+The values are overwritten in perform_step! before any actual solve.
+"""
+function _make_sparse_compatible_W(J, ::Type{CT}) where {CT}
+    W = similar(J, CT)
+    if W isa AbstractSparseMatrix
+        nonzeros(W) .= one(CT)
+    else
+        recursivefill!(W, false)
+    end
+    return W
+end
+
+"""
+    _complex_linsolve(linsolve, W_complex, b, u0, verbose)
+
+Initialize a linear solver for a complex W matrix. If the solver does not
+support complex sparse matrices (e.g., KLU), falls back to the default
+linear solver which uses UMFPACK for sparse matrices.
+"""
+function _complex_linsolve(linsolve, W_complex, b, u0, verbose)
+    linprob = LinearProblem(W_complex, b; u0 = u0)
+    lincache = init(
+        linprob, linsolve,
+        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        assumptions = LinearSolve.OperatorAssumptions(true),
+        verbose = verbose.linear_verbosity
+    )
+    if lincache.cacheval === nothing && W_complex isa AbstractSparseMatrix
+        lincache = init(
+            linprob, nothing,
+            alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+            assumptions = LinearSolve.OperatorAssumptions(true),
+            verbose = verbose.linear_verbosity
+        )
+    end
+    return lincache
+end
 get_fsalfirstlast(cache::FIRKMutableCache, u) = (cache.fsalfirst, cache.k)
 
 mutable struct RadauIIA3ConstantCache{F, Tab, Tol, Dt, U, JType} <:
@@ -107,16 +151,9 @@ function alg_cache(
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-    W1 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W1, false)
+    W1 = _make_sparse_compatible_W(J, Complex{eltype(W1)})
 
-    linprob = LinearProblem(W1, _vec(cubuff); u0 = _vec(dw12))
-    linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
-    )
-    #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-    #Pr = Diagonal(_vec(weight)))
+    linsolve = _complex_linsolve(alg.linsolve, W1, _vec(cubuff), _vec(dw12), verbose)
 
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
@@ -260,8 +297,7 @@ function alg_cache(
     if J isa AbstractSciMLOperator
         error("Non-concrete Jacobian not yet supported by RadauIIA5.")
     end
-    W2 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W2, false)
+    W2 = _make_sparse_compatible_W(J, Complex{eltype(W1)})
 
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
@@ -270,13 +306,7 @@ function alg_cache(
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
-    linprob = LinearProblem(W2, _vec(cubuff); u0 = _vec(dw23))
-    linsolve2 = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
-    )
-    #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-    #Pr = Diagonal(_vec(weight)))
+    linsolve2 = _complex_linsolve(alg.linsolve, W2, _vec(cubuff), _vec(dw23), verbose)
 
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
@@ -464,10 +494,8 @@ function alg_cache(
     if J isa AbstractSciMLOperator
         error("Non-concrete Jacobian not yet supported by RadauIIA5.")
     end
-    W2 = similar(J, Complex{eltype(W1)})
-    W3 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W2, false)
-    recursivefill!(W3, false)
+    W2 = _make_sparse_compatible_W(J, Complex{eltype(W1)})
+    W3 = _make_sparse_compatible_W(J, Complex{eltype(W1)})
 
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
@@ -476,20 +504,8 @@ function alg_cache(
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
-    linprob = LinearProblem(W2, _vec(cubuff1); u0 = _vec(dw23))
-    linsolve2 = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
-    )
-    #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-    #Pr = Diagonal(_vec(weight)))
-    linprob = LinearProblem(W3, _vec(cubuff2); u0 = _vec(dw45))
-    linsolve3 = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
-    )
-    #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-    #Pr = Diagonal(_vec(weight)))
+    linsolve2 = _complex_linsolve(alg.linsolve, W2, _vec(cubuff1), _vec(dw23), verbose)
+    linsolve3 = _complex_linsolve(alg.linsolve, W3, _vec(cubuff2), _vec(dw45), verbose)
 
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
@@ -688,8 +704,7 @@ function alg_cache(
         error("Non-concrete Jacobian not yet supported by AdaptiveRadau.")
     end
 
-    W2 = [similar(J, Complex{eltype(W1)}) for _ in 1:((max_stages - 1) ÷ 2)]
-    recursivefill!.(W2, false)
+    W2 = [_make_sparse_compatible_W(J, Complex{eltype(W1)}) for _ in 1:((max_stages - 1) ÷ 2)]
 
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(
@@ -698,13 +713,7 @@ function alg_cache(
     )
 
     linsolve2 = [
-        init(
-                LinearProblem(W2[i], _vec(cubuff[i]); u0 = _vec(dw2[i])),
-                alg.linsolve, alias = LinearAliasSpecifier(
-                    alias_A = true, alias_b = true
-                ),
-                assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
-            )
+        _complex_linsolve(alg.linsolve, W2[i], _vec(cubuff[i]), _vec(dw2[i]), verbose)
             for i in 1:((max_stages - 1) ÷ 2)
     ]
 

@@ -23,6 +23,7 @@ using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
 isfirk, generic_solver_docstring
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu
+using SparseArrays: AbstractSparseMatrix, nonzeros
 import LinearSolve
 import FastBroadcast: @..
 import OrdinaryDiffEqCore
