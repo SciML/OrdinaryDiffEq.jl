@@ -3,9 +3,14 @@
     Jalg = cache.Jalg
     dW = W.dW
 
-    J = get_iterated_I(
-        dt, dW, W.dZ, Jalg, integrator.alg.p, integrator.alg.c, alg_order(integrator.alg)
-    )
+    # Try to compute iterated integrals from sub-grid noise data (more accurate
+    # for convergence testing when coarse/fine solutions share the same noise grid)
+    J = compute_iterated_I_from_noise(W, t, dt)
+    if J === nothing
+        J = get_iterated_I(
+            dt, dW, W.dZ, Jalg, integrator.alg.p, integrator.alg.c, alg_order(integrator.alg)
+        )
+    end
 
     if SciMLBase.alg_interpretation(integrator.alg) == SciMLBase.AlgorithmInterpretation.Ito
         if dW isa Number || is_diagonal_noise(integrator.sol.prob)
@@ -39,7 +44,7 @@
             if integrator.opts.adaptive
                 ggprime_norm += integrator.opts.internalnorm(ggprime, t)
             end
-            mil_correction += ggprime * @view(J[:, i])
+            mil_correction += ggprime * @view(J[i, :])
         end
         if integrator.opts.adaptive
             K = @.. uprev + dt * du1
@@ -74,9 +79,15 @@ end
     sqdt = integrator.sqdt
     Jalg = cache.Jalg
 
-    get_iterated_I!(
-        dt, dW, W.dZ, Jalg, integrator.alg.p, integrator.alg.c, alg_order(integrator.alg)
-    )
+    # Try to compute iterated integrals from sub-grid noise data
+    J_subgrid = compute_iterated_I_from_noise(W, t, dt)
+    if J_subgrid !== nothing
+        Jalg.J .= J_subgrid
+    else
+        get_iterated_I!(
+            dt, dW, W.dZ, Jalg, integrator.alg.p, integrator.alg.c, alg_order(integrator.alg)
+        )
+    end
     J = Jalg.J
 
     integrator.f(du1, uprev, p, t)
@@ -111,7 +122,7 @@ end
             if integrator.opts.adaptive
                 ggprime_norm += integrator.opts.internalnorm(ggprime, t)
             end
-            mul!(tmp, ggprime, @view(J[:, i]))
+            mul!(tmp, ggprime, @view(J[i, :]))
             @.. mil_correction += tmp
         end
         mul!(tmp, L, dW)

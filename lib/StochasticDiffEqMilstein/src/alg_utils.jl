@@ -18,13 +18,12 @@ alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::WangLi3SMil_F) = true
 
 alg_needs_extra_process(alg::RKMilGeneral) = true
 
-# Override Z prototype for RKMilGeneral — needs extra Z when p is specified
+# Override Z prototype for RKMilGeneral — Z is used to seed the Lévy area RNG
+# for reproducible iterated integrals across NoiseWrapper re-solves.
+# Only needs same dimension as dW (hashed for seed, not consumed directly).
 function StochasticDiffEqCore._z_prototype(alg::RKMilGeneral, rand_prototype, iip::Bool)
-    if alg.p === nothing || rand_prototype isa Number
-        return nothing
+    if rand_prototype isa Number
+        return rand_prototype
     end
-    m = length(rand_prototype)
-    rp2 = similar(rand_prototype, Int(m + alg.p * m * 2))
-    rp2 .= false
-    return rp2
+    return similar(rand_prototype)
 end

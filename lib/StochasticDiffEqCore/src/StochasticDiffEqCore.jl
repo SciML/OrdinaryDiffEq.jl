@@ -165,7 +165,7 @@ export alg_cache, alg_order, get_current_alg_order, isadaptive,
     NLSOLVEJL_SETUP, IIFNLSolveFunc, DiffEqNLSolveTag
 
 # Export iterated integral utilities for solver subpackages
-export get_iterated_I, get_iterated_I!, get_Jalg,
+export get_iterated_I, get_iterated_I!, get_Jalg, compute_iterated_I_from_noise,
     AbstractJ, AbstractJDiagonal, AbstractJCommute,
     JDiagonal_oop, JDiagonal_iip, JCommute_oop, JCommute_iip,
     IteratedIntegralAlgorithm_iip

@@ -133,3 +133,70 @@ end
 # function StochasticDiffEq.get_Jalg(ΔW,prob,alg::SOLVER)
 #  return MronRoe()
 # end
+
+"""
+    compute_iterated_I_from_noise(W, t, dt)
+
+Compute Stratonovich iterated integrals J_{jk} = ∫∫ ∘dW_j ∘dW_k over [t, t+dt]
+from the sub-grid W values stored in the noise process. Returns the m×m matrix J
+where J_{jk} = (1/2)*dW_j*dW_k + dt*A_{jk} (A = Lévy area).
+
+This is computed via the Riemann sum over sub-grid increments:
+  I_{jk}^{Ito} = Σ_{n} dW_k^{(n)} * Σ_{l<n} dW_j^{(l)}
+then converted to Stratonovich: J_{jk} = I_{jk} + (1/2)*δ_{jk}*dt.
+
+Falls back to `nothing` if the noise process doesn't have accessible sub-grid data.
+"""
+function compute_iterated_I_from_noise(W, t, dt)
+    # Only works for NoiseGrid and NoiseWrapper with accessible grid
+    source = _get_noise_source(W)
+    source === nothing && return nothing
+
+    t_grid = source.t
+    W_grid = source.W
+
+    m = length(W_grid[1])
+    t_end = t + dt
+
+    # Find grid indices covering [t, t+dt]
+    i_start = searchsortedfirst(t_grid, t)
+    i_end = searchsortedlast(t_grid, t_end)
+
+    # Need at least 2 sub-steps to get useful iterated integrals
+    if i_end - i_start < 2
+        return nothing
+    end
+
+    # Compute Ito iterated integrals from sub-grid increments
+    T = eltype(eltype(W_grid))
+    I = zeros(T, m, m)
+    W_cumsum = zeros(T, m)  # running sum of dW from t_start
+
+    for n in (i_start + 1):i_end
+        dWn = W_grid[n] .- W_grid[n - 1]
+        for k in 1:m
+            for j in 1:m
+                I[j, k] += W_cumsum[j] * dWn[k]
+            end
+        end
+        W_cumsum .+= dWn
+    end
+
+    # Convert Ito to Stratonovich: J_{jk} = I_{jk} + (1/2)*δ_{jk}*dt
+    for j in 1:m
+        I[j, j] += dt / 2
+    end
+
+    return I
+end
+
+function _get_noise_source(W)
+    if hasproperty(W, :source)
+        # NoiseWrapper — get the underlying source
+        return _get_noise_source(W.source)
+    elseif W isa DiffEqNoiseProcess.NoiseGrid || W isa DiffEqNoiseProcess.NoiseProcess
+        return W
+    else
+        return nothing
+    end
+end
