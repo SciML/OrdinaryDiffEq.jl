@@ -49,7 +49,10 @@ OrdinaryDiffEqSSPRK = {path = "../OrdinaryDiffEqSSPRK"}
 OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "../OrdinaryDiffEqVerner"}
 StochasticDiffEqCore = {path = "../StochasticDiffEqCore"}
+StochasticDiffEqHighOrder = {path = "../StochasticDiffEqHighOrder"}
+StochasticDiffEqImplicit = {path = "../StochasticDiffEqImplicit"}
 StochasticDiffEqLowOrder = {path = "../StochasticDiffEqLowOrder"}
+StochasticDiffEqROCK = {path = "../StochasticDiffEqROCK"}
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
@@ -100,7 +103,11 @@ julia = "1.10"
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
 StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
+StochasticDiffEqHighOrder = "2396deb8-7031-47e3-b5f0-b712c0a6b4cc"
+StochasticDiffEqImplicit = "b4b012ad-4b5e-4e99-a72e-7e09e7e0b800"
 StochasticDiffEqLowOrder = "d15fe365-ce7f-450a-828a-7985bd5b681b"
+StochasticDiffEqROCK = "c3d49e4e-9e6b-4ee6-becc-4dd72c61f2cc"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 DDEProblemLibrary = "f42792ee-6ffc-4e2a-ae83-8ee2f22de800"
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
@@ -124,4 +131,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["ADTypes", "Aqua", "DDEProblemLibrary", "DiffEqCallbacks", "DiffEqDevTools", "ExplicitImports", "FiniteDiff", "LinearSolve", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFeagin", "OrdinaryDiffEqHighOrderRK", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqLowStorageRK", "OrdinaryDiffEqSDIRK", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "Random", "RecursiveArrayTools", "SafeTestsets", "Test", "Unitful"]
+test = ["ADTypes", "Aqua", "DDEProblemLibrary", "DiffEqCallbacks", "DiffEqDevTools", "ExplicitImports", "FiniteDiff", "LinearSolve", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFeagin", "OrdinaryDiffEqHighOrderRK", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqLowStorageRK", "OrdinaryDiffEqSDIRK", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "Random", "RecursiveArrayTools", "SafeTestsets", "SparseArrays", "StochasticDiffEqCore", "StochasticDiffEqHighOrder", "StochasticDiffEqImplicit", "StochasticDiffEqLowOrder", "StochasticDiffEqROCK", "Test", "Unitful"]
