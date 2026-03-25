@@ -1,6 +1,7 @@
 using StochasticDiffEqLevyArea
 using Test
 using Random
+using StableRNGs: StableRNG
 using LinearAlgebra: diag, norm
 using Statistics: var
 
@@ -149,30 +150,37 @@ Random.seed!(638278)
         @test n > 0
     end
 
-    # Regression tests: verify bit-identical output with LevyArea.jl
-    # Reference values were generated using LevyArea.jl v1.0.0 with:
-    #   Random.seed!(638278) to generate W, then Random.seed!(12345) before each levyarea call
-    @testset "Regression vs LevyArea.jl - $alg_name" for (alg_name, alg, W_ref, I_ref) in [
+    # Regression tests using StableRNGs for cross-version reproducibility.
+    # Reference values generated with StableRNG(100) for W, StableRNG(200) for levyarea.
+    # These values must remain stable across Julia versions since StableRNGs
+    # guarantees a fixed stream.
+    @testset "Regression (StableRNG) - $alg_name" for (alg_name, alg, W_ref, I_ref) in [
         ("Fourier m=2", Fourier(),
-            [0.09903103214960329, 0.11212317514303571],
-            [-9.642733569211956e-5 0.0020195078355866964;
-             0.009084165926718873 0.001285803202077931]),
+            [0.0538738050959819, 0.02212611720030917],
+            [-0.0035488065622400772 0.002726448021797754;
+             -0.0015344298962174452 -0.004755217468819091]),
         ("Milstein m=2", Milstein(),
-            [-0.03121756137083341, 0.13620291896429848],
-            [-0.004512731931029125 -0.013820802895184192;
-             0.009568879913529555 0.004275617567197629]),
+            [0.0538738050959819, 0.02212611720030917],
+            [-0.0035488065622400772 -0.0017205137501459774;
+             0.002912531875726286 -0.004755217468819091]),
         ("Wiktorsson m=2", Wiktorsson(),
-            [-0.05354470833343851, 0.029557354340556088],
-            [-0.0035664821047435005 -0.0036534036925311725;
-             0.0020707637752580043 -0.004563181402193405]),
+            [0.0538738050959819, 0.02212611720030917],
+            [-0.0035488065622400772 -6.58073345729482e-5;
+             0.0012578254601532573 -0.004755217468819091]),
         ("MronRoe m=2", MronRoe(),
-            [-0.21299582757570945, -0.053796834119659964],
-            [0.017683611282330675 0.012644240757892108;
-             -0.001185739553621972 -0.0035529503193508947]),
+            [0.0538738050959819, 0.02212611720030917],
+            [-0.0035488065622400772 -0.0008127884214381656;
+             0.0020048065470184744 -0.004755217468819091]),
     ]
         h = 0.01
-        Random.seed!(12345)
-        I_new = iterated_integrals(W_ref, h, h^(3 / 2); alg = alg)
+        # Verify W generation is stable
+        rng_w = StableRNG(100)
+        W_check = sqrt(h) * randn(rng_w, 2)
+        @test W_check ≈ W_ref atol = 1e-15
+
+        # Verify iterated_integrals output is stable
+        rng_la = StableRNG(200)
+        I_new = iterated_integrals(W_ref, h, h^(3 / 2); alg = alg, rng = rng_la)
         @test I_new ≈ I_ref atol = 1e-14
     end
 end
