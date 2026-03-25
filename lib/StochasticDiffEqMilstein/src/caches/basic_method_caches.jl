@@ -1,5 +1,10 @@
 struct RKMilGeneralConstantCache{JalgType} <: StochasticDiffEqConstantCache
     Jalg::JalgType
+    # For rejection handling: store original dW, dZ, dt from the first attempt
+    # so sub-interval iterated integrals can be computed from the same Fourier coefficients
+    _dW_orig::Base.RefValue{Any}
+    _dZ_orig::Base.RefValue{Any}
+    _dt_orig::Base.RefValue{Float64}
 end
 
 @cache struct RKMilGeneralCache{uType, rateType, rateNoiseType, JalgType} <:
@@ -14,6 +19,9 @@ end
     mil_correction::uType
     ggprime::rateNoiseType
     Jalg::JalgType
+    _dW_orig::Base.RefValue{Any}
+    _dZ_orig::Base.RefValue{Any}
+    _dt_orig::Base.RefValue{Float64}
 end
 
 function alg_cache(
@@ -23,7 +31,8 @@ function alg_cache(
         ::Type{Val{false}}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     Jalg = get_Jalg(DeltaW, dt, prob, alg)
-    return RKMilGeneralConstantCache{typeof(Jalg)}(Jalg)
+    return RKMilGeneralConstantCache(
+        Jalg, Ref{Any}(nothing), Ref{Any}(nothing), Ref(0.0))
 end
 
 function alg_cache(
@@ -40,9 +49,8 @@ function alg_cache(
     mil_correction = zero(u)
     ggprime = zero(noise_rate_prototype)
     Jalg = get_Jalg(DeltaW, dt, prob, alg)
-    return RKMilGeneralCache{
-        typeof(u), typeof(rate_prototype), typeof(noise_rate_prototype), typeof(Jalg),
-    }(
-        u, uprev, tmp, du1, du2, K, L, mil_correction, ggprime, Jalg
+    return RKMilGeneralCache(
+        u, uprev, tmp, du1, du2, K, L, mil_correction, ggprime, Jalg,
+        Ref{Any}(nothing), Ref{Any}(nothing), Ref(0.0)
     )
 end

@@ -105,7 +105,7 @@ end
 
 import SciMLBase
 
-using LevyArea
+using StochasticDiffEqLevyArea
 
 const CompiledFloats = Union{Float32, Float64}
 
