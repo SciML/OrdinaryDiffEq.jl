@@ -497,6 +497,411 @@ function ParsaniKetchesonDeconinck3S205(stage_limiter!, step_limiter! = trivial_
     )
 end
 
+# Al Jahdali et al. (2022) 3S* low-storage methods
+# Advection-optimized schemes
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+4-stage, second order (3S) low-storage scheme, optimized for the 2D advection equation.
+Fixed timestep only.", "AlJahdaliAdv3S42",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliAdv3S42{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliAdv3S42(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliAdv3S42{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+8-stage, second order (3S) low-storage scheme, optimized for the 2D advection equation.
+Fixed timestep only.", "AlJahdaliAdv3S82",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliAdv3S82{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliAdv3S82(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliAdv3S82{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+5-stage, third order (3S) low-storage scheme, optimized for the 2D advection equation.
+Fixed timestep only.", "AlJahdaliAdv3S53",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliAdv3S53{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliAdv3S53(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliAdv3S53{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+11-stage, third order (3S) low-storage scheme, optimized for the 2D advection equation.
+Fixed timestep only.", "AlJahdaliAdv3S113",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliAdv3S113{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliAdv3S113(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliAdv3S113{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+6-stage, fourth order (3S) low-storage scheme, optimized for the 2D advection equation.
+Fixed timestep only.", "AlJahdaliAdv3S64",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliAdv3S64{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliAdv3S64(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliAdv3S64{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+15-stage, fourth order (3S) low-storage scheme, optimized for the 2D advection equation.
+Fixed timestep only.", "AlJahdaliAdv3S154",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliAdv3S154{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliAdv3S154(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliAdv3S154{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+8-stage, fifth order (3S) low-storage scheme, optimized for the 2D advection equation.
+Fixed timestep only.", "AlJahdaliAdv3S85",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliAdv3S85{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliAdv3S85(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliAdv3S85{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+16-stage, fifth order (3S) low-storage scheme, optimized for the 2D advection equation.
+Fixed timestep only.", "AlJahdaliAdv3S165",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliAdv3S165{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliAdv3S165(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliAdv3S165{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+# Vortex-optimized schemes
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+4-stage, second order (3S) low-storage scheme, optimized for the isentropic vortex propagation problem.
+Fixed timestep only.", "AlJahdaliVor3S42",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliVor3S42{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliVor3S42(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliVor3S42{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+8-stage, second order (3S) low-storage scheme, optimized for the isentropic vortex propagation problem.
+Fixed timestep only.", "AlJahdaliVor3S82",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliVor3S82{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliVor3S82(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliVor3S82{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+5-stage, third order (3S) low-storage scheme, optimized for the isentropic vortex propagation problem.
+Fixed timestep only.", "AlJahdaliVor3S53",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliVor3S53{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliVor3S53(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliVor3S53{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+11-stage, third order (3S) low-storage scheme, optimized for the isentropic vortex propagation problem.
+Fixed timestep only.", "AlJahdaliVor3S113",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliVor3S113{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliVor3S113(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliVor3S113{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+6-stage, fourth order (3S) low-storage scheme, optimized for the isentropic vortex propagation problem.
+Fixed timestep only.", "AlJahdaliVor3S64",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliVor3S64{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliVor3S64(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliVor3S64{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+15-stage, fourth order (3S) low-storage scheme, optimized for the isentropic vortex propagation problem.
+Fixed timestep only.", "AlJahdaliVor3S154",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliVor3S154{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliVor3S154(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliVor3S154{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+8-stage, fifth order (3S) low-storage scheme, optimized for the isentropic vortex propagation problem.
+Fixed timestep only.", "AlJahdaliVor3S85",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliVor3S85{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliVor3S85(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliVor3S85{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
+@doc explicit_rk_docstring(
+    "Low-Storage Method
+16-stage, fifth order (3S) low-storage scheme, optimized for the isentropic vortex propagation problem.
+Fixed timestep only.", "AlJahdaliVor3S165",
+    references = "Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+    Optimized explicit Runge-Kutta schemes for high-order collocated discontinuous
+    Galerkin methods for compressible fluid dynamics.
+    Computers & Mathematics with Applications, 118, pp. 27-44.
+    doi: https://doi.org/10.1016/j.camwa.2022.05.006"
+)
+Base.@kwdef struct AlJahdaliVor3S165{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function AlJahdaliVor3S165(stage_limiter!, step_limiter! = trivial_limiter!)
+    return AlJahdaliVor3S165{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
+        step_limiter!,
+        False()
+    )
+end
+
 @doc explicit_rk_docstring(
     "Low-Storage Method
 4-stage, third order low-storage scheme, optimized for compressible Navier–Stokes equations.
