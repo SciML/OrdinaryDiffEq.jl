@@ -52,8 +52,24 @@ function get_iterated_I!(dt, dW, dZ, alg::JCommute_iip, p = nothing, c = 1, γ =
     return nothing
 end
 
-# algs from LevyArea.jl # LevyArea.levyarea allocates random variables and then mutates these, see e.g.
-# https://github.com/stochastics-uni-luebeck/LevyArea.jl/blob/68c5cb08ab103b4dcd3178651f7a5dd9ce8c666d/src/milstein.jl#L25
+# LevyArea.jl's levyarea() uses default_rng() internally, which pollutes the
+# global RNG state and creates hidden coupling with the noise process.
+# When dZ is available, we seed a local RNG from dZ and temporarily swap it in,
+# isolating the Lévy area randomness from the noise generation RNG.
+# This also ensures reproducibility: same dZ → same Lévy area.
+function _call_levyarea(dW, dt, p, alg, dZ)
+    Wn = dW / √dt
+    if dZ !== nothing
+        rng_state = copy(Random.default_rng())
+        Random.seed!(hash(dZ))
+        I = LevyArea.levyarea(Wn, p, alg)
+        copy!(Random.default_rng(), rng_state)
+    else
+        I = LevyArea.levyarea(Wn, p, alg)
+    end
+    return I
+end
+
 function get_iterated_I(
         dt, dW, dZ, alg::LevyArea.AbstractIteratedIntegralAlgorithm,
         p = nothing, c = 1, γ = 1 // 1
@@ -62,7 +78,7 @@ function get_iterated_I(
         ε = c * dt^(γ + 1 // 2)
         p = terms_needed(length(dW), dt, ε, alg, MaxL2())
     end
-    I = LevyArea.levyarea(dW / √dt, p, alg)
+    I = _call_levyarea(dW, dt, p, alg, dZ)
     return I .= 1 // 2 * dW .* dW' .+ dt .* I
 end
 
@@ -84,7 +100,7 @@ function get_iterated_I!(
         ε = c * dt^(γ + 1 // 2)
         p = terms_needed(length(dW), dt, ε, levyalg, MaxL2())
     end
-    J .= LevyArea.levyarea(dW / √dt, p, levyalg)
+    J .= _call_levyarea(dW, dt, p, levyalg, dZ)
     J .= 1 // 2 * dW .* dW' .+ dt .* J
     return nothing
 end
