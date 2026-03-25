@@ -172,6 +172,10 @@ function _compute_II_from_S2(W, dt)
     !hasproperty(W, :S₂) && return nothing
     S₂ = W.S₂
     n_sub = length(S₂)
+    # Need ≥2 sub-intervals for a meaningful Lévy area estimate.
+    # With only 1 entry (fresh step, no prior rejections), the iterated
+    # integral would just be the commutative approximation (zero Lévy area),
+    # which is worse than LevyArea.jl's random approximation.
     n_sub < 2 && return nothing
 
     # Extract sub-interval dW values from S₂
