@@ -1,7 +1,7 @@
 name = "StochasticDiffEqWeak"
 uuid = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "0.1.0"
+version = "1.0.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -47,7 +47,7 @@ RecursiveArrayTools = "2, 3"
 Reexport = "0.2, 1.0"
 SciMLBase = "2.146"
 StaticArrays = "1.9.14"
-StochasticDiffEqCore = "0.1"
+StochasticDiffEqCore = "1"
 DiffEqDevTools = "2.44"
 Statistics = "1"
 Test = "<0.0.1, 1"
