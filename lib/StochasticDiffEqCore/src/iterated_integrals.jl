@@ -52,8 +52,8 @@ function get_iterated_I!(dt, dW, dZ, alg::JCommute_iip, p = nothing, c = 1, γ =
     return nothing
 end
 
-# algs from StochasticDiffEqLevyArea.jl # StochasticDiffEqLevyArea.levyarea allocates random variables and then mutates these, see e.g.
-# https://github.com/stochastics-uni-luebeck/StochasticDiffEqLevyArea.jl/blob/68c5cb08ab103b4dcd3178651f7a5dd9ce8c666d/src/milstein.jl#L25
+# algs from StochasticDiffEqLevyArea (originally LevyArea.jl), see e.g.
+# https://github.com/stochastics-uni-luebeck/LevyArea.jl/blob/68c5cb08ab103b4dcd3178651f7a5dd9ce8c666d/src/milstein.jl#L25
 function get_iterated_I(
         dt, dW, dZ, alg::StochasticDiffEqLevyArea.AbstractIteratedIntegralAlgorithm,
         p = nothing, c = 1, γ = 1 // 1
