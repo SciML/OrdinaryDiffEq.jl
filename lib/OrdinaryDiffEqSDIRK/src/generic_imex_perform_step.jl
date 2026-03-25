@@ -173,7 +173,7 @@ end
         end
     end
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive && btilde !== nothing
         tmp = zero(u)
         for i in 1:s
             tmp = tmp + btilde[i] * z[i]
@@ -291,7 +291,7 @@ end
 
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.opts.adaptive
+    if integrator.opts.adaptive && btilde !== nothing
         @..tmp = zero(eltype(u))
         for i in 1:s
             @..tmp += btilde[i] * zs[i]
