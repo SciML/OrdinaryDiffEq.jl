@@ -14,7 +14,6 @@ using RecursiveArrayTools: copyat_or_push!, recursivecopy, recursivecopy!,
     recursive_bottom_eltype, recursive_unitless_bottom_eltype,
     recursive_unitless_eltype
 using ForwardDiff: ForwardDiff
-using Random: Random
 
 import ArrayInterface
 import SimpleNonlinearSolve
@@ -37,11 +36,7 @@ using OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
 using OrdinaryDiffEqFunctionMap: FunctionMap
 # using OrdinaryDiffEqDifferentiation: resize_grad_config!, resize_jac_config!
 
-using DiffEqNoiseProcess: WienerProcess, WienerProcess!, RSWM
 using DiffEqBase: is_diagonal_noise
-
-import StochasticDiffEqCore
-using StochasticDiffEqCore: alg_cache as sde_alg_cache
 
 # Explicit imports for functions
 using OrdinaryDiffEqCore: AutoSwitch, CompositeAlgorithm
@@ -63,6 +58,14 @@ using SciMLLogging: AbstractVerbosityPreset, None, @SciMLMessage
 import SciMLBase
 
 const SDEAlgUnion = Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}
+
+# Internal hook functions for SDDE support. These are overloaded by the
+# StochasticDiffEqCore extension to provide actual implementations.
+# Calling them without the extension loaded gives a clear error.
+function _sde_alg_order end
+function _sde_isadaptive end
+function _sde_alg_cache end
+function _create_sdde_noise end
 
 export Discontinuity, MethodOfSteps
 

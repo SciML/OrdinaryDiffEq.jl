@@ -242,29 +242,10 @@ function SciMLBase.__init(
 
     # ── Noise creation (SDDE only) ─────────────────────────────────────
     if is_stochastic
-        _seed = seed == 0 ? rand(UInt64) : seed
-        _rng = Random.Xoshiro(_seed)
-        if is_diagonal_noise(prob)
-            rand_prototype = u0 isa Number ? u0 : zero(u0)
-        elseif noise_rate_prototype !== nothing
-            rand_prototype = false .* noise_rate_prototype[1, :]
-        else
-            rand_prototype = u0 isa Number ? u0 : zero(u0)
-        end
-        if prob.noise === nothing
-            if isinplace(prob)
-                W = WienerProcess!(t0, rand_prototype, save_everystep = save_noise, rng = _rng)
-            else
-                W = WienerProcess(t0, rand_prototype, save_everystep = save_noise, rng = _rng)
-            end
-        else
-            W = prob.noise
-            if W.curt != t0
-                reinit!(W, t0, t0 = t0)
-            end
-        end
-        P = nothing
-        sqdt = tdir * sqrt(abs(tType(dt)))
+        W, P, sqdt = _create_sdde_noise(
+            prob, u0, t0, tType(dt), tdir, noise_rate_prototype,
+            save_noise, seed, isinplace(prob), isadaptive(alg)
+        )
     else
         W = nothing
         P = nothing
@@ -291,7 +272,7 @@ function SciMLBase.__init(
     cache = if is_stochastic
         dW = W.dW
         dZ = W.dZ
-        sde_alg_cache(
+        _sde_alg_cache(
             alg.alg, prob, u, dW, dZ, p,
             rate_prototype, noise_rate_prototype,
             nothing, uEltypeNoUnits, uBottomEltypeNoUnits,

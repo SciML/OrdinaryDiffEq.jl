@@ -431,7 +431,7 @@ function build_history_function(
         dW_dummy = zero(u0)
     end
 
-    ode_cache = sde_alg_cache(
+    ode_cache = _sde_alg_cache(
         alg.alg, ode_prob, ode_u, dW_dummy, nothing, p,
         rate_prototype, noise_rate_prototype,
         nothing, # jump_rate_prototype
