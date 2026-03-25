@@ -10,7 +10,7 @@ function activate_downstream_env()
     Pkg.develop(
         [
             PackageSpec(path = dirname(@__DIR__)),
-            PackageSpec(path = joinpath(dirname(lib_dir), "..")),
+            PackageSpec(path = dirname(lib_dir)),
             PackageSpec(path = joinpath(lib_dir, "StochasticDiffEq")),
         ]
     )
@@ -29,7 +29,7 @@ function activate_modelingtoolkit_env()
     Pkg.develop(
         [
             PackageSpec(path = dirname(@__DIR__)),
-            PackageSpec(path = joinpath(dirname(lib_dir), "..")),
+            PackageSpec(path = dirname(lib_dir)),
         ]
     )
     return Pkg.instantiate()
@@ -40,7 +40,7 @@ function activate_sundials_env()
     lib_dir = dirname(dirname(@__DIR__))
     Pkg.develop(
         [
-            PackageSpec(path = joinpath(dirname(lib_dir), "..")),
+            PackageSpec(path = dirname(lib_dir)),
         ]
     )
     return Pkg.instantiate()
