@@ -9,8 +9,20 @@ function levyarea(W::AbstractVector{T}, n::Integer, alg::Milstein;
     m = length(W)
     X = randn(rng, T, n, m)
     Y = randn(rng, T, m, n)
-    M = randn(rng, T, m)
-    return _milstein_area(W, X, Y, M, n, m)
+    Y .= (Y .- √(T(2)) .* W) ./ (1:n)'
+    A = Y * X
+    # Match LevyArea.jl: M = randn!(rng, view(Y, :, 1)) — uses view into modified Y
+    M = randn!(rng, view(Y, :, 1))
+    a = T(√(2 * trigamma(n + 1)))
+    A .+= a .* W .* M'
+    for i in 1:m
+        @inbounds A[i, i] = zero(T)
+        for j in (i + 1):m
+            @inbounds A[i, j] = (A[i, j] - A[j, i]) / (2 * T(π))
+            @inbounds A[j, i] = -A[i, j]
+        end
+    end
+    return A
 end
 
 function levyarea(W::AbstractVector{T}, n::Integer, alg::Milstein,

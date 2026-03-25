@@ -7,13 +7,26 @@ norv(m, n, ::MronRoe) = 2 * m * n + (m^2 + m) ÷ 2
 function levyarea(W::AbstractVector{T}, n::Integer, alg::MronRoe;
         rng::AbstractRNG = default_rng()) where {T <: AbstractFloat}
     m = length(W)
-    # MronRoe uses transposed layout: X is m×n, Y is n×m
     X = randn(rng, T, m, n)
     Y = randn(rng, T, n, m)
-    Ψ = randn(rng, T, m)
-    n_tail = (m^2 - m) ÷ 2
-    tail_extra = randn(rng, T, n_tail)
-    return _mronroe_area(W, X, Y, Ψ, tail_extra, n, m)
+    Y .= (Y .- √(T(2)) .* W') ./ (1:n)
+    A = X * Y
+
+    # Match LevyArea.jl: Ψ = randn!(rng, view(X, :, 1))
+    Ψ = randn!(rng, view(X, :, 1))
+    a = T(sqrt(2 * trigamma(n + 1)))
+    A .+= a .* W .* Ψ'
+
+    # Improved tail-sum approximation with individual randn calls
+    for i in 1:m
+        @inbounds A[i, i] = zero(T)
+        for j in (i + 1):m
+            @inbounds A[i, j] = (A[i, j] + a * randn(rng, T) - A[j, i]) / (2 * T(π))
+            @inbounds A[j, i] = -A[i, j]
+        end
+    end
+
+    return A
 end
 
 function levyarea(W::AbstractVector{T}, n::Integer, alg::MronRoe,
