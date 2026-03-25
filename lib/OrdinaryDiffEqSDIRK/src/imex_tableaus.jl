@@ -305,14 +305,8 @@ function ARS343Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
 
     c_vec = T2[zero(T2), c2, c3, c4]
 
-    btilde_vec = T[
-        zero(T), convert(T, 1.20849664917601), convert(T, -0.644363170684469),
-        convert(T, -0.564133478491541),
-    ]
-    ebtilde_vec = T[
-        zero(T), convert(T, 1.20849664917601), convert(T, -0.644363170684469),
-        convert(T, -0.564133478491541),
-    ]
+    btilde_vec = T[zero(T), γ, -2γ, γ]
+    ebtilde_vec = T[zero(T), γ, -2γ, γ]
 
     α_mat = zeros(T2, s, s)
 
@@ -760,8 +754,8 @@ function ARS343Tableau(T, T2)
 
     c_vec = T2[zero(T2), convert(T2, c2), convert(T2, c3), convert(T2, c4)]
 
-    btilde_vec = bi_vec .- T[zero(T), zero(T), zero(T), one(T)]
-    ebtilde_vec = be_vec .- T[zero(T), zero(T), zero(T), one(T)]
+    btilde_vec = T[zero(T), γ, -2γ, γ]
+    ebtilde_vec = T[zero(T), γ, -2γ, γ]
 
     α_mat = zeros(T2, s, s)
 
