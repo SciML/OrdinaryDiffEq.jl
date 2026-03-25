@@ -38,6 +38,7 @@ mutable struct DDEIntegrator{
         dRelType, H,
         tstopsType, discType, FSALType, EventErrorType,
         CallbackCacheType, DV, IA,
+        WType, PType, SqdtType, CType,
     } <:
     AbstractDDEIntegrator{algType, IIP, uType, tType}
     sol::SolType
@@ -101,6 +102,11 @@ mutable struct DDEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     initializealg::IA
+    # SDE/RODE noise fields: populated for SDDEProblem, Nothing for DDEProblem.
+    W::WType
+    P::PType
+    sqdt::SqdtType
+    c::CType  # Jump rate function (Nothing for non-jump problems)
 end
 
 function (integrator::DDEIntegrator)(t, deriv::Type = Val{0}; idxs = nothing)

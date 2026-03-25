@@ -20,6 +20,9 @@ Return if the DDE problem `prob` contains constant delays.
 function has_constant_lags(prob::DDEProblem)
     return prob.constant_lags !== nothing && !isempty(prob.constant_lags)
 end
+function has_constant_lags(prob::SDDEProblem)
+    return prob.constant_lags !== nothing && !isempty(prob.constant_lags)
+end
 
 """
     has_dependent_lags(prob::DDEProblem)
@@ -27,6 +30,9 @@ end
 Return if the DDE problem `prob` contains dependent delays.
 """
 function has_dependent_lags(prob::DDEProblem)
+    return prob.dependent_lags !== nothing && !isempty(prob.dependent_lags)
+end
+function has_dependent_lags(prob::SDDEProblem)
     return prob.dependent_lags !== nothing && !isempty(prob.dependent_lags)
 end
 
@@ -227,7 +233,7 @@ Suggest that solution `sol` reserves capacity for at least `n` elements.
 function _sizehint_solution!(sol::DESolution, n)
     sizehint!(sol.u, n)
     sizehint!(sol.t, n)
-    sizehint!(sol.k, n)
+    hasproperty(sol, :k) && sol.k !== nothing && sizehint!(sol.k, n)
 
     return nothing
 end
@@ -363,6 +369,118 @@ function build_history_function(
     # we use this history information to create a problem function of the DDE with all
     # available history information that is of the form f(du,u,p,t) or f(u,p,t) such that
     # ODE algorithms can be applied
+    return HistoryFunction(prob.h, ode_integrator)
+end
+
+"""
+    build_history_function for SDDE problems with SDE algorithms.
+
+For the history integrator, we use an SDE-compatible cache. The history integrator
+provides interpolation of past values and doesn't actually step; it just stores
+the dense solution computed by the main DDEIntegrator.
+"""
+function build_history_function(
+        prob::AbstractSDDEProblem, alg, rate_prototype, reltol, differential_vars;
+        dt, dtmin, adaptive, calck, internalnorm
+    )
+    (; f, u0, tspan, p) = prob
+
+    t0 = first(tspan)
+    tType = eltype(tspan)
+    tTypeNoUnits = typeof(one(tType))
+    tdir = sign(last(tspan) - t0)
+
+    uEltypeNoUnits = recursive_unitless_eltype(u0)
+    uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u0)
+
+    # Wrap the SDDE function as an ODE function for the history integrator.
+    # The history integrator only needs the drift for ODE-style interpolation.
+    ode_f = ODEFunctionWrapper(f, prob.h)
+    ode_prob = ODEProblem{isinplace(prob)}(ode_f, u0, tspan, p)
+
+    ode_u, ode_uprev = u_uprev(u0, alg; alias_u0 = false, calck = true)
+
+    ode_k = typeof(rate_prototype)[]
+    ode_ts, ode_timeseries,
+        ode_ks = solution_arrays(
+        ode_u, tspan, rate_prototype;
+        timeseries_init = (),
+        ts_init = (),
+        ks_init = (),
+        save_idxs = nothing,
+        save_start = true
+    )
+
+    # For SDE algorithms, we create the cache using the SDE alg_cache signature.
+    # The history cache is used for interpolation data, not for stepping.
+    # Compute noise_rate_prototype using SDE conventions
+    if is_diagonal_noise(prob)
+        noise_rate_prototype = rate_prototype
+    elseif prob.noise_rate_prototype !== nothing
+        noise_rate_prototype = copy(prob.noise_rate_prototype)
+    else
+        noise_rate_prototype = nothing
+    end
+
+    # Create dummy dW/dZ for cache initialization
+    if is_diagonal_noise(prob)
+        dW_dummy = zero(u0)
+    elseif noise_rate_prototype !== nothing
+        dW_dummy = false .* noise_rate_prototype[1, :]
+    else
+        dW_dummy = zero(u0)
+    end
+
+    ode_cache = sde_alg_cache(
+        alg.alg, ode_prob, ode_u, dW_dummy, nothing, p,
+        rate_prototype, noise_rate_prototype,
+        nothing, # jump_rate_prototype
+        uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits, ode_uprev, ode_f, t0,
+        zero(tType), Val{isinplace(prob)},
+        OrdinaryDiffEqCore.DEVerbosity()
+    )
+
+    ode_alg_choice = iscomposite(alg) ? Int[] : nothing
+    ode_id = OrdinaryDiffEqCore.InterpolationData(
+        ode_f, ode_timeseries, ode_ts,
+        ode_ks,
+        ode_alg_choice, true, ode_cache,
+        differential_vars, false
+    )
+    ode_sol = SciMLBase.build_solution(
+        ode_prob, alg.alg, ode_ts, ode_timeseries;
+        dense = true, k = ode_ks, interp = ode_id,
+        alg_choice = ode_alg_choice,
+        calculate_error = false,
+        stats = DiffEqBase.Stats(0)
+    )
+
+    _sizehint_solution!(
+        ode_sol, alg.alg, tspan, (), ();
+        save_everystep = true, adaptive = adaptive, internalnorm = internalnorm,
+        dt = dt, dtmin = dtmin
+    )
+
+    tdirType = typeof(sign(zero(tType)))
+    ode_integrator = HistoryODEIntegrator{
+        typeof(alg.alg), isinplace(prob), typeof(prob.u0),
+        tType, tdirType, typeof(ode_k),
+        typeof(ode_sol), typeof(ode_cache),
+        typeof(differential_vars),
+    }(
+        ode_sol,
+        ode_u, ode_k,
+        t0,
+        zero(tType),
+        ode_uprev,
+        t0, alg.alg,
+        zero(tType),
+        tdir, 1, 1,
+        ode_cache,
+        differential_vars
+    )
+
     return HistoryFunction(prob.h, ode_integrator)
 end
 
