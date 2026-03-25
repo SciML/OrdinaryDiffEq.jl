@@ -10,14 +10,7 @@ function SciMLBase.allowscomplex(alg::AbstractMethodOfStepsAlgorithm)
     return SciMLBase.allowscomplex(alg.alg)
 end
 SciMLBase.isdiscrete(alg::AbstractMethodOfStepsAlgorithm) = SciMLBase.isdiscrete(alg.alg)
-function SciMLBase.isadaptive(alg::AbstractMethodOfStepsAlgorithm)
-    inner = alg.alg
-    if inner isa Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}
-        return _sde_isadaptive(inner)
-    else
-        return SciMLBase.isadaptive(inner)
-    end
-end
+SciMLBase.isadaptive(alg::AbstractMethodOfStepsAlgorithm) = SciMLBase.isadaptive(alg.alg)
 
 ## DelayDiffEq Internal Traits
 
@@ -60,12 +53,7 @@ function OrdinaryDiffEqCore.alg_extrapolates(alg::AbstractMethodOfStepsAlgorithm
     return OrdinaryDiffEqCore.alg_extrapolates(alg.alg)
 end
 function SciMLBase.alg_order(alg::AbstractMethodOfStepsAlgorithm)
-    inner = alg.alg
-    if inner isa Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}
-        return _sde_alg_order(inner)
-    else
-        return SciMLBase.alg_order(inner)
-    end
+    return SciMLBase.alg_order(alg.alg)
 end
 function OrdinaryDiffEqCore.alg_adaptive_order(alg::AbstractMethodOfStepsAlgorithm)
     return OrdinaryDiffEqCore.alg_adaptive_order(alg.alg)
@@ -80,19 +68,12 @@ iscomposite(alg) = false
 iscomposite(::OrdinaryDiffEqCore.OrdinaryDiffEqCompositeAlgorithm) = true
 iscomposite(alg::AbstractMethodOfStepsAlgorithm) = iscomposite(alg.alg)
 
-# SDE algorithms define alg_order in StochasticDiffEqCore's namespace, not SciMLBase's.
-# Bridge the two so that alg_maximum_order works for SDE algorithms.
+# SDE alg_order returns Rational (e.g. 1//2), so we need floor(Int, ...) for alg_maximum_order.
 function OrdinaryDiffEqCore.alg_maximum_order(alg::SDEAlgUnion)
-    return max(1, floor(Int, _sde_alg_order(alg)))
+    return max(1, floor(Int, SciMLBase.alg_order(alg)))
 end
 function OrdinaryDiffEqCore.alg_maximum_order(alg::AbstractMethodOfStepsAlgorithm)
-    inner = alg.alg
-    if inner isa Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}
-        # SDE alg_order returns Rational; convert safely via floor
-        return max(1, floor(Int, _sde_alg_order(inner)))
-    else
-        return OrdinaryDiffEqCore.alg_maximum_order(inner)
-    end
+    return OrdinaryDiffEqCore.alg_maximum_order(alg.alg)
 end
 
 function DiffEqBase.prepare_alg(alg::MethodOfSteps, u0, p, prob)

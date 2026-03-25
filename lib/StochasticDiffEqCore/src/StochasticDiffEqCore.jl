@@ -104,6 +104,7 @@ else
 end
 
 import SciMLBase
+import SciMLBase: isadaptive, alg_order
 
 using LevyArea
 

@@ -1,8 +1,7 @@
 module DelayDiffEqStochasticDiffEqCoreExt
 
 using DelayDiffEq
-import DelayDiffEq: _sde_alg_order, _sde_isadaptive, _sde_alg_cache, _create_sdde_noise,
-    SDEAlgUnion
+import DelayDiffEq: _sde_alg_cache, _create_sdde_noise
 
 import StochasticDiffEqCore
 using StochasticDiffEqCore: alg_cache as sde_alg_cache_impl
@@ -11,18 +10,7 @@ using DiffEqNoiseProcess: WienerProcess, WienerProcess!, RSWM
 using DiffEqBase: is_diagonal_noise
 using Random: Random
 
-using OrdinaryDiffEqCore: DEVerbosity
 using SciMLBase: isinplace
-
-# ── Trait bridges ──────────────────────────────────────────────────────
-
-function DelayDiffEq._sde_alg_order(alg::SDEAlgUnion)
-    return StochasticDiffEqCore.alg_order(alg)
-end
-
-function DelayDiffEq._sde_isadaptive(alg::SDEAlgUnion)
-    return StochasticDiffEqCore.isadaptive(alg)
-end
 
 # ── SDE alg_cache wrapper ─────────────────────────────────────────────
 
