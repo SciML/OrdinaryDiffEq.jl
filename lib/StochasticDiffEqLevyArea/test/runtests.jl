@@ -148,4 +148,31 @@ Random.seed!(638278)
         n = terms_needed(m, h, ε, alg, MaxL2())
         @test n > 0
     end
+
+    # Regression tests: verify bit-identical output with LevyArea.jl
+    # Reference values were generated using LevyArea.jl v1.0.0 with:
+    #   Random.seed!(638278) to generate W, then Random.seed!(12345) before each levyarea call
+    @testset "Regression vs LevyArea.jl - $alg_name" for (alg_name, alg, W_ref, I_ref) in [
+        ("Fourier m=2", Fourier(),
+            [0.09903103214960329, 0.11212317514303571],
+            [-9.642733569211956e-5 0.0020195078355866964;
+             0.009084165926718873 0.001285803202077931]),
+        ("Milstein m=2", Milstein(),
+            [-0.03121756137083341, 0.13620291896429848],
+            [-0.004512731931029125 -0.013820802895184192;
+             0.009568879913529555 0.004275617567197629]),
+        ("Wiktorsson m=2", Wiktorsson(),
+            [-0.05354470833343851, 0.029557354340556088],
+            [-0.0035664821047435005 -0.0036534036925311725;
+             0.0020707637752580043 -0.004563181402193405]),
+        ("MronRoe m=2", MronRoe(),
+            [-0.21299582757570945, -0.053796834119659964],
+            [0.017683611282330675 0.012644240757892108;
+             -0.001185739553621972 -0.0035529503193508947]),
+    ]
+        h = 0.01
+        Random.seed!(12345)
+        I_new = iterated_integrals(W_ref, h, h^(3 / 2); alg = alg)
+        @test I_new ≈ I_ref atol = 1e-14
+    end
 end
