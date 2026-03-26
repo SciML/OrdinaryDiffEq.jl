@@ -20,8 +20,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     step_accept_controller!,
     step_reject_controller!, post_newton_controller!,
     u_modified!, DAEAlgorithm, _unwrap_val, DummyController,
-    get_fsalfirstlast, generic_solver_docstring, _bool_to_ADType,
-    _process_AD_choice,
+    get_fsalfirstlast, generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
     _ode_interpolant, _ode_interpolant!, has_stiff_interpolation,
     _ode_addsteps!, DerivativeOrderNotPossibleError
 using OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache

@@ -39,23 +39,18 @@ for (Alg, Description, Ref) in [
     end
     @eval function $Alg(;
             krylov = false, m = 30, iop = 0, autodiff = AutoForwardDiff(),
-            standardtag = Val{true}(), concrete_jac = nothing,
-            chunk_size = Val{0}(),
-            diff_type = Val{:forward}()
+            concrete_jac = nothing,
         )
-        AD_choice, chunk_size,
-            diff_type = _process_AD_choice(
-            autodiff, chunk_size, diff_type
-        )
+        autodiff = _fixup_ad(autodiff)
 
         return $Alg{
-            _unwrap_val(chunk_size), typeof(AD_choice),
-            diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
+            _ad_chunksize_int(autodiff), typeof(autodiff),
+            _ad_fdtype(autodiff), true, _unwrap_val(concrete_jac),
         }(
             krylov,
             m,
             iop,
-            AD_choice
+            autodiff
         )
     end
 end
@@ -94,23 +89,19 @@ for (Alg, Description, Ref) in [
         end
     end
     @eval function $Alg(;
-            m = 30, iop = 0, autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-            concrete_jac = nothing, chunk_size = Val{0}(),
-            diff_type = Val{:forward}()
+            m = 30, iop = 0, autodiff = AutoForwardDiff(),
+            concrete_jac = nothing,
         )
-        AD_choice, chunk_size,
-            diff_type = _process_AD_choice(
-            autodiff, chunk_size, diff_type
-        )
+        autodiff = _fixup_ad(autodiff)
 
         return $Alg{
-            _unwrap_val(chunk_size), typeof(AD_choice),
-            diff_type, _unwrap_val(standardtag),
+            _ad_chunksize_int(autodiff), typeof(autodiff),
+            _ad_fdtype(autodiff), true,
             _unwrap_val(concrete_jac),
         }(
             m,
             iop,
-            AD_choice
+            autodiff
         )
     end
 end
@@ -177,22 +168,18 @@ for (Alg, Description, Ref) in [
     end
     @eval function $Alg(;
             adaptive_krylov = true, m = 30, iop = 0, autodiff = AutoForwardDiff(),
-            standardtag = Val{true}(), concrete_jac = nothing,
-            chunk_size = Val{0}(), diff_type = Val{:forward}()
+            concrete_jac = nothing,
         )
-        AD_choice, chunk_size,
-            diff_type = _process_AD_choice(
-            autodiff, chunk_size, diff_type
-        )
+        autodiff = _fixup_ad(autodiff)
 
         return $Alg{
-            _unwrap_val(chunk_size), typeof(AD_choice), diff_type,
-            _unwrap_val(standardtag), _unwrap_val(concrete_jac),
+            _ad_chunksize_int(autodiff), typeof(autodiff), _ad_fdtype(autodiff),
+            true, _unwrap_val(concrete_jac),
         }(
             adaptive_krylov,
             m,
             iop,
-            AD_choice
+            autodiff
         )
     end
 end
