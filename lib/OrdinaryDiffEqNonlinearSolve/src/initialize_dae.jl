@@ -114,42 +114,6 @@ function default_nlsolve(
     )
 end
 
-## DefaultInit resolution for DAE-capable algorithms
-
-const DAECapableAlgorithm = Union{
-    OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-    OrdinaryDiffEqImplicitAlgorithm,
-    DAEAlgorithm,
-    OrdinaryDiffEqCompositeAlgorithm,
-}
-
-function _default_dae_init!(
-        integrator, prob::ODEProblem, x,
-        alg::DAECapableAlgorithm
-    )
-    return _initialize_dae!(
-        integrator, prob,
-        BrownFullBasicInit(integrator.opts.abstol), x
-    )
-end
-
-function _default_dae_init!(
-        integrator, prob::DAEProblem, x,
-        alg::DAECapableAlgorithm
-    )
-    return if prob.differential_vars === nothing
-        _initialize_dae!(
-            integrator, prob,
-            ShampineCollocationInit(), x
-        )
-    else
-        _initialize_dae!(
-            integrator, prob,
-            BrownFullBasicInit(integrator.opts.abstol), x
-        )
-    end
-end
-
 ## ShampineCollocationInit
 
 #=
