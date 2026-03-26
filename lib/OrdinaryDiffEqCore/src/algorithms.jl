@@ -16,19 +16,19 @@ abstract type StochasticDiffEqCache <: SciMLBase.DECache end
 abstract type StochasticDiffEqConstantCache <: StochasticDiffEqCache end
 abstract type StochasticDiffEqMutableCache <: StochasticDiffEqCache end
 
-abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} <:
+abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm <:
 OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} <:
-OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
-abstract type OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} <:
-OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm <:
+OrdinaryDiffEqAdaptiveImplicitAlgorithm end
+abstract type OrdinaryDiffEqRosenbrockAdaptiveAlgorithm <:
+OrdinaryDiffEqAdaptiveImplicitAlgorithm end
 
-abstract type OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} <:
+abstract type OrdinaryDiffEqImplicitAlgorithm <:
 OrdinaryDiffEqAlgorithm end
-abstract type OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ} <:
-OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
-abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS, AD, FDT, ST, CJ} <:
-OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+abstract type OrdinaryDiffEqNewtonAlgorithm <:
+OrdinaryDiffEqImplicitAlgorithm end
+abstract type OrdinaryDiffEqRosenbrockAlgorithm <:
+OrdinaryDiffEqImplicitAlgorithm end
 const NewtonAlgorithm = Union{
     OrdinaryDiffEqNewtonAlgorithm,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
@@ -38,18 +38,12 @@ const RosenbrockAlgorithm = Union{
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
 }
 
-abstract type OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ} <:
+abstract type OrdinaryDiffEqExponentialAlgorithm <:
 OrdinaryDiffEqAlgorithm end
-abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD, FDT, ST, CJ} <:
+abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm <:
 OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqLinearExponentialAlgorithm <:
-OrdinaryDiffEqExponentialAlgorithm{
-    0,
-    false,
-    Val{:forward},
-    Val{true},
-    nothing,
-} end
+OrdinaryDiffEqExponentialAlgorithm end
 const ExponentialAlgorithm = Union{
     OrdinaryDiffEqExponentialAlgorithm,
     OrdinaryDiffEqAdaptiveExponentialAlgorithm,
@@ -58,7 +52,7 @@ const ExponentialAlgorithm = Union{
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 # DAE Specific Algorithms
-abstract type DAEAlgorithm{CS, AD, FDT, ST, CJ} <: SciMLBase.AbstractDAEAlgorithm end
+abstract type DAEAlgorithm <: SciMLBase.AbstractDAEAlgorithm end
 
 # Partitioned ODE Specific Algorithms
 abstract type OrdinaryDiffEqPartitionedAlgorithm <: OrdinaryDiffEqAlgorithm end
@@ -69,10 +63,10 @@ const PartitionedAlgorithm = Union{
 }
 
 # Second order ODE Specific Algorithms
-abstract type OrdinaryDiffEqImplicitSecondOrderAlgorithm{CS, AD, FDT, ST, CJ} <:
-OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
-abstract type OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm{CS, AD, FDT, ST, CJ} <:
-OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+abstract type OrdinaryDiffEqImplicitSecondOrderAlgorithm <:
+OrdinaryDiffEqImplicitAlgorithm end
+abstract type OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm <:
+OrdinaryDiffEqAdaptiveImplicitAlgorithm end
 const ImplicitSecondOrderAlgorithm = Union{
     OrdinaryDiffEqImplicitSecondOrderAlgorithm,
     OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm,
@@ -83,27 +77,6 @@ function SciMLBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
     return T(; SciMLBase.struct_as_namedtuple(thing)..., kwargs...)
 end
 
-@inline function SciMLBase.remake(
-        thing::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{
-                CS, AD, FDT,
-                ST, CJ,
-            },
-            OrdinaryDiffEqImplicitAlgorithm{
-                CS, AD, FDT, ST, CJ,
-            },
-            DAEAlgorithm{CS, AD, FDT, ST, CJ},
-        };
-        kwargs...
-    ) where {CS, AD, FDT, ST, CJ}
-    T = SciMLBase.remaker_of(thing)
-    return T(;
-        SciMLBase.struct_as_namedtuple(thing)...,
-        autodiff = thing.autodiff,
-        concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
-        kwargs...
-    )
-end
 
 ###############################################################################
 
