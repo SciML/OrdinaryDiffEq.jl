@@ -17,8 +17,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     PredictiveController, alg_can_repeat_jac, NewtonAlgorithm,
     fac_default_gamma,
     get_current_adaptive_order, get_fsalfirstlast,
-    isfirk, generic_solver_docstring, _bool_to_ADType,
-    _process_AD_choice, LinearAliasSpecifier
+    isfirk, generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
+    LinearAliasSpecifier
 using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
 isfirk, generic_solver_docstring
 using SciMLOperators: AbstractSciMLOperator

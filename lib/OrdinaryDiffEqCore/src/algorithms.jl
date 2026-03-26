@@ -114,16 +114,10 @@ end
         };
         kwargs...
     ) where {CS, AD, FDT, ST, CJ}
-    if haskey(kwargs, :autodiff) && kwargs[:autodiff] isa AutoForwardDiff
-        chunk_size = _get_fwd_chunksize(kwargs[:autodiff])
-    else
-        chunk_size = Val{CS}()
-    end
-
     T = SciMLBase.remaker_of(thing)
     return T(;
         SciMLBase.struct_as_namedtuple(thing)...,
-        chunk_size = chunk_size, autodiff = thing.autodiff, standardtag = Val{ST}(),
+        autodiff = thing.autodiff,
         concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
         kwargs...
     )
