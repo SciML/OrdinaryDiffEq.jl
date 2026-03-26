@@ -358,6 +358,12 @@ const RODAS6PH = [
     48.135250596372614 1.6152029264444003 8.745836243957392 11.94240783069938 21.81240388443989 13.3043522805227 15.272804908450944 7.036607939296541 -2.212585956007379 3.686601637356048 8.623872556251557 -9.029595886738495 -6.643976834766214 -6.745850399987328 -7.810160738277424 -3.8140189856964035 0.04030442810903404 1.0072680387990685 -1.0126127084529764
     -12.232391324631207 1.7643387246585114 -0.8009754670601623 -2.893944757628759 -7.972815842366974 1.309554861689306 -4.604493120665954 1.8134270309595735 -3.751773417632513 -0.5811994801517248 -2.741530578462468 0.300651942632877 2.0061263661214994 1.8521005591286555 -0.2324954254701126 0.6873479719072509 0.12936879836252782 -0.17980608456604885 0.32290862251165836
 ]
+"""
+    Rodas6PTableau(T, T2)
+
+A 19-stage 6th order L-stable Rosenbrock method.
+Reference: Steinebach (2025).
+"""
 function Rodas6PTableau(T, T2)
     gamma = 0.26
     b = T[
@@ -379,6 +385,12 @@ end
 # ROS3P (3-stage, hand-written)
 ################################################################################
 
+"""
+    ROS3PRodasTableau(T, T2)
+
+A 3rd order Rosenbrock method with 3 stages.
+Reference: Rang, J. (2015).
+"""
 function ROS3PRodasTableau(T, T2)
     gamma = convert(T2, 1 / 2 + sqrt(3) / 6)
     igamma = inv(gamma)
@@ -840,6 +852,12 @@ function ROS3PRRodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    Scholz4_7RodasTableau(T, T2)
+
+A 4th order Rosenbrock method with 7 stages by Scholz.
+Reference: Scholz, S. (1989).
+"""
 function Scholz4_7RodasTableau(T, T2)
     gamma = convert(T2, 0.788675134594813)
     A = zeros(T, 3, 3)
@@ -909,6 +927,12 @@ function ROS34PW1bRodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    ROS34PW2RodasTableau(T, T2)
+
+A Rosenbrock-W method of order (3)4.
+Reference: Rang, J., & Angermann, L. (2005).
+"""
 function ROS34PW2RodasTableau(T, T2)
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 4, 4)
@@ -933,6 +957,12 @@ function ROS34PW2RodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    ROS34PW3RodasTableau(T, T2)
+
+A Rosenbrock-W method of order (3)4.
+Reference: Rang, J., & Angermann, L. (2005).
+"""
 function ROS34PW3RodasTableau(T, T2)
     gamma = convert(T2, 1.0685790213016289)
     A = zeros(T, 4, 4)
@@ -957,6 +987,11 @@ function ROS34PW3RodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    ROS34PRwRodasTableau(T, T2)
+
+A 3rd order Rosenbrock-W method.
+"""
 function ROS34PRwRodasTableau(T, T2)
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 4, 4)
@@ -981,6 +1016,11 @@ function ROS34PRwRodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    ROS3PRLRodasTableau(T, T2)
+
+A 3rd order low-storage Rosenbrock method.
+"""
 function ROS3PRLRodasTableau(T, T2)
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 4, 4)
@@ -1004,6 +1044,11 @@ function ROS3PRLRodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    ROS3PRL2RodasTableau(T, T2)
+
+A 3rd order low-storage Rosenbrock method.
+"""
 function ROS3PRL2RodasTableau(T, T2)
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 4, 4)
@@ -1027,6 +1072,12 @@ function ROS3PRL2RodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    ROK4aRodasTableau(T, T2)
+
+A 4th order Rosenbrock-Kaps method with 4 stages.
+Reference: Kaps, P., & Rentrop, P. (1979).
+"""
 function ROK4aRodasTableau(T, T2)
     gamma = convert(T2, 0.572816062482135)
     A = zeros(T, 4, 4)
