@@ -8,7 +8,6 @@ function BDF_docstring(
     )
     keyword_default = """
         autodiff = AutoForwardDiff(),
-
         concrete_jac = nothing,
         linsolve = nothing,
         """ * "\n" * extra_keyword_default
