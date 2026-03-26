@@ -243,7 +243,7 @@ function SciMLBase.__init(
     # ── Noise creation (SDDE only) ─────────────────────────────────────
     if is_stochastic
         W, P, sqdt = _create_sdde_noise(
-            prob, u0, t0, tType(dt), tdir, noise_rate_prototype,
+            prob, alg.alg, u0, t0, tType(dt), tdir, noise_rate_prototype,
             save_noise, seed, isinplace(prob), isadaptive(alg)
         )
     else
@@ -584,6 +584,14 @@ function SciMLBase.__init(
 
     # take care of time step dt = 0 and dt with incorrect sign
     OrdinaryDiffEqCore.handle_dt!(integrator)
+
+    # After handle_dt! may have changed dt (via auto_dt_reset!), update noise state.
+    # This mirrors what OrdinaryDiffEqCore's ODE __init does for SDE integrators.
+    if !isnothing(integrator.W)
+        OrdinaryDiffEqCore.modify_dt_for_tstops!(integrator)
+        integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
+        integrator.W.dt = integrator.dt
+    end
 
     return integrator
 end

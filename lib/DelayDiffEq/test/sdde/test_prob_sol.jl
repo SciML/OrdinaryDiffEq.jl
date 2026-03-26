@@ -1,5 +1,6 @@
 using DelayDiffEq
 using StochasticDiffEqLowOrder
+using StochasticDiffEqHighOrder
 using Test
 
 # Hayes Equation
@@ -27,11 +28,11 @@ prob = SDDEProblem(
 # Explicit low-order methods
 sol = solve(prob, MethodOfSteps(EM()), dt = 0.01)
 @test sol.u[end] != zeros(1)
-sol = solve(prob, MethodOfSteps(LambaEM()), dt = 0.01, adaptive = false)
+sol = solve(prob, MethodOfSteps(LambaEM()), dt = 0.01)
 @test sol.u[end] != zeros(1)
 sol = solve(prob, MethodOfSteps(EulerHeun()), dt = 0.01)
 @test sol.u[end] != zeros(1)
-sol = solve(prob, MethodOfSteps(LambaEulerHeun()), dt = 0.01, adaptive = false)
+sol = solve(prob, MethodOfSteps(LambaEulerHeun()), dt = 0.01)
 @test sol.u[end] != zeros(1)
 sol = solve(prob, MethodOfSteps(RKMil()), dt = 0.01, adaptive = false)
 @test sol.u[end] != zeros(1)
@@ -48,5 +49,26 @@ sol = solve(
 )
 @test sol.u[end] != zeros(1)
 
-# TODO: Additive noise methods (SRA, SRA1, SOSRA, SOSRA2) need
-# alg_needs_extra_process support in _create_sdde_noise for the dZ process
+# High-order SRI methods (need dZ extra process)
+sol = solve(prob, MethodOfSteps(SRI()), dt = 0.01, adaptive = false)
+@test sol.u[end] != zeros(1)
+sol = solve(prob, MethodOfSteps(SRIW1()), dt = 0.01, adaptive = false)
+@test sol.u[end] != zeros(1)
+sol = solve(prob, MethodOfSteps(SOSRI()), dt = 0.01, adaptive = false)
+@test sol.u[end] != zeros(1)
+sol = solve(prob, MethodOfSteps(SOSRI2()), dt = 0.01, adaptive = false)
+@test sol.u[end] != zeros(1)
+
+# Additive noise problems (need dZ extra process)
+prob_add = SDDEProblem(
+    hayes_modelf, hayes_modelg, [1.0], h, tspan, padd;
+    constant_lags = (padd[1],)
+)
+sol = solve(prob_add, MethodOfSteps(SRA()), dt = 0.01, adaptive = false)
+@test sol.u[end] != zeros(1)
+sol = solve(prob_add, MethodOfSteps(SRA1()), dt = 0.01, adaptive = false)
+@test sol.u[end] != zeros(1)
+sol = solve(prob_add, MethodOfSteps(SOSRA()), dt = 0.01, adaptive = false)
+@test sol.u[end] != zeros(1)
+sol = solve(prob_add, MethodOfSteps(SOSRA2()), dt = 0.01, adaptive = false)
+@test sol.u[end] != zeros(1)
