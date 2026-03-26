@@ -2,7 +2,7 @@ using Test
 using SparseArrays
 using LinearAlgebra
 using OrdinaryDiffEqSDIRK
-using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs, algebraic_jacobian
+using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs, algebraic_jacobian, BrownFullBasicInit
 using SciMLBase: ReturnCode
 
 @testset "Sparse jac_prototype in BrownFullBasicInit" begin
@@ -53,7 +53,7 @@ using SciMLBase: ReturnCode
         f_ode = ODEFunction(f_small!; mass_matrix = M, jac_prototype = jac_proto)
         prob = ODEProblem(f_ode, u0, (0.0, 1.0))
 
-        sol = solve(prob, Trapezoid())
+        sol = solve(prob, Trapezoid(), initializealg = BrownFullBasicInit())
         @test sol.retcode == ReturnCode.Success
         # Check constraint is satisfied after initialization
         @test abs(sol.u[1][1] - sol.u[1][2]^3) < 1.0e-6
@@ -90,7 +90,7 @@ using SciMLBase: ReturnCode
         f_ode = ODEFunction(rober!; mass_matrix = M, jac_prototype = jac_proto)
         prob = ODEProblem(f_ode, u0, (0.0, 1.0e5), p)
 
-        sol = solve(prob, Trapezoid())
+        sol = solve(prob, Trapezoid(), initializealg = BrownFullBasicInit())
         @test sol.retcode == ReturnCode.Success
         @test sum(sol.u[1]) ≈ 1
         @test sol.u[1] ≈ [1.0, 0.0, 0.0]
@@ -134,7 +134,7 @@ using SciMLBase: ReturnCode
         f_ode = ODEFunction(f_medium!; mass_matrix = M, jac_prototype = jac_proto)
         prob = ODEProblem(f_ode, u0, (0.0, 1.0))
 
-        sol = solve(prob, Trapezoid(); save_everystep = false)
+        sol = solve(prob, Trapezoid(); save_everystep = false, initializealg = BrownFullBasicInit())
         @test sol.retcode == ReturnCode.Success
         # Algebraic constraint u[i] = u[N+i]^2 should be satisfied at t=0
         max_violation = maximum(abs.(sol.u[1][1:N] .- sol.u[1][(N + 1):(2N)] .^ 2))
@@ -176,8 +176,8 @@ using SciMLBase: ReturnCode
         prob_dense = ODEProblem(f_dense, u0, (0.0, 1.0))
         prob_sparse = ODEProblem(f_sparse, u0, (0.0, 1.0))
 
-        sol_dense = solve(prob_dense, Trapezoid(); save_everystep = false)
-        sol_sparse = solve(prob_sparse, Trapezoid(); save_everystep = false)
+        sol_dense = solve(prob_dense, Trapezoid(); save_everystep = false, initializealg = BrownFullBasicInit())
+        sol_sparse = solve(prob_sparse, Trapezoid(); save_everystep = false, initializealg = BrownFullBasicInit())
 
         @test sol_dense.retcode == ReturnCode.Success
         @test sol_sparse.retcode == ReturnCode.Success
@@ -255,7 +255,7 @@ using SciMLBase: ReturnCode
         @test size(J_sub) == (N, N)
         @test nnz(J_sub) == N  # diagonal only for algebraic block
 
-        sol = solve(prob, Trapezoid(); save_everystep = false)
+        sol = solve(prob, Trapezoid(); save_everystep = false, initializealg = BrownFullBasicInit())
         @test sol.retcode == ReturnCode.Success
         # Verify algebraic constraint P = phi^3 after initialization
         max_violation = maximum(
