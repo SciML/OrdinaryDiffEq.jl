@@ -13,19 +13,19 @@ du₀ = [0.0, 0.0, 0.0]
 tspan = (0.0, 100000.0)
 differential_vars = [true, true, false]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
-integrator = init(prob, DABDF2())
+integrator = init(prob, DABDF2(), initializealg = BrownFullBasicInit())
 
 @test integrator.du[1] ≈ -0.04 atol = 1.0e-9
 @test integrator.du[2] ≈ 0.04 atol = 1.0e-9
 @test integrator.u ≈ u₀ atol = 1.0e-9
 
-integrator = init(prob, DImplicitEuler())
+integrator = init(prob, DImplicitEuler(), initializealg = BrownFullBasicInit())
 
 @test integrator.du[1] ≈ -0.04 atol = 1.0e-9
 @test integrator.du[2] ≈ 0.04 atol = 1.0e-9
 @test integrator.u ≈ u₀ atol = 1.0e-9
 
-integrator = init(prob, DFBDF())
+integrator = init(prob, DFBDF(), initializealg = BrownFullBasicInit())
 
 @test integrator.du[1] ≈ -0.04 atol = 1.0e-9
 @test integrator.du[2] ≈ 0.04 atol = 1.0e-9
@@ -33,7 +33,7 @@ integrator = init(prob, DFBDF())
 
 u₀ = [1.0, 0, 0.2]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
-integrator = init(prob, DABDF2())
+integrator = init(prob, DABDF2(), initializealg = BrownFullBasicInit())
 @test integrator.u ≈ [1.0, 0, 0.0] atol = 1.0e-9
 integrator = init(
     prob, DABDF2(), initializealg = OrdinaryDiffEqNonlinearSolve.ShampineCollocationInit()
@@ -42,7 +42,7 @@ integrator = init(
 
 u₀ = [1.0, 0, 0.2]
 prob = DAEProblem(f, du₀, u₀, tspan)
-integrator = init(prob, DABDF2())
+integrator = init(prob, DABDF2(), initializealg = ShampineCollocationInit())
 @test !(integrator.u ≈ [1.0, 0, 0.0])
 
 f = function (out, du, u, p, t)
@@ -56,8 +56,8 @@ du₀ = [0.0, 0.0, 0.0]
 tspan = (0.0, 100000.0)
 differential_vars = [true, true, false]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
-integrator = init(prob, DABDF2())
-integrator2 = init(prob, DABDF2(autodiff = AutoFiniteDiff()))
+integrator = init(prob, DABDF2(), initializealg = BrownFullBasicInit())
+integrator2 = init(prob, DABDF2(autodiff = AutoFiniteDiff()), initializealg = BrownFullBasicInit())
 
 @test integrator.du[1] ≈ -0.04 atol = 1.0e-9
 @test integrator.du[2] ≈ 0.04 atol = 1.0e-9
@@ -67,13 +67,13 @@ integrator2 = init(prob, DABDF2(autodiff = AutoFiniteDiff()))
 @test integrator2.du[2] ≈ 0.04 atol = 1.0e-9
 @test integrator2.u ≈ u₀ atol = 1.0e-9
 
-integrator = init(prob, DImplicitEuler())
+integrator = init(prob, DImplicitEuler(), initializealg = BrownFullBasicInit())
 
 @test integrator.du[1] ≈ -0.04 atol = 1.0e-9
 @test integrator.du[2] ≈ 0.04 atol = 1.0e-9
 @test integrator.u ≈ u₀ atol = 1.0e-9
 
-integrator = init(prob, DFBDF())
+integrator = init(prob, DFBDF(), initializealg = BrownFullBasicInit())
 
 @test integrator.du[1] ≈ -0.04 atol = 1.0e-9
 @test integrator.du[2] ≈ 0.04 atol = 1.0e-9
@@ -81,7 +81,7 @@ integrator = init(prob, DFBDF())
 
 u₀ = [1.0, 0, 0.2]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
-integrator = init(prob, DABDF2())
+integrator = init(prob, DABDF2(), initializealg = BrownFullBasicInit())
 @test integrator.u ≈ [1.0, 0, 0.0] atol = 1.0e-9
 integrator = init(
     prob, DABDF2(), initializealg = OrdinaryDiffEqNonlinearSolve.ShampineCollocationInit()
@@ -90,7 +90,7 @@ integrator = init(
 
 u₀ = [1.0, 0, 0.2]
 prob = DAEProblem(f, du₀, u₀, tspan)
-integrator = init(prob, DABDF2())
+integrator = init(prob, DABDF2(), initializealg = ShampineCollocationInit())
 @test !(integrator.u ≈ [1.0, 0, 0.0])
 
 # Need to be able to find the consistent solution of this problem, broken right now
@@ -140,7 +140,7 @@ du₀ = SVector(0.0)
 tspan = (0.0, 1.0)
 differential_vars = SVector(true)
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
-integrator = init(prob, DABDF2())
+integrator = init(prob, DABDF2(), initializealg = BrownFullBasicInit())
 
 @test integrator.du ≈ [1.0] atol = 1.0e-9
 
@@ -153,7 +153,7 @@ du₀ = SA[0.0, 0.0]
 tspan = (0.0, 1.0)
 differential_vars = [true, true]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
-integrator = init(prob, DABDF2())
+integrator = init(prob, DABDF2(), initializealg = BrownFullBasicInit())
 
 @test integrator.du[1] ≈ 1.0 atol = 1.0e-9
 @test integrator.du[2] ≈ 1.0 atol = 1.0e-9
