@@ -1,3 +1,4 @@
+using ADTypes
 using Test
 using StochasticDiffEq
 using SparseArrays
@@ -43,9 +44,9 @@ sdefun_sp = SDEFunction(f, g, colorvec = colorvec, jac_prototype = jac_sp)
 prob_sp = SDEProblem(sdefun_sp, u0, tspan)
 prob_std = SDEProblem(f, g, u0, tspan)
 
-sol_sp = solve(prob_sp, SKenCarp(autodiff = false))
+sol_sp = solve(prob_sp, SKenCarp(autodiff = AutoFiniteDiff()))
 @test sol_sp.retcode == ReturnCode.Success #test sparse finitediff
-sol = solve(prob_std, SKenCarp(autodiff = false))
+sol = solve(prob_std, SKenCarp(autodiff = AutoFiniteDiff()))
 @test sol_sp.u[end] ≈ sol.u[end] atol = 1.0e-4
 @test length(sol_sp.t) == length(sol.t)
 
@@ -54,7 +55,7 @@ sol = solve(prob_std, SKenCarp())
 @test sol_sp.u[end] ≈ sol.u[end] atol = 1.0e-4
 @test length(sol_sp.t) == length(sol.t)
 
-#sol_sp=solve(prob_sp,SKenCarp(autodiff=false),abstol=1e-10,reltol=1e-10)
-#sol=solve(prob_std,SKenCarp(autodiff=false),abstol=1e-10,reltol=1e-10)
+#sol_sp=solve(prob_sp,SKenCarp(autodiff = AutoFiniteDiff()),abstol=1e-10,reltol=1e-10)
+#sol=solve(prob_std,SKenCarp(autodiff = AutoFiniteDiff()),abstol=1e-10,reltol=1e-10)
 #@test sol_sp.u[end]≈sol.u[end]
 #@test length(sol_sp.t)==length(sol.t)
