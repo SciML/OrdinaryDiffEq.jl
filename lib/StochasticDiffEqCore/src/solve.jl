@@ -139,7 +139,7 @@ function _sde_init(
         internalnorm = ODE_DEFAULT_NORM,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-        verbose = true, force_dtmin = false,
+        verbose = Standard(), force_dtmin = false,
         timeseries_errors = true, dense_errors = false,
         advance_to_tstop = false, stop_at_next_tstop = false,
         initialize_save = true,
@@ -509,13 +509,13 @@ function _sde_init(
     dW, dZ = isnothing(W) ? (nothing, nothing) : (W.dW, W.dZ)
 
     verbose_internal = if verbose isa Bool
-        verbose ? DEVerbosity(Standard()) : DEVerbosity(None())
+        throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
     elseif verbose isa AbstractVerbosityPreset
         DEVerbosity(verbose)
     elseif verbose isa DEVerbosity
         verbose
     else
-        throw(ArgumentError("verbose must be a Bool, AbstractVerbosityPreset, or DEVerbosity"))
+        throw(ArgumentError("verbose must be an AbstractVerbosityPreset or DEVerbosity"))
     end
 
     cache = alg_cache(
