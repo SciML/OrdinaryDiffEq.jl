@@ -335,7 +335,7 @@ const DEFAULT_VERBOSE = DEVerbosity()
 end
 
 @inline function _process_verbose_param(verbose::Bool)
-    return verbose ? DEFAULT_VERBOSE : DEVerbosity(SciMLLogging.None())
+    throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
 end
 
 @inline _process_verbose_param(verbose::DEVerbosity) = verbose

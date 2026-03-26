@@ -21,16 +21,13 @@ prob = DDEProblem(f_dde, u0, h, tspan; constant_lags = [1.0])
         @test sol.retcode == ReturnCode.Success
     end
 
-    # Test verbose=true (backwards compatible)
-    @testset "verbose=true" begin
-        sol = solve(prob; verbose = true, saveat = 0.1)
-        @test sol.retcode == ReturnCode.Success
+    # Test that Bool verbose is no longer supported (v7 breaking change)
+    @testset "verbose=true throws" begin
+        @test_throws ArgumentError solve(prob; verbose = true, saveat = 0.1)
     end
 
-    # Test verbose=false (backwards compatible)
-    @testset "verbose=false" begin
-        sol = solve(prob; verbose = false, saveat = 0.1)
-        @test sol.retcode == ReturnCode.Success
+    @testset "verbose=false throws" begin
+        @test_throws ArgumentError solve(prob; verbose = false, saveat = 0.1)
     end
 
     # Test with DEVerbosity

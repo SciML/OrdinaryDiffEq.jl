@@ -107,13 +107,9 @@ function SciMLBase.__init(
         order_discontinuity_t0 = prob.order_discontinuity_t0
     end
 
-    # Handle verbose argument: convert Bool or AbstractVerbosityPreset to DEVerbosity
+    # Handle verbose argument: convert AbstractVerbosityPreset to DEVerbosity
     if verbose isa Bool
-        if verbose
-            verbose_spec = DEVerbosity()
-        else
-            verbose_spec = DEVerbosity(None())
-        end
+        throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
     elseif verbose isa AbstractVerbosityPreset
         verbose_spec = DEVerbosity(verbose)
     else
