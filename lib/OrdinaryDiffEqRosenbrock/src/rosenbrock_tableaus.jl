@@ -65,6 +65,13 @@ const RODAS4H = [
     10.12623508344586 -7.487995877610167 -34.80091861555747 -7.992771707568823 1.025137723295662 0
     -0.6762803392801253 6.087714651680015 16.43084320892478 24.76722511418386 -6.594389125716872 0
 ]
+"""
+    Rodas4Tableau(T, T2)
+
+The tableau for the 4th order L-stable Rosenbrock method Rodas4. 
+It is a 6-stage method with a built-in error estimate.
+Reference: Hairer, E., Nørsett, S. P., & Wanner, G. (1996). Solving Ordinary Differential Equations II.
+"""
 function Rodas4Tableau(T, T2)
     gamma = 0.25
     b = T[RODAS4A[6, 1], RODAS4A[6, 2], RODAS4A[6, 3], RODAS4A[6, 4], RODAS4A[6, 5], one(T)]
@@ -94,6 +101,11 @@ const RODAS42H = [
     -38.71940424117216 -135.8025833007622 64.51068857505875 -4.192663174613162 -2.53193205033506 0
     -14.99268484949843 -76.30242396627033 58.65928432851416 16.61359034616402 -0.6758691794084156 0
 ]
+"""
+    Rodas42Tableau(T, T2)
+
+A 4th order L-stable Rosenbrock method with 6 stages, often used as an alternative to Rodas4.
+"""
 function Rodas42Tableau(T, T2)
     gamma = 0.25
     b = T[RODAS42A[6, 1], RODAS42A[6, 2], RODAS42A[6, 3], RODAS42A[6, 4], RODAS42A[6, 5], one(T)]
@@ -123,6 +135,12 @@ const RODAS4PH = [
     25.09876703708589 11.62013104361867 28.49148307714626 -5.664021568594133 0 0
     1.638054557396973 -0.7373619806678748 8.47791821923899 15.9925314877952 -1.882352941176471 0
 ]
+"""
+    Rodas4PTableau(T, T2)
+
+A 4th order L-stable Rosenbrock method with 6 stages, emphasizing stability for parabolic problems.
+Reference: Protopapa, S. (1987).
+"""
 function Rodas4PTableau(T, T2)
     gamma = 0.25
     b = T[RODAS4PA[6, 1], RODAS4PA[6, 2], RODAS4PA[6, 3], RODAS4PA[6, 4], RODAS4PA[6, 5], one(T)]
@@ -152,6 +170,11 @@ const RODAS4P2H = [
     -5.323528268423303 -10.042123754867493 17.175254928256965 -5.079931171878093 -0.016185991706112 0
     6.984505741529879 6.914061169603662 -0.849178943070653 18.104410789349338 -3.516963011559032 0
 ]
+"""
+    Rodas4P2Tableau(T, T2)
+
+An improved version of the Rodas4P 4th order L-stable Rosenbrock method.
+"""
 function Rodas4P2Tableau(T, T2)
     gamma = 0.25
     b = T[RODAS4P2A[6, 1], RODAS4P2A[6, 2], RODAS4P2A[6, 3], RODAS4P2A[6, 4], RODAS4P2A[6, 5], one(T)]
@@ -195,6 +218,13 @@ const RODAS5H = [
     -44.0988150021747 -5.755396159656812e-13 -181.26175034586677 56.99302194811676 183.21182741427398 -7.480257918273637 -5.792426076169686 -5.32503859794143
 ]
 
+"""
+    Rodas5Tableau(T, T2)
+
+The tableau for the 5th order L-stable Rosenbrock method Rodas5. 
+It is an 8-stage method designed for high-accuracy stiff integration.
+Reference: Di Paola, R., & Wanner, G. (1991).
+"""
 function Rodas5Tableau(T, T2)
     gamma = 0.19
     s = size(RODAS5A, 1)
