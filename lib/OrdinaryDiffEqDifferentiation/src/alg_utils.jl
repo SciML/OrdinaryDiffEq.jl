@@ -20,15 +20,7 @@ function _alg_autodiff(
 end
 
 function alg_autodiff(alg)
-    autodiff = _alg_autodiff(alg)
-
-    if autodiff == Val(true)
-        return AutoForwardDiff()
-    elseif autodiff == Val(false)
-        return AutoFiniteDiff()
-    else
-        return autodiff
-    end
+    return _alg_autodiff(alg)
 end
 
 Base.@pure function determine_chunksize(u, alg::SciMLBase.DEAlgorithm)

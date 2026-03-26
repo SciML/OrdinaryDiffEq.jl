@@ -419,28 +419,20 @@ implicit_algs = [
     TRBDF2,
 ]
 
-@testset "deprecated AD keyword arguments still work with $alg" for alg in implicit_algs
-    f = (du, u, p, t) -> du .= -0.5 * u
+@testset "Bool autodiff no longer accepted for $alg" for alg in implicit_algs
+    # In v7, passing autodiff=true or autodiff=false should error (MethodError)
+    @test_throws ArgumentError alg(autodiff = true)
+    @test_throws ArgumentError alg(autodiff = false)
+
+    # ADType-based constructors should work
     alg1 = alg(autodiff = AutoForwardDiff())
-    alg2 = @test_deprecated alg(autodiff = true)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg1) isa AutoForwardDiff
 
-    alg3 = alg(autodiff = AutoFiniteDiff())
-    alg4 = @test_deprecated alg(autodiff = false)
+    alg2 = alg(autodiff = AutoFiniteDiff())
+    @test OrdinaryDiffEqCore.alg_autodiff(alg2) isa AutoFiniteDiff
 
-    alg5 = alg(autodiff = AutoForwardDiff(chunksize = 5))
-    alg6 = @test_deprecated alg(autodiff = true, chunk_size = 5)
-
-    alg7 = alg(autodiff = AutoFiniteDiff(fdtype = Val(:central)))
-    alg8 = @test_deprecated alg(autodiff = false, diff_type = Val(:central))
-
-    alg9 = alg(autodiff = AutoForwardDiff(chunksize = 1))
-    alg10 = @test_deprecated alg(chunk_size = 1)
-
-    @test OrdinaryDiffEqCore.alg_autodiff(alg1) == OrdinaryDiffEqCore.alg_autodiff(alg2)
-    @test OrdinaryDiffEqCore.alg_autodiff(alg3) == OrdinaryDiffEqCore.alg_autodiff(alg4)
-    @test OrdinaryDiffEqCore.alg_autodiff(alg5) == OrdinaryDiffEqCore.alg_autodiff(alg6)
-    @test OrdinaryDiffEqCore.alg_autodiff(alg7) == OrdinaryDiffEqCore.alg_autodiff(alg8)
-    @test OrdinaryDiffEqCore.alg_autodiff(alg9) == OrdinaryDiffEqCore.alg_autodiff(alg10)
+    alg3 = alg(autodiff = AutoForwardDiff(chunksize = 5))
+    @test OrdinaryDiffEqCore.alg_autodiff(alg3) isa AutoForwardDiff
 end
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2675

@@ -111,24 +111,21 @@ for (Alg, desc, refs, is_W) in [
             autodiff::AD
         end
         function $Alg(;
-                chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-                standardtag = Val{true}(), concrete_jac = nothing,
-                diff_type = Val{:forward}(), linsolve = nothing,
+                autodiff = AutoForwardDiff(),
+                concrete_jac = nothing,
+                linsolve = nothing,
                 precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
                 stage_limiter! = trivial_limiter!
             )
-            AD_choice, chunk_size,
-                diff_type = _process_AD_choice(
-                autodiff, chunk_size, diff_type
-            )
+            autodiff = _fixup_ad(autodiff)
             return $Alg{
-                _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-                typeof(precs), diff_type, _unwrap_val(standardtag),
+                _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve),
+                typeof(precs), _ad_fdtype(autodiff), true,
                 _unwrap_val(concrete_jac), typeof(step_limiter!),
                 typeof(stage_limiter!),
             }(
                 linsolve, precs, step_limiter!,
-                stage_limiter!, AD_choice
+                stage_limiter!, autodiff
             )
         end
     end
@@ -154,21 +151,21 @@ struct RosenbrockW6S4OS{CS, AD, F, P, FDT, ST, CJ} <:
     autodiff::AD
 end
 function RosenbrockW6S4OS(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
+        autodiff = AutoForwardDiff(),
+       
+        concrete_jac = nothing,
         linsolve = nothing,
         precs = DEFAULT_PRECS
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
     return RosenbrockW6S4OS{
-        _unwrap_val(chunk_size),
-        typeof(AD_choice), typeof(linsolve), typeof(precs), diff_type,
-        _unwrap_val(standardtag), _unwrap_val(concrete_jac),
+        _ad_chunksize_int(autodiff),
+        typeof(autodiff), typeof(linsolve), typeof(precs), _ad_fdtype(autodiff),
+        true, _unwrap_val(concrete_jac),
     }(
         linsolve,
-        precs, AD_choice
+        precs, autodiff
     )
 end
 
@@ -314,22 +311,19 @@ for (Alg, desc, refs, is_W) in [
             autodiff::AD
         end
         function $Alg(;
-                chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-                standardtag = Val{true}(), concrete_jac = nothing,
-                diff_type = Val{:forward}(), linsolve = nothing, precs = DEFAULT_PRECS
+                autodiff = AutoForwardDiff(),
+                concrete_jac = nothing,
+                linsolve = nothing, precs = DEFAULT_PRECS
             )
-            AD_choice, chunk_size,
-                diff_type = _process_AD_choice(
-                autodiff, chunk_size, diff_type
-            )
+            autodiff = _fixup_ad(autodiff)
 
             return $Alg{
-                _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-                typeof(precs), diff_type, _unwrap_val(standardtag),
+                _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve),
+                typeof(precs), _ad_fdtype(autodiff), true,
                 _unwrap_val(concrete_jac),
             }(
                 linsolve,
-                precs, AD_choice
+                precs, autodiff
             )
         end
     end
@@ -353,23 +347,21 @@ end
 function HybridExplicitImplicitRK(
         tab;
         order,
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(), linsolve = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing,
         precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
         stage_limiter! = trivial_limiter!
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(
-        autodiff, chunk_size, diff_type
-    )
+    autodiff = _fixup_ad(autodiff)
     return HybridExplicitImplicitRK{
-        typeof(tab), _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag),
+        typeof(tab), _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve),
+        typeof(precs), _ad_fdtype(autodiff), true,
         _unwrap_val(concrete_jac), typeof(step_limiter!),
         typeof(stage_limiter!),
     }(
         tab, order, linsolve, precs, step_limiter!,
-        stage_limiter!, AD_choice
+        stage_limiter!, autodiff
     )
 end
 
@@ -377,16 +369,16 @@ end
 function HybridExplicitImplicitRK(;
         tab,
         order,
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(), linsolve = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing,
         precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
         stage_limiter! = trivial_limiter!
     )
     return HybridExplicitImplicitRK(
         tab;
-        order, chunk_size, autodiff, standardtag, concrete_jac,
-        diff_type, linsolve, precs, step_limiter!, stage_limiter!
+        order, autodiff, concrete_jac,
+        linsolve, precs, step_limiter!, stage_limiter!
     )
 end
 

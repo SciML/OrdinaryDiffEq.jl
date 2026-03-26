@@ -32,19 +32,19 @@ struct PDIRK44{CS, AD, F, F2, P, FDT, ST, CJ, TO} <:
     autodiff::AD
 end
 function PDIRK44(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant, threading = true
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
     return PDIRK44{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+        _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve),
+        typeof(nlsolve), typeof(precs), _ad_fdtype(autodiff), true,
         _unwrap_val(concrete_jac), typeof(threading),
     }(
         linsolve, nlsolve, precs,
-        extrapolant, threading, AD_choice
+        extrapolant, threading, autodiff
     )
 end
