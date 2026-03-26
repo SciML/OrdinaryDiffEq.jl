@@ -1,4 +1,5 @@
 using OrdinaryDiffEqBDF, DiffEqBase, Test
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 import OrdinaryDiffEqCore: _initialize_dae!
 
 # Test that u_modified! triggers DAE initialization
@@ -33,9 +34,9 @@ int.u[1] = 2.0 # Breaks algebraic constraint u[1] + u[2] + u[3] = 1
 u_modified!(int, true)
 @test_throws SciMLBase.CheckInitFailureError step!(int)
 
-# With default init, modifying u and calling u_modified! should
+# With BrownFullBasicInit, modifying u and calling u_modified! should
 # reinitialize the algebraic variables to satisfy constraints
-int2 = init(prob, DFBDF())
+int2 = init(prob, DFBDF(), initializealg = BrownFullBasicInit())
 int2.u[1] = 2.0 # Breaks algebraic constraint
 u_modified!(int2, true)
 step!(int2)
