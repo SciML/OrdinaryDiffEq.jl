@@ -22,11 +22,10 @@
     thread = OrdinaryDiffEq.True(),
     """
 )
-struct PDIRK44{AD, F, F2, P, TO, CJ} <:
+struct PDIRK44{AD, F, F2, TO, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     threading::TO
     autodiff::AD
@@ -35,15 +34,14 @@ end
 function PDIRK44(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant, threading = true
     )
     autodiff = _fixup_ad(autodiff)
 
     return PDIRK44(
-        linsolve, nlsolve, precs,
+        linsolve, nlsolve,
         extrapolant, threading, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end

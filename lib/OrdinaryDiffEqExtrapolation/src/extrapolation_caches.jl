@@ -284,7 +284,7 @@ function alg_cache(
         linsolve_tmps[i] = zero(rate_prototype)
     end
 
-    linprob = LinearProblem(W[1], _vec(linsolve_tmps[1]); u0 = _vec(k_tmps[1]))
+    linprob = LinearProblem(W[1], _vec(linsolve_tmps[1]), (nothing, u, p, t); u0 = _vec(k_tmps[1]))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true), verbose = verbose.linear_verbosity
     )
@@ -294,7 +294,7 @@ function alg_cache(
     linsolve = Array{typeof(linsolve1), 1}(undef, get_thread_count(alg))
     linsolve[1] = linsolve1
     for i in 2:get_thread_count(alg)
-        linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]); u0 = _vec(k_tmps[i]))
+        linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]), (nothing, u, p, t); u0 = _vec(k_tmps[i]))
         linsolve[i] = init(
             linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true), verbose = verbose.linear_verbosity
@@ -1295,7 +1295,7 @@ function alg_cache(
         linsolve_tmps[i] = zero(rate_prototype)
     end
 
-    linprob = LinearProblem(W[1], _vec(linsolve_tmps[1]); u0 = _vec(k_tmps[1]))
+    linprob = LinearProblem(W[1], _vec(linsolve_tmps[1]), (nothing, u, p, t); u0 = _vec(k_tmps[1]))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true), verbose = verbose.linear_verbosity
     )
@@ -1305,7 +1305,7 @@ function alg_cache(
     linsolve = Array{typeof(linsolve1), 1}(undef, get_thread_count(alg))
     linsolve[1] = linsolve1
     for i in 2:get_thread_count(alg)
-        linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]); u0 = _vec(k_tmps[i]))
+        linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]), (nothing, u, p, t); u0 = _vec(k_tmps[i]))
         linsolve[i] = init(
             linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true), verbose = verbose.linear_verbosity
@@ -1655,7 +1655,7 @@ function alg_cache(
         linsolve_tmps[i] = zero(rate_prototype)
     end
 
-    linprob = LinearProblem(W[1], _vec(linsolve_tmps[1]); u0 = _vec(k_tmps[1]))
+    linprob = LinearProblem(W[1], _vec(linsolve_tmps[1]), (nothing, u, p, t); u0 = _vec(k_tmps[1]))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true), verbose = verbose.linear_verbosity
     )
@@ -1665,7 +1665,7 @@ function alg_cache(
     linsolve = Array{typeof(linsolve1), 1}(undef, get_thread_count(alg))
     linsolve[1] = linsolve1
     for i in 2:get_thread_count(alg)
-        linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]); u0 = _vec(k_tmps[i]))
+        linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]), (nothing, u, p, t); u0 = _vec(k_tmps[i]))
         linsolve[i] = init(
             linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true), verbose = verbose.linear_verbosity
@@ -1870,7 +1870,7 @@ function alg_cache(
         linsolve_tmps[i] = zero(rate_prototype)
     end
 
-    linprob = LinearProblem(W[1], _vec(linsolve_tmps[1]); u0 = _vec(k_tmps[1]))
+    linprob = LinearProblem(W[1], _vec(linsolve_tmps[1]), (nothing, u, p, t); u0 = _vec(k_tmps[1]))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true), verbose = verbose.linear_verbosity
     )
@@ -1880,7 +1880,7 @@ function alg_cache(
     linsolve = Array{typeof(linsolve1), 1}(undef, get_thread_count(alg))
     linsolve[1] = linsolve1
     for i in 2:get_thread_count(alg)
-        linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]); u0 = _vec(k_tmps[i]))
+        linprob = LinearProblem(W[i], _vec(linsolve_tmps[i]), (nothing, u, p, t); u0 = _vec(k_tmps[i]))
         linsolve[i] = init(
             linprob, alg.linsolve,
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true), verbose = verbose.linear_verbosity
