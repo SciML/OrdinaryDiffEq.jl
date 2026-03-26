@@ -14,8 +14,10 @@ using Test
         integrator -> (integrator.u = -integrator.u)
     )
 
-    sol = solve(prob, MethodOfSteps(RKMil()), dt = 0.01, adaptive = false,
-        tstops = (3,), callback = cb)
+    sol = solve(
+        prob, MethodOfSteps(RKMil()), dt = 0.01, adaptive = false,
+        tstops = (3,), callback = cb
+    )
     ts = findall(x -> x == 3, sol.t)
     @test length(ts) == 2
     @test sol.u[ts[1]] == -sol.u[ts[2]]

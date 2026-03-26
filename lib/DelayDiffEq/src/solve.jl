@@ -761,4 +761,3 @@ function OrdinaryDiffEqCore._initialize_dae!(integrator::DDEIntegrator, prob, ::
         OrdinaryDiffEqCore._initialize_dae!(integrator, prob, SciMLBase.CheckInit(), isinplace)
     end
 end
-

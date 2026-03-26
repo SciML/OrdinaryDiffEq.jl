@@ -18,7 +18,7 @@ begin
 end
 
 pmul = [1.0, -4.0, -2.0, 10.0, -1.3, -1.2, 1.1]
-padd = [1.0, -4.0, -2.0, 10.0, -0.0, -0.0, 0.1]
+p_additive = [1.0, -4.0, -2.0, 10.0, -0.0, -0.0, 0.1]
 
 prob = SDDEProblem(
     hayes_modelf, hayes_modelg, [1.0], h, tspan, pmul;
@@ -61,8 +61,8 @@ sol = solve(prob, MethodOfSteps(SOSRI2()), dt = 0.01, adaptive = false)
 
 # Additive noise problems (need dZ extra process)
 prob_add = SDDEProblem(
-    hayes_modelf, hayes_modelg, [1.0], h, tspan, padd;
-    constant_lags = (padd[1],)
+    hayes_modelf, hayes_modelg, [1.0], h, tspan, p_additive;
+    constant_lags = (p_additive[1],)
 )
 sol = solve(prob_add, MethodOfSteps(SRA()), dt = 0.01, adaptive = false)
 @test sol.u[end] != zeros(1)
