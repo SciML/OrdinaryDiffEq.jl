@@ -22,11 +22,10 @@
     year={2010},
     publisher={Wiley Online Library}}", "", ""
 )
-struct CNAB2{AD, F, F2, P, CJ} <:
+struct CNAB2{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     autodiff::AD
     concrete_jac::CJ
@@ -35,7 +34,7 @@ end
 function CNAB2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear
     )
     autodiff = _fixup_ad(autodiff)
@@ -43,7 +42,6 @@ function CNAB2(;
     return CNAB2(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -72,11 +70,10 @@ end
     year={2015},
     publisher={Elsevier}}", "", ""
 )
-struct CNLF2{AD, F, F2, P, CJ} <:
+struct CNLF2{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     autodiff::AD
     concrete_jac::CJ
@@ -84,7 +81,7 @@ end
 function CNLF2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear
     )
     autodiff = _fixup_ad(autodiff)
@@ -92,7 +89,6 @@ function CNLF2(;
     return CNLF2(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         autodiff,
         _unwrap_val(concrete_jac)

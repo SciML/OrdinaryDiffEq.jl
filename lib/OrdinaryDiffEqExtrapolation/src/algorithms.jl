@@ -57,10 +57,9 @@ Similar to Hairer's SEULEX.",
     sequence = :harmonic
     """
 )
-struct ImplicitEulerExtrapolation{AD, F, P, TO, CJ} <:
+struct ImplicitEulerExtrapolation{AD, F, TO, CJ} <:
     OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
-    precs::P
     max_order::Int
     min_order::Int
     init_order::Int
@@ -74,7 +73,6 @@ function ImplicitEulerExtrapolation(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing,
-        precs = DEFAULT_PRECS,
         max_order = 12, min_order = 3, init_order = 5,
         threading = false, sequence = :harmonic
     )
@@ -110,7 +108,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence = :harmonic
     end
     return ImplicitEulerExtrapolation(
-        linsolve, precs, max_order, min_order,
+        linsolve, max_order, min_order,
         init_order,
         threading, sequence, autodiff,
         _unwrap_val(concrete_jac)
@@ -214,10 +212,9 @@ end
     sequence = :harmonic,
     """
 )
-struct ImplicitDeuflhardExtrapolation{AD, F, P, TO, CJ} <:
+struct ImplicitDeuflhardExtrapolation{AD, F, TO, CJ} <:
     OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
-    precs::P
     min_order::Int # Minimal extrapolation order
     init_order::Int # Initial extrapolation order
     max_order::Int # Maximal extrapolation order
@@ -229,7 +226,7 @@ end
 function ImplicitDeuflhardExtrapolation(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS,
+        linsolve = nothing,
         min_order = 1, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false
     )
@@ -269,7 +266,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 
     # Initialize algorithm
     return ImplicitDeuflhardExtrapolation(
-        linsolve, precs, min_order,
+        linsolve, min_order,
         init_order, max_order,
         sequence, threading, autodiff,
         _unwrap_val(concrete_jac)
@@ -376,10 +373,9 @@ end
     sequence = :harmonic,
     """
 )
-struct ImplicitHairerWannerExtrapolation{AD, F, P, TO, CJ} <:
+struct ImplicitHairerWannerExtrapolation{AD, F, TO, CJ} <:
     OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
-    precs::P
     min_order::Int # Minimal extrapolation order
     init_order::Int # Initial extrapolation order
     max_order::Int # Maximal extrapolation order
@@ -393,7 +389,7 @@ function ImplicitHairerWannerExtrapolation(;
         autodiff = AutoForwardDiff(),
        
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS,
+        linsolve = nothing,
         min_order = 2, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false
     )
@@ -433,7 +429,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     autodiff = _fixup_ad(autodiff)
     # Initialize algorithm
     return ImplicitHairerWannerExtrapolation(
-        linsolve, precs, min_order,
+        linsolve, min_order,
         init_order,
         max_order, sequence, threading, autodiff,
         _unwrap_val(concrete_jac)
@@ -464,10 +460,9 @@ end
     sequence_factor = 2,
     """
 )
-struct ImplicitEulerBarycentricExtrapolation{AD, F, P, TO, CJ} <:
+struct ImplicitEulerBarycentricExtrapolation{AD, F, TO, CJ} <:
     OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
-    precs::P
     min_order::Int # Minimal extrapolation order
     init_order::Int # Initial extrapolation order
     max_order::Int # Maximal extrapolation order
@@ -482,7 +477,7 @@ function ImplicitEulerBarycentricExtrapolation(;
         autodiff = AutoForwardDiff(),
        
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS,
+        linsolve = nothing,
         min_order = 3, init_order = 5,
         max_order = 12, sequence = :harmonic,
         threading = false, sequence_factor = 2
@@ -523,7 +518,6 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     # Initialize algorithm
     return ImplicitEulerBarycentricExtrapolation(
         linsolve,
-        precs,
         min_order,
         init_order,
         max_order,

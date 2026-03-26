@@ -9,7 +9,7 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-    alg_cache, _unwrap_val, DEFAULT_PRECS, @cache,
+    alg_cache, _unwrap_val, @cache,
     _reshape, _vec, full_cache, get_fsalfirstlast,
     generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad
 
