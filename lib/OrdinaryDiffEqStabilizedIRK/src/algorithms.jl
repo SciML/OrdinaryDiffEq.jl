@@ -9,11 +9,10 @@
     If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.",
     "eigen_est = nothing,"
 )
-struct IRKC{AD, F, F2, P, K, T, E, CJ} <:
+struct IRKC{AD, F, F2, K, T, E, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     κ::K
     tol::T
     extrapolant::Symbol
@@ -26,16 +25,15 @@ end
 function IRKC(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
+        linsolve = nothing, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear, controller = :Standard, eigen_est = nothing
     )
     autodiff = _fixup_ad(autodiff)
 
     return IRKC(
-        linsolve, nlsolve, precs, κ, tol,
+        linsolve, nlsolve, κ, tol,
         extrapolant, controller, eigen_est, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end

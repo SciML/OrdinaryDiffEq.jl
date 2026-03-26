@@ -9,30 +9,20 @@ end
 u0 = rand(3)
 prob = ODEProblem(rn, u0, (0, 50.0))
 
-function precsl(W, du, u, p, t, newW, Plprev, Prprev, solverdata)
-    if newW === nothing || newW
-        Pl = lu(convert(AbstractMatrix, W), check = false)
-    else
-        Pl = Plprev
-    end
-    return Pl, nothing
+# Preconditioners for the new interface: precs(A, p) -> (Pl, Pr)
+# where p = (du, u, params, t) is passed through the LinearProblem
+function precsl(A, p)
+    Pl = lu(convert(AbstractMatrix, A), check = false)
+    return Pl, I
 end
 
-function precsr(W, du, u, p, t, newW, Plprev, Prprev, solverdata)
-    if newW === nothing || newW
-        Pr = lu(convert(AbstractMatrix, W), check = false)
-    else
-        Pr = Prprev
-    end
-    return nothing, Pr
+function precsr(A, p)
+    Pr = lu(convert(AbstractMatrix, A), check = false)
+    return I, Pr
 end
 
-function precslr(W, du, u, p, t, newW, Plprev, Prprev, solverdata)
-    if newW === nothing || newW
-        Pr = lu(convert(AbstractMatrix, W), check = false)
-    else
-        Pr = Prprev
-    end
+function precslr(A, p)
+    Pr = lu(convert(AbstractMatrix, A), check = false)
     return Pr, Pr
 end
 
@@ -54,24 +44,27 @@ solref = @test_nowarn solve(
 sol = @test_nowarn solve(
     prob,
     TRBDF2(
-        autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
-        precs = precsl, smooth_est = false, concrete_jac = true
+        autodiff = AutoFiniteDiff(),
+        linsolve = KrylovJL_GMRES(precs = precsl),
+        smooth_est = false, concrete_jac = true
     )
 );
 @test length(sol.t) < 20
 sol = @test_nowarn solve(
     prob,
     TRBDF2(
-        autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
-        precs = precsr, smooth_est = false, concrete_jac = true
+        autodiff = AutoFiniteDiff(),
+        linsolve = KrylovJL_GMRES(precs = precsr),
+        smooth_est = false, concrete_jac = true
     )
 );
 @test length(sol.t) < 20
 sol = @test_nowarn solve(
     prob,
     TRBDF2(
-        autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
-        precs = precslr, smooth_est = false, concrete_jac = true
+        autodiff = AutoFiniteDiff(),
+        linsolve = KrylovJL_GMRES(precs = precslr),
+        smooth_est = false, concrete_jac = true
     )
 );
 @test length(sol.t) < 20
@@ -87,16 +80,17 @@ sol = @test_nowarn solve(
     prob,
     Rosenbrock23(
         autodiff = AutoFiniteDiff(),
-        linsolve = KrylovJL_GMRES(),
-        precs = precslr, concrete_jac = true
+        linsolve = KrylovJL_GMRES(precs = precslr),
+        concrete_jac = true
     )
 );
 @test length(sol.t) < 20
 sol = @test_nowarn solve(
     prob,
     Rodas4(
-        autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
-        precs = precslr, concrete_jac = true
+        autodiff = AutoFiniteDiff(),
+        linsolve = KrylovJL_GMRES(precs = precslr),
+        concrete_jac = true
     )
 );
 @test length(sol.t) < 20
@@ -118,24 +112,27 @@ sol = @test_nowarn solve(
 sol = @test_nowarn solve(
     prob,
     TRBDF2(
-        autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
-        precs = precsl, smooth_est = false, concrete_jac = true
+        autodiff = AutoFiniteDiff(),
+        linsolve = KrylovJL_GMRES(precs = precsl),
+        smooth_est = false, concrete_jac = true
     )
 );
 @test length(sol.t) < 20
 sol = @test_nowarn solve(
     prob,
     TRBDF2(
-        autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
-        precs = precsr, smooth_est = false, concrete_jac = true
+        autodiff = AutoFiniteDiff(),
+        linsolve = KrylovJL_GMRES(precs = precsr),
+        smooth_est = false, concrete_jac = true
     )
 );
 @test length(sol.t) < 20
 sol = @test_nowarn solve(
     prob,
     TRBDF2(
-        autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
-        precs = precslr, smooth_est = false, concrete_jac = true
+        autodiff = AutoFiniteDiff(),
+        linsolve = KrylovJL_GMRES(precs = precslr),
+        smooth_est = false, concrete_jac = true
     )
 );
 @test length(sol.t) < 20
@@ -150,16 +147,18 @@ sol = @test_nowarn solve(
 sol = @test_nowarn solve(
     prob,
     Rosenbrock23(
-        autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
-        precs = precslr, concrete_jac = true
+        autodiff = AutoFiniteDiff(),
+        linsolve = KrylovJL_GMRES(precs = precslr),
+        concrete_jac = true
     )
 );
 @test length(sol.t) < 20
 sol = @test_nowarn solve(
     prob,
     Rodas4(
-        autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES(),
-        precs = precslr, concrete_jac = true
+        autodiff = AutoFiniteDiff(),
+        linsolve = KrylovJL_GMRES(precs = precslr),
+        concrete_jac = true
     )
 );
 @test length(sol.t) < 20
