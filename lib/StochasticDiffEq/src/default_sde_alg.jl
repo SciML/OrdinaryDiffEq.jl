@@ -2,6 +2,7 @@
 # Moved from DifferentialEquations.jl as part of modularization effort
 
 using LinearAlgebra: I
+using ADTypes: AutoFiniteDiff
 
 # Helper function to extract alg_hints from keyword arguments
 function get_alg_hints(o)
@@ -24,13 +25,13 @@ function default_algorithm(
     is_stiff = :stiff ∈ alg_hints
     is_stratonovich = :stratonovich ∈ alg_hints
     if is_stiff || prob.f.mass_matrix !== I
-        alg = ImplicitRKMil(autodiff = false)
+        alg = ImplicitRKMil(autodiff = AutoFiniteDiff())
     end
 
     if is_stratonovich
         if is_stiff || prob.f.mass_matrix !== I
             alg = ImplicitRKMil(
-                autodiff = false,
+                autodiff = AutoFiniteDiff(),
                 interpretation = SciMLBase.AlgorithmInterpretation.Stratonovich
             )
         else
@@ -41,13 +42,13 @@ function default_algorithm(
     if prob.noise_rate_prototype != nothing || prob.noise != nothing
         if is_stratonovich
             if is_stiff || prob.f.mass_matrix !== I
-                alg = ImplicitEulerHeun(autodiff = false)
+                alg = ImplicitEulerHeun(autodiff = AutoFiniteDiff())
             else
                 alg = LambaEulerHeun()
             end
         else
             if is_stiff || prob.f.mass_matrix !== I
-                alg = ISSEM(autodiff = false)
+                alg = ISSEM(autodiff = AutoFiniteDiff())
             else
                 alg = LambaEM()
             end
@@ -56,7 +57,7 @@ function default_algorithm(
 
     if :additive ∈ alg_hints
         if is_stiff || prob.f.mass_matrix !== I
-            alg = SKenCarp(autodiff = false)
+            alg = SKenCarp(autodiff = AutoFiniteDiff())
         else
             alg = SOSRA()
         end
