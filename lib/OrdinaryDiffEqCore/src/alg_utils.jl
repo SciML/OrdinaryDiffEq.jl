@@ -41,15 +41,14 @@ SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 
 function SciMLBase.forwarddiff_chunksize(
         alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD},
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD},
-            DAEAlgorithm{CS, AD},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
-            CompositeAlgorithm{CS, AD},
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+            OrdinaryDiffEqImplicitAlgorithm,
+            DAEAlgorithm,
+            OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         }
-    ) where {CS, AD}
-    return _get_fwd_chunksize(AD)
+    )
+    return _get_fwd_chunksize(typeof(alg.autodiff))
 end
 
 SciMLBase.allows_late_binding_tstops(::OrdinaryDiffEqAlgorithm) = true
@@ -269,15 +268,14 @@ _get_fdtype(::Type{<:AutoFiniteDiff{T1}}) where {T1} = T1
 
 function get_chunksize(
         alg::Union{
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD},
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD},
-            DAEAlgorithm{CS, AD},
-            CompositeAlgorithm{CS, AD},
+            OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+            OrdinaryDiffEqImplicitAlgorithm,
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+            DAEAlgorithm,
         }
-    ) where {CS, AD}
-    return _get_fwd_chunksize(AD)
+    )
+    return _get_fwd_chunksize(typeof(alg.autodiff))
 end
 
 function get_chunksize_int(alg::OrdinaryDiffEqAlgorithm)
@@ -286,15 +284,14 @@ end
 
 function get_chunksize_int(
         alg::Union{
-            OrdinaryDiffEqExponentialAlgorithm{CS},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD},
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD},
-            DAEAlgorithm{CS, AD},
-            CompositeAlgorithm{CS, AD},
+            OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+            OrdinaryDiffEqImplicitAlgorithm,
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+            DAEAlgorithm,
         }
-    ) where {CS, AD}
-    return _get_fwd_chunksize_int(AD)
+    )
+    return _get_fwd_chunksize_int(typeof(alg.autodiff))
 end
 
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
@@ -354,63 +351,31 @@ end
 
 function alg_difftype(
         alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{
-                CS, AD, FDT, ST, CJ,
-            },
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{
-                CS, AD, FDT, ST,
-                CJ,
-            },
-            DAEAlgorithm{CS, AD, FDT, ST, CJ},
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+            OrdinaryDiffEqImplicitAlgorithm,
+            OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+            DAEAlgorithm,
         }
-    ) where {
-        CS, AD, FDT, ST,
-        CJ,
-    }
-    return _get_fdtype(AD)
+    )
+    return _get_fdtype(alg.autodiff)
 end
 
-function standardtag(
-        alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{
-                CS, AD, FDT, ST, CJ,
-            },
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{
-                CS, AD, FDT, ST,
-                CJ,
-            },
-            DAEAlgorithm{CS, AD, FDT, ST, CJ},
-        }
-    ) where {
-        CS, AD, FDT, ST,
-        CJ,
-    }
-    return ST
-end
+standardtag(alg::Union{
+    OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+    OrdinaryDiffEqImplicitAlgorithm,
+    OrdinaryDiffEqExponentialAlgorithm,
+    OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+    DAEAlgorithm,
+}) = true
 
-function concrete_jac(
-        alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{
-                CS, AD, FDT, ST, CJ,
-            },
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{
-                CS, AD, FDT, ST,
-                CJ,
-            },
-            DAEAlgorithm{CS, AD, FDT, ST, CJ},
-        }
-    ) where {
-        CS, AD, FDT, ST,
-        CJ,
-    }
-    return CJ
-end
+concrete_jac(alg::Union{
+    OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+    OrdinaryDiffEqImplicitAlgorithm,
+    OrdinaryDiffEqExponentialAlgorithm,
+    OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+    DAEAlgorithm,
+}) = alg.concrete_jac
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
