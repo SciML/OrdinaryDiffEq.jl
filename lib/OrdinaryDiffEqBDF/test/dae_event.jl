@@ -1,4 +1,5 @@
 using OrdinaryDiffEqBDF, Test
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 
 f = function (out, du, u, p, t)
     out[1] = -p[1] * u[1] + p[3] * u[2] * u[3] - du[1]
@@ -23,7 +24,10 @@ sol = solve(prob, IDA(), callback=cb, tstops=[50.0],abstol=1e-14,reltol=1e-14)
 
 p = [0.04, 3.0e7, 1.0e4, 1.0]
 prob = DAEProblem(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
-sol = solve(prob, DFBDF(), callback = cb, tstops = [50.0], abstol = 1.0e-12, reltol = 1.0e-12)
+sol = solve(
+    prob, DFBDF(), callback = cb, tstops = [50.0], abstol = 1.0e-12, reltol = 1.0e-12,
+    initializealg = BrownFullBasicInit()
+)
 @test sol.t[end] == 100.0
 @test sol.u[end][1] ≈ 0.686300529575259 atol = 1.0e-7
 @test sol.u[end][2] ≈ 2.0797982209353813e-6 atol = 1.0e-7

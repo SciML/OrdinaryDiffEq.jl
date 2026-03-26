@@ -24,7 +24,8 @@ function DiffEqBase.initialize_dae!(
     )
 end
 
-## Default algorithms
+## Default algorithm is CheckInit
+## Changed in v7--previously was BrownFullBasicInit or ShampineCollocationInit
 
 function _initialize_dae!(
         integrator::ODEIntegrator, prob::Union{ODEProblem, DAEProblem},
@@ -36,14 +37,11 @@ function _initialize_dae!(
             OverrideInit(integrator.opts.abstol), x
         )
     else
-        _default_dae_init!(integrator, prob, x, integrator.alg)
+        _initialize_dae!(
+            integrator, prob,
+            CheckInit(), x
+        )
     end
-end
-
-# Fallback: algorithm does not support DAE initialization.
-# OrdinaryDiffEqNonlinearSolve extends this for DAE-capable algorithm types.
-function _default_dae_init!(integrator, prob, x, alg)
-    error("`OrdinaryDiffEqNonlinearSolve` is not loaded, which is required for the default initialization algorithm (`BrownFullBasicInit` or `ShampineCollocationInit`). To solve this problem, either do `using OrdinaryDiffEqNonlinearSolve` or pass `initializealg = CheckInit()` to the `solve` function. This second option requires consistent `u0`.")
 end
 
 function _initialize_dae!(
