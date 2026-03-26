@@ -10,7 +10,6 @@ function SDIRK_docstring(
        
         concrete_jac = nothing,
         linsolve = nothing,
-        precs = DEFAULT_PRECS,
         nlsolve = NLNewton(),
         """ * extra_keyword_default
 
@@ -93,11 +92,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ImplicitEuler{AD, F, F2, P, StepLimiter, CJ} <:
+struct ImplicitEuler{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
@@ -108,7 +106,7 @@ end
 function ImplicitEuler(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
         controller = :PI, step_limiter! = trivial_limiter!
     )
@@ -116,9 +114,8 @@ function ImplicitEuler(;
 
     return ImplicitEuler(
         linsolve,
-        nlsolve, precs, extrapolant, controller, step_limiter!, autodiff,
+        nlsolve, extrapolant, controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -140,11 +137,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ImplicitMidpoint{AD, F, F2, P, StepLimiter, CJ} <:
+struct ImplicitMidpoint{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
@@ -154,7 +150,7 @@ end
 function ImplicitMidpoint(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -162,7 +158,6 @@ function ImplicitMidpoint(;
     return ImplicitMidpoint(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
@@ -185,11 +180,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Trapezoid{AD, F, F2, P, StepLimiter, CJ} <:
+struct Trapezoid{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
@@ -200,7 +194,7 @@ end
 function Trapezoid(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
@@ -209,13 +203,11 @@ function Trapezoid(;
     return Trapezoid(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         controller,
         step_limiter!,
         autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -244,11 +236,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct TRBDF2{AD, F, F2, P, StepLimiter, CJ} <:
+struct TRBDF2{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -260,17 +251,16 @@ end
 function TRBDF2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return TRBDF2(
-        linsolve, nlsolve, precs,
+        linsolve, nlsolve,
         smooth_est, extrapolant, controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -301,11 +291,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct SDIRK2{AD, F, F2, P, StepLimiter, CJ} <:
+struct SDIRK2{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -317,14 +306,14 @@ end
 function SDIRK2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return SDIRK2(
-        linsolve, nlsolve, precs, smooth_est, extrapolant,
+        linsolve, nlsolve, smooth_est, extrapolant,
         controller,
         step_limiter!,
         autodiff,
@@ -353,11 +342,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct SDIRK22{AD, F, F2, P, StepLimiter, CJ} <:
+struct SDIRK22{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
@@ -368,7 +356,7 @@ end
 function SDIRK22(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
@@ -377,13 +365,11 @@ function SDIRK22(;
     return Trapezoid(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         controller,
         step_limiter!,
         autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -414,11 +400,10 @@ end
     controller = :PI,
     """
 )
-struct SSPSDIRK2{AD, F, F2, P, CJ} <:
+struct SSPSDIRK2{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm # Not adaptive
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -429,17 +414,16 @@ end
 function SSPSDIRK2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :constant,
         controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return SSPSDIRK2(
-        linsolve, nlsolve, precs, smooth_est, extrapolant,
+        linsolve, nlsolve, smooth_est, extrapolant,
         controller, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -468,11 +452,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno3{AD, F, F2, P, StepLimiter, CJ} <:
+struct Kvaerno3{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -483,17 +466,16 @@ end
 function Kvaerno3(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return Kvaerno3(
-        linsolve, nlsolve, precs,
+        linsolve, nlsolve,
         smooth_est, extrapolant, controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -518,11 +500,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp3{AD, F, F2, P, StepLimiter, CJ} <:
+struct KenCarp3{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -533,17 +514,16 @@ end
 function KenCarp3(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp3(
-        linsolve, nlsolve, precs,
+        linsolve, nlsolve,
         smooth_est, extrapolant, controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -566,11 +546,10 @@ end
     extrapolant = :linear,
     """
 )
-struct CFNLIRK3{AD, F, F2, P, CJ} <:
+struct CFNLIRK3{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     autodiff::AD
     concrete_jac::CJ
@@ -578,7 +557,7 @@ end
 function CFNLIRK3(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear
     )
     autodiff = _fixup_ad(autodiff)
@@ -586,7 +565,6 @@ function CFNLIRK3(;
     return CFNLIRK3(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -619,11 +597,10 @@ end
     embedding = 3,
     """
 )
-struct Cash4{AD, F, F2, P, CJ} <:
+struct Cash4{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     embedding::Int
@@ -634,7 +611,7 @@ end
 function Cash4(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, embedding = 3
     )
@@ -643,7 +620,6 @@ function Cash4(;
     return Cash4(
         linsolve,
         nlsolve,
-        precs,
         smooth_est,
         extrapolant,
         embedding,
@@ -673,11 +649,10 @@ end
     extrapolant = :linear,
     """
 )
-struct SFSDIRK4{AD, F, F2, P, CJ} <:
+struct SFSDIRK4{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     autodiff::AD
     concrete_jac::CJ
@@ -685,7 +660,7 @@ end
 function SFSDIRK4(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear
     )
     autodiff = _fixup_ad(autodiff)
@@ -693,7 +668,6 @@ function SFSDIRK4(;
     return SFSDIRK4(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -720,11 +694,10 @@ end
     extrapolant = :linear,
     """
 )
-struct SFSDIRK5{AD, F, F2, P, CJ} <:
+struct SFSDIRK5{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     autodiff::AD
     concrete_jac::CJ
@@ -733,7 +706,7 @@ end
 function SFSDIRK5(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear
     )
     autodiff = _fixup_ad(autodiff)
@@ -741,7 +714,6 @@ function SFSDIRK5(;
     return SFSDIRK5(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -768,11 +740,10 @@ end
     extrapolant = :linear,
     """
 )
-struct SFSDIRK6{AD, F, F2, P, CJ} <:
+struct SFSDIRK6{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     autodiff::AD
     concrete_jac::CJ
@@ -781,7 +752,7 @@ end
 function SFSDIRK6(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear
     )
     autodiff = _fixup_ad(autodiff)
@@ -789,7 +760,6 @@ function SFSDIRK6(;
     return SFSDIRK6(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -816,11 +786,10 @@ end
     extrapolant = :linear,
     """
 )
-struct SFSDIRK7{AD, F, F2, P, CJ} <:
+struct SFSDIRK7{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     autodiff::AD
     concrete_jac::CJ
@@ -829,7 +798,7 @@ end
 function SFSDIRK7(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear
     )
     autodiff = _fixup_ad(autodiff)
@@ -837,7 +806,6 @@ function SFSDIRK7(;
     return SFSDIRK7(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -864,11 +832,10 @@ end
     extrapolant = :linear,
     """
 )
-struct SFSDIRK8{AD, F, F2, P, CJ} <:
+struct SFSDIRK8{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     autodiff::AD
     concrete_jac::CJ
@@ -877,7 +844,7 @@ end
 function SFSDIRK8(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear
     )
     autodiff = _fixup_ad(autodiff)
@@ -885,7 +852,6 @@ function SFSDIRK8(;
     return SFSDIRK8(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -910,11 +876,10 @@ end
     controller = :PI,
     """
 )
-struct Hairer4{AD, F, F2, P, CJ} <:
+struct Hairer4{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -924,17 +889,16 @@ end
 function Hairer4(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return Hairer4(
-        linsolve, nlsolve, precs, smooth_est, extrapolant,
+        linsolve, nlsolve, smooth_est, extrapolant,
         controller, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -955,11 +919,10 @@ end
     controller = :PI,
     """
 )
-struct Hairer42{AD, F, F2, P, CJ} <:
+struct Hairer42{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -969,17 +932,16 @@ end
 function Hairer42(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return Hairer42(
-        linsolve, nlsolve, precs, smooth_est, extrapolant,
+        linsolve, nlsolve, smooth_est, extrapolant,
         controller, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -1008,11 +970,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno4{AD, F, F2, P, StepLimiter, CJ} <:
+struct Kvaerno4{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -1023,17 +984,16 @@ end
 function Kvaerno4(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return Kvaerno4(
-        linsolve, nlsolve, precs,
+        linsolve, nlsolve,
         smooth_est, extrapolant, controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -1062,11 +1022,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno5{AD, F, F2, P, StepLimiter, CJ} <:
+struct Kvaerno5{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -1077,17 +1036,16 @@ end
 function Kvaerno5(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return Kvaerno5(
-        linsolve, nlsolve, precs,
+        linsolve, nlsolve,
         smooth_est, extrapolant, controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -1112,11 +1070,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp4{AD, F, F2, P, StepLimiter, CJ} <:
+struct KenCarp4{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -1127,17 +1084,16 @@ end
 function KenCarp4(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp4(
-        linsolve, nlsolve, precs,
+        linsolve, nlsolve,
         smooth_est, extrapolant, controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -1165,11 +1121,10 @@ end
     controller = :PI,
     """
 )
-struct KenCarp47{AD, F, F2, P, CJ} <:
+struct KenCarp47{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -1179,17 +1134,16 @@ end
 function KenCarp47(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp47(
-        linsolve, nlsolve, precs, smooth_est, extrapolant,
+        linsolve, nlsolve, smooth_est, extrapolant,
         controller, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -1214,11 +1168,10 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp5{AD, F, F2, P, StepLimiter, CJ} <:
+struct KenCarp5{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -1229,17 +1182,16 @@ end
 function KenCarp5(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp5(
-        linsolve, nlsolve, precs,
+        linsolve, nlsolve,
         smooth_est, extrapolant, controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -1265,11 +1217,10 @@ end
     controller = :PI,
     """
 )
-struct KenCarp58{AD, F, F2, P, CJ} <:
+struct KenCarp58{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
@@ -1279,17 +1230,16 @@ end
 function KenCarp58(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp58(
-        linsolve, nlsolve, precs, smooth_est, extrapolant,
+        linsolve, nlsolve, smooth_est, extrapolant,
         controller, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -1316,11 +1266,10 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK54I8L2SA{AD, F, F2, P, CJ} <:
+struct ESDIRK54I8L2SA{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
@@ -1329,16 +1278,15 @@ end
 function ESDIRK54I8L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK54I8L2SA(
-        linsolve, nlsolve, precs, extrapolant,
+        linsolve, nlsolve, extrapolant,
         controller, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -1364,11 +1312,10 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK436L2SA2{AD, F, F2, P, CJ} <:
+struct ESDIRK436L2SA2{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
@@ -1377,16 +1324,15 @@ end
 function ESDIRK436L2SA2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK436L2SA2(
-        linsolve, nlsolve, precs, extrapolant,
+        linsolve, nlsolve, extrapolant,
         controller, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -1412,11 +1358,10 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK437L2SA{AD, F, F2, P, CJ} <:
+struct ESDIRK437L2SA{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
@@ -1425,16 +1370,15 @@ end
 function ESDIRK437L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK437L2SA(
-        linsolve, nlsolve, precs, extrapolant,
+        linsolve, nlsolve, extrapolant,
         controller, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -1460,11 +1404,10 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK547L2SA2{AD, F, F2, P, CJ} <:
+struct ESDIRK547L2SA2{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
@@ -1473,16 +1416,15 @@ end
 function ESDIRK547L2SA2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK547L2SA2(
-        linsolve, nlsolve, precs, extrapolant,
+        linsolve, nlsolve, extrapolant,
         controller, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
 
@@ -1510,11 +1452,10 @@ Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more deta
     controller = :PI,
     """
 )
-struct ESDIRK659L2SA{AD, F, F2, P, CJ} <:
+struct ESDIRK659L2SA{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
@@ -1523,15 +1464,14 @@ end
 function ESDIRK659L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK659L2SA(
-        linsolve, nlsolve, precs, extrapolant,
+        linsolve, nlsolve, extrapolant,
         controller, autodiff,
         _unwrap_val(concrete_jac)
-
     )
 end
