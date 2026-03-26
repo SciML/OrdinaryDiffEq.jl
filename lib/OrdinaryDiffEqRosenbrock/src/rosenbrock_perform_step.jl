@@ -62,19 +62,10 @@ end
         integrator.opts.internalnorm, t
     )
 
-    if repeat_step || !new_W
-        linres = dolinsolve(
-            integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-            du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtγ)
-        )
-    else
-        linres = dolinsolve(
-            integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-            du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtγ)
-        )
-    end
+    linres = dolinsolve(
+        integrator, cache.linsolve;
+        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
+    )
 
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
@@ -186,19 +177,10 @@ end
         integrator.opts.internalnorm, t
     )
 
-    if repeat_step || !new_W
-        linres = dolinsolve(
-            integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-            du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtγ)
-        )
-    else
-        linres = dolinsolve(
-            integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-            du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtγ)
-        )
-    end
+    linres = dolinsolve(
+        integrator, cache.linsolve;
+        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
+    )
 
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
@@ -618,19 +600,10 @@ end
         integrator.opts.internalnorm, t
     )
 
-    if repeat_step || !new_W
-        linres = dolinsolve(
-            integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-            du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma)
-        )
-    else
-        linres = dolinsolve(
-            integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-            du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma)
-        )
-    end
+    linres = dolinsolve(
+        integrator, cache.linsolve;
+        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
+    )
 
     @.. $(_vec(ks[1])) = -linres.u
     integrator.stats.nsolve += 1
