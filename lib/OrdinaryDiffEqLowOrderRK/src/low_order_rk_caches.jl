@@ -1665,3 +1665,47 @@ function alg_cache(
         alg.step_limiter!, alg.thread
     )
 end
+
+@cache struct Ralston4Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    fsalfirst::rateType
+    k2::rateType
+    k3::rateType
+    k4::rateType
+    k::rateType
+    tmp::uType
+    tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function alg_cache(
+        alg::Ralston4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return Ralston4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+function alg_cache(
+        alg::Ralston4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = Ralston4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    fsalfirst = zero(rate_prototype)
+    k2 = zero(rate_prototype)
+    k3 = zero(rate_prototype)
+    k4 = zero(rate_prototype)
+    k = zero(rate_prototype)
+    tmp = zero(u)
+    return Ralston4Cache(
+        u, uprev, fsalfirst, k2, k3, k4, k, tmp, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
+end
