@@ -1588,3 +1588,357 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
     return nothing
 end
+
+# pRRK methods: Parametric Relaxation Runge-Kutta (Liu et al. 2023)
+# The pRRK modification adds a stabilization term κ(u - u) to the ODE.
+# This modifies the Shu-Osher coefficients:
+#   ψ₀ = 1, ψᵢ = Σⱼ ψⱼ(αᵢⱼ + z·βᵢⱼ) where z = κ·Δt
+#   α̂ᵢⱼ = (ψⱼ/ψᵢ)(αᵢⱼ + z·βᵢⱼ)
+#   β̂ᵢⱼ = (ψⱼ/ψᵢ)·βᵢⱼ
+# The effective time step becomes Δt̂ = ĉₛ·Δt where ĉₛ is the last abscissa.
+
+# Helper: compute modified coefficients for pRRK22
+# Base: u₁ = u₀ + Δt·f(u₀),  u₂ = ½u₀ + ½u₁ + ½Δt·f(u₁)
+@inline function _prrk22_coeffs(z, α10, β10, α20, α21, β21)
+    # ψ₀ = 1
+    # ψ₁ = α₁₀ + z·β₁₀
+    ψ1 = α10 + z * β10
+    # ψ₂ = (α₂₀ + 0) + ψ₁(α₂₁ + z·β₂₁)  (β₂₀=0)
+    ψ2 = α20 + ψ1 * (α21 + z * β21)
+
+    # Modified coefficients
+    α̂10 = (α10 + z * β10) / ψ1
+    β̂10 = β10 / ψ1
+
+    α̂20 = α20 / ψ2
+    α̂21 = ψ1 * (α21 + z * β21) / ψ2
+    β̂21 = ψ1 * β21 / ψ2
+
+    # Modified abscissae: ĉ₀ = 0, ĉ₁ = α̂₁₀·0 + β̂₁₀ = β̂₁₀
+    ĉ1 = β̂10
+    # ĉ₂ = α̂₂₀·0 + α̂₂₁·ĉ₁ + β̂₂₁
+    ĉ2 = α̂21 * ĉ1 + β̂21
+
+    return α̂10, β̂10, α̂20, α̂21, β̂21, ĉ1, ĉ2
+end
+
+function initialize!(integrator, cache::pRRK22ConstantCache)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.kshortsize = 1
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsallast = zero(integrator.fsalfirst)
+    return integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator, cache::pRRK22ConstantCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; κ, α10, β10, α20, α21, β21) = cache
+
+    z = κ * dt
+    α̂10, β̂10, α̂20, α̂21, β̂21, ĉ1, ĉ2 = _prrk22_coeffs(z, α10, β10, α20, α21, β21)
+
+    # Rescaled time step
+    dt_hat = ĉ2 * dt
+
+    # Stage 1
+    integrator.fsalfirst = f(uprev, p, t)
+    integrator.k[1] = integrator.fsalfirst
+    u1 = α̂10 * uprev + β̂10 * dt_hat * integrator.fsalfirst
+    k = f(u1, p, t + ĉ1 * dt_hat)
+
+    # Stage 2 (final)
+    u = α̂20 * uprev + α̂21 * u1 + β̂21 * dt_hat * k
+
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::pRRK22Cache)
+    (; k, fsalfirst) = cache
+    integrator.kshortsize = 1
+    resize!(integrator.k, integrator.kshortsize)
+    return integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator, cache::pRRK22Cache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k, fsalfirst, stage_limiter!, step_limiter!, thread) = cache
+    (; κ, α10, β10, α20, α21, β21) = cache.tab
+
+    z = κ * dt
+    α̂10, β̂10, α̂20, α̂21, β̂21, ĉ1, ĉ2 = _prrk22_coeffs(z, α10, β10, α20, α21, β21)
+
+    dt_hat = ĉ2 * dt
+
+    # Stage 1
+    f(fsalfirst, uprev, p, t)
+    @.. broadcast = false thread = thread u = α̂10 * uprev + β̂10 * dt_hat * fsalfirst
+    stage_limiter!(u, integrator, p, t + ĉ1 * dt_hat)
+    f(k, u, p, t + ĉ1 * dt_hat)
+
+    # Stage 2 (final)
+    @.. broadcast = false thread = thread u = α̂20 * uprev + α̂21 * u + β̂21 * dt_hat * k
+    stage_limiter!(u, integrator, p, t + dt_hat)
+    step_limiter!(u, integrator, p, t + dt_hat)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
+end
+
+# Helper: compute modified coefficients for pRRK33
+@inline function _prrk33_coeffs(z, α10, β10, α20, α21, β21, α30, α32, β32)
+    # ψ₁ = α₁₀ + z·β₁₀
+    ψ1 = α10 + z * β10
+    # ψ₂ = α₂₀ + ψ₁(α₂₁ + z·β₂₁)
+    ψ2 = α20 + ψ1 * (α21 + z * β21)
+    # ψ₃ = α₃₀ + ψ₂(α₃₂ + z·β₃₂)  (α₃₁=0, β₃₀=β₃₁=0)
+    ψ3 = α30 + ψ2 * (α32 + z * β32)
+
+    α̂10 = (α10 + z * β10) / ψ1
+    β̂10 = β10 / ψ1
+
+    α̂20 = α20 / ψ2
+    α̂21 = ψ1 * (α21 + z * β21) / ψ2
+    β̂21 = ψ1 * β21 / ψ2
+
+    α̂30 = α30 / ψ3
+    α̂32 = ψ2 * (α32 + z * β32) / ψ3
+    β̂32 = ψ2 * β32 / ψ3
+
+    # Modified abscissae
+    ĉ1 = β̂10
+    ĉ2 = α̂21 * ĉ1 + β̂21
+    ĉ3 = α̂32 * ĉ2 + β̂32
+
+    return α̂10, β̂10, α̂20, α̂21, β̂21, α̂30, α̂32, β̂32, ĉ1, ĉ2, ĉ3
+end
+
+function initialize!(integrator, cache::pRRK33ConstantCache)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.kshortsize = 1
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsallast = zero(integrator.fsalfirst)
+    return integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator, cache::pRRK33ConstantCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; κ, α10, β10, α20, α21, β21, α30, α32, β32) = cache
+
+    z = κ * dt
+    α̂10, β̂10, α̂20, α̂21, β̂21, α̂30, α̂32, β̂32, ĉ1, ĉ2, ĉ3 = _prrk33_coeffs(
+        z, α10, β10, α20, α21, β21, α30, α32, β32
+    )
+
+    dt_hat = ĉ3 * dt
+
+    # Stage 1
+    integrator.fsalfirst = f(uprev, p, t)
+    integrator.k[1] = integrator.fsalfirst
+    u1 = α̂10 * uprev + β̂10 * dt_hat * integrator.fsalfirst
+    k = f(u1, p, t + ĉ1 * dt_hat)
+
+    # Stage 2
+    u2 = α̂20 * uprev + α̂21 * u1 + β̂21 * dt_hat * k
+    k = f(u2, p, t + ĉ2 * dt_hat)
+
+    # Stage 3 (final)
+    u = α̂30 * uprev + α̂32 * u2 + β̂32 * dt_hat * k
+
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::pRRK33Cache)
+    (; k, fsalfirst) = cache
+    integrator.kshortsize = 1
+    resize!(integrator.k, integrator.kshortsize)
+    return integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator, cache::pRRK33Cache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k, fsalfirst, stage_limiter!, step_limiter!, thread) = cache
+    (; κ, α10, β10, α20, α21, β21, α30, α32, β32) = cache.tab
+
+    z = κ * dt
+    α̂10, β̂10, α̂20, α̂21, β̂21, α̂30, α̂32, β̂32, ĉ1, ĉ2, ĉ3 = _prrk33_coeffs(
+        z, α10, β10, α20, α21, β21, α30, α32, β32
+    )
+
+    dt_hat = ĉ3 * dt
+
+    # Stage 1
+    f(fsalfirst, uprev, p, t)
+    @.. broadcast = false thread = thread u = α̂10 * uprev + β̂10 * dt_hat * fsalfirst
+    stage_limiter!(u, integrator, p, t + ĉ1 * dt_hat)
+    f(k, u, p, t + ĉ1 * dt_hat)
+
+    # Stage 2 (reuse u as temporary)
+    @.. broadcast = false thread = thread u = α̂20 * uprev + α̂21 * u + β̂21 * dt_hat * k
+    stage_limiter!(u, integrator, p, t + ĉ2 * dt_hat)
+    f(k, u, p, t + ĉ2 * dt_hat)
+
+    # Stage 3 (final)
+    @.. broadcast = false thread = thread u = α̂30 * uprev + α̂32 * u + β̂32 * dt_hat * k
+    stage_limiter!(u, integrator, p, t + dt_hat)
+    step_limiter!(u, integrator, p, t + dt_hat)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
+end
+
+# Helper: compute modified coefficients for pRRK54
+@inline function _prrk54_coeffs(
+        z, β10, α20, α21, β21, α30, α32, β32,
+        α40, α43, β43, α52, α53, β53, α54, β54
+    )
+    # Stage indexing: 0=u₀, 1=u₁, 2=u₂, 3=u₃, 4=u₄, 5=u₅(=uₙ₊₁)
+    # Shu-Osher for SSPRK54 (only nonzero entries):
+    # u₁: α₁₀=1 (implicit), β₁₀
+    # u₂: α₂₀, α₂₁, β₂₁
+    # u₃: α₃₀, α₃₂, β₃₂
+    # u₄: α₄₀, α₄₃, β₄₃
+    # u₅: α₅₂, α₅₃, β₅₃, α₅₄, β₅₄
+    α10 = one(z)
+
+    ψ1 = α10 + z * β10
+    ψ2 = α20 + ψ1 * (α21 + z * β21)
+    ψ3 = α30 + ψ2 * (α32 + z * β32)
+    ψ4 = α40 + ψ3 * (α43 + z * β43)
+    ψ5 = ψ2 * (α52 + z * zero(z)) + ψ3 * (α53 + z * β53) + ψ4 * (α54 + z * β54)
+
+    # Modified α̂, β̂
+    α̂10 = (α10 + z * β10) / ψ1
+    β̂10 = β10 / ψ1
+
+    α̂20 = α20 / ψ2
+    α̂21 = ψ1 * (α21 + z * β21) / ψ2
+    β̂21 = ψ1 * β21 / ψ2
+
+    α̂30 = α30 / ψ3
+    α̂32 = ψ2 * (α32 + z * β32) / ψ3
+    β̂32 = ψ2 * β32 / ψ3
+
+    α̂40 = α40 / ψ4
+    α̂43 = ψ3 * (α43 + z * β43) / ψ4
+    β̂43 = ψ3 * β43 / ψ4
+
+    α̂52 = ψ2 * α52 / ψ5  # β₅₂=0
+    α̂53 = ψ3 * (α53 + z * β53) / ψ5
+    β̂53 = ψ3 * β53 / ψ5
+    α̂54 = ψ4 * (α54 + z * β54) / ψ5
+    β̂54 = ψ4 * β54 / ψ5
+
+    # Modified abscissae
+    ĉ1 = β̂10
+    ĉ2 = α̂21 * ĉ1 + β̂21
+    ĉ3 = α̂32 * ĉ2 + β̂32
+    ĉ4 = α̂43 * ĉ3 + β̂43
+    ĉ5 = α̂52 * ĉ2 + α̂53 * ĉ3 + β̂53 + α̂54 * ĉ4 + β̂54
+
+    return (
+        α̂10, β̂10, α̂20, α̂21, β̂21, α̂30, α̂32, β̂32,
+        α̂40, α̂43, β̂43, α̂52, α̂53, β̂53, α̂54, β̂54,
+        ĉ1, ĉ2, ĉ3, ĉ4, ĉ5,
+    )
+end
+
+function initialize!(integrator, cache::pRRK54ConstantCache)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.kshortsize = 1
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsallast = zero(integrator.fsalfirst)
+    return integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator, cache::pRRK54ConstantCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (;
+        κ, β10, α20, α21, β21, α30, α32, β32,
+        α40, α43, β43, α52, α53, β53, α54, β54,
+    ) = cache
+
+    z = κ * dt
+    (
+        α̂10, β̂10, α̂20, α̂21, β̂21, α̂30, α̂32, β̂32,
+        α̂40, α̂43, β̂43, α̂52, α̂53, β̂53, α̂54, β̂54,
+        ĉ1, ĉ2, ĉ3, ĉ4, ĉ5,
+    ) = _prrk54_coeffs(
+        z, β10, α20, α21, β21, α30, α32, β32,
+        α40, α43, β43, α52, α53, β53, α54, β54
+    )
+
+    dt_hat = ĉ5 * dt
+
+    # u₁
+    integrator.fsalfirst = f(uprev, p, t)
+    integrator.k[1] = integrator.fsalfirst
+    u₂ = α̂10 * uprev + β̂10 * dt_hat * integrator.fsalfirst
+    k = f(u₂, p, t + ĉ1 * dt_hat)
+    # u₂
+    u₂ = α̂20 * uprev + α̂21 * u₂ + β̂21 * dt_hat * k
+    k = f(u₂, p, t + ĉ2 * dt_hat)
+    # u₃
+    u₃ = α̂30 * uprev + α̂32 * u₂ + β̂32 * dt_hat * k
+    k₃ = f(u₃, p, t + ĉ3 * dt_hat)
+    # u₄
+    tmp = α̂40 * uprev + α̂43 * u₃ + β̂43 * dt_hat * k₃
+    k = f(tmp, p, t + ĉ4 * dt_hat)
+    # u₅ (final)
+    u = α̂52 * u₂ + α̂53 * u₃ + β̂53 * dt_hat * k₃ + α̂54 * tmp + β̂54 * dt_hat * k
+
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::pRRK54Cache)
+    (; k, fsalfirst) = cache
+    integrator.kshortsize = 1
+    resize!(integrator.k, integrator.kshortsize)
+    return integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator, cache::pRRK54Cache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k, fsalfirst, k₃, u₂, u₃, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (;
+        κ, β10, α20, α21, β21, α30, α32, β32,
+        α40, α43, β43, α52, α53, β53, α54, β54,
+    ) = cache.tab
+
+    z = κ * dt
+    (
+        α̂10, β̂10, α̂20, α̂21, β̂21, α̂30, α̂32, β̂32,
+        α̂40, α̂43, β̂43, α̂52, α̂53, β̂53, α̂54, β̂54,
+        ĉ1, ĉ2, ĉ3, ĉ4, ĉ5,
+    ) = _prrk54_coeffs(
+        z, β10, α20, α21, β21, α30, α32, β32,
+        α40, α43, β43, α52, α53, β53, α54, β54
+    )
+
+    dt_hat = ĉ5 * dt
+
+    # u₁
+    f(fsalfirst, uprev, p, t)
+    @.. broadcast = false thread = thread u₂ = α̂10 * uprev + β̂10 * dt_hat * fsalfirst
+    stage_limiter!(u₂, integrator, p, t + ĉ1 * dt_hat)
+    f(k, u₂, p, t + ĉ1 * dt_hat)
+    # u₂
+    @.. broadcast = false thread = thread u₂ = α̂20 * uprev + α̂21 * u₂ + β̂21 * dt_hat * k
+    stage_limiter!(u₂, integrator, p, t + ĉ2 * dt_hat)
+    f(k, u₂, p, t + ĉ2 * dt_hat)
+    # u₃
+    @.. broadcast = false thread = thread u₃ = α̂30 * uprev + α̂32 * u₂ + β̂32 * dt_hat * k
+    stage_limiter!(u₃, integrator, p, t + ĉ3 * dt_hat)
+    f(k₃, u₃, p, t + ĉ3 * dt_hat)
+    # u₄ -> stored as tmp
+    @.. broadcast = false thread = thread tmp = α̂40 * uprev + α̂43 * u₃ + β̂43 * dt_hat * k₃
+    stage_limiter!(tmp, integrator, p, t + ĉ4 * dt_hat)
+    f(k, tmp, p, t + ĉ4 * dt_hat)
+    # u₅ (final)
+    @.. broadcast = false thread = thread u = α̂52 * u₂ + α̂53 * u₃ + β̂53 * dt_hat * k₃ + α̂54 * tmp +
+        β̂54 * dt_hat * k
+    stage_limiter!(u, integrator, p, t + dt_hat)
+    step_limiter!(u, integrator, p, t + dt_hat)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
+end
