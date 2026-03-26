@@ -29,12 +29,14 @@ for (Alg, Description, Ref) in [
             iop = 0,
             """
         )
-        struct $Alg{CS, AD, FDT, ST, CJ} <:
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ}
+        struct $Alg{AD} <:
+            OrdinaryDiffEqExponentialAlgorithm
             krylov::Bool
             m::Int
             iop::Int
             autodiff::AD
+
+            concrete_jac::Union{Nothing, Bool}
         end
     end
     @eval function $Alg(;
@@ -43,14 +45,13 @@ for (Alg, Description, Ref) in [
         )
         autodiff = _fixup_ad(autodiff)
 
-        return $Alg{
-            _ad_chunksize_int(autodiff), typeof(autodiff),
-            _ad_fdtype(autodiff), true, _unwrap_val(concrete_jac),
-        }(
+        return $Alg(
             krylov,
             m,
             iop,
-            autodiff
+            autodiff,
+            _unwrap_val(concrete_jac)
+
         )
     end
 end
@@ -81,11 +82,13 @@ for (Alg, Description, Ref) in [
             iop = 0,
             """
         )
-        struct $Alg{CS, AD, FDT, ST, CJ} <:
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD, FDT, ST, CJ}
+        struct $Alg{AD} <:
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm
             m::Int
             iop::Int
             autodiff::AD
+
+            concrete_jac::Union{Nothing, Bool}
         end
     end
     @eval function $Alg(;
@@ -94,14 +97,12 @@ for (Alg, Description, Ref) in [
         )
         autodiff = _fixup_ad(autodiff)
 
-        return $Alg{
-            _ad_chunksize_int(autodiff), typeof(autodiff),
-            _ad_fdtype(autodiff), true,
-            _unwrap_val(concrete_jac),
-        }(
+        return $Alg(
             m,
             iop,
-            autodiff
+            autodiff,
+            _unwrap_val(concrete_jac)
+
         )
     end
 end
@@ -158,12 +159,14 @@ for (Alg, Description, Ref) in [
             """
         )
 
-        struct $Alg{CS, AD, FDT, ST, CJ} <:
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ}
+        struct $Alg{AD} <:
+            OrdinaryDiffEqExponentialAlgorithm
             adaptive_krylov::Bool
             m::Int
             iop::Int
             autodiff::AD
+
+            concrete_jac::Union{Nothing, Bool}
         end
     end
     @eval function $Alg(;
@@ -172,14 +175,13 @@ for (Alg, Description, Ref) in [
         )
         autodiff = _fixup_ad(autodiff)
 
-        return $Alg{
-            _ad_chunksize_int(autodiff), typeof(autodiff), _ad_fdtype(autodiff),
-            true, _unwrap_val(concrete_jac),
-        }(
+        return $Alg(
             adaptive_krylov,
             m,
             iop,
-            autodiff
+            autodiff,
+            _unwrap_val(concrete_jac)
+
         )
     end
 end
@@ -188,5 +190,4 @@ end
 ETD2: Exponential Runge-Kutta Method
 Second order Exponential Time Differencing method (in development).
 """
-struct ETD2 <:
-    OrdinaryDiffEqExponentialAlgorithm{0, false, Val{:forward}, Val{true}, nothing} end
+struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
