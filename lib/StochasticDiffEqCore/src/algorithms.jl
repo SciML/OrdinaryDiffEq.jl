@@ -1,5 +1,20 @@
-# All abstract algorithm types are now defined in OrdinaryDiffEqCore and imported
-# via StochasticDiffEqCore.jl (including Newton/Jump subtypes).
+# Abstract types are defined in OrdinaryDiffEqCore and imported via StochasticDiffEqCore.jl:
+# StochasticDiffEqAlgorithm, StochasticDiffEqAdaptiveAlgorithm,
+# StochasticDiffEqCompositeAlgorithm, StochasticDiffEqRODEAlgorithm,
+# StochasticDiffEqRODEAdaptiveAlgorithm, StochasticDiffEqRODECompositeAlgorithm
+
+abstract type StochasticDiffEqNewtonAdaptiveAlgorithm <:
+StochasticDiffEqAdaptiveAlgorithm end
+abstract type StochasticDiffEqNewtonAlgorithm <:
+StochasticDiffEqAlgorithm end
+
+abstract type StochasticDiffEqJumpAlgorithm <: StochasticDiffEqAlgorithm end
+abstract type StochasticDiffEqJumpAdaptiveAlgorithm <: StochasticDiffEqAlgorithm end
+abstract type StochasticDiffEqJumpNewtonAdaptiveAlgorithm <: StochasticDiffEqJumpAdaptiveAlgorithm end
+
+abstract type StochasticDiffEqJumpDiffusionAlgorithm <: StochasticDiffEqAlgorithm end
+abstract type StochasticDiffEqJumpDiffusionAdaptiveAlgorithm <: StochasticDiffEqAlgorithm end
+abstract type StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm <: StochasticDiffEqJumpDiffusionAdaptiveAlgorithm end
 
 abstract type IteratedIntegralApprox end
 
