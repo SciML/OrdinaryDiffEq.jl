@@ -2,22 +2,14 @@
 function _alg_autodiff(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have an autodifferentiation option defined.")
 end
-function _alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD}
-    return alg.autodiff
-end
-_alg_autodiff(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
-_alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
+_alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = alg.autodiff
+_alg_autodiff(alg::DAEAlgorithm) = alg.autodiff
+_alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm) = alg.autodiff
 _alg_autodiff(alg::CompositeAlgorithm) = _alg_autodiff(alg.algs[end])
-function _alg_autodiff(
-        alg::Union{
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
-        }
-    ) where {
-        CS, AD,
-    }
-    return alg.autodiff
-end
+_alg_autodiff(alg::Union{
+    OrdinaryDiffEqExponentialAlgorithm,
+    OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+}) = alg.autodiff
 
 function alg_autodiff(alg)
     return _alg_autodiff(alg)
@@ -36,18 +28,15 @@ end
 
 function DiffEqBase.prepare_alg(
         alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{
-                CS, AD,
-                FDT, ST,
-            },
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST},
-            DAEAlgorithm{CS, AD, FDT, ST},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST},
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+            OrdinaryDiffEqImplicitAlgorithm,
+            DAEAlgorithm,
+            OrdinaryDiffEqExponentialAlgorithm,
         },
         u0::AbstractArray{T},
         p, prob
-    ) where {CS, AD, FDT, ST, T}
-    prepped_AD = prepare_ADType(alg_autodiff(alg), prob, u0, p, Val{ST}())
+    ) where {T}
+    prepped_AD = prepare_ADType(alg_autodiff(alg), prob, u0, p, Val{true}())
 
     sparse_prepped_AD = prepare_user_sparsity(prepped_AD, prob)
 

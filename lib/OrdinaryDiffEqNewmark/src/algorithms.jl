@@ -15,13 +15,14 @@ time stepping procedure for dynamic analysis." Earthquake engineering &
 structural dynamics 20.9 (1991): 871-887, doi:
 https://doi.org/10.1002/eqe.4290200907
 """
-struct NewmarkBeta{PT, F, CS, AD, FDT, ST, CJ, Thread} <:
-    OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm{CS, AD, FDT, ST, CJ}
+struct NewmarkBeta{PT, F, AD, Thread} <:
+    OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm
     β::PT
     γ::PT
     nlsolve::F
     autodiff::AD
     thread::Thread
+    concrete_jac::Union{Nothing, Bool}
 end
 
 function NewmarkBeta(β, γ; kwargs...)
@@ -41,16 +42,12 @@ function NewmarkBeta(;
     @assert 0.0 ≤ β ≤ 0.5 "Beta outside admissible range [0, 0.5]"
     @assert 0.0 ≤ γ ≤ 1.0 "Gamma outside admissible range [0, 1.0]"
 
-    return NewmarkBeta{
-        typeof(β), typeof(nlsolve),
-        OrdinaryDiffEqCore._ad_chunksize_int(autodiff), typeof(autodiff),
-        OrdinaryDiffEqCore._ad_fdtype(autodiff), true,
-        _unwrap_val(concrete_jac),
-        typeof(thread),
-    }(
+    return NewmarkBeta(
         β, γ,
         nlsolve,
         autodiff,
         thread,
+        _unwrap_val(concrete_jac)
+
     )
 end
