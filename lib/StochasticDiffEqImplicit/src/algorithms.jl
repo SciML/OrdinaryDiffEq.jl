@@ -9,8 +9,8 @@ struct ImplicitEM{CS, AD, F, F2, P, FDT, ST, CJ, T2, Controller} <:
     symplectic::Bool
 end
 function ImplicitEM(;
-        chunk_size = 0, autodiff = true, diff_type = Val{:central},
-        standardtag = Val{true}(), concrete_jac = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
@@ -19,9 +19,10 @@ function ImplicitEM(;
         controller = :Predictive
     )
     return ImplicitEM{
-        chunk_size, autodiff,
-        typeof(linsolve), typeof(nlsolve), typeof(precs), diff_type,
-        SciMLBase._unwrap_val(standardtag),
+        OrdinaryDiffEqCore._ad_chunksize_int(autodiff), typeof(autodiff),
+        typeof(linsolve), typeof(nlsolve), typeof(precs),
+        OrdinaryDiffEqCore._ad_fdtype(autodiff),
+        true,
         SciMLBase._unwrap_val(concrete_jac),
         typeof(new_jac_conv_bound), controller,
     }(
@@ -45,8 +46,8 @@ struct ImplicitEulerHeun{CS, AD, F, P, FDT, ST, CJ, N, T2, Controller} <:
     symplectic::Bool
 end
 function ImplicitEulerHeun(;
-        chunk_size = 0, autodiff = true, diff_type = Val{:central},
-        standardtag = Val{true}(), concrete_jac = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
@@ -55,9 +56,10 @@ function ImplicitEulerHeun(;
         controller = :Predictive
     )
     return ImplicitEulerHeun{
-        chunk_size, autodiff,
-        typeof(linsolve), typeof(precs), diff_type,
-        SciMLBase._unwrap_val(standardtag),
+        OrdinaryDiffEqCore._ad_chunksize_int(autodiff), typeof(autodiff),
+        typeof(linsolve), typeof(precs),
+        OrdinaryDiffEqCore._ad_fdtype(autodiff),
+        true,
         SciMLBase._unwrap_val(concrete_jac),
         typeof(nlsolve),
         typeof(new_jac_conv_bound), controller,
@@ -80,8 +82,8 @@ struct ImplicitRKMil{CS, AD, F, P, FDT, ST, CJ, N, T2, Controller, interpretatio
     symplectic::Bool
 end
 function ImplicitRKMil(;
-        chunk_size = 0, autodiff = true, diff_type = Val{:central},
-        standardtag = Val{true}(), concrete_jac = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
@@ -90,9 +92,10 @@ function ImplicitRKMil(;
         controller = :Predictive, interpretation = SciMLBase.AlgorithmInterpretation.Ito
     )
     return ImplicitRKMil{
-        chunk_size, autodiff,
-        typeof(linsolve), typeof(precs), diff_type,
-        SciMLBase._unwrap_val(standardtag),
+        OrdinaryDiffEqCore._ad_chunksize_int(autodiff), typeof(autodiff),
+        typeof(linsolve), typeof(precs),
+        OrdinaryDiffEqCore._ad_fdtype(autodiff),
+        true,
         SciMLBase._unwrap_val(concrete_jac),
         typeof(nlsolve), typeof(new_jac_conv_bound),
         controller, interpretation,
@@ -115,8 +118,8 @@ struct ISSEM{CS, AD, F, P, FDT, ST, CJ, N, T2, Controller} <:
     symplectic::Bool
 end
 function ISSEM(;
-        chunk_size = 0, autodiff = true, diff_type = Val{:central},
-        standardtag = Val{true}(), concrete_jac = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
@@ -125,9 +128,10 @@ function ISSEM(;
         controller = :Predictive
     )
     return ISSEM{
-        chunk_size, autodiff,
-        typeof(linsolve), typeof(precs), diff_type,
-        SciMLBase._unwrap_val(standardtag),
+        OrdinaryDiffEqCore._ad_chunksize_int(autodiff), typeof(autodiff),
+        typeof(linsolve), typeof(precs),
+        OrdinaryDiffEqCore._ad_fdtype(autodiff),
+        true,
         SciMLBase._unwrap_val(concrete_jac),
         typeof(nlsolve),
         typeof(new_jac_conv_bound), controller,
@@ -150,8 +154,8 @@ struct ISSEulerHeun{CS, AD, F, P, FDT, ST, CJ, N, T2, Controller} <:
     symplectic::Bool
 end
 function ISSEulerHeun(;
-        chunk_size = 0, autodiff = true, diff_type = Val{:central},
-        standardtag = Val{true}(), concrete_jac = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
@@ -160,9 +164,10 @@ function ISSEulerHeun(;
         controller = :Predictive
     )
     return ISSEulerHeun{
-        chunk_size, autodiff,
-        typeof(linsolve), typeof(precs), diff_type,
-        SciMLBase._unwrap_val(standardtag),
+        OrdinaryDiffEqCore._ad_chunksize_int(autodiff), typeof(autodiff),
+        typeof(linsolve), typeof(precs),
+        OrdinaryDiffEqCore._ad_fdtype(autodiff),
+        true,
         SciMLBase._unwrap_val(concrete_jac),
         typeof(nlsolve), typeof(new_jac_conv_bound), controller,
     }(
@@ -185,8 +190,8 @@ struct SKenCarp{CS, AD, F, P, FDT, ST, CJ, N, T2, Controller} <:
 end
 
 function SKenCarp(;
-        chunk_size = 0, autodiff = true, diff_type = Val{:central},
-        standardtag = Val{true}(), concrete_jac = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :min_correct,
@@ -194,8 +199,10 @@ function SKenCarp(;
         ode_error_est = true
     )
     return SKenCarp{
-        chunk_size, autodiff, typeof(linsolve), typeof(precs), diff_type,
-        SciMLBase._unwrap_val(standardtag), SciMLBase._unwrap_val(concrete_jac),
+        OrdinaryDiffEqCore._ad_chunksize_int(autodiff), typeof(autodiff),
+        typeof(linsolve), typeof(precs),
+        OrdinaryDiffEqCore._ad_fdtype(autodiff),
+        true, SciMLBase._unwrap_val(concrete_jac),
         typeof(nlsolve), typeof(new_jac_conv_bound), controller,
     }(
         linsolve, nlsolve, precs, smooth_est, extrapolant, new_jac_conv_bound,
