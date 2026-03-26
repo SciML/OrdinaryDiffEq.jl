@@ -107,10 +107,9 @@ for (Alg, desc, refs, is_W) in [
             is_W ?
                 rosenbrock_wolfbrandt_docstring(desc, String(Alg), references = refs, with_step_limiter = true) :
                 rosenbrock_docstring(desc, String(Alg), references = refs, with_step_limiter = true)
-        ) struct $Alg{AD, F, P, StepLimiter, StageLimiter, CJ} <:
+        ) struct $Alg{AD, F, StepLimiter, StageLimiter, CJ} <:
             OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
             linsolve::F
-            precs::P
             step_limiter!::StepLimiter
             stage_limiter!::StageLimiter
             autodiff::AD
@@ -122,13 +121,13 @@ for (Alg, desc, refs, is_W) in [
                 autodiff = AutoForwardDiff(),
                 concrete_jac = nothing,
                 linsolve = nothing,
-                precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
+                step_limiter! = trivial_limiter!,
                 stage_limiter! = trivial_limiter!,
                 max_jac_age = $default_max_jac_age, jac_reuse_gamma_tol = 0.03
             )
             autodiff = _fixup_ad(autodiff)
             return $Alg(
-                linsolve, precs, step_limiter!,
+                linsolve, step_limiter!,
                 stage_limiter!, autodiff,
                 _unwrap_val(concrete_jac),
                 max_jac_age, jac_reuse_gamma_tol
@@ -150,10 +149,9 @@ $(
     )
 )
 """
-struct RosenbrockW6S4OS{AD, F, P, CJ} <:
+struct RosenbrockW6S4OS{AD, F, CJ} <:
     OrdinaryDiffEqRosenbrockAlgorithm
     linsolve::F
-    precs::P
     autodiff::AD
     concrete_jac::CJ
     max_jac_age::Int
@@ -161,17 +159,14 @@ struct RosenbrockW6S4OS{AD, F, P, CJ} <:
 end
 function RosenbrockW6S4OS(;
         autodiff = AutoForwardDiff(),
-
         concrete_jac = nothing,
         linsolve = nothing,
-        precs = DEFAULT_PRECS,
         max_jac_age = 20, jac_reuse_gamma_tol = 0.03
     )
     autodiff = _fixup_ad(autodiff)
 
     return RosenbrockW6S4OS(
-        linsolve,
-        precs, autodiff,
+        linsolve, autodiff,
         _unwrap_val(concrete_jac),
         max_jac_age, jac_reuse_gamma_tol
     )
@@ -308,10 +303,9 @@ for (Alg, desc, refs, is_W) in [
                     desc, String(Alg), references = refs, with_step_limiter = false
                 ) :
                 rosenbrock_docstring(desc, String(Alg), references = refs, with_step_limiter = false)
-        ) struct $Alg{AD, F, P, CJ} <:
+        ) struct $Alg{AD, F, CJ} <:
             OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
             linsolve::F
-            precs::P
             autodiff::AD
             concrete_jac::CJ
             max_jac_age::Int
@@ -320,14 +314,13 @@ for (Alg, desc, refs, is_W) in [
         function $Alg(;
                 autodiff = AutoForwardDiff(),
                 concrete_jac = nothing,
-                linsolve = nothing, precs = DEFAULT_PRECS,
+                linsolve = nothing,
                 max_jac_age = 20, jac_reuse_gamma_tol = 0.03
             )
             autodiff = _fixup_ad(autodiff)
 
             return $Alg(
-                linsolve,
-                precs, autodiff,
+                linsolve, autodiff,
                 _unwrap_val(concrete_jac),
                 max_jac_age, jac_reuse_gamma_tol
             )
@@ -339,12 +332,11 @@ end
 # HybridExplicitImplicitRK — generic tableau-based hybrid explicit/linear-implicit method
 ################################################################################
 
-struct HybridExplicitImplicitRK{TabType, AD, F, P, StepLimiter, StageLimiter, CJ} <:
+struct HybridExplicitImplicitRK{TabType, AD, F, StepLimiter, StageLimiter, CJ} <:
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
     tab::TabType
     order::Int
     linsolve::F
-    precs::P
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
     autodiff::AD
@@ -359,13 +351,13 @@ function HybridExplicitImplicitRK(
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing,
-        precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
+        step_limiter! = trivial_limiter!,
         stage_limiter! = trivial_limiter!,
         max_jac_age = 20, jac_reuse_gamma_tol = 0.03
     )
     autodiff = _fixup_ad(autodiff)
     return HybridExplicitImplicitRK(
-        tab, order, linsolve, precs, step_limiter!,
+        tab, order, linsolve, step_limiter!,
         stage_limiter!, autodiff,
         _unwrap_val(concrete_jac),
         max_jac_age, jac_reuse_gamma_tol
@@ -379,14 +371,14 @@ function HybridExplicitImplicitRK(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing,
-        precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
+        step_limiter! = trivial_limiter!,
         stage_limiter! = trivial_limiter!,
         max_jac_age = 20, jac_reuse_gamma_tol = 0.03
     )
     return HybridExplicitImplicitRK(
         tab;
         order, autodiff, concrete_jac,
-        linsolve, precs, step_limiter!, stage_limiter!,
+        linsolve, step_limiter!, stage_limiter!,
         max_jac_age, jac_reuse_gamma_tol
     )
 end

@@ -1,7 +1,7 @@
 module OrdinaryDiffEqIMEXMultistep
 
 import OrdinaryDiffEqCore: alg_order, issplit, OrdinaryDiffEqNewtonAlgorithm, _unwrap_val,
-    DEFAULT_PRECS, OrdinaryDiffEqConstantCache,
+    OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqMutableCache,
     @cache, alg_cache, initialize!, perform_step!,
     full_cache, get_fsalfirstlast, @SciMLMessage,

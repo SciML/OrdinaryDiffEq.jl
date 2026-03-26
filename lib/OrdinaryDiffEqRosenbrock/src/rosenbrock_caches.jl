@@ -218,17 +218,10 @@ function alg_cache(
 
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    Pl,
-        Pr = wrapprecs(
-        alg.precs(
-            W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing
-        )..., weight, tmp
-    )
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+        linprob, wrapprecs(alg.linsolve, W, weight),
+        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
@@ -278,18 +271,10 @@ function alg_cache(
 
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-
-    Pl,
-        Pr = wrapprecs(
-        alg.precs(
-            W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing
-        )..., weight, tmp
-    )
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+        linprob, wrapprecs(alg.linsolve, W, weight),
+        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
@@ -532,20 +517,12 @@ function alg_cache(
 
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
-    Pl,
-        Pr = wrapprecs(
-        alg.precs(
-            W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing
-        )..., weight, tmp
-    )
-
     linsolve_tmp = zero(rate_prototype)
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
 
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+        linprob, wrapprecs(alg.linsolve, W, weight),
+        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
@@ -682,16 +659,10 @@ function alg_cache(
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    Pl, Pr = wrapprecs(
-        alg.precs(
-            W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing
-        )..., weight, tmp
-    )
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+        linprob, wrapprecs(alg.linsolve, W, weight),
+        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
