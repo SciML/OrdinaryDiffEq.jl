@@ -34,8 +34,8 @@ Similar to Hairer's SEULEX.",
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct RadauIIA3{AD, F, P, Tol, C1, C2, StepLimiter} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
     extrapolant::Symbol
@@ -46,6 +46,7 @@ struct RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::Union{Nothing, Bool}
 end
 
 function RadauIIA3(;
@@ -59,12 +60,7 @@ function RadauIIA3(;
     )
     autodiff = _fixup_ad(autodiff)
 
-    return RadauIIA3{
-        _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve),
-        typeof(precs), _ad_fdtype(autodiff), true, _unwrap_val(concrete_jac),
-        typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!),
-    }(
+    return RadauIIA3(
         linsolve,
         precs,
         extrapolant,
@@ -74,7 +70,9 @@ function RadauIIA3(;
         new_W_γdt_cutoff,
         controller,
         step_limiter!,
-        autodiff
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -86,8 +84,8 @@ end
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct RadauIIA5{AD, F, P, Tol, C1, C2, StepLimiter} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
     smooth_est::Bool
@@ -99,6 +97,7 @@ struct RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::Union{Nothing, Bool}
 end
 
 function RadauIIA5(;
@@ -112,12 +111,7 @@ function RadauIIA5(;
     )
     autodiff = _fixup_ad(autodiff)
 
-    return RadauIIA5{
-        _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve),
-        typeof(precs), _ad_fdtype(autodiff), true, _unwrap_val(concrete_jac),
-        typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!),
-    }(
+    return RadauIIA5(
         linsolve,
         precs,
         smooth_est,
@@ -128,7 +122,9 @@ function RadauIIA5(;
         new_W_γdt_cutoff,
         controller,
         step_limiter!,
-        autodiff
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -141,8 +137,8 @@ Similar to Hairer's SEULEX.",
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA9{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct RadauIIA9{AD, F, P, Tol, C1, C2, StepLimiter} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
     smooth_est::Bool
@@ -154,6 +150,7 @@ struct RadauIIA9{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::Union{Nothing, Bool}
 end
 
 function RadauIIA9(;
@@ -167,12 +164,7 @@ function RadauIIA9(;
     )
     autodiff = _fixup_ad(autodiff)
 
-    return RadauIIA9{
-        _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve),
-        typeof(precs), _ad_fdtype(autodiff), true, _unwrap_val(concrete_jac),
-        typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!),
-    }(
+    return RadauIIA9(
         linsolve,
         precs,
         smooth_est,
@@ -183,7 +175,9 @@ function RadauIIA9(;
         new_W_γdt_cutoff,
         controller,
         step_limiter!,
-        autodiff
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 @doc differentiation_rk_docstring(
@@ -195,8 +189,8 @@ end
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, TO} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct AdaptiveRadau{AD, F, P, Tol, C1, C2, StepLimiter, TO} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
     smooth_est::Bool
@@ -211,6 +205,7 @@ struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, TO} <:
     max_order::Int
     threading::TO
     autodiff::AD
+    concrete_jac::Union{Nothing, Bool}
 end
 
 function AdaptiveRadau(;
@@ -225,12 +220,7 @@ function AdaptiveRadau(;
     )
     autodiff = _fixup_ad(autodiff)
 
-    return AdaptiveRadau{
-        _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve),
-        typeof(precs), _ad_fdtype(autodiff), true, _unwrap_val(concrete_jac),
-        typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!), typeof(threading),
-    }(
+    return AdaptiveRadau(
         linsolve,
         precs,
         smooth_est,
@@ -241,6 +231,8 @@ function AdaptiveRadau(;
         new_W_γdt_cutoff,
         controller,
         step_limiter!, min_order, max_order, threading,
-        autodiff
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
