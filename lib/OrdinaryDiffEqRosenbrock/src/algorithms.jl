@@ -121,25 +121,22 @@ for (Alg, desc, refs, is_W) in [
             jac_reuse_gamma_tol::Float64
         end
         function $Alg(;
-                chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-                standardtag = Val{true}(), concrete_jac = nothing,
-                diff_type = Val{:forward}(), linsolve = nothing,
+                autodiff = AutoForwardDiff(),
+                concrete_jac = nothing,
+                linsolve = nothing,
                 precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
                 stage_limiter! = trivial_limiter!,
                 max_jac_age = $default_max_jac_age, jac_reuse_gamma_tol = 0.03
             )
-            AD_choice, chunk_size,
-                diff_type = _process_AD_choice(
-                autodiff, chunk_size, diff_type
-            )
+            autodiff = _fixup_ad(autodiff)
             return $Alg{
-                _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-                typeof(precs), diff_type, _unwrap_val(standardtag),
+                _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve),
+                typeof(precs), _ad_fdtype(autodiff), true,
                 _unwrap_val(concrete_jac), typeof(step_limiter!),
                 typeof(stage_limiter!),
             }(
                 linsolve, precs, step_limiter!,
-                stage_limiter!, AD_choice, max_jac_age, jac_reuse_gamma_tol
+                stage_limiter!, autodiff, max_jac_age, jac_reuse_gamma_tol
             )
         end
     end
@@ -167,22 +164,22 @@ struct RosenbrockW6S4OS{CS, AD, F, P, FDT, ST, CJ} <:
     jac_reuse_gamma_tol::Float64
 end
 function RosenbrockW6S4OS(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
+        autodiff = AutoForwardDiff(),
+       
+        concrete_jac = nothing,
         linsolve = nothing,
         precs = DEFAULT_PRECS,
         max_jac_age = 20, jac_reuse_gamma_tol = 0.03
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
     return RosenbrockW6S4OS{
-        _unwrap_val(chunk_size),
-        typeof(AD_choice), typeof(linsolve), typeof(precs), diff_type,
-        _unwrap_val(standardtag), _unwrap_val(concrete_jac),
+        _ad_chunksize_int(autodiff),
+        typeof(autodiff), typeof(linsolve), typeof(precs), _ad_fdtype(autodiff),
+        true, _unwrap_val(concrete_jac),
     }(
         linsolve,
-        precs, AD_choice, max_jac_age, jac_reuse_gamma_tol
+        precs, autodiff, max_jac_age, jac_reuse_gamma_tol
     )
 end
 
@@ -330,23 +327,20 @@ for (Alg, desc, refs, is_W) in [
             jac_reuse_gamma_tol::Float64
         end
         function $Alg(;
-                chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-                standardtag = Val{true}(), concrete_jac = nothing,
-                diff_type = Val{:forward}(), linsolve = nothing, precs = DEFAULT_PRECS,
+                autodiff = AutoForwardDiff(),
+                concrete_jac = nothing,
+                linsolve = nothing, precs = DEFAULT_PRECS,
                 max_jac_age = 20, jac_reuse_gamma_tol = 0.03
             )
-            AD_choice, chunk_size,
-                diff_type = _process_AD_choice(
-                autodiff, chunk_size, diff_type
-            )
+            autodiff = _fixup_ad(autodiff)
 
             return $Alg{
-                _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-                typeof(precs), diff_type, _unwrap_val(standardtag),
+                _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve),
+                typeof(precs), _ad_fdtype(autodiff), true,
                 _unwrap_val(concrete_jac),
             }(
                 linsolve,
-                precs, AD_choice, max_jac_age, jac_reuse_gamma_tol
+                precs, autodiff, max_jac_age, jac_reuse_gamma_tol
             )
         end
     end
@@ -356,8 +350,9 @@ end
 # HybridExplicitImplicitRK — generic tableau-based hybrid explicit/linear-implicit method
 ################################################################################
 
-struct HybridExplicitImplicitRK{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
+struct HybridExplicitImplicitRK{TabType, CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    tab::TabType
     order::Int
     linsolve::F
     precs::P
@@ -368,26 +363,44 @@ struct HybridExplicitImplicitRK{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLim
     jac_reuse_gamma_tol::Float64
 end
 
-function HybridExplicitImplicitRK(;
+function HybridExplicitImplicitRK(
+        tab;
         order,
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(), linsolve = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing,
         precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
         stage_limiter! = trivial_limiter!,
         max_jac_age = 20, jac_reuse_gamma_tol = 0.03
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(
-        autodiff, chunk_size, diff_type
-    )
+    autodiff = _fixup_ad(autodiff)
     return HybridExplicitImplicitRK{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag),
+        typeof(tab), _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve),
+        typeof(precs), _ad_fdtype(autodiff), true,
         _unwrap_val(concrete_jac), typeof(step_limiter!),
         typeof(stage_limiter!),
     }(
-        order, linsolve, precs, step_limiter!,
-        stage_limiter!, AD_choice, max_jac_age, jac_reuse_gamma_tol
+        tab, order, linsolve, precs, step_limiter!,
+        stage_limiter!, autodiff, max_jac_age, jac_reuse_gamma_tol
+    )
+end
+
+# Keyword-only constructor for remake support
+function HybridExplicitImplicitRK(;
+        tab,
+        order,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing,
+        precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
+        stage_limiter! = trivial_limiter!,
+        max_jac_age = 20, jac_reuse_gamma_tol = 0.03
+    )
+    return HybridExplicitImplicitRK(
+        tab;
+        order, autodiff, concrete_jac,
+        linsolve, precs, step_limiter!, stage_limiter!,
+        max_jac_age, jac_reuse_gamma_tol
     )
 end
 
@@ -401,4 +414,4 @@ References:
 - Steinebach G., Rodas6P and Tsit5DA - two new Rosenbrock-type methods for DAEs.
   arXiv:2511.21252, 2025.
 """
-Tsit5DA(; kwargs...) = HybridExplicitImplicitRK(; order = 5, kwargs...)
+Tsit5DA(; kwargs...) = HybridExplicitImplicitRK(Tsit5DATableau; order = 5, kwargs...)
