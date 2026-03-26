@@ -110,7 +110,7 @@ function alg_cache(
     W1 = similar(J, Complex{eltype(W1)})
     recursivefill!(W1, false)
 
-    linprob = LinearProblem(W1, _vec(cubuff); u0 = _vec(dw12))
+    linprob = LinearProblem(W1, _vec(cubuff), (nothing, u, p, t); u0 = _vec(dw12))
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
@@ -263,14 +263,14 @@ function alg_cache(
     W2 = similar(J, Complex{eltype(W1)})
     recursivefill!(W2, false)
 
-    linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
+    linprob = LinearProblem(W1, _vec(ubuff), (nothing, u, p, t); u0 = _vec(dw1))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
-    linprob = LinearProblem(W2, _vec(cubuff); u0 = _vec(dw23))
+    linprob = LinearProblem(W2, _vec(cubuff), (nothing, u, p, t); u0 = _vec(dw23))
     linsolve2 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
@@ -469,21 +469,21 @@ function alg_cache(
     recursivefill!(W2, false)
     recursivefill!(W3, false)
 
-    linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
+    linprob = LinearProblem(W1, _vec(ubuff), (nothing, u, p, t); u0 = _vec(dw1))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
-    linprob = LinearProblem(W2, _vec(cubuff1); u0 = _vec(dw23))
+    linprob = LinearProblem(W2, _vec(cubuff1), (nothing, u, p, t); u0 = _vec(dw23))
     linsolve2 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
-    linprob = LinearProblem(W3, _vec(cubuff2); u0 = _vec(dw45))
+    linprob = LinearProblem(W3, _vec(cubuff2), (nothing, u, p, t); u0 = _vec(dw45))
     linsolve3 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
@@ -691,7 +691,7 @@ function alg_cache(
     W2 = [similar(J, Complex{eltype(W1)}) for _ in 1:((max_stages - 1) ÷ 2)]
     recursivefill!.(W2, false)
 
-    linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
+    linprob = LinearProblem(W1, _vec(ubuff), (nothing, u, p, t); u0 = _vec(dw1))
     linsolve1 = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
@@ -699,7 +699,7 @@ function alg_cache(
 
     linsolve2 = [
         init(
-                LinearProblem(W2[i], _vec(cubuff[i]); u0 = _vec(dw2[i])),
+                LinearProblem(W2[i], _vec(cubuff[i]), (nothing, u, p, t); u0 = _vec(dw2[i])),
                 alg.linsolve, alias = LinearAliasSpecifier(
                     alias_A = true, alias_b = true
                 ),
