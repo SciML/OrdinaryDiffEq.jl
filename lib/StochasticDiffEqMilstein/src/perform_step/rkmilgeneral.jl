@@ -43,6 +43,9 @@ Compute Stratonovich iterated integrals J. Strategy:
 4. **Fallback**: Return nothing → legacy LevyArea path.
 """
 function _compute_iterated_I(dt, dW, dZ, W_noise, cache, alg)
+    # Only for non-diagonal vector noise (dW must be a Vector, not Matrix or Number)
+    dW isa AbstractVector || return nothing
+
     m = length(dW)
 
     # Check if we have usable dZ for coefficient-based computation

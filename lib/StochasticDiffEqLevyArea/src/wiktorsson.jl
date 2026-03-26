@@ -4,8 +4,10 @@ convorder(::Wiktorsson) = 1 // 1
 errcoeff(m, h, ::Wiktorsson, ::MaxLp{2}) = √(5 * m) * h / (√12 * π)
 norv(m, n, ::Wiktorsson) = 2 * m * n + (m^2 - m) ÷ 2
 
-function levyarea(W::AbstractVector{T}, n::Integer, alg::Wiktorsson;
-        rng::AbstractRNG = default_rng()) where {T <: AbstractFloat}
+function levyarea(
+        W::AbstractVector{T}, n::Integer, alg::Wiktorsson;
+        rng::AbstractRNG = default_rng()
+    ) where {T <: AbstractFloat}
     m = length(W)
     A = similar(W, m, m)
     G = similar(W, m, m)
@@ -29,8 +31,10 @@ function levyarea(W::AbstractVector{T}, n::Integer, alg::Wiktorsson;
     return G
 end
 
-function levyarea(W::AbstractVector{T}, n::Integer, alg::Wiktorsson,
-        coeffs::LevyAreaCoefficients{T}) where {T <: AbstractFloat}
+function levyarea(
+        W::AbstractVector{T}, n::Integer, alg::Wiktorsson,
+        coeffs::LevyAreaCoefficients{T}
+    ) where {T <: AbstractFloat}
     return _wiktorsson_area(W, coeffs.X, copy(coeffs.Y), coeffs.tail, n, coeffs.m)
 end
 

@@ -13,8 +13,10 @@ Returns a vector of m-dimensional vectors, one per time point.
 Note: The coefficient layout differs by algorithm. For Fourier/Milstein/Wiktorsson,
 `coeffs.X[k,j]` = a_{j,k}. For MronRoe, `coeffs.X[j,k]` = a_{j,k}.
 """
-function reconstruct_path(dW::AbstractVector{T}, h::Real, coeffs::LevyAreaCoefficients{T},
-        t_points::AbstractVector) where {T <: AbstractFloat}
+function reconstruct_path(
+        dW::AbstractVector{T}, h::Real, coeffs::LevyAreaCoefficients{T},
+        t_points::AbstractVector
+    ) where {T <: AbstractFloat}
     m = length(dW)
     n = coeffs.n
     X = coeffs.X
@@ -51,11 +53,13 @@ Returns an m×m matrix J where:
 The accuracy improves with `n_quadrature` (number of evaluation points within
 the sub-interval) and with the truncation level `n` in the coefficients.
 """
-function iterated_integrals_subinterval(dW::AbstractVector{T}, h::Real,
+function iterated_integrals_subinterval(
+        dW::AbstractVector{T}, h::Real,
         coeffs::LevyAreaCoefficients{T},
         t_start::Real, t_end::Real;
         n_quadrature::Int = 64,
-        ito_correction::Bool = true) where {T <: AbstractFloat}
+        ito_correction::Bool = true
+    ) where {T <: AbstractFloat}
     m = length(dW)
     dt_sub = t_end - t_start
 

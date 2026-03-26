@@ -4,8 +4,10 @@ convorder(::MronRoe) = 1 // 1
 errcoeff(m, h, ::MronRoe, ::MaxLp{2}) = √m * h / (√12 * π)
 norv(m, n, ::MronRoe) = 2 * m * n + (m^2 + m) ÷ 2
 
-function levyarea(W::AbstractVector{T}, n::Integer, alg::MronRoe;
-        rng::AbstractRNG = default_rng()) where {T <: AbstractFloat}
+function levyarea(
+        W::AbstractVector{T}, n::Integer, alg::MronRoe;
+        rng::AbstractRNG = default_rng()
+    ) where {T <: AbstractFloat}
     m = length(W)
     X = randn(rng, T, m, n)
     Y = randn(rng, T, n, m)
@@ -29,8 +31,10 @@ function levyarea(W::AbstractVector{T}, n::Integer, alg::MronRoe;
     return A
 end
 
-function levyarea(W::AbstractVector{T}, n::Integer, alg::MronRoe,
-        coeffs::LevyAreaCoefficients{T}) where {T <: AbstractFloat}
+function levyarea(
+        W::AbstractVector{T}, n::Integer, alg::MronRoe,
+        coeffs::LevyAreaCoefficients{T}
+    ) where {T <: AbstractFloat}
     m = coeffs.m
     Ψ = coeffs.tail[1:m]
     tail_extra = coeffs.tail[(m + 1):end]
