@@ -8,7 +8,7 @@ equations. Fixed timestep only.", "ORK256",
     doi: https://doi.org/10.1016/j.jcp.2009.02.032",
     extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
     """,
-    extra_keyword_default = "williamson_condition = true"
+    extra_keyword_default = "williamson_condition = false"
 )
 Base.@kwdef struct ORK256{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -20,7 +20,7 @@ end
 function ORK256(
         stage_limiter!,
         step_limiter! = trivial_limiter!;
-        williamson_condition = true
+        williamson_condition = false
     )
     return ORK256(stage_limiter!, step_limiter!, False(), williamson_condition)
 end
@@ -38,7 +38,7 @@ geometric features of computational domain. Fixed timestep only.",
     doi: https://doi.org/10.1016/j.jcp.2011.11.024",
     extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
     """,
-    extra_keyword_default = "williamson_condition = true"
+    extra_keyword_default = "williamson_condition = false"
 )
 Base.@kwdef struct DGLDDRK73_C{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -49,7 +49,7 @@ end
 # for backwards compatibility
 function DGLDDRK73_C(
         stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = true
+        williamson_condition = false
     )
     return DGLDDRK73_C(
         stage_limiter!,
@@ -71,7 +71,7 @@ hyperbolic PDEs (stability properties).",
     }",
     extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
     """,
-    extra_keyword_default = "williamson_condition = true"
+    extra_keyword_default = "williamson_condition = false"
 )
 Base.@kwdef struct CarpenterKennedy2N54{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAlgorithm
@@ -84,7 +84,7 @@ end
 function CarpenterKennedy2N54(
         stage_limiter!,
         step_limiter! = trivial_limiter!;
-        williamson_condition = true
+        williamson_condition = false
     )
     return CarpenterKennedy2N54(stage_limiter!, step_limiter!, False(), williamson_condition)
 end
@@ -99,7 +99,7 @@ advection-dominated problems. Fixed timestep only.",
     doi: https://doi.org/10.1016/j.jcp.2011.09.003",
     extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
     """,
-    extra_keyword_default = "williamson_condition = true"
+    extra_keyword_default = "williamson_condition = false"
 )
 Base.@kwdef struct NDBLSRK124{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -110,7 +110,7 @@ end
 # for backwards compatibility
 function NDBLSRK124(
         stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = true
+        williamson_condition = false
     )
     return NDBLSRK124(
         stage_limiter!,
@@ -129,7 +129,7 @@ advection-dominated problems. Fixed timestep only.",
     doi: https://doi.org/10.1016/j.jcp.2011.09.003",
     extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
     """,
-    extra_keyword_default = "williamson_condition = true"
+    extra_keyword_default = "williamson_condition = false"
 )
 Base.@kwdef struct NDBLSRK144{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -140,7 +140,7 @@ end
 # for backwards compatibility
 function NDBLSRK144(
         stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = true
+        williamson_condition = false
     )
     return NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), False}(
         stage_limiter!,
@@ -207,7 +207,7 @@ geometric features of computational domain. Fixed timestep only.",
     doi: https://doi.org/10.1016/j.jcp.2011.11.024",
     extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
     """,
-    extra_keyword_default = "williamson_condition = true"
+    extra_keyword_default = "williamson_condition = false"
 )
 Base.@kwdef struct DGLDDRK84_C{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -218,7 +218,7 @@ end
 # for backwards compatibility
 function DGLDDRK84_C(
         stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = true
+        williamson_condition = false
     )
     return DGLDDRK84_C(
         stage_limiter!,
@@ -241,7 +241,7 @@ constrained. Fixed timestep only.",
     doi: https://doi.org/10.1016/j.jcp.2011.11.024",
     extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
     """,
-    extra_keyword_default = "williamson_condition = true"
+    extra_keyword_default = "williamson_condition = false"
 )
 Base.@kwdef struct DGLDDRK84_F{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -252,7 +252,7 @@ end
 # for backwards compatibility
 function DGLDDRK84_F(
         stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = true
+        williamson_condition = false
     )
     return DGLDDRK84_F(
         stage_limiter!,
@@ -273,7 +273,7 @@ end
     }",
     extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
     """,
-    extra_keyword_default = "williamson_condition = true"
+    extra_keyword_default = "williamson_condition = false"
 )
 Base.@kwdef struct SHLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -285,7 +285,7 @@ end
 function SHLDDRK64(
         stage_limiter!,
         step_limiter! = trivial_limiter!;
-        williamson_condition = true
+        williamson_condition = false
     )
     return SHLDDRK64(stage_limiter!, step_limiter!, False(), williamson_condition)
 end
@@ -1118,7 +1118,7 @@ Fixed timestep only.", "HSLDDRK64",
     }",
     extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
     """,
-    extra_keyword_default = "williamson_condition = true"
+    extra_keyword_default = "williamson_condition = false"
 )
 struct HSLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -1127,7 +1127,7 @@ struct HSLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     williamson_condition::Bool
     function HSLDDRK64(
             stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!;
-            williamson_condition = true, thread = False()
+            williamson_condition = false, thread = False()
         )
         Base.depwarn("HSLDDRK64 is deprecated, use SHLDDRK64 instead.", :HSLDDRK64)
         return SHLDDRK64(; stage_limiter!, step_limiter!, thread, williamson_condition)
@@ -1144,7 +1144,7 @@ advection-dominated problems. Fixed timestep only.",
     doi: https://doi.org/10.1016/j.jcp.2011.09.003",
     extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
     """,
-    extra_keyword_default = "williamson_condition = true"
+    extra_keyword_default = "williamson_condition = false"
 )
 Base.@kwdef struct NDBLSRK134{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -1155,7 +1155,7 @@ end
 # for backwards compatibility
 function NDBLSRK134(
         stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = true
+        williamson_condition = false
     )
     return NDBLSRK134(
         stage_limiter!,
