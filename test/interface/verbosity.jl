@@ -189,6 +189,11 @@ using NonlinearSolve: NonlinearVerbosity
         # Test that invalid individual fields throw errors
         @test_throws ArgumentError DEVerbosity(dt_NaN = "invalid")
         @test_throws ArgumentError DEVerbosity(unknown_field = SciMLLogging.InfoLevel())
+
+        # Test that Bool verbose is no longer supported (v7 breaking change)
+        prob_simple = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+        @test_throws ArgumentError solve(prob_simple, Tsit5(); verbose = true)
+        @test_throws ArgumentError solve(prob_simple, Tsit5(); verbose = false)
     end
 
     @testset "Multiple group settings" begin
