@@ -22,13 +22,14 @@
     year={2010},
     publisher={Wiley Online Library}}", "", ""
 )
-struct CNAB2{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+struct CNAB2{AD, F, F2, P} <:
+    OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     autodiff::AD
+    concrete_jac::Union{Nothing, Bool}
 end
 
 function CNAB2(;
@@ -39,15 +40,14 @@ function CNAB2(;
     )
     autodiff = _fixup_ad(autodiff)
 
-    return CNAB2{
-        _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve), typeof(nlsolve),
-        typeof(precs), _ad_fdtype(autodiff), true, _unwrap_val(concrete_jac),
-    }(
+    return CNAB2(
         linsolve,
         nlsolve,
         precs,
         extrapolant,
-        autodiff
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -72,13 +72,14 @@ end
     year={2015},
     publisher={Elsevier}}", "", ""
 )
-struct CNLF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+struct CNLF2{AD, F, F2, P} <:
+    OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     autodiff::AD
+    concrete_jac::Union{Nothing, Bool}
 end
 function CNLF2(;
         autodiff = AutoForwardDiff(),
@@ -88,14 +89,13 @@ function CNLF2(;
     )
     autodiff = _fixup_ad(autodiff)
 
-    return CNLF2{
-        _ad_chunksize_int(autodiff), typeof(autodiff), typeof(linsolve), typeof(nlsolve),
-        typeof(precs), _ad_fdtype(autodiff), true, _unwrap_val(concrete_jac),
-    }(
+    return CNLF2(
         linsolve,
         nlsolve,
         precs,
         extrapolant,
-        autodiff
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
