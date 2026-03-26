@@ -1,13 +1,13 @@
-struct RKMilGeneralConstantCache{JalgType} <: StochasticDiffEqConstantCache
+struct RKMilGeneralConstantCache{JalgType, dWType, dZType} <: StochasticDiffEqConstantCache
     Jalg::JalgType
     # For rejection handling: store original dW, dZ, dt from the first attempt
     # so sub-interval iterated integrals can be computed from the same Fourier coefficients
-    _dW_orig::Base.RefValue{Any}
-    _dZ_orig::Base.RefValue{Any}
+    _dW_orig::Base.RefValue{dWType}
+    _dZ_orig::Base.RefValue{dZType}
     _dt_orig::Base.RefValue{Float64}
 end
 
-@cache struct RKMilGeneralCache{uType, rateType, rateNoiseType, JalgType} <:
+@cache struct RKMilGeneralCache{uType, rateType, rateNoiseType, JalgType, dWType, dZType} <:
     StochasticDiffEqMutableCache
     u::uType
     uprev::uType
@@ -19,8 +19,8 @@ end
     mil_correction::uType
     ggprime::rateNoiseType
     Jalg::JalgType
-    _dW_orig::Base.RefValue{Any}
-    _dZ_orig::Base.RefValue{Any}
+    _dW_orig::Base.RefValue{dWType}
+    _dZ_orig::Base.RefValue{dZType}
     _dt_orig::Base.RefValue{Float64}
 end
 
@@ -31,8 +31,9 @@ function alg_cache(
         ::Type{Val{false}}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     Jalg = get_Jalg(DeltaW, dt, prob, alg)
-    return RKMilGeneralConstantCache(
-        Jalg, Ref{Any}(nothing), Ref{Any}(nothing), Ref(0.0))
+    dW_ref = Ref(copy(DeltaW))
+    dZ_ref = DeltaZ === nothing ? Ref{Nothing}(nothing) : Ref(copy(DeltaZ))
+    return RKMilGeneralConstantCache(Jalg, dW_ref, dZ_ref, Ref(0.0))
 end
 
 function alg_cache(
@@ -49,8 +50,10 @@ function alg_cache(
     mil_correction = zero(u)
     ggprime = zero(noise_rate_prototype)
     Jalg = get_Jalg(DeltaW, dt, prob, alg)
+    dW_ref = Ref(copy(DeltaW))
+    dZ_ref = DeltaZ === nothing ? Ref{Nothing}(nothing) : Ref(copy(DeltaZ))
     return RKMilGeneralCache(
         u, uprev, tmp, du1, du2, K, L, mil_correction, ggprime, Jalg,
-        Ref{Any}(nothing), Ref{Any}(nothing), Ref(0.0)
+        dW_ref, dZ_ref, Ref(0.0)
     )
 end

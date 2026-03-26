@@ -77,8 +77,8 @@ function _compute_iterated_I(dt, dW, dZ, W_noise, cache, alg)
     coeffs === nothing && return nothing
 
     # Cache for potential rejection retry
-    cache._dW_orig[] = collect(dW)
-    cache._dZ_orig[] = collect(dZ)
+    copyto!(cache._dW_orig[], dW)
+    copyto!(cache._dZ_orig[], dZ)
     cache._dt_orig[] = dt
 
     # Compute full-step Lévy area from coefficients (Stratonovich)
