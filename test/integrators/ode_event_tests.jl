@@ -30,9 +30,12 @@ condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
     return out[1] = -t - 2.95
 end
 
-affect! = function (integrator, idx)
-    return if idx == 1
-        integrator.u = integrator.u + 2
+affect! = function (integrator, events)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        if idx == 1
+            integrator.u = integrator.u + 2
+        end
     end
 end
 
@@ -70,9 +73,12 @@ condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
     return out[1] = t - 2.95
 end
 
-affect! = function (integrator, idx)
-    return if idx == 1
-        integrator.u = integrator.u .+ 2
+affect! = function (integrator, events)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        if idx == 1
+            integrator.u = integrator.u .+ 2
+        end
     end
 end
 
@@ -110,11 +116,15 @@ condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
     return out[1] = u[1]
 end
 
-affect! = nothing
-affect_neg! = function (integrator, idx)
-    return if idx == 1
-        integrator.u[2] = -integrator.u[2]
+affect! = function (integrator, events)
+    for (idx, dir) in enumerate(events)
+        if dir == 1 && idx == 1 # downcrossing
+            integrator.u[2] = -integrator.u[2]
+        end
     end
+end
+affect_neg! = function (integrator)
+    return integrator.u[2] = -integrator.u[2]
 end
 
 vcb = VectorContinuousCallback(condition, affect!, 1, interp_points = 100)
@@ -156,15 +166,16 @@ condition_single = function (out, u, t, integrator) # Event when event_f(u,t,k) 
     return out[1] = u[1]
 end
 
-affect! = nothing
-affect_neg! = function (integrator, idx)
-    return if idx == 1
-        integrator.u[2] = -integrator.u[2]
+affect! = function (integrator, events)
+    for (idx, dir) in enumerate(events)
+        if dir == 1 && idx == 1 # downcrossing
+            integrator.u[2] = -integrator.u[2]
+        end
     end
 end
 
 callback_single = VectorContinuousCallback(
-    condition_single, affect!, affect_neg!, 1,
+    condition_single, affect!, 1,
     interp_points = 100
 )
 
@@ -250,12 +261,15 @@ affect! = function (integrator, retcode = nothing)
     end
 end
 
-vaffect! = function (integrator, idx, retcode = nothing)
-    return if idx == 1
-        if retcode === nothing
-            terminate!(integrator)
-        else
-            terminate!(integrator, retcode)
+vaffect! = function (integrator, events, retcode = nothing)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        if idx == 1
+            if retcode === nothing
+                terminate!(integrator)
+            else
+                terminate!(integrator, retcode)
+            end
         end
     end
 end
@@ -268,8 +282,8 @@ custom_retcode_callback = ContinuousCallback(
 vterminate_callback = VectorContinuousCallback(vcondition, vaffect!, 1)
 vcustom_retcode_callback = VectorContinuousCallback(
     vcondition,
-    (x, idx) -> vaffect!(
-        x, idx,
+    (x, events) -> vaffect!(
+        x, events,
         ReturnCode.MaxIters
     ),
     1
@@ -302,19 +316,21 @@ affect2! = function (integrator)
     end
 end
 
-vaffect2! = function (integrator, idx)
-    return if idx == 1
-        if integrator.t >= 3.5
-            terminate!(integrator)
-        else
-            integrator.u[2] = -integrator.u[2]
+vaffect2! = function (integrator, events)
+    for (idx, dir) in enumerate(events)
+        if dir == 1 && idx == 1 # downcrossing
+            if integrator.t >= 3.5
+                terminate!(integrator)
+            else
+                integrator.u[2] = -integrator.u[2]
+            end
         end
     end
 end
 
 terminate_callback2 = ContinuousCallback(condition, nothing, affect2!, interp_points = 100)
 vterminate_callback2 = VectorContinuousCallback(
-    vcondition, nothing, vaffect2!, 1,
+    vcondition, vaffect2!, 1,
     interp_points = 100
 )
 
@@ -394,9 +410,12 @@ condition = function (out, u, t, integrator)
     return out[1] = t - 0.5
 end
 n = 0
-affect! = function (integrator, event_index)
+affect! = function (integrator, events)
     global n
-    return n += 1
+    for (_, dir) in enumerate(events)
+        iszero(dir) && continue
+        n += 1
+    end
 end
 callback = VectorContinuousCallback(condition, affect!, 1)
 sol = solve(prob, Tsit5(), callback = callback)
@@ -462,4 +481,167 @@ step!(integrator, 1.0e-5, true)
     prob = ODEProblem(A, u0, (0, 1.0))
     solve(prob, LinearExponential(), dt = t_l[2] - t_l[1], callback = cb)
     @test length(saved_values.saveval) == length(t_l)
+end
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/3222
+# Friction state machine where a velocity zero crossing under one discrete state
+# (SLIDING_LEFT, condition 6) transitions to a new state (SLIDING_RIGHT) where
+# the corresponding condition (condition 2) is immediately at zero. The rootfinder
+# can't detect this because condition 2 starts at zero rather than crossing through
+# it. With the simultaneous events API, the user can chain the transition in the
+# affect! function.
+@testset "Issue #3222: chained velocity crossing in friction state machine" begin
+    _LEFT_STOP, _SLIDING_RIGHT, _STOPPED, _SLIDING_LEFT, _RIGHT_STOP = 1:5
+
+    mutable struct _FrictionParams
+        M::Float64
+        kf::Float64
+        Fsp::Float64
+        xls::Float64
+        xrs::Float64
+        Fsf::Float64
+        Fkf::Float64
+        cor::Float64
+        state::Int
+        A::Float64
+        minbouncespeed::Float64
+    end
+
+    _P(t) = t > 0.0 ? 6895 * (18 + 4 * sin(2π * 250 * t)) : 0.0
+
+    function _friction_ode(u, p, t)
+        v, x = u
+        Fspring = p.kf * x + p.Fsp
+        st = p.state
+        if st == _LEFT_STOP
+            dv = 0.0; dx = 0.0
+        elseif st == _SLIDING_RIGHT
+            dv = 1 / p.M * (_P(t) * p.A - p.Fkf - Fspring); dx = v
+        elseif st == _STOPPED
+            dv = 0.0; dx = 0.0
+        elseif st == _SLIDING_LEFT
+            dv = 1 / p.M * (_P(t) * p.A + p.Fkf - Fspring); dx = v
+        else
+            dv = 0.0; dx = 0.0
+        end
+        @SVector [dv, dx]
+    end
+
+    function _friction_condition(out, u, t, integ)
+        p = integ.p
+        v, x = u
+        Fspring = p.kf * x + p.Fsp
+        st = p.state
+        out[1] = (st == _LEFT_STOP) * (_P(t) * p.A - p.Fsf - Fspring)
+        out[2] = (st == _SLIDING_RIGHT) * (-v)
+        out[3] = (st == _SLIDING_RIGHT) * (x - p.xrs)
+        out[4] = (st == _STOPPED) * (_P(t) * p.A - p.Fsf - Fspring)
+        out[5] = (st == _STOPPED) * (-(_P(t) * p.A + p.Fsf - Fspring))
+        out[6] = (st == _SLIDING_LEFT) * v
+        out[7] = (st == _SLIDING_LEFT) * (-(x - p.xls))
+        out[8] = (st == _RIGHT_STOP) * (-(_P(t) * p.A - Fspring + p.Fsf))
+    end
+
+    affect_log = Tuple{Float64, Int, Int}[]  # (t, idx, new_state)
+
+    function _friction_affect!(integ, events)
+        p = integ.p
+        v, x = integ.u
+        t = integ.t
+        Fspring = p.Fsp + x * p.kf
+
+        for (idx, dir) in enumerate(events)
+            iszero(dir) && continue
+
+            if idx == 1
+                p.state = _SLIDING_RIGHT
+            elseif idx == 2
+                if _P(t) * p.A - Fspring < -p.Fkf
+                    p.state = _SLIDING_LEFT
+                else
+                    p.state = _STOPPED
+                end
+            elseif idx == 3
+                if p.cor == 0.0 || p.cor * v < p.minbouncespeed
+                    p.state = _RIGHT_STOP
+                    integ.u = @SVector [0.0, integ.u[2]]
+                else
+                    p.state = _SLIDING_LEFT
+                    integ.u = @SVector [-p.cor * v, integ.u[2]]
+                end
+            elseif idx == 4
+                p.state = _SLIDING_RIGHT
+            elseif idx == 5
+                p.state = _SLIDING_LEFT
+            elseif idx == 6
+                if _P(t) * p.A - Fspring > p.Fkf
+                    p.state = _SLIDING_RIGHT
+                else
+                    p.state = _STOPPED
+                    integ.u = @SVector [0.0, integ.u[2]]
+                end
+            elseif idx == 7
+                if p.cor == 0.0 || -p.cor * v < p.minbouncespeed
+                    p.state = _LEFT_STOP
+                    integ.u = @SVector [0.0, integ.u[2]]
+                else
+                    p.state = _SLIDING_RIGHT
+                    integ.u = @SVector [-p.cor * v, integ.u[2]]
+                end
+            elseif idx == 8
+                p.state = _SLIDING_LEFT
+            end
+            push!(affect_log, (t, idx, p.state))
+
+            # Chain: when a velocity-zero event (idx 2 or 6) transitions to
+            # the opposite sliding state, v is still ≈0 so the new state's
+            # velocity-crossing condition is immediately at its trigger point.
+            # The rootfinder can't detect a crossing that starts at zero, so
+            # handle it explicitly here.
+            v_now = integ.u[1]
+            if (idx == 2 || idx == 6) && abs(v_now) < 1e-8 &&
+                    (p.state == _SLIDING_RIGHT || p.state == _SLIDING_LEFT)
+                prev_state = p.state
+                if p.state == _SLIDING_RIGHT
+                    if _P(t) * p.A - Fspring < -p.Fkf
+                        p.state = _SLIDING_LEFT
+                    else
+                        p.state = _STOPPED
+                    end
+                elseif p.state == _SLIDING_LEFT
+                    if _P(t) * p.A - Fspring > p.Fkf
+                        p.state = _SLIDING_RIGHT
+                    else
+                        p.state = _STOPPED
+                        integ.u = @SVector [0.0, integ.u[2]]
+                    end
+                end
+                push!(affect_log, (t, idx, p.state))
+            end
+        end
+    end
+
+    vcb = VectorContinuousCallback(_friction_condition, _friction_affect!, nothing,
+        save_positions = (true, true), 8)
+
+    p = _FrictionParams(0.0003361185937456267, 1488.578099595049, 8.54503372291542,
+        0.0, 0.001016, 1.0, 1.0, 0.3, _LEFT_STOP,
+        7.373657906574696e-5, 0.001)
+    u0 = @SVector [0.0, 0.0]
+    prob = ODEProblem(_friction_ode, u0, (-10e-6, 0.0025), p)
+    empty!(affect_log)
+    sol = solve(prob, Rodas5(), callback = vcb, reltol = 1e-6, abstol = 1e-6,
+        save_everystep = true)
+
+    # The chained logic should catch the v≈0 condition when idx=6 transitions
+    # to SLIDING_RIGHT, immediately chaining to STOPPED.
+    has_chained_transition = any(affect_log) do (t, idx, new_state)
+        idx == 6 && new_state == _STOPPED
+    end
+    @test has_chained_transition
+
+    # With the chain, velocity should stay ≈0 through the previously-problematic
+    # region (t=0.00128 to t=0.00135) instead of going negative without a callback.
+    @test abs(sol(0.00128)[1]) < 0.01
+    @test abs(sol(0.00135)[1]) < 0.01
 end

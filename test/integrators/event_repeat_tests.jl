@@ -28,17 +28,20 @@ c3 = Ref(0)
 c4 = Ref(0)
 c5 = Ref(0)
 
-function affect_v!(integrator, idx)
-    return if idx == 1
-        c1[] += 1
-    elseif idx == 2
-        c2[] += 1
-    elseif idx == 3
-        c3[] += 1
-    elseif idx == 4
-        c4[] += 1
-    elseif idx == 5
-        c5[] += 1
+function affect_v!(integrator, events)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        if idx == 1
+            c1[] += 1
+        elseif idx == 2
+            c2[] += 1
+        elseif idx == 3
+            c3[] += 1
+        elseif idx == 4
+            c4[] += 1
+        elseif idx == 5
+            c5[] += 1
+        end
     end
 end
 
