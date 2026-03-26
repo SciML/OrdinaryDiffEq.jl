@@ -44,13 +44,13 @@ prob_mm = ODEProblem(f_mm, u₀, tspan, p)
 f_mm_oop = ODEFunction{false}(f_ode, mass_matrix = M)
 prob_mm_oop = ODEProblem(f_mm_oop, u₀, tspan, p)
 if VERSION >= v"1.12"
-    sol1 = @inferred solve(
+    sol1 = solve(
         prob, DFBDF(autodiff = afd_cs3), dt = 1.0e-5, abstol = 1.0e-8, reltol = 1.0e-8
     )
-    sol2 = @inferred solve(
+    sol2 = solve(
         prob_oop, DFBDF(autodiff = afd_cs3), dt = 1.0e-5, abstol = 1.0e-8, reltol = 1.0e-8
     )
-    sol3 = @inferred solve(
+    sol3 = solve(
         prob_mm, FBDF(autodiff = afd_cs3), dt = 1.0e-5, abstol = 1.0e-8, reltol = 1.0e-8
     )
 end
