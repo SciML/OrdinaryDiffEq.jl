@@ -13,14 +13,14 @@
     }",
     extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.
     """,
-    extra_keyword_default = "lazy = true"
+    extra_keyword_default = "lazy = false"
 )
 Base.@kwdef struct Vern6{StageLimiter, StepLimiter, Thread, L} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
-    lazy::L = Val{true}()
+    lazy::L = Val{false}()
 end
 @truncate_stacktrace Vern6 3
 # Convert Bool lazy to Val for backwards compatibility
@@ -28,7 +28,7 @@ function Vern6(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
     return Vern6{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
 end
 # for backwards compatibility
-function Vern6(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
+function Vern6(stage_limiter!, step_limiter! = trivial_limiter!; lazy = false)
     return Vern6(stage_limiter!, step_limiter!, False(), lazy)
 end
 
@@ -47,14 +47,14 @@ end
     }",
     extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.
     """,
-    extra_keyword_default = "lazy = true"
+    extra_keyword_default = "lazy = false"
 )
 Base.@kwdef struct Vern7{StageLimiter, StepLimiter, Thread, L} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
-    lazy::L = Val{true}()
+    lazy::L = Val{false}()
 end
 @truncate_stacktrace Vern7 3
 # Convert Bool lazy to Val for backwards compatibility
@@ -62,7 +62,7 @@ function Vern7(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
     return Vern7{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
 end
 # for backwards compatibility
-function Vern7(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
+function Vern7(stage_limiter!, step_limiter! = trivial_limiter!; lazy = false)
     return Vern7(stage_limiter!, step_limiter!, False(), lazy)
 end
 
@@ -81,14 +81,14 @@ end
     }",
     extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.
     """,
-    extra_keyword_default = "lazy = true"
+    extra_keyword_default = "lazy = false"
 )
 Base.@kwdef struct Vern8{StageLimiter, StepLimiter, Thread, L} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
-    lazy::L = Val{true}()
+    lazy::L = Val{false}()
 end
 @truncate_stacktrace Vern8 3
 # Convert Bool lazy to Val for backwards compatibility
@@ -96,7 +96,7 @@ function Vern8(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
     return Vern8{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
 end
 # for backwards compatibility
-function Vern8(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
+function Vern8(stage_limiter!, step_limiter! = trivial_limiter!; lazy = false)
     return Vern8(stage_limiter!, step_limiter!, False(), lazy)
 end
 
@@ -114,14 +114,14 @@ end
     publisher={Springer}
     }",
     extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.
-    """, extra_keyword_default = "lazy = true"
+    """, extra_keyword_default = "lazy = false"
 )
 Base.@kwdef struct Vern9{StageLimiter, StepLimiter, Thread, L} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
-    lazy::L = Val{true}()
+    lazy::L = Val{false}()
 end
 @truncate_stacktrace Vern9 3
 # Convert Bool lazy to Val for backwards compatibility
@@ -129,7 +129,7 @@ function Vern9(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
     return Vern9{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
 end
 # for backwards compatibility
-function Vern9(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
+function Vern9(stage_limiter!, step_limiter! = trivial_limiter!; lazy = false)
     return Vern9(stage_limiter!, step_limiter!, False(), lazy)
 end
 
@@ -142,7 +142,7 @@ This method is equivalent to `AutoAlgSwitch(Vern6(), stiff_alg; kwargs...)`.
 To gain access to stiff algorithms you might have to install additional libraries,
 such as `OrdinaryDiffEqRosenbrock`.
 """
-AutoVern6(alg; lazy = true, kwargs...) = AutoAlgSwitch(Vern6(lazy = lazy), alg; kwargs...)
+AutoVern6(alg; lazy = false, kwargs...) = AutoAlgSwitch(Vern6(lazy = lazy), alg; kwargs...)
 """
 Automatic switching algorithm that can switch between the (non-stiff) `Vern7()` and `stiff_alg`.
 
@@ -152,7 +152,7 @@ This method is equivalent to `AutoAlgSwitch(Vern7(), stiff_alg; kwargs...)`.
 To gain access to stiff algorithms you might have to install additional libraries,
 such as `OrdinaryDiffEqRosenbrock`.
 """
-AutoVern7(alg; lazy = true, kwargs...) = AutoAlgSwitch(Vern7(lazy = lazy), alg; kwargs...)
+AutoVern7(alg; lazy = false, kwargs...) = AutoAlgSwitch(Vern7(lazy = lazy), alg; kwargs...)
 """
 Automatic switching algorithm that can switch between the (non-stiff) `Vern8()` and `stiff_alg`.
 
@@ -162,7 +162,7 @@ This method is equivalent to `AutoAlgSwitch(Vern8(), stiff_alg; kwargs...)`.
 To gain access to stiff algorithms you might have to install additional libraries,
 such as `OrdinaryDiffEqRosenbrock`.
 """
-AutoVern8(alg; lazy = true, kwargs...) = AutoAlgSwitch(Vern8(lazy = lazy), alg; kwargs...)
+AutoVern8(alg; lazy = false, kwargs...) = AutoAlgSwitch(Vern8(lazy = lazy), alg; kwargs...)
 """
 Automatic switching algorithm that can switch between the (non-stiff) `Vern9()` and `stiff_alg`.
 
@@ -172,7 +172,7 @@ This method is equivalent to `AutoAlgSwitch(Vern9(), stiff_alg; kwargs...)`.
 To gain access to stiff algorithms you might have to install additional libraries,
 such as `OrdinaryDiffEqRosenbrock`.
 """
-AutoVern9(alg; lazy = true, kwargs...) = AutoAlgSwitch(Vern9(lazy = lazy), alg; kwargs...)
+AutoVern9(alg; lazy = false, kwargs...) = AutoAlgSwitch(Vern9(lazy = lazy), alg; kwargs...)
 
 
 @doc explicit_rk_docstring(
@@ -186,14 +186,14 @@ AutoVern9(alg; lazy = true, kwargs...) = AutoAlgSwitch(Vern9(lazy = lazy), alg; 
     }",
     extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.
     """,
-    extra_keyword_default = "lazy = true"
+    extra_keyword_default = "lazy = false"
 )
 Base.@kwdef struct RKV76IIa{StageLimiter, StepLimiter, Thread, L} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
-    lazy::L = Val{true}()
+    lazy::L = Val{false}()
 end
 @truncate_stacktrace RKV76IIa 3
 # Convert Bool lazy to Val for backwards compatibility
@@ -201,6 +201,6 @@ function RKV76IIa(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
     return RKV76IIa{SL, STL, TH, Val{lazy}}(sl, stl, th, Val{lazy}())
 end
 # for backwards compatibility
-function RKV76IIa(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
+function RKV76IIa(stage_limiter!, step_limiter! = trivial_limiter!; lazy = false)
     return RKV76IIa(stage_limiter!, step_limiter!, False(), lazy)
 end

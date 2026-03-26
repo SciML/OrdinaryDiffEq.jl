@@ -45,4 +45,14 @@ end
     @test isnothing(stripped_sol.interp.cache.args)
 end
 
-@test_throws SciMLBase.LazyInterpolationException SciMLBase.strip_solution(vern_sol)
+@testset "Vern Solution Stripping (default lazy=false)" begin
+    # With default lazy=false, strip_solution should work
+    stripped_sol = SciMLBase.strip_solution(vern_sol)
+    @test stripped_sol.prob isa NamedTuple
+end
+
+@testset "Vern Solution Stripping (explicit lazy=true)" begin
+    # With explicit lazy=true, strip_solution should throw
+    vern_lazy_sol = solve(prob, Vern7(lazy = true))
+    @test_throws SciMLBase.LazyInterpolationException SciMLBase.strip_solution(vern_lazy_sol)
+end
