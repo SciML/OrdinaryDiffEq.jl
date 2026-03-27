@@ -4,47 +4,65 @@ $(DocStringExtensions.README)
 module OrdinaryDiffEq
 
 import DocStringExtensions
-using Reexport
 
-# OrdinaryDiffEqCore provides core utilities and re-exports SciMLBase.
-@reexport using OrdinaryDiffEqCore
+# Load packages (no blanket @reexport)
+using OrdinaryDiffEqCore
+using OrdinaryDiffEqDefault
 
-# OrdinaryDiffEqDefault provides: DefaultODEAlgorithm and the default algorithm
-# selection logic. It transitively depends on Tsit5, Verner, Rosenbrock, and BDF.
-@reexport using OrdinaryDiffEqDefault
-
-# Import only the widely-used algorithms from OrdinaryDiffEqDefault's dependencies.
-# We intentionally do NOT @reexport the full sub-packages so that less common
-# algorithms (e.g. other Rosenbrock or BDF variants) stay opt-in.
+# Import specific algorithms from OrdinaryDiffEqDefault's dependencies
 using OrdinaryDiffEqTsit5: Tsit5, AutoTsit5
 using OrdinaryDiffEqVerner: Vern6, Vern7, Vern8, Vern9,
     AutoVern6, AutoVern7, AutoVern8, AutoVern9
 using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas5P
 using OrdinaryDiffEqBDF: FBDF
 
-# Re-export specific core utilities that were previously exported
+# Import ODE-relevant types from SciMLBase
+using SciMLBase: SciMLBase,
+    ODEProblem, ODEFunction, ODESolution,
+    SplitODEProblem, SplitFunction,
+    SecondOrderODEProblem, DynamicalODEProblem,
+    DAEProblem, DAEFunction, DAESolution,
+    CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
+    ReturnCode,
+    remake, successful_retcode, reinit!
+
+# Import ADTypes for autodiff specification
+using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
+
+# Import from OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqCore,
-    CompositeAlgorithm,
-    ShampineCollocationInit, BrownFullBasicInit, NoInit,
-    du_cache, full_cache, isfsal, ode_interpolant, u_cache,
-    AutoSwitch,
-    IController, PIController, PIDController
+    CompositeAlgorithm, AutoSwitch
+
+# Import from OrdinaryDiffEqDefault
+using OrdinaryDiffEqDefault: DefaultODEAlgorithm, DefaultImplicitODEAlgorithm
 
 import CommonSolve: init, solve, solve!, step!
-import SciMLBase: SciMLBase, addsteps!, savevalues!, terminate!
+
+# --- Exports ---
 
 # General Functions
 export solve, solve!, init, step!
 
-# Callback Necessary
-export addsteps!, ode_interpolant, terminate!, savevalues!, isfsal
+# Problem types
+export ODEProblem, ODEFunction, ODESolution
+export SplitODEProblem, SplitFunction
+export SecondOrderODEProblem, DynamicalODEProblem
+export DAEProblem, DAEFunction, DAESolution
 
-# Core types
-export CompositeAlgorithm, AutoSwitch
-export ShampineCollocationInit, BrownFullBasicInit, NoInit
-export IController, PIController, PIDController
+# Callbacks
+export CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback
 
-# Widely-used algorithms (selectively exported, not blanket @reexport)
+# Utilities
+export ReturnCode
+export remake, successful_retcode, reinit!
+
+# ADTypes
+export AutoForwardDiff, AutoFiniteDiff, AutoSparse
+
+# Default algorithm
+export DefaultODEAlgorithm
+
+# Widely-used algorithms
 export Tsit5, AutoTsit5
 export Vern6, Vern7, Vern8, Vern9, AutoVern6, AutoVern7, AutoVern8, AutoVern9
 export Rosenbrock23, Rodas5P
