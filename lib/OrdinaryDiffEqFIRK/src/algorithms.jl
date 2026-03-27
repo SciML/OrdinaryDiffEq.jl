@@ -26,7 +26,7 @@ Similar to Hairer's SEULEX.",
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA3{AD, F, P, Tol, C1, C2, StepLimiter} <:
+struct RadauIIA3{AD, F, P, Tol, C1, C2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
@@ -38,7 +38,7 @@ struct RadauIIA3{AD, F, P, Tol, C1, C2, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function RadauIIA3(;
@@ -76,7 +76,7 @@ end
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA5{AD, F, P, Tol, C1, C2, StepLimiter} <:
+struct RadauIIA5{AD, F, P, Tol, C1, C2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
@@ -89,7 +89,7 @@ struct RadauIIA5{AD, F, P, Tol, C1, C2, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function RadauIIA5(;
@@ -129,7 +129,7 @@ Similar to Hairer's SEULEX.",
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA9{AD, F, P, Tol, C1, C2, StepLimiter} <:
+struct RadauIIA9{AD, F, P, Tol, C1, C2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
@@ -142,7 +142,7 @@ struct RadauIIA9{AD, F, P, Tol, C1, C2, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function RadauIIA9(;
@@ -173,7 +173,7 @@ function RadauIIA9(;
     )
 end
 
-struct AdaptiveRadau{AD, F, P, Tol, C1, C2, StepLimiter, TO} <:
+struct AdaptiveRadau{AD, F, P, Tol, C1, C2, StepLimiter, TO, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
@@ -189,7 +189,7 @@ struct AdaptiveRadau{AD, F, P, Tol, C1, C2, StepLimiter, TO} <:
     max_order::Int
     threading::TO
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function AdaptiveRadau(;
