@@ -73,13 +73,6 @@ function _ode_init(
         abstol = nothing,
         reltol = nothing,
         gamma = nothing,
-        qmin = nothing,
-        qmax = nothing,
-        qsteady_min = nothing,
-        qsteady_max = nothing,
-        beta1 = nothing,
-        beta2 = nothing,
-        qoldinit = nothing,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
@@ -228,42 +221,11 @@ function _ode_init(
         _alg = alg
     end
 
-    use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_du0)
-
-    aliases = nothing
-    if use_old_kwargs
-        aliases = ODEAliasSpecifier()
-        if haskey(kwargs, :alias_u0)
-            message = "`alias_u0` keyword argument is deprecated, to set `alias_u0`,
-            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            aliases = ODEAliasSpecifier(alias_u0 = values(kwargs).alias_u0)
-        else
-            aliases = ODEAliasSpecifier(alias_u0 = nothing)
-        end
-
-        if haskey(kwargs, :alias_du0)
-            message = "`alias_du0` keyword argument is deprecated, to set `alias_du0`,
-            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            aliases = ODEAliasSpecifier(
-                alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0
-            )
-        else
-            aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = nothing)
-        end
-
-        aliases
-
-    else
-        # If alias isa Bool, all fields of ODEAliases set to alias
-        if alias isa Bool
-            aliases = ODEAliasSpecifier(alias = alias)
-        elseif alias isa ODEAliasSpecifier
-            aliases = alias
-        end
+    # If alias isa Bool, all fields of ODEAliases set to alias
+    if alias isa Bool
+        aliases = ODEAliasSpecifier(alias = alias)
+    elseif alias isa ODEAliasSpecifier
+        aliases = alias
     end
 
     if isnothing(aliases.alias_f) || aliases.alias_f
@@ -535,46 +497,16 @@ function _ode_init(
     end
 
     # Setting up the step size controller
-    if (beta1 !== nothing || beta2 !== nothing) && controller !== nothing
-        throw(ArgumentError("Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."))
-    end
-
-    # Deprecation warnings for users to break down which parameters they accidentally set.
-    if (beta1 !== nothing || beta2 !== nothing)
-        message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-    if (qmin !== nothing || qmax !== nothing)
-        message = "Providing the legacy PID parameters `qmin, qmax` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-    if (qsteady_min !== nothing || qsteady_max !== nothing)
-        message = "Providing the legacy PID parameters `qsteady_min, qsteady_max` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-    if (qoldinit !== nothing)
-        message = "Providing the legacy PID parameters `qoldinit` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-
     QT = determine_controller_datatype(u, internalnorm, tspan)
 
-    # The following code provides an upgrade path for users by preserving the old behavior.
-    legacy_controller_parameters = (gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit)
-    if controller === nothing # We have to reconstruct the old controller before breaking release.
-        if any(legacy_controller_parameters .== nothing)
-            gamma = convert(QT, gamma === nothing ? gamma_default(alg) : gamma)
-            qmin = convert(QT, qmin === nothing ? qmin_default(alg) : qmin)
-            qmax = convert(QT, qmax === nothing ? qmax_default(alg) : qmax)
-            qsteady_min = convert(QT, qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min)
-            qsteady_max = convert(QT, qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max)
-            qoldinit = convert(QT, qoldinit === nothing ? (anyadaptive(alg) ? 1 // 10^4 : 0) : qoldinit)
-        end
-        controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
+    if controller === nothing
+        gamma = convert(QT, gamma === nothing ? gamma_default(alg) : gamma)
+        qmin = convert(QT, qmin_default(alg))
+        qmax = convert(QT, qmax_default(alg))
+        qsteady_min = convert(QT, qsteady_min_default(alg))
+        qsteady_max = convert(QT, qsteady_max_default(alg))
+        qoldinit = convert(QT, anyadaptive(alg) ? 1 // 10^4 : 0)
+        controller = default_controller(_alg, cache, qoldinit, nothing, nothing)
     else # Controller has been passed
         gamma = hasfield(typeof(controller), :gamma) ? controller.gamma : gamma_default(alg)
         qmin = hasfield(typeof(controller), :qmin) ? controller.qmin : qmin_default(alg)
