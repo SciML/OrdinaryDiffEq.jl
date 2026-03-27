@@ -30,7 +30,7 @@ const DEFAULTBETA1S = (
 callbacks_exists(integrator) = !isempty(integrator.opts.callbacks)
 current_nonstiff(current) = ifelse(current <= NUM_NONSTIFF, current, current - NUM_STIFF)
 
-function DefaultODEAlgorithm(; lazy = true, stiffalgfirst = false, kwargs...)
+function DefaultODEAlgorithm(; lazy = Val{true}(), stiffalgfirst = false, kwargs...)
     nonstiff = (Tsit5(), Vern7(lazy = lazy))
     stiff = (
         Rosenbrock23(; kwargs...), Rodas5P(; kwargs...), FBDF(; kwargs...),
@@ -157,7 +157,7 @@ function is_mass_matrix_alg(
     return true
 end
 
-function DefaultImplicitODEAlgorithm(; lazy = true, stol = 0, ntol = Inf, kwargs...)
+function DefaultImplicitODEAlgorithm(; lazy = Val{true}(), stol = 0, ntol = Inf, kwargs...)
     nonstiff = (Tsit5(), Vern7(lazy = lazy))
     stiff = (
         Rosenbrock23(; kwargs...), Rodas5P(; kwargs...),

@@ -171,11 +171,11 @@ cb_nolazy = DiscreteCallback(
 )
 
 solve(
-    prob_back, Vern9(lazy = true), abstol = 1.0e-12, reltol = 1.0e-12,
+    prob_back, Vern9(lazy = Val{true}()), abstol = 1.0e-12, reltol = 1.0e-12,
     callback = cb_lazy, save_everystep = false
 )
 solve(
-    prob_back, Vern9(lazy = false), abstol = 1.0e-12, reltol = 1.0e-12,
+    prob_back, Vern9(lazy = Val{false}()), abstol = 1.0e-12, reltol = 1.0e-12,
     callback = cb_nolazy, save_everystep = false
 )
 
