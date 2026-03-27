@@ -107,11 +107,6 @@ function __nonlinearsolve_is_approx(
 end
 
 @inline function __add_and_norm(::Nothing, x, y)
-    Base.depwarn(
-        "Not specifying the internal norm of termination conditions has been \
-                  deprecated. Using inf-norm currently.",
-        :__add_and_norm
-    )
     return __maximum_abs(+, x, y)
 end
 @inline __add_and_norm(::typeof(Base.Fix1(maximum, abs)), x, y) = __maximum_abs(+, x, y)
