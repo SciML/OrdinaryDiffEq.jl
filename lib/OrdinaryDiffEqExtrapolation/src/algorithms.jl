@@ -57,7 +57,7 @@ Similar to Hairer's SEULEX.",
     sequence = :harmonic
     """
 )
-struct ImplicitEulerExtrapolation{AD, F, P, TO} <:
+struct ImplicitEulerExtrapolation{AD, F, P, TO, CJ} <:
     OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
     precs::P
@@ -67,7 +67,7 @@ struct ImplicitEulerExtrapolation{AD, F, P, TO} <:
     threading::TO
     sequence::Symbol # Name of the subdividing sequence
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function ImplicitEulerExtrapolation(;
@@ -214,7 +214,7 @@ end
     sequence = :harmonic,
     """
 )
-struct ImplicitDeuflhardExtrapolation{AD, F, P, TO} <:
+struct ImplicitDeuflhardExtrapolation{AD, F, P, TO, CJ} <:
     OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
     precs::P
@@ -224,7 +224,7 @@ struct ImplicitDeuflhardExtrapolation{AD, F, P, TO} <:
     sequence::Symbol # Name of the subdividing sequence
     threading::TO
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function ImplicitDeuflhardExtrapolation(;
         autodiff = AutoForwardDiff(),
@@ -376,7 +376,7 @@ end
     sequence = :harmonic,
     """
 )
-struct ImplicitHairerWannerExtrapolation{AD, F, P, TO} <:
+struct ImplicitHairerWannerExtrapolation{AD, F, P, TO, CJ} <:
     OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
     precs::P
@@ -386,7 +386,7 @@ struct ImplicitHairerWannerExtrapolation{AD, F, P, TO} <:
     sequence::Symbol # Name of the subdividing sequence
     threading::TO
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function ImplicitHairerWannerExtrapolation(;
@@ -464,7 +464,7 @@ end
     sequence_factor = 2,
     """
 )
-struct ImplicitEulerBarycentricExtrapolation{AD, F, P, TO} <:
+struct ImplicitEulerBarycentricExtrapolation{AD, F, P, TO, CJ} <:
     OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
     precs::P
@@ -475,7 +475,7 @@ struct ImplicitEulerBarycentricExtrapolation{AD, F, P, TO} <:
     threading::TO
     sequence_factor::Int
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function ImplicitEulerBarycentricExtrapolation(;

@@ -704,7 +704,7 @@ Alternative stochastic generalization of the modified Euler method.
 """
 struct SMEB <: StochasticDiffEqAlgorithm end
 
-struct IRI1{AD, F, F2, P, T2} <:
+struct IRI1{AD, F, F2, P, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -713,7 +713,7 @@ struct IRI1{AD, F, F2, P, T2} <:
     extrapolant::Symbol
     new_jac_conv_bound::T2
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
     controller::Symbol
 end
 function IRI1(;

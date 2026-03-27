@@ -29,14 +29,14 @@ for (Alg, Description, Ref) in [
             iop = 0,
             """
         )
-        struct $Alg{AD} <:
+        struct $Alg{AD, CJ} <:
             OrdinaryDiffEqExponentialAlgorithm
             krylov::Bool
             m::Int
             iop::Int
             autodiff::AD
 
-            concrete_jac::Union{Nothing, Bool}
+            concrete_jac::CJ
         end
     end
     @eval function $Alg(;
@@ -82,13 +82,13 @@ for (Alg, Description, Ref) in [
             iop = 0,
             """
         )
-        struct $Alg{AD} <:
+        struct $Alg{AD, CJ} <:
             OrdinaryDiffEqAdaptiveExponentialAlgorithm
             m::Int
             iop::Int
             autodiff::AD
 
-            concrete_jac::Union{Nothing, Bool}
+            concrete_jac::CJ
         end
     end
     @eval function $Alg(;
@@ -159,14 +159,14 @@ for (Alg, Description, Ref) in [
             """
         )
 
-        struct $Alg{AD} <:
+        struct $Alg{AD, CJ} <:
             OrdinaryDiffEqExponentialAlgorithm
             adaptive_krylov::Bool
             m::Int
             iop::Int
             autodiff::AD
 
-            concrete_jac::Union{Nothing, Bool}
+            concrete_jac::CJ
         end
     end
     @eval function $Alg(;
