@@ -20,21 +20,14 @@ alg_needs_extra_process(alg::SKenCarp) = true
 
 function SciMLBase.alg_interpretation(
         alg::ImplicitRKMil{
-            CS,
             AD,
             F,
             P,
-            FDT,
-            ST,
-            CJ,
             N,
             T2,
-            Controller,
             interpretation,
         }
-    ) where {
-        CS, AD, F, P, FDT, ST, CJ, N, T2, Controller, interpretation,
-    }
+    ) where {AD, F, P, N, T2, interpretation}
     return interpretation
 end
 
