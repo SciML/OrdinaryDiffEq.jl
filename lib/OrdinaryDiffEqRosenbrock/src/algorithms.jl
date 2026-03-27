@@ -98,7 +98,7 @@ for (Alg, desc, refs, is_W) in [
             is_W ?
                 rosenbrock_wolfbrandt_docstring(desc, String(Alg), references = refs, with_step_limiter = true) :
                 rosenbrock_docstring(desc, String(Alg), references = refs, with_step_limiter = true)
-        ) struct $Alg{AD, F, P, StepLimiter, StageLimiter} <:
+        ) struct $Alg{AD, F, P, StepLimiter, StageLimiter, CJ} <:
             OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
             linsolve::F
             precs::P
@@ -106,7 +106,7 @@ for (Alg, desc, refs, is_W) in [
             stage_limiter!::StageLimiter
             autodiff::AD
 
-            concrete_jac::Union{Nothing, Bool}
+            concrete_jac::CJ
         end
         function $Alg(;
                 autodiff = AutoForwardDiff(),
@@ -139,12 +139,12 @@ $(
     )
 )
 """
-struct RosenbrockW6S4OS{AD, F, P} <:
+struct RosenbrockW6S4OS{AD, F, P, CJ} <:
     OrdinaryDiffEqRosenbrockAlgorithm
     linsolve::F
     precs::P
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function RosenbrockW6S4OS(;
         autodiff = AutoForwardDiff(),
@@ -294,13 +294,13 @@ for (Alg, desc, refs, is_W) in [
                     desc, String(Alg), references = refs, with_step_limiter = false
                 ) :
                 rosenbrock_docstring(desc, String(Alg), references = refs, with_step_limiter = false)
-        ) struct $Alg{AD, F, P} <:
+        ) struct $Alg{AD, F, P, CJ} <:
             OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
             linsolve::F
             precs::P
             autodiff::AD
 
-            concrete_jac::Union{Nothing, Bool}
+            concrete_jac::CJ
         end
         function $Alg(;
                 autodiff = AutoForwardDiff(),
@@ -323,7 +323,7 @@ end
 # HybridExplicitImplicitRK — generic tableau-based hybrid explicit/linear-implicit method
 ################################################################################
 
-struct HybridExplicitImplicitRK{TabType, AD, F, P, StepLimiter, StageLimiter} <:
+struct HybridExplicitImplicitRK{TabType, AD, F, P, StepLimiter, StageLimiter, CJ} <:
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
     tab::TabType
     order::Int
@@ -332,7 +332,7 @@ struct HybridExplicitImplicitRK{TabType, AD, F, P, StepLimiter, StageLimiter} <:
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function HybridExplicitImplicitRK(

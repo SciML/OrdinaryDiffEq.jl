@@ -9,7 +9,7 @@
     If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.",
     "eigen_est = nothing,"
 )
-struct IRKC{AD, F, F2, P, K, T, E} <:
+struct IRKC{AD, F, F2, P, K, T, E, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -20,7 +20,7 @@ struct IRKC{AD, F, F2, P, K, T, E} <:
     controller::Symbol
     eigen_est::E
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function IRKC(;

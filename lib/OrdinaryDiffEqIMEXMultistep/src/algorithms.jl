@@ -22,14 +22,14 @@
     year={2010},
     publisher={Wiley Online Library}}", "", ""
 )
-struct CNAB2{AD, F, F2, P} <:
+struct CNAB2{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function CNAB2(;
@@ -72,14 +72,14 @@ end
     year={2015},
     publisher={Elsevier}}", "", ""
 )
-struct CNLF2{AD, F, F2, P} <:
+struct CNLF2{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function CNLF2(;
         autodiff = AutoForwardDiff(),
