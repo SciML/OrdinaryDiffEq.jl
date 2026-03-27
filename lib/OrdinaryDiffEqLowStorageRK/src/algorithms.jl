@@ -1107,34 +1107,6 @@ end
 #Low Storage Explicit Runge-Kutta Methods
 
 @doc explicit_rk_docstring(
-    "Low-Storage Method
-6-stage, fourth order low-stage, low-dissipation, low-dispersion scheme.
-Fixed timestep only.", "HSLDDRK64",
-    references = "D. Stanescu, W. G. Habashi.
-    2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for Computational
-    Acoustics.
-    Journal of Computational Physics, 143(2), pp 674-681, 1998.
-    doi: https://doi.org/10.1006/jcph.1998.5986
-    }",
-    extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
-    """,
-    extra_keyword_default = "williamson_condition = false"
-)
-struct HSLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-    williamson_condition::Bool
-    function HSLDDRK64(
-            stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!;
-            williamson_condition = false, thread = False()
-        )
-        Base.depwarn("HSLDDRK64 is deprecated, use SHLDDRK64 instead.", :HSLDDRK64)
-        return SHLDDRK64(; stage_limiter!, step_limiter!, thread, williamson_condition)
-    end
-end
-
-@doc explicit_rk_docstring(
     "13-stage, fourth order low-storage method with optimized stability regions for
 advection-dominated problems. Fixed timestep only.",
     "NDBLSRK134",
