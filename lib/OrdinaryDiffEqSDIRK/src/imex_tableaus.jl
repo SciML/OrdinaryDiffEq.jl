@@ -21,6 +21,11 @@ ESDIRKIMEXTableau(::KenCarp4, T, T2) = KenCarp4ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::KenCarp5, T, T2) = KenCarp5ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::KenCarp47, T, T2) = KenCarp47ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::KenCarp58, T, T2) = KenCarp58ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ESDIRK54I8L2SA, T, T2) = ESDIRK54I8L2SAESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ESDIRK436L2SA2, T, T2) = ESDIRK436L2SA2ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ESDIRK437L2SA, T, T2) = ESDIRK437L2SAESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ESDIRK547L2SA2, T, T2) = ESDIRK547L2SA2ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ESDIRK659L2SA, T, T2) = ESDIRK659L2SAESDIRKIMEXTableau(T, T2)
 
 #
 # KenCarp3 IMEX Tableau
@@ -1489,4 +1494,267 @@ function KenCarp58ESDIRKIMEXTableau(T, T2)
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_mat, 5, s
     )
+end
+
+#
+# Helper to build an ESDIRKIMEXTableau for pure-implicit ESDIRK methods
+# (no explicit tableau, no extrapolation guess)
+#
+function _pure_esdirk_to_imex_tableau(Ai_mat::Matrix{T}, c_vec::Vector{T2},
+        btilde_vec::Vector{T}, order::Int) where {T, T2}
+    s = size(Ai_mat, 1)
+    bi_vec = Ai_mat[s, :]
+    Ae = zeros(T, s, s)
+    be_vec = zeros(T, s)
+    return ESDIRKIMEXTableau(
+        Ai_mat, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, nothing, nothing, order, s
+    )
+end
+
+#
+# ESDIRK54I8L2SA IMEX Tableau (8 stages, order 5)
+#
+function ESDIRK54I8L2SAESDIRKIMEXTableau(T, T2)
+    tab = ESDIRK54I8L2SATableau(T, T2)
+    s = 8
+    γ = convert(T, tab.γ)
+
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γ
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γ
+    Ai[7, 1] = tab.a71
+    Ai[7, 2] = tab.a72
+    Ai[7, 3] = tab.a73
+    Ai[7, 4] = tab.a74
+    Ai[7, 5] = tab.a75
+    Ai[7, 6] = tab.a76
+    Ai[7, 7] = γ
+    Ai[8, 1] = tab.a81
+    Ai[8, 2] = tab.a82
+    Ai[8, 3] = tab.a83
+    Ai[8, 4] = tab.a84
+    Ai[8, 5] = tab.a85
+    Ai[8, 6] = tab.a86
+    Ai[8, 7] = tab.a87
+    Ai[8, 8] = γ
+
+    c_vec = T2[zero(T2), convert(T2, 2) * convert(T2, tab.γ),
+        tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, one(T2)]
+
+    btilde_vec = T[tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4,
+        tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8]
+
+    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 5)
+end
+
+#
+# ESDIRK436L2SA2 IMEX Tableau (6 stages, order 4)
+#
+function ESDIRK436L2SA2ESDIRKIMEXTableau(T, T2)
+    tab = ESDIRK436L2SA2Tableau(T, T2)
+    s = 6
+    γ = tab.γ
+
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γ
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γ
+
+    c_vec = T2[zero(T2), convert(T2, 2) * convert(T2, γ),
+        tab.c3, tab.c4, tab.c5, tab.c6]
+
+    btilde_vec = T[tab.btilde1, tab.btilde2, tab.btilde3,
+        tab.btilde4, tab.btilde5, tab.btilde6]
+
+    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 4)
+end
+
+#
+# ESDIRK437L2SA IMEX Tableau (7 stages, order 4)
+#
+function ESDIRK437L2SAESDIRKIMEXTableau(T, T2)
+    tab = ESDIRK437L2SATableau(T, T2)
+    s = 7
+    γ = tab.γ
+
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γ
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γ
+    Ai[7, 1] = tab.a71
+    Ai[7, 2] = tab.a72
+    Ai[7, 3] = tab.a73
+    Ai[7, 4] = tab.a74
+    Ai[7, 5] = tab.a75
+    Ai[7, 6] = tab.a76
+    Ai[7, 7] = γ
+
+    c_vec = T2[zero(T2), convert(T2, 2) * convert(T2, γ),
+        tab.c3, tab.c4, tab.c5, tab.c6, tab.c7]
+
+    btilde_vec = T[tab.btilde1, tab.btilde2, tab.btilde3,
+        tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7]
+
+    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 4)
+end
+
+#
+# ESDIRK547L2SA2 IMEX Tableau (7 stages, order 5)
+#
+function ESDIRK547L2SA2ESDIRKIMEXTableau(T, T2)
+    tab = ESDIRK547L2SA2Tableau(T, T2)
+    s = 7
+    γ = tab.γ
+
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γ
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γ
+    Ai[7, 1] = tab.a71
+    Ai[7, 2] = tab.a72
+    Ai[7, 3] = tab.a73
+    Ai[7, 4] = tab.a74
+    Ai[7, 5] = tab.a75
+    Ai[7, 6] = tab.a76
+    Ai[7, 7] = γ
+
+    c_vec = T2[zero(T2), convert(T2, 2) * convert(T2, γ),
+        tab.c3, tab.c4, tab.c5, tab.c6, tab.c7]
+
+    btilde_vec = T[tab.btilde1, tab.btilde2, tab.btilde3,
+        tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7]
+
+    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 5)
+end
+
+#
+# ESDIRK659L2SA IMEX Tableau (9 stages, order 6)
+# Note: stage 9 has a91=a92=a93=0 (only depends on stages 4-8)
+#
+function ESDIRK659L2SAESDIRKIMEXTableau(T, T2)
+    tab = ESDIRK659L2SATableau(T, T2)
+    s = 9
+    γ = tab.γ
+
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γ
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γ
+    Ai[7, 1] = tab.a71
+    Ai[7, 2] = tab.a72
+    Ai[7, 3] = tab.a73
+    Ai[7, 4] = tab.a74
+    Ai[7, 5] = tab.a75
+    Ai[7, 6] = tab.a76
+    Ai[7, 7] = γ
+    Ai[8, 1] = tab.a81
+    Ai[8, 2] = tab.a82
+    Ai[8, 3] = tab.a83
+    Ai[8, 4] = tab.a84
+    Ai[8, 5] = tab.a85
+    Ai[8, 6] = tab.a86
+    Ai[8, 7] = tab.a87
+    Ai[8, 8] = γ
+    # Stage 9: a91=a92=a93=0 (zeros from initialization)
+    Ai[9, 4] = tab.a94
+    Ai[9, 5] = tab.a95
+    Ai[9, 6] = tab.a96
+    Ai[9, 7] = tab.a97
+    Ai[9, 8] = tab.a98
+    Ai[9, 9] = γ
+
+    c_vec = T2[zero(T2), convert(T2, 2) * convert(T2, γ),
+        tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, tab.c8, tab.c9]
+
+    btilde_vec = T[tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4,
+        tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8, tab.btilde9]
+
+    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 6)
 end
