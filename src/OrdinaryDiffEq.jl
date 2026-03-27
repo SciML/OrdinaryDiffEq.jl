@@ -50,7 +50,4 @@ export Vern6, Vern7, Vern8, Vern9, AutoVern6, AutoVern7, AutoVern8, AutoVern9
 export Rosenbrock23, Rodas5P
 export FBDF
 
-# Re-export Reexport for downstream compatibility
-export Reexport, @reexport
-
 end # module
