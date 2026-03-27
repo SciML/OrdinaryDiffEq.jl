@@ -41,8 +41,6 @@ else
         maxeig::Float64
     end
 
-    Base.@deprecate_binding DEStats Stats false
-
     Stats(x::Int = -1) = Stats(x, x, x, x, x, x, x, x, x, x, 0.0)
 
     function Base.show(io::IO, s::Stats)
