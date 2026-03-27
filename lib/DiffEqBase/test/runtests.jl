@@ -6,14 +6,6 @@ const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "Core")
 
 function activate_downstream_env()
     Pkg.activate(joinpath(@__DIR__, "downstream"))
-    lib_dir = dirname(dirname(@__DIR__))
-    Pkg.develop(
-        [
-            PackageSpec(path = dirname(@__DIR__)),
-            PackageSpec(path = joinpath(dirname(lib_dir), "..")),
-            PackageSpec(path = joinpath(lib_dir, "StochasticDiffEq")),
-        ]
-    )
     return Pkg.instantiate()
 end
 
@@ -25,24 +17,11 @@ end
 
 function activate_modelingtoolkit_env()
     Pkg.activate(joinpath(@__DIR__, "modelingtoolkit"))
-    lib_dir = dirname(dirname(@__DIR__))
-    Pkg.develop(
-        [
-            PackageSpec(path = dirname(@__DIR__)),
-            PackageSpec(path = joinpath(dirname(lib_dir), "..")),
-        ]
-    )
     return Pkg.instantiate()
 end
 
 function activate_sundials_env()
     Pkg.activate(joinpath(@__DIR__, "sundials"))
-    lib_dir = dirname(dirname(@__DIR__))
-    Pkg.develop(
-        [
-            PackageSpec(path = joinpath(dirname(lib_dir), "..")),
-        ]
-    )
     return Pkg.instantiate()
 end
 
