@@ -4,6 +4,7 @@ authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <maying
 version = "7.0.0-DEV"
 
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
@@ -23,6 +24,7 @@ OrdinaryDiffEqTsit5 = {path = "lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
 
 [compat]
+ADTypes = "1.10"
 CommonSolve = "0.2.4"
 DocStringExtensions = "0.9.5"
 OrdinaryDiffEqBDF = "1.16.0"
