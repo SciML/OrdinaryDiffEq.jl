@@ -1,4 +1,4 @@
-struct ImplicitEM{AD, F, F2, P, T2} <:
+struct ImplicitEM{AD, F, F2, P, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -8,7 +8,7 @@ struct ImplicitEM{AD, F, F2, P, T2} <:
     new_jac_conv_bound::T2
     symplectic::Bool
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
     controller::Symbol
 end
 function ImplicitEM(;
@@ -33,7 +33,7 @@ end
 STrapezoid(; kwargs...) = ImplicitEM(; theta = 1 / 2, kwargs...)
 SImplicitMidpoint(; kwargs...) = ImplicitEM(; theta = 1 / 2, symplectic = true, kwargs...)
 
-struct ImplicitEulerHeun{AD, F, P, N, T2} <:
+struct ImplicitEulerHeun{AD, F, P, N, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
@@ -43,7 +43,7 @@ struct ImplicitEulerHeun{AD, F, P, N, T2} <:
     new_jac_conv_bound::T2
     symplectic::Bool
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
     controller::Symbol
 end
 function ImplicitEulerHeun(;
@@ -66,7 +66,7 @@ function ImplicitEulerHeun(;
     )
 end
 
-struct ImplicitRKMil{AD, F, P, N, T2, interpretation} <:
+struct ImplicitRKMil{AD, F, P, N, T2, interpretation, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
@@ -76,7 +76,7 @@ struct ImplicitRKMil{AD, F, P, N, T2, interpretation} <:
     new_jac_conv_bound::T2
     symplectic::Bool
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
     controller::Symbol
 end
 function ImplicitRKMil(;
@@ -102,7 +102,7 @@ function ImplicitRKMil(;
     )
 end
 
-struct ISSEM{AD, F, P, N, T2} <:
+struct ISSEM{AD, F, P, N, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
@@ -112,7 +112,7 @@ struct ISSEM{AD, F, P, N, T2} <:
     new_jac_conv_bound::T2
     symplectic::Bool
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
     controller::Symbol
 end
 function ISSEM(;
@@ -135,7 +135,7 @@ function ISSEM(;
     )
 end
 
-struct ISSEulerHeun{AD, F, P, N, T2} <:
+struct ISSEulerHeun{AD, F, P, N, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
@@ -145,7 +145,7 @@ struct ISSEulerHeun{AD, F, P, N, T2} <:
     new_jac_conv_bound::T2
     symplectic::Bool
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
     controller::Symbol
 end
 function ISSEulerHeun(;
@@ -168,7 +168,7 @@ function ISSEulerHeun(;
     )
 end
 
-struct SKenCarp{AD, F, P, N, T2} <:
+struct SKenCarp{AD, F, P, N, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
@@ -178,7 +178,7 @@ struct SKenCarp{AD, F, P, N, T2} <:
     new_jac_conv_bound::T2
     ode_error_est::Bool
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
     controller::Symbol
 end
 
