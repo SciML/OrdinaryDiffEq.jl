@@ -98,7 +98,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ABDF2{AD, F, F2, P, K, T, StepLimiter} <:
+struct ABDF2{AD, F, F2, P, K, T, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -110,7 +110,7 @@ struct ABDF2{AD, F, F2, P, K, T, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function ABDF2(;
         autodiff = AutoForwardDiff(),
@@ -162,7 +162,7 @@ like `KenCarp4`, but instead using a multistep BDF approach",
     order,
     """
 )
-struct SBDF{AD, F, F2, P, K, T} <:
+struct SBDF{AD, F, F2, P, K, T, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
@@ -173,7 +173,7 @@ struct SBDF{AD, F, F2, P, K, T} <:
     order::Int
     ark::Bool
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function SBDF(
@@ -299,7 +299,7 @@ SBDF4(; kwargs...) = SBDF(4; kwargs...)
     step_limiter! = trivial_limiter!,
     """
 )
-struct QNDF1{AD, F, F2, P, κType, StepLimiter} <:
+struct QNDF1{AD, F, F2, P, κType, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -309,7 +309,7 @@ struct QNDF1{AD, F, F2, P, κType, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function QNDF1(;
@@ -363,7 +363,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct QNDF2{AD, F, F2, P, κType, StepLimiter} <:
+struct QNDF2{AD, F, F2, P, κType, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -373,7 +373,7 @@ struct QNDF2{AD, F, F2, P, κType, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function QNDF2(;
@@ -431,7 +431,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct QNDF{MO, AD, F, F2, P, K, T, κType, StepLimiter} <:
+struct QNDF{MO, AD, F, F2, P, K, T, κType, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     max_order::Val{MO}
     linsolve::F
@@ -444,7 +444,7 @@ struct QNDF{MO, AD, F, F2, P, K, T, κType, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function QNDF(;
@@ -492,14 +492,14 @@ end
     extrapolant = :constant,
     """
 )
-struct MEBDF2{AD, F, F2, P} <:
+struct MEBDF2{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function MEBDF2(;
         autodiff = AutoForwardDiff(),
@@ -563,7 +563,7 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     stald_tiny = 1e-90,
     """
 )
-struct FBDF{MO, AD, F, F2, P, K, T, StepLimiter} <:
+struct FBDF{MO, AD, F, F2, P, K, T, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     max_order::Val{MO}
     linsolve::F
@@ -582,7 +582,7 @@ struct FBDF{MO, AD, F, F2, P, K, T, StepLimiter} <:
     stald_sqtol::Float64
     stald_rrtol::Float64
     stald_tiny::Float64
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function FBDF(;
@@ -706,14 +706,14 @@ It uses an apriori error estimator for adaptivity based on a finite differencing
     controller = :Standard,
     """
 )
-struct DImplicitEuler{AD, F, F2, P} <: DAEAlgorithm
+struct DImplicitEuler{AD, F, F2, P, CJ} <: DAEAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function DImplicitEuler(;
         autodiff = AutoForwardDiff(),
@@ -754,14 +754,14 @@ end
     controller = :Standard,
     """
 )
-struct DABDF2{AD, F, F2, P} <: DAEAlgorithm
+struct DABDF2{AD, F, F2, P, CJ} <: DAEAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function DABDF2(;
         autodiff = AutoForwardDiff(),
@@ -820,7 +820,7 @@ DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), concrete_jac = nothing,diff_type
     max_order::Val{MO} = Val{5}(),
     """
 )
-struct DFBDF{MO, AD, F, F2, P, K, T} <: DAEAlgorithm
+struct DFBDF{MO, AD, F, F2, P, K, T, CJ} <: DAEAlgorithm
     max_order::Val{MO}
     linsolve::F
     nlsolve::F2
@@ -830,7 +830,7 @@ struct DFBDF{MO, AD, F, F2, P, K, T} <: DAEAlgorithm
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function DFBDF(;
         max_order::Val{MO} = Val{5}(),
