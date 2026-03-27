@@ -1,9 +1,10 @@
+using ADTypes
 using StochasticDiffEq, OrdinaryDiffEqDifferentiation, Test
 
 tspan = (0.0, 1.0)
 explicit = [SRIW1(), SRIW2(), SOSRI(), SOSRI2(), SRA2(), SRA3(), SOSRA(), SOSRA2()]
 implicit_autodiff = [SKenCarp(), ImplicitEulerHeun()]
-implicit_noautodiff = [SKenCarp(autodiff = false), ImplicitEulerHeun(autodiff = false)]
+implicit_noautodiff = [SKenCarp(autodiff = AutoFiniteDiff()), ImplicitEulerHeun(autodiff = AutoFiniteDiff())]
 
 @testset "Out-of-place methods" begin
     u0 = 1.0 + 1.0im

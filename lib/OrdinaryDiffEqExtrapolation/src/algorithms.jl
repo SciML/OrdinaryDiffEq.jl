@@ -1,7 +1,7 @@
 abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <:
 OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ} <:
-OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm <:
+OrdinaryDiffEqAdaptiveImplicitAlgorithm end
 reference = """@inproceedings{elrod2022parallelizing,
   title={Parallelizing explicit and implicit extrapolation methods for ordinary differential equations},
   author={Elrod, Chris and Ma, Yingbo and Althaus, Konstantin and Rackauckas, Christopher and others},
@@ -57,8 +57,8 @@ Similar to Hairer's SEULEX.",
     sequence = :harmonic
     """
 )
-struct ImplicitEulerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+struct ImplicitEulerExtrapolation{AD, F, P, TO, CJ} <:
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
     precs::P
     max_order::Int
@@ -67,17 +67,18 @@ struct ImplicitEulerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
     threading::TO
     sequence::Symbol # Name of the subdividing sequence
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function ImplicitEulerExtrapolation(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(), linsolve = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing,
         precs = DEFAULT_PRECS,
         max_order = 12, min_order = 3, init_order = 5,
         threading = false, sequence = :harmonic
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
     linsolve = (
             linsolve === nothing &&
@@ -108,15 +109,12 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
           :$(sequence) --> :harmonic"
         sequence = :harmonic
     end
-    return ImplicitEulerExtrapolation{
-        _unwrap_val(chunk_size), typeof(AD_choice),
-        typeof(linsolve), typeof(precs), diff_type,
-        _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading),
-    }(
+    return ImplicitEulerExtrapolation(
         linsolve, precs, max_order, min_order,
         init_order,
-        threading, sequence, AD_choice
+        threading, sequence, autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -216,8 +214,8 @@ end
     sequence = :harmonic,
     """
 )
-struct ImplicitDeuflhardExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+struct ImplicitDeuflhardExtrapolation{AD, F, P, TO, CJ} <:
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
     precs::P
     min_order::Int # Minimal extrapolation order
@@ -226,16 +224,16 @@ struct ImplicitDeuflhardExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
     sequence::Symbol # Name of the subdividing sequence
     threading::TO
     autodiff::AD
+    concrete_jac::CJ
 end
 function ImplicitDeuflhardExtrapolation(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS,
-        diff_type = Val{:forward}(),
         min_order = 1, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
     # Enforce 1 <=  min_order <= init_order <= max_order:
     min_order = max(1, min_order)
@@ -270,15 +268,12 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
     # Initialize algorithm
-    return ImplicitDeuflhardExtrapolation{
-        _unwrap_val(chunk_size), typeof(AD_choice),
-        typeof(linsolve), typeof(precs), diff_type,
-        _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading),
-    }(
+    return ImplicitDeuflhardExtrapolation(
         linsolve, precs, min_order,
         init_order, max_order,
-        sequence, threading, AD_choice
+        sequence, threading, autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -381,8 +376,8 @@ end
     sequence = :harmonic,
     """
 )
-struct ImplicitHairerWannerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+struct ImplicitHairerWannerExtrapolation{AD, F, P, TO, CJ} <:
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
     precs::P
     min_order::Int # Minimal extrapolation order
@@ -391,14 +386,14 @@ struct ImplicitHairerWannerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
     sequence::Symbol # Name of the subdividing sequence
     threading::TO
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function ImplicitHairerWannerExtrapolation(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(),
+        autodiff = AutoForwardDiff(),
+       
         concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS,
-        diff_type = Val{:forward}(),
         min_order = 2, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false
     )
@@ -435,17 +430,14 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence = :harmonic
     end
 
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
     # Initialize algorithm
-    return ImplicitHairerWannerExtrapolation{
-        _unwrap_val(chunk_size), typeof(AD_choice),
-        typeof(linsolve), typeof(precs), diff_type,
-        _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading),
-    }(
+    return ImplicitHairerWannerExtrapolation(
         linsolve, precs, min_order,
         init_order,
-        max_order, sequence, threading, AD_choice
+        max_order, sequence, threading, autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -472,8 +464,8 @@ end
     sequence_factor = 2,
     """
 )
-struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+struct ImplicitEulerBarycentricExtrapolation{AD, F, P, TO, CJ} <:
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
     precs::P
     min_order::Int # Minimal extrapolation order
@@ -483,15 +475,14 @@ struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
     threading::TO
     sequence_factor::Int
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function ImplicitEulerBarycentricExtrapolation(;
-        chunk_size = Val{0}(),
         autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(),
+       
         concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS,
-        diff_type = Val{:forward}(),
         min_order = 3, init_order = 5,
         max_order = 12, sequence = :harmonic,
         threading = false, sequence_factor = 2
@@ -528,14 +519,9 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence = :harmonic
     end
 
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
     # Initialize algorithm
-    return ImplicitEulerBarycentricExtrapolation{
-        _unwrap_val(chunk_size), typeof(AD_choice),
-        typeof(linsolve), typeof(precs), diff_type,
-        _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(threading),
-    }(
+    return ImplicitEulerBarycentricExtrapolation(
         linsolve,
         precs,
         min_order,
@@ -544,6 +530,8 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence,
         threading,
         sequence_factor,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end

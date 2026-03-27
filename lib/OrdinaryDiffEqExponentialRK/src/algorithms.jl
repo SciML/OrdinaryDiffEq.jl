@@ -29,33 +29,29 @@ for (Alg, Description, Ref) in [
             iop = 0,
             """
         )
-        struct $Alg{CS, AD, FDT, ST, CJ} <:
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ}
+        struct $Alg{AD, CJ} <:
+            OrdinaryDiffEqExponentialAlgorithm
             krylov::Bool
             m::Int
             iop::Int
             autodiff::AD
+
+            concrete_jac::CJ
         end
     end
     @eval function $Alg(;
             krylov = false, m = 30, iop = 0, autodiff = AutoForwardDiff(),
-            standardtag = Val{true}(), concrete_jac = nothing,
-            chunk_size = Val{0}(),
-            diff_type = Val{:forward}()
+            concrete_jac = nothing,
         )
-        AD_choice, chunk_size,
-            diff_type = _process_AD_choice(
-            autodiff, chunk_size, diff_type
-        )
+        autodiff = _fixup_ad(autodiff)
 
-        return $Alg{
-            _unwrap_val(chunk_size), typeof(AD_choice),
-            diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        }(
+        return $Alg(
             krylov,
             m,
             iop,
-            AD_choice
+            autodiff,
+            _unwrap_val(concrete_jac)
+
         )
     end
 end
@@ -86,31 +82,27 @@ for (Alg, Description, Ref) in [
             iop = 0,
             """
         )
-        struct $Alg{CS, AD, FDT, ST, CJ} <:
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD, FDT, ST, CJ}
+        struct $Alg{AD, CJ} <:
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm
             m::Int
             iop::Int
             autodiff::AD
+
+            concrete_jac::CJ
         end
     end
     @eval function $Alg(;
-            m = 30, iop = 0, autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-            concrete_jac = nothing, chunk_size = Val{0}(),
-            diff_type = Val{:forward}()
+            m = 30, iop = 0, autodiff = AutoForwardDiff(),
+            concrete_jac = nothing,
         )
-        AD_choice, chunk_size,
-            diff_type = _process_AD_choice(
-            autodiff, chunk_size, diff_type
-        )
+        autodiff = _fixup_ad(autodiff)
 
-        return $Alg{
-            _unwrap_val(chunk_size), typeof(AD_choice),
-            diff_type, _unwrap_val(standardtag),
-            _unwrap_val(concrete_jac),
-        }(
+        return $Alg(
             m,
             iop,
-            AD_choice
+            autodiff,
+            _unwrap_val(concrete_jac)
+
         )
     end
 end
@@ -167,32 +159,29 @@ for (Alg, Description, Ref) in [
             """
         )
 
-        struct $Alg{CS, AD, FDT, ST, CJ} <:
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ}
+        struct $Alg{AD, CJ} <:
+            OrdinaryDiffEqExponentialAlgorithm
             adaptive_krylov::Bool
             m::Int
             iop::Int
             autodiff::AD
+
+            concrete_jac::CJ
         end
     end
     @eval function $Alg(;
             adaptive_krylov = true, m = 30, iop = 0, autodiff = AutoForwardDiff(),
-            standardtag = Val{true}(), concrete_jac = nothing,
-            chunk_size = Val{0}(), diff_type = Val{:forward}()
+            concrete_jac = nothing,
         )
-        AD_choice, chunk_size,
-            diff_type = _process_AD_choice(
-            autodiff, chunk_size, diff_type
-        )
+        autodiff = _fixup_ad(autodiff)
 
-        return $Alg{
-            _unwrap_val(chunk_size), typeof(AD_choice), diff_type,
-            _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        }(
+        return $Alg(
             adaptive_krylov,
             m,
             iop,
-            AD_choice
+            autodiff,
+            _unwrap_val(concrete_jac)
+
         )
     end
 end
@@ -201,5 +190,4 @@ end
 ETD2: Exponential Runge-Kutta Method
 Second order Exponential Time Differencing method (in development).
 """
-struct ETD2 <:
-    OrdinaryDiffEqExponentialAlgorithm{0, false, Val{:forward}, Val{true}, nothing} end
+struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end

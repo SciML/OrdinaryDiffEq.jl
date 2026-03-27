@@ -3,22 +3,18 @@
 # StochasticDiffEqCompositeAlgorithm, StochasticDiffEqRODEAlgorithm,
 # StochasticDiffEqRODEAdaptiveAlgorithm, StochasticDiffEqRODECompositeAlgorithm
 
-abstract type StochasticDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ, Controller} <:
+abstract type StochasticDiffEqNewtonAdaptiveAlgorithm <:
 StochasticDiffEqAdaptiveAlgorithm end
-abstract type StochasticDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ, Controller} <:
+abstract type StochasticDiffEqNewtonAlgorithm <:
 StochasticDiffEqAlgorithm end
 
 abstract type StochasticDiffEqJumpAlgorithm <: StochasticDiffEqAlgorithm end
 abstract type StochasticDiffEqJumpAdaptiveAlgorithm <: StochasticDiffEqAlgorithm end
-abstract type StochasticDiffEqJumpNewtonAdaptiveAlgorithm{
-    CS, AD, FDT, ST, CJ, Controller,
-} <: StochasticDiffEqJumpAdaptiveAlgorithm end
+abstract type StochasticDiffEqJumpNewtonAdaptiveAlgorithm <: StochasticDiffEqJumpAdaptiveAlgorithm end
 
 abstract type StochasticDiffEqJumpDiffusionAlgorithm <: StochasticDiffEqAlgorithm end
 abstract type StochasticDiffEqJumpDiffusionAdaptiveAlgorithm <: StochasticDiffEqAlgorithm end
-abstract type StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm{
-    CS, AD, FDT, ST, CJ, Controller,
-} <: StochasticDiffEqJumpDiffusionAdaptiveAlgorithm end
+abstract type StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm <: StochasticDiffEqJumpDiffusionAdaptiveAlgorithm end
 
 abstract type IteratedIntegralApprox end
 

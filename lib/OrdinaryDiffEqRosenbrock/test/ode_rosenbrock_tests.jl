@@ -1099,39 +1099,27 @@ end
             OrdinaryDiffEqRosenbrock.OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
         end
 
+        # Test with AutoForwardDiff
         ad = AutoForwardDiff(; chunksize = 3)
-        alg = @test_logs @inferred(T(; autodiff = ad))
-        @test alg isa RosenbrockAlgorithm{3, typeof(ad), Val{:forward}()}
+        alg = T(; autodiff = ad)
+        @test alg isa RosenbrockAlgorithm
+        @test alg.autodiff === ad
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) === ad
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{3}()
 
-        alg = @test_logs (:warn, r"The `chunk_size` keyword is deprecated") match_mode = :any @inferred(
-            T(;
-                autodiff = ad, chunk_size = Val{4}()
-            )
-        )
-        @test alg isa RosenbrockAlgorithm{4, <:AutoForwardDiff{4}, Val{:forward}()}
-        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) isa
-            AutoForwardDiff{4}
-        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{4}()
+        # chunk_size keyword was removed in v7, test that it errors
+        @test_throws MethodError T(; autodiff = ad, chunk_size = Val{4}())
 
+        # Test with AutoFiniteDiff
         ad = AutoFiniteDiff(; fdtype = Val{:central}())
-        alg = @test_logs @inferred(T(; autodiff = ad))
-        @test alg isa
-            RosenbrockAlgorithm{0, <:AutoFiniteDiff{Val{:central}}, Val{:central}()}
+        alg = T(; autodiff = ad)
+        @test alg isa RosenbrockAlgorithm
+        @test alg.autodiff isa AutoFiniteDiff{Val{:central}}
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) isa AutoFiniteDiff{Val{:central}}
         @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{0}()
 
-        alg = @test_logs (:warn, r"The `diff_type` keyword is deprecated") match_mode = :any @inferred(
-            T(;
-                autodiff = ad, diff_type = Val{:complex}()
-            )
-        )
-        @test alg isa
-            RosenbrockAlgorithm{0, <:AutoFiniteDiff{Val{:complex}}, Val{:complex}()}
-        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.alg_autodiff(alg) isa
-            AutoFiniteDiff{Val{:complex}}
-        @test OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.get_chunksize(alg) === Val{0}()
+        # diff_type keyword was removed in v7, test that it errors
+        @test_throws MethodError T(; autodiff = ad, diff_type = Val{:complex}())
 
         # issue #2613
         f(u, _, _) = -u

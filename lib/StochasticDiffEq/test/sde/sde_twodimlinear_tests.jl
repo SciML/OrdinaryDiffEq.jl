@@ -1,3 +1,4 @@
+using ADTypes
 using StochasticDiffEq, Test, Random, DiffEqDevTools
 using SDEProblemLibrary: prob_sde_2Dlinear
 Random.seed!(100)
@@ -18,7 +19,7 @@ sol = solve(prob, SOSRI(), dt = 1 / 2^(3))
 sol = solve(prob, SOSRI2(), dt = 1 / 2^(3))
 sol = solve(prob, ImplicitEM(), dt = 1 / 2^(3))
 sol = solve(prob, ImplicitEM(nlsolve = StochasticDiffEq.NLFunctional()), dt = 1 / 2^(3), adaptive = false)
-sol = solve(prob, ImplicitEM(autodiff = false), dt = 1 / 2^(3))
+sol = solve(prob, ImplicitEM(autodiff = AutoFiniteDiff()), dt = 1 / 2^(3))
 sol = solve(prob, ImplicitRKMil(), dt = 1 / 2^(3))
 
 sol = solve(prob, SRIW1(), dt = 1 / 2^(3), save_everystep = false)
@@ -51,7 +52,7 @@ sim = test_convergence(dts, prob, ImplicitEM(theta = 1), trajectories = 100)
 sim = test_convergence(dts, prob, ImplicitEM(symplectic = true), trajectories = 500)
 @test abs(sim.𝒪est[:l2] - 0.5) < 0.1
 
-sim = test_convergence(dts, prob, ImplicitEM(symplectic = true, autodiff = false), trajectories = 100)
+sim = test_convergence(dts, prob, ImplicitEM(symplectic = true, autodiff = AutoFiniteDiff()), trajectories = 100)
 @test abs(sim.𝒪est[:l2] - 0.5) < 0.1
 
 sim = test_convergence(dts, prob, ISSEM(), trajectories = 500)
@@ -63,13 +64,13 @@ sim = test_convergence(dts, prob, ImplicitRKMil(), trajectories = 100)
 sim = test_convergence(dts, prob, ImplicitRKMil(theta = 1), trajectories = 100)
 @test abs(sim.𝒪est[:l2] - 1) < 0.1
 
-sim = test_convergence(dts, prob, ImplicitRKMil(theta = 1, autodiff = false), trajectories = 200)
+sim = test_convergence(dts, prob, ImplicitRKMil(theta = 1, autodiff = AutoFiniteDiff()), trajectories = 200)
 @test abs(sim.𝒪est[:l2] - 1) < 0.1
 
 sim = test_convergence(dts, prob, ImplicitRKMil(symplectic = true), trajectories = 150)
 @test abs(sim.𝒪est[:l2] - 1) < 0.1
 
-sim = test_convergence(dts, prob, ImplicitRKMil(symplectic = true, autodiff = false), trajectories = 100)
+sim = test_convergence(dts, prob, ImplicitRKMil(symplectic = true, autodiff = AutoFiniteDiff()), trajectories = 100)
 @test abs(sim.𝒪est[:l2] - 1) < 0.1
 
 sim = test_convergence(dts, prob, ImplicitRKMil(nlsolve = StochasticDiffEq.NLFunctional()), trajectories = 100)

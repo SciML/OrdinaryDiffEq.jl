@@ -5,10 +5,10 @@ using OrdinaryDiffEqCore: DEVerbosity
 
 prob = ODEProblem((du, u, p, t) -> du .= u, zeros(1), (0.0, 1.0))
 nlalg = FBDF(
-    autodiff = false,
+    autodiff = AutoFiniteDiff(),
     nlsolve = OrdinaryDiffEqBDF.NonlinearSolveAlg(TrustRegion(autodiff = AutoFiniteDiff()))
 )
-basicalg = FBDF(autodiff = false)
+basicalg = FBDF(autodiff = AutoFiniteDiff())
 basicalgad = FBDF()
 
 nlsolver = @inferred OrdinaryDiffEqBDF.build_nlsolver(

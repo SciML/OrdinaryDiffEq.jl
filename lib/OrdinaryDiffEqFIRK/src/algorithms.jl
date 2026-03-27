@@ -26,8 +26,8 @@ Similar to Hairer's SEULEX.",
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct RadauIIA3{AD, F, P, Tol, C1, C2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
     extrapolant::Symbol
@@ -38,26 +38,21 @@ struct RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function RadauIIA3(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10,
         step_limiter! = trivial_limiter!
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return RadauIIA3{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!),
-    }(
+    return RadauIIA3(
         linsolve,
         precs,
         extrapolant,
@@ -67,7 +62,9 @@ function RadauIIA3(;
         new_W_γdt_cutoff,
         controller,
         step_limiter!,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -79,8 +76,8 @@ end
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct RadauIIA5{AD, F, P, Tol, C1, C2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
     smooth_est::Bool
@@ -92,26 +89,21 @@ struct RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function RadauIIA5(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return RadauIIA5{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!),
-    }(
+    return RadauIIA5(
         linsolve,
         precs,
         smooth_est,
@@ -122,7 +114,9 @@ function RadauIIA5(;
         new_W_γdt_cutoff,
         controller,
         step_limiter!,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -135,8 +129,8 @@ Similar to Hairer's SEULEX.",
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct RadauIIA9{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct RadauIIA9{AD, F, P, Tol, C1, C2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
     smooth_est::Bool
@@ -148,26 +142,21 @@ struct RadauIIA9{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function RadauIIA9(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return RadauIIA9{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!),
-    }(
+    return RadauIIA9(
         linsolve,
         precs,
         smooth_est,
@@ -178,12 +167,14 @@ function RadauIIA9(;
         new_W_γdt_cutoff,
         controller,
         step_limiter!,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
-struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, TO} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct AdaptiveRadau{AD, F, P, Tol, C1, C2, StepLimiter, TO, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
     smooth_est::Bool
@@ -198,26 +189,22 @@ struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, TO} <:
     max_order::Int
     threading::TO
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function AdaptiveRadau(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(), min_order = 5, max_order = 13, threading = false,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        min_order = 5, max_order = 13, threading = false,
         linsolve = nothing, precs = DEFAULT_PRECS,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return AdaptiveRadau{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!), typeof(threading),
-    }(
+    return AdaptiveRadau(
         linsolve,
         precs,
         smooth_est,
@@ -228,6 +215,8 @@ function AdaptiveRadau(;
         new_W_γdt_cutoff,
         controller,
         step_limiter!, min_order, max_order, threading,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
