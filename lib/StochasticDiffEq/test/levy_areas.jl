@@ -1,5 +1,5 @@
 using StochasticDiffEq, DiffEqNoiseProcess, Test, Random, LinearAlgebra
-using LevyArea, Statistics
+using StochasticDiffEqLevyArea, Statistics
 
 seed = 113213898
 Random.seed!(seed)
@@ -26,7 +26,7 @@ end
     @test StochasticDiffEq.get_iterated_I(dt, W.dW, W.dZ, Jdiagoop, nothing, 1) == Jdiag.J
     @test Jdiag.J == true_diag
 
-    for alg in LevyArea.ITER_INT_ALGS
+    for alg in StochasticDiffEqLevyArea.ITER_INT_ALGS
         @test diag(StochasticDiffEq.get_iterated_I(dt, W.dW, W.dZ, alg, nothing, 1)) ==
             true_diag
     end
@@ -44,7 +44,7 @@ end
         Jcommute.J
     @test Jcommute.J == true_commute
 
-    for alg in LevyArea.ITER_INT_ALGS
+    for alg in StochasticDiffEqLevyArea.ITER_INT_ALGS
         @test diag(StochasticDiffEq.get_iterated_I(dt, W.dW, W.dZ, alg, nothing, 1)) ==
             diag(true_commute)
     end
@@ -115,12 +115,12 @@ end
 @testset "General noise tests" begin
     true_commute = 1 // 2 .* W.dW .* W.dW'
     samples = Int(1.0e4)
-    for alg in LevyArea.ITER_INT_ALGS
+    for alg in StochasticDiffEqLevyArea.ITER_INT_ALGS
         # Test the relations given in Wiktorsson paper Eq.(2.1)
         Random.seed!(seed)
         I = StochasticDiffEq.get_iterated_I(dt, W.dW, W.dZ, alg, 1, 1)
         Random.seed!(seed)
-        A = LevyArea.levyarea(W.dW / √dt, 1, alg)
+        A = StochasticDiffEqLevyArea.levyarea(W.dW / √dt, 1, alg)
         @test dt * A + true_commute == I # because of correction with \mu term
         @test diag(A) == diag(zero(A))
         @test diag(true_commute) == diag(I)
