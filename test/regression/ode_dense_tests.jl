@@ -480,7 +480,7 @@ regression_test(Feagin10(), 6.0e-4, 9.0e-4)
 @test BS5() == BS5(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(BS5(), 4.0e-8, 6.0e-8; test_diff1 = true, nth_der = 1, dertol = 1.0e-12)
 regression_test(
-    BS5(lazy = false), 4.0e-8, 6.0e-8; test_diff1 = true, nth_der = 1,
+    BS5(lazy = Val{false}()), 4.0e-8, 6.0e-8; test_diff1 = true, nth_der = 1,
     dertol = 1.0e-12
 )
 
@@ -506,7 +506,7 @@ println("Verns")
 @test Vern6() == Vern6(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(Vern6(), 7.0e-8, 7.0e-8; test_diff1 = true, nth_der = 1, dertol = 1.0e-9)
 regression_test(
-    Vern6(lazy = false), 7.0e-8, 7.0e-8; test_diff1 = true, nth_der = 1,
+    Vern6(lazy = Val{false}()), 7.0e-8, 7.0e-8; test_diff1 = true, nth_der = 1,
     dertol = 1.0e-9
 )
 
@@ -530,7 +530,7 @@ print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_big)) < 
 # Vern7
 regression_test(Vern7(), 3.0e-9, 5.0e-9; test_diff1 = true, nth_der = 1, dertol = 1.0e-10)
 regression_test(
-    Vern7(lazy = false), 3.0e-9, 5.0e-9; test_diff1 = true, nth_der = 1,
+    Vern7(lazy = Val{false}()), 3.0e-9, 5.0e-9; test_diff1 = true, nth_der = 1,
     dertol = 1.0e-10
 )
 
@@ -538,7 +538,7 @@ regression_test(
 @test Vern8() == Vern8(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(Vern8(), 3.0e-8, 5.0e-8; test_diff1 = true, nth_der = 1, dertol = 1.0e-7)
 regression_test(
-    Vern8(lazy = false), 3.0e-8, 5.0e-8; test_diff1 = true, nth_der = 1,
+    Vern8(lazy = Val{false}()), 3.0e-8, 5.0e-8; test_diff1 = true, nth_der = 1,
     dertol = 1.0e-7
 )
 
@@ -546,7 +546,7 @@ regression_test(
 @test Vern9() == Vern9(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(Vern9(), 1.0e-9, 2.0e-9; test_diff1 = true, nth_der = 4, dertol = 5.0e-2)
 regression_test(
-    Vern9(lazy = false), 1.0e-9, 2.0e-9; test_diff1 = true, nth_der = 4,
+    Vern9(lazy = Val{false}()), 1.0e-9, 2.0e-9; test_diff1 = true, nth_der = 4,
     dertol = 5.0e-2
 )
 
