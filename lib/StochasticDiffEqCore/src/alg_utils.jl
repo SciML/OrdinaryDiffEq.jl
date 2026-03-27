@@ -67,18 +67,11 @@ for T in [
     @eval OrdinaryDiffEqCore.has_autodiff(::$T) = true
 end
 
-_alg_autodiff(::StochasticDiffEqNewtonAlgorithm{T, AD}) where {T, AD} = Val{AD}()
-_alg_autodiff(::StochasticDiffEqNewtonAdaptiveAlgorithm{T, AD}) where {T, AD} = Val{AD}()
-function _alg_autodiff(::StochasticDiffEqJumpNewtonAdaptiveAlgorithm{T, AD}) where {T, AD}
-    return Val{AD}()
-end
-function _alg_autodiff(
-        ::StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm{
-            T, AD,
-        }
-    ) where {T, AD}
-    return Val{AD}()
-end
+
+_alg_autodiff(::StochasticDiffEqNewtonAlgorithm) = alg.autodiff
+_alg_autodiff(::StochasticDiffEqNewtonAdaptiveAlgorithm) = alg.autodiff
+_alg_autodiff(::StochasticDiffEqJumpNewtonAdaptiveAlgorithm) = alg.autodiff
+_alg_autodiff(::StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm) = alg.autodiff
 _alg_autodiff(alg::StochasticCompositeAlgorithm) = _alg_autodiff(alg.algs[end])
 
 function OrdinaryDiffEqCore.alg_autodiff(
