@@ -47,7 +47,7 @@ for inplace in [false, true], alg in lazy_alg
     fail = all(isapprox(sol(t)[1], test_solution(t); atol = 0.05) for t in testtimes)
 
     prob = ODEProblem{inplace}(test_ode, [0.0], tspan, [1.0])
-    sol = solve(prob, alg(lazy = false); callback = cb, dt = 0.0013)
+    sol = solve(prob, alg(lazy = Val{false}()); callback = cb, dt = 0.0013)
     pass = all(isapprox(sol(t)[1], test_solution(t); atol = 0.05) for t in testtimes)
 
     cur_itr += 1
