@@ -30,65 +30,86 @@ end
 
 Compute Stratonovich iterated integrals J. Strategy:
 
-1. **NoiseWrapper/NoiseGrid sub-grid**: If the noise process has fine-grid W values
+1. **RSwM3 S₂ stack**: After step rejection, RSwM3 decomposes the current step's
+   noise into sub-intervals stored in S₂. Compute iterated integrals from these
+   exact sub-interval dW values. Handles multiple rejections naturally since
+   `reject_step!` keeps S₂ updated.
+
+2. **NoiseWrapper/NoiseGrid sub-grid**: If the noise process has fine-grid W values
    (from a prior solve), compute iterated integrals from sub-grid dW increments.
    This ensures consistency between fine and coarse solutions for convergence testing.
 
-2. **Rejection retry**: If dt < cached original dt, use sub-interval computation
-   from the cached Fourier coefficients.
-
 3. **Fresh step with dZ coefficients**: Unpack dZ into MronRoe Fourier coefficients,
-   compute levyarea deterministically. Cache for potential rejection.
+   compute levyarea deterministically.
 
-4. **Fallback**: Return nothing → legacy LevyArea path.
+4. **Fallback**: Return nothing → legacy path for diagonal/scalar noise.
 """
-function _compute_iterated_I(dt, dW, dZ, W_noise, cache, alg)
+function _compute_iterated_I(dt, dW, dZ, W_noise, alg)
     # Only for non-diagonal vector noise (dW must be a Vector, not Matrix or Number)
     dW isa AbstractVector || return nothing
 
     m = length(dW)
+
+    # Strategy 1: RSwM3 S₂ stack (adaptive, post-rejection)
+    J_s2 = _compute_II_from_S2(W_noise, m, dt)
+    if J_s2 !== nothing
+        return J_s2
+    end
+
+    # Strategy 2: NoiseWrapper/NoiseGrid sub-grid (convergence testing)
+    J_subgrid = _compute_II_from_grid(W_noise, m, dt)
+    if J_subgrid !== nothing
+        return J_subgrid
+    end
 
     # Check if we have usable dZ for coefficient-based computation
     if dZ === nothing || length(dZ) < 2 * m
         return nothing
     end
 
-    # Strategy 1: NoiseWrapper/NoiseGrid sub-grid (convergence testing)
-    J_subgrid = _compute_II_from_grid(W_noise, m, dt)
-    if J_subgrid !== nothing
-        return J_subgrid
-    end
-
-    # Strategy 2: Rejection retry — use cached original coefficients
-    if cache._dt_orig[] > 0 && dt < cache._dt_orig[] - eps(cache._dt_orig[])
-        dZ_orig = cache._dZ_orig[]
-        dW_orig = cache._dW_orig[]
-        dt_orig = cache._dt_orig[]
-        coeffs = _unpack_dZ_to_coefficients(dZ_orig, m, alg.p)
-        coeffs === nothing && return nothing
-
-        n_quad = max(64, coeffs.n)
-        J = iterated_integrals_subinterval(
-            dW_orig, dt_orig, coeffs, 0.0, dt;
-            n_quadrature = n_quad, ito_correction = false
-        )
-        return J
-    end
-
     # Strategy 3: Fresh step — unpack dZ into Fourier coefficients
     coeffs = _unpack_dZ_to_coefficients(dZ, m, alg.p)
     coeffs === nothing && return nothing
-
-    # Cache for potential rejection retry
-    copyto!(cache._dW_orig[], dW)
-    copyto!(cache._dZ_orig[], dZ)
-    cache._dt_orig[] = dt
 
     # Compute full-step Lévy area from coefficients (Stratonovich)
     Wn = dW / √dt
     A = levyarea(Wn, coeffs.n, MronRoe(), coeffs)
     J = 1 // 2 * dW .* dW' .+ dt .* A
     return J
+end
+
+"""
+Compute Stratonovich iterated integrals from RSwM3's S₂ stack.
+S₂ holds the sub-interval decomposition (dt_i, dW_i, dZ_i) of the current
+step's noise. After rejection, S₂ has ≥2 entries. With only 1 entry (fresh
+step, no rejections), the discrete integral gives zero Lévy area, which is
+worse than LevyArea.jl's approximation, so we return nothing.
+"""
+function _compute_II_from_S2(W_noise, m, dt)
+    !hasproperty(W_noise, :S₂) && return nothing
+    S₂ = W_noise.S₂
+    n_sub = length(S₂)
+    n_sub < 2 && return nothing
+
+    T = Float64
+    I = zeros(T, m, m)
+    W_cumsum = zeros(T, m)
+
+    for idx in 1:n_sub
+        dWn = S₂.data[idx][2]  # dW_i from (dt_i, dW_i, dZ_i) tuple
+        for k in 1:m
+            for j in 1:m
+                I[j, k] += W_cumsum[j] * dWn[k]
+            end
+        end
+        W_cumsum .+= dWn
+    end
+
+    # Ito → Stratonovich: J_{jk} = I_{jk} + (1/2)*δ_{jk}*dt
+    for j in 1:m
+        I[j, j] += dt / 2
+    end
+    return I
 end
 
 """
@@ -148,7 +169,7 @@ end
     dW = W.dW
 
     # Try coefficient-based computation first (handles adaptivity + consistency)
-    J = _compute_iterated_I(dt, dW, W.dZ, W, cache, integrator.alg)
+    J = _compute_iterated_I(dt, dW, W.dZ, W, integrator.alg)
     if J === nothing
         # Fallback: legacy LevyArea path (scalar/diagonal/commutative noise)
         J = get_iterated_I(
@@ -223,7 +244,7 @@ end
     Jalg = cache.Jalg
 
     # Try coefficient-based computation first
-    J_coeffs = _compute_iterated_I(dt, dW, W.dZ, W, cache, integrator.alg)
+    J_coeffs = _compute_iterated_I(dt, dW, W.dZ, W, integrator.alg)
     if J_coeffs !== nothing
         Jalg.J .= J_coeffs
     else
