@@ -8,8 +8,8 @@ u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 1.0)
 prob = ODEProblem(lorenz, u0, tspan)
 sol = solve(prob, Tsit5(), save_idxs = 1)
-solve(prob, Tsit5())
-solve(prob, Tsit5(), save_idxs = 1)
+@inferred solve(prob, Tsit5())
+@inferred solve(prob, Tsit5(), save_idxs = 1)
 @test_broken @inferred(remake(prob, u0 = Float32[1.0; 0.0; 0.0])) ==
     remake(prob, u0 = Float32[1.0; 0.0; 0.0])
 @test_broken @inferred(solve(prob, Tsit5(), u0 = Float32[1.0; 0.0; 0.0])) ==
@@ -24,7 +24,7 @@ prob = ODEProblem{true, SciMLBase.FullSpecialize}(lorenz, u0, tspan)
     solve(prob, Tsit5(), u0 = Float32[1.0; 0.0; 0.0])
 
 prob = ODEProblem(lorenz, Float32[1.0; 0.0; 0.0], tspan)
-solve(prob, Tsit5(), save_idxs = 1)
+@inferred solve(prob, Tsit5(), save_idxs = 1)
 @test_broken @inferred(solve(prob, Tsit5(), u0 = [1.0; 0.0; 0.0])) ==
     solve(prob, Tsit5(), u0 = [1.0; 0.0; 0.0])
 remake(prob, u0 = [1.0; 0.0; 0.0])
@@ -102,5 +102,5 @@ dt = 1 // 2^(4)
 tspan = (0.0, 1.0)
 prob = SDEProblem(ff, gg, u0, (0.0, 1.0))
 sol = solve(prob, EM(), dt = dt)
-solve(prob, EM(), dt = dt)
-solve(prob, EM(), dt = dt, save_idxs = 1)
+@inferred solve(prob, EM(), dt = dt)
+@inferred solve(prob, EM(), dt = dt, save_idxs = 1)
