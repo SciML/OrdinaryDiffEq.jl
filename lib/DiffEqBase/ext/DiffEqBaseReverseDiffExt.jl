@@ -175,7 +175,7 @@ function DiffEqBase.solve_up(
     )
 end
 
-# Required becase ReverseDiff.@grad function DiffEqBase.solve_up is not supported!
+# Required because ReverseDiff.@grad function DiffEqBase.solve_up is not supported!
 import DiffEqBase: solve_up
 ReverseDiff.@grad function solve_up(prob, sensealg, u0, p, args...; kwargs...)
     out = DiffEqBase._solve_adjoint(

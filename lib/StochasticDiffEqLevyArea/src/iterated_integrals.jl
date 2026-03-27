@@ -6,7 +6,7 @@ Subtract h/2 from every diagonal element of I (Itô correction).
 function ito_correction!(I, h = 1)
     m, n = size(I)
     m == n || throw(DimensionMismatch("Matrix is not square: dimensions are $(size(I))"))
-    @inbounds for i in 1:m
+    return @inbounds for i in 1:m
         I[i, i] -= h / 2
     end
 end
@@ -16,11 +16,13 @@ end
 
 Simulate iterated stochastic integrals ∫₀ʰ∫₀ˢdWᵢ(t)dWⱼ(s) for all pairs i,j.
 """
-function iterated_integrals(W::AbstractVector{T}, h::Real, eps::Real = h^(3 / 2);
+function iterated_integrals(
+        W::AbstractVector{T}, h::Real, eps::Real = h^(3 / 2);
         ito_correction = true,
         error_norm::AbstractErrorNorm = MaxL2(),
         alg::AbstractIteratedIntegralAlgorithm = optimal_algorithm(length(W), h, eps, error_norm),
-        rng::AbstractRNG = default_rng()) where {T <: AbstractFloat}
+        rng::AbstractRNG = default_rng()
+    ) where {T <: AbstractFloat}
     m = length(W)
     n = terms_needed(m, h, eps, alg, error_norm)
     I = levyarea(W / √h, n, alg; rng = rng)
@@ -36,10 +38,12 @@ end
 
 Compute iterated integrals using pre-generated Fourier coefficients (deterministic).
 """
-function iterated_integrals(W::AbstractVector{T}, h::Real,
+function iterated_integrals(
+        W::AbstractVector{T}, h::Real,
         coeffs::LevyAreaCoefficients{T};
         ito_correction = true,
-        alg::AbstractIteratedIntegralAlgorithm = MronRoe()) where {T <: AbstractFloat}
+        alg::AbstractIteratedIntegralAlgorithm = MronRoe()
+    ) where {T <: AbstractFloat}
     n = coeffs.n
     I = levyarea(W / √h, n, alg, coeffs)
     if ito_correction
@@ -54,11 +58,13 @@ end
 
 Q-Wiener process version.
 """
-function iterated_integrals(W::AbstractVector{T}, q_12::AbstractVector, h::Real, eps::Real;
+function iterated_integrals(
+        W::AbstractVector{T}, q_12::AbstractVector, h::Real, eps::Real;
         ito_correction = true,
         error_norm::AbstractErrorNorm = FrobeniusL2(),
         alg::AbstractIteratedIntegralAlgorithm = optimal_algorithm(length(W), q_12, h, eps, error_norm),
-        rng::AbstractRNG = default_rng()) where {T <: AbstractFloat}
+        rng::AbstractRNG = default_rng()
+    ) where {T <: AbstractFloat}
     m = length(W)
     n = terms_needed(m, q_12, h, eps, alg, error_norm)
     I = levyarea(W ./ q_12 ./ √h, n, alg; rng = rng)

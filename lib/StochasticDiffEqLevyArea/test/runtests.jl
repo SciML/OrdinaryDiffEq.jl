@@ -18,7 +18,7 @@ Random.seed!(638278)
 
     @testset "Iterated integrals - $alg, m=$m" for
         alg in [Fourier(), Milstein(), Wiktorsson(), MronRoe()],
-        m in [2, 10, 50]
+            m in [2, 10, 50]
 
         h = 0.0001
         ε = h^(3 / 2)
@@ -81,8 +81,8 @@ Random.seed!(638278)
 
         # Boundary conditions: W(0) = 0, W(h) = dW
         W_vals = reconstruct_path(dW, h, coeffs, [0.0, h])
-        @test W_vals[1] ≈ zeros(m) atol = 1e-12
-        @test W_vals[2] ≈ dW atol = 1e-10
+        @test W_vals[1] ≈ zeros(m) atol = 1.0e-12
+        @test W_vals[2] ≈ dW atol = 1.0e-10
 
         # Mid-point should not equal simple linear interpolation (bridge is non-trivial)
         W_mid = reconstruct_path(dW, h, coeffs, [h / 2])
@@ -114,26 +114,34 @@ Random.seed!(638278)
         coeffs = generate_coefficients(m, n, MronRoe(), rng)
 
         # Full interval: diagonal should satisfy Itô identity
-        I_full = iterated_integrals_subinterval(dW, h, coeffs, 0.0, h;
-            n_quadrature = 1000, ito_correction = true)
+        I_full = iterated_integrals_subinterval(
+            dW, h, coeffs, 0.0, h;
+            n_quadrature = 1000, ito_correction = true
+        )
         @test diag(I_full) ≈ 0.5 * dW .^ 2 .- 0.5 * h atol = 0.05
 
         # Sub-interval diagonal identity
-        I_sub = iterated_integrals_subinterval(dW, h, coeffs, 0.0, h / 2;
-            n_quadrature = 500, ito_correction = true)
+        I_sub = iterated_integrals_subinterval(
+            dW, h, coeffs, 0.0, h / 2;
+            n_quadrature = 500, ito_correction = true
+        )
         W_half = reconstruct_path(dW, h, coeffs, [h / 2])[1]
         dW_sub = W_half
         @test diag(I_sub) ≈ 0.5 * dW_sub .^ 2 .- 0.5 * (h / 2) atol = 0.05
 
         # Determinism: same coefficients → same result
-        I_sub2 = iterated_integrals_subinterval(dW, h, coeffs, 0.0, h / 2;
-            n_quadrature = 500, ito_correction = true)
+        I_sub2 = iterated_integrals_subinterval(
+            dW, h, coeffs, 0.0, h / 2;
+            n_quadrature = 500, ito_correction = true
+        )
         @test I_sub == I_sub2
 
         # Convergence: increasing quadrature improves diagonal accuracy
         for nq in [100, 500, 2000]
-            I_q = iterated_integrals_subinterval(dW, h, coeffs, 0.0, h;
-                n_quadrature = nq, ito_correction = true)
+            I_q = iterated_integrals_subinterval(
+                dW, h, coeffs, 0.0, h;
+                n_quadrature = nq, ito_correction = true
+            )
             err = norm(diag(I_q) - (0.5 * dW .^ 2 .- 0.5 * h))
             # Just check it's reasonably small
             @test err < 0.5
@@ -155,32 +163,48 @@ Random.seed!(638278)
     # These values must remain stable across Julia versions since StableRNGs
     # guarantees a fixed stream.
     @testset "Regression (StableRNG) - $alg_name" for (alg_name, alg, W_ref, I_ref) in [
-        ("Fourier m=2", Fourier(),
-            [0.0538738050959819, 0.02212611720030917],
-            [-0.0035488065622400772 0.002726448021797754;
-             -0.0015344298962174452 -0.004755217468819091]),
-        ("Milstein m=2", Milstein(),
-            [0.0538738050959819, 0.02212611720030917],
-            [-0.0035488065622400772 -0.0017205137501459774;
-             0.002912531875726286 -0.004755217468819091]),
-        ("Wiktorsson m=2", Wiktorsson(),
-            [0.0538738050959819, 0.02212611720030917],
-            [-0.0035488065622400772 -6.58073345729482e-5;
-             0.0012578254601532573 -0.004755217468819091]),
-        ("MronRoe m=2", MronRoe(),
-            [0.0538738050959819, 0.02212611720030917],
-            [-0.0035488065622400772 -0.0008127884214381656;
-             0.0020048065470184744 -0.004755217468819091]),
-    ]
+            (
+                "Fourier m=2", Fourier(),
+                [0.0538738050959819, 0.02212611720030917],
+                [
+                    -0.0035488065622400772 0.002726448021797754;
+                    -0.0015344298962174452 -0.004755217468819091
+                ],
+            ),
+            (
+                "Milstein m=2", Milstein(),
+                [0.0538738050959819, 0.02212611720030917],
+                [
+                    -0.0035488065622400772 -0.0017205137501459774;
+                    0.002912531875726286 -0.004755217468819091
+                ],
+            ),
+            (
+                "Wiktorsson m=2", Wiktorsson(),
+                [0.0538738050959819, 0.02212611720030917],
+                [
+                    -0.0035488065622400772 -6.58073345729482e-5;
+                    0.0012578254601532573 -0.004755217468819091
+                ],
+            ),
+            (
+                "MronRoe m=2", MronRoe(),
+                [0.0538738050959819, 0.02212611720030917],
+                [
+                    -0.0035488065622400772 -0.0008127884214381656;
+                    0.0020048065470184744 -0.004755217468819091
+                ],
+            ),
+        ]
         h = 0.01
         # Verify W generation is stable
         rng_w = StableRNG(100)
         W_check = sqrt(h) * randn(rng_w, 2)
-        @test W_check ≈ W_ref atol = 1e-15
+        @test W_check ≈ W_ref atol = 1.0e-15
 
         # Verify iterated_integrals output is stable
         rng_la = StableRNG(200)
         I_new = iterated_integrals(W_ref, h, h^(3 / 2); alg = alg, rng = rng_la)
-        @test I_new ≈ I_ref atol = 1e-14
+        @test I_new ≈ I_ref atol = 1.0e-14
     end
 end

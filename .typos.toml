@@ -87,5 +87,23 @@ IIF = "IIF"  # Integrating Factor method (IIF1M, IIF2M, IIF1Mil)
 iif = "iif"
 currate = "currate"  # current rate variable in tau-leaping
 SIE = "SIE"  # SIEA/SIEB algorithm name prefix
+SME = "SME"  # SME algorithm name (Stochastic Modified Euler)
 resetted = "resetted"  # variable name in stepsize control
 strat = "strat"  # Stratonovich abbreviation
+
+# Variable names used in codebase
+yhat = "yhat"  # estimated y value
+accpt = "accpt"  # accepted step flag variable
+gam = "gam"  # gamma abbreviation in tableaux
+clos = "clos"  # closure abbreviation
+
+# Journal abbreviations in BibTeX citations
+Comput = "Comput"  # J. Comput. Phys. (Journal of Computational Physics)
+
+# Function names with historical spelling (API-stable)
+occurence = "occurence"  # in check_event_occurence, is_event_occurence
+occured = "occured"  # in comments near occurence functions
+occuring = "occuring"  # in comments near occurence functions
+
+# Julia spelling convention
+inferrable = "inferrable"  # Julia uses "inferrable" not "inferable"

@@ -819,7 +819,8 @@ function promote_f(
                 J_T = Base.promote_op(similar, typeof(f.jac_prototype), Type{uElType})
                 sig = Tuple{J_T, typeof(u0), typeof(p), typeof(t)}
                 f = @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
-                    Void(f.jac), (sig,), (Nothing,))
+                    Void(f.jac), (sig,), (Nothing,)
+                )
             elseif isdefined(f, :sparsity) && f.sparsity isa AbstractMatrix &&
                     !(f.sparsity isa Matrix)
                 # The sparsity pattern is a non-dense matrix (e.g. SparseMatrixCSC).
@@ -836,7 +837,8 @@ function promote_f(
             else
                 sig = Tuple{Matrix{uElType}, typeof(u0), typeof(p), typeof(t)}
                 f = @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
-                    Void(f.jac), (sig,), (Nothing,))
+                    Void(f.jac), (sig,), (Nothing,)
+                )
             end
         end
         return unwrapped_f(f, wrapfun_iip(f.f, (u0, u0, p, t), Val(CS)))
