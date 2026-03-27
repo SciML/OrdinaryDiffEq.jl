@@ -1052,17 +1052,6 @@ struct SensitivityADPassThrough <: AbstractDEAlgorithm end
 ### Legacy Dispatches to be Non-Breaking
 ###
 
-@deprecate concrete_solve(
-    prob::AbstractDEProblem,
-    alg::Union{AbstractDEAlgorithm, Nothing},
-    u0 = prob.u0, p = prob.p, args...; kwargs...
-) solve(
-    prob, alg,
-    args...;
-    u0 = u0,
-    p = p,
-    kwargs...
-)
 
 function _solve_adjoint(
         prob, sensealg, u0, p, originator, args...; merge_callbacks = true,

@@ -102,14 +102,7 @@ function SciMLBase.__init(
         initializealg = DDEDefaultInit(),
         kwargs...
     )
-    is_stochastic = prob isa AbstractSDDEProblem
-
-    if haskey(kwargs, :initial_order)
-        @warn "initial_order has been deprecated. Please specify order_discontinuity_t0 in the DDEProblem/SDDEProblem instead."
-        order_discontinuity_t0::Int = kwargs[:initial_order]
-    else
-        order_discontinuity_t0 = is_stochastic ? Int(prob.order_discontinuity_t0) : prob.order_discontinuity_t0
-    end
+    order_discontinuity_t0 = prob.order_discontinuity_t0
 
     # Handle verbose argument: convert AbstractVerbosityPreset to DEVerbosity
     if verbose isa Bool
@@ -362,16 +355,6 @@ function SciMLBase.__init(
     QT = tTypeNoUnits <: Integer ? typeof(qmin) : typeof(internalnorm(u, t0))
 
     # Setting up the step size controller
-    if (beta1 !== nothing || beta2 !== nothing) && controller !== nothing
-        throw(ArgumentError("Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."))
-    end
-
-    if (beta1 !== nothing || beta2 !== nothing)
-        message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-
     if controller === nothing
         controller = OrdinaryDiffEqCore.default_controller(
             alg.alg, cache,
