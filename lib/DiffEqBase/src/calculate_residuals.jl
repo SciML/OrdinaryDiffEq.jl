@@ -142,7 +142,8 @@ with multiple threads.
         out, u₀, u₁, α, ρ, internalnorm, t,
         thread::Union{False, True} = False()
     )
-    return @.. broadcast = false thread = thread out = calculate_residuals(u₀, u₁, α, ρ, internalnorm, t)
+    @.. broadcast = false thread = thread out = calculate_residuals(u₀, u₁, α, ρ, internalnorm, t)
+    return nothing
 end
 
 """
@@ -166,5 +167,5 @@ with multiple threads.
         E₁, E₂, u₀, u₁, α, ρ, δ,
         scalarnorm, t
     )
-    return out
+    return nothing
 end
