@@ -48,8 +48,10 @@ end
 
 @time begin
     # Core tests — basic DiffEqBase functionality, no downstream solvers needed
-    if TEST_GROUP ∉ ("QA", "Static", "Downstream", "Downstream2",
-        "ModelingToolkit", "Sundials")
+    if TEST_GROUP ∉ (
+            "QA", "Static", "Downstream", "Downstream2",
+            "ModelingToolkit", "Sundials",
+        )
         @time @safetestset "Callbacks" include("callbacks.jl")
         @time @safetestset "Plot Vars" include("plot_vars.jl")
         @time @safetestset "Problem Creation Tests" include("problem_creation_tests.jl")
@@ -68,8 +70,10 @@ end
     end
 
     # QA tests — Aqua quality checks
-    if TEST_GROUP ∉ ("Core", "Static", "Downstream", "Downstream2",
-        "ModelingToolkit", "Sundials") && isempty(VERSION.prerelease)
+    if TEST_GROUP ∉ (
+            "Core", "Static", "Downstream", "Downstream2",
+            "ModelingToolkit", "Sundials",
+        ) && isempty(VERSION.prerelease)
         @time @safetestset "Aqua" include("aqua.jl")
     end
 

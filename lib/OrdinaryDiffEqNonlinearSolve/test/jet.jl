@@ -41,10 +41,10 @@ using JET
 
         # Solvers which are not fully type-stable for initialization
         iip_unstable_ode_solvers = [
-            ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(), MEBDF2(), 
+            ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(), MEBDF2(),
             Rosenbrock23(), Rosenbrock32(), Rodas4(), Rodas4P(), Rodas5(), Rodas5P(),
-            Rosenbrock23(autodiff=ad), Rosenbrock32(autodiff=ad), Rodas4(autodiff=ad), 
-            Rodas4P(autodiff=ad), Rodas5(autodiff=ad), Rodas5P(autodiff=ad),
+            Rosenbrock23(autodiff = ad), Rosenbrock32(autodiff = ad), Rodas4(autodiff = ad),
+            Rodas4P(autodiff = ad), Rodas5(autodiff = ad), Rodas5P(autodiff = ad),
         ]
         # Some of these are type-stable for the initialization step, but not all
         iip_stable_ode_solvers = [
@@ -64,10 +64,10 @@ using JET
 
         # Solvers which are not fully type-stable for initialization
         oop_unstable_ode_solvers = [
-            ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(), MEBDF2(), 
+            ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(), MEBDF2(),
             Rosenbrock23(), Rosenbrock32(), Rodas4(), Rodas4P(), Rodas5(), Rodas5P(),
-            Rosenbrock23(autodiff=ad), Rosenbrock32(autodiff=ad), Rodas4(autodiff=ad), 
-            Rodas4P(autodiff=ad), Rodas5(autodiff=ad), Rodas5P(autodiff=ad),
+            Rosenbrock23(autodiff = ad), Rosenbrock32(autodiff = ad), Rodas4(autodiff = ad),
+            Rodas4P(autodiff = ad), Rodas5(autodiff = ad), Rodas5P(autodiff = ad),
         ]
         # Some of these are type-stable for the initialization step, but not all
         oop_stable_ode_solvers = [
@@ -97,4 +97,3 @@ using JET
 
     end
 end
-

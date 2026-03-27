@@ -717,7 +717,7 @@ function _ode_init(
     success_iter = 0
     erracc = QT(1)
     dtacc = tType(1)
-    reinitiailize = true
+    reinitialize = true
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
     fsalfirst, fsallast = _cache !== nothing ? (nothing, nothing) :
@@ -757,7 +757,7 @@ function _ode_init(
         vector_event_last_time,
         last_event_error, accept_step,
         isout, reeval_fsal,
-        u_modified, reinitiailize, isdae,
+        u_modified, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
         fsalfirst, fsallast, _rng,
         W, P, sqdt,

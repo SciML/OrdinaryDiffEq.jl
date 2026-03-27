@@ -319,7 +319,7 @@ end
 end
 
 """
-Return a nudged (if neccessary) value of `integrator.tprev` to avoid repeat event detection
+Return a nudged (if necessary) value of `integrator.tprev` to avoid repeat event detection
 - `integrator`
 - `callback`: Last occuring callback
 - `condition_tprev`: Condition of last occuring callback evaluated at `integrator.tprev`

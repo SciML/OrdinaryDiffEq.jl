@@ -6,23 +6,29 @@ depends on the algorithm:
 - Fourier, Milstein, Wiktorsson: X is n×m, Y is m×n
 - MronRoe: X is m×n, Y is n×m
 """
-function generate_coefficients(m::Int, n::Int, alg::Fourier,
-        rng::AbstractRNG = default_rng(); T::Type = Float64)
+function generate_coefficients(
+        m::Int, n::Int, alg::Fourier,
+        rng::AbstractRNG = default_rng(); T::Type = Float64
+    )
     X = randn(rng, T, n, m)
     Y = randn(rng, T, m, n)
     return LevyAreaCoefficients{T}(X, Y, T[], m, n)
 end
 
-function generate_coefficients(m::Int, n::Int, alg::Milstein,
-        rng::AbstractRNG = default_rng(); T::Type = Float64)
+function generate_coefficients(
+        m::Int, n::Int, alg::Milstein,
+        rng::AbstractRNG = default_rng(); T::Type = Float64
+    )
     X = randn(rng, T, n, m)
     Y = randn(rng, T, m, n)
     M = randn(rng, T, m)
     return LevyAreaCoefficients{T}(X, Y, M, m, n)
 end
 
-function generate_coefficients(m::Int, n::Int, alg::Wiktorsson,
-        rng::AbstractRNG = default_rng(); T::Type = Float64)
+function generate_coefficients(
+        m::Int, n::Int, alg::Wiktorsson,
+        rng::AbstractRNG = default_rng(); T::Type = Float64
+    )
     X = randn(rng, T, n, m)
     Y = randn(rng, T, m, n)
     n_tail = (m^2 - m) ÷ 2
@@ -30,8 +36,10 @@ function generate_coefficients(m::Int, n::Int, alg::Wiktorsson,
     return LevyAreaCoefficients{T}(X, Y, tail, m, n)
 end
 
-function generate_coefficients(m::Int, n::Int, alg::MronRoe,
-        rng::AbstractRNG = default_rng(); T::Type = Float64)
+function generate_coefficients(
+        m::Int, n::Int, alg::MronRoe,
+        rng::AbstractRNG = default_rng(); T::Type = Float64
+    )
     # MronRoe uses transposed layout
     X = randn(rng, T, m, n)
     Y = randn(rng, T, n, m)
