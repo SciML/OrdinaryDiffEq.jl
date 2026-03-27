@@ -55,9 +55,6 @@ end
 function SciMLBase.alg_order(alg::AbstractMethodOfStepsAlgorithm)
     return SciMLBase.alg_order(alg.alg)
 end
-function OrdinaryDiffEqCore.alg_maximum_order(alg::AbstractMethodOfStepsAlgorithm)
-    return OrdinaryDiffEqCore.alg_maximum_order(alg.alg)
-end
 function OrdinaryDiffEqCore.alg_adaptive_order(alg::AbstractMethodOfStepsAlgorithm)
     return OrdinaryDiffEqCore.alg_adaptive_order(alg.alg)
 end
@@ -70,6 +67,14 @@ Return if algorithm `alg` is a composite algorithm.
 iscomposite(alg) = false
 iscomposite(::OrdinaryDiffEqCore.OrdinaryDiffEqCompositeAlgorithm) = true
 iscomposite(alg::AbstractMethodOfStepsAlgorithm) = iscomposite(alg.alg)
+
+# SDE alg_order returns Rational (e.g. 1//2), so we need floor(Int, ...) for alg_maximum_order.
+function OrdinaryDiffEqCore.alg_maximum_order(alg::SDEAlgUnion)
+    return max(1, floor(Int, SciMLBase.alg_order(alg)))
+end
+function OrdinaryDiffEqCore.alg_maximum_order(alg::AbstractMethodOfStepsAlgorithm)
+    return OrdinaryDiffEqCore.alg_maximum_order(alg.alg)
+end
 
 function DiffEqBase.prepare_alg(alg::MethodOfSteps, u0, p, prob)
     return MethodOfSteps(

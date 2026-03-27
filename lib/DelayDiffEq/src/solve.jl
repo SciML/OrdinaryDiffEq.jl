@@ -1,5 +1,5 @@
 function SciMLBase.__solve(
-        prob::SciMLBase.AbstractDDEProblem,
+        prob::Union{SciMLBase.AbstractDDEProblem, AbstractSDDEProblem},
         alg::AbstractMethodOfStepsAlgorithm, args...;
         kwargs...
     )
@@ -36,7 +36,7 @@ Old version has 20 parameters, new version has 21 parameters (adds typeof(verbos
 const DEOPTIONS_HAS_VERBOSE_TYPEPARAM = _count_deoptions_typeparams() >= 21
 
 function SciMLBase.__init(
-        prob::SciMLBase.AbstractDDEProblem,
+        prob::Union{SciMLBase.AbstractDDEProblem, AbstractSDDEProblem},
         alg::AbstractMethodOfStepsAlgorithm,
         timeseries_init = (),
         ts_init = (),
@@ -51,6 +51,7 @@ function SciMLBase.__init(
             saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
         save_discretes = true,
+        save_noise = save_everystep,
         callback = nothing,
         dense = save_everystep && isempty(saveat),
         calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
@@ -93,6 +94,7 @@ function SciMLBase.__init(
         allow_extrapolation = OrdinaryDiffEqCore.alg_extrapolates(alg),
         initialize_integrator = true,
         alias_u0 = false,
+        seed = UInt64(0),
         # keyword arguments for DDEs
         discontinuity_interp_points::Int = 10,
         discontinuity_abstol = eltype(prob.tspan)(1 // Int64(10)^12),
@@ -100,11 +102,13 @@ function SciMLBase.__init(
         initializealg = DDEDefaultInit(),
         kwargs...
     )
+    is_stochastic = prob isa AbstractSDDEProblem
+
     if haskey(kwargs, :initial_order)
-        @warn "initial_order has been deprecated. Please specify order_discontinuity_t0 in the DDEProblem instead."
+        @warn "initial_order has been deprecated. Please specify order_discontinuity_t0 in the DDEProblem/SDDEProblem instead."
         order_discontinuity_t0::Int = kwargs[:initial_order]
     else
-        order_discontinuity_t0 = prob.order_discontinuity_t0
+        order_discontinuity_t0 = is_stochastic ? Int(prob.order_discontinuity_t0) : prob.order_discontinuity_t0
     end
 
     # Handle verbose argument: convert Bool or AbstractVerbosityPreset to DEVerbosity
@@ -120,7 +124,7 @@ function SciMLBase.__init(
         verbose_spec = verbose
     end
 
-    if alg.alg isa CompositeAlgorithm && alg.alg.choice_function isa AutoSwitch
+    if !is_stochastic && alg.alg isa CompositeAlgorithm && alg.alg.choice_function isa AutoSwitch
         auto = alg.alg.choice_function
         alg = MethodOfSteps(
             CompositeAlgorithm(
@@ -188,6 +192,20 @@ function SciMLBase.__init(
     # get rate prototype
     rate_prototype = rate_prototype_of(u0, tspan)
 
+    # compute noise_rate_prototype for SDDE
+    if is_stochastic
+        _noise_rate_prototype = prob.noise_rate_prototype
+        if is_diagonal_noise(prob)
+            noise_rate_prototype = rate_prototype
+        elseif _noise_rate_prototype !== nothing
+            noise_rate_prototype = copy(_noise_rate_prototype)
+        else
+            noise_rate_prototype = nothing
+        end
+    else
+        noise_rate_prototype = nothing
+    end
+
     # get states (possibly different from the ODE integrator!)
     u, uprev,
         uprev2 = u_uprev_uprev2(
@@ -201,8 +219,13 @@ function SciMLBase.__init(
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
 
     # get the differential vs algebraic variables
-    differential_vars = prob isa DAEProblem ? prob.differential_vars :
+    differential_vars = if is_stochastic
         OrdinaryDiffEqCore.get_differential_vars(f, u)
+    elseif prob isa DAEProblem
+        prob.differential_vars
+    else
+        OrdinaryDiffEqCore.get_differential_vars(f, u)
+    end
 
     # create a history function
     history = build_history_function(
@@ -211,7 +234,23 @@ function SciMLBase.__init(
         dt = dt, dtmin = dtmin, calck = false,
         adaptive = adaptive, internalnorm = internalnorm
     )
-    f_with_history = ODEFunctionWrapper(f, history)
+    f_with_history = if is_stochastic
+        SDEFunctionWrapper(f, history)
+    else
+        ODEFunctionWrapper(f, history)
+    end
+
+    # ── Noise creation (SDDE only) ─────────────────────────────────────
+    if is_stochastic
+        W, P, sqdt = _create_sdde_noise(
+            prob, alg.alg, u0, t0, tType(dt), tdir, noise_rate_prototype,
+            save_noise, seed, isinplace(prob), isadaptive(alg)
+        )
+    else
+        W = nothing
+        P = nothing
+        sqdt = nothing
+    end
 
     # initialize output arrays of the solution
     save_idxs,
@@ -230,13 +269,26 @@ function SciMLBase.__init(
 
     # build cache
     ode_integrator = history.integrator
-    cache = OrdinaryDiffEqCore.alg_cache(
-        alg.alg, u, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2,
-        f_with_history, t0, zero(tType), reltol_internal, p,
-        calck,
-        Val(isinplace(prob)), OrdinaryDiffEqCore.DEVerbosity()
-    )
+    cache = if is_stochastic
+        dW = W.dW
+        dZ = W.dZ
+        _sde_alg_cache(
+            alg.alg, prob, u, dW, dZ, p,
+            rate_prototype, noise_rate_prototype,
+            nothing, uEltypeNoUnits, uBottomEltypeNoUnits,
+            tTypeNoUnits, uprev, f_with_history, t0,
+            tType(dt), Val{isinplace(prob)},
+            OrdinaryDiffEqCore.DEVerbosity()
+        )
+    else
+        OrdinaryDiffEqCore.alg_cache(
+            alg.alg, u, rate_prototype, uEltypeNoUnits,
+            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2,
+            f_with_history, t0, zero(tType), reltol_internal, p,
+            calck,
+            Val(isinplace(prob)), OrdinaryDiffEqCore.DEVerbosity()
+        )
+    end
 
     # separate statistics of the integrator and the history
     stats = SciMLBase.DEStats(0)
@@ -247,12 +299,21 @@ function SciMLBase.__init(
         f_with_history, timeseries, ts, ks,
         alg_choice, dense, cache, differential_vars, false
     )
-    sol = SciMLBase.build_solution(
-        prob, alg.alg, ts, timeseries;
-        dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
-        alg_choice = id.alg_choice, calculate_error = false,
-        stats = stats
-    )
+    sol = if is_stochastic
+        SciMLBase.build_solution(
+            prob, alg.alg, ts, timeseries;
+            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
+            alg_choice = id.alg_choice, calculate_error = false,
+            stats = stats, W = W
+        )
+    else
+        SciMLBase.build_solution(
+            prob, alg.alg, ts, timeseries;
+            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
+            alg_choice = id.alg_choice, calculate_error = false,
+            stats = stats
+        )
+    end
 
     # retrieve time stops, time points at which solutions is saved, and discontinuities
     tstops_internal = OrdinaryDiffEqCore.initialize_tstops(
@@ -328,136 +389,76 @@ function SciMLBase.__init(
         save_everystep || isempty(saveat) || saveat isa Number ||
         prob.tspan[2] in saveat : save_end
 
-    # Construct DEOptions with compatibility for both old and new OrdinaryDiffEqCore
-    # Old version (before PR #2895): DEOptions without typeof(verbose) type parameter
-    # New version (with PR #2895): DEOptions with typeof(verbose) type parameter
-    @static if DEOPTIONS_HAS_VERBOSE_TYPEPARAM
-        # New version: include typeof(verbose) as a type parameter
-        opts = OrdinaryDiffEqCore.DEOptions{
-            typeof(abstol_internal), typeof(reltol_internal),
-            QT, tType, typeof(controller),
-            typeof(internalnorm), typeof(internalopnorm),
-            typeof(save_end_user),
-            typeof(callback_set),
-            typeof(isoutofdomain),
-            typeof(progress_message), typeof(unstable_check),
-            typeof(tstops_internal),
-            typeof(d_discontinuities_internal), typeof(userdata),
-            typeof(save_idxs),
-            typeof(maxiters), typeof(tstops),
-            typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
-        }(
-            maxiters,
-            save_everystep,
-            adaptive,
-            abstol_internal,
-            reltol_internal,
-            QT(gamma),
-            QT(qmax),
-            QT(qmin),
-            QT(qsteady_max),
-            QT(qsteady_min),
-            QT(qoldinit),
-            QT(failfactor),
-            tType(dtmax),
-            tType(dtmin),
-            controller,
-            internalnorm,
-            internalopnorm,
-            save_idxs,
-            tstops_internal,
-            saveat_internal,
-            d_discontinuities_internal,
-            tstops,
-            saveat,
-            d_discontinuities,
-            userdata,
-            progress,
-            progress_steps,
-            progress_name,
-            progress_message,
-            progress_id,
-            timeseries_errors,
-            dense_errors,
-            dense,
-            save_on,
-            save_start,
-            save_end,
-            save_discretes,
-            save_end_user,
-            callback_set,
-            isoutofdomain,
-            unstable_check,
-            verbose_spec,
-            calck,
-            force_dtmin,
-            advance_to_tstop,
-            stop_at_next_tstop
-        )
-    else
-        # Old version: without typeof(verbose) type parameter
-        opts = OrdinaryDiffEqCore.DEOptions{
-            typeof(abstol_internal), typeof(reltol_internal),
-            QT, tType, typeof(controller),
-            typeof(internalnorm), typeof(internalopnorm),
-            typeof(save_end_user),
-            typeof(callback_set),
-            typeof(isoutofdomain),
-            typeof(progress_message), typeof(unstable_check),
-            typeof(tstops_internal),
-            typeof(d_discontinuities_internal), typeof(userdata),
-            typeof(save_idxs),
-            typeof(maxiters), typeof(tstops),
-            typeof(saveat), typeof(d_discontinuities),
-        }(
-            maxiters,
-            save_everystep,
-            adaptive,
-            abstol_internal,
-            reltol_internal,
-            QT(gamma),
-            QT(qmax),
-            QT(qmin),
-            QT(qsteady_max),
-            QT(qsteady_min),
-            QT(qoldinit),
-            QT(failfactor),
-            tType(dtmax),
-            tType(dtmin),
-            controller,
-            internalnorm,
-            internalopnorm,
-            save_idxs,
-            tstops_internal,
-            saveat_internal,
-            d_discontinuities_internal,
-            tstops,
-            saveat,
-            d_discontinuities,
-            userdata,
-            progress,
-            progress_steps,
-            progress_name,
-            progress_message,
-            progress_id,
-            timeseries_errors,
-            dense_errors,
-            dense,
-            save_on,
-            save_start,
-            save_end,
-            save_discretes,
-            save_end_user,
-            callback_set,
-            isoutofdomain,
-            unstable_check,
-            verbose_spec,
-            calck,
-            force_dtmin,
-            advance_to_tstop,
-            stop_at_next_tstop
-        )
-    end
+    # Compute delta for SDE algorithms (used by Milstein-type methods).
+    # For pure DDE, delta is nothing (unused).
+    delta = is_stochastic ?
+        convert(recursive_unitless_bottom_eltype(u), 1 // 1) : nothing
+
+    # Construct DEOptions using full constructor (with delta and save_noise fields)
+    opts = OrdinaryDiffEqCore.DEOptions{
+        typeof(abstol_internal), typeof(reltol_internal),
+        QT, tType, typeof(controller),
+        typeof(internalnorm), typeof(internalopnorm),
+        typeof(save_end_user),
+        typeof(callback_set),
+        typeof(isoutofdomain),
+        typeof(progress_message), typeof(unstable_check),
+        typeof(tstops_internal),
+        typeof(d_discontinuities_internal), typeof(userdata),
+        typeof(save_idxs),
+        typeof(maxiters), typeof(tstops),
+        typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
+        typeof(delta),
+    }(
+        maxiters,
+        save_everystep,
+        adaptive,
+        abstol_internal,
+        reltol_internal,
+        QT(gamma),
+        QT(qmax),
+        QT(qmin),
+        QT(qsteady_max),
+        QT(qsteady_min),
+        QT(qoldinit),
+        QT(failfactor),
+        tType(dtmax),
+        tType(dtmin),
+        controller,
+        internalnorm,
+        internalopnorm,
+        save_idxs,
+        tstops_internal,
+        saveat_internal,
+        d_discontinuities_internal,
+        tstops,
+        saveat,
+        d_discontinuities,
+        userdata,
+        progress,
+        progress_steps,
+        progress_name,
+        progress_message,
+        progress_id,
+        timeseries_errors,
+        dense_errors,
+        delta,
+        dense,
+        save_on,
+        save_start,
+        save_end,
+        save_noise,
+        save_discretes,
+        save_end_user,
+        callback_set,
+        isoutofdomain,
+        unstable_check,
+        verbose_spec,
+        calck,
+        force_dtmin,
+        advance_to_tstop,
+        stop_at_next_tstop
+    )
 
     # create fixed point solver
     fpsolver = build_fpsolver(
@@ -512,6 +513,7 @@ function SciMLBase.__init(
         typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),
         typeof(differential_vars), typeof(initializealg),
+        typeof(W), typeof(P), typeof(sqdt), Nothing,
     }(
         sol, u, k,
         t0,
@@ -565,7 +567,8 @@ function SciMLBase.__init(
         stats,
         history,
         differential_vars,
-        ode_integrator, fsalfirst, fsallast, initializealg
+        ode_integrator, fsalfirst, fsallast, initializealg,
+        W, P, sqdt, nothing,
     )
 
     # initialize DDE integrator
@@ -581,6 +584,14 @@ function SciMLBase.__init(
 
     # take care of time step dt = 0 and dt with incorrect sign
     OrdinaryDiffEqCore.handle_dt!(integrator)
+
+    # After handle_dt! may have changed dt (via auto_dt_reset!), update noise state.
+    # This mirrors what OrdinaryDiffEqCore's ODE __init does for SDE integrators.
+    if !isnothing(integrator.W)
+        OrdinaryDiffEqCore.modify_dt_for_tstops!(integrator)
+        integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
+        integrator.W.dt = integrator.dt
+    end
 
     return integrator
 end
@@ -714,6 +725,25 @@ function initialize_tstops_d_discontinuities_propagated(
 
     return tstops_propagated, d_discontinuities_propagated
 end
+
+# Override check_prob_alg_pairing: MethodOfSteps wrapping an SDE algorithm can solve SDDEProblem
+function DiffEqBase.check_prob_alg_pairing(prob::SDDEProblem, alg::AbstractMethodOfStepsAlgorithm)
+    # MethodOfSteps wrapping an SDE algorithm is valid for SDDEProblem
+    if !(alg.alg isa SDEAlgUnion)
+        throw(DiffEqBase.ProblemSolverPairingError(prob, alg))
+    end
+    if isdefined(prob, :u0) && DiffEqBase.eltypedual(prob.u0) &&
+            !SciMLBase.isautodifferentiable(alg)
+        throw(DiffEqBase.DirectAutodiffError())
+    end
+    return nothing
+end
+
+# SDE caches don't have fsalfirst/fsallast (SDE algorithms are never FSAL)
+OrdinaryDiffEqCore.get_fsalfirstlast(cache::StochasticDiffEqConstantCache, u) = (zero(u), zero(u))
+OrdinaryDiffEqCore.get_fsalfirstlast(cache::StochasticDiffEqMutableCache, u) = (zero(u), zero(u))
+
+## Note: StochasticDiffEqCore already defines initialize!(integrator, cache::StochasticDiffEqCache)
 
 struct DDEDefaultInit <: SciMLBase.DAEInitializationAlgorithm end
 
