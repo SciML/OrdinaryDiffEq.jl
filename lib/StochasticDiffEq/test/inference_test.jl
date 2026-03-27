@@ -7,7 +7,7 @@ g(u, p, t) = u
 dt = 1 // 2^(4)
 tspan = (0.0, 1.0)
 prob = SDEProblem{false}(f, g, u0, (0.0, 1.0))
-sol = solve(prob, EM(), dt = dt)
+sol = @inferred solve(prob, EM(), dt = dt)
 
 # issue #351 — interpolation with ForwardDiff.Dual
 # Now uses ODE's interpolation infrastructure (linear fallback via isempty(k))
