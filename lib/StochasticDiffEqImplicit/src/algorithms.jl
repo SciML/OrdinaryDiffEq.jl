@@ -1,7 +1,11 @@
-struct ImplicitEM{AD, F, F2, T2, CJ} <:
+using ADTypes: AutoForwardDiff
+using OrdinaryDiffEqCore: _fixup_ad, _unwrap_val
+
+struct ImplicitEM{AD, F, F2, P, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
+    precs::P
     theta::T2
     extrapolant::Symbol
     new_jac_conv_bound::T2
@@ -13,6 +17,7 @@ end
 function ImplicitEM(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
+        precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
         theta = 1, symplectic = false,
@@ -21,7 +26,7 @@ function ImplicitEM(;
     )
     autodiff = _fixup_ad(autodiff)
     return ImplicitEM(
-        linsolve, nlsolve,
+        linsolve, nlsolve, precs,
         symplectic ? 1 / 2 : theta,
         extrapolant, new_jac_conv_bound, symplectic,
         autodiff, _unwrap_val(concrete_jac), controller
@@ -31,10 +36,11 @@ end
 STrapezoid(; kwargs...) = ImplicitEM(; theta = 1 / 2, kwargs...)
 SImplicitMidpoint(; kwargs...) = ImplicitEM(; theta = 1 / 2, symplectic = true, kwargs...)
 
-struct ImplicitEulerHeun{AD, F, N, T2, CJ} <:
+struct ImplicitEulerHeun{AD, F, P, N, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
+    precs::P
     theta::T2
     extrapolant::Symbol
     new_jac_conv_bound::T2
@@ -46,6 +52,7 @@ end
 function ImplicitEulerHeun(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
+        precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
         theta = 1, symplectic = false,
@@ -54,7 +61,7 @@ function ImplicitEulerHeun(;
     )
     autodiff = _fixup_ad(autodiff)
     return ImplicitEulerHeun(
-        linsolve, nlsolve,
+        linsolve, nlsolve, precs,
         symplectic ? 1 / 2 : theta,
         extrapolant,
         new_jac_conv_bound, symplectic,
@@ -62,10 +69,11 @@ function ImplicitEulerHeun(;
     )
 end
 
-struct ImplicitRKMil{AD, F, N, T2, interpretation, CJ} <:
+struct ImplicitRKMil{AD, F, P, N, T2, interpretation, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
+    precs::P
     theta::T2
     extrapolant::Symbol
     new_jac_conv_bound::T2
@@ -77,6 +85,7 @@ end
 function ImplicitRKMil(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
+        precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
         theta = 1, symplectic = false,
@@ -85,21 +94,22 @@ function ImplicitRKMil(;
     )
     autodiff = _fixup_ad(autodiff)
     return ImplicitRKMil{
-        typeof(autodiff), typeof(linsolve), typeof(nlsolve),
+        typeof(autodiff), typeof(linsolve), typeof(precs), typeof(nlsolve),
         typeof(symplectic ? 1 / 2 : theta), typeof(interpretation),
-        _unwrap_val(concrete_jac),
     }(
-        linsolve, nlsolve, symplectic ? 1 / 2 : theta,
+        linsolve, nlsolve, precs,
+        symplectic ? 1 / 2 : theta,
         extrapolant,
         new_jac_conv_bound, symplectic,
         autodiff, _unwrap_val(concrete_jac), controller
     )
 end
 
-struct ISSEM{AD, F, N, T2, CJ} <:
+struct ISSEM{AD, F, P, N, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
+    precs::P
     theta::T2
     extrapolant::Symbol
     new_jac_conv_bound::T2
@@ -111,6 +121,7 @@ end
 function ISSEM(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
+        precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
         theta = 1, symplectic = false,
@@ -119,7 +130,7 @@ function ISSEM(;
     )
     autodiff = _fixup_ad(autodiff)
     return ISSEM(
-        linsolve, nlsolve,
+        linsolve, nlsolve, precs,
         symplectic ? 1 / 2 : theta,
         extrapolant,
         new_jac_conv_bound, symplectic,
@@ -127,10 +138,11 @@ function ISSEM(;
     )
 end
 
-struct ISSEulerHeun{AD, F, N, T2, CJ} <:
+struct ISSEulerHeun{AD, F, P, N, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
+    precs::P
     theta::T2
     extrapolant::Symbol
     new_jac_conv_bound::T2
@@ -142,6 +154,7 @@ end
 function ISSEulerHeun(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
+        precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
         theta = 1, symplectic = false,
@@ -150,7 +163,7 @@ function ISSEulerHeun(;
     )
     autodiff = _fixup_ad(autodiff)
     return ISSEulerHeun(
-        linsolve, nlsolve,
+        linsolve, nlsolve, precs,
         symplectic ? 1 / 2 : theta,
         extrapolant,
         new_jac_conv_bound, symplectic,
@@ -158,10 +171,11 @@ function ISSEulerHeun(;
     )
 end
 
-struct SKenCarp{AD, F, N, T2, CJ} <:
+struct SKenCarp{AD, F, P, N, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
+    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     new_jac_conv_bound::T2
@@ -174,6 +188,7 @@ end
 function SKenCarp(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
+        precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :min_correct,
         new_jac_conv_bound = 1.0e-3, controller = :Predictive,
@@ -181,7 +196,7 @@ function SKenCarp(;
     )
     autodiff = _fixup_ad(autodiff)
     return SKenCarp(
-        linsolve, nlsolve, smooth_est, extrapolant, new_jac_conv_bound,
+        linsolve, nlsolve, precs, smooth_est, extrapolant, new_jac_conv_bound,
         ode_error_est,
         autodiff, _unwrap_val(concrete_jac), controller
     )
