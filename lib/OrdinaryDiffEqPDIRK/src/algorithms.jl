@@ -22,7 +22,7 @@
     thread = OrdinaryDiffEq.True(),
     """
 )
-struct PDIRK44{AD, F, F2, P, TO} <:
+struct PDIRK44{AD, F, F2, P, TO, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
@@ -30,7 +30,7 @@ struct PDIRK44{AD, F, F2, P, TO} <:
     extrapolant::Symbol
     threading::TO
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function PDIRK44(;
         autodiff = AutoForwardDiff(),

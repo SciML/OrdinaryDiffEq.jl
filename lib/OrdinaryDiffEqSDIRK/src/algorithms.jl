@@ -93,7 +93,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ImplicitEuler{AD, F, F2, P, StepLimiter} <:
+struct ImplicitEuler{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -102,7 +102,7 @@ struct ImplicitEuler{AD, F, F2, P, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function ImplicitEuler(;
@@ -140,7 +140,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ImplicitMidpoint{AD, F, F2, P, StepLimiter} <:
+struct ImplicitMidpoint{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
@@ -148,7 +148,7 @@ struct ImplicitMidpoint{AD, F, F2, P, StepLimiter} <:
     extrapolant::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function ImplicitMidpoint(;
@@ -185,7 +185,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Trapezoid{AD, F, F2, P, StepLimiter} <:
+struct Trapezoid{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -194,7 +194,7 @@ struct Trapezoid{AD, F, F2, P, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function Trapezoid(;
@@ -244,7 +244,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct TRBDF2{AD, F, F2, P, StepLimiter} <:
+struct TRBDF2{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -254,7 +254,7 @@ struct TRBDF2{AD, F, F2, P, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function TRBDF2(;
@@ -301,7 +301,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct SDIRK2{AD, F, F2, P, StepLimiter} <:
+struct SDIRK2{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -311,7 +311,7 @@ struct SDIRK2{AD, F, F2, P, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function SDIRK2(;
@@ -353,7 +353,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct SDIRK22{AD, F, F2, P, StepLimiter} <:
+struct SDIRK22{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -362,7 +362,7 @@ struct SDIRK22{AD, F, F2, P, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function SDIRK22(;
@@ -414,7 +414,7 @@ end
     controller = :PI,
     """
 )
-struct SSPSDIRK2{AD, F, F2, P} <:
+struct SSPSDIRK2{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm # Not adaptive
     linsolve::F
     nlsolve::F2
@@ -423,7 +423,7 @@ struct SSPSDIRK2{AD, F, F2, P} <:
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function SSPSDIRK2(;
@@ -468,7 +468,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno3{AD, F, F2, P, StepLimiter} <:
+struct Kvaerno3{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -478,7 +478,7 @@ struct Kvaerno3{AD, F, F2, P, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function Kvaerno3(;
         autodiff = AutoForwardDiff(),
@@ -518,7 +518,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp3{AD, F, F2, P, StepLimiter} <:
+struct KenCarp3{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -528,7 +528,7 @@ struct KenCarp3{AD, F, F2, P, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function KenCarp3(;
         autodiff = AutoForwardDiff(),
@@ -566,14 +566,14 @@ end
     extrapolant = :linear,
     """
 )
-struct CFNLIRK3{AD, F, F2, P} <:
+struct CFNLIRK3{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function CFNLIRK3(;
         autodiff = AutoForwardDiff(),
@@ -619,7 +619,7 @@ end
     embedding = 3,
     """
 )
-struct Cash4{AD, F, F2, P} <:
+struct Cash4{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -629,7 +629,7 @@ struct Cash4{AD, F, F2, P} <:
     embedding::Int
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function Cash4(;
         autodiff = AutoForwardDiff(),
@@ -673,14 +673,14 @@ end
     extrapolant = :linear,
     """
 )
-struct SFSDIRK4{AD, F, F2, P} <:
+struct SFSDIRK4{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function SFSDIRK4(;
         autodiff = AutoForwardDiff(),
@@ -720,14 +720,14 @@ end
     extrapolant = :linear,
     """
 )
-struct SFSDIRK5{AD, F, F2, P} <:
+struct SFSDIRK5{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function SFSDIRK5(;
@@ -768,14 +768,14 @@ end
     extrapolant = :linear,
     """
 )
-struct SFSDIRK6{AD, F, F2, P} <:
+struct SFSDIRK6{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function SFSDIRK6(;
@@ -816,14 +816,14 @@ end
     extrapolant = :linear,
     """
 )
-struct SFSDIRK7{AD, F, F2, P} <:
+struct SFSDIRK7{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function SFSDIRK7(;
@@ -864,14 +864,14 @@ end
     extrapolant = :linear,
     """
 )
-struct SFSDIRK8{AD, F, F2, P} <:
+struct SFSDIRK8{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function SFSDIRK8(;
@@ -910,7 +910,7 @@ end
     controller = :PI,
     """
 )
-struct Hairer4{AD, F, F2, P} <:
+struct Hairer4{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -919,7 +919,7 @@ struct Hairer4{AD, F, F2, P} <:
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function Hairer4(;
         autodiff = AutoForwardDiff(),
@@ -955,7 +955,7 @@ end
     controller = :PI,
     """
 )
-struct Hairer42{AD, F, F2, P} <:
+struct Hairer42{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -964,7 +964,7 @@ struct Hairer42{AD, F, F2, P} <:
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function Hairer42(;
         autodiff = AutoForwardDiff(),
@@ -1008,7 +1008,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno4{AD, F, F2, P, StepLimiter} <:
+struct Kvaerno4{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -1018,7 +1018,7 @@ struct Kvaerno4{AD, F, F2, P, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function Kvaerno4(;
         autodiff = AutoForwardDiff(),
@@ -1062,7 +1062,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno5{AD, F, F2, P, StepLimiter} <:
+struct Kvaerno5{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -1072,7 +1072,7 @@ struct Kvaerno5{AD, F, F2, P, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function Kvaerno5(;
         autodiff = AutoForwardDiff(),
@@ -1112,7 +1112,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp4{AD, F, F2, P, StepLimiter} <:
+struct KenCarp4{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -1122,7 +1122,7 @@ struct KenCarp4{AD, F, F2, P, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function KenCarp4(;
         autodiff = AutoForwardDiff(),
@@ -1165,7 +1165,7 @@ end
     controller = :PI,
     """
 )
-struct KenCarp47{AD, F, F2, P} <:
+struct KenCarp47{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -1174,7 +1174,7 @@ struct KenCarp47{AD, F, F2, P} <:
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function KenCarp47(;
         autodiff = AutoForwardDiff(),
@@ -1214,7 +1214,7 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp5{AD, F, F2, P, StepLimiter} <:
+struct KenCarp5{AD, F, F2, P, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -1224,7 +1224,7 @@ struct KenCarp5{AD, F, F2, P, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function KenCarp5(;
         autodiff = AutoForwardDiff(),
@@ -1265,7 +1265,7 @@ end
     controller = :PI,
     """
 )
-struct KenCarp58{AD, F, F2, P} <:
+struct KenCarp58{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -1274,7 +1274,7 @@ struct KenCarp58{AD, F, F2, P} <:
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function KenCarp58(;
         autodiff = AutoForwardDiff(),
@@ -1316,7 +1316,7 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK54I8L2SA{AD, F, F2, P} <:
+struct ESDIRK54I8L2SA{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -1324,7 +1324,7 @@ struct ESDIRK54I8L2SA{AD, F, F2, P} <:
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function ESDIRK54I8L2SA(;
         autodiff = AutoForwardDiff(),
@@ -1364,7 +1364,7 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK436L2SA2{AD, F, F2, P} <:
+struct ESDIRK436L2SA2{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -1372,7 +1372,7 @@ struct ESDIRK436L2SA2{AD, F, F2, P} <:
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function ESDIRK436L2SA2(;
         autodiff = AutoForwardDiff(),
@@ -1412,7 +1412,7 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK437L2SA{AD, F, F2, P} <:
+struct ESDIRK437L2SA{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -1420,7 +1420,7 @@ struct ESDIRK437L2SA{AD, F, F2, P} <:
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function ESDIRK437L2SA(;
         autodiff = AutoForwardDiff(),
@@ -1460,7 +1460,7 @@ but are still being fully evaluated in context.",
     controller = :PI,
     """
 )
-struct ESDIRK547L2SA2{AD, F, F2, P} <:
+struct ESDIRK547L2SA2{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -1468,7 +1468,7 @@ struct ESDIRK547L2SA2{AD, F, F2, P} <:
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function ESDIRK547L2SA2(;
         autodiff = AutoForwardDiff(),
@@ -1510,7 +1510,7 @@ Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more deta
     controller = :PI,
     """
 )
-struct ESDIRK659L2SA{AD, F, F2, P} <:
+struct ESDIRK659L2SA{AD, F, F2, P, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
@@ -1518,7 +1518,7 @@ struct ESDIRK659L2SA{AD, F, F2, P} <:
     extrapolant::Symbol
     controller::Symbol
     autodiff::AD
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 function ESDIRK659L2SA(;
         autodiff = AutoForwardDiff(),
