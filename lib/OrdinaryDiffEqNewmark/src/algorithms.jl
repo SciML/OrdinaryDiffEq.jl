@@ -15,14 +15,14 @@ time stepping procedure for dynamic analysis." Earthquake engineering &
 structural dynamics 20.9 (1991): 871-887, doi:
 https://doi.org/10.1002/eqe.4290200907
 """
-struct NewmarkBeta{PT, F, AD, Thread} <:
+struct NewmarkBeta{PT, F, AD, Thread, CJ} <:
     OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm
     β::PT
     γ::PT
     nlsolve::F
     autodiff::AD
     thread::Thread
-    concrete_jac::Union{Nothing, Bool}
+    concrete_jac::CJ
 end
 
 function NewmarkBeta(β, γ; kwargs...)
