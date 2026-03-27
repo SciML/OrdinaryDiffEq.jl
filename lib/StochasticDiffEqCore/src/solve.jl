@@ -161,51 +161,7 @@ function _sde_init(
     is_sde = _prob isa SDEProblem
 
     # ── Alias resolution (SDE/RODE-specific specifier types) ─────────────
-    use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_jumps) ||
-        haskey(kwargs, :alias_noise)
-
-    if use_old_kwargs
-        aliases = ODEAliasSpecifier()
-        if haskey(kwargs, :alias_u0)
-            message = "`alias_u0` keyword argument is deprecated, to set `alias_u0`,
-            please use an SDEAliasSpecifier or RODEAliasSpecifier, e.g. `solve(prob, alias = SDEAliasSpecifier(alias_u0 = true))`"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            alias_u0 = values(kwargs).alias_u0
-        else
-            alias_u0 = nothing
-        end
-
-        if haskey(kwargs, :alias_jumps)
-            message = "`alias_jumps` keyword argument is deprecated, to set `alias_jumps`,
-            please use an SDEAliasSpecifier or RODEAliasSpecifier, e.g. `solve(prob, alias = SDEAliasSpecifier(alias_jumps = true))`"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            alias_jumps = values(kwargs).alias_jumps
-        else
-            alias_jumps = nothing
-        end
-
-        if haskey(kwargs, :alias_noise)
-            message = "`alias_noise` keyword argument is deprecated, to set `alias_noise`,
-            please use a RODEAliasSpecifier, e.g. `solve(prob, alias = RODEAliasSpecifier(alias_noise = true))`"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            alias_noise = values(kwargs).alias_noise
-        else
-            alias_noise = nothing
-        end
-
-        aliases = if alias_noise !== nothing
-            SciMLBase.RODEAliasSpecifier(; alias_u0, alias_jumps, alias_noise)
-        elseif is_sde
-            SciMLBase.SDEAliasSpecifier(; alias_u0, alias_jumps)
-        else
-            SciMLBase.RODEAliasSpecifier(; alias_u0, alias_jumps)
-        end
-
-    else
-        if alias isa Bool
+    if alias isa Bool
             aliases = is_sde ? SciMLBase.SDEAliasSpecifier(; alias) :
                 SciMLBase.RODEAliasSpecifier(; alias)
         elseif alias isa SciMLBase.SDEAliasSpecifier
@@ -216,7 +172,6 @@ function _sde_init(
             aliases = is_sde ? SciMLBase.SDEAliasSpecifier() :
                 SciMLBase.RODEAliasSpecifier()
         end
-    end
 
     prob = concrete_prob(_prob)
 
@@ -526,20 +481,6 @@ function _sde_init(
 
     # ── Controller computation ───────────────────────────────────────────
     QT = tTypeNoUnits <: Integer ? typeof(qmin) : tTypeNoUnits
-
-    if (beta1 !== nothing || beta2 !== nothing) && controller !== nothing
-        throw(
-            ArgumentError(
-                "Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."
-            )
-        )
-    end
-
-    if (beta1 !== nothing || beta2 !== nothing)
-        message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
 
     if controller === nothing
         controller = default_controller(alg, cache, QT(qoldinit), beta1, beta2)
