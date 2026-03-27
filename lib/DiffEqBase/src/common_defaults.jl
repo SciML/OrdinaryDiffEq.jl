@@ -61,9 +61,22 @@ end
 
 function ODE_DEFAULT_NORM(
         f::F,
-        u::Union{Array{T}, Iterators.Zip{<:Tuple{Vararg{Array{T}}}}},
+        u::Array{T},
         t
     ) where {F, T <: Union{AbstractFloat, Complex}}
+    x = zero(T)
+    @inbounds @fastmath for ui in u
+        x += abs2(f(ui))
+    end
+    return Base.FastMath.sqrt_fast(real(x) / max(length(u), 1))
+end
+
+function ODE_DEFAULT_NORM(
+        f::F,
+        u::Iterators.Zip{Z},
+        t
+    ) where {F, Z <: Tuple{Vararg{Array{<:Union{AbstractFloat, Complex}}}}}
+    T = eltype(first(u.is))
     x = zero(T)
     @inbounds @fastmath for ui in u
         x += abs2(f(ui))
