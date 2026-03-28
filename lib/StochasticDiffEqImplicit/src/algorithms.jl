@@ -1,3 +1,6 @@
+using ADTypes: AutoForwardDiff
+using OrdinaryDiffEqCore: _fixup_ad, _unwrap_val
+
 struct ImplicitEM{AD, F, F2, T2, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F

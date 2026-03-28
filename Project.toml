@@ -4,6 +4,7 @@ authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <maying
 version = "7.0.0-DEV"
 
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
@@ -12,7 +13,6 @@ OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [sources]
@@ -24,6 +24,7 @@ OrdinaryDiffEqTsit5 = {path = "lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
 
 [compat]
+ADTypes = "1.10"
 CommonSolve = "0.2.4"
 DocStringExtensions = "0.9.5"
 OrdinaryDiffEqBDF = "1.16.0"
@@ -32,7 +33,6 @@ OrdinaryDiffEqDefault = "1.7.0"
 OrdinaryDiffEqRosenbrock = "1.15.1"
 OrdinaryDiffEqTsit5 = "1.4.0"
 OrdinaryDiffEqVerner = "1.5.0"
-Reexport = "1.2.2"
 SciMLBase = "2.143"
 julia = "1.10"
 
