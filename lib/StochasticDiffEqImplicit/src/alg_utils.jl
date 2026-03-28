@@ -22,12 +22,13 @@ function SciMLBase.alg_interpretation(
         alg::ImplicitRKMil{
             AD,
             F,
-            P,
             N,
             T2,
+            T3,
             interpretation,
+            CJ,
         }
-    ) where {AD, F, P, N, T2, interpretation}
+    ) where {AD, F, N, T2, T3, interpretation, CJ}
     return interpretation
 end
 
