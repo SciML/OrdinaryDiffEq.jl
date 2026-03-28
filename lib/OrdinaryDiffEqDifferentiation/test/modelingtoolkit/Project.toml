@@ -3,6 +3,8 @@ ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
@@ -12,4 +14,4 @@ OrdinaryDiffEq = {path = "../../../.."}
 ADTypes = "1.16"
 ForwardDiff = "0.10, 1"
 ModelingToolkit = "10.10, 11"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "6, 7"
