@@ -191,8 +191,7 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
     iop = 0,
     """
 )
-struct LinearExponential <:
-    OrdinaryDiffEqExponentialAlgorithm{1, false, Val{:forward}, Val{true}, nothing}
+struct LinearExponential <: OrdinaryDiffEqLinearExponentialAlgorithm
     krylov::Symbol
     m::Int
     iop::Int
