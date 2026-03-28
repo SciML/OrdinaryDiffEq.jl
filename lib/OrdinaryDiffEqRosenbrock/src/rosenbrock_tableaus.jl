@@ -105,7 +105,8 @@ const RODAS42H = [
     Rodas42Tableau(T, T2)
 
 A 4th order L-stable Rosenbrock method with 6 stages, often used as an alternative to Rodas4.
-Reference: Hairer, E., & Wanner, G. (1996). Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems. Springer-Verlag, 2nd Edition.
+Reference: Hairer, E., & Wanner, G. (1996). Solving Ordinary Differential Equations II:
+    Stiff and Differential-Algebraic Problems. Springer-Verlag, 2nd Edition.
 """
 function Rodas42Tableau(T, T2)
     gamma = 0.25
