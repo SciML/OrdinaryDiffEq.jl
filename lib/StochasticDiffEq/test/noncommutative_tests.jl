@@ -104,13 +104,13 @@ sim5 = analyticless_test_convergence(
     dts, prob2, EM(), test_dt, trajectories = 300, use_noise_grid = false
 )
 @test abs(sim5.𝒪est[:final] - 0.5) < 0.2
-test_dt_mil = 1 / 2^(11)
+test_dt_mil = 1 / 2^(12)
 sim6 = analyticless_test_convergence(
     dts, prob2, RKMilGeneral(p = true, dt = test_dt_mil),
-    test_dt_mil, trajectories = 100, use_noise_grid = false
+    test_dt_mil, trajectories = 500, use_noise_grid = false
 )
-@test abs(sim6.𝒪est[:final] - 1.0) < 0.3
-@test abs(sim6.𝒪est[:weak_final] - 1.0) < 0.8
+@test abs(sim6.𝒪est[:final] - 1.0) < 0.2
+@test abs(sim6.𝒪est[:weak_final] - 1.0) < 0.3
 sim7 = analyticless_test_convergence(
     dts, prob2, EulerHeun(), test_dt, trajectories = 300, use_noise_grid = false
 )
