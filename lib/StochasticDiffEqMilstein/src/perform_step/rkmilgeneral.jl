@@ -82,8 +82,17 @@ end
 Compute Stratonovich iterated integrals from RSwM3's S₂ stack.
 S₂ holds the sub-interval decomposition (dt_i, dW_i, dZ_i) of the current
 step's noise. After rejection, S₂ has ≥2 entries. With only 1 entry (fresh
-step, no rejections), the discrete integral gives zero Lévy area, which is
-worse than LevyArea.jl's approximation, so we return nothing.
+step, no rejections), fall back to nothing so the dZ coefficient path is used.
+
+The iterated integral over the composite step [0,h] = ∪_i [t_i, t_{i+1}]
+decomposes as:
+
+    J_{jk} = Σ_i J^(i)_{jk}  +  Σ_{i} W_cumsum_j(t_i) * dW^(i)_k
+
+where J^(i) is the within-sub-interval iterated integral computed from the
+dZ_i Fourier coefficients (Lévy area), and the second sum gives the
+cross-interval contributions. Both terms are needed for correct strong
+order 1.0 convergence on rejected steps.
 """
 function _compute_II_from_S2(W_noise, m, dt)
     !hasproperty(W_noise, :S₂) && return nothing
@@ -96,7 +105,40 @@ function _compute_II_from_S2(W_noise, m, dt)
     W_cumsum = zeros(T, m)
 
     for idx in 1:n_sub
-        dWn = S₂.data[idx][2]  # dW_i from (dt_i, dW_i, dZ_i) tuple
+        dt_i = S₂.data[idx][1]  # sub-interval step size
+        dWn = S₂.data[idx][2]   # dW_i from (dt_i, dW_i, dZ_i) tuple
+        dZn = S₂.data[idx][3]   # dZ_i Fourier coefficients
+
+        # Within-sub-interval iterated integral from Lévy area coefficients
+        if dZn !== nothing && length(dZn) >= 2 * m && dt_i > 0
+            coeffs_i = _unpack_dZ_to_coefficients(dZn, m, nothing)
+            if coeffs_i !== nothing
+                Wn_i = dWn / √dt_i
+                A_i = levyarea(Wn_i, coeffs_i.n, MronRoe(), coeffs_i)
+                # J^(i) = ½ dW_i dW_i' + dt_i * A_i  (Stratonovich within sub-interval)
+                for k in 1:m
+                    for j in 1:m
+                        I[j, k] += 1 // 2 * dWn[j] * dWn[k] + dt_i * A_i[j, k]
+                    end
+                end
+            else
+                # No usable coefficients — add ½ dW_i dW_i' as best approximation
+                for k in 1:m
+                    for j in 1:m
+                        I[j, k] += 1 // 2 * dWn[j] * dWn[k]
+                    end
+                end
+            end
+        else
+            # No dZ available for this sub-interval — commutative approximation
+            for k in 1:m
+                for j in 1:m
+                    I[j, k] += 1 // 2 * dWn[j] * dWn[k]
+                end
+            end
+        end
+
+        # Cross-interval contribution: W_cumsum_j * dW^(i)_k
         for k in 1:m
             for j in 1:m
                 I[j, k] += W_cumsum[j] * dWn[k]
@@ -105,10 +147,6 @@ function _compute_II_from_S2(W_noise, m, dt)
         W_cumsum .+= dWn
     end
 
-    # Ito → Stratonovich: J_{jk} = I_{jk} + (1/2)*δ_{jk}*dt
-    for j in 1:m
-        I[j, j] += dt / 2
-    end
     return I
 end
 
