@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, ForwardDiff, Test, ADTypes
+using OrdinaryDiffEq, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock, ForwardDiff, Test, ADTypes
 
 function d_alembert(du, u, p, t)
     return du[1] = p[1] - p[2] * u[1] + p[3] * t
@@ -34,7 +34,7 @@ sol = solve(prob, Rodas4(), abstol = 1.0e-10, reltol = 1.0e-10)
 @test sol.errors[:l2] < 1.0e-7
 sol = solve(prob, Veldd4(), abstol = 1.0e-10, reltol = 1.0e-10)
 @test sol.errors[:l2] < 1.0e-7
-sol = solve(prob, Rodas5(), abstol = 1.0e-10, reltol = 1.0e-10)
+sol = solve(prob, Rodas5P(), abstol = 1.0e-10, reltol = 1.0e-10)
 @test sol.errors[:l2] < 1.0e-7
 sol = solve(prob, TRBDF2(), abstol = 1.0e-10, reltol = 1.0e-10)
 @test sol.errors[:l2] < 2.0e-6
