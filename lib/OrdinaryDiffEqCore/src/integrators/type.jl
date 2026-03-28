@@ -146,5 +146,6 @@ mutable struct ODEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     rng::RNGType
+    #disco_prob::IntervalNonlinearProblem
     disco_probs::Vector{IntervalNonlinearProblem}
 end

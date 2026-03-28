@@ -1,5 +1,7 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner
+using Logging
+global_logger(ConsoleLogger(stderr, Logging.Error)) 
 
 #TEST 1: SIMPLE DISCONTINUITY
 #test example discontinuous at u = 1
@@ -19,6 +21,7 @@ cb2 = ContinuousCallback(condition, affect!; is_discontinuity = false)
 
 sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
 #  277.833 μs (8033 allocations: 251.14 KiB)
+# curr update: 287.417 μs (8240 allocations: 258.56 KiB)
 sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
 #  343.041 μs (10008 allocations: 311.02 KiB)
 
@@ -104,6 +107,7 @@ cb_multi2 = CallbackSet(cb_multi_1f, cb_multi_2f)
 #disco solve
 sol_disco = solve(prob_multi, RadauIIA5(); callback=cb_multi, reltol=1e-7, abstol=1e-9)
 #    202.834 μs (2770 allocations: 93.23 KiB)
+# curr update:   238.416 μs (4426 allocations: 119.88 KiB)
 #fixed order solve
 sol_no_disco = solve(prob_multi, RadauIIA5(); callback=cb_multi2, reltol = 1e-7, abstol = 1e-9)
 #  122.875 μs (1136 allocations: 54.52 KiB)

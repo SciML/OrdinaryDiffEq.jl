@@ -16,6 +16,27 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
+mutable struct zero_func_struct{uType, tType, rateType, CacheType}
+    #integrator_ref::IntegratorType
+    u₁::uType
+    callback::ContinuousCallback
+    dt::tType
+    uprev::uType
+    u::uType
+    k::Vector{rateType}
+    cache::CacheType
+    idxs::Union{Nothing, Vector{Int}}
+    differential_vars::Union{Nothing, Vector{Bool}}
+end
+
+function (z::zero_func_struct)(θ, p)
+    #integrator = z.integrator_ref[]::ODEIntegrator
+    ode_interpolant!(z.u₁, θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars)
+    #ode_interpolant!(z.u₁, θ, integrator, integrator.opts.save_idxs, Val{0})
+    out = z.callback.condition(z.u₁, z.dt + θ * z.dt, z)
+    out
+end
+
 function SciMLBase.__init(
         prob::Union{
             SciMLBase.AbstractODEProblem,
@@ -654,29 +675,38 @@ function SciMLBase.__init(
     fsalfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
 
     _rng = rng === nothing ? Random.default_rng() : rng
-    disco_cb_num = 0
+    num_probs = 0
+    integrator_ref = Ref{Union{DEIntegrator, Nothing}}(nothing)
     for i in callbacks_internal.continuous_callbacks
-        if i.is_discontinuity
-            disco_cb_num += 1
+        if !(i isa VectorContinuousCallback) && i.is_discontinuity
+            num_probs += 1
         end
     end
-    disco_probs = Vector{IntervalNonlinearProblem}(undef, disco_cb_num)
+
+    disco_probs = Vector{IntervalNonlinearProblem}(undef, num_probs)
     idx = 1
-    for (ind, i) in enumerate(callbacks_internal.continuous_callbacks)
+    for i in callbacks_internal.continuous_callbacks
+        if i.is_discontinuity && !(i isa VectorContinuousCallback)
+            u₁ = similar(u)
+            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars)
+            disco_probs[idx] = IntervalNonlinearProblem(zero_func, [zero(tType), one(tType)], p)
+            idx += 1
+        end
+    end 
+ #=
+    disco_prob = nothing
+    integrator_ref = Ref{Union{DEIntegrator, Nothing}}(nothing)
+    for i in callbacks_internal.continuous_callbacks
         if i.is_discontinuity && !(i isa VectorContinuousCallback)
             #VCC problems handled in disco itself
             u₁ = similar(u)
-            function zero_func(θ, p)
-                ode_interpolant!(u₁, θ, integrator, integrator.opts.save_idxs, Val{0})
-                out = i.condition(u₁, t + θ * integrator.dt, integrator)
-                out
-            end
+            #zero_func = zero_func_struct(integrator_ref, u₁, i)
+            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars)
             disco_prob = IntervalNonlinearProblem(zero_func, [zero(tType), one(tType)], p)
-            disco_probs[idx] = disco_prob
+            break
         end
-        idx+=1
-    end
-
+    end 
+ =#
     integrator = ODEIntegrator{
         typeof(_alg), isinplace(prob), uType, typeof(du),
         tType, typeof(p),
@@ -711,6 +741,9 @@ function SciMLBase.__init(
         opts, stats, initializealg, differential_vars,
         fsalfirst, fsallast, _rng, disco_probs
     )
+    #if (num_probs > 0)
+    integrator_ref[] = integrator
+    #end
 
     if initialize_integrator
         if isdae || SciMLBase.has_initializeprob(prob.f) ||

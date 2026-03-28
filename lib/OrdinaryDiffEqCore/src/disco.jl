@@ -48,12 +48,21 @@ function find_discontinuity(u, uprev, integrator, cache)
             out_prev = i.condition(uprev, t, integrator)
             out_curr = i.condition(u, t + dt, integrator)
             if (out_prev * out_curr < zero(out_prev))
-                prob = integrator.disco_probs[idx]
-                sol = solve(prob; bracket=[zero(dt), one(dt)], abstol = 0, reltol = 0)                
+                disco_prob = integrator.disco_probs[idx]
+                #disco_prob = integrator.disco_prob
+                disco_prob.f.f.dt = integrator.dt
+                disco_prob.f.f.uprev = uprev
+                disco_prob.f.f.u = u
+                disco_prob.f.f.k = integrator.k
+                disco_prob.f.f.cache = integrator.cache
+                disco_prob.f.f.differential_vars = integrator.differential_vars
+                disco_prob.f.f.idxs = integrator.opts.save_idxs
+                #disco_prob.f.f.callback = i                
+                sol = solve(disco_prob; bracket=[zero(dt), one(dt)], abstol = 0, reltol = 0)                
                 tmp = sol[]
                 if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) 
                     breakpointθ = tmp 
-                end
+                end 
             end
             idx += 1
         end
