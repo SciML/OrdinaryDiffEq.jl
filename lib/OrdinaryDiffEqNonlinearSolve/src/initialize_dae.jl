@@ -225,7 +225,7 @@ function _initialize_dae!(
             typeof(u0) !== typeof(_u0)
         if isAD
             chunk = ForwardDiff.pickchunksize(length(tmp))
-            _tmp = dualcache(tmp, chunk)
+            _tmp = DiffCache(tmp, chunk)
         else
             _tmp = tmp
         end
@@ -418,7 +418,7 @@ function _initialize_dae!(
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u0) !== typeof(_u0)
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
-        _tmp = dualcache(tmp, chunk)
+        _tmp = DiffCache(tmp, chunk)
     else
         _tmp = tmp
     end
@@ -596,8 +596,8 @@ function _initialize_dae!(
         # would be more efficient but cannot be inferred from types
         # chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
         chunk = 1
-        _tmp = dualcache(tmp, chunk)
-        _du_tmp = dualcache(similar(tmp), chunk)
+        _tmp = DiffCache(tmp, chunk)
+        _du_tmp = DiffCache(similar(tmp), chunk)
         nlchunk = Val(chunk)
     else
         _tmp, _du_tmp = tmp, similar(tmp)
@@ -670,7 +670,7 @@ function _initialize_dae!(
         # would be more efficient but cannot be inferred from types
         # chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
         chunk = 1
-        _tmp = dualcache(similar(u0), chunk)
+        _tmp = DiffCache(similar(u0), chunk)
         nlchunk = Val(chunk)
     else
         _tmp = similar(u0)
@@ -761,8 +761,8 @@ function _initialize_dae!(
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
-        _tmp = dualcache(tmp, chunk)
-        _du_tmp = dualcache(du_tmp, chunk)
+        _tmp = DiffCache(tmp, chunk)
+        _du_tmp = DiffCache(du_tmp, chunk)
     else
         _tmp, _du_tmp = tmp, du_tmp
     end
