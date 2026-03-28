@@ -1,13 +1,13 @@
 using ADTypes: AutoForwardDiff
 using OrdinaryDiffEqCore: _fixup_ad, _unwrap_val
 
-struct ImplicitEM{AD, F, F2, T2, CJ} <:
+struct ImplicitEM{AD, F, F2, T2, T3, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
     theta::T2
     extrapolant::Symbol
-    new_jac_conv_bound::T2
+    new_jac_conv_bound::T3
     symplectic::Bool
     autodiff::AD
     concrete_jac::CJ
@@ -34,13 +34,13 @@ end
 STrapezoid(; kwargs...) = ImplicitEM(; theta = 1 / 2, kwargs...)
 SImplicitMidpoint(; kwargs...) = ImplicitEM(; theta = 1 / 2, symplectic = true, kwargs...)
 
-struct ImplicitEulerHeun{AD, F, N, T2, CJ} <:
+struct ImplicitEulerHeun{AD, F, N, T2, T3, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
     theta::T2
     extrapolant::Symbol
-    new_jac_conv_bound::T2
+    new_jac_conv_bound::T3
     symplectic::Bool
     autodiff::AD
     concrete_jac::CJ
@@ -65,13 +65,13 @@ function ImplicitEulerHeun(;
     )
 end
 
-struct ImplicitRKMil{AD, F, N, T2, interpretation, CJ} <:
+struct ImplicitRKMil{AD, F, N, T2, T3, interpretation, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
     theta::T2
     extrapolant::Symbol
-    new_jac_conv_bound::T2
+    new_jac_conv_bound::T3
     symplectic::Bool
     autodiff::AD
     concrete_jac::CJ
@@ -89,8 +89,8 @@ function ImplicitRKMil(;
     autodiff = _fixup_ad(autodiff)
     return ImplicitRKMil{
         typeof(autodiff), typeof(linsolve), typeof(nlsolve),
-        typeof(symplectic ? 1 / 2 : theta), typeof(interpretation),
-        _unwrap_val(concrete_jac),
+        typeof(symplectic ? 1 / 2 : theta), typeof(new_jac_conv_bound),
+        typeof(interpretation), typeof(_unwrap_val(concrete_jac)),
     }(
         linsolve, nlsolve, symplectic ? 1 / 2 : theta,
         extrapolant,
@@ -99,13 +99,13 @@ function ImplicitRKMil(;
     )
 end
 
-struct ISSEM{AD, F, N, T2, CJ} <:
+struct ISSEM{AD, F, N, T2, T3, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
     theta::T2
     extrapolant::Symbol
-    new_jac_conv_bound::T2
+    new_jac_conv_bound::T3
     symplectic::Bool
     autodiff::AD
     concrete_jac::CJ
@@ -130,13 +130,13 @@ function ISSEM(;
     )
 end
 
-struct ISSEulerHeun{AD, F, N, T2, CJ} <:
+struct ISSEulerHeun{AD, F, N, T2, T3, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::N
     theta::T2
     extrapolant::Symbol
-    new_jac_conv_bound::T2
+    new_jac_conv_bound::T3
     symplectic::Bool
     autodiff::AD
     concrete_jac::CJ
