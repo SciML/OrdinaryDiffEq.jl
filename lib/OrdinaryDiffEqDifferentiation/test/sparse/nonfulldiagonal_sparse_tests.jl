@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, SparseArrays, LinearSolve, LinearAlgebra
+using OrdinaryDiffEqSDIRK
 using ComponentArrays
 
 function enclosethetimedifferential(parameters::NamedTuple)::Function
