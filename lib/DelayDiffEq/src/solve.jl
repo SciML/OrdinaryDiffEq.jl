@@ -730,11 +730,11 @@ end
 function DiffEqBase.check_prob_alg_pairing(prob::SDDEProblem, alg::AbstractMethodOfStepsAlgorithm)
     # MethodOfSteps wrapping an SDE algorithm is valid for SDDEProblem
     if !(alg.alg isa SDEAlgUnion)
-        throw(DiffEqBase.ProblemSolverPairingError(prob, alg))
+        throw(SciMLBase.ProblemSolverPairingError(prob, alg))
     end
     if isdefined(prob, :u0) && DiffEqBase.eltypedual(prob.u0) &&
             !SciMLBase.isautodifferentiable(alg)
-        throw(DiffEqBase.DirectAutodiffError())
+        throw(SciMLBase.DirectAutodiffError())
     end
     return nothing
 end
