@@ -3,12 +3,12 @@ Random.seed!(1)
 
 f1_harmonic(v, u, p, t) = -u
 f2_harmonic(v, u, p, t) = v
-g(u, p, t) = 1
-γ = 1
+g(u, p, t) = 1.0
+γ = 1.0
 
 @testset "Scalar u" begin
-    u0 = 0
-    v0 = 1
+    u0 = 0.0
+    v0 = 1.0
 
     ff_harmonic = DynamicalSDEFunction(f1_harmonic, f2_harmonic, g)
     prob1 = DynamicalSDEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
@@ -55,8 +55,8 @@ end
 end
 
 @testset "Scalar u, scale_noise=false" begin
-    u0 = 0
-    v0 = 1
+    u0 = 0.0
+    v0 = 1.0
 
     ff_harmonic = DynamicalSDEFunction(f1_harmonic, f2_harmonic, g)
     prob1 = DynamicalSDEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
