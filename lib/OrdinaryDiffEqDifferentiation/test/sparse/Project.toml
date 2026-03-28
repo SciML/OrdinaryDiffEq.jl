@@ -3,13 +3,15 @@ ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
-OrdinaryDiffEq = {path = "../../../.."}
+OrdinaryDiffEq = {path = "/home/oscardssmith/.julia/dev/OrdinaryDiffEq"}
+OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
 
 [compat]
 ComponentArrays = "0.15, 1"
 LinearSolve = "3"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "6,7"
