@@ -68,18 +68,15 @@ for T in [
 end
 
 
-_alg_autodiff(::StochasticDiffEqNewtonAlgorithm) = alg.autodiff
-_alg_autodiff(::StochasticDiffEqNewtonAdaptiveAlgorithm) = alg.autodiff
-_alg_autodiff(::StochasticDiffEqJumpNewtonAdaptiveAlgorithm) = alg.autodiff
-_alg_autodiff(::StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm) = alg.autodiff
-_alg_autodiff(alg::StochasticCompositeAlgorithm) = _alg_autodiff(alg.algs[end])
-
 function OrdinaryDiffEqCore.alg_autodiff(
         alg::Union{
-            StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm,
+            StochasticDiffEqNewtonAlgorithm,
+            StochasticDiffEqNewtonAdaptiveAlgorithm,
+            StochasticDiffEqJumpNewtonAdaptiveAlgorithm,
+            StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
         }
     )
-    ad = _alg_autodiff(alg)
+    ad = alg.autodiff
     if ad == Val(false)
         return ADTypes.AutoFiniteDiff()
     elseif ad == Val(true)
@@ -88,6 +85,7 @@ function OrdinaryDiffEqCore.alg_autodiff(
         return SciMLBase._unwrap_val(ad)
     end
 end
+OrdinaryDiffEqCore.alg_autodiff(alg::StochasticDiffEqCompositeAlgorithm) = OrdinaryDiffEqCore.alg_autodiff(alg.algs[end])
 
 isadaptive(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}) = false
 function isadaptive(
