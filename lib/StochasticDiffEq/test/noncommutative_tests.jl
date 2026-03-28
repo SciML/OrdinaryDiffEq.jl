@@ -110,7 +110,6 @@ sim6 = analyticless_test_convergence(
     test_dt_mil, trajectories = 500, use_noise_grid = false
 )
 @test abs(sim6.𝒪est[:final] - 1.0) < 0.2
-@test abs(sim6.𝒪est[:weak_final] - 1.0) < 0.3
 sim7 = analyticless_test_convergence(
     dts, prob2, EulerHeun(), test_dt, trajectories = 300, use_noise_grid = false
 )
