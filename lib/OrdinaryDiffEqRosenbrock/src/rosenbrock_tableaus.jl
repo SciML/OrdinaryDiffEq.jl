@@ -105,6 +105,7 @@ const RODAS42H = [
     Rodas42Tableau(T, T2)
 
 A 4th order L-stable Rosenbrock method with 6 stages, often used as an alternative to Rodas4.
+Reference: Hairer, E., & Wanner, G. (1996). Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems. Springer-Verlag, 2nd Edition.
 """
 function Rodas42Tableau(T, T2)
     gamma = 0.25
@@ -139,7 +140,8 @@ const RODAS4PH = [
     Rodas4PTableau(T, T2)
 
 A 4th order L-stable Rosenbrock method with 6 stages, emphasizing stability for parabolic problems.
-Reference: Protopapa, S. (1987).
+Reference: Steinebach, G. (1995). Order-reduction of ROW-methods for DAEs and
+    method of lines applications. Preprint-Nr. 1741, FB Mathematik, TH Darmstadt.
 """
 function Rodas4PTableau(T, T2)
     gamma = 0.25
@@ -174,6 +176,9 @@ const RODAS4P2H = [
     Rodas4P2Tableau(T, T2)
 
 An improved version of the Rodas4P 4th order L-stable Rosenbrock method.
+Reference: Steinebach, G. (2020). Improvement of Rosenbrock-Wanner method RODASP.
+    In: Progress in Differential-Algebraic Equations II, pp. 165–184.
+    Springer, Cham.
 """
 function Rodas4P2Tableau(T, T2)
     gamma = 0.25
@@ -221,9 +226,11 @@ const RODAS5H = [
 """
     Rodas5Tableau(T, T2)
 
-The tableau for the 5th order L-stable Rosenbrock method Rodas5. 
+The tableau for the 5th order L-stable Rosenbrock method Rodas5.
 It is an 8-stage method designed for high-accuracy stiff integration.
-Reference: Di Paola, R., & Wanner, G. (1991).
+Reference: Di Marzo, G. (1993). Rodas5(4) -- Méthodes de Rosenbrock d'ordre 5(4)
+    adaptées aux problemes différentiels-algébriques. Master's thesis,
+    University of Geneva.
 """
 function Rodas5Tableau(T, T2)
     gamma = 0.19
@@ -268,6 +275,14 @@ const RODAS5PH = [
     -9.91568850695171 -0.9689944594115154 3.0438037242978453 -24.495224566215796 20.176138334709044 15.98066361424651 -6.789040303419874 -6.710236069923372
     11.419903575922262 2.8879645146136994 72.92137995996029 80.12511834622643 -52.072871366152654 -59.78993625266729 -0.15582684282751913 4.883087185713722
 ]
+"""
+    Rodas5PTableau(T, T2)
+
+A 5th order L-stable Rosenbrock method with 8 stages.
+Reference: Steinebach, G. (2023). Construction of Rosenbrock-Wanner method Rodas5P
+    and numerical benchmarks within the Julia Differential Equations package.
+    BIT Numerical Mathematics, 63, 27.
+"""
 function Rodas5PTableau(T, T2)
     gamma = 0.21193756319429014
     s = size(RODAS5PA, 1)
@@ -362,7 +377,8 @@ const RODAS6PH = [
     Rodas6PTableau(T, T2)
 
 A 19-stage 6th order L-stable Rosenbrock method.
-Reference: Steinebach (2025).
+Reference: Steinebach, G. (2025). Rodas6P and Tsit5DA - two new Rosenbrock-type
+    methods for DAEs. arXiv:2511.21252.
 """
 function Rodas6PTableau(T, T2)
     gamma = 0.26
@@ -389,7 +405,7 @@ end
     ROS3PRodasTableau(T, T2)
 
 A 3rd order Rosenbrock method with 3 stages.
-Reference: Rang, J. (2015).
+Reference: Lang, J., & Verwer, J. G. (2001). ROS3P—an accurate third-order Rosenbrock solver designed for parabolic problems. BIT Numerical Mathematics, 41, 731-738.
 """
 function ROS3PRodasTableau(T, T2)
     gamma = convert(T2, 1 / 2 + sqrt(3) / 6)
@@ -437,6 +453,7 @@ end
     Rodas3RodasTableau(T, T2)
 
 A 3rd order Rosenbrock method with 4 stages.
+Reference: Sandu, A., et al. (1997). Benchmarking stiff ode solvers for atmospheric chemistry problems-I. implicit vs explicit. Atmospheric Environment, 31(19), 3151-3166.
 """
 function Rodas3RodasTableau(T, T2)
     A = zeros(T, 4, 4)
@@ -471,6 +488,7 @@ end
     Rodas3PRodasTableau(T, T2)
 
 A 3rd order Rosenbrock method with 5 stages, including a dense output matrix H.
+Reference: Steinebach, G. (2024). Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications. Proceedings of the JuliaCon Conferences.
 """
 function Rodas3PRodasTableau(T, T2)
     gamma = convert(T2, 1 // 3)
@@ -532,6 +550,7 @@ end
     Rodas23WRodasTableau(T, T2)
 
 A W-method variant of Rodas3P, providing 2nd order solutions with 5 stages.
+Reference: Steinebach, G. (2024). Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications. Proceedings of the JuliaCon Conferences.
 """
 function Rodas23WRodasTableau(T, T2)
     gamma = convert(T2, 1 // 3)
