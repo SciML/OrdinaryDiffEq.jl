@@ -87,7 +87,7 @@ include("alg_utils.jl")
 include("solve.jl")
 include("utils.jl")
 
-# Default solver for DDEProblems
+# Default solver for DDEProblems (no algorithm specified)
 function SciMLBase.__solve(prob::DDEProblem; kwargs...)
     return SciMLBase.solve(prob, MethodOfSteps(DefaultODEAlgorithm()); kwargs...)
 end
@@ -95,8 +95,40 @@ function SciMLBase.__init(prob::DDEProblem; kwargs...)
     return DiffEqBase.init(prob, MethodOfSteps(DefaultODEAlgorithm()); kwargs...)
 end
 
-# Default solver for SDDEProblems is not provided here since SDE algorithm
-# packages (e.g. StochasticDiffEqLowOrder) must be loaded separately.
-# Users should call: solve(sdde_prob, MethodOfSteps(EM()))
+# Auto-wrap bare ODE/SDE algorithms in MethodOfSteps for DDE/SDDE problems.
+# Allows: solve(DDEProblem(...), Tsit5()) instead of MethodOfSteps(Tsit5())
+# and:    solve(SDDEProblem(...), EM()) instead of MethodOfSteps(EM())
+const OrdinaryDiffEqAlgorithm = OrdinaryDiffEqCore.OrdinaryDiffEqAlgorithm
+function SciMLBase.__solve(
+        prob::SciMLBase.AbstractDDEProblem,
+        alg::OrdinaryDiffEqAlgorithm, args...; kwargs...
+    )
+    return SciMLBase.__solve(prob, MethodOfSteps(alg), args...; kwargs...)
+end
+function SciMLBase.__init(
+        prob::SciMLBase.AbstractDDEProblem,
+        alg::OrdinaryDiffEqAlgorithm, args...; kwargs...
+    )
+    return SciMLBase.__init(prob, MethodOfSteps(alg), args...; kwargs...)
+end
+function DiffEqBase.check_prob_alg_pairing(prob::DDEProblem, alg::OrdinaryDiffEqAlgorithm)
+    return nothing
+end
+
+function SciMLBase.__solve(
+        prob::AbstractSDDEProblem,
+        alg::SDEAlgUnion, args...; kwargs...
+    )
+    return SciMLBase.__solve(prob, MethodOfSteps(alg), args...; kwargs...)
+end
+function SciMLBase.__init(
+        prob::AbstractSDDEProblem,
+        alg::SDEAlgUnion, args...; kwargs...
+    )
+    return SciMLBase.__init(prob, MethodOfSteps(alg), args...; kwargs...)
+end
+function DiffEqBase.check_prob_alg_pairing(prob::SDDEProblem, alg::SDEAlgUnion)
+    return nothing
+end
 
 end # module
