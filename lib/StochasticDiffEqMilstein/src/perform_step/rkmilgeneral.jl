@@ -151,8 +151,10 @@ function _compute_II_from_S2(W_noise, m, dt)
 end
 
 """
-Compute Stratonovich iterated integrals from saved fine-grid W values in a
-NoiseWrapper or NoiseProcess source. Returns nothing if no sub-grid is available.
+Compute Stratonovich iterated integrals from saved fine-grid W and Z values in a
+NoiseWrapper or NoiseProcess source. Uses Z grid (Fourier coefficients) for
+within-sub-interval Lévy area when available, falling back to commutative
+approximation (½ dW dW') for sub-intervals without Z data.
 """
 function _compute_II_from_grid(W_noise, m, dt)
     source = _get_noise_grid_source(W_noise)
@@ -170,12 +172,54 @@ function _compute_II_from_grid(W_noise, m, dt)
     n_sub = i_end - i_start
     n_sub < 2 && return nothing
 
+    # Check if Z grid is available for Lévy area computation
+    Z_grid = _get_Z_grid(source)
+
     T = eltype(eltype(W_grid))
     I = zeros(T, m, m)
     W_cumsum = zeros(T, m)
 
     for n in (i_start + 1):i_end
         dWn = W_grid[n] .- W_grid[n - 1]
+        dt_n = t_grid[n] - t_grid[n - 1]
+
+        # Within-sub-interval iterated integral
+        if Z_grid !== nothing && dt_n > 0
+            dZn = Z_grid[n] .- Z_grid[n - 1]
+            if length(dZn) >= 2 * m
+                coeffs_n = _unpack_dZ_to_coefficients(dZn, m, nothing)
+                if coeffs_n !== nothing
+                    Wn_n = dWn / √dt_n
+                    A_n = levyarea(Wn_n, coeffs_n.n, MronRoe(), coeffs_n)
+                    for k in 1:m
+                        for j in 1:m
+                            I[j, k] += 1 // 2 * dWn[j] * dWn[k] + dt_n * A_n[j, k]
+                        end
+                    end
+                else
+                    for k in 1:m
+                        for j in 1:m
+                            I[j, k] += 1 // 2 * dWn[j] * dWn[k]
+                        end
+                    end
+                end
+            else
+                for k in 1:m
+                    for j in 1:m
+                        I[j, k] += 1 // 2 * dWn[j] * dWn[k]
+                    end
+                end
+            end
+        else
+            # No Z data — commutative approximation
+            for k in 1:m
+                for j in 1:m
+                    I[j, k] += 1 // 2 * dWn[j] * dWn[k]
+                end
+            end
+        end
+
+        # Cross-interval contribution
         for k in 1:m
             for j in 1:m
                 I[j, k] += W_cumsum[j] * dWn[k]
@@ -184,11 +228,17 @@ function _compute_II_from_grid(W_noise, m, dt)
         W_cumsum .+= dWn
     end
 
-    # Ito → Stratonovich
-    for j in 1:m
-        I[j, j] += dt / 2
-    end
     return I
+end
+
+"""
+Extract Z grid from the noise source, or nothing if Z is not stored.
+"""
+function _get_Z_grid(source)
+    hasproperty(source, :Z) || return nothing
+    Z = source.Z
+    (Z === nothing || isempty(Z)) && return nothing
+    return Z
 end
 
 function _get_noise_grid_source(W)
