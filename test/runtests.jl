@@ -32,3 +32,6 @@ end
 @time @testset "Error Reduction Function Tests" begin
     include("error_reduction_tests.jl")
 end
+@time @testset "Tagging Tests" begin
+    include("tagging_tests.jl")
+end

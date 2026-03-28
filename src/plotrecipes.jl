@@ -102,8 +102,38 @@ end
         x = wp_set.error_estimate,
         y = :times,
         view = :benchmark,
-        color = nothing
+        color = nothing,
+        tags = nothing,
+        include_tags = nothing,
+        exclude_tags = nothing
     )
+    # Apply tag-based filtering if specified
+    if tags !== nothing || include_tags !== nothing || exclude_tags !== nothing
+        filtered = wp_set
+        if tags !== nothing
+            filtered = filter_by_tags(filtered, tags...)
+        end
+        if include_tags !== nothing
+            extra = filter_by_tags(wp_set, include_tags...)
+            # Merge: filtered + extra (deduplicated)
+            seen = Set(wp.name for wp in filtered.wps)
+            extra_wps = [wp for wp in extra.wps if wp.name ∉ seen]
+            if !isempty(extra_wps)
+                all_wps = vcat(filtered.wps, extra_wps)
+                all_names = [wp.name for wp in all_wps]
+                filtered = WorkPrecisionSet(
+                    all_wps, length(all_wps), filtered.abstols, filtered.reltols,
+                    filtered.prob, filtered.setups, all_names, filtered.error_estimate,
+                    filtered.numruns
+                )
+            end
+        end
+        if exclude_tags !== nothing
+            filtered = exclude_by_tags(filtered, exclude_tags...)
+        end
+        wp_set = filtered
+    end
+
     if view == :benchmark
         seriestype --> :path
         linewidth --> 3

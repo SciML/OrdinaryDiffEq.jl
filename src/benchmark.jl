@@ -226,6 +226,7 @@ relates to error (precision) across different tolerance settings.
 - `name`: Name of the algorithm
 - `error_estimate`: Error metric used (e.g., `:final`, `:l2`)
 - `N`: Number of tolerance settings tested
+- `tags`: Symbolic tags for categorizing this algorithm (e.g., `[:rosenbrock, :stiff, :4th_order]`)
 
 # Example
 ```julia
@@ -248,6 +249,7 @@ mutable struct WorkPrecision
     name::Any
     error_estimate::Any
     N::Int
+    tags::Vector{Symbol}
 end
 
 """
@@ -294,7 +296,8 @@ end
 function WorkPrecision(
         prob, alg, abstols, reltols, dts = nothing;
         name = nothing, appxsol = nothing, error_estimate = :final,
-        numruns = 20, seconds = 2, reduction = default_reduction, kwargs...
+        numruns = 20, seconds = 2, reduction = default_reduction,
+        tags::Vector{Symbol} = Symbol[], kwargs...
 )
     N = length(abstols)
     errors = Vector{Dict{Symbol, Float64}}(undef, N)
@@ -417,7 +420,7 @@ function WorkPrecision(
     end
     return WorkPrecision(
         prob, abstols, reltols, _dicts_to_structarray(errors),
-        times, dts, stats, name, error_estimate, N
+        times, dts, stats, name, error_estimate, N, tags
     )
 end
 
@@ -425,7 +428,8 @@ end
 function WorkPrecision(
         prob::AbstractBVProblem, alg, abstols, reltols, dts = nothing;
         name = nothing, appxsol = nothing, error_estimate = :final,
-        numruns = 20, seconds = 2, reduction = default_reduction, kwargs...
+        numruns = 20, seconds = 2, reduction = default_reduction,
+        tags::Vector{Symbol} = Symbol[], kwargs...
 )
     N = length(abstols)
     errors = Vector{Dict{Symbol, Float64}}(undef, N)
@@ -547,7 +551,7 @@ function WorkPrecision(
     end
     return WorkPrecision(
         prob, abstols, reltols, _dicts_to_structarray(errors),
-        times, dts, stats, name, error_estimate, N
+        times, dts, stats, name, error_estimate, N, tags
     )
 end
 
@@ -555,7 +559,7 @@ end
 function WorkPrecision(
         prob::NonlinearProblem, alg, abstols, reltols, dts = nothing; name = nothing,
         appxsol = nothing, error_estimate = :l2, numruns = 20, seconds = 2,
-        reduction = default_reduction, kwargs...
+        reduction = default_reduction, tags::Vector{Symbol} = Symbol[], kwargs...
 )
     N = length(abstols)
     errors = Vector{Dict{Symbol, Float64}}(undef, N)
@@ -612,7 +616,7 @@ function WorkPrecision(
 
     return WorkPrecision(
         prob, abstols, reltols, _dicts_to_structarray(errors),
-        times, dts, stats, name, error_estimate, N
+        times, dts, stats, name, error_estimate, N, tags
     )
 end
 
@@ -636,11 +640,13 @@ function WorkPrecisionSet(
         _dts = get(setups[i], :dts, nothing)
         filtered_setup = filter(p -> p.first in DiffEqBase.allowedkeywords, setups[i])
 
+        _tags = get(setups[i], :tags, Symbol[])
         wps[i] = WorkPrecision(
             prob, setups[i][:alg], _abstols, _reltols, _dts;
             appxsol = appxsol,
             error_estimate = error_estimate,
-            name = names[i], reduction = reduction, kwargs..., filtered_setup...
+            name = names[i], reduction = reduction,
+            tags = _tags, kwargs..., filtered_setup...
         )
     end
     return WorkPrecisionSet(
@@ -792,7 +798,8 @@ function WorkPrecisionSet(
     wps = [WorkPrecision(
                prob, _abstols[i], _reltols[i],
                _dicts_to_structarray(errors[i]),
-               times[:, i], _dts[i], stats, names[i], error_estimate, N
+               times[:, i], _dts[i], stats, names[i], error_estimate, N,
+               get(setups[i], :tags, Symbol[])
            )
            for i in 1:N]
     return WorkPrecisionSet(
@@ -922,7 +929,8 @@ function WorkPrecisionSet(
     stats = nothing
     wps = [WorkPrecision(
                prob, _abstols[i], _reltols[i], errors[i], times[:, i],
-               _dts[i], stats, names[i], error_estimate, N
+               _dts[i], stats, names[i], error_estimate, N,
+               get(setups[i], :tags, Symbol[])
            )
            for i in 1:N]
     return WorkPrecisionSet(
@@ -951,11 +959,13 @@ function WorkPrecisionSet(
         _dts = get(setups[i], :dts, nothing)
         filtered_setup = filter(p -> p.first in DiffEqBase.allowedkeywords, setups[i])
 
+        _tags = get(setups[i], :tags, Symbol[])
         wps[i] = WorkPrecision(
             prob, setups[i][:alg], _abstols, _reltols, _dts;
             appxsol = appxsol,
             error_estimate = error_estimate,
-            name = names[i], reduction = reduction, kwargs..., filtered_setup...
+            name = names[i], reduction = reduction,
+            tags = _tags, kwargs..., filtered_setup...
         )
     end
     return WorkPrecisionSet(
@@ -1038,6 +1048,97 @@ function get_sample_errors(
                            sqrt(numruns[i])
         end
     end
+end
+
+"""
+    filter_by_tags(wp_set::WorkPrecisionSet, tags::Symbol...) -> WorkPrecisionSet
+
+Return a new `WorkPrecisionSet` containing only entries whose tags include
+ALL of the specified tags (AND logic).
+
+# Example
+```julia
+setups = [
+    Dict(:alg => Rosenbrock23(), :tags => [:rosenbrock, :2nd_order]),
+    Dict(:alg => Rodas5P(),      :tags => [:rosenbrock, :5th_order]),
+    Dict(:alg => TRBDF2(),       :tags => [:bdf, :2nd_order]),
+]
+wp_set = WorkPrecisionSet(prob, abstols, reltols, setups)
+rosenbrock_only = filter_by_tags(wp_set, :rosenbrock)
+second_order_rosenbrock = filter_by_tags(wp_set, :rosenbrock, :2nd_order)
+```
+"""
+function filter_by_tags(wp_set::WorkPrecisionSet, tags::Symbol...)
+    isempty(tags) && return wp_set
+    indices = findall(wp -> all(t -> t in wp.tags, tags), wp_set.wps)
+    _subset_wps(wp_set, indices)
+end
+
+"""
+    exclude_by_tags(wp_set::WorkPrecisionSet, tags::Symbol...) -> WorkPrecisionSet
+
+Return a new `WorkPrecisionSet` excluding entries that have ANY of the specified tags.
+
+# Example
+```julia
+no_reference = exclude_by_tags(wp_set, :reference)
+```
+"""
+function exclude_by_tags(wp_set::WorkPrecisionSet, tags::Symbol...)
+    isempty(tags) && return wp_set
+    indices = findall(wp -> !any(t -> t in wp.tags, tags), wp_set.wps)
+    _subset_wps(wp_set, indices)
+end
+
+"""
+    get_tags(wp_set::WorkPrecisionSet) -> Vector{Vector{Symbol}}
+
+Return the tags for each entry in the `WorkPrecisionSet`.
+"""
+get_tags(wp_set::WorkPrecisionSet) = [wp.tags for wp in wp_set.wps]
+
+"""
+    unique_tags(wp_set::WorkPrecisionSet) -> Vector{Symbol}
+
+Return all unique tags present across entries in the `WorkPrecisionSet`.
+"""
+function unique_tags(wp_set::WorkPrecisionSet)
+    alltags = Symbol[]
+    for wp in wp_set.wps
+        append!(alltags, wp.tags)
+    end
+    return unique!(sort!(alltags))
+end
+
+"""
+    merge_wp_sets(sets::WorkPrecisionSet...) -> WorkPrecisionSet
+
+Merge multiple `WorkPrecisionSet`s into a single set. All entries are combined.
+The metadata (abstols, reltols, prob, error_estimate) is taken from the first set.
+"""
+function merge_wp_sets(sets::WorkPrecisionSet...)
+    isempty(sets) && throw(ArgumentError("At least one WorkPrecisionSet is required"))
+    wps = vcat([s.wps for s in sets]...)
+    all_setups = vcat([s.setups for s in sets]...)
+    all_names = vcat([s.names for s in sets]...)
+    N = length(wps)
+    first_set = first(sets)
+    return WorkPrecisionSet(
+        wps, N, first_set.abstols, first_set.reltols, first_set.prob,
+        all_setups, all_names, first_set.error_estimate, first_set.numruns
+    )
+end
+
+function _subset_wps(wp_set::WorkPrecisionSet, indices::Vector{Int})
+    isempty(indices) &&
+        @warn "No entries match the specified tags. Returning empty WorkPrecisionSet."
+    wps = wp_set.wps[indices]
+    setups = wp_set.setups isa AbstractVector ? wp_set.setups[indices] : wp_set.setups
+    names = wp_set.names isa AbstractVector ? wp_set.names[indices] : wp_set.names
+    return WorkPrecisionSet(
+        wps, length(wps), wp_set.abstols, wp_set.reltols, wp_set.prob,
+        setups, names, wp_set.error_estimate, wp_set.numruns
+    )
 end
 
 Base.length(wp::WorkPrecision) = wp.N
