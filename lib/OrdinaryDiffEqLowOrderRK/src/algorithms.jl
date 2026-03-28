@@ -14,8 +14,7 @@ struct Euler <: OrdinaryDiffEqAlgorithm end
     "Split Method.",
     "", "", ""
 )
-struct SplitEuler <:
-    OrdinaryDiffEqExponentialAlgorithm{0, false, Val{:forward}, Val{true}, nothing} end
+struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 
 @doc explicit_rk_docstring(
     "The second order Heun's method. Uses embedded Euler method for adaptivity.",
