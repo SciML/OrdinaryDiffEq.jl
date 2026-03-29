@@ -24,4 +24,5 @@ end
 # Functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Sparse isdiag Performance" include("sparse_isdiag_tests.jl")
+    @time @safetestset "DynamicQuantities + Measurements" include("dynamicquantities_measurements.jl")
 end
