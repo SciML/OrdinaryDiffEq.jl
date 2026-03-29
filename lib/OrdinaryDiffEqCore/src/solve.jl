@@ -318,7 +318,7 @@ function _ode_init(
 
     scalar_type_tol =
         uBottomEltypeNoUnits == uBottomEltype &&
-        uBottomEltype <: Union{Real,Complex}
+        uBottomEltype <: Union{Real, Complex}
 
     if prob isa SciMLBase.AbstractDiscreteProblem && abstol === nothing
         abstol_internal = false
@@ -695,8 +695,11 @@ function _ode_init(
     kshortsize = 0
     reeval_fsal = false
     u_modified = false
-    # Avoid calling oneunit on a Quantity *type* (DynamicQuantities stores dimensions at runtime).
-    EEst = oneunit(internalnorm(u, t)) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
+    EEst = try
+        oneunit(EEstT)
+    catch
+        oneunit(internalnorm(u, t))
+    end # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
     next_step_tstop = false
     tstop_target = zero(t)
