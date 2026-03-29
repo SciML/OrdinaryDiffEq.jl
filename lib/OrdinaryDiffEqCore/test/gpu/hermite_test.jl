@@ -1,4 +1,4 @@
-using ComponentArrays, CUDA, Adapt, RecursiveArrayTools, FastBroadcast, FillArrays,
+using ComponentArrays, CUDA, Adapt, RecursiveArrayTools, FastBroadcast,
     OrdinaryDiffEq, Test
 using OrdinaryDiffEqCore
 
@@ -10,7 +10,7 @@ pc = deepcopy(pa)
 pd = deepcopy(pa)
 pe = deepcopy(pa)
 k = [pd, pe]
-t = FillArrays.Trues(length(pa))
+t = trues(length(pa))
 
 OrdinaryDiffEqCore.hermite_interpolant!(pa, 0.1, 0.2, pb, pc, k, nothing, Val{0}, t) # if this doesn't error we're good
 
