@@ -420,7 +420,7 @@ function alg_cache(
     btmp = zero(u)
     bs3cache = BS3Cache(
         u, uprev, bk1, bk2, bk3, bk4, butilde, btmp, batmp, tab,
-        trivial_limiter!, trivial_limiter!, False()
+        trivial_limiter!, trivial_limiter!, false
     )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
@@ -527,7 +527,7 @@ function alg_cache(
     recursivefill!(ratmp, false)
     rk4cache = RK4Cache(
         u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
-        trivial_limiter!, False()
+        trivial_limiter!, false
     )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
@@ -636,7 +636,7 @@ function alg_cache(
     recursivefill!(ratmp, false)
     rk4cache = RK4Cache(
         u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
-        trivial_limiter!, False()
+        trivial_limiter!, false
     )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
@@ -750,7 +750,7 @@ function alg_cache(
     btmp = zero(u)
     bs3cache = BS3Cache(
         u, uprev, bk1, bk2, bk3, bk4, butilde, btmp, batmp, tab,
-        trivial_limiter!, trivial_limiter!, False()
+        trivial_limiter!, trivial_limiter!, false
     )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
@@ -869,7 +869,7 @@ function alg_cache(
     recursivefill!(ratmp, false)
     rk4cache = RK4Cache(
         u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
-        trivial_limiter!, False()
+        trivial_limiter!, false
     )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
@@ -988,7 +988,7 @@ function alg_cache(
     recursivefill!(ratmp, false)
     rk4cache = RK4Cache(
         u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
-        trivial_limiter!, False()
+        trivial_limiter!, false
     )
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)

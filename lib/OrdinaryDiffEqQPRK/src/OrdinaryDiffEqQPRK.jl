@@ -8,7 +8,6 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConsta
     perform_step!, get_fsalfirstlast,
     constvalue, calculate_residuals!, calculate_residuals,
     full_cache
-using Static: False
 using MuladdMacro, FastBroadcast
 using RecursiveArrayTools: recursive_unitless_bottom_eltype, recursivefill!
 import OrdinaryDiffEqCore

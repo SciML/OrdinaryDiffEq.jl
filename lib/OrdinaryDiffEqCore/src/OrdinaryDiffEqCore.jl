@@ -19,7 +19,6 @@ using LinearAlgebra: opnorm, I, UniformScaling, diag, rank, isdiag
 
 import PrecompileTools
 
-import FillArrays: Trues, Falses
 
 import FastPower: fastpower
 
@@ -69,7 +68,7 @@ import DiffEqBase: get_tstops, get_tstops_array, get_tstops_max
 
 using DiffEqBase: check_error!, @def, _vec, _reshape
 
-using FastBroadcast: @.., True, False
+using FastBroadcast: @..
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
     ODEAliasSpecifier

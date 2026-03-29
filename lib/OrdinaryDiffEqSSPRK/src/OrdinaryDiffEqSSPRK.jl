@@ -15,7 +15,6 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     _ode_addsteps!, get_fsalfirstlast, copyat_or_push!
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def
-using Static: False
 import OrdinaryDiffEqCore
 
 using Reexport
