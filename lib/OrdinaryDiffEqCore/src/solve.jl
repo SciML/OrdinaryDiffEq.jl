@@ -665,6 +665,14 @@ function _ode_init(
         get_differential_vars(f, u)
     end
 
+    # SDE/RODE solvers never populate derivative stages (ks) — RODESolution has
+    # no .k field, so _has_ks returns false and save_dense_at_t! is a no-op.
+    # Force dense=false so ode_interpolation uses linear interpolation instead
+    # of trying to access the empty ks vector.
+    if !isnothing(W)
+        dense = false
+    end
+
     id = InterpolationData(
         f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
     )
