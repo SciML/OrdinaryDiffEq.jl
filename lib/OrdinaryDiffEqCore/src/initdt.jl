@@ -15,7 +15,7 @@
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
+    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(DiffEqBase.value(t)))))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
@@ -315,7 +315,7 @@ end
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
+    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(DiffEqBase.value(t)))))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
