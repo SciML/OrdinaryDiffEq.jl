@@ -26,7 +26,7 @@ import SciMLBase
 using LinearAlgebra
 using StaticArrays
 using RecursiveArrayTools
-using LevyArea
+using StochasticDiffEqLevyArea
 using DiffEqNoiseProcess
 
 include("algorithms.jl")

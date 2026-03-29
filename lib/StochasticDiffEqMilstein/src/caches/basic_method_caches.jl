@@ -3,7 +3,7 @@ struct RKMilGeneralConstantCache{JalgType} <: StochasticDiffEqConstantCache
 end
 
 @cache struct RKMilGeneralCache{uType, rateType, rateNoiseType, JalgType} <:
-    StochasticDiffEqMutableCache
+              StochasticDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -41,8 +41,7 @@ function alg_cache(
     ggprime = zero(noise_rate_prototype)
     Jalg = get_Jalg(DeltaW, dt, prob, alg)
     return RKMilGeneralCache{
-        typeof(u), typeof(rate_prototype), typeof(noise_rate_prototype), typeof(Jalg),
-    }(
+        typeof(u), typeof(rate_prototype), typeof(noise_rate_prototype), typeof(Jalg)}(
         u, uprev, tmp, du1, du2, K, L, mil_correction, ggprime, Jalg
     )
 end

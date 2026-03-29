@@ -106,7 +106,7 @@ end
 import SciMLBase
 import SciMLBase: isadaptive, alg_order
 
-using LevyArea
+using StochasticDiffEqLevyArea
 
 const CompiledFloats = Union{Float32, Float64}
 
