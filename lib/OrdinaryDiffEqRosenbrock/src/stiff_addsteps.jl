@@ -126,14 +126,10 @@ function _ode_addsteps!(
                 end
                 copyat_or_push!(k, j, kj)
             end
-        else
-            # No H matrix: compute Hermite-compatible coefficients
-            # k₁ = dt*f₀ - (y₁-y₀), k₂ = 2(y₁-y₀) - dt*(f₀+f₁)
-            f0 = f(uprev, p, t)
-            f1 = f(u, p, t + dt)
-            copyat_or_push!(k, 1, @.. dt * f0 - (u - uprev))
-            copyat_or_push!(k, 2, @.. 2 * (u - uprev) - dt * (f0 + f1))
         end
+        # Methods with empty H (Rodas3, ROS34PW3, etc.) have no dense output
+        # coefficients — fall through to the generic _ode_addsteps! which
+        # stores f₀ and f₁ for standard Hermite interpolation.
     end
     return nothing
 end
@@ -208,14 +204,10 @@ function _ode_addsteps!(
                     @.. k[j] += H[j, i] * _vec(ks[i])
                 end
             end
-        else
-            # No H matrix: compute Hermite-compatible coefficients
-            # k₁ = dt*f₀ - (y₁-y₀), k₂ = 2(y₁-y₀) - dt*(f₀+f₁)
-            f(du, uprev, p, t)
-            f(du1, u, p, t + dt)
-            copyat_or_push!(k, 1, @.. dt * du - (u - uprev))
-            copyat_or_push!(k, 2, @.. 2 * (u - uprev) - dt * (du + du1))
         end
+        # Methods with empty H (Rodas3, ROS34PW3, etc.) have no dense output
+        # coefficients — fall through to the generic _ode_addsteps! which
+        # stores f₀ and f₁ for standard Hermite interpolation.
     end
     return nothing
 end
