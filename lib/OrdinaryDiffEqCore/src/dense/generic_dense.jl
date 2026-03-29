@@ -1299,6 +1299,11 @@ end
 
 ##################### Hermite Interpolants
 
+# Helper for indexing differential_vars: scalar Bool broadcasts as-is,
+# arrays are indexed normally. The compiler specializes away the branch.
+@inline _dv(dv::Bool, _) = dv
+@inline _dv(dv, i) = dv[i]
+
 function interpolation_differential_vars(differential_vars, y₀, idxs)
     if isnothing(differential_vars)
         if y₀ isa Number
@@ -1408,7 +1413,7 @@ end
     out = similar(y₀)
     @inbounds @simd ivdep for i in eachindex(y₀)
         out[i] = (1 - Θ) * y₀[i] + Θ * y₁[i] +
-            differential_vars[i] * Θ * (Θ - 1) *
+            _dv(differential_vars, i) * Θ * (Θ - 1) *
             ((1 - 2Θ) * (y₁[i] - y₀[i]) + (Θ - 1) * dt * k[1][i] + Θ * dt * k[2][i])
     end
 end
@@ -1465,7 +1470,7 @@ end
     )
     @inbounds @simd ivdep for i in eachindex(out)
         out[i] = (1 - Θ) * y₀[i] + Θ * y₁[i] +
-            differential_vars[i] * Θ * (Θ - 1) *
+            _dv(differential_vars, i) * Θ * (Θ - 1) *
             ((1 - 2Θ) * (y₁[i] - y₀[i]) + (Θ - 1) * dt * k[1][i] + Θ * dt * k[2][i])
     end
     out
@@ -1497,7 +1502,7 @@ end
     )
     @inbounds for (j, i) in enumerate(idxs)
         out[j] = (1 - Θ) * y₀[i] + Θ * y₁[i] +
-            differential_vars[j] * Θ * (Θ - 1) *
+            _dv(differential_vars, j) * Θ * (Θ - 1) *
             ((1 - 2Θ) * (y₁[i] - y₀[i]) + (Θ - 1) * dt * k[1][i] + Θ * dt * k[2][i])
     end
     out
@@ -1624,8 +1629,8 @@ end
         T::Type{Val{1}}, differential_vars
     )
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = !differential_vars[i] * ((y₁[i] - y₀[i]) / dt) +
-            differential_vars[i] * (
+        out[i] = !_dv(differential_vars, i) * ((y₁[i] - y₀[i]) / dt) +
+            _dv(differential_vars, i) * (
             k[1][i] +
                 Θ * (
                 -4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
@@ -1672,8 +1677,8 @@ end
         out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{1}}, differential_vars
     )
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = !differential_vars[j] * ((y₁[i] - y₀[i]) / dt) +
-            differential_vars[j] * (
+        out[j] = !_dv(differential_vars, j) * ((y₁[i] - y₀[i]) / dt) +
+            _dv(differential_vars, j) * (
             k[1][i] +
                 Θ * (
                 -4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
@@ -1779,7 +1784,7 @@ end
         T::Type{Val{2}}, differential_vars
     )
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = differential_vars[i] *
+        out[i] = _dv(differential_vars, i) *
             (
             -4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
                 Θ * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) +
@@ -1821,7 +1826,7 @@ end
         out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{2}}, differential_vars
     )
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = differential_vars[j] *
+        out[j] = _dv(differential_vars, j) *
             (
             -4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
                 Θ * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) +
@@ -1913,7 +1918,7 @@ end
         T::Type{Val{3}}, differential_vars
     )
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = differential_vars[i] *
+        out[i] = _dv(differential_vars, i) *
             (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
             (dt * dt * dt)
     end
@@ -1942,7 +1947,7 @@ end
         out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{3}}, differential_vars
     )
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = differential_vars[j] *
+        out[j] = _dv(differential_vars, j) *
             (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
             (dt * dt * dt)
     end
