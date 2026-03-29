@@ -12,12 +12,14 @@ import SciMLBase
     Aqua.test_stale_deps(DelayDiffEq)
     Aqua.test_deps_compat(DelayDiffEq)
     # Allow piracy for the default solver methods and SDE integration
-    using OrdinaryDiffEqCore: StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm,
+    using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, StochasticDiffEqAlgorithm,
+        StochasticDiffEqRODEAlgorithm,
         StochasticDiffEqConstantCache, StochasticDiffEqMutableCache
     Aqua.test_piracies(
         DelayDiffEq;
         treat_as_own = [
             SciMLBase.DDEProblem,
+            OrdinaryDiffEqAlgorithm,
             StochasticDiffEqAlgorithm,
             StochasticDiffEqRODEAlgorithm,
             StochasticDiffEqConstantCache,

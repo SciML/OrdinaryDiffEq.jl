@@ -732,7 +732,7 @@ function DiffEqBase.check_prob_alg_pairing(prob::SDDEProblem, alg::AbstractMetho
     if !(alg.alg isa SDEAlgUnion)
         throw(SciMLBase.ProblemSolverPairingError(prob, alg))
     end
-    if isdefined(prob, :u0) && DiffEqBase.eltypedual(prob.u0) &&
+    if isdefined(prob, :u0) && SciMLBase.eltypedual(prob.u0) &&
             !SciMLBase.isautodifferentiable(alg)
         throw(SciMLBase.DirectAutodiffError())
     end

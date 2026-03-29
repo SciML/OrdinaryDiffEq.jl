@@ -21,7 +21,7 @@ import SymbolicIndexingInterface as SII
 
 using SciMLBase: AbstractDDEAlgorithm, AbstractDDEIntegrator, AbstractODEIntegrator,
     DEIntegrator
-using SciMLBase: AbstractSDDEProblem, SDDEProblem, AbstractSDDEAlgorithm
+using SciMLBase: AbstractSDDEProblem, SDDEProblem
 
 using Base: deleteat!
 import FastBroadcast: @..
@@ -29,9 +29,9 @@ import FastBroadcast: @..
 using OrdinaryDiffEqNonlinearSolve: NLAnderson, NLFunctional
 using OrdinaryDiffEqCore: AbstractNLSolverCache, SlowConvergence,
     alg_extrapolates, alg_maximum_order, initialize!, DEVerbosity
-using OrdinaryDiffEqCore: StochasticDiffEqAlgorithm, StochasticDiffEqAdaptiveAlgorithm,
+using OrdinaryDiffEqCore: StochasticDiffEqAlgorithm,
     StochasticDiffEqRODEAlgorithm,
-    StochasticDiffEqCache, StochasticDiffEqConstantCache, StochasticDiffEqMutableCache
+    StochasticDiffEqConstantCache, StochasticDiffEqMutableCache
 using OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
 using OrdinaryDiffEqFunctionMap: FunctionMap
 # using OrdinaryDiffEqDifferentiation: resize_grad_config!, resize_jac_config!
