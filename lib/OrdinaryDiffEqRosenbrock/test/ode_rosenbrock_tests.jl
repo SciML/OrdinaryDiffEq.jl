@@ -1150,3 +1150,48 @@ end
         end
     end
 end
+
+# Dense interpolation regression tests for Rosenbrock methods without H matrix.
+# These methods use the generic Hermite fallback (k[1]=f₀, k[2]=f₁).
+# Ensures sol(t) at intermediate points matches the exact solution.
+@testset "Dense interpolation accuracy (empty H methods)" begin
+    # Exponential growth: du/dt = λ*u, u(t) = u0*exp(λ*t)
+    function f_exp(u, p, t)
+        return p[1] * u
+    end
+    function f_exp!(du, u, p, t)
+        @. du = p[1] * u
+    end
+    u0 = [1.0, 2.0]
+    p = [-0.5]
+    tspan = (0.0, 2.0)
+    exact(t) = u0 .* exp.(p[1] .* t)
+
+    t_check = 0.0:0.05:2.0
+
+    for alg in [Rodas3(), ROS3P(), ROS34PW1a(), ROS34PW1b(), ROS34PW2(), ROS34PW3()]
+        @testset "$(nameof(typeof(alg)))" begin
+            # OOP
+            prob_oop = ODEProblem(f_exp, u0, tspan, p)
+            sol_oop = solve(prob_oop, alg; abstol = 1e-8, reltol = 1e-8)
+            @test sol_oop.dense
+            for t in t_check
+                @test sol_oop(t) ≈ exact(t) atol = 1e-4
+            end
+
+            # IIP
+            prob_iip = ODEProblem(f_exp!, copy(u0), tspan, p)
+            sol_iip = solve(prob_iip, alg; abstol = 1e-8, reltol = 1e-8)
+            @test sol_iip.dense
+            for t in t_check
+                @test sol_iip(t) ≈ exact(t) atol = 1e-4
+            end
+
+            # saveat uses interpolation — check consistency
+            sol_saveat = solve(prob_oop, alg; abstol = 1e-8, reltol = 1e-8, saveat = 0.1)
+            for (i, t) in enumerate(sol_saveat.t)
+                @test sol_saveat.u[i] ≈ exact(t) atol = 1e-4
+            end
+        end
+    end
+end
