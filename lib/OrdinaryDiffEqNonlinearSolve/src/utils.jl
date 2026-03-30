@@ -148,7 +148,7 @@ SciMLBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact_t(f
 
 # Wrappers for computing separated DAE Jacobians: dF/du and dF/d(du).
 # These pass the differentiation variable directly to f, so ForwardDiff
-# handles mixed Float64/Dual arithmetic natively. No dualcache needed.
+# handles mixed Float64/Dual arithmetic natively. No DiffCache needed.
 
 # IIP: varies u only, du held fixed → Jacobian is dF/du
 mutable struct DAEJacobianUWrapper{F, pType, duType, tType} <: Function
