@@ -10,6 +10,7 @@ ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
 ExponentialUtilities = "d4d017d3-3776-5f7e-afef-a10c40355c18"
@@ -105,6 +106,7 @@ OrdinaryDiffEqSymplecticRK = {path = "lib/OrdinaryDiffEqSymplecticRK"}
 OrdinaryDiffEqTsit5 = {path = "lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
 DiffEqBase = {path = "lib/DiffEqBase"}
+DiffEqDevTools = {path = "lib/DiffEqDevTools"}
 
 [compat]
 ADTypes = "1.16"
