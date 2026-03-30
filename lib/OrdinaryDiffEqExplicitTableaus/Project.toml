@@ -1,0 +1,21 @@
+name = "OrdinaryDiffEqExplicitTableaus"
+uuid = "3278f1b1-0f5c-4cde-98e0-ba5eb00db955"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
+version = "1.0.0"
+
+[deps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+
+[compat]
+DiffEqBase = "6.194"
+Test = "<0.0.1, 1"
+julia = "1.10"
+
+[targets]
+test = ["Test"]
