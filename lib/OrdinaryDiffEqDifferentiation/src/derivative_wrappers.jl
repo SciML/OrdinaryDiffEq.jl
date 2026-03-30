@@ -287,6 +287,10 @@ function build_jac_config(
         autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg), u)
         dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
 
+        # Unwrap FunctionWrappersWrapper for Jacobian preparation so that
+        # sparsity tracers and other non-standard types can pass through.
+        uf_unwrapped = SciMLBase.@set uf.f = SciMLBase.unwrapped_f(uf.f)
+
         if dense isa AutoFiniteDiff
             dir_forward = @set dense.dir = 1
             dir_reverse = @set dense.dir = -1
@@ -300,15 +304,15 @@ function build_jac_config(
             end
 
             jac_config_forward = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_forward, u, strict = Val(false)
+                uf_unwrapped, du1, autodiff_alg_forward, u, strict = Val(false)
             )
             jac_config_reverse = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_reverse, u, strict = Val(false)
+                uf_unwrapped, du1, autodiff_alg_reverse, u, strict = Val(false)
             )
 
             jac_config = (jac_config_forward, jac_config_reverse)
         else
-            jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u, strict = Val(false))
+            jac_config1 = DI.prepare_jacobian(uf_unwrapped, du1, autodiff_alg, u, strict = Val(false))
             jac_config = (jac_config1, jac_config1)
         end
 
