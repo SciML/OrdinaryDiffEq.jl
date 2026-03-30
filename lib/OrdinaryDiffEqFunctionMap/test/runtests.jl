@@ -12,6 +12,7 @@ end
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "DiscreteProblem Defaults" include("discrete_problem_defaults.jl")
+    @time @safetestset "DiscreteProblem Defaults" include("discrete_problem_test.jl")
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
