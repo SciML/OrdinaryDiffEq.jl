@@ -36,10 +36,11 @@ $(TYPEDEF)
 
 Holds a tableau which defines an implicit Runge-Kutta method.
 """
-mutable struct ImplicitRKTableau{MType <: AbstractMatrix, VType <: AbstractVector} <:
+mutable struct ImplicitRKTableau{MType <: AbstractMatrix, VType <: AbstractVector,
+        CType <: AbstractVector} <:
     ODERKTableau
     A::MType
-    c::VType
+    c::CType
     α::VType
     αEEst::VType
     stages::Int
@@ -47,8 +48,9 @@ mutable struct ImplicitRKTableau{MType <: AbstractMatrix, VType <: AbstractVecto
     adaptiveorder::Int #The lower order of the pair. Only used for adaptivity.
 end
 function ImplicitRKTableau(
-        A::MType, c::VType, α::VType, order;
-        adaptiveorder = 0, αEEst = VType()
-    ) where {MType, VType}
-    return ImplicitRKTableau{MType, VType}(A, c, α, αEEst, length(α), order, adaptiveorder)
+        A::MType, c::CType, α::VType, order;
+        adaptiveorder = 0, αEEst = similar(α, 0)
+    ) where {MType, VType, CType}
+    return ImplicitRKTableau{MType, VType, CType}(
+        A, c, α, αEEst, length(α), order, adaptiveorder)
 end
