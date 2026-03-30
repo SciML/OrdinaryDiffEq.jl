@@ -1,16 +1,22 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
-authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 version = "7.0.0-DEV"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
+OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
+OrdinaryDiffEqExplicitRK = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
+OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
@@ -27,6 +33,7 @@ OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
 ADTypes = "1.10"
 CommonSolve = "0.2.4"
 DocStringExtensions = "0.9.5"
+ODEProblemLibrary = "1.3.0"
 OrdinaryDiffEqBDF = "1.16.0"
 OrdinaryDiffEqCore = "3"
 OrdinaryDiffEqDefault = "1.7.0"
@@ -37,9 +44,9 @@ SciMLBase = "2.143"
 julia = "1.10"
 
 [extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test", "SafeTestsets", "Pkg"]
