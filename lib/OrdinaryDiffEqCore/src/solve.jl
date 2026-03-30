@@ -222,10 +222,12 @@ Base.@constprop :aggressive function _ode_init(
     end
 
     # If alias isa Bool, all fields of ODEAliases set to alias
-    if alias isa Bool
-        aliases = ODEAliasSpecifier(alias = alias)
+    aliases = if alias isa Bool
+        ODEAliasSpecifier(alias = alias)
     elseif alias isa ODEAliasSpecifier
-        aliases = alias
+        alias
+    else
+        throw(ArgumentError("alias kwarg must be a Bool or ODEAliasSpecifier"))
     end
 
     if isnothing(aliases.alias_f) || aliases.alias_f
