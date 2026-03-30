@@ -26,3 +26,21 @@ end
 @time @testset "Plot Recipes (Nonlinearsolve WP-diagrams)" begin
     include("nonlinearsolve_wpdiagram_tests.jl")
 end
+@time @testset "Tagging Tests" begin
+    include("tagging_tests.jl")
+end
+@time @testset "Multi-Error Tests" begin
+    include("multi_error_tests.jl")
+end
+@time @testset "Best-of-Family Tests" begin
+    include("best_of_family_tests.jl")
+end
+@time @testset "Timeout Tests" begin
+    include("timeout_tests.jl")
+end
+@time @testset "AutoDiff Helper Tests" begin
+    include("autodiff_tests.jl")
+end
+@time @testset "Autoplot Tests" begin
+    include("autoplot_tests.jl")
+end

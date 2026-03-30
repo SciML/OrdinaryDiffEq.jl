@@ -1,5 +1,17 @@
 using Statistics
 
+# Convert a vector of error Dicts to a StructArray with consistent NamedTuple key ordering.
+# Dict iteration order is not guaranteed, so NamedTuple.(dicts) can produce NamedTuples
+# with different type parameters, causing the element type to widen to bare `NamedTuple`.
+# StructArrays 0.7 requires parameterized NamedTuple types (NamedTuple{names}), so we
+# must ensure all NamedTuples share the same key ordering.
+function _dicts_to_structarray(dicts)
+    ks = Tuple(sort(collect(keys(first(dicts)))))
+    V = valtype(first(dicts))
+    NT = NamedTuple{ks, NTuple{length(ks), V}}
+    return StructArray([NT(Tuple(d[k] for k in ks)) for d in dicts])
+end
+
 # Default names of algorithms:
 # Workaround for `MethodOfSteps` algorithms, otherwise they are all called "MethodOfSteps"
 # Ideally this would be a trait (in SciMLBase?), so packages could implement it
@@ -167,6 +179,7 @@ mutable struct WorkPrecision
     name::Any
     error_estimate::Any
     N::Int
+    tags::Vector{Symbol}
 end
 
 mutable struct WorkPrecisionSet
@@ -179,11 +192,37 @@ mutable struct WorkPrecisionSet
     names::Any
     error_estimate::Any
     numruns::Any
+    active_error_estimates::Vector{Symbol}
 end
+
+# Backward-compatible 9-argument constructor
+function WorkPrecisionSet(wps, N, abstols, reltols, prob, setups, names, error_estimate, numruns)
+    WorkPrecisionSet(wps, N, abstols, reltols, prob, setups, names, error_estimate, numruns,
+        [error_estimate isa Symbol ? error_estimate : :final])
+end
+
+# Multi-error-mode helpers
+function _needs_timeseries(error_estimates)
+    any(e -> e ∈ TIMESERIES_ERRORS, error_estimates)
+end
+
+function _needs_dense(error_estimates)
+    any(e -> e ∈ DENSE_ERRORS, error_estimates)
+end
+
+"""
+    available_errors(wp_set::WorkPrecisionSet)
+
+Return the list of error estimates that were computed for this WorkPrecisionSet.
+"""
+available_errors(wp_set::WorkPrecisionSet) = wp_set.active_error_estimates
 
 function WorkPrecision(prob, alg, abstols, reltols, dts = nothing;
         name = nothing, appxsol = nothing, error_estimate = :final,
-        numruns = 20, seconds = 2, kwargs...)
+        numruns = 20, seconds = 2, timeout = nothing,
+        timeseries_errors::Union{Bool, Nothing} = nothing,
+        dense_errors::Union{Bool, Nothing} = nothing,
+        tags::Vector{Symbol} = Symbol[], kwargs...)
     N = length(abstols)
     errors = Vector{Dict{Symbol, Float64}}(undef, N)
     times = Vector{Float64}(undef, N)
@@ -201,18 +240,29 @@ function WorkPrecision(prob, alg, abstols, reltols, dts = nothing;
     end
 
     let _prob = _prob
-        timeseries_errors = error_estimate ∈ TIMESERIES_ERRORS
-        dense_errors = error_estimate ∈ DENSE_ERRORS
+        _timeseries_errors = timeseries_errors !== nothing ? timeseries_errors : (error_estimate ∈ TIMESERIES_ERRORS)
+        _dense_errors = dense_errors !== nothing ? dense_errors : (error_estimate ∈ DENSE_ERRORS)
         for i in 1:N
+            t_start = time()
             if dts === nothing
                 sol = solve(_prob, alg; kwargs..., abstol = abstols[i],
-                    reltol = reltols[i], timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors)
+                    reltol = reltols[i], timeseries_errors = _timeseries_errors,
+                    dense_errors = _dense_errors)
             else
                 sol = solve(_prob, alg; kwargs..., abstol = abstols[i],
                     reltol = reltols[i], dt = dts[i],
-                    timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors)
+                    timeseries_errors = _timeseries_errors,
+                    dense_errors = _dense_errors)
+            end
+            solve_time = time() - t_start
+
+            if timeout !== nothing && solve_time > timeout
+                @warn "Timeout exceeded for tolerance index $i ($(round(solve_time, digits=1))s > $(timeout)s)"
+                errors[i] = Dict(
+                    :l∞ => NaN, :L2 => NaN, :final => NaN, :l2 => NaN, :L∞ => NaN)
+                times[i] = NaN
+                stats[i] = nothing
+                continue
             end
 
             stats[i] = sol.stats
@@ -290,14 +340,17 @@ function WorkPrecision(prob, alg, abstols, reltols, dts = nothing;
             end
         end
     end
-    return WorkPrecision(prob, abstols, reltols, StructArray(NamedTuple.(errors)),
-        times, dts, stats, name, error_estimate, N)
+    return WorkPrecision(prob, abstols, reltols, _dicts_to_structarray(errors),
+        times, dts, stats, name, error_estimate, N, tags)
 end
 
 # Work precision information for a BVP
 function WorkPrecision(prob::AbstractBVProblem, alg, abstols, reltols, dts = nothing;
         name = nothing, appxsol = nothing, error_estimate = :final,
-        numruns = 20, seconds = 2, kwargs...)
+        numruns = 20, seconds = 2, timeout = nothing,
+        timeseries_errors::Union{Bool, Nothing} = nothing,
+        dense_errors::Union{Bool, Nothing} = nothing,
+        tags::Vector{Symbol} = Symbol[], kwargs...)
     N = length(abstols)
     errors = Vector{Dict{Symbol, Float64}}(undef, N)
     times = Vector{Float64}(undef, N)
@@ -315,18 +368,29 @@ function WorkPrecision(prob::AbstractBVProblem, alg, abstols, reltols, dts = not
     end
 
     let _prob = _prob
-        timeseries_errors = error_estimate ∈ TIMESERIES_ERRORS
-        dense_errors = error_estimate ∈ DENSE_ERRORS
+        _timeseries_errors = timeseries_errors !== nothing ? timeseries_errors : (error_estimate ∈ TIMESERIES_ERRORS)
+        _dense_errors = dense_errors !== nothing ? dense_errors : (error_estimate ∈ DENSE_ERRORS)
         for i in 1:N
+            t_start = time()
             if dts === nothing
                 sol = solve(_prob, alg; kwargs..., abstol = abstols[i],
-                    reltol = reltols[i], timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors)
+                    reltol = reltols[i], timeseries_errors = _timeseries_errors,
+                    dense_errors = _dense_errors)
             else
                 sol = solve(_prob, alg; kwargs..., abstol = abstols[i],
                     reltol = reltols[i], dt = dts[i],
-                    timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors)
+                    timeseries_errors = _timeseries_errors,
+                    dense_errors = _dense_errors)
+            end
+            solve_time = time() - t_start
+
+            if timeout !== nothing && solve_time > timeout
+                @warn "Timeout exceeded for tolerance index $i ($(round(solve_time, digits=1))s > $(timeout)s)"
+                errors[i] = Dict(
+                    :l∞ => NaN, :L2 => NaN, :final => NaN, :l2 => NaN, :L∞ => NaN)
+                times[i] = NaN
+                stats[i] = nothing
+                continue
             end
 
             stats[i] = sol.stats
@@ -347,8 +411,8 @@ function WorkPrecision(prob::AbstractBVProblem, alg, abstols, reltols, dts = not
                     end
                 else
                     errors[i] = Dict{Symbol, Float64}()
-                    for err in keys(errsol.errors)
-                        errors[i][err] = mean(errsol.errors[err])
+                    for err in keys(sol.errors)
+                        errors[i][err] = mean(sol.errors[err])
                     end
                 end
 
@@ -403,14 +467,15 @@ function WorkPrecision(prob::AbstractBVProblem, alg, abstols, reltols, dts = not
             end
         end
     end
-    return WorkPrecision(prob, abstols, reltols, StructArray(NamedTuple.(errors)),
-        times, dts, stats, name, error_estimate, N)
+    return WorkPrecision(prob, abstols, reltols, _dicts_to_structarray(errors),
+        times, dts, stats, name, error_estimate, N, tags)
 end
 
 # Work precision information for a nonlinear problem.
 function WorkPrecision(
         prob::NonlinearProblem, alg, abstols, reltols, dts = nothing; name = nothing,
-        appxsol = nothing, error_estimate = :l2, numruns = 20, seconds = 2, kwargs...)
+        appxsol = nothing, error_estimate = :l2, numruns = 20, seconds = 2,
+        timeout = nothing, tags::Vector{Symbol} = Symbol[], kwargs...)
     N = length(abstols)
     errors = Vector{Dict{Symbol, Float64}}(undef, N)
     times = Vector{Float64}(undef, N)
@@ -429,7 +494,17 @@ function WorkPrecision(
 
     let _prob = _prob
         for i in 1:N
+            t_start = time()
             sol = solve(_prob, alg; kwargs..., abstol = abstols[i], reltol = reltols[i])
+            solve_time = time() - t_start
+
+            if timeout !== nothing && solve_time > timeout
+                @warn "Timeout exceeded for tolerance index $i ($(round(solve_time, digits=1))s > $(timeout)s)"
+                errors[i] = Dict(error_estimate => NaN)
+                times[i] = NaN
+                stats[i] = nothing
+                continue
+            end
 
             stats[i] = sol.stats
 
@@ -461,35 +536,44 @@ function WorkPrecision(
         end
     end
 
-    return WorkPrecision(prob, abstols, reltols, StructArray(NamedTuple.(errors)),
-        times, dts, stats, name, error_estimate, N)
+    return WorkPrecision(prob, abstols, reltols, _dicts_to_structarray(errors),
+        times, dts, stats, name, error_estimate, N, tags)
 end
 
 function WorkPrecisionSet(prob,
         abstols, reltols, setups;
         print_names = false, names = nothing, appxsol = nothing,
-        error_estimate = :final,
-        test_dt = nothing, kwargs...)
+        error_estimate = :final, error_estimates = nothing,
+        test_dt = nothing, timeout = nothing, kwargs...)
     N = length(setups)
     @assert names === nothing || length(setups) == length(names)
     wps = Vector{WorkPrecision}(undef, N)
     if names === nothing
         names = [_default_name(setup[:alg]) for setup in setups]
     end
+
+    _active = error_estimates !== nothing ? collect(error_estimates) : [error_estimate]
+    _ts_errors = error_estimates !== nothing ? _needs_timeseries(_active) : nothing
+    _dense_errors = error_estimates !== nothing ? _needs_dense(_active) : nothing
+
     for i in 1:N
         print_names && println(names[i])
         _abstols = get(setups[i], :abstols, abstols)
         _reltols = get(setups[i], :reltols, reltols)
         _dts = get(setups[i], :dts, nothing)
+        _tags = get(setups[i], :tags, Symbol[])
         filtered_setup = filter(p -> p.first in DiffEqBase.allowedkeywords, setups[i])
 
         wps[i] = WorkPrecision(prob, setups[i][:alg], _abstols, _reltols, _dts;
             appxsol = appxsol,
             error_estimate = error_estimate,
-            name = names[i], kwargs..., filtered_setup...)
+            name = names[i], timeout = timeout,
+            timeseries_errors = _ts_errors,
+            dense_errors = _dense_errors,
+            tags = _tags, kwargs..., filtered_setup...)
     end
     return WorkPrecisionSet(wps, N, abstols, reltols, prob, setups, names, error_estimate,
-        nothing)
+        nothing, _active)
 end
 
 @def error_calculation begin
@@ -540,7 +624,8 @@ function WorkPrecisionSet(prob::AbstractRODEProblem, abstols, reltols, setups,
         test_dt = nothing;
         numruns = 20, numruns_error = 20,
         print_names = false, names = nothing, appxsol_setup = nothing,
-        error_estimate = :final, parallel_type = :none,
+        error_estimate = :final, error_estimates = nothing,
+        parallel_type = :none, timeout = nothing,
         kwargs...)
     @assert names === nothing || length(setups) == length(names)
     timeseries_errors = DiffEqBase.has_analytic(prob.f) &&
@@ -556,6 +641,8 @@ function WorkPrecisionSet(prob::AbstractRODEProblem, abstols, reltols, setups,
         names = [_default_name(setup[:alg]) for setup in setups]
     end
     time_tmp = Vector{Float64}(undef, numruns)
+
+    _active = error_estimates !== nothing ? collect(error_estimates) : [error_estimate]
 
     # First calculate all of the errors
     if parallel_type == :threads
@@ -600,26 +687,34 @@ function WorkPrecisionSet(prob::AbstractRODEProblem, abstols, reltols, setups,
         x = isempty(_sol.t) ? 0 : round(Int, mean(_sol.t) - sum(_sol.t) / length(_sol.t))
         GC.gc()
         for j in 1:M
+            timed_out = false
             for i in 1:numruns
+                t_start = time()
                 time_tmp[i] = @elapsed sol = solve(prob, setups[k][:alg];
                     kwargs..., filtered_setup...,
                     abstol = _abstols[k][j],
                     reltol = _reltols[k][j], dt = _dts[k][j],
                     timeseries_errors = false,
                     dense_errors = false)
+                if timeout !== nothing && (time() - t_start) > timeout
+                    @warn "Timeout exceeded for method $k, tolerance $j"
+                    timed_out = true
+                    break
+                end
             end
-            times[j, k] = mean(time_tmp) + x
+            times[j, k] = timed_out ? NaN : mean(time_tmp) + x
             GC.gc()
         end
     end
 
     stats = nothing
     wps = [WorkPrecision(prob, _abstols[i], _reltols[i],
-               StructArray(NamedTuple.(errors[i])),
-               times[:, i], _dts[i], stats, names[i], error_estimate, N)
+               _dicts_to_structarray(errors[i]),
+               times[:, i], _dts[i], stats, names[i], error_estimate, N,
+               get(setups[i], :tags, Symbol[]))
            for i in 1:N]
     WorkPrecisionSet(wps, N, abstols, reltols, prob, setups, names, error_estimate,
-        numruns_error)
+        numruns_error, _active)
 end
 
 function WorkPrecisionSet(prob::AbstractEnsembleProblem, abstols, reltols, setups,
@@ -627,8 +722,9 @@ function WorkPrecisionSet(prob::AbstractEnsembleProblem, abstols, reltols, setup
         numruns = 5, trajectories = 1000,
         print_names = false, names = nothing, appxsol_setup = nothing,
         expected_value = nothing,
-        error_estimate = :weak_final, ensemblealg = EnsembleThreads(),
-        kwargs...)
+        error_estimate = :weak_final, error_estimates = nothing,
+        ensemblealg = EnsembleThreads(),
+        timeout = nothing, kwargs...)
     @assert names === nothing || length(setups) == length(names)
 
     weak_timeseries_errors = error_estimate ∈ WEAK_TIMESERIES_ERRORS
@@ -642,6 +738,8 @@ function WorkPrecisionSet(prob::AbstractEnsembleProblem, abstols, reltols, setup
         names = [_default_name(setup[:alg]) for setup in setups]
     end
     time_tmp = Vector{Float64}(undef, numruns)
+
+    _active = error_estimates !== nothing ? collect(error_estimates) : [error_estimate]
 
     # First calculate all of the errors
     _abstols = [get(setups[k], :abstols, abstols) for k in 1:N]
@@ -708,7 +806,9 @@ function WorkPrecisionSet(prob::AbstractEnsembleProblem, abstols, reltols, setup
         #x = isempty(_sol.t) ? 0 : round(Int,mean(_sol.t) - sum(_sol.t)/length(_sol.t))
         GC.gc()
         for j in 1:M
+            timed_out = false
             for i in 1:numruns
+                t_start = time()
                 time_tmp[i] = @elapsed sol = solve(prob, setups[k][:alg], ensemblealg;
                     filtered_setup...,
                     abstol = _abstols[k][j],
@@ -718,44 +818,59 @@ function WorkPrecisionSet(prob::AbstractEnsembleProblem, abstols, reltols, setup
                     dense_errors = false,
                     trajectories = Int(trajectories),
                     kwargs...)
+                if timeout !== nothing && (time() - t_start) > timeout
+                    @warn "Timeout exceeded for method $k, tolerance $j"
+                    timed_out = true
+                    break
+                end
             end
-            times[j, k] = mean(time_tmp) #+ x
+            times[j, k] = timed_out ? NaN : mean(time_tmp) #+ x
             GC.gc()
         end
     end
     stats = nothing
     wps = [WorkPrecision(prob, _abstols[i], _reltols[i], errors[i], times[:, i],
-               _dts[i], stats, names[i], error_estimate, N)
+               _dts[i], stats, names[i], error_estimate, N,
+               get(setups[i], :tags, Symbol[]))
            for i in 1:N]
     WorkPrecisionSet(wps, N, abstols, reltols, prob, setups, names, error_estimate,
-        Int(trajectories))
+        Int(trajectories), _active)
 end
 
 function WorkPrecisionSet(prob::AbstractBVProblem,
         abstols, reltols, setups;
         print_names = false, names = nothing, appxsol = nothing,
-        error_estimate = :final,
-        test_dt = nothing, kwargs...)
+        error_estimate = :final, error_estimates = nothing,
+        test_dt = nothing, timeout = nothing, kwargs...)
     N = length(setups)
     @assert names === nothing || length(setups) == length(names)
     wps = Vector{WorkPrecision}(undef, N)
     if names === nothing
         names = [_default_name(setup[:alg]) for setup in setups]
     end
+
+    _active = error_estimates !== nothing ? collect(error_estimates) : [error_estimate]
+    _ts_errors = error_estimates !== nothing ? _needs_timeseries(_active) : nothing
+    _dense_errors = error_estimates !== nothing ? _needs_dense(_active) : nothing
+
     for i in 1:N
         print_names && println(names[i])
         _abstols = get(setups[i], :abstols, abstols)
         _reltols = get(setups[i], :reltols, reltols)
         _dts = get(setups[i], :dts, nothing)
+        _tags = get(setups[i], :tags, Symbol[])
         filtered_setup = filter(p -> p.first in DiffEqBase.allowedkeywords, setups[i])
 
         wps[i] = WorkPrecision(prob, setups[i][:alg], _abstols, _reltols, _dts;
             appxsol = appxsol,
             error_estimate = error_estimate,
-            name = names[i], kwargs..., filtered_setup...)
+            name = names[i], timeout = timeout,
+            timeseries_errors = _ts_errors,
+            dense_errors = _dense_errors,
+            tags = _tags, kwargs..., filtered_setup...)
     end
     return WorkPrecisionSet(wps, N, abstols, reltols, prob, setups, names, error_estimate,
-        nothing)
+        nothing, _active)
 end
 
 function get_sample_errors(prob::AbstractRODEProblem, setup, test_dt = nothing;
@@ -822,6 +937,185 @@ function get_sample_errors(prob::AbstractRODEProblem, setup, test_dt = nothing;
         end
     end
 end
+
+## Tagging and filtering helpers
+
+"""
+    filter_by_tags(wp_set::WorkPrecisionSet, tags::Symbol...) -> WorkPrecisionSet
+
+Return a new `WorkPrecisionSet` containing only entries whose tags include
+ALL of the specified tags (AND logic).
+"""
+function filter_by_tags(wp_set::WorkPrecisionSet, tags::Symbol...)
+    isempty(tags) && return wp_set
+    indices = findall(wp -> all(t -> t in wp.tags, tags), wp_set.wps)
+    _subset_wps(wp_set, indices)
+end
+
+"""
+    exclude_by_tags(wp_set::WorkPrecisionSet, tags::Symbol...) -> WorkPrecisionSet
+
+Return a new `WorkPrecisionSet` excluding entries that have ANY of the specified tags.
+"""
+function exclude_by_tags(wp_set::WorkPrecisionSet, tags::Symbol...)
+    isempty(tags) && return wp_set
+    indices = findall(wp -> !any(t -> t in wp.tags, tags), wp_set.wps)
+    _subset_wps(wp_set, indices)
+end
+
+"""
+    get_tags(wp_set::WorkPrecisionSet) -> Vector{Vector{Symbol}}
+
+Return the tags for each entry in the `WorkPrecisionSet`.
+"""
+get_tags(wp_set::WorkPrecisionSet) = [wp.tags for wp in wp_set.wps]
+
+"""
+    unique_tags(wp_set::WorkPrecisionSet) -> Vector{Symbol}
+
+Return all unique tags present across entries in the `WorkPrecisionSet`.
+"""
+function unique_tags(wp_set::WorkPrecisionSet)
+    alltags = Symbol[]
+    for wp in wp_set.wps
+        append!(alltags, wp.tags)
+    end
+    return unique!(sort!(alltags))
+end
+
+"""
+    merge_wp_sets(sets::WorkPrecisionSet...) -> WorkPrecisionSet
+
+Merge multiple `WorkPrecisionSet`s into a single set. All entries are combined.
+The metadata (abstols, reltols, prob, error_estimate) is taken from the first set.
+"""
+function merge_wp_sets(sets::WorkPrecisionSet...)
+    isempty(sets) && throw(ArgumentError("At least one WorkPrecisionSet is required"))
+    wps = vcat([s.wps for s in sets]...)
+    all_setups = vcat([s.setups for s in sets]...)
+    all_names = vcat([s.names for s in sets]...)
+    N = length(wps)
+    first_set = first(sets)
+    return WorkPrecisionSet(
+        wps, N, first_set.abstols, first_set.reltols, first_set.prob,
+        all_setups, all_names, first_set.error_estimate, first_set.numruns)
+end
+
+function _subset_wps(wp_set::WorkPrecisionSet, indices::Vector{Int})
+    isempty(indices) &&
+        @warn "No entries match the specified tags. Returning empty WorkPrecisionSet."
+    wps = wp_set.wps[indices]
+    setups = wp_set.setups isa AbstractVector ? wp_set.setups[indices] : wp_set.setups
+    names = wp_set.names isa AbstractVector ? wp_set.names[indices] : wp_set.names
+    return WorkPrecisionSet(
+        wps, length(wps), wp_set.abstols, wp_set.reltols, wp_set.prob,
+        setups, names, wp_set.error_estimate, wp_set.numruns)
+end
+
+## Best-of-family helpers
+
+"""
+    wp_area(wp::WorkPrecision)
+
+Compute the area under the log-log work-precision curve using trapezoidal integration.
+Lower area = better (less time for given error). Returns `Inf` if fewer than 2 valid points.
+"""
+function wp_area(wp::WorkPrecision)
+    errs = getproperty(wp.errors, wp.error_estimate)
+    times = wp.times
+    valid = [(e, t) for (e, t) in zip(errs, times) if !isnan(e) && !isnan(t) && e > 0 && t > 0]
+    length(valid) < 2 && return Inf
+    log_errs = [log10(v[1]) for v in valid]
+    log_times = [log10(v[2]) for v in valid]
+    perm = sortperm(log_errs)
+    log_errs = log_errs[perm]
+    log_times = log_times[perm]
+    area = 0.0
+    for i in 2:length(log_errs)
+        area += 0.5 * (log_times[i] + log_times[i - 1]) * (log_errs[i] - log_errs[i - 1])
+    end
+    return area
+end
+
+"""
+    best_by_tag(wp_set, tag; n=1, metric=:area)
+
+Return the top `n` methods matching `tag`, ranked by work-precision performance.
+"""
+function best_by_tag(wp_set::WorkPrecisionSet, tag::Symbol; n::Int = 1, metric::Symbol = :area)
+    filtered = filter_by_tags(wp_set, tag)
+    length(filtered) == 0 && return filtered
+    if metric == :area
+        areas = [wp_area(wp) for wp in filtered.wps]
+        perm = sortperm(areas)
+        selected = perm[1:min(n, length(perm))]
+        return _subset_wps(filtered, selected)
+    else
+        throw(ArgumentError("Unknown metric: $metric. Supported: :area"))
+    end
+end
+
+"""
+    best_of_families(wp_set, family_tags; n=1, metric=:area)
+
+Select the best `n` methods from each family tag and combine into a single WorkPrecisionSet.
+"""
+function best_of_families(wp_set::WorkPrecisionSet, family_tags; n::Int = 1, metric::Symbol = :area)
+    results = WorkPrecisionSet[]
+    for tag in family_tags
+        best = best_by_tag(wp_set, tag; n = n, metric = metric)
+        length(best) > 0 && push!(results, best)
+    end
+    isempty(results) && throw(ArgumentError("No methods found for any of the specified family tags"))
+    return merge_wp_sets(results...)
+end
+
+## AutoDiff comparison helpers
+
+"""
+    ad_backend_name(backend)
+
+Get a short string name from an AD backend object. Strips "Auto" prefix.
+"""
+function ad_backend_name(backend)
+    name = string(nameof(typeof(backend)))
+    startswith(name, "Auto") ? name[5:end] : name
+end
+
+"""
+    with_autodiff_variants(setups; ad_backends, tag_prefix=:autodiff)
+
+Create AD variants of setup dicts. For each setup and each AD backend, creates a
+new setup with the `:autodiff` key set and tags augmented with an AD-specific tag.
+Original setups get tagged with `Symbol(tag_prefix, "_default")`.
+"""
+function with_autodiff_variants(setups; ad_backends, tag_prefix::Symbol = :autodiff)
+    result = Vector{Dict{Symbol, Any}}()
+
+    for setup in setups
+        # Tag original setup (copy to avoid mutation)
+        original = copy(setup)
+        original_tags = copy(get(original, :tags, Symbol[]))
+        push!(original_tags, Symbol(tag_prefix, :_default))
+        original[:tags] = original_tags
+        push!(result, original)
+
+        # Create variants for each AD backend
+        for backend in ad_backends
+            variant = copy(setup)
+            variant[:autodiff] = backend
+            variant_tags = copy(get(variant, :tags, Symbol[]))
+            backend_name = lowercase(ad_backend_name(backend))
+            push!(variant_tags, Symbol(tag_prefix, :_, Symbol(backend_name)))
+            variant[:tags] = variant_tags
+            push!(result, variant)
+        end
+    end
+
+    return result
+end
+
+## Base overloads
 
 Base.length(wp::WorkPrecision) = wp.N
 Base.size(wp::WorkPrecision) = length(wp)
