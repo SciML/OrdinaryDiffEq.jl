@@ -50,3 +50,15 @@ ssp_coefficient(alg::SSPRKMSVS32) = 0.5
 ssp_coefficient(alg::SSPRKMSVS43) = 0.33
 ssp_coefficient(alg::KYKSSPRK42) = 2.459
 ssp_coefficient(alg::KYK2014DGSSPRK_3S2) = 0.8417
+
+isfsal(alg::pRRK22) = false
+isfsal(alg::pRRK33) = false
+isfsal(alg::pRRK54) = false
+
+alg_order(alg::pRRK22) = 2
+alg_order(alg::pRRK33) = 3
+alg_order(alg::pRRK54) = 4
+
+ssp_coefficient(alg::pRRK22) = 1
+ssp_coefficient(alg::pRRK33) = 1
+ssp_coefficient(alg::pRRK54) = 1.508
