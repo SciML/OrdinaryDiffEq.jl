@@ -4,21 +4,6 @@ function SciMLBase.interp_summary(
     ) where {
         cacheType <:
         Union{
-            Rosenbrock23ConstantCache,
-            Rosenbrock32ConstantCache,
-            Rosenbrock23Cache,
-            Rosenbrock32Cache,
-        },
-    }
-    return dense ? "specialized 2nd order \"free\" stiffness-aware interpolation" :
-        "1st order linear"
-end
-function SciMLBase.interp_summary(
-        ::Type{cacheType},
-        dense::Bool
-    ) where {
-        cacheType <:
-        Union{
             RosenbrockCombinedConstantCache,
             RosenbrockCache,
             HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
