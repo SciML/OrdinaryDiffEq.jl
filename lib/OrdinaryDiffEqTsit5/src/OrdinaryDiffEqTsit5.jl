@@ -11,7 +11,6 @@ import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
     CompositeAlgorithm, _ode_addsteps!, copyat_or_push!,
     AutoAlgSwitch, get_fsalfirstlast,
     full_cache, DerivativeOrderNotPossibleError
-import Static: False
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype

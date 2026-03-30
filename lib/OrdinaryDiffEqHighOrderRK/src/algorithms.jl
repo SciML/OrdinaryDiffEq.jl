@@ -9,11 +9,11 @@ Base.@kwdef struct TanYam7{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = false
 end
 # for backwards compatibility
 function TanYam7(stage_limiter!, step_limiter! = trivial_limiter!)
-    return TanYam7(stage_limiter!, step_limiter!, False())
+    return TanYam7(stage_limiter!, step_limiter!, false)
 end
 
 @doc explicit_rk_docstring(
@@ -32,11 +32,11 @@ Base.@kwdef struct TsitPap8{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = false
 end
 # for backwards compatibility
 function TsitPap8(stage_limiter!, step_limiter! = trivial_limiter!)
-    return TsitPap8(stage_limiter!, step_limiter!, False())
+    return TsitPap8(stage_limiter!, step_limiter!, false)
 end
 
 @doc explicit_rk_docstring(
@@ -49,11 +49,11 @@ end
 Base.@kwdef struct DP8{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = false
 end
 # for backwards compatibility
 function DP8(stage_limiter!, step_limiter! = trivial_limiter!)
-    return DP8(stage_limiter!, step_limiter!, False())
+    return DP8(stage_limiter!, step_limiter!, false)
 end
 
 @doc explicit_rk_docstring(
@@ -75,10 +75,10 @@ Base.@kwdef struct PFRK87{StageLimiter, StepLimiter, Thread, T} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = false
     omega::T = 0.0
 end
 # for backwards compatibility
 function PFRK87(stage_limiter!, step_limiter! = trivial_limiter!; omega = 0.0)
-    return PFRK87(stage_limiter!, step_limiter!, False(), omega)
+    return PFRK87(stage_limiter!, step_limiter!, false, omega)
 end

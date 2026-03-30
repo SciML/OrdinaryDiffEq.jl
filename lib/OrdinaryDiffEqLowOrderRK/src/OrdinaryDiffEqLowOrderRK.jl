@@ -22,7 +22,6 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 import LinearAlgebra: norm
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
-import Static: False
 using DiffEqBase: @def, @tight_loop_macros
 import DiffEqBase: prepare_alg
 import OrdinaryDiffEqCore

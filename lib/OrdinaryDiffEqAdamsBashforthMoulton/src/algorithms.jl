@@ -4,11 +4,11 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1"""
 
 keyword_default_description = """
-- `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+- `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.false`) or use multiple threads (`thread = true`) when Julia is started with multiple threads.
 """
 
 keyword_default = """
-thread = OrdinaryDiffEq.False(),
+thread = OrdinaryDiffEq.false,
 """
 
 @doc generic_solver_docstring(
@@ -21,7 +21,7 @@ thread = OrdinaryDiffEq.False(),
     keyword_default
 )
 Base.@kwdef struct AB3{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 @doc generic_solver_docstring(
@@ -34,7 +34,7 @@ end
     keyword_default
 )
 Base.@kwdef struct AB4{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 @doc generic_solver_docstring(
@@ -47,7 +47,7 @@ end
     keyword_default
 )
 Base.@kwdef struct AB5{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 @doc generic_solver_docstring(
@@ -61,7 +61,7 @@ end
     keyword_default
 )
 Base.@kwdef struct ABM32{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 @doc generic_solver_docstring(
@@ -75,7 +75,7 @@ end
     keyword_default
 )
 Base.@kwdef struct ABM43{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 @doc generic_solver_docstring(
@@ -89,7 +89,7 @@ end
     keyword_default
 )
 Base.@kwdef struct ABM54{Thread} <: OrdinaryDiffEqAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 # Variable Step Size Adams methods
@@ -104,7 +104,7 @@ end
     keyword_default
 )
 Base.@kwdef struct VCAB3{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 @doc generic_solver_docstring(
@@ -117,7 +117,7 @@ end
     keyword_default
 )
 Base.@kwdef struct VCAB4{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 @doc generic_solver_docstring(
@@ -130,7 +130,7 @@ end
     keyword_default
 )
 Base.@kwdef struct VCAB5{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 @doc generic_solver_docstring(
@@ -143,7 +143,7 @@ end
     keyword_default
 )
 Base.@kwdef struct VCABM3{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 @doc generic_solver_docstring(
@@ -156,7 +156,7 @@ end
     keyword_default
 )
 Base.@kwdef struct VCABM4{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 @doc generic_solver_docstring(
@@ -169,7 +169,7 @@ end
     keyword_default
 )
 Base.@kwdef struct VCABM5{Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
 
 # Variable Order and Variable Step Size Adams methods
@@ -184,5 +184,5 @@ end
     keyword_default
 )
 Base.@kwdef struct VCABM{Thread} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
-    thread::Thread = False()
+    thread::Thread = false
 end
