@@ -58,7 +58,7 @@ function find_discontinuity(u, uprev, integrator, cache)
                 disco_prob.f.f.differential_vars = integrator.differential_vars
                 disco_prob.f.f.idxs = integrator.opts.save_idxs
                 #disco_prob.f.f.callback = i                
-                sol = solve(disco_prob; bracket=[zero(dt), one(dt)], abstol = 0, reltol = 0)                
+                sol = solve(disco_prob; bracket=[zero(dt), one(dt)], abstol = 0, reltol = 0)      
                 tmp = sol[]
                 if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) 
                     breakpointθ = tmp 

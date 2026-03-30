@@ -1,5 +1,5 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
-using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner 
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error)) 
 
@@ -20,11 +20,9 @@ cb = ContinuousCallback(condition, affect!; is_discontinuity = true)
 cb2 = ContinuousCallback(condition, affect!; is_discontinuity = false)
 
 sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
-#  277.833 μs (8033 allocations: 251.14 KiB)
-# curr update: 287.417 μs (8240 allocations: 258.56 KiB)
+#    286.125 μs (8207 allocations: 258.09 KiB)
 sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
-#  343.041 μs (10008 allocations: 311.02 KiB)
-
+#    340.292 μs (10009 allocations: 311.05 KiB)
 @profview for i in 1:1000 
     solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
 end
@@ -64,11 +62,14 @@ cb2 = CallbackSet(cb1f, cb2f)
 
 #disco solve
 sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
-#  1.664 ms (43703 allocations: 1.35 MiB)
+#    1.548 ms (46763 allocations: 1.35 MiB)
 #fixed order solve
 sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
-#   1.266 ms (37019 allocations: 1.12 MiB)
+#     1.264 ms (37026 allocations: 1.13 MiB)
 
+@profview for i in 1:1000 
+    solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
+end
 
 
 #TEST 3: EXPONENTIAL DISCONTINUITY
@@ -106,11 +107,10 @@ cb_multi2 = CallbackSet(cb_multi_1f, cb_multi_2f)
 
 #disco solve
 sol_disco = solve(prob_multi, RadauIIA5(); callback=cb_multi, reltol=1e-7, abstol=1e-9)
-#    202.834 μs (2770 allocations: 93.23 KiB)
-# curr update:   238.416 μs (4426 allocations: 119.88 KiB)
+#      195.666 μs (3834 allocations: 110.72 KiB)
 #fixed order solve
 sol_no_disco = solve(prob_multi, RadauIIA5(); callback=cb_multi2, reltol = 1e-7, abstol = 1e-9)
-#  122.875 μs (1136 allocations: 54.52 KiB)
+#    125.583 μs (1134 allocations: 54.56 KiB)
 
 @profview for i in 1:1000 
     solve(prob_multi, RadauIIA5(); callback = cb_multi, reltol = 1e-6)
@@ -141,11 +141,14 @@ cb_stiff_f = ContinuousCallback(cond_stiff, affect_stiff!; is_discontinuity = fa
 
 #disco solve
 sol_disco = solve(prob_stiff, RadauIIA5(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
-#  131.875 μs (1956 allocations: 74.03 KiB)
+#    131.375 μs (2181 allocations: 78.84 KiB)
 #fixed order solve
 sol_no_disco = solve(prob_stiff, RadauIIA5(); callback=cb_stiff_f, reltol = 1e-9, abstol = 1e-11)
 #  119.417 μs (1480 allocations: 59.55 KiB)
 
+@profview for i in 1:1000 
+    solve(prob_stiff, RadauIIA5(); callback = cb_stiff, reltol = 1e-9, abstol = 1e-11)
+end
 
 #TEST 5: MULTIPLE DISCONTINUITIES IN SMALL RANGE
 # multiple discontinuities in very small range (1e-6 apart, 5 discontinuities)
@@ -176,10 +179,14 @@ cb_many_f = CallbackSet(cbs_many_f...)
 
 #disco solve
 sol_disco = solve(prob_many, RadauIIA5(); callback=cb_many, reltol=1e-10, abstol=1e-12)
-#   111.333 μs (907 allocations: 36.94 KiB)
+#     169.541 μs (1479 allocations: 73.98 KiB)
 #fixed order solve
 sol_no_disco = solve(prob_many, RadauIIA5(); callback=cb_many_f, reltol=1e-10, abstol=1e-12)
 #   111.666 μs (907 allocations: 36.94 KiB)
+
+@profview for i in 1:1000 
+    solve(prob_many, RadauIIA5(); callback = cb_many, reltol = 1e-10, abstol = 1e-12)
+end
 
 #TEST 6: DISCONTINUOUS DAE
 # discontinuous DAE with mass matrix
@@ -214,7 +221,7 @@ cb_daef = ContinuousCallback(cond_dae, affect_dae!; is_discontinuity = false)
 radau_no_disco = solve(prob_dae, RadauIIA5(); callback=cb_daef, reltol=1e-8, abstol=1e-10)
 #  83.500 μs (769 allocations: 35.72 KiB)
 radau_disco = solve(prob_dae, RadauIIA5(); callback=cb_dae, reltol=1e-8, abstol=1e-10)
-#  101.542 μs (1230 allocations: 48.16 KiB)
+#  104.292 μs (1494 allocations: 53.25 KiB)
  
 #TEST 7: VECTOR CALLBACK
 function f!(du, u, p, t)

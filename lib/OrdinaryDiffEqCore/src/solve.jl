@@ -26,7 +26,7 @@ mutable struct zero_func_struct{uType, tType, rateType, CacheType}
     k::Vector{rateType}
     cache::CacheType
     idxs::Union{Nothing, Vector{Int}}
-    differential_vars::Union{Nothing, Vector{Bool}}
+    differential_vars::Union{Nothing, Vector{Bool}, BitVector}
 end
 
 function (z::zero_func_struct)(θ, p)
