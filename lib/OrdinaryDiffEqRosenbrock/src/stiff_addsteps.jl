@@ -126,10 +126,13 @@ function _ode_addsteps!(
                 end
                 copyat_or_push!(k, j, kj)
             end
+        else
+            # Methods with empty H (Rodas3, ROS34PW3, etc.) have no stiff-aware
+            # dense output coefficients. Store f₀ and f₁ for standard Hermite
+            # interpolation (same as the generic _ode_addsteps! fallback).
+            copyat_or_push!(k, 1, f(uprev, p, t))
+            copyat_or_push!(k, 2, f(u, p, t + dt))
         end
-        # Methods with empty H (Rodas3, ROS34PW3, etc.) have no dense output
-        # coefficients — fall through to the generic _ode_addsteps! which
-        # stores f₀ and f₁ for standard Hermite interpolation.
     end
     return nothing
 end
@@ -204,10 +207,16 @@ function _ode_addsteps!(
                     @.. k[j] += H[j, i] * _vec(ks[i])
                 end
             end
+        else
+            # Methods with empty H (Rodas3, ROS34PW3, etc.) have no stiff-aware
+            # dense output coefficients. Store f₀ and f₁ for standard Hermite
+            # interpolation (same as the generic _ode_addsteps! fallback).
+            rtmp = similar(u, eltype(eltype(k)))
+            f(rtmp, uprev, p, t)
+            copyat_or_push!(k, 1, rtmp)
+            f(rtmp, u, p, t + dt)
+            copyat_or_push!(k, 2, rtmp)
         end
-        # Methods with empty H (Rodas3, ROS34PW3, etc.) have no dense output
-        # coefficients — fall through to the generic _ode_addsteps! which
-        # stores f₀ and f₁ for standard Hermite interpolation.
     end
     return nothing
 end
