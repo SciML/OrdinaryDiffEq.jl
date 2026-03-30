@@ -3,10 +3,11 @@ $(TYPEDEF)
 
 Holds a tableau which defines an explicit Runge-Kutta method.
 """
-mutable struct ExplicitRKTableau{MType <: AbstractMatrix, VType <: AbstractVector, S, IType} <:
+mutable struct ExplicitRKTableau{MType <: AbstractMatrix, VType <: AbstractVector,
+        CType <: AbstractVector, S, IType} <:
     ODERKTableau
     A::MType
-    c::VType
+    c::CType
     α::VType
     αEEst::VType
     d::VType # dense output coefficients
@@ -18,13 +19,13 @@ mutable struct ExplicitRKTableau{MType <: AbstractMatrix, VType <: AbstractVecto
     B_interp::IType
 end
 function ExplicitRKTableau(
-        A::MType, c::VType, α::VType, order;
+        A::MType, c::CType, α::VType, order;
         adaptiveorder = 0, αEEst = similar(α, 0),
         fsal = false, stability_size = 0.0,
         d = similar(α, 0), B_interp::IType = nothing
-    ) where {MType, VType, IType}
+    ) where {MType, VType, CType, IType}
     S = typeof(stability_size)
-    return ExplicitRKTableau{MType, VType, S, IType}(
+    return ExplicitRKTableau{MType, VType, CType, S, IType}(
         A, c, α, αEEst, d, length(α), order, adaptiveorder,
         fsal, stability_size, B_interp
     )

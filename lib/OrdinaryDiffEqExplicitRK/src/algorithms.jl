@@ -3,7 +3,7 @@ constructDormandPrince()
 
 Constructs the tableau object for the Dormand-Prince Order 4/5 method.
 """
-function constructDormandPrince(T::Type = Float64)
+function constructDormandPrince(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [
         0 0 0 0 0 0 0
         1 // 5 0 0 0 0 0 0
@@ -27,7 +27,7 @@ function constructDormandPrince(T::Type = Float64)
     A = map(T, A)
     α = map(T, α)
     αEEst = map(T, αEEst)
-    c = map(T, c)
+    c = map(T_time, c)
     return (
         DiffEqBase.ExplicitRKTableau(
             A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
@@ -194,11 +194,12 @@ end
 constructTsit5ExplicitRK() = constructTsit5ExplicitRK(Float64)
 
 """
-    constructTsit5ExplicitRK(::Type{T}) where T
+    constructTsit5ExplicitRK(::Type{T}, ::Type{T_time}) where {T, T_time}
 
 High-precision version for BigFloat and other arbitrary-precision types.
+Second type parameter controls the time coefficient type (`c`).
 """
-function constructTsit5ExplicitRK(::Type{T}) where {T}
+function constructTsit5ExplicitRK(::Type{T}, ::Type{T_time} = T) where {T, T_time}
     A = [
         0 0 0 0 0 0 0
         14 // 87 0 0 0 0 0 0
@@ -240,7 +241,7 @@ function constructTsit5ExplicitRK(::Type{T}) where {T}
     A = map(T, A)
     α = map(T, α)
     αEEst = map(T, αEEst)
-    c = map(T, c)
+    c = map(T_time, c)
     B_interp = construct_tsit5_interp_matrix(T)
 
     return DiffEqBase.ExplicitRKTableau(
