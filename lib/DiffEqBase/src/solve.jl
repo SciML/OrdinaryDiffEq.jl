@@ -815,7 +815,7 @@ function promote_f(
         # has a sparsity pattern, since the solver may use either depending on
         # the autodiff configuration (AutoSparse creates sparse J from sparsity).
         if f.jac !== nothing && !(f.jac isa FunctionWrappersWrappers.FunctionWrappersWrapper)
-            if f.jac_prototype !== nothing
+            if f.jac_prototype !== nothing && !(f.jac_prototype isa AbstractSciMLOperator)
                 J_T = Base.promote_op(similar, typeof(f.jac_prototype), Type{uElType})
                 sig = Tuple{J_T, typeof(u0), typeof(p), typeof(t)}
                 f = @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
