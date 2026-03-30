@@ -1,7 +1,7 @@
 name = "DiffEqBase"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "6.212.0"
+version = "6.213.0"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -87,7 +87,7 @@ FastPower = "1.1"
 FlexUnits = "0.4"
 ForwardDiff = "0.10, 1"
 FunctionWrappers = "1.0"
-FunctionWrappersWrappers = "0.1"
+FunctionWrappersWrappers = "0.1, 1"
 GTPSA = "1.4"
 GeneralizedGenerated = "0.3"
 InteractiveUtils = "1.9"
