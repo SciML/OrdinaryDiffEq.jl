@@ -153,7 +153,7 @@ function solve_call(
             end
 
             if !(eltype(_prob.u0) <: Number) && !(eltype(_prob.u0) <: Enum) &&
-                    !(_prob.u0 isa AbstractVector{<:AbstractArray} && _prob isa BVProblem)
+                    !(_prob.u0 isa AbstractVector{<:AbstractArray} && _prob isa AbstractBVProblem)
                 # Allow Enums for FunctionMaps, make into a trait in the future
                 # BVPs use Vector of Arrays for initial guesses
                 throw(NonNumberEltypeError(eltype(_prob.u0)))
