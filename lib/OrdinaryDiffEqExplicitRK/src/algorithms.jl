@@ -139,10 +139,6 @@ function construct_tsit5_interp_matrix(::Type{T}) where {T}
     return B_interp
 end
 
-# ============================================================================
-# Tsit5 in ExplicitRK tableau format
-# ============================================================================
-
 """
     constructTsit5ExplicitRK(::Type{T}) where {T <: Union{Float32, Float64}}
 
