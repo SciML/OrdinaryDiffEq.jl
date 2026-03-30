@@ -34,7 +34,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 Pkg = "1"
 OrdinaryDiffEqTsit5 = "1.4.0"
 Test = "<0.0.1, 1"
-FastBroadcast = "0.3"
+FastBroadcast = "0.3, 1"
 Random = "<0.0.1, 1"
 DiffEqDevTools = "2.44.4"
 MuladdMacro = "0.2"
