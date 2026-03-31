@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqBDF"
 uuid = "6ad6398a-0878-4a85-9266-38940aa047c8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.24.0"
+version = "1.23.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -69,7 +69,7 @@ JET = "0.9, 0.11"
 StaticArrays = "1.9"
 julia = "1.10"
 ADTypes = "1.16"
-RecursiveArrayTools = "3.52"
+RecursiveArrayTools = "3.36"
 ODEProblemLibrary = "1"
 OrdinaryDiffEqNonlinearSolve = "1.16.0"
 AllocCheck = "0.2"
