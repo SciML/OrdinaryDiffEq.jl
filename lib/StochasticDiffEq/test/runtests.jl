@@ -159,6 +159,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Dynamical SDE Tests" begin
             include("sde/sde_dynamical.jl")
         end
+    end
+
+    if !is_APPVEYOR && (TEST_GROUP == "ALL" || TEST_GROUP == "NoncommutativeConvergence")
         @time @safetestset "Noncommutative Noise Tests" begin
             include("noncommutative_tests.jl")
         end

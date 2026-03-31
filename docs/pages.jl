@@ -51,4 +51,24 @@ pages = [
     "Misc Solvers" => [
         "misc.md",
     ],
+    "Developer Documentation" => [
+        "devtools/index.md",
+        "Contributor Guide" => [
+            "devtools/contributing/ecosystem_overview.md",
+            "devtools/contributing/adding_packages.md",
+            "devtools/contributing/adding_algorithms.md",
+            "devtools/contributing/defining_problems.md",
+            "devtools/contributing/diffeq_internals.md",
+            "devtools/contributing/type_traits.md",
+        ],
+        "Algorithm Development Tools" => [
+            "devtools/alg_dev/test_problems.md",
+            "devtools/alg_dev/convergence.md",
+            "devtools/alg_dev/benchmarks.md",
+        ],
+        "Internal Documentation" => [
+            "devtools/internals/notes_on_algorithms.md",
+            "devtools/internals/tableaus.md",
+        ],
+    ],
 ]

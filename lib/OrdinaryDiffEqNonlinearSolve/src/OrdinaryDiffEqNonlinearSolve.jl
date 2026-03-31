@@ -9,7 +9,7 @@ using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
     update_coefficients!, get_tmp_cache, AbstractSciMLOperator, ReturnCode,
     AbstractNonlinearProblem, LinearAliasSpecifier
 import DiffEqBase
-import PreallocationTools: dualcache, get_tmp
+import PreallocationTools: DiffCache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
 using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
     step!, NonlinearVerbosity

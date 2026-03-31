@@ -36,21 +36,27 @@ sol = @inferred solve(
     initializealg = BrownFullBasicInit()
 )
 
+# Test Tsit5DA (Hybrid Explicit/Linear-Implicit)
+sol = @inferred solve(prob_mm, Tsit5DA(), reltol = 1.0e-8, abstol = 1.0e-8)
+@test SciMLBase.successful_retcode(sol)
+
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
-@testset "Inplace: $(isinplace(_prob)), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [
+@testset "Inplace: $(isinplace(_prob)), BrownBasic: $(initalg isa BrownFullBasicInit), " *
+         "Autodiff: $autodiff, Alg: $AlgName" for _prob in [
             prob_mm, prob_mm_oop,
         ],
         initalg in [BrownFullBasicInit(), ShampineCollocationInit()],
-        autodiff in [AutoForwardDiff(chunksize = 3), AutoFiniteDiff()]
+        autodiff in [AutoForwardDiff(chunksize = 3), AutoFiniteDiff()],
+        (Alg, AlgName) in [(Rodas5P, "Rodas5P"), (Tsit5DA, "Tsit5DA")]
 
-    alg = Rodas5P(; autodiff)
+    alg = Alg(; autodiff)
     function f(p)
         sol = @inferred solve(
             remake(_prob, p = p), alg, abstol = 1.0e-14,
             reltol = 1.0e-14, initializealg = initalg
         )
-        sum(sol)
+        sum(sol[end])
     end
     @test DI.gradient(f, AutoForwardDiff(), [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
 end

@@ -8,4 +8,4 @@ OrdinaryDiffEq = {path = "../../../.."}
 
 [compat]
 OrdinaryDiffEq = "6"
-Sundials = "4"
+Sundials = "4, 5"

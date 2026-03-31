@@ -10,6 +10,11 @@ versions = ["1.11", "1", "pre"]
 [AlgConvergence]
 versions = ["1"]
 
+[NoncommutativeConvergence]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 240
+
 [AlgConvergence2]
 versions = ["1"]
 
@@ -22,12 +27,12 @@ versions = ["1"]
 [OOPWeakConvergence]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "high-memory"]
-timeout = 240
+timeout = 300
 
 [IIPWeakConvergence]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "high-memory"]
-timeout = 240
+timeout = 300
 
 [Multithreaded]
 versions = ["1"]

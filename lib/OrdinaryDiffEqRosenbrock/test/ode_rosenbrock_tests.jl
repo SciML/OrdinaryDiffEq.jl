@@ -133,8 +133,9 @@ end
 
     prob = prob_ode_linear
 
-    sim = test_convergence(dts, prob, ROS3P())
+    sim = test_convergence(dts, prob, ROS3P(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3P())
     @test length(sol) < 20
@@ -142,8 +143,9 @@ end
 
     prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob, ROS3P())
+    sim = test_convergence(dts, prob, ROS3P(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3P())
     @test length(sol) < 20
@@ -179,8 +181,9 @@ end
 
     prob = prob_ode_linear
 
-    sim = test_convergence(dts, prob, Rodas3())
+    sim = test_convergence(dts, prob, Rodas3(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, Rodas3())
     @test length(sol) < 20
@@ -188,8 +191,9 @@ end
 
     prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob, Rodas3())
+    sim = test_convergence(dts, prob, Rodas3(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, Rodas3())
     @test length(sol) < 20
@@ -465,8 +469,9 @@ end
     ### ROS34PW1a
     prob = prob_ode_linear
 
-    sim = test_convergence(dts, prob, ROS34PW1a())
+    sim = test_convergence(dts, prob, ROS34PW1a(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW1a())
     @test length(sol) < 20
@@ -474,8 +479,9 @@ end
 
     prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob, ROS34PW1a())
+    sim = test_convergence(dts, prob, ROS34PW1a(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW1a())
     @test length(sol) < 20
@@ -484,8 +490,9 @@ end
     ### ROS34PW1b
     prob = prob_ode_linear
 
-    sim = test_convergence(dts, prob, ROS34PW1b())
+    sim = test_convergence(dts, prob, ROS34PW1b(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW1b())
     @test length(sol) < 20
@@ -493,8 +500,9 @@ end
 
     prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob, ROS34PW1b())
+    sim = test_convergence(dts, prob, ROS34PW1b(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW1b())
     @test length(sol) < 20
@@ -503,8 +511,9 @@ end
     ### ROS34PW2
     prob = prob_ode_linear
 
-    sim = test_convergence(dts, prob, ROS34PW2())
+    sim = test_convergence(dts, prob, ROS34PW2(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW2())
     @test length(sol) < 20
@@ -512,8 +521,9 @@ end
 
     prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob, ROS34PW2())
+    sim = test_convergence(dts, prob, ROS34PW2(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW2())
     @test length(sol) < 20
@@ -522,8 +532,9 @@ end
     ### ROS34PW3
     prob = prob_ode_linear
 
-    sim = test_convergence(dts, prob, ROS34PW3())
+    sim = test_convergence(dts, prob, ROS34PW3(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW3())
     @test length(sol) < 20
@@ -531,8 +542,9 @@ end
 
     prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob, ROS34PW3())
+    sim = test_convergence(dts, prob, ROS34PW3(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW3())
     @test length(sol) < 20

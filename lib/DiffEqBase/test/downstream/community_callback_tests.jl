@@ -98,7 +98,7 @@ using StaticArrays
 using MultiScaleArrays
 
 t_last = 0.0
-function attactor(du, u, p, t)
+function attractor(du, u, p, t)
     α, β = p
     n = length(u.nodes)
     return for k in 1:n
@@ -198,7 +198,7 @@ cback = VectorContinuousCallback(
     (x -> Int(((x - 1) * x) / 2))(length(Newton.nodes))
 )
 
-problemp = ODEProblem(attactor, Newton, (0.0, Inf), parameters)
+problemp = ODEProblem(attractor, Newton, (0.0, Inf), parameters)
 
 world = init(problemp, AutoTsit5(Rosenbrock23()); save_everystep = false, callback = cback)
 
@@ -228,7 +228,7 @@ cb = VectorContinuousCallback(cond!, terminate_affect!, nothing, 1)
 u0 = [0.0, 0.0, 1.0]
 prob = ODEProblem(f!, u0, (0.0, 10.0); callback = cb)
 soln = solve(prob, Tsit5())
-@test soln.t[end] ≈ 4.712347213360699 atol = 1e-4
+@test soln.t[end] ≈ 4.712347213360699 atol = 1.0e-4
 
 odefun = ODEFunction((u, p, t) -> [u[2], u[2] - p]; mass_matrix = [1 0; 0 0])
 callback = PresetTimeCallback(0.5, integ -> (integ.p = -integ.p))

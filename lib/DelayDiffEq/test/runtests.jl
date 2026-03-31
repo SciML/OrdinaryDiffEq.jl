@@ -113,6 +113,18 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
     end
 end
 
+if TEST_GROUP == "ALL" || TEST_GROUP == "SDDE"
+    @time @safetestset "SDDE Problem/Solution Tests" begin
+        include("sdde/test_prob_sol.jl")
+    end
+    @time @safetestset "SDDE Event Tests" begin
+        include("sdde/events.jl")
+    end
+    @time @safetestset "SDDE Non-diagonal Sparse Noise Tests" begin
+        include("sdde/nondiagonal_sparse_noise.jl")
+    end
+end
+
 if TEST_GROUP == "QA" && isempty(VERSION.prerelease)
     @time @safetestset "QA Tests" begin
         include("qa/qa_tests.jl")

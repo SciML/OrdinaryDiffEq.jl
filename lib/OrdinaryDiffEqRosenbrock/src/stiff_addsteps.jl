@@ -127,12 +127,11 @@ function _ode_addsteps!(
                 copyat_or_push!(k, j, kj)
             end
         else
-            # No H matrix: compute Hermite-compatible coefficients
-            # k₁ = dt*f₀ - (y₁-y₀), k₂ = 2(y₁-y₀) - dt*(f₀+f₁)
-            f0 = f(uprev, p, t)
-            f1 = f(u, p, t + dt)
-            copyat_or_push!(k, 1, @.. dt * f0 - (u - uprev))
-            copyat_or_push!(k, 2, @.. 2 * (u - uprev) - dt * (f0 + f1))
+            # Methods with empty H (Rodas3, ROS34PW3, etc.) have no stiff-aware
+            # dense output coefficients. Store f₀ and f₁ for standard Hermite
+            # interpolation (same as the generic _ode_addsteps! fallback).
+            copyat_or_push!(k, 1, f(uprev, p, t))
+            copyat_or_push!(k, 2, f(u, p, t + dt))
         end
     end
     return nothing
@@ -209,12 +208,14 @@ function _ode_addsteps!(
                 end
             end
         else
-            # No H matrix: compute Hermite-compatible coefficients
-            # k₁ = dt*f₀ - (y₁-y₀), k₂ = 2(y₁-y₀) - dt*(f₀+f₁)
-            f(du, uprev, p, t)
-            f(du1, u, p, t + dt)
-            copyat_or_push!(k, 1, @.. dt * du - (u - uprev))
-            copyat_or_push!(k, 2, @.. 2 * (u - uprev) - dt * (du + du1))
+            # Methods with empty H (Rodas3, ROS34PW3, etc.) have no stiff-aware
+            # dense output coefficients. Store f₀ and f₁ for standard Hermite
+            # interpolation (same as the generic _ode_addsteps! fallback).
+            rtmp = similar(u, eltype(eltype(k)))
+            f(rtmp, uprev, p, t)
+            copyat_or_push!(k, 1, rtmp)
+            f(rtmp, u, p, t + dt)
+            copyat_or_push!(k, 2, rtmp)
         end
     end
     return nothing
