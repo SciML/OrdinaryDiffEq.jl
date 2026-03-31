@@ -14,7 +14,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, qsteady_max_default,
     generic_solver_docstring
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import LinearAlgebra: rmul!
-import Static: False
+using FastBroadcast: Serial
 using OrdinaryDiffEqTsit5: Tsit5ConstantCache, Tsit5Cache
 import OrdinaryDiffEqCore
 

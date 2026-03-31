@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqNewmark"
 uuid = "d204908a-63b9-11ef-18f5-cfec7123a93b"
 authors = ["Dennis Ogiermann <termi-official@users.noreply.github.com>"]
-version = "1.5.0"
+version = "1.4.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -17,7 +17,6 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 PreallocationTools = "d236fae5-4411-538c-8e31-a6e3d9e00b46"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
-Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 
 [extras]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
@@ -46,11 +45,10 @@ NonlinearSolveFirstOrder = "1.9.0"
 MacroTools = "0.5.13"
 JET = "0.9, 0.11"
 julia = "1.10"
-RecursiveArrayTools = "3.52"
+RecursiveArrayTools = "3.36"
 PreallocationTools = "0.4.34, 1"
 DiffEqBase = "6.194"
 Reexport = "1.2.2"
-Static = "1"
 SafeTestsets = "0.1.0"
 
 [targets]

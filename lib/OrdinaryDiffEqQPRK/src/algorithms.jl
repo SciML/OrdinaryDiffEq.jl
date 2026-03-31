@@ -8,9 +8,9 @@ Base.@kwdef struct QPRK98{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function QPRK98(stage_limiter!, step_limiter! = trivial_limiter!)
-    return QPRK98(stage_limiter!, step_limiter!, False())
+    return QPRK98(stage_limiter!, step_limiter!, Serial())
 end

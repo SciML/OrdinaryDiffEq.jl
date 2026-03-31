@@ -6,7 +6,7 @@ end
 
 function MER5v2(;
         stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-        thread = False()
+        thread = Serial()
     )
     return MER5v2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(
         stage_limiter!,
@@ -17,9 +17,9 @@ end
 
 # for backwards compatibility
 function MER5v2(stage_limiter!, step_limiter! = trivial_limiter!)
-    return MER5v2{typeof(stage_limiter!), typeof(step_limiter!), False}(
+    return MER5v2{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
         stage_limiter!,
-        step_limiter!, False()
+        step_limiter!, Serial()
     )
 end
 
@@ -31,7 +31,7 @@ end
 
 function MER6v2(;
         stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-        thread = False()
+        thread = Serial()
     )
     return MER6v2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(
         stage_limiter!,
@@ -42,9 +42,9 @@ end
 
 # for backwards compatibility
 function MER6v2(stage_limiter!, step_limiter! = trivial_limiter!)
-    return MER6v2{typeof(stage_limiter!), typeof(step_limiter!), False}(
+    return MER6v2{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
         stage_limiter!,
-        step_limiter!, False()
+        step_limiter!, Serial()
     )
 end
 
@@ -56,7 +56,7 @@ end
 
 function RK6v4(;
         stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-        thread = False()
+        thread = Serial()
     )
     return RK6v4{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(
         stage_limiter!,
@@ -67,9 +67,9 @@ end
 
 # for backwards compatibility
 function RK6v4(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RK6v4{typeof(stage_limiter!), typeof(step_limiter!), False}(
+    return RK6v4{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
         stage_limiter!,
-        step_limiter!, False()
+        step_limiter!, Serial()
     )
 end
 
