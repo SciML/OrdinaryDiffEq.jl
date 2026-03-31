@@ -90,7 +90,7 @@ end
 # Inplace Versions
 
 """
-    DiffEqBase.calculate_residuals!(out, ũ, u₀, u₁, α, ρ, thread=false)
+    DiffEqBase.calculate_residuals!(out, ũ, u₀, u₁, α, ρ, thread=Serial())
 
 Save element-wise residuals
 ```math
@@ -99,13 +99,13 @@ Save element-wise residuals
 in `out`.
 
 The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = false`, default)
-or use multiple threads (`thread = true`) when Julia is started
+appropriate CPU arrays should be serial (`thread = Serial()`, default)
+or use multiple threads (`thread = Threaded()`) when Julia is started
 with multiple threads.
 """
 @inline function calculate_residuals!(
         out, ũ, u₀, u₁, α, ρ, internalnorm, t,
-        thread::Bool = false
+        thread = Serial()
     )
     @.. broadcast = false thread = thread out = calculate_residuals(
         ũ, u₀, u₁, α, ρ, internalnorm,
@@ -115,7 +115,7 @@ with multiple threads.
 end
 
 """
-    calculate_residuals!(out, u₀, u₁, α, ρ, thread=false)
+    calculate_residuals!(out, u₀, u₁, α, ρ, thread=Serial())
 
 Save element-wise residuals
 ```math
@@ -124,20 +124,20 @@ Save element-wise residuals
 in `out`.
 
 The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = false`, default)
-or use multiple threads (`thread = true`) when Julia is started
+appropriate CPU arrays should be serial (`thread = Serial()`, default)
+or use multiple threads (`thread = Threaded()`) when Julia is started
 with multiple threads.
 """
 @inline function calculate_residuals!(
         out, u₀, u₁, α, ρ, internalnorm, t,
-        thread::Bool = false
+        thread = Serial()
     )
     @.. broadcast = false thread = thread out = calculate_residuals(u₀, u₁, α, ρ, internalnorm, t)
     return nothing
 end
 
 """
-    calculate_residuals!(out, E₁, E₂, u₀, u₁, α, ρ, δ, scalarnorm, thread=false)
+    calculate_residuals!(out, E₁, E₂, u₀, u₁, α, ρ, δ, scalarnorm, thread=Serial())
 
 Calculate element-wise residuals
 ```math
@@ -145,13 +145,13 @@ Calculate element-wise residuals
 ```
 
 The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = false`, default)
-or use multiple threads (`thread = true`) when Julia is started
+appropriate CPU arrays should be serial (`thread = Serial()`, default)
+or use multiple threads (`thread = Threaded()`) when Julia is started
 with multiple threads.
 """
 @inline function calculate_residuals!(
         out, E₁, E₂, u₀, u₁, α, ρ, δ, scalarnorm, t,
-        thread::Bool = false
+        thread = Serial()
     )
     @.. broadcast = false thread = thread out = calculate_residuals(
         E₁, E₂, u₀, u₁, α, ρ, δ,

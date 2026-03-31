@@ -22,7 +22,7 @@ using FunctionWrappers: FunctionWrapper
 using MuladdMacro
 
 
-using FastBroadcast: @..
+using FastBroadcast: @.., Serial, Threaded
 
 import RecursiveArrayTools
 import TruncatedStacktraces
