@@ -12,7 +12,7 @@ import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
     AutoAlgSwitch, get_fsalfirstlast,
     full_cache, DerivativeOrderNotPossibleError, unwrap_alg, step_accept_controller!,
     stepsize_controller!, get_current_adaptive_order, get_current_alg_order
-import Static: False
+using FastBroadcast: Serial
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
