@@ -11,7 +11,7 @@ using DiffEqBase
 import RecursiveArrayTools: recursivecopy!
 import FastBroadcast: @..
 import MuladdMacro: @muladd
-import Static: False
+using FastBroadcast: Serial
 import OrdinaryDiffEqCore
 
 using Reexport
