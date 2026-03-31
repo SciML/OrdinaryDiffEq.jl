@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, Test
 import ODEProblemLibrary: prob_ode_linear,
     linear, f_2dlinear
+using OrdinaryDiffEqLowOrderRK
 
 # scalar, not in-place
 prob = prob_ode_linear
