@@ -27,11 +27,11 @@ Base.@kwdef struct Heun{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function Heun(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Heun(stage_limiter!, step_limiter!, False())
+    return Heun(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -45,11 +45,11 @@ Base.@kwdef struct Ralston{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function Ralston(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Ralston(stage_limiter!, step_limiter!, False())
+    return Ralston(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -63,11 +63,11 @@ Base.@kwdef struct Midpoint{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function Midpoint(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Midpoint(stage_limiter!, step_limiter!, False())
+    return Midpoint(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -87,11 +87,11 @@ end
 Base.@kwdef struct RK4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function RK4(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RK4(stage_limiter!, step_limiter!, False())
+    return RK4(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -111,11 +111,11 @@ end
 Base.@kwdef struct BS3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function BS3(stage_limiter!, step_limiter! = trivial_limiter!)
-    return BS3(stage_limiter!, step_limiter!, False())
+    return BS3(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -136,11 +136,11 @@ Base.@kwdef struct OwrenZen3{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function OwrenZen3(stage_limiter!, step_limiter! = trivial_limiter!)
-    return OwrenZen3(stage_limiter!, step_limiter!, False())
+    return OwrenZen3(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -161,11 +161,11 @@ Base.@kwdef struct OwrenZen4{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function OwrenZen4(stage_limiter!, step_limiter! = trivial_limiter!)
-    return OwrenZen4(stage_limiter!, step_limiter!, False())
+    return OwrenZen4(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -186,11 +186,11 @@ Base.@kwdef struct OwrenZen5{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function OwrenZen5(stage_limiter!, step_limiter! = trivial_limiter!)
-    return OwrenZen5(stage_limiter!, step_limiter!, False())
+    return OwrenZen5(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -212,12 +212,12 @@ end
 Base.@kwdef struct BS5{StageLimiter, StepLimiter, Thread, L} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
     lazy::L = Val{true}()
 end
 # for backwards compatibility
 function BS5(stage_limiter!, step_limiter! = trivial_limiter!; lazy = Val{true}())
-    return BS5(stage_limiter!, step_limiter!, False(), lazy)
+    return BS5(stage_limiter!, step_limiter!, Serial(), lazy)
 end
 
 @doc explicit_rk_docstring(
@@ -237,11 +237,11 @@ end
 Base.@kwdef struct DP5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function DP5(stage_limiter!, step_limiter! = trivial_limiter!)
-    return DP5(stage_limiter!, step_limiter!, False())
+    return DP5(stage_limiter!, step_limiter!, Serial())
 end
 
 AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
@@ -265,12 +265,12 @@ AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
 Base.@kwdef struct Anas5{StageLimiter, StepLimiter, Thread, T} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
     w::T = 1
 end
 # for backwards compatibility
 function Anas5(stage_limiter!, step_limiter! = trivial_limiter!; w = 1)
-    return Anas5(stage_limiter!, step_limiter!, False(), w)
+    return Anas5(stage_limiter!, step_limiter!, Serial(), w)
 end
 
 @doc explicit_rk_docstring(
@@ -282,11 +282,11 @@ end
 Base.@kwdef struct RKO65{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function RKO65(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RKO65(stage_limiter!, step_limiter!, False())
+    return RKO65(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -308,13 +308,13 @@ Base.@kwdef struct FRK65{StageLimiter, StepLimiter, Thread, T} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
     omega::T = 0.0
 end
 
 # for backwards compatibility
 function FRK65(stage_limiter!, step_limiter! = trivial_limiter!; omega = 0.0)
-    return FRK65(stage_limiter!, step_limiter!, False(), omega)
+    return FRK65(stage_limiter!, step_limiter!, Serial(), omega)
 end
 
 @doc explicit_rk_docstring(
@@ -336,11 +336,11 @@ end
 Base.@kwdef struct RKM{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function RKM(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RKM(stage_limiter!, step_limiter!, False())
+    return RKM(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -359,10 +359,10 @@ end
 Base.@kwdef struct Ralston4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 function Ralston4(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Ralston4(stage_limiter!, step_limiter!, False())
+    return Ralston4(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -372,11 +372,11 @@ end
 Base.@kwdef struct MSRK5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function MSRK5(stage_limiter!, step_limiter! = trivial_limiter!)
-    return MSRK5(stage_limiter!, step_limiter!, False())
+    return MSRK5(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -386,11 +386,11 @@ end
 Base.@kwdef struct MSRK6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function MSRK6(stage_limiter!, step_limiter! = trivial_limiter!)
-    return MSRK6(stage_limiter!, step_limiter!, False())
+    return MSRK6(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -416,7 +416,7 @@ end
 Base.@kwdef struct PSRK4p7q6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -436,7 +436,7 @@ end
 Base.@kwdef struct PSRK3p5q4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -456,7 +456,7 @@ end
 Base.@kwdef struct PSRK3p6q5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -474,11 +474,11 @@ Base.@kwdef struct Stepanov5{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function Stepanov5(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Stepanov5(stage_limiter!, step_limiter!, False())
+    return Stepanov5(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -497,11 +497,11 @@ Base.@kwdef struct SIR54{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function SIR54(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SIR54(stage_limiter!, step_limiter!, False())
+    return SIR54(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -525,11 +525,11 @@ Base.@kwdef struct Alshina2{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function Alshina2(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Alshina2(stage_limiter!, step_limiter!, False())
+    return Alshina2(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -553,11 +553,11 @@ Base.@kwdef struct Alshina3{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function Alshina3(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Alshina3(stage_limiter!, step_limiter!, False())
+    return Alshina3(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -580,9 +580,9 @@ end
 Base.@kwdef struct Alshina6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 # for backwards compatibility
 function Alshina6(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Alshina6(stage_limiter!, step_limiter!, False())
+    return Alshina6(stage_limiter!, step_limiter!, Serial())
 end

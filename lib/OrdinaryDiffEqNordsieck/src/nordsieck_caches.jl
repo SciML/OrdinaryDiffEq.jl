@@ -84,7 +84,7 @@ function alg_cache(
     tmp = zero(u)
     tsit5cache = Tsit5Cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
-        trivial_limiter!, trivial_limiter!, False()
+        trivial_limiter!, trivial_limiter!, Serial()
     )
     #################################################
     N = 5
@@ -247,7 +247,7 @@ function alg_cache(
     tmp = zero(u)
     tsit5cache = Tsit5Cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
-        trivial_limiter!, trivial_limiter!, False()
+        trivial_limiter!, trivial_limiter!, Serial()
     )
     #################################################
     fsalfirst = zero(rate_prototype)
