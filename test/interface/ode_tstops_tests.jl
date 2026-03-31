@@ -1,5 +1,8 @@
 using OrdinaryDiffEq, Test, Random, StaticArrays, DiffEqCallbacks
+using OrdinaryDiffEqCore: add_tstop!
 import ODEProblemLibrary: prob_ode_linear
+using OrdinaryDiffEqLowOrderRK
+
 Random.seed!(100)
 
 @testset "Tstops Tests on the Interval [0, 1]" begin
@@ -131,7 +134,7 @@ end
         prob_static, Vern9(); reltol = 1.0e-12, abstol = 1.0e-15,
         tstops = tstops
     )
-    @test SciMLBase.successful_retcode(sol_static)
+    @test successful_retcode(sol_static)
     for tstop in tstops
         @test tstop ∈ sol_static.t
     end
@@ -141,7 +144,7 @@ end
         prob_array, Vern9(); reltol = 1.0e-12, abstol = 1.0e-15,
         tstops = tstops
     )
-    @test SciMLBase.successful_retcode(sol_array)
+    @test successful_retcode(sol_array)
     for tstop in tstops
         @test tstop ∈ sol_array.t
     end
@@ -160,7 +163,7 @@ end
 
     prob = ODEProblem(decay_ode, u0, tspan)
     sol = solve(prob, Vern9(); tstops = tstops, reltol = 1.0e-12, abstol = 1.0e-15)
-    @test SciMLBase.successful_retcode(sol)
+    @test successful_retcode(sol)
     for tstop in tstops
         @test tstop ∈ sol.t
     end
@@ -190,7 +193,7 @@ end
         reltol = 1.0e-10, abstol = 1.0e-12
     )
 
-    @test SciMLBase.successful_retcode(sol)
+    @test successful_retcode(sol)
     for time in critical_times
         @test any(abs.(sol.t .- time) .< 1.0e-10)
     end
@@ -212,7 +215,7 @@ end
 
     prob = ODEProblem(oscillator, u0, tspan)
     sol = solve(prob, Vern9(); tstops = close_tstops, reltol = 1.0e-12, abstol = 1.0e-15)
-    @test SciMLBase.successful_retcode(sol)
+    @test successful_retcode(sol)
     for time in [1.0, 2.0, 3.0]
         @test any(abs.(sol.t .- time) .< 1.0e-10)
     end
