@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, Test
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
+using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 
 prob_forward = prob_ode_linear
 prob_reverse = remake(prob_forward, tspan = (1.0, 0.0))
