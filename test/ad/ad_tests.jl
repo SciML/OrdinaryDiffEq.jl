@@ -483,8 +483,10 @@ end
         return nothing
     end
     u0_c = hcat(normalize(rand(ComplexF64, pd)), normalize(rand(pd)))
-    prob_c = ODEProblem(f_complex!, u0_c, (0.0, 1.0), rand(3);
-        saveat = range(0.0, 1.0, length = 3), reltol = 1.0e-6, alg = Tsit5())
+    prob_c = ODEProblem(
+        f_complex!, u0_c, (0.0, 1.0), rand(3);
+        saveat = range(0.0, 1.0, length = 3), reltol = 1.0e-6, alg = Tsit5()
+    )
     cost_c(u) = abs2(tr(first(u)' * u[2])) - abs2(tr(first(u)' * last(u)))
 
     function loss_complex(p)
@@ -502,8 +504,10 @@ end
         selectdim(du, 3, 2) .= imag(complex_du)
         return nothing
     end
-    prob_real = remake(prob_c; f = real_f!,
-        u0 = cat(real(prob_c.u0), imag(prob_c.u0); dims = 3))
+    prob_real = remake(
+        prob_c; f = real_f!,
+        u0 = cat(real(prob_c.u0), imag(prob_c.u0); dims = 3)
+    )
 
     function loss_real(p)
         prob = remake(prob_real; p)

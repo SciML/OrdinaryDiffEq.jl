@@ -25,11 +25,11 @@ using LinearAlgebra
 
     W = DiffEqBase.default_factorize(A)
     x = W \ b
-    @test maximum(abs.(ustrip.(A * x .- b))) ≤ 1e-12
+    @test maximum(abs.(ustrip.(A * x .- b))) ≤ 1.0e-12
 
     x2 = similar(b)
     ldiv!(x2, W, b)
-    @test maximum(abs.(ustrip.(A * x2 .- b))) ≤ 1e-12
+    @test maximum(abs.(ustrip.(A * x2 .- b))) ≤ 1.0e-12
 
     # _infer_ut fallback when all entries are zero
     Az = fill(0.0u"m", 2, 2)

@@ -50,6 +50,10 @@ E = diagm([1.0, M, 0.0])
 f = ODEFunction(dynamics!, mass_matrix = E)
 prob = ODEProblem(f, x0, tspan, θ)
 
+sol1 = solve(prob, Rodas3(), callback = cbs, reltol = 1.0e-6)
+@test sol1(0.06692341688237893)[3] ≈ 0.72 atol = 1.0e-2
+sol1 = solve(prob, ROS34PW3(), callback = cbs, reltol = 1.0e-6)
+@test sol1(0.06692341688237893)[3] ≈ 0.72 atol = 1.0e-2
 sol1 = solve(prob, Rodas4(), callback = cbs, reltol = 1.0e-6)
 @test sol1(0.06692341688237893)[3] ≈ 0.72 atol = 1.0e-2
 sol1 = solve(prob, Rodas5(), callback = cbs, reltol = 1.0e-6)

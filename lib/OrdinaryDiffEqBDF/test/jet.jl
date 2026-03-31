@@ -33,7 +33,7 @@ using Test
         # Regular BDF solvers (ODEProblem)
         regular_bdf_solvers = [
             ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(),
-            MEBDF2()
+            MEBDF2(),
         ]
         # Some of these are type-stable for the initialization step, but not all
         stable_bdf_solvers = [QNDF(), QBDF(), FBDF(), MEBDF2()]

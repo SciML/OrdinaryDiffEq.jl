@@ -24,6 +24,9 @@ These tests verify that the step! operation does not allocate during stepping.
         SSPRK53_2N2(), SSPRK22(), SSPRK53(), SSPRK63(), SSPRK83(), SSPRK43(), SSPRK432(), SSPRKMSVS32(),
         SSPRK54(), SSPRK53_2N1(), SSPRK104(), SSPRK932(), SSPRKMSVS43(), SSPRK73(), SSPRK53_H(),
         SSPRK33(), KYKSSPRK42(), KYK2014DGSSPRK_3S2(),
+        pRRK22(kappa = 0.0), pRRK22(kappa = 1.0),
+        pRRK33(kappa = 0.0), pRRK33(kappa = 1.0),
+        pRRK54(kappa = 0.0), pRRK54(kappa = 1.0),
     ]
 
     @testset "SSPRK Solver Allocation Analysis" begin

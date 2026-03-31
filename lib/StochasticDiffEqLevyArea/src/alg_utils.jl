@@ -26,12 +26,12 @@ function norv end
 Returns the number of terms needed to achieve error at most `eps`.
 """
 function terms_needed(dim, stepsize, eps, alg::AbstractIteratedIntegralAlgorithm, norm::AbstractErrorNorm)
-    ceil(Int64, (errcoeff(dim, stepsize, alg, norm) / eps)^(1 // convorder(alg)))
+    return ceil(Int64, (errcoeff(dim, stepsize, alg, norm) / eps)^(1 // convorder(alg)))
 end
 
 function terms_needed(dim, q_12, stepsize, eps, alg::AbstractIteratedIntegralAlgorithm, norm::AbstractErrorNorm)
     length(q_12) == dim || throw(ArgumentError("Length of q_12 must be equal to the dimension."))
-    ceil(Int64, (errcoeff(dim, q_12, stepsize, alg, norm) / eps)^(1 // convorder(alg)))
+    return ceil(Int64, (errcoeff(dim, q_12, stepsize, alg, norm) / eps)^(1 // convorder(alg)))
 end
 
 """
@@ -40,10 +40,10 @@ end
 Returns the number of random numbers needed with the given parameters.
 """
 function effective_cost(dim, stepsize, eps, alg, norm)
-    norv(dim, terms_needed(dim, stepsize, eps, alg, norm), alg)
+    return norv(dim, terms_needed(dim, stepsize, eps, alg, norm), alg)
 end
 function effective_cost(dim, q_12, stepsize, eps, alg, norm)
-    norv(dim, terms_needed(dim, q_12, stepsize, eps, alg, norm), alg)
+    return norv(dim, terms_needed(dim, q_12, stepsize, eps, alg, norm), alg)
 end
 
 """

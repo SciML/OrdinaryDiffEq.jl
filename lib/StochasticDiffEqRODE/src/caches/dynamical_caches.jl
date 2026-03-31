@@ -26,7 +26,10 @@ function alg_cache(
     k = zero(rate_prototype.x[1])
     c1 = exp(-alg.gamma * dt)
     c2 = alg.scale_noise ? sqrt((1 - c1^2) / abs(dt)) : 1 # if scale_noise == false, c2 = 1
-    return BAOABConstantCache(k, uEltypeNoUnits(1 // 2), uEltypeNoUnits(c1), uEltypeNoUnits(c2))
+    return BAOABConstantCache(
+        k, convert(float(uEltypeNoUnits), 1 // 2),
+        convert(float(uEltypeNoUnits), c1), convert(float(uEltypeNoUnits), c2)
+    )
 end
 
 function alg_cache(
@@ -42,13 +45,14 @@ function alg_cache(
     gtmp = zero(rate_prototype.x[1])
     noise = zero(rate_prototype.x[1])
 
-    half = uEltypeNoUnits(1 // 2)
+    FT = float(uEltypeNoUnits)
+    half = convert(FT, 1 // 2)
     c1 = exp(-alg.gamma * dt)
     c2 = alg.scale_noise ? sqrt((1 - c1^2) / abs(dt)) : 1 # if scale_noise == false, c2 = 1
 
     tmp = zero(u)
 
     return BAOABCache(
-        utmp, dutmp, k, gtmp, noise, half, uEltypeNoUnits(c1), uEltypeNoUnits(c2), tmp
+        utmp, dutmp, k, gtmp, noise, half, convert(FT, c1), convert(FT, c2), tmp
     )
 end

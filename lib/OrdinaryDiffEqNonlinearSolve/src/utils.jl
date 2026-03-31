@@ -81,8 +81,8 @@ mutable struct DAEResidualJacobianWrapper{
         ad = ADTypes.dense_ad(alg_autodiff(alg))
         isautodiff = ad isa AutoForwardDiff
         if isautodiff
-            tmp_du = dualcache(uprev)
-            tmp_u = dualcache(uprev)
+            tmp_du = DiffCache(uprev)
+            tmp_u = DiffCache(uprev)
         else
             tmp_du = similar(uprev)
             tmp_u = similar(uprev)

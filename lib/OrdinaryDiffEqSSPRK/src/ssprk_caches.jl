@@ -1299,3 +1299,236 @@ function alg_cache(
         constvalue(tTypeNoUnits)
     )
 end
+
+# pRRK caches
+# Parametric Relaxation Runge-Kutta methods (Liu et al. 2023)
+# These store base Shu-Osher coefficients (α, β) and the stabilization parameter κ.
+# Modified coefficients (α̂, β̂) are computed in perform_step! based on κ·Δt.
+
+# pRRK22: Based on Heun's method / SSPRK(2,2)
+# Shu-Osher form:
+#   u₁ = u₀ + Δt f(u₀)
+#   u₂ = ½u₀ + ½u₁ + ½Δt f(u₁)
+# α = [1 0; 1/2 1/2], β = [1 0; 0 1/2]
+struct pRRK22ConstantCache{T, T2} <: SSPRKConstantCache
+    κ::T
+    # Base Shu-Osher coefficients (stored for clarity)
+    α10::T
+    β10::T
+    α20::T
+    α21::T
+    β21::T
+
+    function pRRK22ConstantCache(T, T2, κ)
+        α10 = T(1)
+        β10 = T(1)
+        α20 = T(1 // 2)
+        α21 = T(1 // 2)
+        β21 = T(1 // 2)
+        return new{T, T2}(T(κ), α10, β10, α20, α21, β21)
+    end
+end
+
+@cache struct pRRK22Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    SSPRKMutableCache
+    u::uType
+    uprev::uType
+    k::rateType
+    fsalfirst::rateType
+    tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function alg_cache(
+        alg::pRRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    k = zero(rate_prototype)
+    if calck
+        fsalfirst = zero(k)
+    else
+        fsalfirst = k
+    end
+    tab = pRRK22ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), alg.kappa)
+    return pRRK22Cache(u, uprev, k, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+end
+
+function alg_cache(
+        alg::pRRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return pRRK22ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), alg.kappa)
+end
+
+# pRRK33: Based on SSPRK(3,3)
+# Shu-Osher form:
+#   u₁ = u₀ + Δt f(u₀)
+#   u₂ = ¾u₀ + ¼u₁ + ¼Δt f(u₁)
+#   u₃ = ⅓u₀ + ⅔u₂ + ⅔Δt f(u₂)
+# α = [1 0 0; 3/4 1/4 0; 1/3 0 2/3], β = [1 0 0; 0 1/4 0; 0 0 2/3]
+struct pRRK33ConstantCache{T, T2} <: SSPRKConstantCache
+    κ::T
+    α10::T
+    β10::T
+    α20::T
+    α21::T
+    β21::T
+    α30::T
+    α32::T
+    β32::T
+
+    function pRRK33ConstantCache(T, T2, κ)
+        α10 = T(1)
+        β10 = T(1)
+        α20 = T(3 // 4)
+        α21 = T(1 // 4)
+        β21 = T(1 // 4)
+        α30 = T(1 // 3)
+        α32 = T(2 // 3)
+        β32 = T(2 // 3)
+        return new{T, T2}(T(κ), α10, β10, α20, α21, β21, α30, α32, β32)
+    end
+end
+
+@cache struct pRRK33Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    SSPRKMutableCache
+    u::uType
+    uprev::uType
+    k::rateType
+    fsalfirst::rateType
+    tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function alg_cache(
+        alg::pRRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    k = zero(rate_prototype)
+    if calck
+        fsalfirst = zero(k)
+    else
+        fsalfirst = k
+    end
+    tab = pRRK33ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), alg.kappa)
+    return pRRK33Cache(u, uprev, k, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+end
+
+function alg_cache(
+        alg::pRRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return pRRK33ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), alg.kappa)
+end
+
+# pRRK54: Based on Spiteri-Ruuth SSPRK(5,4)
+# Uses the same base Shu-Osher coefficients as SSPRK54
+struct pRRK54ConstantCache{T, T2} <: SSPRKConstantCache
+    κ::T
+    β10::T
+    α20::T
+    α21::T
+    β21::T
+    α30::T
+    α32::T
+    β32::T
+    α40::T
+    α43::T
+    β43::T
+    α52::T
+    α53::T
+    β53::T
+    α54::T
+    β54::T
+    c1::T2
+    c2::T2
+    c3::T2
+    c4::T2
+
+    function pRRK54ConstantCache(T, T2, κ)
+        β10 = T(0.39175222657189)
+        α20 = T(0.444370493651235)
+        α21 = T(0.555629506348765)
+        β21 = T(0.368410593050371)
+        α30 = T(0.620101851488403)
+        α32 = T(0.379898148511597)
+        β32 = T(0.251891774271694)
+        α40 = T(0.178079954393132)
+        α43 = T(0.821920045606868)
+        β43 = T(0.544974750228521)
+        α52 = T(0.517231671970585)
+        α53 = T(0.096059710526147)
+        β53 = T(0.06369246866629)
+        α54 = T(0.386708617503269)
+        β54 = T(0.226007483236906)
+        c1 = T2(0.39175222657189)
+        c2 = T2(0.58607968931154)
+        c3 = T2(0.4745423631214)
+        c4 = T2(0.935010630967653)
+
+        return new{T, T2}(
+            T(κ), β10, α20, α21, β21, α30, α32, β32, α40, α43, β43, α52, α53, β53, α54,
+            β54, c1, c2, c3, c4
+        )
+    end
+end
+
+@cache struct pRRK54Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+    SSPRKMutableCache
+    u::uType
+    uprev::uType
+    k::rateType
+    fsalfirst::rateType
+    k₃::rateType
+    u₂::uType
+    u₃::uType
+    tmp::uType
+    tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function alg_cache(
+        alg::pRRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    u₂ = zero(u)
+    u₃ = zero(u)
+    tmp = zero(u)
+    k = zero(rate_prototype)
+    if calck
+        fsalfirst = zero(k)
+    else
+        fsalfirst = k
+    end
+    k₃ = zero(rate_prototype)
+    tab = pRRK54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), alg.kappa)
+    return pRRK54Cache(
+        u, uprev, k, fsalfirst, k₃, u₂, u₃, tmp, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
+end
+
+function alg_cache(
+        alg::pRRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return pRRK54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), alg.kappa)
+end

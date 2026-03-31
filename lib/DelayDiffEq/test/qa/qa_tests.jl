@@ -11,10 +11,20 @@ import SciMLBase
     Aqua.test_ambiguities(DelayDiffEq; recursive = false)
     Aqua.test_stale_deps(DelayDiffEq)
     Aqua.test_deps_compat(DelayDiffEq)
-    # Allow piracy for the default solver methods
+    # Allow piracy for the default solver methods and SDE integration
+    using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, StochasticDiffEqAlgorithm,
+        StochasticDiffEqRODEAlgorithm,
+        StochasticDiffEqConstantCache, StochasticDiffEqMutableCache
     Aqua.test_piracies(
         DelayDiffEq;
-        treat_as_own = [SciMLBase.DDEProblem]
+        treat_as_own = [
+            SciMLBase.DDEProblem,
+            OrdinaryDiffEqAlgorithm,
+            StochasticDiffEqAlgorithm,
+            StochasticDiffEqRODEAlgorithm,
+            StochasticDiffEqConstantCache,
+            StochasticDiffEqMutableCache,
+        ]
     )
 end
 

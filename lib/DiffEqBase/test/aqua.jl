@@ -31,7 +31,6 @@ end
     Aqua.test_stale_deps(DiffEqBase)
     Aqua.test_deps_compat(DiffEqBase)
     Aqua.test_project_extras(DiffEqBase)
-    Aqua.test_project_toml_formatting(DiffEqBase)
     # Aqua.test_piracy(DiffEqBase) # failing
 end
 

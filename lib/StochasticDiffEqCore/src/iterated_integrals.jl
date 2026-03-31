@@ -52,22 +52,22 @@ function get_iterated_I!(dt, dW, dZ, alg::JCommute_iip, p = nothing, c = 1, γ =
     return nothing
 end
 
-# algs from LevyArea.jl # LevyArea.levyarea allocates random variables and then mutates these, see e.g.
+# algs from StochasticDiffEqLevyArea (originally LevyArea.jl), see e.g.
 # https://github.com/stochastics-uni-luebeck/LevyArea.jl/blob/68c5cb08ab103b4dcd3178651f7a5dd9ce8c666d/src/milstein.jl#L25
 function get_iterated_I(
-        dt, dW, dZ, alg::LevyArea.AbstractIteratedIntegralAlgorithm,
+        dt, dW, dZ, alg::StochasticDiffEqLevyArea.AbstractIteratedIntegralAlgorithm,
         p = nothing, c = 1, γ = 1 // 1
     )
     if isnothing(p)
         ε = c * dt^(γ + 1 // 2)
         p = terms_needed(length(dW), dt, ε, alg, MaxL2())
     end
-    I = LevyArea.levyarea(dW / √dt, p, alg)
+    I = StochasticDiffEqLevyArea.levyarea(dW / √dt, p, alg)
     return I .= 1 // 2 * dW .* dW' .+ dt .* I
 end
 
 mutable struct IteratedIntegralAlgorithm_iip{JType, levyalgType} <:
-    LevyArea.AbstractIteratedIntegralAlgorithm
+    StochasticDiffEqLevyArea.AbstractIteratedIntegralAlgorithm
     J::JType
     levyalg::levyalgType
     function IteratedIntegralAlgorithm_iip(ΔW, levyalg)
@@ -84,7 +84,7 @@ function get_iterated_I!(
         ε = c * dt^(γ + 1 // 2)
         p = terms_needed(length(dW), dt, ε, levyalg, MaxL2())
     end
-    J .= LevyArea.levyarea(dW / √dt, p, levyalg)
+    J .= StochasticDiffEqLevyArea.levyarea(dW / √dt, p, levyalg)
     J .= 1 // 2 * dW .* dW' .+ dt .* J
     return nothing
 end
@@ -97,13 +97,13 @@ function get_Jalg(ΔW, dt, prob, alg)
                 return JDiagonal_iip(ΔW)
             else
                 # optimal_algorithm(dim, stepsize, eps=stepsize^(3/2), norm=MaxL2())
-                return IteratedIntegralAlgorithm_iip(ΔW, LevyArea.optimal_algorithm(length(ΔW), dt))
+                return IteratedIntegralAlgorithm_iip(ΔW, StochasticDiffEqLevyArea.optimal_algorithm(length(ΔW), dt))
             end
         else
             if ΔW isa Number || is_diagonal_noise(prob)
                 return JDiagonal_oop()
             else
-                return LevyArea.optimal_algorithm(length(ΔW), dt)
+                return StochasticDiffEqLevyArea.optimal_algorithm(length(ΔW), dt)
             end
         end
     elseif alg.ii_approx isa IICommutative
