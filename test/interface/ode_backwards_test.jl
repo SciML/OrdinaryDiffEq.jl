@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, Test, Statistics
 import ODEProblemLibrary: prob_ode_2Dlinear
+using OrdinaryDiffEqLowOrderRK
+
 prob = deepcopy(prob_ode_2Dlinear)
 prob2 = ODEProblem(prob.f, prob.u0, (1.0, 0.0), 1.01)
 
