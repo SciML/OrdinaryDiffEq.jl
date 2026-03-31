@@ -20,9 +20,9 @@ cb = ContinuousCallback(condition, affect!; is_discontinuity = true)
 cb2 = ContinuousCallback(condition, affect!; is_discontinuity = false)
 
 sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
-#    283.292 μs (8113 allocations: 256.59 KiB)
+#  298.084 μs (8108 allocations: 257.11 KiB)
 sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
-#    340.292 μs (10009 allocations: 311.05 KiB)
+#  356.708 μs (10024 allocations: 312.08 KiB)
 @profview for i in 1:1000 
     solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
 end
@@ -62,10 +62,10 @@ cb2 = CallbackSet(cb1f, cb2f)
 
 #disco solve
 sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
-#     1.460 ms (41491 allocations: 1.26 MiB)
+#  1.503 ms (41672 allocations: 1.27 MiB)
 #fixed order solve
 sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
-#     1.264 ms (37026 allocations: 1.13 MiB)
+#  1.306 ms (37092 allocations: 1.13 MiB)
 
 @profview for i in 1:1000 
     solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
@@ -107,10 +107,10 @@ cb_multi2 = CallbackSet(cb_multi_1f, cb_multi_2f)
 
 #disco solve
 sol_disco = solve(prob_multi, RadauIIA5(); callback=cb_multi, reltol=1e-7, abstol=1e-9)
-#    159.125 μs (1819 allocations: 79.06 KiB)
+#  175.625 μs (1871 allocations: 81.55 KiB)
 #fixed order solve
 sol_no_disco = solve(prob_multi, RadauIIA5(); callback=cb_multi2, reltol = 1e-7, abstol = 1e-9)
-#    125.583 μs (1134 allocations: 54.56 KiB)
+#  142.875 μs (1244 allocations: 59.17 KiB)
 
 @profview for i in 1:1000 
     solve(prob_multi, RadauIIA5(); callback = cb_multi, reltol = 1e-6)
@@ -141,10 +141,10 @@ cb_stiff_f = ContinuousCallback(cond_stiff, affect_stiff!; is_discontinuity = fa
 
 #disco solve
 sol_disco = solve(prob_stiff, RadauIIA5(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
-#    131.375 μs (2181 allocations: 78.84 KiB)
+#  149.167 μs (1819 allocations: 75.19 KiB)
 #fixed order solve
 sol_no_disco = solve(prob_stiff, RadauIIA5(); callback=cb_stiff_f, reltol = 1e-9, abstol = 1e-11)
-#  119.417 μs (1480 allocations: 59.55 KiB)
+#  138.125 μs (1565 allocations: 64.09 KiB)
 
 @profview for i in 1:1000 
     solve(prob_stiff, RadauIIA5(); callback = cb_stiff, reltol = 1e-9, abstol = 1e-11)
@@ -179,10 +179,10 @@ cb_many_f = CallbackSet(cbs_many_f...)
 
 #disco solve
 sol_disco = solve(prob_many, RadauIIA5(); callback=cb_many, reltol=1e-10, abstol=1e-12)
-#     169.541 μs (1479 allocations: 73.98 KiB)
+#  182.541 μs (1489 allocations: 73.64 KiB)
 #fixed order solve
 sol_no_disco = solve(prob_many, RadauIIA5(); callback=cb_many_f, reltol=1e-10, abstol=1e-12)
-#   111.666 μs (907 allocations: 36.94 KiB)
+#  121.292 μs (923 allocations: 36.78 KiB)
 
 @profview for i in 1:1000 
     solve(prob_many, RadauIIA5(); callback = cb_many, reltol = 1e-10, abstol = 1e-12)
@@ -218,11 +218,11 @@ end
 cb_dae = ContinuousCallback(cond_dae, affect_dae!; is_discontinuity = true)
 cb_daef = ContinuousCallback(cond_dae, affect_dae!; is_discontinuity = false)
 
-radau_no_disco = solve(prob_dae, RadauIIA5(); callback=cb_daef, reltol=1e-8, abstol=1e-10)
-#  83.500 μs (769 allocations: 35.72 KiB)
 radau_disco = solve(prob_dae, RadauIIA5(); callback=cb_dae, reltol=1e-8, abstol=1e-10)
-#  104.292 μs (1494 allocations: 53.25 KiB)
- 
+#  88.542 μs (870 allocations: 41.86 KiB)
+radau_no_disco = solve(prob_dae, RadauIIA5(); callback=cb_daef, reltol=1e-8, abstol=1e-10)
+#  73.000 μs (673 allocations: 32.05 KiB)
+
 #TEST 7: VECTOR CALLBACK
 function f!(du, u, p, t)
     du[1] = -u[1]

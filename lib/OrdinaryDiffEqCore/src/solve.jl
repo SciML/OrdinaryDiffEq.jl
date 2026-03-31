@@ -822,7 +822,6 @@ function _ode_init(
         u_modified, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
         fsalfirst, fsallast, _rng, disco_probs,
-        fsalfirst, fsallast, _rng,
         W, P, sqdt,
         noise, c, rate_constants, QT(1)
     )
