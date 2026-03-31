@@ -64,13 +64,13 @@ function explicit_rk_docstring(
     keyword_default = """
         stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
         step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-        thread = OrdinaryDiffEq.False(),
+        thread = Serial(),
         """ * extra_keyword_default
 
     keyword_default_description = """
         - `stage_limiter!`: function of the form `limiter!(u, integrator, p, t)`
         - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
-        - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+        - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
         """ * extra_keyword_description
 
     return generic_solver_docstring(

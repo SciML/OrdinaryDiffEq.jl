@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqExponentialRK"
 uuid = "e0540318-69ee-4070-8777-9e2de6de23de"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.15.0"
+version = "1.14.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -28,6 +28,7 @@ OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [sources]
@@ -54,7 +55,8 @@ Aqua = "0.8.11"
 julia = "1.10"
 JET = "0.9, 0.11"
 ADTypes = "1.16"
-RecursiveArrayTools = "3.52"
+RecursiveArrayTools = "3.36"
+AllocCheck = "0.2"
 DiffEqBase = "6.194"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
