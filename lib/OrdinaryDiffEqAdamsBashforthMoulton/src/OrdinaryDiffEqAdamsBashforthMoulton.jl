@@ -14,7 +14,7 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCac
 import OrdinaryDiffEqLowOrderRK: BS3ConstantCache, BS3Cache, RK4ConstantCache, RK4Cache
 import RecursiveArrayTools: recursivefill!
 using MuladdMacro, FastBroadcast
-import Static: False
+using FastBroadcast: Serial
 import OrdinaryDiffEqCore
 
 using Reexport
