@@ -45,7 +45,6 @@ include("caches/kencarp_caches.jl")
 include("perform_step/sdirk.jl")
 include("perform_step/implicit_split_step.jl")
 include("perform_step/kencarp.jl")
-include("alg_autodiff.jl")
 
 export ImplicitEM, ImplicitEulerHeun, ImplicitRKMil, STrapezoid, SImplicitMidpoint,
     ISSEM, ISSEulerHeun, SKenCarp

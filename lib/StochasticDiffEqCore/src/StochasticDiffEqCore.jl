@@ -66,6 +66,8 @@ import ForwardDiff.Dual
 
 import FastPower
 
+import OrdinaryDiffEqDifferentiation
+
 import DiffEqBase: step!, initialize!, DEAlgorithm,
     AbstractSDEAlgorithm, AbstractRODEAlgorithm, DEIntegrator,
     DECache, AbstractSDEIntegrator, AbstractRODEIntegrator,
@@ -134,6 +136,7 @@ include("perform_step/composite.jl")
 include("iterated_integrals.jl")
 include("composite_algs.jl")
 include("weak_utils.jl")
+include("alg_autodiff.jl")
 
 export StochasticDiffEqAlgorithm, StochasticDiffEqAdaptiveAlgorithm,
     StochasticDiffEqCompositeAlgorithm,
