@@ -68,7 +68,7 @@ import DiffEqBase: get_tstops, get_tstops_array, get_tstops_max
 
 using DiffEqBase: check_error!, @def, _vec, _reshape
 
-using FastBroadcast: @.., True, False
+using FastBroadcast: @.., Serial, Threaded
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
     ODEAliasSpecifier
