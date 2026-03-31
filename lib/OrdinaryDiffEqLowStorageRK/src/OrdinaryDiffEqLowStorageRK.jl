@@ -14,7 +14,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
     explicit_rk_docstring, get_fsalfirstlast
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, Adapt
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
-import Static: False
+using FastBroadcast: Serial
 import RecursiveArrayTools: recursive_unitless_bottom_eltype
 import OrdinaryDiffEqCore
 
