@@ -69,13 +69,7 @@ import DiffEqBase: get_tstops, get_tstops_array, get_tstops_max
 using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @..
-import FastBroadcast
 using Static: True, False
-
-# Bridge Static.jl's True/False to FastBroadcast v1.0's Bool-based threading dispatch.
-# This keeps the existing user-facing API (thread=False(), thread=True()) non-breaking.
-FastBroadcast.fast_materialize!(t::Static.StaticBool, dst, bc) = FastBroadcast.fast_materialize!(Bool(t), dst, bc)
-FastBroadcast.fast_materialize(t::Static.StaticBool, bc) = FastBroadcast.fast_materialize(Bool(t), bc)
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
     ODEAliasSpecifier
