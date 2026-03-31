@@ -12,7 +12,7 @@ import OrdinaryDiffEqCore: alg_order, qmax_default, qmin_default, beta2_default,
     copyat_or_push!, get_fsalfirstlast,
     unwrap_alg, _ode_interpolant, _ode_interpolant!,
     DerivativeOrderNotPossibleError, full_cache, isdp8
-import Static: False
+using FastBroadcast: Serial
 import MuladdMacro: @muladd
 using DiffEqBase
 import FastBroadcast: @..

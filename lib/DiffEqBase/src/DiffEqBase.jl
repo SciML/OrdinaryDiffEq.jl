@@ -22,9 +22,8 @@ using FunctionWrappers: FunctionWrapper
 using MuladdMacro
 
 
-using FastBroadcast: @.., True, False
+using FastBroadcast: @.., Serial, Threaded
 
-using Static: reduce_tup
 
 import RecursiveArrayTools
 import TruncatedStacktraces

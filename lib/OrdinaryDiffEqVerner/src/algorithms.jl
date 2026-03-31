@@ -19,7 +19,7 @@ Base.@kwdef struct Vern6{StageLimiter, StepLimiter, Thread, L} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
     lazy::L = Val{true}()
 end
 @truncate_stacktrace Vern6 3
@@ -29,7 +29,7 @@ function Vern6(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
 end
 # for backwards compatibility
 function Vern6(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
-    return Vern6(stage_limiter!, step_limiter!, False(), lazy)
+    return Vern6(stage_limiter!, step_limiter!, Serial(), lazy)
 end
 
 @doc explicit_rk_docstring(
@@ -53,7 +53,7 @@ Base.@kwdef struct Vern7{StageLimiter, StepLimiter, Thread, L} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
     lazy::L = Val{true}()
 end
 @truncate_stacktrace Vern7 3
@@ -63,7 +63,7 @@ function Vern7(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
 end
 # for backwards compatibility
 function Vern7(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
-    return Vern7(stage_limiter!, step_limiter!, False(), lazy)
+    return Vern7(stage_limiter!, step_limiter!, Serial(), lazy)
 end
 
 @doc explicit_rk_docstring(
@@ -87,7 +87,7 @@ Base.@kwdef struct Vern8{StageLimiter, StepLimiter, Thread, L} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
     lazy::L = Val{true}()
 end
 @truncate_stacktrace Vern8 3
@@ -97,7 +97,7 @@ function Vern8(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
 end
 # for backwards compatibility
 function Vern8(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
-    return Vern8(stage_limiter!, step_limiter!, False(), lazy)
+    return Vern8(stage_limiter!, step_limiter!, Serial(), lazy)
 end
 
 @doc explicit_rk_docstring(
@@ -120,7 +120,7 @@ Base.@kwdef struct Vern9{StageLimiter, StepLimiter, Thread, L} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
     lazy::L = Val{true}()
 end
 @truncate_stacktrace Vern9 3
@@ -130,7 +130,7 @@ function Vern9(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
 end
 # for backwards compatibility
 function Vern9(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
-    return Vern9(stage_limiter!, step_limiter!, False(), lazy)
+    return Vern9(stage_limiter!, step_limiter!, Serial(), lazy)
 end
 
 """
@@ -192,7 +192,7 @@ Base.@kwdef struct RKV76IIa{StageLimiter, StepLimiter, Thread, L} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
     lazy::L = Val{true}()
 end
 @truncate_stacktrace RKV76IIa 3
@@ -202,5 +202,5 @@ function RKV76IIa(sl::SL, stl::STL, th::TH, lazy::Bool) where {SL, STL, TH}
 end
 # for backwards compatibility
 function RKV76IIa(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
-    return RKV76IIa(stage_limiter!, step_limiter!, False(), lazy)
+    return RKV76IIa(stage_limiter!, step_limiter!, Serial(), lazy)
 end
