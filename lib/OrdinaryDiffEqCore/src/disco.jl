@@ -16,6 +16,13 @@ function find_discontinuity(u, uprev, integrator, cache)
     p = integrator.p
     t = integrator.t
     dt = integrator.dt
+    save_idxs = integrator.opts.save_idxs
+    k = integrator.k
+    cache = integrator.cache
+    differential_vars = integrator.differential_vars
+    θlo = zero(dt)
+    θhi = one(dt)
+    bracket = [θlo, θhi]
     breakpointθ = -one(dt)
     idx = 1
     for i in cb.continuous_callbacks
@@ -50,15 +57,16 @@ function find_discontinuity(u, uprev, integrator, cache)
             if (out_prev * out_curr < zero(out_prev))
                 disco_prob = integrator.disco_probs[idx]
                 #disco_prob = integrator.disco_prob
-                disco_prob.f.f.dt = integrator.dt
-                disco_prob.f.f.uprev = uprev
-                disco_prob.f.f.u = u
-                disco_prob.f.f.k = integrator.k
-                disco_prob.f.f.cache = integrator.cache
-                disco_prob.f.f.differential_vars = integrator.differential_vars
-                disco_prob.f.f.idxs = integrator.opts.save_idxs
+                disco_zero = disco_prob.f.f
+                disco_zero.dt = dt
+                disco_zero.uprev = uprev
+                disco_zero.u = u
+                disco_zero.k = k
+                disco_zero.cache = cache
+                disco_zero.differential_vars = differential_vars
+                disco_zero.idxs = save_idxs
                 #disco_prob.f.f.callback = i                
-                sol = solve(disco_prob; bracket=[zero(dt), one(dt)], abstol = 0, reltol = 0)      
+                sol = solve(disco_prob; bracket = bracket, abstol = 0, reltol = 0)
                 tmp = sol[]
                 if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) 
                     breakpointθ = tmp 

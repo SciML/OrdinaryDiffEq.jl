@@ -16,17 +16,17 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
-mutable struct zero_func_struct{uType, tType, rateType, CacheType}
+mutable struct zero_func_struct{uType, tType, kType, CacheType, idxsType, varsType, callbackType}
     #integrator_ref::IntegratorType
     u₁::uType
-    callback::ContinuousCallback
+    callback::callbackType
     dt::tType
     uprev::uType
     u::uType
-    k::Vector{rateType}
+    k::kType
     cache::CacheType
-    idxs::Union{Nothing, Vector{Int}}
-    differential_vars::Union{Nothing, Vector{Bool}, BitVector}
+    idxs::idxsType
+    differential_vars::varsType
 end
 
 function (z::zero_func_struct)(θ, p)
