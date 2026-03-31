@@ -20,13 +20,13 @@ reference = """@inproceedings{elrod2022parallelizing,
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     """,
     """
     max_order::Int = 10,
     min_order::Int = 1,
     init_order = 3,
-    thread = OrdinaryDiffEq.False(),
+    thread = Serial(),
     """
 )
 Base.@kwdef struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
@@ -46,14 +46,14 @@ Similar to Hairer's SEULEX.",
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     """,
     extra_keyword_default = """
     max_order = 12,
     min_order = 3,
     init_order = 5,
-    thread = OrdinaryDiffEq.False(),
+    thread = Serial(),
     sequence = :harmonic
     """
 )
@@ -125,7 +125,7 @@ end
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     - `sequence_factor`: denotes which even multiple of sequence to take while evaluating internal discretizations.
     """,
@@ -133,7 +133,7 @@ end
     max_order = 10,
     min_order = 1,
     init_order = 5,
-    thread = OrdinaryDiffEq.True(),
+    thread = Threaded(),
     sequence = :harmonic,
     sequence_factor = 2,
     """
@@ -201,14 +201,14 @@ end
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     """,
     extra_keyword_default = """
     max_order = 10,
     min_order = 1,
     init_order = 5,
-    thread = OrdinaryDiffEq.False(),
+    thread = Serial(),
     sequence = :harmonic,
     """
 )
@@ -284,7 +284,7 @@ end
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     - `sequence_factor`: denotes which even multiple of sequence to take while evaluating internal discretizations.
     """,
@@ -292,7 +292,7 @@ end
     max_order = 10,
     min_order = 2,
     init_order = 5,
-    thread = OrdinaryDiffEq.True(),
+    thread = Threaded(),
     sequence = :harmonic,
     sequence_factor = 2,
     """
@@ -362,14 +362,14 @@ end
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     """,
     extra_keyword_default = """
     max_order = 10,
     min_order = 2,
     init_order = 5,
-    thread = OrdinaryDiffEq.False(),
+    thread = Serial(),
     sequence = :harmonic,
     """
 )
@@ -447,7 +447,7 @@ end
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     - `sequence_factor`: denotes which even multiple of sequence to take while evaluating internal discretizations.
     """,
@@ -455,7 +455,7 @@ end
     max_order = 10,
     min_order = 3,
     init_order = 5,
-    thread = OrdinaryDiffEq.False(),
+    thread = Serial(),
     sequence = :harmonic,
     sequence_factor = 2,
     """
