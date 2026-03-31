@@ -22,9 +22,10 @@ using FunctionWrappers: FunctionWrapper
 using MuladdMacro
 
 
-using FastBroadcast: @.., True, False
+using FastBroadcast: @..
+import FastBroadcast
 
-using Static: reduce_tup
+using Static: True, False, reduce_tup
 
 import RecursiveArrayTools
 import TruncatedStacktraces
