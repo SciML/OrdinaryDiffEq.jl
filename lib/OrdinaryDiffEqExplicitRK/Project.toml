@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqExplicitRK"
 uuid = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.9.0"
+version = "1.10.0"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
@@ -23,6 +23,9 @@ DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
 Pkg = "1"

@@ -1,7 +1,7 @@
 mutable struct DEOptions{
         absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-        disccache, verbType,
+        disccache, verbType, DType,
     }
     maxiters::MI
     save_everystep::Bool
@@ -37,10 +37,12 @@ mutable struct DEOptions{
     progress_id::Symbol
     timeseries_errors::Bool
     dense_errors::Bool
+    delta::DType
     dense::Bool
     save_on::Bool
     save_start::Bool
     save_end::Bool
+    save_noise::Bool
     save_discretes::Bool
     save_end_user::F3
     callback::F4
@@ -51,6 +53,47 @@ mutable struct DEOptions{
     force_dtmin::Bool
     advance_to_tstop::Bool
     stop_at_next_tstop::Bool
+end
+
+# Legacy constructor for backwards compatibility with packages (e.g. DelayDiffEq)
+# that construct DEOptions without the delta and save_noise fields and without
+# the DType type parameter. Accepts 21 type params and 46 positional args.
+function DEOptions{
+        absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType,
+    }(
+        maxiters, save_everystep, adaptive, abstol, reltol,
+        gamma, qmax, qmin, qsteady_max, qsteady_min, qoldinit,
+        failfactor, dtmax, dtmin, controller, internalnorm, internalopnorm,
+        save_idxs, tstops, saveat, d_discontinuities,
+        tstops_cache, saveat_cache, d_discontinuities_cache, userdata,
+        progress, progress_steps, progress_name, progress_message, progress_id,
+        timeseries_errors, dense_errors,
+        dense, save_on, save_start, save_end, save_discretes,
+        save_end_user, callback, isoutofdomain, unstable_check,
+        verbose, calck, force_dtmin, advance_to_tstop, stop_at_next_tstop,
+    ) where {
+        absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType,
+    }
+    return DEOptions{
+        absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType, typeof(nothing),
+    }(
+        maxiters, save_everystep, adaptive, abstol, reltol,
+        gamma, qmax, qmin, qsteady_max, qsteady_min, qoldinit,
+        failfactor, dtmax, dtmin, controller, internalnorm, internalopnorm,
+        save_idxs, tstops, saveat, d_discontinuities,
+        tstops_cache, saveat_cache, d_discontinuities_cache, userdata,
+        progress, progress_steps, progress_name, progress_message, progress_id,
+        timeseries_errors, dense_errors,
+        nothing, dense, save_on, save_start, save_end,
+        false, save_discretes, save_end_user, callback, isoutofdomain, unstable_check,
+        verbose, calck, force_dtmin, advance_to_tstop, stop_at_next_tstop,
+    )
 end
 
 """
@@ -86,10 +129,11 @@ integrator.opts.abstol = 1e-9
 For more info see the linked documentation page.
 """
 mutable struct ODEIntegrator{
-        algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, IIP,
+        algType, IIP,
         uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
-        CallbackCacheType, IA, DV, CC, RNGType,
+        CallbackCacheType, IA, DV, CC, RNGType, WType, PType, SqdtType,
+        NoiseType, CType, RCType,
     } <:
     SciMLBase.AbstractODEIntegrator{algType, IIP, uType, tType}
     sol::SolType
@@ -129,6 +173,8 @@ mutable struct ODEIntegrator{
     force_stepfail::Bool
     last_stepfail::Bool
     just_hit_tstop::Bool
+    next_step_tstop::Bool
+    tstop_target::tType
     do_error_check::Bool
     event_last_time::Int
     vector_event_last_time::Int
@@ -148,4 +194,12 @@ mutable struct ODEIntegrator{
     rng::RNGType
     #disco_prob::IntervalNonlinearProblem
     disco_probs::Vector{IntervalNonlinearProblem}
+    W::WType
+    P::PType
+    sqdt::SqdtType
+    # SDE/RODE fields: populated by SDE packages, Nothing for pure ODE.
+    noise::NoiseType
+    c::CType
+    rate_constants::RCType
+    q::QT
 end

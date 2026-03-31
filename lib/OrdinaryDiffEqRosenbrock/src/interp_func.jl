@@ -19,8 +19,9 @@ function SciMLBase.interp_summary(
     ) where {
         cacheType <:
         Union{
-            RosenbrockCombinedConstantCache, Rodas23WConstantCache, Rodas3PConstantCache,
-            RosenbrockCache, Rodas23WCache, Rodas3PCache,
+            RosenbrockCombinedConstantCache,
+            RosenbrockCache,
+            HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
         },
     }
     return dense ? "specialized 3rd order \"free\" stiffness-aware interpolation" :
@@ -37,6 +38,7 @@ function SciMLBase.interp_summary(
             RosenbrockCache,
         },
     }
-    return dense ? "specialized 4th (Rodas6P = 5th) order \"free\" stiffness-aware interpolation" :
+    return dense ?
+        "specialized 4th (Rodas6P = 5th) order \"free\" stiffness-aware interpolation" :
         "1st order linear"
 end

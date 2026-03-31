@@ -420,3 +420,66 @@ function KYK2014DGSSPRK_3S2(stage_limiter!, step_limiter! = trivial_limiter!)
         False()
     )
 end
+
+@doc explicit_rk_docstring(
+    "Parametric relaxation Runge-Kutta method based on Heun's method (SSPRK(2,2)).
+The parametric stabilization adds a term κ(u - u) to the ODE, modifying
+Shu-Osher coefficients to enhance stability for large time steps.
+SSP coefficient C = 1. The parameter `kappa` controls the stabilization strength;
+when `kappa = 0`, this reduces to standard SSPRK22.
+Fixed timestep only.",
+    "pRRK22",
+    references = """@article{liu2023high,
+    title={High-order, large time-stepping integrators for scalar hyperbolic conservation laws},
+    author={Liu, Lele and Burchard, Hans and Kuzmin, Dmitri and Shang, Sijun},
+    year={2023},
+    note={SSRN preprint 4401014}}"""
+)
+Base.@kwdef struct pRRK22{T, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    kappa::T = 0.0
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+
+@doc explicit_rk_docstring(
+    "Parametric relaxation Runge-Kutta method based on RK(3,3) (SSPRK(3,3)).
+The parametric stabilization adds a term κ(u - u) to the ODE, modifying
+Shu-Osher coefficients to enhance stability for large time steps.
+SSP coefficient C = 1. The parameter `kappa` controls the stabilization strength;
+when `kappa = 0`, this reduces to standard SSPRK33.
+Fixed timestep only.",
+    "pRRK33",
+    references = """@article{liu2023high,
+    title={High-order, large time-stepping integrators for scalar hyperbolic conservation laws},
+    author={Liu, Lele and Burchard, Hans and Kuzmin, Dmitri and Shang, Sijun},
+    year={2023},
+    note={SSRN preprint 4401014}}"""
+)
+Base.@kwdef struct pRRK33{T, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    kappa::T = 0.0
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+
+@doc explicit_rk_docstring(
+    "Parametric relaxation Runge-Kutta method based on Spiteri-Ruuth RK(5,4) (SSPRK(5,4)).
+The parametric stabilization adds a term κ(u - u) to the ODE, modifying
+Shu-Osher coefficients to enhance stability for large time steps.
+SSP coefficient C ≈ 1.508. The parameter `kappa` controls the stabilization strength;
+when `kappa = 0`, this reduces to standard SSPRK54.
+Fixed timestep only.",
+    "pRRK54",
+    references = """@article{liu2023high,
+    title={High-order, large time-stepping integrators for scalar hyperbolic conservation laws},
+    author={Liu, Lele and Burchard, Hans and Kuzmin, Dmitri and Shang, Sijun},
+    year={2023},
+    note={SSRN preprint 4401014}}"""
+)
+Base.@kwdef struct pRRK54{T, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    kappa::T = 0.0
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end

@@ -5,7 +5,7 @@ function EnzymeCore.EnzymeRules.inactive_noinl(
 end
 
 function EnzymeCore.EnzymeRules.inactive_noinl(
-        ::typeof(fixed_t_for_floatingpoint_error!), args...
+        ::typeof(fixed_t_for_tstop_error!), args...
     )
     return true
 end

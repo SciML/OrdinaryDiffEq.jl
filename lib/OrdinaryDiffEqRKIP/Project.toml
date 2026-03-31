@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqRKIP"
 uuid = "a4daff8c-1d43-4ff3-8eff-f78720aeecdc"
 authors = ["Azercoco <20425137+Azercoco@users.noreply.github.com>"]
-version = "1.1.0"
+version = "1.2.0"
 
 [deps]
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
@@ -20,6 +20,9 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
 Pkg = "1"

@@ -19,7 +19,6 @@ using LinearAlgebra: opnorm, I, UniformScaling, diag, rank, isdiag
 
 import PrecompileTools
 
-import FillArrays: Trues, Falses
 
 import FastPower: fastpower
 

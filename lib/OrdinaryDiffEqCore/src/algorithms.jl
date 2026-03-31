@@ -2,6 +2,20 @@ abstract type OrdinaryDiffEqAlgorithm <: SciMLBase.AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
+# SDE/RODE algorithm type hierarchy (used by StochasticDiffEq)
+abstract type StochasticDiffEqAlgorithm <: SciMLBase.AbstractSDEAlgorithm end
+abstract type StochasticDiffEqAdaptiveAlgorithm <: StochasticDiffEqAlgorithm end
+abstract type StochasticDiffEqCompositeAlgorithm <: StochasticDiffEqAlgorithm end
+
+abstract type StochasticDiffEqRODEAlgorithm <: SciMLBase.AbstractRODEAlgorithm end
+abstract type StochasticDiffEqRODEAdaptiveAlgorithm <: StochasticDiffEqRODEAlgorithm end
+abstract type StochasticDiffEqRODECompositeAlgorithm <: StochasticDiffEqRODEAlgorithm end
+
+# SDE/RODE cache type hierarchy (used by StochasticDiffEq)
+abstract type StochasticDiffEqCache <: SciMLBase.DECache end
+abstract type StochasticDiffEqConstantCache <: StochasticDiffEqCache end
+abstract type StochasticDiffEqMutableCache <: StochasticDiffEqCache end
+
 abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} <:
 OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} <:
@@ -69,7 +83,7 @@ function SciMLBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
     return T(; SciMLBase.struct_as_namedtuple(thing)..., kwargs...)
 end
 
-function SciMLBase.remake(
+@inline function SciMLBase.remake(
         thing::Union{
             OrdinaryDiffEqAdaptiveImplicitAlgorithm{
                 CS, AD, FDT,

@@ -129,8 +129,8 @@ end
         # check allocations
         integrator = init(prob, alg; save_everystep = false)
         allocs = @allocations solve!(integrator)
-        # Julia 1.11 has an extra allocation in these algorithms
-        expected_allocs = VERSION >= v"1.11" ? 4 : 3
+        # sizehint! calls in _postamble! add allocations to release excess memory
+        expected_allocs = VERSION >= v"1.11" ? 7 : 6
         @test allocs <= expected_allocs
     end
 end

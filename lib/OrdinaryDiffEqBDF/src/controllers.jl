@@ -32,7 +32,7 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
     integrator.cache.consfailcnt = 0
     integrator.cache.nconsteps += 1
     if iszero(integrator.EEst)
-        return integrator.dt * integrator.opts.qmax
+        return integrator.dt * get_current_qmax(integrator, integrator.opts.qmax)
     else
         est = integrator.EEst
         estₖ₋₁ = integrator.cache.EEst1
@@ -180,7 +180,7 @@ function choose_order!(
         ::Val{max_order}
     ) where {max_order}
     (; t, dt, u, cache, uprev) = integrator
-    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history) = cache
+    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
     k = cache.order
     # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
     if k < max_order && integrator.cache.qwait == 0 &&
@@ -196,18 +196,16 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            fd_weights = calc_finite_difference_weights(
-                ts_tmp, t + dt, k - 2,
-                Val(max_order)
+            calc_finite_difference_weights!(
+                fd_weights, ts_tmp, t + dt, k - 2
             )
-            terk_tmp = @.. broadcast = false fd_weights[k - 2, 1] * u
-            vc = _vec(terk_tmp)
+            @.. broadcast = false terk_tmp = fd_weights[k - 2, 1] * u
             for i in 2:(k - 2)
-                @.. @views vc += fd_weights[i, k - 2] * u_history[:, i - 1]
+                @.. broadcast = false terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
             end
             @.. broadcast = false terk_tmp *= abs(dt^(k - 2))
             calculate_residuals!(
-                atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
+                atmp, terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -253,16 +251,14 @@ function choose_order!(
             else
                 # we need terk_tmp to be mutable.
                 # so it can be updated
-                terk_tmp = similar(u)
-                @.. terk_tmp = fd_weights[k - 2, 1] * _vec(u)
+                terk_tmp = fd_weights[k - 2, 1] * u
                 for i in 2:(k - 2)
-                    @.. terk_tmp += fd_weights[i, k - 2] *
-                        $(_reshape(view(u_history, :, i - 1), axes(u)))
+                    terk_tmp = @.. terk_tmp + fd_weights[i, k - 2] * u_history[i - 1]
                 end
-                @.. terk_tmp *= abs(dt^(k - 2))
+                terk_tmp = @.. terk_tmp * abs(dt^(k - 2))
             end
             atmp = calculate_residuals(
-                terk_tmp, _vec(uprev), _vec(u),
+                terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -288,15 +284,44 @@ function stepsize_controller!(
         max_order,
     }
     cache.prev_order = cache.order
+
+    # CVODE-style Stability Limit Detection (STALD)
+    # Collect data and check BEFORE order selection, using the step's order and norms.
+    # BDF orders 3-5 are only alpha-stable, so eigenvalues near the imaginary axis
+    # can cause instability. STALD detects this and forces order reduction.
+    step_order = cache.prev_order
+    stald_reduce = false
+    if step_order >= 3
+        stald_collect_data!(
+            cache.stald, step_order,
+            cache.terkm2, cache.terkm1, cache.terk
+        )
+        stald_reduce = stald_check!(cache.stald, step_order)
+    end
+
     k, terk = choose_order!(alg, integrator, cache, Val(max_order))
     if k != cache.order
         cache.nconsteps = 0
         cache.order = k
     end
+
+    if stald_reduce
+        # Stability violation detected at the step's order: constrain new order
+        k = min(k, step_order - 1)
+        cache.order = k
+        cache.nconsteps = 0
+        terk = cache.terkm1
+    end
+
     if iszero(terk)
-        q = inv(integrator.opts.qmax)
+        q = inv(get_current_qmax(integrator, integrator.opts.qmax))
     else
-        q = ((2 * terk / (k + 1))^(1 / (k + 1)))
+        # CVODE-style step size formula: eta = 1 / (BIAS2 * dsm)^(1/(k+1))
+        # where dsm = terk / (alpha0 * (k+1)) and alpha0 is the BDF leading coefficient.
+        # FBDF uses fixed leading coefficients, so alpha0 = bdf_coeffs[k, 1].
+        # BIAS2 = 6 matches CVODE (cvode_impl.h).
+        alpha0 = cache.bdf_coeffs[k, 1]
+        q = ((6 * terk / (alpha0 * (k + 1)))^(1 / (k + 1)))
     end
     integrator.qold = q
     return q
@@ -346,7 +371,7 @@ function choose_order!(
         ::Val{max_order}
     ) where {max_order}
     (; t, dt, u, cache, uprev) = integrator
-    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history) = cache
+    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
     k = cache.order
     # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
     if k < max_order && integrator.cache.qwait == 0 &&
@@ -362,18 +387,16 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            fd_weights = calc_finite_difference_weights(
-                ts_tmp, t + dt, k - 2,
-                Val(max_order)
+            calc_finite_difference_weights!(
+                fd_weights, ts_tmp, t + dt, k - 2
             )
-            terk_tmp = @.. broadcast = false fd_weights[k - 2, 1] * u
-            vc = _vec(terk_tmp)
+            @.. broadcast = false terk_tmp = fd_weights[k - 2, 1] * u
             for i in 2:(k - 2)
-                @.. broadcast = false @views vc += fd_weights[i, k - 2] * u_history[:, i - 1]
+                @.. broadcast = false terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
             end
             @.. broadcast = false terk_tmp *= abs(dt^(k - 2))
             calculate_residuals!(
-                atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
+                atmp, terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -416,16 +439,13 @@ function choose_order!(
                 end
                 terk_tmp *= abs(dt^(k - 2))
             else
-                vc = _vec(terk_tmp)
                 for i in 2:(k - 2)
-                    @.. broadcast = false @views vc += fd_weights[i, k - 2] *
-                        u_history[:, i - 1]
+                    terk_tmp = @.. terk_tmp + fd_weights[i, k - 2] * u_history[i - 1]
                 end
-                terk_tmp = reshape(vc, size(terk_tmp))
-                terk_tmp *= @.. broadcast = false abs(dt^(k - 2))
+                terk_tmp = @.. broadcast = false terk_tmp * abs(dt^(k - 2))
             end
             atmp = calculate_residuals(
-                _vec(terk_tmp), _vec(uprev), _vec(u),
+                terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -457,9 +477,11 @@ function stepsize_controller!(
         cache.order = k
     end
     if iszero(terk)
-        q = inv(integrator.opts.qmax)
+        q = inv(get_current_qmax(integrator, integrator.opts.qmax))
     else
-        q = ((2 * terk / (k + 1))^(1 / (k + 1)))
+        # CVODE-style step size formula matching FBDF change
+        alpha0 = cache.bdf_coeffs[k, 1]
+        q = ((6 * terk / (alpha0 * (k + 1)))^(1 / (k + 1)))
     end
     integrator.qold = q
     return q

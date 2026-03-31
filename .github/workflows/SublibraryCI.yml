@@ -1,0 +1,88 @@
+name: Sublibrary CI
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      # JSON array of {group, version, runner, timeout, num_threads} objects for matrix include
+      matrix: ${{ steps.compute.outputs.matrix }}
+      # Whether any sublibraries are affected
+      has_changes: ${{ steps.compute.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - name: Compute affected sublibraries from dependency graph
+        id: compute
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # For push events, compare against the previous commit
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || git diff --name-only HEAD~1 HEAD)
+          else
+            # For pull requests, compare against the base branch
+            git fetch origin ${{ github.event.pull_request.base.ref }}
+            CHANGED=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD)
+          fi
+
+          MATRIX=$(echo "$CHANGED" | julia .github/scripts/compute_affected_sublibraries.jl .)
+
+          echo "Changed files in lib/:"
+          echo "$CHANGED" | grep "^lib/" || echo "(none)"
+          echo ""
+          echo "Matrix entries: $MATRIX"
+
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          if [ "$MATRIX" = "[]" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    permissions:
+      actions: write
+      contents: read
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: ${{ matrix.timeout }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v3
+        with:
+          cache-compiled: 'false'
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+        with:
+          coverage: false
+          check_bounds: auto
+        env:
+          GROUP: ${{ matrix.group }}
+          JULIA_NUM_THREADS: ${{ matrix.num_threads }}
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lcov.info
+          fail_ci_if_error: false
+          disable_safe_directory: true

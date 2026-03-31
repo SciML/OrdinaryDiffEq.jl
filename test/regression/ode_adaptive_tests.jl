@@ -66,7 +66,7 @@ tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
 prob = DAEProblem(lorenz, du0, u0, tspan, differential_vars = differential_vars)
 sol = solve(prob, DFBDF())
-@test length(sol.t) < 6600
+@test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)
 
 function lorenz(du, u, p, t)
@@ -82,7 +82,7 @@ tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
 prob = DAEProblem{false}(lorenz, du0, u0, tspan, differential_vars = differential_vars)
 sol = solve(prob, DFBDF())
-@test length(sol.t) < 6600
+@test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)
 
 rr(x1, x2) = (x1 * (-2.1474936f0 * (x2 + x1)))

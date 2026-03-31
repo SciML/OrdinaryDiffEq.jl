@@ -48,6 +48,17 @@ else
     end
 end
 
+@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.10"
+    @eval begin
+        import OrdinaryDiffEqCore: get_current_qmax
+    end
+else
+    @eval begin
+        # Fallback for older OrdinaryDiffEqCore: no first-step qmax behavior
+        @inline get_current_qmax(integrator, qmax) = qmax
+    end
+end
+
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
     nlsolve!, nlsolvefail, isnewton, markfirststage!,
@@ -61,6 +72,7 @@ using Reexport
 include("algorithms.jl")
 include("alg_utils.jl")
 include("bdf_utils.jl")
+include("stald.jl")
 include("bdf_caches.jl")
 include("dae_caches.jl")
 include("controllers.jl")

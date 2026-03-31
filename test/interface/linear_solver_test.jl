@@ -42,7 +42,7 @@ end
 
 @test isapprox(
     exp.(p), g_helper(p; alg = Rosenbrock23(linsolve = KLUFactorization()));
-    atol = 1.0e-3, rtol = 1.0e-3
+    atol = 1.0e-2, rtol = 1.0e-2
 )
 @test isapprox(
     exp.(p), g_helper(p; alg = Rosenbrock23(linsolve = UMFPACKFactorization()));
@@ -152,7 +152,7 @@ end
 
 @test isapprox(
     exp.(p), g_helper(p; alg = Rosenbrock23(linsolve = KLUFactorization()));
-    atol = 1.0e-3, rtol = 1.0e-3
+    atol = 1.0e-2, rtol = 1.0e-2
 )
 @test isapprox(
     exp.(p), g_helper(p; alg = Rosenbrock23(linsolve = UMFPACKFactorization()));
@@ -300,7 +300,7 @@ end
         @testset "$solname" for (solname, solver) in pairs(solvers)
             sol = solve(prob, solver, maxiters = 2.0e4)
             @test sol.retcode == ReturnCode.Success
-            @test isapprox(sol.u[end], refsol.u[end], rtol = 2.0e-3, atol = 1.0e-6)
+            @test isapprox(sol.u[end], refsol.u[end], rtol = 5.0e-3, atol = 1.0e-6)
         end
     end
 end

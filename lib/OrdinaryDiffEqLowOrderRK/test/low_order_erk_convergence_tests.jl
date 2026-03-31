@@ -41,6 +41,8 @@ prob_ode_nonlinear = ODEProblem(
     @test sim2.𝒪est[:l∞] ≈ 2 atol = testTol
     sim3 = test_convergence(dts, prob, RK4())
     @test sim3.𝒪est[:l∞] ≈ 4 atol = testTol
+    sim3 = test_convergence(dts, prob, Ralston4())
+    @test sim3.𝒪est[:l∞] ≈ 4 atol = testTol
 
     sim3 = test_convergence(dts2, prob, RKO65())
     @test sim3.𝒪est[:l∞] ≈ 5 atol = testTol

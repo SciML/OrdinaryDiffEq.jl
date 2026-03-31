@@ -20,221 +20,28 @@ function Rosenbrock32Tableau(T)
     return Rosenbrock32Tableau(c₃₂, d)
 end
 
-struct ROS3PTableau{T, T2}
-    a21::T
-    a31::T
-    a32::T
-    C21::T
-    C31::T
-    C32::T
-    b1::T
-    b2::T
-    b3::T
-    btilde1::T
-    btilde2::T
-    btilde3::T
-    gamma::T2
-    c2::T2
-    c3::T2
-    d1::T
-    d2::T
-    d3::T
-end
+################################################################################
+# Unified Rosenbrock/Rodas tableau in matrix form
+#
+# b is always explicit (for ALL methods, including Rodas encoding).
+# btilde is explicit for adaptive methods, nothing for fixed-step.
+# H with 0 rows means Hermite interpolation fallback (kshortsize=2).
+################################################################################
 
-function ROS3PTableau(T, T2)
-    gamma = convert(T, 1 / 2 + sqrt(3) / 6)
-    igamma = inv(gamma)
-    a21 = convert(T, igamma)
-    a31 = convert(T, igamma)
-    a32 = convert(T, 0)
-    C21 = convert(T, -igamma^2)
-    tmp = -igamma * (convert(T, 2) - convert(T, 1 / 2) * igamma)
-    C31 = -igamma * (convert(T, 1) - tmp)
-    C32 = tmp
-    tmp = igamma * (convert(T, 2 / 3) - convert(T, 1 / 6) * igamma)
-    b1 = igamma * (convert(T, 1) + tmp)
-    b2 = tmp
-    b3 = convert(T, 1 / 3) * igamma
-    # btilde1 = convert(T,2.113248654051871)
-    # btilde2 = convert(T,1.000000000000000)
-    # btilde3 = convert(T,0.4226497308103742)
-    btilde1 = b1 - convert(T, 2.113248654051871)
-    btilde2 = b2 - convert(T, 1.0)
-    btilde3 = b3 - convert(T, 0.4226497308103742)
-    c2 = convert(T, 1)
-    c3 = convert(T, 1)
-    d1 = convert(T, 0.7886751345948129)
-    d2 = convert(T, -0.2113248654051871)
-    d3 = convert(T, -1.077350269189626)
-    return ROS3PTableau(
-        a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma,
-        c2, c3, d1, d2, d3
-    )
-end
-
-struct Rodas3Tableau{T, T2}
-    a21::T
-    a31::T
-    a32::T
-    a41::T
-    a42::T
-    a43::T
-    C21::T
-    C31::T
-    C32::T
-    C41::T
-    C42::T
-    C43::T
-    b1::T
-    b2::T
-    b3::T
-    b4::T
-    btilde1::T
-    btilde2::T
-    btilde3::T
-    btilde4::T
-    gamma::T2
-    c2::T2
-    c3::T2
-    d1::T
-    d2::T
-    d3::T
-    d4::T
-end
-
-function Rodas3Tableau(T, T2)
-    gamma = convert(T, 1 // 2)
-    a21 = convert(T, 0)
-    a31 = convert(T, 2)
-    a32 = convert(T, 0)
-    a41 = convert(T, 2)
-    a42 = convert(T, 0)
-    a43 = convert(T, 1)
-    C21 = convert(T, 4)
-    C31 = convert(T, 1)
-    C32 = convert(T, -1)
-    C41 = convert(T, 1)
-    C42 = convert(T, -1)
-    C43 = convert(T, -8 // 3)
-    b1 = convert(T, 2)
-    b2 = convert(T, 0)
-    b3 = convert(T, 1)
-    b4 = convert(T, 1)
-    btilde1 = convert(T, 0.0)
-    btilde2 = convert(T, 0.0)
-    btilde3 = convert(T, 0.0)
-    btilde4 = convert(T, 1.0)
-    c2 = convert(T, 0.0)
-    c3 = convert(T, 1.0)
-    c4 = convert(T, 1.0)
-    d1 = convert(T, 1 // 2)
-    d2 = convert(T, 3 // 2)
-    d3 = convert(T, 0)
-    d4 = convert(T, 0)
-    return Rodas3Tableau(
-        a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3,
-        b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4
-    )
-end
-
-struct Rodas3PTableau{T, T2}
-    a21::T
-    a41::T
-    a42::T
-    a43::T
-    C21::T
-    C31::T
-    C32::T
-    C41::T
-    C42::T
-    C43::T
-    C51::T
-    C52::T
-    C53::T
-    C54::T
-    gamma::T
-    c2::T2
-    c3::T2
-    d1::T
-    d2::T
-    d3::T
-    h21::T
-    h22::T
-    h23::T
-    h24::T
-    h25::T
-    h31::T
-    h32::T
-    h33::T
-    h34::T
-    h35::T
-    h2_21::T
-    h2_22::T
-    h2_23::T
-    h2_24::T
-    h2_25::T
-end
-
-function Rodas3PTableau(T, T2)
-    gamma = convert(T, 1 // 3)
-    a21 = convert(T, 4.0 / 3.0)
-    a41 = convert(T, 2.90625)
-    a42 = convert(T, 3.375)
-    a43 = convert(T, 0.40625)
-    C21 = -convert(T, 4.0)
-    C31 = convert(T, 8.25)
-    C32 = convert(T, 6.75)
-    C41 = convert(T, 1.21875)
-    C42 = -convert(T, 5.0625)
-    C43 = -convert(T, 1.96875)
-    C51 = convert(T, 4.03125)
-    C52 = -convert(T, 15.1875)
-    C53 = -convert(T, 4.03125)
-    C54 = convert(T, 6.0)
-    c2 = convert(T2, 4.0 / 9.0)
-    c3 = convert(T2, 0.0)
-    d1 = convert(T, 1.0 / 3.0)
-    d2 = -convert(T, 1.0 / 9.0)
-    d3 = convert(T, 1.0)
-    h21 = convert(T, 1.78125)
-    h22 = convert(T, 6.75)
-    h23 = convert(T, 0.15625)
-    h24 = -convert(T, 6.0)
-    h25 = -convert(T, 1.0)
-    h31 = convert(T, 4.21875)
-    h32 = -convert(T, 15.1875)
-    h33 = -convert(T, 3.09375)
-    h34 = convert(T, 9.0)
-    h35 = convert(T, 0.0)
-    h2_21 = convert(T, 4.21875)
-    h2_22 = -convert(T, 2.025)
-    h2_23 = -convert(T, 1.63125)
-    h2_24 = -convert(T, 1.7)
-    h2_25 = -convert(T, 0.1)
-    return Rodas3PTableau(
-        a21, a41, a42, a43,
-        C21, C31, C32, C41, C42, C43, C51, C52, C53, C54,
-        gamma, c2, c3, d1, d2, d3,
-        h21, h22, h23, h24, h25, h31, h32, h33, h34, h35, h2_21, h2_22, h2_23, h2_24, h2_25
-    )
-end
-
-@ROS2(:tableau)
-
-@ROS23(:tableau)
-
-@ROS34PW(:tableau)
-
-@Rosenbrock4(:tableau)
-
-struct RodasTableau{T, T2}
+struct RodasTableau{T, T2, btType}
     A::Matrix{T}
     C::Matrix{T}
     gamma::T2
     c::Vector{T2}
     d::Vector{T}
     H::Matrix{T}
+    b::Vector{T}
+    btilde::btType  # Vector{T} for adaptive, nothing for fixed-step
 end
+
+################################################################################
+# Rodas4 family (6-stage)
+################################################################################
 
 const RODAS4A = [
     0 0 0 0 0 0
@@ -258,11 +65,19 @@ const RODAS4H = [
     10.12623508344586 -7.487995877610167 -34.80091861555747 -7.992771707568823 1.025137723295662 0
     -0.6762803392801253 6.087714651680015 16.43084320892478 24.76722511418386 -6.594389125716872 0
 ]
+"""
+    Rodas4Tableau(T, T2)
+
+The tableau for the 4th order L-stable Rosenbrock method Rodas4. 
+It is a 6-stage method with a built-in error estimate.
+Reference: Hairer, E., Nørsett, S. P., & Wanner, G. (1996). Solving Ordinary Differential Equations II.
+"""
 function Rodas4Tableau(T, T2)
     gamma = 0.25
-    return RodasTableau{T, T2}(RODAS4A, RODAS4C, gamma, RODAS4c, RODAS4d, RODAS4H)
+    b = T[RODAS4A[6, 1], RODAS4A[6, 2], RODAS4A[6, 3], RODAS4A[6, 4], RODAS4A[6, 5], one(T)]
+    btilde = T[zero(T), zero(T), zero(T), zero(T), zero(T), one(T)]
+    return RodasTableau{T, T2, Vector{T}}(RODAS4A, RODAS4C, gamma, RODAS4c, RODAS4d, RODAS4H, b, btilde)
 end
-
 
 const RODAS42A = [
     0 0 0 0 0 0
@@ -286,9 +101,18 @@ const RODAS42H = [
     -38.71940424117216 -135.8025833007622 64.51068857505875 -4.192663174613162 -2.53193205033506 0
     -14.99268484949843 -76.30242396627033 58.65928432851416 16.61359034616402 -0.6758691794084156 0
 ]
+"""
+    Rodas42Tableau(T, T2)
+
+A 4th order L-stable Rosenbrock method with 6 stages, often used as an alternative to Rodas4.
+Reference: Hairer, E., & Wanner, G. (1996). Solving Ordinary Differential Equations II:
+    Stiff and Differential-Algebraic Problems. Springer-Verlag, 2nd Edition.
+"""
 function Rodas42Tableau(T, T2)
     gamma = 0.25
-    return RodasTableau{T, T2}(RODAS42A, RODAS42C, gamma, RODAS42c, RODAS42d, RODAS42H)
+    b = T[RODAS42A[6, 1], RODAS42A[6, 2], RODAS42A[6, 3], RODAS42A[6, 4], RODAS42A[6, 5], one(T)]
+    btilde = T[zero(T), zero(T), zero(T), zero(T), zero(T), one(T)]
+    return RodasTableau{T, T2, Vector{T}}(RODAS42A, RODAS42C, gamma, RODAS42c, RODAS42d, RODAS42H, b, btilde)
 end
 
 const RODAS4PA = [
@@ -313,9 +137,18 @@ const RODAS4PH = [
     25.09876703708589 11.62013104361867 28.49148307714626 -5.664021568594133 0 0
     1.638054557396973 -0.7373619806678748 8.47791821923899 15.9925314877952 -1.882352941176471 0
 ]
+"""
+    Rodas4PTableau(T, T2)
+
+A 4th order L-stable Rosenbrock method with 6 stages, emphasizing stability for parabolic problems.
+Reference: Steinebach, G. (1995). Order-reduction of ROW-methods for DAEs and
+    method of lines applications. Preprint-Nr. 1741, FB Mathematik, TH Darmstadt.
+"""
 function Rodas4PTableau(T, T2)
     gamma = 0.25
-    return RodasTableau{T, T2}(RODAS4PA, RODAS4PC, gamma, RODAS4Pc, RODAS4Pd, RODAS4PH)
+    b = T[RODAS4PA[6, 1], RODAS4PA[6, 2], RODAS4PA[6, 3], RODAS4PA[6, 4], RODAS4PA[6, 5], one(T)]
+    btilde = T[zero(T), zero(T), zero(T), zero(T), zero(T), one(T)]
+    return RodasTableau{T, T2, Vector{T}}(RODAS4PA, RODAS4PC, gamma, RODAS4Pc, RODAS4Pd, RODAS4PH, b, btilde)
 end
 
 const RODAS4P2A = [
@@ -340,10 +173,24 @@ const RODAS4P2H = [
     -5.323528268423303 -10.042123754867493 17.175254928256965 -5.079931171878093 -0.016185991706112 0
     6.984505741529879 6.914061169603662 -0.849178943070653 18.104410789349338 -3.516963011559032 0
 ]
+"""
+    Rodas4P2Tableau(T, T2)
+
+An improved version of the Rodas4P 4th order L-stable Rosenbrock method.
+Reference: Steinebach, G. (2020). Improvement of Rosenbrock-Wanner method RODASP.
+    In: Progress in Differential-Algebraic Equations II, pp. 165–184.
+    Springer, Cham.
+"""
 function Rodas4P2Tableau(T, T2)
     gamma = 0.25
-    return RodasTableau{T, T2}(RODAS4P2A, RODAS4P2C, gamma, RODAS4P2c, RODAS4P2d, RODAS4P2H)
+    b = T[RODAS4P2A[6, 1], RODAS4P2A[6, 2], RODAS4P2A[6, 3], RODAS4P2A[6, 4], RODAS4P2A[6, 5], one(T)]
+    btilde = T[zero(T), zero(T), zero(T), zero(T), zero(T), one(T)]
+    return RodasTableau{T, T2, Vector{T}}(RODAS4P2A, RODAS4P2C, gamma, RODAS4P2c, RODAS4P2d, RODAS4P2H, b, btilde)
 end
+
+################################################################################
+# Rodas5 family (8-stage)
+################################################################################
 
 const RODAS5A = [
     0 0 0 0 0 0 0 0
@@ -377,9 +224,23 @@ const RODAS5H = [
     -44.0988150021747 -5.755396159656812e-13 -181.26175034586677 56.99302194811676 183.21182741427398 -7.480257918273637 -5.792426076169686 -5.32503859794143
 ]
 
+"""
+    Rodas5Tableau(T, T2)
+
+The tableau for the 5th order L-stable Rosenbrock method Rodas5.
+It is an 8-stage method designed for high-accuracy stiff integration.
+Reference: Di Marzo, G. (1993). Rodas5(4) -- Méthodes de Rosenbrock d'ordre 5(4)
+    adaptées aux problemes différentiels-algébriques. Master's thesis,
+    University of Geneva.
+"""
 function Rodas5Tableau(T, T2)
     gamma = 0.19
-    return RodasTableau{T, T2}(RODAS5A, RODAS5C, gamma, RODAS5c, RODAS5d, RODAS5H)
+    s = size(RODAS5A, 1)
+    b = T[RODAS5A[s, i] for i in 1:(s - 1)]
+    push!(b, one(T))
+    btilde = zeros(T, s)
+    btilde[s] = one(T)
+    return RodasTableau{T, T2, Vector{T}}(RODAS5A, RODAS5C, gamma, RODAS5c, RODAS5d, RODAS5H, b, btilde)
 end
 
 const RODAS5PA = [
@@ -415,10 +276,41 @@ const RODAS5PH = [
     -9.91568850695171 -0.9689944594115154 3.0438037242978453 -24.495224566215796 20.176138334709044 15.98066361424651 -6.789040303419874 -6.710236069923372
     11.419903575922262 2.8879645146136994 72.92137995996029 80.12511834622643 -52.072871366152654 -59.78993625266729 -0.15582684282751913 4.883087185713722
 ]
+"""
+    Rodas5PTableau(T, T2)
+
+A 5th order L-stable Rosenbrock method with 8 stages.
+Reference: Steinebach, G. (2023). Construction of Rosenbrock-Wanner method Rodas5P
+    and numerical benchmarks within the Julia Differential Equations package.
+    BIT Numerical Mathematics, 63, 27.
+"""
 function Rodas5PTableau(T, T2)
     gamma = 0.21193756319429014
-    return RodasTableau{T, T2}(RODAS5PA, RODAS5PC, gamma, RODAS5Pc, RODAS5Pd, RODAS5PH)
+    s = size(RODAS5PA, 1)
+    b = T[RODAS5PA[s, i] for i in 1:(s - 1)]
+    push!(b, one(T))
+    btilde = zeros(T, s)
+    btilde[s] = one(T)
+    return RodasTableau{T, T2, Vector{T}}(RODAS5PA, RODAS5PC, gamma, RODAS5Pc, RODAS5Pd, RODAS5PH, b, btilde)
 end
+
+# Rodas5Pe uses the same tableau as Rodas5P but with a custom btilde
+function Rodas5PeTableau(T, T2)
+    gamma = 0.21193756319429014
+    s = size(RODAS5PA, 1)
+    b = T[RODAS5PA[s, i] for i in 1:(s - 1)]
+    push!(b, one(T))
+    btilde = T[
+        0.2606326497975715, -0.005158627295444251, 1.3038988631109731,
+        1.235000722062074, -0.7931985603795049, -1.005448461135913,
+        -0.18044626132120234, 0.17051519239113755,
+    ]
+    return RodasTableau{T, T2, Vector{T}}(RODAS5PA, RODAS5PC, gamma, RODAS5Pc, RODAS5Pd, RODAS5PH, b, btilde)
+end
+
+################################################################################
+# Rodas6P (19-stage)
+################################################################################
 
 const RODAS6PA = [
     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
@@ -462,64 +354,904 @@ const RODAS6PC = [
     -164.17333724090065 -123.20834760012879 41.95443520088893 -239.77049586199965 -114.21790985713952 -12.341946126859007 15.750890701780254 39.790586318490696 -15.10728752295998 -12.824535901748304 16.73312629333741 -11.045750202895642 -14.639022723428816 -4.819493713790297 0.12987727446051117 0.04274137296376776 1.204312390836273 0.0 0.0
     461.9368267656361 52.53840694165619 144.8183760448168 455.9093893534564 35.81740627464267 40.776479432911195 17.76376684531324 -7.606209560029927 -15.381956921574087 3.9317973949968428 -41.37771137941743 -44.920577584346 53.37495929469229 10.211466474320808 -15.84128439059478 -19.507483543094224 1.884309895179932 5.745356704710484 0.0
 ]
-const RODAS6Pc = [0.0, 0.4449064090300329, 0.5391930604628539, 0.3920739557917205, 0.5393851240464334, 0.7496615946466092, 0.09171052879621677, 0.716762001806476, 0.9201684737037024, 0.7017495611178288, 0.5587152179138446, 0.10896187906446, 0.5073827520419607, 0.9999999999999999, 0.9999999999999999, 1.0000000000000002, 0.19999999999999996, 0.4999999999999998, 0.8]
-const RODAS6Pd = [0.26, -0.18490640903003291, -0.5445316852875675, -0.03230297796648507, -0.05985832397786847, 0.08292573124960323, 0.4158601113780379, -0.4887636036121086, -0.5305551731438798, 0.12166683722729399, -0.14899579330238244, 0.20995126195089908, -0.06287825975966793, -1.1102230246251565e-16, 1.1102230246251565e-16, 2.220446049250313e-16, 8.520155173756681, -7.34858003171262, 1.5593201340906078]
+const RODAS6Pc = [
+    0.0, 0.4449064090300329, 0.5391930604628539, 0.3920739557917205,
+    0.5393851240464334, 0.7496615946466092, 0.09171052879621677,
+    0.716762001806476, 0.9201684737037024, 0.7017495611178288, 0.5587152179138446,
+    0.10896187906446, 0.5073827520419607, 0.9999999999999999, 0.9999999999999999,
+    1.0000000000000002, 0.19999999999999996, 0.4999999999999998, 0.8,
+]
+const RODAS6Pd = [
+    0.26, -0.18490640903003291, -0.5445316852875675, -0.03230297796648507,
+    -0.05985832397786847, 0.08292573124960323, 0.4158601113780379, -0.4887636036121086,
+    -0.5305551731438798, 0.12166683722729399, -0.14899579330238244, 0.20995126195089908,
+    -0.06287825975966793, -1.1102230246251565e-16, 1.1102230246251565e-16,
+    2.220446049250313e-16, 8.520155173756681, -7.34858003171262, 1.5593201340906078,
+]
 const RODAS6PH = [
     17.587737160518465 -4.506717064391614 3.246011776864481 -5.070180845870549 -6.923968603369673 -1.6592466655000042 0.8383525386642399 1.2720777724693832 2.2171542815286456 1.2791183755209752 3.3596716472022443 -0.5508890465808383 -2.0565074886981494 -2.6056952102687827 -2.100871100634552 -1.8776167550373888 -0.022326222735958842 0.25936621048769365 -0.12973178185863266
     -27.32817833553187 2.3528275077734033 7.155223685651038 10.820120934865187 -25.034320788396975 -8.268316122429903 -11.20195859714455 -5.95292555000712 -4.350123484395559 -3.4923279797567224 -7.522667509591013 6.313357154108988 3.434436480929646 4.500204746140061 3.6478467450775045 2.888705712728512 -0.031277730738519756 -1.0511708104283997 0.7378677397843861
     48.135250596372614 1.6152029264444003 8.745836243957392 11.94240783069938 21.81240388443989 13.3043522805227 15.272804908450944 7.036607939296541 -2.212585956007379 3.686601637356048 8.623872556251557 -9.029595886738495 -6.643976834766214 -6.745850399987328 -7.810160738277424 -3.8140189856964035 0.04030442810903404 1.0072680387990685 -1.0126127084529764
     -12.232391324631207 1.7643387246585114 -0.8009754670601623 -2.893944757628759 -7.972815842366974 1.309554861689306 -4.604493120665954 1.8134270309595735 -3.751773417632513 -0.5811994801517248 -2.741530578462468 0.300651942632877 2.0061263661214994 1.8521005591286555 -0.2324954254701126 0.6873479719072509 0.12936879836252782 -0.17980608456604885 0.32290862251165836
 ]
+"""
+    Rodas6PTableau(T, T2)
+
+A 19-stage 6th order L-stable Rosenbrock method.
+Reference: Steinebach, G. (2025). Rodas6P and Tsit5DA - two new Rosenbrock-type
+    methods for DAEs. arXiv:2511.21252.
+"""
 function Rodas6PTableau(T, T2)
     gamma = 0.26
-    return RodasTableau{T, T2}(RODAS6PA, RODAS6PC, gamma, RODAS6Pc, RODAS6Pd, RODAS6PH)
+    b = T[
+        RODAS6PA[16, 1], RODAS6PA[16, 2], RODAS6PA[16, 3], RODAS6PA[16, 4],
+        RODAS6PA[16, 5], RODAS6PA[16, 6], RODAS6PA[16, 7], RODAS6PA[16, 8],
+        RODAS6PA[16, 9], RODAS6PA[16, 10], RODAS6PA[16, 11], RODAS6PA[16, 12],
+        RODAS6PA[16, 13], RODAS6PA[16, 14], RODAS6PA[16, 15], one(T),
+        zero(T), zero(T), zero(T),
+    ]
+    btilde = T[
+        zero(T), zero(T), zero(T), zero(T), zero(T), zero(T), zero(T), zero(T),
+        zero(T), zero(T), zero(T), zero(T), zero(T), zero(T), zero(T), one(T),
+        zero(T), zero(T), zero(T),
+    ]
+    return RodasTableau{T, T2, Vector{T}}(RODAS6PA, RODAS6PC, gamma, RODAS6Pc, RODAS6Pd, RODAS6PH, b, btilde)
 end
 
-@RosenbrockW6S4OS(:tableau)
+################################################################################
+# ROS3P (3-stage, hand-written)
+################################################################################
 
-#=
-# alpha_ij
-A = [0 0 0 0 0 0 0 0
-     big"0.38" 0 0 0 0 0 0 0
-     big"0.1899188971074152"    big"0.1979321027247381"  0 0 0 0 0 0
-     big"0.1110729281178426"    big"0.5456026683145674"  big"-0.1727037026450261" 0 0 0 0 0
-     big"0.2329444418850307"    big"0.025099380960713898" big"0.1443314046300300"  big"0.054672473406183418" 0 0 0 0
-     big"-0.036201017843430883" big"4.208448872731939"   big"-7.549674427720996"  big"-0.2076823626400282" big"4.585108935472517" 0 0 0
-     big"7.585261698003052"     big"-15.57426208319938"  big"-8.814406895608121"  big"1.534698996826085"   big"16.07870828397837" big"0.19" 0 0
-     big"0.4646018839086969"    big"0"                   big"-1.720907508837576"  big"0.2910480220957973"  big"1.821778861539924" big"-0.046521258706842056" big"0.19" 0]
-# bi
-B = [big"0.464601884",0,big"-1.72090751",big"0.29104802",big"1.82177886",big"-0.02674488",big"-0.01977638",big"0.19"]
+"""
+    ROS3PRodasTableau(T, T2)
 
-# Beta_ij
+A 3rd order Rosenbrock method with 3 stages.
+Reference: Lang, J., & Verwer, J. G. (2001). ROS3P—an accurate third-order Rosenbrock solver designed for parabolic problems. BIT Numerical Mathematics, 41, 731-738.
+"""
+function ROS3PRodasTableau(T, T2)
+    gamma = convert(T2, 1 / 2 + sqrt(3) / 6)
+    igamma = inv(gamma)
+    a21 = convert(T, igamma)
+    a31 = convert(T, igamma)
+    C21 = convert(T, -igamma^2)
+    tmp = -igamma * (convert(T, 2) - convert(T, 1 / 2) * igamma)
+    C31 = -igamma * (convert(T, 1) - tmp)
+    C32 = tmp
+    tmp2 = igamma * (convert(T, 2 / 3) - convert(T, 1 / 6) * igamma)
+    b1 = igamma * (convert(T, 1) + tmp2)
+    b2 = tmp2
+    b3 = convert(T, 1 / 3) * igamma
+    btilde1 = b1 - convert(T, 2.113248654051871)
+    btilde2 = b2 - convert(T, 1.0)
+    btilde3 = b3 - convert(T, 0.4226497308103742)
+    d1 = convert(T, 0.7886751345948129)
+    d2 = convert(T, -0.2113248654051871)
+    d3 = convert(T, -1.077350269189626)
 
-Beta = [big"0.19" 0 0 0 0 0 0 0
-        big"0.0076920774666285364"  big"0.19" 0 0 0 0 0 0
-        big"-0.058129718999580252"  big"-0.063251113355141360"  big"0.19" 0 0 0 0 0
-        big"0.7075715596134048"     big"-0.5980299539145789"   big"0.5294131505610923"    big"0.19" 0 0 0 0
-        big"-0.034975026573934865"  big"-0.1928476085817357"    big"0.089839586125126941"  big"0.027613185520411822" big"0.19" 0 0 0
-        big"7.585261698003052"      big"-15.57426208319938"     big"-8.814406895608121"    big"1.534698996826085"    big"16.07870828397837"  big"0.19" 0 0
-        big"0.4646018839086969"     0                           big"-1.720907508837576"    big"0.2910480220957973"   big"1.821778861539924"  big"-0.046521258706842056" big"0.19" 0
-        big"0.4646018839086969"     0                           big"-1.720907508837576"    big"0.2910480220957973"   big"1.821778861539924"  big"-0.026744882930135193" big"-0.019776375776706864" big"0.19"]
+    A = zeros(T, 3, 3)
+    A[2, 1] = a21
+    A[3, 1] = a31
 
-Gamma = Beta - A
-a = A*Gamma
-m = B'*inv(Gamma) # = b_i
-C = inv(Diagonal(diag(Gamma))) - inv(Gamma)
-c = sum(A,2)
-D = Beta*inv(Gamma)
-d = sum(Gamma,2)
+    C = zeros(T, 3, 3)
+    C[2, 1] = C21
+    C[3, 1] = C31
+    C[3, 2] = C32
 
-# Dense output
-D_i = tanspose(D)*k_i
-y1(Θ) = y₀*(1-Θ) + Θ*(y₁ + (Θ-1)*(D₂ + D₄ + (Θ + 1)*(D₃ + ΘD₄)))
+    c = T2[convert(T2, 0), convert(T2, 1), convert(T2, 1)]
+    d = T[d1, d2, d3]
+    b = T[b1, b2, b3]
+    btilde = T[btilde1, btilde2, btilde3]
+    H = zeros(T, 0, 3)
 
-# Determining coefficients
-gamma = 0.19
-c3 = 0.3878509998321533 == alpha3
-c4 = 0.4839718937873840 == alpha4
-c5 = 0.4570477008819580 == alpha5
-beta3 = 6.8619167645278386e-2
-beta4 = 0.8289547562599182
-beta5 = 7.9630136489868164e-2
-alpha64 = -0.2076823627400282
-=#
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+################################################################################
+# Rodas3 (4-stage, hand-written)
+################################################################################
+
+"""
+    Rodas3RodasTableau(T, T2)
+
+A 3rd order Rosenbrock method with 4 stages.
+Reference: Sandu, A., et al. (1997). Benchmarking stiff ode solvers for atmospheric chemistry problems-I. implicit vs explicit. Atmospheric Environment, 31(19), 3151-3166.
+"""
+function Rodas3RodasTableau(T, T2)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 0)
+    A[3, 1] = convert(T, 2)
+    A[4, 1] = convert(T, 2)
+    A[4, 3] = convert(T, 1)
+
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, 4)
+    C[3, 1] = convert(T, 1)
+    C[3, 2] = convert(T, -1)
+    C[4, 1] = convert(T, 1)
+    C[4, 2] = convert(T, -1)
+    C[4, 3] = convert(T, -8 // 3)
+
+    gamma = convert(T2, 1 // 2)
+    c = T2[convert(T2, 0), convert(T2, 0), convert(T2, 1), convert(T2, 1)]
+    d = T[convert(T, 1 // 2), convert(T, 3 // 2), zero(T), zero(T)]
+    b = T[convert(T, 2), zero(T), convert(T, 1), convert(T, 1)]
+    btilde = T[zero(T), zero(T), zero(T), one(T)]
+    H = zeros(T, 0, 4)
+
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+################################################################################
+# Rodas3P (5-stage, with H matrix for dense output)
+################################################################################
+
+"""
+    Rodas3PRodasTableau(T, T2)
+
+A 3rd order Rosenbrock method with 5 stages, including a dense output matrix H.
+Reference: Steinebach, G. (2024). Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications. Proceedings of the JuliaCon Conferences.
+"""
+function Rodas3PRodasTableau(T, T2)
+    gamma = convert(T2, 1 // 3)
+    a21 = convert(T, 4.0 / 3.0)
+    a41 = convert(T, 2.90625)
+    a42 = convert(T, 3.375)
+    a43 = convert(T, 0.40625)
+
+    A = zeros(T, 5, 5)
+    A[2, 1] = a21
+    A[4, 1] = a41
+    A[4, 2] = a42
+    A[4, 3] = a43
+    A[5, 1] = a41
+    A[5, 2] = a42
+    A[5, 3] = a43
+
+    C = zeros(T, 5, 5)
+    C[2, 1] = -convert(T, 4.0)
+    C[3, 1] = convert(T, 8.25)
+    C[3, 2] = convert(T, 6.75)
+    C[4, 1] = convert(T, 1.21875)
+    C[4, 2] = -convert(T, 5.0625)
+    C[4, 3] = -convert(T, 1.96875)
+    C[5, 1] = convert(T, 4.03125)
+    C[5, 2] = -convert(T, 15.1875)
+    C[5, 3] = -convert(T, 4.03125)
+    C[5, 4] = convert(T, 6.0)
+
+    c = T2[convert(T2, 0), convert(T2, 4.0 / 9.0), convert(T2, 0), convert(T2, 1), convert(T2, 1)]
+    d = T[convert(T, 1.0 / 3.0), -convert(T, 1.0 / 9.0), convert(T, 1.0), zero(T), zero(T)]
+    b = T[a41, a42, a43, zero(T), one(T)]
+    btilde = T[zero(T), zero(T), zero(T), -one(T), one(T)]
+
+    H = zeros(T, 3, 5)
+    H[1, 1] = convert(T, 1.78125)
+    H[1, 2] = convert(T, 6.75)
+    H[1, 3] = convert(T, 0.15625)
+    H[1, 4] = -convert(T, 6.0)
+    H[1, 5] = -convert(T, 1.0)
+    H[2, 1] = convert(T, 4.21875)
+    H[2, 2] = -convert(T, 15.1875)
+    H[2, 3] = -convert(T, 3.09375)
+    H[2, 4] = convert(T, 9.0)
+    H[3, 1] = convert(T, 4.21875)
+    H[3, 2] = -convert(T, 2.025)
+    H[3, 3] = -convert(T, 1.63125)
+    H[3, 4] = -convert(T, 1.7)
+    H[3, 5] = -convert(T, 0.1)
+
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+################################################################################
+# Rodas23W (5-stage, same data as Rodas3P but 2nd order solution)
+################################################################################
+
+"""
+    Rodas23WRodasTableau(T, T2)
+
+A W-method variant of Rodas3P, providing 2nd order solutions with 5 stages.
+Reference: Steinebach, G. (2024). Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications. Proceedings of the JuliaCon Conferences.
+"""
+function Rodas23WRodasTableau(T, T2)
+    gamma = convert(T2, 1 // 3)
+    a21 = convert(T, 4.0 / 3.0)
+    a41 = convert(T, 2.90625)
+    a42 = convert(T, 3.375)
+    a43 = convert(T, 0.40625)
+
+    A = zeros(T, 5, 5)
+    A[2, 1] = a21
+    A[4, 1] = a41
+    A[4, 2] = a42
+    A[4, 3] = a43
+    A[5, 1] = a41
+    A[5, 2] = a42
+    A[5, 3] = a43
+
+    C = zeros(T, 5, 5)
+    C[2, 1] = -convert(T, 4.0)
+    C[3, 1] = convert(T, 8.25)
+    C[3, 2] = convert(T, 6.75)
+    C[4, 1] = convert(T, 1.21875)
+    C[4, 2] = -convert(T, 5.0625)
+    C[4, 3] = -convert(T, 1.96875)
+    C[5, 1] = convert(T, 4.03125)
+    C[5, 2] = -convert(T, 15.1875)
+    C[5, 3] = -convert(T, 4.03125)
+    C[5, 4] = convert(T, 6.0)
+
+    c = T2[convert(T2, 0), convert(T2, 4.0 / 9.0), convert(T2, 0), convert(T2, 1), convert(T2, 1)]
+    d = T[convert(T, 1.0 / 3.0), -convert(T, 1.0 / 9.0), convert(T, 1.0), zero(T), zero(T)]
+    b = T[a41, a42, a43, one(T), zero(T)]
+    btilde = T[zero(T), zero(T), zero(T), one(T), -one(T)]
+
+    # H: after Rodas23W swap, k[1]=h2_ row, k[2]=0, k[3]=h2_ row
+    H = zeros(T, 3, 5)
+    H[1, 1] = convert(T, 4.21875)
+    H[1, 2] = -convert(T, 2.025)
+    H[1, 3] = -convert(T, 1.63125)
+    H[1, 4] = -convert(T, 1.7)
+    H[1, 5] = -convert(T, 0.1)
+    # H[2,:] = 0 (k[2] is zeroed for Rodas23W)
+    H[3, 1] = convert(T, 4.21875)
+    H[3, 2] = -convert(T, 2.025)
+    H[3, 3] = -convert(T, 1.63125)
+    H[3, 4] = -convert(T, 1.7)
+    H[3, 5] = -convert(T, 0.1)
+
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+################################################################################
+################################################################################
+# Macro-free direct constructors for all formerly generated methods
+################################################################################
+
+
+"""
+    RosShamp4RodasTableau(T, T2)
+
+A 4th order Rosenbrock method developed by Shampine.
+"""
+function RosShamp4RodasTableau(T, T2)
+    gamma = convert(T2, 1 // 2)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 2.0)
+    A[3, 1] = convert(T, 1.92)
+    A[3, 2] = convert(T, 0.24)
+    A[4, 1] = convert(T, 1.92)
+    A[4, 2] = convert(T, 0.24)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -8 // 1)
+    C[3, 1] = convert(T, 372 // 25)
+    C[3, 2] = convert(T, 12 // 5)
+    C[4, 1] = convert(T, -112 // 125)
+    C[4, 2] = convert(T, -54 // 125)
+    C[4, 3] = convert(T, -2 // 5)
+    c = T2[0.0, 1.0, 0.6, 0.6]
+    d = T[1 // 2, -3 // 2, 121 // 50, 29 // 250]
+    b = T[19 // 9, 1 // 2, 25 // 108, 125 // 108]
+    btilde = T[17 // 54, 7 // 36, 0 // 1, 125 // 108]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    Veldd4RodasTableau(T, T2)
+
+A 4th order Rosenbrock method by van Veldhuizen.
+"""
+function Veldd4RodasTableau(T, T2)
+    gamma = convert(T2, 0.2257081148225682)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 2.0)
+    A[3, 1] = convert(T, 4.812234362695436)
+    A[3, 2] = convert(T, 4.578146956747842)
+    A[4, 1] = convert(T, 4.812234362695436)
+    A[4, 2] = convert(T, 4.578146956747842)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -5.333333333333331)
+    C[3, 1] = convert(T, 6.100529678848254)
+    C[3, 2] = convert(T, 1.804736797378427)
+    C[4, 1] = convert(T, -2.540515456634749)
+    C[4, 2] = convert(T, -9.443746328915205)
+    C[4, 3] = convert(T, -1.988471753215993)
+    c = T2[0.0, 0.4514162296451364, 0.8755928946018455, 0.8755928946018455]
+    d = T[0.2257081148225682, -0.04599403502680582, 0.5177590504944076, -0.03805623938054428]
+    b = T[4.289339254654537, 5.036098482851414, 0.6085736420673917, 1.355958941201148]
+    btilde = T[2.175672787531755, 2.950911222575741, -0.785974454488743, -1.355958941201148]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+function Velds4RodasTableau(T, T2)
+    gamma = convert(T2, 1 // 2)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 2.0)
+    A[3, 1] = convert(T, 1.75)
+    A[3, 2] = convert(T, 0.25)
+    A[4, 1] = convert(T, 1.75)
+    A[4, 2] = convert(T, 0.25)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -8 // 1)
+    C[3, 1] = convert(T, -8 // 1)
+    C[3, 2] = convert(T, -1 // 1)
+    C[4, 1] = convert(T, 1 // 2)
+    C[4, 2] = convert(T, -1 // 2)
+    C[4, 3] = convert(T, 2 // 1)
+    c = T2[0.0, 1.0, 0.5, 0.5]
+    d = T[1 // 2, -3 // 2, -3 // 4, 1 // 4]
+    b = T[4 // 3, 2 // 3, -4 // 3, 4 // 3]
+    btilde = T[-1 // 3, -1 // 3, 0 // 1, -4 // 3]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    GRK4TRodasTableau(T, T2)
+
+A 4th order Generalized Runge-Kutta (Rosenbrock) method by Kaps and Rentrop.
+"""
+function GRK4TRodasTableau(T, T2)
+    gamma = convert(T2, 0.231)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 2.0)
+    A[3, 1] = convert(T, 4.524708207373116)
+    A[3, 2] = convert(T, 4.163528788597648)
+    A[4, 1] = convert(T, 4.524708207373116)
+    A[4, 2] = convert(T, 4.163528788597648)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -5.071675338776316)
+    C[3, 1] = convert(T, 6.020152728650786)
+    C[3, 2] = convert(T, 0.1597506846727117)
+    C[4, 1] = convert(T, -1.856343618686113)
+    C[4, 2] = convert(T, -8.505380858179826)
+    C[4, 3] = convert(T, -2.084075136023187)
+    c = T2[0.0, 0.462, 0.8802083333333334, 0.8802083333333334]
+    d = T[0.231, -0.03962966775244303, 0.5507789395789127, -0.05535098457052764]
+    b = T[3.957503746640777, 4.624892388363313, 0.6174772638750108, 1.282612945269037]
+    btilde = T[2.302155402932996, 3.073634485392623, -0.8732808018045032, -1.282612945269037]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+function GRK4ARodasTableau(T, T2)
+    gamma = convert(T2, 0.395)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 1.108860759493671)
+    A[3, 1] = convert(T, 2.37708526198336)
+    A[3, 2] = convert(T, 0.1850114988899692)
+    A[4, 1] = convert(T, 2.37708526198336)
+    A[4, 2] = convert(T, 0.1850114988899692)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -4.920188402397641)
+    C[3, 1] = convert(T, 1.055588686048583)
+    C[3, 2] = convert(T, 3.351817267668938)
+    C[4, 1] = convert(T, 3.846869007049313)
+    C[4, 2] = convert(T, 3.42710924126818)
+    C[4, 3] = convert(T, -2.162408848753263)
+    c = T2[0.0, 0.438, 0.87, 0.87]
+    d = T[0.395, -0.372672395484092, 0.06629196544571492, 0.4340946962568634]
+    b = T[1.84568324040584, 0.1369796894360503, 0.7129097783291559, 0.6329113924050632]
+    btilde = T[0.04831870177201765, -0.6471108651049505, 0.218687666050024, -0.6329113924050632]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    Ros4LStabRodasTableau(T, T2)
+
+A 4th order L-stable Rosenbrock method.
+"""
+function Ros4LStabRodasTableau(T, T2)
+    gamma = convert(T2, 0.57282)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 2.0)
+    A[3, 1] = convert(T, 1.867943637803922)
+    A[3, 2] = convert(T, 0.2344449711399156)
+    A[4, 1] = convert(T, 1.867943637803922)
+    A[4, 2] = convert(T, 0.2344449711399156)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -7.13761503641231)
+    C[3, 1] = convert(T, 2.580708087951457)
+    C[3, 2] = convert(T, 0.6515950076447975)
+    C[4, 1] = convert(T, -2.137148994382534)
+    C[4, 2] = convert(T, -0.3214669691237626)
+    C[4, 3] = convert(T, -0.6949742501781779)
+    c = T2[0.0, 1.14564, 0.65521686381559, 0.65521686381559]
+    d = T[0.57282, -1.769193891319233, 0.7592633437920482, -0.104902108710045]
+    b = T[2.255570073418735, 0.2870493262186792, 0.435317943184018, 1.093502252409163]
+    btilde = T[-0.2815431932141155, -0.0727619912493892, -0.1082196201495311, -1.093502252409163]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    ROS2RodasTableau(T, T2)
+
+A 2nd order Rosenbrock method.
+"""
+function ROS2RodasTableau(T, T2)
+    gamma = convert(T2, 1.7071067811865475)
+    A = zeros(T, 2, 2)
+    A[2, 1] = convert(T, 0.585786437626905)
+    C = zeros(T, 2, 2)
+    C[2, 1] = convert(T, -1.17157287525381)
+    c = T2[0.0, 1.0]
+    d = T[1.7071067811865475, -1.7071067811865475]
+    b = T[0.8786796564403574, 0.2928932188134525]
+    btilde = T[0.2928932188134525, 0.2928932188134525]
+    H = zeros(T, 0, 2)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+function ROS2PRRodasTableau(T, T2)
+    gamma = convert(T2, 0.228155493653962)
+    A = zeros(T, 3, 3)
+    A[2, 1] = convert(T, 4.382975767906234)
+    A[3, 1] = convert(T, 4.382975767906234)
+    A[3, 2] = convert(T, 4.382975767906234)
+    C = zeros(T, 3, 3)
+    C[2, 1] = convert(T, -4.382975767906234)
+    C[3, 1] = convert(T, -4.382975767906234)
+    C[3, 2] = convert(T, -16.827500814147)
+    c = T2[0.0, 1.0, 1.0]
+    d = T[0.228155493653962, 0.0, -2.7755575615628914e-17]
+    b = T[4.382975767906234, 4.382975767906234, 1.0]
+    btilde = T[-9.968705307220848e-18, 3.3829757679062333, 1.0]
+    H = zeros(T, 0, 3)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    ROS2SRodasTableau(T, T2)
+
+A 2nd order Rosenbrock method with specific stability properties.
+"""
+function ROS2SRodasTableau(T, T2)
+    gamma = convert(T2, 0.292893218813452)
+    A = zeros(T, 3, 3)
+    A[2, 1] = convert(T, 2.0000000000000036)
+    A[3, 1] = convert(T, 6.828427124746214)
+    A[3, 2] = convert(T, 3.4142135623731007)
+    C = zeros(T, 3, 3)
+    C[2, 1] = convert(T, -6.828427124746214)
+    C[3, 1] = convert(T, -10.949747468305889)
+    C[3, 2] = convert(T, -7.535533905932761)
+    c = T2[0.0, 0.585786437626905, 1.0]
+    d = T[0.292893218813452, -0.292893218813453, -5.551115123125783e-17]
+    b = T[6.828427124746214, 3.414213562373101, 1.0]
+    btilde = T[-0.23570226039551292, -0.23570226039551567, -0.13807118745769906]
+    H = zeros(T, 0, 3)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    ROS3RodasTableau(T, T2)
+
+A 3rd order Rosenbrock method.
+"""
+function ROS3RodasTableau(T, T2)
+    gamma = convert(T2, 0.435866521508459)
+    A = zeros(T, 3, 3)
+    A[2, 1] = convert(T, 1.0)
+    A[3, 1] = convert(T, 1.0)
+    C = zeros(T, 3, 3)
+    C[2, 1] = convert(T, -1.0156171083877703)
+    C[3, 1] = convert(T, 4.07599564525377)
+    C[3, 2] = convert(T, 9.20767942983308)
+    c = T2[0.0, 0.435866521508459, 0.435866521508459]
+    d = T[0.435866521508459, 0.24291996454816805, 2.185138002766406]
+    b = T[1.0000000000000002, 6.1697947043828245, -0.42772256543218573]
+    btilde = T[0.49999999999999983, -2.907955871680547, 0.22354069897811568]
+    H = zeros(T, 0, 3)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    ROS3PRRodasTableau(T, T2)
+
+A 3rd order Rosenbrock method.
+"""
+function ROS3PRRodasTableau(T, T2)
+    gamma = convert(T2, 0.788675134594813)
+    A = zeros(T, 3, 3)
+    A[2, 1] = convert(T, 3.0000000000000018)
+    A[3, 1] = convert(T, 3.80384757729337)
+    A[3, 2] = convert(T, 1.2679491924311226)
+    C = zeros(T, 3, 3)
+    C[2, 1] = convert(T, -3.80384757729337)
+    C[3, 1] = convert(T, -5.673079295488928)
+    C[3, 2] = convert(T, -1.7384634363911504)
+    c = T2[0.0, 2.36602540378444, 1.0]
+    d = T[0.788675134594813, -1.577350269189627, -0.577350269189621]
+    b = T[4.5358983848622305, 1.2679491924311173, 1.0]
+    btilde = T[-0.4598572229918937, -0.22992861149594657, 0.0]
+    H = zeros(T, 0, 3)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    Scholz4_7RodasTableau(T, T2)
+
+A 4th order Rosenbrock method with 7 stages by Scholz.
+Reference: Scholz, S. (1989).
+"""
+function Scholz4_7RodasTableau(T, T2)
+    gamma = convert(T2, 0.788675134594813)
+    A = zeros(T, 3, 3)
+    A[2, 1] = convert(T, 3.0000000000000018)
+    A[3, 1] = convert(T, 4.120834875401151)
+    A[3, 2] = convert(T, 1.2679491924311226)
+    C = zeros(T, 3, 3)
+    C[2, 1] = convert(T, -3.80384757729337)
+    C[3, 1] = convert(T, -6.310062633644914)
+    C[3, 2] = convert(T, -1.7746264440079669)
+    c = T2[0.0, 2.36602540378444, 1.25]
+    d = T[0.788675134594813, -1.577350269189627, -0.928571905524962]
+    b = T[4.096775673951863, 0.953252779460065, 0.7833659121534696]
+    btilde = T[0.3028225394953986, -0.06093909935296366, 0.36071618134309585]
+    H = zeros(T, 0, 3)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    ROS34PW1aRodasTableau(T, T2)
+
+A Rosenbrock-W method of order (3)4.
+Reference: Rang, J., & Angermann, L. (2005). New Rosenbrock-W methods of order 3 and 4 for stiff problems.
+"""
+function ROS34PW1aRodasTableau(T, T2)
+    gamma = convert(T2, 0.435866521508459)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 5.0905205106702045)
+    A[4, 1] = convert(T, 4.005173696367865)
+    A[4, 2] = convert(T, 0.19316470237944158)
+    A[4, 3] = convert(T, 1.147140180139521)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -11.679081231228288)
+    C[3, 1] = convert(T, -0.7100952636543062)
+    C[3, 2] = convert(T, -0.04165460771675499)
+    C[4, 1] = convert(T, -11.979557762226603)
+    C[4, 2] = convert(T, -0.48054400523894975)
+    C[4, 3] = convert(T, 1.4350493021655284)
+    c = T2[0.0, 2.218787467653286, 0.0, 1.7837037931914073]
+    d = T[0.435866521508459, -1.7829209461448272, 0.33333333333333337, -1.258070496147625]
+    b = T[6.1538321465310215, -0.8364233759732359, -0.8614792120957679, 2.294280360279042]
+    btilde = T[-5.429679341539398, -1.3273810331413745, 0.0, 0.0]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+function ROS34PW1bRodasTableau(T, T2)
+    gamma = convert(T2, 0.435866521508459)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 5.0905205106702045)
+    A[3, 1] = convert(T, 5.0905205106702045)
+    A[4, 1] = convert(T, 4.976281110107875)
+    A[4, 2] = convert(T, 0.027726816471584953)
+    A[4, 3] = convert(T, 0.22942803602790418)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -11.679081231228288)
+    C[3, 1] = convert(T, -16.40573264673668)
+    C[3, 2] = convert(T, -0.27726816471584953)
+    C[4, 1] = convert(T, -8.38103960500476)
+    C[4, 2] = convert(T, -0.8483284091993433)
+    C[4, 3] = convert(T, 0.28700986043310556)
+    c = T2[0.0, 2.218787467653286, 2.218787467653286, 1.553923375357884]
+    d = T[0.435866521508459, -1.7829209461448272, -2.4654190049693425, -0.8055299979063697]
+    b = T[5.2258276123309395, -0.5569711481541647, 0.35797946935364533, 1.7233739852106407]
+    btilde = T[-5.168452127840395, -1.2635194260384186, 0.0, 0.0]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    ROS34PW2RodasTableau(T, T2)
+
+A Rosenbrock-W method of order (3)4.
+Reference: Rang, J., & Angermann, L. (2005).
+"""
+function ROS34PW2RodasTableau(T, T2)
+    gamma = convert(T2, 0.435866521508459)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 2.0)
+    A[3, 1] = convert(T, 1.4192173174557647)
+    A[3, 2] = convert(T, -0.2592322116729697)
+    A[4, 1] = convert(T, 4.18476048231916)
+    A[4, 2] = convert(T, -0.28519201735549593)
+    A[4, 3] = convert(T, 2.294280360279042)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -4.588560720558084)
+    C[3, 1] = convert(T, -4.18476048231916)
+    C[3, 2] = convert(T, 0.28519201735549593)
+    C[4, 1] = convert(T, -6.368179200128359)
+    C[4, 2] = convert(T, -6.795620944466837)
+    C[4, 3] = convert(T, 2.8700986043310563)
+    c = T2[0.0, 0.871733043016918, 0.7315799577888524, 1.0]
+    d = T[0.435866521508459, -0.435866521508459, -0.4133333762338865, -5.551115123125783e-17]
+    b = T[4.1847604823191595, -0.28519201735549565, 2.2942803602790414, 1.0]
+    btilde = T[0.2777499476479681, -1.4032398951759992, 1.7726301276675507, 0.5]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    ROS34PW3RodasTableau(T, T2)
+
+A Rosenbrock-W method of order (3)4.
+Reference: Rang, J., & Angermann, L. (2005).
+"""
+function ROS34PW3RodasTableau(T, T2)
+    gamma = convert(T2, 1.0685790213016289)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 2.3541034887609085)
+    A[3, 1] = convert(T, 2.1274518517432335)
+    A[3, 2] = convert(T, 0.7018666706430658)
+    A[4, 1] = convert(T, 1.6573541366907125)
+    A[4, 2] = convert(T, 0.37998365119129385)
+    A[4, 3] = convert(T, 0.7677537933767512)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -2.20302237067446)
+    C[3, 1] = convert(T, -2.750060114993467)
+    C[3, 2] = convert(T, -0.8408569631081119)
+    C[4, 1] = convert(T, -3.0077871973155896)
+    C[4, 2] = convert(T, -0.7070774625618249)
+    C[4, 3] = convert(T, -1.1874362749274354)
+    c = T2[0.0, 2.5155456020628817, 1.2577728010314408, 0.6288864005157204]
+    d = T[1.0685790213016289, -1.4469665807612528, -0.7714762485313431, -0.29371172261080924]
+    b = T[2.5468758076906703, 0.5527809704437551, 0.920521963049926, 0.7201674983256354]
+    btilde = T[0.20632710213677674, 0.0026042321416049896, 0.006723394920071124, 0.7201674983256354]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    ROS34PRwRodasTableau(T, T2)
+
+A 3rd order Rosenbrock-W method.
+"""
+function ROS34PRwRodasTableau(T, T2)
+    gamma = convert(T2, 0.435866521508459)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 2.0)
+    A[3, 1] = convert(T, 1.9166355646921893)
+    A[3, 2] = convert(T, -0.7305046154473316)
+    A[4, 1] = convert(T, 3.7075384385487764)
+    A[4, 2] = convert(T, 1.984721005641544)
+    A[4, 3] = convert(T, -0.7228174329072325)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -4.588560720558084)
+    C[3, 1] = convert(T, -1.4496008611374558)
+    C[3, 2] = convert(T, 2.6585485498967283)
+    C[4, 1] = convert(T, -0.8142320398640468)
+    C[4, 2] = convert(T, 2.1949369533270104)
+    C[4, 3] = convert(T, -0.9042300763629808)
+    c = T2[0.0, 0.871733043016918, 1.1537997822626886, 0.9999999999999999]
+    d = T[0.435866521508459, -0.435866521508459, -0.34459816128502135, 5.551115123125783e-17]
+    b = T[3.7075384385487764, 1.9847210056415439, -0.7228174329072324, 1.0]
+    btilde = T[-0.08016142700721947, 0.15059517863671545, -0.29187352202361583, 0.26131506383377556]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    ROS3PRLRodasTableau(T, T2)
+
+A 3rd order low-storage Rosenbrock method.
+"""
+function ROS3PRLRodasTableau(T, T2)
+    gamma = convert(T2, 0.435866521508459)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 1.147140180139521)
+    A[3, 1] = convert(T, 2.4630707730300534)
+    A[3, 2] = convert(T, 1.147140180139521)
+    A[4, 1] = convert(T, 2.4630707730300534)
+    A[4, 2] = convert(T, 1.147140180139521)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -2.631861185781065)
+    C[3, 1] = convert(T, -2.038451402734394)
+    C[3, 2] = convert(T, 1.8551577240019121)
+    C[4, 1] = convert(T, -1.8050630466729911)
+    C[4, 2] = convert(T, 3.411439279441918)
+    C[4, 3] = convert(T, -1.7057196397209593)
+    c = T2[0.0, 0.5, 1.0, 1.0]
+    d = T[0.435866521508459, -0.064133478491541, -0.0032561147686690495, 0.0]
+    b = T[2.4630707730300534, 1.1471401801395211, 0.0, 1.0]
+    btilde = T[0.14188781262114447, 0.9677841576948438, -0.06855321332716582, 0.26131506383377634]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    ROS3PRL2RodasTableau(T, T2)
+
+A 3rd order low-storage Rosenbrock method.
+"""
+function ROS3PRL2RodasTableau(T, T2)
+    gamma = convert(T2, 0.435866521508459)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 3.000000000000007)
+    A[3, 1] = convert(T, 4.588560720558092)
+    A[3, 2] = convert(T, 1.147140180139521)
+    A[4, 1] = convert(T, 4.588560720558092)
+    A[4, 2] = convert(T, 1.147140180139521)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -6.882841080837141)
+    C[3, 1] = convert(T, -12.579179703104524)
+    C[3, 2] = convert(T, -2.9475127180857186)
+    C[4, 1] = convert(T, 3.556592450580385)
+    C[4, 2] = convert(T, -0.4663124315128337)
+    C[4, 3] = convert(T, 3.545260255335102)
+    c = T2[0.0, 1.30759956452538, 1.0, 1.0]
+    d = T[0.435866521508459, -0.871733043016921, -0.8339865967040412, -5.551115123125783e-17]
+    b = T[4.5885607205580925, 1.1471401801395211, 0.0, 1.0]
+    btilde = T[0.8808636262903982, 0.3041167493114213, 0.14248471842891264, 0.26131506383377634]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    ROK4aRodasTableau(T, T2)
+
+A 4th order Rosenbrock-Kaps method with 4 stages.
+Reference: Kaps, P., & Rentrop, P. (1979).
+"""
+function ROK4aRodasTableau(T, T2)
+    gamma = convert(T2, 0.572816062482135)
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 1.745761101158346)
+    A[3, 1] = convert(T, 2.4703844781940627)
+    A[3, 2] = convert(T, 0.6835475189193349)
+    A[4, 1] = convert(T, 1.6819503991264864)
+    A[4, 2] = convert(T, 0.25286213499736193)
+    A[4, 3] = convert(T, -0.13856798941027462)
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -5.825741115110917)
+    C[3, 1] = convert(T, 1.0021333747582308)
+    C[4, 1] = convert(T, -2.0798465277651803)
+    C[4, 2] = convert(T, -0.7428770881288675)
+    C[4, 3] = convert(T, -0.5200138498012211)
+    c = T2[0.0, 1.0, 0.5, 0.5]
+    d = T[0.572816062482135, -1.338715867278416, 0.9016343030936702, 0.19147495119907043]
+    b = T[2.6484813878883307, 0.7862115756123027, 0.3466758998674807, 1.1638407341055639]
+    btilde = T[0.3665053527208292, 0.2997106934923117, -0.03500203986368344, 1.1638407341055639]
+    H = zeros(T, 0, 4)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+"""
+    RosenbrockW6S4OSRodasTableau(T, T2)
+
+A 6-stage 4th order Rosenbrock-W method.
+"""
+function RosenbrockW6S4OSRodasTableau(T, T2)
+    gamma = convert(T2, 0.25)
+    A = zeros(T, 6, 6)
+    A[2, 1] = convert(T, 0.5812383407115008)
+    A[3, 1] = convert(T, 0.903962441371467)
+    A[3, 2] = convert(T, 1.861519155534501)
+    A[4, 1] = convert(T, 2.076579719675)
+    A[4, 2] = convert(T, 0.1884255381414796)
+    A[4, 3] = convert(T, 1.870158967491032)
+    A[5, 1] = convert(T, 4.435550638484312)
+    A[5, 2] = convert(T, 5.457181798610189)
+    A[5, 3] = convert(T, 4.61635078806893)
+    A[5, 4] = convert(T, 3.118111952402361)
+    A[6, 1] = convert(T, 10.79170169848326)
+    A[6, 2] = convert(T, -10.05691522584131)
+    A[6, 3] = convert(T, 14.99564485428419)
+    A[6, 4] = convert(T, 5.274339954390943)
+    A[6, 5] = convert(T, 1.42973087126119)
+    C = zeros(T, 6, 6)
+    C[2, 1] = convert(T, -2.661294105131369)
+    C[3, 1] = convert(T, -3.128450202373838)
+    C[4, 1] = convert(T, -6.920335474535658)
+    C[4, 2] = convert(T, -1.202675288266817)
+    C[4, 3] = convert(T, -9.73356181141362)
+    C[5, 1] = convert(T, -28.09530629102695)
+    C[5, 2] = convert(T, 20.37126295479377)
+    C[5, 3] = convert(T, -41.04375275302869)
+    C[5, 4] = convert(T, -19.66373175620895)
+    C[6, 1] = convert(T, 9.7998186780974)
+    C[6, 2] = convert(T, 11.93579288660318)
+    C[6, 3] = convert(T, 3.673874929013201)
+    C[6, 4] = convert(T, 14.8078285410955)
+    C[6, 5] = convert(T, 0.831858399869068)
+    c = T2[0.0, 0.1453095851778752, 0.3817422770256738, 0.6367813704374599, 0.7560744496323561, 0.927104723987567]
+    d = T[0.25, 0.0836691184292894, 0.0544718623516351, -0.3402289722355864, 0.0337651588339529, -0.090307426761854]
+    b = T[6.456217074653235, -4.853141317768053, 9.76531833406926, 2.081084177278723, 0.6603936866352417, 0.6]
+    btilde = nothing
+    H = zeros(T, 0, 6)
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+
+# Tsit5DA - 12-stage order 5(4) hybrid explicit/linear-implicit method for DAEs
+# Reference: Steinebach (2025), arXiv:2511.21252
+################################################################################
+
+struct Tsit5DATableau{T, T2}
+    A::Matrix{T}       # 12x12 alpha - explicit RK coefficients
+    C::Matrix{T}       # 12x12 gamma - linear-implicit coefficients (raw Gamma matrix)
+    gamma::T2           # 0.15 - diagonal value of Gamma
+    b::Vector{T}        # 12 primary weights
+    bhat::Vector{T}     # 12 embedded weights (4th order)
+    c::Vector{T2}       # 12 nodes (abscissae)
+    d::Vector{T}        # 12 gamma row sums
+    H::Matrix{T}        # 3x12 dense output coefficient matrix
+end
+
+const TSIT5DA_A = [
+    0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    0.3 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    0.4 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    0.161 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    -0.008480655492356989 0.0 0.0 0.335480655492357 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    2.8971530571054935 0.0 0.0 -6.359448489975075 4.3622954328695815 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    5.325864828439257 0.0 0.0 -11.748883564062828 7.4955393428898365 -0.09249506636175525 0.0 0.0 0.0 0.0 0.0 0.0
+    5.86145544294642 0.0 0.0 -12.92096931784711 8.159367898576159 -0.071584973281401 -0.028269050394068383 0.0 0.0 0.0 0.0 0.0
+    0.09646076681806523 0.0 0.0 0.01 0.4798896504144996 1.379008574103742 -3.290069515436081 2.324710524099774 0.0 0.0 0.0 0.0
+    0.09468075576583945 0.0 0.0 0.009183565540343254 0.4877705284247616 1.234297566930479 -2.7077123499835256 1.866628418170587 0.015151515151515152 0.0 0.0 0.0
+    0.09646076681806523 0.0 0.0 0.01 0.4798896504144996 1.379008574103742 -3.290069515436081 2.324710524099774 0.0 0.0 0.0 0.0
+    0.09468075576583945 0.0 0.0 0.009183565540343254 0.4877705284247616 1.234297566930479 -2.7077123499835256 1.866628418170587 -0.13484848484848483 0.0 0.15 0.0
+]
+
+const TSIT5DA_GAMMA = [
+    0.15 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    0.5470689774431368 0.15 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    -0.0723537422175421 0.0666666666666667 0.15 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    -0.11997574346406034 -0.20497635844374418 0.1257585188328081 0.15 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    0.3751214208728726 -0.6896518858336065 0.355777003175544 0.09308620463102296 0.15 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    -2.339423457351162 -1.8924202822866893 1.3476713525236836 7.143916166630147 -3.8352059902547007 0.15 0.0 0.0 0.0 0.0 0.0 0.0
+    -4.632327787862374 -0.9275563213580595 1.3114822266754764 12.288465257549579 -7.550172308571812 0.11237010207373185 0.15 0.0 0.0 0.0 0.0 0.0
+    -5.308384000531637 -1.235796359903477 1.4327893840055572 13.611173348816065 -8.203424318957262 0.23478742833475824 -0.06966253474809248 0.15 0.0 0.0 0.0 0.0
+    0.6035096617978578 3.7030920005107406 9.236101686975612 1.1223090015867678 -8.707588403514192 -10.01583191268519 3.226138565592647 3.563871912389068 0.15 0.0 0.0 0.0
+    0.5358920454864625 0.5149989566328188 -2.906166595272873 0.28758667283221606 0.4409793917839428 -1.2462207699816854 2.8597299754852776 -1.7759657086671305 0.7624212212647992 0.15 0.0 0.0
+    -0.0017800110522257773 0.0 0.0 -0.0008164344596567463 0.007880878010261994 -0.1447110071732629 0.5823571654525552 -0.45808210592918686 -0.13484848484848483 0.0 0.15 0.0
+    0.0017800110522257773 0.0 0.0 0.0008164344596567463 -0.007880878010261994 0.1447110071732629 -0.5823571654525552 0.45808210592918686 0.13484848484848483 -0.15 -0.15 0.15
+]
+
+const TSIT5DA_b = [
+    0.09646076681806523, 0.0, 0.0, 0.01, 0.4798896504144996,
+    1.379008574103742, -3.290069515436081, 2.324710524099774,
+    0.0, -0.15, 0.0, 0.15,
+]
+
+const TSIT5DA_bhat = [
+    0.09468075576583945, 0.0, 0.0, 0.009183565540343254, 0.4877705284247616,
+    1.234297566930479, -2.7077123499835256, 1.866628418170587,
+    -0.13484848484848483, 0.0, 0.15, 0.0,
+]
+
+const TSIT5DA_c = [
+    0.0, 0.3, 0.4, 0.161, 0.327, 0.9,
+    0.9800255409045114, 0.9999990000000002, 1.0, 1.0, 1.0, 1.0,
+]
+
+const TSIT5DA_d = [
+    0.15, 0.6970689774431368, 0.1443129244491246,
+    -0.04919358307499642, 0.2843274226367331, 0.5745377892612785,
+    0.7522611681065419, 0.6114829470159118, 2.881602512653311,
+    -0.376744810436172, 0.0, 0.0,
+]
+
+const TSIT5DA_H = [
+    0.8556749116393667 -0.1165263061110306 0.038120922841221455 0.15789728749504028 -0.54499490500098 -1.0853086321284309 2.2958098031370873 -1.566895939698076 -8.34587614295097 0.4162190065087707 8.314552638841711 -0.41867264457370923
+    -5.79723517059224 -9.361429135834928 3.062538663421373 13.568052287784441 -1.3736819148585004 2.344366172070166 -9.053170825304539 7.042985092806263 147.11116130708155 1.0678265669046618 -147.34646739130434 -1.264945652173913
+    7.347103241623678 14.93483561943059 -4.885847112946526 -21.54749924818453 5.148057565540175 -8.136928580553082 27.90674208255712 -21.23889269084667 -292.95889431249236 0.20306256630643107 293.11684782608694 0.11141304347826086
+]
+
+"""
+    Tsit5DATableau(T, T2)
+
+A 12-stage order 5(4) hybrid explicit/linear-implicit method for DAEs.
+Reference: Steinebach (2025), arXiv:2511.21252
+"""
+function Tsit5DATableau(T, T2)
+    return Tsit5DATableau{T, T2}(
+        TSIT5DA_A, TSIT5DA_GAMMA, convert(T2, 0.15),
+        TSIT5DA_b, TSIT5DA_bhat, TSIT5DA_c, TSIT5DA_d, TSIT5DA_H
+    )
+end

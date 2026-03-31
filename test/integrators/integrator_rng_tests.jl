@@ -115,7 +115,7 @@ f_iip(du, u, p, t) = (du .= 2 .* u)
         integrator = init(prob, Tsit5(); rng)
 
         # The RNG type should be a concrete type parameter, not Any
-        @test typeof(integrator).parameters[end] === typeof(rng)
+        @test fieldtype(typeof(integrator), :rng) === typeof(rng)
     end
 
     @testset "Callback can access RNG via get_rng" begin
@@ -242,7 +242,7 @@ f_iip(du, u, p, t) = (du .= 2 .* u)
         rng = StableRNG(42)
         integrator = init(prob, Tsit5(); rng)
 
-        @test typeof(integrator).parameters[end] === StableRNG
+        @test fieldtype(typeof(integrator), :rng) === StableRNG
         @test SciMLBase.get_rng(integrator) === rng
     end
 

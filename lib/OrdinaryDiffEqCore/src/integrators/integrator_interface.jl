@@ -17,11 +17,21 @@ function _change_t_via_interpolation!(
         else
             integrator(integrator.u, t)
         end
+        # SDE path: reject noise to rewind W/P, update sqdt
+        W = _get_W(integrator)
+        if !isnothing(W)
+            reject_noise!(W, t - integrator.tprev, integrator.u, integrator.p)
+            reject_noise!(_get_P(integrator), t - integrator.tprev, integrator.u, integrator.p)
+        end
         integrator.t = t
         integrator.dt = integrator.t - integrator.tprev
-        SciMLBase.reeval_internals_due_to_modification!(
-            integrator; callback_initializealg = reinitialize_alg
-        )
+        if isnothing(W)
+            SciMLBase.reeval_internals_due_to_modification!(
+                integrator; callback_initializealg = reinitialize_alg
+            )
+        else
+            integrator.sqdt = sqrt(abs(integrator.dt))
+        end
         if T
             solution_endpoint_match_cur_integrator!(integrator)
         end
@@ -76,8 +86,27 @@ end
         # Special stiff interpolations do not store the
         # right value in fsallast
         integrator.fsallast
+    elseif isempty(integrator.k)
+        # Before cache initialization, k is empty and interpolation
+        # cannot be used. Compute du directly.
+        _get_du_fallback(integrator)
     else
         integrator(integrator.t, Val{1})
+    end
+end
+
+@inline function _get_du_fallback(integrator::ODEIntegrator)
+    return if integrator.isdae
+        error(
+            "get_du is not available for DAE problems before the first step. " *
+                "The derivative is not initialized until the solver has taken a step."
+        )
+    elseif isinplace(integrator.sol.prob)
+        du = similar(integrator.u)
+        integrator.f(du, integrator.u, integrator.p, integrator.t)
+        du
+    else
+        integrator.f(integrator.u, integrator.p, integrator.t)
     end
 end
 
@@ -92,9 +121,26 @@ end
             # Special stiff interpolations do not store the
             # right value in fsallast
             out .= integrator.fsallast
+        elseif isempty(integrator.k)
+            # Before cache initialization, k is empty and interpolation
+            # cannot be used. Compute du directly.
+            _get_du_fallback!(out, integrator)
         else
             integrator(out, integrator.t, Val{1})
         end
+    end
+end
+
+@inline function _get_du_fallback!(out, integrator::ODEIntegrator)
+    return if integrator.isdae
+        error(
+            "get_du! is not available for DAE problems before the first step. " *
+                "The derivative is not initialized until the solver has taken a step."
+        )
+    elseif isinplace(integrator.sol.prob)
+        integrator.f(out, integrator.u, integrator.p, integrator.t)
+    else
+        out .= integrator.f(integrator.u, integrator.p, integrator.t)
     end
 end
 
@@ -209,6 +255,22 @@ end
         cache::OrdinaryDiffEqMutableCache
     )
     return (cache.nlsolver.cache.dz, cache.atmp)
+end
+
+# SDE cache fallbacks — mirror ODE's pattern for SDE types
+for AlgType in (StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm)
+    @eval @inline function SciMLBase.get_tmp_cache(
+            integrator, alg::$AlgType,
+            cache::StochasticDiffEqConstantCache
+        )
+        return nothing
+    end
+    @eval @inline function SciMLBase.get_tmp_cache(
+            integrator, alg::$AlgType,
+            cache::StochasticDiffEqMutableCache
+        )
+        return (cache.tmp,)
+    end
 end
 
 function full_cache(integrator::ODEIntegrator)
@@ -374,6 +436,15 @@ function SciMLBase.set_rng!(integrator::ODEIntegrator, rng)
         )
     end
     integrator.rng = rng
+    # Sync framework-constructed noise processes (SDE only, no-op when W/P are nothing)
+    W = _get_W(integrator)
+    if !isnothing(W) && integrator.noise === nothing
+        W.rng = rng
+    end
+    P = _get_P(integrator)
+    if !isnothing(P)
+        P.rng = rng
+    end
     return nothing
 end
 
@@ -435,7 +506,10 @@ function SciMLBase.reinit!(
 
     tType = typeof(integrator.t)
     tspan = (tType(t0), tType(tf))
-    reinit_tstops!(tType, integrator.opts.tstops, tstops, d_discontinuities, tspan)
+    reinit_tstops!(
+        tType, integrator.opts.tstops, tstops, d_discontinuities, tspan;
+        p = parameter_values(integrator)
+    )
     reinit_saveat!(tType, integrator.opts.saveat, saveat, tspan)
     reinit_d_discontinuities!(tType, integrator.opts.d_discontinuities, d_discontinuities, tspan)
     if erase_sol
@@ -446,7 +520,9 @@ function SciMLBase.reinit!(
         end
         resize!(integrator.sol.u, resize_start)
         resize!(integrator.sol.t, resize_start)
-        resize!(integrator.sol.k, resize_start)
+        if _has_ks(integrator)
+            resize!(integrator.sol.k, resize_start)
+        end
 
         if integrator.opts.save_start || (!isempty(saveat) && saveat[1] == tType(t0))
             copyat_or_push!(integrator.sol.t, 1, t0)
@@ -460,7 +536,7 @@ function SciMLBase.reinit!(
         if integrator.sol.u_analytic !== nothing
             resize!(integrator.sol.u_analytic, 0)
         end
-        if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
+        if is_composite_algorithm(integrator.alg)
             resize!(integrator.sol.alg_choice, resize_start)
         end
         integrator.saveiter = resize_start
@@ -504,17 +580,25 @@ function SciMLBase.reinit!(
     if reinit_retcode
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
     end
+
+    reinit_noise!(_get_W(integrator), integrator.dt)
     return nothing
 end
 
-function SciMLBase.auto_dt_reset!(integrator::ODEIntegrator)
-    integrator.dt = ode_determine_initdt(
+# Extensible initdt hook: ODE defaults to ode_determine_initdt.
+# SDE extends this in StochasticDiffEq to pass the stochastic order.
+function _determine_initdt(integrator)
+    return ode_determine_initdt(
         integrator.u, integrator.t,
         integrator.tdir, integrator.opts.dtmax,
         integrator.opts.abstol, integrator.opts.reltol,
         integrator.opts.internalnorm, integrator.sol.prob,
         integrator
     )
+end
+
+function SciMLBase.auto_dt_reset!(integrator::ODEIntegrator)
+    integrator.dt = _determine_initdt(integrator)
     integrator.dtpropose = integrator.dt
     return increment_nf!(integrator.stats, 2)
 end

@@ -1,7 +1,7 @@
 name = "ImplicitDiscreteSolve"
 uuid = "3263718b-31ed-49cf-8a0f-35a466e8af96"
 authors = ["vyudu <vincent.duyuan@gmail.com>"]
-version = "1.7.0"
+version = "1.9.0"
 
 [deps]
 NonlinearSolveBase = "be0214bd-f91f-a760-ac4e-3421ce2b2da0"
@@ -22,6 +22,9 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+
 [compat]
 Pkg = "1"
 Test = "1.10.0"
@@ -32,7 +35,7 @@ SciMLBase = "2.116"
 OrdinaryDiffEqCore = "3.4"
 ConcreteStructs = "0.2.3"
 Aqua = "0.8.11"
-NonlinearSolveFirstOrder = "1.9.0"
+NonlinearSolveFirstOrder = "1.9.0, 2"
 SymbolicIndexingInterface = "0.3.38"
 JET = "0.9.18, 0.10.4"
 julia = "1.10"

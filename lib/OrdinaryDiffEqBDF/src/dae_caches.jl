@@ -180,12 +180,15 @@ function alg_cache(
     ts = zero(Vector{typeof(t)}(undef, max_order + 2)) #ts is the successful past points, it will be updated after successful step
     ts_tmp = similar(ts)
 
-    u_history = zero(Matrix{eltype(u)}(undef, length(u), max_order + 2))
+    if u isa Number
+        u_history = zeros(eltype(u), max_order + 2)
+        u_corrector = zeros(eltype(u), max_order + 2)
+    else
+        u_history = [zero(u) for _ in 1:(max_order + 2)]
+        u_corrector = [zero(u) for _ in 1:(max_order + 2)]
+    end
     order = 1
     prev_order = 1
-    u_corrector = similar(u_history)
-    recursivefill!(u_corrector, zero(eltype(u)))
-    recursivefill!(u_history, zero(eltype(u_history)))
     terkm2 = tTypeNoUnits(1)
     terkm1 = tTypeNoUnits(1)
     terk = tTypeNoUnits(1)
@@ -209,7 +212,7 @@ end
 
 @cache mutable struct DFBDFCache{
         MO, N, rateType, uNoUnitsType, tsType, tType, uType,
-        uuType, coeffType, EEstType, rType, wType,
+        uuType, coeffType, EEstType, rType, wType, fdWeightsType,
     } <:
     DAEBDFMutableCache
     fsalfirst::rateType
@@ -240,6 +243,7 @@ end
     equi_ts::tsType
     iters_from_event::Int
     dense::Vector{uType}
+    fd_weights::fdWeightsType
 end
 
 function alg_cache(
@@ -268,13 +272,11 @@ function alg_cache(
         Int64(60) // 137 -Int64(300) // 137 Int64(300) // 137 -Int64(200) // 137 Int64(75) // 137 -Int64(12) // 137
     ]
     ts = Vector{typeof(t)}(undef, max_order + 2) #ts is the successful past points, it will be updated after successful step
-    u_history = Matrix{eltype(u)}(undef, length(u), max_order + 2)
+    u_history = [zero(u) for _ in 1:(max_order + 2)]
     order = 1
     prev_order = 1
-    u_corrector = similar(u_history)
+    u_corrector = [zero(u) for _ in 1:(max_order + 2)]
     recursivefill!(ts, zero(t))
-    recursivefill!(u_corrector, zero(eltype(u)))
-    recursivefill!(u_history, zero(eltype(u_history)))
     terkm2 = tTypeNoUnits(1)
     terkm1 = tTypeNoUnits(1)
     terk = tTypeNoUnits(1)
@@ -298,12 +300,14 @@ function alg_cache(
     ts_tmp = similar(ts)
     iters_from_event = 0
 
-    dense = [zero(u) for _ in 1:(2 * (max_order + 1))]
+    dense = [zero(u) for _ in 1:(2 * (max_order + 1))]  # first half for integrator.k, second half as scratch
+
+    fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
 
     return DFBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event, dense
+        iters_from_event, dense, fd_weights
     )
 end

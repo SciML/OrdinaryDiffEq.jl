@@ -280,6 +280,29 @@ function choose_algorithm!(integrator, cache::DefaultCache)
 end
 
 """
+Generic fallback for composite caches that are not CompositeCache or DefaultCache
+(e.g. StochasticCompositeCache). Uses the `is_composite_cache` trait.
+Non-composite caches that don't match any more-specific method get the no-op.
+"""
+function choose_algorithm!(integrator, cache)
+    is_composite_cache(cache) || return nothing
+    new_current = cache.choice_function(integrator)
+    old_current = cache.current
+    new_current == old_current && return nothing
+    initialize!(integrator, @inbounds(cache.caches[new_current]))
+    reset_alg_dependent_opts!(
+        integrator, integrator.alg.algs[old_current],
+        integrator.alg.algs[new_current]
+    )
+    transfer_cache!(
+        integrator, cache.caches[old_current],
+        cache.caches[new_current]
+    )
+    cache.current = new_current
+    return nothing
+end
+
+"""
 If no user default, then this will change the default to the defaults
 for the second algorithm.
 Except if the user default turns out to be the default for the current alg,
@@ -289,6 +312,18 @@ function reset_alg_dependent_opts!(integrator, alg1, alg2)
     integrator.dtchangeable = isdtchangeable(alg2)
     if integrator.opts.adaptive == isadaptive(alg1)
         integrator.opts.adaptive = isadaptive(alg2)
+    end
+    if integrator.opts.qmin == qmin_default(alg1)
+        integrator.opts.qmin = qmin_default(alg2)
+    end
+    if integrator.opts.qmax == qmax_default(alg1)
+        integrator.opts.qmax = qmax_default(alg2)
+    end
+    if integrator.opts.qsteady_min == qsteady_min_default(alg1)
+        integrator.opts.qsteady_min = qsteady_min_default(alg2)
+    end
+    if integrator.opts.qsteady_max == qsteady_max_default(alg1)
+        integrator.opts.qsteady_max = qsteady_max_default(alg2)
     end
     reset_alg_dependent_opts!(integrator.opts.controller, alg1, alg2)
     return nothing

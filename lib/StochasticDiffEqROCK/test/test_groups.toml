@@ -1,0 +1,10 @@
+[Core]
+versions = ["1.11", "1", "pre"]
+
+[SROCKC2WeakConvergence]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 240
+
+[QA]
+versions = ["1"]

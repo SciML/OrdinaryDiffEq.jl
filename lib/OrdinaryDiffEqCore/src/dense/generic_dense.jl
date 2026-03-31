@@ -1224,6 +1224,14 @@ function ode_interpolation!(
     return out
 end
 
+# No-op: SDE uses linear interpolation, not Hermite, so no k values needed.
+@inline function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::StochasticDiffEqCache,
+        always_calc_begin = false, allow_calc_end = true, force_calc_end = false
+    )
+    return nothing
+end
+
 """
 By default, Hermite interpolant so update the derivative at the two ends
 """
@@ -1291,26 +1299,31 @@ end
 
 ##################### Hermite Interpolants
 
+# Helper for indexing differential_vars: scalar Bool broadcasts as-is,
+# arrays are indexed normally. The compiler specializes away the branch.
+@inline _dv(dv::Bool, _) = dv
+@inline _dv(dv, i) = dv[i]
+
 function interpolation_differential_vars(differential_vars, y₀, idxs)
     if isnothing(differential_vars)
         if y₀ isa Number
             return true
         elseif idxs === nothing
-            return Trues(size(y₀))
+            return true
         elseif idxs isa Number
             return true
         else
-            return Trues(size(idxs))
+            return true
         end
     elseif differential_vars isa DifferentialVarsUndefined #for non diagonal mass matrices, use linear interpolation.
         if y₀ isa Number
             return false
         elseif idxs === nothing
-            return Falses(size(y₀))
+            return false
         elseif idxs isa Number
             return false
         else
-            return Falses(size(idxs))
+            return false
         end
     elseif idxs isa Number
         return return differential_vars[idxs]
@@ -1321,11 +1334,16 @@ function interpolation_differential_vars(differential_vars, y₀, idxs)
     end
 end
 
-# If no dispatch found, assume Hermite
+# If no dispatch found, assume Hermite (or linear when k is empty, e.g. SDE)
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
     ) where {TI}
     TI > 3 && throw(DerivativeOrderNotPossibleError())
+
+    # Linear fallback when no dense output vectors (e.g. SDE)
+    if isempty(k)
+        return linear_interpolant(Θ, dt, y₀, y₁, idxs, T)
+    end
 
     differential_vars = interpolation_differential_vars(differential_vars, y₀, idxs)
     return hermite_interpolant(
@@ -1338,6 +1356,10 @@ function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
     ) where {TI}
     TI > 3 && throw(DerivativeOrderNotPossibleError())
+
+    if isempty(k)
+        return linear_interpolant!(out, Θ, dt, y₀, y₁, idxs, T)
+    end
 
     differential_vars = interpolation_differential_vars(differential_vars, y₀, idxs)
     return hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
@@ -1391,7 +1413,7 @@ end
     out = similar(y₀)
     @inbounds @simd ivdep for i in eachindex(y₀)
         out[i] = (1 - Θ) * y₀[i] + Θ * y₁[i] +
-            differential_vars[i] * Θ * (Θ - 1) *
+            _dv(differential_vars, i) * Θ * (Θ - 1) *
             ((1 - 2Θ) * (y₁[i] - y₀[i]) + (Θ - 1) * dt * k[1][i] + Θ * dt * k[2][i])
     end
 end
@@ -1448,7 +1470,7 @@ end
     )
     @inbounds @simd ivdep for i in eachindex(out)
         out[i] = (1 - Θ) * y₀[i] + Θ * y₁[i] +
-            differential_vars[i] * Θ * (Θ - 1) *
+            _dv(differential_vars, i) * Θ * (Θ - 1) *
             ((1 - 2Θ) * (y₁[i] - y₀[i]) + (Θ - 1) * dt * k[1][i] + Θ * dt * k[2][i])
     end
     out
@@ -1480,7 +1502,7 @@ end
     )
     @inbounds for (j, i) in enumerate(idxs)
         out[j] = (1 - Θ) * y₀[i] + Θ * y₁[i] +
-            differential_vars[j] * Θ * (Θ - 1) *
+            _dv(differential_vars, j) * Θ * (Θ - 1) *
             ((1 - 2Θ) * (y₁[i] - y₀[i]) + (Θ - 1) * dt * k[1][i] + Θ * dt * k[2][i])
     end
     out
@@ -1607,8 +1629,8 @@ end
         T::Type{Val{1}}, differential_vars
     )
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = !differential_vars[i] * ((y₁[i] - y₀[i]) / dt) +
-            differential_vars[i] * (
+        out[i] = !_dv(differential_vars, i) * ((y₁[i] - y₀[i]) / dt) +
+            _dv(differential_vars, i) * (
             k[1][i] +
                 Θ * (
                 -4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
@@ -1655,8 +1677,8 @@ end
         out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{1}}, differential_vars
     )
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = !differential_vars[j] * ((y₁[i] - y₀[i]) / dt) +
-            differential_vars[j] * (
+        out[j] = !_dv(differential_vars, j) * ((y₁[i] - y₀[i]) / dt) +
+            _dv(differential_vars, j) * (
             k[1][i] +
                 Θ * (
                 -4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
@@ -1762,7 +1784,7 @@ end
         T::Type{Val{2}}, differential_vars
     )
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = differential_vars[i] *
+        out[i] = _dv(differential_vars, i) *
             (
             -4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
                 Θ * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) +
@@ -1804,7 +1826,7 @@ end
         out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{2}}, differential_vars
     )
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = differential_vars[j] *
+        out[j] = _dv(differential_vars, j) *
             (
             -4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
                 Θ * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) +
@@ -1896,7 +1918,7 @@ end
         T::Type{Val{3}}, differential_vars
     )
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = differential_vars[i] *
+        out[i] = _dv(differential_vars, i) *
             (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
             (dt * dt * dt)
     end
@@ -1925,7 +1947,7 @@ end
         out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{3}}, differential_vars
     )
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = differential_vars[j] *
+        out[j] = _dv(differential_vars, j) *
             (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
             (dt * dt * dt)
     end

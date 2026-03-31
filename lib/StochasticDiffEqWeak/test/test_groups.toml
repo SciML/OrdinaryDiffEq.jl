@@ -1,0 +1,45 @@
+[Core]
+versions = ["1.11", "1", "pre"]
+
+[WeakConvergence1]
+versions = ["1"]
+
+[WeakConvergence2]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 300
+
+[W2Ito1WeakConvergence]
+versions = ["1"]
+
+[WeakConvergence3]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 300
+
+[SIESMEWeakConvergence]
+versions = ["1"]
+
+[WeakConvergence4]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 420
+
+[WeakConvergence5]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 300
+
+[WeakConvergence6]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 300
+
+[IRI1WeakConvergence]
+versions = ["1"]
+
+[WeakAdaptiveCPU]
+versions = ["1"]
+
+[QA]
+versions = ["1"]

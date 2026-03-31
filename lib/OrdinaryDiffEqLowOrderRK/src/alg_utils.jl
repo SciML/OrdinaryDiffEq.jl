@@ -14,6 +14,7 @@ alg_order(alg::RKO65) = 5
 alg_order(alg::FRK65) = 6
 alg_order(alg::RK4) = 4
 alg_order(alg::RKM) = 4
+alg_order(alg::Ralston4) = 4
 alg_order(alg::MSRK5) = 5
 alg_order(alg::MSRK6) = 6
 alg_order(alg::PSRK4p7q6) = 4

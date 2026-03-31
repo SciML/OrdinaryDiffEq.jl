@@ -55,6 +55,16 @@ end
 SciMLBase.allows_late_binding_tstops(::OrdinaryDiffEqAlgorithm) = true
 SciMLBase.allows_late_binding_tstops(::DAEAlgorithm) = true
 
+SciMLBase.supports_solve_rng(
+    ::SciMLBase.AbstractODEProblem,
+    ::OrdinaryDiffEqAlgorithm,
+) = true
+
+SciMLBase.supports_solve_rng(
+    ::SciMLBase.AbstractDAEProblem,
+    ::DAEAlgorithm,
+) = true
+
 # isadaptive is defined below.
 
 ## OrdinaryDiffEq Internal Traits
@@ -104,6 +114,7 @@ all_fsal(alg::CompositeAlgorithm, cache) = _all_fsal(alg.algs)
 end
 
 issplit(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
+issplit(alg::StochasticDiffEqAlgorithm) = false
 
 function _composite_beta1_default(
         algs::Tuple{T1, T2}, current, ::Val{QT},
@@ -178,6 +189,8 @@ isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+isdtchangeable(alg) = true
 
 ismultistep(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
@@ -185,14 +198,22 @@ ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
 isadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
 isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+isadaptive(alg) = false
 
 has_special_newton_error(alg) = false
 
 anyadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = isadaptive(alg)
 anyadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = any(isadaptive, alg.algs)
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+anyadaptive(alg) = isadaptive(alg)
 
 has_dtnew_modification(alg) = false
 dtnew_modification(integrator, alg, dtnew) = dtnew
+
+# Whether an algorithm uses a posteriori dt estimates (always accepts, then picks next dt).
+# Default is false. CaoTauLeaping overrides to true.
+isaposteriori(alg) = false
 
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
@@ -205,9 +226,13 @@ function qmin_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return isadaptive(alg) ? 1 // 5 : 0
 end
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+qmin_default(alg) = 1 // 5
 
 qmax_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+qmax_default(alg) = 10
 
 function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
     return alg isa Union{
@@ -279,8 +304,24 @@ function DiffEqBase.prepare_alg(
 end
 
 function DiffEqBase.prepare_alg(alg::CompositeAlgorithm, u0, p, prob)
-    algs = map(alg -> DiffEqBase.prepare_alg(alg, u0, p, prob), alg.algs)
-    return CompositeAlgorithm(algs, alg.choice_function)
+    algs = map(a -> DiffEqBase.prepare_alg(a, u0, p, prob), alg.algs)
+    cf = alg.choice_function
+    if cf isa AutoSwitch
+        nonstiffalg = _prepare_autoswitch_alg(cf.nonstiffalg, u0, p, prob)
+        stiffalg = _prepare_autoswitch_alg(cf.stiffalg, u0, p, prob)
+        cf = AutoSwitch(
+            nonstiffalg, stiffalg,
+            cf.maxstiffstep, cf.maxnonstiffstep,
+            cf.nonstifftol, cf.stifftol,
+            cf.dtfac, cf.stiffalgfirst, cf.switch_max
+        )
+    end
+    return CompositeAlgorithm(algs, cf)
+end
+
+_prepare_autoswitch_alg(alg, u0, p, prob) = DiffEqBase.prepare_alg(alg, u0, p, prob)
+function _prepare_autoswitch_alg(algs::Tuple, u0, p, prob)
+    return map(a -> DiffEqBase.prepare_alg(a, u0, p, prob), algs)
 end
 
 has_autodiff(alg::OrdinaryDiffEqAlgorithm) = false
@@ -366,6 +407,8 @@ end
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+alg_extrapolates(alg) = false
 function alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     error("Order is not defined for this algorithm")
 end
@@ -479,11 +522,16 @@ function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return isadaptive(alg) ? 9 // 10 : 0
 end
 gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+gamma_default(alg) = isadaptive(alg) ? 9 // 10 : 0
 
 fac_default_gamma(alg) = false
 
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 qsteady_max_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
+# Generic fallbacks for non-ODE algorithms (SDE, RODE) calling __init
+qsteady_min_default(alg) = 1
+qsteady_max_default(alg) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6 // 5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 // 1 : 0
@@ -515,7 +563,7 @@ alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 
 function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
-    if !(alg isa CompositeAlgorithm)
+    if !is_composite_algorithm(alg)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
         if length(alg.algs) > 2
@@ -537,7 +585,7 @@ end
 
 function unwrap_alg(integrator, is_stiff)
     alg = integrator.alg
-    if !(alg isa CompositeAlgorithm)
+    if !is_composite_algorithm(alg)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
         if length(alg.algs) > 2
@@ -565,6 +613,8 @@ end
 # Whether `uprev` is used in the algorithm directly.
 uses_uprev(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, adaptive::Bool) = true
 uses_uprev(alg::OrdinaryDiffEqAdaptiveAlgorithm, adaptive::Bool) = true
+# Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
+uses_uprev(alg, adaptive) = true
 
 ispredictive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
@@ -578,7 +628,7 @@ isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::CompositeAlgorithm) = all(is_mass_matrix_alg, alg.algs)
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
-is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
+is_mass_matrix_alg(alg::NewtonAlgorithm) = isfsal(alg) || !isesdirk(alg)
 
 # All algorithms should be shown using their keyword definition, and not as structs
 function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
@@ -591,3 +641,5 @@ end
 
 # Defaults in the current system: currently opt out DAEAlgorithms until complete
 default_linear_interpolation(alg, prob) = alg isa DAEAlgorithm || prob isa DiscreteProblem
+# RODE/SDE always uses linear interpolation (no dense output)
+default_linear_interpolation(prob::SciMLBase.AbstractRODEProblem, alg) = true

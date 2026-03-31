@@ -23,7 +23,7 @@ import LinearSolve
 import LinearSolve: UniformScaling
 import ForwardDiff
 using FiniteDiff
-using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm, lu!
+using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm, lu, lu!
 using ADTypes
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
@@ -213,7 +213,6 @@ end
 
 include("algorithms.jl")
 include("alg_utils.jl")
-include("generic_rosenbrock.jl")
 include("rosenbrock_caches.jl")
 include("rosenbrock_tableaus.jl")
 include("interp_func.jl")
@@ -284,6 +283,7 @@ PrecompileTools.@compile_workload begin
     end
 
     for prob in prob_list, solver in solver_list
+
         solve(prob, solver)(5.0)
     end
 
@@ -293,7 +293,7 @@ end
 
 export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
     Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
-    Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P,
+    Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P, HybridExplicitImplicitRK, Tsit5DA,
     RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL,
     ROS3PRL2, ROK4a,
     ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7

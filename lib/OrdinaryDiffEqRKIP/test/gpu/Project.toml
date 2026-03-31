@@ -1,0 +1,18 @@
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OrdinaryDiffEqRKIP = "a4daff8c-1d43-4ff3-8eff-f78720aeecdc"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources.OrdinaryDiffEqRKIP]
+path = "../../../OrdinaryDiffEqRKIP"
+
+[compat]
+CUDA = "4, 5"
+FFTW = "1.8"
+OrdinaryDiffEqRKIP = "1"
+SciMLBase = "2.99"
+SciMLOperators = "1.3"

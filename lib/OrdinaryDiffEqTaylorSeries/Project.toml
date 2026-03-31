@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqTaylorSeries"
 uuid = "9c7f1690-dd92-42a3-8318-297ee24d8d39"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.8.0"
+version = "1.11.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -30,6 +30,9 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
 AllocCheck = "0.2"

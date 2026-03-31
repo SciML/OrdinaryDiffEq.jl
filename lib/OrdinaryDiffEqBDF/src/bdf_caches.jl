@@ -414,10 +414,13 @@ function alg_cache(
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
     )
     dtprev = one(dt)
-    D = Matrix{uEltypeNoUnits}(undef, length(u), max_order + 2)
-    recursivefill!(D, zero(uEltypeNoUnits))
-    prevD = similar(D)
-    recursivefill!(prevD, zero(uEltypeNoUnits))
+    if u isa Number
+        D = zeros(uEltypeNoUnits, max_order + 2)
+        prevD = zeros(uEltypeNoUnits, max_order + 2)
+    else
+        D = [zero(u) .* zero(uEltypeNoUnits) for _ in 1:(max_order + 2)]
+        prevD = [zero(u) .* zero(uEltypeNoUnits) for _ in 1:(max_order + 2)]
+    end
     EEst1 = tTypeNoUnits(1)
     EEst2 = tTypeNoUnits(1)
 
@@ -497,11 +500,9 @@ function alg_cache(
     ϕ = zero(u)
     u₀ = zero(u)
     dtprev = one(dt)
-    D = similar(u, uEltypeNoUnits, length(u), max_order + 2)
-    recursivefill!(D, zero(uEltypeNoUnits))
-    Dtmp = similar(D)
-    recursivefill!(Dtmp, zero(uEltypeNoUnits))
-    prevD = zero(similar(D))
+    D = [zero(similar(u, uEltypeNoUnits)) for _ in 1:(max_order + 2)]
+    Dtmp = [zero(similar(u, uEltypeNoUnits)) for _ in 1:(max_order + 2)]
+    prevD = [zero(similar(u, uEltypeNoUnits)) for _ in 1:(max_order + 2)]
     atmp = zero(similar(u, uEltypeNoUnits))
     atmpm1 = zero(similar(u, uEltypeNoUnits))
     atmpp1 = zero(similar(u, uEltypeNoUnits))
@@ -586,7 +587,7 @@ end
 
 @cache mutable struct FBDFConstantCache{
         MO, N, tsType, tType, uType, uuType, coeffType,
-        EEstType, rType, wType,
+        EEstType, rType, wType, staldType,
     } <:
     OrdinaryDiffEqConstantCache
     nlsolver::N
@@ -609,6 +610,7 @@ end
     r::rType
     weights::wType
     iters_from_event::Int
+    stald::staldType
 end
 
 function alg_cache(
@@ -635,12 +637,15 @@ function alg_cache(
     ts = zero(Vector{typeof(t)}(undef, max_order + 2)) #ts is the successful past points, it will be updated after successful step
     ts_tmp = similar(ts)
 
-    u_history = zero(Matrix{eltype(u)}(undef, length(u), max_order + 2))
+    if u isa Number
+        u_history = zeros(eltype(u), max_order + 2)
+        u_corrector = zeros(eltype(u), max_order + 2)
+    else
+        u_history = [zero(u) for _ in 1:(max_order + 2)]
+        u_corrector = [zero(u) for _ in 1:(max_order + 2)]
+    end
     order = 1
     prev_order = 1
-    u_corrector = similar(u_history)
-    recursivefill!(u_corrector, zero(eltype(u)))
-    recursivefill!(u_history, zero(eltype(u_history)))
     terkm2 = tTypeNoUnits(1)
     terkm1 = tTypeNoUnits(1)
     terk = tTypeNoUnits(1)
@@ -654,16 +659,28 @@ function alg_cache(
     t_old = zero(t)
     iters_from_event = 0
 
+    T_stald = real(uBottomEltypeNoUnits)
+    stald = StabilityLimitDetectionState(
+        T_stald;
+        enabled = alg.stald,
+        rrcut = alg.stald_rrcut,
+        vrrtol = alg.stald_vrrtol,
+        vrrt2 = alg.stald_vrrt2,
+        sqtol = alg.stald_sqtol,
+        rrtol = alg.stald_rrtol,
+        tiny = alg.stald_tiny,
+    )
+
     return FBDFConstantCache(
         nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, terkm2,
-        terkm1, terk, terkp1, r, weights, iters_from_event
+        terkm1, terk, terkp1, r, weights, iters_from_event, stald
     )
 end
 
 @cache mutable struct FBDFCache{
         MO, N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
-        coeffType, EEstType, rType, wType, StepLimiter,
+        coeffType, EEstType, rType, wType, StepLimiter, fdWeightsType, staldType,
     } <:
     BDFMutableCache
     fsalfirst::rateType
@@ -695,6 +712,8 @@ end
     iters_from_event::Int
     dense::Vector{uType}
     step_limiter!::StepLimiter
+    fd_weights::fdWeightsType
+    stald::staldType
 end
 
 @truncate_stacktrace FBDFCache 1
@@ -723,13 +742,11 @@ function alg_cache(
         Int64(137) // 60 -5 5 -Int64(10) // 3 Int64(5) // 4 -Int64(1) // 5
     ]
     ts = Vector{typeof(t)}(undef, max_order + 2) #ts is the successful past points, it will be updated after successful step
-    u_history = Matrix{eltype(u)}(undef, length(u), max_order + 2)
+    u_history = [zero(u) for _ in 1:(max_order + 2)]
     order = 1
     prev_order = 1
-    u_corrector = similar(u_history)
+    u_corrector = [zero(u) for _ in 1:(max_order + 2)]
     recursivefill!(ts, zero(t))
-    recursivefill!(u_corrector, zero(eltype(u)))
-    recursivefill!(u_history, zero(eltype(u_history)))
     terkm2 = tTypeNoUnits(1)
     terkm1 = tTypeNoUnits(1)
     terk = tTypeNoUnits(1)
@@ -753,12 +770,25 @@ function alg_cache(
     ts_tmp = similar(ts)
     iters_from_event = 0
 
-    dense = [zero(u) for _ in 1:(2 * (max_order + 1))]
+    dense = [zero(u) for _ in 1:(2 * (max_order + 1))]  # first half for integrator.k, second half as scratch
+
+    fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
+    T_stald = real(uBottomEltypeNoUnits)
+    stald = StabilityLimitDetectionState(
+        T_stald;
+        enabled = alg.stald,
+        rrcut = alg.stald_rrcut,
+        vrrtol = alg.stald_vrrtol,
+        vrrt2 = alg.stald_vrrt2,
+        sqtol = alg.stald_sqtol,
+        rrtol = alg.stald_rrtol,
+        tiny = alg.stald_tiny,
+    )
 
     return FBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event, dense, alg.step_limiter!
+        iters_from_event, dense, alg.step_limiter!, fd_weights, stald
     )
 end

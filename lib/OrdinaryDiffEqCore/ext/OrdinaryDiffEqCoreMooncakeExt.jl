@@ -11,7 +11,7 @@ Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.increment_nf!), Vararg,
 }
 Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
-    typeof(OrdinaryDiffEqCore.fixed_t_for_floatingpoint_error!), Vararg,
+    typeof(OrdinaryDiffEqCore.fixed_t_for_tstop_error!), Vararg,
 }
 Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.increment_accept!), Vararg,

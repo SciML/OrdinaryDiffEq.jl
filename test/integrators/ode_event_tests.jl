@@ -188,15 +188,15 @@ sol = solve(prob, BS3(), callback = callback)
 sol33 = solve(prob, Vern7(), callback = callback)
 sol33 = solve(prob, Vern7(), callback = vcb)
 
-bounced = ODEProblem(f, sol.u[8], (0.0, 1.0))
-sol_bounced = solve(bounced, Vern6(), callback = callback, dt = sol.t[9] - sol.t[8])
+bounced = ODEProblem(f, sol.u[end - 1], (0.0, 1.0))
+sol_bounced = solve(bounced, Vern6(), callback = callback, dt = sol.t[end] - sol.t[end - 1])
 #plot(sol_bounced,denseplot=true)
 sol_bounced(0.04) # Complete density
 @test maximum(
     maximum.(
         map(
-            (i) -> sol.k[9][i] - sol_bounced.k[2][i],
-            1:length(sol.k[9])
+            (i) -> sol.k[end][i] - sol_bounced.k[2][i],
+            1:length(sol.k[end])
         )
     )
 ) ==

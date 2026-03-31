@@ -1,0 +1,49 @@
+name = "StochasticDiffEqLowOrder"
+uuid = "d15fe365-ce7f-450a-828a-7985bd5b681b"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
+version = "1.0.0"
+
+[deps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
+
+[extras]
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+
+[compat]
+DiffEqBase = "6.187"
+DiffEqNoiseProcess = "5.13"
+LinearAlgebra = "1.10"
+MuladdMacro = "0.2.4"
+OrdinaryDiffEqCore = "3.22"
+Pkg = "1"
+RecursiveArrayTools = "2, 3"
+Reexport = "0.2, 1.0"
+SciMLBase = "2.146"
+StaticArrays = "1.9.14"
+StochasticDiffEqCore = "1"
+Test = "<0.0.1, 1"
+SafeTestsets = "0.1.0"
+julia = "1.10"
+
+[targets]
+test = ["Test", "Pkg", "SafeTestsets"]
+
+[sources.OrdinaryDiffEqCore]
+path = "../OrdinaryDiffEqCore"
+
+[sources.StochasticDiffEqCore]
+path = "../StochasticDiffEqCore"

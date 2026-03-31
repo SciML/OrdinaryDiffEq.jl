@@ -46,16 +46,16 @@ function DiffEqBase.prepare_alg(
         alg::Union{
             OrdinaryDiffEqAdaptiveImplicitAlgorithm{
                 CS, AD,
-                FDT,
+                FDT, ST,
             },
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT},
-            DAEAlgorithm{CS, AD, FDT},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT},
+            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST},
+            DAEAlgorithm{CS, AD, FDT, ST},
+            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST},
         },
         u0::AbstractArray{T},
         p, prob
-    ) where {CS, AD, FDT, T}
-    prepped_AD = prepare_ADType(alg_autodiff(alg), prob, u0, p, standardtag(alg))
+    ) where {CS, AD, FDT, ST, T}
+    prepped_AD = prepare_ADType(alg_autodiff(alg), prob, u0, p, Val{ST}())
 
     sparse_prepped_AD = prepare_user_sparsity(prepped_AD, prob)
 
@@ -82,13 +82,11 @@ function prepare_ADType(autodiff_alg::AutoSparse, prob, u0, p, standardtag)
     )
 end
 
-function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
-    tag = if standardtag
-        ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u0))
-    else
-        nothing
-    end
+function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag::Bool)
+    return prepare_ADType(autodiff_alg, prob, u0, p, Val(standardtag))
+end
 
+function _prepare_ADType_fwd(autodiff_alg::AutoForwardDiff, prob, u0, tag)
     T = eltype(u0)
 
     fwd_cs = OrdinaryDiffEqCore._get_fwd_chunksize_int(autodiff_alg)
@@ -106,6 +104,15 @@ function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag)
     else
         return AutoForwardDiff{cs}(tag)
     end
+end
+
+function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, ::Val{true})
+    tag = ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u0))
+    return _prepare_ADType_fwd(autodiff_alg, prob, u0, tag)
+end
+
+function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, ::Val{false})
+    return _prepare_ADType_fwd(autodiff_alg, prob, u0, nothing)
 end
 
 function prepare_ADType(alg::AutoFiniteDiff, prob, u0, p, standardtag)

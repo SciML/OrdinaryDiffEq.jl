@@ -117,13 +117,21 @@ function _ode_addsteps!(
             ks = Base.setindex(ks, _reshape(W \ _vec(linsolve_tmp), axes(uprev)), stage)
         end
 
-        for j in 1:size(H, 1)
-            kj = zero(ks[1])
-            # Last stage affect's ks for Rodas5,5P,6P
-            for i in 1:num_stages
-                kj = @.. kj + H[j, i] * ks[i]
+        if size(H, 1) > 0
+            for j in 1:size(H, 1)
+                kj = zero(ks[1])
+                # Last stage affect's ks for Rodas5,5P,6P
+                for i in 1:num_stages
+                    kj = @.. kj + H[j, i] * ks[i]
+                end
+                copyat_or_push!(k, j, kj)
             end
-            copyat_or_push!(k, j, kj)
+        else
+            # Methods with empty H (Rodas3, ROS34PW3, etc.) have no stiff-aware
+            # dense output coefficients. Store f₀ and f₁ for standard Hermite
+            # interpolation (same as the generic _ode_addsteps! fallback).
+            copyat_or_push!(k, 1, f(uprev, p, t))
+            copyat_or_push!(k, 2, f(u, p, t + dt))
         end
     end
     return nothing
@@ -135,7 +143,10 @@ function _ode_addsteps!(
         force_calc_end = false
     )
     if length(k) < 2 || always_calc_begin
-        (; du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
+        (;
+            du, du1, du2, tmp, ks, dT, J, W, uf, tf,
+            linsolve_tmp, jac_config, fsalfirst, weight,
+        ) = cache
         (; A, C, gamma, c, d, H) = cache.tab
 
         # Assignments
@@ -188,10 +199,94 @@ function _ode_addsteps!(
             @.. $(_vec(ks[stage])) = -linres.u
         end
 
+        if size(H, 1) > 0
+            for j in 1:size(H, 1)
+                copyat_or_push!(k, j, zero(du))
+                # Last stage affect's ks for Rodas5,5P,6P
+                for i in 1:length(ks)
+                    @.. k[j] += H[j, i] * _vec(ks[i])
+                end
+            end
+        else
+            # Methods with empty H (Rodas3, ROS34PW3, etc.) have no stiff-aware
+            # dense output coefficients. Store f₀ and f₁ for standard Hermite
+            # interpolation (same as the generic _ode_addsteps! fallback).
+            rtmp = similar(u, eltype(eltype(k)))
+            f(rtmp, uprev, p, t)
+            copyat_or_push!(k, 1, rtmp)
+            f(rtmp, u, p, t + dt)
+            copyat_or_push!(k, 2, rtmp)
+        end
+    end
+    return nothing
+end
+
+# Tsit5DA: explicit RK stages for addsteps (pure ODE only, ignores algebraic coupling)
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::HybridExplicitImplicitConstantCache,
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false
+    )
+    if length(k) < size(cache.tab.H, 1) || always_calc_begin
+        (; tf, uf) = cache
+        (; A, C, gamma, b, c, d, H) = cache.tab
+
+        num_stages = size(A, 1)
+
+        # Compute explicit RK stages
+        du = f(uprev, p, t)
+        ks1 = dt .* du
+        ks = ntuple(Returns(ks1), Val(12))
+        for stage in 2:num_stages
+            u_stage = uprev
+            for i in 1:(stage - 1)
+                u_stage = @.. u_stage + A[stage, i] * ks[i]
+            end
+            du = f(u_stage, p, t + c[stage] * dt)
+            ks = Base.setindex(ks, dt .* du, stage)
+        end
+
+        # Dense output
+        for j in 1:size(H, 1)
+            kj = zero(ks[1])
+            for i in 1:num_stages
+                kj = @.. kj + H[j, i] * ks[i]
+            end
+            copyat_or_push!(k, j, kj)
+        end
+    end
+    return nothing
+end
+
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::HybridExplicitImplicitCache,
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false
+    )
+    if length(k) < size(cache.tab.H, 1) || always_calc_begin
+        (; du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
+        (; A, C, gamma, b, c, d, H) = cache.tab
+
+        num_stages = size(A, 1)
+        mass_matrix = f.mass_matrix
+
+        # Compute explicit RK stages
+        f(fsalfirst, uprev, p, t)
+        @.. ks[1] = dt * fsalfirst
+
+        for stage in 2:num_stages
+            tmp .= uprev
+            for i in 1:(stage - 1)
+                @.. tmp += A[stage, i] * ks[i]
+            end
+            f(du, tmp, p, t + c[stage] * dt)
+            @.. ks[stage] = dt * du
+        end
+
+        # Dense output
         for j in 1:size(H, 1)
             copyat_or_push!(k, j, zero(du))
-            # Last stage affect's ks for Rodas5,5P,6P
-            for i in 1:length(ks)
+            for i in 1:num_stages
                 @.. k[j] += H[j, i] * _vec(ks[i])
             end
         end

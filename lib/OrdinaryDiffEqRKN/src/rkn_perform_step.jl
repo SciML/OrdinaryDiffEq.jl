@@ -987,8 +987,8 @@ function initialize!(integrator, cache::DPRKN6Cache)
     integrator.k[1] = ArrayPartition(cache.fsalfirst.x[1], cache.k2)
     integrator.k[2] = ArrayPartition(cache.k3, cache.k4)
     integrator.k[3] = ArrayPartition(cache.k5, cache.k6)
-    integrator.f.f1(integrator.fsallast.x[1], duprev, uprev, integrator.p, integrator.t)
-    integrator.f.f2(integrator.fsallast.x[2], duprev, uprev, integrator.p, integrator.t)
+    integrator.f.f1(integrator.fsalfirst.x[1], duprev, uprev, integrator.p, integrator.t)
+    integrator.f.f2(integrator.fsalfirst.x[2], duprev, uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return integrator.stats.nf2 += 1
 end
@@ -1005,24 +1005,24 @@ end
 
     @.. broadcast = false ku = uprev + dt * (c1 * duprev + dt * a21 * k1)
 
-    f.f1(k2, du, ku, p, t + dt * c1)
+    f.f1(k2, duprev, ku, p, t + dt * c1)
     @.. broadcast = false ku = uprev + dt * (c2 * duprev + dt * (a31 * k1 + a32 * k2))
 
-    f.f1(k3, du, ku, p, t + dt * c2)
+    f.f1(k3, duprev, ku, p, t + dt * c2)
     @.. broadcast = false ku = uprev +
         dt * (c3 * duprev + dt * (a41 * k1 + a42 * k2 + a43 * k3))
 
-    f.f1(k4, du, ku, p, t + dt * c3)
+    f.f1(k4, duprev, ku, p, t + dt * c3)
     @.. broadcast = false ku = uprev +
         dt *
         (c4 * duprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4))
 
-    f.f1(k5, du, ku, p, t + dt * c4)
+    f.f1(k5, duprev, ku, p, t + dt * c4)
     @.. broadcast = false ku = uprev +
         dt *
         (c5 * duprev + dt * (a61 * k1 + a63 * k3 + a64 * k4 + a65 * k5)) # no a62
 
-    f.f1(k6, du, ku, p, t + dt * c5)
+    f.f1(k6, duprev, ku, p, t + dt * c5)
 
     @.. broadcast = false u = uprev +
         dt * (duprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5)) # b1 -- b5, no b2

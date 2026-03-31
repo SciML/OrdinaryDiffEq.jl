@@ -41,8 +41,33 @@ function SciMLBase.__init(
         prob::Union{
             SciMLBase.AbstractODEProblem,
             SciMLBase.AbstractDAEProblem,
+            SciMLBase.AbstractRODEProblem,
+            SciMLBase.AbstractJumpProblem,
         },
-        alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
+        alg::Union{
+            OrdinaryDiffEqAlgorithm,
+            DAEAlgorithm,
+            StochasticDiffEqAlgorithm,
+            StochasticDiffEqRODEAlgorithm,
+        },
+        timeseries_init = (),
+        ts_init = (),
+        ks_init = ();
+        kwargs...
+    )
+    return _ode_init(prob, alg, timeseries_init, ts_init, ks_init; kwargs...)
+end
+
+"""
+    _ode_init(prob, alg, timeseries_init=(), ts_init=(), ks_init=(); kwargs...)
+
+Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
+separated from `__init` so that SDE packages can call it directly, bypassing
+method dispatch (which would otherwise re-enter SDE's more specific `__init`).
+"""
+function _ode_init(
+        prob,
+        alg,
         timeseries_init = (),
         ts_init = (),
         ks_init = ();
@@ -103,31 +128,50 @@ function SciMLBase.__init(
         initializealg = DefaultInit(),
         rng = nothing,
         disco_probs = nothing,
+        # SDE/RODE fields: accepted here so that SDE packages can delegate to
+        # _ode_init and construct an ODEIntegrator with noise populated.
+        save_noise = false,
+        delta = nothing,
+        W = nothing,
+        P = nothing,
+        sqdt = nothing,
+        noise = nothing,
+        c = nothing,
+        rate_constants = nothing,
+        # Pre-built cache for SDE delegation (skip alg_cache call)
+        _cache = nothing,
+        # Pre-built u/uprev for SDE delegation (cache holds references to these)
+        _u = nothing,
+        _uprev = nothing,
+        seed = UInt64(0),
         kwargs...
     )
-    if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
-        error("You cannot use an ODE Algorithm with a DAEProblem")
-    end
-
-    if prob isa SciMLBase.AbstractODEProblem && alg isa DAEAlgorithm
-        error("You cannot use an DAE Algorithm with a ODEProblem")
-    end
-
-    if prob isa SciMLBase.ODEProblem
-        if !(prob.f isa SciMLBase.DynamicalODEFunction) && alg isa PartitionedAlgorithm
-            error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
+    # ODE/DAE-specific validation (skip for RODE/SDE problems)
+    if !(prob isa SciMLBase.AbstractRODEProblem)
+        if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
+            error("You cannot use an ODE Algorithm with a DAEProblem")
         end
-    end
 
-    if prob.f isa DynamicalODEFunction && prob.f.mass_matrix isa Tuple
-        if any(mm != I for mm in prob.f.mass_matrix)
+        if prob isa SciMLBase.AbstractODEProblem && alg isa DAEAlgorithm
+            error("You cannot use an DAE Algorithm with a ODEProblem")
+        end
+
+        if prob isa SciMLBase.ODEProblem
+            if !(prob.f isa SciMLBase.DynamicalODEFunction) && alg isa PartitionedAlgorithm
+                error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
+            end
+        end
+
+        if prob.f isa DynamicalODEFunction && prob.f.mass_matrix isa Tuple
+            if any(mm != I for mm in prob.f.mass_matrix)
+                error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
+            end
+        elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
+                !(prob isa SciMLBase.AbstractDAEProblem) &&
+                !is_mass_matrix_alg(alg) &&
+                prob.f.mass_matrix != I
             error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
         end
-    elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
-            !(prob isa SciMLBase.AbstractDAEProblem) &&
-            !is_mass_matrix_alg(alg) &&
-            prob.f.mass_matrix != I
-        error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
     end
 
     verbose_spec = _process_verbose_param(verbose)
@@ -167,28 +211,24 @@ function SciMLBase.__init(
 
     t = tspan[1]
 
-    if (
-            (
-                (
-                    !(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
-                        !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
-                        !(alg isa DAEAlgorithm)
-                ) || !adaptive || !isadaptive(alg)
-            ) &&
-                isnothing(dt) && isempty(tstops)
-        ) && dt_required(alg)
+    if (!isadaptive(alg) || !adaptive) &&
+            isnothing(dt) && isempty(tstops) && dt_required(alg)
         throw(ArgumentError("Fixed timestep methods require a choice of dt or choosing the tstops"))
     end
     if !isadaptive(alg) && adaptive
         throw(ArgumentError("Fixed timestep methods can not be run with adaptive=true"))
     end
 
-    isdae = alg isa DAEAlgorithm || (
-        !(prob isa SciMLBase.AbstractDiscreteProblem) &&
-            prob.f.mass_matrix != I &&
-            !(prob.f.mass_matrix isa Tuple) &&
-            ArrayInterface.issingular(prob.f.mass_matrix)
-    )
+    isdae = if !isnothing(W)
+        false # RODE/SDE — never DAE
+    else
+        alg isa DAEAlgorithm || (
+            !(prob isa SciMLBase.AbstractDiscreteProblem) &&
+                prob.f.mass_matrix != I &&
+                !(prob.f.mass_matrix isa Tuple) &&
+                ArrayInterface.issingular(prob.f.mass_matrix)
+        )
+    end
     if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
         auto = alg.choice_function
         _alg = CompositeAlgorithm(
@@ -273,6 +313,11 @@ function SciMLBase.__init(
         u = Float64[]
     end
 
+    # SDE delegation: use pre-built u if provided (cache holds references to it)
+    if _u !== nothing
+        u = _u
+    end
+
     if _alg isa DAEAlgorithm
         if !isnothing(aliases.alias_du0) && aliases.alias_du0
             du = prob.du0
@@ -292,7 +337,7 @@ function SciMLBase.__init(
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(one(tType))
 
-    if prob isa SciMLBase.AbstractDiscreteProblem
+    if prob isa SciMLBase.AbstractDiscreteProblem && abstol === nothing
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -312,7 +357,7 @@ function SciMLBase.__init(
         abstol_internal = real.(abstol)
     end
 
-    if prob isa SciMLBase.AbstractDiscreteProblem
+    if prob isa SciMLBase.AbstractDiscreteProblem && reltol === nothing
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -366,9 +411,9 @@ function SciMLBase.__init(
     end
 
     if tstops isa AbstractArray || tstops isa Tuple || tstops isa Number
-        _tstops = nothing
+        _tstops_cache = tstops
     else
-        _tstops = tstops
+        _tstops_cache = tstops
         tstops = ()
     end
     tstops_internal = initialize_tstops(tType, tstops, d_discontinuities, tspan)
@@ -424,7 +469,11 @@ function SciMLBase.__init(
 
     ts = ts_init === () ? tType[] : convert(Vector{tType}, ts_init)
     ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype}, ks_init)
-    alg_choice = _alg isa CompositeAlgorithm ? Int[] : nothing
+    alg_choice = (
+            _alg isa CompositeAlgorithm ||
+            _alg isa StochasticDiffEqCompositeAlgorithm ||
+            _alg isa StochasticDiffEqRODECompositeAlgorithm
+        ) ? Int[] : nothing
 
     if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
         if isnothing(dt)
@@ -470,6 +519,10 @@ function SciMLBase.__init(
         # some memory by aliasing `uprev = u`, e.g. for "2N" low storage methods.
         uprev = u
     end
+    # SDE delegation: use pre-built uprev if provided (cache holds references to it)
+    if _uprev !== nothing
+        uprev = _uprev
+    end
     if allow_extrapolation
         uprev2 = recursivecopy(u)
     else
@@ -482,7 +535,9 @@ function SciMLBase.__init(
     else
         dt
     end
-    if prob isa DAEProblem
+    if _cache !== nothing
+        cache = _cache
+    elseif prob isa DAEProblem
         cache = alg_cache(
             _alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
             uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, _dt,
@@ -579,8 +634,9 @@ function SciMLBase.__init(
         typeof(tstops_internal),
         typeof(d_discontinuities_internal), typeof(userdata),
         typeof(save_idxs),
-        typeof(maxiters), typeof(tstops),
+        typeof(maxiters), typeof(_tstops_cache),
         typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
+        typeof(delta),
     }(
         maxiters, save_everystep,
         adaptive, abstol_internal,
@@ -604,7 +660,7 @@ function SciMLBase.__init(
         save_idxs, tstops_internal,
         saveat_internal,
         d_discontinuities_internal,
-        tstops, saveat,
+        _tstops_cache, saveat,
         d_discontinuities,
         userdata, progress,
         progress_steps,
@@ -612,9 +668,9 @@ function SciMLBase.__init(
         progress_message,
         progress_id,
         timeseries_errors,
-        dense_errors, dense,
+        dense_errors, delta, dense,
         save_on, save_start,
-        save_end, save_discretes, save_end_user,
+        save_end, save_noise, save_discretes, save_end_user,
         callbacks_internal,
         isoutofdomain,
         unstable_check,
@@ -624,17 +680,38 @@ function SciMLBase.__init(
     )
 
     stats = SciMLBase.DEStats(0)
-    differential_vars = prob isa DAEProblem ? prob.differential_vars :
+    differential_vars = if prob isa DAEProblem
+        prob.differential_vars
+    elseif !isnothing(W)
+        nothing
+    else
         get_differential_vars(f, u)
+    end
+
+    # SDE/RODE solvers never populate derivative stages (ks) — RODESolution has
+    # no .k field, so _has_ks returns false and save_dense_at_t! is a no-op.
+    # Force dense=false so ode_interpolation uses linear interpolation instead
+    # of trying to access the empty ks vector.
+    if !isnothing(W)
+        dense = false
+    end
 
     id = InterpolationData(
         f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
     )
-    sol = SciMLBase.build_solution(
-        prob, _alg, ts, timeseries,
-        dense = dense, k = ks, interp = id, alg_choice = alg_choice,
-        calculate_error = false, stats = stats, saved_subsystem = saved_subsystem
-    )
+
+    _sol_kwargs = if !isnothing(W)
+        (;
+            W = W, seed = seed, interp = id, dense = dense, alg_choice = alg_choice,
+            calculate_error = false, stats = stats, saved_subsystem = saved_subsystem,
+        )
+    else
+        (;
+            dense = dense, k = ks, interp = id, alg_choice = alg_choice,
+            calculate_error = false, stats = stats, saved_subsystem = saved_subsystem,
+        )
+    end
+    sol = SciMLBase.build_solution(prob, _alg, ts, timeseries; _sol_kwargs...)
 
     FType = typeof(f)
     SolType = typeof(sol)
@@ -652,6 +729,8 @@ function SciMLBase.__init(
     u_modified = false
     EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
+    next_step_tstop = false
+    tstop_target = zero(t)
     isout = false
     accept_step = false
     force_stepfail = false
@@ -669,10 +748,11 @@ function SciMLBase.__init(
     success_iter = 0
     erracc = QT(1)
     dtacc = tType(1)
-    reinitiailize = true
+    reinitialize = true
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
-    fsalfirst, fsallast = get_fsalfirstlast(cache, rate_prototype)
+    fsalfirst, fsallast = _cache !== nothing ? (nothing, nothing) :
+        get_fsalfirstlast(cache, rate_prototype)
 
     _rng = rng === nothing ? Random.default_rng() : rng
     num_probs = 0
@@ -717,6 +797,8 @@ function SciMLBase.__init(
         typeof(last_event_error), typeof(callback_cache),
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
+        typeof(W), typeof(P), typeof(sqdt),
+        typeof(noise), typeof(c), typeof(rate_constants),
     }(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
@@ -732,14 +814,17 @@ function SciMLBase.__init(
         callback_cache,
         kshortsize, force_stepfail,
         last_stepfail,
-        just_hit_tstop, do_error_check,
+        just_hit_tstop, next_step_tstop, tstop_target, do_error_check,
         event_last_time,
         vector_event_last_time,
         last_event_error, accept_step,
         isout, reeval_fsal,
-        u_modified, reinitiailize, isdae,
+        u_modified, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast, _rng, disco_probs
+        fsalfirst, fsallast, _rng, disco_probs,
+        fsalfirst, fsallast, _rng,
+        W, P, sqdt,
+        noise, c, rate_constants, QT(1)
     )
     #if (num_probs > 0)
     integrator_ref[] = integrator
@@ -759,10 +844,14 @@ function SciMLBase.__init(
             # N.B.: integrator.u can be modified by initialized_dae!
             if save_idxs === nothing
                 copyat_or_push!(timeseries, 1, integrator.u)
-                copyat_or_push!(ks, 1, [rate_prototype])
+                if isnothing(W)
+                    copyat_or_push!(ks, 1, [rate_prototype])
+                end
             else
                 copyat_or_push!(timeseries, 1, integrator.u[save_idxs], Val{false})
-                copyat_or_push!(ks, 1, [ks_prototype])
+                if isnothing(W)
+                    copyat_or_push!(ks, 1, [ks_prototype])
+                end
             end
         else
             integrator.saveiter = 0 # Starts at 0 so first save is at 1
@@ -775,37 +864,55 @@ function SciMLBase.__init(
         if _alg isa OrdinaryDiffEqCompositeAlgorithm
             # in case user mixes adaptive and non-adaptive algorithms
             ensure_behaving_adaptivity!(integrator, integrator.cache)
-
-            if save_start
-                # Loop to get all of the extra possible saves in callback initialization
-                for i in 1:(integrator.saveiter)
-                    copyat_or_push!(alg_choice, i, integrator.cache.current)
-                end
+        end
+        if alg_choice !== nothing && save_start
+            # Loop to get all of the extra possible saves in callback initialization
+            for i in 1:(integrator.saveiter)
+                copyat_or_push!(alg_choice, i, integrator.cache.current)
             end
         end
     end
 
-    if _tstops !== nothing
-        tstops = _tstops(parameter_values(integrator), prob.tspan)
+    if !(_tstops_cache isa AbstractArray || _tstops_cache isa Tuple || _tstops_cache isa Number)
+        tstops = _tstops_cache(parameter_values(integrator), prob.tspan)
         for tstop in tstops
             add_tstop!(integrator, tstop)
         end
     end
 
     handle_dt!(integrator, dt)
+
+    # Noise process initialization for SDE/RODE integrators
+    if !isnothing(integrator.W)
+        modify_dt_for_tstops!(integrator)
+        integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
+        integrator.W.dt = integrator.dt
+        !isnothing(integrator.P) && (integrator.P.dt = integrator.dt)
+    end
+
     return integrator
 end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
     @inbounds while !isempty(integrator.opts.tstops)
-        while integrator.tdir * integrator.t < first(integrator.opts.tstops)
+        first_tstop = first(integrator.opts.tstops)
+        while integrator.tdir * integrator.t < first_tstop
             loopheader!(integrator)
             if integrator.do_error_check && check_error!(integrator) != ReturnCode.Success
                 return integrator.sol
             end
-            perform_step!(integrator, integrator.cache)
+
+            # Use special tstop handling if flag is set, otherwise normal stepping
+            if integrator.next_step_tstop
+                handle_tstop_step!(integrator)
+            else
+                perform_step!(integrator, integrator.cache)
+            end
+
+            should_exit = integrator.next_step_tstop
+
             loopfooter!(integrator)
-            if isempty(integrator.opts.tstops)
+            if isempty(integrator.opts.tstops) || should_exit
                 break
             end
         end
@@ -814,6 +921,8 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
     postamble!(integrator)
 
     f = integrator.sol.prob.f
+    # SDE split problems may store f as a Tuple; unwrap to check for analytic solution
+    f = f isa Tuple ? f[1] : f
 
     if SciMLBase.has_analytic(f)
         SciMLBase.calculate_solution_errors!(
@@ -878,32 +987,43 @@ end
 
     for t in tstops
         tdir_t = tdir * t
-        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+        tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end
     for t in d_discontinuities
         tdir_t = tdir * t
-        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+        tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end
     push!(tstops_internal, tdir_tf)
 
     return tstops_internal
 end
 
-function reinit_tstops!(::Type{T}, tstops_internal, tstops, d_discontinuities, tspan) where {T}
+function reinit_tstops!(
+        ::Type{T}, tstops_internal, tstops, d_discontinuities, tspan; p = nothing
+    ) where {T}
     empty!(tstops_internal)
+
+    # Evaluate callable tstops
+    _tstops = if tstops isa AbstractArray || tstops isa Tuple || tstops isa Number
+        tstops
+    elseif p !== nothing
+        tstops(p, tspan)
+    else
+        ()
+    end
 
     t0, tf = tspan
     tdir = sign(tf - t0)
     tdir_t0 = tdir * t0
     tdir_tf = tdir * tf
 
-    for t in tstops
+    for t in _tstops
         tdir_t = tdir * t
-        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+        tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end
     for t in d_discontinuities
         tdir_t = tdir * t
-        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+        tdir_t0 < tdir_t < tdir_tf && push!(tstops_internal, tdir_t)
     end
     return push!(tstops_internal, tdir_tf)
 end

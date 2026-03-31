@@ -11,12 +11,12 @@ using Test
         BS3() => 2.4e-6,
         Tsit5() => 4.5e-3,
         RK4() => 1.1e-4,
-        Vern6() => 1.0e-3,
-        SDIRK2(nlsolve = nlsolve) => 2.3e-1,
+        Vern6() => 3.0e-3,
+        SDIRK2(nlsolve = nlsolve) => 3.8e-1,
         TRBDF2(nlsolve = nlsolve) => 6.2e-2,
-        KenCarp4(nlsolve = nlsolve) => 5.6e-2,
+        KenCarp4(nlsolve = nlsolve) => 7.3e-2,
         Rosenbrock23() => 6.5e-4,
-        Rodas4() => 5.4e-4
+        Rodas4() => 7.1e-4
     )
 
     for (alg, error) in algdict

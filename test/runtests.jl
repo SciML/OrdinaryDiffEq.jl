@@ -11,12 +11,6 @@ function activate_downstream_env()
     return Pkg.instantiate()
 end
 
-function activate_gpu_env()
-    Pkg.activate("gpu")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
-end
-
 function activate_odeinterface_env()
     Pkg.activate("odeinterface")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
@@ -38,14 +32,44 @@ end
 #Start Test Script
 
 @time begin
-    # Handle sublibrary QA groups (e.g., OrdinaryDiffEqBDF_QA)
-    is_qa_group = endswith(GROUP, "_QA")
-    base_group = is_qa_group ? GROUP[1:(end - 3)] : GROUP
+    # Detect sublibrary test groups.
+    # GROUP can be a bare sublibrary name (Core test group) or
+    # "{sublibrary}_{TEST_GROUP}" for any custom group (e.g., QA, GPU, etc.).
+    # Sublibraries declare their groups in test/test_groups.toml.
+    lib_dir = joinpath(dirname(@__DIR__), "lib")
 
-    if contains(base_group, "OrdinaryDiffEq") || base_group == "ImplicitDiscreteSolve" || base_group == "SimpleImplicitDiscreteSolve"
-        Pkg.activate(joinpath(dirname(@__DIR__), "lib", base_group))
-        # Set QA_ONLY env var to tell sublibrary tests whether to run only QA tests
-        withenv("ODEDIFFEQ_TEST_GROUP" => (is_qa_group ? "QA" : "FUNCTIONAL")) do
+    # Check if GROUP matches a sublibrary, possibly with a _SUFFIX for the test group.
+    # Scan underscores right-to-left to find the longest matching sublibrary prefix.
+    function _detect_sublibrary_group(group, lib_dir)
+        isdir(joinpath(lib_dir, group)) && return (group, "Core")
+        for i in length(group):-1:1
+            if group[i] == '_' && isdir(joinpath(lib_dir, group[1:(i - 1)]))
+                return (group[1:(i - 1)], group[(i + 1):end])
+            end
+        end
+        return (group, "Core")
+    end
+    base_group, test_group = _detect_sublibrary_group(GROUP, lib_dir)
+
+    if isdir(joinpath(lib_dir, base_group))
+        Pkg.activate(joinpath(lib_dir, base_group))
+        # On Julia < 1.11, the [sources] section in Project.toml is not supported.
+        # Manually Pkg.develop local path dependencies so CI tests the PR branch code.
+        if VERSION < v"1.11.0-DEV.0"
+            toml = Pkg.TOML.parsefile(joinpath(lib_dir, base_group, "Project.toml"))
+            if haskey(toml, "sources")
+                for (dep_name, source_spec) in toml["sources"]
+                    if source_spec isa Dict && haskey(source_spec, "path")
+                        dep_path = normpath(joinpath(lib_dir, base_group, source_spec["path"]))
+                        if isdir(dep_path)
+                            @info "Developing local source dependency" dep_name dep_path
+                            Pkg.develop(Pkg.PackageSpec(path = dep_path))
+                        end
+                    end
+                end
+            end
+        end
+        withenv("ODEDIFFEQ_TEST_GROUP" => test_group) do
             Pkg.test(base_group, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
         end
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
@@ -59,7 +83,6 @@ end
         @time @safetestset "Backwards Tests" include("interface/ode_backwards_test.jl")
         @time @safetestset "Initdt Tests" include("interface/ode_initdt_tests.jl")
         @time @safetestset "Linear Tests" include("interface/ode_twodimlinear_tests.jl")
-        @time @safetestset "Differentiation Trait Tests" include("interface/differentiation_traits_tests.jl")
         @time @safetestset "Inf Tests" include("interface/inf_handling.jl")
         @time @safetestset "saveat Tests" include("interface/ode_saveat_tests.jl")
         @time @safetestset "save_idxs Tests" include("interface/ode_saveidxs_tests.jl")
@@ -80,19 +103,14 @@ end
         @time @safetestset "Algebraic Interpolation Tests" include("interface/algebraic_interpolation.jl")
         @time @safetestset "Interpolation and Cache Stripping Tests" include("interface/ode_strip_test.jl")
         @time @safetestset "Aliasing Tests" include("interface/aliasing_tests.jl")
+        @time @safetestset "Solution Memory Release" include("interface/solution_memory_tests.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
         #@time @safetestset "No Recompile Tests" include("interface/norecompile.jl") # doesn't work on CI?
-        @time @safetestset "Linear Nonlinear Solver Tests" include("interface/linear_nonlinear_tests.jl")
-        @time @safetestset "Linear Solver Tests" include("interface/linear_solver_test.jl")
-        @time @safetestset "Linear Solver Split ODE Tests" include("interface/linear_solver_split_ode_test.jl")
         @time @safetestset "AutoSparse Detection Tests" include("interface/autosparse_detection_tests.jl")
         @time @safetestset "Enum Tests" include("interface/enums.jl")
-        @time @safetestset "CheckInit Tests" include("interface/checkinit_tests.jl")
         @time @safetestset "Get du Tests" include("interface/get_du.jl")
-        @time @safetestset "Mass Matrix Tests" include("interface/mass_matrix_tests.jl")
-        @time @safetestset "W-Operator prototype tests" include("interface/wprototype_tests.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIII" || GROUP == "Interface")
@@ -100,14 +118,11 @@ end
         @time @safetestset "stats Tests" include("interface/stats_tests.jl")
         @time @safetestset "No Index Tests" include("interface/noindex_tests.jl")
         @time @safetestset "Events + DAE addsteps Tests" include("interface/event_dae_addsteps.jl")
-        @time @safetestset "No Jac Tests" include("interface/nojac.jl")
         @time @safetestset "Units Tests" include("interface/units_tests.jl")
-        @time @safetestset "Non-Full Diagonal Sparsity Tests" include("interface/nonfulldiagonal_sparse.jl")
         @time @safetestset "DEVerbosity Tests" include("interface/verbosity.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIV" || GROUP == "Interface")
-        @time @safetestset "Autodiff Error Tests" include("interface/autodiff_error_tests.jl")
         @time @safetestset "Ambiguity Tests" include("interface/ambiguity_tests.jl")
         @time @safetestset "Precision Mixing Tests" include("interface/precision_mixing.jl")
         @time @safetestset "Sized Matrix Tests" include("interface/sized_matrix_tests.jl")
@@ -117,7 +132,6 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "GPU AutoDiff Interface Tests" include("interface/gpu_autodiff_interface_tests.jl")
-        @time @safetestset "DAE Initialization Tests" include("interface/dae_initialization_tests.jl")
     end
 
     if !is_APPVEYOR &&
@@ -169,20 +183,13 @@ end
         @time @safetestset "Split Methods Tests" include("algconvergence/split_methods_tests.jl")
     end
 
-    # Don't run ModelingToolkit tests on prerelease
-    if !is_APPVEYOR && GROUP == "ModelingToolkit" && isempty(VERSION.prerelease)
-        activate_modelingtoolkit_env()
-        @time @safetestset "NLStep Tests" include("modelingtoolkit/nlstep_tests.jl")
-        @time @safetestset "Jacobian Tests" include("modelingtoolkit/jacobian_tests.jl")
-        @time @safetestset "Preconditioner Tests" include("modelingtoolkit/preconditioners.jl")
-        @time @safetestset "DAE Initialize Integration" include("modelingtoolkit/dae_initialize_integration.jl")
-    end
+    # ModelingToolkit tests moved to OrdinaryDiffEqDifferentiation and
+    # OrdinaryDiffEqNonlinearSolve subpackage test groups (ModelingToolkit group).
 
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
-        @time @safetestset "Sparse Diff Tests" include("downstream/sparsediff_tests.jl")
         @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
     end
 
@@ -200,30 +207,6 @@ end
         activate_odeinterface_env()
         @time @safetestset "Init dt vs dorpri tests" include("odeinterface/init_dt_vs_dopri_tests.jl")
         @time @safetestset "ODEInterface Regression Tests" include("odeinterface/odeinterface_regression.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "Multithreading"
-        @time @safetestset "Extrapolation Tests" include("multithreading/ode_extrapolation_tests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "GPU"
-        activate_gpu_env()
-        @time @safetestset "Simple GPU" begin
-            import OrdinaryDiffEqCore
-            include(
-                joinpath(
-                    dirname(pathof(OrdinaryDiffEqCore.DiffEqBase)), "..",
-                    "test/gpu/simple_gpu.jl"
-                )
-            )
-        end
-        @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
-        @time @safetestset "Linear LSRK GPU" include("gpu/linear_lsrk.jl")
-        @time @safetestset "Linear Exponential GPU" include("gpu/linear_exp.jl")
-        @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
-        @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
-        @time @safetestset "RKIP Semilinear PDE GPU" include("gpu/rkip_semilinear_pde.jl")
-        @time @safetestset "simple dae on GPU" include("gpu/simple_dae.jl")
     end
 
     if !is_APPVEYOR && GROUP == "QA"
