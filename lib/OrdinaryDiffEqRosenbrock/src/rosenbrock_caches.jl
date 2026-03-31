@@ -4,6 +4,8 @@ abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
 # Fake values since non-FSAL
 get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (nothing, nothing)
 
+tabtype(::HybridExplicitImplicitRK) = Tsit5DATableau
+
 ################################################################################
 
 # Shampine's Low-order Rosenbrocks
@@ -403,12 +405,12 @@ function alg_cache(
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
     tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     H_rows = size(tab.H, 1)
-    # Rodas3P/Rodas23W: H has 3 rows but only 2 are for interpolation;
-    # the 3rd row is for interpoldiff error estimation
-    if alg isa Union{Rodas3P, Rodas23W}
+    if H_rows == 0
+        interp_order = -1
+    elseif alg isa Union{Rodas3P, Rodas23W}
         interp_order = 2
     else
-        interp_order = H_rows > 0 ? H_rows : 2
+        interp_order = H_rows
     end
     return RosenbrockCombinedConstantCache(
         tf, uf,
@@ -429,8 +431,12 @@ function alg_cache(
     H_rows = size(tab.H, 1)
     kshortsize = H_rows > 0 ? H_rows : 2
     # Rodas3P/Rodas23W: H has 3 rows but only 2 are for interpolation;
-    # the 3rd row is for interpoldiff error estimation
-    if alg isa Union{Rodas3P, Rodas23W}
+    # the 3rd row is for interpoldiff error estimation.
+    # Methods with empty H use generic Hermite (f₀, f₁), not Rosenbrock
+    # dense output coefficients — signal this with interp_order = -1.
+    if H_rows == 0
+        interp_order = -1
+    elseif alg isa Union{Rodas3P, Rodas23W}
         interp_order = 2
     else
         interp_order = kshortsize
@@ -574,7 +580,7 @@ function alg_cache(
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
-    tab = alg.tab(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return HybridExplicitImplicitConstantCache(
         tf, uf, tab, J, W, nothing, alg_autodiff(alg), size(tab.H, 1)
     )
@@ -586,7 +592,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = alg.tab(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     num_stages = size(tab.A, 1)
     interp_order = size(tab.H, 1)
 
@@ -629,25 +635,20 @@ function alg_cache(
 
     # Detect algebraic variables from mass matrix
     mass_matrix = f.mass_matrix
+    n = length(u)
     if mass_matrix === I
-        diff_vars = collect(1:length(u))
+        diff_vars = collect(1:n)
         alg_vars = Int[]
-        g_z = zeros(eltype(u), 0, 0)
-        g_y = zeros(eltype(u), 0, 0)
-        W_z = zeros(eltype(u), 0, 0)
-        linsolve_tmp_z = zeros(eltype(u), 0)
-        linsolve_z = nothing
     else
-        n = length(u)
         diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
         alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
-        n_g = length(alg_vars)
-        n_f = length(diff_vars)
-        g_z = zeros(eltype(u), n_g, n_g)
-        g_y = zeros(eltype(u), n_g, n_f)
-        W_z = zeros(eltype(u), n_g, n_g)
-        linsolve_tmp_z = zeros(eltype(u), n_g)
     end
+    n_g = length(alg_vars)
+    n_f = length(diff_vars)
+    g_z = zeros(eltype(u), n_g, n_g)
+    g_y = zeros(eltype(u), n_g, n_f)
+    W_z = zeros(eltype(u), n_g, n_g)
+    linsolve_tmp_z = zeros(eltype(u), n_g)
 
     return HybridExplicitImplicitCache(
         u, uprev, dense, du, du1, du2, ks,
