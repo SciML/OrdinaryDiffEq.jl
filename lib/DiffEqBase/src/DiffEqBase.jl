@@ -22,7 +22,8 @@ using FunctionWrappers: FunctionWrapper
 using MuladdMacro
 
 
-using FastBroadcast: @.., True, False
+using FastBroadcast: @..
+using Static: True, False
 
 using Static: reduce_tup
 
