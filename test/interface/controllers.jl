@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, OrdinaryDiffEqCore, Test
+using OrdinaryDiffEqLowStorageRK
+using OrdinaryDiffEqCore: IController, PIController, PIDController
 
 f(u, p, t) = zero(u)
 prob = ODEProblem(f, 1.0, (0.0, 10.0))
