@@ -14,7 +14,7 @@ DifferentiationInterface = "0.6.54, 0.7"
 Enzyme = "0.13"
 FiniteDiff = "2.27"
 Measurements = "2.9"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "6, 7"
 StaticArrays = "1"
 StochasticDiffEq = "6.60.1"
 
