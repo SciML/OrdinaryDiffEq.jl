@@ -18,6 +18,7 @@ using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArr
 using SciMLBase: DynamicalODEFunction
 using LinearAlgebra: mul!, I
 import FastBroadcast: @..
+import Static
 import MuladdMacro: @muladd
 
 using NonlinearSolveFirstOrder
