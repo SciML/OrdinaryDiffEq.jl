@@ -448,7 +448,7 @@ x0 = [0.1]
 DI.gradient(AutoForwardDiff(), x0) do x
     prob = ODEProblem{true}((du, u, p, t) -> (du[1] = -u[1]), x, (0.0, 1.0))
     sol = solve(prob, DefaultODEAlgorithm(), reltol = 1.0e-6)
-    sum(sol)
+    sum(sum, sol.u)
 end ≈ [6.765310476296564]
 
 # Test with multiple AD backends

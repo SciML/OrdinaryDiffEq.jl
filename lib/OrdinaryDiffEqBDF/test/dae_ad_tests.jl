@@ -69,7 +69,7 @@ end
             remake(_prob, p = p), alg, abstol = 1.0e-14,
             reltol = 1.0e-14, initializealg = initalg
         )
-        sum(sol)
+        sum(sum, sol.u)
     end
     @test DI.gradient(f_loss, AutoForwardDiff(), [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
 end

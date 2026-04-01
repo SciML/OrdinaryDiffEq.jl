@@ -50,7 +50,7 @@ sol = @inferred solve(prob_mm, Tsit5DA(), reltol = 1.0e-8, abstol = 1.0e-8)
             remake(_prob, p = p), alg, abstol = 1.0e-14,
             reltol = 1.0e-14, initializealg = initalg
         )
-        sum(sol[end])
+        sum(sol.u[end])
     end
     @test DI.gradient(f, AutoForwardDiff(), [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
 end

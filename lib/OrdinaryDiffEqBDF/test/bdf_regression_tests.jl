@@ -23,7 +23,7 @@ function ad_helper(alg, prob)
     return function costoop(p)
         _oprob = remake(prob; p)
         sol = solve(_oprob, alg, saveat = 1:10)
-        return sum(sol)
+        return sum(sum, sol.u)
     end
 end
 
