@@ -2,6 +2,7 @@ using OrdinaryDiffEq, OrdinaryDiffEqCore, DiffEqBase, Test, ADTypes
 using Random
 using OrdinaryDiffEqDefault
 using ElasticArrays, LinearSolve
+using OrdinaryDiffEqBDF, OrdinaryDiffEqExtrapolation, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqLowStorageRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqSSPRK
 Random.seed!(213)
 CACHE_TEST_ALGS = [
     Euler(), Midpoint(), RK4(), SSPRK22(), SSPRK33(), SSPRK43(), SSPRK104(),

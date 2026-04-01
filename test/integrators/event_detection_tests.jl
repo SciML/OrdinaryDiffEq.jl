@@ -2,6 +2,7 @@ using StaticArrays
 using OrdinaryDiffEq
 using DiffEqDevTools
 using Test
+using OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock
 
 @inbounds @inline function ż(z, p, t)
     A, B, D = p

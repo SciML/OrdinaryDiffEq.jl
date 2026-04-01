@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, ODEProblemLibrary
 using Test
+using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 
 @testset "init" begin
     prob = ODEProblemLibrary.prob_ode_linear

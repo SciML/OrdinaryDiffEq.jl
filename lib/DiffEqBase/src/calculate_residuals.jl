@@ -105,7 +105,7 @@ with multiple threads.
 """
 @inline function calculate_residuals!(
         out, ũ, u₀, u₁, α, ρ, internalnorm, t,
-        thread = Serial()
+        thread::Union{Serial, Threaded} = Serial()
     )
     @.. broadcast = false thread = thread out = calculate_residuals(
         ũ, u₀, u₁, α, ρ, internalnorm,
@@ -140,7 +140,7 @@ with multiple threads.
 """
 @inline function calculate_residuals!(
         out, u₀, u₁, α, ρ, internalnorm, t,
-        thread = Serial()
+        thread::Union{Serial, Threaded} = Serial()
     )
     @.. broadcast = false thread = thread out = calculate_residuals(u₀, u₁, α, ρ, internalnorm, t)
     return nothing
@@ -161,7 +161,7 @@ with multiple threads.
 """
 @inline function calculate_residuals!(
         out, E₁, E₂, u₀, u₁, α, ρ, δ, scalarnorm, t,
-        thread = Serial()
+        thread::Union{Serial, Threaded} = Serial()
     )
     @.. broadcast = false thread = thread out = calculate_residuals(
         E₁, E₂, u₀, u₁, α, ρ, δ,
