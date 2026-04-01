@@ -9,4 +9,4 @@ DiffEqDevTools = {path = "../lib/DiffEqDevTools"}
 [compat]
 DiffEqDevTools = "2"
 Documenter = "0.27, 1"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "6, 7"
