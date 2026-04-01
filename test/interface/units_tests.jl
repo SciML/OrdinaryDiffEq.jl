@@ -15,12 +15,12 @@ using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK,
         u0 = 1.0u"N"
         prob = ODEProblem(f, u0, (0.0u"s", 1.0u"s"))
 
-        for alg in algs
-            @show alg
+        @testset "$(typeof(alg))" for alg in algs
             sol = solve(prob, alg, dt = 1u"s" / 10)
+            @test successful_retcode(sol)
         end
 
-        sol = solve(prob, ExplicitRK())
+        sol = solve(prob, ExplicitRK(), dt = 1u"s" / 10)
     end
 
     @testset "2D units" begin
@@ -31,12 +31,12 @@ using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK,
         ]
         prob = ODEProblem(f, u0, (0.0u"s", 1.0u"s"))
 
-        for alg in algs
-            @show alg
+        @testset "$(typeof(alg))" for alg in algs
             sol = solve(prob, alg, dt = 1u"s" / 10)
+            @test successful_retcode(sol)
         end
 
-        sol = solve(prob, ExplicitRK())
+        sol = solve(prob, ExplicitRK(), dt = 1u"s" / 10)
     end
 end
 
@@ -55,18 +55,16 @@ end
         end
 
         prob = ODEProblem(f, rv0, (0.0u"s", 1.0u"s"), μ)
-        for alg in [Tsit5()]
-            @show alg
+        @testset "$(typeof(alg))" for alg in [Tsit5()]
             sol = solve(prob, alg)
         end
 
-        for alg in [
-                AutoVern6(Rodas5(autodiff = AutoFiniteDiff())),
-                AutoVern7(Rodas5(autodiff = AutoFiniteDiff())),
-                AutoVern8(Rodas5(autodiff = AutoFiniteDiff())),
-                AutoVern9(Rodas5(autodiff = AutoFiniteDiff())),
+        @testset "$(typeof(alg))" for alg in [
+                AutoVern6(Rodas5P(autodiff = AutoFiniteDiff())),
+                AutoVern7(Rodas5P(autodiff = AutoFiniteDiff())),
+                AutoVern8(Rodas5P(autodiff = AutoFiniteDiff())),
+                AutoVern9(Rodas5P(autodiff = AutoFiniteDiff())),
             ]
-            @show alg
             @test_broken sol = solve(prob, alg)
         end
     end
@@ -86,7 +84,7 @@ end
         u0 = [1.0u"m", 0.0u"kg*m/s"] # initial values (position, momentum)
         tspan = (0.0u"s", 10.0u"s")
         prob = ODEProblem(f_harmonic!, u0, tspan, p)
-        @test solve(prob, Tsit5()).retcode == ReturnCode.Success
+        @test successful_retcode(solve(prob, Tsit5()))
     end
 
     @testset "Unitful time with unitless state" begin
@@ -97,7 +95,7 @@ end
         prob2 = ODEProblem((u, t, p) -> (-0.2u"1/s" * u[1]), u0, tspan)
         prob3 = ODEProblem((u, t, p) -> [-0.2u"1/s" * u[1]], [u0], tspan)
         for prob in [prob1, prob2, prob3]
-            @test solve(prob, Tsit5()).retcode == ReturnCode.Success
+            @test successful_retcode(solve(prob, Tsit5()))
         end
     end
 end
