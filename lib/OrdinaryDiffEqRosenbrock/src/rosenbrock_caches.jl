@@ -179,7 +179,7 @@ function alg_cache(
     )
 
     algebraic_vars = f.mass_matrix === I ? nothing :
-        [all(iszero, x) for x in eachcol(f.mass_matrix)]
+        find_algebraic_vars_eqs(f.mass_matrix)[1]
 
     return Rosenbrock23Cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁,
@@ -239,7 +239,7 @@ function alg_cache(
     )
 
     algebraic_vars = f.mass_matrix === I ? nothing :
-        [all(iszero, x) for x in eachcol(f.mass_matrix)]
+        find_algebraic_vars_eqs(f.mass_matrix)[1]
 
     return Rosenbrock32Cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
