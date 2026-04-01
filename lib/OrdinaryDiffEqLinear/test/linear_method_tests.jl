@@ -246,7 +246,7 @@ prob = SplitODEProblem(f, η, tspan)
 sol = solve(prob, CayleyEuler(), dt = 1 / 10)
 
 @test sol.retcode == ReturnCode.Success
-eig_err = [norm(eigvals(sol[i]) - eigvals(η)) for i in eachindex(sol)]
+eig_err = [norm(eigvals(sol.u[i]) - eigvals(η)) for i in eachindex(sol.u)]
 @test all(≈(e, 0, atol = 1.0e-13) for e in eig_err)
 
 test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
@@ -260,7 +260,7 @@ prob = SplitODEProblem(f, η, tspan)
 sol = solve(prob, CayleyEuler(), dt = 1 / 10)
 
 @test sol.retcode == ReturnCode.Success
-eig_err = [norm(eigvals(sol[i]) - eigvals(η)) for i in eachindex(sol)]
+eig_err = [norm(eigvals(sol.u[i]) - eigvals(η)) for i in eachindex(sol.u)]
 @test all(≈(e, 0, atol = 1.0e-13) for e in eig_err)
 
 test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
