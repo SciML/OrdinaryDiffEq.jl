@@ -10,4 +10,4 @@ path = "../../../.."
 
 [compat]
 CUDA = "4, 5"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "6, 7"

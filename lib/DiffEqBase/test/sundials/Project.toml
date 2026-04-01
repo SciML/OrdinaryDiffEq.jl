@@ -7,5 +7,5 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 OrdinaryDiffEq = {path = "../../../.."}
 
 [compat]
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "6, 7"
 Sundials = "4, 5"
