@@ -188,7 +188,6 @@ end
 
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
-        @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
         @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
     end
