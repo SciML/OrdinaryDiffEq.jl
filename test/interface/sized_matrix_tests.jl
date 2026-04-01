@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, StaticArrays, Test
+using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock
 
 function dudt!(du, σ, p, t)
     return du .= -σ
