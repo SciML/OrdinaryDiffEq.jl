@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, Test, Random
-using OrdinaryDiffEqCore, OrdinaryDiffEqExplicitRK
+using OrdinaryDiffEqCore, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqLowOrderRK
 
 Random.seed!(100)
 setprecision(400)

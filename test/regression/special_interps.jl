@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test, LinearAlgebra
+using OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSSPRK
 
 function f(du, u, p, t)
     du[1] = dx = p[1] * u[1] - p[2] * u[1] * u[2]
