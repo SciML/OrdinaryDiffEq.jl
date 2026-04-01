@@ -172,7 +172,11 @@ From MATLAB ODE Suite by Shampine
         idxs::Nothing, T::Type{Val{0}}, differential_vars
     )
     Θ1 = 1 - Θ
-    if !hasproperty(cache, :interp_order) || cache.interp_order == 2
+    if hasproperty(cache, :interp_order) && cache.interp_order == -1
+        # Generic Hermite: k[1]=f₀, k[2]=f₁ (methods with no H matrix)
+        @.. Θ1 * y₀ + Θ * y₁ +
+            Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2])
+    elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @.. Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
     elseif cache.interp_order == 4
         @.. Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * (k[2] + Θ * (k[3] + Θ * k[4]))))
@@ -191,7 +195,10 @@ end
         idxs, T::Type{Val{0}}, differential_vars
     )
     Θ1 = 1 - Θ
-    if !hasproperty(cache, :interp_order) || cache.interp_order == 2
+    if hasproperty(cache, :interp_order) && cache.interp_order == -1
+        @views @.. Θ1 * y₀[idxs] + Θ * y₁[idxs] +
+            Θ * (Θ - 1) * ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) + (Θ - 1) * dt * k[1][idxs] + Θ * dt * k[2][idxs])
+    elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @views @.. Θ1 * y₀[idxs] + Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * k[2][idxs]))
     elseif cache.interp_order == 4
         @views @.. Θ1 * y₀[idxs] + Θ * (
@@ -216,7 +223,10 @@ end
         idxs::Nothing, T::Type{Val{0}}, differential_vars
     )
     Θ1 = 1 - Θ
-    if !hasproperty(cache, :interp_order) || cache.interp_order == 2
+    if hasproperty(cache, :interp_order) && cache.interp_order == -1
+        @.. out = Θ1 * y₀ + Θ * y₁ +
+            Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2])
+    elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @.. out = Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
     elseif cache.interp_order == 4
         @.. out = Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * (k[2] + Θ * (k[3] + Θ * k[4]))))
@@ -236,7 +246,10 @@ end
         idxs, T::Type{Val{0}}, differential_vars
     )
     Θ1 = 1 - Θ
-    if !hasproperty(cache, :interp_order) || cache.interp_order == 2
+    if hasproperty(cache, :interp_order) && cache.interp_order == -1
+        @views @.. out = Θ1 * y₀[idxs] + Θ * y₁[idxs] +
+            Θ * (Θ - 1) * ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) + (Θ - 1) * dt * k[1][idxs] + Θ * dt * k[2][idxs])
+    elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @views @.. out = Θ1 * y₀[idxs] + Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * k[2][idxs]))
     elseif cache.interp_order == 4
         @views @.. out = Θ1 * y₀[idxs] + Θ * (

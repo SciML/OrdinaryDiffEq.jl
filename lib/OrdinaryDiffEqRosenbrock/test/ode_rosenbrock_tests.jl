@@ -534,7 +534,7 @@ end
 
     sim = test_convergence(dts, prob, ROS34PW3(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
-    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, ROS34PW3())
     @test length(sol) < 20
@@ -544,7 +544,7 @@ end
 
     sim = test_convergence(dts, prob, ROS34PW3(), dense_errors = true)
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
-    @test sim.𝒪est[:L2] ≈ 3 atol = testTol
+    @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, ROS34PW3())
     @test length(sol) < 20

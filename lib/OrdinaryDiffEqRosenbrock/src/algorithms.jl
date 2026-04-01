@@ -339,9 +339,8 @@ end
 # HybridExplicitImplicitRK — generic tableau-based hybrid explicit/linear-implicit method
 ################################################################################
 
-struct HybridExplicitImplicitRK{TabType, CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
+struct HybridExplicitImplicitRK{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLimiter} <:
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
-    tab::TabType
     order::Int
     linsolve::F
     precs::P
@@ -350,8 +349,7 @@ struct HybridExplicitImplicitRK{TabType, CS, AD, F, P, FDT, ST, CJ, StepLimiter,
     autodiff::AD
 end
 
-function HybridExplicitImplicitRK(
-        tab;
+function HybridExplicitImplicitRK(;
         order,
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
@@ -363,30 +361,13 @@ function HybridExplicitImplicitRK(
         autodiff, chunk_size, diff_type
     )
     return HybridExplicitImplicitRK{
-        typeof(tab), _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(step_limiter!),
         typeof(stage_limiter!),
     }(
-        tab, order, linsolve, precs, step_limiter!,
+        order, linsolve, precs, step_limiter!,
         stage_limiter!, AD_choice
-    )
-end
-
-# Keyword-only constructor for remake support
-function HybridExplicitImplicitRK(;
-        tab,
-        order,
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(), linsolve = nothing,
-        precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
-        stage_limiter! = trivial_limiter!
-    )
-    return HybridExplicitImplicitRK(
-        tab;
-        order, chunk_size, autodiff, standardtag, concrete_jac,
-        diff_type, linsolve, precs, step_limiter!, stage_limiter!
     )
 end
 
@@ -400,4 +381,4 @@ References:
 - Steinebach G., Rodas6P and Tsit5DA - two new Rosenbrock-type methods for DAEs.
   arXiv:2511.21252, 2025.
 """
-Tsit5DA(; kwargs...) = HybridExplicitImplicitRK(Tsit5DATableau; order = 5, kwargs...)
+Tsit5DA(; kwargs...) = HybridExplicitImplicitRK(; order = 5, kwargs...)
