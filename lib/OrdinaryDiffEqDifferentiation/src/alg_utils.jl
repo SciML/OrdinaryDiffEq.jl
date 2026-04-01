@@ -8,6 +8,29 @@ end
 _alg_autodiff(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
 _alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
 _alg_autodiff(alg::CompositeAlgorithm) = _alg_autodiff(alg.algs[end])
+
+# SDE Newton algorithm abstract types
+function _alg_autodiff(
+        alg::StochasticDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ, Controller}
+    ) where {CS, AD, FDT, ST, CJ, Controller}
+    return Val{AD}()
+end
+function _alg_autodiff(
+        alg::StochasticDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ, Controller}
+    ) where {CS, AD, FDT, ST, CJ, Controller}
+    return Val{AD}()
+end
+function _alg_autodiff(
+        alg::StochasticDiffEqJumpNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ, Controller}
+    ) where {CS, AD, FDT, ST, CJ, Controller}
+    return Val{AD}()
+end
+function _alg_autodiff(
+        alg::StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm{
+            CS, AD, FDT, ST, CJ, Controller}
+    ) where {CS, AD, FDT, ST, CJ, Controller}
+    return Val{AD}()
+end
 function _alg_autodiff(
         alg::Union{
             OrdinaryDiffEqExponentialAlgorithm{CS, AD},

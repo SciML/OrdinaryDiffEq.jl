@@ -19,7 +19,6 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
-OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
@@ -54,7 +53,6 @@ LinearAlgebra = "1.10"
 Logging = "1.10"
 MuladdMacro = "0.2.4"
 OrdinaryDiffEqCore = "3.22"
-OrdinaryDiffEqDifferentiation = "2"
 Pkg = "1"
 Random = "<0.0.1, 1"
 RecursiveArrayTools = "2, 3"
@@ -74,9 +72,6 @@ test = ["Test", "Pkg", "SafeTestsets"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
-
-[sources.OrdinaryDiffEqDifferentiation]
-path = "../OrdinaryDiffEqDifferentiation"
 
 [sources.StochasticDiffEqLevyArea]
 path = "../StochasticDiffEqLevyArea"

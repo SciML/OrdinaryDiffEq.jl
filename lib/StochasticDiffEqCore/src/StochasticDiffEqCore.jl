@@ -11,6 +11,11 @@ import OrdinaryDiffEqCore: ODEIntegrator,
     StochasticDiffEqCompositeAlgorithm,
     StochasticDiffEqRODEAlgorithm, StochasticDiffEqRODEAdaptiveAlgorithm,
     StochasticDiffEqRODECompositeAlgorithm,
+    StochasticDiffEqNewtonAdaptiveAlgorithm, StochasticDiffEqNewtonAlgorithm,
+    StochasticDiffEqJumpAlgorithm, StochasticDiffEqJumpAdaptiveAlgorithm,
+    StochasticDiffEqJumpNewtonAdaptiveAlgorithm,
+    StochasticDiffEqJumpDiffusionAlgorithm, StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
+    StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
     StochasticDiffEqCache, StochasticDiffEqConstantCache, StochasticDiffEqMutableCache,
     default_controller, isstandard, ispredictive,
     beta2_default, beta1_default, gamma_default,
@@ -65,8 +70,6 @@ using LinearAlgebra, Random
 import ForwardDiff.Dual
 
 import FastPower
-
-import OrdinaryDiffEqDifferentiation
 
 import DiffEqBase: step!, initialize!, DEAlgorithm,
     AbstractSDEAlgorithm, AbstractRODEAlgorithm, DEIntegrator,
@@ -136,7 +139,6 @@ include("perform_step/composite.jl")
 include("iterated_integrals.jl")
 include("composite_algs.jl")
 include("weak_utils.jl")
-include("alg_autodiff.jl")
 
 export StochasticDiffEqAlgorithm, StochasticDiffEqAdaptiveAlgorithm,
     StochasticDiffEqCompositeAlgorithm,
