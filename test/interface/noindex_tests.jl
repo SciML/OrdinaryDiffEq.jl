@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, RecursiveArrayTools, LinearAlgebra
+using OrdinaryDiffEqLowOrderRK
 
 struct NoIndexArray{T, N} <: AbstractArray{T, N}
     x::Array{T, N}

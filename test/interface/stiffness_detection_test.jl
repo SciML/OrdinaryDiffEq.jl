@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test, ADTypes
+using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 import ODEProblemLibrary: prob_ode_vanderpol
 using ForwardDiff: Dual
 

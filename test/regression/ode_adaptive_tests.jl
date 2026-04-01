@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test
+using OrdinaryDiffEqBDF, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 
 import ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
