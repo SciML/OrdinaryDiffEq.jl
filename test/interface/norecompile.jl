@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test, ADTypes
+using OrdinaryDiffEqExponentialRK
 function f(du, u, p, t)
     du[1] = 0.2u[1]
     return du[2] = 0.4u[2]

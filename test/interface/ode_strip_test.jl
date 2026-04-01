@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqSDIRK
 import SciMLBase
 
 function lorenz!(du, u, p, t)

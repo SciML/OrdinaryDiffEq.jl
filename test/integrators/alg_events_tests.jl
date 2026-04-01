@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, StaticArrays, Test
+using OrdinaryDiffEqAdamsBashforthMoulton, OrdinaryDiffEqBDF, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSSPRK
 
 # More ODE event tests, cf. #201, #199, #198, #197
 function test_callback_inplace(alg; kwargs...)

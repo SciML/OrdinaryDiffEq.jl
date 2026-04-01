@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, OrdinaryDiffEqCore, Test
+using OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 function lorenz!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]

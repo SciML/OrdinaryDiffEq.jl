@@ -1,4 +1,5 @@
 using OrdinaryDiffEq
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqStabilizedRK
 
 function SinCosDiffEqToSolve!(ddu, du, u, p, t)
     return ddu[1] = -u[1]
