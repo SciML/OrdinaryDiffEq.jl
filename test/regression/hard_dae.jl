@@ -2,6 +2,7 @@ using OrdinaryDiffEq
 using LinearAlgebra
 using NLsolve
 using Test
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 
 p_inv = [
     500.0
