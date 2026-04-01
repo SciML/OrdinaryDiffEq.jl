@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, OrdinaryDiffEqCore, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 using DiffEqDevTools, ADTypes
+using OrdinaryDiffEqAdamsBashforthMoulton, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqRosenbrock
 
 prob = prob_ode_2Dlinear
 choice_function(integrator) = (Int(integrator.t < 0.5) + 1)

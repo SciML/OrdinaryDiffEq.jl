@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, RecursiveArrayTools, Unitful
 using LinearAlgebra, Test, ADTypes
+using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK,
+    OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSSPRK
 
 @testset "Algorithms" begin
     algs = [

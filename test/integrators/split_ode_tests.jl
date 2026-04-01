@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, SparseArrays, LinearAlgebra, Test
+using OrdinaryDiffEqSDIRK
 
 function explicit_fun(du, _, _, _)
     du .= 0

@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqRosenbrock
 
 function f(du, u, p, t)
     Gut, Cent, Periph, Resp = u
