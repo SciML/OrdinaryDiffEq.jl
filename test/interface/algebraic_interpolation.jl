@@ -1,4 +1,4 @@
-using OrdinaryDiffEq
+using OrdinaryDiffEq, SciMLBase
 using Test
 
 function rober_ip(du, u, p, t)
