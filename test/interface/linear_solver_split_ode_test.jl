@@ -1,6 +1,7 @@
 using Test
 using OrdinaryDiffEq
 using LinearAlgebra, LinearSolve
+using OrdinaryDiffEqSDIRK
 
 import OrdinaryDiffEqCore.dolinsolve
 

@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test, ADTypes, SparseMatrixColorings, DiffEqBase, ForwardDiff, SciMLBase, LinearSolve
+using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqSDIRK
 import OrdinaryDiffEqDifferentiation.DI
 
 f(du, u, p, t) = du .= u

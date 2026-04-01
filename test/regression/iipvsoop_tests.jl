@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, Test
 using OrdinaryDiffEqCore, ADTypes
+using OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqSSPRK, OrdinaryDiffEqStabilizedRK
 
 f(u, p, t) = 0.98u
 u0 = 1.0

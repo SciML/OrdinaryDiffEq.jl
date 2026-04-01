@@ -2,6 +2,8 @@ using OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: DEVerbosity
 using OrdinaryDiffEq
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
+using OrdinaryDiffEqExtrapolation, OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock,
+    OrdinaryDiffEqSDIRK
 using ODEProblemLibrary: prob_ode_vanderpol_stiff
 using Test
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging

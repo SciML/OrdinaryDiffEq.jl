@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, RecursiveArrayTools, Test
+using OrdinaryDiffEqFunctionMap, OrdinaryDiffEqRKN, OrdinaryDiffEqSymplecticRK
 
 # in terms of the voltage across all three elements
 rlc1!(v′, v, (R, L, C), t) = -(v′ / R + v / L) / C
