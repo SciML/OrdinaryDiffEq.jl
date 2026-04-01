@@ -2,6 +2,7 @@ using Test, OrdinaryDiffEq
 
 using SparseArrays, LinearSolve
 using LinearAlgebra, Random
+using OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 N = 30
 AA = sprand(MersenneTwister(12), N, N, 0.5)
 mm = sprand(MersenneTwister(123), N, N, 0.5)

@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, ADTypes, Test, Random, LinearAlgebra, SparseArrays, Statistics
+using OrdinaryDiffEqLowOrderRK
 
 # Parameters
 Nc = 22
