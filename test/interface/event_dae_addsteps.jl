@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, LinearAlgebra, Test
+using OrdinaryDiffEqRosenbrock
 
 function dynamics!(dx, x, θ, t)
     zmin, zmax, M, g = θ

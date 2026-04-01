@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 
 function nonauto1(u, p, t)
     x, _ = u

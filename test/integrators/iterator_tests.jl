@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test, RecursiveArrayTools
+using OrdinaryDiffEqLowOrderRK
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 prob = prob_ode_linear
