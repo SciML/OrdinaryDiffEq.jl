@@ -1,7 +1,7 @@
 name = "StochasticDiffEqImplicit"
 uuid = "5080b986-4c76-4669-b5dc-373a41579d5b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "1.0.0"
+version = "1.1.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -38,8 +38,8 @@ ForwardDiff = "0.10, 1"
 JumpProcesses = "9.13.1"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
-OrdinaryDiffEqCore = "3.22"
-OrdinaryDiffEqDifferentiation = "2"
+OrdinaryDiffEqCore = "3.25"
+OrdinaryDiffEqDifferentiation = "2.4"
 OrdinaryDiffEqNonlinearSolve = "1"
 Pkg = "1"
 RecursiveArrayTools = "2, 3"
