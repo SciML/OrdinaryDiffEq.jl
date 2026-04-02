@@ -221,26 +221,24 @@ function _ode_init(
         _alg = alg
     end
 
-    # If alias isa Bool, all fields of ODEAliases set to alias
-    if alias isa Bool
-        aliases = ODEAliasSpecifier(alias = alias)
-    elseif alias isa ODEAliasSpecifier
-        aliases = alias
+    alias 
+    if !(alias isa ODEAliasSpecifier)
+        throw(ArgumentError("alias kwarg must be an ODEAliasSpecifier"))
     end
 
-    if isnothing(aliases.alias_f) || aliases.alias_f
+    if isnothing(alias.alias_f) || alias.alias_f
         f = prob.f
     else
         f = deepcopy(prob.f)
     end
 
-    if isnothing(aliases.alias_p) || aliases.alias_p
+    if isnothing(alias.alias_p) || alias.alias_p
         p = prob.p
     else
         p = recursivecopy(prob.p)
     end
 
-    if !isnothing(aliases.alias_u0) && aliases.alias_u0
+    if !isnothing(alias.alias_u0) && alias.alias_u0
         u = prob.u0
     else
         u = recursivecopy(prob.u0)
@@ -258,7 +256,7 @@ function _ode_init(
     end
 
     if _alg isa DAEAlgorithm
-        if !isnothing(aliases.alias_du0) && aliases.alias_du0
+        if !isnothing(alias.alias_du0) && alias.alias_du0
             du = prob.du0
         else
             du = recursivecopy(prob.du0)
@@ -343,7 +341,7 @@ function _ode_init(
         resType = typeof(res_prototype)
     end
 
-    if isnothing(aliases.alias_tstops) || aliases.alias_tstops
+    if isnothing(alias.alias_tstops) || alias.alias_tstops
         tstops = tstops
     else
         tstops = recursivecopy(tstops)

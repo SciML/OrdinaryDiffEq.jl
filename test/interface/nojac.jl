@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, RecursiveFactorization, LinearSolve, Test, ADTypes
+using OrdinaryDiffEqSDIRK
 
 const N = 32
 const xyd_brusselator = range(0, stop = 1, length = N)

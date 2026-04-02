@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, OrdinaryDiffEqBDF, Test, DiffEqBase
 using OrdinaryDiffEqCore
 using ForwardDiff
+using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqLowStorageRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSSPRK
 import ODEProblemLibrary: prob_ode_linear,
     prob_ode_2Dlinear,
     prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear

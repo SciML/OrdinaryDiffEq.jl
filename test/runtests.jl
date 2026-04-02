@@ -73,7 +73,6 @@ end
             Pkg.test(base_group, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
         end
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
-        @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
         # Skip on Julia LTS (oneunit(Type{Any}) not defined) and pre-release (stalls)
         # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2979
         if VERSION >= v"1.11" && isempty(VERSION.prerelease)

@@ -2,6 +2,7 @@ using OrdinaryDiffEq,
     RecursiveArrayTools, Test, StaticArrays, DiffEqCallbacks,
     SparseArrays,
     LinearAlgebra
+using OrdinaryDiffEqLinear, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock
 
 f = function (u, p, t)
     return -u + sin(-t)
