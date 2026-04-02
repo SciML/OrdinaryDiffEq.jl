@@ -23,7 +23,7 @@ Base.@kwdef struct SolverConfig
     display_name::String  # human-readable name for log messages
 end
 
-const SOLVER_CONFIGS = Dict{String,SolverConfig}(
+const SOLVER_CONFIGS = Dict{String, SolverConfig}(
     "tsit5" => SolverConfig(
         pkg = "OrdinaryDiffEqTsit5",
         uuid = "b1df2697-797e-41e3-8120-5422d3b24e4a",
@@ -64,23 +64,23 @@ const LIB_REL_PATH = "../../.."
 # Packages with a non-nothing lib_subdir get a [sources] entry pointing to
 # the local monorepo checkout.
 const ALL_DEPS = Dict(
-    "ADTypes"                  => ("47edcb42-4c32-4615-8424-f2b9edc5f35b", nothing),
-    "LinearSolve"              => ("7ed4a6bd-45f5-4d41-b270-4a48e9bafcae", nothing),
-    "SciMLBase"                => ("0bca4576-84f4-4d90-8ffe-ffa030f20462", nothing),
-    "SciMLLogging"             => ("a6db7da4-7206-11f0-1eab-35f2a5dbe1d1", nothing),
-    "OrdinaryDiffEqCore"       => ("bbf590c4-e513-4bbe-9b18-05decba2e5d8", "OrdinaryDiffEqCore"),
-    "OrdinaryDiffEqTsit5"      => ("b1df2697-797e-41e3-8120-5422d3b24e4a", "OrdinaryDiffEqTsit5"),
-    "OrdinaryDiffEqBDF"        => ("6ad6398a-0878-4a85-9266-38940aa047c8", "OrdinaryDiffEqBDF"),
+    "ADTypes" => ("47edcb42-4c32-4615-8424-f2b9edc5f35b", nothing),
+    "LinearSolve" => ("7ed4a6bd-45f5-4d41-b270-4a48e9bafcae", nothing),
+    "SciMLBase" => ("0bca4576-84f4-4d90-8ffe-ffa030f20462", nothing),
+    "SciMLLogging" => ("a6db7da4-7206-11f0-1eab-35f2a5dbe1d1", nothing),
+    "OrdinaryDiffEqCore" => ("bbf590c4-e513-4bbe-9b18-05decba2e5d8", "OrdinaryDiffEqCore"),
+    "OrdinaryDiffEqTsit5" => ("b1df2697-797e-41e3-8120-5422d3b24e4a", "OrdinaryDiffEqTsit5"),
+    "OrdinaryDiffEqBDF" => ("6ad6398a-0878-4a85-9266-38940aa047c8", "OrdinaryDiffEqBDF"),
     "OrdinaryDiffEqRosenbrock" => ("43230ef6-c299-4910-a778-202eb28ce4ce", "OrdinaryDiffEqRosenbrock"),
-    "OrdinaryDiffEqDefault"    => ("50262376-6c5a-4cf5-baba-aaf4f84d72d7", "OrdinaryDiffEqDefault"),
-    "DiffEqBase"               => ("2b5f629d-d688-5b77-993f-72d75c75574e", "DiffEqBase"),
+    "OrdinaryDiffEqDefault" => ("50262376-6c5a-4cf5-baba-aaf4f84d72d7", "OrdinaryDiffEqDefault"),
+    "DiffEqBase" => ("2b5f629d-d688-5b77-993f-72d75c75574e", "DiffEqBase"),
 )
 
 # ── Code generation ────────────────────────────────────────────────────
 
 function generate_project_toml(cfg::SolverConfig)
-    deps = Dict{String,String}()
-    sources = Dict{String,String}()
+    deps = Dict{String, String}()
+    sources = Dict{String, String}()
 
     # Add all shared deps + local packages
     for (pkg, (uuid, lib_subdir)) in ALL_DEPS
@@ -250,6 +250,7 @@ function run_trim_tests(solvers = SOLVER_ORDER)
             end
         end
     end
+    return
 end
 
 run_trim_tests()

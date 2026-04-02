@@ -31,7 +31,7 @@ end
 
 function activate_trim_env()
     Pkg.activate("trim")
-    Pkg.instantiate()
+    return Pkg.instantiate()
 end
 
 #Start Test Script
