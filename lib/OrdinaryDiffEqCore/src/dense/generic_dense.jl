@@ -153,7 +153,9 @@ end
     return ode_addsteps!(integrator, args...)
 end
 
-@inline function ode_interpolant(Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
+@inline function ode_interpolant(
+        Θ, integrator::SciMLBase.DEIntegrator, idxs, ::Type{deriv}
+    ) where {deriv}
     SciMLBase.addsteps!(integrator)
     if integrator.cache isa CompositeCache
         val = composite_ode_interpolant(
