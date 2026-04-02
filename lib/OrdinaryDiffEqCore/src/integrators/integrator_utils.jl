@@ -309,7 +309,7 @@ end
 # ODE: polynomial interpolation via addsteps!/ode_interpolant (always available,
 #   regardless of opts.dense which only controls post-solve k-array storage).
 # SDE: linear interpolation between uprev and u.
-function interp_at_saveat(Θ, integrator, idxs, deriv)
+function interp_at_saveat(Θ, integrator, idxs, ::Type{deriv}) where {deriv}
     if isnothing(_get_W(integrator))
         # ODE/DDE: polynomial interpolation
         SciMLBase.addsteps!(integrator)
