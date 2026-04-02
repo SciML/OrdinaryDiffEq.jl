@@ -1,12 +1,13 @@
 import OrdinaryDiffEqTaylorSeries: build_jet, build_propagator
 
 @cache mutable struct ImplicitTaylorCache{
-        T, uType, propagatorType, d_propagatorType, jacobianType, uIntermediateType, rateType, uNoUnitsType, F1, Tol, StepLimiter,
+        T, uType, tType, jacobianType, uIntermediateType, rateType, uNoUnitsType, F1, Tol, StepLimiter,
     } <:
     OrdinaryDiffEqMutableCache
     μ::T
-    propagator::propagatorType
-    d_propagator::d_propagatorType
+    t::tType
+    propagator::FunctionWrapper{Nothing, Tuple{uType, uType, tType, tType}}
+    d_propagator::FunctionWrapper{Nothing, Tuple{jacobianType, uType, tType, tType}}
     u::uType
     uprev::uType
     uprev2::uType
@@ -56,9 +57,12 @@ function alg_cache(
     ηold = one(uToltype)
     iter = 10000
     status = Convergence
+    uType, tType, jacobianType = typeof(u), typeof(t), typeof(J)
+    propagator_wrapped = FunctionWrapper{Nothing, Tuple{uType, uType, tType, tType}}(propagator)
+    d_propagator_wrapped = FunctionWrapper{Nothing, Tuple{jacobianType, uType, tType, tType}}(d_propagator)
 
     return ImplicitTaylorCache(
-        alg.μ, propagator, d_propagator, u, uprev, uprev2, J, utilde, uintermediate, tmp, atmp, fsalfirst, linsolve,
+        alg.μ, t, propagator_wrapped, d_propagator_wrapped, u, uprev, uprev2, J, utilde, uintermediate, tmp, atmp, fsalfirst, linsolve,
         κ, ηold, status, iter, alg.step_limiter!
     )
 end
