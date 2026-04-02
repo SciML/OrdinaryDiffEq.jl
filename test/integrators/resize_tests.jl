@@ -76,6 +76,7 @@ i = init(prob, Rosenbrock23())
 resize!(i, 5)
 @test length(i.cache.u) == 5
 @test length(i.cache.uprev) == 5
+@test length(i.cache.ks) == 3
 @test all(length.(i.cache.ks) .== 5)
 @test length(i.cache.du1) == 5
 @test length(i.cache.du2) == 5
@@ -102,6 +103,7 @@ i = init(prob, Rosenbrock23(autodiff = AutoForwardDiff(), linsolve = KrylovJL_GM
 resize!(i, 5)
 @test length(i.cache.u) == 5
 @test length(i.cache.uprev) == 5
+@test length(i.cache.ks) == 3
 @test all(length.(i.cache.ks) .== 5)
 @test length(i.cache.du1) == 5
 @test length(i.cache.du2) == 5
@@ -119,6 +121,7 @@ i = init(prob, Rosenbrock23(; autodiff = AutoFiniteDiff()))
 resize!(i, 5)
 @test length(i.cache.u) == 5
 @test length(i.cache.uprev) == 5
+@test length(i.cache.ks) == 3
 @test all(length.(i.cache.ks) .== 5)
 @test length(i.cache.du1) == 5
 @test length(i.cache.du2) == 5
