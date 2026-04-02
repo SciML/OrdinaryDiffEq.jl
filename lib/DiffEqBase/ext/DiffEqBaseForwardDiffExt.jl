@@ -80,10 +80,7 @@ function wrapfun_iip(
 
     iip_returnlists = ntuple(x -> Nothing, 4)
 
-    fwt = map(iip_arglists, iip_returnlists) do A, R
-        FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper{R, A}(Void(ff))
-    end
-    return FunctionWrappersWrappers.FunctionWrappersWrapper{typeof(fwt), false}(fwt)
+    return FunctionWrappersWrappers.FunctionWrappersWrapper(Void(ff), iip_arglists, iip_returnlists)
 end
 
 # 3-arg version: compile FunctionWrapper variants with the specified chunk size.
@@ -115,10 +112,7 @@ function wrapfun_iip(
 
     iip_returnlists = ntuple(x -> Nothing, 4)
 
-    fwt = map(iip_arglists, iip_returnlists) do A, R
-        FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper{R, A}(Void(ff))
-    end
-    return FunctionWrappersWrappers.FunctionWrappersWrapper{typeof(fwt), false}(fwt)
+    return FunctionWrappersWrappers.FunctionWrappersWrapper(Void(ff), iip_arglists, iip_returnlists)
 end
 
 const iip_arglists_default = (
@@ -146,10 +140,7 @@ const iip_arglists_default = (
 const iip_returnlists_default = ntuple(x -> Nothing, length(iip_arglists_default))
 
 function wrapfun_iip(@nospecialize(ff))
-    fwt = map(iip_arglists_default, iip_returnlists_default) do A, R
-        FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper{R, A}(Void(ff))
-    end
-    return FunctionWrappersWrappers.FunctionWrappersWrapper{typeof(fwt), false}(fwt)
+    return FunctionWrappersWrappers.FunctionWrappersWrapper(Void(ff), iip_arglists_default, iip_returnlists_default)
 end
 
 function promote_tspan(u0::AbstractArray{<:ForwardDiff.Dual}, p, tspan, prob, kwargs)
