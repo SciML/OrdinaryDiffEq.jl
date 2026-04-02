@@ -7,9 +7,9 @@
 # =============================================================================
 
 @muladd function _ode_initdt_iip(
-        u0, t, _tType, tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, ::Type{_tType}, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_prototype, order, integrator
-    )
+    ) where {_tType}
     f = prob.f
     p = integrator.p
     oneunit_tType = oneunit(_tType)
@@ -307,9 +307,9 @@ function Base.showerror(io::IO, e::TypeNotConstantError)
 end
 
 @muladd function _ode_initdt_oop(
-        u0, t, _tType, tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, ::Type{_tType}, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, order, integrator
-    )
+    ) where {_tType}
     f = prob.f
     p = prob.p
     oneunit_tType = oneunit(_tType)
