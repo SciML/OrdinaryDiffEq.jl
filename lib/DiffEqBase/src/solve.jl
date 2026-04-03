@@ -791,6 +791,7 @@ function promote_f(
     end
 
     return f = if f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
+            !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) &&
             # Opt-out SubArrays since they would create type mismatches with the integrator's internal Arrays
             !(u0 isa SubArray) &&
             (
@@ -801,8 +802,7 @@ function promote_f(
                     hasdualpromote(u0, t)
             ) ||
                 (
-                specialize === SciMLBase.FunctionWrapperSpecialize &&
-                    !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+                specialize === SciMLBase.FunctionWrapperSpecialize
             )
         )
         # Wrap tgrad if present, so its type is also erased.
@@ -861,6 +861,7 @@ function promote_f(
     end
 
     return f = if f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
+            !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) &&
             f.mass_matrix isa UniformScaling &&
             f.jac === nothing &&
             !(u0 isa SubArray) &&
@@ -871,8 +872,7 @@ function promote_f(
                     one(t) === oneunit(t)
             ) ||
                 (
-                specialize === SciMLBase.FunctionWrapperSpecialize &&
-                    !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+                specialize === SciMLBase.FunctionWrapperSpecialize
             )
         )
         return unwrapped_f(
