@@ -32,6 +32,7 @@ const ALL_ERRORS = union([:final],
 include("benchmark.jl")
 include("convergence.jl")
 include("plotrecipes.jl")
+include("autoplot.jl")
 include("test_solution.jl")
 include("ode_tableaus.jl")
 include("tableau_info.jl")
@@ -44,6 +45,21 @@ export Shootout, ShootoutSet, WorkPrecision, WorkPrecisionSet
 export test_convergence, analyticless_test_convergence, appxtrue!, appxtrue
 
 export get_sample_errors
+
+#Tagging and Filtering
+export filter_by_tags, exclude_by_tags, get_tags, unique_tags, merge_wp_sets
+
+#Multi-error-mode
+export available_errors
+
+#Best-of-family helpers
+export best_by_tag, best_of_families, wp_area
+
+#AutoDiff comparison helpers
+export with_autodiff_variants
+
+#Autoplot
+export autoplot
 
 #Tab Functions
 export stability_region, residual_order_condition, check_tableau, imaginary_stability_interval

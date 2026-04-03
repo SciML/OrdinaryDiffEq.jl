@@ -91,7 +91,7 @@ function key_to_label(key::Symbol)
     elseif key == :maxeig
         return "Maximum eigenvalue recorded"
     else
-        return key
+        return String(key)
     end
 end
 
@@ -99,20 +99,90 @@ end
         x = wp_set.error_estimate,
         y = :times,
         view = :benchmark,
-        color = nothing)
+        color = nothing,
+        tags = nothing,
+        include_tags = nothing,
+        exclude_tags = nothing,
+        reference_tags = nothing,
+        reference_style = (linestyle = :dash, linewidth = 1, alpha = 0.5))
+    # Apply tag-based filtering if specified
+    if tags !== nothing || include_tags !== nothing || exclude_tags !== nothing
+        filtered = wp_set
+        if tags !== nothing
+            filtered = filter_by_tags(filtered, tags...)
+        end
+        if include_tags !== nothing
+            extra = filter_by_tags(wp_set, include_tags...)
+            seen = Set(wp.name for wp in filtered.wps)
+            extra_wps = [wp for wp in extra.wps if wp.name ∉ seen]
+            if !isempty(extra_wps)
+                all_wps = vcat(filtered.wps, extra_wps)
+                all_names = [wp.name for wp in all_wps]
+                filtered = WorkPrecisionSet(
+                    all_wps, length(all_wps), filtered.abstols, filtered.reltols,
+                    filtered.prob, filtered.setups, all_names, filtered.error_estimate,
+                    filtered.numruns)
+            end
+        end
+        if exclude_tags !== nothing
+            filtered = exclude_by_tags(filtered, exclude_tags...)
+        end
+        wp_set = filtered
+    end
+
     if view == :benchmark
-        seriestype --> :path
-        linewidth --> 3
-        xscale --> :log10
-        yscale --> :log10
-        markershape --> :auto
-        xs = [get_val_from_wp(wp, x) for wp in wp_set.wps]
-        ys = [get_val_from_wp(wp, y) for wp in wp_set.wps]
-        xguide --> key_to_label(x)
-        yguide --> key_to_label(y)
-        legend --> :outerright
-        label --> reshape(wp_set.names, 1, length(wp_set))
-        return xs, ys
+        if reference_tags !== nothing
+            ref_tags = reference_tags isa Symbol ? (reference_tags,) : reference_tags
+            ref_indices = findall(wp -> any(t -> t in wp.tags, ref_tags), wp_set.wps)
+            main_indices = setdiff(1:length(wp_set.wps), ref_indices)
+
+            if !isempty(ref_indices)
+                @series begin
+                    seriestype --> :path
+                    linewidth --> get(reference_style, :linewidth, 1)
+                    linestyle --> get(reference_style, :linestyle, :dash)
+                    seriesalpha --> get(reference_style, :alpha, 0.5)
+                    xscale --> :log10
+                    yscale --> :log10
+                    markershape --> :auto
+                    xguide --> key_to_label(x)
+                    yguide --> key_to_label(y)
+                    legend --> :outerright
+                    ref_xs = [get_val_from_wp(wp_set.wps[i], x) for i in ref_indices]
+                    ref_ys = [get_val_from_wp(wp_set.wps[i], y) for i in ref_indices]
+                    label --> reshape([wp_set.wps[i].name for i in ref_indices], 1, length(ref_indices))
+                    ref_xs, ref_ys
+                end
+            end
+
+            if !isempty(main_indices)
+                seriestype --> :path
+                linewidth --> 3
+                xscale --> :log10
+                yscale --> :log10
+                markershape --> :auto
+                xguide --> key_to_label(x)
+                yguide --> key_to_label(y)
+                legend --> :outerright
+                main_xs = [get_val_from_wp(wp_set.wps[i], x) for i in main_indices]
+                main_ys = [get_val_from_wp(wp_set.wps[i], y) for i in main_indices]
+                label --> reshape([wp_set.wps[i].name for i in main_indices], 1, length(main_indices))
+                return main_xs, main_ys
+            end
+        else
+            seriestype --> :path
+            linewidth --> 3
+            xscale --> :log10
+            yscale --> :log10
+            markershape --> :auto
+            xs = [get_val_from_wp(wp, x) for wp in wp_set.wps]
+            ys = [get_val_from_wp(wp, y) for wp in wp_set.wps]
+            xguide --> key_to_label(x)
+            yguide --> key_to_label(y)
+            legend --> :outerright
+            label --> reshape(wp_set.names, 1, length(wp_set))
+            return xs, ys
+        end
     elseif view == :dt_convergence
         idts = filter(i -> haskey(wp_set.setups[i], :dts), 1:length(wp_set))
         length(idts) > 0 ||
