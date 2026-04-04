@@ -10,7 +10,7 @@ import OrdinaryDiffEqCore: isfsal, alg_order, _unwrap_val,
 import StaticArrays: SVector
 import MuladdMacro: @muladd
 import FastBroadcast: @..
-using Polyester
+
 
 using Reexport
 @reexport using SciMLBase
