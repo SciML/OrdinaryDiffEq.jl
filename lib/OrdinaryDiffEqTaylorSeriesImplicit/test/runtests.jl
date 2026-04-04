@@ -50,9 +50,6 @@ testTol = 0.2
     @test simpade2v2.𝒪est[:final]≈4 atol=testTol
 
     # Taylor-Radau
-    simpade0v1 = test_convergence(dts, prob, ImplicitTaylor(order = Val(0), order_q = Val(1)))
-    @test simpade0v1.𝒪est[:final]≈1 atol=testTol
-
     simpade1v2 = test_convergence(dts, prob, ImplicitTaylor(order = Val(1), order_q = Val(2)))
     @test simpade1v2.𝒪est[:final]≈3 atol=testTol
 

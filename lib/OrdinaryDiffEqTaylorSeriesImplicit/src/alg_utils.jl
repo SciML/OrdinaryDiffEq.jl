@@ -30,7 +30,7 @@ end
 alg_adaptive_order(::ImplicitTaylor) = 0
 
 function normalized_pade(p::Int, q::Int)
-    RI = Rational{BigInt}
+    RI = Rational{Int}
     N = p + q
     c = Vector{RI}(undef, N + 1)
     c[1] = big(1) // big(1)
