@@ -59,10 +59,8 @@ isthreaded(::PolyesterThreads) = true
 macro threaded(option, ex)
     return quote
         opt = $(esc(option))
-        if (opt === BaseThreads()) || ((opt isa Bool) && opt)
+        if (opt === BaseThreads()) || (opt === PolyesterThreads()) || ((opt isa Bool) && opt)
             $(esc(:(Threads.@threads :static $ex)))
-        elseif opt === PolyesterThreads()
-            $(esc(:(Polyester.@batch $ex)))
         else
             $(esc(ex))
         end
