@@ -27,7 +27,13 @@ function alg_order(alg::ImplicitTaylor{P, Q}) where {P, Q}
     end
 end
 
-alg_adaptive_order(::ImplicitTaylor) = 0
+function alg_adaptive_order(alg::ImplicitTaylor{P, Q}) where {P, Q}
+    if is_mu_taylor(alg)
+        return 0 # haven't implemented embedded method for μ-Taylor yet
+    else
+        return P + Q - 1
+    end
+end
 
 function normalized_pade(p::Int, q::Int)
     RI = Rational{Int}
@@ -59,7 +65,7 @@ function normalized_pade(p::Int, q::Int)
             n[k + 1] += dres[j] * c[k - j + 1]
         end
     end
-    d = vcat(big(1) // big(1), dres)
+    d = vcat(1 // 1, dres)
     normalized_n = [x * factorial(k - 1) for (k, x) in enumerate(n)]
     normalized_d = [x * factorial(k - 1) for (k, x) in enumerate(d)]
     return normalized_n, normalized_d

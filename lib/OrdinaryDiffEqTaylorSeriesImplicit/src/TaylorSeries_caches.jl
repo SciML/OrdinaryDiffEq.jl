@@ -45,9 +45,9 @@ function alg_cache(
         polynomial_A1 = polynomial
         polynomial_B1 = polynomial
     else
-        vector_coeffs_A, vector_coeffs_B = normalized_pade(P, Q)
-        tuple_A = tuple(map(Float64, vector_coeffs_A)...)
-        tuple_B = tuple(map(Float64, vector_coeffs_B)...)
+        vector_A, vector_B = normalized_pade(P, Q)
+        tuple_A = tuple(map(Float64, vector_A)...)
+        tuple_B = tuple(map(Float64, vector_B)...)
         polynomial_A_all, _ = build_polynomial(f, p, tuple_A, length(u))
         polynomial_B_all, d_polynomial_B_all = build_polynomial(f, p, tuple_B, length(u))
         # get the iip version
@@ -59,14 +59,15 @@ function alg_cache(
         # else, the embedded method is (P - 1, Q)
         if Q >= P + 2
             Q == 0 && error("Embedded method requires Q > 0.")
-            vector_coeffs_A1, vector_coeffs_B1 = normalized_pade(P, Q - 1)
+            vector_A1, vector_B1 = normalized_pade(P, Q - 1)
         else
             P == 0 && error("Embedded method requires P > 0.")
-            vector_coeffs_A1, vector_coeffs_B1 = normalized_pade(P - 1, Q)
+            vector_A1, vector_B1 = normalized_pade(P - 1, Q)
         end
-        vector_coeffs_B1[1] = 0
-        tuple_A1 = tuple(map(Float64, vector_coeffs_A1)...)
-        tuple_B1 = tuple(map(Float64, vector_coeffs_B1)...)
+        vector_B1[1] = 0
+        println("Embedded method coefficients: A1 = $vector_A1, B1 = $vector_B1")
+        tuple_A1 = tuple(map(Float64, vector_A1)...)
+        tuple_B1 = tuple(map(Float64, vector_B1)...)
         polynomial_A1_all, _ = build_polynomial(f, p, tuple_A1, length(u))
         polynomial_B1_all, _ = build_polynomial(f, p, tuple_B1, length(u))
         # get the iip version
