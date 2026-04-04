@@ -84,7 +84,7 @@ end
 # For μ-Taylor methods, only use stage 2 and stage 3 (if μ != 1)
 @muladd function perform_step!(integrator, cache::ImplicitTaylorCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; μ, κ, tmp, atmp, ηold, polynomial, d_polynomial, polynomial_explicit, linsolve, J, uintermediate, rhs) = cache
+    (; μ, κ, tmp, atmp, ηold, polynomial, d_polynomial, polynomial_explicit, polynomial_A1, polynomial_B1, linsolve, J, uintermediate, rhs, utilde) = cache
     alg = unwrap_alg(integrator, true)
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     (; maxiters, real_function) = alg
@@ -178,28 +178,21 @@ end
     end
     # step_limiter!(u, integrator, p, t + dt)
 
-    if adaptive && integrator.success_iter > 0
-        # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
-        # use 2nd divided differences (DD) a la SPICE and Shampine
-
-        # TODO: check numerical stability
-        uprev2 = integrator.uprev2
-        tprev = integrator.tprev
-
-        dt1 = dt * (t + dt - tprev)
-        dt2 = (t - tprev) * (t + dt - tprev)
-        c = 7 / 12 # default correction factor in SPICE (LTE overestimated by DD)
-        r = c * dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
-
-        @.. tmp = r * integrator.opts.internalnorm(
-            (u - uprev) / dt1 -
-                (uprev - uprev2) / dt2, t
-        )
-        calculate_residuals!(
-            atmp, tmp, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t
-        )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    if adaptive
+        if is_mu_taylor(alg) # haven't implemented
+            integrator.EEst = 1
+        else
+            polynomial_A1(utilde, uprev, t, dt)
+            polynomial_B1(tmp, u, t + dt, dt)
+            utilde .-= tmp # now utilde holds the embedded result
+            tmp .= utilde - u
+            println("norm(tmp) = ", internalnorm(tmp, t), " norm(u) = ", internalnorm(u, t))
+            calculate_residuals!(
+                atmp, tmp, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        end
     else
         integrator.EEst = 1
     end

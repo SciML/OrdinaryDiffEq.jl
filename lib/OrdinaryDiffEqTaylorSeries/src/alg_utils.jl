@@ -10,38 +10,10 @@ alg_order(alg::ExplicitTaylorAdaptiveOrder) = get_value(alg.min_order)
 get_current_adaptive_order(::ExplicitTaylorAdaptiveOrder, cache) = cache.current_order[]
 get_current_alg_order(::ExplicitTaylorAdaptiveOrder, cache) = cache.current_order[]
 
+# f -> (order, params, jet)
 JET_CACHE = IdDict()
-
-# Helper functions to unwrap Symbolics.Num to concrete values (needed for Symbolics v7+)
-# After build_function evaluation, results may be wrapped in Num and need explicit unwrapping
-
-# Convert symbolic value to concrete numeric type
-# Uses Symbolics.value for proper evaluation to concrete numbers
-@inline function _sym_to_numeric(x::Symbolics.Num, ::Type{T}) where {T}
-    v = Symbolics.unwrap(x)
-    return v isa Number ? convert(T, v) : convert(T, Symbolics.value(x))
-end
-@inline function _sym_to_numeric(x::SymbolicUtils.BasicSymbolic, ::Type{T}) where {T}
-    # BasicSymbolic that should be a concrete number - evaluate it
-    return convert(T, Symbolics.value(Symbolics.Num(x)))
-end
-@inline _sym_to_numeric(x::Number, ::Type{T}) where {T} = convert(T, x)
-@inline _sym_to_numeric(x, ::Type{T}) where {T} = convert(T, x)  # fallback
-
-# Unwrap Symbolics values in TaylorScalar coefficients
-@inline function sym_unwrap_taylor(ts::TaylorScalar, ::Type{T}) where {T}
-    coeffs = TaylorDiff.flatten(ts)
-    unwrapped = map(c -> _sym_to_numeric(c, T), coeffs)
-    return TaylorScalar(unwrapped)  # Pass tuple directly
-end
-
-# For arrays of TaylorScalars
-@inline function sym_unwrap_taylor(arr::AbstractArray{<:TaylorScalar}, ::Type{T}) where {T}
-    return map(ts -> sym_unwrap_taylor(ts, T), arr)
-end
-
-# Fallback for other types (e.g., already-concrete values)
-@inline sym_unwrap_taylor(x, ::Type{T}) where {T} = x
+# f -> (coeffs, params, polynomial, d_polynomial)
+POLYNOMIAL_CACHE = IdDict()
 
 function build_jet(f::ODEFunction{iip}, p, order, length = nothing) where {iip}
     # Unwrap FunctionWrappers since TaylorDiff/Symbolics types don't match wrapper signatures
@@ -49,7 +21,6 @@ function build_jet(f::ODEFunction{iip}, p, order, length = nothing) where {iip}
     return build_jet(f, Val{iip}(), p, order, length)
 end
 
-# cache format: Dict{typeof(f), Vector{Tuple{order, p, jet}}}
 function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, iip}
     if haskey(JET_CACHE, f)
         list = JET_CACHE[f]
@@ -120,12 +91,18 @@ function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, 
     return jet
 end
 
-function build_polynomial(f::ODEFunction{iip}, p, coeffs::NTuple{P, Float64}, length = nothing) where {P, iip}
+function build_polynomial(f::ODEFunction{iip}, p, coeffs::NTuple{P1, Float64}, length = nothing) where {P1, iip}
     f = unwrapped_f(f)
     return build_polynomial(f, Val{iip}(), p, coeffs, length)
 end
 
-function build_polynomial(f, ::Val{iip}, p, coeffs::NTuple{P, Float64}, length = nothing) where {P, iip}
+function build_polynomial(f, ::Val{iip}, p, coeffs::NTuple{P1, Float64}, length = nothing) where {P1, iip}
+    P = P1 - 1
+    if haskey(POLYNOMIAL_CACHE, f)
+        list = POLYNOMIAL_CACHE[f]
+        index = findfirst(x -> x[1] == coeffs && x[2] == p, list)
+        index !== nothing && return list[index][3:4]
+    end
     @variables t0::Real dt::Real
     u0 = isnothing(length) ? Symbolics.variable(:u0) : Symbolics.variables(:u0, 1:length)
     if iip
@@ -146,11 +123,16 @@ function build_polynomial(f, ::Val{iip}, p, coeffs::NTuple{P, Float64}, length =
         d = get_coefficient(fu, index - 1) / index
         u = append_coefficient(u, d)
     end
-    ut = eval_taylor_polynomial(u, (1., coeffs...), dt)
-    propagator = build_function(ut, u0, t0, dt; expression = Val(false), cse = true)
+    ut = eval_taylor_polynomial(u, coeffs, dt)
+    polynomial = build_function(ut, u0, t0, dt; expression = Val(false), cse = true)
     jacobian = Symbolics.jacobian(ut, u0)
-    d_propagator = build_function(jacobian, u0, t0, dt; expression = Val(false), cse = true)
-    return propagator, d_propagator
+    d_polynomial = build_function(jacobian, u0, t0, dt; expression = Val(false), cse = true)
+
+    if !haskey(POLYNOMIAL_CACHE, f)
+        POLYNOMIAL_CACHE[f] = []
+    end
+    push!(POLYNOMIAL_CACHE[f], (coeffs, p, polynomial, d_polynomial))
+    return polynomial, d_polynomial
 end
 
 # Evaluate polynomial for scalar TaylorScalar (returns scalar)
