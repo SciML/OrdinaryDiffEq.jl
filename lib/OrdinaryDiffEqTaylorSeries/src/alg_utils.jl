@@ -1,8 +1,14 @@
+get_value(::Val{T}) where {T} = T
+
 alg_order(::ExplicitTaylor2) = 2
 alg_stability_size(alg::ExplicitTaylor2) = 1
 
 alg_order(::ExplicitTaylor{P}) where {P} = P
 alg_stability_size(alg::ExplicitTaylor) = 1
+
+alg_order(alg::ExplicitTaylorAdaptiveOrder) = get_value(alg.min_order)
+get_current_adaptive_order(::ExplicitTaylorAdaptiveOrder, cache) = cache.current_order[]
+get_current_alg_order(::ExplicitTaylorAdaptiveOrder, cache) = cache.current_order[]
 
 JET_CACHE = IdDict()
 
@@ -43,6 +49,7 @@ function build_jet(f::ODEFunction{iip}, p, order, length = nothing) where {iip}
     return build_jet(f, Val{iip}(), p, order, length)
 end
 
+# cache format: Dict{typeof(f), Vector{Tuple{order, p, jet}}}
 function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, iip}
     if haskey(JET_CACHE, f)
         list = JET_CACHE[f]
