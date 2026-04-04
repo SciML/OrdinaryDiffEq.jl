@@ -120,12 +120,12 @@ function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, 
     return jet
 end
 
-function build_propagator(f::ODEFunction{iip}, p, order, length = nothing) where {iip}
+function build_polynomial(f::ODEFunction{iip}, p, coeffs::NTuple{P, Float64}, length = nothing) where {P, iip}
     f = unwrapped_f(f)
-    return build_propagator(f, Val{iip}(), p, order, length)
+    return build_polynomial(f, Val{iip}(), p, coeffs, length)
 end
 
-function build_propagator(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, iip}
+function build_polynomial(f, ::Val{iip}, p, coeffs::NTuple{P, Float64}, length = nothing) where {P, iip}
     @variables t0::Real dt::Real
     u0 = isnothing(length) ? Symbolics.variable(:u0) : Symbolics.variables(:u0, 1:length)
     if iip
@@ -146,24 +146,14 @@ function build_propagator(f, ::Val{iip}, p, order::Val{P}, length = nothing) whe
         d = get_coefficient(fu, index - 1) / index
         u = append_coefficient(u, d)
     end
-    # ut is u evaluated at t0 + dt, which is all we need for the Taylor expansion evaluation
-    ut = eval_taylor_polynomial(u, dt)
+    ut = eval_taylor_polynomial(u, (1., coeffs...), dt)
     propagator = build_function(ut, u0, t0, dt; expression = Val(false), cse = true)
     jacobian = Symbolics.jacobian(ut, u0)
     d_propagator = build_function(jacobian, u0, t0, dt; expression = Val(false), cse = true)
     return propagator, d_propagator
 end
 
-# evaluate using Qin Jiushao's algorithm
-@generated function evaluate_polynomial(t::TaylorScalar{T, P}, z) where {T, P}
-    ex = :(v[$(P + 1)])
-    for i in P:-1:1
-        ex = :(v[$i] + z * $ex)
-    end
-    return :($(Expr(:meta, :inline)); v = flatten(t); $ex)
-end
-
 # Evaluate polynomial for scalar TaylorScalar (returns scalar)
-@inline eval_taylor_polynomial(utaylor::TaylorScalar, dt) = evaluate_polynomial(utaylor, dt)
+@inline eval_taylor_polynomial(u::TaylorScalar, coeffs, dt) = evalpoly(dt, map(*, coeffs, TaylorDiff.flatten(u)))
 # Evaluate polynomial for array of TaylorScalars (returns array)
-@inline eval_taylor_polynomial(utaylor::AbstractArray, dt) = map(x -> evaluate_polynomial(x, dt), utaylor)
+@inline eval_taylor_polynomial(us::AbstractArray, coeffs, dt) = map(x -> eval_taylor_polynomial(x, coeffs, dt), us)
