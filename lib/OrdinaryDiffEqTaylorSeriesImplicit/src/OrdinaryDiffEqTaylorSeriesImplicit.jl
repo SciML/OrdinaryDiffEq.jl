@@ -1,6 +1,6 @@
 module OrdinaryDiffEqTaylorSeriesImplicit
 
-import OrdinaryDiffEqCore: alg_order, alg_autodiff, calculate_residuals!,
+import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, alg_autodiff, calculate_residuals!,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals, alg_extrapolates,
     OrdinaryDiffEqAlgorithm,
