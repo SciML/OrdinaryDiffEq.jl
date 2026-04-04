@@ -78,7 +78,6 @@ import DiffEqBase: calculate_residuals,
     calculate_residuals!, @tight_loop_macros,
     timedepentdtmin
 
-import Polyester
 # MacroTools and Adapt imported but not directly used in OrdinaryDiffEqCore
 # using MacroTools, Adapt
 import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse, dense_ad
