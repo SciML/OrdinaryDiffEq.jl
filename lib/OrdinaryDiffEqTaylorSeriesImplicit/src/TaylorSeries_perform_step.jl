@@ -186,12 +186,12 @@ end
             polynomial_B1(tmp, u, t + dt, dt)
             utilde .-= tmp # now utilde holds the embedded result
             tmp .= utilde - u
-            println("norm(tmp) = ", internalnorm(tmp, t), " norm(u) = ", internalnorm(u, t))
             calculate_residuals!(
                 atmp, tmp, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
+            println("norm(tmp) = $(internalnorm(tmp, t)), norm(u) = $(internalnorm(u, t)), EEst = $(integrator.EEst)")
         end
     else
         integrator.EEst = 1
