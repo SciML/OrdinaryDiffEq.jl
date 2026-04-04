@@ -66,7 +66,7 @@ function _tagged_autodiff(u, ::Val{CS} = Val(1)) where {CS}
     # standardize_forwarddiff_tag can stamp the NonlinearSolveTag, matching the
     # FunctionWrappersWrapper dual signatures created by AutoSpecialize.
     # Passing OrdinaryDiffEqTag here caused a tag mismatch for DAE initialization.
-    return AutoForwardDiff{CS}(nothing)
+    return AutoForwardDiff(; chunksize = CS)
 end
 
 function default_nlsolve(
