@@ -62,7 +62,11 @@ end
 _tagged_autodiff(u, ::Val{nothing}) = _tagged_autodiff(u, Val(1))
 _tagged_autodiff(u, ::Val{0}) = _tagged_autodiff(u, Val(1))
 function _tagged_autodiff(u, ::Val{CS} = Val(1)) where {CS}
-    return AutoForwardDiff{CS}(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u)))
+    # Use AutoForwardDiff without a custom tag so that NonlinearSolveBase's
+    # standardize_forwarddiff_tag can stamp the NonlinearSolveTag, matching the
+    # FunctionWrappersWrapper dual signatures created by AutoSpecialize.
+    # Passing OrdinaryDiffEqTag here caused a tag mismatch for DAE initialization.
+    return AutoForwardDiff{CS}(nothing)
 end
 
 function default_nlsolve(
@@ -783,15 +787,16 @@ function _initialize_dae!(
         f(out, du_tmp, uu, p, t)
     end
 
-    nlsolve_alg = alg.nlsolve
-    if nlsolve_alg !== nothing
-        nlsolve = nlsolve_alg
-    else
-        nlsolve = NewtonRaphson(autodiff = alg_autodiff(integrator.alg))
-    end
-
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u), p)
+    nlchunk = SciMLBase.forwarddiff_chunksize(integrator.alg)
+    nlsolve = if alg.nlsolve !== nothing
+        alg.nlsolve
+    else
+        default_nlsolve(
+            nothing, isinplace, _u, nlprob, isAD, nlchunk
+        )
+    end
     nlsol = solve(
         nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol,
         verbose = integrator.opts.verbose.nonlinear_verbosity
