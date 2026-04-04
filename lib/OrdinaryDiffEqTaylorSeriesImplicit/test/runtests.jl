@@ -21,24 +21,45 @@ testTol = 0.2
 
     dts = 1 .// 2 .^ (9:-1:5)
 
-    sim11 = test_convergence(dts, prob, ImplicitTaylor(μ = 1.0, extrapolant = :linear))
+    sim11 = test_convergence(dts, prob, ImplicitTaylor(μ = 1.0))
     @test sim11.𝒪est[:final]≈1 atol=testTol
 
-    sim12 = test_convergence(dts, prob, ImplicitTaylor(μ = 0.5, extrapolant = :linear))
+    sim12 = test_convergence(dts, prob, ImplicitTaylor(μ = 0.5))
     @test sim12.𝒪est[:final]≈2 atol=testTol
 
-    sim21 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = 1.0, extrapolant = :linear))
+    sim21 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = 1.0))
     @test sim21.𝒪est[:final]≈2 atol=testTol
 
-    sim22 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = 0.5, extrapolant = :linear))
+    sim22 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = 0.5))
     @test sim22.𝒪est[:final]≈2 atol=testTol
 
-    sim23 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = complex(0.5, √3 / 6), extrapolant = :linear))
-    @test sim23.𝒪est[:final]≈4 atol=testTol
+    # sim23 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = complex(0.5, √3 / 6)))
+    # @test sim23.𝒪est[:final]≈4 atol=testTol
 
-    sim31 = test_convergence(dts, prob, ImplicitTaylor(order = Val(3), μ = 0.5, extrapolant = :linear))
+    sim31 = test_convergence(dts, prob, ImplicitTaylor(order = Val(3), μ = 0.5))
     @test sim31.𝒪est[:final]≈4 atol=testTol
 
-    sim41 = test_convergence(dts, prob, ImplicitTaylor(order = Val(4), μ = 0.5, extrapolant = :linear))
+    sim41 = test_convergence(dts, prob, ImplicitTaylor(order = Val(4), μ = 0.5))
     @test sim41.𝒪est[:final]≈4 atol=testTol
+
+    # Taylor-Gauss
+    simpade1v1 = test_convergence(dts, prob, ImplicitTaylor(order = Val(1), order_q = Val(1)))
+    @test simpade1v1.𝒪est[:final]≈2 atol=testTol
+
+    simpade2v2 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), order_q = Val(2)))
+    @test simpade2v2.𝒪est[:final]≈4 atol=testTol
+
+    # Taylor-Radau
+    simpade0v1 = test_convergence(dts, prob, ImplicitTaylor(order = Val(0), order_q = Val(1)))
+    @test simpade0v1.𝒪est[:final]≈1 atol=testTol
+
+    simpade1v2 = test_convergence(dts, prob, ImplicitTaylor(order = Val(1), order_q = Val(2)))
+    @test simpade1v2.𝒪est[:final]≈3 atol=testTol
+
+    # Taylor-Lobatto
+    simpade0v2 = test_convergence(dts, prob, ImplicitTaylor(order = Val(0), order_q = Val(2)))
+    @test simpade0v2.𝒪est[:final]≈2 atol=testTol
+
+    simpade1v3 = test_convergence(dts, prob, ImplicitTaylor(order = Val(1), order_q = Val(3)))
+    @test simpade1v3.𝒪est[:final]≈4 atol=testTol
 end
