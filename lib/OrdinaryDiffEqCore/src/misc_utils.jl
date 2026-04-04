@@ -56,11 +56,32 @@ isthreaded(::Sequential) = false
 isthreaded(::BaseThreads) = true
 isthreaded(::PolyesterThreads) = true
 
+@inline function _threaded_execute(f, ::Union{BaseThreads, Bool}, range)
+    Threads.@threads :static for i in range
+        f(i)
+    end
+end
+
+function _polyester_batch end
+
+@inline function _threaded_execute(f, ::PolyesterThreads, range)
+    isempty(methods(_polyester_batch)) && throw(ArgumentError(LazyString(
+        "PolyesterThreads() requires Polyester.jl to be loaded. ",
+        "Add `using Polyester` to your code.")))
+    _polyester_batch(f, range)
+end
+
 macro threaded(option, ex)
+    ex.head === :for || error("@threaded expects a for loop")
+    loop_var = esc(ex.args[1].args[1])
+    range_expr = esc(ex.args[1].args[2])
+    body = esc(ex.args[2])
     return quote
         opt = $(esc(option))
-        if (opt === BaseThreads()) || (opt === PolyesterThreads()) || ((opt isa Bool) && opt)
-            $(esc(:(Threads.@threads :static $ex)))
+        if isthreaded(opt)
+            _threaded_execute(opt, $range_expr) do $loop_var
+                $body
+            end
         else
             $(esc(ex))
         end
