@@ -19,7 +19,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     get_current_adaptive_order, get_fsalfirstlast,
     isfirk, generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
     LinearAliasSpecifier
-using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
+using MuladdMacro, DiffEqBase, RecursiveArrayTools
 isfirk, generic_solver_docstring
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu
