@@ -79,17 +79,35 @@ end
     integrator.u = u
 end
 
+# Generic 3-stage formulation: explicit-implicit-explicit
+# For Taylor-Padé methods, only use stage 1 and stage 2
+# For μ-Taylor methods, only use stage 2 and stage 3 (if μ != 1)
 @muladd function perform_step!(integrator, cache::ImplicitTaylorCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; μ, κ, tmp, atmp, ηold, propagator, d_propagator, linsolve, J, uintermediate) = cache
+    (; μ, κ, tmp, atmp, ηold, polynomial, d_polynomial, polynomial_explicit, linsolve, J, uintermediate, rhs) = cache
     alg = unwrap_alg(integrator, true)
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     (; maxiters, real_function) = alg
 
-    # expansion center
-    tc = t + μ * dt
+    # Stage 1: explicit step.
+    # if the method is Taylor-Padé, we need to compute a rhs; else, set rhs to be current u
+    if is_taylor_pade(alg)
+        polynomial_explicit(rhs, uprev, t, dt)
+    else
+        rhs .= uprev
+    end
 
-    # Newton iteration
+    # Stage 2: implicit step.
+    # Solve nonlinear equation: polynomial(uintermediate, tc, distance) - rhs = 0
+    # store the result in uintermediate
+    if is_taylor_pade(alg)
+        tc = t + dt
+        distance = dt
+    else
+        # expansion center
+        tc = t + μ * dt
+        distance = -μ * dt
+    end
     local ndw
     η = max(ηold, eps(eltype(integrator.opts.reltol)))
     fail_convergence = true
@@ -101,11 +119,11 @@ end
         integrator.stats.nnonliniter += 1
         # calculate rhs and Jacobian
         # tmp holds the rhs of the linear system
-        propagator(tmp, uintermediate, tc, -μ * dt)
-        tmp .-= uprev
+        polynomial(tmp, uintermediate, tc, distance)
+        tmp .-= rhs
         needfactor = iter == 1
         if needfactor
-            d_propagator(J, uintermediate, tc, -μ * dt)
+            d_polynomial(J, uintermediate, tc, distance)
             A = J
         else
             A = nothing
@@ -145,8 +163,10 @@ end
     cache.ηold = η
     cache.iter = iter
 
-    if μ != one(μ)
-        propagator(tmp, uintermediate, tc, (1 - μ) * dt)
+    # Stage 3: explicit step.
+    # Only used if it's μ-Taylor method and μ != 1
+    if is_mu_taylor(alg) && μ != one(μ)
+        polynomial(tmp, uintermediate, tc, (1 - μ) * dt)
         if real_function
             u .= real.(tmp)
         else
