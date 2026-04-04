@@ -57,3 +57,12 @@ issplit(alg::KenCarp47) = true
 issplit(alg::KenCarp5) = true
 issplit(alg::KenCarp58) = true
 issplit(alg::CFNLIRK3) = true
+issplit(alg::IMEXSSP222) = true
+issplit(alg::IMEXSSP2322) = true
+issplit(alg::IMEXSSP3332) = true
+issplit(alg::IMEXSSP3433) = true
+
+alg_order(alg::IMEXSSP222) = 2
+alg_order(alg::IMEXSSP2322) = 2
+alg_order(alg::IMEXSSP3332) = 2
+alg_order(alg::IMEXSSP3433) = 3

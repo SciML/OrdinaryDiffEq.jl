@@ -728,3 +728,261 @@ function alg_cache(
         k1, k2, k3, k4, k5, k6, k7, k8, atmp, nlsolver, tab
     )
 end
+
+# ---- IMEXSSP222 ----
+
+@cache mutable struct IMEXSSP222ConstantCache{N, Tab} <: SDIRKConstantCache
+    nlsolver::N
+    tab::Tab
+end
+
+function alg_cache(
+        alg::IMEXSSP222, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = IMEXSSP222Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.c2
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    )
+    return IMEXSSP222ConstantCache(nlsolver, tab)
+end
+
+@cache mutable struct IMEXSSP222Cache{uType, rateType, N, Tab, kType, StepLimiter} <:
+    SDIRKMutableCache
+    u::uType
+    uprev::uType
+    fsalfirst::rateType
+    z₁::uType
+    z₂::uType
+    k1::kType
+    k2::kType
+    nlsolver::N
+    tab::Tab
+    step_limiter!::StepLimiter
+end
+
+function alg_cache(
+        alg::IMEXSSP222, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = IMEXSSP222Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.c2
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
+    )
+    fsalfirst = zero(rate_prototype)
+    z₁ = zero(u)
+    z₂ = nlsolver.z
+    if f isa SplitFunction
+        k1 = zero(u)
+        k2 = zero(u)
+    else
+        k1 = nothing
+        k2 = nothing
+    end
+    return IMEXSSP222Cache(u, uprev, fsalfirst, z₁, z₂, k1, k2, nlsolver, tab, alg.step_limiter!)
+end
+
+# ---- IMEXSSP2322 ----
+
+@cache mutable struct IMEXSSP2322ConstantCache{N, Tab} <: SDIRKConstantCache
+    nlsolver::N
+    tab::Tab
+end
+
+function alg_cache(
+        alg::IMEXSSP2322, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = IMEXSSP2322Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.c3
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    )
+    return IMEXSSP2322ConstantCache(nlsolver, tab)
+end
+
+@cache mutable struct IMEXSSP2322Cache{uType, rateType, N, Tab, kType, StepLimiter} <:
+    SDIRKMutableCache
+    u::uType
+    uprev::uType
+    fsalfirst::rateType
+    z₁::uType
+    z₂::uType
+    z₃::uType
+    k2::kType
+    k3::kType
+    nlsolver::N
+    tab::Tab
+    step_limiter!::StepLimiter
+end
+
+function alg_cache(
+        alg::IMEXSSP2322, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = IMEXSSP2322Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.c3
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
+    )
+    fsalfirst = zero(rate_prototype)
+    z₁ = zero(u)
+    z₂ = zero(u)
+    z₃ = nlsolver.z
+    if f isa SplitFunction
+        k2 = zero(u)
+        k3 = zero(u)
+    else
+        k2 = nothing
+        k3 = nothing
+    end
+    return IMEXSSP2322Cache(u, uprev, fsalfirst, z₁, z₂, z₃, k2, k3, nlsolver, tab, alg.step_limiter!)
+end
+
+# ---- IMEXSSP3332 ----
+
+@cache mutable struct IMEXSSP3332ConstantCache{N, Tab} <: SDIRKConstantCache
+    nlsolver::N
+    tab::Tab
+end
+
+function alg_cache(
+        alg::IMEXSSP3332, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = IMEXSSP3332Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.c3
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    )
+    return IMEXSSP3332ConstantCache(nlsolver, tab)
+end
+
+@cache mutable struct IMEXSSP3332Cache{uType, rateType, N, Tab, kType, StepLimiter} <:
+    SDIRKMutableCache
+    u::uType
+    uprev::uType
+    fsalfirst::rateType
+    z₁::uType
+    z₂::uType
+    z₃::uType
+    k1::kType
+    k2::kType
+    k3::kType
+    nlsolver::N
+    tab::Tab
+    step_limiter!::StepLimiter
+end
+
+function alg_cache(
+        alg::IMEXSSP3332, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = IMEXSSP3332Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.c3
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
+    )
+    fsalfirst = zero(rate_prototype)
+    z₁ = zero(u)
+    z₂ = zero(u)
+    z₃ = nlsolver.z
+    if f isa SplitFunction
+        k1 = zero(u)
+        k2 = zero(u)
+        k3 = zero(u)
+    else
+        k1 = nothing
+        k2 = nothing
+        k3 = nothing
+    end
+    return IMEXSSP3332Cache(u, uprev, fsalfirst, z₁, z₂, z₃, k1, k2, k3, nlsolver, tab, alg.step_limiter!)
+end
+
+# ---- IMEXSSP3433 ----
+
+@cache mutable struct IMEXSSP3433ConstantCache{N, Tab} <: SDIRKConstantCache
+    nlsolver::N
+    tab::Tab
+end
+
+function alg_cache(
+        alg::IMEXSSP3433, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = IMEXSSP3433Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.c4
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    )
+    return IMEXSSP3433ConstantCache(nlsolver, tab)
+end
+
+@cache mutable struct IMEXSSP3433Cache{uType, rateType, N, Tab, kType, StepLimiter} <:
+    SDIRKMutableCache
+    u::uType
+    uprev::uType
+    fsalfirst::rateType
+    z₁::uType
+    z₂::uType
+    z₃::uType
+    z₄::uType
+    k2::kType
+    k3::kType
+    k4::kType
+    nlsolver::N
+    tab::Tab
+    step_limiter!::StepLimiter
+end
+
+function alg_cache(
+        alg::IMEXSSP3433, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = IMEXSSP3433Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.c4
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
+    )
+    fsalfirst = zero(rate_prototype)
+    z₁ = zero(u)
+    z₂ = zero(u)
+    z₃ = zero(u)
+    z₄ = nlsolver.z
+    if f isa SplitFunction
+        k2 = zero(u)
+        k3 = zero(u)
+        k4 = zero(u)
+    else
+        k2 = nothing
+        k3 = nothing
+        k4 = nothing
+    end
+    return IMEXSSP3433Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, k2, k3, k4, nlsolver, tab, alg.step_limiter!)
+end

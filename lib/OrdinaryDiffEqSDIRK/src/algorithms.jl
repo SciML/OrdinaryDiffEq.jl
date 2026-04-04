@@ -1593,3 +1593,183 @@ function ESDIRK659L2SA(;
         controller, AD_choice
     )
 end
+
+@doc SDIRK_docstring(
+    "2-stage 2nd-order L-stable SSP IMEX-SDIRK method for split (implicit+explicit) ODEs. From Pareschi & Russo (2005), Table 2.",
+    "IMEXSSP222";
+    references = "@article{pareschi2005implicit,
+    title={Implicit-explicit Runge-Kutta schemes and applications to hyperbolic systems with relaxation},
+    author={Pareschi, Lorenzo and Russo, Giovanni},
+    journal={Journal of Scientific Computing},
+    volume={25},
+    number={1},
+    pages={129--155},
+    year={2005},
+    publisher={Springer}}",
+    extra_keyword_description = """
+    - `extrapolant`: TBD
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    extrapolant = :linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct IMEXSSP222{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
+    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    step_limiter!::StepLimiter
+    autodiff::AD
+end
+function IMEXSSP222(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
+        standardtag = Val{true}(), concrete_jac = nothing,
+        diff_type = Val{:forward}(),
+        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        extrapolant = :linear, step_limiter! = trivial_limiter!
+    )
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    return IMEXSSP222{
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
+        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
+    }(linsolve, nlsolve, precs, extrapolant, step_limiter!, AD_choice)
+end
+
+@doc SDIRK_docstring(
+    "3-stage 2nd-order stiffly-accurate SSP IMEX-SDIRK method for split ODEs. From Pareschi & Russo (2005), Table 3.",
+    "IMEXSSP2322";
+    references = "@article{pareschi2005implicit,
+    title={Implicit-explicit Runge-Kutta schemes and applications to hyperbolic systems with relaxation},
+    author={Pareschi, Lorenzo and Russo, Giovanni},
+    journal={Journal of Scientific Computing},
+    volume={25},
+    number={1},
+    pages={129--155},
+    year={2005},
+    publisher={Springer}}",
+    extra_keyword_description = """
+    - `extrapolant`: TBD
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    extrapolant = :linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct IMEXSSP2322{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
+    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    step_limiter!::StepLimiter
+    autodiff::AD
+end
+function IMEXSSP2322(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
+        standardtag = Val{true}(), concrete_jac = nothing,
+        diff_type = Val{:forward}(),
+        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        extrapolant = :linear, step_limiter! = trivial_limiter!
+    )
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    return IMEXSSP2322{
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
+        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
+    }(linsolve, nlsolve, precs, extrapolant, step_limiter!, AD_choice)
+end
+
+@doc SDIRK_docstring(
+    "3-stage 2nd-order L-stable SSP IMEX-SDIRK method (3rd order SSP explicit part) for split ODEs. From Pareschi & Russo (2005), Table 6.",
+    "IMEXSSP3332";
+    references = "@article{pareschi2005implicit,
+    title={Implicit-explicit Runge-Kutta schemes and applications to hyperbolic systems with relaxation},
+    author={Pareschi, Lorenzo and Russo, Giovanni},
+    journal={Journal of Scientific Computing},
+    volume={25},
+    number={1},
+    pages={129--155},
+    year={2005},
+    publisher={Springer}}",
+    extra_keyword_description = """
+    - `extrapolant`: TBD
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    extrapolant = :linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct IMEXSSP3332{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
+    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    step_limiter!::StepLimiter
+    autodiff::AD
+end
+function IMEXSSP3332(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
+        standardtag = Val{true}(), concrete_jac = nothing,
+        diff_type = Val{:forward}(),
+        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        extrapolant = :linear, step_limiter! = trivial_limiter!
+    )
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    return IMEXSSP3332{
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
+        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
+    }(linsolve, nlsolve, precs, extrapolant, step_limiter!, AD_choice)
+end
+
+@doc SDIRK_docstring(
+    "4-stage 3rd-order L-stable SSP IMEX-SDIRK method for split ODEs. From Pareschi & Russo (2005), Table 7.",
+    "IMEXSSP3433";
+    references = "@article{pareschi2005implicit,
+    title={Implicit-explicit Runge-Kutta schemes and applications to hyperbolic systems with relaxation},
+    author={Pareschi, Lorenzo and Russo, Giovanni},
+    journal={Journal of Scientific Computing},
+    volume={25},
+    number={1},
+    pages={129--155},
+    year={2005},
+    publisher={Springer}}",
+    extra_keyword_description = """
+    - `extrapolant`: TBD
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    extrapolant = :linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct IMEXSSP3433{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
+    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    step_limiter!::StepLimiter
+    autodiff::AD
+end
+function IMEXSSP3433(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
+        standardtag = Val{true}(), concrete_jac = nothing,
+        diff_type = Val{:forward}(),
+        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        extrapolant = :linear, step_limiter! = trivial_limiter!
+    )
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    return IMEXSSP3433{
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
+        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
+    }(linsolve, nlsolve, precs, extrapolant, step_limiter!, AD_choice)
+end
