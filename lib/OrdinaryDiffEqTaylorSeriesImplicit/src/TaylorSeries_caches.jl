@@ -9,6 +9,8 @@ import OrdinaryDiffEqTaylorSeries: build_jet, build_polynomial
     polynomial::FunctionWrapper{Nothing, Tuple{uType, uType, tType, tType}}
     d_polynomial::FunctionWrapper{Nothing, Tuple{jacobianType, uType, tType, tType}}
     polynomial_explicit::FunctionWrapper{Nothing, Tuple{uType, uType, tType, tType}}
+    polynomial_A1::FunctionWrapper{Nothing, Tuple{uType, uType, tType, tType}}
+    polynomial_B1::FunctionWrapper{Nothing, Tuple{uType, uType, tType, tType}}
     u::uType
     uprev::uType
     uprev2::uType
@@ -34,22 +36,42 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {P, Q, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     if is_mu_taylor(alg)
-        coeffs = ntuple(_ -> 1.0, alg.order)
+        coeffs = tuple(1.0, ntuple(_ -> 1.0, alg.order)...)
         polynomial_all, d_polynomial_all = build_polynomial(f, p, coeffs, length(u))
         # get the iip version
         _, polynomial = polynomial_all
         _, d_polynomial = d_polynomial_all
         polynomial_explicit = polynomial
+        polynomial_A1 = polynomial
+        polynomial_B1 = polynomial
     else
-        polynomial_p, polynomial_q = normalized_pade(P, Q)
-        tuple_p = Base.tail(tuple(map(Float64, polynomial_p)...))
-        tuple_q = Base.tail(tuple(map(Float64, polynomial_q)...))
-        polynomial_p_all, _ = build_polynomial(f, p, tuple_p, length(u))
-        polynomial_q_all, d_polynomial_q_all = build_polynomial(f, p, tuple_q, length(u))
+        vector_coeffs_A, vector_coeffs_B = normalized_pade(P, Q)
+        tuple_A = tuple(map(Float64, vector_coeffs_A)...)
+        tuple_B = tuple(map(Float64, vector_coeffs_B)...)
+        polynomial_A_all, _ = build_polynomial(f, p, tuple_A, length(u))
+        polynomial_B_all, d_polynomial_B_all = build_polynomial(f, p, tuple_B, length(u))
         # get the iip version
-        _, polynomial = polynomial_q_all
-        _, d_polynomial = d_polynomial_q_all
-        _, polynomial_explicit = polynomial_p_all
+        _, polynomial = polynomial_B_all
+        _, d_polynomial = d_polynomial_B_all
+        _, polynomial_explicit = polynomial_A_all
+        # Embedded polynomials
+        # for methods equal or more implicit than Taylor-Lobatto, the embedded method is (P, Q - 1)
+        # else, the embedded method is (P - 1, Q)
+        if Q >= P + 2
+            Q == 0 && error("Embedded method requires Q > 0.")
+            vector_coeffs_A1, vector_coeffs_B1 = normalized_pade(P, Q - 1)
+        else
+            P == 0 && error("Embedded method requires P > 0.")
+            vector_coeffs_A1, vector_coeffs_B1 = normalized_pade(P - 1, Q)
+        end
+        vector_coeffs_B1[1] = 0
+        tuple_A1 = tuple(map(Float64, vector_coeffs_A1)...)
+        tuple_B1 = tuple(map(Float64, vector_coeffs_B1)...)
+        polynomial_A1_all, _ = build_polynomial(f, p, tuple_A1, length(u))
+        polynomial_B1_all, _ = build_polynomial(f, p, tuple_B1, length(u))
+        # get the iip version
+        _, polynomial_A1 = polynomial_A1_all
+        _, polynomial_B1 = polynomial_B1_all
     end
     fsalfirst = zero(rate_prototype)
     atmp = similar(u, promote_type(uEltypeNoUnits, typeof(alg.μ)))
@@ -78,9 +100,11 @@ function alg_cache(
     polynomial_wrapped = FunctionWrapper{Nothing, Tuple{uType, uType, tType, tType}}(polynomial)
     d_polynomial_wrapped = FunctionWrapper{Nothing, Tuple{jacobianType, uType, tType, tType}}(d_polynomial)
     polynomial_explicit_wrapped = FunctionWrapper{Nothing, Tuple{uType, uType, tType, tType}}(polynomial_explicit)
+    polynomial_A1_wrapped = FunctionWrapper{Nothing, Tuple{uType, uType, tType, tType}}(polynomial_A1)
+    polynomial_B1_wrapped = FunctionWrapper{Nothing, Tuple{uType, uType, tType, tType}}(polynomial_B1)
 
     return ImplicitTaylorCache(
-        alg.μ, t, polynomial_wrapped, d_polynomial_wrapped, polynomial_explicit_wrapped, u, uprev, uprev2, J, utilde, uintermediate, rhs, tmp, atmp, fsalfirst, linsolve,
+        alg.μ, t, polynomial_wrapped, d_polynomial_wrapped, polynomial_explicit_wrapped, polynomial_A1_wrapped, polynomial_B1_wrapped, u, uprev, uprev2, J, utilde, uintermediate, rhs, tmp, atmp, fsalfirst, linsolve,
         κ, ηold, status, iter, alg.step_limiter!
     )
 end
