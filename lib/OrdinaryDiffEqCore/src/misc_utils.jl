@@ -62,12 +62,13 @@ isthreaded(::PolyesterThreads) = true
     end
 end
 
-function _polyester_batch end
-
-@inline function _threaded_execute(f, ::PolyesterThreads, range)
-    applicable(_polyester_batch, f, range) || throw(ArgumentError(LazyString(
+function _polyester_batch(args...)
+    throw(ArgumentError(LazyString(
         "PolyesterThreads() requires Polyester.jl to be loaded. ",
         "Add `using Polyester` to your code.")))
+end
+
+@inline function _threaded_execute(f, ::PolyesterThreads, range)
     _polyester_batch(f, range)
 end
 
