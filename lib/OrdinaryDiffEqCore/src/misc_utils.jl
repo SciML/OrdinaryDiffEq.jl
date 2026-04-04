@@ -65,7 +65,7 @@ end
 function _polyester_batch end
 
 @inline function _threaded_execute(f, ::PolyesterThreads, range)
-    isempty(methods(_polyester_batch)) && throw(ArgumentError(LazyString(
+    applicable(_polyester_batch, f, range) || throw(ArgumentError(LazyString(
         "PolyesterThreads() requires Polyester.jl to be loaded. ",
         "Add `using Polyester` to your code.")))
     _polyester_batch(f, range)
