@@ -7,9 +7,10 @@
 # =============================================================================
 
 @muladd function _ode_initdt_iip(
-        u0, t, _tType, tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_prototype, order, integrator
     )
+    _tType = eltype(t)
     f = prob.f
     p = integrator.p
     oneunit_tType = oneunit(_tType)
@@ -274,7 +275,7 @@ function ode_determine_initdt(
         integrator
     ) where {tType, uType}
     return _ode_initdt_iip(
-        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, nothing, nothing,
         get_current_alg_order(integrator.alg, integrator.cache), integrator
     )
@@ -307,9 +308,10 @@ function Base.showerror(io::IO, e::TypeNotConstantError)
 end
 
 @muladd function _ode_initdt_oop(
-        u0, t, _tType, tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, order, integrator
     )
+    _tType = eltype(t)
     f = prob.f
     p = prob.p
     oneunit_tType = oneunit(_tType)
@@ -406,7 +408,7 @@ function ode_determine_initdt(
         integrator
     ) where {uType, tType}
     return _ode_initdt_oop(
-        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, nothing,
         get_current_alg_order(integrator.alg, integrator.cache), integrator
     )
@@ -441,7 +443,7 @@ function ode_determine_initdt(
         nothing
     effective_order = g !== nothing ? order + 1 // 2 : order
     return _ode_initdt_iip(
-        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_proto, effective_order, integrator
     )
 end
@@ -458,7 +460,7 @@ function ode_determine_initdt(
     g = prob.f.g
     effective_order = g !== nothing ? order + 1 // 2 : order
     return _ode_initdt_oop(
-        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, effective_order, integrator
     )
 end
