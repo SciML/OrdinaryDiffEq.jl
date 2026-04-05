@@ -3373,3 +3373,741 @@ end
         @.. broadcast=false integrator.fsallast = z₄ / dt
     end
 end
+
+# ---------------------------------------------------------------------------
+# ARS(2,2,2) — 3-stage, 2nd order, ESDIRK, ISA  (Ascher et al. 1997 Table II)
+# ---------------------------------------------------------------------------
+
+@muladd function perform_step!(
+        integrator, cache::ARS222ConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    nlsolver = cache.nlsolver
+    (; γ, a32, ea21, ea31, ea32) = cache.tab
+
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    γdt = γ * dt
+    markfirststage!(nlsolver)
+
+    # Stage 1 (ESDIRK: trivial, FSAL)
+    if integrator.f isa SplitFunction
+        z₁ = dt .* f(uprev, p, t)
+        k1 = dt * integrator.fsalfirst - z₁
+    else
+        z₁ = dt * integrator.fsalfirst
+    end
+
+    # Stage 2
+    nlsolver.z = z₂ = z₁
+    nlsolver.tmp = uprev  # a21=0
+    if integrator.f isa SplitFunction
+        nlsolver.tmp = nlsolver.tmp + ea21 * k1
+    end
+    nlsolver.c = γ
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 3
+    if integrator.f isa SplitFunction
+        u = nlsolver.tmp + γ * z₂  # Y₂
+        k2 = dt * f2(u, p, t + γdt)
+        integrator.stats.nf2 += 1
+        tmp = uprev + a32 * z₂ + ea31 * k1 + ea32 * k2
+    else
+        tmp = uprev + a32 * z₂
+    end
+    nlsolver.z = z₃ = z₂
+    nlsolver.tmp = tmp
+    nlsolver.c = 1
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Final update: u = tmp + γ*z₃
+    # For split: tmp already contains ea31*k1+ea32*k2 = eb1*k1+eb2*k2 (GSA: b̃ = last row of Ã)
+    u = nlsolver.tmp + γ * z₃
+
+    if integrator.f isa SplitFunction
+        integrator.k[1] = integrator.fsalfirst
+        integrator.fsallast = integrator.f(u, p, t + dt)
+        integrator.k[2] = integrator.fsallast
+    else
+        integrator.fsallast = z₃ ./ dt
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+    end
+    integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::ARS222Cache, repeat_step = false)
+    (; t, dt, uprev, u, p) = integrator
+    (; z₁, z₂, z₃, k1, k2, nlsolver, step_limiter!) = cache
+    (; tmp) = nlsolver
+    (; γ, a32, ea21, ea31, ea32) = cache.tab
+
+    f2 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    γdt = γ * dt
+    markfirststage!(nlsolver)
+
+    # Stage 1 (ESDIRK: trivial, FSAL)
+    if integrator.f isa SplitFunction && !repeat_step && !integrator.last_stepfail
+        f(z₁, uprev, p, t)
+        z₁ .*= dt
+    else
+        @.. broadcast = false z₁ = dt * integrator.fsalfirst
+    end
+
+    # Stage 2
+    copyto!(z₂, z₁)
+    nlsolver.z = z₂
+    @.. broadcast = false tmp = uprev  # a21=0
+    if integrator.f isa SplitFunction
+        @.. broadcast = false k1 = dt * integrator.fsalfirst - z₁
+        @.. broadcast = false tmp += ea21 * k1
+    end
+    nlsolver.c = γ
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+
+    # Stage 3
+    if integrator.f isa SplitFunction
+        @.. broadcast = false u = tmp + γ * z₂  # Y₂
+        f2(k2, u, p, t + γdt)
+        k2 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast = false tmp = uprev + a32 * z₂ + ea31 * k1 + ea32 * k2
+    else
+        @.. broadcast = false tmp = uprev + a32 * z₂
+    end
+    copyto!(z₃, z₂)
+    nlsolver.z = z₃
+    nlsolver.c = 1
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Final update: u = tmp + γ*z₃ (works for both split and non-split: GSA for split)
+    @.. broadcast = false u = tmp + γ * z₃
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    if integrator.f isa SplitFunction
+        integrator.f(integrator.fsallast, u, p, t + dt)
+    else
+        @.. broadcast = false integrator.fsallast = z₃ / dt
+    end
+end
+
+# ---------------------------------------------------------------------------
+# ARS(2,3,2) — 3-stage, 2nd order, ESDIRK, ISA  (Ascher et al. 1997)
+# ---------------------------------------------------------------------------
+
+@muladd function perform_step!(
+        integrator, cache::ARS232ConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    nlsolver = cache.nlsolver
+    (; γ, a32, ea21, ea31, ea32, eb2, eb3) = cache.tab
+
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    k3 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    γdt = γ * dt
+    markfirststage!(nlsolver)
+
+    # Stage 1 (ESDIRK: trivial, FSAL)
+    if integrator.f isa SplitFunction
+        z₁ = dt .* f(uprev, p, t)
+        k1 = dt * integrator.fsalfirst - z₁
+    else
+        z₁ = dt * integrator.fsalfirst
+    end
+
+    # Stage 2
+    nlsolver.z = z₂ = z₁
+    nlsolver.tmp = uprev  # a21=0
+    if integrator.f isa SplitFunction
+        nlsolver.tmp = nlsolver.tmp + ea21 * k1
+    end
+    nlsolver.c = γ
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 3
+    if integrator.f isa SplitFunction
+        u = nlsolver.tmp + γ * z₂  # Y₂
+        k2 = dt * f2(u, p, t + γdt)
+        integrator.stats.nf2 += 1
+        tmp = uprev + a32 * z₂ + ea31 * k1 + ea32 * k2
+    else
+        tmp = uprev + a32 * z₂
+    end
+    nlsolver.z = z₃ = z₂
+    nlsolver.tmp = tmp
+    nlsolver.c = 1
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Final update
+    if integrator.f isa SplitFunction
+        u = nlsolver.tmp + γ * z₃  # Y₃ (ISA implicit part)
+        k3 = dt * f2(u, p, t + dt)
+        integrator.stats.nf2 += 1
+        # b̃ = [0, 1-γ, γ] ≠ last row of Ã → must reconstruct explicitly
+        u = uprev + eb2 * (z₂ + k2) + eb3 * (z₃ + k3)
+    else
+        u = nlsolver.tmp + γ * z₃  # ISA
+    end
+
+    if integrator.f isa SplitFunction
+        integrator.k[1] = integrator.fsalfirst
+        integrator.fsallast = integrator.f(u, p, t + dt)
+        integrator.k[2] = integrator.fsallast
+    else
+        integrator.fsallast = z₃ ./ dt
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+    end
+    integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::ARS232Cache, repeat_step = false)
+    (; t, dt, uprev, u, p) = integrator
+    (; z₁, z₂, z₃, k1, k2, k3, nlsolver, step_limiter!) = cache
+    (; tmp) = nlsolver
+    (; γ, a32, ea21, ea31, ea32, eb2, eb3) = cache.tab
+
+    f2 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    γdt = γ * dt
+    markfirststage!(nlsolver)
+
+    # Stage 1 (ESDIRK: trivial, FSAL)
+    if integrator.f isa SplitFunction && !repeat_step && !integrator.last_stepfail
+        f(z₁, uprev, p, t)
+        z₁ .*= dt
+    else
+        @.. broadcast = false z₁ = dt * integrator.fsalfirst
+    end
+
+    # Stage 2
+    copyto!(z₂, z₁)
+    nlsolver.z = z₂
+    @.. broadcast = false tmp = uprev  # a21=0
+    if integrator.f isa SplitFunction
+        @.. broadcast = false k1 = dt * integrator.fsalfirst - z₁
+        @.. broadcast = false tmp += ea21 * k1
+    end
+    nlsolver.c = γ
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+
+    # Stage 3
+    if integrator.f isa SplitFunction
+        @.. broadcast = false u = tmp + γ * z₂  # Y₂
+        f2(k2, u, p, t + γdt)
+        k2 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast = false tmp = uprev + a32 * z₂ + ea31 * k1 + ea32 * k2
+    else
+        @.. broadcast = false tmp = uprev + a32 * z₂
+    end
+    copyto!(z₃, z₂)
+    nlsolver.z = z₃
+    nlsolver.c = 1
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Final update
+    @.. broadcast = false u = tmp + γ * z₃  # ISA (or Y₃ for split)
+    if integrator.f isa SplitFunction
+        f2(k3, u, p, t + dt)
+        k3 .*= dt
+        integrator.stats.nf2 += 1
+        # b̃ = [0, 1-γ, γ]; explicit reconstruction needed
+        @.. broadcast = false u = uprev + eb2 * (z₂ + k2) + eb3 * (z₃ + k3)
+    end
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    if integrator.f isa SplitFunction
+        integrator.f(integrator.fsallast, u, p, t + dt)
+    else
+        @.. broadcast = false integrator.fsallast = z₃ / dt
+    end
+end
+
+# ---------------------------------------------------------------------------
+# ARS(4,4,3) — 5-stage, 3rd order, ESDIRK, ISA  (Ascher et al. 1997 Table IV)
+# ---------------------------------------------------------------------------
+
+@muladd function perform_step!(
+        integrator, cache::ARS443ConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    nlsolver = cache.nlsolver
+    (; γ, a32, a42, a43, a52, a53, a54,
+        ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54,
+        eb2, eb3, eb4, eb5, c3, c4) = cache.tab
+
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    k3 = nothing
+    k4 = nothing
+    k5 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    γdt = γ * dt
+    markfirststage!(nlsolver)
+
+    # Stage 1 (ESDIRK: trivial, FSAL)
+    if integrator.f isa SplitFunction
+        z₁ = dt .* f(uprev, p, t)
+        k1 = dt * integrator.fsalfirst - z₁
+    else
+        z₁ = dt * integrator.fsalfirst
+    end
+
+    # Stage 2 (a21=0, c₂=γ)
+    nlsolver.z = z₂ = z₁
+    nlsolver.tmp = uprev  # a21=0
+    if integrator.f isa SplitFunction
+        nlsolver.tmp = nlsolver.tmp + ea21 * k1
+    end
+    nlsolver.c = γ
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 3 (c₃=2/3)
+    if integrator.f isa SplitFunction
+        u = nlsolver.tmp + γ * z₂  # Y₂
+        k2 = dt * f2(u, p, t + γdt)
+        integrator.stats.nf2 += 1
+        tmp = uprev + a32 * z₂ + ea31 * k1 + ea32 * k2
+    else
+        tmp = uprev + a32 * z₂
+    end
+    nlsolver.z = z₃ = z₂
+    nlsolver.tmp = tmp
+    nlsolver.c = c3
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 4 (c₄=1/2)
+    if integrator.f isa SplitFunction
+        u = nlsolver.tmp + γ * z₃  # Y₃
+        k3 = dt * f2(u, p, t + c3 * dt)
+        integrator.stats.nf2 += 1
+        tmp = uprev + a42 * z₂ + a43 * z₃ + ea41 * k1 + ea42 * k2 + ea43 * k3
+    else
+        tmp = uprev + a42 * z₂ + a43 * z₃
+    end
+    nlsolver.z = z₄ = z₃
+    nlsolver.tmp = tmp
+    nlsolver.c = c4
+    z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 5 (c₅=1)
+    if integrator.f isa SplitFunction
+        u = nlsolver.tmp + γ * z₄  # Y₄
+        k4 = dt * f2(u, p, t + c4 * dt)
+        integrator.stats.nf2 += 1
+        tmp = uprev + a52 * z₂ + a53 * z₃ + a54 * z₄ +
+              ea51 * k1 + ea52 * k2 + ea53 * k3 + ea54 * k4
+    else
+        tmp = uprev + a52 * z₂ + a53 * z₃ + a54 * z₄
+    end
+    nlsolver.z = z₅ = z₄
+    nlsolver.tmp = tmp
+    nlsolver.c = 1
+    z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Final update: ISA → u = tmp + γ*z₅; for split add explicit contributions
+    u = nlsolver.tmp + γ * z₅
+    if integrator.f isa SplitFunction
+        k5 = dt * f2(u, p, t + dt)
+        integrator.stats.nf2 += 1
+        # b̃ = b_i = [0, eb2, eb3, eb4, eb5]
+        u = uprev + eb2 * (z₂ + k2) + eb3 * (z₃ + k3) + eb4 * (z₄ + k4) + eb5 * (z₅ + k5)
+    end
+
+    if integrator.f isa SplitFunction
+        integrator.k[1] = integrator.fsalfirst
+        integrator.fsallast = integrator.f(u, p, t + dt)
+        integrator.k[2] = integrator.fsallast
+    else
+        integrator.fsallast = z₅ ./ dt
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+    end
+    integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::ARS443Cache, repeat_step = false)
+    (; t, dt, uprev, u, p) = integrator
+    (; z₁, z₂, z₃, z₄, z₅, k1, k2, k3, k4, k5, nlsolver, step_limiter!) = cache
+    (; tmp) = nlsolver
+    (; γ, a32, a42, a43, a52, a53, a54,
+        ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54,
+        eb2, eb3, eb4, eb5, c3, c4) = cache.tab
+
+    f2 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    γdt = γ * dt
+    markfirststage!(nlsolver)
+
+    # Stage 1 (ESDIRK: trivial, FSAL)
+    if integrator.f isa SplitFunction && !repeat_step && !integrator.last_stepfail
+        f(z₁, uprev, p, t)
+        z₁ .*= dt
+    else
+        @.. broadcast = false z₁ = dt * integrator.fsalfirst
+    end
+
+    # Stage 2 (a21=0, c₂=γ)
+    copyto!(z₂, z₁)
+    nlsolver.z = z₂
+    @.. broadcast = false tmp = uprev  # a21=0
+    if integrator.f isa SplitFunction
+        @.. broadcast = false k1 = dt * integrator.fsalfirst - z₁
+        @.. broadcast = false tmp += ea21 * k1
+    end
+    nlsolver.c = γ
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+
+    # Stage 3 (c₃=2/3)
+    if integrator.f isa SplitFunction
+        @.. broadcast = false u = tmp + γ * z₂  # Y₂
+        f2(k2, u, p, t + γdt)
+        k2 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast = false tmp = uprev + a32 * z₂ + ea31 * k1 + ea32 * k2
+    else
+        @.. broadcast = false tmp = uprev + a32 * z₂
+    end
+    copyto!(z₃, z₂)
+    nlsolver.z = z₃
+    nlsolver.c = c3
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 4 (c₄=1/2)
+    if integrator.f isa SplitFunction
+        @.. broadcast = false u = tmp + γ * z₃  # Y₃
+        f2(k3, u, p, t + c3 * dt)
+        k3 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast = false tmp = uprev + a42 * z₂ + a43 * z₃ + ea41 * k1 +
+            ea42 * k2 + ea43 * k3
+    else
+        @.. broadcast = false tmp = uprev + a42 * z₂ + a43 * z₃
+    end
+    copyto!(z₄, z₃)
+    nlsolver.z = z₄
+    nlsolver.c = c4
+    z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 5 (c₅=1)
+    if integrator.f isa SplitFunction
+        @.. broadcast = false u = tmp + γ * z₄  # Y₄
+        f2(k4, u, p, t + c4 * dt)
+        k4 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast = false tmp = uprev + a52 * z₂ + a53 * z₃ + a54 * z₄ +
+            ea51 * k1 + ea52 * k2 + ea53 * k3 + ea54 * k4
+    else
+        @.. broadcast = false tmp = uprev + a52 * z₂ + a53 * z₃ + a54 * z₄
+    end
+    copyto!(z₅, z₄)
+    nlsolver.z = z₅
+    nlsolver.c = 1
+    z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Final update
+    @.. broadcast = false u = tmp + γ * z₅  # ISA (or Y₅ for split)
+    if integrator.f isa SplitFunction
+        f2(k5, u, p, t + dt)
+        k5 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast = false u = uprev + eb2 * (z₂ + k2) + eb3 * (z₃ + k3) +
+            eb4 * (z₄ + k4) + eb5 * (z₅ + k5)
+    end
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    if integrator.f isa SplitFunction
+        integrator.f(integrator.fsallast, u, p, t + dt)
+    else
+        @.. broadcast = false integrator.fsallast = z₅ / dt
+    end
+end
+
+# ---------------------------------------------------------------------------
+# BHR(5,5,3)* — 5-stage, 3rd order, ESDIRK, ISA  (Boscarino & Russo 2009)
+# ---------------------------------------------------------------------------
+
+@muladd function perform_step!(
+        integrator, cache::BHR553ConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    nlsolver = cache.nlsolver
+    (; γ, a21, a31, a41, a43, a51, a53, a54,
+        ea21, ea31, ea32, ea41, ea43, ea51, ea52, ea53, ea54,
+        eb1, eb3, eb4, eb5, c2, c4) = cache.tab
+
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    k3 = nothing
+    k4 = nothing
+    k5 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    markfirststage!(nlsolver)
+
+    # Stage 1 (ESDIRK: trivial, FSAL)
+    if integrator.f isa SplitFunction
+        z₁ = dt .* f(uprev, p, t)
+        k1 = dt * integrator.fsalfirst - z₁
+    else
+        z₁ = dt * integrator.fsalfirst
+    end
+
+    # Stage 2 (a21=γ, c₂=2γ)
+    nlsolver.z = z₂ = z₁
+    nlsolver.tmp = uprev + a21 * z₁
+    if integrator.f isa SplitFunction
+        nlsolver.tmp = nlsolver.tmp + ea21 * k1
+    end
+    nlsolver.c = c2
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 3 (a31=γ, a32=0, c₃=2γ; same c as stage 2)
+    if integrator.f isa SplitFunction
+        u = nlsolver.tmp + γ * z₂  # Y₂
+        k2 = dt * f2(u, p, t + c2 * dt)
+        integrator.stats.nf2 += 1
+        tmp = uprev + a31 * z₁ + ea31 * k1 + ea32 * k2  # a32=0 implicit
+    else
+        tmp = uprev + a31 * z₁
+    end
+    nlsolver.z = z₃ = z₂
+    nlsolver.tmp = tmp
+    nlsolver.c = c2  # c₃ = c₂ = 2γ
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 4 (a41, a42=0, a43, c₄=1.5)
+    if integrator.f isa SplitFunction
+        u = nlsolver.tmp + γ * z₃  # Y₃
+        k3 = dt * f2(u, p, t + c2 * dt)  # c₃ = 2γ
+        integrator.stats.nf2 += 1
+        tmp = uprev + a41 * z₁ + a43 * z₃ + ea41 * k1 + ea43 * k3  # a42=0, ae42=0
+    else
+        tmp = uprev + a41 * z₁ + a43 * z₃
+    end
+    nlsolver.z = z₄ = z₃
+    nlsolver.tmp = tmp
+    nlsolver.c = c4
+    z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 5 (a51, a52=0, a53, a54, c₅=1)
+    if integrator.f isa SplitFunction
+        u = nlsolver.tmp + γ * z₄  # Y₄
+        k4 = dt * f2(u, p, t + c4 * dt)
+        integrator.stats.nf2 += 1
+        tmp = uprev + a51 * z₁ + a53 * z₃ + a54 * z₄ +
+              ea51 * k1 + ea52 * k2 + ea53 * k3 + ea54 * k4  # a52=0
+    else
+        tmp = uprev + a51 * z₁ + a53 * z₃ + a54 * z₄
+    end
+    nlsolver.z = z₅ = z₄
+    nlsolver.tmp = tmp
+    nlsolver.c = 1
+    z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Final update: ISA → u = tmp + γ*z₅; for split use b̃ = b_i
+    u = nlsolver.tmp + γ * z₅
+    if integrator.f isa SplitFunction
+        k5 = dt * f2(u, p, t + dt)
+        integrator.stats.nf2 += 1
+        # b̃ = [eb1, 0, eb3, eb4, eb5]; b̃₂=0 so no z₂+k2 term
+        u = uprev + eb1 * (z₁ + k1) + eb3 * (z₃ + k3) + eb4 * (z₄ + k4) + eb5 * (z₅ + k5)
+    end
+
+    if integrator.f isa SplitFunction
+        integrator.k[1] = integrator.fsalfirst
+        integrator.fsallast = integrator.f(u, p, t + dt)
+        integrator.k[2] = integrator.fsallast
+    else
+        integrator.fsallast = z₅ ./ dt
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+    end
+    integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::BHR553Cache, repeat_step = false)
+    (; t, dt, uprev, u, p) = integrator
+    (; z₁, z₂, z₃, z₄, z₅, k1, k2, k3, k4, k5, nlsolver, step_limiter!) = cache
+    (; tmp) = nlsolver
+    (; γ, a21, a31, a41, a43, a51, a53, a54,
+        ea21, ea31, ea32, ea41, ea43, ea51, ea52, ea53, ea54,
+        eb1, eb3, eb4, eb5, c2, c4) = cache.tab
+
+    f2 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    markfirststage!(nlsolver)
+
+    # Stage 1 (ESDIRK: trivial, FSAL)
+    if integrator.f isa SplitFunction && !repeat_step && !integrator.last_stepfail
+        f(z₁, uprev, p, t)
+        z₁ .*= dt
+    else
+        @.. broadcast = false z₁ = dt * integrator.fsalfirst
+    end
+
+    # Stage 2 (a21=γ, c₂=2γ)
+    copyto!(z₂, z₁)
+    nlsolver.z = z₂
+    @.. broadcast = false tmp = uprev + a21 * z₁
+    if integrator.f isa SplitFunction
+        @.. broadcast = false k1 = dt * integrator.fsalfirst - z₁
+        @.. broadcast = false tmp += ea21 * k1
+    end
+    nlsolver.c = c2
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+
+    # Stage 3 (a31=γ, a32=0, c₃=2γ)
+    if integrator.f isa SplitFunction
+        @.. broadcast = false u = tmp + γ * z₂  # Y₂
+        f2(k2, u, p, t + c2 * dt)
+        k2 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast = false tmp = uprev + a31 * z₁ + ea31 * k1 + ea32 * k2  # a32=0 implicit
+    else
+        @.. broadcast = false tmp = uprev + a31 * z₁
+    end
+    copyto!(z₃, z₂)
+    nlsolver.z = z₃
+    nlsolver.c = c2  # c₃ = 2γ
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 4 (a41, a42=0, a43, c₄=1.5)
+    if integrator.f isa SplitFunction
+        @.. broadcast = false u = tmp + γ * z₃  # Y₃
+        f2(k3, u, p, t + c2 * dt)  # c₃ = 2γ
+        k3 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast = false tmp = uprev + a41 * z₁ + a43 * z₃ +
+            ea41 * k1 + ea43 * k3  # a42=0, ae42=0
+    else
+        @.. broadcast = false tmp = uprev + a41 * z₁ + a43 * z₃
+    end
+    copyto!(z₄, z₃)
+    nlsolver.z = z₄
+    nlsolver.c = c4
+    z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Stage 5 (a51, a52=0, a53, a54, c₅=1)
+    if integrator.f isa SplitFunction
+        @.. broadcast = false u = tmp + γ * z₄  # Y₄
+        f2(k4, u, p, t + c4 * dt)
+        k4 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast = false tmp = uprev + a51 * z₁ + a53 * z₃ + a54 * z₄ +
+            ea51 * k1 + ea52 * k2 + ea53 * k3 + ea54 * k4  # a52=0
+    else
+        @.. broadcast = false tmp = uprev + a51 * z₁ + a53 * z₃ + a54 * z₄
+    end
+    copyto!(z₅, z₄)
+    nlsolver.z = z₅
+    nlsolver.c = 1
+    z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    # Final update
+    @.. broadcast = false u = tmp + γ * z₅  # ISA (or Y₅ for split)
+    if integrator.f isa SplitFunction
+        f2(k5, u, p, t + dt)
+        k5 .*= dt
+        integrator.stats.nf2 += 1
+        # b̃ = [eb1, 0, eb3, eb4, eb5]; b̃₂=0
+        @.. broadcast = false u = uprev + eb1 * (z₁ + k1) + eb3 * (z₃ + k3) +
+            eb4 * (z₄ + k4) + eb5 * (z₅ + k5)
+    end
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    if integrator.f isa SplitFunction
+        integrator.f(integrator.fsallast, u, p, t + dt)
+    else
+        @.. broadcast = false integrator.fsallast = z₅ / dt
+    end
+end
