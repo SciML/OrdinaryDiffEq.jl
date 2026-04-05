@@ -1,7 +1,7 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 using ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear,
-                         prob_ode_bigfloatlinear,
-                         prob_ode_bigfloat2Dlinear
+    prob_ode_bigfloatlinear,
+    prob_ode_bigfloat2Dlinear
 
 probArr = Vector{ODEProblem}(undef, 2)
 bigprobArr = Vector{ODEProblem}(undef, 2)
@@ -21,8 +21,10 @@ superduperbool = Vector{Bool}(undef, 2)
 for constructfun in filter(x -> startswith(string(x), "construct"), names(DiffEqDevTools))
     tab = getproperty(DiffEqDevTools, constructfun)(BigFloat)
     if tab.order < 12
-        if constructfun in (:constructTsitouras9,  # order 1 ???!!!
-            :constructTsitouras92)
+        if constructfun in (
+                :constructTsitouras9,  # order 1 ???!!!
+                :constructTsitouras92,
+            )
             @info "Failed $constructfun..."
             @test_broken check_tableau(tab)
         else
@@ -44,10 +46,10 @@ for i in 1:2 # 1 = num, 2 = ExplicitRK
     end
 
     for tab in [
-        constructFeagin12(BigFloat),
-        constructFeagin14(BigFloat),
-        constructOno12(BigFloat)
-    ]
+            constructFeagin12(BigFloat),
+            constructFeagin14(BigFloat),
+            constructOno12(BigFloat),
+        ]
         @info "Testing..."
         tabalg = ExplicitRK(tableau = tab)
         sim = test_convergence(dts, bigprob, tabalg)

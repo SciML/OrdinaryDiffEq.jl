@@ -230,7 +230,7 @@ const RODAS5H = [
 The tableau for the 5th order L-stable Rosenbrock method Rodas5.
 It is an 8-stage method designed for high-accuracy stiff integration.
 Reference: Di Marzo, G. (1993). Rodas5(4) -- Méthodes de Rosenbrock d'ordre 5(4)
-    adaptées aux problemes différentiels-algébriques. Master's thesis,
+    adaptées aux problèmes différentiels-algébriques. Master's thesis,
     University of Geneva.
 """
 function Rodas5Tableau(T, T2)

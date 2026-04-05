@@ -45,9 +45,12 @@ Kaps = "Kaps"
 Rentrop = "Rentrop"
 Rang = "Rang"
 Darmstadt = "Darmstadt"
-Méthodes = "Méthodes"
-différentiels = "différentiels"
-algébriques = "algébriques"
+"Méthodes" = "Méthodes"
+"différentiels" = "différentiels"
+"algébriques" = "algébriques"
+"problèmes" = "problèmes"
+Ono = "Ono"  # Hiroshi Ono, author of Ono10/Ono12 RK methods
+padd = "padd"  # variable name in analyticless_convergence_tests.jl
 Preprint = "Preprint"
 Nr = "Nr"
 Wouver = "Wouver"
@@ -59,8 +62,7 @@ Numer = "Numer"
 Jcon = "Jcon"
 arXiv = "arXiv"
 
-# Common journal abbreviations 
-Numer = "Numer"  # As in "P. Numer. Math." (Periodica Numerica Mathematica)
+# (Numer already declared above for "BIT Numer" context.)
 
 # Technical variable names
 dorder = "dorder"  # Parameter for delta order / order change

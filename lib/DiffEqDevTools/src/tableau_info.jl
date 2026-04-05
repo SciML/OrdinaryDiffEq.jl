@@ -23,7 +23,7 @@ function stability_region(z, tab::ODERKTableau; embedded = false)
     b = embedded ? tab.αEEst : tab.α
     e = ones(eltype(A), length(b))
     stages = (I - z * A) \ e
-    1 + z * (transpose(b) * stages)
+    return 1 + z * (transpose(b) * stages)
 end
 
 """
@@ -66,13 +66,15 @@ end
 Calculates the length of the stability region in the real axis.
 See also [`imaginary_stability_interval`](@ref).
 """
-function stability_region(tab_or_alg::Union{ODERKTableau, AbstractODEAlgorithm};
-                          initial_guess = -3.0, kw...)
+function stability_region(
+        tab_or_alg::Union{ODERKTableau, AbstractODEAlgorithm};
+        initial_guess = -3.0, kw...
+    )
     residual! = function (resid, x)
-        resid[1] = abs(stability_region(x[1], tab_or_alg)) - 1
+        return resid[1] = abs(stability_region(x[1], tab_or_alg)) - 1
     end
     sol = nlsolve(residual!, [initial_guess]; kw...)
-    sol.zero[1]
+    return sol.zero[1]
 end
 
 """
@@ -83,14 +85,16 @@ Calculates the length of the imaginary stability interval, i.e.,
 the size of the stability region on the imaginary axis.
 See also [`stability_region`](@ref).
 """
-function imaginary_stability_interval(tab::ODERKTableau;
-                                      initial_guess = length(tab) - one(eltype(tab.A)),
-                                      kw...)
+function imaginary_stability_interval(
+        tab::ODERKTableau;
+        initial_guess = length(tab) - one(eltype(tab.A)),
+        kw...
+    )
     residual! = function (resid, x)
-        resid[1] = abs(stability_region(im * x[1], tab)) - 1
+        return resid[1] = abs(stability_region(im * x[1], tab)) - 1
     end
     sol = nlsolve(residual!, [initial_guess]; kw...)
-    sol.zero[1]
+    return sol.zero[1]
 end
 
 """
@@ -101,19 +105,23 @@ Calculates the length of the imaginary stability interval, i.e.,
 the size of the stability region on the imaginary axis.
 See also [`stability_region`](@ref).
 """
-function imaginary_stability_interval(alg::AbstractODEAlgorithm;
-                                      initial_guess = 20.0,
-                                      kw...)
+function imaginary_stability_interval(
+        alg::AbstractODEAlgorithm;
+        initial_guess = 20.0,
+        kw...
+    )
     residual! = function (resid, x)
-        resid[1] = abs(stability_region(im * x[1], alg)) - 1
+        return resid[1] = abs(stability_region(im * x[1], alg)) - 1
     end
     sol = nlsolve(residual!, [initial_guess]; kw...)
-    sol.zero[1]
+    return sol.zero[1]
 end
 
-function RootedTrees.residual_order_condition(tab::ODERKTableau, order::Int,
+function RootedTrees.residual_order_condition(
+        tab::ODERKTableau, order::Int,
         reducer = nothing, mapper = x -> x^2;
-        embedded = false)
+        embedded = false
+    )
     A, c = tab.A, tab.c
     b = embedded ? tab.αEEst : tab.α
     if reducer === nothing
@@ -137,9 +145,12 @@ function check_tableau(tab; tol = 10eps(1.0))
     end
     if tab.adaptiveorder != 0
         embedded_order = all(
-            i -> residual_order_condition(tab, i, +, abs;
-                embedded = true) < tol,
-            tab.adaptiveorder)
+            i -> residual_order_condition(
+                tab, i, +, abs;
+                embedded = true
+            ) < tol,
+            tab.adaptiveorder
+        )
         if !embedded_order
             error("Tableau's embedded order is not correct.")
         end

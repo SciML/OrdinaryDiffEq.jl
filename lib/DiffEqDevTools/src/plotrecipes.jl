@@ -1,7 +1,9 @@
 @recipe function f(sim::ConvergenceSimulation)
     if any((x) -> ndims(x) > 1, values(sim.errors)) #Monte Carlo
-        vals = [x isa AbstractVector ? x : vec(mean(x, 1))
-                for x in values(sim.errors)]
+        vals = [
+            x isa AbstractVector ? x : vec(mean(x, 1))
+                for x in values(sim.errors)
+        ]
     else #Deterministic
         vals = [x for x in values(sim.errors)]
     end
@@ -95,11 +97,13 @@ function key_to_label(key::Symbol)
     end
 end
 
-@recipe function f(wp_set::WorkPrecisionSet;
+@recipe function f(
+        wp_set::WorkPrecisionSet;
         x = wp_set.error_estimate,
         y = :times,
         view = :benchmark,
-        color = nothing)
+        color = nothing
+    )
     if view == :benchmark
         seriestype --> :path
         linewidth --> 3
@@ -129,7 +133,7 @@ end
             push!(convs, exp(lc) * dts[end] .^ p)
         end
         names = wp_set.names[idts] .*
-                map(p -> " (Δtᵖ order p=$(round(p, sigdigits=2)))", ps)
+            map(p -> " (Δtᵖ order p=$(round(p, sigdigits = 2)))", ps)
         if color === nothing
             color = reshape(1:length(idts), 1, :)
         end
@@ -161,16 +165,20 @@ end
     end
 end
 
-@recipe function f(tab::ODERKTableau; dx = 1 / 100, dy = 1 / 100, order_star = false,
-        embedded = false)
+@recipe function f(
+        tab::ODERKTableau; dx = 1 / 100, dy = 1 / 100, order_star = false,
+        embedded = false
+    )
     xlims = get(plotattributes, :xlims, (-6, 1))
     ylims = get(plotattributes, :ylims, (-5, 5))
     x = xlims[1]:dx:xlims[2]
     y = ylims[1]:dy:ylims[2]
 
     if order_star
-        f = (u, v) -> abs(stability_region(u + v * im, tab; embedded = embedded) /
-                          exp(u + v * im)) < 1
+        f = (u, v) -> abs(
+            stability_region(u + v * im, tab; embedded = embedded) /
+                exp(u + v * im)
+        ) < 1
     else
         f = (u, v) -> abs(stability_region(u + v * im, tab; embedded = embedded)) < 1
     end
