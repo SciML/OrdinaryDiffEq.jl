@@ -21,8 +21,6 @@ import OrdinaryDiffEqCore
 using Reexport
 @reexport using SciMLBase
 
-import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
-
 include("algorithms.jl")
 include("alg_utils.jl")
 include("ssprk_caches.jl")
