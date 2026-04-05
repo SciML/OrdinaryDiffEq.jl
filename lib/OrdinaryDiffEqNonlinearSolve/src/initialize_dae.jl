@@ -259,7 +259,7 @@ function _initialize_dae!(
             end
         end
 
-        nlfunc = NonlinearFunction(
+        nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
             nlequation!;
             jac_prototype = f.jac_prototype,
             jac = jac
@@ -350,7 +350,7 @@ function _initialize_dae!(
             end
         end
 
-        nlfunc = NonlinearFunction(
+        nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
             nlequation_oop;
             jac_prototype = f.jac_prototype,
             jac = jac
@@ -446,7 +446,7 @@ function _initialize_dae!(
         end
     end
 
-    nlfunc = NonlinearFunction(
+    nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
         nlequation!;
         jac_prototype = f.jac_prototype,
         jac = jac
@@ -505,7 +505,7 @@ function _initialize_dae!(
             return f.jac(u, p, inv(dt), t)
         end
     end
-    nlfunc = NonlinearFunction(
+    nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
         nlequation; jac_prototype = f.jac_prototype,
         jac = jac
     )
@@ -516,7 +516,9 @@ function _initialize_dae!(
         SciMLBase.forwarddiff_chunksize(integrator.alg)
     )
 
-    nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
+    nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
+        nlequation; jac_prototype = f.jac_prototype
+    )
     nlprob = NonlinearProblem(nlfunc, u0)
     nlsol = solve(
         nlprob, nlsolve; abstol = integrator.opts.abstol,
@@ -623,7 +625,9 @@ function _initialize_dae!(
 
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
     # Set nonlinear function to operate in-place since the ODE function is in-place
-    nlfunc = NonlinearFunction{true}(nlequation!; jac_prototype = J)
+    nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
+        nlequation!; jac_prototype = J
+    )
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
 
@@ -696,7 +700,9 @@ function _initialize_dae!(
 
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
     # Operate out of place since the ODE function is out of place
-    nlfunc = NonlinearFunction{false}(nlequation; jac_prototype = J)
+    nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
+        nlequation; jac_prototype = J
+    )
     nlprob = NonlinearProblem(nlfunc, u0[algebraic_vars])
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD, nlchunk)
 
@@ -790,7 +796,9 @@ function _initialize_dae!(
         nlsolve = NewtonRaphson(autodiff = alg_autodiff(integrator.alg))
     end
 
-    nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)
+    nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
+        nlequation!; jac_prototype = f.jac_prototype
+    )
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u), p)
     nlsol = solve(
         nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol,
@@ -844,7 +852,9 @@ function _initialize_dae!(
         f.f(du_, u_, p, t)
     end
 
-    nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
+    nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
+        nlequation; jac_prototype = f.jac_prototype
+    )
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u))
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
