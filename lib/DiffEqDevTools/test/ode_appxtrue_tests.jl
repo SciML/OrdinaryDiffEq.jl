@@ -6,7 +6,7 @@ fun = ODEFunction(f; analytic = (u0, p, t) -> u0 * exp(t))
 prob = ODEProblem(fun, 1 / 2, (0.0, 1.0))
 
 sol = solve(prob, Euler(); dt = 1 // 2^(4), dense_errors = true)
-sol2 = solve(prob, Vern9(); dt = 1 // 2^(10), abstol = 1e-14, reltol = 1e-14)
+sol2 = solve(prob, Vern9(); dt = 1 // 2^(10), abstol = 1.0e-14, reltol = 1.0e-14)
 
 prob2 = ODEProblem(f, 1 / 2, (0.0, 1.0))
 sol3 = solve(prob_ode_linear, Euler(); dt = 1 // 2^(4))

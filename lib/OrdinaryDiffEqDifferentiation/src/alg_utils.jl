@@ -27,7 +27,8 @@ function _alg_autodiff(
 end
 function _alg_autodiff(
         alg::StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm{
-            CS, AD, FDT, ST, CJ, Controller}
+            CS, AD, FDT, ST, CJ, Controller,
+        }
     ) where {CS, AD, FDT, ST, CJ, Controller}
     return Val{AD}()
 end
