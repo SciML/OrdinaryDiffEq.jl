@@ -7,7 +7,6 @@ import OrdinaryDiffEqCore: isfsal, alg_order, _unwrap_val,
     @threaded, initialize!, perform_step!, isthreaded,
     full_cache, get_fsalfirstlast, differentiation_rk_docstring,
     _ad_chunksize_int, _ad_fdtype, _fixup_ad
-import StaticArrays: SVector
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 
