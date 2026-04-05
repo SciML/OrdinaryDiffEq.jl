@@ -433,7 +433,7 @@ function alg_cache(
     end
     U = SArray(U)
 
-    γₖ = SVector(ntuple(k -> sum(tTypeNoUnits(Int64(1) // j) for j in 1:k), Val(max_order)))
+    γₖ = ntuple(k -> sum(tTypeNoUnits(Int64(1) // j) for j in 1:k), Val(max_order))
 
     return QNDFConstantCache(
         nlsolver, U, D, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1,
@@ -520,7 +520,7 @@ function alg_cache(
     U = SArray(U)
 
     RU = Matrix(U)
-    γₖ = SVector(ntuple(k -> sum(tTypeNoUnits(Int64(1) // j) for j in 1:k), Val(max_order)))
+    γₖ = ntuple(k -> sum(tTypeNoUnits(Int64(1) // j) for j in 1:k), Val(max_order))
 
     dense = [zero(u) for _ in 1:max_order]
 
