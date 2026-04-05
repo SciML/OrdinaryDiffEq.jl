@@ -57,19 +57,24 @@ isthreaded(::BaseThreads) = true
 isthreaded(::PolyesterThreads) = true
 
 @inline function _threaded_execute(f, ::Union{BaseThreads, Bool}, range)
-    Threads.@threads :static for i in range
+    return Threads.@threads :static for i in range
         f(i)
     end
 end
 
 function _polyester_batch(args...)
-    throw(ArgumentError(LazyString(
-        "PolyesterThreads() requires Polyester.jl to be loaded. ",
-        "Add `using Polyester` to your code.")))
+    throw(
+        ArgumentError(
+            LazyString(
+                "PolyesterThreads() requires Polyester.jl to be loaded. ",
+                "Add `using Polyester` to your code."
+            )
+        )
+    )
 end
 
 @inline function _threaded_execute(f, ::PolyesterThreads, range)
-    _polyester_batch(f, range)
+    return _polyester_batch(f, range)
 end
 
 macro threaded(option, ex)
@@ -174,9 +179,11 @@ function _fixup_ad(ad_alg::AutoFiniteDiff)
     return ad_alg
 end
 function _fixup_ad(ad_alg::Bool)
-    throw(ArgumentError(
-        "Passing a `Bool` for keyword argument `autodiff` is no longer supported. " *
-        "Use an `ADType` specifier from ADTypes.jl, e.g. `AutoForwardDiff()` or `AutoFiniteDiff()`."
-    ))
+    throw(
+        ArgumentError(
+            "Passing a `Bool` for keyword argument `autodiff` is no longer supported. " *
+                "Use an `ADType` specifier from ADTypes.jl, e.g. `AutoForwardDiff()` or `AutoFiniteDiff()`."
+        )
+    )
 end
 _fixup_ad(ad_alg) = ad_alg
