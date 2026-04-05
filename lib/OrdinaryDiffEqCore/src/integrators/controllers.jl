@@ -533,8 +533,8 @@ Some standard controller parameters suggested in the literature are
     [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)    # limiter of the dt factor (before clipping)
 """
 struct PIDController{QT, Limiter} <: AbstractLegacyController
-    beta::MVector{3, QT} # controller coefficients
-    err::MVector{3, QT} # history of the error estimates
+    beta::NTuple{3, QT} # controller coefficients
+    err::MVector{3, QT} # history of the error estimates (mutable via indexing)
     accept_safety::QT   # accept a step if the predicted change of the step size
     # is bigger than this parameter
     limiter::Limiter    # limiter of the dt factor (before clipping)
@@ -545,7 +545,7 @@ function PIDController(
         limiter = default_dt_factor_limiter,
         accept_safety = 0.81
     )
-    beta = MVector(map(float, promote(beta1, beta2, beta3))...)
+    beta = map(float, promote(beta1, beta2, beta3))
     QT = eltype(beta)
     err = MVector{3, QT}(true, true, true)
     return PIDController(beta, err, convert(QT, accept_safety), limiter)
@@ -638,7 +638,7 @@ end
 
 
 struct NewPIDController{T, Limiter} <: AbstractController
-    beta::SVector{3, T} # controller coefficients
+    beta::NTuple{3, T} # controller coefficients
     accept_safety::T   # accept a step if the predicted change of the step size
     # is bigger than this parameter
     limiter::Limiter    # limiter of the dt factor (before clipping)
@@ -658,7 +658,7 @@ function NewPIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter
     else
         beta1, beta2, beta3 = beta
     end
-    beta = SVector(map(float, promote(beta1, beta2, beta3))...)
+    beta = map(float, promote(beta1, beta2, beta3))
     return NewPIDController{QT, typeof(limiter)}(
         beta,
         QT(accept_safety),
