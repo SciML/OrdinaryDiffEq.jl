@@ -341,7 +341,17 @@ function build_nlsolver(
                 else
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
-                NonlinearProblem(NonlinearFunction{true}(nlf), ztmp, nlp_params)
+                # Use FullSpecialize so SciMLBase does not wrap `nlf` in a
+                # FunctionWrappersWrapper with a fixed set of Dual tag branches.
+                # The wrapper otherwise throws "No matching function wrapper was
+                # found!" when the ODE solver is itself nested inside an outer
+                # ForwardDiff.Dual layer (e.g. SciMLSensitivity, nested AD), since
+                # the inner NonlinearProblem is then called with a Dual tagged by
+                # `DiffEqBase.OrdinaryDiffEqTag` that no pre-built wrapper matches.
+                NonlinearProblem(
+                    NonlinearFunction{true, SciMLBase.FullSpecialize}(nlf),
+                    ztmp, nlp_params
+                )
             end
             cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
@@ -467,7 +477,13 @@ function build_nlsolver(
             else
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
-            prob = NonlinearProblem(NonlinearFunction{false}(nlf), copy(ztmp), nlp_params)
+            # See comment on the in-place branch above: FullSpecialize avoids
+            # the FunctionWrappersWrapper dispatch hole when the ODE solver is
+            # called inside an outer ForwardDiff layer.
+            prob = NonlinearProblem(
+                NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf),
+                copy(ztmp), nlp_params
+            )
             cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache
