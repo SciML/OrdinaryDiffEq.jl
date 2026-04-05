@@ -2935,7 +2935,7 @@ Chummund's First Order 6 method
 
 A three-dimensional family of seven-step Runge-Kutta methods of order 6, by G. M. Chammud (Hammud),
 Numerical Methods and programming, 2001, Vol.2, 2001, pages 159-166
-(Advanced Computing Scientific journal published by the Research Computing Center of the Lomonosov Moscow State Univeristy)
+(Advanced Computing Scientific journal published by the Research Computing Center of the Lomonosov Moscow State University)
 """
 function constructChummund6(T::Type = Float64)
     A = zeros(T, 7, 7)
@@ -2989,7 +2989,7 @@ Chummund's Second Order 6 method
 
 A three-dimensional family of seven-step Runge-Kutta methods of order 6, by G. M. Chammud (Hammud),
 Numerical Methods and programming, 2001, Vol.2, 2001, pages 159-166
-(Advanced Computing Scientific journal published by the Research Computing Center of the Lomonosov Moscow State Univeristy)
+(Advanced Computing Scientific journal published by the Research Computing Center of the Lomonosov Moscow State University)
 """
 function constructChummund62(T::Type = Float64)
     A = zeros(T, 7, 7)
@@ -4824,7 +4824,7 @@ function constructTsitourasPapakostas8(T::Type = Float64)
 end
 
 """
-From Verner's Webiste
+From Verner's Website
 """
 function constructVernerRobust9(T::Type = Float64)
     A = zeros(T, 16, 16)
@@ -5131,7 +5131,7 @@ function constructVernerRobust9(T::Type = Float64)
 end
 
 """
-From Verner's Webiste
+From Verner's Website
 """
 function constructVernerEfficient9(T::Type = Float64)
     A = zeros(T, 16, 16)
