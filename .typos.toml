@@ -43,11 +43,12 @@ Veldhuizen = "Veldhuizen"
 Tsit5DA = "Tsit5DA"
 Kaps = "Kaps"
 Rentrop = "Rentrop"
+Ono = "Ono"  # Ono's scheme — numerical method by Ono
 Rang = "Rang"
 Darmstadt = "Darmstadt"
-Méthodes = "Méthodes"
-différentiels = "différentiels"
-algébriques = "algébriques"
+"Méthodes" = "Méthodes"
+"différentiels" = "différentiels"
+"algébriques" = "algébriques"
 Preprint = "Preprint"
 Nr = "Nr"
 Wouver = "Wouver"
@@ -59,8 +60,7 @@ Numer = "Numer"
 Jcon = "Jcon"
 arXiv = "arXiv"
 
-# Common journal abbreviations 
-Numer = "Numer"  # As in "P. Numer. Math." (Periodica Numerica Mathematica)
+# Common journal abbreviations (Numer is already listed above)
 
 # Technical variable names
 dorder = "dorder"  # Parameter for delta order / order change
@@ -143,3 +143,7 @@ occuring = "occuring"  # in comments near occurence functions
 
 # Julia spelling convention
 inferrable = "inferrable"  # Julia uses "inferrable" not "inferable"
+
+# Variable names / French citation text
+padd = "padd"  # variable name in analyticless_convergence_tests.jl
+problemes = "problemes"  # appears in French citation title (Rosenbrock tableaus)
