@@ -141,8 +141,9 @@ You can also download the
 
 ```@eval
 using TOML
-version = TOML.parse(read("../../Project.toml", String))["version"]
-name = TOML.parse(read("../../Project.toml", String))["name"]
+proj = TOML.parse(read(joinpath(@__DIR__, "..", "..", "..", "Project.toml"), String))
+version = proj["version"]
+name = proj["name"]
 link = "https://github.com/SciML/" * name * ".jl/tree/gh-pages/v" * version *
        "/assets/Manifest.toml"
 ```
@@ -154,8 +155,9 @@ link = "https://github.com/SciML/" * name * ".jl/tree/gh-pages/v" * version *
 
 ```@eval
 using TOML
-version = TOML.parse(read("../../Project.toml", String))["version"]
-name = TOML.parse(read("../../Project.toml", String))["name"]
+proj = TOML.parse(read(joinpath(@__DIR__, "..", "..", "..", "Project.toml"), String))
+version = proj["version"]
+name = proj["name"]
 link = "https://github.com/SciML/" * name * ".jl/tree/gh-pages/v" * version *
        "/assets/Project.toml"
 ```

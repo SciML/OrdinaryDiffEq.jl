@@ -112,6 +112,7 @@
 
 ```@docs
 DiffEqDevTools.stability_region
+DiffEqDevTools.imaginary_stability_interval
 OrdinaryDiffEq.ODE_DEFAULT_TABLEAU
 ```
 
