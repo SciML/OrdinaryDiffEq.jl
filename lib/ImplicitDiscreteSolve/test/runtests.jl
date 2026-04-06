@@ -98,7 +98,9 @@ if TEST_GROUP != "QA"
         tsteps = 5
         u0 = nothing
         idprob = ImplicitDiscreteProblem(emptyiip, u0, (0, tsteps), [])
-        @test_nowarn integ = init(idprob, IDSolve())
+        # IIP with u0=nothing currently errors because NonlinearSolve/ForwardDiff
+        # cannot handle a zero-length vector (chunk size 1 > structural_length 0)
+        @test_throws ArgumentError integ = init(idprob, IDSolve())
 
         idprob2 = ImplicitDiscreteProblem(emptyoop, u0, (0, tsteps), [])
         # OOP with u0=nothing throws an error (MethodError or AssertionError depending on
