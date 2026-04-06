@@ -20,7 +20,6 @@ using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver
 using OrdinaryDiffEqStabilizedRK: ESERK4, ESERK5, RKC, SERK2
 
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
-import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import OrdinaryDiffEqCore
 import ADTypes: AutoForwardDiff, AbstractADType
 
