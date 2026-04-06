@@ -139,8 +139,30 @@ const iip_arglists_default = (
 )
 const iip_returnlists_default = ntuple(x -> Nothing, length(iip_arglists_default))
 
+# Explicit FunctionWrapper type aliases for the default iip arglists.
+# Julia's inference cannot trace through `map` over 7-element heterogeneous
+# tuples across precompilation boundaries, so we spell out each wrapper type
+# and the full FunctionWrappersWrapper return type as const aliases.
+const _FW = FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper
+const _IIP_FW1 = _FW{Nothing, Tuple{Vector{Float64}, Vector{Float64}, Vector{Float64}, Float64}}
+const _IIP_FW2 = _FW{Nothing, Tuple{Vector{Float64}, Vector{Float64}, SciMLBase.NullParameters, Float64}}
+const _IIP_FW3 = _FW{Nothing, Tuple{Vector{dualT}, Vector{Float64}, Vector{Float64}, dualT}}
+const _IIP_FW4 = _FW{Nothing, Tuple{Vector{dualT}, Vector{dualT}, Vector{Float64}, dualT}}
+const _IIP_FW5 = _FW{Nothing, Tuple{Vector{dualT}, Vector{dualT}, Vector{Float64}, Float64}}
+const _IIP_FW6 = _FW{Nothing, Tuple{Vector{dualT}, Vector{dualT}, SciMLBase.NullParameters, Float64}}
+const _IIP_FW7 = _FW{Nothing, Tuple{Vector{dualT}, Vector{Float64}, SciMLBase.NullParameters, dualT}}
+const _IIP_FWT = Tuple{_IIP_FW1, _IIP_FW2, _IIP_FW3, _IIP_FW4, _IIP_FW5, _IIP_FW6, _IIP_FW7}
+const _IIP_FWWT = FunctionWrappersWrappers.FunctionWrappersWrapper{
+    _IIP_FWT, FunctionWrappersWrappers.AllowNonIsBits, FunctionWrappersWrappers.SingleCacheStorage,
+}
+
 function wrapfun_iip(@nospecialize(ff))
-    return FunctionWrappersWrappers.FunctionWrappersWrapper(Void(ff), iip_arglists_default, iip_returnlists_default)
+    vff = Void(ff)
+    fwt = (
+        _IIP_FW1(vff), _IIP_FW2(vff), _IIP_FW3(vff), _IIP_FW4(vff),
+        _IIP_FW5(vff), _IIP_FW6(vff), _IIP_FW7(vff),
+    )
+    return _IIP_FWWT(fwt, FunctionWrappersWrappers.SingleCacheStorage())
 end
 
 function promote_tspan(u0::AbstractArray{<:ForwardDiff.Dual}, p, tspan, prob, kwargs)
