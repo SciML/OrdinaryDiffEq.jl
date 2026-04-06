@@ -130,16 +130,6 @@ function wrapfun_iip(
     )
 end
 
-# Default 0-arg: delegate to the standard 2-arg path with default inputs.
-function wrapfun_iip(ff)
-    return wrapfun_iip(
-        ff,
-        (
-            Vector{Float64}(undef, 0), Vector{Float64}(undef, 0),
-            Vector{Float64}(undef, 0), 0.0,
-        ),
-    )
-end
 
 function promote_tspan(u0::AbstractArray{<:ForwardDiff.Dual}, p, tspan, prob, kwargs)
     if (haskey(kwargs, :callback) && has_continuous_callback(kwargs[:callback])) ||
