@@ -39,9 +39,9 @@ function normalized_pade(p::Int, q::Int)
     RI = Rational{Int}
     N = p + q
     c = Vector{RI}(undef, N + 1)
-    c[1] = big(1) // big(1)
+    c[1] = 1 // 1
     for k in 1:N
-        c[k + 1] = c[k] // big(k)
+        c[k + 1] = c[k] // k
     end
     if q == 0
         dres = RI[]
@@ -49,14 +49,14 @@ function normalized_pade(p::Int, q::Int)
         A = zeros(RI, q, q)
         rhs = zeros(RI, q)
         for i in 1:q
-            k = p + i                     # 对应 z^k 阶 (0-indexed)
-            rhs[i] = -c[k + 1]             # -c_k
+            k = p + i
+            rhs[i] = -c[k + 1]
             for j in 1:q
-                idx = k - j               # 0-indexed Taylor index
-                A[i, j] = idx >= 0 ? c[idx + 1] : big(0) // big(1)
+                idx = k - j
+                A[i, j] = idx >= 0 ? c[idx + 1] : 0 // 1
             end
         end
-        dres = A \ rhs                       # Rational 精确求解
+        dres = A \ rhs
     end
     n = zeros(RI, p + 1)
     for k in 0:p
