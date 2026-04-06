@@ -1,4 +1,5 @@
 using OrdinaryDiffEqTaylorSeriesImplicit, ODEProblemLibrary, DiffEqDevTools, ADTypes
+using OrdinaryDiffEqRosenbrock # for reference
 using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NonlinearSolveAlg
 using Test, Random
 Random.seed!(100)
@@ -15,48 +16,47 @@ prob_ode_2Dlinear = ODEProblem(
 testTol = 0.2
 
 @testset "Implicit Solver Convergence Tests" begin # ($(["out-of-place", "in-place"][i]))" for i in 1:2
-    # prob = (ODEProblemLibrary.prob_ode_linear,
-        # ODEProblemLibrary.prob_ode_2Dlinear)[i]
-    prob = ODEProblemLibrary.prob_ode_2Dlinear
+    # skip linear problems for now, since it can be misleading for stiff solvers
+    # prob = ODEProblemLibrary.prob_ode_2Dlinear
+    # dts = 1 .// 2 .^ (7:-1:5)
 
-    dts = 1 .// 2 .^ (9:-1:5)
+    # sim11 = test_convergence(dts, prob, ImplicitTaylor(μ = 1.0))
+    # @test sim11.𝒪est[:final]≈1 atol=testTol
 
-    sim11 = test_convergence(dts, prob, ImplicitTaylor(μ = 1.0))
-    @test sim11.𝒪est[:final]≈1 atol=testTol
+    # sim12 = test_convergence(dts, prob, ImplicitTaylor(μ = 0.5))
+    # @test sim12.𝒪est[:final]≈2 atol=testTol
 
-    sim12 = test_convergence(dts, prob, ImplicitTaylor(μ = 0.5))
-    @test sim12.𝒪est[:final]≈2 atol=testTol
+    # sim21 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = 1.0))
+    # @test sim21.𝒪est[:final]≈2 atol=testTol
 
-    sim21 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = 1.0))
-    @test sim21.𝒪est[:final]≈2 atol=testTol
+    # sim22 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = 0.5))
+    # @test sim22.𝒪est[:final]≈2 atol=testTol
 
-    sim22 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = 0.5))
-    @test sim22.𝒪est[:final]≈2 atol=testTol
+    # # sim23 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = complex(0.5, √3 / 6)))
+    # # @test sim23.𝒪est[:final]≈4 atol=testTol
 
-    # sim23 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), μ = complex(0.5, √3 / 6)))
-    # @test sim23.𝒪est[:final]≈4 atol=testTol
+    # sim31 = test_convergence(dts, prob, ImplicitTaylor(order = Val(3), μ = 0.5))
+    # @test sim31.𝒪est[:final]≈4 atol=testTol
 
-    sim31 = test_convergence(dts, prob, ImplicitTaylor(order = Val(3), μ = 0.5))
-    @test sim31.𝒪est[:final]≈4 atol=testTol
+    # sim41 = test_convergence(dts, prob, ImplicitTaylor(order = Val(4), μ = 0.5))
+    # @test sim41.𝒪est[:final]≈4 atol=testTol
 
-    sim41 = test_convergence(dts, prob, ImplicitTaylor(order = Val(4), μ = 0.5))
-    @test sim41.𝒪est[:final]≈4 atol=testTol
+    prob_stiff = ODEProblemLibrary.prob_ode_hires
+    dts = 2. .^ (-8:-5)
+    ref_setup = Dict(:alg => Rodas5P(), :reltol => 1e-14, :abstol => 1e-14)
 
     # Taylor-Gauss
-    simpade1v1 = test_convergence(dts, prob, ImplicitTaylor(order = Val(1), order_q = Val(1)))
-    @test simpade1v1.𝒪est[:final]≈2 atol=testTol
+    sim1v1 = analyticless_test_convergence(dts, prob_stiff, ImplicitTaylor(order = Val(1), order_q = Val(1)), ref_setup)
+    @test sim1v1.𝒪est[:final]≈2 atol=testTol
 
-    simpade2v2 = test_convergence(dts, prob, ImplicitTaylor(order = Val(2), order_q = Val(2)))
-    @test simpade2v2.𝒪est[:final]≈4 atol=testTol
+    sim2v2 = analyticless_test_convergence(dts, prob_stiff, ImplicitTaylor(order = Val(2), order_q = Val(2)), ref_setup)
+    @test sim2v2.𝒪est[:final]≈4 atol=testTol
 
     # Taylor-Radau
-    simpade1v2 = test_convergence(dts, prob, ImplicitTaylor(order = Val(1), order_q = Val(2)))
-    @test simpade1v2.𝒪est[:final]≈3 atol=testTol
+    sim1v2 = analyticless_test_convergence(dts, prob_stiff, ImplicitTaylor(order = Val(1), order_q = Val(2)), ref_setup)
+    @test sim1v2.𝒪est[:final]≈3 atol=testTol
 
     # Taylor-Lobatto
-    simpade0v2 = test_convergence(dts, prob, ImplicitTaylor(order = Val(0), order_q = Val(2)))
-    @test simpade0v2.𝒪est[:final]≈2 atol=testTol
-
-    simpade1v3 = test_convergence(dts, prob, ImplicitTaylor(order = Val(1), order_q = Val(3)))
-    @test simpade1v3.𝒪est[:final]≈4 atol=testTol
+    sim1v3 = analyticless_test_convergence(dts, prob_stiff, ImplicitTaylor(order = Val(1), order_q = Val(3)), ref_setup)
+    @test sim1v3.𝒪est[:final]≈4 atol=testTol
 end

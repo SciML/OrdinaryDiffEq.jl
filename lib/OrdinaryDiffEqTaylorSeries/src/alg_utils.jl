@@ -101,7 +101,7 @@ function build_polynomial(f, ::Val{iip}, p, coeffs::NTuple{P1, Float64}, length 
     if haskey(POLYNOMIAL_CACHE, f)
         list = POLYNOMIAL_CACHE[f]
         index = findfirst(x -> x[1] == coeffs && x[2] == p, list)
-        index !== nothing && return list[index][3:4]
+        index !== nothing && return list[index][3], list[index][4]
     end
     @variables t0::Real dt::Real
     u0 = isnothing(length) ? Symbolics.variable(:u0) : Symbolics.variables(:u0, 1:length)
