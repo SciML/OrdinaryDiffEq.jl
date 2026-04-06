@@ -21,12 +21,6 @@ jobs:
       # Force consistent Julia depot path for self-hosted runners
       JULIA_DEPOT_PATH: ~/.julia
     steps:
-      # Clean stale AirspeedVelocity installation to avoid path issues
-      - name: Clean AirspeedVelocity cache
-        run: |
-          rm -rf ~/.julia/bin/benchpkg* ~/.julia/bin/asvjl* || true
-          rm -rf ~/.julia/packages/AirspeedVelocity || true
-          rm -rf ~/.julia/compiled/*/AirspeedVelocity || true
       - uses: MilesCranmer/AirspeedVelocity.jl@action-v1
         with:
           julia-version: ${{ matrix.version }}
