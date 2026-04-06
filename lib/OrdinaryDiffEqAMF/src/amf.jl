@@ -33,13 +33,13 @@ end
 AMF(AlgType::Type; kwargs...) = AMF(AlgType, kwargs)
 
 function _build_inner_alg(amf::AMF)
-    amf.algtype(; linsolve = SciMLOpFactorization(), amf.kwargs...)
+    return amf.algtype(; linsolve = SciMLOpFactorization(), amf.kwargs...)
 end
 
 function SciMLBase.__solve(prob::SciMLBase.AbstractODEProblem, amf::AMF, args...; kwargs...)
-    SciMLBase.__solve(prob, _build_inner_alg(amf), args...; kwargs...)
+    return SciMLBase.__solve(prob, _build_inner_alg(amf), args...; kwargs...)
 end
 
 function SciMLBase.__init(prob::SciMLBase.AbstractODEProblem, amf::AMF, args...; kwargs...)
-    SciMLBase.__init(prob, _build_inner_alg(amf), args...; kwargs...)
+    return SciMLBase.__init(prob, _build_inner_alg(amf), args...; kwargs...)
 end

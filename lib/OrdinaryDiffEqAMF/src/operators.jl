@@ -31,9 +31,9 @@ diagonal, etc.).
 An operator W representing the AMF approximation: `W = -(I - γJ1)(I - γJ2) / γ`
 """
 function AMFOperator(
-    J1_op::SciMLOperators.AbstractSciMLOperator,
-    J2_op::SciMLOperators.AbstractSciMLOperator,
-)
+        J1_op::SciMLOperators.AbstractSciMLOperator,
+        J2_op::SciMLOperators.AbstractSciMLOperator,
+    )
     N = size(J1_op, 1)
     @assert size(J1_op) == size(J2_op) "J1 and J2 must have the same size"
 
@@ -98,11 +98,11 @@ avoiding indirection through operator composition.
 An operator W representing: `W = -(I - γJ1)(I - γJ2) / γ`
 """
 function AMFOperator(
-    J1_prototype::AbstractMatrix,
-    J2_prototype::AbstractMatrix,
-    fjac_J1!::Function,
-    fjac_J2!::Function,
-)
+        J1_prototype::AbstractMatrix,
+        J2_prototype::AbstractMatrix,
+        fjac_J1!::Function,
+        fjac_J2!::Function,
+    )
     N = size(J1_prototype, 1)
     @assert size(J1_prototype) == size(J2_prototype) "J1 and J2 must have the same size"
     @assert N == size(J1_prototype, 2) "J1 and J2 must be square"
@@ -147,24 +147,24 @@ function AMFOperator(
 end
 
 function split_jacobian_operator(
-    n::Integer,
-    jac_upper,
-    jac_lower;
-    u_cache = zeros(n^2),
-)
+        n::Integer,
+        jac_upper,
+        jac_lower;
+        u_cache = zeros(n^2),
+    )
     J1_op = MatrixOperator(UpperTriangular(zeros(n, n)); update_func! = jac_upper)
     J2_op = MatrixOperator(LowerTriangular(zeros(n, n)); update_func! = jac_lower)
     return cache_operator(J1_op + J2_op, u_cache)
 end
 
 function build_amf_function(
-    f!;
-    n::Integer,
-    jac_upper,
-    jac_lower,
-    jac_cache = zeros(n^2),
-    w_cache = zeros(n),
-)
+        f!;
+        n::Integer,
+        jac_upper,
+        jac_lower,
+        jac_cache = zeros(n^2),
+        w_cache = zeros(n),
+    )
     J_op = split_jacobian_operator(n, jac_upper, jac_lower; u_cache = jac_cache)
     W_op = AMFOperator(
         UpperTriangular(zeros(n, n)),
