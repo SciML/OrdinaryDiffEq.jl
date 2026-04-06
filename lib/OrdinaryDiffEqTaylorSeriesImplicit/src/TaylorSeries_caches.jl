@@ -46,6 +46,7 @@ function alg_cache(
         polynomial_B1 = polynomial
     else
         vector_A, vector_B = normalized_pade(P, Q)
+        # println("Pade coefficients: A = $vector_A, B = $vector_B")
         tuple_A = tuple(map(Float64, vector_A)...)
         tuple_B = tuple(map(Float64, vector_B)...)
         polynomial_A_all, _ = build_polynomial(f, p, tuple_A, length(u))
@@ -65,7 +66,7 @@ function alg_cache(
             vector_A1, vector_B1 = normalized_pade(P - 1, Q)
         end
         vector_B1[1] = 0
-        println("Embedded method coefficients: A1 = $vector_A1, B1 = $vector_B1")
+        # println("Embedded method coefficients: A1 = $vector_A1, B1 = $vector_B1")
         tuple_A1 = tuple(map(Float64, vector_A1)...)
         tuple_B1 = tuple(map(Float64, vector_B1)...)
         polynomial_A1_all, _ = build_polynomial(f, p, tuple_A1, length(u))
