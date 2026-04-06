@@ -31,7 +31,6 @@ jobs:
           - {user: SciML, repo: ModelingToolkit.jl, group: InterfaceII}
           - {user: SciML, repo: ModelingToolkit.jl, group: Initialization}
           - {user: SciML, repo: ModelingToolkit.jl, group: SymbolicIndexingInterface}
-          - {user: SciML, repo: DiffEqDevTools.jl, group: Core}
           - {user: nathanaelbosch, repo: ProbNumDiffEq.jl, group: Downstream}
           - {user: SKopecz, repo: PositiveIntegrators.jl, group: Downstream}
 
