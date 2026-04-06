@@ -3,23 +3,26 @@ Pkg.add("AllocCheck")
 
 using OrdinaryDiffEqLowOrderRK
 using OrdinaryDiffEqCore
+using SciMLBase: FullSpecialize
 using AllocCheck
 using Test
 
 """
 Allocation tests for OrdinaryDiffEqLowOrderRK solvers using AllocCheck.jl.
-These tests verify that the step! operation does not allocate during stepping.
+Tests perform_step! directly (the core stepping function) rather than step!,
+since step! includes saving operations that naturally allocate.
+Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
 """
 
 @testset "LowOrderRK Allocation Tests" begin
-    # Test problem for adaptive methods
     function simple_system!(du, u, p, t)
         du[1] = -0.5 * u[1]
         du[2] = -1.5 * u[2]
     end
-    prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 1.0))
 
-    # Test all exported LowOrderRK solvers for allocation-free behavior
+    # Use FullSpecialize to avoid FunctionWrappers dynamic dispatch noise
+    prob = ODEProblem{true, FullSpecialize}(simple_system!, [1.0, 1.0], (0.0, 1.0))
+
     low_order_solvers = [
         Euler(), Heun(), Ralston(), Midpoint(), RK4(),
         BS3(), OwrenZen3(), OwrenZen4(), OwrenZen5(), BS5(),
@@ -28,31 +31,37 @@ These tests verify that the step! operation does not allocate during stepping.
         Alshina2(), Alshina3(), Alshina6(), AutoDP5(DP5()),
     ]
 
-    @testset "LowOrderRK Solver Allocation Analysis" begin
+    @testset "LowOrderRK perform_step! Static Analysis" begin
         for solver in low_order_solvers
-            @testset "$(typeof(solver)) allocation check" begin
-                # Some solvers need fixed timestep
+            @testset "$(typeof(solver)) perform_step! allocation check" begin
                 if solver isa Euler || solver isa Midpoint || solver isa Heun
-                    integrator = init(prob, solver, dt = 0.1, save_everystep = false, adaptive = false)
+                    integrator = init(
+                        prob, solver, dt = 0.1, save_everystep = false, adaptive = false
+                    )
                 else
-                    integrator = init(prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
+                    integrator = init(
+                        prob, solver, dt = 0.1, save_everystep = false,
+                        abstol = 1.0e-6, reltol = 1.0e-6
+                    )
                 end
-                step!(integrator)  # Setup step may allocate
+                step!(integrator)
 
-                # Use AllocCheck to verify step! is allocation-free
-                allocs = check_allocs(step!, (typeof(integrator),))
+                cache = integrator.cache
+                allocs = check_allocs(
+                    OrdinaryDiffEqCore.perform_step!,
+                    (typeof(integrator), typeof(cache))
+                )
 
-                # These solvers should be allocation-free, but mark as broken for now
-                # to verify with AllocCheck (more accurate than @allocated)
-                @test length(allocs) == 0 broken = true
+                @test length(allocs) == 0
 
                 if length(allocs) > 0
-                    println("AllocCheck found $(length(allocs)) allocation sites in $(typeof(solver)) step!:")
-                    for (i, alloc) in enumerate(allocs[1:min(3, end)])  # Show first 3
-                        println("  $i. $alloc")
-                    end
+                    println(
+                        "AllocCheck found $(length(allocs)) allocation sites in $(typeof(solver)) perform_step!"
+                    )
                 else
-                    println("✓ $(typeof(solver)) appears allocation-free with AllocCheck")
+                    println(
+                        "$(typeof(solver)) perform_step! appears allocation-free with AllocCheck"
+                    )
                 end
             end
         end
