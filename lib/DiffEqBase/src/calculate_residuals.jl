@@ -169,3 +169,13 @@ with multiple threads.
     )
     return nothing
 end
+
+@inline function calculate_residuals!(
+        out::Array, E₁::Array, E₂::Array, u₀::Array, u₁::Array,
+        α::Number, ρ::Number, δ::Number, scalarnorm::F, t, ::False
+    ) where {F}
+    @inbounds @simd ivdep for i in eachindex(out, E₁, E₂, u₀, u₁)
+        out[i] = calculate_residuals(E₁[i], E₂[i], u₀[i], u₁[i], α, ρ, δ, scalarnorm, t)
+    end
+    return nothing
+end
