@@ -115,55 +115,38 @@ function wrapfun_iip(
     return FunctionWrappersWrappers.FunctionWrappersWrapper(Void(ff), iip_arglists, iip_returnlists)
 end
 
-const iip_arglists_default = (
-    Tuple{
-        Vector{Float64}, Vector{Float64}, Vector{Float64},
-        Float64,
-    },
-    Tuple{
-        Vector{Float64}, Vector{Float64},
-        SciMLBase.NullParameters,
-        Float64,
-    },
-    Tuple{Vector{dualT}, Vector{Float64}, Vector{Float64}, dualT},
-    Tuple{Vector{dualT}, Vector{dualT}, Vector{Float64}, dualT},
-    Tuple{Vector{dualT}, Vector{dualT}, Vector{Float64}, Float64},
-    Tuple{
-        Vector{dualT}, Vector{dualT}, SciMLBase.NullParameters,
-        Float64,
-    },
-    Tuple{
-        Vector{dualT}, Vector{Float64},
-        SciMLBase.NullParameters, dualT,
-    },
-)
-const iip_returnlists_default = ntuple(x -> Nothing, length(iip_arglists_default))
-
-# Explicit FunctionWrapper type aliases for the default iip arglists.
-# Julia's inference cannot trace through `map` over 7-element heterogeneous
-# tuples across precompilation boundaries, so we spell out each wrapper type
-# and the full FunctionWrappersWrapper return type as const aliases.
-const _FW = FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper
-const _IIP_FW1 = _FW{Nothing, Tuple{Vector{Float64}, Vector{Float64}, Vector{Float64}, Float64}}
-const _IIP_FW2 = _FW{Nothing, Tuple{Vector{Float64}, Vector{Float64}, SciMLBase.NullParameters, Float64}}
-const _IIP_FW3 = _FW{Nothing, Tuple{Vector{dualT}, Vector{Float64}, Vector{Float64}, dualT}}
-const _IIP_FW4 = _FW{Nothing, Tuple{Vector{dualT}, Vector{dualT}, Vector{Float64}, dualT}}
-const _IIP_FW5 = _FW{Nothing, Tuple{Vector{dualT}, Vector{dualT}, Vector{Float64}, Float64}}
-const _IIP_FW6 = _FW{Nothing, Tuple{Vector{dualT}, Vector{dualT}, SciMLBase.NullParameters, Float64}}
-const _IIP_FW7 = _FW{Nothing, Tuple{Vector{dualT}, Vector{Float64}, SciMLBase.NullParameters, dualT}}
-const _IIP_FWT = Tuple{_IIP_FW1, _IIP_FW2, _IIP_FW3, _IIP_FW4, _IIP_FW5, _IIP_FW6, _IIP_FW7}
-const _IIP_FWWT = FunctionWrappersWrappers.FunctionWrappersWrapper{
-    _IIP_FWT, FunctionWrappersWrappers.AllowNonIsBits, FunctionWrappersWrappers.SingleCacheStorage,
-}
-
-function wrapfun_iip(@nospecialize(ff))
+# Build a FunctionWrappersWrapper with iip arglists for the default no-recompile
+# path. The arglists cover both Vector{T} and NullParameters parameter types,
+# plus ForwardDiff Dual variants. Parameterized on U (state array type) and T
+# (time eltype) so Julia specializes and fully infers the return type.
+#
+# We use @nospecialize(ff) because ff can be a complex type like ODEFunction
+# with 20+ type parameters, which exceeds Julia's inference budget when combined
+# with the FunctionWrappersWrapper convenience constructor's `map` over 7
+# elements. Instead we construct each FunctionWrapper explicitly — the return
+# type depends only on U and T, not on ff.
+function _default_iip_fww(@nospecialize(ff), ::Type{U}, ::Type{T}) where {U, T}
     vff = Void(ff)
+    dT = dualgen(T)
+    dU = ArrayInterface.promote_eltype(U, dT)
+
+    FW = FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper
     fwt = (
-        _IIP_FW1(vff), _IIP_FW2(vff), _IIP_FW3(vff), _IIP_FW4(vff),
-        _IIP_FW5(vff), _IIP_FW6(vff), _IIP_FW7(vff),
+        FW{Nothing, Tuple{U, U, Vector{T}, T}}(vff),
+        FW{Nothing, Tuple{U, U, SciMLBase.NullParameters, T}}(vff),
+        FW{Nothing, Tuple{dU, U, Vector{T}, dT}}(vff),
+        FW{Nothing, Tuple{dU, dU, Vector{T}, dT}}(vff),
+        FW{Nothing, Tuple{dU, dU, Vector{T}, T}}(vff),
+        FW{Nothing, Tuple{dU, dU, SciMLBase.NullParameters, T}}(vff),
+        FW{Nothing, Tuple{dU, U, SciMLBase.NullParameters, dT}}(vff),
     )
-    return _IIP_FWWT(fwt, FunctionWrappersWrappers.SingleCacheStorage())
+    cs = FunctionWrappersWrappers.SingleCacheStorage()
+    return FunctionWrappersWrappers.FunctionWrappersWrapper{
+        typeof(fwt), FunctionWrappersWrappers.AllowNonIsBits, typeof(cs),
+    }(fwt, cs)
 end
+
+wrapfun_iip(ff) = _default_iip_fww(ff, Vector{Float64}, Float64)
 
 function promote_tspan(u0::AbstractArray{<:ForwardDiff.Dual}, p, tspan, prob, kwargs)
     if (haskey(kwargs, :callback) && has_continuous_callback(kwargs[:callback])) ||
