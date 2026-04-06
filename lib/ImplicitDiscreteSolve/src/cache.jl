@@ -19,18 +19,23 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
+
+    # When u0=nothing (e.g. MTK systems with only callbacks and no state variables),
+    # skip NonlinearSolve initialization entirely — there is nothing to solve for.
+    if isnothing(u) || isempty(u)
+        return IDSolveCache(u, uprev, state.u, nothing, uBottomEltypeNoUnits[])
+    end
+
     f_nl = (resid, u_next, p) -> f(resid, u_next, p.u, p.p, p.t)
 
-    u_len = isnothing(u) ? 0 : length(u)
-    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != u_len)
-    unl = isnothing(u) ? Float64[] : u # FIXME nonlinear solve cannot handle nothing for u
+    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != length(u))
     prob = if nlls
         NonlinearLeastSquaresProblem{isinplace(f)}(
             NonlinearFunction(f_nl; resid_prototype = f.resid_prototype),
-            unl, state
+            u, state
         )
     else
-        NonlinearProblem{isinplace(f)}(f_nl, unl, state)
+        NonlinearProblem{isinplace(f)}(f_nl, u, state)
     end
 
     nlcache = init(prob, alg.nlsolve)
@@ -48,19 +53,17 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     @assert !isnothing(u) "Empty u not supported with out of place functions yet."
 
-    state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
+    state = ImplicitDiscreteState(zero(u), p, t)
     f_nl = (u_next, p) -> f(u_next, p.u, p.p, p.t)
 
-    u_len = isnothing(u) ? 0 : length(u)
-    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != u_len)
-    unl = isnothing(u) ? Float64[] : u # FIXME nonlinear solve cannot handle nothing for u
+    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != length(u))
     prob = if nlls
         NonlinearLeastSquaresProblem{isinplace(f)}(
             NonlinearFunction(f_nl; resid_prototype = f.resid_prototype),
-            unl, state
+            u, state
         )
     else
-        NonlinearProblem{isinplace(f)}(f_nl, unl, state)
+        NonlinearProblem{isinplace(f)}(f_nl, u, state)
     end
 
     nlcache = init(prob, alg.nlsolve)

@@ -2,6 +2,11 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     (; alg, u, uprev, dt, t, tprev, f, p) = integrator
     (; nlcache, Θks) = cache
 
+    # u0=nothing: no state variables to solve for, just advance time
+    if isnothing(nlcache)
+        return
+    end
+
     # initial guess
     if alg.extrapolant == :constant
         cache.z .= integrator.u
@@ -66,7 +71,8 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::IDSolveCache)
-    return integrator.u isa AbstractVector && (cache.z .= integrator.u)
+    return integrator.u isa AbstractVector && !isempty(integrator.u) &&
+           (cache.z .= integrator.u)
 end
 
 function _initialize_dae!(
