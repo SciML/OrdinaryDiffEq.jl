@@ -61,6 +61,27 @@ function wrapfun_oop(ff, inputs::Tuple = ())
     )
 end
 
+# Construct FunctionWrappersWrapper bypassing the convenience constructor.
+# The convenience constructor's `map` doesn't infer when the callable has many
+# type parameters (e.g. ODEFunction with 20+), because the FunctionWrapper
+# constructor in the separately-precompiled FunctionWrappers package can't be
+# traced through for complex types. Using Type{A} dispatch binds the arglist
+# types as type parameters, making FW{Nothing, A}(vff) fully inferrable.
+function _make_fww(
+        @nospecialize(vff),
+        ::Type{A1}, ::Type{A2}, ::Type{A3}, ::Type{A4},
+    ) where {A1, A2, A3, A4}
+    FW = FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper
+    fwt = (
+        FW{Nothing, A1}(vff), FW{Nothing, A2}(vff),
+        FW{Nothing, A3}(vff), FW{Nothing, A4}(vff),
+    )
+    cs = FunctionWrappersWrappers.SingleCacheStorage()
+    return FunctionWrappersWrappers.FunctionWrappersWrapper{
+        typeof(fwt), FunctionWrappersWrappers.AllowNonIsBits, typeof(cs),
+    }(fwt, cs)
+end
+
 function wrapfun_iip(
         ff,
         inputs::Tuple{T1, T2, T3, T4}
@@ -71,16 +92,13 @@ function wrapfun_iip(
     dualT2 = ArrayInterface.promote_eltype(T2, dualT)
     dualT4 = dualgen(promote_type(T, T4))
 
-    iip_arglists = (
+    return _make_fww(
+        Void(ff),
         Tuple{T1, T2, T3, T4},
         Tuple{dualT1, dualT2, T3, T4},
         Tuple{dualT1, T2, T3, dualT4},
-        Tuple{dualT1, dualT2, T3, dualT4},
+        Tuple{dualT1, dualT2, T3, dualT4}
     )
-
-    iip_returnlists = ntuple(x -> Nothing, 4)
-
-    return FunctionWrappersWrappers.FunctionWrappersWrapper(Void(ff), iip_arglists, iip_returnlists)
 end
 
 # 3-arg version: compile FunctionWrapper variants with the specified chunk size.
@@ -103,50 +121,25 @@ function wrapfun_iip(
     dualT1_time = ArrayInterface.promote_eltype(T1, dualT_time)
     dualT4_time = dualgen(promote_type(T, T4))
 
-    iip_arglists = (
-        Tuple{T1, T2, T3, T4},                                  # plain
-        Tuple{dualT1_jac, dualT2_jac, T3, T4},                  # Jacobian (u dual, chunk=CS)
-        Tuple{dualT1_time, T2, T3, dualT4_time},                # time derivative (chunk=1)
-        Tuple{dualT1_jac, dualT2_jac, T3, dualT4_time},         # both
+    return _make_fww(
+        Void(ff),
+        Tuple{T1, T2, T3, T4},
+        Tuple{dualT1_jac, dualT2_jac, T3, T4},
+        Tuple{dualT1_time, T2, T3, dualT4_time},
+        Tuple{dualT1_jac, dualT2_jac, T3, dualT4_time}
     )
-
-    iip_returnlists = ntuple(x -> Nothing, 4)
-
-    return FunctionWrappersWrappers.FunctionWrappersWrapper(Void(ff), iip_arglists, iip_returnlists)
 end
 
-# Build a FunctionWrappersWrapper with iip arglists for the default no-recompile
-# path. The arglists cover both Vector{T} and NullParameters parameter types,
-# plus ForwardDiff Dual variants. Parameterized on U (state array type) and T
-# (time eltype) so Julia specializes and fully infers the return type.
-#
-# We use @nospecialize(ff) because ff can be a complex type like ODEFunction
-# with 20+ type parameters, which exceeds Julia's inference budget when combined
-# with the FunctionWrappersWrapper convenience constructor's `map` over 7
-# elements. Instead we construct each FunctionWrapper explicitly — the return
-# type depends only on U and T, not on ff.
-function _default_iip_fww(@nospecialize(ff), ::Type{U}, ::Type{T}) where {U, T}
-    vff = Void(ff)
-    dT = dualgen(T)
-    dU = ArrayInterface.promote_eltype(U, dT)
-
-    FW = FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper
-    fwt = (
-        FW{Nothing, Tuple{U, U, Vector{T}, T}}(vff),
-        FW{Nothing, Tuple{U, U, SciMLBase.NullParameters, T}}(vff),
-        FW{Nothing, Tuple{dU, U, Vector{T}, dT}}(vff),
-        FW{Nothing, Tuple{dU, dU, Vector{T}, dT}}(vff),
-        FW{Nothing, Tuple{dU, dU, Vector{T}, T}}(vff),
-        FW{Nothing, Tuple{dU, dU, SciMLBase.NullParameters, T}}(vff),
-        FW{Nothing, Tuple{dU, U, SciMLBase.NullParameters, dT}}(vff),
+# Default 0-arg: delegate to the standard 2-arg path with default inputs.
+function wrapfun_iip(ff)
+    return wrapfun_iip(
+        ff,
+        (
+            Vector{Float64}(undef, 0), Vector{Float64}(undef, 0),
+            Vector{Float64}(undef, 0), 0.0,
+        ),
     )
-    cs = FunctionWrappersWrappers.SingleCacheStorage()
-    return FunctionWrappersWrappers.FunctionWrappersWrapper{
-        typeof(fwt), FunctionWrappersWrappers.AllowNonIsBits, typeof(cs),
-    }(fwt, cs)
 end
-
-wrapfun_iip(ff) = _default_iip_fww(ff, Vector{Float64}, Float64)
 
 function promote_tspan(u0::AbstractArray{<:ForwardDiff.Dual}, p, tspan, prob, kwargs)
     if (haskey(kwargs, :callback) && has_continuous_callback(kwargs[:callback])) ||
