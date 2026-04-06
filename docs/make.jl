@@ -42,7 +42,7 @@ makedocs(
         DiffEqDevTools,
     ],
     linkcheck_ignore = [r"https://github.com/JuliaDiff/ForwardDiff.jl"],
-    warnonly = [:docs_block, :missing_docs, :eval_block, :cross_references],
+    warnonly = [:docs_block, :missing_docs, :eval_block],
     format = Documenter.HTML(
         analytics = "UA-90474609-3",
         assets = ["assets/favicon.ico"],
