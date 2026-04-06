@@ -2,6 +2,9 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     (; alg, u, uprev, dt, t, tprev, f, p) = integrator
     (; nlcache, Θks) = cache
 
+    # When u0 is nothing, there is no state to solve for
+    isnothing(nlcache) && return
+
     # initial guess
     if alg.extrapolant == :constant
         cache.z .= integrator.u
