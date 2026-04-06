@@ -1,3 +1,5 @@
+using NonlinearSolve
+
 function initialize!(integrator, cache::ImplicitTaylorConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -109,11 +111,13 @@ end
         distance = -μ * dt
     end
     local ndw
-    η = max(ηold, eps(eltype(integrator.opts.reltol)))
+    # reusing η is causing problems, temporarily initialize it to Inf
+    # η = max(ηold, eps(eltype(integrator.opts.reltol)))
+    η = Inf
     fail_convergence = true
     iter = 0
     dw = linsolve.u
-    uintermediate .= u
+    uintermediate .= uprev
     while iter < maxiters
         iter += 1
         integrator.stats.nnonliniter += 1
@@ -173,7 +177,6 @@ end
             u .= tmp # should be automatically converted with convert(eltype(u), tmp)
         end
     else
-        @assert isreal(μ) # using 1.0+0.0im does not make any sense
         u .= uintermediate
     end
     # step_limiter!(u, integrator, p, t + dt)
@@ -186,12 +189,13 @@ end
             polynomial_B1(tmp, u, t + dt, dt)
             utilde .-= tmp # now utilde holds the embedded result
             tmp .= utilde - u
+            tmp ./= 10
             calculate_residuals!(
                 atmp, tmp, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            println("norm(tmp) = $(internalnorm(tmp, t)), norm(u) = $(internalnorm(u, t)), EEst = $(integrator.EEst)")
+            #println("norm(tmp) = $(internalnorm(tmp, t)), norm(u) = $(internalnorm(u, t)), EEst = $(integrator.EEst)")
         end
     else
         integrator.EEst = 1

@@ -14,6 +14,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
+NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
@@ -37,6 +38,7 @@ LinearAlgebra = "<0.0.1, 1"
 LinearSolve = "3.26.0"
 MacroTools = "0.5.13"
 MuladdMacro = "0.2.4"
+NonlinearSolve = "4.12.0"
 Random = "<0.0.1, 1"
 RecursiveArrayTools = "3.27.0"
 Reexport = "1.2.2"
@@ -50,9 +52,10 @@ julia = "1.10"
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "OrdinaryDiffEqRosenbrock"]
