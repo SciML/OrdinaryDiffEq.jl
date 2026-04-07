@@ -387,7 +387,7 @@ end
 
 function ImplicitHairerWannerExtrapolation(;
         autodiff = AutoForwardDiff(),
-       
+
         concrete_jac = nothing,
         linsolve = nothing,
         min_order = 2, init_order = 5, max_order = 10,
@@ -475,7 +475,7 @@ end
 
 function ImplicitEulerBarycentricExtrapolation(;
         autodiff = AutoForwardDiff(),
-       
+
         concrete_jac = nothing,
         linsolve = nothing,
         min_order = 3, init_order = 5,
