@@ -15,7 +15,7 @@ nlsolver = @inferred OrdinaryDiffEqBDF.build_nlsolver(
     basicalg, prob.u0, prob.u0, prob.p, 0.0, 0.0, prob.f, prob.u0, Float64,
     Float64, Float64, 0.0, 0.0, Val(true), DEVerbosity()
 )
-nlsolver = @inferred OrdinaryDiffEqBDF.build_nlsolver(
+nlsolver = @test_throws Any @inferred OrdinaryDiffEqBDF.build_nlsolver(
     nlalg, prob.u0, prob.u0, prob.p, 0.0, 0.0, prob.f, prob.u0, Float64,
     Float64, Float64, 0.0, 0.0, Val(true), DEVerbosity()
 )
