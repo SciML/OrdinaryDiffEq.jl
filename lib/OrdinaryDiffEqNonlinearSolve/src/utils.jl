@@ -287,38 +287,7 @@ function build_nlsolver(
     atmp .= false
     dz = zero(u)
 
-    if nlalg isa NonlinearSolveAlg
-        nf = nlsolve_f(f, alg)
-        tType = typeof(t)
-        invγdt = inv(oneunit(t) * one(uTolType))
-
-        γ = tTypeNoUnits(γ)
-        α = tTypeNoUnits(α)
-        dt = tTypeNoUnits(dt)
-        prob = if f.nlstep_data !== nothing
-            prob = f.nlstep_data.nlprob
-        else
-            nlf = isdae ? daenlf : odenlf
-            nlp_params = if isdae
-                (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
-            else
-                (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
-            end
-            # Use FullSpecialize so SciMLBase does not wrap `nlf` in a
-            # FunctionWrappersWrapper with a fixed set of Dual tag branches.
-            # The wrapper otherwise throws "No matching function wrapper was
-            # found!" when the ODE solver is itself nested inside an outer
-            # ForwardDiff.Dual layer (e.g. SciMLSensitivity, nested AD), since
-            # the inner NonlinearProblem is then called with a Dual tagged by
-            # `DiffEqBase.OrdinaryDiffEqTag` that no pre-built wrapper matches.
-            NonlinearProblem(
-                NonlinearFunction{true, SciMLBase.FullSpecialize}(nlf),
-                ztmp, nlp_params
-            )
-        end
-        cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
-        nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
-    elseif nlalg isa Union{NLNewton}
+    if nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
 
         # TODO: check if the solver is iterative
@@ -359,7 +328,34 @@ function build_nlsolver(
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
 
-        begin
+        if nlalg isa NonlinearSolveAlg
+            γ = tTypeNoUnits(γ)
+            α = tTypeNoUnits(α)
+            dt = tTypeNoUnits(dt)
+            prob = if f.nlstep_data !== nothing
+                prob = f.nlstep_data.nlprob
+            else
+                nlf = isdae ? daenlf : odenlf
+                nlp_params = if isdae
+                    (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+                else
+                    (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
+                end
+                # Use FullSpecialize so SciMLBase does not wrap `nlf` in a
+                # FunctionWrappersWrapper with a fixed set of Dual tag branches.
+                # The wrapper otherwise throws "No matching function wrapper was
+                # found!" when the ODE solver is itself nested inside an outer
+                # ForwardDiff.Dual layer (e.g. SciMLSensitivity, nested AD), since
+                # the inner NonlinearProblem is then called with a Dual tagged by
+                # `DiffEqBase.OrdinaryDiffEqTag` that no pre-built wrapper matches.
+                NonlinearProblem(
+                    NonlinearFunction{true, SciMLBase.FullSpecialize}(nlf),
+                    ztmp, nlp_params
+                )
+            end
+            cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
+            nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
+        else
             # Build separated DAE Jacobian cache if applicable
             if isdae
                 if islinear(f) || SciMLBase.has_jac(f) ||
@@ -459,32 +455,7 @@ function build_nlsolver(
     # build cache of non-linear solver
     tstep = zero(t)
 
-    if nlalg isa NonlinearSolveAlg
-        nf = nlsolve_f(f, alg)
-        tType = typeof(t)
-        invγdt = inv(oneunit(t) * one(uTolType))
-
-        γ = tTypeNoUnits(γ)
-        α = tTypeNoUnits(α)
-        dt = tTypeNoUnits(dt)
-        nlf = isdae ? oopdaenlf : oopodenlf
-        nlp_params = if isdae
-            (tmp, α, tstep, invγdt, p, dt, uprev, f)
-        else
-            (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
-        end
-        # See comment on the in-place branch above: FullSpecialize avoids
-        # the FunctionWrappersWrapper dispatch hole when the ODE solver is
-        # called inside an outer ForwardDiff layer.
-        prob = NonlinearProblem(
-            NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf),
-            copy(ztmp), nlp_params
-        )
-        cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
-        nlcache = NonlinearSolveCache(
-            nothing, tstep, nothing, nothing, invγdt, prob, cache
-        )
-    elseif nlalg isa Union{NLNewton}
+    if nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
         if isdae
             uf = DAEResidualDerivativeWrapper(f, p, α, inv(γ * dt), tmp, uprev, t)
@@ -496,7 +467,28 @@ function build_nlsolver(
         invγdt = inv(oneunit(t) * one(uTolType))
 
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
-        begin
+        if nlalg isa NonlinearSolveAlg
+            γ = tTypeNoUnits(γ)
+            α = tTypeNoUnits(α)
+            dt = tTypeNoUnits(dt)
+            nlf = isdae ? oopdaenlf : oopodenlf
+            nlp_params = if isdae
+                (tmp, α, tstep, invγdt, p, dt, uprev, f)
+            else
+                (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
+            end
+            # See comment on the in-place branch above: FullSpecialize avoids
+            # the FunctionWrappersWrapper dispatch hole when the ODE solver is
+            # called inside an outer ForwardDiff layer.
+            prob = NonlinearProblem(
+                NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf),
+                copy(ztmp), nlp_params
+            )
+            cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
+            nlcache = NonlinearSolveCache(
+                nothing, tstep, nothing, nothing, invγdt, prob, cache
+            )
+        else
             # Build separated DAE Jacobian cache if applicable
             if isdae
                 if SciMLBase.has_jac(f) ||
