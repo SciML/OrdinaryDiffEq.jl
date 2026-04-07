@@ -20,26 +20,6 @@ function Rosenbrock32Tableau(T)
     return Rosenbrock32Tableau(c₃₂, d)
 end
 
-struct RodasTableau{T, T2, btType}
-    A::Matrix{T}
-    C::Matrix{T}
-    gamma::T2
-    c::Vector{T2}
-    d::Vector{T}
-    H::Matrix{T}
-    b::Vector{T}
-    btilde::btType  # Vector{T} for adaptive, nothing for fixed-step
-end
-
-    gamma = 0.19
-    s = size(RODAS5A, 1)
-    b = T[RODAS5A[s, i] for i in 1:(s - 1)]
-    push!(b, one(T))
-    btilde = zeros(T, s)
-    btilde[s] = one(T)
-    return RodasTableau{T, T2, Vector{T}}(RODAS5A, RODAS5C, gamma, RODAS5c, RODAS5d, RODAS5H, b, btilde)
-end
-
 const RODAS5PA = [
     0 0 0 0 0 0 0 0
     3.0 0 0 0 0 0 0 0
@@ -196,68 +176,6 @@ function Rodas6PTableau(T, T2)
 end
 
 ################################################################################
-# ROS3P (3-stage, hand-written)
-################################################################################
-
-"""
-    ROS3PRodasTableau(T, T2)
-
-A 3rd order Rosenbrock method with 3 stages.
-Reference: Lang, J., & Verwer, J. G. (2001). ROS3P—an accurate third-order Rosenbrock solver designed for parabolic problems. BIT Numerical Mathematics, 41, 731-738.
-"""
-
-    gamma = convert(T2, 1 // 3)
-    a21 = convert(T, 4.0 / 3.0)
-    a41 = convert(T, 2.90625)
-    a42 = convert(T, 3.375)
-    a43 = convert(T, 0.40625)
-
-    A = zeros(T, 5, 5)
-    A[2, 1] = a21
-    A[4, 1] = a41
-    A[4, 2] = a42
-    A[4, 3] = a43
-    A[5, 1] = a41
-    A[5, 2] = a42
-    A[5, 3] = a43
-
-    C = zeros(T, 5, 5)
-    C[2, 1] = -convert(T, 4.0)
-    C[3, 1] = convert(T, 8.25)
-    C[3, 2] = convert(T, 6.75)
-    C[4, 1] = convert(T, 1.21875)
-    C[4, 2] = -convert(T, 5.0625)
-    C[4, 3] = -convert(T, 1.96875)
-    C[5, 1] = convert(T, 4.03125)
-    C[5, 2] = -convert(T, 15.1875)
-    C[5, 3] = -convert(T, 4.03125)
-    C[5, 4] = convert(T, 6.0)
-
-    c = T2[convert(T2, 0), convert(T2, 4.0 / 9.0), convert(T2, 0), convert(T2, 1), convert(T2, 1)]
-    d = T[convert(T, 1.0 / 3.0), -convert(T, 1.0 / 9.0), convert(T, 1.0), zero(T), zero(T)]
-    b = T[a41, a42, a43, zero(T), one(T)]
-    btilde = T[zero(T), zero(T), zero(T), -one(T), one(T)]
-
-    H = zeros(T, 3, 5)
-    H[1, 1] = convert(T, 1.78125)
-    H[1, 2] = convert(T, 6.75)
-    H[1, 3] = convert(T, 0.15625)
-    H[1, 4] = -convert(T, 6.0)
-    H[1, 5] = -convert(T, 1.0)
-    H[2, 1] = convert(T, 4.21875)
-    H[2, 2] = -convert(T, 15.1875)
-    H[2, 3] = -convert(T, 3.09375)
-    H[2, 4] = convert(T, 9.0)
-    H[3, 1] = convert(T, 4.21875)
-    H[3, 2] = -convert(T, 2.025)
-    H[3, 3] = -convert(T, 1.63125)
-    H[3, 4] = -convert(T, 1.7)
-    H[3, 5] = -convert(T, 0.1)
-
-    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
-end
-
-################################################################################
 # Rodas23W (5-stage, same data as Rodas3P but 2nd order solution)
 ################################################################################
 
@@ -316,18 +234,6 @@ function Rodas23WRodasTableau(T, T2)
 
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
-
-################################################################################
-################################################################################
-# Macro-free direct constructors for all formerly generated methods
-################################################################################
-
-
-"""
-    RosShamp4RodasTableau(T, T2)
-
-A 4th order Rosenbrock method developed by Shampine.
-"""
 
 ################################################################################
 # Essential W-method tableaus (best for Jacobian reuse, see PR #3075)
