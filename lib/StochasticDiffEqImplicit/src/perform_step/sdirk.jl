@@ -4,7 +4,8 @@
             ImplicitEMConstantCache,
             ImplicitEulerHeunConstantCache,
             ImplicitRKMilConstantCache,
-        }
+        },
+        repeat_step = false
     )
     (; t, dt, uprev, u, p, P, c, f) = integrator
     (; nlsolver) = cache
@@ -114,7 +115,8 @@ end
             ImplicitEMCache,
             ImplicitEulerHeunCache,
             ImplicitRKMilCache,
-        }
+        },
+        repeat_step = false
     )
     (; t, dt, uprev, u, p, P, c, f) = integrator
     (; fsalfirst, gtmp, gtmp2, nlsolver) = cache

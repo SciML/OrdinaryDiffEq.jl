@@ -1341,7 +1341,8 @@ function _ode_interpolant(
     TI > 3 && throw(DerivativeOrderNotPossibleError())
 
     # Linear fallback when no dense output vectors (e.g. SDE)
-    if isempty(k)
+    # Hermite interpolation requires at least 2 stages (k[1] and k[2])
+    if isempty(k) || length(k) < 2
         return linear_interpolant(Θ, dt, y₀, y₁, idxs, T)
     end
 
@@ -1357,7 +1358,8 @@ function _ode_interpolant!(
     ) where {TI}
     TI > 3 && throw(DerivativeOrderNotPossibleError())
 
-    if isempty(k)
+    # Hermite interpolation requires at least 2 stages (k[1] and k[2])
+    if isempty(k) || length(k) < 2
         return linear_interpolant!(out, Θ, dt, y₀, y₁, idxs, T)
     end
 
