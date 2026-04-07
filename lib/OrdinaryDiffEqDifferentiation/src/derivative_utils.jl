@@ -8,6 +8,10 @@ does not have a `jac_reuse` field.
 """
 get_jac_reuse(cache) = hasproperty(cache, :jac_reuse) ? cache.jac_reuse : nothing
 
+# Strip ForwardDiff.Dual to plain value for heuristic storage in JacReuseState.
+# JacReuseState fields are Float64 (or similar) and don't need to carry AD derivatives.
+_jac_reuse_value(x) = ForwardDiff.value(x)
+
 """
     _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma) -> Union{Nothing, NTuple{2,Bool}}
 
@@ -833,7 +837,7 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
         if jac_reuse !== nothing
             jac_reuse.last_step_iter = integrator.iter
             if new_jac
-                jac_reuse.pending_dtgamma = dtgamma
+                jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
                 jac_reuse.last_u_length = length(integrator.u)
             end
         end
@@ -874,61 +878,48 @@ function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step
     # Track iteration for algorithm-switch detection in CompositeAlgorithm
     jac_reuse.last_step_iter = integrator.iter
 
-    # For complex W types (operators), delegate to standard calc_W
-    if cache.W isa StaticWOperator || cache.W isa WOperator ||
-            cache.W isa AbstractSciMLOperator
+    if new_jac
+        # Fresh Jacobian needed — delegate to standard calc_tderivative + calc_W
+        # to ensure numerical consistency with the IIP path (calc_W handles
+        # StaticWOperator, WOperator, AbstractSciMLOperator, etc.).
         dT = calc_tderivative(integrator, cache)
         W = calc_W(integrator, cache, dtgamma, repeat_step)
-        jac_reuse.pending_dtgamma = dtgamma
+
+        # Cache the J we just computed (calc_W stored it in integrator internals;
+        # extract from the cache or recompute cheaply for OOP caching).
+        jac_reuse.cached_J = calc_J(integrator, cache)
+        jac_reuse.cached_dT = dT
+        jac_reuse.cached_W = W
+        jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
+        jac_reuse.last_u_length = length(integrator.u)
+
         return dT, W
     end
+
+    # Reusing cached J — build W from it directly.
+    # Safety: if cached_J is nothing (e.g. first use after algorithm switch),
+    # fall back to standard path.
+    if jac_reuse.cached_J === nothing
+        dT = calc_tderivative(integrator, cache)
+        W = calc_W(integrator, cache, dtgamma, repeat_step)
+        return dT, W
+    end
+
+    J = jac_reuse.cached_J
+    dT = jac_reuse.cached_dT
 
     mass_matrix = integrator.f.mass_matrix
     update_coefficients!(mass_matrix, integrator.uprev, integrator.p, integrator.t)
 
-    # Safety: if cached_J or cached_W is nothing (e.g. first use after algorithm switch),
-    # force a fresh computation regardless of the decision.
-    if !new_jac && jac_reuse.cached_J === nothing
-        new_jac = true
-        new_W = true
-    end
-    if !new_W && jac_reuse.cached_W === nothing
-        new_W = true
-    end
-
-    if new_jac
-        J = calc_J(integrator, cache)
-        dT = calc_tderivative(integrator, cache)
-
-        # Cache for future reuse
-        jac_reuse.cached_J = J
-        jac_reuse.cached_dT = dT
-    else
-        # Reuse cached J and dT
-        J = jac_reuse.cached_J
-        dT = jac_reuse.cached_dT
-    end
-
-    # Record pending dtgamma only when J was freshly computed;
-    # committed as last_dtgamma on the next accepted step.
-    if new_jac
-        jac_reuse.pending_dtgamma = dtgamma
-        jac_reuse.last_u_length = length(integrator.u)
-    end
-
-    # Always rebuild W from the (possibly cached) J and the current dtgamma.
+    # Rebuild W from cached J and current dtgamma.
     # The Jacobian evaluation is the expensive part; W = J − M/(dt·γ) and
     # its factorization are comparatively cheap and keep step control accurate.
-    if new_W
-        W = J - mass_matrix * inv(dtgamma)
-        if !isa(W, Number)
-            W = DiffEqBase.default_factorize(W)
-        end
-        integrator.stats.nw += 1
-        jac_reuse.cached_W = W
-    else
-        W = jac_reuse.cached_W
+    W = J - mass_matrix * inv(dtgamma)
+    if !isa(W, Number)
+        W = DiffEqBase.default_factorize(W)
     end
+    integrator.stats.nw += 1
+    jac_reuse.cached_W = W
 
     return dT, W
 end
