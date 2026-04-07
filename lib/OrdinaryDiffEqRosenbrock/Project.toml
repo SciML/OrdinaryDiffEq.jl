@@ -17,6 +17,7 @@ MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
+OrdinaryDiffEqRosenbrockTableaus = "b4bd8bb3-f80f-41d2-9b21-73a655b304b9"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
@@ -31,6 +32,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
+OrdinaryDiffEqRosenbrockTableaus = {path = "../OrdinaryDiffEqRosenbrockTableaus"}
 
 [compat]
 ADTypes = "1.16"
@@ -51,6 +53,7 @@ ODEProblemLibrary = "1"
 OrdinaryDiffEqCore = "3"
 OrdinaryDiffEqDifferentiation = "2"
 OrdinaryDiffEqNonlinearSolve = "1.16.0"
+OrdinaryDiffEqRosenbrockTableaus = "1"
 Pkg = "1"
 PrecompileTools = "1.2, 1.3"
 Preferences = "1.4"
