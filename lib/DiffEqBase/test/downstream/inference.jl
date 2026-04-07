@@ -17,7 +17,7 @@ sol = solve(prob, Tsit5(), save_idxs = 1)
 
 prob = ODEProblem{true, SciMLBase.FullSpecialize}(lorenz, u0, tspan)
 
-@inferred SciMLBase.wrapfun_iip(prob.f)
+@inferred SciMLBase.wrapfun_iip(prob.f, (u0, u0, Float64[], tspan[1]))
 @inferred remake(prob, u0 = [1.0; 0.0; 0.0])
 @inferred remake(prob, u0 = Float32[1.0; 0.0; 0.0])
 @test_broken @inferred(solve(prob, Tsit5(), u0 = Float32[1.0; 0.0; 0.0])) ==
@@ -29,7 +29,8 @@ prob = ODEProblem(lorenz, Float32[1.0; 0.0; 0.0], tspan)
     solve(prob, Tsit5(), u0 = [1.0; 0.0; 0.0])
 remake(prob, u0 = [1.0; 0.0; 0.0])
 
-@inferred SciMLBase.wrapfun_iip(prob.f)
+u0_32 = Float32[1.0; 0.0; 0.0]
+@inferred SciMLBase.wrapfun_iip(prob.f, (u0_32, u0_32, Float32[], tspan[1]))
 @test_broken @inferred(
     ODEFunction{
         isinplace(prob), SciMLBase.FunctionWrapperSpecialize,
