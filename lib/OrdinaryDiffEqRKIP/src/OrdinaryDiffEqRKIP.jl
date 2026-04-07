@@ -6,7 +6,7 @@ using SciMLOperators: AbstractSciMLOperator
 using MaybeInplace: @bb
 using SciMLBase: isinplace
 using DiffEqBase: ExplicitRKTableau
-using DiffEqDevTools: constructVerner6
+using OrdinaryDiffEqExplicitTableaus: Verner6
 
 import OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveExponentialAlgorithm, alg_adaptive_order,
     alg_order, alg_cache, @cache, SplitFunction, get_fsalfirstlast,
