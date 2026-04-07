@@ -1,4 +1,30 @@
 using Documenter, OrdinaryDiffEq, DiffEqDevTools
+using OrdinaryDiffEqAdamsBashforthMoulton
+using OrdinaryDiffEqBDF
+using OrdinaryDiffEqDefault
+using OrdinaryDiffEqExplicitRK
+using OrdinaryDiffEqExponentialRK
+using OrdinaryDiffEqExtrapolation
+using OrdinaryDiffEqFeagin
+using OrdinaryDiffEqFIRK
+using OrdinaryDiffEqHighOrderRK
+using OrdinaryDiffEqIMEXMultistep
+using OrdinaryDiffEqLinear
+using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqLowStorageRK
+using OrdinaryDiffEqNordsieck
+using OrdinaryDiffEqPDIRK
+using OrdinaryDiffEqPRK
+using OrdinaryDiffEqQPRK
+using OrdinaryDiffEqRKN
+using OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqSSPRK
+using OrdinaryDiffEqStabilizedIRK
+using OrdinaryDiffEqStabilizedRK
+using OrdinaryDiffEqSymplecticRK
+using OrdinaryDiffEqTsit5
+using OrdinaryDiffEqVerner
 
 cp(joinpath(@__DIR__, "Manifest.toml"), joinpath(@__DIR__, "src", "assets", "Manifest.toml"), force = true)
 cp(joinpath(@__DIR__, "Project.toml"), joinpath(@__DIR__, "src", "assets", "Project.toml"), force = true)
@@ -13,32 +39,32 @@ makedocs(
     doctest = false,
     modules = [
         OrdinaryDiffEq,
-        OrdinaryDiffEq.OrdinaryDiffEqAdamsBashforthMoulton,
-        OrdinaryDiffEq.OrdinaryDiffEqBDF,
-        OrdinaryDiffEq.OrdinaryDiffEqDefault,
-        OrdinaryDiffEq.OrdinaryDiffEqExplicitRK,
-        OrdinaryDiffEq.OrdinaryDiffEqExponentialRK,
-        OrdinaryDiffEq.OrdinaryDiffEqExtrapolation,
-        OrdinaryDiffEq.OrdinaryDiffEqFeagin,
-        OrdinaryDiffEq.OrdinaryDiffEqFIRK,
-        OrdinaryDiffEq.OrdinaryDiffEqHighOrderRK,
-        OrdinaryDiffEq.OrdinaryDiffEqIMEXMultistep,
-        OrdinaryDiffEq.OrdinaryDiffEqLinear,
-        OrdinaryDiffEq.OrdinaryDiffEqLowOrderRK,
-        OrdinaryDiffEq.OrdinaryDiffEqLowStorageRK,
-        OrdinaryDiffEq.OrdinaryDiffEqNordsieck,
-        OrdinaryDiffEq.OrdinaryDiffEqPDIRK,
-        OrdinaryDiffEq.OrdinaryDiffEqPRK,
-        OrdinaryDiffEq.OrdinaryDiffEqQPRK,
-        OrdinaryDiffEq.OrdinaryDiffEqRKN,
-        OrdinaryDiffEq.OrdinaryDiffEqRosenbrock,
-        OrdinaryDiffEq.OrdinaryDiffEqSDIRK,
-        OrdinaryDiffEq.OrdinaryDiffEqSSPRK,
-        OrdinaryDiffEq.OrdinaryDiffEqStabilizedIRK,
-        OrdinaryDiffEq.OrdinaryDiffEqStabilizedRK,
-        OrdinaryDiffEq.OrdinaryDiffEqSymplecticRK,
-        OrdinaryDiffEq.OrdinaryDiffEqTsit5,
-        OrdinaryDiffEq.OrdinaryDiffEqVerner,
+        OrdinaryDiffEqAdamsBashforthMoulton,
+        OrdinaryDiffEqBDF,
+        OrdinaryDiffEqDefault,
+        OrdinaryDiffEqExplicitRK,
+        OrdinaryDiffEqExponentialRK,
+        OrdinaryDiffEqExtrapolation,
+        OrdinaryDiffEqFeagin,
+        OrdinaryDiffEqFIRK,
+        OrdinaryDiffEqHighOrderRK,
+        OrdinaryDiffEqIMEXMultistep,
+        OrdinaryDiffEqLinear,
+        OrdinaryDiffEqLowOrderRK,
+        OrdinaryDiffEqLowStorageRK,
+        OrdinaryDiffEqNordsieck,
+        OrdinaryDiffEqPDIRK,
+        OrdinaryDiffEqPRK,
+        OrdinaryDiffEqQPRK,
+        OrdinaryDiffEqRKN,
+        OrdinaryDiffEqRosenbrock,
+        OrdinaryDiffEqSDIRK,
+        OrdinaryDiffEqSSPRK,
+        OrdinaryDiffEqStabilizedIRK,
+        OrdinaryDiffEqStabilizedRK,
+        OrdinaryDiffEqSymplecticRK,
+        OrdinaryDiffEqTsit5,
+        OrdinaryDiffEqVerner,
         DiffEqDevTools,
     ],
     linkcheck_ignore = [r"https://github.com/JuliaDiff/ForwardDiff.jl"],

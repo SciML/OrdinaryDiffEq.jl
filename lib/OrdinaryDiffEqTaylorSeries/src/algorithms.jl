@@ -36,5 +36,5 @@ Base.@kwdef struct ExplicitTaylorAdaptiveOrder{P, Q, StageLimiter, StepLimiter, 
     max_order::Val{Q} = Val{10}()
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end

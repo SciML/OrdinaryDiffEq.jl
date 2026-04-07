@@ -685,8 +685,10 @@ function CallbackCache(
     prev_sign = similar(u, signType, max_len)
     simultaneous_events = zeros(Int8, max_len)
     prev_simultaneous_events = zeros(Bool, max_len)
-    return CallbackCache(tmp_condition, next_condition, next_sign, prev_sign,
-        simultaneous_events, prev_simultaneous_events)
+    return CallbackCache(
+        tmp_condition, next_condition, next_sign, prev_sign,
+        simultaneous_events, prev_simultaneous_events
+    )
 end
 
 function CallbackCache(
@@ -699,6 +701,8 @@ function CallbackCache(
     prev_sign = zeros(signType, max_len)
     simultaneous_events = zeros(Int8, max_len)
     prev_simultaneous_events = zeros(Bool, max_len)
-    return CallbackCache(tmp_condition, next_condition, next_sign, prev_sign,
-        simultaneous_events, prev_simultaneous_events)
+    return CallbackCache(
+        tmp_condition, next_condition, next_sign, prev_sign,
+        simultaneous_events, prev_simultaneous_events
+    )
 end

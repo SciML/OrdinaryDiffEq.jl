@@ -115,6 +115,7 @@ function affect!(integrator, events)
             integrator.u[4] = -0.9integrator.u[4]
         end
     end
+    return
 end
 
 function affect_neg!(integrator, events)
@@ -124,6 +125,7 @@ function affect_neg!(integrator, events)
         @show integrator.u[1]
         @show integrator.u[3]
     end
+    return
 end
 
 function affect_combined!(integrator, events)
@@ -142,6 +144,7 @@ function affect_combined!(integrator, events)
             end
         end
     end
+    return
 end
 
 cb = VectorContinuousCallback(condition, affect!, 2)
