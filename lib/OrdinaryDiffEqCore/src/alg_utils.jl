@@ -361,21 +361,25 @@ function alg_difftype(
     return _get_fdtype(alg.autodiff)
 end
 
-standardtag(alg::Union{
-    OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-    OrdinaryDiffEqImplicitAlgorithm,
-    OrdinaryDiffEqExponentialAlgorithm,
-    OrdinaryDiffEqAdaptiveExponentialAlgorithm,
-    DAEAlgorithm,
-}) = true
+standardtag(
+    alg::Union{
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+        OrdinaryDiffEqImplicitAlgorithm,
+        OrdinaryDiffEqExponentialAlgorithm,
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+        DAEAlgorithm,
+    }
+) = true
 
-concrete_jac(alg::Union{
-    OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-    OrdinaryDiffEqImplicitAlgorithm,
-    OrdinaryDiffEqExponentialAlgorithm,
-    OrdinaryDiffEqAdaptiveExponentialAlgorithm,
-    DAEAlgorithm,
-}) = alg.concrete_jac
+concrete_jac(
+    alg::Union{
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+        OrdinaryDiffEqImplicitAlgorithm,
+        OrdinaryDiffEqExponentialAlgorithm,
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+        DAEAlgorithm,
+    }
+) = alg.concrete_jac
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))

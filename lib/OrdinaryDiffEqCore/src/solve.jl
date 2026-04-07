@@ -221,7 +221,7 @@ function _ode_init(
         _alg = alg
     end
 
-    alias 
+    alias
     if !(alias isa ODEAliasSpecifier)
         throw(ArgumentError("alias kwarg must be an ODEAliasSpecifier"))
     end
