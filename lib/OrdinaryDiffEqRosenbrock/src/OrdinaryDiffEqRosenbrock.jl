@@ -37,6 +37,7 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
 
 using OrdinaryDiffEqDifferentiation: calc_rosenbrock_differentiation
 
+using OrdinaryDiffEqRosenbrockTableaus
 using Reexport
 @reexport using SciMLBase
 
