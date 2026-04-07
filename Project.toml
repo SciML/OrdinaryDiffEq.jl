@@ -11,6 +11,7 @@ OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqRosenbrockTableaus = "b4bd8bb3-f80f-41d2-9b21-73a655b304b9"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
@@ -21,6 +22,7 @@ OrdinaryDiffEqBDF = {path = "lib/OrdinaryDiffEqBDF"}
 OrdinaryDiffEqCore = {path = "lib/OrdinaryDiffEqCore"}
 OrdinaryDiffEqDefault = {path = "lib/OrdinaryDiffEqDefault"}
 OrdinaryDiffEqRosenbrock = {path = "lib/OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqRosenbrockTableaus = {path = "lib/OrdinaryDiffEqRosenbrockTableaus"}
 OrdinaryDiffEqTsit5 = {path = "lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "lib/OrdinaryDiffEqVerner"}
 OrdinaryDiffEqDifferentiation = {path = "lib/OrdinaryDiffEqDifferentiation"}
