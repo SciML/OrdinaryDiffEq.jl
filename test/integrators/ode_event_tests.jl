@@ -38,6 +38,7 @@ affect! = function (integrator, events)
             integrator.u = integrator.u + 2
         end
     end
+    return
 end
 
 callback = VectorContinuousCallback(condition, affect!, 1)
@@ -81,6 +82,7 @@ affect! = function (integrator, events)
             integrator.u = integrator.u .+ 2
         end
     end
+    return
 end
 
 callback = VectorContinuousCallback(condition, affect!, 1)
@@ -123,6 +125,7 @@ affect! = function (integrator, events)
             integrator.u[2] = -integrator.u[2]
         end
     end
+    return
 end
 affect_neg! = function (integrator)
     return integrator.u[2] = -integrator.u[2]
@@ -173,6 +176,7 @@ affect! = function (integrator, events)
             integrator.u[2] = -integrator.u[2]
         end
     end
+    return
 end
 
 callback_single = VectorContinuousCallback(
@@ -273,6 +277,7 @@ vaffect! = function (integrator, events, retcode = nothing)
             end
         end
     end
+    return
 end
 
 terminate_callback = ContinuousCallback(condition, affect!)
@@ -327,6 +332,7 @@ vaffect2! = function (integrator, events)
             end
         end
     end
+    return
 end
 
 terminate_callback2 = ContinuousCallback(condition, nothing, affect2!, interp_points = 100)
@@ -417,6 +423,7 @@ affect! = function (integrator, events)
         iszero(dir) && continue
         n += 1
     end
+    return
 end
 callback = VectorContinuousCallback(condition, affect!, 1)
 sol = solve(prob, Tsit5(), callback = callback)
@@ -600,7 +607,7 @@ end
             # The rootfinder can't detect a crossing that starts at zero, so
             # handle it explicitly here.
             v_now = integ.u[1]
-            if (idx == 2 || idx == 6) && abs(v_now) < 1e-8 &&
+            if (idx == 2 || idx == 6) && abs(v_now) < 1.0e-8 &&
                     (p.state == _SLIDING_RIGHT || p.state == _SLIDING_LEFT)
                 prev_state = p.state
                 if p.state == _SLIDING_RIGHT
@@ -622,17 +629,23 @@ end
         end
     end
 
-    vcb = VectorContinuousCallback(_friction_condition, _friction_affect!, nothing,
-        save_positions = (true, true), 8)
+    vcb = VectorContinuousCallback(
+        _friction_condition, _friction_affect!, nothing,
+        save_positions = (true, true), 8
+    )
 
-    p = _FrictionParams(0.0003361185937456267, 1488.578099595049, 8.54503372291542,
+    p = _FrictionParams(
+        0.0003361185937456267, 1488.578099595049, 8.54503372291542,
         0.0, 0.001016, 1.0, 1.0, 0.3, _LEFT_STOP,
-        7.373657906574696e-5, 0.001)
+        7.373657906574696e-5, 0.001
+    )
     u0 = @SVector [0.0, 0.0]
-    prob = ODEProblem(_friction_ode, u0, (-10e-6, 0.0025), p)
+    prob = ODEProblem(_friction_ode, u0, (-10.0e-6, 0.0025), p)
     empty!(affect_log)
-    sol = solve(prob, Rodas5(), callback = vcb, reltol = 1e-6, abstol = 1e-6,
-        save_everystep = true)
+    sol = solve(
+        prob, Rodas5(), callback = vcb, reltol = 1.0e-6, abstol = 1.0e-6,
+        save_everystep = true
+    )
 
     # The chained logic should catch the v≈0 condition when idx=6 transitions
     # to SLIDING_RIGHT, immediately chaining to STOPPED.

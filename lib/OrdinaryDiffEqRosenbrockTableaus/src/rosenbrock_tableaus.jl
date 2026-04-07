@@ -768,7 +768,3 @@ function RosenbrockW6S4OSRodasTableau(T, T2)
     H = zeros(T, 0, 6)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
-
-
-# Tsit5DA - 12-stage order 5(4) hybrid explicit/linear-implicit method for DAEs
-# Reference: Steinebach (2025), arXiv:2511.21252

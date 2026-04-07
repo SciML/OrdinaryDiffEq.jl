@@ -2,8 +2,10 @@
 Heun's Order 2 method.
 """
 function Heun(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
-    A = [0 0
-         1 0]
+    A = [
+        0 0
+        1 0
+    ]
     c = [0; 1]
     α = [1 // 2; 1 // 2]
     αEEst = [1; 0]
@@ -11,16 +13,22 @@ function Heun(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ExplicitRKTableau(A, c, α, 2, αEEst = αEEst, adaptiveorder = 1,
-        stability_size = 2.0))
+    return (
+        DiffEqBase.ExplicitRKTableau(
+            A, c, α, 2, αEEst = αEEst, adaptiveorder = 1,
+            stability_size = 2.0
+        )
+    )
 end
 
 """
 Ralston's Order 2 method.
 """
 function Ralston(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
-    A = [0 0
-         2//3 0]
+    A = [
+        0 0
+        2 // 3 0
+    ]
     c = [0; 2 // 3]
     α = [1 // 4; 3 // 4]
     A = map(T, A)
@@ -47,9 +55,11 @@ end
 Kutta's Order 3 method.
 """
 function Kutta3(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
-    A = [0 0 0
-         1//2 0 0
-         -1 2 0]
+    A = [
+        0 0 0
+        1 // 2 0 0
+        -1 2 0
+    ]
     c = [0; 1 // 2; 1]
     α = [1 // 6; 2 // 3; 1 // 6]
     A = map(T, A)
@@ -62,10 +72,12 @@ end
 Classic RK4 method.
 """
 function RK4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
-    A = [0 0 0 0
-         1//2 0 0 0
-         0 1//2 0 0
-         0 0 1 0]
+    A = [
+        0 0 0 0
+        1 // 2 0 0 0
+        0 1 // 2 0 0
+        0 0 1 0
+    ]
     c = [0; 1 // 2; 1 // 2; 1]
     α = [1 // 6; 1 // 3; 1 // 3; 1 // 6]
     A = map(T, A)
@@ -78,10 +90,12 @@ end
 Classic RK4 3/8's rule method.
 """
 function RK438Rule(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
-    A = [0 0 0 0
-         1//3 0 0 0
-         -1//3 1 0 0
-         1 -1 1 0]
+    A = [
+        0 0 0 0
+        1 // 3 0 0 0
+        -1 // 3 1 0 0
+        1 -1 1 0
+    ]
     c = [0; 1 // 3; 2 // 3; 1]
     α = [1 // 8; 3 // 8; 3 // 8; 1 // 8]
     A = map(T, A)
@@ -101,10 +115,12 @@ function Ralston4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     a41 = (-3365 + 2094 * sqrt5) / 6040
     a42 = (-975 - 3046 * sqrt5) / 2552
     a43 = (467040 + 203968 * sqrt5) / 240845
-    A = [0 0 0 0
-         a21 0 0 0
-         a31 a32 0 0
-         a41 a42 a43 0]
+    A = [
+        0 0 0 0
+        a21 0 0 0
+        a31 a32 0 0
+        a41 a42 a43 0
+    ]
     b2 = 4 // 10
     b3 = (14 - 3 * sqrt5) / 16
     c = [0, b2, b3, 1]
@@ -123,8 +139,10 @@ end
 Explicit SSP method of order 2 using 2 stages.
 """
 function SSPRK22(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
-    A = [0 0
-         1 0]
+    A = [
+        0 0
+        1 0
+    ]
     c = [0; 1]
     α = [1 // 2; 1 // 2]
     A = map(T, A)
@@ -137,9 +155,11 @@ end
 Explicit SSP method of order 3 using 3 stages.
 """
 function SSPRK33(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
-    A = [0 0 0
-         1 0 0
-         1//4 1//4 0]
+    A = [
+        0 0 0
+        1 0 0
+        1 // 4 1 // 4 0
+    ]
     c = [0; 1; 1 // 2]
     α = [1 // 6; 1 // 6; 2 // 3]
     A = map(T, A)
@@ -152,10 +172,12 @@ end
 Explicit SSP method of order 3 using 4 stages.
 """
 function SSPRK43(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
-    A = [0 0 0 0
-         1//2 0 0 0
-         1//2 1//2 0 0
-         1//6 1//6 1//6 0]
+    A = [
+        0 0 0 0
+        1 // 2 0 0 0
+        1 // 2 1 // 2 0 0
+        1 // 6 1 // 6 1 // 6 0
+    ]
     c = [0; 1 // 2; 1; 1 // 2]
     α = [1 // 6; 1 // 6; 1 // 6; 1 // 2]
     A = map(T, A)
@@ -168,19 +190,23 @@ end
 Explicit SSP method of order 4 using 10 stages.
 """
 function SSPRK104(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
-    A = [0 0 0 0 0 0 0 0 0 0
-         1//6 0 0 0 0 0 0 0 0 0
-         1//6 1//6 0 0 0 0 0 0 0 0
-         1//6 1//6 1//6 0 0 0 0 0 0 0
-         1//6 1//6 1//6 1//6 0 0 0 0 0 0
-         1//15 1//15 1//15 1//15 1//15 0 0 0 0 0
-         1//15 1//15 1//15 1//15 1//15 1//6 0 0 0 0
-         1//15 1//15 1//15 1//15 1//15 1//6 1//6 0 0 0
-         1//15 1//15 1//15 1//15 1//15 1//6 1//6 1//6 0 0
-         1//15 1//15 1//15 1//15 1//15 1//6 1//6 1//6 1//6 0]
+    A = [
+        0 0 0 0 0 0 0 0 0 0
+        1 // 6 0 0 0 0 0 0 0 0 0
+        1 // 6 1 // 6 0 0 0 0 0 0 0 0
+        1 // 6 1 // 6 1 // 6 0 0 0 0 0 0 0
+        1 // 6 1 // 6 1 // 6 1 // 6 0 0 0 0 0 0
+        1 // 15 1 // 15 1 // 15 1 // 15 1 // 15 0 0 0 0 0
+        1 // 15 1 // 15 1 // 15 1 // 15 1 // 15 1 // 6 0 0 0 0
+        1 // 15 1 // 15 1 // 15 1 // 15 1 // 15 1 // 6 1 // 6 0 0 0
+        1 // 15 1 // 15 1 // 15 1 // 15 1 // 15 1 // 6 1 // 6 1 // 6 0 0
+        1 // 15 1 // 15 1 // 15 1 // 15 1 // 15 1 // 6 1 // 6 1 // 6 1 // 6 0
+    ]
     c = [0; 1 // 6; 1 // 3; 1 // 2; 2 // 3; 1 // 3; 1 // 2; 2 // 3; 5 // 6; 1]
-    α = [1 // 10; 1 // 10; 1 // 10; 1 // 10; 1 // 10; 1 // 10; 1 // 10; 1 // 10; 1 // 10;
-         1 // 10]
+    α = [
+        1 // 10; 1 // 10; 1 // 10; 1 // 10; 1 // 10; 1 // 10; 1 // 10; 1 // 10; 1 // 10;
+        1 // 10
+    ]
     A = map(T, A)
     α = map(T, α)
     c = map(T_time, c)
@@ -192,8 +218,10 @@ LobattoIIIC* Order 2 method
 
 """
 function LobattoIIICStar2(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
-    A = [0 0
-         1 0]
+    A = [
+        0 0
+        1 0
+    ]
     c = [0; 1]
     α = [1 // 2; 1 // 2]
     A = map(T, A)
