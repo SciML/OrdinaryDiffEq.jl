@@ -49,6 +49,7 @@ Darmstadt = "Darmstadt"
 "différentiels" = "différentiels"
 "algébriques" = "algébriques"
 "problèmes" = "problèmes"
+problemes = "problemes"  # French word in citation without accent
 Ono = "Ono"  # Hiroshi Ono, author of Ono10/Ono12 RK methods
 padd = "padd"  # variable name in analyticless_convergence_tests.jl
 Preprint = "Preprint"

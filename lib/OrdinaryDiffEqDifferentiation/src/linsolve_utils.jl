@@ -2,8 +2,10 @@ issuccess_W(W::LinearAlgebra.Factorization) = LinearAlgebra.issuccess(W)
 issuccess_W(W::Number) = !iszero(W)
 issuccess_W(::Any) = true
 
-function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing,
-        reltol = integrator === nothing ? nothing : integrator.opts.reltol)
+function dolinsolve(
+        integrator, linsolve; A = nothing, linu = nothing, b = nothing,
+        reltol = integrator === nothing ? nothing : integrator.opts.reltol
+    )
     b !== nothing && (linsolve.b = b)
     linu !== nothing && (linsolve.u = linu)
 
@@ -21,8 +23,8 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
 
     # TODO: this ignores the add of the `f` count for add_steps!
     if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
-       !LinearSolve.needs_concrete_A(_alg.linsolve) &&
-       linsolve.A isa WOperator && linsolve.A.J isa AbstractSciMLOperator
+            !LinearSolve.needs_concrete_A(_alg.linsolve) &&
+            linsolve.A isa WOperator && linsolve.A.J isa AbstractSciMLOperator
         ad = alg_autodiff(_alg) isa ADTypes.AutoSparse ? ADTypes.dense_ad(alg_autodiff(_alg)) :
             alg_autodiff(_alg)
         if ad isa ADTypes.AutoFiniteDiff || ad isa ADTypes.AutoFiniteDifferences

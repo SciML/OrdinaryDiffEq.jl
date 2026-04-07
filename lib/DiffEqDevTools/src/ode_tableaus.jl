@@ -12,7 +12,7 @@ function deduce_Butcher_tableau(erk, T = Float64)
     function f_for_s(du, u, p, t)
         step_counter_s += 1
         du .= zero(eltype(du))
-        nothing
+        return nothing
     end
 
     tspan = (zero(T), one(T))
@@ -33,7 +33,7 @@ function deduce_Butcher_tableau(erk, T = Float64)
             c[step_counter_c] = t
         end
         du .= zero(eltype(du))
-        nothing
+        return nothing
     end
 
     tspan = (zero(T), one(T))
@@ -51,7 +51,7 @@ function deduce_Butcher_tableau(erk, T = Float64)
         for idx in 1:length(du)
             du[idx] = step_counter_b == idx
         end
-        nothing
+        return nothing
     end
 
     tspan = (zero(T), one(T))
@@ -73,7 +73,7 @@ function deduce_Butcher_tableau(erk, T = Float64)
             A[step_counter_A, idx] = u[idx]
             du[idx] = step_counter_A == idx
         end
-        nothing
+        return nothing
     end
 
     tspan = (zero(T), one(T))
@@ -83,5 +83,5 @@ function deduce_Butcher_tableau(erk, T = Float64)
     integrator = init(ode, erk, adaptive = false, dt = 1.0)
     step!(integrator)
 
-    A, b, c
+    return A, b, c
 end

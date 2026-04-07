@@ -190,6 +190,7 @@ function collision_affect!(integrator, events)
             end
         end
     end
+    return
 end
 
 cback = VectorContinuousCallback(
@@ -221,7 +222,7 @@ function cond!(out, u, t, i)
     return nothing
 end
 function terminate_affect!(int, events)
-    any(!iszero, events) && terminate!(int)
+    return any(!iszero, events) && terminate!(int)
 end
 cb = VectorContinuousCallback(cond!, terminate_affect!, nothing, 1)
 

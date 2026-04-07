@@ -43,6 +43,7 @@ function affect_v!(integrator, events)
             c5[] += 1
         end
     end
+    return
 end
 
 cb = VectorContinuousCallback(condition_v, affect_v!, 5)

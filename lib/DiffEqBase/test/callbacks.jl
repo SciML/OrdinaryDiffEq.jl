@@ -77,6 +77,7 @@ vector_affect! = function (integrator, events)
         iszero(dir) && continue
         integrator.u = integrator.u .+ idx
     end
+    return
 end
 
 cond_1(u, t, integrator) = t - 1.0
