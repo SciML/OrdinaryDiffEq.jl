@@ -44,7 +44,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     isnewton, _unwrap_val,
     set_new_W!, set_W_γdt!, alg_difftype, unwrap_cache, diffdir,
     get_W, isfirstcall, isfirststage, isJcurrent,
-    get_new_W_γdt_cutoff,
+    get_new_W_γdt_cutoff, isWmethod,
     TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM,
     FastConvergence, Convergence, SlowConvergence,
     VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue, @SciMLMessage

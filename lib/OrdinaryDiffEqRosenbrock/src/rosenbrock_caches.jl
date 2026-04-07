@@ -1,6 +1,40 @@
 abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
 
+"""
+    JacReuseState{T}
+
+Lightweight mutable state for tracking Jacobian reuse in Rosenbrock-W methods.
+W-methods guarantee correctness with a stale Jacobian, so we can skip expensive
+Jacobian recomputations when conditions allow it.
+
+Fields:
+- `last_dtgamma`: The dtgamma value from the last Jacobian computation
+- `pending_dtgamma`: The dtgamma from the current step (committed on accept)
+- `last_naccept`: The naccept count at last Jacobian computation
+- `max_jac_age`: Maximum number of accepted steps between Jacobian updates (default 20)
+- `cached_J`: Cached Jacobian for OOP reuse (type-erased for flexibility)
+- `cached_dT`: Cached time derivative for OOP reuse
+- `cached_W`: Cached factorized W for OOP reuse
+- `last_step_iter`: The integrator.iter at the last Rosenbrock step
+- `last_u_length`: The length of u at the last Jacobian computation
+"""
+mutable struct JacReuseState{T}
+    last_dtgamma::T
+    pending_dtgamma::T
+    last_naccept::Int
+    max_jac_age::Int
+    cached_J::Any
+    cached_dT::Any
+    cached_W::Any
+    last_step_iter::Int
+    last_u_length::Int
+end
+
+function JacReuseState(dtgamma::T) where {T}
+    return JacReuseState{T}(dtgamma, dtgamma, 0, 20, nothing, nothing, nothing, 0, 0)
+end
+
 # Fake values since non-FSAL
 get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (nothing, nothing)
 
@@ -12,7 +46,7 @@ tabtype(::HybridExplicitImplicitRK) = Tsit5DATableau
 
 mutable struct RosenbrockCache{
         uType, rateType, tabType, uNoUnitsType, JType, WType, TabType,
-        TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter,
+        TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter, JRType,
     } <:
     RosenbrockMutableCache
     u::uType
@@ -44,6 +78,7 @@ mutable struct RosenbrockCache{
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
     interp_order::Int
+    jac_reuse::JRType
 end
 function full_cache(c::RosenbrockCache)
     return [
@@ -52,7 +87,7 @@ function full_cache(c::RosenbrockCache)
     ]
 end
 
-struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
+struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD, JRType} <:
     RosenbrockConstantCache
     tf::TF
     uf::UF
@@ -62,12 +97,13 @@ struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
     linsolve::F
     autodiff::AD
     interp_order::Int
+    jac_reuse::JRType
 end
 
 @cache mutable struct Rosenbrock23Cache{
         uType, rateType, uNoUnitsType, JType, WType,
         TabType, TFType, UFType, F, JCType, GCType,
-        RTolType, A, AV, StepLimiter, StageLimiter,
+        RTolType, A, AV, StepLimiter, StageLimiter, JRType,
     } <: RosenbrockMutableCache
     u::uType
     uprev::uType
@@ -97,12 +133,13 @@ end
     algebraic_vars::AV
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
+    jac_reuse::JRType
 end
 
 @cache mutable struct Rosenbrock32Cache{
         uType, rateType, uNoUnitsType, JType, WType,
         TabType, TFType, UFType, F, JCType, GCType,
-        RTolType, A, AV, StepLimiter, StageLimiter,
+        RTolType, A, AV, StepLimiter, StageLimiter, JRType,
     } <: RosenbrockMutableCache
     u::uType
     uprev::uType
@@ -132,6 +169,7 @@ end
     algebraic_vars::AV
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
+    jac_reuse::JRType
 end
 
 function alg_cache(
@@ -189,7 +227,7 @@ function alg_cache(
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
-        alg.stage_limiter!
+        alg.stage_limiter!, JacReuseState(zero(dt))
     )
 end
 
@@ -248,11 +286,12 @@ function alg_cache(
     return Rosenbrock32Cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
         tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
-        grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!
+        grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!,
+        JacReuseState(zero(dt))
     )
 end
 
-struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
+struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
     RosenbrockConstantCache
     c₃₂::T
     d::T
@@ -262,6 +301,7 @@ struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
     W::WType
     linsolve::F
     autodiff::AD
+    jac_reuse::JRType
 end
 
 function Rosenbrock23ConstantCache(
@@ -269,7 +309,8 @@ function Rosenbrock23ConstantCache(
     ) where {T}
     tab = Rosenbrock23Tableau(T)
     return Rosenbrock23ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
+        JacReuseState(zero(T))
     )
 end
 
@@ -290,7 +331,7 @@ function alg_cache(
     )
 end
 
-struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <:
+struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
     RosenbrockConstantCache
     c₃₂::T
     d::T
@@ -300,6 +341,7 @@ struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <:
     W::WType
     linsolve::F
     autodiff::AD
+    jac_reuse::JRType
 end
 
 function Rosenbrock32ConstantCache(
@@ -307,7 +349,8 @@ function Rosenbrock32ConstantCache(
     ) where {T}
     tab = Rosenbrock32Tableau(T)
     return Rosenbrock32ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
+        JacReuseState(zero(T))
     )
 end
 
@@ -417,7 +460,8 @@ function alg_cache(
     return RosenbrockCombinedConstantCache(
         tf, uf,
         tab, J, W, linsolve,
-        alg_autodiff(alg), interp_order
+        alg_autodiff(alg), interp_order,
+        JacReuseState(zero(constvalue(uBottomEltypeNoUnits)))
     )
 end
 
@@ -497,7 +541,8 @@ function alg_cache(
         u, uprev, dense, du, du1, du2, dtC, dtd, ks, fsalfirst, fsallast,
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
-        _get_step_limiter(alg), _get_stage_limiter(alg), interp_order
+        _get_step_limiter(alg), _get_stage_limiter(alg), interp_order,
+        JacReuseState(zero(dt))
     )
 end
 
