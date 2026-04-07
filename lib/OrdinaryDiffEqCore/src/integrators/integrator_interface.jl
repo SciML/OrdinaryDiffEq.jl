@@ -144,7 +144,7 @@ end
     end
 end
 
-function u_modified!(integrator::ODEIntegrator, bool::Bool)
+function SciMLBase.u_modified!(integrator::ODEIntegrator, bool::Bool)
     return integrator.u_modified = bool
 end
 

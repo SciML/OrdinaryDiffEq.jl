@@ -16,7 +16,7 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
-mutable struct zero_func_struct{uType, tType, kType, CacheType, idxsType, varsType, callbackType}
+mutable struct zero_func_struct{uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType}
     #integrator_ref::IntegratorType
     u₁::uType
     callback::callbackType
@@ -27,14 +27,19 @@ mutable struct zero_func_struct{uType, tType, kType, CacheType, idxsType, varsTy
     cache::CacheType
     idxs::idxsType
     differential_vars::varsType
+    ind::Int
+    out::outType
 end
 
 function (z::zero_func_struct)(θ, p)
-    #integrator = z.integrator_ref[]::ODEIntegrator
     ode_interpolant!(z.u₁, θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars)
-    #ode_interpolant!(z.u₁, θ, integrator, integrator.opts.save_idxs, Val{0})
-    out = z.callback.condition(z.u₁, z.dt + θ * z.dt, z)
-    out
+    return zero_condition(z.callback, z.out, z.u₁, z.dt + θ * z.dt, z, z.ind)
+end
+
+@inline zero_condition(cb::ContinuousCallback, out::Nothing, u, t, z, ind) = cb.condition(u, t, z)
+@inline function zero_condition(cb::VectorContinuousCallback, out, u, t, z, ind)
+    cb.condition(out, u, t, z)
+    return out[ind]
 end
 
 function SciMLBase.__init(
@@ -755,38 +760,25 @@ function _ode_init(
         get_fsalfirstlast(cache, rate_prototype)
 
     _rng = rng === nothing ? Random.default_rng() : rng
+
     num_probs = 0
-    integrator_ref = Ref{Union{DEIntegrator, Nothing}}(nothing)
     for i in callbacks_internal.continuous_callbacks
-        if !(i isa VectorContinuousCallback) && i.is_discontinuity
+        if i.is_discontinuity
             num_probs += 1
         end
     end
-
     disco_probs = Vector{IntervalNonlinearProblem}(undef, num_probs)
     idx = 1
     for i in callbacks_internal.continuous_callbacks
-        if i.is_discontinuity && !(i isa VectorContinuousCallback)
+        if i.is_discontinuity
             u₁ = similar(u)
-            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars)
+            out = i isa VectorContinuousCallback ? similar(u) : nothing
+            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out)
             disco_probs[idx] = IntervalNonlinearProblem(zero_func, [zero(tType), one(tType)], p)
             idx += 1
         end
     end 
- #=
-    disco_prob = nothing
-    integrator_ref = Ref{Union{DEIntegrator, Nothing}}(nothing)
-    for i in callbacks_internal.continuous_callbacks
-        if i.is_discontinuity && !(i isa VectorContinuousCallback)
-            #VCC problems handled in disco itself
-            u₁ = similar(u)
-            #zero_func = zero_func_struct(integrator_ref, u₁, i)
-            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars)
-            disco_prob = IntervalNonlinearProblem(zero_func, [zero(tType), one(tType)], p)
-            break
-        end
-    end 
- =#
+
     integrator = ODEIntegrator{
         typeof(_alg), isinplace(prob), uType, typeof(du),
         tType, typeof(p),
@@ -798,7 +790,7 @@ function _ode_init(
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
         typeof(W), typeof(P), typeof(sqdt),
-        typeof(noise), typeof(c), typeof(rate_constants),
+        typeof(noise), typeof(c), typeof(rate_constants)
     }(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
@@ -825,9 +817,6 @@ function _ode_init(
         W, P, sqdt,
         noise, c, rate_constants, QT(1)
     )
-    #if (num_probs > 0)
-    integrator_ref[] = integrator
-    #end
 
     if initialize_integrator
         if isdae || SciMLBase.has_initializeprob(prob.f) ||

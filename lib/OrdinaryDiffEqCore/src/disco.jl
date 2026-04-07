@@ -29,51 +29,43 @@ function find_discontinuity(u, uprev, integrator, cache)
         if (!(i.is_discontinuity)) 
             continue 
         end
+        disco_prob = integrator.disco_probs[idx]
+        disco_zero = disco_prob.f.f
+        disco_zero.dt = dt
+        disco_zero.uprev = uprev
+        disco_zero.u = u
+        disco_zero.k = k
+        disco_zero.cache = cache
+        disco_zero.differential_vars = differential_vars
+        disco_zero.idxs = save_idxs
         if (i isa VectorContinuousCallback)
+            len_cb = i.len
             out_prev = similar(u)
-            out_curr = similar(u)  
+            out_curr = similar(u)
             i.condition(out_prev, uprev, t, integrator)
             i.condition(out_curr, u, t + dt, integrator)
-            for (ind, (f0, f1)) in enumerate(zip(out_prev, out_curr))
-                if (f0 * f1 < zero(f0))
-                    u₁ = similar(u)
-                    out = similar(u)
-                    function zero_func(θ, p)
-                        ode_interpolant!(u₁, θ, integrator, integrator.opts.save_idxs, Val{0})
-                        i.condition(out, u₁, t + θ * integrator.dt, integrator)
-                        out[ind]
-                    end
-                    prob = IntervalNonlinearProblem(zero_func, [zero(dt), one(dt)], p)
-                    sol = solve(prob; bracket=[zero(dt), one(dt)], abstol = 0, reltol = 0)                
+            for j in 1:len_cb
+                if (out_prev[j] * out_curr[j] < zero(out_prev[j]))
+                    disco_zero.ind = j
+                    sol = solve(disco_prob; bracket = bracket)
                     tmp = sol[]
                     if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) 
                         breakpointθ = tmp 
-                    end
+                    end 
                 end
             end
         else
             out_prev = i.condition(uprev, t, integrator)
             out_curr = i.condition(u, t + dt, integrator)
             if (out_prev * out_curr < zero(out_prev))
-                disco_prob = integrator.disco_probs[idx]
-                #disco_prob = integrator.disco_prob
-                disco_zero = disco_prob.f.f
-                disco_zero.dt = dt
-                disco_zero.uprev = uprev
-                disco_zero.u = u
-                disco_zero.k = k
-                disco_zero.cache = cache
-                disco_zero.differential_vars = differential_vars
-                disco_zero.idxs = save_idxs
-                #disco_prob.f.f.callback = i                
-                sol = solve(disco_prob; bracket = bracket, abstol = 0, reltol = 0)
+                sol = solve(disco_prob; bracket = bracket)
                 tmp = sol[]
                 if (!isnan(tmp) && (breakpointθ == -1 || tmp < breakpointθ)) 
                     breakpointθ = tmp 
                 end 
             end
-            idx += 1
         end
+        idx += 1
     end
     breakpointθ
 end
