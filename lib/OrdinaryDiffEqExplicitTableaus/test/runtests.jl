@@ -82,28 +82,28 @@ const ET = OrdinaryDiffEqExplicitTableaus
 
         for bigprob in [prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear]
             for tab in [
-                ET.Feagin12(BigFloat),
-                ET.Feagin14(BigFloat),
-                ET.Ono12(BigFloat)
-            ]
+                    ET.Feagin12(BigFloat),
+                    ET.Feagin14(BigFloat),
+                    ET.Ono12(BigFloat),
+                ]
                 @info "Testing high-order convergence..."
                 tabalg = ExplicitRK(tableau = tab)
                 sim = test_convergence(dts, bigprob, tabalg)
                 @test sim.𝒪est[:l∞] >= tab.order ||
-                      abs(sim.𝒪est[:l∞] - tab.order) < testTol
+                    abs(sim.𝒪est[:l∞] - tab.order) < testTol
             end
         end
     end
 
     @testset "Stability regions" begin
-        @test stability_region(ET.DormandPrince6(), initial_guess = -3.5)≈-3.95413 rtol=1e-3
-        @test stability_region(ET.TsitourasPapakostas6(), initial_guess = -3.5)≈-3.95413 rtol=1e-3
+        @test stability_region(ET.DormandPrince6(), initial_guess = -3.5) ≈ -3.95413 rtol = 1.0e-3
+        @test stability_region(ET.TsitourasPapakostas6(), initial_guess = -3.5) ≈ -3.95413 rtol = 1.0e-3
 
-        @test imaginary_stability_interval(ET.SSPRK33())≈sqrt(3)
-        @test imaginary_stability_interval(ET.SSPRK33(Float32))≈sqrt(3.0f0)
-        @test imaginary_stability_interval(ET.Kutta3())≈sqrt(3)
-        @test imaginary_stability_interval(ET.Kutta3(Float32))≈sqrt(3.0f0)
-        @test imaginary_stability_interval(ET.RK4())≈2.8284271247
+        @test imaginary_stability_interval(ET.SSPRK33()) ≈ sqrt(3)
+        @test imaginary_stability_interval(ET.SSPRK33(Float32)) ≈ sqrt(3.0f0)
+        @test imaginary_stability_interval(ET.Kutta3()) ≈ sqrt(3)
+        @test imaginary_stability_interval(ET.Kutta3(Float32)) ≈ sqrt(3.0f0)
+        @test imaginary_stability_interval(ET.RK4()) ≈ 2.8284271247
     end
 
     @testset "Deduce Butcher tableau" begin

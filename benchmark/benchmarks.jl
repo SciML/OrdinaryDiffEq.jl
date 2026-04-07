@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, BenchmarkTools
+using OrdinaryDiffEqRosenbrock: Rodas4
+using OrdinaryDiffEqSDIRK: TRBDF2
 using LinearAlgebra, SparseArrays, StaticArrays, StableRNGs
 
 const SUITE = BenchmarkGroup()
