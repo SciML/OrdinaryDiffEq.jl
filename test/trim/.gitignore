@@ -1,0 +1,6 @@
+# Generated at runtime by trim_tests.jl
+tsit5/
+fbdf/
+rodas5p/
+auto/
+logs/

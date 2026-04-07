@@ -29,6 +29,11 @@ function activate_modelingtoolkit_env()
     return Pkg.instantiate()
 end
 
+function activate_trim_env()
+    Pkg.activate("trim")
+    return Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -210,5 +215,11 @@ end
 
     if !is_APPVEYOR && GROUP == "QA"
         @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
+    end
+
+    # Trim (static compilation) tests — requires Julia 1.12+
+    if !is_APPVEYOR && GROUP == "Trim" && VERSION >= v"1.12.0"
+        activate_trim_env()
+        @time @safetestset "Trim Tests" include("trim/trim_tests.jl")
     end
 end # @time

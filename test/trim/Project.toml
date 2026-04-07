@@ -1,0 +1,17 @@
+[deps]
+JuliaC = "acedd4c2-ced6-4a15-accc-2607eb759ba2"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+OrdinaryDiffEqCore = {path = "../../lib/OrdinaryDiffEqCore"}
+OrdinaryDiffEqTsit5 = {path = "../../lib/OrdinaryDiffEqTsit5"}
+OrdinaryDiffEqBDF = {path = "../../lib/OrdinaryDiffEqBDF"}
+OrdinaryDiffEqRosenbrock = {path = "../../lib/OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqDefault = {path = "../../lib/OrdinaryDiffEqDefault"}
+DiffEqBase = {path = "../../lib/DiffEqBase"}
