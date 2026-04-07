@@ -1,7 +1,7 @@
 """
 Heun's Order 2 method.
 """
-function constructHeun(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Heun(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0
          1 0]
     c = [0; 1]
@@ -18,7 +18,7 @@ end
 """
 Ralston's Order 2 method.
 """
-function constructRalston(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Ralston(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0
          2//3 0]
     c = [0; 2 // 3]
@@ -32,7 +32,7 @@ end
 """
 Euler's method.
 """
-function constructEuler(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Euler(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = Matrix{T}(undef, 1, 1)
     A[1] = 0
     c = [0]
@@ -46,7 +46,7 @@ end
 """
 Kutta's Order 3 method.
 """
-function constructKutta3(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Kutta3(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0
          1//2 0 0
          -1 2 0]
@@ -61,7 +61,7 @@ end
 """
 Classic RK4 method.
 """
-function constructRK4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function RK4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0
          1//2 0 0 0
          0 1//2 0 0
@@ -77,7 +77,7 @@ end
 """
 Classic RK4 3/8's rule method.
 """
-function constructRK438Rule(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function RK438Rule(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0
          1//3 0 0 0
          -1//3 1 0 0
@@ -93,7 +93,7 @@ end
 """
 Ralston's Order 4 method with minimum truncation error.
 """
-function constructRalston4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Ralston4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     sqrt5 = sqrt(convert(T, 5))
     a21 = 4 // 10
     a31 = (-2889 + 1428 * sqrt5) / 1024
@@ -122,7 +122,7 @@ end
 """
 Explicit SSP method of order 2 using 2 stages.
 """
-function constructSSPRK22(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function SSPRK22(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0
          1 0]
     c = [0; 1]
@@ -136,7 +136,7 @@ end
 """
 Explicit SSP method of order 3 using 3 stages.
 """
-function constructSSPRK33(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function SSPRK33(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0
          1 0 0
          1//4 1//4 0]
@@ -151,7 +151,7 @@ end
 """
 Explicit SSP method of order 3 using 4 stages.
 """
-function constructSSPRK43(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function SSPRK43(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0
          1//2 0 0 0
          1//2 1//2 0 0
@@ -167,7 +167,7 @@ end
 """
 Explicit SSP method of order 4 using 10 stages.
 """
-function constructSSPRK104(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function SSPRK104(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0 0 0 0 0 0 0
          1//6 0 0 0 0 0 0 0 0 0
          1//6 1//6 0 0 0 0 0 0 0 0
@@ -191,7 +191,7 @@ end
 LobattoIIIC* Order 2 method
 
 """
-function constructLobattoIIICStar2(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function LobattoIIICStar2(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0
          1 0]
     c = [0; 1]
@@ -205,7 +205,7 @@ end
 """
 Runge-Kutta-Fehlberg Order 4/5 method.
 """
-function constructRKF5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function RKF5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0 0 0
          1//4 0 0 0 0 0
          3//32 9//32 0 0 0 0
@@ -228,7 +228,7 @@ end
 Runge's First Order 5 method
 
 """
-function constructRungeFirst5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function RungeFirst5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 6, 6)
     c = zeros(T_time, 6)
     α = zeros(T, 6)
@@ -268,7 +268,7 @@ end
 
 Cassity's Order 5 method
 """
-function constructCassity5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Cassity5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 6, 6)
     c = zeros(T_time, 6)
     α = zeros(T, 6)
@@ -312,7 +312,7 @@ An Order Five Runge Kutta Process with Extended Region of Stability, J. Douglas 
  Siam Journal on Numerical Analysis, Vol. 3, No. 4, (Dec., 1966) pages 593-597
 
 """
-function constructLawson5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Lawson5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 6, 6)
     c = zeros(T_time, 6)
     α = zeros(T, 6)
@@ -355,7 +355,7 @@ Some Fifth-Order Classical Runge Kutta Formulas, H.A.Luther and H.P.Konen,
  Siam Review, Vol. 3, No. 7, (Oct., 1965) pages 551-558.
 
 """
-function constructLutherKonen5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function LutherKonen5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 6, 6)
     c = zeros(T_time, 6)
     α = zeros(T, 6)
@@ -398,7 +398,7 @@ Some Fifth-Order Classical Runge Kutta Formulas, H.A.Luther and H.P.Konen,
  Siam Review, Vol. 3, No. 7, (Oct., 1965) pages 551-558.
 
 """
-function constructLutherKonen52(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function LutherKonen52(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 6, 6)
     c = zeros(T_time, 6)
     α = zeros(T, 6)
@@ -441,7 +441,7 @@ Some Fifth-Order Classical Runge Kutta Formulas, H.A.Luther and H.P.Konen,
  Siam Review, Vol. 3, No. 7, (Oct., 1965) pages 551-558.
 
 """
-function constructLutherKonen53(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function LutherKonen53(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 6, 6)
     c = zeros(T_time, 6)
     α = zeros(T, 6)
@@ -485,7 +485,7 @@ end
  Mathematics of Computation,Volume 65, Number 215, July 1996, Pages 1165-1181.
 
 """
-function constructPapakostasPapaGeorgiou5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function PapakostasPapaGeorgiou5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 7, 7)
     c = zeros(T_time, 7)
     α = zeros(T, 7)
@@ -547,7 +547,7 @@ end
  Mathematics of Computation,Volume 65, Number 215, July 1996, Pages 1165-1181.
 
 """
-function constructPapakostasPapaGeorgiou52(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function PapakostasPapaGeorgiou52(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 7, 7)
     c = zeros(T_time, 7)
     α = zeros(T, 7)
@@ -606,7 +606,7 @@ end
 Runge–Kutta pairs of orders 5(4) using the minimal set of simplifying assumptions,
  by Ch. Tsitouras, TEI of Chalkis, Dept. of Applied Sciences, GR34400, Psahna, Greece.
 """
-function constructTsitouras5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Tsitouras5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 7, 7)
     c = zeros(T_time, 7)
     α = zeros(T, 7)
@@ -695,7 +695,7 @@ end
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
  Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
 """
-function constructBogakiShampine5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function BogakiShampine5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 8, 8)
     c = zeros(T_time, 8)
     α = zeros(T, 8)
@@ -768,7 +768,7 @@ Explicit Runge-Kutta Pairs with One More Derivative Evaluation than the Minimum,
  Siam Journal of Scientific Computing, Vol. 14, No. 2, pages. 338-348, March 1993.
 
 """
-function constructSharpSmart5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function SharpSmart5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 7, 7)
     c = zeros(T_time, 7)
     α = zeros(T, 7)
@@ -824,11 +824,11 @@ function constructSharpSmart5(::Type{T} = Float64, ::Type{T_time} = T) where {T,
 end
 
 """
-constructBogakiShampine3()
+BogakiShampine3()
 
 Constructs the tableau object for the Bogakai-Shampine Order 2/3 method.
 """
-function constructBogakiShampine3(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function BogakiShampine3(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0
          1//2 0 0 0
          0 3//4 0 0
@@ -845,11 +845,11 @@ function constructBogakiShampine3(::Type{T} = Float64, ::Type{T_time} = T) where
 end
 
 """
-constructCashKarp()
+CashKarp()
 
 Constructs the tableau object for the Cash-Karp Order 4/5 method.
 """
-function constructCashKarp(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function CashKarp(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0 0 0
          1//5 0 0 0 0 0
          3//40 9//40 0 0 0 0
@@ -870,7 +870,7 @@ end
 """
 Runge-Kutta-Fehberg Order 4/3
 """
-function constructRKF4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function RKF4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     c = [0; 1 // 4; 4 // 9; 6 // 7; 1]
     A = [0 0 0 0 0
          1//4 0 0 0 0
@@ -894,7 +894,7 @@ On Runge-Kutta Processes of High Order, by J. C. Butcher,
  Journal of the Australian Mathematical Society, Vol. 4, (1964), pages 179 to 194
 
 """
-function constructButcher63(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Butcher63(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     c = [0; 1 / 2; 2 / 3; 1 / 3; 5 / 6; 1 / 6; 1]
     A = [0 0 0 0 0 0 0
          1//2 0 0 0 0 0 0
@@ -917,7 +917,7 @@ Butcher's First Order 6 method
 On Runge-Kutta Processes of High Order, by J. C. Butcher,
  Journal of the Australian Mathematical Society, Vol. 4, (1964), pages 179 to 194
 """
-function constructButcher6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Butcher6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 7, 7)
     c = zeros(T_time, 7)
     α = zeros(T, 7)
@@ -970,7 +970,7 @@ Butcher's Second Order 6 method
 On Runge-Kutta Processes of High Order, by J. C. Butcher,
  Journal of the Australian Mathematical Society, Vol. 4, (1964), pages 179 to 194
 """
-function constructButcher62(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Butcher62(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 7, 7)
     c = zeros(T_time, 7)
     α = zeros(T, 7)
@@ -1024,7 +1024,7 @@ A Contrast of a New RK56 pair with DP56, by Jim Verner,
  Department of Mathematics. Simon Fraser University, Burnaby, Canada, 2006.
 
 """
-function constructVerner6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Verner6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 8, 8)
     c = zeros(T_time, 8)
     α = zeros(T, 8)
@@ -1097,7 +1097,7 @@ Dormand-Prince Order 5//6 method
 P.J. Prince and J. R. Dormand, High order embedded Runge-Kutta formulae,
 Journal of Computational and Applied Mathematics . 7 (1981), pp. 67-75.
 """
-function constructDormandPrince6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function DormandPrince6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 8, 8)
     c = zeros(T_time, 8)
     α = zeros(T, 8)
@@ -1170,7 +1170,7 @@ Sharp-Verner Order 5/6 method
 Completely Imbedded Runge-Kutta Pairs, by P. W. Sharp and J. H. Verner,
  SIAM Journal on Numerical Analysis, Vol. 31, No. 4. (Aug., 1994), pages. 1169 to 1190.
 """
-function constructSharpVerner6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function SharpVerner6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 9, 9)
     c = zeros(T_time, 9)
     α = zeros(T, 9)
@@ -1253,7 +1253,7 @@ Verner 1991 Second Order 5/6 method
 Some Ruge-Kutta Formula Pairs, by J.H.Verner,
  SIAM Journal on Numerical Analysis, Vol. 28, No. 2 (April 1991), pages 496 to 511.
 """
-function constructVerner9162(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Verner9162(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 9, 9)
     c = zeros(T_time, 9)
     α = zeros(T, 9)
@@ -1336,7 +1336,7 @@ Verner 1991 First Order 5/6 method
 Some Ruge-Kutta Formula Pairs, by J.H.Verner,
  SIAM Journal on Numerical Analysis, Vol. 28, No. 2 (April 1991), pages 496 to 511.
 """
-function constructVerner916(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Verner916(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 9, 9)
     c = zeros(T_time, 9)
     α = zeros(T, 9)
@@ -1417,7 +1417,7 @@ end
 
 From Verner's Website
 """
-function constructVernerRobust6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function VernerRobust6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 9, 9)
     c = zeros(T_time, 9)
     α = zeros(T, 9)
@@ -1497,7 +1497,7 @@ end
 
 From Verner's Website
 """
-function constructVernerEfficient6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function VernerEfficient6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 9, 9)
     c = zeros(T_time, 9)
     α = zeros(T, 9)
@@ -1578,7 +1578,7 @@ function constructVernerEfficient6(::Type{T} = Float64, ::Type{T_time} = T) wher
         stability_size = 4.8552743145651425))
 end
 
-function constructVerner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Verner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 10, 10)
     c = zeros(T_time, 10)
     α = zeros(T, 10)
@@ -1671,7 +1671,7 @@ end
 """
 Verner Efficient 8
 """
-function constructVerner8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Verner8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 13, 13)
     c = zeros(T_time, 13)
     α = zeros(T, 13)
@@ -1813,7 +1813,7 @@ Papakostas's Order 6
 On Phase-Fitted modified Runge-Kutta Pairs of order 6(5), by Ch. Tsitouras and I. Th. Famelis,
  International Conference of Numerical Analysis and Applied Mathematics, Crete, (2006)
 """
-function constructPapakostas6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Papakostas6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 9, 9)
     c = zeros(T_time, 9)
     α = zeros(T, 9)
@@ -1896,7 +1896,7 @@ Lawson's Order 6
 An Order 6 Runge-Kutta Process with an Extended Region of Stability, by J. D. Lawson,
  Siam Journal on Numerical Analysis, Vol. 4, No. 4 (Dec. 1967) pages 620-625.
 """
-function constructLawson6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Lawson6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 7, 7)
     c = zeros(T_time, 7)
     α = zeros(T, 7)
@@ -1949,7 +1949,7 @@ Tsitouras-Papakostas's Order 6
 Cheap Error Estimation for Runge-Kutta methods, by Ch. Tsitouras and S.N. Papakostas,
 Siam Journal on Scientific Computing, Vol. 20, Issue 6, Nov 1999.
 """
-function constructTsitourasPapakostas6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function TsitourasPapakostas6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 8, 8)
     c = zeros(T_time, 8)
     α = zeros(T, 8)
@@ -2022,7 +2022,7 @@ DormandLockyerMcCorriganPrince Order 6 Global Error Estimation
 Global Error estimation with Runge-Kutta triples, by J.R.Dormand, M.A.Lockyer, N.E.McCorrigan and P.J.Prince,
  Computers and Mathematics with Applications, 18 (1989) pages 835-846.
 """
-function constructDormandLockyerMcCorriganPrince6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function DormandLockyerMcCorriganPrince6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 9, 9)
     c = zeros(T_time, 9)
     α = zeros(T, 9)
@@ -2101,13 +2101,13 @@ end
 
 """
 
-constructTanakaKasugaYamashitaYazaki Order 6 D
+TanakaKasugaYamashitaYazaki Order 6 D
 
 On the Optimization of Some Eight-stage Sixth-order Explicit Runge-Kutta Method,
  by M. Tanaka, K. Kasuga, S. Yamashita and H. Yazaki,
  Journal of the Information Processing Society of Japan, Vol. 34, No. 1 (1993), pages 62 to 74.
 """
-function constructTanakaKasugaYamashitaYazaki6D(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function TanakaKasugaYamashitaYazaki6D(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 9, 9)
     c = zeros(T_time, 9)
     α = zeros(T, 9)
@@ -2203,13 +2203,13 @@ end
 
 """
 
-constructTanakaKasugaYamashitaYazaki Order 6 C
+TanakaKasugaYamashitaYazaki Order 6 C
 
 On the Optimization of Some Eight-stage Sixth-order Explicit Runge-Kutta Method,
  by M. Tanaka, K. Kasuga, S. Yamashita and H. Yazaki,
  Journal of the Information Processing Society of Japan, Vol. 34, No. 1 (1993), pages 62 to 74.
 """
-function constructTanakaKasugaYamashitaYazaki6C(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function TanakaKasugaYamashitaYazaki6C(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 9, 9)
     c = zeros(T_time, 9)
     α = zeros(T, 9)
@@ -2302,13 +2302,13 @@ end
 
 """
 
-constructTanakaKasugaYamashitaYazaki Order 6 B
+TanakaKasugaYamashitaYazaki Order 6 B
 
 On the Optimization of Some Eight-stage Sixth-order Explicit Runge-Kutta Method,
  by M. Tanaka, K. Kasuga, S. Yamashita and H. Yazaki,
  Journal of the Information Processing Society of Japan, Vol. 34, No. 1 (1993), pages 62 to 74.
 """
-function constructTanakaKasugaYamashitaYazaki6B(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function TanakaKasugaYamashitaYazaki6B(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 9, 9)
     c = zeros(T_time, 9)
     α = zeros(T, 9)
@@ -2392,7 +2392,7 @@ On the Optimization of Some Eight-stage Sixth-order Explicit Runge-Kutta Method,
  by M. Tanaka, K. Kasuga, S. Yamashita and H. Yazaki,
  Journal of the Information Processing Society of Japan, Vol. 34, No. 1 (1993), pages 62 to 74.
 """
-function constructTanakaKasugaYamashitaYazaki6A(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function TanakaKasugaYamashitaYazaki6A(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 9, 9)
     c = zeros(T_time, 9)
     α = zeros(T, 9)
@@ -2494,7 +2494,7 @@ A general four-parameter non-FSAL embedded Runge–Kutta algorithm of orders 6 a
  Applied Mathematics and Computation, Vol. 143, No. 2, (2003) pages 259 to 267.
 
 """
-function constructMikkawyEisa(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function MikkawyEisa(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 7, 7)
     c = zeros(T_time, 7)
     α = zeros(T, 7)
@@ -2557,7 +2557,7 @@ A three-dimensional family of seven-step Runge-Kutta methods of order 6, by G. M
 Numerical Methods and programming, 2001, Vol.2, 2001, pages 159-166
 (Advanced Computing Scientific journal published by the Research Computing Center of the Lomonosov Moscow State Univeristy)
 """
-function constructChummund6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Chummund6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 7, 7)
     c = zeros(T_time, 7)
     α = zeros(T, 7)
@@ -2611,7 +2611,7 @@ A three-dimensional family of seven-step Runge-Kutta methods of order 6, by G. M
 Numerical Methods and programming, 2001, Vol.2, 2001, pages 159-166
 (Advanced Computing Scientific journal published by the Research Computing Center of the Lomonosov Moscow State Univeristy)
 """
-function constructChummund62(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Chummund62(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 7, 7)
     c = zeros(T_time, 7)
     α = zeros(T, 7)
@@ -2750,7 +2750,7 @@ by Anton Huta,
 Acta Fac. Nat. Univ. Comenian Math., Vol. 1, pages 201-224 (1956).
 
 """
-function constructHuta62(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Huta62(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 8, 8)
     c = zeros(T_time, 8)
     α = zeros(T, 8)
@@ -2814,7 +2814,7 @@ by Anton Huta,
 Acta Fac. Nat. Univ. Comenian Math., Vol. 1, pages 201-224 (1956).
 
 """
-function constructHuta6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Huta6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 8, 8)
     c = zeros(T_time, 8)
     α = zeros(T, 8)
@@ -2874,7 +2874,7 @@ The Relative Efficiency of Alternative Defect Control Schemes for High-Order Con
  W. H. Enright SIAM Journal on Numerical Analysis, Vol. 30, No. 5. (Oct., 1993), pp. 1419-1445.
 
 """
-function constructEnrightVerner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function EnrightVerner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 10, 10)
     c = zeros(T_time, 10)
     α = zeros(T, 10)
@@ -2965,7 +2965,7 @@ end
 """
 From Verner's website
 """
-function constructVernerRobust7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function VernerRobust7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 10, 10)
     c = zeros(T_time, 10)
     α = zeros(T, 10)
@@ -3063,7 +3063,7 @@ end
 """
 From Verner's website
 """
-function constructVernerEfficient7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function VernerEfficient7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 10, 10)
     c = zeros(T_time, 10)
     α = zeros(T, 10)
@@ -3180,7 +3180,7 @@ end
 Completely Imbedded Runge-Kutta Pairs, by P.W.Sharp and J.H.Verner, Siam Journal on Numerical Analysis, Vol.31, No.4.
 (August 1994) pages 1169-1190.
 """
-function constructSharpVerner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function SharpVerner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 12, 12)
     c = zeros(T_time, 12)
     α = zeros(T, 12)
@@ -3299,7 +3299,7 @@ end
 Explicit Runge-Kutta Pairs with One More Derivative Evaluation than the Minimum, by P.W.Sharp and E.Smart,
  Siam Journal of Scientific Computing, Vol. 14, No. 2, pages. 338-348, March 1993.
 """
-function constructSharpSmart7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function SharpSmart7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 11, 11)
     c = zeros(T_time, 11)
     α = zeros(T, 11)
@@ -3411,7 +3411,7 @@ end
 On the Optimization of Some Nine-Stage Seventh-order Runge-Kutta Method, by M. Tanaka, S. Muramatsu and S. Yamashita,
 Information Processing Society of Japan, Vol. 33, No. 12 (1992) pages 1512-1526.
 """
-function constructTanakaYamashitaEfficient7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function TanakaYamashitaEfficient7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 10, 10)
     c = zeros(T_time, 10)
     α = zeros(T, 10)
@@ -3544,7 +3544,7 @@ end
 On the Optimization of Some Nine-Stage Seventh-order Runge-Kutta Method, by M. Tanaka, S. Muramatsu and S. Yamashita,
 Information Processing Society of Japan, Vol. 33, No. 12 (1992) pages 1512-1526.
 """
-function constructTanakaYamashitaStable7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function TanakaYamashitaStable7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 10, 10)
     c = zeros(T_time, 10)
     α = zeros(T, 10)
@@ -3661,7 +3661,7 @@ end
 Some Explicit Runge-Kutta Methods of High Order, by G. J. Cooper and J. H. Verner,
  SIAM Journal on Numerical Analysis, Vol. 9, No. 3, (September 1972), pages 389 to 405
 """
-function constructCooperVerner8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function CooperVerner8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 11, 11)
     c = zeros(T_time, 11)
     α = zeros(T, 11)
@@ -3753,7 +3753,7 @@ end
 Some Explicit Runge-Kutta Methods of High Order, by G. J. Cooper and J. H. Verner,
  SIAM Journal on Numerical Analysis, Vol. 9, No. 3, (September 1972), pages 389 to 405
 """
-function constructCooperVerner82(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function CooperVerner82(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 11, 11)
     c = zeros(T_time, 11)
     α = zeros(T, 11)
@@ -3845,7 +3845,7 @@ end
 An Eighth Order Runge-Kutta process with Eleven Function Evaluations per Step, by A. R. Curtis,
  Numerische Mathematik, Vol. 16, No. 3 (1970), pages 268 to 277
 """
-function constructCurtis8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Curtis8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 11, 11)
     c = zeros(T_time, 11)
     α = zeros(T, 11)
@@ -3939,7 +3939,7 @@ end
 The Relative Efficiency of Alternative Defect Control Schemes for High-Order Continuous Runge-Kutta Formulas
  W. H. Enright SIAM Journal on Numerical Analysis, Vol. 30, No. 5. (Oct., 1993), pp. 1419-1445.
 """
-function constructEnrightVerner8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function EnrightVerner8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 13, 13)
     c = zeros(T_time, 13)
     α = zeros(T, 13)
@@ -4121,7 +4121,7 @@ end
 """
 Jim Verner's "Maple" (dverk78)
 """
-function constructdverk78(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function dverk78(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 13, 13)
     c = zeros(T_time, 13)
     α = zeros(T, 13)
@@ -4274,7 +4274,7 @@ end
 Cheap Error Estimation for Runge-Kutta methods, by Ch. Tsitouras and S.N. Papakostas,
  Siam Journal on Scientific Computing, Vol. 20, Issue 6, Nov 1999.
 """
-function constructTsitourasPapakostas8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function TsitourasPapakostas8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 13, 13)
     c = zeros(T_time, 13)
     α = zeros(T, 13)
@@ -4446,7 +4446,7 @@ end
 """
 From Verner's Webiste
 """
-function constructVernerRobust9(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function VernerRobust9(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 16, 16)
     c = zeros(T_time, 16)
     α = zeros(T, 16)
@@ -4753,7 +4753,7 @@ end
 """
 From Verner's Webiste
 """
-function constructVernerEfficient9(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function VernerEfficient9(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 16, 16)
     c = zeros(T_time, 16)
     α = zeros(T, 16)
@@ -5090,7 +5090,7 @@ end
 Journal of Applied Mathematics & Decision Sciences, 4(2), 183-192 (2000),
  "High order explicit Runge-Kutta pairs for ephemerides of the Solar System and the Moon".
 """
-function constructSharp9(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Sharp9(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 16, 16)
     c = zeros(T_time, 16)
     α = zeros(T, 16)
@@ -5372,7 +5372,7 @@ end
 Optimized explicit Runge-Kutta pairs of order 9(8), by Ch. Tsitouras,
  Applied Numerical Mathematics, 38 (2001) 123-134.
 """
-function constructTsitouras9(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Tsitouras9(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 16, 16)
     c = zeros(T_time, 16)
     α = zeros(T, 16)
@@ -5651,7 +5651,7 @@ end
 Optimized explicit Runge-Kutta pairs of order 9(8), by Ch. Tsitouras,
  Applied Numerical Mathematics, 38 (2001) 123-134.
 """
-function constructTsitouras92(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Tsitouras92(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 16, 16)
     c = zeros(T_time, 16)
     α = zeros(T, 16)
@@ -5992,7 +5992,7 @@ Part of RK-Aid
 http://www.scm.tees.ac.uk/users/u0000251/research/researcht.htm
 http://www.scm.tees.ac.uk/users/u0000251/j.r.dormand/t.baker/rk10921m/rk10921m
 """
-function constructBaker10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
+function Baker10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 21, 21)
     c = zeros(T_time, 21)
     α = zeros(T, 21)
@@ -6427,7 +6427,7 @@ end
 """
 Ono10
 """
-function constructOno10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
+function Ono10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 17, 17)
     c = zeros(T_time, 17)
     α = zeros(T, 17)
@@ -6725,7 +6725,7 @@ end
 """
 Feagin10 in Tableau form
 """
-function constructFeagin10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
+function Feagin10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 17, 17)
     c = zeros(T_time, 17)
     α = zeros(T, 17)
@@ -7011,7 +7011,7 @@ end
 """
 A Runge-Kutta Method of Order 10, E. Hairer, J. Inst. Maths Applics (1978) 21, 47-59.
 """
-function constructHairer10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
+function Hairer10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 17, 17)
     c = zeros(T_time, 17)
     α = zeros(T, 17)
@@ -7309,7 +7309,7 @@ end
 """
 High-order Explicit Runge-Kutta Formulae, Their uses, and Limitations, A.R.Curtis, J. Inst. Maths Applics (1975) 16, 35-55.
 """
-function constructCurtis10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
+function Curtis10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 18, 18)
     c = zeros(T_time, 18)
     α = zeros(T, 18)
@@ -7624,7 +7624,7 @@ end
 On the 25 stage 12th order explicit Runge-Kutta method, by Hiroshi Ono.
 Transactions of the Japan Society for Industrial and applied Mathematics, Vol. 6, No. 3, (2006) pages 177 to 186
 """
-function constructOno12(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
+function Ono12(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 25, 25)
     c = zeros(T_time, 25)
     α = zeros(T, 25)
@@ -8163,7 +8163,7 @@ end
 """
 Tableau form of Feagin12
 """
-function constructFeagin12(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
+function Feagin12(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 25, 25)
     c = zeros(T_time, 25)
     α = zeros(T, 25)
@@ -8714,7 +8714,7 @@ end
 """
 Tableau form of Feagin14
 """
-function constructFeagin14(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
+function Feagin14(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 35, 35)
     c = zeros(T_time, 35)
     α = zeros(T, 35)
@@ -9741,7 +9741,7 @@ function constructFeagin14(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T
     return (DiffEqBase.ExplicitRKTableau(A, c, α, 14, stability_size = 1.873815353775539))
 end
 
-function constructButcher7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Butcher7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     t = sqrt(convert(T, 21))
     c2 = (7 + t) / 42
     c6 = (7 - t) / 14
@@ -9767,7 +9767,7 @@ function constructButcher7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_
     return (DiffEqBase.ExplicitRKTableau(A, c, α, 7, stability_size = 2.6662179256363756))
 end
 
-function constructDverk(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function Dverk(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     c = [0; 1 // 6; 4 // 15; 2 // 3; 5 // 6; 1; 1 // 15; 1]
     A = [0 0 0 0 0 0 0 0
          1//6 0 0 0 0 0 0 0
@@ -9791,7 +9791,7 @@ end
 EXPLICIT RUNGE-KUTTA METHODS WITH
 ESTIMATES OF THE LOCAL TRUNCATION ERROR
 """
-function constructClassicVerner6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function ClassicVerner6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0 0 0 0 0
          1//18 0 0 0 0 0 0 0
          -1//12 1//4 0 0 0 0 0 0
@@ -9815,7 +9815,7 @@ end
 EXPLICIT RUNGE-KUTTA METHODS WITH
 ESTIMATES OF THE LOCAL TRUNCATION ERROR
 """
-function constructClassicVerner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function ClassicVerner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0 0 0 0 0 0 0
          1//12 0 0 0 0 0 0 0 0 0
          0 1//6 0 0 0 0 0 0 0 0
@@ -9842,7 +9842,7 @@ end
 EXPLICIT RUNGE-KUTTA METHODS WITH
 ESTIMATES OF THE LOCAL TRUNCATION ERROR
 """
-function constructClassicVerner8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function ClassicVerner8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0 0 0 0 0 0 0 0 0 0
          1//4 0 0 0 0 0 0 0 0 0 0 0 0
          5//72 1//72 0 0 0 0 0 0 0 0 0 0 0
@@ -9871,11 +9871,11 @@ function constructClassicVerner8(::Type{T} = Float64, ::Type{T_time} = T) where 
 end
 
 """
-constructRKF8()
+RKF8()
 
 Constructs the tableau object for the Runge-Kutta-Fehlberg Order 7/8 method.
 """
-function constructRKF8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function RKF8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0 0 0 0 0 0 0 0 0 0
          2//27 0 0 0 0 0 0 0 0 0 0 0 0
          1//36 1//12 0 0 0 0 0 0 0 0 0 0 0
@@ -9904,13 +9904,13 @@ function constructRKF8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time
 end
 
 """
-constructDormandPrice8_64bit()
+DormandPrice8_64bit()
 
 Constructs the tableau object for the Dormand-Prince Order 6/8 method with the
 approximated coefficients from the paper. This works until below 64-bit precision.
 
 """
-function constructDormandPrince8_64bit(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function DormandPrince8_64bit(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0 0 0 0 0 0 0 0 0 0
          1//18 0 0 0 0 0 0 0 0 0 0 0 0
          1//48 1//16 0 0 0 0 0 0 0 0 0 0 0
@@ -9941,11 +9941,11 @@ function constructDormandPrince8_64bit(::Type{T} = Float64, ::Type{T_time} = T) 
 end
 
 """
-constructDormandPrice8()
+DormandPrice8()
 
 Constructs the tableau object for the Dormand-Prince Order 6/8 method.
 """
-function constructDormandPrince8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function DormandPrince8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = [0 0 0 0 0 0 0 0 0 0 0 0 0
          1//18 0 0 0 0 0 0 0 0 0 0 0 0
          1//48 1//16 0 0 0 0 0 0 0 0 0 0 0
@@ -9998,7 +9998,7 @@ end
   https://www.sciencedirect.com/science/article/pii/S0096300319301511
 """
 
-function constructRKO65(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+function RKO65(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 6, 6)
     c = zeros(T_time, 6)
     α = zeros(T, 6)
