@@ -63,7 +63,7 @@ end
     )
     for MO in 1:5
         sol = solve(
-            dae_prob_mo, DFBDF(max_order = Val{MO}()), initializealg=BrownFullBasicInit(),
+            dae_prob_mo, DFBDF(max_order = Val{MO}()), initializealg = BrownFullBasicInit(),
             abstol = 1.0e-8, reltol = 1.0e-8, verbose = DEVerbosity(SciMLLogging.None())
         )
         @test sol.t[end] > 0
@@ -168,7 +168,7 @@ if VERSION >= v"1.12"
         )
         integrator = init(
             dae_prob, DFBDF(), abstol = 1.0e-8, reltol = 1.0e-8,
-            save_everystep = false, initializealg=BrownFullBasicInit()
+            save_everystep = false, initializealg = BrownFullBasicInit()
         )
         for _ in 1:10
             step!(integrator)
