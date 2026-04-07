@@ -24,7 +24,8 @@ for tab in [ET.Ralston4(Rational{BigInt}), ET.TsitourasPapakostas6(Rational{BigI
     if tab.adaptiveorder != 0
         @test all(
             i -> residual_order_condition(tab, i, +, abs; embedded = true) < 10eps(1.0),
-            tab.adaptiveorder)
+            tab.adaptiveorder
+        )
     end
 end
 
@@ -91,7 +92,7 @@ for i in 1:2 # 1 = num, 2 = ExplicitRK
     tabalg = ExplicitRK(tableau = ET.DormandPrince())
     sim = test_convergence(dts, prob, tabalg)
     sim2 = test_convergence(dts, prob, DP5())
-    @test (abs(sim.𝒪est[:l∞] - 5) < testTol && (maximum(sim[end][end] - sim2[end][end]) < 1e-10))
+    @test (abs(sim.𝒪est[:l∞] - 5) < testTol && (maximum(sim[end][end] - sim2[end][end]) < 1.0e-10))
 
     tabalg = ExplicitRK(tableau = ET.CashKarp())
     sim = test_convergence(dts, prob, tabalg)

@@ -162,16 +162,16 @@ function _sde_init(
 
     # ── Alias resolution (SDE/RODE-specific specifier types) ─────────────
     if alias isa Bool
-            aliases = is_sde ? SciMLBase.SDEAliasSpecifier(; alias) :
-                SciMLBase.RODEAliasSpecifier(; alias)
-        elseif alias isa SciMLBase.SDEAliasSpecifier
-            aliases = alias
-        elseif alias isa SciMLBase.RODEAliasSpecifier
-            aliases = alias
-        else
-            aliases = is_sde ? SciMLBase.SDEAliasSpecifier() :
-                SciMLBase.RODEAliasSpecifier()
-        end
+        aliases = is_sde ? SciMLBase.SDEAliasSpecifier(; alias) :
+            SciMLBase.RODEAliasSpecifier(; alias)
+    elseif alias isa SciMLBase.SDEAliasSpecifier
+        aliases = alias
+    elseif alias isa SciMLBase.RODEAliasSpecifier
+        aliases = alias
+    else
+        aliases = is_sde ? SciMLBase.SDEAliasSpecifier() :
+            SciMLBase.RODEAliasSpecifier()
+    end
 
     prob = concrete_prob(_prob)
 
