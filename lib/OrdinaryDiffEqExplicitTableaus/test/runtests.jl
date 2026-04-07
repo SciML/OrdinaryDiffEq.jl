@@ -205,4 +205,8 @@ const ET = OrdinaryDiffEqExplicitTableaus
             @test cc ≈ tab.c
         end
     end
+
+    @time @testset "ODE Tableau Convergence Tests" begin
+        include("ode_tableau_convergence_tests.jl")
+    end
 end
