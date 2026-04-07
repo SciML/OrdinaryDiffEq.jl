@@ -84,6 +84,6 @@ const IT = OrdinaryDiffEqImplicitTableaus
     end
 
     @testset "Stability regions" begin
-        @test stability_region(IT.RadauIIA5(), initial_guess = 12.0)≈11.84 rtol=1e-2
+        @test stability_region(IT.RadauIIA5(), initial_guess = 12.0) ≈ 11.84 rtol = 1.0e-2
     end
 end
