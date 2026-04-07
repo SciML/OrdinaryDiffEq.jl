@@ -1,0 +1,33 @@
+name = "OrdinaryDiffEqRosenbrockTableaus"
+uuid = "b4bd8bb3-f80f-41d2-9b21-73a655b304b9"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
+version = "1.0.0"
+
+[deps]
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+
+[extras]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
+ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
+
+[compat]
+ADTypes = "1.16"
+DiffEqDevTools = "2.44.4"
+Enzyme = "0.13"
+LinearAlgebra = "1.10"
+LinearSolve = "3.46"
+ODEProblemLibrary = "1"
+OrdinaryDiffEqRosenbrock = "1.26"
+Test = "<0.0.1, 1"
+julia = "1.10"
+
+[targets]
+test = ["ADTypes", "DiffEqDevTools", "Enzyme", "LinearAlgebra", "LinearSolve", "ODEProblemLibrary", "Test"]
