@@ -235,8 +235,8 @@ end
 """
     DEVerbosity <: AbstractVerbositySpecifier
 
-Verbosity configuration for OrdinaryDiffEq.jl solvers, providing fine-grained control over
-diagnostic messages, warnings, and errors during ODE solution.
+Verbosity configuration for differential equation solvers, providing fine-grained control over
+diagnostic messages, warnings, and errors during solution.
 
 # Fields
 
@@ -290,7 +290,7 @@ diagnostic messages, warnings, and errors during ODE solution.
 
     DEVerbosity(preset::AbstractVerbosityPreset)
 
-Create an `DEVerbosity` using a preset configuration:
+Create a `DEVerbosity` using a preset configuration:
 - `SciMLLogging.None()`: All messages disabled
 - `SciMLLogging.Minimal()`: Only critical errors and fatal issues
 - `SciMLLogging.Standard()`: Balanced verbosity (default)
@@ -299,7 +299,7 @@ Create an `DEVerbosity` using a preset configuration:
 
     DEVerbosity(; preset=nothing, error_control=nothing, performance=nothing, numerical=nothing, sde_specific=nothing, dde_specific=nothing, kwargs...)
 
-Create an `DEVerbosity` with group-level or individual field control.
+Create a `DEVerbosity` with group-level or individual field control.
 
 # Examples
 
@@ -329,13 +329,21 @@ verbose = DEVerbosity(
 function DEVerbosity end
 
 const DEFAULT_VERBOSE = DEVerbosity()
+const NONE_VERBOSE = DEVerbosity(SciMLLogging.None())
 
 @inline function _process_verbose_param(verbose::SciMLLogging.AbstractVerbosityPreset)
     return DEVerbosity(verbose)
 end
 
 @inline function _process_verbose_param(verbose::Bool)
-    return verbose ? DEFAULT_VERBOSE : DEVerbosity(SciMLLogging.None())
+    return verbose ? DEFAULT_VERBOSE : NONE_VERBOSE
 end
 
 @inline _process_verbose_param(verbose::DEVerbosity) = verbose
+
+# Extend SciMLLogging.verbosity_to_bool for Bool, presets, and DEVerbosity,
+# so packages with a simple boolean verbose flag can accept any verbose argument.
+SciMLLogging.verbosity_to_bool(verbose::Bool) = verbose
+SciMLLogging.verbosity_to_bool(::SciMLLogging.None) = false
+SciMLLogging.verbosity_to_bool(::SciMLLogging.AbstractVerbosityPreset) = true
+SciMLLogging.verbosity_to_bool(verbose::DEVerbosity) = verbose !== NONE_VERBOSE

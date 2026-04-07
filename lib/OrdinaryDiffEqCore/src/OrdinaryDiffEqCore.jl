@@ -32,7 +32,8 @@ import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 # Internal utils
 import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
-    ODE_DEFAULT_UNSTABLE_CHECK
+    ODE_DEFAULT_UNSTABLE_CHECK,
+    DEVerbosity, DEFAULT_VERBOSE, _process_verbose_param
 
 import SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator,
     MatrixOperator, FunctionOperator,
@@ -90,7 +91,7 @@ import Accessors: @reset
 
 using SciMLLogging: SciMLLogging, @SciMLMessage, AbstractVerbositySpecifier, AbstractVerbosityPreset,
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
-    CustomLevel, AbstractMessageLevel, @verbosity_specifier
+    CustomLevel, AbstractMessageLevel
 
 using SymbolicIndexingInterface: state_values, parameter_values
 
@@ -142,7 +143,6 @@ end
 
 include("doc_utils.jl")
 include("misc_utils.jl")
-include("verbosity.jl")
 
 include("algorithms.jl")
 include("composite_algs.jl")

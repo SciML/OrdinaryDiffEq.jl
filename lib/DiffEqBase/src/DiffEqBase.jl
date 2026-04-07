@@ -42,6 +42,10 @@ import FunctionWrappersWrappers
 
 using SciMLBase
 
+using SciMLLogging: SciMLLogging, AbstractVerbositySpecifier, AbstractVerbosityPreset,
+    None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
+    CustomLevel, AbstractMessageLevel, @verbosity_specifier, verbosity_to_bool
+
 using SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator, DEFAULT_UPDATE_FUNC
 
 using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
@@ -151,6 +155,7 @@ include("solve.jl")
 include("internal_euler.jl")
 include("norecompile.jl")
 include("integrator_accessors.jl")
+include("verbosity.jl")
 
 # This is only used for oop stiff solvers
 default_factorize(A) = lu(A; check = false)
@@ -172,6 +177,7 @@ struct ConvergenceSetup{P, C}
     convergence_axis::C
 end
 
+export DEVerbosity
 export initialize!, finalize!
 
 export SensitivityADPassThrough
