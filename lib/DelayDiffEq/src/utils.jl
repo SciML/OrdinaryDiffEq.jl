@@ -181,7 +181,8 @@ function solution_arrays(
         ts_init,
         ks_init,
         save_idxs,
-        save_start
+        save_start,
+        is_stochastic = false
     )
     # determine types of time and state
     uType = typeof(u)
@@ -214,11 +215,16 @@ function solution_arrays(
         copyat_or_push!(ts, 1, first(tspan))
         if save_idxs === nothing
             copyat_or_push!(timeseries, 1, u)
-            copyat_or_push!(ks, 1, [rate_prototype])
+            # SDE/SDDE solvers don't populate derivative stages for dense output
+            if !is_stochastic
+                copyat_or_push!(ks, 1, [rate_prototype])
+            end
         else
             u_initial = u[save_idxs]
             copyat_or_push!(timeseries, 1, u_initial, Val{false})
-            copyat_or_push!(ks, 1, [ks_prototype])
+            if !is_stochastic
+                copyat_or_push!(ks, 1, [ks_prototype])
+            end
         end
     end
 
