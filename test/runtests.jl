@@ -55,15 +55,29 @@ end
         Pkg.activate(joinpath(lib_dir, base_group))
         # On Julia < 1.11, the [sources] section in Project.toml is not supported.
         # Manually Pkg.develop local path dependencies so CI tests the PR branch code.
+        # We resolve transitively: each developed dependency's own [sources] are also
+        # developed, so that packages like OrdinaryDiffEqRosenbrockTableaus (a source
+        # dependency of OrdinaryDiffEqRosenbrock) are correctly found even when testing
+        # a higher-level sublibrary like OrdinaryDiffEqDefault.
         if VERSION < v"1.11.0-DEV.0"
-            toml = Pkg.TOML.parsefile(joinpath(lib_dir, base_group, "Project.toml"))
-            if haskey(toml, "sources")
-                for (dep_name, source_spec) in toml["sources"]
-                    if source_spec isa Dict && haskey(source_spec, "path")
-                        dep_path = normpath(joinpath(lib_dir, base_group, source_spec["path"]))
-                        if isdir(dep_path)
-                            @info "Developing local source dependency" dep_name dep_path
-                            Pkg.develop(Pkg.PackageSpec(path = dep_path))
+            developed = Set{String}()
+            queue = [joinpath(lib_dir, base_group)]
+            while !isempty(queue)
+                pkg_dir = popfirst!(queue)
+                toml_path = joinpath(pkg_dir, "Project.toml")
+                isfile(toml_path) || continue
+                toml = Pkg.TOML.parsefile(toml_path)
+                if haskey(toml, "sources")
+                    for (dep_name, source_spec) in toml["sources"]
+                        if source_spec isa Dict && haskey(source_spec, "path")
+                            dep_path = normpath(joinpath(pkg_dir, source_spec["path"]))
+                            if isdir(dep_path) && !(dep_path in developed)
+                                push!(developed, dep_path)
+                                @info "Developing local source dependency" dep_name dep_path
+                                Pkg.develop(Pkg.PackageSpec(path = dep_path))
+                                # Queue this dependency so its own [sources] are also resolved.
+                                push!(queue, dep_path)
+                            end
                         end
                     end
                 end
