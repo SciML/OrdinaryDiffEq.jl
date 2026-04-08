@@ -67,7 +67,9 @@ SciMLBase = "2.143"
 julia = "1.10"
 
 [extras]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 AlgebraicMultigrid = "2169fc97-5a83-5252-b627-83903c6c433c"
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
@@ -124,4 +126,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["ComponentArrays", "AlgebraicMultigrid", "DiffEqBase", "DiffEqCallbacks", "DifferentiationInterface", "DiffEqDevTools", "ExplicitImports",  "ForwardDiff", "IncompleteLU", "LinearAlgebra", "LinearSolve", "ODEProblemLibrary", "OrdinaryDiffEqAdamsBashforthMoulton", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqExplicitRK", "OrdinaryDiffEqExplicitTableaus", "OrdinaryDiffEqExponentialRK", "OrdinaryDiffEqExtrapolation", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqFeagin", "OrdinaryDiffEqFunctionMap", "OrdinaryDiffEqHighOrderRK", "OrdinaryDiffEqIMEXMultistep", "OrdinaryDiffEqLinear", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqLowStorageRK", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqNordsieck", "OrdinaryDiffEqPDIRK", "OrdinaryDiffEqPRK", "OrdinaryDiffEqQPRK", "OrdinaryDiffEqRKN", "OrdinaryDiffEqSDIRK", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqStabilizedIRK", "OrdinaryDiffEqStabilizedRK", "OrdinaryDiffEqSymplecticRK", "ElasticArrays", "JLArrays", "Random", "SafeTestsets", "StableRNGs", "StructArrays", "Test", "Unitful", "Pkg", "RecursiveArrayTools", "RecursiveFactorization", "SparseArrays", "SparseConnectivityTracer", "SparseMatrixColorings", "StaticArrays", "Statistics"]
+test = ["ADTypes", "ArrayInterface", "ComponentArrays", "AlgebraicMultigrid", "DiffEqBase", "DiffEqCallbacks", "DifferentiationInterface", "DiffEqDevTools", "ExplicitImports",  "ForwardDiff", "IncompleteLU", "LinearAlgebra", "LinearSolve", "ODEProblemLibrary", "OrdinaryDiffEqAdamsBashforthMoulton", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqExplicitRK", "OrdinaryDiffEqExplicitTableaus", "OrdinaryDiffEqExponentialRK", "OrdinaryDiffEqExtrapolation", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqFeagin", "OrdinaryDiffEqFunctionMap", "OrdinaryDiffEqHighOrderRK", "OrdinaryDiffEqIMEXMultistep", "OrdinaryDiffEqLinear", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqLowStorageRK", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqNordsieck", "OrdinaryDiffEqPDIRK", "OrdinaryDiffEqPRK", "OrdinaryDiffEqQPRK", "OrdinaryDiffEqRKN", "OrdinaryDiffEqSDIRK", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqStabilizedIRK", "OrdinaryDiffEqStabilizedRK", "OrdinaryDiffEqSymplecticRK", "ElasticArrays", "JLArrays", "Random", "SafeTestsets", "StableRNGs", "StructArrays", "Test", "Unitful", "Pkg", "RecursiveArrayTools", "RecursiveFactorization", "SparseArrays", "SparseConnectivityTracer", "SparseMatrixColorings", "StaticArrays", "Statistics"]
