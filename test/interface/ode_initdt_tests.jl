@@ -1,20 +1,20 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
-using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqExplicitTableaus, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock
 
 prob = prob_ode_linear
 sol = solve(prob, Rosenbrock32())
 dt₀ = sol.t[2]
 
 prob = prob_ode_2Dlinear
-sol = solve(prob, ExplicitRK(tableau = constructBogakiShampine3()))
+sol = solve(prob, ExplicitRK(tableau = BogakiShampine3()))
 dt₀ = sol.t[2]
 
 @test 1.0e-7 < dt₀ < 0.1
 @test_throws ArgumentError local sol = solve(prob, Euler())
 #dt₀ = sol.t[2]
 
-sol3 = solve(prob, ExplicitRK(tableau = constructDormandPrince8_64bit()))
+sol3 = solve(prob, ExplicitRK(tableau = DormandPrince8_64bit()))
 dt₀ = sol3.t[2]
 
 @test 1.0e-7 < dt₀ < 0.3
