@@ -54,6 +54,13 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
         return (true, true)
     end
 
+    # Operator-based W (WOperator for Krylov solvers, AbstractSciMLOperator):
+    # always recompute. Krylov convergence depends on W quality, and stale J
+    # in the operator causes convergence degradation.
+    if cache.W isa WOperator || cache.W isa AbstractSciMLOperator
+        return (true, true)
+    end
+
     # Linear problems: J is constant, never needs recomputation after first eval.
     # But W still depends on dtgamma, so always rebuild W.
     islin, _ = islinearfunction(integrator)
