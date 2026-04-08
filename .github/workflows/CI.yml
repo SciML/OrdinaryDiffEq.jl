@@ -66,6 +66,21 @@ jobs:
       - uses: julia-actions/cache@v3
         with:
           cache-compiled: 'false'
+      - name: Develop local path deps (Julia < 1.11)
+        shell: julia --color=yes {0}
+        run: |
+          using Pkg
+          if VERSION < v"1.11.0-DEV.0"
+            toml = Pkg.TOML.parsefile("Project.toml")
+            if haskey(toml, "sources")
+              for (dep, spec) in toml["sources"]
+                if spec isa Dict && haskey(spec, "path") && isdir(spec["path"])
+                  @info "Developing" dep spec["path"]
+                  Pkg.develop(Pkg.PackageSpec(path=spec["path"]))
+                end
+              end
+            end
+          end
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
