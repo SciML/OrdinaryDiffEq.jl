@@ -1,4 +1,4 @@
-using ExplicitImports, OrdinaryDiffEq
+using ExplicitImports, OrdinaryDiffEq, SciMLBase
 using Test
 
 @testset "ExplicitImports" begin
