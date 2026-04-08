@@ -67,7 +67,7 @@ jobs:
         with:
           cache-compiled: 'false'
       - name: Develop local path deps (Julia < 1.11)
-        shell: julia --color=yes {0}
+        shell: julia --color=yes --project=. {0}
         run: |
           using Pkg
           if VERSION < v"1.11.0-DEV.0"
