@@ -94,7 +94,7 @@ jobs:
           restore-keys: |
             julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};
       - name: Develop local path deps (Julia < 1.11)
-        shell: julia --color=yes {0}
+        shell: julia --color=yes --project=. {0}
         run: |
           using Pkg
           if VERSION < v"1.11.0-DEV.0"
