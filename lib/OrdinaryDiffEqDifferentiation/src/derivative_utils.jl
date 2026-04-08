@@ -46,6 +46,14 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
         return nothing
     end
 
+    # Non-adaptive solves: delegate to do_newJW.
+    # With prescribed timesteps, J reuse provides negligible benefit and causes
+    # IIP/OOP inconsistency (adaptive solves have step rejections that reset
+    # reuse state, while non-adaptive solves following the same timesteps don't).
+    if !integrator.opts.adaptive
+        return nothing
+    end
+
     # Linear problems: delegate to do_newJW (which returns (false, false) for islin)
     islin, _ = islinearfunction(integrator)
     if islin
