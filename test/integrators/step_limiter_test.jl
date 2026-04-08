@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqBDF, OrdinaryDiffEqFeagin, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqFIRK: AdaptiveRadau, RadauIIA9, RadauIIA5, RadauIIA3
 
 # define the counting variable
