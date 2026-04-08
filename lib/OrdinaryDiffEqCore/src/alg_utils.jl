@@ -48,6 +48,7 @@ function SciMLBase.forwarddiff_chunksize(
             OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         }
     )
+    hasfield(typeof(alg), :autodiff) || return Val{0}()
     return _get_fwd_chunksize(typeof(alg.autodiff))
 end
 
@@ -275,6 +276,7 @@ function get_chunksize(
             DAEAlgorithm,
         }
     )
+    hasfield(typeof(alg), :autodiff) || return Val{0}()
     return _get_fwd_chunksize(typeof(alg.autodiff))
 end
 
@@ -291,6 +293,7 @@ function get_chunksize_int(
             DAEAlgorithm,
         }
     )
+    hasfield(typeof(alg), :autodiff) || return 0
     return _get_fwd_chunksize_int(typeof(alg.autodiff))
 end
 
@@ -358,6 +361,7 @@ function alg_difftype(
             DAEAlgorithm,
         }
     )
+    hasfield(typeof(alg), :autodiff) || return Val{:forward}
     return _get_fdtype(alg.autodiff)
 end
 
