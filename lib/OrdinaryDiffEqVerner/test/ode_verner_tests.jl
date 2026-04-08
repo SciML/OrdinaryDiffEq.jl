@@ -1,4 +1,5 @@
-using OrdinaryDiffEqVerner, OrdinaryDiffEqCore, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqExplicitTableaus
+using OrdinaryDiffEqVerner, OrdinaryDiffEqCore, OrdinaryDiffEqExplicitRK
+import OrdinaryDiffEqExplicitTableaus
 using DiffEqDevTools, Test
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 
@@ -40,7 +41,7 @@ dts = (1 / 2) .^ (8:-1:5)
 check_convergence(dts, probnumbig, Vern6(), 6)
 check_convergence(dts, probbig, Vern6(), 6)
 
-tabalg = ExplicitRK(tableau = VernerEfficient6(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.VernerEfficient6(BigFloat))
 sol1 = solve(probnumbig, Vern6(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
 @test sol1.u[end] - sol2.u[end] < 1.0e-10
@@ -62,7 +63,7 @@ dts = (1 / 2) .^ (6:-1:3)
 check_convergence(dts, probnumbig, Vern7(), 7)
 check_convergence(dts, probbig, Vern7(), 7)
 
-tabalg = ExplicitRK(tableau = Verner7(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.Verner7(BigFloat))
 sol1 = solve(probnumbig, Vern7(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
 @test sol1.u[end] - sol2.u[end] < 1.0e-10
@@ -84,7 +85,7 @@ dts = (1 / 2) .^ (6:-1:3)
 check_convergence(dts, probnumbig, Vern8(), 8)
 check_convergence(dts, probbig, Vern8(), 8)
 
-tabalg = ExplicitRK(tableau = Verner8(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.Verner8(BigFloat))
 sol1 = solve(probnumbig, Vern8(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
 @test sol1.u[end] - sol2.u[end] < 1.0e-10
@@ -106,7 +107,7 @@ dts = (1 / 2) .^ (6:-1:3)
 check_convergence(dts, probnumbig, Vern9(), 9)
 check_convergence(dts, probbig, Vern9(), 9)
 
-tabalg = ExplicitRK(tableau = VernerEfficient9(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.VernerEfficient9(BigFloat))
 sol1 = solve(probnumbig, Vern9(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
 @test abs(sol1.u[end] - sol2.u[end]) < 1.0e-15

@@ -1,18 +1,19 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test
-using OrdinaryDiffEqBDF, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqExplicitTableaus, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqBDF, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
+import OrdinaryDiffEqExplicitTableaus
 
 import ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
 prob = prob_ode_2Dlinear
 sol = solve(prob, Rosenbrock32(), dt = 1 / 2^4)
 
-sol = solve(prob, ExplicitRK(tableau = BogakiShampine3()))
+sol = solve(prob, ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.BogakiShampine3()))
 val1 = maximum(abs.(sol.u[end] - sol.u_analytic[end]))
 
 sol2 = solve(prob, ExplicitRK(tableau = OrdinaryDiffEqExplicitRK.constructDormandPrince()))
 val2 = maximum(abs.(sol2.u[end] - sol2.u_analytic[end]))
 
-sol3 = solve(prob, ExplicitRK(tableau = RKF8(Float64)))
+sol3 = solve(prob, ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.RKF8(Float64)))
 val3 = maximum(abs.(sol3.u[end] - sol3.u_analytic[end]))
 
 sol4 = solve(prob, Stepanov5())
