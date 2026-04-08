@@ -123,6 +123,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "SDDE"
     @time @safetestset "SDDE Non-diagonal Sparse Noise Tests" begin
         include("sdde/nondiagonal_sparse_noise.jl")
     end
+    @time @safetestset "SDDE Implicit Method Tests" begin
+        include("sdde/implicit_methods.jl")
+    end
 end
 
 if TEST_GROUP == "QA" && isempty(VERSION.prerelease)

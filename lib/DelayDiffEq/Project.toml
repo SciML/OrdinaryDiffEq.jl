@@ -1,7 +1,7 @@
 name = "DelayDiffEq"
 uuid = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "5.71.0"
+version = "5.72.0"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"

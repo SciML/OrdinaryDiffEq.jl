@@ -1,7 +1,8 @@
 @muladd function perform_step!(
         integrator, cache::Union{
             ISSEMConstantCache, ISSEulerHeunConstantCache,
-        }
+        },
+        repeat_step = false
     )
     (; t, dt, uprev, u, p, f) = integrator
     (; nlsolver) = cache
@@ -116,7 +117,7 @@
     integrator.u = u
 end
 
-@muladd function perform_step!(integrator, cache::Union{ISSEMCache, ISSEulerHeunCache})
+@muladd function perform_step!(integrator, cache::Union{ISSEMCache, ISSEulerHeunCache}, repeat_step = false)
     (; t, dt, uprev, u, p, f) = integrator
     (; gtmp, gtmp2, dW_cache, nlsolver, k, dz) = cache
     (; z, tmp) = nlsolver

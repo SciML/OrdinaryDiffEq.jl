@@ -264,7 +264,8 @@ function SciMLBase.__init(
         ts_init = ts_init,
         ks_init = ks_init,
         save_idxs = save_idxs,
-        save_start = save_start
+        save_start = save_start,
+        is_stochastic = is_stochastic
     )
 
     # build cache
