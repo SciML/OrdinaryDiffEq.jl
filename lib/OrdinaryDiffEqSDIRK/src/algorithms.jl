@@ -1798,7 +1798,7 @@ const _ARS_BHR_REFERENCE = "@article{ascher1997implicit,
     """
 )
 struct ARS222{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1835,7 +1835,7 @@ end
     """
 )
 struct ARS232{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1872,7 +1872,7 @@ end
     """
 )
 struct ARS443{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -1917,7 +1917,7 @@ end
     """
 )
 struct BHR553{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonESDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P

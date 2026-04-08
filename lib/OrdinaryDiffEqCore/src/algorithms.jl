@@ -45,6 +45,8 @@ abstract type OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} <:
 OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ} <:
 OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+abstract type OrdinaryDiffEqNewtonESDIRKAlgorithm{CS, AD, FDT, ST, CJ} <:
+OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ} end
 abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS, AD, FDT, ST, CJ} <:
 OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
 const NewtonAlgorithm = Union{
