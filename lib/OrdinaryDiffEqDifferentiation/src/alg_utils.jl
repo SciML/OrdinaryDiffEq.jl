@@ -5,12 +5,15 @@ alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = alg.autodiff
 alg_autodiff(alg::DAEAlgorithm) = alg.autodiff
 alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm) = alg.autodiff
 alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[end])
-alg_autodiff(
-    alg::Union{
-        OrdinaryDiffEqExponentialAlgorithm,
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm,
-    }
-) = alg.autodiff
+function alg_autodiff(
+        alg::Union{
+            OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+        }
+    )
+    hasfield(typeof(alg), :autodiff) || return AutoForwardDiff()
+    return alg.autodiff
+end
 
 Base.@pure function determine_chunksize(u, alg::SciMLBase.DEAlgorithm)
     determine_chunksize(u, get_chunksize(alg))
