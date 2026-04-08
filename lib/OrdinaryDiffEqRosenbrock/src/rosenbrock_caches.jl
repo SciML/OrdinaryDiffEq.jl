@@ -176,6 +176,7 @@ function alg_cache(
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
+        abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -236,6 +237,7 @@ function alg_cache(
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
+        abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -485,6 +487,7 @@ function alg_cache(
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
+        abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -629,6 +632,7 @@ function alg_cache(
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         Pl = Pl, Pr = Pr,
+        abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
