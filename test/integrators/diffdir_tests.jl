@@ -1,4 +1,4 @@
-using Test, OrdinaryDiffEq
+using Test, OrdinaryDiffEq, OrdinaryDiffEqSDIRK
 
 for Alg in (Rosenbrock23, TRBDF2)
     tspan = (0, 10.0)
