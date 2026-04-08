@@ -13,67 +13,65 @@ get_jac_reuse(cache) = hasproperty(cache, :jac_reuse) ? cache.jac_reuse : nothin
 _jac_reuse_value(x) = ForwardDiff.value(x)
 
 """
-    _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma) -> Union{Nothing, NTuple{2,Bool}}
+    _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma) -> NTuple{2,Bool}
 
 Decide whether to recompute the Jacobian and/or W matrix for Rosenbrock methods.
-For W-methods (where `isWmethod(alg) == true`) on non-DAE problems, implements
-CVODE-inspired Jacobian reuse:
+All Rosenbrock/W-method J/W logic lives here — no delegation to `do_newJW`.
+
+For W-methods on adaptive, non-DAE, non-composite, non-linear ODE problems,
+implements CVODE-inspired Jacobian reuse:
 - Always recompute on first iteration
-- Recompute after step rejection (EEst > 1), since the old J wasn't good enough
+- Recompute after step rejection (EEst > 1), callback, resize, algorithm switch
 - Recompute when gamma ratio changes too much: |dtgamma/last_dtgamma - 1| > 0.3
 - Recompute every `max_jac_age` accepted steps (default 20)
-- Recompute when u_modified (callback modification)
 - Otherwise reuse J but rebuild W from the cached J and current dtgamma.
   The Jacobian evaluation (finite-diff / AD) is the expensive part; W
   construction and LU factorization are comparatively cheap.
 
-Returns `nothing` (delegate to `do_newJW`) for strict Rosenbrock methods,
-linear problems, mass-matrix (DAE) problems where stale Jacobians cause
-order reduction, and CompositeAlgorithm where rapid stiff↔nonstiff
-transitions make reuse counterproductive.
+Returns `(true, true)` (fresh J and W) for all non-reusable cases:
+strict Rosenbrock methods, linear problems, mass-matrix (DAE) problems,
+CompositeAlgorithm, non-adaptive solves, and first iteration.
 """
 function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     alg = OrdinaryDiffEqCore.unwrap_alg(integrator, true)
 
-    # Non-W-methods: delegate to do_newJW (preserves linear problem optimization etc.)
+    # Non-W-methods always recompute
     if !isWmethod(alg)
-        return nothing
+        return (true, true)
     end
 
     jac_reuse = get_jac_reuse(cache)
-    # If no reuse state (e.g. OOP cache without jac_reuse), delegate to do_newJW
+    # No reuse state available — always recompute
     if jac_reuse === nothing
-        return nothing
+        return (true, true)
     end
 
-    # Non-adaptive solves: delegate to do_newJW.
-    # With prescribed timesteps, J reuse provides negligible benefit and causes
+    # Non-adaptive solves always recompute.
+    # J reuse provides negligible benefit with prescribed timesteps and causes
     # IIP/OOP inconsistency (adaptive solves have step rejections that reset
     # reuse state, while non-adaptive solves following the same timesteps don't).
     if !integrator.opts.adaptive
-        return nothing
+        return (true, true)
     end
 
-    # Linear problems: delegate to do_newJW (which returns (false, false) for islin)
+    # Linear problems: J is constant, never needs recomputation after first eval.
+    # But W still depends on dtgamma, so always rebuild W.
     islin, _ = islinearfunction(integrator)
     if islin
-        return nothing
+        return (false, false)
     end
 
-    # Mass matrix (DAE) problems: delegate to do_newJW.
+    # Mass matrix (DAE) problems always recompute.
     # Stale Jacobians cause order reduction for DAEs because the algebraic
-    # constraint derivatives must remain accurate.  See Steinebach (2024)
-    # for W-method DAE order conditions.
+    # constraint derivatives must remain accurate. See Steinebach (2024).
     if integrator.f.mass_matrix !== I
-        return nothing
+        return (true, true)
     end
 
-    # CompositeAlgorithm: delegate to do_newJW, which always recomputes J
-    # for Rosenbrock methods in composite context (the Jacobian may be stale
-    # from a different algorithm, and rapid stiff↔nonstiff transitions make
-    # reuse counterproductive due to increased step rejections).
+    # CompositeAlgorithm always recomputes.
+    # Rapid stiff↔nonstiff transitions make reuse counterproductive.
     if integrator.alg isa CompositeAlgorithm
-        return nothing
+        return (true, true)
     end
 
     # First iteration: always compute J and W.
@@ -82,8 +80,7 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     end
 
     # Commit pending_dtgamma from previous step if it was accepted.
-    # This ensures rejected steps don't pollute last_dtgamma, keeping
-    # IIP-adaptive and OOP-non-adaptive reuse decisions synchronized.
+    # This ensures rejected steps don't pollute last_dtgamma.
     naccept = integrator.stats.naccept
     if naccept > jac_reuse.last_naccept
         jac_reuse.last_dtgamma = jac_reuse.pending_dtgamma
@@ -129,13 +126,11 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     end
 
     # Age check: recompute J after max_jac_age accepted steps.
-    # Uses naccept (not a local counter) so rejected steps don't desynchronize
-    # IIP-adaptive and OOP-non-adaptive solves.
     if (naccept - jac_reuse.last_naccept) >= jac_reuse.max_jac_age
         return (true, true)
     end
 
-    # Reuse J but rebuild W with the current dtgamma.  Following CVODE's
+    # Reuse J but rebuild W with the current dtgamma. Following CVODE's
     # approach: the Jacobian evaluation (finite-diff / AD) is expensive,
     # while reconstructing W = J − M/(dt·γ) and its LU is comparatively
     # cheap and keeps the step controller accurate.
@@ -872,29 +867,20 @@ function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step
         return dT, W
     end
 
-    newJW = _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
-
-    if newJW === nothing
-        # Delegate to standard path (linear problems, non-W-methods, etc.)
-        dT = calc_tderivative(integrator, cache)
-        W = calc_W(integrator, cache, dtgamma, repeat_step)
-        return dT, W
-    end
-
-    new_jac, new_W = newJW
+    new_jac, new_W = _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
 
     # Track iteration for algorithm-switch detection in CompositeAlgorithm
     jac_reuse.last_step_iter = integrator.iter
 
     if new_jac
-        # Fresh Jacobian needed — delegate to standard calc_tderivative + calc_W
-        # to ensure numerical consistency with the IIP path (calc_W handles
+        # Fresh Jacobian needed — use standard calc_tderivative + calc_W
+        # for numerical consistency with the IIP path (calc_W handles
         # StaticWOperator, WOperator, AbstractSciMLOperator, etc.).
         dT = calc_tderivative(integrator, cache)
         W = calc_W(integrator, cache, dtgamma, repeat_step)
 
-        # Cache the J we just computed (calc_W stored it in integrator internals;
-        # extract from the cache or recompute cheaply for OOP caching).
+        # Cache J for future reuse (calc_W computes J internally but
+        # doesn't expose it, so we recompute — cheap relative to W).
         jac_reuse.cached_J = calc_J(integrator, cache)
         jac_reuse.cached_dT = dT
         jac_reuse.cached_W = W
