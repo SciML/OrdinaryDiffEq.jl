@@ -1,7 +1,7 @@
 @verbosity_specifier DEVerbosity begin
     toggles = (
         :linear_verbosity, :nonlinear_verbosity,
-        :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability,
+        :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability, :inconsistent_input,
         :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
         :w_factorization, :newton_iterations,
@@ -29,6 +29,7 @@
             max_iters = Silent(),
             dt_min_unstable = Silent(),
             instability = Silent(),
+            inconsistent_input = Silent(),
             newton_convergence = Silent(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -65,6 +66,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            inconsistent_input = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -101,6 +103,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            inconsistent_input = WarnLevel(),
             newton_convergence = Silent(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -137,6 +140,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            inconsistent_input = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -173,6 +177,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            inconsistent_input = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = InfoLevel(),
             step_accepted = InfoLevel(),
@@ -205,7 +210,7 @@
     groups = (
         error_control = (
             :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable,
-            :instability, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
+            :instability, :inconsistent_input, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         ),
         performance = (
             :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
