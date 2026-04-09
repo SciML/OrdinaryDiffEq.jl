@@ -1,6 +1,6 @@
 using DiffEqBase: set_t!, set_u!, set_ut!
 using OrdinaryDiffEq
-using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqSDIRK
 
 println("First")
 # set_X!(integrator, integrator.X) should not change the result.
