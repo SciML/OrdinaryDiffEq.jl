@@ -379,6 +379,5 @@ end
             @inferred(solve(prob, alg; dt = 0.1))
         end
     end
-    end
 end
 
