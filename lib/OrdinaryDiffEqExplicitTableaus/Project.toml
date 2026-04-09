@@ -26,7 +26,7 @@ path = "../.."
 DiffEqBase = "6.194"
 DiffEqDevTools = "2.48"
 ODEProblemLibrary = "0.1"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "6, 7"
 Test = "<0.0.1, 1"
 julia = "1.10"
 
