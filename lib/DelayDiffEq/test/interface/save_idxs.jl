@@ -23,7 +23,7 @@ const prob_inplace = DDEProblem(
 
 const alg = MethodOfSteps(BS3())
 
-@testset for prob in (prob_notinplace, prob_inplace)
+@testset "iip: $(isinplace(prob))" for prob in (prob_notinplace, prob_inplace)
     # reference solution
     dde_int = init(prob, alg)
     sol = solve!(dde_int)
