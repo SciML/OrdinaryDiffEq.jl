@@ -15,7 +15,7 @@ function coefficients_as_in_tableau(A, b, c, tab)
         bb = b[1:(end - 1)]
         cc = c[1:(end - 1)]
     end
-    AA, bb, cc
+    return AA, bb, cc
 end
 
 function ode_tableau_tests(T)
@@ -127,7 +127,7 @@ function ode_tableau_tests(T)
         @test cc ≈ tab.c
     end
 
-    let erk = RKO65()
+    return let erk = RKO65()
         A, b, c = deduce_Butcher_tableau(erk)
         tab = constructRKO65()
         AA = A[2:end, 2:end]
