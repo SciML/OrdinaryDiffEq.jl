@@ -2,6 +2,7 @@ using Test
 using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes,
     StaticArrays
 using SciMLSensitivity  # Loaded so Mooncake can dispatch through SciMLSensitivityMooncakeExt
+using OrdinaryDiffEqSDIRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock
 import DifferentiationInterface as DI
 using Mooncake  # Load Mooncake after DI to ensure extension is loaded
 
