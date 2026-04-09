@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 using OrdinaryDiffEqBDF, OrdinaryDiffEqIMEXMultistep, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqSDIRK, OrdinaryDiffEqStabilizedIRK
+using OrdinaryDiffEqNonlinearSolve
 testTol = 0.2
 
 Random.seed!(100)
@@ -58,7 +59,7 @@ sim = test_convergence(dts, prob, CFNLIRK3())
 @test sim.𝒪est[:l∞] ≈ 3 atol = testTol
 
 sol = solve(
-    prob, KenCarp3(nlsolve = OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve.NLFunctional())
+    prob, KenCarp3(nlsolve = OrdinaryDiffEqNonlinearSolve.NLFunctional())
 )
 dts = 1 .// 2 .^ (8:-1:4)
 sim = test_convergence(dts, prob, KenCarp3())
