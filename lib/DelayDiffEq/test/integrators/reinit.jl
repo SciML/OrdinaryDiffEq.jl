@@ -7,7 +7,7 @@ const prob_scalar = prob_dde_constant_1delay_scalar
 
 const alg = MethodOfSteps(BS3(); constrained = false)
 
-@testset for inplace in (true, false)
+@testset "iip: $inplace" for inplace in (true, false)
     prob = inplace ? prob_ip : prob_scalar
 
     @testset "integrator" begin
