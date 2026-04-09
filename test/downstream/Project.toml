@@ -5,6 +5,13 @@ Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
 Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqFeagin = "101fe9f7-ebb6-4678-b671-3a81e7194747"
+OrdinaryDiffEqHighOrderRK = "d28bc4f8-55e1-4f49-af69-84c1a99f0f58"
+OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
+OrdinaryDiffEqLowStorageRK = "b0944070-b475-4768-8dec-fb6eb410534d"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+OrdinaryDiffEqSSPRK = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 
@@ -15,8 +22,22 @@ Enzyme = "0.13"
 FiniteDiff = "2.27"
 Measurements = "2.9"
 OrdinaryDiffEq = "6, 7"
+OrdinaryDiffEqFeagin = "1"
+OrdinaryDiffEqHighOrderRK = "1"
+OrdinaryDiffEqLowOrderRK = "1"
+OrdinaryDiffEqLowStorageRK = "1"
+OrdinaryDiffEqRosenbrock = "1"
+OrdinaryDiffEqSDIRK = "1"
+OrdinaryDiffEqSSPRK = "1"
 StaticArrays = "1"
 StochasticDiffEq = "6.60.1"
 
 [sources]
 OrdinaryDiffEq = {path = "../../"}
+OrdinaryDiffEqFeagin = {path = "../../lib/OrdinaryDiffEqFeagin"}
+OrdinaryDiffEqHighOrderRK = {path = "../../lib/OrdinaryDiffEqHighOrderRK"}
+OrdinaryDiffEqLowOrderRK = {path = "../../lib/OrdinaryDiffEqLowOrderRK"}
+OrdinaryDiffEqLowStorageRK = {path = "../../lib/OrdinaryDiffEqLowStorageRK"}
+OrdinaryDiffEqRosenbrock = {path = "../../lib/OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqSDIRK = {path = "../../lib/OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqSSPRK = {path = "../../lib/OrdinaryDiffEqSSPRK"}

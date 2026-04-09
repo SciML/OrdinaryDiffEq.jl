@@ -6,8 +6,6 @@ module OrdinaryDiffEq
 import DocStringExtensions
 
 # Load packages (no blanket @reexport)
-using OrdinaryDiffEqCore
-using OrdinaryDiffEqDefault
 
 # Import specific algorithms from OrdinaryDiffEqDefault's dependencies
 using OrdinaryDiffEqTsit5: Tsit5, AutoTsit5
@@ -24,17 +22,17 @@ using SciMLBase: SciMLBase,
     DAEProblem, DAEFunction, DAESolution,
     CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
     ReturnCode, set_proposed_dt!,
-    remake, successful_retcode, reinit!
+    remake, successful_retcode, reinit!,
+    u_modified!, add_tstop!, ODEAliasSpecifier
 
 # Import ADTypes for autodiff specification
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
 
 # Import from OrdinaryDiffEqCore
-using OrdinaryDiffEqCore: OrdinaryDiffEqCore,
-    CompositeAlgorithm, AutoSwitch
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore
 
 # Import from OrdinaryDiffEqDefault
-using OrdinaryDiffEqDefault: DefaultODEAlgorithm, DefaultImplicitODEAlgorithm
+using OrdinaryDiffEqDefault: DefaultODEAlgorithm
 
 import CommonSolve: init, solve, solve!, step!
 
