@@ -387,9 +387,13 @@ function alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
 end
 alg_order(alg::CompositeAlgorithm) = maximum(alg_order, alg.algs)
 
-function get_current_alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm,
-        StochasticDiffEqAlgorithm,
-        StochasticDiffEqRODEAlgorithm}, cache)
+function get_current_alg_order(
+        alg::Union{
+            OrdinaryDiffEqAlgorithm, DAEAlgorithm,
+            StochasticDiffEqAlgorithm,
+            StochasticDiffEqRODEAlgorithm,
+        }, cache
+    )
     return alg_order(alg)
 end
 function get_current_alg_order(alg::CompositeAlgorithm, cache)
