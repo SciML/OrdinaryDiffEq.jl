@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqHighOrderRK
+using OrdinaryDiffEqSSPRK, OrdinaryDiffEqRosenbrock
 
 function test_ode(u, p, t)
     return [p[1] - (1 - p[1]) * u[1]]

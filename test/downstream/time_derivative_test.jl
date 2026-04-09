@@ -1,4 +1,7 @@
 using OrdinaryDiffEq, StaticArrays, Test, ADTypes
+using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqSSPRK
+using OrdinaryDiffEqLowStorageRK, OrdinaryDiffEqFeagin
+using OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 
 adchoices = if isempty(VERSION.prerelease)
     using Enzyme
