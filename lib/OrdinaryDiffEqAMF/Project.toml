@@ -1,0 +1,25 @@
+name = "OrdinaryDiffEqAMF"
+uuid = "08082164-f6a1-4363-b3df-3aa6fcf571ad"
+authors = ["Utkarsh <rajpututkarsh530@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
+
+[compat]
+julia = "1"
+
+[sources.OrdinaryDiffEqCore]
+path = "../OrdinaryDiffEqCore"
+
+[extras]
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["OrdinaryDiffEqRosenbrock", "Test"]
