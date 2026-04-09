@@ -1467,7 +1467,7 @@ function perform_step!(
                             end
                         end
                     end
-                    end
+                end
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
@@ -1573,7 +1573,7 @@ function perform_step!(
                             end
                         end
                     end
-                    end
+                end
             end
         end
     end
@@ -1849,7 +1849,7 @@ function perform_step!(
                             end
                         end
                     end
-                    end
+                end
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
@@ -1900,7 +1900,7 @@ function perform_step!(
                             end
                         end
                     end
-                    end
+                end
             end
         end
     end
@@ -2668,7 +2668,7 @@ function perform_step!(
                             diff1 = u_temp3 - u_temp4
                         end
                     end
-                    end
+                end
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
@@ -2723,7 +2723,7 @@ function perform_step!(
                             diff1 = u_temp3 - u_temp4
                         end
                     end
-                    end
+                end
             end
         end
     end
@@ -3102,7 +3102,7 @@ function perform_step!(
                                 u_temp4[Threads.threadid()]
                         end
                     end
-                    end
+                end
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
@@ -3188,7 +3188,7 @@ function perform_step!(
                             @.. broadcast = false diff1[tid] = u_temp3[tid] - u_temp4[tid]
                         end
                     end
-                    end
+                end
             end
         end
     end
@@ -3488,7 +3488,7 @@ function perform_step!(
                             diff1 = u_temp3 - u_temp4
                         end
                     end
-                    end
+                end
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
@@ -3541,7 +3541,7 @@ function perform_step!(
                             diff1 = u_temp3 - u_temp4
                         end
                     end
-                    end
+                end
             end
         end
     end
@@ -3916,7 +3916,7 @@ function perform_step!(
                                 u_temp4[Threads.threadid()]
                         end
                     end
-                    end
+                end
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
@@ -4024,7 +4024,7 @@ function perform_step!(
                                 u_temp4[Threads.threadid()]
                         end
                     end
-                    end
+                end
             end
         end
     end
