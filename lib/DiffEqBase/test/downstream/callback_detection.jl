@@ -59,8 +59,8 @@ using OrdinaryDiffEq
 end
 
 @testset "Successive same event detection" begin
-    @testset for affect_integrator in [false, true]
-        @testset for tdir in [1, -1]
+    @testset "affect_integrator: affect_integrator" for affect_integrator in [false, true]
+        @testset "tdir: $tdir" for tdir in [1, -1]
             poly(t) = (t - 0.1) * (t - 0.4) * (t - 0.8)
             function affect!(integrator, index = 1)
                 push!(record, tdir * integrator.t)

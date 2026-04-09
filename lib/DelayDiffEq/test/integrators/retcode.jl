@@ -8,7 +8,7 @@ using SciMLBase: ReturnCode
 
 const prob = prob_dde_constant_1delay_ip
 
-@testset for composite in (true, false)
+@testset "composite: $composite" for composite in (true, false)
     alg = MethodOfSteps(
         composite ? AutoTsit5(Rosenbrock23()) : Tsit5();
         constrained = false
