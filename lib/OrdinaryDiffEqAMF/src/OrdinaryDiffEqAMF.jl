@@ -16,7 +16,6 @@ include("amf.jl")
 export AMF
 export SciMLOpFactorization
 export AMFOperator
-export split_jacobian_operator
 export build_amf_function
 
 end # module OrdinaryDiffEqAMF

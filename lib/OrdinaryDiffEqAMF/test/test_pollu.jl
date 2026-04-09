@@ -164,43 +164,35 @@ function setup_pollu_problem()
     ref_func = ODEFunction{true, SciMLBase.FullSpecialize}(f!; jac = fjac)
     ref_prob = ODEProblem(ref_func, u0, tspan)
 
-    amf_func = build_amf_function(f!; n = N, jac_upper = fjac_upper, jac_lower = fjac_lower)
-    amf_prob = ODEProblem(amf_func, u0, tspan)
-
     J1_op = MatrixOperator(UpperTriangular(zeros(N, N)); update_func! = fjac_upper)
     J2_op = MatrixOperator(LowerTriangular(zeros(N, N)); update_func! = fjac_lower)
     J_op = cache_operator(J1_op + J2_op, zeros(N^2))
-    W_op = cache_operator(
-        AMFOperator(
-            UpperTriangular(zeros(N, N)),
-            LowerTriangular(zeros(N, N)),
-            fjac_upper,
-            fjac_lower,
-        ), zeros(N)
-    )
-    amf_func_direct = ODEFunction(f!; jac_prototype = J_op, W_prototype = W_op)
-    amf_prob_direct = ODEProblem(amf_func_direct, u0, tspan)
 
-    return ref_prob, amf_prob, amf_prob_direct
+    amf_func = build_amf_function(f!; jac = J_op, split = (J1_op, J2_op))
+    amf_prob = ODEProblem(amf_func, u0, tspan)
+
+    exact_w_func = build_amf_function(f!; jac = J_op)
+    exact_w_prob = ODEProblem(exact_w_func, u0, tspan)
+
+    return ref_prob, amf_prob, exact_w_prob
 end
 
 @testset "AMF POLLU regression" begin
-    ref_prob, amf_prob, amf_prob_direct = setup_pollu_problem()
+    ref_prob, amf_prob, exact_w_prob = setup_pollu_problem()
 
     ref_sol = solve(ref_prob, ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
     amf_sol = solve(amf_prob, AMF(ROS34PW1a); abstol = 1.0e-10, reltol = 1.0e-10)
-    amf_sol_direct = solve(amf_prob_direct, AMF(ROS34PW1a); abstol = 1.0e-10, reltol = 1.0e-10)
+    exact_w_sol = solve(exact_w_prob, AMF(ROS34PW1a); abstol = 1.0e-10, reltol = 1.0e-10)
 
     @test ref_sol.retcode == SciMLBase.ReturnCode.Success
     @test amf_sol.retcode == SciMLBase.ReturnCode.Success
-    @test amf_sol_direct.retcode == SciMLBase.ReturnCode.Success
+    @test exact_w_sol.retcode == SciMLBase.ReturnCode.Success
 
-    # Both AMF construction paths should be numerically equivalent.
-    @test isapprox(amf_sol.u[end], amf_sol_direct.u[end]; rtol = 1.0e-12, atol = 1.0e-12)
-
-    # AMF is approximate but should remain close to exact-Jacobian reference.
     relerr = norm(amf_sol.u[end] - ref_sol.u[end]) / norm(ref_sol.u[end])
     @test relerr < 1.0e-3
+
+    exact_w_relerr = norm(exact_w_sol.u[end] - ref_sol.u[end]) / norm(ref_sol.u[end])
+    @test exact_w_relerr < 1.0e-10
 
     amf_sol_tight = solve(amf_prob, AMF(ROS34PW1a); abstol = 1.0e-8, reltol = 1.0e-8)
     ref_sol_tight = solve(ref_prob, ROS34PW1a(); abstol = 1.0e-8, reltol = 1.0e-8)

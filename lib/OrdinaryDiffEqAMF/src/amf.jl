@@ -9,12 +9,17 @@ automatically uses `SciMLOpFactorization()` as the linear solver, so that the
 concretized into a dense matrix.
 
 The ODEFunction must be built with `build_amf_function` (or manually with
-`jac_prototype` and `W_prototype` SciMLOperators).
+`jac_prototype` and `W_prototype` SciMLOperators). Use `split = (...)` for the
+standard AMF product, or `amf_factors = (...)` when you want to supply custom
+structured AMF factors directly.
 
 # Usage
 
 ```julia
-func = build_amf_function(f!; n = 20, jac_upper = fjac_upper, jac_lower = fjac_lower)
+J1_op = MatrixOperator(UpperTriangular(zeros(20, 20)); update_func! = fjac_upper)
+J2_op = MatrixOperator(LowerTriangular(zeros(20, 20)); update_func! = fjac_lower)
+J_op = cache_operator(J1_op + J2_op, zeros(20^2))
+func = build_amf_function(f!; jac = J_op, split = (J1_op, J2_op))
 prob = ODEProblem(func, u0, tspan)
 sol = solve(prob, AMF(ROS34PW1a))
 ```
