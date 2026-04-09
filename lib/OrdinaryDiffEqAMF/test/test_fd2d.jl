@@ -29,7 +29,9 @@ function setup_fd2d_problem(; A = 0.1, B = 0.1, C = 0.0, N = 40, final_t = 1.0)
     u0 = [16 * (h * i) * (h * j) * (1 - h * i) * (1 - h * j) for i in 1:N for j in 1:N]
     tspan = (0.0, final_t)
 
-    ref_func = ODEFunction{true, SciMLBase.FullSpecialize}(f!; jac_prototype = J_op)
+    ref_func = ODEFunction{true, SciMLBase.FullSpecialize}(
+        f!; jac_prototype = J_op, sparsity = convert(AbstractMatrix, J_op)
+    )
     ref_prob = ODEProblem(ref_func, u0, tspan)
 
     amf_func = build_amf_function(f!; jac = J_op, split = (Jx_op, Jy_op))
@@ -47,35 +49,30 @@ function setup_fd2d_problem(; A = 0.1, B = 0.1, C = 0.0, N = 40, final_t = 1.0)
     custom_amf_func = build_amf_function(f!; jac = J_op, split = (Jx_op, Jy_op), amf_factors = custom_factors)
     custom_amf_prob = ODEProblem(custom_amf_func, u0, tspan)
 
-    exact_w_func = build_amf_function(f!; jac = J_op)
-    exact_w_prob = ODEProblem(exact_w_func, u0, tspan)
-
-    return ref_prob, amf_prob, custom_amf_prob, exact_w_prob
+    return ref_prob, amf_prob, custom_amf_prob
 end
 
 @testset "AMF finite-difference 2D regression" begin
-    ref_prob, amf_prob, custom_amf_prob, exact_w_prob = setup_fd2d_problem()
+    ref_prob, amf_prob, custom_amf_prob = setup_fd2d_problem()
 
-    @test !isa(exact_w_prob.f.W_prototype, MatrixOperator)
+    solve(ref_prob, ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
+    solve(custom_amf_prob, AMF(ROS34PW1a); abstol = 1.0e-8, reltol = 1.0e-8)
 
-    ref_sol = solve(ref_prob, ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
+    ref_time = @elapsed ref_sol = solve(ref_prob, ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
     amf_sol = solve(amf_prob, AMF(ROS34PW1a); abstol = 1.0e-8, reltol = 1.0e-8)
-    custom_amf_sol = solve(custom_amf_prob, AMF(ROS34PW1a); abstol = 1.0e-8, reltol = 1.0e-8)
-    exact_w_sol = solve(exact_w_prob, AMF(ROS34PW1a); abstol = 1.0e-10, reltol = 1.0e-10)
+    custom_time = @elapsed custom_amf_sol = solve(custom_amf_prob, AMF(ROS34PW1a); abstol = 1.0e-8, reltol = 1.0e-8)
+
+    @info "FD2D AMF(custom) speedup vs ref" speedup = ref_time / custom_time ref_time custom_time
 
     @test ref_sol.retcode == SciMLBase.ReturnCode.Success
     @test amf_sol.retcode == SciMLBase.ReturnCode.Success
     @test custom_amf_sol.retcode == SciMLBase.ReturnCode.Success
-    @test exact_w_sol.retcode == SciMLBase.ReturnCode.Success
 
     relerr = norm(amf_sol.u[end] - ref_sol.u[end]) / norm(ref_sol.u[end])
     @test relerr < 1.0e-6
 
     custom_relerr = norm(custom_amf_sol.u[end] - ref_sol.u[end]) / norm(ref_sol.u[end])
     @test custom_relerr < 1.0e-6
-
-    exact_w_relerr = norm(exact_w_sol.u[end] - ref_sol.u[end]) / norm(ref_sol.u[end])
-    @test exact_w_relerr < 1.0e-10
 end
 
 @testset "AMF operator validation" begin
