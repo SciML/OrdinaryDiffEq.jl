@@ -21,7 +21,7 @@ const probs = Dict(
 # we test the current handling of units for regressions
 # however, it is broken upstream: https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/issues/828
 
-@testset for inplace in (true, false)
+@testset "iip: $inplace" for inplace in (true, false)
     prob = probs[inplace]
 
     alg = MethodOfSteps(
