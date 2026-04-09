@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, LinearAlgebra, Test
-using OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqNonlinearSolve
 
 function dynamics!(dx, x, θ, t)
     zmin, zmax, M, g = θ
