@@ -11,7 +11,7 @@ f_scalar(u, h, p, t) = p[1] * u * (1 - h(p, t - 1))
 # simple history function
 h(p, t; idxs = nothing) = 0.1
 
-@testset for inplace in (true, false)
+@testset "iip: $inplace" for inplace in (true, false)
     # define problem
     # we specify order_discontinuity_t0 = 1 to indicate that the discontinuity at
     # t = 0 is of first order
