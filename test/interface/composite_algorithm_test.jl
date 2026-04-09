@@ -1,7 +1,8 @@
 using OrdinaryDiffEq, OrdinaryDiffEqCore, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 using DiffEqDevTools, ADTypes
-using OrdinaryDiffEqAdamsBashforthMoulton, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqExplicitTableaus, OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqAdamsBashforthMoulton, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqRosenbrock
+import OrdinaryDiffEqExplicitTableaus
 using OrdinaryDiffEqCore: CompositeAlgorithm
 
 prob = prob_ode_2Dlinear
@@ -85,7 +86,7 @@ sol = solve(prob, alg = AutoVern7(Rodas5()))
 
 sol = solve(
     prob,
-    alg = OrdinaryDiffEqCore.AutoAlgSwitch(ExplicitRK(Verner7()), Rodas5())
+    alg = OrdinaryDiffEqCore.AutoAlgSwitch(ExplicitRK(OrdinaryDiffEqExplicitTableaus.Verner7()), Rodas5())
 )
 @test sol.t[end] == 1000.0
 
