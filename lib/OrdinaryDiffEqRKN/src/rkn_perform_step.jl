@@ -382,4 +382,3 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 end
-
