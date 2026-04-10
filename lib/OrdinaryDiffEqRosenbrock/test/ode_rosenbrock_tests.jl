@@ -114,7 +114,8 @@ end
                 autodiff = AutoEnzyme(
                     mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const
                 ), linsolve = LinearSolve.KrylovJL()
-            )
+            ),
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
@@ -160,7 +161,8 @@ end
                     mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const
                 ),
                 linsolve = LinearSolve.KrylovJL()
-            )
+            ),
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
@@ -208,7 +210,8 @@ end
                     mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const
                 ),
                 linsolve = LinearSolve.KrylovJL()
-            )
+            ),
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
@@ -669,7 +672,8 @@ end
                     mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const
                 ),
                 linsolve = LinearSolve.KrylovJL()
-            )
+            ),
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
@@ -717,7 +721,8 @@ end
                     mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const
                 ),
                 linsolve = LinearSolve.KrylovJL()
-            )
+            ),
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
@@ -1006,7 +1011,8 @@ end
                 ),
                 linsolve = LinearSolve.KrylovJL()
             ),
-            dense_errors = true
+            dense_errors = true,
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
         @test sim.𝒪est[:L2] ≈ 5 atol = testTol
@@ -1019,7 +1025,8 @@ end
                 ),
                 linsolve = LinearSolve.KrylovJL_GMRES()
             ),
-            dense_errors = true
+            dense_errors = true,
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
         @test sim.𝒪est[:L2] ≈ 5 atol = testTol
@@ -1061,7 +1068,8 @@ end
     testTol = 0.2
     # Check convergence of Rodas3 with time-dependent matrix-free Jacobian.
     # Primarily to check that the Jacobian is being updated correctly as t changes.
-    sim = test_convergence(dts, prob, Rodas3(linsolve = LinearSolve.KrylovJL()))
+    sim = test_convergence(dts, prob, Rodas3(linsolve = LinearSolve.KrylovJL()),
+        reltol = 1.0e-14, abstol = 1.0e-14)
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 end
 
