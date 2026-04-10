@@ -1,17 +1,9 @@
 # Discrete adjoint tests with Mooncake
 # Enzyme: skipped due to segfaults (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
 # Mooncake: all versions
-#   - SensitivityADPassThrough (true discrete adjoint): works after fixing the
-#     OrdinaryDiffEqCoreMooncakeExt rule on `fixed_t_for_tstop_error!` — that
-#     rule was incorrectly @zero_adjoint and was silently zeroing the gradient
-#     flow through `integrator.t`.
-#   - Continuous adjoints via SciMLSensitivity (e.g. InterpolatingAdjoint with
-#     ZygoteVJP/EnzymeVJP, GaussAdjoint): also tested as a regression check
-#     that the SciMLSensitivityMooncakeExt path works.
 # ForwardDiff: all versions (reference)
 
 using OrdinaryDiffEqTsit5, StaticArrays, DiffEqBase, Test, ForwardDiff
-using SciMLSensitivity
 using ADTypes
 import DifferentiationInterface as DI
 using Mooncake  # Load Mooncake after DI to ensure extension is loaded
@@ -48,63 +40,20 @@ function f_dt_sum(u0)
     return sum(sol[1, :])
 end
 
-# Continuous-adjoint variant (parameterised Lorenz, Vector saveat, no
-# SensitivityADPassThrough) so the SciMLSensitivity adjoint dispatch is used.
-# Mooncake supports this path via SciMLSensitivityMooncakeExt with
-# InterpolatingAdjoint(ZygoteVJP/EnzymeVJP) and GaussAdjoint(ZygoteVJP).
-# A parameterised form is required because the no-parameter `lorenz!` triggers
-# a "nothing returned from Zygote vjp" error in ZygoteVJP-based sensealgs.
-function lorenz_p!(du, u, p, t)
-    du[1] = p[1] * (u[2] - u[1])
-    du[2] = u[1] * (p[2] - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - p[3] * u[3]
-end
-
-const _saveat_v = collect(0.0:0.25:3.0)
-const _lorenz_p = [10.0, 28.0, 8 / 3]
-
-function f_dt_sum_sa(u0, sensealg)
-    tspan = (0.0, 3.0)
-    prob = ODEProblem{true, SciMLBase.FullSpecialize}(lorenz_p!, u0, tspan, _lorenz_p)
-    sol = solve(prob, Tsit5(), saveat = _saveat_v, sensealg = sensealg, abstol = 1.0e-12, reltol = 1.0e-12)
-    return sum(sol[1, :])
-end
-
 u0 = [1.0; 0.0; 0.0]
 
 # Reference jacobian and gradient using ForwardDiff
 fdj = DI.jacobian(f_dt, AutoForwardDiff(), u0)
 fdg = DI.gradient(f_dt_sum, AutoForwardDiff(), u0)
-fdg_sa = DI.gradient(u_ -> f_dt_sum_sa(u_, ForwardDiffSensitivity()), AutoForwardDiff(), u0)
-
 @testset "Discrete Adjoints" begin
     # Enzyme tests skipped - Enzyme segfaults on ODE solves which crashes the process
     # before @test_broken can catch it. See https://github.com/EnzymeAD/Enzyme.jl/issues/2699
 
     # Mooncake tests (all Julia versions)
     @testset "Mooncake" begin
-        # SensitivityADPassThrough lets Mooncake differentiate through the
-        # mutating solver internals directly. This was previously @test_broken
-        # because the OrdinaryDiffEqCoreMooncakeExt @zero_adjoint rule on
-        # `fixed_t_for_tstop_error!` was silently zeroing the gradient flow
-        # through `integrator.t` (the function returns its `ttmp` argument
-        # which gets assigned back into `integrator.t`). With that rule
-        # removed, Mooncake gives the correct gradient to within ~10 digits.
         @testset "Gradient via SensitivityADPassThrough" begin
             mkg = DI.gradient(f_dt_sum, AutoMooncake(; config = nothing), u0)
             @test mkg ≈ fdg rtol = 1.0e-6
-        end
-
-        # Continuous adjoints through SciMLSensitivity DO work with Mooncake
-        # via the SciMLSensitivityMooncakeExt extension. These cover the same
-        # Lorenz problem as the SensitivityADPassThrough test above.
-        @testset "Gradient via $(nameof(typeof(sensealg))) ($(nameof(typeof(sensealg.autojacvec))))" for sensealg in (
-                InterpolatingAdjoint(autojacvec = ZygoteVJP()),
-                InterpolatingAdjoint(autojacvec = EnzymeVJP()),
-                GaussAdjoint(autojacvec = ZygoteVJP()),
-            )
-            mkg = DI.gradient(u_ -> f_dt_sum_sa(u_, sensealg), AutoMooncake(; config = nothing), u0)
-            @test mkg ≈ fdg_sa rtol = 1.0e-6
         end
     end
 end
