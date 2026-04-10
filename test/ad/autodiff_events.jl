@@ -1,6 +1,9 @@
 # Version-dependent AD backend selection
 # Enzyme/Zygote: Julia <= 1.11 only (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
-# Mooncake: gradient support for ODE solves is currently broken (see discrete_adjoints.jl)
+# Mooncake: works on all Julia versions for the ForwardDiffSensitivity-based
+#   gradient tests below via SciMLSensitivityMooncakeExt. Mooncake does NOT
+#   support ReverseDiffAdjoint (TypeError on the ODESolution CoDual), so the
+#   ReverseDiffAdjoint-based gradient tests are not run with Mooncake.
 # ForwardDiff: all versions
 
 const JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE = VERSION < v"1.12" && isempty(VERSION.prerelease)
@@ -9,6 +12,7 @@ using SciMLSensitivity
 using OrdinaryDiffEq, OrdinaryDiffEqCore, FiniteDiff, Test
 using ADTypes
 import DifferentiationInterface as DI
+using Mooncake  # Load Mooncake after DI to ensure extension is loaded
 
 # Load version-dependent packages
 if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
@@ -17,8 +21,11 @@ if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
     get_gradient_backends() = [AutoZygote()]
     get_jacobian_backends() = [AutoForwardDiff()]
 else
-    # On Julia 1.12+, skip gradient tests since Zygote/Enzyme aren't available
-    # and Mooncake gradient support for ODE solves is broken
+    # On Julia 1.12+, Zygote/Enzyme aren't available; the gradient_backends list
+    # is empty here because the existing gradient testset exercises sensealgs
+    # (ReverseDiffAdjoint, PIDController, ...) that Mooncake does not support.
+    # Mooncake-specific gradient tests for the sensealgs Mooncake DOES support
+    # are added in a separate testset below.
     get_gradient_backends() = []
     get_jacobian_backends() = [AutoForwardDiff()]
 end
@@ -139,4 +146,25 @@ if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
             g ≈ findiff[2, 1:2]
         )
     end
+end
+
+# Mooncake gradient tests (all Julia versions). Only the sensealgs Mooncake
+# actually supports are exercised here:
+#   - ForwardDiffSensitivity: works for the standard, IController, and
+#     PredictiveController/TRBDF2 cases.
+#   - ReverseDiffAdjoint, PI/PIDController-driven solves: NOT exercised because
+#     Mooncake currently throws a TypeError on the resulting ODESolution CoDual.
+@testset "Mooncake gradient tests" begin
+    backend = AutoMooncake(; config = nothing)
+    g1 = DI.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), backend, p)
+    g6 = DI.gradient(
+        θ -> test_f2(
+            θ, ForwardDiffSensitivity(),
+            OrdinaryDiffEqCore.PredictiveController(), TRBDF2()
+        ),
+        backend,
+        p
+    )
+    @test g1 ≈ findiff[2, 1:2] rtol = 1.0e-5
+    @test g6 ≈ findiff[2, 1:2] rtol = 1.0e-5
 end
