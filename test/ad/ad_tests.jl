@@ -1,7 +1,9 @@
 using Test
 using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes,
     StaticArrays
+using SciMLSensitivity  # Loaded so Mooncake can dispatch through SciMLSensitivityMooncakeExt
 import DifferentiationInterface as DI
+using Mooncake  # Load Mooncake after DI to ensure extension is loaded
 
 # Version-dependent AD backend selection via DifferentiationInterface
 # Zygote: Julia <= 1.11 only
@@ -16,7 +18,10 @@ const JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE = VERSION < v"1.12" && isempty(VERSION.
 const JULIA_VERSION_ENZYME_NO_SEGFAULT = VERSION >= v"1.11" && VERSION < v"1.12" && isempty(VERSION.prerelease)
 
 # Load version-dependent packages and define helpers
-# Note: Mooncake gradient support for ODE solves is currently broken (see discrete_adjoints.jl)
+# Note: Mooncake works for parameter gradients with default sensealg on simple
+# ODEs (used in the multi-backend test below). Mooncake does NOT work with
+# SensitivityADPassThrough or with closure-captured ODE definitions
+# (see discrete_adjoints.jl and the closure-based tests in this file).
 # Note: Enzyme requires set_runtime_activity for functions with internal closures that capture
 # external variables (throws EnzymeRuntimeActivityError otherwise)
 if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
@@ -453,7 +458,10 @@ end ≈ [6.765310476296564]
 
 # Test with multiple AD backends
 # Note: Enzyme reverse mode through ODE solve requires SciMLSensitivity for adjoint methods.
-# ForwardDiff works without SciMLSensitivity, so we only test ForwardDiff here.
+# ForwardDiff works without SciMLSensitivity, so we test ForwardDiff here.
+# Mooncake works on all Julia versions for this simple parameter-gradient case
+# via the SciMLSensitivityMooncakeExt extension (SciMLSensitivity is loaded
+# at the top of this file).
 @testset "DifferentiationInterface multi-backend tests" begin
     # Simple ODE for testing
     function simple_ode!(du, u, p, t)
@@ -473,6 +481,11 @@ end ≈ [6.765310476296564]
     # ForwardDiff works without SciMLSensitivity
     grad = DI.gradient(loss_fn, AutoForwardDiff(), p_test)
     @test grad ≈ ref_grad rtol = 1.0e-6
+
+    # Mooncake works for this case (parameter gradient through a simple
+    # in-place ODE with default sensealg dispatch).
+    grad_mc = DI.gradient(loss_fn, AutoMooncake(; config = nothing), p_test)
+    @test grad_mc ≈ ref_grad rtol = 1.0e-6
 end
 
 # Tests migrated from DiffEqBase downstream to cover complex numbers, StaticArrays,
