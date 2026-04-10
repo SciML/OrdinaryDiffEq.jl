@@ -11,6 +11,7 @@ const JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE = VERSION < v"1.12" && isempty(VERSION.
 using SciMLSensitivity
 using OrdinaryDiffEq, OrdinaryDiffEqCore, FiniteDiff, Test
 using OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqCore: IController, PIController, PIDController
 using ADTypes
 import DifferentiationInterface as DI
 using Mooncake  # Load Mooncake after DI to ensure extension is loaded
