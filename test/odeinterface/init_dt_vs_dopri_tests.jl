@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test,
     ODEInterface, ODEInterfaceDiffEq
+using OrdinaryDiffEqLowOrderRK: DP5
 
 import ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
