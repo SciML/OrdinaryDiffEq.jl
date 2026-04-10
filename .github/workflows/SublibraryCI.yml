@@ -68,7 +68,16 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v3
+      # Same workaround as CI.yml: only write the cache from master pushes
+      # to avoid the Azure SAS auth failure storm during PR matrix uploads.
+      # SublibraryCI's matrix shape is dynamic (group/version/runner/timeout/
+      # num_threads), so we don't try to construct a restore-only key for
+      # PRs here — PRs simply skip the cache. This workflow only fires when
+      # files in lib/ change, so the lost cache hit on PRs is small.
+      - name: Cache Julia depot (push only)
+        if: github.event_name == 'push'
+        uses: julia-actions/cache@v3
+        continue-on-error: true
         with:
           cache-compiled: 'false'
       - uses: julia-actions/julia-buildpkg@v1
