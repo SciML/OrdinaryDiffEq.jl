@@ -76,7 +76,8 @@ end
                     function_annotation = Enzyme.Const
                 ),
                 linsolve = LinearSolve.KrylovJL()
-            )
+            ),
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         @test sim.𝒪est[:final] ≈ 1 atol = testTol
         @test sim.𝒪est[:l2] ≈ 1 atol = testTol
