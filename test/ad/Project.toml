@@ -9,6 +9,7 @@ Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqFIRK = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
+OrdinaryDiffEqLinear = "521117fe-8c41-49f8-b3b6-30780b3f0fb5"
 OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
@@ -21,6 +22,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 OrdinaryDiffEq = {path = "../.."}
 OrdinaryDiffEqCore = {path = "../../lib/OrdinaryDiffEqCore"}
 OrdinaryDiffEqFIRK = {path = "../../lib/OrdinaryDiffEqFIRK"}
+OrdinaryDiffEqLinear = {path = "../../lib/OrdinaryDiffEqLinear"}
 OrdinaryDiffEqLowOrderRK = {path = "../../lib/OrdinaryDiffEqLowOrderRK"}
 OrdinaryDiffEqRosenbrock = {path = "../../lib/OrdinaryDiffEqRosenbrock"}
 OrdinaryDiffEqSDIRK = {path = "../../lib/OrdinaryDiffEqSDIRK"}
@@ -38,6 +40,7 @@ Mooncake = "0.4, 0.5"
 OrdinaryDiffEq = "6, 7"
 OrdinaryDiffEqCore = "3"
 OrdinaryDiffEqFIRK = "1"
+OrdinaryDiffEqLinear = "1"
 OrdinaryDiffEqLowOrderRK = "1"
 OrdinaryDiffEqRosenbrock = "1"
 OrdinaryDiffEqSDIRK = "1"

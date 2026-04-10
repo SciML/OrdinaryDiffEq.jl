@@ -2,11 +2,14 @@
 ODEInterface = "54ca160b-1b9f-5127-a996-1867f4bc2a2c"
 ODEInterfaceDiffEq = "09606e27-ecf5-54fc-bb29-004bd9f985bf"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 
 [compat]
 ODEInterface = "0.5"
 ODEInterfaceDiffEq = "3.13"
 OrdinaryDiffEq = "6, 7"
+OrdinaryDiffEqLowOrderRK = "1"
 
 [sources]
 OrdinaryDiffEq = {path = "../../"}
+OrdinaryDiffEqLowOrderRK = {path = "../../lib/OrdinaryDiffEqLowOrderRK"}
