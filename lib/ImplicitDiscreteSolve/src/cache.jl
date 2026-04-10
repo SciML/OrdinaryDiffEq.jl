@@ -12,25 +12,45 @@ mutable struct IDSolveCache{uType, cType, thetaType} <: OrdinaryDiffEqMutableCac
     Θks::thetaType
 end
 
+# u === nothing path: no state to evolve (e.g. MTK systems with only callbacks).
+# Bypass NonlinearSolve entirely — there is nothing to nonlinear-solve, and
+# constructing a NonlinearProblem with empty u would force the nonlinear
+# solver to handle a degenerate case. Returning a cache with `nlcache=nothing`
+# is dispatched on in `perform_step!` below to make stepping a no-op success.
+function alg_cache(
+        alg::IDSolve, ::Nothing, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return IDSolveCache(nothing, nothing, nothing, nothing, uBottomEltypeNoUnits[])
+end
+function alg_cache(
+        alg::IDSolve, ::Nothing, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return IDSolveCache(nothing, nothing, nothing, nothing, uBottomEltypeNoUnits[])
+end
+
 function alg_cache(
         alg::IDSolve, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
+    state = ImplicitDiscreteState(zero(u), p, t)
     f_nl = (resid, u_next, p) -> f(resid, u_next, p.u, p.p, p.t)
 
-    u_len = isnothing(u) ? 0 : length(u)
-    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != u_len)
-    unl = isnothing(u) ? Float64[] : u # FIXME nonlinear solve cannot handle nothing for u
+    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != length(u))
     prob = if nlls
         NonlinearLeastSquaresProblem{isinplace(f)}(
             NonlinearFunction(f_nl; resid_prototype = f.resid_prototype),
-            unl, state
+            u, state
         )
     else
-        NonlinearProblem{isinplace(f)}(f_nl, unl, state)
+        NonlinearProblem{isinplace(f)}(f_nl, u, state)
     end
 
     nlcache = init(prob, alg.nlsolve)
@@ -46,21 +66,17 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    @assert !isnothing(u) "Empty u not supported with out of place functions yet."
-
-    state = ImplicitDiscreteState(isnothing(u) ? nothing : zero(u), p, t)
+    state = ImplicitDiscreteState(zero(u), p, t)
     f_nl = (u_next, p) -> f(u_next, p.u, p.p, p.t)
 
-    u_len = isnothing(u) ? 0 : length(u)
-    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != u_len)
-    unl = isnothing(u) ? Float64[] : u # FIXME nonlinear solve cannot handle nothing for u
+    nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != length(u))
     prob = if nlls
         NonlinearLeastSquaresProblem{isinplace(f)}(
             NonlinearFunction(f_nl; resid_prototype = f.resid_prototype),
-            unl, state
+            u, state
         )
     else
-        NonlinearProblem{isinplace(f)}(f_nl, unl, state)
+        NonlinearProblem{isinplace(f)}(f_nl, u, state)
     end
 
     nlcache = init(prob, alg.nlsolve)

@@ -88,22 +88,19 @@ if TEST_GROUP != "QA"
     end
 
     @testset "Handle nothing in u0" begin
-        function emptyiip(residual, u_next, u, p, t) # TODO OOP variant does not work yet
-            nothing
-        end
-        function emptyoop(u_next, u, p, t) # TODO OOP variant does not work yet
-            nothing
-        end
+        emptyiip(residual, u_next, u, p, t) = nothing
+        emptyoop(u_next, u, p, t) = nothing
 
         tsteps = 5
         u0 = nothing
+
         idprob = ImplicitDiscreteProblem(emptyiip, u0, (0, tsteps), [])
-        @test_nowarn integ = init(idprob, IDSolve())
+        sol = solve(idprob, IDSolve())
+        @test sol.retcode == ReturnCode.Success
 
         idprob2 = ImplicitDiscreteProblem(emptyoop, u0, (0, tsteps), [])
-        # OOP with u0=nothing throws an error (MethodError or AssertionError depending on
-        # how far the initialization proceeds before encountering undefined operations on Nothing)
-        @test_throws Exception integ = init(idprob2, IDSolve())
+        sol2 = solve(idprob2, IDSolve())
+        @test sol2.retcode == ReturnCode.Success
     end
 
     @testset "Create NonlinearLeastSquaresProblem" begin
