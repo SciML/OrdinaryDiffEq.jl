@@ -54,7 +54,7 @@ using Test
 
         # check number of function evaluations
         @test !iszero(nWfact_ts[])
-        @test_broken nWfact_ts[] == njacs[]
+        @test nWfact_ts[] == njacs[]
         @test iszero(sol_Wfact_t.stats.njacs)
         @test_broken nWfact_ts[] == sol_Wfact_t.stats.nw
 

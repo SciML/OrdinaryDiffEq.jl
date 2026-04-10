@@ -46,6 +46,22 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
         return (true, true)
     end
 
+    # First iteration: always compute J and W.
+    if integrator.iter <= 1
+        return (true, true)
+    end
+
+    # Linear problems: J is the constant linear operator and W wrapping it
+    # doesn't need rebuilding after the first step — SciMLOperators update
+    # W's internal gamma in place. This must come before the non-adaptive,
+    # WOperator, mass-matrix, and composite checks so linear operator ODEs
+    # (e.g. ODEFunction(::MatrixOperator), including with a mass matrix) get
+    # the fast path — matches the pre-reuse `do_newJW` behavior.
+    islin, _ = islinearfunction(integrator)
+    if islin
+        return (false, false)
+    end
+
     # Non-adaptive solves always recompute.
     # J reuse provides negligible benefit with prescribed timesteps and causes
     # IIP/OOP inconsistency (adaptive solves have step rejections that reset
@@ -61,13 +77,6 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
         return (true, true)
     end
 
-    # Linear problems: J is constant, never needs recomputation after first eval.
-    # But W still depends on dtgamma, so always rebuild W.
-    islin, _ = islinearfunction(integrator)
-    if islin
-        return (false, false)
-    end
-
     # Mass matrix (DAE) problems always recompute.
     # Stale Jacobians cause order reduction for DAEs because the algebraic
     # constraint derivatives must remain accurate. See Steinebach (2024).
@@ -78,11 +87,6 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     # CompositeAlgorithm always recomputes.
     # Rapid stiff↔nonstiff transitions make reuse counterproductive.
     if integrator.alg isa CompositeAlgorithm
-        return (true, true)
-    end
-
-    # First iteration: always compute J and W.
-    if integrator.iter <= 1
         return (true, true)
     end
 
