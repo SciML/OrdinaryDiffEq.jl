@@ -154,11 +154,27 @@ end
 #     PredictiveController/TRBDF2 cases.
 #   - ReverseDiffAdjoint, PI/PIDController-driven solves: NOT exercised because
 #     Mooncake currently throws a TypeError on the resulting ODESolution CoDual.
+#
+# `test_f2` returns `sol[end][end]`. The `sol[Int]` rrule in
+# `SciMLBaseMooncakeExt._scatter_pullback` is currently broken: it treats the
+# integer as a variable index, but for `ODESolution` `sol[Int]` returns the
+# state at that time index, leading to a BoundsError. As a workaround we
+# define a Mooncake-only variant that reaches into `sol.u` directly to avoid
+# the SciMLBase getindex rrule entirely.
+function test_f2_mc(p, sensealg, controller = nothing, alg = Tsit5())
+    _prob = remake(prob, p = p)
+    sol = solve(
+        _prob, alg, sensealg = sensealg, controller = controller,
+        abstol = 1.0e-14, reltol = 1.0e-14, callback = cb, save_everystep = false
+    )
+    return sol.u[end][end]
+end
+
 @testset "Mooncake gradient tests" begin
     backend = AutoMooncake(; config = nothing)
-    g1 = DI.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), backend, p)
+    g1 = DI.gradient(θ -> test_f2_mc(θ, ForwardDiffSensitivity()), backend, p)
     g6 = DI.gradient(
-        θ -> test_f2(
+        θ -> test_f2_mc(
             θ, ForwardDiffSensitivity(),
             OrdinaryDiffEqCore.PredictiveController(), TRBDF2()
         ),

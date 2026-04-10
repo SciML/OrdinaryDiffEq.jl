@@ -1,12 +1,13 @@
 # Discrete adjoint tests with Mooncake
 # Enzyme: skipped due to segfaults (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
 # Mooncake: all versions
-#   - SensitivityADPassThrough (true discrete adjoint): broken — Mooncake cannot
-#     differentiate through the mutating solver internals and silently produces
-#     incorrect gradients.
+#   - SensitivityADPassThrough (true discrete adjoint): works after fixing the
+#     OrdinaryDiffEqCoreMooncakeExt rule on `fixed_t_for_tstop_error!` — that
+#     rule was incorrectly @zero_adjoint and was silently zeroing the gradient
+#     flow through `integrator.t`.
 #   - Continuous adjoints via SciMLSensitivity (e.g. InterpolatingAdjoint with
-#     ZygoteVJP/EnzymeVJP, GaussAdjoint): working on all Julia versions, tested
-#     below as a regression check that the SciMLSensitivityMooncakeExt path works.
+#     ZygoteVJP/EnzymeVJP, GaussAdjoint): also tested as a regression check
+#     that the SciMLSensitivityMooncakeExt path works.
 # ForwardDiff: all versions (reference)
 
 using OrdinaryDiffEqTsit5, StaticArrays, DiffEqBase, Test, ForwardDiff
@@ -82,16 +83,16 @@ fdg_sa = DI.gradient(u_ -> f_dt_sum_sa(u_, ForwardDiffSensitivity()), AutoForwar
 
     # Mooncake tests (all Julia versions)
     @testset "Mooncake" begin
-        # SensitivityADPassThrough lets Mooncake try to differentiate through the
-        # mutating solver internals directly. Mooncake currently does not handle
-        # all the in-place mutations correctly and silently produces wrong
-        # gradients (the call succeeds but the result is incorrect), so this is
-        # left as @test_broken.
-        @testset "Gradient via SensitivityADPassThrough (broken)" begin
-            @test_broken begin
-                mkg = DI.gradient(f_dt_sum, AutoMooncake(; config = nothing), u0)
-                mkg ≈ fdg
-            end
+        # SensitivityADPassThrough lets Mooncake differentiate through the
+        # mutating solver internals directly. This was previously @test_broken
+        # because the OrdinaryDiffEqCoreMooncakeExt @zero_adjoint rule on
+        # `fixed_t_for_tstop_error!` was silently zeroing the gradient flow
+        # through `integrator.t` (the function returns its `ttmp` argument
+        # which gets assigned back into `integrator.t`). With that rule
+        # removed, Mooncake gives the correct gradient to within ~10 digits.
+        @testset "Gradient via SensitivityADPassThrough" begin
+            mkg = DI.gradient(f_dt_sum, AutoMooncake(; config = nothing), u0)
+            @test mkg ≈ fdg rtol = 1.0e-6
         end
 
         # Continuous adjoints through SciMLSensitivity DO work with Mooncake
