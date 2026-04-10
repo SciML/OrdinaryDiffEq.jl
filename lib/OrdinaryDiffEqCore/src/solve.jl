@@ -358,7 +358,12 @@ function _ode_init(
 
     if !isdae && isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
             uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
-        rate_prototype = recursivecopy(u)
+        # SDE delegation provides `_cache` and a non-nothing `W`. In that case
+        # `rate_prototype`'s value is unused: only its type is taken downstream,
+        # the alg_cache calls are skipped (cache is provided), get_fsalfirstlast
+        # is short-circuited, and the [rate_prototype] push is gated by
+        # `isnothing(W)` which is false for SDE. Alias instead of allocating.
+        rate_prototype = (_cache !== nothing && W !== nothing) ? u : recursivecopy(u)
     elseif prob isa DAEProblem
         rate_prototype = prob.du0
     else
@@ -489,16 +494,17 @@ function _ode_init(
 
     k = rateType[]
 
-    if uses_uprev(_alg, adaptive) || calck
+    if _uprev !== nothing
+        # SDE delegation provides a pre-built uprev (cache holds references to it).
+        # Use it directly instead of allocating a recursivecopy(u) that would
+        # immediately be discarded.
+        uprev = _uprev
+    elseif uses_uprev(_alg, adaptive) || calck
         uprev = recursivecopy(u)
     else
         # Some algorithms do not use `uprev` explicitly. In that case, we can save
         # some memory by aliasing `uprev = u`, e.g. for "2N" low storage methods.
         uprev = u
-    end
-    # SDE delegation: use pre-built uprev if provided (cache holds references to it)
-    if _uprev !== nothing
-        uprev = _uprev
     end
     if allow_extrapolation
         uprev2 = recursivecopy(u)
