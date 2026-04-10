@@ -2,6 +2,7 @@ using Test
 using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes,
     StaticArrays
 using OrdinaryDiffEqSDIRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqLinear: LinearExponential, MatrixOperator
 import DifferentiationInterface as DI
 
 # Version-dependent AD backend selection via DifferentiationInterface
