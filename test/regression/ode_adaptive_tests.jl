@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test
 using OrdinaryDiffEqBDF, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 import OrdinaryDiffEqExplicitTableaus
 
 import ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
@@ -67,7 +68,7 @@ du0 = [0.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
 prob = DAEProblem(lorenz, du0, u0, tspan, differential_vars = differential_vars)
-sol = solve(prob, DFBDF())
+sol = solve(prob, DFBDF(); initializealg = BrownFullBasicInit())
 @test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)
 
@@ -83,7 +84,7 @@ du0 = [0.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
 prob = DAEProblem{false}(lorenz, du0, u0, tspan, differential_vars = differential_vars)
-sol = solve(prob, DFBDF())
+sol = solve(prob, DFBDF(); initializealg = BrownFullBasicInit())
 @test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)
 
