@@ -201,6 +201,160 @@ function Nystrom5VelocityIndependentTableau(T::Type, T2::Type)
     c = [tab.c1, tab.c2, one(T2)]  # c for stages 2,3,4
     return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
 end
+
+"""
+    NystromVDTableau{T, T2}
+
+Tableau for velocity-dependent Nyström methods.
+Fields:
+- `a`: nstages × nstages lower-triangular position coupling matrix
+- `abar`: nstages × nstages lower-triangular velocity coupling matrix
+- `b`: position update weights (length nstages)
+- `bp`: velocity update weights (length nstages)
+- `btilde`: embedded position error weights (empty if non-adaptive)
+- `bptilde`: embedded velocity error weights (empty if non-adaptive)
+- `c`: time nodes for stages 2..nstages (length nstages-1); c[i] is node for stage i+1
+- `nf_per_step`: number of f1 evaluations to count per step (default = nstages, i.e.,
+  loop stages k2..kN plus fsallast; set to nstages-1 to exclude fsallast from the count)
+"""
+struct NystromVDTableau{T, T2}
+    a::Matrix{T}
+    abar::Matrix{T}
+    b::Vector{T}
+    bp::Vector{T}
+    btilde::Vector{T}
+    bptilde::Vector{T}
+    c::Vector{T2}
+    nf_per_step::Int
+end
+
+function Nystrom4VelocityIndependentTableau(T::Type, T2::Type)
+    # 3 stages, velocity-independent: kᵢ = f1(duprev, kuᵢ, p, t+cᵢ*dt)
+    # Coefficients from perform_step!:
+    #   c = [1/2, 1]; a[2,1]=1/8, a[3,2]=1/2
+    #   b = [1/6, 2/6, 0], bp = [1/6, 4/6, 1/6]
+    nstages = 3
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = convert(T, 1 // 8)
+    a[3, 2] = convert(T, 1 // 2)
+    b = [convert(T, 1 // 6), convert(T, 2 // 6), zero(T)]
+    bp = [convert(T, 1 // 6), convert(T, 4 // 6), convert(T, 1 // 6)]
+    btilde = T[]  # non-adaptive
+    bptilde = T[]
+    c = [convert(T2, 1 // 2), one(T2)]  # c for stages 2,3
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+end
+
+function RKN4Tableau(T::Type, T2::Type)
+    # 3 stages, velocity-dependent
+    # k2 at c[1]=1/2: ku = uprev + dt*(1/2)*duprev + dt²*(1/8)*k1
+    #                 kdu = duprev + dt*(1/2)*k1
+    # k3 at c[2]=1:   ku = uprev + dt*1*duprev + dt²*(1/2)*k2
+    #                 kdu = duprev + dt*1*k2
+    # u = uprev + dt*duprev + dt²*(1/6*k1 + 2/6*k2 + 0*k3)
+    # du = duprev + dt*(1/6*k1 + 4/6*k2 + 1/6*k3)
+    # nf_per_step=2: matches original counting convention (k2+k3 only, not fsallast)
+    nstages = 3
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = convert(T, 1 // 8)
+    a[3, 2] = convert(T, 1 // 2)
+    abar = zeros(T, nstages, nstages)
+    abar[2, 1] = convert(T, 1 // 2)
+    abar[3, 2] = convert(T, 1 // 1)
+    b = [convert(T, 1 // 6), convert(T, 2 // 6), zero(T)]
+    bp = [convert(T, 1 // 6), convert(T, 4 // 6), convert(T, 1 // 6)]
+    btilde = T[]  # non-adaptive
+    bptilde = T[]
+    c = [convert(T2, 1 // 2), one(T2)]  # c for stages 2,3
+    return NystromVDTableau(a, abar, b, bp, btilde, bptilde, c, nstages - 1)
+end
+
+function Nystrom4Tableau(T::Type, T2::Type)
+    # 4 stages, velocity-dependent
+    # From perform_step! Nystrom4ConstantCache:
+    # k2 at c[1]=1/2: ku = uprev + dt*(1/2)*duprev + dt²*(1/8)*k1
+    #                 kdu = duprev + dt*(1/2)*k1
+    # k3 at c[2]=1/2: ku = uprev + dt*(1/2)*duprev + dt²*(1/8)*k1  (same ku as k2!)
+    #                 kdu = duprev + dt*(1/2)*k2
+    # k4 at c[3]=1:   ku = uprev + dt*1*duprev + dt²*(1/2)*k3
+    #                 kdu = duprev + dt*1*k3
+    # u = uprev + dt*duprev + dt²*(1/6*(k1+k2+k3))   [b4=0]
+    # du = duprev + dt*(1/6*(k1+k4) + 2/6*(k2+k3))
+    nstages = 4
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = convert(T, 1 // 8)
+    a[3, 1] = convert(T, 1 // 8)   # a[3,2] = 0
+    a[4, 3] = convert(T, 1 // 2)
+    abar = zeros(T, nstages, nstages)
+    abar[2, 1] = convert(T, 1 // 2)
+    abar[3, 2] = convert(T, 1 // 2)
+    abar[4, 3] = convert(T, 1 // 1)
+    b = [convert(T, 1 // 6), convert(T, 1 // 6), convert(T, 1 // 6), zero(T)]
+    bp = [convert(T, 1 // 6), convert(T, 2 // 6), convert(T, 2 // 6), convert(T, 1 // 6)]
+    btilde = T[]  # non-adaptive
+    bptilde = T[]
+    c = [convert(T2, 1 // 2), convert(T2, 1 // 2), one(T2)]  # c for stages 2,3,4
+    return NystromVDTableau(a, abar, b, bp, btilde, bptilde, c, nstages)
+end
+
+function FineRKN4Tableau(T::Type, T2::Type)
+    tab = FineRKN4ConstantCache(T, T2)
+    # 5 stages, velocity-dependent, adaptive
+    # c for stages 2..5: [c2, c3, c4, c5]
+    nstages = 5
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = tab.a21
+    a[3, 1] = tab.a31; a[3, 2] = tab.a32
+    a[4, 1] = tab.a41; a[4, 3] = tab.a43  # a42 = 0
+    a[5, 1] = tab.a51; a[5, 2] = tab.a52; a[5, 3] = tab.a53; a[5, 4] = tab.a54
+    abar = zeros(T, nstages, nstages)
+    abar[2, 1] = tab.abar21
+    abar[3, 1] = tab.abar31; abar[3, 2] = tab.abar32
+    abar[4, 1] = tab.abar41; abar[4, 2] = tab.abar42; abar[4, 3] = tab.abar43
+    abar[5, 1] = tab.abar51; abar[5, 2] = tab.abar52; abar[5, 3] = tab.abar53; abar[5, 4] = tab.abar54
+    # b2 = 0
+    b = [tab.b1, zero(T), tab.b3, tab.b4, tab.b5]
+    # bbar2 = 0
+    bp = [tab.bbar1, zero(T), tab.bbar3, tab.bbar4, tab.bbar5]
+    # btilde2 = 0
+    btilde = [tab.btilde1, zero(T), tab.btilde3, tab.btilde4, tab.btilde5]
+    # bptilde2 = 0
+    bptilde = [tab.bptilde1, zero(T), tab.bptilde3, tab.bptilde4, tab.bptilde5]
+    c = [tab.c2, tab.c3, tab.c4, tab.c5]  # c for stages 2..5
+    return NystromVDTableau(a, abar, b, bp, btilde, bptilde, c, nstages)
+end
+
+function FineRKN5Tableau(T::Type, T2::Type)
+    tab = FineRKN5ConstantCache(T, T2)
+    # 7 stages, velocity-dependent, adaptive
+    # c for stages 2..7: [c2, c3, c4, c5, c6, c7]
+    nstages = 7
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = tab.a21
+    a[3, 1] = tab.a31; a[3, 2] = tab.a32
+    a[4, 1] = tab.a41; a[4, 3] = tab.a43  # a42 = 0
+    a[5, 1] = tab.a51; a[5, 2] = tab.a52; a[5, 3] = tab.a53; a[5, 4] = tab.a54
+    a[6, 1] = tab.a61; a[6, 2] = tab.a62; a[6, 3] = tab.a63; a[6, 4] = tab.a64  # a65 = 0
+    a[7, 1] = tab.a71; a[7, 3] = tab.a73; a[7, 4] = tab.a74; a[7, 5] = tab.a75  # a72 = a76 = 0
+    abar = zeros(T, nstages, nstages)
+    abar[2, 1] = tab.abar21
+    abar[3, 1] = tab.abar31; abar[3, 2] = tab.abar32
+    abar[4, 1] = tab.abar41; abar[4, 2] = tab.abar42; abar[4, 3] = tab.abar43
+    abar[5, 1] = tab.abar51; abar[5, 2] = tab.abar52; abar[5, 3] = tab.abar53; abar[5, 4] = tab.abar54
+    abar[6, 1] = tab.abar61; abar[6, 2] = tab.abar62; abar[6, 3] = tab.abar63; abar[6, 4] = tab.abar64; abar[6, 5] = tab.abar65
+    abar[7, 1] = tab.abar71; abar[7, 3] = tab.abar73; abar[7, 4] = tab.abar74; abar[7, 5] = tab.abar75; abar[7, 6] = tab.abar76  # abar72 = 0
+    # b2 = b6 = b7 = 0
+    b = [tab.b1, zero(T), tab.b3, tab.b4, tab.b5, zero(T), zero(T)]
+    # bbar2 = bbar7 = 0
+    bp = [tab.bbar1, zero(T), tab.bbar3, tab.bbar4, tab.bbar5, tab.bbar6, zero(T)]
+    # btilde2 = btilde6 = btilde7 = 0
+    btilde = [tab.btilde1, zero(T), tab.btilde3, tab.btilde4, tab.btilde5, zero(T), zero(T)]
+    # bptilde2 = 0; bptilde7 is included
+    bptilde = [tab.bptilde1, zero(T), tab.bptilde3, tab.bptilde4, tab.bptilde5, tab.bptilde6, tab.bptilde7]
+    c = [tab.c2, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7]  # c for stages 2..7
+    return NystromVDTableau(a, abar, b, bp, btilde, bptilde, c, nstages)
+end
+
 struct FineRKN4ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2

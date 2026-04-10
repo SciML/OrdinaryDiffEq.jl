@@ -20,18 +20,24 @@ end
     tab::NystromVITableau{T, T2}
 end
 
-@cache struct Nystrom4Cache{uType, rateType, reducedRateType} <: NystromMutableCache
+## Generic velocity-dependent Nyström caches
+
+struct NystromVDConstantCache{T, T2} <: NystromConstantCache
+    tab::NystromVDTableau{T, T2}
+end
+
+@cache struct NystromVDCache{uType, rateType, reducedRateType, uNoUnitsType, T, T2} <:
+    NystromMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
-    k₂::reducedRateType
-    k₃::reducedRateType
-    k₄::reducedRateType
+    ks::Vector{reducedRateType}   # stage derivatives k2..kN (length nstages-1)
     k::rateType
+    utilde::uType
     tmp::uType
+    atmp::uNoUnitsType
+    tab::NystromVDTableau{T, T2}
 end
-
-# struct Nystrom4ConstantCache <: NystromConstantCache end
 
 function alg_cache(
         alg::Nystrom4, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -40,16 +46,17 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
-    k₁ = zero(rate_prototype)
-    k₂ = zero(reduced_rate_prototype)
-    k₃ = zero(reduced_rate_prototype)
-    k₄ = zero(reduced_rate_prototype)
+    tab = Nystrom4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    nstages = length(tab.b)
+    k1 = zero(rate_prototype)
+    ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
+    utilde = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
     tmp = zero(u)
-    return Nystrom4Cache(u, uprev, k₁, k₂, k₃, k₄, k, tmp)
+    return NystromVDCache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
 end
-
-struct Nystrom4ConstantCache <: NystromConstantCache end
 
 function alg_cache(
         alg::Nystrom4, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -57,25 +64,9 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return Nystrom4ConstantCache()
-end
-
-# alg_cache(alg::Nystrom4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = Nystrom4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-
-@cache struct FineRKN4Cache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <:
-    NystromMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    k2::reducedRateType
-    k3::reducedRateType
-    k4::reducedRateType
-    k5::reducedRateType
-    k::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
-    tab::TabType
+    return NystromVDConstantCache(
+        Nystrom4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    )
 end
 
 function alg_cache(
@@ -85,18 +76,16 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
-    tab = FineRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tab = FineRKN4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    nstages = length(tab.b)
     k1 = zero(rate_prototype)
-    k2 = zero(reduced_rate_prototype)
-    k3 = zero(reduced_rate_prototype)
-    k4 = zero(reduced_rate_prototype)
-    k5 = zero(reduced_rate_prototype)
+    ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
     utilde = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
-    return FineRKN4Cache(u, uprev, k1, k2, k3, k4, k5, k, utilde, tmp, atmp, tab)
+    return NystromVDCache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
 end
 
 function alg_cache(
@@ -105,25 +94,9 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return FineRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-@cache struct FineRKN5Cache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <:
-    NystromMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    k2::reducedRateType
-    k3::reducedRateType
-    k4::reducedRateType
-    k5::reducedRateType
-    k6::reducedRateType
-    k7::reducedRateType
-    k::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
-    tab::TabType
+    return NystromVDConstantCache(
+        FineRKN4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    )
 end
 
 function alg_cache(
@@ -133,20 +106,16 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
-    tab = FineRKN5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tab = FineRKN5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    nstages = length(tab.b)
     k1 = zero(rate_prototype)
-    k2 = zero(reduced_rate_prototype)
-    k3 = zero(reduced_rate_prototype)
-    k4 = zero(reduced_rate_prototype)
-    k5 = zero(reduced_rate_prototype)
-    k6 = zero(reduced_rate_prototype)
-    k7 = zero(reduced_rate_prototype)
+    ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
     utilde = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
-    return FineRKN5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k, utilde, tmp, atmp, tab)
+    return NystromVDCache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
 end
 
 function alg_cache(
@@ -155,7 +124,9 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return FineRKN5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return NystromVDConstantCache(
+        FineRKN5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    )
 end
 
 @cache struct Nystrom4VelocityIndependentCache{uType, rateType, reducedRateType} <:
@@ -176,12 +147,19 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
-    k₁ = zero(rate_prototype)
-    k₂ = zero(reduced_rate_prototype)
-    k₃ = zero(reduced_rate_prototype)
+    tab = Nystrom4VelocityIndependentTableau(
+        constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits)
+    )
+    nstages = length(tab.b)
+    k1 = zero(rate_prototype)
+    ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
+    utilde = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
     tmp = zero(u)
-    return Nystrom4VelocityIndependentCache(u, uprev, k₁, k₂, k₃, k, tmp)
+    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
 end
 
 struct Nystrom4VelocityIndependentConstantCache <: NystromConstantCache end
@@ -192,7 +170,11 @@ function alg_cache(
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return Nystrom4VelocityIndependentConstantCache()
+    tab = Nystrom4VelocityIndependentTableau(
+        constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits)
+    )
+    return NystromVIConstantCache(tab)
 end
 
 @cache struct IRKN3Cache{uType, rateType, TabType} <: NystromMutableCache
@@ -602,16 +584,6 @@ function alg_cache(
     )
 end
 
-@cache struct RKN4Cache{uType, rateType, reducedRateType} <: NystromMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    k₂::reducedRateType
-    k₃::reducedRateType
-    k::rateType
-    tmp::uType
-end
-
 function alg_cache(
         alg::RKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -619,15 +591,17 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
-    k₁ = zero(rate_prototype)
-    k₂ = zero(reduced_rate_prototype)
-    k₃ = zero(reduced_rate_prototype)
+    tab = RKN4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    nstages = length(tab.b)
+    k1 = zero(rate_prototype)
+    ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
+    utilde = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
     tmp = zero(u)
-    return RKN4Cache(u, uprev, k₁, k₂, k₃, k, tmp)
+    return NystromVDCache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
 end
-
-struct RKN4ConstantCache <: NystromConstantCache end
 
 function alg_cache(
         alg::RKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -635,5 +609,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return RKN4ConstantCache()
+    return NystromVDConstantCache(
+        RKN4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    )
 end
