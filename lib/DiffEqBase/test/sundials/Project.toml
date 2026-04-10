@@ -1,11 +1,14 @@
 [deps]
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 Sundials = "c3572dad-4567-51f8-b174-8c6c989267f4"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
 OrdinaryDiffEq = {path = "../../../.."}
+OrdinaryDiffEqBDF = {path = "../../../OrdinaryDiffEqBDF"}
 
 [compat]
 OrdinaryDiffEq = "6, 7"
+OrdinaryDiffEqBDF = "1"
 Sundials = "4, 5"
