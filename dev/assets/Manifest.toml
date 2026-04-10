@@ -55,9 +55,9 @@ version = "0.1.44"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
-git-tree-sha1 = "35ea197a51ce46fcd01c4a44befce0578a1aaeca"
+git-tree-sha1 = "c2250e92a5b6cf4ebcea273335946a70513b629b"
 uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "4.5.0"
+version = "4.5.1"
 weakdeps = ["SparseArrays", "StaticArrays"]
 
     [deps.Adapt.extensions]
@@ -784,9 +784,9 @@ version = "1.18.0+0"
 
 [[deps.LineSearch]]
 deps = ["ADTypes", "CommonSolve", "ConcreteStructs", "FastClosures", "LinearAlgebra", "MaybeInplace", "PrecompileTools", "SciMLBase", "SciMLJacobianOperators", "StaticArraysCore"]
-git-tree-sha1 = "9f7253c0574b4b585c8909232adb890930da980a"
+git-tree-sha1 = "69da095e4c24ed3c4a168bb76dc9c620a6d7239c"
 uuid = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
-version = "0.1.6"
+version = "0.1.7"
 weakdeps = ["LineSearches"]
 
     [deps.LineSearch.extensions]
