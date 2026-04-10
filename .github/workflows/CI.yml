@@ -61,9 +61,36 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v3
+      # Split cache restore/save by event to work around recurring GitHub
+      # Actions cache upload auth failures (Azure SAS "Server failed to
+      # authenticate the request") that show up sporadically across the
+      # ~68-cell matrix. PRs only restore from a recent master push cache;
+      # only master push runs write the cache. continue-on-error keeps a
+      # transient cache backend hiccup from flunking an otherwise green job.
+      - name: Cache Julia depot (push only — read+write)
+        if: github.event_name == 'push'
+        uses: julia-actions/cache@v3
+        continue-on-error: true
         with:
           cache-compiled: 'false'
+      - name: Cache Julia depot (PR — restore only)
+        if: github.event_name != 'push'
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/scratchspaces
+            ~/.julia/logs
+          # Primary key intentionally won't match (run_id is unique); the
+          # restore-keys prefix matches julia-actions/cache's key scheme
+          # `${cache-name};os=${runner.os};${matrix...}` so we pull the most
+          # recent cache from a master push for this same matrix cell.
+          key: julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};run_id=${{ github.run_id }};run_attempt=${{ github.run_attempt }}
+          restore-keys: |
+            julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
