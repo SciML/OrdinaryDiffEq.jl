@@ -133,7 +133,7 @@ end
 
     # AMF gradient should be close to baseline
     relerr_amf_vs_baseline = norm(dLdu0_amf - dLdu0_baseline) / norm(dLdu0_baseline)
-    @test relerr_amf_vs_baseline < 1e-4
+    @test relerr_amf_vs_baseline < 1.0e-4
     @info "Adjoint AMF vs baseline" relerr = relerr_amf_vs_baseline
 
     # Finite-difference validation on a few components
@@ -141,11 +141,11 @@ end
         f!; jac_prototype = J_op, sparsity = adj_sparsity,
     )
 
-    function fd_gradient_component(idx; ε = 1e-7)
+    function fd_gradient_component(idx; ε = 1.0e-7)
         u_plus = copy(u0); u_plus[idx] += ε
         u_minus = copy(u0); u_minus[idx] -= ε
-        sol_plus = solve(ODEProblem(ref_func, u_plus, tspan), ROS34PW1a(); abstol = 1e-10, reltol = 1e-10)
-        sol_minus = solve(ODEProblem(ref_func, u_minus, tspan), ROS34PW1a(); abstol = 1e-10, reltol = 1e-10)
+        sol_plus = solve(ODEProblem(ref_func, u_plus, tspan), ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
+        sol_minus = solve(ODEProblem(ref_func, u_minus, tspan), ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
         L_plus = 0.5 * dot(sol_plus.u[end], sol_plus.u[end])
         L_minus = 0.5 * dot(sol_minus.u[end], sol_minus.u[end])
         return (L_plus - L_minus) / (2ε)
@@ -155,7 +155,7 @@ end
     for idx in test_indices
         fd_grad = fd_gradient_component(idx)
         adj_amf = dLdu0_amf[idx]
-        relerr_vs_fd = abs(fd_grad - adj_amf) / max(abs(fd_grad), 1e-12)
+        relerr_vs_fd = abs(fd_grad - adj_amf) / max(abs(fd_grad), 1.0e-12)
         @test relerr_vs_fd < 0.01  # AMF + forward tolerance → ~1e-3
         @info "FD validation idx=$idx" fd = fd_grad adj_amf = adj_amf relerr = relerr_vs_fd
     end
