@@ -27,6 +27,7 @@ include("rkn_caches.jl")
 include("interp_func.jl")
 include("interpolants.jl")
 include("rkn_perform_step.jl")
+include("generic_rkn_vi_perform_step.jl")
 
 export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
     Nystrom5VelocityIndependent,

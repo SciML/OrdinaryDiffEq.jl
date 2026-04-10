@@ -1,4 +1,206 @@
 abstract type NystromConstantCache <: OrdinaryDiffEqConstantCache end
+
+"""
+    NystromVITableau{T, T2}
+
+Tableau for velocity-independent Nyström methods.
+Fields:
+- `a`: nstages × nstages lower-triangular position coupling matrix
+- `b`: position update weights (length nstages; b[end] may be 0 if last stage not in position update)
+- `bp`: velocity update weights (length nstages)
+- `btilde`: embedded position error weights (empty if non-adaptive)
+- `bptilde`: embedded velocity error weights (empty if non-adaptive)
+- `c`: time nodes for stages 2..nstages (length nstages-1); c[i] is node for stage i+1
+- `pos_only_error`: if true, error estimate uses only position components (ERKN5 behaviour)
+"""
+struct NystromVITableau{T, T2}
+    a::Matrix{T}
+    b::Vector{T}
+    bp::Vector{T}
+    btilde::Vector{T}
+    bptilde::Vector{T}
+    c::Vector{T2}
+    pos_only_error::Bool
+end
+
+function DPRKN4Tableau(T::Type, T2::Type)
+    tab = DPRKN4ConstantCache(T, T2)
+    # 4 stages: k1 = fsalfirst, k2, k3, k4
+    nstages = 4
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = tab.a21
+    a[3, 1] = tab.a31; a[3, 2] = tab.a32
+    a[4, 1] = tab.a41; a[4, 2] = tab.a42; a[4, 3] = tab.a43
+    # DPRKN4: u = uprev + dt*(duprev + dt*(b1*k1 + b2*k2 + b3*k3))  (b4=0)
+    b = [tab.b1, tab.b2, tab.b3, zero(T)]
+    bp = [tab.bp1, tab.bp2, tab.bp3, tab.bp4]
+    btilde = [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4]
+    bptilde = [tab.bptilde1, tab.bptilde2, tab.bptilde3, tab.bptilde4]
+    c = [tab.c1, tab.c2, tab.c3]  # c for stages 2, 3, 4
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+end
+
+function DPRKN5Tableau(T::Type, T2::Type)
+    tab = DPRKN5ConstantCache(T, T2)
+    # 6 stages: k1..k6; c1..c5 for stages 2..6
+    nstages = 6
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = tab.a21
+    a[3, 1] = tab.a31; a[3, 2] = tab.a32
+    a[4, 1] = tab.a41; a[4, 3] = tab.a43  # a42=0
+    a[5, 1] = tab.a51; a[5, 3] = tab.a53; a[5, 4] = tab.a54  # a52=0
+    a[6, 1] = tab.a61; a[6, 3] = tab.a63; a[6, 4] = tab.a64; a[6, 5] = tab.a65  # a62=0
+    # u = uprev + dt*(duprev + dt*(b1*k1 + b3*k3 + b4*k4 + b5*k5))  b2=b6=0
+    b = [tab.b1, zero(T), tab.b3, tab.b4, tab.b5, zero(T)]
+    bp = [tab.bp1, zero(T), tab.bp3, tab.bp4, tab.bp5, tab.bp6]
+    btilde = [tab.btilde1, zero(T), tab.btilde3, tab.btilde4, tab.btilde5, zero(T)]
+    bptilde = [tab.bptilde1, zero(T), tab.bptilde3, tab.bptilde4, tab.bptilde5, tab.bptilde6]
+    c = [tab.c1, tab.c2, tab.c3, tab.c4, tab.c5]  # c for stages 2..6
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+end
+
+function DPRKN6FMTableau(T::Type, T2::Type)
+    tab = DPRKN6FMConstantCache(T, T2)
+    # 6 stages: k1..k6; c1..c5 for stages 2..6
+    nstages = 6
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = tab.a21
+    a[3, 1] = tab.a31; a[3, 2] = tab.a32
+    a[4, 1] = tab.a41; a[4, 2] = tab.a42; a[4, 3] = tab.a43
+    a[5, 1] = tab.a51; a[5, 2] = tab.a52; a[5, 3] = tab.a53; a[5, 4] = tab.a54
+    a[6, 1] = tab.a61; a[6, 2] = tab.a62; a[6, 3] = tab.a63; a[6, 4] = tab.a64; a[6, 5] = tab.a65
+    # u = uprev + dt*(duprev + dt*(b1*k1+b2*k2+b3*k3+b4*k4+b5*k5))  b6=0
+    b = [tab.b1, tab.b2, tab.b3, tab.b4, tab.b5, zero(T)]
+    bp = [tab.bp1, tab.bp2, tab.bp3, tab.bp4, tab.bp5, tab.bp6]
+    btilde = [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, tab.btilde5, zero(T)]
+    bptilde = [tab.bptilde1, tab.bptilde2, tab.bptilde3, tab.bptilde4, tab.bptilde5, zero(T)]
+    c = [tab.c1, tab.c2, tab.c3, tab.c4, tab.c5]
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+end
+
+function DPRKN8Tableau(T::Type, T2::Type)
+    tab = DPRKN8ConstantCache(T, T2)
+    # 9 stages: k1..k9; c1..c8 for stages 2..9
+    nstages = 9
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = tab.a21
+    a[3, 1] = tab.a31; a[3, 2] = tab.a32
+    a[4, 1] = tab.a41; a[4, 2] = tab.a42; a[4, 3] = tab.a43
+    a[5, 1] = tab.a51; a[5, 2] = tab.a52; a[5, 3] = tab.a53; a[5, 4] = tab.a54
+    a[6, 1] = tab.a61; a[6, 2] = tab.a62; a[6, 3] = tab.a63; a[6, 4] = tab.a64; a[6, 5] = tab.a65
+    a[7, 1] = tab.a71; a[7, 2] = tab.a72; a[7, 3] = tab.a73; a[7, 4] = tab.a74; a[7, 5] = tab.a75; a[7, 6] = tab.a76
+    a[8, 1] = tab.a81; a[8, 2] = tab.a82; a[8, 3] = tab.a83; a[8, 4] = tab.a84; a[8, 5] = tab.a85; a[8, 6] = tab.a86; a[8, 7] = tab.a87
+    a[9, 1] = tab.a91; a[9, 3] = tab.a93; a[9, 4] = tab.a94; a[9, 5] = tab.a95; a[9, 6] = tab.a96; a[9, 7] = tab.a97  # a92=a98=0
+    # u uses b1,b3..b7 (b2=b8=b9=0)
+    b = [tab.b1, zero(T), tab.b3, tab.b4, tab.b5, tab.b6, tab.b7, zero(T), zero(T)]
+    bp = [tab.bp1, zero(T), tab.bp3, tab.bp4, tab.bp5, tab.bp6, tab.bp7, tab.bp8, zero(T)]
+    btilde = [tab.btilde1, zero(T), tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7, zero(T), zero(T)]
+    bptilde = [tab.bptilde1, zero(T), tab.bptilde3, tab.bptilde4, tab.bptilde5, tab.bptilde6, tab.bptilde7, tab.bptilde8, tab.bptilde9]
+    c = [tab.c1, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, tab.c8]
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+end
+
+function DPRKN12Tableau(T::Type, T2::Type)
+    tab = DPRKN12ConstantCache(T, T2)
+    # 17 stages: k1..k17; c1..c16 for stages 2..17
+    nstages = 17
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = tab.a21
+    a[3, 1] = tab.a31; a[3, 2] = tab.a32
+    a[4, 1] = tab.a41; a[4, 2] = tab.a42; a[4, 3] = tab.a43
+    a[5, 1] = tab.a51; a[5, 3] = tab.a53; a[5, 4] = tab.a54  # a52=0
+    a[6, 1] = tab.a61; a[6, 3] = tab.a63; a[6, 4] = tab.a64; a[6, 5] = tab.a65  # a62=0
+    a[7, 1] = tab.a71; a[7, 3] = tab.a73; a[7, 4] = tab.a74; a[7, 5] = tab.a75; a[7, 6] = tab.a76  # a72=0
+    a[8, 1] = tab.a81; a[8, 4] = tab.a84; a[8, 5] = tab.a85; a[8, 6] = tab.a86; a[8, 7] = tab.a87  # a82=a83=0
+    a[9, 1] = tab.a91; a[9, 3] = tab.a93; a[9, 4] = tab.a94; a[9, 5] = tab.a95; a[9, 6] = tab.a96; a[9, 7] = tab.a97; a[9, 8] = tab.a98  # a92=0
+    a[10, 1] = tab.a101; a[10, 3] = tab.a103; a[10, 4] = tab.a104; a[10, 5] = tab.a105; a[10, 6] = tab.a106; a[10, 7] = tab.a107; a[10, 8] = tab.a108; a[10, 9] = tab.a109  # a102=0
+    a[11, 1] = tab.a111; a[11, 3] = tab.a113; a[11, 4] = tab.a114; a[11, 5] = tab.a115; a[11, 6] = tab.a116; a[11, 7] = tab.a117; a[11, 8] = tab.a118; a[11, 9] = tab.a119; a[11, 10] = tab.a1110  # a112=0
+    a[12, 1] = tab.a121; a[12, 3] = tab.a123; a[12, 4] = tab.a124; a[12, 5] = tab.a125; a[12, 6] = tab.a126; a[12, 7] = tab.a127; a[12, 8] = tab.a128; a[12, 9] = tab.a129; a[12, 10] = tab.a1210; a[12, 11] = tab.a1211  # a122=0
+    a[13, 1] = tab.a131; a[13, 3] = tab.a133; a[13, 4] = tab.a134; a[13, 5] = tab.a135; a[13, 6] = tab.a136; a[13, 7] = tab.a137; a[13, 8] = tab.a138; a[13, 9] = tab.a139; a[13, 10] = tab.a1310; a[13, 11] = tab.a1311; a[13, 12] = tab.a1312  # a132=0
+    a[14, 1] = tab.a141; a[14, 3] = tab.a143; a[14, 4] = tab.a144; a[14, 5] = tab.a145; a[14, 6] = tab.a146; a[14, 7] = tab.a147; a[14, 8] = tab.a148; a[14, 9] = tab.a149; a[14, 10] = tab.a1410; a[14, 11] = tab.a1411; a[14, 12] = tab.a1412; a[14, 13] = tab.a1413  # a142=0
+    a[15, 1] = tab.a151; a[15, 3] = tab.a153; a[15, 4] = tab.a154; a[15, 5] = tab.a155; a[15, 6] = tab.a156; a[15, 7] = tab.a157; a[15, 8] = tab.a158; a[15, 9] = tab.a159; a[15, 10] = tab.a1510; a[15, 11] = tab.a1511; a[15, 12] = tab.a1512; a[15, 13] = tab.a1513; a[15, 14] = tab.a1514  # a152=0
+    a[16, 1] = tab.a161; a[16, 3] = tab.a163; a[16, 4] = tab.a164; a[16, 5] = tab.a165; a[16, 6] = tab.a166; a[16, 7] = tab.a167; a[16, 8] = tab.a168; a[16, 9] = tab.a169; a[16, 10] = tab.a1610; a[16, 11] = tab.a1611; a[16, 12] = tab.a1612; a[16, 13] = tab.a1613; a[16, 14] = tab.a1614; a[16, 15] = tab.a1615  # a162=0
+    a[17, 1] = tab.a171; a[17, 3] = tab.a173; a[17, 4] = tab.a174; a[17, 5] = tab.a175; a[17, 6] = tab.a176; a[17, 7] = tab.a177; a[17, 8] = tab.a178; a[17, 9] = tab.a179; a[17, 10] = tab.a1710; a[17, 11] = tab.a1711; a[17, 12] = tab.a1712; a[17, 13] = tab.a1713; a[17, 14] = tab.a1714; a[17, 15] = tab.a1715  # a172=a1716=0
+    # u uses b1, b7..b15  (b2..b6=b16=b17=0)
+    b = [tab.b1, zero(T), zero(T), zero(T), zero(T), zero(T), tab.b7, tab.b8, tab.b9, tab.b10, tab.b11, tab.b12, tab.b13, tab.b14, tab.b15, zero(T), zero(T)]
+    bp = [tab.bp1, zero(T), zero(T), zero(T), zero(T), zero(T), tab.bp7, tab.bp8, tab.bp9, tab.bp10, tab.bp11, tab.bp12, tab.bp13, tab.bp14, tab.bp15, tab.bp16, tab.bp17]
+    btilde = [tab.btilde1, zero(T), zero(T), zero(T), zero(T), zero(T), tab.btilde7, tab.btilde8, tab.btilde9, tab.btilde10, tab.btilde11, tab.btilde12, tab.btilde13, tab.btilde14, tab.btilde15, zero(T), zero(T)]
+    bptilde = [tab.bptilde1, zero(T), zero(T), zero(T), zero(T), zero(T), tab.bptilde7, tab.bptilde8, tab.bptilde9, tab.bptilde10, tab.bptilde11, tab.bptilde12, tab.bptilde13, tab.bptilde14, tab.bptilde15, tab.bptilde16, tab.bptilde17]
+    c = [tab.c1, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, tab.c8, tab.c9, tab.c10, tab.c11, tab.c12, tab.c13, tab.c14, tab.c15, tab.c16]
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+end
+
+function ERKN4Tableau(T::Type, T2::Type)
+    tab = ERKN4ConstantCache(T, T2)
+    # 4 stages: k1..k4; c1,c2,c3 for stages 2,3,4 (c3=1 stored)
+    nstages = 4
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = tab.a21
+    a[3, 1] = tab.a31; a[3, 2] = tab.a32
+    a[4, 1] = tab.a41; a[4, 2] = tab.a42; a[4, 3] = tab.a43
+    b = [tab.b1, tab.b2, tab.b3, tab.b4]
+    bp = [tab.bp1, tab.bp2, tab.bp3, tab.bp4]
+    btilde = [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4]
+    bptilde = [tab.bptilde1, tab.bptilde2, tab.bptilde3, tab.bptilde4]
+    c = [tab.c1, tab.c2, tab.c3]
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+end
+
+function ERKN5Tableau(T::Type, T2::Type)
+    tab = ERKN5ConstantCache(T, T2)
+    # 4 stages: k1..k4; c1,c2,c3 for stages 2,3,4
+    # Note: ERKN5 has no bptilde coefficients (velocity error not tracked)
+    nstages = 4
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = tab.a21
+    a[3, 1] = tab.a31; a[3, 2] = tab.a32
+    a[4, 1] = tab.a41; a[4, 2] = tab.a42; a[4, 3] = tab.a43
+    b = [tab.b1, tab.b2, tab.b3, tab.b4]
+    bp = [tab.bp1, tab.bp2, tab.bp3, tab.bp4]
+    btilde = [tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4]
+    bptilde = T[]  # no velocity error for ERKN5
+    c = [tab.c1, tab.c2, tab.c3]
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, true)  # pos_only_error = true
+end
+
+function ERKN7Tableau(T::Type, T2::Type)
+    tab = ERKN7ConstantCache(T, T2)
+    # 7 stages: k1..k7; c1..c6 for stages 2..7
+    # Note: b2=0, bp2=0, btilde2=0, bptilde2=0
+    nstages = 7
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = tab.a21
+    a[3, 1] = tab.a31; a[3, 2] = tab.a32
+    a[4, 1] = tab.a41; a[4, 2] = tab.a42; a[4, 3] = tab.a43
+    a[5, 1] = tab.a51; a[5, 2] = tab.a52; a[5, 3] = tab.a53; a[5, 4] = tab.a54
+    a[6, 1] = tab.a61; a[6, 2] = tab.a62; a[6, 3] = tab.a63; a[6, 4] = tab.a64; a[6, 5] = tab.a65
+    a[7, 1] = tab.a71; a[7, 3] = tab.a73; a[7, 4] = tab.a74; a[7, 5] = tab.a75; a[7, 6] = tab.a76  # a72=0
+    # u uses b1,b3,b4,b5,b6  (b2=b7=0)
+    b = [tab.b1, zero(T), tab.b3, tab.b4, tab.b5, tab.b6, zero(T)]
+    bp = [tab.bp1, zero(T), tab.bp3, tab.bp4, tab.bp5, tab.bp6, tab.bp7]
+    btilde = [tab.btilde1, zero(T), tab.btilde3, tab.btilde4, tab.btilde5, tab.btilde6, zero(T)]
+    bptilde = [tab.bptilde1, zero(T), tab.bptilde3, tab.bptilde4, tab.bptilde5, tab.bptilde6, tab.bptilde7]
+    c = [tab.c1, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6]
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+end
+
+function Nystrom5VelocityIndependentTableau(T::Type, T2::Type)
+    tab = Nystrom5VelocityIndependentConstantCache(T, T2)
+    # 4 stages: k1..k4; c1=1/5, c2=2/3 for stages 2,3; stage 4 uses c3=1 (not stored in tab)
+    # In the perform_step!: k2 at c1, k3 at c2, k4 at 1 (t+dt)
+    nstages = 4
+    a = zeros(T, nstages, nstages)
+    a[2, 1] = tab.a21
+    a[3, 1] = tab.a31; a[3, 2] = tab.a32
+    a[4, 1] = tab.a41; a[4, 2] = tab.a42; a[4, 3] = tab.a43
+    # u = uprev + dt*(duprev + dt*(bbar1*k1 + bbar2*k2 + bbar3*k3))  (b4 not in u)
+    b = [tab.bbar1, tab.bbar2, tab.bbar3, zero(T)]
+    bp = [tab.b1, tab.b2, tab.b3, tab.b4]
+    btilde = T[]  # non-adaptive
+    bptilde = T[]
+    c = [tab.c1, tab.c2, one(T2)]  # c for stages 2,3,4
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+end
 struct FineRKN4ConstantCache{T, T2} <: NystromConstantCache
     c1::T2
     c2::T2
