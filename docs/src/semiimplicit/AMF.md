@@ -40,16 +40,36 @@ If your Jacobian is genuinely dense and unstructured, plain Rosenbrock with a st
 
 To use it, the `ODEFunction` must carry a `jac_prototype` (the true Jacobian, as a `SciMLOperator`) *and* a `W_prototype` (the AMF approximation of `-(I - γJ)/γ`, built from the factors). `build_amf_function` assembles both for you.
 
-## Usage
+## Usage: 2D reaction-diffusion with ADI-style splitting
 
-First install the package alongside a Rosenbrock-W subpackage:
+The canonical AMF use case is a PDE whose discrete Laplacian separates along each spatial dimension — the split reduces the dense Rosenbrock-W `W` solve to a pair of Kronecker-structured solves that can be done much faster. This example is a 2D reaction-diffusion problem,
+
+```
+uₜ = A uₓₓ + B u_yy + g(u, t),     g(u, t) = u²(1 − u) + eᵗ,
+```
+
+on the unit square with homogeneous Dirichlet boundary conditions. After second-order finite differencing on an `N × N` grid, the Jacobian of the linear (diffusion) part splits as
+
+```
+J = A (Lx ⊗ I) + B (I ⊗ Lx) = Jx + Jy
+```
+
+where `Lx` is the tridiagonal 1D Laplacian. AMF approximates the stage operator as
+
+```
+W ≈ −(I − γ Jx)(I − γ Jy) / γ,
+```
+
+so each stage does two independent block-diagonal tridiagonal solves instead of one dense solve — the standard ADI preconditioner, applied automatically by `AMF(...)` whenever you hand it the split.
+
+Install the package alongside a Rosenbrock-W subpackage:
 
 ```julia
 using Pkg
 Pkg.add(["OrdinaryDiffEqAMF", "OrdinaryDiffEqRosenbrock"])
 ```
 
-Minimal example with a 2-way split Jacobian:
+Set up the problem:
 
 ```julia
 using OrdinaryDiffEqAMF
@@ -57,45 +77,73 @@ using OrdinaryDiffEqRosenbrock
 using SciMLOperators
 using LinearAlgebra
 
-# Problem: du/dt = f(u, t), with Jacobian J = J_upper + J_lower.
-function f!(du, u, p, t)
-    # ... fill du ...
+function setup_fd2d_problem(; A = 0.1, B = 0.1, N = 40, final_t = 1.0)
+    h = 1 / (N + 1)
+
+    # 1D Laplacian with Dirichlet zero BCs, as a SciMLOperator.
+    D    = (1 / h^2) * Tridiagonal(ones(N - 1), -2 * ones(N), ones(N - 1))
+    D_op = MatrixOperator(D)
+
+    # 2D Jacobian pieces: diffusion in x and in y, via Kronecker products.
+    Jx_op = A * Base.kron(D_op, IdentityOperator(N))
+    Jy_op = B * Base.kron(IdentityOperator(N), D_op)
+    J_op  = cache_operator(Jx_op + Jy_op, zeros(N^2))
+
+    # Nonlinear reaction term.
+    g!(du, u, p, t) = (@. du += u^2 * (1 - u) + exp(t); return nothing)
+
+    # Full RHS: linear diffusion + nonlinear reaction.
+    function f!(du, u, p, t)
+        mul!(du, J_op, u)
+        g!(du, u, p, t)
+        return nothing
+    end
+
+    # Initial condition: a bump that vanishes on the boundary.
+    u0 = [16 * (h * i) * (h * j) * (1 - h * i) * (1 - h * j) for i in 1:N for j in 1:N]
+
+    # Hand the split to build_amf_function so Rosenbrock-W sees the
+    # structured W_prototype instead of a dense one.
+    amf_func = build_amf_function(f!; jac = J_op, split = (Jx_op, Jy_op))
+    return ODEProblem(amf_func, u0, (0.0, final_t))
 end
 
-# Per-part update functions populate the structured operators in place.
-fjac_upper(J, u, p, t) = (# fill upper-triangular J)
-fjac_lower(J, u, p, t) = (# fill lower-triangular J)
-
-N = 20
-J1_op = MatrixOperator(UpperTriangular(zeros(N, N)); update_func! = fjac_upper)
-J2_op = MatrixOperator(LowerTriangular(zeros(N, N)); update_func! = fjac_lower)
-J_op  = cache_operator(J1_op + J2_op, zeros(N))
-
-# Hand the split to build_amf_function so it can build the W_prototype for you.
-func = build_amf_function(f!; jac = J_op, split = (J1_op, J2_op))
-
-u0    = zeros(N)
-tspan = (0.0, 1.0)
-prob  = ODEProblem(func, u0, tspan)
-
-sol = solve(prob, AMF(ROS34PW1a))
+prob = setup_fd2d_problem()
+sol  = solve(prob, AMF(ROS34PW1a); abstol = 1e-8, reltol = 1e-8)
 ```
+
+For this 1600-unknown problem the AMF stage solve is substantially faster than the dense equivalent, and the speedup grows with `N` because the dense `W` solve is `O(N⁶)` while the two Kronecker-structured AMF solves are `O(N³)` total. A regression test inside the package (`lib/OrdinaryDiffEqAMF/test/test_fd2d.jl`) measures the speedup on the same problem against a baseline `solve(..., ROS34PW1a())` without AMF.
 
 ### Supplying AMF factors directly
 
-Sometimes you want to control the factors yourself — for example when the factors aren't just `I - γJᵢ` but have their own structure (pre-factorized banded matrices, FFT plans, etc.). Pass them as `amf_factors`:
+Sometimes you want to control the factors yourself — for instance to pre-factorize each 1D operator with something cheaper than a generic structured solver, or to bake in an FFT plan. Pass the custom factors as `amf_factors`:
 
 ```julia
-func = build_amf_function(f!;
-    jac = J_op,
-    split = (J1_op, J2_op),
-    amf_factors = (F1_op, F2_op),
+using SciMLOperators: ScalarOperator
+
+gamma_op = ScalarOperator(
+    1.0;
+    update_func       = (old, u, p, t; gamma = 1.0) -> gamma,
+    accepted_kwargs   = Val((:gamma,)),
 )
 
-sol = solve(prob, AMF(Rosenbrock23))
+# Each factor is (I − γ Jᵢ), pre-assembled as a Kronecker-structured operator.
+custom_factors = (
+    Base.kron(IdentityOperator(N) - gamma_op * A * D_op, IdentityOperator(N)),
+    Base.kron(IdentityOperator(N), IdentityOperator(N) - gamma_op * B * D_op),
+)
+
+amf_func = build_amf_function(
+    f!;
+    jac         = J_op,
+    split       = (Jx_op, Jy_op),
+    amf_factors = custom_factors,
+)
+
+sol = solve(ODEProblem(amf_func, u0, (0.0, 1.0)), AMF(ROS34PW1a); reltol = 1e-8)
 ```
 
-`split` and `amf_factors` must contain the same number of operators; the split is used to propagate Jacobian updates while the factors determine what `W_prototype` actually looks like.
+`split` and `amf_factors` must contain the same number of operators: the split is used to propagate Jacobian updates, and the factors determine the actual `W_prototype` that the linear solver sees.
 
 ### Forwarding keyword arguments
 
