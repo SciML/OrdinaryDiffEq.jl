@@ -22,11 +22,17 @@ For W-methods on adaptive, non-DAE, non-composite, non-linear ODE problems,
 implements CVODE-inspired Jacobian reuse:
 - Always recompute on first iteration
 - Recompute after step rejection (EEst > 1), callback, resize, algorithm switch
-- Recompute when gamma ratio changes too much: |dtgamma/last_dtgamma - 1| > 0.3
-- Recompute every `max_jac_age` accepted steps (default 20)
+- Recompute when gamma ratio changes too much:
+  `|dtgamma/last_dtgamma - 1| > alg.jac_reuse_gamma_tol` (default 0.3)
+- Recompute every `alg.max_jac_age` accepted steps (default 20)
 - Otherwise reuse J but rebuild W from the cached J and current dtgamma.
   The Jacobian evaluation (finite-diff / AD) is the expensive part; W
   construction and LU factorization are comparatively cheap.
+
+Both thresholds are tunable via Rosenbrock algorithm constructor kwargs
+`max_jac_age` and `jac_reuse_gamma_tol`, e.g.
+`Rosenbrock23(max_jac_age = 50, jac_reuse_gamma_tol = 0.1)`.
+Set `max_jac_age = 1` to effectively disable reuse (recompute every step).
 
 Returns `(true, true)` (fresh J and W) for all non-reusable cases:
 strict Rosenbrock methods, linear problems, mass-matrix (DAE) problems,
@@ -130,9 +136,11 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
         return (true, true)
     end
 
-    # Gamma ratio check (uses only accepted-step dtgamma)
+    # Gamma ratio check (uses only accepted-step dtgamma).
+    # Tunable via `alg.jac_reuse_gamma_tol` (default 0.3).
     last_dtg = jac_reuse.last_dtgamma
-    if !iszero(last_dtg) && abs(dtgamma / last_dtg - 1) > 0.3
+    gamma_tol = hasproperty(alg, :jac_reuse_gamma_tol) ? alg.jac_reuse_gamma_tol : 0.3
+    if !iszero(last_dtg) && abs(dtgamma / last_dtg - 1) > gamma_tol
         return (true, true)
     end
 

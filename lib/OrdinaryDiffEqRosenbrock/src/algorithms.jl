@@ -109,13 +109,16 @@ for (Alg, desc, refs, is_W) in [
             step_limiter!::StepLimiter
             stage_limiter!::StageLimiter
             autodiff::AD
+            max_jac_age::Int
+            jac_reuse_gamma_tol::Float64
         end
         function $Alg(;
                 chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
                 diff_type = Val{:forward}(), linsolve = nothing,
                 precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
-                stage_limiter! = trivial_limiter!
+                stage_limiter! = trivial_limiter!,
+                max_jac_age = 20, jac_reuse_gamma_tol = 0.3
             )
             AD_choice, chunk_size,
                 diff_type = _process_AD_choice(
@@ -128,7 +131,7 @@ for (Alg, desc, refs, is_W) in [
                 typeof(stage_limiter!),
             }(
                 linsolve, precs, step_limiter!,
-                stage_limiter!, AD_choice
+                stage_limiter!, AD_choice, max_jac_age, jac_reuse_gamma_tol
             )
         end
     end
@@ -152,13 +155,16 @@ struct RosenbrockW6S4OS{CS, AD, F, P, FDT, ST, CJ} <:
     linsolve::F
     precs::P
     autodiff::AD
+    max_jac_age::Int
+    jac_reuse_gamma_tol::Float64
 end
 function RosenbrockW6S4OS(;
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing,
-        precs = DEFAULT_PRECS
+        precs = DEFAULT_PRECS,
+        max_jac_age = 20, jac_reuse_gamma_tol = 0.3
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
@@ -168,7 +174,7 @@ function RosenbrockW6S4OS(;
         _unwrap_val(standardtag), _unwrap_val(concrete_jac),
     }(
         linsolve,
-        precs, AD_choice
+        precs, AD_choice, max_jac_age, jac_reuse_gamma_tol
     )
 end
 
@@ -312,11 +318,14 @@ for (Alg, desc, refs, is_W) in [
             linsolve::F
             precs::P
             autodiff::AD
+            max_jac_age::Int
+            jac_reuse_gamma_tol::Float64
         end
         function $Alg(;
                 chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
-                diff_type = Val{:forward}(), linsolve = nothing, precs = DEFAULT_PRECS
+                diff_type = Val{:forward}(), linsolve = nothing, precs = DEFAULT_PRECS,
+                max_jac_age = 20, jac_reuse_gamma_tol = 0.3
             )
             AD_choice, chunk_size,
                 diff_type = _process_AD_choice(
@@ -329,7 +338,7 @@ for (Alg, desc, refs, is_W) in [
                 _unwrap_val(concrete_jac),
             }(
                 linsolve,
-                precs, AD_choice
+                precs, AD_choice, max_jac_age, jac_reuse_gamma_tol
             )
         end
     end
@@ -347,6 +356,8 @@ struct HybridExplicitImplicitRK{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLim
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
     autodiff::AD
+    max_jac_age::Int
+    jac_reuse_gamma_tol::Float64
 end
 
 function HybridExplicitImplicitRK(;
@@ -355,7 +366,8 @@ function HybridExplicitImplicitRK(;
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward}(), linsolve = nothing,
         precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
-        stage_limiter! = trivial_limiter!
+        stage_limiter! = trivial_limiter!,
+        max_jac_age = 20, jac_reuse_gamma_tol = 0.3
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(
         autodiff, chunk_size, diff_type
@@ -367,7 +379,7 @@ function HybridExplicitImplicitRK(;
         typeof(stage_limiter!),
     }(
         order, linsolve, precs, step_limiter!,
-        stage_limiter!, AD_choice
+        stage_limiter!, AD_choice, max_jac_age, jac_reuse_gamma_tol
     )
 end
 

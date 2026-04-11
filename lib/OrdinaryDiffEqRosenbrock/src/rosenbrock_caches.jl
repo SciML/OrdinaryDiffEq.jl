@@ -12,7 +12,8 @@ Fields:
 - `last_dtgamma`: The dtgamma value from the last Jacobian computation
 - `pending_dtgamma`: The dtgamma from the current step (committed on accept)
 - `last_naccept`: The naccept count at last Jacobian computation
-- `max_jac_age`: Maximum number of accepted steps between Jacobian updates (default 20)
+- `max_jac_age`: Maximum number of accepted steps between Jacobian updates
+  (populated from `alg.max_jac_age`, default 20)
 - `cached_J`: Cached Jacobian for OOP reuse (type-erased for flexibility)
 - `cached_dT`: Cached time derivative for OOP reuse
 - `cached_W`: Cached factorized W for OOP reuse
@@ -31,8 +32,10 @@ mutable struct JacReuseState{T}
     last_u_length::Int
 end
 
-function JacReuseState(dtgamma::T) where {T}
-    return JacReuseState{T}(dtgamma, dtgamma, 0, 20, nothing, nothing, nothing, 0, 0)
+function JacReuseState(dtgamma::T, max_jac_age::Int = 20) where {T}
+    return JacReuseState{T}(
+        dtgamma, dtgamma, 0, max_jac_age, nothing, nothing, nothing, 0, 0
+    )
 end
 
 # Fake values since non-FSAL
@@ -227,7 +230,7 @@ function alg_cache(
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
-        alg.stage_limiter!, JacReuseState(zero(dt))
+        alg.stage_limiter!, JacReuseState(zero(dt), alg.max_jac_age)
     )
 end
 
@@ -287,7 +290,7 @@ function alg_cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
         tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
         grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!,
-        JacReuseState(zero(dt))
+        JacReuseState(zero(dt), alg.max_jac_age)
     )
 end
 
@@ -305,12 +308,12 @@ struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
 end
 
 function Rosenbrock23ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff
+        ::Type{T}, tf, uf, J, W, linsolve, autodiff, max_jac_age::Int = 20
     ) where {T}
     tab = Rosenbrock23Tableau(T)
     return Rosenbrock23ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
-        JacReuseState(zero(T))
+        JacReuseState(zero(T), max_jac_age)
     )
 end
 
@@ -327,7 +330,7 @@ function alg_cache(
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
     return Rosenbrock23ConstantCache(
         constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg)
+        alg_autodiff(alg), alg.max_jac_age
     )
 end
 
@@ -345,12 +348,12 @@ struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
 end
 
 function Rosenbrock32ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff
+        ::Type{T}, tf, uf, J, W, linsolve, autodiff, max_jac_age::Int = 20
     ) where {T}
     tab = Rosenbrock32Tableau(T)
     return Rosenbrock32ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
-        JacReuseState(zero(T))
+        JacReuseState(zero(T), max_jac_age)
     )
 end
 
@@ -367,7 +370,7 @@ function alg_cache(
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
     return Rosenbrock32ConstantCache(
         constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg)
+        alg_autodiff(alg), alg.max_jac_age
     )
 end
 
@@ -461,7 +464,7 @@ function alg_cache(
         tf, uf,
         tab, J, W, linsolve,
         alg_autodiff(alg), interp_order,
-        JacReuseState(zero(constvalue(uBottomEltypeNoUnits)))
+        JacReuseState(zero(constvalue(uBottomEltypeNoUnits)), alg.max_jac_age)
     )
 end
 
@@ -542,7 +545,7 @@ function alg_cache(
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
         _get_step_limiter(alg), _get_stage_limiter(alg), interp_order,
-        JacReuseState(zero(dt))
+        JacReuseState(zero(dt), alg.max_jac_age)
     )
 end
 
