@@ -20,6 +20,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
 end
 
 # Run QA tests (JET, Aqua)
+# Allocation tests must run before JET because JET's static analysis
+# invalidates compiled code and causes spurious runtime allocations.
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
     @time @safetestset "Aqua" include("qa.jl")
