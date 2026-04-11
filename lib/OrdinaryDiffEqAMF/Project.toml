@@ -12,7 +12,13 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [compat]
-julia = "1"
+LinearAlgebra = "1.10"
+LinearSolve = "3.46"
+OrdinaryDiffEqCore = "3.30"
+Reexport = "1.2"
+SciMLBase = "2.146"
+SciMLOperators = "1.4"
+julia = "1.10"
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
