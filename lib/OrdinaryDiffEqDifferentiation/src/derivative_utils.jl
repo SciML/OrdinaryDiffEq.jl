@@ -842,26 +842,30 @@ end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
     nlsolver = nothing
+    alg = OrdinaryDiffEqCore.unwrap_alg(integrator, true)
     # we need to skip calculating `J` and `W` when a step is repeated
     new_jac = new_W = false
     if !repeat_step
-        # For W-methods, use reuse logic; for strict Rosenbrock, always recompute
-        newJW = _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
-        new_jac,
-            new_W = calc_W!(
-            cache.W, integrator, nlsolver, cache, dtgamma, repeat_step, newJW
-        )
-        # Record pending dtgamma only when J was freshly computed; it will be
-        # committed as last_dtgamma when the step is accepted (checked in
-        # _rosenbrock_jac_reuse_decision). This tracks the dtgamma at the
-        # last J computation for the gamma ratio heuristic.
-        jac_reuse = get_jac_reuse(cache)
-        if jac_reuse !== nothing
-            jac_reuse.last_step_iter = integrator.iter
-            if new_jac
-                jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
-                jac_reuse.last_u_length = length(integrator.u)
+        if isWmethod(alg)
+            # W-methods: use CVODE-inspired reuse logic to skip J recomputes
+            newJW = _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
+            new_jac, new_W = calc_W!(
+                cache.W, integrator, nlsolver, cache, dtgamma, repeat_step, newJW
+            )
+            jac_reuse = get_jac_reuse(cache)
+            if jac_reuse !== nothing
+                jac_reuse.last_step_iter = integrator.iter
+                if new_jac
+                    jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
+                    jac_reuse.last_u_length = length(integrator.u)
+                end
             end
+        else
+            # Strict Rosenbrock: defer to do_newJW inside calc_W! so that the
+            # errorfail branch reuses J across step rejections (matches master).
+            new_jac, new_W = calc_W!(
+                cache.W, integrator, nlsolver, cache, dtgamma, repeat_step
+            )
         end
     end
     # If the Jacobian is not updated, we won't have to update ∂/∂t either.
