@@ -185,6 +185,68 @@ function jacobian(f::F, x, integrator) where {F}
     return jac
 end
 
+# Inner-Dual eltype that the prepared ForwardDiff JacobianConfig will allocate
+# for its xdual buffer. Returns `nothing` if `prep` is not a ForwardDiff
+# JacobianConfig-backed prep (e.g. AutoFiniteDiff path).
+function _jac_prep_inner_dual_eltype(prep)
+    hasfield(typeof(prep), :config) || return nothing
+    cfg = getfield(prep, :config)
+    cfg isa ForwardDiff.JacobianConfig || return nothing
+    duals = cfg.duals
+    duals isa Tuple && length(duals) >= 2 || return nothing
+    return eltype(duals[2])
+end
+
+# When the integrator's stored `p` (held in `f::UJacobianWrapper`) is a
+# `Vector{<:Dual}` because we are *inside* an outer ForwardDiff Jacobian /
+# gradient, the inner Rosenbrock Jacobian widens `u` into a deeper nested-Dual
+# type via the prepared `JacobianConfig`. If the user-facing function is a
+# plain Julia function (the FullSpecialize / NoSpecialize case), then the
+# subsequent `p[i] * u[i]` inside the user body multiplies values at two
+# different Dual nesting levels, which dispatches through ForwardDiff's
+# `tagcount`-based tag precedence. That precedence is unstable across
+# precompile boundaries (the `@generated tagcount` literal is baked at first
+# compile and depends on which package precompiled which tag first), so the
+# result type can come out wrong and crash inside `setindex!(du, ...)` with
+# `Float64(::nested_dual)`.
+#
+# The fix: lift `p` into the inner nested-Dual type so the user body never
+# multiplies across tag levels. The widened `p` carries zero inner partials
+# (which is what we want — `p` does not depend on `u`).
+#
+# We deliberately skip widening when the underlying ODEFunction was
+# AutoSpecialize-wrapped by DiffEqBase into a `FunctionWrappersWrapper`.
+# DiffEqBase already precompiles the `(nested_u, nested_du, outer_p, t)`
+# FunctionWrapper signature, so the unwidened call matches an existing
+# wrapper slot and dispatches normally; widening to a nested `p` would
+# instead produce `(nested_u, nested_du, nested_p, t)` which does not match
+# any precompiled slot and trips FWW v1's `AllowNonIsBits` policy into
+# `NoFunctionWrapperFoundError`.
+_widen_uf_p_for_jac(f, prep) = f
+function _widen_uf_p_for_jac(f::UJacobianWrapper, prep)
+    inner_T = _jac_prep_inner_dual_eltype(prep)
+    inner_T === nothing && return f
+    p = f.p
+    p isa AbstractArray || return f
+    Tp = eltype(p)
+    Tp <: ForwardDiff.Dual || return f
+    Tp === inner_T && return f
+    inner_T <: ForwardDiff.Dual || return f
+    # Skip widening when the user function is FWW-wrapped — DiffEqBase's
+    # AutoSpecialize already precompiles the needed nested-u / outer-p slot.
+    _uf_is_fw_wrapped(f) && return f
+    return UJacobianWrapper{isinplace(f)}(f.f, f.t, convert.(inner_T, p))
+end
+
+# Whether the user function stored in a UJacobianWrapper lives behind a
+# FunctionWrappersWrapper (i.e. was AutoSpecialize-wrapped). Handles the
+# common layer `UJacobianWrapper.f = ODEFunction`, `ODEFunction.f = FWW`.
+function _uf_is_fw_wrapped(f::UJacobianWrapper)
+    ff = f.f
+    hasfield(typeof(ff), :f) || return false
+    return getfield(ff, :f) isa FunctionWrappersWrappers.FunctionWrappersWrapper
+end
+
 function jacobian!(
         J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::SciMLBase.DEIntegrator,
@@ -240,14 +302,16 @@ function jacobian!(
         config = jac_config[1]
     end
 
+    f_eff = _widen_uf_p_for_jac(f, config)
+
     if integrator.iter == 1
         try
-            DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
+            DI.jacobian!(f_eff, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
         catch e
             throw(FirstAutodiffJacError(e))
         end
     else
-        DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
+        DI.jacobian!(f_eff, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
     end
 
     return nothing
