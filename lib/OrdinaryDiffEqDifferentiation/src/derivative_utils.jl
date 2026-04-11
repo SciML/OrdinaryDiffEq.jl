@@ -23,7 +23,7 @@ implements CVODE-inspired Jacobian reuse:
 - Always recompute on first iteration
 - Recompute after step rejection (EEst > 1), callback, resize, algorithm switch
 - Recompute when gamma ratio changes too much:
-  `|dtgamma/last_dtgamma - 1| > alg.jac_reuse_gamma_tol` (default 0.3)
+  `|dtgamma/last_dtgamma - 1| > alg.jac_reuse_gamma_tol` (default 0.03)
 - Recompute every `alg.max_jac_age` accepted steps (default 20)
 - Otherwise reuse J but rebuild W from the cached J and current dtgamma.
   The Jacobian evaluation (finite-diff / AD) is the expensive part; W
@@ -137,9 +137,9 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     end
 
     # Gamma ratio check (uses only accepted-step dtgamma).
-    # Tunable via `alg.jac_reuse_gamma_tol` (default 0.3).
+    # Tunable via `alg.jac_reuse_gamma_tol` (default 0.03).
     last_dtg = jac_reuse.last_dtgamma
-    gamma_tol = hasproperty(alg, :jac_reuse_gamma_tol) ? alg.jac_reuse_gamma_tol : 0.3
+    gamma_tol = hasproperty(alg, :jac_reuse_gamma_tol) ? alg.jac_reuse_gamma_tol : 0.03
     if !iszero(last_dtg) && abs(dtgamma / last_dtg - 1) > gamma_tol
         return (true, true)
     end

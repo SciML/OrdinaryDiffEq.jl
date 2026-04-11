@@ -118,7 +118,7 @@ for (Alg, desc, refs, is_W) in [
                 diff_type = Val{:forward}(), linsolve = nothing,
                 precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
                 stage_limiter! = trivial_limiter!,
-                max_jac_age = 20, jac_reuse_gamma_tol = 0.3
+                max_jac_age = 20, jac_reuse_gamma_tol = 0.03
             )
             AD_choice, chunk_size,
                 diff_type = _process_AD_choice(
@@ -164,7 +164,7 @@ function RosenbrockW6S4OS(;
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing,
         precs = DEFAULT_PRECS,
-        max_jac_age = 20, jac_reuse_gamma_tol = 0.3
+        max_jac_age = 20, jac_reuse_gamma_tol = 0.03
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
@@ -325,7 +325,7 @@ for (Alg, desc, refs, is_W) in [
                 chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
                 diff_type = Val{:forward}(), linsolve = nothing, precs = DEFAULT_PRECS,
-                max_jac_age = 20, jac_reuse_gamma_tol = 0.3
+                max_jac_age = 20, jac_reuse_gamma_tol = 0.03
             )
             AD_choice, chunk_size,
                 diff_type = _process_AD_choice(
@@ -367,7 +367,7 @@ function HybridExplicitImplicitRK(;
         diff_type = Val{:forward}(), linsolve = nothing,
         precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
         stage_limiter! = trivial_limiter!,
-        max_jac_age = 20, jac_reuse_gamma_tol = 0.3
+        max_jac_age = 20, jac_reuse_gamma_tol = 0.03
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(
         autodiff, chunk_size, diff_type
