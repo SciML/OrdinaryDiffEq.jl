@@ -35,6 +35,8 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
     calc_W, calc_rosenbrock_differentiation!, build_J_W,
     UJacobianWrapper, dolinsolve, WOperator, resize_J_W!
 
+using OrdinaryDiffEqDifferentiation: calc_rosenbrock_differentiation
+
 using Reexport
 @reexport using SciMLBase
 

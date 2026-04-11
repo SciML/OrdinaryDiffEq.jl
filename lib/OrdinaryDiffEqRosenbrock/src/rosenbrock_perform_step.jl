@@ -288,10 +288,8 @@ end
 
     mass_matrix = integrator.f.mass_matrix
 
-    # Time derivative
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtγ, repeat_step)
+    # Time derivative and W matrix (with Jacobian reuse for W-methods)
+    dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
@@ -375,10 +373,8 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
-    # Time derivative
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtγ, repeat_step)
+    # Time derivative and W matrix (with Jacobian reuse for W-methods)
+    dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
@@ -468,10 +464,8 @@ end
 
     mass_matrix = integrator.f.mass_matrix
 
-    # Time derivative
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtgamma, repeat_step)
+    # Time derivative and W matrix (with Jacobian reuse for W-methods)
+    dT, W = calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
