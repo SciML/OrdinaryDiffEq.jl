@@ -38,6 +38,18 @@ function JacReuseState(dtgamma::T, max_jac_age::Int = 20) where {T}
     )
 end
 
+"""
+    _make_jac_reuse_state(dtgamma, max_jac_age)
+
+Allocate a `JacReuseState` only when reuse is meaningfully enabled
+(`max_jac_age > 1`). When `max_jac_age ≤ 1` every accepted step would
+recompute J anyway, so return `nothing` to let the decision function
+take the master-compatible fast path through `do_newJW`.
+"""
+@inline function _make_jac_reuse_state(dtgamma, max_jac_age::Int)
+    return max_jac_age > 1 ? JacReuseState(dtgamma, max_jac_age) : nothing
+end
+
 # Fake values since non-FSAL
 get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (nothing, nothing)
 
@@ -230,7 +242,7 @@ function alg_cache(
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
-        alg.stage_limiter!, JacReuseState(zero(dt), alg.max_jac_age)
+        alg.stage_limiter!, _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
@@ -290,7 +302,7 @@ function alg_cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
         tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
         grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!,
-        JacReuseState(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
@@ -313,7 +325,7 @@ function Rosenbrock23ConstantCache(
     tab = Rosenbrock23Tableau(T)
     return Rosenbrock23ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
-        JacReuseState(zero(T), max_jac_age)
+        _make_jac_reuse_state(zero(T), max_jac_age)
     )
 end
 
@@ -353,7 +365,7 @@ function Rosenbrock32ConstantCache(
     tab = Rosenbrock32Tableau(T)
     return Rosenbrock32ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
-        JacReuseState(zero(T), max_jac_age)
+        _make_jac_reuse_state(zero(T), max_jac_age)
     )
 end
 
@@ -464,7 +476,7 @@ function alg_cache(
         tf, uf,
         tab, J, W, linsolve,
         alg_autodiff(alg), interp_order,
-        JacReuseState(zero(constvalue(uBottomEltypeNoUnits)), alg.max_jac_age)
+        _make_jac_reuse_state(zero(constvalue(uBottomEltypeNoUnits)), alg.max_jac_age)
     )
 end
 
@@ -545,7 +557,7 @@ function alg_cache(
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
         _get_step_limiter(alg), _get_stage_limiter(alg), interp_order,
-        JacReuseState(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 

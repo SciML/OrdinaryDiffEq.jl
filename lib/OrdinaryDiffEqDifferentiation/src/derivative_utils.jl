@@ -6,7 +6,16 @@ using SciMLOperators: StaticWOperator, WOperator
 Duck-typed accessor for the `jac_reuse` field. Returns `nothing` if the cache
 does not have a `jac_reuse` field.
 """
-get_jac_reuse(cache) = hasproperty(cache, :jac_reuse) ? cache.jac_reuse : nothing
+@inline function get_jac_reuse(cache)
+    # hasfield on typeof(cache) is compile-time constant-foldable, unlike
+    # hasproperty which walks propertynames at runtime. This makes the
+    # non-reuse fast path free on caches without the field.
+    if hasfield(typeof(cache), :jac_reuse)
+        return cache.jac_reuse
+    else
+        return nothing
+    end
+end
 
 # Strip ForwardDiff.Dual to plain value for heuristic storage in JacReuseState.
 # JacReuseState fields are Float64 (or similar) and don't need to carry AD derivatives.
@@ -139,7 +148,11 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     # Gamma ratio check (uses only accepted-step dtgamma).
     # Tunable via `alg.jac_reuse_gamma_tol` (default 0.03).
     last_dtg = jac_reuse.last_dtgamma
-    gamma_tol = hasproperty(alg, :jac_reuse_gamma_tol) ? alg.jac_reuse_gamma_tol : 0.03
+    gamma_tol = if hasfield(typeof(alg), :jac_reuse_gamma_tol)
+        alg.jac_reuse_gamma_tol
+    else
+        0.03
+    end
     if !iszero(last_dtg) && abs(dtgamma / last_dtg - 1) > gamma_tol
         return (true, true)
     end
@@ -846,23 +859,22 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
     # we need to skip calculating `J` and `W` when a step is repeated
     new_jac = new_W = false
     if !repeat_step
-        if isWmethod(alg)
-            # W-methods: use CVODE-inspired reuse logic to skip J recomputes
+        jac_reuse = get_jac_reuse(cache)
+        if isWmethod(alg) && jac_reuse !== nothing
+            # W-methods with reuse enabled: use CVODE-inspired reuse logic
             newJW = _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
             new_jac, new_W = calc_W!(
                 cache.W, integrator, nlsolver, cache, dtgamma, repeat_step, newJW
             )
-            jac_reuse = get_jac_reuse(cache)
-            if jac_reuse !== nothing
-                jac_reuse.last_step_iter = integrator.iter
-                if new_jac
-                    jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
-                    jac_reuse.last_u_length = length(integrator.u)
-                end
+            jac_reuse.last_step_iter = integrator.iter
+            if new_jac
+                jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
+                jac_reuse.last_u_length = length(integrator.u)
             end
         else
-            # Strict Rosenbrock: defer to do_newJW inside calc_W! so that the
-            # errorfail branch reuses J across step rejections (matches master).
+            # Strict Rosenbrock, or W-method with reuse disabled (jac_reuse ===
+            # nothing). Defer to do_newJW inside calc_W! so that the errorfail
+            # branch reuses J across step rejections (matches master).
             new_jac, new_W = calc_W!(
                 cache.W, integrator, nlsolver, cache, dtgamma, repeat_step
             )
