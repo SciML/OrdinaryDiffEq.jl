@@ -41,6 +41,11 @@ end
     nlsolvefail(nlsolver) && return
     u = nlsolver.tmp + z
 
+    if alg.time_filter && integrator.success_iter > 0
+        uprev2 = integrator.uprev2
+        u = u - (1 // 3) * (u - 2 * uprev + uprev2)
+    end
+
     if integrator.opts.adaptive && integrator.success_iter > 0
         # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
         # use 2nd divided differences (DD) a la SPICE and Shampine
@@ -98,6 +103,11 @@ end
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     @.. broadcast = false u = uprev + z
+
+    if alg.time_filter && integrator.success_iter > 0
+        uprev2 = integrator.uprev2
+        @.. broadcast = false u = u - (1 // 3) * (u - 2 * uprev + uprev2)
+    end
 
     step_limiter!(u, integrator, p, t + dt)
 

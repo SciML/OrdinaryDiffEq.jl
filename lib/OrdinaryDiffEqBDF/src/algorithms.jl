@@ -15,10 +15,10 @@ function BDF_docstring(
         """ * "\n" * extra_keyword_default
 
     keyword_default_description = """
-        - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/) 
+        - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/)
             to specify whether to use automatic differentiation via
             [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) or finite
-            differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl). 
+            differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl).
             Defaults to `AutoForwardDiff()` for automatic differentiation, which by default uses
             `chunksize = 0`, and thus uses the internal ForwardDiff.jl algorithm for the choice.
             To use `FiniteDiff.jl`, the `AutoFiniteDiff()` ADType can be used, which has a keyword argument
@@ -629,6 +629,63 @@ function FBDF(;
 end
 
 @truncate_stacktrace FBDF
+
+@doc BDF_docstring(
+    "A variable-stepsize, variable-order (2/3/4) implicit method based on the MOOSE234
+(Multiple Order One Solve Embedded 234) scheme of DeCaria, Guzel, Layton, and Li.
+Performs a single BDF3 nonlinear solve per step, then applies two cheap linear
+time-filter post-processing steps to produce embedded solutions at orders 2 and 4.
+This yields error estimates at three orders, enabling VSVO behavior at the cost of
+a single implicit solve per step.",
+    "MOOSE234",
+    references = """@article{decaria2018variable,
+    title={A variable stepsize, variable order family of low complexity},
+    author={DeCaria, Victor and Guzel, Abigail and Layton, William and Li, Yanghong},
+    journal={arXiv preprint arXiv:1810.06670},
+    year={2018}}""",
+    extra_keyword_description = """
+    - `nlsolve`: TBD
+    - `extrapolant`: TBD
+    - `controller`: TBD
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    controller = :Standard,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct MOOSE234{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
+    step_limiter!::StepLimiter
+    autodiff::AD
+end
+
+function MOOSE234(;
+        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
+        concrete_jac = nothing, diff_type = Val{:forward}(),
+        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!
+    )
+    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+
+    return MOOSE234{
+        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
+        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac), typeof(step_limiter!),
+    }(
+        linsolve, nlsolve, precs, extrapolant,
+        controller, step_limiter!, AD_choice
+    )
+end
+
+@truncate_stacktrace MOOSE234
 
 """
 QBDF1: Multistep Method

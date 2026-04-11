@@ -17,10 +17,10 @@ function SDIRK_docstring(
         """ * extra_keyword_default
 
     keyword_default_description = """
-        - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/) 
+        - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/)
             to specify whether to use automatic differentiation via
             [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) or finite
-            differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl). 
+            differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl).
             Defaults to `AutoForwardDiff()` for automatic differentiation, which by default uses
             `chunksize = 0`, and thus uses the internal ForwardDiff.jl algorithm for the choice.
             To use `FiniteDiff.jl`, the `AutoFiniteDiff()` ADType can be used, which has a keyword argument
@@ -80,7 +80,7 @@ function SDIRK_docstring(
 end
 
 @doc SDIRK_docstring(
-    "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
+    "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations. When `time_filter=true`, a 2nd-order time-filter correction is applied after each step, raising the effective order from 1 to 2.",
     "ImplicitEuler";
     references = "@book{wanner1996solving,
     title={Solving ordinary differential equations II},
@@ -92,11 +92,13 @@ end
     - `extrapolant`: TBD
     - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    - `time_filter`: when `true`, apply a 2nd-order time-filter correction after each backward Euler step
     """,
     extra_keyword_default = """
     extrapolant = :constant,
     controller = :PI,
     step_limiter! = trivial_limiter!,
+    time_filter = false,
     """
 )
 struct ImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
@@ -107,6 +109,7 @@ struct ImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
+    time_filter::Bool
     autodiff::AD
 end
 
@@ -116,7 +119,8 @@ function ImplicitEuler(;
         diff_type = Val{:forward}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant,
-        controller = :PI, step_limiter! = trivial_limiter!
+        controller = :PI, step_limiter! = trivial_limiter!,
+        time_filter = false
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
@@ -126,7 +130,7 @@ function ImplicitEuler(;
         _unwrap_val(concrete_jac), typeof(step_limiter!),
     }(
         linsolve,
-        nlsolve, precs, extrapolant, controller, step_limiter!, AD_choice
+        nlsolve, precs, extrapolant, controller, step_limiter!, time_filter, AD_choice
     )
 end
 

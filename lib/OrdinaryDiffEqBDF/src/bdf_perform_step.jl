@@ -767,6 +767,486 @@ function initialize!(integrator, cache::QNDFConstantCache{max_order}) where {max
     return nothing
 end
 
+# ============================================================================
+# MOOSE234 — Variable-stepsize, variable-order (2/3/4) embedded method
+# DeCaria et al., arXiv:1810.06670v1
+#
+# Per-step procedure:
+# 1. BDF3 solve (single nonlinear solve) → y³
+# 2. BDF3-Stab filter → y² (order 2, cheap linear combination)
+# 3. FBDF4 filter → y⁴ (order 4, cheap linear combination)
+# 4. Error estimation via embedded differences
+# 5. Output selection based on cache.order
+# ============================================================================
+
+function initialize!(integrator, cache::MOOSE234ConstantCache)
+    integrator.kshortsize = 5 # max_order(4) + 1
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    integrator.fsallast = zero(integrator.fsalfirst)
+    for i in 1:5
+        integrator.k[i] = zero(integrator.fsalfirst)
+    end
+
+    u_modified = integrator.u_modified
+    integrator.u_modified = true
+    reinitMOOSE!(integrator, cache)
+    return integrator.u_modified = u_modified
+end
+
+function perform_step!(integrator, cache::MOOSE234ConstantCache, repeat_step = false)
+    (; ts, u_history, order, u_corrector, nlsolver, ts_tmp) = cache
+    (; t, dt, u, f, p, uprev) = integrator
+
+    tdt = t + dt
+    reinitMOOSE!(integrator, cache)
+
+    k = order
+    # n_hist: number of valid history entries after reinitMOOSE
+    n_hist = min(cache.iters_from_event + 1, 5)
+
+    # Determine available capabilities
+    can_bdf3 = n_hist >= 3
+    can_stab_filter = n_hist >= 3
+    can_fbdf4_filter = n_hist >= 4
+
+    # BDF order for the nonlinear solve
+    bdf_order = can_bdf3 ? 3 : min(n_hist, 2)
+
+    # Clamp the active order to what's achievable with available history
+    max_avail_order = can_fbdf4_filter ? 4 : (can_stab_filter ? 3 : 2)
+    k = min(k, max_avail_order)
+
+    bdf_coeffs = _BDF_COEFFS
+
+    # === Predictor: Lagrange interpolation through history ===
+    n_pred = min(bdf_order + 1, n_hist)
+    pred_thetas = Vector{typeof(t)}(undef, n_pred)
+    if cache.iters_from_event >= 1
+        for j in 1:n_pred
+            pred_thetas[j] = (ts[j] - t) / dt
+        end
+        u₀ = _eval_lagrange_oop(one(t), pred_thetas, u_history, n_pred)
+    else
+        u₀ = u
+    end
+
+    markfirststage!(nlsolver)
+    nlsolver.z = u₀
+    mass_matrix = f.mass_matrix
+
+    # === BDF Corrector: Fixed coefficients + Lagrange interpolation ===
+    if u isa Number
+        fill!(u_corrector, zero(eltype(u)))
+    else
+        for i in eachindex(u_corrector)
+            u_corrector[i] = zero(u_corrector[i])
+        end
+    end
+    if cache.iters_from_event >= 1 && bdf_order > 1
+        for i in 1:(bdf_order - 1)
+            u_corrector[i] = _eval_lagrange_oop(
+                oftype(t, -i), pred_thetas, u_history, n_pred
+            )
+        end
+    end
+
+    if u isa Number
+        tmp = -uprev * bdf_coeffs[bdf_order, 2]
+        for i in 1:(bdf_order - 1)
+            tmp -= u_corrector[i] * bdf_coeffs[bdf_order, i + 2]
+        end
+    else
+        tmp = -uprev * bdf_coeffs[bdf_order, 2]
+        for i in 1:(bdf_order - 1)
+            tmp = @.. tmp - u_corrector[i] * bdf_coeffs[bdf_order, i + 2]
+        end
+    end
+
+    if mass_matrix === I
+        nlsolver.tmp = tmp / dt
+    else
+        nlsolver.tmp = mass_matrix * tmp / dt
+    end
+
+    β₀ = inv(bdf_coeffs[bdf_order, 1])
+    α₀ = 1
+    nlsolver.γ = β₀
+    nlsolver.α = α₀
+    nlsolver.method = COEFFICIENT_MULTISTEP
+
+    # === BDF Solve → y³ ===
+    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    y3 = z
+
+    # === Apply Filters ===
+    y2 = y3
+    y4 = y3
+
+    if can_stab_filter
+        # Build ascending time vector: [t_{n-2}, t_{n-1}, t_n, t_{n+1}]
+        n_dd = 4
+        ts_asc = Vector{typeof(t)}(undef, n_dd)
+        for i in 1:(n_dd - 1)
+            ts_asc[i] = ts[n_dd - 1 - i + 1] # ts[3], ts[2], ts[1]
+        end
+        ts_asc[n_dd] = tdt
+
+        c = backdiff(ts_asc)
+        weight_stab = bdf3stab_coeff(c, n_dd)
+
+        # δ³y = Σ c[4,i] * values[i]
+        # values = [u_history[3], u_history[2], u_history[1], y3]
+        if u isa Number
+            δ3 = c[4, n_dd] * y3
+            for i in 1:(n_dd - 1)
+                δ3 += c[4, i] * u_history[n_dd - i]
+            end
+            y2 = y3 + weight_stab * δ3
+        else
+            δ3 = @.. c[4, n_dd] * y3
+            for i in 1:(n_dd - 1)
+                δ3 = @.. δ3 + c[4, i] * u_history[n_dd - i]
+            end
+            y2 = @.. y3 + weight_stab * δ3
+        end
+    end
+
+    if can_fbdf4_filter
+        # 5 points: [t_{n-3}, t_{n-2}, t_{n-1}, t_n, t_{n+1}]
+        n_dd5 = 5
+        ts_asc5 = Vector{typeof(t)}(undef, n_dd5)
+        for i in 1:4
+            ts_asc5[i] = ts[5 - i] # ts[4], ts[3], ts[2], ts[1]
+        end
+        ts_asc5[5] = tdt
+
+        _, η4, c5 = bdf_and_filt_coeff(ts_asc5, 3)
+
+        # δ⁴y = Σ c5[5,i] * values[i]
+        # values = [u_history[4], u_history[3], u_history[2], u_history[1], y3]
+        if u isa Number
+            δ4 = c5[5, 5] * y3
+            for i in 1:4
+                δ4 += c5[5, i] * u_history[5 - i]
+            end
+            y4 = y3 - η4 * δ4
+        else
+            δ4 = @.. c5[5, 5] * y3
+            for i in 1:4
+                δ4 = @.. δ4 + c5[5, i] * u_history[5 - i]
+            end
+            y4 = @.. y3 - η4 * δ4
+        end
+    end
+
+    # === Error Estimation ===
+    if integrator.opts.adaptive
+        (; abstol, reltol, internalnorm) = integrator.opts
+
+        if can_stab_filter
+            est2 = u isa Number ? (y2 - y3) : @.. y2 - y3
+            atmp = calculate_residuals(est2, uprev, y3, abstol, reltol, internalnorm, t)
+            cache.terkm1 = internalnorm(atmp, t)
+        else
+            cache.terkm1 = zero(cache.terk)
+        end
+
+        if can_fbdf4_filter
+            est3 = u isa Number ? (y4 - y3) : @.. y4 - y3
+            atmp = calculate_residuals(est3, uprev, y3, abstol, reltol, internalnorm, t)
+            cache.terkp1 = internalnorm(atmp, t)
+        else
+            cache.terkp1 = zero(cache.terk)
+        end
+
+        # FBDF-style error for the BDF solve (predictor-corrector difference)
+        if u isa Number
+            bdf_err = y3 - u₀
+            for j in 1:min(bdf_order + 1, n_hist)
+                bdf_err *= j * dt / (tdt - ts[j])
+            end
+            bdf_lte = bdf_err * (-1 / (1 + bdf_order))
+        else
+            bdf_err = @.. y3 - u₀
+            for j in 1:min(bdf_order + 1, n_hist)
+                bdf_err = @.. bdf_err * (j * dt / (tdt - ts[j]))
+            end
+            bdf_lte = @.. bdf_err * (-1 / (1 + bdf_order))
+        end
+
+        # Select the error estimate for the current order
+        if k == 2 && can_stab_filter
+            lte = est2
+        elseif k >= 3 && can_fbdf4_filter
+            lte = est3
+        elseif k == 3 && can_stab_filter
+            lte = est2
+        else
+            lte = bdf_lte
+        end
+
+        atmp = calculate_residuals(lte, uprev, y3, abstol, reltol, internalnorm, t)
+        cache.terk = internalnorm(atmp, t)
+        integrator.EEst = cache.terk
+    end
+
+    # === Set output based on current order ===
+    if k == 4 && can_fbdf4_filter
+        u = y4
+    elseif k == 2 && can_stab_filter
+        u = y2
+    else
+        u = y3
+    end
+
+    integrator.fsallast = f(u, p, tdt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    # Dense output: resample Lagrange interpolant at Chebyshev nodes
+    if integrator.opts.calck
+        n = min(bdf_order + 1, 5)
+        calck_thetas = Vector{typeof(t)}(undef, n)
+        calck_thetas[1] = one(t)
+        for j in 1:min(bdf_order, 4)
+            calck_thetas[1 + j] = (ts[j] - t) / dt
+        end
+        calck_values = Vector{typeof(u)}(undef, n)
+        calck_values[1] = u isa Number ? u : copy(u)
+        for j in 1:min(bdf_order, 4)
+            calck_values[1 + j] = u isa Number ? u_history[j] : copy(u_history[j])
+        end
+        _resample_at_chebyshev!(integrator.k, calck_values, calck_thetas, n)
+        for j in (n + 1):5
+            integrator.k[j] = zero(u)
+        end
+    end
+
+    return integrator.u = u
+end
+
+function initialize!(integrator, cache::MOOSE234Cache)
+    integrator.kshortsize = 5 # max_order(4) + 1
+
+    resize!(integrator.k, integrator.kshortsize)
+    for i in 1:5
+        integrator.k[i] = cache.dense[i]
+    end
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    u_modified = integrator.u_modified
+    integrator.u_modified = true
+    reinitMOOSE!(integrator, cache)
+    return integrator.u_modified = u_modified
+end
+
+function perform_step!(integrator, cache::MOOSE234Cache, repeat_step = false)
+    (;
+        ts, u_history, order, u_corrector, nlsolver, ts_tmp,
+        equi_ts, step_limiter!, u₀, tmp, atmp, terk_tmp, terkp1_tmp, dense,
+    ) = cache
+    (; t, dt, u, f, p, uprev) = integrator
+
+    tdt = t + dt
+    reinitMOOSE!(integrator, cache)
+
+    k = order
+    n_hist = min(cache.iters_from_event + 1, 5)
+
+    can_bdf3 = n_hist >= 3
+    can_stab_filter = n_hist >= 3
+    can_fbdf4_filter = n_hist >= 4
+
+    bdf_order = can_bdf3 ? 3 : min(n_hist, 2)
+    max_avail_order = can_fbdf4_filter ? 4 : (can_stab_filter ? 3 : 2)
+    k = min(k, max_avail_order)
+
+    bdf_coeffs = _BDF_COEFFS
+
+    # === Predictor: Lagrange interpolation through history ===
+    n_pred = min(bdf_order + 1, n_hist)
+    @.. broadcast = false u₀ = zero(u)
+    if cache.iters_from_event >= 1
+        for j in 1:n_pred
+            equi_ts[j] = (ts[j] - t) / dt
+        end
+        _eval_lagrange_iip!(u₀, one(t), equi_ts, u_history, n_pred)
+    else
+        @.. broadcast = false u₀ = u
+    end
+
+    markfirststage!(nlsolver)
+    @.. broadcast = false nlsolver.z = u₀
+    mass_matrix = f.mass_matrix
+
+    # === BDF Corrector: Fixed coefficients + Lagrange interpolation ===
+    for h in u_corrector
+        fill!(h, zero(eltype(h)))
+    end
+    if cache.iters_from_event >= 1 && bdf_order > 1
+        for i in 1:(bdf_order - 1)
+            _eval_lagrange_iip!(u_corrector[i], oftype(t, -i), equi_ts, u_history, n_pred)
+        end
+    end
+
+    @.. broadcast = false tmp = -uprev * bdf_coeffs[bdf_order, 2]
+    for i in 1:(bdf_order - 1)
+        @.. broadcast = false tmp -= u_corrector[i] * bdf_coeffs[bdf_order, i + 2]
+    end
+
+    invdt = inv(dt)
+    if mass_matrix === I
+        @.. broadcast = false nlsolver.tmp = tmp * invdt
+    else
+        @.. broadcast = false terkp1_tmp = tmp * invdt
+        mul!(nlsolver.tmp, mass_matrix, terkp1_tmp)
+    end
+
+    β₀ = inv(bdf_coeffs[bdf_order, 1])
+    α₀ = 1
+    nlsolver.γ = β₀
+    nlsolver.α = α₀
+    nlsolver.method = COEFFICIENT_MULTISTEP
+
+    # === BDF Solve → y³ (result in u) ===
+    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    @.. broadcast = false u = z
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    # y3 is now in `u`. Store y2 in u₀, y4 in terk_tmp.
+
+    # === BDF3-Stab filter → y² ===
+    # u₀ will hold y2 (overwriting the predictor, no longer needed)
+    @.. broadcast = false u₀ = u  # default: y2 = y3
+
+    if can_stab_filter
+        n_dd = 4
+        # Build ascending time points into ts_tmp
+        for i in 1:(n_dd - 1)
+            ts_tmp[i] = ts[n_dd - 1 - i + 1]
+        end
+        ts_tmp[n_dd] = tdt
+
+        # ts_tmp[1:n_dd] is ascending
+        ts_asc_view = @view ts_tmp[1:n_dd]
+        c = backdiff(ts_asc_view)
+        weight_stab = bdf3stab_coeff(c, n_dd)
+
+        # δ³y → stored in tmp
+        @.. broadcast = false tmp = c[4, n_dd] * u
+        for i in 1:(n_dd - 1)
+            idx = n_dd - i
+            @.. broadcast = false tmp += c[4, i] * u_history[idx]
+        end
+
+        # y2 = y3 + weight_stab * δ³y → stored in u₀
+        @.. broadcast = false u₀ = u + weight_stab * tmp
+    end
+
+    # === FBDF4 filter → y⁴ ===
+    # terk_tmp will hold y4
+    @.. broadcast = false terk_tmp = u  # default: y4 = y3
+
+    if can_fbdf4_filter
+        n_dd5 = 5
+        for i in 1:4
+            ts_tmp[i] = ts[5 - i]
+        end
+        ts_tmp[5] = tdt
+
+        ts_asc5_view = @view ts_tmp[1:n_dd5]
+        _, η4, c5 = bdf_and_filt_coeff(ts_asc5_view, 3)
+
+        # δ⁴y → stored in tmp
+        @.. broadcast = false tmp = c5[5, 5] * u
+        for i in 1:4
+            idx = 5 - i
+            @.. broadcast = false tmp += c5[5, i] * u_history[idx]
+        end
+
+        # y4 = y3 - η4 * δ⁴y → stored in terk_tmp
+        @.. broadcast = false terk_tmp = u - η4 * tmp
+    end
+
+    # === Error Estimation ===
+    if integrator.opts.adaptive
+        (; abstol, reltol, internalnorm) = integrator.opts
+
+        if can_stab_filter
+            # est2 = y2 - y3 → terkp1_tmp
+            @.. broadcast = false terkp1_tmp = u₀ - u
+            calculate_residuals!(atmp, terkp1_tmp, uprev, u, abstol, reltol, internalnorm, t)
+            cache.terkm1 = internalnorm(atmp, t)
+        else
+            cache.terkm1 = zero(cache.terk)
+        end
+
+        if can_fbdf4_filter
+            # est3 = y4 - y3 → tmp
+            @.. broadcast = false tmp = terk_tmp - u
+            calculate_residuals!(atmp, tmp, uprev, u, abstol, reltol, internalnorm, t)
+            cache.terkp1 = internalnorm(atmp, t)
+        else
+            cache.terkp1 = zero(cache.terk)
+        end
+
+        # FBDF-style predictor-corrector error for startup
+        @.. broadcast = false terkp1_tmp = u - u₀
+        for j in 1:min(bdf_order + 1, n_hist)
+            factor = j * dt / (tdt - ts[j])
+            @.. broadcast = false terkp1_tmp *= factor
+        end
+        @.. broadcast = false terkp1_tmp *= (-1 / (1 + bdf_order))
+
+        # Select the error estimate based on active order
+        if k == 2 && can_stab_filter
+            @.. broadcast = false tmp = u₀ - u
+        elseif k >= 3 && can_fbdf4_filter
+            @.. broadcast = false tmp = terk_tmp - u
+        elseif k == 3 && can_stab_filter
+            @.. broadcast = false tmp = u₀ - u
+        else
+            @.. broadcast = false tmp = terkp1_tmp
+        end
+
+        calculate_residuals!(atmp, tmp, uprev, u, abstol, reltol, internalnorm, t)
+        cache.terk = internalnorm(atmp, t)
+        integrator.EEst = cache.terk
+    end
+
+    # === Set output based on current order ===
+    if k == 4 && can_fbdf4_filter
+        @.. broadcast = false u = terk_tmp
+    elseif k == 2 && can_stab_filter
+        @.. broadcast = false u = u₀
+    end
+    # else: u already has y3
+
+    # Compute fsallast — call f() directly since u may hold y2 or y4, not y3
+    f(integrator.fsallast, u, p, tdt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    # Dense output: resample at Chebyshev nodes
+    if integrator.opts.calck
+        n = min(bdf_order + 1, 5)
+        equi_ts[1] = one(eltype(equi_ts))
+        for j in 1:min(bdf_order, 4)
+            equi_ts[1 + j] = (ts[j] - t) / dt
+        end
+        _resample_at_chebyshev_direct_iip!(integrator.k, u, u_history, equi_ts, n)
+        for j in (n + 1):5
+            fill!(integrator.k[j], zero(eltype(u)))
+        end
+    end
+    return nothing
+end
+
 function perform_step!(
         integrator, cache::QNDFConstantCache{max_order},
         repeat_step = false
@@ -1366,6 +1846,15 @@ function initialize!(integrator, cache::FBDFCache{max_order}) where {max_order}
     reinitFBDF!(integrator, cache)
     return integrator.u_modified = u_modified
 end
+
+# BDF coefficients shared by FBDF and MOOSE234 for the nonlinear solve
+const _BDF_COEFFS = SA[
+    1 -1 0 0 0 0;
+    Int64(3) // 2 -2 Int64(1) // 2 0 0 0;
+    Int64(11) // 6 -3 Int64(3) // 2 -Int64(1) // 3 0 0;
+    Int64(25) // 12 -4 3 -Int64(4) // 3 Int64(1) // 4 0;
+    Int64(137) // 60 -5 5 -Int64(10) // 3 Int64(5) // 4 -Int64(1) // 5
+]
 
 function perform_step!(
         integrator, cache::FBDFCache{max_order},
