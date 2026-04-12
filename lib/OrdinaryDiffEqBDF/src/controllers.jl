@@ -215,7 +215,7 @@ function choose_order!(
         ::Val{max_order}
     ) where {max_order}
     (; t, dt, u, cache, uprev) = integrator
-    (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history) = cache
+    (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history, fd_weights) = cache
     k = cache.order
     if k < max_order && integrator.cache.qwait == 0 &&
             (
@@ -230,9 +230,8 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            fd_weights = calc_finite_difference_weights(
-                ts_tmp, t + dt, k - 2,
-                Val(max_order)
+            calc_finite_difference_weights!(
+                fd_weights, ts_tmp, t + dt, k - 2
             )
             local terk_tmp
             if u isa Number
@@ -406,7 +405,7 @@ function choose_order!(
         ::Val{max_order}
     ) where {max_order}
     (; t, dt, u, cache, uprev) = integrator
-    (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history) = cache
+    (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history, fd_weights) = cache
     k = cache.order
     if k < max_order && integrator.cache.qwait == 0 &&
             (
@@ -421,9 +420,8 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            fd_weights = calc_finite_difference_weights(
-                ts_tmp, t + dt, k - 2,
-                Val(max_order)
+            calc_finite_difference_weights!(
+                fd_weights, ts_tmp, t + dt, k - 2
             )
             terk_tmp = @.. broadcast = false fd_weights[k - 2, 1] * u
             if u isa Number
