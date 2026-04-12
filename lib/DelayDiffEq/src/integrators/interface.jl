@@ -508,6 +508,9 @@ function DiffEqBase.reinit!(
         DiffEqBase.initialize!(integrator)
     end
 
+    # Starting-time discontinuity handling: mirrors DDE's __init.
+    OrdinaryDiffEqCore.handle_starting_time_discontinuity!(integrator)
+
     return nothing
 end
 
