@@ -61,6 +61,7 @@ end
         # a higher-level sublibrary like OrdinaryDiffEqDefault.
         if VERSION < v"1.11.0-DEV.0"
             developed = Set{String}()
+            specs = Pkg.PackageSpec[]
             queue = [joinpath(lib_dir, base_group)]
             while !isempty(queue)
                 pkg_dir = popfirst!(queue)
@@ -73,8 +74,8 @@ end
                             dep_path = normpath(joinpath(pkg_dir, source_spec["path"]))
                             if isdir(dep_path) && !(dep_path in developed)
                                 push!(developed, dep_path)
-                                @info "Developing local source dependency" dep_name dep_path
-                                Pkg.develop(Pkg.PackageSpec(path = dep_path))
+                                @info "Queuing local source dependency" dep_name dep_path
+                                push!(specs, Pkg.PackageSpec(path = dep_path))
                                 # Queue this dependency so its own [sources] are also resolved.
                                 push!(queue, dep_path)
                             end
@@ -82,6 +83,10 @@ end
                     end
                 end
             end
+            # Batch the develop call so Pkg resolves all path deps together;
+            # calling it one-at-a-time would re-resolve the active project and
+            # fail to find unregistered siblings.
+            isempty(specs) || Pkg.develop(specs)
         end
         withenv("ODEDIFFEQ_TEST_GROUP" => test_group) do
             Pkg.test(base_group, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
