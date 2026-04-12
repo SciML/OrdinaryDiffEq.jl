@@ -582,6 +582,10 @@ function SciMLBase.reinit!(
     end
 
     reinit_noise!(_get_W(integrator), integrator.dt)
+
+    # Starting-time discontinuity handling: mirrors `__init`.
+    handle_starting_time_discontinuity!(integrator)
+
     return nothing
 end
 

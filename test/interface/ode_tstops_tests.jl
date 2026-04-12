@@ -220,3 +220,74 @@ end
         @test any(abs.(sol.t .- time) .< 1.0e-10)
     end
 end
+
+# Tests for the `t > t_d` convention on `d_discontinuities`:
+# v7 advances `integrator.t` by one ULP past a d_discontinuity so the
+# post-discontinuity side of `t`-dependent branches in `f` is reached.
+@testset "d_discontinuities: interior discontinuity with t > t_d" begin
+    # f has slope 0 for t < 5 and slope 1 for t > 5.
+    # Exact solution: u(t) = 0 for t ≤ 5, u(t) = t - 5 for t > 5. So u(10) = 5.
+    # With a fixed-step non-adaptive integrator, a stale pre-discontinuity FSAL
+    # would cause the first post-discontinuity step to use f(u, 5) = 0 and drop
+    # accumulated value by exactly one step (0.5 with dt = 0.5).
+    f(u, p, t) = t > 5.0 ? 1.0 : 0.0
+    prob = ODEProblem(f, 0.0, (0.0, 10.0))
+    sol = solve(
+        prob, Euler(); dt = 0.5, d_discontinuities = [5.0],
+        adaptive = false
+    )
+    @test sol.u[end] ≈ 5.0 atol = 1.0e-10
+
+    # Same setup with Tsit5 (FSAL, adaptive) at tight tolerance.
+    sol_tsit5 = solve(
+        prob, Tsit5(); d_discontinuities = [5.0],
+        reltol = 1.0e-12, abstol = 1.0e-14
+    )
+    @test sol_tsit5.u[end] ≈ 5.0 atol = 1.0e-10
+    @test 5.0 ∈ sol_tsit5.t
+end
+
+@testset "d_discontinuities: starting-time discontinuity" begin
+    # f has slope 0 at t = 0 and slope 1 for t > 0. Without handling of
+    # t_d == t0, the starting-time discontinuity would be silently dropped
+    # (filtered out of the tstops heap by the strict-inequality tspan check)
+    # and fsalfirst would be stuck at 0.
+    f(u, p, t) = t > 0.0 ? 1.0 : 0.0
+    prob = ODEProblem(f, 0.0, (0.0, 5.0))
+    sol = solve(
+        prob, Euler(); dt = 0.5, d_discontinuities = [0.0],
+        adaptive = false
+    )
+    @test sol.u[end] ≈ 5.0 atol = 1.0e-10
+end
+
+@testset "d_discontinuities: backward integration shifts with prevfloat" begin
+    # Backwards integration with discontinuity at t = 5.
+    # u(10) = 5. For t > 5 the slope is 1, so integrating backward from t = 10
+    # to t = 5 decreases u by 5 → u(5) = 0. For t ≤ 5, slope is 0, so u stays
+    # at 0 back to t = 0. Expected u(0) = 0.
+    f(u, p, t) = t > 5.0 ? 1.0 : 0.0
+    prob = ODEProblem(f, 5.0, (10.0, 0.0))
+    sol = solve(
+        prob, Tsit5(); d_discontinuities = [5.0],
+        reltol = 1.0e-12, abstol = 1.0e-14
+    )
+    @test sol.u[end] ≈ 0.0 atol = 1.0e-10
+end
+
+@testset "d_discontinuities: tprev advanced past discontinuity" begin
+    # Directly verify the shift-past invariant using the integrator interface:
+    # after stepping past the discontinuity, integrator.tprev should be
+    # nextfloat(t_d), not t_d itself.
+    f(u, p, t) = t > 5.0 ? 1.0 : 0.0
+    prob = ODEProblem(f, 0.0, (0.0, 10.0))
+    integrator = init(prob, Tsit5(); d_discontinuities = [5.0])
+    # Advance until we've landed on the tstop at t = 5.
+    while integrator.t < 5.0
+        step!(integrator)
+    end
+    @test integrator.t == 5.0
+    # The next step triggers update_fsal! → shift_past_discontinuity!
+    step!(integrator)
+    @test integrator.tprev == nextfloat(5.0)
+end
