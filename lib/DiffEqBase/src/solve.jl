@@ -351,9 +351,25 @@ section at the end of this page for some example usage.
   also cannot interpolate, then `tstops` must be a multiple of `dt` or else an
   error will be thrown. `tstops` may also be a function `tstops(p, tspan)`, accepting the parameter
   object and `tspan`, returning the vector of time points to stop at. Default is `[]`.
-* `d_discontinuities:` Denotes locations of discontinuities in low order derivatives.
-  This will force FSAL algorithms which assume derivative continuity to re-evaluate
-  the derivatives at the point of discontinuity. The default is `[]`.
+* `d_discontinuities`: Denotes locations of discontinuities in low-order derivatives
+  of the vector field `f`. Each entry `t_d` is added as a tstop, and when the
+  integrator lands on `t_d` it advances `t` by one ULP in the integration direction
+  and re-evaluates the FSAL cache on the post-discontinuity side. The convention
+  is *right-continuous*: `f` evaluated at `t_d` is the "old" regime and `f` at
+  `nextfloat(t_d)` is the "new" regime, so user code should be written as
+  ```julia
+  if t > t_d
+      # new regime
+  else
+      # old regime
+  end
+  ```
+  Writing `t >= t_d` also works but means the solver takes one step of post-regime
+  integration with a pre-regime-evaluated FSAL, which is less efficient and can
+  reduce step acceptance near the discontinuity. A `d_discontinuities` entry at
+  `tspan[1]` is supported (the starting-time case), in which case the first step
+  begins at `nextfloat(tspan[1])`; this is useful for callbacks that need to
+  activate immediately. The default is `[]`.
 * `save_everystep`: Saves the result at every step.
   Default is true if `isempty(saveat)`.
 * `save_on`: Denotes whether intermediate solutions are saved. This overrides the
