@@ -28,6 +28,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+OrdinaryDiffEqBDF = {path = "../OrdinaryDiffEqBDF"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}

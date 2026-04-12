@@ -229,7 +229,7 @@ cb = DiscreteCallback(condition, affect!)
 prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
 refsol = solve(
     prob, Rodas4(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1.0e-12,
-    abstol = 1.0e-17
+    abstol = 1.0e-14
 )
 
 for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF)

@@ -201,11 +201,6 @@ end
     @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
-@testset "HSLDDRK64" begin
-    # this method is deprecated
-    alg = @test_deprecated HSLDDRK64()
-    @test alg isa SHLDDRK64
-end
 
 @testset "SHLDDRK64" begin
     alg = SHLDDRK64()
