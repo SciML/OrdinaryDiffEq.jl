@@ -117,7 +117,8 @@ sol = solve(prob_swaplinear)
 @test sol(0.5) isa Vector{Float64} # test dense output
 # for some reason the timestepping here is different from regular Rodas5P (including the initial timestep)
 
-# test mass matrix DAE where we have to initialize algebraic variables
+# test mass matrix DAE with consistent initial conditions
+# v7 default init is CheckInit, so u0 must satisfy the algebraic constraint y₁+y₂+y₃=1
 function rober_mm(du, u, p, t)
     y₁, y₂, y₃ = u
     k₁, k₂, k₃ = p
@@ -127,7 +128,7 @@ function rober_mm(du, u, p, t)
     return nothing
 end
 f = ODEFunction(rober_mm, mass_matrix = [1 0 0; 0 1 0; 0 0 0])
-prob_rober_mm = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
+prob_rober_mm = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 sol = solve(prob_rober_mm)
 @test all(isequal(4), sol.alg_choice)
 @test sol(0.5) isa Vector{Float64} # test dense output
