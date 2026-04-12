@@ -232,18 +232,24 @@ function OrdinaryDiffEqCore.handle_discontinuities!(integrator::DDEIntegrator)
 end
 
 # Override shift_past_discontinuity! for DDEIntegrator: after advancing
-# integrator.t by one ULP, also update the internal ODE integrator's solution
-# endpoint so that the `t == ode_integrator.sol.t[end]` check in
-# advance_ode_integrator! remains satisfied.
+# integrator.t by one ULP, add a new save slot to the history ODE integrator's
+# solution at the shifted time. This keeps the `t == ode_integrator.sol.t[end]`
+# invariant in `advance_ode_integrator!` satisfied, and gives the history
+# interpolant a proper boundary at the discontinuity.
 function OrdinaryDiffEqCore.shift_past_discontinuity!(integrator::DDEIntegrator)
     OrdinaryDiffEqCore._shift_past_discontinuity!(
         integrator, integrator.t, integrator.tdir
     )
-    # Keep the ODE history integrator's solution endpoint in sync
+    # Add a new save slot at the shifted time. The state u is continuous
+    # across the discontinuity so we copy the current values unchanged.
     ode_integrator = integrator.integrator
-    if !isempty(ode_integrator.sol.t) && length(ode_integrator.sol.t) > 0
-        ode_integrator.sol.t[end] = integrator.t
-    end
+    ode_integrator.saveiter += 1
+    copyat_or_push!(ode_integrator.sol.t, ode_integrator.saveiter, integrator.t)
+    copyat_or_push!(ode_integrator.sol.u, ode_integrator.saveiter, ode_integrator.u)
+    ode_integrator.saveiter_dense += 1
+    copyat_or_push!(ode_integrator.sol.k, ode_integrator.saveiter_dense, ode_integrator.k)
+    ode_integrator.t = integrator.t
+    integrator.prev_idx = ode_integrator.saveiter
     return nothing
 end
 
