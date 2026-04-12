@@ -838,7 +838,36 @@ function _ode_init(
         !isnothing(integrator.P) && (integrator.P.dt = integrator.dt)
     end
 
+    # Starting-time discontinuity: if `d_discontinuities` names `t0`, advance
+    # past it so the first step's RHS evaluations are on the post-discontinuity
+    # side of `t`-dependent branches in `f` (e.g. `if t > t0`). The regular
+    # `update_fsal!` mechanism only fires at iter > 0, so handle the iter==0
+    # case explicitly here. Interior/end discontinuities are handled normally
+    # via the tstops heap and `update_fsal!`. Gated on `initialize_integrator`
+    # because otherwise the FSAL cache is not yet populated.
+    if initialize_integrator
+        handle_starting_time_discontinuity!(integrator)
+    end
+
     return integrator
+end
+
+"""
+    handle_starting_time_discontinuity!(integrator)
+
+If `integrator.opts.d_discontinuities` has an entry at exactly `integrator.t`
+(i.e. at `t0`), pop it, shift `t` by one ULP in the `tdir` direction, and
+re-evaluate the FSAL cache on the post-discontinuity side. No-op otherwise.
+"""
+function handle_starting_time_discontinuity!(integrator)
+    if has_discontinuity(integrator) &&
+            first_discontinuity(integrator) == integrator.tdir * integrator.t
+        handle_discontinuities!(integrator)
+        shift_past_discontinuity!(integrator)
+        get_current_isfsal(integrator.alg, integrator.cache) &&
+            reset_fsal!(integrator)
+    end
+    return nothing
 end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
