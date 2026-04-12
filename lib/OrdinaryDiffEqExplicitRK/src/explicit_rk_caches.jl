@@ -52,9 +52,12 @@ end
 function ExplicitRKConstantCache(tableau, rate_prototype, ::Type{tType} = Float64) where {tType}
     (; A, c, α, αEEst, stages) = tableau
     A = copy(A') # Transpose A to column major looping
-    # Convert c to match time type so that t + c[i]*dt doesn't promote t
-    # beyond what FunctionWrapper signatures expect under AutoSpecialize.
-    c = tType.(c)
+    # Convert c to match the dimensionless numeric type of dt so that
+    # t + c[i]*dt doesn't promote t beyond what FunctionWrapper signatures
+    # expect under AutoSpecialize. `one(tType)` strips units for Unitful
+    # quantities while preserving precision for BigFloat/Float32 time types.
+    cType = typeof(one(tType))
+    c = cType.(c)
     kk = Array{typeof(rate_prototype)}(undef, stages) # Not ks since that's for integrator.opts.dense
     αEEst = isempty(αEEst) ? αEEst : α .- αEEst
     B_interp = hasproperty(tableau, :B_interp) ? tableau.B_interp : nothing
