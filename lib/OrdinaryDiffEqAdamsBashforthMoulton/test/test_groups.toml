@@ -1,0 +1,9 @@
+[Core]
+versions = ["lts", "1.11", "1", "pre"]
+
+[Threaded]
+versions = ["1"]
+num_threads = 2
+
+[QA]
+versions = ["1"]
