@@ -227,9 +227,11 @@ affect!(integrator) = integrator.p[28] += 0.2
 cb = DiscreteCallback(condition, affect!)
 
 prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
+# v7 default is CheckInit which rejects nlsolve residuals at tight tolerances;
+# use BrownFullBasicInit to initialize algebraic variables as before v7.
 refsol = solve(
     prob, Rodas4(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1.0e-12,
-    abstol = 1.0e-14
+    abstol = 1.0e-17, initializealg = BrownFullBasicInit()
 )
 
 for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF)
@@ -237,7 +239,7 @@ for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF)
     prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
     sol = solve(
         prob, solver(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1.0e-14,
-        abstol = 1.0e-14
+        abstol = 1.0e-14, initializealg = BrownFullBasicInit()
     )
     @test sol.retcode == ReturnCode.Success
     @test sol.t[end] == 20.0
