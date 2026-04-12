@@ -1,6 +1,3 @@
-using Pkg
-Pkg.add("AllocCheck")
-
 using OrdinaryDiffEqLinear
 using OrdinaryDiffEqCore
 using AllocCheck

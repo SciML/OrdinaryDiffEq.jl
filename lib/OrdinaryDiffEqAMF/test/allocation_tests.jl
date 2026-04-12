@@ -1,7 +1,3 @@
-using Pkg
-Pkg.add("AllocCheck")
-Pkg.add("OrdinaryDiffEqRosenbrock")
-
 using OrdinaryDiffEqAMF
 using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqCore

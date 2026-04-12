@@ -1,6 +1,3 @@
-using Pkg
-Pkg.add("AllocCheck")
-
 using OrdinaryDiffEqFeagin
 using OrdinaryDiffEqCore
 using SciMLBase: FullSpecialize
