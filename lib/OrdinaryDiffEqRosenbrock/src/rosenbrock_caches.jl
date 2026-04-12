@@ -41,13 +41,13 @@ end
 """
     _make_jac_reuse_state(dtgamma, max_jac_age)
 
-Allocate a `JacReuseState` only when reuse is meaningfully enabled
-(`max_jac_age > 1`). When `max_jac_age ≤ 1` every accepted step would
-recompute J anyway, so return `nothing` to let the decision function
-take the master-compatible fast path through `do_newJW`.
+Always allocate a `JacReuseState` to keep cache types concrete and avoid
+Union-type instability that breaks `@inferred` tests. When `max_jac_age ≤ 1`
+the age check in `_rosenbrock_jac_reuse_decision` triggers every step anyway,
+so the overhead is negligible.
 """
 @inline function _make_jac_reuse_state(dtgamma, max_jac_age::Int)
-    return max_jac_age > 1 ? JacReuseState(dtgamma, max_jac_age) : nothing
+    return JacReuseState(dtgamma, max_jac_age)
 end
 
 # Fake values since non-FSAL

@@ -96,11 +96,10 @@ for (Alg, desc, refs, is_W) in [
     # Rosenbrock23/32 are low-order methods typically used on small/warm-up
     # problems where J evaluation is cheap and per-step overhead dominates.
     # Default them to max_jac_age = 1 which effectively disables reuse (the
-    # cache allocates `nothing` for jac_reuse and the decision function
-    # short-circuits through do_newJW, matching master behavior). Users can
-    # still opt into reuse with an explicit max_jac_age kwarg. Higher-order
-    # W-methods (Rodas23W, ROS34PW*, Rodas4P2, Rodas5P/Pe/Pr, Rodas6P) keep
-    # the full reuse default which wins on PDE workloads.
+    # age check in _rosenbrock_jac_reuse_decision triggers every step).
+    # Users can still opt into reuse with an explicit max_jac_age kwarg.
+    # Higher-order W-methods (Rodas23W, ROS34PW*, Rodas4P2, Rodas5P/Pe/Pr,
+    # Rodas6P) keep the full reuse default which wins on PDE workloads.
     default_max_jac_age = (Alg === :Rosenbrock23 || Alg === :Rosenbrock32) ? 1 : 20
     @eval begin
         @doc $(
