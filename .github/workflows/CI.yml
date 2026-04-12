@@ -100,12 +100,18 @@ jobs:
           if VERSION < v"1.11.0-DEV.0"
             toml = Pkg.TOML.parsefile("Project.toml")
             if haskey(toml, "sources")
+              specs = Pkg.PackageSpec[]
               for (dep, spec) in toml["sources"]
                 if spec isa Dict && haskey(spec, "path") && isdir(spec["path"])
                   @info "Developing" dep spec["path"]
-                  Pkg.develop(Pkg.PackageSpec(path=spec["path"]))
+                  push!(specs, Pkg.PackageSpec(path=spec["path"]))
                 end
               end
+              # Batch the develop call so Pkg resolves all path deps together.
+              # Calling Pkg.develop once per source triggers a full re-resolve
+              # each time, which fails if any sibling path dep isn't yet
+              # registered (e.g. OrdinaryDiffEqRosenbrockTableaus).
+              isempty(specs) || Pkg.develop(specs)
             end
           end
       - uses: julia-actions/julia-buildpkg@v1
