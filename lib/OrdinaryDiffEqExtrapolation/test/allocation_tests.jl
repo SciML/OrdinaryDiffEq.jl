@@ -4,18 +4,6 @@ using SciMLBase: FullSpecialize
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqExtrapolation solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
-
-All extrapolation methods are marked broken=true. These methods adaptively
-select the extrapolation order and maintain multiple substep solutions,
-requiring dynamic allocation in perform_step!. Fixing would require
-pre-allocating all substep work arrays in the cache.
-"""
-
 @testset "Extrapolation Allocation Tests" begin
     function simple_system!(du, u, p, t)
         du[1] = -0.5 * u[1]

@@ -4,18 +4,6 @@ using SciMLBase: FullSpecialize
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqLowStorageRK solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
-
-RDPK3 family (RDPK3Sp35/49/510 and RDPK3SpFSAL35/49/510) is excluded:
-their PID error controller always constructs MVector{3, Float64} from Bool
-flags during init, which fails regardless of problem type. This is an upstream
-bug in OrdinaryDiffEqCore.PIDController that should be fixed separately.
-"""
-
 @testset "LowStorageRK Allocation Tests" begin
     function simple_system!(du, u, p, t)
         du[1] = -0.5 * u[1]

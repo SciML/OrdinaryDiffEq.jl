@@ -3,19 +3,6 @@ using OrdinaryDiffEqCore
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqSIMDRK solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-
-SIMDRRK methods only support OOP (out-of-place) problems. MER5v2 and MER6v2
-are tested with standard Vector{Float64}; both are marked broken=true because
-OOP perform_step! allocates return values from the ODE function by design.
-
-RK6v4 is excluded: it requires SIMD-specific packed-vector types and errors
-with standard Vector{Float64} during step!.
-"""
-
 @testset "SIMDRRK Allocation Tests" begin
     # OOP (out-of-place) problem — SIMDRRK only supports non-IIP
     function simple_system(u, p, t)

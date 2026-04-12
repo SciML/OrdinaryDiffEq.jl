@@ -4,17 +4,6 @@ using SciMLBase: FullSpecialize
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqNordsieck solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
-
-All Nordsieck/VODE methods are marked broken=true. These variable-order,
-variable-step methods manage a Nordsieck array and dynamically resize
-internal history structures, which currently allocate in perform_step!.
-"""
-
 @testset "Nordsieck Allocation Tests" begin
     function simple_system!(du, u, p, t)
         du[1] = -0.5 * u[1]

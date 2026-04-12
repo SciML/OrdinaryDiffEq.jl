@@ -4,15 +4,6 @@ using SciMLBase: FullSpecialize, DiscreteFunction
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqFunctionMap (FunctionMap) using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-FunctionMap solves DiscreteProblem: u[n+1] = f(u[n], p, t).
-Uses DiscreteFunction{true, FullSpecialize} to avoid FunctionWrappers noise.
-(DiscreteProblem does not accept {true, FullSpecialize} type parameters directly.)
-"""
-
 @testset "FunctionMap Allocation Tests" begin
     function discrete_map!(du, u, p, t)
         du[1] = 0.9 * u[1]

@@ -5,17 +5,6 @@ using SciMLOperators: MatrixOperator
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqAMF (Approximate Matrix Factorization) using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-
-AMF requires build_amf_function with a MatrixOperator for the Jacobian and
-a Rosenbrock algorithm (e.g. ROS34PW1a) as the underlying integrator.
-
-AMF is marked broken=true as it currently allocates in perform_step!.
-"""
-
 @testset "AMF Allocation Tests" begin
     function f!(du, u, p, t)
         du[1] = -0.5 * u[1]

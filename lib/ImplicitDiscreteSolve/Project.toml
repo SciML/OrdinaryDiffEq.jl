@@ -39,7 +39,6 @@ NonlinearSolveFirstOrder = "1.9.0, 2"
 SymbolicIndexingInterface = "0.3.38"
 JET = "0.9.18, 0.10.4"
 julia = "1.10"
-AllocCheck = "0.2"
 DiffEqBase = "6.194"
 Reexport = "1.2"
 

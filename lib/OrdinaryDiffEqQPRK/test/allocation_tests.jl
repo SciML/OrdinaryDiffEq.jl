@@ -4,13 +4,6 @@ using SciMLBase: FullSpecialize
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqQPRK solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
-"""
-
 @testset "QPRK Allocation Tests" begin
     function simple_system!(du, u, p, t)
         du[1] = -0.5 * u[1]

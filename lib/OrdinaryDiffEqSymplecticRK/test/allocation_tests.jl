@@ -4,21 +4,6 @@ using SciMLBase: FullSpecialize, DynamicalODEFunction
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqSymplecticRK solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize on DynamicalODEFunction to avoid FunctionWrappers noise.
-
-Symplectic methods operate on separable Hamiltonian systems:
-  dv/dt = f1(v, u, p, t)   (force/acceleration)
-  du/dt = f2(v, u, p, t)   (velocity)
-
-All symplectic methods are marked broken=true. The DynamicalODEProblem
-perform_step! involves ArrayPartition construction per step that currently
-allocates. Fixing requires refactoring the partitioned-state update.
-"""
-
 @testset "SymplecticRK Allocation Tests" begin
     # Simple harmonic oscillator: dv = -u, du = v
     function f1!(dv, v, u, p, t)

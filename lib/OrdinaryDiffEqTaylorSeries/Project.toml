@@ -36,7 +36,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
-AllocCheck = "0.2"
 Aqua = "0.8.11"
 DiffEqBase = "6.194"
 DiffEqDevTools = "2.44.4"

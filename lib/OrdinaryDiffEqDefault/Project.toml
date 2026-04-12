@@ -59,7 +59,6 @@ OrdinaryDiffEqRosenbrock = "1.15.1"
 DiffEqBase = "6.194"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
-AllocCheck = "0.2"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "StaticArrays", "Test", "Pkg"]

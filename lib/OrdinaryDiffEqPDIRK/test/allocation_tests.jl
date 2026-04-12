@@ -4,16 +4,6 @@ using SciMLBase: FullSpecialize
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqPDIRK solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
-
-PDIRK44 is an implicit parallel diagonally-implicit RK method and is marked
-broken=true because implicit methods require linear solves that currently allocate.
-"""
-
 @testset "PDIRK Allocation Tests" begin
     function simple_system!(du, u, p, t)
         du[1] = -0.5 * u[1]

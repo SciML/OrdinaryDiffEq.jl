@@ -4,19 +4,6 @@ using AllocCheck
 using LinearAlgebra
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqLinear solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-
-Linear methods operate on ODEProblem(MatrixOperator(A), u0, tspan).
-CayleyEuler is excluded: it requires a matrix-valued state and SplitODEProblem
-with time-varying MatrixOperator, which is too specialized for a simple test.
-
-All methods are marked broken=true as Lie group/Magnus integrators currently
-allocate in perform_step! (matrix exponential and Krylov operations).
-"""
-
 @testset "Linear Allocation Tests" begin
     A = MatrixOperator([-1.0 0.5; 0.0 -2.0])
     prob = ODEProblem(A, [1.0, 1.0], (0.0, 1.0))

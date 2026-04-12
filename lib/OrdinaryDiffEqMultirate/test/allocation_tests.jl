@@ -4,17 +4,6 @@ using SciMLBase: FullSpecialize, SplitFunction, ODEFunction
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqMultirate solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
-
-MREEF is a multirate extrapolated explicit Euler method that uses a
-SplitODEProblem (fast + slow components). It is marked broken=true as its
-multirate substep structure currently allocates in perform_step!.
-"""
-
 @testset "Multirate Allocation Tests" begin
     function f_fast!(du, u, p, t)
         du[1] = -0.9 * u[1]

@@ -4,17 +4,6 @@ using SciMLBase: FullSpecialize, SplitFunction, ODEFunction, DAEFunction
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqBDF solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Also tests step! with save_everystep=false using @allocated for FBDF and DFBDF;
-both are marked broken=true as they currently allocate in the stepping loop.
-
-Runtime tests run FIRST to avoid interference from AllocCheck's static analysis,
-which can invalidate compiled code.
-"""
-
 @testset "BDF Allocation Tests" begin
     # Test problem for standard ODE BDF methods
     function simple_system!(du, u, p, t)

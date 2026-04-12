@@ -4,16 +4,6 @@ using SciMLBase: FullSpecialize, SplitFunction, ODEFunction
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqIMEXMultistep solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
-
-CNAB2 and CNLF2 are IMEX multistep methods and are marked broken=true
-because their implicit part requires linear solves that currently allocate.
-"""
-
 @testset "IMEXMultistep Allocation Tests" begin
     function f1!(du, u, p, t)
         du[1] = -0.5 * u[1]

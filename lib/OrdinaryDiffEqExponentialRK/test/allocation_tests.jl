@@ -5,21 +5,6 @@ using AllocCheck
 using LinearAlgebra
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqExponentialRK solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-
-Exponential RK solvers operate on split problems: du/dt = L*u + N(u,p,t)
-where L is a linear operator and N is the nonlinear part. The problem must
-be a SplitODEProblem with MatrixOperator as the linear part.
-
-All exponential RK methods are marked broken=true. These methods compute
-matrix exponentials or use Krylov approximations (e.g., Arnoldi iteration),
-which inherently allocate. Fixing would require exposing Krylov/Arnoldi
-workspace arrays as cache fields.
-"""
-
 @testset "ExponentialRK Allocation Tests" begin
     A = [-1.0 0.5; 0.0 -2.0]
 

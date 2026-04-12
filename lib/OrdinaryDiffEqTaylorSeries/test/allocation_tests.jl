@@ -4,17 +4,6 @@ using SciMLBase: FullSpecialize
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqTaylorSeries solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
-
-ExplicitTaylor2 is allocation-free. ExplicitTaylor(order=Val(N)) for N>2 and
-ExplicitTaylorAdaptiveOrder compute higher-order Taylor coefficients using
-dynamically-sized coefficient arrays that currently allocate in perform_step!.
-"""
-
 @testset "TaylorSeries Allocation Tests" begin
     function simple_system!(du, u, p, t)
         du[1] = -0.5 * u[1]

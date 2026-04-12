@@ -32,7 +32,6 @@ OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
 
 [compat]
 ADTypes = "1.16"
-AllocCheck = "0.2"
 Aqua = "0.8.11"
 DiffEqBase = "6.194"
 DiffEqDevTools = "2.44.4"

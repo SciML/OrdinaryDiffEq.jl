@@ -4,18 +4,6 @@ using SciMLBase: FullSpecialize
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqStabilizedRK solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
-
-All stabilized RK methods are marked broken=true. ROCK2/ROCK4/RKC have 2
-allocation sites related to their spectral radius estimation and stage selection.
-ESERK4, ESERK5, and SERK2 also allocate. Fixing these requires caching the
-spectral radius estimate and stage-count arrays.
-"""
-
 @testset "StabilizedRK Allocation Tests" begin
     function simple_system!(du, u, p, t)
         du[1] = -0.5 * u[1]

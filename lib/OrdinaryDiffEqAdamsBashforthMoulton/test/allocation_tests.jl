@@ -4,18 +4,6 @@ using SciMLBase: FullSpecialize
 using AllocCheck
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqAdamsBashforthMoulton solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
-
-Fixed-coefficient multistep methods (AB3/4/5, ABM32/43/54) are tested without
-broken=true since their perform_step! only reads from cached history arrays.
-Variable-coefficient methods (VCAB/VCABM) are marked broken=true as they
-recompute coefficients each step, which may allocate.
-"""
-
 @testset "AdamsBashforthMoulton Allocation Tests" begin
     function simple_system!(du, u, p, t)
         du[1] = -0.5 * u[1]

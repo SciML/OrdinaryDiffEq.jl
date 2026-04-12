@@ -5,18 +5,6 @@ using AllocCheck
 using LinearAlgebra
 using Test
 
-"""
-Allocation tests for OrdinaryDiffEqStabilizedIRK solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-
-IRKC is an implicit-explicit stabilized method and requires a SplitODEProblem:
-f1 is the stiff implicit part, f2 is the explicit non-stiff part.
-Uses FullSpecialize on both parts to avoid FunctionWrappers noise.
-
-IRKC is marked broken=true because its implicit linear solve allocates.
-"""
-
 @testset "StabilizedIRK Allocation Tests" begin
     A = [-10.0 0.5; 0.0 -2.0]
     function f1!(du, u, p, t)
