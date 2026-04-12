@@ -25,10 +25,10 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+OrdinaryDiffEqBDF = {path = "../OrdinaryDiffEqBDF"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
@@ -62,7 +62,6 @@ RecursiveArrayTools = "3.52"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
 SciMLBase = "2.116"
-Static = "1.2"
 Test = "<0.0.1, 1"
 julia = "1.10"
 
