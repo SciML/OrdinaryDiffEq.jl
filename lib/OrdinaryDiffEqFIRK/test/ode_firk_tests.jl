@@ -43,7 +43,7 @@ for i in [5, 9, 13, 17, 21, 25], prob in [prob_ode_linear_big, prob_ode_2Dlinear
     local sim21 = test_convergence(
         dts,
         prob,
-        AdaptiveRadau(min_order = i, max_order = i, threading = OrdinaryDiffEqCore.PolyesterThreads()), dense_errors = true
+        AdaptiveRadau(min_order = i, max_order = i, threading = OrdinaryDiffEqCore.BaseThreads()), dense_errors = true
     )
     @test sim21.𝒪est[:final] ≈ i atol = testTol
     @test sim21.𝒪est[:L2] ≈ ((i + 3) ÷ 2) atol = testTol
