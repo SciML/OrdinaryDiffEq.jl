@@ -1068,8 +1068,10 @@ end
     testTol = 0.2
     # Check convergence of Rodas3 with time-dependent matrix-free Jacobian.
     # Primarily to check that the Jacobian is being updated correctly as t changes.
-    sim = test_convergence(dts, prob, Rodas3(linsolve = LinearSolve.KrylovJL()),
-        reltol = 1.0e-14, abstol = 1.0e-14)
+    sim = test_convergence(
+        dts, prob, Rodas3(linsolve = LinearSolve.KrylovJL()),
+        reltol = 1.0e-14, abstol = 1.0e-14
+    )
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 end
 

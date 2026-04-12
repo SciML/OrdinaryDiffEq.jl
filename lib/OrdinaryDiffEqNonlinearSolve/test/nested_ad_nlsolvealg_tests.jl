@@ -33,16 +33,18 @@ using ForwardDiff
     function make_loss(alg)
         return function (p)
             prob = ODEProblem(lin!, u0, tspan, p)
-            sol = solve(prob, alg; save_everystep = false, reltol = 1.0e-8,
-                abstol = 1.0e-8)
+            sol = solve(
+                prob, alg; save_everystep = false, reltol = 1.0e-8,
+                abstol = 1.0e-8
+            )
             return sum(sol.u[end])
         end
     end
 
     for alg in (
-        ImplicitEuler(nlsolve = NonlinearSolveAlg()),
-        TRBDF2(nlsolve = NonlinearSolveAlg()),
-    )
+            ImplicitEuler(nlsolve = NonlinearSolveAlg()),
+            TRBDF2(nlsolve = NonlinearSolveAlg()),
+        )
         loss = make_loss(alg)
         # The @test_nowarn just guards against a regression — the important
         # thing is that this does not throw
