@@ -31,7 +31,6 @@ using MuladdMacro: @muladd
 using MacroTools: @capture
 using FastBroadcast: @..
 using RecursiveArrayTools: recursivefill!
-import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 using LinearAlgebra: mul!, I
 import ArrayInterface
 using ArrayInterface: ismutable

@@ -73,15 +73,42 @@ function reinterpolate_history!(cache::OrdinaryDiffEqConstantCache, D, R, k)
     return
 end
 
-function calc_R(ρ, k, ::Val{N}) where {N}
-    R = zero(MMatrix{N, N, typeof(ρ)})
+function _make_bdf_coeffs_fbdf()
+    Rat = Rational{Int64}
+    return Rat[
+        1 -1 0 0 0 0;
+        3//2 -2 1//2 0 0 0;
+        11//6 -3 3//2 -1//3 0 0;
+        25//12 -4 3 -4//3 1//4 0;
+        137//60 -5 5 -10//3 5//4 -1//5
+    ]
+end
+
+function _make_bdf_coeffs_dfbdf()
+    Rat = Rational{Int64}
+    return Rat[
+        1 -1 0 0 0 0;
+        2//3 -4//3 1//3 0 0 0;
+        6//11 -18//11 9//11 -2//11 0 0;
+        12//25 -48//25 36//25 -16//25 3//25 0;
+        60//137 -300//137 300//137 -200//137 75//137 -12//137
+    ]
+end
+
+function calc_R!(R, ρ, k)
+    fill!(R, zero(eltype(R)))
     @inbounds for r in 1:k
         R[1, r] = -r * ρ
         for j in 2:k
             R[j, r] = R[j - 1, r] * ((j - 1) - r * ρ) / j
         end
     end
-    return SArray(R)
+    return R
+end
+
+function calc_R(ρ, k, ::Val{N}) where {N}
+    R = zeros(typeof(ρ), N, N)
+    return calc_R!(R, ρ, k)
 end
 
 function update_D!(D, dd, k)
@@ -143,9 +170,9 @@ end
 
 function calc_finite_difference_weights(ts, t, order, ::Val{N}) where {N}
     max_order = N
-    c = zero(MMatrix{max_order + 1, max_order + 1, eltype(ts)})
+    c = zeros(eltype(ts), max_order + 1, max_order + 1)
     calc_finite_difference_weights!(c, ts, t, order)
-    return SArray(c)
+    return c
 end
 
 function reinitFBDF!(integrator, cache)
@@ -356,9 +383,9 @@ function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order
 end
 
 function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where {max_order}
-    (; ts_tmp, u_history) = cache
+    (; ts_tmp, u_history, fd_weights) = cache
     (; t, dt) = integrator
-    fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 1, Val(max_order))
+    calc_finite_difference_weights!(fd_weights, ts_tmp, t + dt, k - 1)
     terk = @.. broadcast = false fd_weights[1, k] * u
     #@show terk,fd_weights[1,k+1]
     if u isa Number
