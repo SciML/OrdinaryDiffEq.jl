@@ -51,8 +51,9 @@ function advance_ode_integrator!(integrator::DDEIntegrator, always_calc_begin = 
     ode_integrator = integrator.integrator
 
     # algorithm only works if current time of DDE integrator equals final time point
-    # of solution
-    t != ode_integrator.sol.t[end] && error("cannot advance ODE integrator")
+    # of solution (allow one-ULP gap from shift_past_discontinuity!)
+    abs(t - ode_integrator.sol.t[end]) > eps(t) &&
+        error("cannot advance ODE integrator")
 
     # complete interpolation data of DDE integrator for time interval [t, t+dt]
     # and copy it to ODE integrator
@@ -231,31 +232,16 @@ function OrdinaryDiffEqCore.handle_discontinuities!(integrator::DDEIntegrator)
     return nothing
 end
 
-# Override shift_past_discontinuity! for DDEIntegrator: after advancing
-# integrator.t by one ULP, add a new save slot to the history ODE integrator's
-# solution at the shifted time. This keeps the `t == ode_integrator.sol.t[end]`
-# invariant in `advance_ode_integrator!` satisfied, and gives the history
-# interpolant a proper boundary at the discontinuity.
+# Override shift_past_discontinuity! for DDEIntegrator: shift integrator.t
+# and ode_integrator.t by one ULP. We do NOT modify ode_integrator.sol.t
+# (which must stay in lockstep with the outer DDE sol.t). Instead, the
+# one-ULP gap between t and sol.t[end] is tolerated by a relaxed check
+# in advance_ode_integrator!.
 function OrdinaryDiffEqCore.shift_past_discontinuity!(integrator::DDEIntegrator)
     OrdinaryDiffEqCore._shift_past_discontinuity!(
         integrator, integrator.t, integrator.tdir
     )
-    # Add a new save slot at the shifted time. The state u is continuous
-    # across the discontinuity so we copy the current values unchanged.
-    ode_integrator = integrator.integrator
-    ode_integrator.saveiter += 1
-    copyat_or_push!(ode_integrator.sol.t, ode_integrator.saveiter, integrator.t)
-    copyat_or_push!(ode_integrator.sol.u, ode_integrator.saveiter, ode_integrator.u)
-    ode_integrator.saveiter_dense += 1
-    copyat_or_push!(ode_integrator.sol.k, ode_integrator.saveiter_dense, ode_integrator.k)
-    if iscomposite(integrator.alg)
-        copyat_or_push!(
-            ode_integrator.sol.alg_choice, ode_integrator.saveiter,
-            integrator.cache.current
-        )
-    end
-    ode_integrator.t = integrator.t
-    integrator.prev_idx = ode_integrator.saveiter
+    integrator.integrator.t = integrator.t
     return nothing
 end
 
