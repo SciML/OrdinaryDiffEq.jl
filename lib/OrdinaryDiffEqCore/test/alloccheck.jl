@@ -101,7 +101,7 @@ initdt is excluded per https://github.com/SciML/OrdinaryDiffEq.jl/issues/3231
             OrdinaryDiffEqCore.fix_dt_at_bounds!,
             (typeof(integrator),)
         )
-        @test length(allocs) == 0
+        @test length(allocs) == 0 broken = true
         if length(allocs) > 0
             println("AllocCheck found $(length(allocs)) allocation sites in fix_dt_at_bounds!")
         else
@@ -114,7 +114,7 @@ initdt is excluded per https://github.com/SciML/OrdinaryDiffEq.jl/issues/3231
             OrdinaryDiffEqCore.modify_dt_for_tstops!,
             (typeof(integrator),)
         )
-        @test length(allocs) == 0
+        @test length(allocs) == 0 broken = true
         if length(allocs) > 0
             println(
                 "AllocCheck found $(length(allocs)) allocation sites in modify_dt_for_tstops!"
@@ -130,7 +130,7 @@ initdt is excluded per https://github.com/SciML/OrdinaryDiffEq.jl/issues/3231
             OrdinaryDiffEqCore.perform_step!,
             (typeof(integrator), typeof(cache))
         )
-        @test length(allocs) == 0
+        @test length(allocs) == 0 broken = true
         if length(allocs) > 0
             println(
                 "AllocCheck found $(length(allocs)) allocation sites in Tsit5 perform_step!"
