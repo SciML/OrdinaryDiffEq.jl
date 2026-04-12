@@ -248,6 +248,12 @@ function OrdinaryDiffEqCore.shift_past_discontinuity!(integrator::DDEIntegrator)
     copyat_or_push!(ode_integrator.sol.u, ode_integrator.saveiter, ode_integrator.u)
     ode_integrator.saveiter_dense += 1
     copyat_or_push!(ode_integrator.sol.k, ode_integrator.saveiter_dense, ode_integrator.k)
+    if iscomposite(integrator.alg)
+        copyat_or_push!(
+            ode_integrator.sol.alg_choice, ode_integrator.saveiter,
+            integrator.cache.current
+        )
+    end
     ode_integrator.t = integrator.t
     integrator.prev_idx = ode_integrator.saveiter
     return nothing
