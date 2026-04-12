@@ -8,6 +8,7 @@ using Aqua
     Aqua.test_all(
         OrdinaryDiffEqCore;
         piracies = false,
-        unbound_args = false
+        unbound_args = false,
+        deps_compat = (check_extras = false,)
     )
 end

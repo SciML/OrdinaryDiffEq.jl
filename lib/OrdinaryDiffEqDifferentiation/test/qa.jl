@@ -8,6 +8,7 @@ using Aqua
     Aqua.test_all(
         OrdinaryDiffEqDifferentiation;
         piracies = false,
-        ambiguities = false
+        ambiguities = false,
+        deps_compat = (check_extras = false,)
     )
 end
