@@ -58,7 +58,7 @@ using Test
         for _ in 1:10
             allocs += @allocated step!(integrator)
         end
-        @test allocs == 0 broken = true
+        @test allocs == 0
     end
 
     @testset "DFBDF step!(save_everystep=false) Runtime Allocation Check" begin
@@ -82,7 +82,7 @@ using Test
         for _ in 1:10
             allocs += @allocated step!(integrator)
         end
-        @test allocs == 0 broken = true
+        @test allocs == 0
     end
 
     # Static analysis tests below. These use AllocCheck's check_allocs which

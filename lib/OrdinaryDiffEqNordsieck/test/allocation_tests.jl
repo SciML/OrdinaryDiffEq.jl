@@ -32,7 +32,7 @@ using Test
                     (typeof(integrator), typeof(cache))
                 )
 
-                @test length(allocs) == 0 broken = true
+                @test length(allocs) == 0 broken = (solver isa AN5)
 
                 if length(allocs) > 0
                     println(
