@@ -45,12 +45,10 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
-OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
-OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
 
 [compat]
 SafeTestsets = "0.1.0"
@@ -93,7 +91,6 @@ FastPower = "1.1"
 Logging = "1.10"
 Mooncake = "0.4, 0.5"
 AllocCheck = "0.2"
-OrdinaryDiffEqTsit5 = "1"
 DiffEqBase = "6.209"
 Adapt = "4.3"
 Reexport = "1.2"
@@ -103,7 +100,7 @@ Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [targets]
-test = ["AllocCheck", "DiffEqDevTools", "OrdinaryDiffEqTsit5", "SafeTestsets", "SparseArrays", "Test", "Pkg"]
+test = ["AllocCheck", "DiffEqDevTools", "SafeTestsets", "SparseArrays", "Test", "Pkg"]
 
 [extensions]
 OrdinaryDiffEqCoreMooncakeExt = "Mooncake"
