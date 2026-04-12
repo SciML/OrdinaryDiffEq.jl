@@ -231,6 +231,22 @@ function OrdinaryDiffEqCore.handle_discontinuities!(integrator::DDEIntegrator)
     return nothing
 end
 
+# Override shift_past_discontinuity! for DDEIntegrator: after advancing
+# integrator.t by one ULP, also update the internal ODE integrator's solution
+# endpoint so that the `t == ode_integrator.sol.t[end]` check in
+# advance_ode_integrator! remains satisfied.
+function OrdinaryDiffEqCore.shift_past_discontinuity!(integrator::DDEIntegrator)
+    OrdinaryDiffEqCore._shift_past_discontinuity!(
+        integrator, integrator.t, integrator.tdir
+    )
+    # Keep the ODE history integrator's solution endpoint in sync
+    ode_integrator = integrator.integrator
+    if !isempty(ode_integrator.sol.t) && length(ode_integrator.sol.t) > 0
+        ode_integrator.sol.t[end] = integrator.t
+    end
+    return nothing
+end
+
 """
     add_next_discontinuities!(integrator::DDEIntegrator, order[, t=integrator.t])
 

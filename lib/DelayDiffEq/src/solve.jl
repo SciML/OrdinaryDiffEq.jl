@@ -564,6 +564,9 @@ function SciMLBase.__init(
     # take care of time step dt = 0 and dt with incorrect sign
     OrdinaryDiffEqCore.handle_dt!(integrator)
 
+    # Starting-time discontinuity handling: mirrors OrdinaryDiffEqCore's __init.
+    OrdinaryDiffEqCore.handle_starting_time_discontinuity!(integrator)
+
     return integrator
 end
 
