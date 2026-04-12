@@ -204,6 +204,24 @@ if !hasmethod(nextfloat, Tuple{ForwardDiff.Dual})
     end
 end
 
+struct WidenedDualArray{T,A} <: AbstractVector{T}
+    parent::A
+end
+Base.size(a::WidenedDualArray) = size(a.parent)
+Base.@propagate_inbounds Base.getindex(a::WidenedDualArray{T}, i::Int) where {T} = convert(T, a.parent[i])
+
+function (ff::SciMLBase.UJacobianWrapper{true})(du1, uprev::AbstractArray{<:ForwardDiff.Dual})
+    p = ff.p
+    if p isa AbstractArray && eltype(p) <: ForwardDiff.Dual
+        DualU = eltype(uprev)
+        if !(eltype(p) <: DualU)
+            hasfield(typeof(ff.f), :f) && getfield(ff.f, :f) isa FunctionWrappersWrappers.FunctionWrappersWrapper && return ff.f(du1, uprev, p, ff.t)
+            return ff.f(du1, uprev, WidenedDualArray{DualU, typeof(p)}(p), ff.t)
+        end
+    end
+    ff.f(du1, uprev, p, ff.t)
+end
+
 import PrecompileTools
 PrecompileTools.@compile_workload begin
     # Scalar operations on Dual numbers (arithmetic, math functions, comparisons)
