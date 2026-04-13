@@ -451,11 +451,8 @@ end
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
-    # The the number of degree for Chebyshev polynomial
-    #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
-    maxm = 50
+    # The number of degree for Chebyshev polynomial
     mdeg = 1 + Int(floor(sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)))
-    mdeg = (mdeg > maxm) ? maxm : mdeg
 
     w0 = 1 + 2 / (13 * (mdeg^2))
     temp1 = w0^2 - 1
@@ -508,9 +505,11 @@ end
             d2z1 = d2z
         end
     end
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # error estimate
     if integrator.opts.adaptive
-        tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + gprev)
+        tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + integrator.fsallast)
         atmp = calculate_residuals(
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -518,8 +517,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast = f(u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.k[2] = integrator.fsallast
     integrator.u = u
 end
 
@@ -537,11 +535,8 @@ end
     (; k, tmp, gprev2, gprev, atmp) = cache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
-    # The the number of degree for Chebyshev polynomial
-    #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/10eps(t)))))
-    maxm = 50
+    # The number of degree for Chebyshev polynomial
     mdeg = 1 + Int(floor(sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)))
-    mdeg = (mdeg > maxm) ? maxm : mdeg
 
     w0 = 1 + 2 / (13 * (mdeg^2))
     temp1 = w0^2 - 1
@@ -580,8 +575,8 @@ end
             dt * μs * (k - νs * fsalfirst)
         th = μ * th1 + ν * th2 + μs * (1 - νs)
         if (iter < mdeg)
-            gprev2 = gprev
-            gprev = u
+            @.. broadcast = false gprev2 = gprev
+            @.. broadcast = false gprev = u
             th2 = th1
             th1 = th
             b2 = b1
@@ -594,9 +589,11 @@ end
             d2z1 = d2z
         end
     end
+    f(integrator.fsallast, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # error estimate
     if integrator.opts.adaptive
-        @.. broadcast = false tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + gprev)
+        @.. broadcast = false tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + integrator.fsallast)
         calculate_residuals!(
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -604,8 +601,6 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = integrator.fsalfirst
-    f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[2] = integrator.fsallast
     integrator.u = u
 end
