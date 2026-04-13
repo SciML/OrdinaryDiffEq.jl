@@ -33,14 +33,14 @@ function nordsieck_prepare_next!(integrator, cache::T) where {T}
     (; maxη, order, L) = cache
     # TODO: further clean up
     (; bias1, bias2, bias3, addon) = integrator.alg
-    if integrator.EEst > one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
         nordsieck_rewind!(cache)
         cache.n_wait = max(2, cache.n_wait)
         cache.nextorder = order
-        cache.η = inv((bias2 * integrator.EEst)^inv(L) + addon)
+        cache.η = inv((bias2 * OrdinaryDiffEqCore.get_EEst(integrator))^inv(L) + addon)
         return nothing
     end
-    cache.ηq = inv((bias2 * integrator.EEst)^inv(L) + addon)
+    cache.ηq = inv((bias2 * OrdinaryDiffEqCore.get_EEst(integrator))^inv(L) + addon)
     stepsize_η!(integrator, cache, cache.order)
     if !is_nordsieck_change_order(cache)
         cache.η = cache.ηq
@@ -394,7 +394,7 @@ function stepsize_η!(integrator, cache, order)
     bias2 = integrator.alg.bias2
     addon = integrator.alg.addon
     L = order + 1
-    cache.ηq = inv((bias2 * integrator.EEst)^inv(L) + addon)
+    cache.ηq = inv((bias2 * OrdinaryDiffEqCore.get_EEst(integrator))^inv(L) + addon)
     return cache.ηq
 end
 

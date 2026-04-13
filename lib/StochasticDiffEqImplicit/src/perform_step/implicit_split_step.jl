@@ -111,7 +111,7 @@
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(resids, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(resids, t))
     end
 
     integrator.u = u
@@ -256,6 +256,6 @@ end
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(tmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
     end
 end

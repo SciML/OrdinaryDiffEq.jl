@@ -632,7 +632,7 @@ function _ode_init(
 
     _rng = rng === nothing ? Random.default_rng() : rng
 
-    # Seed the initial EEst on the controller cache (was historically
+    # Seed the initial EEst on the controller cache (was previously
     # `integrator.EEst = oneunit(EEstT)`).
     set_EEst!(controller_cache, EEst)
 

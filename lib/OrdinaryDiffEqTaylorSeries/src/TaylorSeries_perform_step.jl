@@ -86,7 +86,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, P + 1)
     # Save Taylor coefficients for dense output interpolation
@@ -123,7 +123,7 @@ end
             atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, P + 1)
     # Copy Taylor coefficients into k for dense output interpolation.
@@ -172,23 +172,23 @@ end
             EEst = integrator.opts.internalnorm(atmp, t)
 
             # backup
-            e = integrator.EEst
+            e = OrdinaryDiffEqCore.get_EEst(integrator)
             qold = integrator.controller_cache.qold
             # calculate dt
-            integrator.EEst = EEst
+            OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
             # restore
-            integrator.EEst = e
+            OrdinaryDiffEqCore.set_EEst!(integrator, e)
             integrator.controller_cache.qold = qold
 
             work = A / dtpropose
             if work < min_work
                 cache.current_order[] = i
                 min_work = work
-                integrator.EEst = EEst
+                OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             end
             dtn *= dt
         end
@@ -232,23 +232,23 @@ end
             EEst = integrator.opts.internalnorm(atmp, t)
 
             # backup
-            e = integrator.EEst
+            e = OrdinaryDiffEqCore.get_EEst(integrator)
             qold = integrator.controller_cache.qold
             # calculate dt
-            integrator.EEst = EEst
+            OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
             # restore
-            integrator.EEst = e
+            OrdinaryDiffEqCore.set_EEst!(integrator, e)
             integrator.controller_cache.qold = qold
 
             work = A / dtpropose
             if work < min_work
                 cache.current_order[] = i
                 min_work = work
-                integrator.EEst = EEst
+                OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             end
         end
     end

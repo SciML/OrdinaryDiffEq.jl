@@ -119,16 +119,3 @@ end
 function SII.get_history_function(integrator::DDEIntegrator)
     return integrator.history
 end
-
-# `EEst` now lives on the controller cache for DDE integrators too.
-@inline function Base.getproperty(integ::DDEIntegrator, s::Symbol)
-    s === :EEst &&
-        return OrdinaryDiffEqCore.get_EEst(getfield(integ, :controller_cache))
-    return getfield(integ, s)
-end
-
-@inline function Base.setproperty!(integ::DDEIntegrator, s::Symbol, val)
-    s === :EEst &&
-        return OrdinaryDiffEqCore.set_EEst!(getfield(integ, :controller_cache), val)
-    return setfield!(integ, s, convert(fieldtype(typeof(integ), s), val))
-end

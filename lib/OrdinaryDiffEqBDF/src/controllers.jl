@@ -17,10 +17,10 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
     #step is accepted, reset count of consecutive failed steps
     cache.consfailcnt = 0
     cache.nconsteps += 1
-    if iszero(integrator.EEst)
+    if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
         return integrator.dt * get_current_qmax(integrator, alg.qmax)
     else
-        est = integrator.EEst
+        est = OrdinaryDiffEqCore.get_EEst(integrator)
         estₖ₋₁ = cache.EEst1
         estₖ₊₁ = cache.EEst2
         h = integrator.dt
@@ -102,7 +102,7 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     end
     zₛ = 1.2  # equivalent to integrator.opts.gamma
     expo = 1 / (k + 1)
-    z = zₛ * ((integrator.EEst)^expo)
+    z = zₛ * ((OrdinaryDiffEqCore.get_EEst(integrator))^expo)
     F = inv(z)
     if z <= 10
         hₖ = F * h
