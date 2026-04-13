@@ -46,8 +46,8 @@ If not provided, the methods include automatic estimation procedures.
 
 ### Recommended stabilized methods
 
-  - **`ROCK2`**: Second-order ROW-type stabilized method with extended stability
-  - **`ROCK4`**: Fourth-order stabilized method for higher accuracy requirements
+  - **`RKC`**: Second-order one-step stabilized method for low accuracy requirements
+  - **`TSRKC3`**: Third-order two-step stabilized method for moderate accuracy requirements
 
 ## Performance Guidelines
 
@@ -83,6 +83,7 @@ first_steps("OrdinaryDiffEqStabilizedRK", "ROCK4")
 ROCK2 
 ROCK4 
 RKC
+TSRKC3
 SERK2
 ESERK4
 ESERK5
