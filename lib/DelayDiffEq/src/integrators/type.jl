@@ -32,7 +32,7 @@ function (integrator::HistoryODEIntegrator)(
 end
 
 mutable struct DDEIntegrator{
-        algType, IIP, uType, tType, P, eigenType, EEstT, tTypeNoUnits,
+        algType, IIP, uType, tType, P, eigenType, tTypeNoUnits,
         tdirType,
         ksEltype, SolType, F, CacheType, IType, FP, O, dAbsType,
         dRelType, H,
@@ -70,7 +70,6 @@ mutable struct DDEIntegrator{
     dtpropose::tType
     tdir::tdirType
     eigen_est::eigenType
-    EEst::EEstT
     success_iter::Int
     iter::Int
     saveiter::Int
@@ -119,4 +118,17 @@ end
 
 function SII.get_history_function(integrator::DDEIntegrator)
     return integrator.history
+end
+
+# `EEst` now lives on the controller cache for DDE integrators too.
+@inline function Base.getproperty(integ::DDEIntegrator, s::Symbol)
+    s === :EEst &&
+        return OrdinaryDiffEqCore.get_EEst(getfield(integ, :controller_cache))
+    return getfield(integ, s)
+end
+
+@inline function Base.setproperty!(integ::DDEIntegrator, s::Symbol, val)
+    s === :EEst &&
+        return OrdinaryDiffEqCore.set_EEst!(getfield(integ, :controller_cache), val)
+    return setfield!(integ, s, convert(fieldtype(typeof(integ), s), val))
 end

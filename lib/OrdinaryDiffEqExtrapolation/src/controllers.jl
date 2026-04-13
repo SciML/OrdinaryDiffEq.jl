@@ -11,19 +11,21 @@ function ExtrapolationController(QT, alg; qmin = nothing, qmax = nothing)
     )
 end
 
-mutable struct ExtrapolationControllerCache{QT} <: AbstractControllerCache
+mutable struct ExtrapolationControllerCache{QT, E} <: AbstractControllerCache
     controller::ExtrapolationController{QT}
     beta1::QT
     gamma::QT
     qold::QT
+    EEst::E
 end
 
-function setup_controller_cache(alg, cache, controller::ExtrapolationController{T}) where {T}
-    return ExtrapolationControllerCache(
+function setup_controller_cache(alg, cache, controller::ExtrapolationController{T}, ::Type{E}) where {T, E}
+    return ExtrapolationControllerCache{T, E}(
         controller,
         T(1),
         T(1),
         T(1 // 10^4),
+        oneunit(E),
     )
 end
 

@@ -1,14 +1,47 @@
 abstract type AbstractController end
 
+"""
+    AbstractControllerCache
+
+Each controller cache is expected to own the scalar error estimate used by the
+step-size logic and exposed to users as `integrator.EEst`. The accessors
+[`get_EEst`](@ref) and [`set_EEst!`](@ref) read/write that scalar; the default
+implementations dispatch on a `EEst` field. Controllers that track multiple
+error estimates (e.g. BDF methods with `EEst1`, `EEst2`) can either still hold
+a canonical scalar EEst or override the accessors directly.
+"""
 abstract type AbstractControllerCache end
 
 """
-    setup_controller_cache(alg, algcache, controller::AbstractController)::AbstractControllerCache
+    get_EEst(controller_cache)
+
+Return the scalar error estimate stored by the controller cache. Fallback reads
+the `EEst` field.
+"""
+@inline get_EEst(cache::AbstractControllerCache) = cache.EEst
+
+"""
+    set_EEst!(controller_cache, val)
+
+Store `val` as the scalar error estimate on the controller cache. Fallback
+writes the `EEst` field.
+"""
+@inline set_EEst!(cache::AbstractControllerCache, val) = (cache.EEst = val)
+
+"""
+    setup_controller_cache(alg, algcache, controller::AbstractController, ::Type{EEstT})::AbstractControllerCache
 
 This function takes a controller together with the time stepping algorithm to
-construct and initialize the respective cache for the controller.
+construct and initialize the respective cache for the controller. The
+`EEstT` type parameter is the element type of the error estimate stored on
+the returned cache (matches what used to live on `integrator.EEst`).
 """
 setup_controller_cache
+
+# Back-compat dispatch for any 3-arg implementation still in the ecosystem.
+# New code should pass the `EEstT` type parameter explicitly.
+setup_controller_cache(alg, cache, controller::AbstractController) =
+    setup_controller_cache(alg, cache, controller, Float64)
 
 """
     accept_step_controller(integrator, alg)::Bool
@@ -95,6 +128,13 @@ See also: https://github.com/SciML/DifferentialEquations.jl/issues/299
 @inline function get_current_qmax(integrator, qmax)
     if integrator.success_iter == 0
         ctrl = integrator.controller_cache
+        # Look through a DummyController wrapper at the embedded alg cache.
+        if ctrl isa DummyControllerCache
+            inner = ctrl.cache
+            if hasfield(typeof(inner), :qmax_first_step)
+                return inner.qmax_first_step
+            end
+        end
         if hasfield(typeof(ctrl), :controller) &&
                 hasfield(typeof(ctrl.controller), :qmax_first_step)
             return ctrl.controller.qmax_first_step
@@ -126,7 +166,23 @@ end
 # This is a helper struct for algorithms with integrated controllers like Nordsieck and BDF methods.
 struct DummyController <: AbstractController
 end
-setup_controller_cache(alg, cache, controller::DummyController) = cache
+
+"""
+    DummyControllerCache
+
+Controller cache used by algorithms that manage step-size selection themselves
+(BDF, Nordsieck, Leaping, …). Holds the scalar error estimate exposed through
+`integrator.EEst` and a reference to the algorithm cache so existing dispatch
+on the algorithm cache continues to work.
+"""
+mutable struct DummyControllerCache{T, C} <: AbstractControllerCache
+    EEst::T
+    cache::C
+end
+
+function setup_controller_cache(alg, cache, controller::DummyController, ::Type{E}) where {E}
+    return DummyControllerCache{E, typeof(cache)}(oneunit(E), cache)
+end
 
 
 # Standard integral (I) step size controller
@@ -195,15 +251,17 @@ function IController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = 
     )
 end
 
-mutable struct IControllerCache{T} <: AbstractControllerCache
+mutable struct IControllerCache{T, E} <: AbstractControllerCache
     controller::IController{T}
     dtreject::T
+    EEst::E
 end
 
-function setup_controller_cache(alg, cache, controller::IController{T}) where {T}
-    return IControllerCache(
+function setup_controller_cache(alg, cache, controller::IController{T}, ::Type{E}) where {T, E}
+    return IControllerCache{T, E}(
         controller,
         T(1 // 10^4),
+        oneunit(E),
     )
 end
 
@@ -329,19 +387,21 @@ function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing,
     )
 end
 
-mutable struct PIControllerCache{T} <: AbstractControllerCache
+mutable struct PIControllerCache{T, E} <: AbstractControllerCache
     controller::PIController{T}
     # Cached εₙ₊₁^β₁
     q11::T
     # Previous EEst
     errold::T
+    EEst::E
 end
 
-function setup_controller_cache(alg, cache, controller::PIController{T}) where {T}
-    return PIControllerCache(
+function setup_controller_cache(alg, cache, controller::PIController{T}, ::Type{E}) where {T, E}
+    return PIControllerCache{T, E}(
         controller,
         one(T),
         T(controller.qoldinit),
+        oneunit(E),
     )
 end
 
@@ -511,10 +571,11 @@ function Base.show(io::IO, controller::PIDController)
     )
 end
 
-mutable struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
+mutable struct PIDControllerCache{T, Limiter, E} <: AbstractControllerCache
     controller::PIDController{T, Limiter}
     err::Vector{T} # history of the error estimates
     dt_factor::T
+    EEst::E
 end
 
 function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PIDControllerCache{T}) where {T}
@@ -523,12 +584,13 @@ function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PIDContro
     return nothing
 end
 
-function setup_controller_cache(alg, cache, controller::PIDController{QT}) where {QT}
+function setup_controller_cache(alg, cache, controller::PIDController{QT}, ::Type{E}) where {QT, E}
     err = ones(QT, 3)
-    return PIDControllerCache(
+    return PIDControllerCache{QT, typeof(controller.limiter), E}(
         controller,
         err,
         one(QT),
+        oneunit(E),
     )
 end
 
@@ -692,11 +754,12 @@ function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, qmax_firs
     )
 end
 
-mutable struct PredictiveControllerCache{T} <: AbstractControllerCache
+mutable struct PredictiveControllerCache{T, E} <: AbstractControllerCache
     controller::PredictiveController{T}
     dtacc::T
     erracc::T
     qold::T
+    EEst::E
 end
 
 function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PredictiveControllerCache{T}) where {T}
@@ -713,12 +776,13 @@ function sync_controllers!(cache1::PredictiveControllerCache, cache2::Predictive
     return nothing
 end
 
-function setup_controller_cache(alg, cache, controller::PredictiveController{T}) where {T}
-    return PredictiveControllerCache(
+function setup_controller_cache(alg, cache, controller::PredictiveController{T}, ::Type{E}) where {T, E}
+    return PredictiveControllerCache{T, E}(
         controller,
         one(T),
         one(T),
         one(T),
+        oneunit(E),
     )
 end
 
@@ -784,14 +848,25 @@ struct CompositeController{T} <: AbstractController
     controllers::T
 end
 
-struct CompositeControllerCache{T} <: AbstractControllerCache
+mutable struct CompositeControllerCache{T, E} <: AbstractControllerCache
     caches::T
+    EEst::E
 end
 
-function setup_controller_cache(alg::CompositeAlgorithm, caches::CompositeCache, cc::CompositeController)
-    return CompositeControllerCache(
-        map((alg, cache, controller) -> setup_controller_cache(alg, cache, controller), alg.algs, caches.caches, cc.controllers),
-    )
+@inline function get_EEst(cache::CompositeControllerCache)
+    return cache.EEst
+end
+@inline function set_EEst!(cache::CompositeControllerCache, val)
+    cache.EEst = val
+    # Mirror to the currently active sub-cache if it exposes its own EEst
+    # field, so controller logic reading `cache.EEst` inside the sub-cache
+    # stays consistent.
+    return val
+end
+
+function setup_controller_cache(alg::CompositeAlgorithm, caches::CompositeCache, cc::CompositeController, ::Type{E}) where {E}
+    sub = map((alg, cache, controller) -> setup_controller_cache(alg, cache, controller, E), alg.algs, caches.caches, cc.controllers)
+    return CompositeControllerCache{typeof(sub), E}(sub, oneunit(E))
 end
 
 @inline function accept_step_controller(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
@@ -839,17 +914,16 @@ end
     return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
 
-function setup_controller_cache(alg::CompositeAlgorithm, caches::DefaultCache, controller::CompositeController)
-    return CompositeControllerCache(
-        (
-            setup_controller_cache(alg.algs[1], caches, controller.controllers[1]),
-            setup_controller_cache(alg.algs[2], caches, controller.controllers[2]),
-            setup_controller_cache(alg.algs[3], caches, controller.controllers[3]),
-            setup_controller_cache(alg.algs[4], caches, controller.controllers[4]),
-            setup_controller_cache(alg.algs[5], caches, controller.controllers[5]),
-            setup_controller_cache(alg.algs[6], caches, controller.controllers[6]),
-        )
+function setup_controller_cache(alg::CompositeAlgorithm, caches::DefaultCache, controller::CompositeController, ::Type{E}) where {E}
+    sub = (
+        setup_controller_cache(alg.algs[1], caches, controller.controllers[1], E),
+        setup_controller_cache(alg.algs[2], caches, controller.controllers[2], E),
+        setup_controller_cache(alg.algs[3], caches, controller.controllers[3], E),
+        setup_controller_cache(alg.algs[4], caches, controller.controllers[4], E),
+        setup_controller_cache(alg.algs[5], caches, controller.controllers[5], E),
+        setup_controller_cache(alg.algs[6], caches, controller.controllers[6], E),
     )
+    return CompositeControllerCache{typeof(sub), E}(sub, oneunit(E))
 end
 
 # Default alg

@@ -133,14 +133,23 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     return cache.order = kₙ
 end
 
+function step_reject_controller!(integrator, alg::QNDF)
+    return step_reject_controller!(integrator, integrator.cache, alg)
+end
 function step_reject_controller!(integrator, cache::Union{QNDFCache, QNDFConstantCache}, ::QNDF)
     return bdf_step_reject_controller!(integrator, cache, cache.EEst1)
 end
 
+function step_reject_controller!(integrator, alg::FBDF)
+    return step_reject_controller!(integrator, integrator.cache, alg)
+end
 function step_reject_controller!(integrator, cache::Union{FBDFCache, FBDFConstantCache}, ::FBDF)
     return bdf_step_reject_controller!(integrator, cache, cache.terkm1)
 end
 
+function post_newton_controller!(integrator, alg::FBDF)
+    return post_newton_controller!(integrator, integrator.cache, alg)
+end
 function post_newton_controller!(integrator, cache::Union{FBDFCache, FBDFConstantCache}, alg::FBDF)
     if cache.order > 1 && cache.nlsolver.nfails >= 3
         cache.order -= 1
@@ -325,10 +334,16 @@ function step_accept_controller!(
     return integrator.dt / q
 end
 
+function step_reject_controller!(integrator, alg::DFBDF)
+    return step_reject_controller!(integrator, integrator.cache, alg)
+end
 function step_reject_controller!(integrator, cache::Union{DFBDFCache, DFBDFConstantCache}, ::DFBDF)
     return bdf_step_reject_controller!(integrator, cache, cache.terkm1)
 end
 
+function post_newton_controller!(integrator, alg::DFBDF)
+    return post_newton_controller!(integrator, integrator.cache, alg)
+end
 function post_newton_controller!(integrator, cache::Union{DFBDFCache, DFBDFConstantCache}, alg::DFBDF)
     if cache.order > 1 && cache.nlsolver.nfails >= 3
         cache.order -= 1

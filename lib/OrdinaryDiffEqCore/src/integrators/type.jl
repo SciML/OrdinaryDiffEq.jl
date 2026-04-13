@@ -121,7 +121,7 @@ For more info see the linked documentation page.
 """
 mutable struct ODEIntegrator{
         algType, IIP,
-        uType, duType, tType, pType, eigenType, EEstT, tdirType,
+        uType, duType, tType, pType, eigenType, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
         CallbackCacheType, IA, DV, CC, RNGType, WType, PType, SqdtType,
         NoiseType, CType, RCType,
@@ -145,7 +145,6 @@ mutable struct ODEIntegrator{
     dtpropose::tType
     tdir::tdirType
     eigen_est::eigenType
-    EEst::EEstT
     controller_cache::CC
     success_iter::Int
     iter::Int
@@ -183,4 +182,17 @@ mutable struct ODEIntegrator{
     noise::NoiseType
     c::CType
     rate_constants::RCType
+end
+
+# `EEst` now lives on the controller cache: not every controller tracks a
+# single scalar error estimate, so the integrator stays agnostic. Existing
+# `integrator.EEst` reads/writes are forwarded to the active controller cache.
+@inline function Base.getproperty(integ::ODEIntegrator, s::Symbol)
+    s === :EEst && return get_EEst(getfield(integ, :controller_cache))
+    return getfield(integ, s)
+end
+
+@inline function Base.setproperty!(integ::ODEIntegrator, s::Symbol, val)
+    s === :EEst && return set_EEst!(getfield(integ, :controller_cache), val)
+    return setfield!(integ, s, convert(fieldtype(typeof(integ), s), val))
 end
