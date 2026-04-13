@@ -33,7 +33,6 @@ function SciMLBase.__init(
         dtmax = eltype(prob.tspan)(prob.tspan[end] - prob.tspan[1]),
         force_dtmin = false,
         adaptive = isadaptive(alg),
-        gamma = OrdinaryDiffEqCore.gamma_default(alg.alg),
         abstol = nothing,
         reltol = nothing,
         controller = nothing,
