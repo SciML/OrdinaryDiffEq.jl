@@ -34,7 +34,7 @@ function NewmarkBeta(;
         β = 0.25, γ = 0.5,
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        nlsolve = NewtonRaphson(), thread = Val{false}()
+        nlsolve = NewtonRaphson(), thread = Serial()
     )
     autodiff = OrdinaryDiffEqCore._fixup_ad(autodiff)
 

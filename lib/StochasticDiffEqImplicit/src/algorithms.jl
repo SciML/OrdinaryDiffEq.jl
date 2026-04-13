@@ -11,7 +11,6 @@ struct ImplicitEM{AD, F, F2, T2, T3, CJ} <:
     symplectic::Bool
     autodiff::AD
     concrete_jac::CJ
-    controller::Symbol
 end
 function ImplicitEM(;
         autodiff = AutoForwardDiff(),
@@ -20,14 +19,13 @@ function ImplicitEM(;
         extrapolant = :constant,
         theta = 1, symplectic = false,
         new_jac_conv_bound = 1.0e-3,
-        controller = :Predictive
     )
     autodiff = _fixup_ad(autodiff)
     return ImplicitEM(
         linsolve, nlsolve,
         symplectic ? 1 / 2 : theta,
         extrapolant, new_jac_conv_bound, symplectic,
-        autodiff, _unwrap_val(concrete_jac), controller
+        autodiff, _unwrap_val(concrete_jac),
     )
 end
 
@@ -44,7 +42,6 @@ struct ImplicitEulerHeun{AD, F, N, T2, T3, CJ} <:
     symplectic::Bool
     autodiff::AD
     concrete_jac::CJ
-    controller::Symbol
 end
 function ImplicitEulerHeun(;
         autodiff = AutoForwardDiff(),
@@ -53,7 +50,6 @@ function ImplicitEulerHeun(;
         extrapolant = :constant,
         theta = 1, symplectic = false,
         new_jac_conv_bound = 1.0e-3,
-        controller = :Predictive
     )
     autodiff = _fixup_ad(autodiff)
     return ImplicitEulerHeun(
@@ -61,7 +57,7 @@ function ImplicitEulerHeun(;
         symplectic ? 1 / 2 : theta,
         extrapolant,
         new_jac_conv_bound, symplectic,
-        autodiff, _unwrap_val(concrete_jac), controller
+        autodiff, _unwrap_val(concrete_jac),
     )
 end
 
@@ -75,7 +71,6 @@ struct ImplicitRKMil{AD, F, N, T2, T3, interpretation, CJ} <:
     symplectic::Bool
     autodiff::AD
     concrete_jac::CJ
-    controller::Symbol
 end
 function ImplicitRKMil(;
         autodiff = AutoForwardDiff(),
@@ -83,8 +78,7 @@ function ImplicitRKMil(;
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
         theta = 1, symplectic = false,
-        new_jac_conv_bound = 1.0e-3,
-        controller = :Predictive, interpretation = SciMLBase.AlgorithmInterpretation.Ito
+        new_jac_conv_bound = 1.0e-3, interpretation = SciMLBase.AlgorithmInterpretation.Ito
     )
     autodiff = _fixup_ad(autodiff)
     return ImplicitRKMil{
@@ -95,7 +89,7 @@ function ImplicitRKMil(;
         linsolve, nlsolve, symplectic ? 1 / 2 : theta,
         extrapolant,
         new_jac_conv_bound, symplectic,
-        autodiff, _unwrap_val(concrete_jac), controller
+        autodiff, _unwrap_val(concrete_jac),
     )
 end
 
@@ -109,7 +103,6 @@ struct ISSEM{AD, F, N, T2, T3, CJ} <:
     symplectic::Bool
     autodiff::AD
     concrete_jac::CJ
-    controller::Symbol
 end
 function ISSEM(;
         autodiff = AutoForwardDiff(),
@@ -118,7 +111,6 @@ function ISSEM(;
         extrapolant = :constant,
         theta = 1, symplectic = false,
         new_jac_conv_bound = 1.0e-3,
-        controller = :Predictive
     )
     autodiff = _fixup_ad(autodiff)
     return ISSEM(
@@ -126,7 +118,7 @@ function ISSEM(;
         symplectic ? 1 / 2 : theta,
         extrapolant,
         new_jac_conv_bound, symplectic,
-        autodiff, _unwrap_val(concrete_jac), controller
+        autodiff, _unwrap_val(concrete_jac),
     )
 end
 
@@ -140,7 +132,6 @@ struct ISSEulerHeun{AD, F, N, T2, T3, CJ} <:
     symplectic::Bool
     autodiff::AD
     concrete_jac::CJ
-    controller::Symbol
 end
 function ISSEulerHeun(;
         autodiff = AutoForwardDiff(),
@@ -149,7 +140,6 @@ function ISSEulerHeun(;
         extrapolant = :constant,
         theta = 1, symplectic = false,
         new_jac_conv_bound = 1.0e-3,
-        controller = :Predictive
     )
     autodiff = _fixup_ad(autodiff)
     return ISSEulerHeun(
@@ -157,7 +147,7 @@ function ISSEulerHeun(;
         symplectic ? 1 / 2 : theta,
         extrapolant,
         new_jac_conv_bound, symplectic,
-        autodiff, _unwrap_val(concrete_jac), controller
+        autodiff, _unwrap_val(concrete_jac),
     )
 end
 
@@ -171,7 +161,6 @@ struct SKenCarp{AD, F, N, T2, CJ} <:
     ode_error_est::Bool
     autodiff::AD
     concrete_jac::CJ
-    controller::Symbol
 end
 
 function SKenCarp(;
@@ -179,13 +168,13 @@ function SKenCarp(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :min_correct,
-        new_jac_conv_bound = 1.0e-3, controller = :Predictive,
+        new_jac_conv_bound = 1.0e-3,
         ode_error_est = true
     )
     autodiff = _fixup_ad(autodiff)
     return SKenCarp(
         linsolve, nlsolve, smooth_est, extrapolant, new_jac_conv_bound,
         ode_error_est,
-        autodiff, _unwrap_val(concrete_jac), controller
+        autodiff, _unwrap_val(concrete_jac),
     )
 end

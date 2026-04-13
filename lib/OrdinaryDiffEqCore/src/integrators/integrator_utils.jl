@@ -508,7 +508,7 @@ function _loopfooter!(integrator)
             !integrator.isout &&
                 accept_step_controller(
                 integrator,
-                integrator.opts.controller
+                integrator.alg
             )
         ) ||
             (
