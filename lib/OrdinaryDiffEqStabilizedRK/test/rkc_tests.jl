@@ -55,9 +55,12 @@ end
         sim = test_convergence(dts, prob, ROCK4(min_stages = 21))
         @test sim.𝒪est[:l∞] ≈ 4 atol = testTol
 
-        println("ROCKC")
+        println("RKC")
         sim = test_convergence(dts, prob, RKC())
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        println("TSRKC3")
+        sim = test_convergence(dts, prob, TSRKC3())
+        @test sim.𝒪est[:l∞] ≈ 3 atol = testTol
         println("SERK2")
         sim = test_convergence(dts, prob, SERK2())
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
@@ -93,6 +96,7 @@ end
             ROCK2(), ROCK2(eigen_est = eigen_est),
             ROCK4(), ROCK4(eigen_est = eigen_est),
             RKC(), RKC(eigen_est = eigen_est),
+            TSRKC3(), TSRKC3(eigen_est = eigen_est),
             SERK2(), SERK2(eigen_est = eigen_est),
             ESERK4(), ESERK4(eigen_est = eigen_est),
             ESERK5(), ESERK5(eigen_est = eigen_est),
@@ -118,6 +122,7 @@ end
         ROCK2(), ROCK2(eigen_est = eigen_est),
         ROCK4(), ROCK4(eigen_est = eigen_est),
         RKC(), RKC(eigen_est = eigen_est),
+        TSRKC3(), TSRKC3(eigen_est = eigen_est),
         SERK2(), SERK2(eigen_est = eigen_est),
         ESERK4(), ESERK4(eigen_est = eigen_est),
         ESERK5(), ESERK5(eigen_est = eigen_est),
