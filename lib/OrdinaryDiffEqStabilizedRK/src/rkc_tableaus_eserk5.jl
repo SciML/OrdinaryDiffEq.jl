@@ -15494,5 +15494,7 @@ function ESERK5ConstantCache(zprev)
         23.68169873246636214503,
     ]
 
-    return ESERK5ConstantCache{eltype(Bᵢ), typeof(zprev)}(ms, Cᵤ, Cₑ, zprev, Bᵢ, 1, 0, 0)
+    return ESERK5ConstantCache{eltype(Bᵢ), typeof(zprev)}(
+        Tuple(ms), Tuple(Cᵤ), Tuple(Cₑ), zprev, Bᵢ, 1, 0, 0
+    )
 end
