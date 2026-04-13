@@ -156,7 +156,7 @@ function choose_order!(
         cache::FBDFCache,
         ::Val{max_order}
     ) where {max_order}
-    (; t, dt, u, cache, uprev) = integrator
+    (; t, dt, u, uprev) = integrator
     (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
     k = cache.order
     # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
@@ -344,7 +344,7 @@ function choose_order!(
         cache::DFBDFCache,
         ::Val{max_order}
     ) where {max_order}
-    (; t, dt, u, cache, uprev) = integrator
+    (; t, dt, u, uprev) = integrator
     (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
     k = cache.order
     # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
