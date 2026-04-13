@@ -491,7 +491,7 @@ function DiffEqBase.reinit!(
     integrator.u_modified = false
 
     # full re-initialize the controller in timestepping
-    reinit!(integrator, integrator.controller_cache)
+    OrdinaryDiffEqCore.reinit_controller!(integrator, integrator.controller_cache)
 
     if reset_dt
         DiffEqBase.auto_dt_reset!(integrator)

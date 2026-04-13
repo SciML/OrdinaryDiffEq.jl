@@ -548,7 +548,7 @@ function SciMLBase.reinit!(
     integrator.u_modified = false
 
     # full re-initialize the controller in timestepping
-    reinit!(integrator, integrator.controller_cache)
+    reinit_controller!(integrator, integrator.controller_cache)
 
     if rng !== nothing
         SciMLBase.set_rng!(integrator, rng)

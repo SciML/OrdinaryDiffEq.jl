@@ -108,11 +108,11 @@ end
 
 reset_alg_dependent_opts!(controller::AbstractControllerCache, alg1, alg2) = nothing
 
-SciMLBase.reinit!(integrator::SciMLBase.DEIntegrator, controller::AbstractControllerCache) = nothing
+reinit_controller!(integrator::SciMLBase.DEIntegrator, controller::AbstractControllerCache) = nothing
 sync_controllers!(::AbstractControllerCache, ::AbstractControllerCache) = nothing
 
 # Remember: Caches can also hold the control algorithm (see e.g. BDF and Nordsieck methods).
-SciMLBase.reinit!(integrator::SciMLBase.DEIntegrator, cache::OrdinaryDiffEqCache) = nothing
+reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::OrdinaryDiffEqCache) = nothing
 sync_controllers!(::OrdinaryDiffEqCache, ::OrdinaryDiffEqCache) = nothing
 
 function post_newton_controller!(integrator, alg)
@@ -238,7 +238,7 @@ function step_reject_controller!(integrator, cache::IControllerCache, alg)
     return integrator.dt = cache.dtreject
 end
 
-SciMLBase.reinit!(integrator::SciMLBase.DEIntegrator, cache::IControllerCache) = nothing
+reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::IControllerCache) = nothing
 
 function sync_controllers!(cache1::IControllerCache, cache2::IControllerCache)
     cache1.dtreject = cache2.dtreject
@@ -381,7 +381,7 @@ function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
-function SciMLBase.reinit!(integrator::SciMLBase.DEIntegrator, cache::PIControllerCache{T}) where {T}
+function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PIControllerCache{T}) where {T}
     cache.q11 = one(T)
     return cache.errold = T(cache.controller.qoldinit)
 end
@@ -517,7 +517,7 @@ mutable struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
     dt_factor::T
 end
 
-function SciMLBase.reinit!(integrator::SciMLBase.DEIntegrator, cache::PIDControllerCache{T}) where {T}
+function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PIDControllerCache{T}) where {T}
     cache.err = ones(T, 3)
     cache.dt_factor = one(T)
     return nothing
@@ -699,7 +699,7 @@ mutable struct PredictiveControllerCache{T} <: AbstractControllerCache
     qold::T
 end
 
-function SciMLBase.reinit!(integrator::SciMLBase.DEIntegrator, cache::PredictiveControllerCache{T}) where {T}
+function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PredictiveControllerCache{T}) where {T}
     cache.dtacc = one(T)
     cache.erracc = one(T)
     cache.qold = one(T)
