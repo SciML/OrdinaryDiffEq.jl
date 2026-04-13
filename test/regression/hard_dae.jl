@@ -5,6 +5,7 @@ using NLsolve
 using Test
 using OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqNonlinearSolve: NLNewton
+using OrdinaryDiffEqCore: CompositeAlgorithm
 
 p_inv = [
     500.0
