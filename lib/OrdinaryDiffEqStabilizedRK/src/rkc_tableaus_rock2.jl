@@ -1,12 +1,12 @@
 function ROCK2ConstantCache(T, T2, zprev)
-    ms = SVector{46, Int}(
+    ms = (
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
         20,
         22, 24, 26, 28, 30, 33, 36, 39, 43, 47, 51, 56, 61, 66, 72, 78,
         85, 93,
         102, 112, 123, 135, 148, 163, 180, 198
     )
-    fp1 = SVector{46, T}(
+    fp1 = (
         0.4102693550421609e+0, 0.3889624104727243e+0,
         0.3804692420283886e+0,
         0.3760815680865637e+0, 0.3735177579729938e+0,
@@ -39,7 +39,7 @@ function ROCK2ConstantCache(T, T2, zprev)
         0.3679216942157868e+0,
         0.3679229127010114e+0
     )
-    fp2 = SVector{46, T}(
+    fp2 = (
         0.4495196112243335e+0, 0.4219428123056774e+0,
         0.4084335547255627e+0,
         0.4009301129475925e+0, 0.3963598727888637e+0,
@@ -4551,5 +4551,7 @@ function ROCK2ConstantCache(T, T2, zprev)
         0.9638702662671197,
     ]
 
-    return ROCK2ConstantCache{T, T2, typeof(zprev)}(ms, fp1, fp2, recf, zprev, 1, 1, 1, 0, 200)
+    return ROCK2ConstantCache{T, T2, typeof(zprev)}(
+        ms, NTuple{46, T}(fp1), NTuple{46, T}(fp2), recf, zprev, 1, 1, 1, 0, 200
+    )
 end

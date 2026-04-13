@@ -534,7 +534,7 @@ Some standard controller parameters suggested in the literature are
 """
 struct PIDController{QT, Limiter} <: AbstractLegacyController
     beta::NTuple{3, QT} # controller coefficients
-    err::MVector{3, QT} # history of the error estimates (mutable via indexing)
+    err::Vector{QT}     # history of the error estimates (length 3, mutable via indexing)
     accept_safety::QT   # accept a step if the predicted change of the step size
     # is bigger than this parameter
     limiter::Limiter    # limiter of the dt factor (before clipping)
@@ -547,7 +547,7 @@ function PIDController(
     )
     beta = map(float, promote(beta1, beta2, beta3))
     QT = eltype(beta)
-    err = MVector{3, QT}(true, true, true)
+    err = QT[1, 1, 1]
     return PIDController(beta, err, convert(QT, accept_safety), limiter)
 end
 
@@ -679,18 +679,18 @@ end
 
 mutable struct PIDControllerCache{T, Limiter, UT} <: AbstractControllerCache
     controller::NewPIDController{T, Limiter}
-    err::MVector{3, T} # history of the error estimates
+    err::Vector{T}      # history of the error estimates (length 3)
     dt_factor::T
     atmp::UT
 end
 
 function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIDControllerCache{T}) where {T}
-    cache.err = MVector{3, T}(true, true, true)
+    cache.err = T[1, 1, 1]
     return cache.dt_factor = T(1 // 10^4)
 end
 
 function setup_controller_cache(alg, atmp, controller::NewPIDController{QT}) where {QT}
-    err = MVector{3, QT}(true, true, true)
+    err = QT[1, 1, 1]
     return PIDControllerCache(
         controller,
         err,

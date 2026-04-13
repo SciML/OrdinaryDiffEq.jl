@@ -18,8 +18,7 @@ import ArrayInterface: fast_scalar_indexing, zeromatrix, lu_instance
 
 # StaticArrayInterface imported but not used
 # import StaticArrayInterface
-import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
-    StaticMatrix
+import StaticArraysCore: StaticArray, StaticMatrix
 
 using DiffEqBase: TimeGradientWrapper,
     UJacobianWrapper, TimeDerivativeWrapper,
