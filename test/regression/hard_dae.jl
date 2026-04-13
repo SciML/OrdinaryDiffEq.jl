@@ -4,6 +4,7 @@ using LinearAlgebra
 using NLsolve
 using Test
 using OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqNonlinearSolve: NLNewton
 
 p_inv = [
     500.0
