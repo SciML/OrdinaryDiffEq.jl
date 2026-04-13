@@ -16,7 +16,6 @@ struct IRKC{AD, F, F2, K, T, E, CJ} <:
     κ::K
     tol::T
     extrapolant::Symbol
-    controller::Symbol
     eigen_est::E
     autodiff::AD
     concrete_jac::CJ
@@ -27,13 +26,13 @@ function IRKC(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard, eigen_est = nothing
+        extrapolant = :linear, eigen_est = nothing
     )
     autodiff = _fixup_ad(autodiff)
 
     return IRKC(
         linsolve, nlsolve, κ, tol,
-        extrapolant, controller, eigen_est, autodiff,
+        extrapolant, eigen_est, autodiff,
         _unwrap_val(concrete_jac)
     )
 end

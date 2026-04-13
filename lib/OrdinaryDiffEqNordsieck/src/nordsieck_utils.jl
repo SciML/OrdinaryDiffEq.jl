@@ -349,13 +349,13 @@ end
 
 # `η` is `dtₙ₊₁/dtₙ`
 function setη!(integrator, cache::T) where {T}
-    if cache.η < integrator.opts.qsteady_max
+    if cache.η < integrator.alg.qsteady_max
         cache.η = 1
     else
         # TODO: Not the same with SUNDIALS
         (integrator.iter == 1 || integrator.u_modified) &&
             (cache.η = min(1.0e5, cache.η); return nothing)
-        cache.η = min(integrator.opts.qmax, max(integrator.opts.qmin, cache.η))
+        cache.η = min(integrator.alg.qmax, max(integrator.alg.qmin, cache.η))
     end
     return nothing
 end
@@ -364,7 +364,7 @@ function chooseη!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
     (; ηq, η₋₁, η₊₁, order, z, Δ) = cache
     η = max(ηq, η₋₁, η₊₁)
-    if η < integrator.opts.qsteady_max
+    if η < integrator.alg.qsteady_max
         cache.η = 1
         cache.nextorder = order
     end

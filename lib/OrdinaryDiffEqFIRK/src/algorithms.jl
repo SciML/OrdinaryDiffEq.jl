@@ -42,7 +42,6 @@ struct RadauIIA3{AD, F, Tol, C1, C2, StepLimiter, CJ} <:
     maxiters::Int
     fast_convergence_cutoff::C1
     new_W_γdt_cutoff::C2
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -54,7 +53,7 @@ function RadauIIA3(;
         linsolve = nothing,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
-        controller = :Predictive, κ = nothing, maxiters = 10,
+        κ = nothing, maxiters = 10,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -66,7 +65,6 @@ function RadauIIA3(;
         maxiters,
         fast_convergence_cutoff,
         new_W_γdt_cutoff,
-        controller,
         step_limiter!,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -91,7 +89,6 @@ struct RadauIIA5{AD, F, Tol, C1, C2, StepLimiter, CJ} <:
     maxiters::Int
     fast_convergence_cutoff::C1
     new_W_γdt_cutoff::C2
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -103,7 +100,7 @@ function RadauIIA5(;
         linsolve = nothing,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
-        controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
+        κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -116,7 +113,6 @@ function RadauIIA5(;
         maxiters,
         fast_convergence_cutoff,
         new_W_γdt_cutoff,
-        controller,
         step_limiter!,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -142,7 +138,6 @@ struct RadauIIA9{AD, F, Tol, C1, C2, StepLimiter, CJ} <:
     maxiters::Int
     fast_convergence_cutoff::C1
     new_W_γdt_cutoff::C2
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -154,7 +149,7 @@ function RadauIIA9(;
         linsolve = nothing,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
-        controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
+        κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -167,7 +162,6 @@ function RadauIIA9(;
         maxiters,
         fast_convergence_cutoff,
         new_W_γdt_cutoff,
-        controller,
         step_limiter!,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -192,7 +186,6 @@ struct AdaptiveRadau{AD, F, Tol, C1, C2, StepLimiter, TO, CJ} <:
     maxiters::Int
     fast_convergence_cutoff::C1
     new_W_γdt_cutoff::C2
-    controller::Symbol
     step_limiter!::StepLimiter
     min_order::Int
     max_order::Int
@@ -208,7 +201,7 @@ function AdaptiveRadau(;
         linsolve = nothing,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
-        controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
+        κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -221,7 +214,6 @@ function AdaptiveRadau(;
         maxiters,
         fast_convergence_cutoff,
         new_W_γdt_cutoff,
-        controller,
         step_limiter!, min_order, max_order, threading,
         autodiff,
         _unwrap_val(concrete_jac)

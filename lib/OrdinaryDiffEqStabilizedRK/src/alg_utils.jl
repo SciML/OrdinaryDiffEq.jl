@@ -11,7 +11,7 @@ alg_order(alg::TSRKC3) = 3
 
 alg_extrapolates(alg::TSRKC3) = true
 
-ispredictive(alg::Union{SERK2}) = alg.controller === :Predictive
+ispredictive(alg::Union{SERK2}) = true
 ispredictive(alg::Union{RKC, TSRKC3}) = true
 
 alg_adaptive_order(alg::Union{RKC, TSRKC3}) = 2

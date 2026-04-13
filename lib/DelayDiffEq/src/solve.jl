@@ -8,33 +8,6 @@ function SciMLBase.__solve(
     return integrator.sol
 end
 
-# Compile-time detection for OrdinaryDiffEqCore version compatibility
-# Detects if DEOptions has typeof(verbose) as a type parameter (PR #2895)
-"""
-    _count_deoptions_typeparams()
-
-Count the number of type parameters in OrdinaryDiffEqCore.DEOptions.
-Used for compile-time detection of API changes.
-"""
-function _count_deoptions_typeparams()
-    count = 0
-    T = OrdinaryDiffEqCore.DEOptions
-    while T isa UnionAll
-        count += 1
-        T = T.body
-    end
-    return count
-end
-
-"""
-    DEOPTIONS_HAS_VERBOSE_TYPEPARAM
-
-Compile-time constant that is `true` if OrdinaryDiffEqCore.DEOptions includes
-`typeof(verbose)` as a type parameter (OrdinaryDiffEqCore >= 1.37.0 or with PR #2895).
-Old version has 20 parameters, new version has 21 parameters (adds typeof(verbose)).
-"""
-const DEOPTIONS_HAS_VERBOSE_TYPEPARAM = _count_deoptions_typeparams() >= 21
-
 function SciMLBase.__init(
         prob::SciMLBase.AbstractDDEProblem,
         alg::AbstractMethodOfStepsAlgorithm,
@@ -60,19 +33,11 @@ function SciMLBase.__init(
         dtmax = eltype(prob.tspan)(prob.tspan[end] - prob.tspan[1]),
         force_dtmin = false,
         adaptive = isadaptive(alg),
-        gamma = OrdinaryDiffEqCore.gamma_default(alg.alg),
         abstol = nothing,
         reltol = nothing,
-        qmin = OrdinaryDiffEqCore.qmin_default(alg.alg),
-        qmax = OrdinaryDiffEqCore.qmax_default(alg.alg),
-        qsteady_min = OrdinaryDiffEqCore.qsteady_min_default(alg.alg),
-        qsteady_max = OrdinaryDiffEqCore.qsteady_max_default(alg.alg),
-        qoldinit = isadaptive(alg) ? 1 // 10^4 : 0,
         controller = nothing,
         fullnormalize = true,
         failfactor = 2,
-        beta1 = nothing,
-        beta2 = nothing,
         maxiters = adaptive ? 1000000 : typemax(Int),
         internalnorm = DiffEqBase.ODE_DEFAULT_NORM,
         internalopnorm = opnorm,
@@ -98,6 +63,8 @@ function SciMLBase.__init(
         discontinuity_abstol = eltype(prob.tspan)(1 // Int64(10)^12),
         discontinuity_reltol = 0,
         initializealg = DDEDefaultInit(),
+        delta = nothing,
+        save_noise = false,
         kwargs...
     )
     order_discontinuity_t0 = prob.order_discontinuity_t0
@@ -217,7 +184,7 @@ function SciMLBase.__init(
         ks_init = ks_init,
         save_idxs = save_idxs,
         save_start = save_start,
-        is_stochastic = is_stochastic
+        is_stochastic = false # FIXME the interface changed and now I do not know how to query this anymore.
     )
 
     # build cache
@@ -294,15 +261,11 @@ function SciMLBase.__init(
 
     # separate options of integrator and of dummy ODE integrator since ODE integrator always saves
     # every step and every index (necessary for history function)
-    QT = tTypeNoUnits <: Integer ? typeof(qmin) : typeof(internalnorm(u, t0))
+    QT = OrdinaryDiffEqCore.determine_controller_datatype(u, internalnorm, tspan)
 
     # Setting up the step size controller
     if controller === nothing
-        controller = OrdinaryDiffEqCore.default_controller(
-            alg.alg, cache,
-            convert(QT, qoldinit)::QT, beta1,
-            beta2
-        )
+        controller = OrdinaryDiffEqCore.default_controller(QT, alg.alg)
     end
 
     save_end_user = save_end
@@ -310,136 +273,64 @@ function SciMLBase.__init(
         save_everystep || isempty(saveat) || saveat isa Number ||
         prob.tspan[2] in saveat : save_end
 
-    # Construct DEOptions with compatibility for both old and new OrdinaryDiffEqCore
-    # Old version (before PR #2895): DEOptions without typeof(verbose) type parameter
-    # New version (with PR #2895): DEOptions with typeof(verbose) type parameter
-    @static if DEOPTIONS_HAS_VERBOSE_TYPEPARAM
-        # New version: include typeof(verbose) as a type parameter
-        opts = OrdinaryDiffEqCore.DEOptions{
-            typeof(abstol_internal), typeof(reltol_internal),
-            QT, tType, typeof(controller),
-            typeof(internalnorm), typeof(internalopnorm),
-            typeof(save_end_user),
-            typeof(callback_set),
-            typeof(isoutofdomain),
-            typeof(progress_message), typeof(unstable_check),
-            typeof(tstops_internal),
-            typeof(d_discontinuities_internal), typeof(userdata),
-            typeof(save_idxs),
-            typeof(maxiters), typeof(tstops),
-            typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
-        }(
-            maxiters,
-            save_everystep,
-            adaptive,
-            abstol_internal,
-            reltol_internal,
-            QT(gamma),
-            QT(qmax),
-            QT(qmin),
-            QT(qsteady_max),
-            QT(qsteady_min),
-            QT(qoldinit),
-            QT(failfactor),
-            tType(dtmax),
-            tType(dtmin),
-            controller,
-            internalnorm,
-            internalopnorm,
-            save_idxs,
-            tstops_internal,
-            saveat_internal,
-            d_discontinuities_internal,
-            tstops,
-            saveat,
-            d_discontinuities,
-            userdata,
-            progress,
-            progress_steps,
-            progress_name,
-            progress_message,
-            progress_id,
-            timeseries_errors,
-            dense_errors,
-            dense,
-            save_on,
-            save_start,
-            save_end,
-            save_discretes,
-            save_end_user,
-            callback_set,
-            isoutofdomain,
-            unstable_check,
-            verbose_spec,
-            calck,
-            force_dtmin,
-            advance_to_tstop,
-            stop_at_next_tstop
-        )
-    else
-        # Old version: without typeof(verbose) type parameter
-        opts = OrdinaryDiffEqCore.DEOptions{
-            typeof(abstol_internal), typeof(reltol_internal),
-            QT, tType, typeof(controller),
-            typeof(internalnorm), typeof(internalopnorm),
-            typeof(save_end_user),
-            typeof(callback_set),
-            typeof(isoutofdomain),
-            typeof(progress_message), typeof(unstable_check),
-            typeof(tstops_internal),
-            typeof(d_discontinuities_internal), typeof(userdata),
-            typeof(save_idxs),
-            typeof(maxiters), typeof(tstops),
-            typeof(saveat), typeof(d_discontinuities),
-        }(
-            maxiters,
-            save_everystep,
-            adaptive,
-            abstol_internal,
-            reltol_internal,
-            QT(gamma),
-            QT(qmax),
-            QT(qmin),
-            QT(qsteady_max),
-            QT(qsteady_min),
-            QT(qoldinit),
-            QT(failfactor),
-            tType(dtmax),
-            tType(dtmin),
-            controller,
-            internalnorm,
-            internalopnorm,
-            save_idxs,
-            tstops_internal,
-            saveat_internal,
-            d_discontinuities_internal,
-            tstops,
-            saveat,
-            d_discontinuities,
-            userdata,
-            progress,
-            progress_steps,
-            progress_name,
-            progress_message,
-            progress_id,
-            timeseries_errors,
-            dense_errors,
-            dense,
-            save_on,
-            save_start,
-            save_end,
-            save_discretes,
-            save_end_user,
-            callback_set,
-            isoutofdomain,
-            unstable_check,
-            verbose_spec,
-            calck,
-            force_dtmin,
-            advance_to_tstop,
-            stop_at_next_tstop
-        )
-    end
+    # Construct DEOptions
+    opts = OrdinaryDiffEqCore.DEOptions{
+        typeof(abstol_internal), typeof(reltol_internal),
+        QT, tType,
+        typeof(internalnorm), typeof(internalopnorm),
+        typeof(save_end_user),
+        typeof(callback_set),
+        typeof(isoutofdomain),
+        typeof(progress_message), typeof(unstable_check),
+        typeof(tstops_internal),
+        typeof(d_discontinuities_internal), typeof(userdata),
+        typeof(save_idxs),
+        typeof(maxiters), typeof(tstops),
+        typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
+        typeof(delta),
+    }(
+        maxiters,
+        save_everystep,
+        adaptive,
+        abstol_internal,
+        reltol_internal,
+        QT(failfactor),
+        tType(dtmax),
+        tType(dtmin),
+        internalnorm,
+        internalopnorm,
+        save_idxs,
+        tstops_internal,
+        saveat_internal,
+        d_discontinuities_internal,
+        tstops,
+        saveat,
+        d_discontinuities,
+        userdata,
+        progress,
+        progress_steps,
+        progress_name,
+        progress_message,
+        progress_id,
+        timeseries_errors,
+        dense_errors,
+        delta,
+        dense,
+        save_on,
+        save_start,
+        save_end,
+        save_noise,
+        save_discretes,
+        save_end_user,
+        callback_set,
+        isoutofdomain,
+        unstable_check,
+        verbose_spec,
+        calck,
+        force_dtmin,
+        advance_to_tstop,
+        stop_at_next_tstop
+    )
 
     # create fixed point solver
     fpsolver = build_fpsolver(
@@ -450,6 +341,16 @@ function SciMLBase.__init(
     # initialize indices of u(t) and u(tprev) in the dense history
     prev_idx = 1
     prev2_idx = 1
+
+    EEstT = if tTypeNoUnits <: Integer
+        QT
+    elseif prob isa SciMLBase.AbstractDiscreteProblem
+        constvalue(tTypeNoUnits)
+    else
+        typeof(internalnorm(u, t0))
+    end
+
+    controller_cache = OrdinaryDiffEqCore.setup_controller_cache(alg.alg, cache, controller)
 
     # create integrator combining the new defined problem function with history
     # information, the new solution, the parameters of the ODE integrator, and
@@ -464,7 +365,7 @@ function SciMLBase.__init(
     kshortsize = 0
     reeval_fsal = false
     u_modified = false
-    EEst = QT(1)
+    EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
     do_error_check = true
     isout = false
@@ -475,7 +376,6 @@ function SciMLBase.__init(
     vector_event_last_time = 1
     last_event_error = zero(uBottomEltypeNoUnits)
     dtchangeable = OrdinaryDiffEqCore.isdtchangeable(alg.alg)
-    q11 = QT(1)
     success_iter = 0
     erracc = QT(1)
     dtacc = tType(1)
@@ -484,7 +384,7 @@ function SciMLBase.__init(
     integrator = DDEIntegrator{
         typeof(alg.alg), isinplace(prob), typeof(u0), tType,
         typeof(p),
-        typeof(eigen_est), QT, typeof(tdir), typeof(k), typeof(sol),
+        typeof(eigen_est), EEstT, QT, typeof(tdir), typeof(k), typeof(sol),
         typeof(f_with_history), typeof(cache),
         typeof(ode_integrator), typeof(fpsolver),
         typeof(opts), typeof(discontinuity_abstol),
@@ -493,7 +393,9 @@ function SciMLBase.__init(
         typeof(d_discontinuities_propagated),
         typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),
-        typeof(differential_vars), typeof(initializealg),
+        typeof(differential_vars), typeof(controller_cache),
+        typeof(initializealg),
+        Nothing, Nothing, Nothing, Nothing,
     }(
         sol, u, k,
         t0,
@@ -520,10 +422,6 @@ function SciMLBase.__init(
         tdir,
         eigen_est,
         EEst,
-        QT(qoldinit),
-        q11,
-        erracc,
-        dtacc,
         success_iter,
         iter,
         length(ts),
@@ -547,7 +445,9 @@ function SciMLBase.__init(
         stats,
         history,
         differential_vars,
-        ode_integrator, fsalfirst, fsallast, initializealg
+        controller_cache,
+        ode_integrator, fsalfirst, fsallast, initializealg,
+        nothing, nothing, nothing, nothing,
     )
 
     # initialize DDE integrator
