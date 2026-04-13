@@ -252,7 +252,6 @@ function ImplicitDeuflhardExtrapolation(;
 Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
             "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
-        chunk_size
     end
 
     # Warn user if sequence has been changed:
