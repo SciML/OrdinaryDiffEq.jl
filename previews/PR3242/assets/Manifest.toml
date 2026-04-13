@@ -1064,7 +1064,7 @@ version = "1.8.1"
 
 [[deps.OrdinaryDiffEq]]
 deps = ["ADTypes", "CommonSolve", "DocStringExtensions", "OrdinaryDiffEqBDF", "OrdinaryDiffEqCore", "OrdinaryDiffEqDefault", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqRosenbrockTableaus", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "SciMLBase"]
-path = "/home/runner/work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl"
+path = "/home/chrisrackauckas/github-runners/deepsea4-18/_work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 version = "7.0.0-DEV"
 
@@ -1244,7 +1244,7 @@ uuid = "e3e12d00-db14-5390-b879-ac3dd2ef6296"
 version = "1.14.0"
 
 [[deps.OrdinaryDiffEqStabilizedRK]]
-deps = ["DiffEqBase", "FastBroadcast", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArraysCore"]
+deps = ["DiffEqBase", "FastBroadcast", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "Reexport", "SciMLBase"]
 path = "../lib/OrdinaryDiffEqStabilizedRK"
 uuid = "358294b1-0aab-51c3-aafe-ad5ab194a2ad"
 version = "1.11.0"
