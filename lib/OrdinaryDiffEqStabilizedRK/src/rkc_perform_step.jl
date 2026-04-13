@@ -452,7 +452,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The number of degree for Chebyshev polynomial
-    mdeg = 1 + Int(floor(sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)))
+    mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
 
     w0 = 1 + 2 / (13 * (mdeg^2))
     temp1 = w0^2 - 1
@@ -536,7 +536,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The number of degree for Chebyshev polynomial
-    mdeg = 1 + Int(floor(sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)))
+    mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
 
     w0 = 1 + 2 / (13 * (mdeg^2))
     temp1 = w0^2 - 1
@@ -1087,7 +1087,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
         if (rkcstep)
-        mdeg = 1 + Int(floor(sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)))
+        mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
         w0 = 1 + 2 / (13 * (mdeg^2))
         temp1 = w0^2 - 1
         temp2 = sqrt(temp1)
@@ -1097,7 +1097,7 @@ end
         b = b1
         b2 = b1
     else
-        mdeg = 1 + Int(floor(sqrt(4 + 1.267029788142009 * abs(dt) * integrator.eigen_est * (onemq + sqrt(1 + q * (0.44256220745562963 + q))))))
+        mdeg = floor(Int, sqrt(4 + 1.267029788142009 * abs(dt) * integrator.eigen_est * (onemq + sqrt(1 + q * (0.44256220745562963 + q))))) + 1
         mdeg2 = mdeg^2
         tsw0 = cache.tsw0
         acoshtsw0 = cache.acoshtsw0
@@ -1217,7 +1217,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     if (rkcstep)
-        mdeg = 1 + Int(floor(sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)))
+        mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
         w0 = 1 + 2 / (13 * (mdeg^2))
         temp1 = w0^2 - 1
         temp2 = sqrt(temp1)
@@ -1227,7 +1227,7 @@ end
         b = b1
         b2 = b1
     else
-        mdeg = 1 + Int(floor(sqrt(4 + 1.267029788142009 * abs(dt) * integrator.eigen_est * (onemq + sqrt(1 + q * (0.44256220745562963 + q))))))
+        mdeg = floor(Int, sqrt(4 + 1.267029788142009 * abs(dt) * integrator.eigen_est * (onemq + sqrt(1 + q * (0.44256220745562963 + q))))) + 1
         mdeg2 = mdeg^2
         tsw0 = constantcache.tsw0
         acoshtsw0 = constantcache.acoshtsw0
