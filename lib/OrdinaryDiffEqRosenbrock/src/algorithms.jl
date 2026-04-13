@@ -93,6 +93,14 @@ for (Alg, desc, refs, is_W) in [
             true,
         ),
     ]
+    # Rosenbrock23/32 are low-order methods typically used on small/warm-up
+    # problems where J evaluation is cheap and per-step overhead dominates.
+    # Default them to max_jac_age = 1 which effectively disables reuse (the
+    # age check in _rosenbrock_jac_reuse_decision triggers every step).
+    # Users can still opt into reuse with an explicit max_jac_age kwarg.
+    # Higher-order W-methods (Rodas23W, ROS34PW*, Rodas4P2, Rodas5P/Pe/Pr,
+    # Rodas6P) keep the full reuse default which wins on PDE workloads.
+    default_max_jac_age = (Alg === :Rosenbrock23 || Alg === :Rosenbrock32) ? 1 : 20
     @eval begin
         @doc $(
             is_W ?
@@ -109,13 +117,16 @@ for (Alg, desc, refs, is_W) in [
             step_limiter!::StepLimiter
             stage_limiter!::StageLimiter
             autodiff::AD
+            max_jac_age::Int
+            jac_reuse_gamma_tol::Float64
         end
         function $Alg(;
                 chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
                 diff_type = Val{:forward}(), linsolve = nothing,
                 precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
-                stage_limiter! = trivial_limiter!
+                stage_limiter! = trivial_limiter!,
+                max_jac_age = $default_max_jac_age, jac_reuse_gamma_tol = 0.03
             )
             AD_choice, chunk_size,
                 diff_type = _process_AD_choice(
@@ -128,7 +139,7 @@ for (Alg, desc, refs, is_W) in [
                 typeof(stage_limiter!),
             }(
                 linsolve, precs, step_limiter!,
-                stage_limiter!, AD_choice
+                stage_limiter!, AD_choice, max_jac_age, jac_reuse_gamma_tol
             )
         end
     end
@@ -152,13 +163,16 @@ struct RosenbrockW6S4OS{CS, AD, F, P, FDT, ST, CJ} <:
     linsolve::F
     precs::P
     autodiff::AD
+    max_jac_age::Int
+    jac_reuse_gamma_tol::Float64
 end
 function RosenbrockW6S4OS(;
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward}(),
         linsolve = nothing,
-        precs = DEFAULT_PRECS
+        precs = DEFAULT_PRECS,
+        max_jac_age = 20, jac_reuse_gamma_tol = 0.03
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
 
@@ -168,7 +182,7 @@ function RosenbrockW6S4OS(;
         _unwrap_val(standardtag), _unwrap_val(concrete_jac),
     }(
         linsolve,
-        precs, AD_choice
+        precs, AD_choice, max_jac_age, jac_reuse_gamma_tol
     )
 end
 
@@ -312,11 +326,14 @@ for (Alg, desc, refs, is_W) in [
             linsolve::F
             precs::P
             autodiff::AD
+            max_jac_age::Int
+            jac_reuse_gamma_tol::Float64
         end
         function $Alg(;
                 chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
                 standardtag = Val{true}(), concrete_jac = nothing,
-                diff_type = Val{:forward}(), linsolve = nothing, precs = DEFAULT_PRECS
+                diff_type = Val{:forward}(), linsolve = nothing, precs = DEFAULT_PRECS,
+                max_jac_age = 20, jac_reuse_gamma_tol = 0.03
             )
             AD_choice, chunk_size,
                 diff_type = _process_AD_choice(
@@ -329,7 +346,7 @@ for (Alg, desc, refs, is_W) in [
                 _unwrap_val(concrete_jac),
             }(
                 linsolve,
-                precs, AD_choice
+                precs, AD_choice, max_jac_age, jac_reuse_gamma_tol
             )
         end
     end
@@ -347,6 +364,8 @@ struct HybridExplicitImplicitRK{CS, AD, F, P, FDT, ST, CJ, StepLimiter, StageLim
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
     autodiff::AD
+    max_jac_age::Int
+    jac_reuse_gamma_tol::Float64
 end
 
 function HybridExplicitImplicitRK(;
@@ -355,7 +374,8 @@ function HybridExplicitImplicitRK(;
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward}(), linsolve = nothing,
         precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!,
-        stage_limiter! = trivial_limiter!
+        stage_limiter! = trivial_limiter!,
+        max_jac_age = 20, jac_reuse_gamma_tol = 0.03
     )
     AD_choice, chunk_size, diff_type = _process_AD_choice(
         autodiff, chunk_size, diff_type
@@ -367,7 +387,7 @@ function HybridExplicitImplicitRK(;
         typeof(stage_limiter!),
     }(
         order, linsolve, precs, step_limiter!,
-        stage_limiter!, AD_choice
+        stage_limiter!, AD_choice, max_jac_age, jac_reuse_gamma_tol
     )
 end
 

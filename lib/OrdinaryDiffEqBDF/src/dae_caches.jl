@@ -133,7 +133,7 @@ end
 
 @cache mutable struct DFBDFConstantCache{
         MO, N, tsType, tType, uType, uuType, coeffType,
-        EEstType, rType, wType,
+        EEstType, rType, wType, fdWeightsType,
     } <:
     OrdinaryDiffEqConstantCache
     nlsolver::N
@@ -157,6 +157,7 @@ end
     r::rType
     weights::wType
     iters_from_event::Int
+    fd_weights::fdWeightsType
 end
 
 function alg_cache(
@@ -170,13 +171,7 @@ function alg_cache(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
     )
-    bdf_coeffs = SA[
-        1 -1 0 0 0 0;
-        Int64(2) // 3 -Int64(4) // 3 Int64(1) // 3 0 0 0;
-        Int64(6) // 11 -Int64(18) // 11 Int64(9) // 11 -Int64(2) // 11 0 0;
-        Int64(12) // 25 -Int64(48) // 25 Int64(36) // 25 -Int64(16) // 25 Int64(3) // 25 0;
-        Int64(60) // 137 -Int64(300) // 137 Int64(300) // 137 -Int64(200) // 137 Int64(75) // 137 -Int64(12) // 137
-    ]
+    bdf_coeffs = _make_bdf_coeffs_dfbdf()
     ts = zero(Vector{typeof(t)}(undef, max_order + 2)) #ts is the successful past points, it will be updated after successful step
     ts_tmp = similar(ts)
 
@@ -203,10 +198,12 @@ function alg_cache(
     iters_from_event = 0
     u₀ = zero(u)
 
+    fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
+
     return DFBDFConstantCache(
         nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order, u₀,
         u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, terkm2,
-        terkm1, terk, terkp1, r, weights, iters_from_event
+        terkm1, terk, terkp1, r, weights, iters_from_event, fd_weights
     )
 end
 
@@ -259,18 +256,7 @@ function alg_cache(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
     )
-    #=bdf_coeffs = SA[1 -1 0 0 0 0 ;
-                    3//2 -2 1//2 0 0 0 ;
-                    11//6 -3 3//2 -1//3  0 0 ;
-                    25//12 -4 3 -4//3 1//4 0 ;
-                    137//60 -5 5 -10//3 5//4 -1//5]=#
-    bdf_coeffs = SA[
-        1 -1 0 0 0 0;
-        Int64(2) // 3 -Int64(4) // 3 Int64(1) // 3 0 0 0;
-        Int64(6) // 11 -Int64(18) // 11 Int64(9) // 11 -Int64(2) // 11 0 0;
-        Int64(12) // 25 -Int64(48) // 25 Int64(36) // 25 -Int64(16) // 25 Int64(3) // 25 0;
-        Int64(60) // 137 -Int64(300) // 137 Int64(300) // 137 -Int64(200) // 137 Int64(75) // 137 -Int64(12) // 137
-    ]
+    bdf_coeffs = _make_bdf_coeffs_dfbdf()
     ts = Vector{typeof(t)}(undef, max_order + 2) #ts is the successful past points, it will be updated after successful step
     u_history = [zero(u) for _ in 1:(max_order + 2)]
     order = 1

@@ -131,6 +131,7 @@ function update_fsal!(integrator)
     if has_discontinuity(integrator) &&
             first_discontinuity(integrator) == integrator.tdir * integrator.t
         handle_discontinuities!(integrator)
+        shift_past_discontinuity!(integrator)
         get_current_isfsal(integrator.alg, integrator.cache) && reset_fsal!(integrator)
     elseif all_fsal(integrator.alg, integrator.cache) ||
             get_current_isfsal(integrator.alg, integrator.cache)
@@ -722,6 +723,34 @@ function update_uprev!(integrator)
 end
 
 handle_discontinuities!(integrator) = pop_discontinuity!(integrator)
+
+"""
+    shift_past_discontinuity!(integrator)
+
+Advance `integrator.t` by one ULP in the `integrator.tdir` direction. Called
+right after `handle_discontinuities!` so that subsequent RHS evaluations —
+including the FSAL re-evaluation that follows in `update_fsal!` — take place
+on the post-discontinuity side of `t`-dependent branches in the user's `f`.
+
+By convention, a `d_discontinuities` entry at `t_d` marks the vector field as
+right-discontinuous there: `f` evaluated at `t_d` is the "old" regime, and
+`f` at `nextfloat(t_d)` is the "new" regime. This pairs with user code
+written as `if t > t_d; new; else; old; end` and lets starting-time
+discontinuities (`t_d == t0`) work by advancing forward into the tspan.
+
+The state `u` is continuous across `t_d` (only the vector field changes), so
+it is left untouched. For non-`AbstractFloat` time types (e.g. `Rational`),
+there is no ULP to shift to and the call is a no-op.
+"""
+@inline function shift_past_discontinuity!(integrator)
+    _shift_past_discontinuity!(integrator, integrator.t, integrator.tdir)
+    return nothing
+end
+@inline function _shift_past_discontinuity!(integrator, t::AbstractFloat, tdir)
+    integrator.t = tdir > 0 ? nextfloat(t) : prevfloat(t)
+    return nothing
+end
+@inline _shift_past_discontinuity!(integrator, t, tdir) = nothing
 
 function calc_dt_propose!(integrator, dtnew)
     dtnew = if has_dtnew_modification(integrator.alg) &&

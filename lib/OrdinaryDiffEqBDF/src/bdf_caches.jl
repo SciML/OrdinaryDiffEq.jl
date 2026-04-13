@@ -380,12 +380,15 @@ end
         N,
         coefType,
         UType,
+        RUType,
         dtType,
         EEstType,
         gammaType,
     } <: OrdinaryDiffEqConstantCache
     nlsolver::N
     U::UType
+    R::RUType
+    RU::RUType
     D::coefType
     prevD::coefType
     prevorder::Int
@@ -424,19 +427,20 @@ function alg_cache(
     EEst1 = tTypeNoUnits(1)
     EEst2 = tTypeNoUnits(1)
 
-    U = zero(MMatrix{max_order, max_order, tTypeNoUnits})
+    U = zeros(tTypeNoUnits, max_order, max_order)
     for r in 1:max_order
         U[1, r] = -r
         for j in 2:max_order
             U[j, r] = U[j - 1, r] * ((j - 1) - r) / j
         end
     end
-    U = SArray(U)
+    R = zeros(tTypeNoUnits, max_order, max_order)
+    RU = zeros(tTypeNoUnits, max_order, max_order)
 
     γₖ = ntuple(k -> sum(tTypeNoUnits(Int64(1) // j) for j in 1:k), Val(max_order))
 
     return QNDFConstantCache(
-        nlsolver, U, D, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1,
+        nlsolver, U, R, RU, D, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1,
         EEst2, γₖ
     )
 end
@@ -455,6 +459,7 @@ end
     u₀::uType
     nlsolver::N
     U::UType
+    R::RUType
     RU::RUType
     D::coefType
     Dtmp::coefType
@@ -510,22 +515,22 @@ function alg_cache(
     EEst1 = tTypeNoUnits(1)
     EEst2 = tTypeNoUnits(1)
 
-    U = zero(MMatrix{max_order, max_order, tTypeNoUnits})
+    U = zeros(tTypeNoUnits, max_order, max_order)
     for r in 1:max_order
         U[1, r] = -r
         for j in 2:max_order
             U[j, r] = U[j - 1, r] * ((j - 1) - r) / j
         end
     end
-    U = SArray(U)
 
-    RU = Matrix(U)
+    R = zeros(tTypeNoUnits, max_order, max_order)
+    RU = zeros(tTypeNoUnits, max_order, max_order)
     γₖ = ntuple(k -> sum(tTypeNoUnits(Int64(1) // j) for j in 1:k), Val(max_order))
 
     dense = [zero(u) for _ in 1:max_order]
 
     return QNDFCache(
-        fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, RU, D, Dtmp,
+        fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, R, RU, D, Dtmp,
         tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
         atmpm1, atmpp1, dense, alg.step_limiter!
     )
@@ -587,7 +592,7 @@ end
 
 @cache mutable struct FBDFConstantCache{
         MO, N, tsType, tType, uType, uuType, coeffType,
-        EEstType, rType, wType, staldType,
+        EEstType, rType, wType, fdWeightsType, staldType,
     } <:
     OrdinaryDiffEqConstantCache
     nlsolver::N
@@ -610,6 +615,7 @@ end
     r::rType
     weights::wType
     iters_from_event::Int
+    fd_weights::fdWeightsType
     stald::staldType
 end
 
@@ -627,13 +633,7 @@ function alg_cache(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
     )
-    bdf_coeffs = SA[
-        1 -1 0 0 0 0;
-        Int64(3) // 2 -2 Int64(1) // 2 0 0 0;
-        Int64(11) // 6 -3 Int64(3) // 2 -Int64(1) // 3 0 0;
-        Int64(25) // 12 -4 3 -Int64(4) // 3 Int64(1) // 4 0;
-        Int64(137) // 60 -5 5 -Int64(10) // 3 Int64(5) // 4 -Int64(1) // 5
-    ]
+    bdf_coeffs = _make_bdf_coeffs_fbdf()
     ts = zero(Vector{typeof(t)}(undef, max_order + 2)) #ts is the successful past points, it will be updated after successful step
     ts_tmp = similar(ts)
 
@@ -671,10 +671,12 @@ function alg_cache(
         tiny = alg.stald_tiny,
     )
 
+    fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
+
     return FBDFConstantCache(
         nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, terkm2,
-        terkm1, terk, terkp1, r, weights, iters_from_event, stald
+        terkm1, terk, terkp1, r, weights, iters_from_event, fd_weights, stald
     )
 end
 
@@ -734,13 +736,7 @@ function alg_cache(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
     )
-    bdf_coeffs = SA[
-        1 -1 0 0 0 0;
-        Int64(3) // 2 -2 Int64(1) // 2 0 0 0;
-        Int64(11) // 6 -3 Int64(3) // 2 -Int64(1) // 3 0 0;
-        Int64(25) // 12 -4 3 -Int64(4) // 3 Int64(1) // 4 0;
-        Int64(137) // 60 -5 5 -Int64(10) // 3 Int64(5) // 4 -Int64(1) // 5
-    ]
+    bdf_coeffs = _make_bdf_coeffs_fbdf()
     ts = Vector{typeof(t)}(undef, max_order + 2) #ts is the successful past points, it will be updated after successful step
     u_history = [zero(u) for _ in 1:(max_order + 2)]
     order = 1

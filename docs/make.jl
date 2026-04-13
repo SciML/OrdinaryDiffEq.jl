@@ -1,4 +1,5 @@
 using Documenter, OrdinaryDiffEq, DiffEqDevTools
+using OrdinaryDiffEqAMF
 
 cp(joinpath(@__DIR__, "Manifest.toml"), joinpath(@__DIR__, "src", "assets", "Manifest.toml"), force = true)
 cp(joinpath(@__DIR__, "Project.toml"), joinpath(@__DIR__, "src", "assets", "Project.toml"), force = true)
@@ -39,6 +40,7 @@ makedocs(
         OrdinaryDiffEq.OrdinaryDiffEqSymplecticRK,
         OrdinaryDiffEq.OrdinaryDiffEqTsit5,
         OrdinaryDiffEq.OrdinaryDiffEqVerner,
+        OrdinaryDiffEqAMF,
         DiffEqDevTools,
     ],
     linkcheck_ignore = [r"https://github.com/JuliaDiff/ForwardDiff.jl"],

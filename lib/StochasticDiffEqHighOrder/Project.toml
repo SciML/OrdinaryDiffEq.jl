@@ -1,7 +1,7 @@
 name = "StochasticDiffEqHighOrder"
 uuid = "0520c28c-50fd-4d16-9c96-902fc80b3bab"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "1.0.0"
+version = "1.1.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"

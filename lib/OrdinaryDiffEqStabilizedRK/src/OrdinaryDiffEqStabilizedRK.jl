@@ -12,7 +12,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
     constvalue, _unwrap_val, full_cache, get_fsalfirstlast,
     generic_solver_docstring
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
-import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
+import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix
 import OrdinaryDiffEqCore
 using DiffEqBase: DiffEqBase, value
 
