@@ -5,6 +5,13 @@ alg_order(alg::ISSEM) = 1 // 2
 alg_order(alg::ISSEulerHeun) = 1 // 2
 alg_order(alg::SKenCarp) = 2 // 1
 
+ispredictive(::ImplicitEM) = true
+ispredictive(::ImplicitEulerHeun) = true
+ispredictive(::ImplicitRKMil) = true
+ispredictive(::ISSEM) = true
+ispredictive(::ISSEulerHeun) = true
+ispredictive(::SKenCarp) = true
+
 supports_regular_jumps(::ImplicitEM) = true
 isadaptive(prob::JumpProblem, alg::ImplicitEM) = false
 alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::ImplicitEM) = true

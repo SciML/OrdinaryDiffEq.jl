@@ -470,7 +470,7 @@ end
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
 function PIDController(beta1::Real, beta2::Real, beta3::Real = zero(beta1); accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
-    beta = SVector(map(float, promote(beta1, beta2, beta3))...)
+    beta = map(float, promote(beta1, beta2, beta3))
     return PIDController{typeof(beta1), typeof(limiter)}(
         beta,
         accept_safety,
@@ -492,7 +492,7 @@ function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = 
     else
         beta1, beta2, beta3 = beta
     end
-    beta = SVector(map(float, promote(beta1, beta2, beta3))...)
+    beta = map(float, promote(beta1, beta2, beta3))
     return PIDController{QT, typeof(limiter)}(
         beta,
         QT(accept_safety),
@@ -513,18 +513,18 @@ end
 
 mutable struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
     controller::PIDController{T, Limiter}
-    err::MVector{3, T} # history of the error estimates
+    err::Vector{T} # history of the error estimates
     dt_factor::T
 end
 
 function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIDControllerCache{T}) where {T}
-    cache.err = MVector{3, T}(true, true, true)
+    cache.err = ones(T, 3)
     cache.dt_factor = one(T)
     return nothing
 end
 
 function setup_controller_cache(alg, cache, controller::PIDController{QT}) where {QT}
-    err = MVector{3, QT}(true, true, true)
+    err = ones(QT, 3)
     return PIDControllerCache(
         controller,
         err,

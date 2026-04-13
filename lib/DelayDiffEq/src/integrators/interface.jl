@@ -488,13 +488,10 @@ function DiffEqBase.reinit!(
     # reset integration counters
     integrator.iter = 0
     integrator.success_iter = 0
-
-    # full re-initialize the PI in timestepping
-    integrator.qold = integrator.opts.qoldinit
-    integrator.q11 = one(integrator.t)
-    integrator.erracc = one(integrator.erracc)
-    integrator.dtacc = one(integrator.dtacc)
     integrator.u_modified = false
+
+    # full re-initialize the controller in timestepping
+    reinit!(integrator, integrator.controller_cache)
 
     if reset_dt
         DiffEqBase.auto_dt_reset!(integrator)
