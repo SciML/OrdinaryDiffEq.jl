@@ -1,0 +1,11 @@
+[Core]
+versions = ["lts", "1.11", "1", "pre"]
+
+[QA]
+versions = ["1"]
+
+[Sparse]
+versions = ["1"]
+
+[ModelingToolkit]
+versions = ["1"]

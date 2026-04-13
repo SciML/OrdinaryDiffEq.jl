@@ -1,0 +1,147 @@
+[default.extend-words]
+# Julia-specific functions
+indexin = "indexin"
+findfirst = "findfirst"
+findlast = "findlast"
+eachindex = "eachindex"
+setp = "setp"
+getp = "getp"
+setu = "setu"
+getu = "getu"
+
+# Mathematical/scientific terms
+jacobian = "jacobian"
+hessian = "hessian" 
+eigenvalue = "eigenvalue"
+eigenvector = "eigenvector"
+discretization = "discretization"
+linearization = "linearization"
+parameterized = "parameterized"
+discretized = "discretized"
+vectorized = "vectorized"
+extrapolant = "extrapolant"
+# Person names in citations - these are correct spellings
+Sigal = "Sigal"  # Sigal Gottlieb is a real person/author
+Steinebach = "Steinebach"
+Protopapa = "Protopapa"
+Hairer = "Hairer"
+Wanner = "Wanner"
+Verwer = "Verwer"
+Sandu = "Sandu"
+Carmichael = "Carmichael"
+Potra = "Potra"
+Seinfeld = "Seinfeld"
+Dabdub = "Dabdub"
+Marzo = "Marzo"
+Loon = "Loon"
+RODASP = "RODASP"
+Rodas4P = "Rodas4P"
+Rodas5P = "Rodas5P"
+Rodas6P = "Rodas6P"
+Scholz = "Scholz"
+Veldhuizen = "Veldhuizen"
+Tsit5DA = "Tsit5DA"
+Kaps = "Kaps"
+Rentrop = "Rentrop"
+Rang = "Rang"
+Darmstadt = "Darmstadt"
+"Méthodes" = "Méthodes"
+"différentiels" = "différentiels"
+"algébriques" = "algébriques"
+"problèmes" = "problèmes"
+Ono = "Ono"  # Hiroshi Ono, author of Ono10/Ono12 RK methods
+padd = "padd"  # variable name in analyticless_convergence_tests.jl
+Preprint = "Preprint"
+Nr = "Nr"
+Wouver = "Wouver"
+Sauces = "Sauces"
+Schiesser = "Schiesser"
+Vande = "Vande"
+BIT = "BIT"
+Numer = "Numer"
+Jcon = "Jcon"
+arXiv = "arXiv"
+
+# (Numer already declared above for "BIT Numer" context.)
+
+# Technical variable names
+dorder = "dorder"  # Parameter for delta order / order change
+
+
+# Common variable patterns in Julia/SciML
+ists = "ists"
+ispcs = "ispcs"
+osys = "osys"
+rsys = "rsys"
+usys = "usys"
+fsys = "fsys"
+eqs = "eqs"
+rhs = "rhs"
+lhs = "lhs"
+ode = "ode"
+pde = "pde"
+sde = "sde"
+dde = "dde"
+bvp = "bvp"
+ivp = "ivp"
+
+# Common abbreviations
+tol = "tol"
+rtol = "rtol"
+atol = "atol"
+idx = "idx"
+jdx = "jdx"
+prev = "prev"
+curr = "curr"
+init = "init"
+tmp = "tmp"
+vec = "vec"
+arr = "arr"
+dt = "dt"
+du = "du"
+dx = "dx"
+dy = "dy"
+dz = "dz"
+
+# Algorithm/type suffixes
+alg = "alg"
+prob = "prob"
+sol = "sol"
+cb = "cb"
+opts = "opts"
+args = "args"
+kwargs = "kwargs"
+
+# Scientific abbreviations
+ND = "ND"
+nd = "nd"
+MTK = "MTK"
+ODE = "ODE"
+PDE = "PDE"
+SDE = "SDE"
+
+# SDE-specific terms
+IIF = "IIF"  # Integrating Factor method (IIF1M, IIF2M, IIF1Mil)
+iif = "iif"
+currate = "currate"  # current rate variable in tau-leaping
+SIE = "SIE"  # SIEA/SIEB algorithm name prefix
+SME = "SME"  # SME algorithm name (Stochastic Modified Euler)
+resetted = "resetted"  # variable name in stepsize control
+strat = "strat"  # Stratonovich abbreviation
+
+# Variable names used in codebase
+yhat = "yhat"  # estimated y value
+accpt = "accpt"  # accepted step flag variable
+gam = "gam"  # gamma abbreviation in tableaux
+clos = "clos"  # closure abbreviation
+
+# Journal abbreviations in BibTeX citations
+Comput = "Comput"  # J. Comput. Phys. (Journal of Computational Physics)
+
+# Function names with historical spelling (API-stable)
+occurence = "occurence"  # in check_event_occurence, is_event_occurence
+occured = "occured"  # in comments near occurence functions
+occuring = "occuring"  # in comments near occurence functions
+
+# Julia spelling convention
+inferrable = "inferrable"  # Julia uses "inferrable" not "inferable"

@@ -1,0 +1,107 @@
+name: CI
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+jobs:
+  test:
+    permissions:
+      actions: write
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    continue-on-error: ${{ matrix.group == 'Downstream' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        group:
+          - InterfaceI
+          - InterfaceII
+          - InterfaceIII
+          - InterfaceIV
+          - InterfaceV
+          - Integrators_I
+          - Integrators_II
+          - AlgConvergence_I
+          - AlgConvergence_II
+          - AlgConvergence_III
+          - ModelingToolkit
+          - Downstream
+          - ODEInterfaceRegression
+          - QA
+          - Regression_I
+          - Regression_II
+          - AD
+        version:
+          - 'lts'
+          - '1.11'
+          - '1'
+          - 'pre'
+        exclude:
+          - group: AD
+            version: '1'
+          - group: AD
+            version: 'pre'
+          # Skip ODEInterfaceRegression until ODEInterface.jl is fixed upstream
+          # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2987
+          - group: ODEInterfaceRegression
+            version: '1'
+          - group: ODEInterfaceRegression
+            version: 'pre'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      # Split cache restore/save by event to work around recurring GitHub
+      # Actions cache upload auth failures (Azure SAS "Server failed to
+      # authenticate the request") that show up sporadically across the
+      # ~68-cell matrix. PRs only restore from a recent master push cache;
+      # only master push runs write the cache. continue-on-error keeps a
+      # transient cache backend hiccup from flunking an otherwise green job.
+      - name: Cache Julia depot (push only — read+write)
+        if: github.event_name == 'push'
+        uses: julia-actions/cache@v3
+        continue-on-error: true
+        with:
+          cache-compiled: 'false'
+      - name: Cache Julia depot (PR — restore only)
+        if: github.event_name != 'push'
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/scratchspaces
+            ~/.julia/logs
+          # Primary key intentionally won't match (run_id is unique); the
+          # restore-keys prefix matches julia-actions/cache's key scheme
+          # `${cache-name};os=${runner.os};${matrix...}` so we pull the most
+          # recent cache from a master push for this same matrix cell.
+          key: julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};run_id=${{ github.run_id }};run_attempt=${{ github.run_attempt }}
+          restore-keys: |
+            julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+        with:
+          coverage: false
+          check_bounds: auto
+        env:
+          GROUP: ${{ matrix.group }}
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lcov.info
+          fail_ci_if_error: false
+          disable_safe_directory: true

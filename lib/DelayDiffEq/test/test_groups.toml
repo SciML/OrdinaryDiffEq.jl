@@ -1,0 +1,11 @@
+[Interface]
+versions = ["lts", "1.11", "1", "pre"]
+
+[Integrators]
+versions = ["lts", "1.11", "1", "pre"]
+
+[Regression]
+versions = ["lts", "1.11", "1", "pre"]
+
+[QA]
+versions = ["1"]

@@ -1,0 +1,55 @@
+[Interface1]
+versions = ["1.11", "1", "pre"]
+
+[Interface2]
+versions = ["1.11", "1", "pre"]
+
+[Interface3]
+versions = ["1.11", "1", "pre"]
+
+[AlgConvergence]
+versions = ["1"]
+
+[NoncommutativeConvergence]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 240
+
+[AlgConvergence2]
+versions = ["1"]
+
+[AlgConvergence3]
+versions = ["1"]
+
+[WeakConvergence1]
+versions = ["1"]
+
+[OOPWeakConvergence]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 300
+
+[IIPWeakConvergence]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 300
+
+[Multithreaded]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64"]
+num_threads = 2
+timeout = 240
+
+[WeakAdaptiveGPU]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "gpu"]
+timeout = 240
+
+[Allocations]
+versions = ["1"]
+
+[StaticAnalysis]
+versions = ["1"]
+
+[QA]
+versions = ["1"]

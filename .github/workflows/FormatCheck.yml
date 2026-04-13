@@ -1,0 +1,22 @@
+name: format-check
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'main'
+      - 'release-'
+    tags: '*'
+  pull_request:
+
+jobs:
+  runic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - uses: fredrikekre/runic-action@v1
+        with:
+          version: '1'

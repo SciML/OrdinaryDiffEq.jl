@@ -1,0 +1,67 @@
+name = "StochasticDiffEqImplicit"
+uuid = "5080b986-4c76-4669-b5dc-373a41579d5b"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
+version = "1.2.0"
+
+[deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
+FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
+OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
+
+[extras]
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+
+[compat]
+ADTypes = "1"
+DiffEqBase = "6.187"
+DiffEqNoiseProcess = "5.13"
+FiniteDiff = "2"
+ForwardDiff = "0.10, 1"
+JumpProcesses = "9.13.1"
+LinearAlgebra = "1.10"
+MuladdMacro = "0.2.4"
+OrdinaryDiffEqCore = "3.25"
+OrdinaryDiffEqDifferentiation = "2.4"
+OrdinaryDiffEqNonlinearSolve = "1"
+Pkg = "1"
+RecursiveArrayTools = "2, 3"
+Reexport = "0.2, 1.0"
+SciMLBase = "2.146"
+StaticArrays = "1.9.14"
+StochasticDiffEqCore = "1"
+Test = "<0.0.1, 1"
+SafeTestsets = "0.1.0"
+julia = "1.10"
+
+[targets]
+test = ["Test", "Pkg", "SafeTestsets"]
+
+[sources.OrdinaryDiffEqCore]
+path = "../OrdinaryDiffEqCore"
+
+[sources.StochasticDiffEqCore]
+path = "../StochasticDiffEqCore"
+
+[sources.OrdinaryDiffEqDifferentiation]
+path = "../OrdinaryDiffEqDifferentiation"
+
+[sources.OrdinaryDiffEqNonlinearSolve]
+path = "../OrdinaryDiffEqNonlinearSolve"

@@ -1,0 +1,41 @@
+name: Downgrade
+on:
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+jobs:
+  test:
+    if: false
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        downgrade_mode: ['alldeps']
+        julia-version: ['1.11']
+        group: ['InterfaceI']
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.julia-version }}
+      - uses: julia-actions/julia-downgrade-compat@v2
+        with:
+          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils
+          julia_version: ${{ matrix.julia-version }}
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+        with:
+          ALLOW_RERESOLVE: false
+        env:
+          GROUP: ${{ matrix.group }}

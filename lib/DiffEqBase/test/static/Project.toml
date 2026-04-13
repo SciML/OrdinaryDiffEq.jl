@@ -1,0 +1,5 @@
+[deps]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
+ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
+
+[compat]

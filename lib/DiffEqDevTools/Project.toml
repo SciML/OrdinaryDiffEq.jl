@@ -1,0 +1,66 @@
+name = "DiffEqDevTools"
+uuid = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
+version = "2.53.0"
+
+[deps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
+RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+RootedTrees = "47965b36-3f3e-11e9-0dcf-4570dfd42a8c"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+
+[compat]
+BVProblemLibrary = "0.1"
+BoundaryValueDiffEq = "5"
+DDEProblemLibrary = "0.1"
+DelayDiffEq = "5.20"
+DiffEqBase = "6.94.4"
+DiffEqNoiseProcess = "5.0"
+Distributed = "1.9"
+LinearAlgebra = "1.9"
+Logging = "1.9"
+NLsolve = "4.2"
+NonlinearSolve = "3.13, 4"
+ODEProblemLibrary = "0.1"
+OrdinaryDiffEq = "6"
+ParameterizedFunctions = "5"
+RecipesBase = "1"
+RecursiveArrayTools = "2, 3"
+RootedTrees = "2"
+SDEProblemLibrary = "0.1"
+SciMLBase = "2.52.2"
+Statistics = "1"
+StochasticDelayDiffEq = "1"
+StochasticDiffEq = "6"
+StructArrays = "0.6, 0.7"
+julia = "1.9"
+
+[extras]
+BVProblemLibrary = "ded0fc24-dfea-4565-b1d9-79c027d14d84"
+BoundaryValueDiffEq = "764a87c0-6b3e-53db-9096-fe964310641d"
+DDEProblemLibrary = "f42792ee-6ffc-4e2a-ae83-8ee2f22de800"
+DelayDiffEq = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
+NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
+ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+ParameterizedFunctions = "65888b18-ceab-5e60-b2b9-181511a3b968"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
+StochasticDelayDiffEq = "29a0d76e-afc8-11e9-03a4-eda52ae4b960"
+StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["BoundaryValueDiffEq", "BVProblemLibrary", "DelayDiffEq", "DDEProblemLibrary", "NonlinearSolve", "ODEProblemLibrary", "SDEProblemLibrary", "OrdinaryDiffEq", "ParameterizedFunctions", "Random", "StochasticDiffEq", "StochasticDelayDiffEq", "Plots", "Test"]

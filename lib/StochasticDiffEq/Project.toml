@@ -1,0 +1,87 @@
+name = "StochasticDiffEq"
+uuid = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
+version = "6.102.0"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
+
+[deps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
+StochasticDiffEqHighOrder = "0520c28c-50fd-4d16-9c96-902fc80b3bab"
+StochasticDiffEqIIF = "ebf54054-c36b-4494-9aba-657e36df524f"
+StochasticDiffEqImplicit = "5080b986-4c76-4669-b5dc-373a41579d5b"
+StochasticDiffEqLeaping = "aefaaa88-39f2-4e89-b162-d61b7e8cc81b"
+StochasticDiffEqLevyArea = "90dbc90e-856a-4131-af2c-e8c5aa0f35b5"
+StochasticDiffEqLowOrder = "d15fe365-ce7f-450a-828a-7985bd5b681b"
+StochasticDiffEqMilstein = "8c95a807-c8e7-4581-8419-890d001af53e"
+StochasticDiffEqROCK = "db241ea8-0e6b-4abc-8f2d-1adff2294fd9"
+StochasticDiffEqRODE = "49714585-0aa1-4f53-b1e6-a9b8c0d5e03f"
+StochasticDiffEqWeak = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+StochasticDiffEqCore = {path = "../StochasticDiffEqCore"}
+StochasticDiffEqHighOrder = {path = "../StochasticDiffEqHighOrder"}
+StochasticDiffEqIIF = {path = "../StochasticDiffEqIIF"}
+StochasticDiffEqImplicit = {path = "../StochasticDiffEqImplicit"}
+StochasticDiffEqLeaping = {path = "../StochasticDiffEqLeaping"}
+StochasticDiffEqLevyArea = {path = "../StochasticDiffEqLevyArea"}
+StochasticDiffEqLowOrder = {path = "../StochasticDiffEqLowOrder"}
+StochasticDiffEqMilstein = {path = "../StochasticDiffEqMilstein"}
+StochasticDiffEqROCK = {path = "../StochasticDiffEqROCK"}
+StochasticDiffEqRODE = {path = "../StochasticDiffEqRODE"}
+StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
+
+[compat]
+DiffEqBase = "6.187"
+DiffEqNoiseProcess = "5.13"
+LinearAlgebra = "1.6"
+OrdinaryDiffEqCore = "3.22"
+OrdinaryDiffEqNonlinearSolve = "1"
+Reexport = "0.2, 1.0"
+SciMLBase = "2.146"
+StochasticDiffEqCore = "1"
+StochasticDiffEqHighOrder = "1"
+StochasticDiffEqIIF = "1"
+StochasticDiffEqImplicit = "1"
+StochasticDiffEqLeaping = "1"
+StochasticDiffEqLevyArea = "1"
+StochasticDiffEqLowOrder = "1"
+StochasticDiffEqMilstein = "1"
+StochasticDiffEqROCK = "1"
+StochasticDiffEqRODE = "1"
+StochasticDiffEqWeak = "1"
+julia = "1.10"
+
+[extras]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
+DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
+LevyArea = "2d8b4e74-eb68-11e8-0fb9-d5eb67b50637"
+LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["AllocCheck", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqNoiseProcess", "ForwardDiff", "JumpProcesses", "LevyArea", "LinearSolve", "ModelingToolkit", "OrdinaryDiffEq", "OrdinaryDiffEqDifferentiation", "Pkg", "Random", "RecursiveArrayTools", "SciMLOperators", "SDEProblemLibrary", "SafeTestsets", "SparseArrays", "Statistics", "StaticArrays", "Test"]

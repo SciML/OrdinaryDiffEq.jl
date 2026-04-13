@@ -1,0 +1,140 @@
+name = "DelayDiffEq"
+uuid = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
+version = "5.74.0"
+
+[deps]
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
+OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
+OrdinaryDiffEqFunctionMap = "d3585ca7-f5d3-4ba6-8057-292ed1abd90f"
+OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+SciMLLogging = "a6db7da4-7206-11f0-1eab-35f2a5dbe1d1"
+SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
+SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
+
+[weakdeps]
+DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
+
+[extensions]
+DelayDiffEqStochasticDiffEqCoreExt = ["StochasticDiffEqCore", "DiffEqNoiseProcess", "Random"]
+
+[sources]
+OrdinaryDiffEqBDF = {path = "../OrdinaryDiffEqBDF"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqDefault = {path = "../OrdinaryDiffEqDefault"}
+OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
+OrdinaryDiffEqFeagin = {path = "../OrdinaryDiffEqFeagin"}
+OrdinaryDiffEqFunctionMap = {path = "../OrdinaryDiffEqFunctionMap"}
+OrdinaryDiffEqHighOrderRK = {path = "../OrdinaryDiffEqHighOrderRK"}
+OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
+OrdinaryDiffEqLowStorageRK = {path = "../OrdinaryDiffEqLowStorageRK"}
+OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
+OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqSSPRK = {path = "../OrdinaryDiffEqSSPRK"}
+OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
+OrdinaryDiffEqVerner = {path = "../OrdinaryDiffEqVerner"}
+StochasticDiffEqCore = {path = "../StochasticDiffEqCore"}
+StochasticDiffEqHighOrder = {path = "../StochasticDiffEqHighOrder"}
+StochasticDiffEqImplicit = {path = "../StochasticDiffEqImplicit"}
+StochasticDiffEqLowOrder = {path = "../StochasticDiffEqLowOrder"}
+StochasticDiffEqROCK = {path = "../StochasticDiffEqROCK"}
+DiffEqBase = {path = "../DiffEqBase"}
+
+[compat]
+ADTypes = "1.16"
+Aqua = "0.8.11"
+ArrayInterface = "7"
+DDEProblemLibrary = "0.1"
+DataStructures = "0.18, 0.19"
+DiffEqBase = "6.209"
+DiffEqCallbacks = "4"
+DiffEqDevTools = "2.44.4"
+DiffEqNoiseProcess = "5"
+ExplicitImports = "1.13.1"
+FastBroadcast = "1.3"
+FiniteDiff = "2.27"
+ForwardDiff = "0.10.38, 1"
+LinearAlgebra = "1"
+LinearSolve = "3.54"
+Logging = "1"
+OrdinaryDiffEqBDF = "1.16.0"
+OrdinaryDiffEqCore = "3"
+OrdinaryDiffEqDefault = "1.9"
+OrdinaryDiffEqDifferentiation = "2.2.1"
+OrdinaryDiffEqFeagin = "1.3.0"
+OrdinaryDiffEqFunctionMap = "1.6"
+OrdinaryDiffEqHighOrderRK = "1.4.0"
+OrdinaryDiffEqLowOrderRK = "1.5.0"
+OrdinaryDiffEqLowStorageRK = "1.12.0"
+OrdinaryDiffEqNonlinearSolve = "1.16"
+OrdinaryDiffEqRosenbrock = "1.19"
+OrdinaryDiffEqSDIRK = "1.6.0"
+OrdinaryDiffEqSSPRK = "1.5.0"
+OrdinaryDiffEqTsit5 = "1.4.0"
+OrdinaryDiffEqVerner = "1.5.0"
+Random = "<0.0.1, 1"
+RecursiveArrayTools = "3.52"
+Reexport = "1.0"
+SafeTestsets = "0.1.0"
+SciMLBase = "2.115.0"
+SparseArrays = "<0.0.1, 1, 2"
+StochasticDiffEqCore = "1"
+StochasticDiffEqHighOrder = "1"
+StochasticDiffEqImplicit = "1"
+StochasticDiffEqLowOrder = "1"
+StochasticDiffEqROCK = "1"
+SciMLLogging = "1.4.0"
+SimpleNonlinearSolve = "2"
+SymbolicIndexingInterface = "0.3.36"
+Test = "<0.0.1, 1"
+Unitful = "1"
+julia = "1.10"
+
+[extras]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
+StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
+StochasticDiffEqHighOrder = "0520c28c-50fd-4d16-9c96-902fc80b3bab"
+StochasticDiffEqImplicit = "5080b986-4c76-4669-b5dc-373a41579d5b"
+StochasticDiffEqLowOrder = "d15fe365-ce7f-450a-828a-7985bd5b681b"
+StochasticDiffEqROCK = "db241ea8-0e6b-4abc-8f2d-1adff2294fd9"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+DDEProblemLibrary = "f42792ee-6ffc-4e2a-ae83-8ee2f22de800"
+DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
+FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
+LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
+OrdinaryDiffEqFeagin = "101fe9f7-ebb6-4678-b671-3a81e7194747"
+OrdinaryDiffEqHighOrderRK = "d28bc4f8-55e1-4f49-af69-84c1a99f0f58"
+OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
+OrdinaryDiffEqLowStorageRK = "b0944070-b475-4768-8dec-fb6eb410534d"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+OrdinaryDiffEqSSPRK = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
+OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
+[targets]
+test = ["ADTypes", "Aqua", "DDEProblemLibrary", "DiffEqCallbacks", "DiffEqDevTools", "ExplicitImports", "FiniteDiff", "LinearSolve", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFeagin", "OrdinaryDiffEqHighOrderRK", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqLowStorageRK", "OrdinaryDiffEqSDIRK", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "Random", "RecursiveArrayTools", "SafeTestsets", "SparseArrays", "StochasticDiffEqCore", "StochasticDiffEqHighOrder", "StochasticDiffEqImplicit", "StochasticDiffEqLowOrder", "StochasticDiffEqROCK", "Test", "Unitful"]

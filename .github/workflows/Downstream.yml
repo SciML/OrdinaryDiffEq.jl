@@ -1,0 +1,69 @@
+name: IntegrationTest
+on:
+  push:
+    branches: [master]
+    tags: [v*]
+  pull_request:
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+jobs:
+  test:
+    name: ${{ matrix.package.repo }}/${{ matrix.package.group }}/${{ matrix.julia-version }}
+    runs-on: ${{ matrix.os }}
+    env:
+      GROUP: ${{ matrix.package.group }}
+    strategy:
+      fail-fast: false
+      matrix:
+        julia-version: ['1.10']
+        os: [ubuntu-latest]
+        package:
+          - {user: SciML, repo: DiffEqCallbacks.jl, group: All}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core1}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core2}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core3}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core4}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core5}
+          - {user: SciML, repo: ModelingToolkit.jl, group: InterfaceI}
+          - {user: SciML, repo: ModelingToolkit.jl, group: InterfaceII}
+          - {user: SciML, repo: ModelingToolkit.jl, group: Initialization}
+          - {user: SciML, repo: ModelingToolkit.jl, group: SymbolicIndexingInterface}
+          - {user: nathanaelbosch, repo: ProbNumDiffEq.jl, group: Downstream}
+          - {user: SKopecz, repo: PositiveIntegrators.jl, group: Downstream}
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.julia-version }}
+          arch: x64
+      - name: Clone Downstream
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
+          path: downstream
+      - name: Load this and run the downstream tests
+        shell: julia --color=yes --project=downstream {0}
+        run: |
+          using Pkg
+          try
+            Pkg.develop(map(path ->Pkg.PackageSpec.(;path="lib/$(path)"), readdir("./lib")));
+            Pkg.test(coverage=true)  # resolver may fail with test time depsAdd commentMore actions
+          catch err
+            err isa Pkg.Resolve.ResolverError || rethrow()
+            # If we can't resolve that means this is incompatible by SemVer and this is fine
+            # It means we marked this as a breaking change, so we don't need to worry about
+            # mistakenly introducing a breaking change, as we have intentionally made one
+            @info "Not compatible with this release. No problem." exception=err
+            exit(0)  # Exit immediately, as a success
+          end
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lcov.info
+          fail_ci_if_error: false
+          disable_safe_directory: true

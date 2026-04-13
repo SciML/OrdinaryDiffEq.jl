@@ -1,0 +1,20 @@
+[Core]
+versions = ["lts", "1.11", "1", "pre"]
+
+[QA]
+versions = ["1"]
+
+[Static]
+versions = ["1"]
+
+[Downstream]
+versions = ["1"]
+
+[Downstream2]
+versions = ["1"]
+
+[ModelingToolkit]
+versions = ["1"]
+
+[Sundials]
+versions = ["1"]
