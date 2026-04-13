@@ -716,7 +716,6 @@ struct IRI1{AD, F, F2, T2, T3, CJ} <:
     new_jac_conv_bound::T3
     autodiff::AD
     concrete_jac::CJ
-    controller::Symbol
 end
 function IRI1(;
         autodiff = AutoForwardDiff(),
@@ -725,13 +724,12 @@ function IRI1(;
         extrapolant = :constant,
         theta = 1,
         new_jac_conv_bound = 1.0e-3,
-        controller = :Predictive
     )
     autodiff = OrdinaryDiffEqCore._fixup_ad(autodiff)
     return IRI1(
         linsolve, nlsolve,
         theta,
         extrapolant, new_jac_conv_bound,
-        autodiff, SciMLBase._unwrap_val(concrete_jac), controller
+        autodiff, SciMLBase._unwrap_val(concrete_jac),
     )
 end

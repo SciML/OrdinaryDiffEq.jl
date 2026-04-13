@@ -479,13 +479,6 @@ function _sde_init(
         tTypeNoUnits, uprev, f, t, dt, Val{isinplace(_prob)}, verbose_internal
     )
 
-    # ── Controller computation ───────────────────────────────────────────
-    QT = tTypeNoUnits <: Integer ? typeof(qmin) : tTypeNoUnits
-
-    if controller === nothing
-        controller = default_controller(alg, cache, QT(qoldinit), beta1, beta2)
-    end
-
     # ── Delegate to ODE's _ode_init directly ─────────────────────────────
     ode_alias = ODEAliasSpecifier(alias_u0 = true, alias_f = true, alias_p = true)
 
@@ -502,16 +495,13 @@ function _sde_init(
         noise = noise, c = c, rate_constants = rate_constants,
         seed = _seed,
         rng = _rng,
-        controller = controller,
+        controller,
         # SDE-specific defaults (passed through from SDE's kwargs)
         saveat, tstops, d_discontinuities,
         save_idxs, save_everystep, save_noise, save_on,
         save_start, save_end, callback = _callback,
         dense, calck, dt = iszero(dt) ? nothing : dt, adaptive,
         abstol, reltol,
-        gamma = nothing, qmin = nothing, qmax = nothing,
-        qsteady_min = nothing, qsteady_max = nothing,
-        beta1 = nothing, beta2 = nothing, qoldinit = nothing,
         fullnormalize, failfactor,
         delta = convert.(uBottomEltypeNoUnits, delta),
         maxiters, dtmax, dtmin,
