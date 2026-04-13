@@ -164,7 +164,7 @@ SERK2(; controller = :PI, eigen_est = nothing) = SERK2(controller, eigen_est)
     """Third order method. Exhibits high stability for real eigenvalues.""",
     "TSRKC3",
     "Two-step Stabilized Explicit Method.",
-    """A. V. Moisa. RKC: Third order two-step Runge-Kutta-Chebyshev methods,
+    """A. V. Moisa. Third order two-step Runge-Kutta-Chebyshev methods,
     Journal of Computational and Applied Mathematics, 457, pp 116291, 2025. doi:
     https://doi.org/10.1016/j.cam.2024.116291""",
     """
