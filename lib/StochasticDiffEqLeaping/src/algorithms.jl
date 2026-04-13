@@ -77,7 +77,7 @@ Automatically adjusts tau based on:
 
   - Cao, Y., Gillespie, D.T., Petzold, L.R., "Efficient step size selection for the tau-leaping method"
 """
-@kwdef struct CaoTauLeaping <: StochasticDiffEqJumpAdaptiveAlgorithm
+@kwdef struct CaoTauLeaping{QT} <: StochasticDiffEqJumpAdaptiveAlgorithm
     gamma::QT = 9 // 10
 end
 
