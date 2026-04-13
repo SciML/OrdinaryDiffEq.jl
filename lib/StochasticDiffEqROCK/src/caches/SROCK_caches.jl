@@ -1,6 +1,6 @@
 mutable struct SROCK1ConstantCache{zType, tType} <: StochasticDiffEqConstantCache
-    ms::SVector{10, Int}
-    mη::SVector{10, tType}
+    ms::NTuple{10, Int}
+    mη::NTuple{10, tType}
     zprev::zType
     mdeg::Int
     optimal_η::tType
@@ -48,12 +48,12 @@ function alg_cache(
 end
 
 mutable struct SROCK2ConstantCache{zType, T} <: StochasticDiffEqConstantCache
-    ms::SVector{46, Int}
+    ms::NTuple{46, Int}
     recf::Vector{T}
-    mσ::SVector{46, T}
-    mτ::SVector{46, T}
+    mσ::NTuple{46, T}
+    mτ::NTuple{46, T}
     recf2::Vector{T}
-    mα::SVector{46, T}
+    mα::NTuple{46, T}
     zprev::zType
     mdeg::Int
     deg_index::Int
@@ -119,8 +119,8 @@ function alg_cache(
 end
 
 mutable struct SROCKEMConstantCache{zType, tType} <: StochasticDiffEqConstantCache
-    ms::SVector{10, Int}
-    mη::SVector{10, tType}
+    ms::NTuple{10, Int}
+    mη::NTuple{10, tType}
     zprev::zType
     mdeg::Int
     optimal_η::tType
@@ -235,15 +235,15 @@ function alg_cache(
 end
 
 mutable struct TangXiaoSROCK2ConstantCache{zType, T} <: StochasticDiffEqConstantCache
-    ms::SVector{46, Int}
+    ms::NTuple{46, Int}
     recf::Vector{T}
-    mσ::SVector{46, T}
-    mτ::SVector{46, T}
+    mσ::NTuple{46, T}
+    mτ::NTuple{46, T}
     recf2::Vector{T}
-    mα::SVector{5, T}
-    mn̂::SVector{5, Int}
-    c1::SVector{13, T}
-    c2::SVector{13, T}
+    mα::NTuple{5, T}
+    mn̂::NTuple{5, Int}
+    c1::NTuple{13, T}
+    c2::NTuple{13, T}
     zprev::zType
     mdeg::Int
     deg_index::Int
@@ -311,10 +311,10 @@ function alg_cache(
 end
 
 mutable struct KomBurSROCK2ConstantCache{zType, T} <: StochasticDiffEqConstantCache
-    ms::SVector{46, Int}
+    ms::NTuple{46, Int}
     recf::Vector{T}
-    mσ::SVector{46, T}
-    mτ::SVector{46, T}
+    mσ::NTuple{46, T}
+    mτ::NTuple{46, T}
     mδ::Vector{T}
     zprev::zType
     mdeg::Int
@@ -400,10 +400,10 @@ function alg_cache(
 end
 
 mutable struct SROCKC2ConstantCache{zType, T} <: StochasticDiffEqConstantCache
-    ms::SVector{46, Int}
+    ms::NTuple{46, Int}
     recf::Vector{T}
-    mσ::SVector{46, T}
-    mτ::SVector{46, T}
+    mσ::NTuple{46, T}
+    mτ::NTuple{46, T}
     zprev::zType
     mdeg::Int
     deg_index::Int
