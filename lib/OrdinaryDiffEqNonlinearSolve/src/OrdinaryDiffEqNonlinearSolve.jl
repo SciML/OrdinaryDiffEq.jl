@@ -62,8 +62,7 @@ import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_
     build_jac_config, dolinsolve, alg_autodiff,
     resize_jac_config!
 
-import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
-    StaticMatrix
+import StaticArraysCore: StaticArray
 
 @static if isdefined(SciMLBase, :OrdinaryDiffEqTag)
     import SciMLBase: OrdinaryDiffEqTag
