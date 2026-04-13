@@ -1,5 +1,6 @@
 using OrdinaryDiffEqBDF
 using OrdinaryDiffEqCore
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 using SciMLBase: FullSpecialize, SplitFunction, ODEFunction, DAEFunction
 using AllocCheck
 using Test
@@ -68,7 +69,8 @@ using Test
         )
         integrator = init(
             long_dae_prob, DFBDF(), dt = 0.1, save_everystep = false,
-            abstol = 1.0e-6, reltol = 1.0e-6
+            abstol = 1.0e-6, reltol = 1.0e-6,
+            initializealg = BrownFullBasicInit()
         )
         for _ in 1:50
             step!(integrator)
@@ -179,7 +181,8 @@ using Test
             @testset "$(typeof(solver)) perform_step! allocation check" begin
                 integrator = init(
                     fs_dae_prob, solver, dt = 0.1, save_everystep = false,
-                    abstol = 1.0e-6, reltol = 1.0e-6
+                    abstol = 1.0e-6, reltol = 1.0e-6,
+                    initializealg = BrownFullBasicInit()
                 )
                 step!(integrator)
 
