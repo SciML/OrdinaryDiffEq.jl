@@ -195,6 +195,22 @@ function setup_controller_cache(alg, cache, controller::DummyController, ::Type{
     return DummyControllerCache{E, typeof(cache)}(oneunit(E), cache)
 end
 
+# Algorithms with integrated controllers (BDF, Nordsieck, …) only define their
+# own `stepsize_controller!(integrator, alg)` 2-arg method that reaches for
+# `integrator.cache`. When such an algorithm appears as a branch of a
+# `CompositeAlgorithm`, the composite dispatch hands us the sub-cache
+# (`DummyControllerCache`) explicitly, so fall back to the alg-level method.
+@inline stepsize_controller!(integrator, ::DummyControllerCache, alg) =
+    stepsize_controller!(integrator, alg)
+@inline step_accept_controller!(integrator, ::DummyControllerCache, alg, q) =
+    step_accept_controller!(integrator, alg, q)
+@inline step_reject_controller!(integrator, ::DummyControllerCache, alg) =
+    step_reject_controller!(integrator, alg)
+@inline post_newton_controller!(integrator, ::DummyControllerCache, alg) =
+    post_newton_controller!(integrator, alg)
+@inline accept_step_controller(integrator, cache::DummyControllerCache, alg) =
+    get_EEst(cache) <= 1
+
 
 # Standard integral (I) step size controller
 """

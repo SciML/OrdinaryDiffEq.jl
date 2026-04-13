@@ -171,9 +171,10 @@ end
             )
             EEst = integrator.opts.internalnorm(atmp, t)
 
-            # backup
-            e = OrdinaryDiffEqCore.get_EEst(integrator)
-            qold = integrator.controller_cache.qold
+            # backup — pseudo-step the controller to estimate the work at
+            # this order without leaking state back out.
+            saved_EEst = OrdinaryDiffEqCore.get_EEst(integrator)
+            saved_cache = deepcopy(integrator.controller_cache)
             # calculate dt
             OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
@@ -181,8 +182,10 @@ end
                 stepsize_controller!(integrator, alg)
             )
             # restore
-            OrdinaryDiffEqCore.set_EEst!(integrator, e)
-            integrator.controller_cache.qold = qold
+            OrdinaryDiffEqCore.sync_controllers!(
+                integrator.controller_cache, saved_cache
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, saved_EEst)
 
             work = A / dtpropose
             if work < min_work
@@ -231,9 +234,10 @@ end
             )
             EEst = integrator.opts.internalnorm(atmp, t)
 
-            # backup
-            e = OrdinaryDiffEqCore.get_EEst(integrator)
-            qold = integrator.controller_cache.qold
+            # backup — pseudo-step the controller to estimate the work at
+            # this order without leaking state back out.
+            saved_EEst = OrdinaryDiffEqCore.get_EEst(integrator)
+            saved_cache = deepcopy(integrator.controller_cache)
             # calculate dt
             OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
@@ -241,8 +245,10 @@ end
                 stepsize_controller!(integrator, alg)
             )
             # restore
-            OrdinaryDiffEqCore.set_EEst!(integrator, e)
-            integrator.controller_cache.qold = qold
+            OrdinaryDiffEqCore.sync_controllers!(
+                integrator.controller_cache, saved_cache
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, saved_EEst)
 
             work = A / dtpropose
             if work < min_work

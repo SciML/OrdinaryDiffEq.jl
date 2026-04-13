@@ -406,10 +406,7 @@ function get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgor
 end
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
-function get_current_adaptive_order(
-        alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
-        cache
-    )
+function get_current_adaptive_order(alg, cache)
     return alg_adaptive_order(alg)
 end
 function get_current_adaptive_order(alg::CompositeAlgorithm, cache)
@@ -419,7 +416,7 @@ end
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
 
-alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_order(alg) - 1
+alg_adaptive_order(alg) = alg_order(alg) - 1
 
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
