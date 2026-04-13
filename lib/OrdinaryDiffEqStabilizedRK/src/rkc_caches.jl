@@ -315,3 +315,52 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SERK2ConstantCache(u)
 end
+
+mutable struct TSRKC3ConstantCache{zType, tTypeNoUnits} <: OrdinaryDiffEqConstantCache
+    #to match the types to call maxeig!
+    zprev::zType
+    tsw0::tTypeNoUnits
+    acoshtsw0::tTypeNoUnits
+end
+@cache struct TSRKC3Cache{uType, rateType, uNoUnitsType, C <: TSRKC3ConstantCache} <:
+    StabilizedRKMutableCache
+    u::uType
+    uprev::uType
+    gprev::uType
+    gprev2::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    fsalfirst::rateType
+    k::rateType
+    constantcache::C
+end
+
+function alg_cache(
+        alg::TSRKC3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tsw0 = tTypeNoUnits(1.25)
+    acoshtsw0 = tTypeNoUnits(acosh(1.25))
+    constantcache = TSRKC3ConstantCache(u, tsw0, acoshtsw0)
+    gprev = zero(u)
+    gprev2 = zero(u)
+    tmp = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    fsalfirst = zero(rate_prototype)
+    k = zero(rate_prototype)
+    return TSRKC3Cache(u, uprev, gprev, gprev2, tmp, atmp, fsalfirst, k, constantcache)
+end
+
+function alg_cache(
+        alg::TSRKC3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tsw0 = tTypeNoUnits(1.25)
+    acoshtsw0 = tTypeNoUnits(acosh(1.25))
+    return TSRKC3ConstantCache(u, tsw0, acoshtsw0)
+end

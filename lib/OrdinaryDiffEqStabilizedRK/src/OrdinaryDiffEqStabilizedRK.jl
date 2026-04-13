@@ -1,7 +1,7 @@
 module OrdinaryDiffEqStabilizedRK
 
 import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
-    beta2_default, beta1_default, gamma_default,
+    beta2_default, beta1_default, gamma_default, qmax_default, alg_extrapolates,
     fac_default_gamma, has_dtnew_modification,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals,
@@ -30,6 +30,6 @@ include("rkc_tableaus_rock2.jl")
 include("rkc_tableaus_eserk5.jl")
 include("rkc_tableaus_eserk4.jl")
 
-export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2
+export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, TSRKC3
 
 end
