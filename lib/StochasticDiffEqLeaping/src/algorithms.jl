@@ -33,8 +33,8 @@ Critical parameter: tau should be small enough that jump rates don't change sign
   - Gillespie, D.T., "Approximate accelerated stochastic simulation of chemically reacting systems"
 """
 @kwdef struct TauLeaping{QT} <: StochasticDiffEqJumpAdaptiveAlgorithm
-  gamma::QT = 9 // 10
-  qmax::QT  = 10 // 1
+    gamma::QT = 9 // 10
+    qmax::QT = 10 // 1
 end
 
 """
@@ -78,7 +78,7 @@ Automatically adjusts tau based on:
   - Cao, Y., Gillespie, D.T., Petzold, L.R., "Efficient step size selection for the tau-leaping method"
 """
 @kwdef struct CaoTauLeaping <: StochasticDiffEqJumpAdaptiveAlgorithm
-  gamma::QT = 9 // 10
+    gamma::QT = 9 // 10
 end
 
 """

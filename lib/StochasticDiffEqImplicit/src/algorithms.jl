@@ -78,7 +78,7 @@ function ImplicitRKMil(;
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
         theta = 1, symplectic = false,
-        new_jac_conv_bound = 1.0e-3,interpretation = SciMLBase.AlgorithmInterpretation.Ito
+        new_jac_conv_bound = 1.0e-3, interpretation = SciMLBase.AlgorithmInterpretation.Ito
     )
     autodiff = _fixup_ad(autodiff)
     return ImplicitRKMil{
@@ -168,7 +168,7 @@ function SKenCarp(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :min_correct,
-        new_jac_conv_bound = 1.0e-3, 
+        new_jac_conv_bound = 1.0e-3,
         ode_error_est = true
     )
     autodiff = _fixup_ad(autodiff)

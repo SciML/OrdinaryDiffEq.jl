@@ -342,7 +342,7 @@ function SciMLBase.__init(
     # initialize indices of u(t) and u(tprev) in the dense history
     prev_idx = 1
     prev2_idx = 1
-    
+
     EEstT = if tTypeNoUnits <: Integer
         QT
     elseif prob isa SciMLBase.AbstractDiscreteProblem
