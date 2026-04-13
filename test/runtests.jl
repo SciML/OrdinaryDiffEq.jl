@@ -5,84 +5,27 @@ const LONGER_TESTS = false
 const GROUP = get(ENV, "GROUP", "All")
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
 
-# On Julia < 1.11, the [sources] section in Project.toml is not supported for
-# transitive deps (nested [sources] are ignored). Walk [sources] ourselves and
-# collect Pkg.PackageSpec entries so the CI tests the PR-branch code of every
-# sub-package. `skip_uuid` drops transitive paths whose UUID matches the caller
-# (the active project when testing a sublibrary) — otherwise Pkg.develop errors
-# with "same name or UUID as the active project" once the [sources] graph
-# cycles back through OrdinaryDiffEq → lib/{base_group}.
-function _collect_path_sources(start_path; skip_uuid = nothing)
-    developed = Set{String}()
-    specs = Pkg.PackageSpec[]
-    start_norm = normpath(start_path)
-    push!(developed, start_norm)
-    queue = String[start_norm]
-    while !isempty(queue)
-        pkg_dir = popfirst!(queue)
-        toml_path = joinpath(pkg_dir, "Project.toml")
-        isfile(toml_path) || continue
-        toml = Pkg.TOML.parsefile(toml_path)
-        haskey(toml, "sources") || continue
-        for (dep_name, source_spec) in toml["sources"]
-            (source_spec isa Dict && haskey(source_spec, "path")) || continue
-            dep_path = normpath(joinpath(pkg_dir, source_spec["path"]))
-            (dep_path in developed) && continue
-            isdir(dep_path) || continue
-            dep_toml_path = joinpath(dep_path, "Project.toml")
-            if skip_uuid !== nothing && isfile(dep_toml_path)
-                dep_toml = Pkg.TOML.parsefile(dep_toml_path)
-                if get(dep_toml, "uuid", "") == skip_uuid
-                    push!(developed, dep_path)
-                    continue
-                end
-            end
-            push!(developed, dep_path)
-            @info "Queuing local source dependency" dep_name dep_path
-            push!(specs, Pkg.PackageSpec(path = dep_path))
-            push!(queue, dep_path)
-        end
-    end
-    return specs
-end
-
-# Develop the main OrdinaryDiffEq package plus every sub-package reachable via
-# its [sources] graph. Needed for the ad/odeinterface/modelingtoolkit/downstream
-# test envs on Julia 1.10 so they pick up PR-branch sub-packages instead of
-# pulling (incompatible) registered versions.
-function _develop_ordinarydiffeq_with_sources()
-    root = dirname(@__DIR__)
-    if VERSION < v"1.11.0-DEV.0"
-        specs = _collect_path_sources(root)
-        pushfirst!(specs, Pkg.PackageSpec(path = root))
-        Pkg.develop(specs)
-    else
-        Pkg.develop(Pkg.PackageSpec(path = root))
-    end
-    return nothing
-end
-
 function activate_downstream_env()
     Pkg.activate("downstream")
-    _develop_ordinarydiffeq_with_sources()
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     return Pkg.instantiate()
 end
 
 function activate_odeinterface_env()
     Pkg.activate("odeinterface")
-    _develop_ordinarydiffeq_with_sources()
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     return Pkg.instantiate()
 end
 
 function activate_ad_env()
     Pkg.activate("ad")
-    _develop_ordinarydiffeq_with_sources()
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     return Pkg.instantiate()
 end
 
 function activate_modelingtoolkit_env()
     Pkg.activate("modelingtoolkit")
-    _develop_ordinarydiffeq_with_sources()
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     return Pkg.instantiate()
 end
 
@@ -110,18 +53,36 @@ end
 
     if isdir(joinpath(lib_dir, base_group))
         Pkg.activate(joinpath(lib_dir, base_group))
-        # Manually Pkg.develop local path dependencies so CI tests the PR branch
-        # code. Resolved transitively via `_collect_path_sources`; the active
-        # sublibrary's UUID is filtered out so cycles in the [sources] graph
-        # (OrdinaryDiffEqNonlinearSolve ⇄ OrdinaryDiffEqBDF, OrdinaryDiffEq →
-        # lib/OrdinaryDiffEqDefault, etc.) don't try to re-develop the active
-        # project.
+        # On Julia < 1.11, the [sources] section in Project.toml is not supported.
+        # Manually Pkg.develop local path dependencies so CI tests the PR branch code.
+        # We resolve transitively: each developed dependency's own [sources] are also
+        # developed, so that packages like OrdinaryDiffEqRosenbrockTableaus (a source
+        # dependency of OrdinaryDiffEqRosenbrock) are correctly found even when testing
+        # a higher-level sublibrary like OrdinaryDiffEqDefault.
         if VERSION < v"1.11.0-DEV.0"
-            active_path = joinpath(lib_dir, base_group)
-            active_toml_path = joinpath(active_path, "Project.toml")
-            active_uuid = isfile(active_toml_path) ?
-                get(Pkg.TOML.parsefile(active_toml_path), "uuid", nothing) : nothing
-            specs = _collect_path_sources(active_path; skip_uuid = active_uuid)
+            developed = Set{String}()
+            specs = Pkg.PackageSpec[]
+            queue = [joinpath(lib_dir, base_group)]
+            while !isempty(queue)
+                pkg_dir = popfirst!(queue)
+                toml_path = joinpath(pkg_dir, "Project.toml")
+                isfile(toml_path) || continue
+                toml = Pkg.TOML.parsefile(toml_path)
+                if haskey(toml, "sources")
+                    for (dep_name, source_spec) in toml["sources"]
+                        if source_spec isa Dict && haskey(source_spec, "path")
+                            dep_path = normpath(joinpath(pkg_dir, source_spec["path"]))
+                            if isdir(dep_path) && !(dep_path in developed)
+                                push!(developed, dep_path)
+                                @info "Queuing local source dependency" dep_name dep_path
+                                push!(specs, Pkg.PackageSpec(path = dep_path))
+                                # Queue this dependency so its own [sources] are also resolved.
+                                push!(queue, dep_path)
+                            end
+                        end
+                    end
+                end
+            end
             # Batch the develop call so Pkg resolves all path deps together;
             # calling it one-at-a-time would re-resolve the active project and
             # fail to find unregistered siblings.
