@@ -358,7 +358,12 @@ function _ode_init(
 
     if !isdae && isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
             uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
-        rate_prototype = recursivecopy(u)
+        # SDE delegation provides `_cache` and a non-nothing `W`. In that case
+        # `rate_prototype`'s value is unused: only its type is taken downstream,
+        # the alg_cache calls are skipped (cache is provided), get_fsalfirstlast
+        # is short-circuited, and the [rate_prototype] push is gated by
+        # `isnothing(W)` which is false for SDE. Alias instead of allocating.
+        rate_prototype = (_cache !== nothing && W !== nothing) ? u : recursivecopy(u)
     elseif prob isa DAEProblem
         rate_prototype = prob.du0
     else
@@ -489,16 +494,17 @@ function _ode_init(
 
     k = rateType[]
 
-    if uses_uprev(_alg, adaptive) || calck
+    if _uprev !== nothing
+        # SDE delegation provides a pre-built uprev (cache holds references to it).
+        # Use it directly instead of allocating a recursivecopy(u) that would
+        # immediately be discarded.
+        uprev = _uprev
+    elseif uses_uprev(_alg, adaptive) || calck
         uprev = recursivecopy(u)
     else
         # Some algorithms do not use `uprev` explicitly. In that case, we can save
         # some memory by aliasing `uprev = u`, e.g. for "2N" low storage methods.
         uprev = u
-    end
-    # SDE delegation: use pre-built uprev if provided (cache holds references to it)
-    if _uprev !== nothing
-        uprev = _uprev
     end
     if allow_extrapolation
         uprev2 = recursivecopy(u)
@@ -832,7 +838,36 @@ function _ode_init(
         !isnothing(integrator.P) && (integrator.P.dt = integrator.dt)
     end
 
+    # Starting-time discontinuity: if `d_discontinuities` names `t0`, advance
+    # past it so the first step's RHS evaluations are on the post-discontinuity
+    # side of `t`-dependent branches in `f` (e.g. `if t > t0`). The regular
+    # `update_fsal!` mechanism only fires at iter > 0, so handle the iter==0
+    # case explicitly here. Interior/end discontinuities are handled normally
+    # via the tstops heap and `update_fsal!`. Gated on `initialize_integrator`
+    # because otherwise the FSAL cache is not yet populated.
+    if initialize_integrator
+        handle_starting_time_discontinuity!(integrator)
+    end
+
     return integrator
+end
+
+"""
+    handle_starting_time_discontinuity!(integrator)
+
+If `integrator.opts.d_discontinuities` has an entry at exactly `integrator.t`
+(i.e. at `t0`), pop it, shift `t` by one ULP in the `tdir` direction, and
+re-evaluate the FSAL cache on the post-discontinuity side. No-op otherwise.
+"""
+function handle_starting_time_discontinuity!(integrator)
+    if has_discontinuity(integrator) &&
+            first_discontinuity(integrator) == integrator.tdir * integrator.t
+        handle_discontinuities!(integrator)
+        shift_past_discontinuity!(integrator)
+        get_current_isfsal(integrator.alg, integrator.cache) &&
+            reset_fsal!(integrator)
+    end
+    return nothing
 end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)

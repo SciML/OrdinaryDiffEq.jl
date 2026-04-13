@@ -800,9 +800,9 @@ function perform_step!(
     if dt != dtprev || cache.prevorder != k
         ρ = dt / dtprev
         integrator.cache.nconsteps = 0
-        (; U) = cache
-        R = calc_R(ρ, k, Val(max_order))
-        RU = R * U
+        (; U, R, RU) = cache
+        calc_R!(R, ρ, k)
+        mul!(RU, R, U)
         D_new = [sum(D[i] * RU[i, j] for i in 1:k) for j in 1:k]
         for j in 1:k
             D[j] = D_new[j]
@@ -944,9 +944,9 @@ function perform_step!(
     if dt != dtprev || cache.prevorder != k
         ρ = dt / dtprev
         cache.nconsteps = 0
-        (; RU, U, Dtmp) = cache
-        R = calc_R(ρ, k, Val(max_order))
-        copyto!(RU, R * U)
+        (; R, RU, U, Dtmp) = cache
+        calc_R!(R, ρ, k)
+        mul!(RU, R, U)
         for j in 1:k
             fill!(Dtmp[j], zero(eltype(Dtmp[j])))
             for i in 1:k

@@ -1,3 +1,11 @@
+# u === nothing path: nothing to step. The integrator's state is unchanged
+# and the step trivially succeeds.
+function perform_step!(
+        integrator, cache::IDSolveCache{Nothing, Nothing}, repeat_step = false
+    )
+    return nothing
+end
+
 function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     (; alg, u, uprev, dt, t, tprev, f, p) = integrator
     (; nlcache, Θks) = cache

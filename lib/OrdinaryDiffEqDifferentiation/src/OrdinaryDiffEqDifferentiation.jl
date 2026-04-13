@@ -18,8 +18,7 @@ import ArrayInterface: fast_scalar_indexing, zeromatrix, lu_instance
 
 # StaticArrayInterface imported but not used
 # import StaticArrayInterface
-import StaticArrays
-import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA,
+import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
     StaticMatrix
 
 using DiffEqBase: TimeGradientWrapper,
@@ -44,7 +43,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     isnewton, _unwrap_val,
     set_new_W!, set_W_γdt!, alg_difftype, unwrap_cache, diffdir,
     get_W, isfirstcall, isfirststage, isJcurrent,
-    get_new_W_γdt_cutoff,
+    get_new_W_γdt_cutoff, isWmethod,
     TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM,
     FastConvergence, Convergence, SlowConvergence,
     VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue, @SciMLMessage
