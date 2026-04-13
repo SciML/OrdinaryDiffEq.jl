@@ -29,6 +29,8 @@ alg_order(alg::SMEB) = 1 // 1
 
 alg_order(alg::IRI1) = 1 // 1  # Strong order, weak order is 2
 
+ispredictive(::IRI1) = true
+
 ## alg_interpretation (Stratonovich methods)
 
 SciMLBase.alg_interpretation(alg::RS1) = SciMLBase.AlgorithmInterpretation.Stratonovich
