@@ -233,7 +233,7 @@ end
 
             # backup
             e = integrator.EEst
-            qold = integrator.qold
+            qold = integrator.controller_cache.qold
             # calculate dt
             integrator.EEst = EEst
             dtpropose = step_accept_controller!(
@@ -242,7 +242,7 @@ end
             )
             # restore
             integrator.EEst = e
-            integrator.qold = qold
+            integrator.controller_cache.qold = qold
 
             work = A / dtpropose
             if work < min_work
