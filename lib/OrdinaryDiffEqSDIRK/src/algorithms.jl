@@ -7,7 +7,6 @@ function SDIRK_docstring(
     )
     keyword_default = """
         autodiff = AutoForwardDiff(),
-
         concrete_jac = nothing,
         linsolve = nothing,
         nlsolve = NLNewton(),
@@ -83,12 +82,10 @@ end
     publisher={Springer Berlin Heidelberg New York}}",
     extra_keyword_description = """
     - `extrapolant`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     extrapolant = :constant,
-    controller = :PI,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -97,7 +94,6 @@ struct ImplicitEuler{AD, F, F2, StepLimiter, CJ} <:
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -108,13 +104,13 @@ function ImplicitEuler(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
-        controller = :PI, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ImplicitEuler(
         linsolve,
-        nlsolve, extrapolant, controller, step_limiter!, autodiff,
+        nlsolve, extrapolant, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -171,12 +167,10 @@ end
     references = "Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York, NY, USA.",
     extra_keyword_description = """
     - `extrapolant`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     extrapolant = :linear,
-    controller = :PI,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -185,7 +179,6 @@ struct Trapezoid{AD, F, F2, StepLimiter, CJ} <:
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -196,7 +189,7 @@ function Trapezoid(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear,
-        controller = :PI, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
@@ -204,7 +197,6 @@ function Trapezoid(;
         linsolve,
         nlsolve,
         extrapolant,
-        controller,
         step_limiter!,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -226,13 +218,11 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -242,7 +232,6 @@ struct TRBDF2{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -253,13 +242,13 @@ function TRBDF2(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return TRBDF2(
         linsolve, nlsolve,
-        smooth_est, extrapolant, controller, step_limiter!, autodiff,
+        smooth_est, extrapolant, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -281,13 +270,11 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -297,7 +284,6 @@ struct SDIRK2{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -308,13 +294,12 @@ function SDIRK2(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return SDIRK2(
         linsolve, nlsolve, smooth_est, extrapolant,
-        controller,
         step_limiter!,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -332,13 +317,11 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -347,7 +330,6 @@ struct SDIRK22{AD, F, F2, StepLimiter, CJ} <:
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -358,7 +340,7 @@ function SDIRK22(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear,
-        controller = :PI, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
@@ -366,7 +348,6 @@ function SDIRK22(;
         linsolve,
         nlsolve,
         extrapolant,
-        controller,
         step_limiter!,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -392,12 +373,10 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
-    """,
+        """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :constant,
-    controller = :PI,
     """
 )
 struct SSPSDIRK2{AD, F, F2, CJ} <:
@@ -406,7 +385,6 @@ struct SSPSDIRK2{AD, F, F2, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
     concrete_jac::CJ
 end
@@ -416,13 +394,12 @@ function SSPSDIRK2(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :constant,
-        controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return SSPSDIRK2(
         linsolve, nlsolve, smooth_est, extrapolant,
-        controller, autodiff,
+        autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -442,13 +419,11 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -458,7 +433,6 @@ struct Kvaerno3{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -468,13 +442,13 @@ function Kvaerno3(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return Kvaerno3(
         linsolve, nlsolve,
-        smooth_est, extrapolant, controller, step_limiter!, autodiff,
+        smooth_est, extrapolant, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -490,13 +464,11 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -506,7 +478,6 @@ struct KenCarp3{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -516,13 +487,13 @@ function KenCarp3(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp3(
         linsolve, nlsolve,
-        smooth_est, extrapolant, controller, step_limiter!, autodiff,
+        smooth_est, extrapolant, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -587,13 +558,11 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
     - `embedding`: TBD
     """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     embedding = 3,
     """
 )
@@ -604,7 +573,6 @@ struct Cash4{AD, F, F2, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     embedding::Int
-    controller::Symbol
     autodiff::AD
     concrete_jac::CJ
 end
@@ -613,7 +581,7 @@ function Cash4(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI, embedding = 3
+        embedding = 3
     )
     autodiff = _fixup_ad(autodiff)
 
@@ -623,7 +591,6 @@ function Cash4(;
         smooth_est,
         extrapolant,
         embedding,
-        controller,
         autodiff,
         _unwrap_val(concrete_jac)
 
@@ -868,12 +835,10 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
-    """,
+        """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     """
 )
 struct Hairer4{AD, F, F2, CJ} <:
@@ -882,7 +847,6 @@ struct Hairer4{AD, F, F2, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
     concrete_jac::CJ
 end
@@ -891,13 +855,12 @@ function Hairer4(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return Hairer4(
         linsolve, nlsolve, smooth_est, extrapolant,
-        controller, autodiff,
+        autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -911,12 +874,10 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
-    """,
+        """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     """
 )
 struct Hairer42{AD, F, F2, CJ} <:
@@ -925,7 +886,6 @@ struct Hairer42{AD, F, F2, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
     concrete_jac::CJ
 end
@@ -934,13 +894,12 @@ function Hairer42(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return Hairer42(
         linsolve, nlsolve, smooth_est, extrapolant,
-        controller, autodiff,
+        autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -960,13 +919,11 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
-    - `step_limiter`: TBD
+    - `step_limiter!`: TBD
     """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -976,7 +933,6 @@ struct Kvaerno4{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -986,13 +942,13 @@ function Kvaerno4(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return Kvaerno4(
         linsolve, nlsolve,
-        smooth_est, extrapolant, controller, step_limiter!, autodiff,
+        smooth_est, extrapolant, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1012,13 +968,11 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
-    - `step_limiter`: TBD
+    - `step_limiter!`: TBD
     """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -1028,7 +982,6 @@ struct Kvaerno5{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1038,13 +991,13 @@ function Kvaerno5(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return Kvaerno5(
         linsolve, nlsolve,
-        smooth_est, extrapolant, controller, step_limiter!, autodiff,
+        smooth_est, extrapolant, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1060,13 +1013,11 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
-    - `step_limiter`: TBD
+    - `step_limiter!`: TBD
     """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -1076,7 +1027,6 @@ struct KenCarp4{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1086,13 +1036,13 @@ function KenCarp4(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp4(
         linsolve, nlsolve,
-        smooth_est, extrapolant, controller, step_limiter!, autodiff,
+        smooth_est, extrapolant, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1113,12 +1063,10 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
-    """,
+        """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     """
 )
 struct KenCarp47{AD, F, F2, CJ} <:
@@ -1127,7 +1075,6 @@ struct KenCarp47{AD, F, F2, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1136,13 +1083,12 @@ function KenCarp47(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp47(
         linsolve, nlsolve, smooth_est, extrapolant,
-        controller, autodiff,
+        autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1158,13 +1104,11 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
-    - `step_limiter`: TBD
+    - `step_limiter!`: TBD
     """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -1174,7 +1118,6 @@ struct KenCarp5{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1184,13 +1127,13 @@ function KenCarp5(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp5(
         linsolve, nlsolve,
-        smooth_est, extrapolant, controller, step_limiter!, autodiff,
+        smooth_est, extrapolant, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1209,12 +1152,10 @@ end
     extra_keyword_description = """
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
-    """,
+        """,
     extra_keyword_default = """
     smooth_est = true,
     extrapolant = :linear,
-    controller = :PI,
     """
 )
 struct KenCarp58{AD, F, F2, CJ} <:
@@ -1223,7 +1164,6 @@ struct KenCarp58{AD, F, F2, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1232,13 +1172,12 @@ function KenCarp58(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp58(
         linsolve, nlsolve, smooth_est, extrapolant,
-        controller, autodiff,
+        autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1259,11 +1198,9 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `extrapolant`: TBD
-    - `controller`: TBD
-    """,
+        """,
     extra_keyword_default = """
     extrapolant = :linear,
-    controller = :PI,
     """
 )
 struct ESDIRK54I8L2SA{AD, F, F2, CJ} <:
@@ -1271,7 +1208,6 @@ struct ESDIRK54I8L2SA{AD, F, F2, CJ} <:
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1279,13 +1215,13 @@ function ESDIRK54I8L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear, controller = :PI
+        extrapolant = :linear,
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK54I8L2SA(
         linsolve, nlsolve, extrapolant,
-        controller, autodiff,
+        autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1305,11 +1241,9 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `extrapolant`: TBD
-    - `controller`: TBD
-    """,
+        """,
     extra_keyword_default = """
     extrapolant = :linear,
-    controller = :PI,
     """
 )
 struct ESDIRK436L2SA2{AD, F, F2, CJ} <:
@@ -1317,7 +1251,6 @@ struct ESDIRK436L2SA2{AD, F, F2, CJ} <:
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1325,13 +1258,13 @@ function ESDIRK436L2SA2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear, controller = :PI
+        extrapolant = :linear,
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK436L2SA2(
         linsolve, nlsolve, extrapolant,
-        controller, autodiff,
+        autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1351,11 +1284,9 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `extrapolant`: TBD
-    - `controller`: TBD
-    """,
+        """,
     extra_keyword_default = """
     extrapolant = :linear,
-    controller = :PI,
     """
 )
 struct ESDIRK437L2SA{AD, F, F2, CJ} <:
@@ -1363,7 +1294,6 @@ struct ESDIRK437L2SA{AD, F, F2, CJ} <:
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1371,13 +1301,13 @@ function ESDIRK437L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear, controller = :PI
+        extrapolant = :linear,
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK437L2SA(
         linsolve, nlsolve, extrapolant,
-        controller, autodiff,
+        autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1397,11 +1327,9 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `extrapolant`: TBD
-    - `controller`: TBD
-    """,
+        """,
     extra_keyword_default = """
     extrapolant = :linear,
-    controller = :PI,
     """
 )
 struct ESDIRK547L2SA2{AD, F, F2, CJ} <:
@@ -1409,7 +1337,6 @@ struct ESDIRK547L2SA2{AD, F, F2, CJ} <:
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1417,13 +1344,13 @@ function ESDIRK547L2SA2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear, controller = :PI
+        extrapolant = :linear,
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK547L2SA2(
         linsolve, nlsolve, extrapolant,
-        controller, autodiff,
+        autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1445,11 +1372,9 @@ Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more deta
     }""",
     extra_keyword_description = """
     - `extrapolant`: TBD
-    - `controller`: TBD
-    """,
+        """,
     extra_keyword_default = """
     extrapolant = :linear,
-    controller = :PI,
     """
 )
 struct ESDIRK659L2SA{AD, F, F2, CJ} <:
@@ -1457,7 +1382,6 @@ struct ESDIRK659L2SA{AD, F, F2, CJ} <:
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1465,13 +1389,13 @@ function ESDIRK659L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear, controller = :PI
+        extrapolant = :linear,
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK659L2SA(
         linsolve, nlsolve, extrapolant,
-        controller, autodiff,
+        autodiff,
         _unwrap_val(concrete_jac)
     )
 end

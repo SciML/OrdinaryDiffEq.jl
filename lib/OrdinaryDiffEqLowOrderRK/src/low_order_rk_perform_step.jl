@@ -481,7 +481,7 @@ end
     alg = unwrap_alg(integrator, false)
     if !_unwrap_val(alg.lazy) && (
             integrator.opts.adaptive == false ||
-                accept_step_controller(integrator, integrator.opts.controller)
+                accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
         )
         (; c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110) = cache
         k = integrator.k
@@ -614,7 +614,7 @@ end
     alg = unwrap_alg(integrator, false)
     if !_unwrap_val(alg.lazy) && (
             integrator.opts.adaptive == false ||
-                accept_step_controller(integrator, integrator.opts.controller)
+                accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
         )
         k = integrator.k
         (; c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110) = cache.tab
