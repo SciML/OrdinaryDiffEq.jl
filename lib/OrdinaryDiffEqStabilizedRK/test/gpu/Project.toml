@@ -11,4 +11,4 @@ path = "../../../.."
 [compat]
 CUDA = "4, 5"
 OrdinaryDiffEq = "6, 7"
-RecursiveArrayTools = "3.52"
+RecursiveArrayTools = "4"
