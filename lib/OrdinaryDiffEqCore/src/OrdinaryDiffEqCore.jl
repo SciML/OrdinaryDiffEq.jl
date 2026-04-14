@@ -52,9 +52,6 @@ using ArrayInterface: ArrayInterface, issingular
 
 import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
-import StaticArraysCore: SArray, SVector, StaticArray, MMatrix,
-    StaticMatrix
-
 # Integrator Interface
 import SciMLBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
     resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
