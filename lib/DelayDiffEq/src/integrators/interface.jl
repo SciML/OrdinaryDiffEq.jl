@@ -193,9 +193,9 @@ function DiffEqBase.initialize!(integrator::DDEIntegrator)
     return nothing
 end
 
-# signal the integrator that state u was modified
-function DiffEqBase.u_modified!(integrator::DDEIntegrator, bool::Bool)
-    return integrator.u_modified = bool
+# signal the integrator of a derivative discontinuity
+function SciMLBase.derivative_discontinuity!(integrator::DDEIntegrator, bool::Bool)
+    return integrator.derivative_discontinuity = bool
 end
 
 # return next integration time step
@@ -488,7 +488,7 @@ function DiffEqBase.reinit!(
     # reset integration counters
     integrator.iter = 0
     integrator.success_iter = 0
-    integrator.u_modified = false
+    integrator.derivative_discontinuity = false
 
     # full re-initialize the controller in timestepping
     OrdinaryDiffEqCore.reinit_controller!(integrator, integrator.controller_cache)
@@ -628,7 +628,7 @@ function DiffEqBase.reeval_internals_due_to_modification!(
         ode_integrator.u = integrator.u
     end
 
-    return integrator.u_modified = false
+    return integrator.derivative_discontinuity = false
 end
 
 # perform one step

@@ -37,7 +37,7 @@ sol2 = solve(prob, tabalg, dt = 1 / 2^1, adaptive = false, save_everystep = fals
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, BS3(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -63,7 +63,7 @@ sol2 = solve(prob, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = fals
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, BS5(), dt = 1 / 2^6)
 
-@test length(sol1) <= length(sol2) # Dual error estimators is more strict
+@test length(sol1.t) <= length(sol2.t) # Dual error estimators is more strict
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -90,7 +90,7 @@ sol2 = solve(prob, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = fals
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, Tsit5(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -117,7 +117,7 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(probbig, tabalg, dt = 1 / 2^6)
 sol2 = solve(probbig, Vern6(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -144,7 +144,7 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(probbig, tabalg, dt = 1 / 2^6)
 sol2 = solve(probbig, Vern7(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -172,7 +172,7 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, TanYam7(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -199,7 +199,7 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, Vern8(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -226,7 +226,7 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, TsitPap8(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -253,6 +253,6 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(probbig, tabalg, dt = 1 / 2^6)
 sol2 = solve(probbig, Vern9(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)

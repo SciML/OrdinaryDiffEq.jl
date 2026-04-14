@@ -15,7 +15,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3ConstantCache)
     J = calc_J(integrator, cache)
 
     c1m1 = c1 - 1
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = zero(eltype(u))
         z1 = @.. uzero
@@ -152,7 +152,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
     end
 
     c1m1 = c1 - 1
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = zero(eltype(u))
         @.. z1 = uzero
@@ -320,7 +320,7 @@ function _ode_addsteps!(
     integrator.stats.nw += 1
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = map(zero, u)
         z1 = @.. uzero
@@ -477,7 +477,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
     end
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = zero(eltype(u))
         @.. z1 = uzero
@@ -714,7 +714,7 @@ function _ode_addsteps!(
     integrator.stats.nw += 1
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         z1 = map(zero, u)
         z2 = map(zero, u)
@@ -978,7 +978,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
     end
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = zero(eltype(u))
         @.. z1 = uzero
@@ -1310,7 +1310,7 @@ function _ode_addstep!(integrator, cache::AdaptiveRadauConstantCache, repeat_ste
     integrator.stats.nw += 1
     z = Vector{typeof(u)}(undef, num_stages)
     w = Vector{typeof(u)}(undef, num_stages)
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         for i in 1:num_stages
             z[i] = @.. map(zero, u)
@@ -1551,7 +1551,7 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
     end
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         for i in 1:num_stages
             @.. z[i] = map(zero, u)

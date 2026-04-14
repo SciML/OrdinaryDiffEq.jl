@@ -2,7 +2,7 @@ using OrdinaryDiffEqBDF, DiffEqBase, Test
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 import OrdinaryDiffEqCore: _initialize_dae!
 
-# Test that u_modified! triggers DAE initialization
+# Test that derivative_discontinuity! triggers DAE initialization
 # Regression test for https://github.com/SciML/DifferentialEquations.jl/issues/1127
 
 # Custom init algorithm that counts how many times initialize_dae! is called
@@ -27,29 +27,29 @@ du₀ = [-0.04, 0.04, 0.0]
 
 prob = DAEProblem(f, du₀, u₀, (0.0, 1.0), differential_vars = [true, true, false])
 
-# With CheckInit, modifying u to break constraints and calling u_modified!
+# With CheckInit, modifying u to break constraints and calling derivative_discontinuity!
 # should trigger the initialization check and error
 int = init(prob, DFBDF(), initializealg = DiffEqBase.CheckInit())
 int.u[1] = 2.0 # Breaks algebraic constraint u[1] + u[2] + u[3] = 1
-u_modified!(int, true)
+derivative_discontinuity!(int, true)
 @test_throws SciMLBase.CheckInitFailureError step!(int)
 
-# With BrownFullBasicInit, modifying u and calling u_modified! should
+# With BrownFullBasicInit, modifying u and calling derivative_discontinuity! should
 # reinitialize the algebraic variables to satisfy constraints
 int2 = init(prob, DFBDF(), initializealg = BrownFullBasicInit())
 int2.u[1] = 2.0 # Breaks algebraic constraint
-u_modified!(int2, true)
+derivative_discontinuity!(int2, true)
 step!(int2)
 @test int2.u[1] + int2.u[2] + int2.u[3] ≈ 1.0 atol = 1.0e-10
 
-# Test that u_modified! calls initialize_dae! exactly once
+# Test that derivative_discontinuity! calls initialize_dae! exactly once
 counter = CountingInit(DiffEqBase.CheckInit(), Ref(0))
 int3 = init(prob, DFBDF(), initializealg = counter)
 init_after_init = counter.count[]  # init() calls initialize_dae! once
 @test init_after_init == 1
 # Modify u without breaking constraints (just set same values)
 int3.u .= u₀
-u_modified!(int3, true)
+derivative_discontinuity!(int3, true)
 step!(int3)
 @test counter.count[] == init_after_init + 1  # exactly one more init call
 

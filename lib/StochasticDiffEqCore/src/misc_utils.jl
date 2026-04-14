@@ -23,7 +23,7 @@ get_du(dc::DiffCache, T) = dc.du
 
 # Default nlsolve behavior, should be removed
 
-Base.@pure determine_chunksize(u, alg::DEAlgorithm) = determine_chunksize(u, get_chunksize(alg))
+Base.@pure determine_chunksize(u, alg::AbstractDEAlgorithm) = determine_chunksize(u, get_chunksize(alg))
 Base.@pure function determine_chunksize(u, CS)
     if CS != 0
         return CS

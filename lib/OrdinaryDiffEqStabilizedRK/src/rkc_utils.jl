@@ -3,7 +3,7 @@
 const RKCAlgs = Union{RKC, ESERK4, ESERK5, SERK2, ROCK2, ROCK4}
 
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
-    isfirst = integrator.iter == 1 || integrator.u_modified
+    isfirst = integrator.iter == 1 || integrator.derivative_discontinuity
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     maxiter = (integrator.alg isa Union{ESERK4, ESERK5, SERK2}) ? 100 : 50
 
@@ -91,7 +91,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
 end
 
 function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
-    isfirst = integrator.iter == 1 || integrator.u_modified
+    isfirst = integrator.iter == 1 || integrator.derivative_discontinuity
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     fz, z, atmp = cache.k, cache.tmp, cache.atmp
     ccache = cache.constantcache

@@ -506,7 +506,7 @@ ssp_coefficient(alg) = error("$alg is not a strong stability preserving method."
 alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 
-function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
+function unwrap_alg(alg::SciMLBase.AbstractDEAlgorithm, is_stiff)
     if !is_composite_algorithm(alg)
         return alg
     elseif alg.choice_function isa AutoSwitchCache

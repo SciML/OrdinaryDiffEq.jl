@@ -111,6 +111,6 @@ M = [
 f = ODEFunction(rober, mass_matrix = M)
 prob_mm = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 cb = DiscreteCallback(
-    (u, t, integrator) -> true, (integrator) -> u_modified!(integrator, true)
+    (u, t, integrator) -> true, (integrator) -> derivative_discontinuity!(integrator, true)
 )
 sol = solve(prob_mm, DefaultODEAlgorithm(), callback = cb)
