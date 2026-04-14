@@ -345,10 +345,3 @@ end
 end
 
 @inline _process_verbose_param(verbose::DEVerbosity) = verbose
-
-# Extend SciMLLogging.verbosity_to_bool for Bool, presets, and DEVerbosity,
-# so packages with a simple boolean verbose flag can accept any verbose argument.
-SciMLLogging.verbosity_to_bool(verbose::Bool) = verbose
-SciMLLogging.verbosity_to_bool(::SciMLLogging.None) = false
-SciMLLogging.verbosity_to_bool(::SciMLLogging.AbstractVerbosityPreset) = true
-SciMLLogging.verbosity_to_bool(verbose::DEVerbosity) = verbose !== NONE_VERBOSE
