@@ -547,7 +547,7 @@ function PIDController(
     )
     beta = map(float, promote(beta1, beta2, beta3))
     QT = eltype(beta)
-    err = MVector{3, QT}(one(QT), one(QT), one(QT))
+    err = MVector{3, QT}((one(QT), one(QT), one(QT)))
     return PIDController(beta, err, convert(QT, accept_safety), limiter)
 end
 
@@ -685,12 +685,12 @@ mutable struct PIDControllerCache{T, Limiter, UT} <: AbstractControllerCache
 end
 
 function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIDControllerCache{T}) where {T}
-    cache.err = MVector{3, T}(one(T), one(T), one(T))
+    cache.err = MVector{3, T}((one(T), one(T), one(T)))
     return cache.dt_factor = T(1 // 10^4)
 end
 
 function setup_controller_cache(alg, atmp, controller::NewPIDController{QT}) where {QT}
-    err = MVector{3, QT}(one(QT), one(QT), one(QT))
+    err = MVector{3, QT}((one(QT), one(QT), one(QT)))
     return PIDControllerCache(
         controller,
         err,
