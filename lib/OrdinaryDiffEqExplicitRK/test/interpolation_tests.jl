@@ -31,11 +31,11 @@ prob_ode_2Dlinear = ODEProblem(
 @testset "Basic Solve" begin
     for tableau_fn in [constructTsit5ExplicitRK, constructDormandPrince]
         sol = solve(prob_ode_linear, ExplicitRK(tableau = tableau_fn()))
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
 
         sol = solve(prob_ode_2Dlinear, ExplicitRK(tableau = tableau_fn()))
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
 end

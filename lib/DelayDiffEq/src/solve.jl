@@ -364,7 +364,7 @@ function SciMLBase.__init(
     iter = 0
     kshortsize = 0
     reeval_fsal = false
-    u_modified = false
+    derivative_discontinuity = false
     EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
     do_error_check = true
@@ -439,7 +439,7 @@ function SciMLBase.__init(
         accept_step,
         isout,
         reeval_fsal,
-        u_modified,
+        derivative_discontinuity,
         isdae,
         opts,
         stats,
@@ -525,13 +525,13 @@ function OrdinaryDiffEqCore.initialize_callbacks!(
     # set up additional initial values of newly created DDE integrator
     # (such as fsalfirst) and its callbacks
 
-    integrator.u_modified = true
+    integrator.derivative_discontinuity = true
 
-    u_modified = initialize!(callbacks, integrator.u, integrator.t, integrator)
+    derivative_discontinuity = initialize!(callbacks, integrator.u, integrator.t, integrator)
 
     # if the user modifies u, we need to fix previous values before initializing
     # FSAL in order for the starting derivatives to be correct
-    if u_modified
+    if derivative_discontinuity
         if isinplace(prob)
             recursivecopy!(integrator.uprev, integrator.u)
         else
@@ -563,7 +563,7 @@ function OrdinaryDiffEqCore.initialize_callbacks!(
     end
 
     # reset this as it is now handled so the integrators should proceed as normal
-    return integrator.u_modified = false
+    return integrator.derivative_discontinuity = false
 end
 
 function initialize_tstops_d_discontinuities_propagated(

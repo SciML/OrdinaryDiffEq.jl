@@ -19,7 +19,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     stepsize_controller!,
     step_accept_controller!,
     step_reject_controller!, post_newton_controller!,
-    u_modified!, DAEAlgorithm, _unwrap_val, DummyController,
+    DAEAlgorithm, _unwrap_val, DummyController,
     get_fsalfirstlast, generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
     _ode_interpolant, _ode_interpolant!, has_stiff_interpolation,
     _ode_addsteps!, DerivativeOrderNotPossibleError

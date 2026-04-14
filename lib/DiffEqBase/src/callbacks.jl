@@ -15,14 +15,14 @@ function initialize!(
         c::DECallback, cs::DECallback...
     )
     c.initialize(c, u, t, integrator)
-    return initialize!(u, t, integrator, any_modified || integrator.u_modified, cs...)
+    return initialize!(u, t, integrator, any_modified || integrator.derivative_discontinuity, cs...)
 end
 function initialize!(
         u, t, integrator::DEIntegrator, any_modified::Bool,
         c::DECallback
     )
     c.initialize(c, u, t, integrator)
-    return any_modified || integrator.u_modified
+    return any_modified || integrator.derivative_discontinuity
 end
 
 """
@@ -39,14 +39,14 @@ function finalize!(
         c::DECallback, cs::DECallback...
     )
     c.finalize(c, u, t, integrator)
-    return finalize!(u, t, integrator, any_modified || integrator.u_modified, cs...)
+    return finalize!(u, t, integrator, any_modified || integrator.derivative_discontinuity, cs...)
 end
 function finalize!(
         u, t, integrator::DEIntegrator, any_modified::Bool,
         c::DECallback
     )
     c.finalize(c, u, t, integrator)
-    return any_modified || integrator.u_modified
+    return any_modified || integrator.derivative_discontinuity
 end
 
 # Helpers
@@ -527,31 +527,31 @@ function apply_callback!(
         savedexactly || savevalues!(integrator, true)
     end
 
-    integrator.u_modified = true
+    integrator.derivative_discontinuity = true
 
     if callback isa VectorContinuousCallback
         if callback.affect! === nothing
-            integrator.u_modified = false
+            integrator.derivative_discontinuity = false
         else
             callback.affect!(integrator, integrator.callback_cache.simultaneous_events)
         end
     else
         if prev_sign < 0
             if callback.affect! === nothing
-                integrator.u_modified = false
+                integrator.derivative_discontinuity = false
             else
                 callback.affect!(integrator)
             end
         elseif prev_sign > 0
             if callback.affect_neg! === nothing
-                integrator.u_modified = false
+                integrator.derivative_discontinuity = false
             else
                 callback.affect_neg!(integrator)
             end
         end
     end
 
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         reeval_internals_due_to_modification!(
             integrator, callback_initializealg = callback.initializealg
         )
@@ -583,9 +583,9 @@ end
             # if already saved then skip saving
             savedexactly || savevalues!(integrator, true)
         end
-        integrator.u_modified = true
+        integrator.derivative_discontinuity = true
         callback.affect!(integrator)
-        if integrator.u_modified
+        if integrator.derivative_discontinuity
             reeval_internals_due_to_modification!(
                 integrator, false, callback_initializealg = callback.initializealg
             )
@@ -599,7 +599,7 @@ end
         end
     end
     integrator.sol.stats.ncondition += 1
-    return integrator.u_modified, saved_in_cb
+    return integrator.derivative_discontinuity, saved_in_cb
 end
 
 #Starting: Get bool from first and do next

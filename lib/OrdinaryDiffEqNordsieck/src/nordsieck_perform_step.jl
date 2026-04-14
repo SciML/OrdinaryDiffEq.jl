@@ -17,7 +17,7 @@ end
     (; t, dt, uprev, u, f, p, differential_vars) = integrator
     (; z, l, m, c_LTE, dts, tsit5tab) = cache
     # handle callbacks, rewind back to order one.
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.order = 1
     end
     # Nordsieck form needs to build the history vector
@@ -114,7 +114,7 @@ end
     (; t, dt, uprev, u, f, p, uprev2, differential_vars) = integrator
     (; z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache) = cache
     # handle callbacks, rewind back to order one.
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.order = 1
     end
     # Nordsieck form needs to build the history vector
@@ -215,7 +215,7 @@ end
     (; t, dt, uprev, u, f, p, differential_vars) = integrator
     (; z, l, m, c_LTE, dts, tsit5tab) = cache
     # handle callbacks, rewind back to order one.
-    if integrator.u_modified || integrator.iter == 1
+    if integrator.derivative_discontinuity || integrator.iter == 1
         cache.order = 1
         z[1] = integrator.uprev
         z[2] = f(uprev, p, t) * dt
@@ -282,7 +282,7 @@ end
     (; t, dt, uprev, u, f, p, uprev2, differential_vars) = integrator
     (; z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache) = cache
     # handle callbacks, rewind back to order one.
-    if integrator.u_modified || integrator.iter == 1
+    if integrator.derivative_discontinuity || integrator.iter == 1
         cache.order = 1
         @.. broadcast = false z[1] = integrator.uprev
         f(z[2], uprev, p, t)

@@ -21,7 +21,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, Rosenbrock32())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -30,7 +30,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, Rosenbrock32())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     if isempty(VERSION.prerelease)
@@ -53,7 +53,7 @@ end
                 )
             )
         )
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
 
         sim = test_convergence(
@@ -75,7 +75,7 @@ end
                 ), linsolve = LinearSolve.KrylovJL()
             )
         )
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
     ### ROS3P()
@@ -87,7 +87,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3P())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -97,7 +97,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3P())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     if isempty(VERSION.prerelease)
@@ -122,7 +122,7 @@ end
                 linsolve = LinearSolve.KrylovJL()
             )
         )
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
 
@@ -135,7 +135,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, Rodas3())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -145,7 +145,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, Rodas3())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     if isempty(VERSION.prerelease)
@@ -170,7 +170,7 @@ end
                 linsolve = LinearSolve.KrylovJL()
             )
         )
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
 
@@ -181,7 +181,7 @@ end
     @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
     sol = solve(prob, ROS2())
-    @test length(sol) < 61
+    @test length(sol.t) < 61
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -190,7 +190,7 @@ end
     @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
     sol = solve(prob, ROS2PR())
-    @test length(sol) < 60
+    @test length(sol.t) < 60
     @test SciMLBase.successful_retcode(sol)
 
     ### ROS2PR
@@ -200,7 +200,7 @@ end
     @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
     sol = solve(prob, ROS2PR())
-    @test length(sol) < 30
+    @test length(sol.t) < 30
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -209,7 +209,7 @@ end
     @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
     sol = solve(prob, ROS2PR())
-    @test length(sol) < 30
+    @test length(sol.t) < 30
     @test SciMLBase.successful_retcode(sol)
 
     ### ROS2S
@@ -219,7 +219,7 @@ end
     @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
     sol = solve(prob, ROS2S())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -228,7 +228,7 @@ end
     @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
     sol = solve(prob, ROS2S())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### ROS3
@@ -238,7 +238,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -247,7 +247,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### ROS3PR
@@ -257,8 +257,8 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3PR())
-    @test length(sol) < 20
-    @test SciMLBase.successful_retcode(sol) #length(sol) = 4 => Too Small??
+    @test length(sol.t) < 20
+    @test SciMLBase.successful_retcode(sol) #length(sol.t) = 4 => Too Small??
 
     prob = prob_ode_2Dlinear
 
@@ -266,8 +266,8 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3PR())
-    @test length(sol) < 20
-    @test SciMLBase.successful_retcode(sol) #length(sol) = 4 => Too Small??
+    @test length(sol.t) < 20
+    @test SciMLBase.successful_retcode(sol) #length(sol.t) = 4 => Too Small??
 
     ### Scholz4_7
     prob = prob_ode_linear
@@ -276,7 +276,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, Scholz4_7())
-    @test length(sol) < 30
+    @test length(sol.t) < 30
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -285,7 +285,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, Scholz4_7())
-    @test length(sol) < 30
+    @test length(sol.t) < 30
     @test SciMLBase.successful_retcode(sol)
 
     println("4th order Rosenbrocks")
@@ -298,7 +298,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, RosShamp4())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -307,7 +307,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, RosShamp4())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### Veldd4
@@ -318,7 +318,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, Veldd4())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -327,7 +327,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, Veldd4())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### Velds4
@@ -338,7 +338,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, Velds4())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -347,7 +347,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, Velds4())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### GRK4T
@@ -358,7 +358,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, GRK4T())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -367,7 +367,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, GRK4T())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### GRK4A
@@ -379,7 +379,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, GRK4A())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -388,7 +388,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, GRK4A())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### Ros4LStab
@@ -399,7 +399,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, Ros4LStab())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -408,7 +408,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, Ros4LStab())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### Rosenbrock-W Algorithms
@@ -423,7 +423,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW1a())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -433,7 +433,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW1a())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### ROS34PW1b
@@ -444,7 +444,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW1b())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -454,7 +454,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW1b())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### ROS34PW2
@@ -465,7 +465,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW2())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -475,7 +475,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PW2())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### ROS34PRw
@@ -485,7 +485,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PRw())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -494,7 +494,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS34PRw())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### ROS3PRL
@@ -504,7 +504,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3PRL())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -513,7 +513,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3PRL())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### ROS3PRL2
@@ -523,7 +523,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3PRL2())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -532,7 +532,7 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     sol = solve(prob, ROS3PRL2())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### RosenbrockW6S4OS
@@ -553,7 +553,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, Rodas3P())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -563,7 +563,7 @@ end
     @test sim.𝒪est[:L2] ≈ 3 atol = testTol
 
     sol = solve(prob, Rodas3P())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     if isempty(VERSION.prerelease)
@@ -588,7 +588,7 @@ end
                 linsolve = LinearSolve.KrylovJL()
             )
         )
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
 
@@ -605,7 +605,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas4())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(
@@ -615,7 +615,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff()))
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     if isempty(VERSION.prerelease)
@@ -627,7 +627,7 @@ end
                 )
             )
         )
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
 
@@ -636,7 +636,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas42())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(dts, prob, Rodas4P(), dense_errors = true)
@@ -644,7 +644,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas4P())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(dts, prob, Rodas4P2(), dense_errors = true)
@@ -652,7 +652,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas4P2())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -662,7 +662,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas4())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     println("Rodas4 with finite diff")
@@ -674,7 +674,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff()))
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(
@@ -685,7 +685,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff(fdtype = Val(:forward))))
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(
@@ -696,7 +696,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas4(autodiff = AutoFiniteDiff(fdtype = Val(:forward))))
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(dts, prob, Rodas42(), dense_errors = true)
@@ -704,7 +704,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas42())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(dts, prob, Rodas4P(), dense_errors = true)
@@ -712,7 +712,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas4P())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     sim = test_convergence(dts, prob, Rodas4P2(), dense_errors = true)
@@ -720,7 +720,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas4P2())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     println("Rodas4P2 with finite diff")
@@ -732,7 +732,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, Rodas4P2(autodiff = AutoFiniteDiff()))
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     ### Rodas5
@@ -746,7 +746,7 @@ end
     @test sim.𝒪est[:L2] ≈ 5 atol = testTol
 
     sol = solve(prob, Rodas5())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -756,7 +756,7 @@ end
     @test sim.𝒪est[:L2] ≈ 5 atol = testTol
 
     sol = solve(prob, Rodas5())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
 end

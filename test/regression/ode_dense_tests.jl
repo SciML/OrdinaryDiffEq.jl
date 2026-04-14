@@ -138,12 +138,12 @@ for co in (:right, :left)
     @test interpdright == sol(similar(sol.u[end]), last(sol.t), continuity = co)
     tmp = [similar(sol.u[end]) for i in 1:3]
     sol(tmp, ts, continuity = co)
-    @test all(map((x, y) -> x == y, interpdrights, tmp))
+    @test all(map((x, y) -> x == y, interpdrights.u, tmp))
 end
 
 interpd_idxs = sol(0:(1 // 2^(4)):1, idxs = 1:2:5)
 
-@test minimum([isapprox(interpd_idxs[i], interpd[i][1:2:5], rtol = 1.0e-14) for i in 1:length(interpd)])
+@test minimum([isapprox(interpd_idxs.u[i], interpd.u[i][1:2:5], rtol = 1.0e-14) for i in 1:length(interpd.u)])
 
 interpd_single = sol(0:(1 // 2^(4)):1, idxs = 1)
 
@@ -158,7 +158,9 @@ sol2 = solve(prob, Euler(), dt = 1 // 2^(4), dense = true)
 
 @test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd)) < 0.2
 
-sol(interpd, 0:(1 // 2^(4)):1)
+# In-place fill of a VectorOfArray container.
+interpd_buf = [similar(sol.u[end]) for _ in 0:(1 // 2^(4)):1]
+sol(interpd_buf, 0:(1 // 2^(4)):1)
 
 @test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd)) < 0.2
 

@@ -71,7 +71,7 @@ import ForwardDiff.Dual
 
 import FastPower
 
-import DiffEqBase: step!, initialize!, DEAlgorithm,
+import DiffEqBase: step!, initialize!, AbstractDEAlgorithm,
     AbstractSDEAlgorithm, AbstractRODEAlgorithm, DEIntegrator,
     DECache, AbstractSDEIntegrator, AbstractRODEIntegrator,
     AbstractContinuousCallback,
@@ -82,7 +82,7 @@ import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, 
     rand_cache, ratenoise_cache,
     resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
     terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
-    u_modified!, savevalues!, add_tstop!, add_saveat!, set_reltol!,
+    savevalues!, add_tstop!, add_saveat!, set_reltol!,
     set_abstol!, postamble!, last_step_failed, has_Wfact, has_jac,
     get_tstops, get_tstops_array, get_tstops_max
 

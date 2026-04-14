@@ -49,8 +49,8 @@ function loopheader!(integrator)
             # REJECT
             handle_step_rejection!(integrator)
         end
-    elseif integrator.u_modified # && integrator.iter == 0
-        on_u_modified_at_init!(integrator)
+    elseif integrator.derivative_discontinuity # && integrator.iter == 0
+        on_derivative_discontinuity_at_init!(integrator)
     end
 
     integrator.iter += 1
@@ -89,7 +89,7 @@ post_step_reject!(integrator) = nothing
 
 # Called at iter==0 when u was modified by callbacks during init.
 # For SDE: isdae=false skips DAE re-init; isfsal=false makes update_fsal! a no-op.
-function on_u_modified_at_init!(integrator)
+function on_derivative_discontinuity_at_init!(integrator)
     if integrator.isdae
         DiffEqBase.initialize_dae!(integrator)
     end
@@ -135,7 +135,7 @@ function update_fsal!(integrator)
         get_current_isfsal(integrator.alg, integrator.cache) && reset_fsal!(integrator)
     elseif all_fsal(integrator.alg, integrator.cache) ||
             get_current_isfsal(integrator.alg, integrator.cache)
-        if integrator.reeval_fsal || integrator.u_modified ||
+        if integrator.reeval_fsal || integrator.derivative_discontinuity ||
                 (isdp8(integrator.alg) && !integrator.opts.calck) ||
                 (
                 only_diagonal_mass_matrix(integrator.alg) &&
@@ -583,10 +583,10 @@ is_composite_algorithm(alg) = alg isa OrdinaryDiffEqCompositeAlgorithm
 # For SDE, reeval_fsal is always false so resetting is a no-op.
 function loopfooter_reset!(integrator)
     # Carry-over from callback
-    # This is set to true if u_modified requires callback FSAL reset
+    # This is set to true if derivative_discontinuity requires callback FSAL reset
     # But not set to false when reset so algorithms can check if reset occurred
     integrator.reeval_fsal = false
-    return integrator.u_modified = false
+    return integrator.derivative_discontinuity = false
 end
 
 # Handle force_stepfail in adaptive mode: reduce dt after Newton failure.
@@ -697,7 +697,7 @@ function handle_callbacks!(integrator)
         savevalues!(integrator)
     end
 
-    integrator.u_modified = continuous_modified | discrete_modified
+    integrator.derivative_discontinuity = continuous_modified | discrete_modified
     on_callbacks_complete!(integrator)
     return nothing
 end
@@ -708,7 +708,7 @@ end
 function on_callbacks_complete!(integrator)
     if isfsal(integrator.alg)
         integrator.reeval_fsal && handle_callback_modifiers!(integrator)
-    elseif integrator.u_modified && !isnothing(_get_W(integrator))
+    elseif integrator.derivative_discontinuity && !isnothing(_get_W(integrator))
         integrator.do_error_check = false
         handle_callback_modifiers!(integrator)
     end

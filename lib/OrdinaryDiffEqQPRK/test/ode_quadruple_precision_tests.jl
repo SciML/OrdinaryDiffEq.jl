@@ -61,7 +61,7 @@ for prob in test_problems_only_time
     @test sim.𝒪est[:final] ≈ OrdinaryDiffEqQPRK.alg_order(alg) + 1 atol = testTol
     sol = solve(prob, alg, adaptive = true, save_everystep = true)
     sol_exact = prob.f.analytic(prob.u0, prob.p, sol.t[end])
-    @test length(sol) < 7
+    @test length(sol.t) < 7
     @test SciMLBase.successful_retcode(sol)
     @test minimum(abs.(sol.u[end] .- sol_exact) .< 1.0e-12)
 end
@@ -72,7 +72,7 @@ for prob in test_problems_linear
     @test sim.𝒪est[:final] ≈ OrdinaryDiffEqQPRK.alg_order(alg) + 1 atol = testTol
     sol = solve(prob, alg, adaptive = true, save_everystep = true)
     sol_exact = prob.f.analytic(prob.u0, prob.p, sol.t[end])
-    @test length(sol) < 5
+    @test length(sol.t) < 5
     @test SciMLBase.successful_retcode(sol)
     @test minimum(abs.(sol.u[end] .- sol_exact) .< 1.0e-8)
 end
@@ -83,7 +83,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final] ≈ OrdinaryDiffEqQPRK.alg_order(alg) + 2.5 atol = testTol
     sol = solve(prob, alg, adaptive = true, save_everystep = true)
     sol_exact = prob.f.analytic(prob.u0, prob.p, sol.t[end])
-    @test length(sol) < 5
+    @test length(sol.t) < 5
     @test SciMLBase.successful_retcode(sol)
     @test minimum(abs.(sol.u[end] .- sol_exact) .< 1.0e-11)
 end
