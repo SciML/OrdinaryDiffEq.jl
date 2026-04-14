@@ -42,8 +42,8 @@ export OrdinaryDiffEqExtrapolation, AitkenNeville, ExtrapolationMidpointDeuflhar
     ImplicitEulerBarycentricExtrapolation
 
 import OrdinaryDiffEqStabilizedRK: OrdinaryDiffEqStabilizedRK
-using OrdinaryDiffEqStabilizedRK: ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, TSRKC3
-export OrdinaryDiffEqStabilizedRK, ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, TSRKC3
+using OrdinaryDiffEqStabilizedRK: ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2
+export OrdinaryDiffEqStabilizedRK, ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2
 
 import OrdinaryDiffEqStabilizedIRK: OrdinaryDiffEqStabilizedIRK
 using OrdinaryDiffEqStabilizedIRK: IRKC
