@@ -103,7 +103,7 @@ function perform_step!(integrator, cache::MREEFCache, repeat_step = false)
             integrator.opts.internalnorm,
             t,
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -158,6 +158,6 @@ end
             integrator.opts.internalnorm,
             t,
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end

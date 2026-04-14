@@ -56,7 +56,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = k1
     integrator.k[2] = k2
@@ -200,7 +200,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     alg = unwrap_alg(integrator, false)
@@ -299,7 +299,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = k1
     integrator.k[2] = k2
@@ -498,7 +498,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     alg = unwrap_alg(integrator, false)
     if !_unwrap_val(cache.lazy) && (
@@ -657,7 +657,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = k1
     integrator.k[2] = k2
@@ -903,7 +903,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     alg = unwrap_alg(integrator, false)
@@ -1111,7 +1111,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we don't need their pointers.
     # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on.
@@ -1406,7 +1406,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     alg = unwrap_alg(integrator, false)
@@ -1591,7 +1591,7 @@ end
             u .- uhat, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.k[1] = k1
@@ -1671,6 +1671,6 @@ end
             atmp, atmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t, thread
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end

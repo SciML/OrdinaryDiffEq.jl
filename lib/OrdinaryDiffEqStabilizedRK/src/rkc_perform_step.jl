@@ -68,7 +68,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = f(u, p, t + dt)
@@ -155,7 +155,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     f(integrator.fsallast, u, p, t + dt)
@@ -290,7 +290,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = uᵢ₋₁
@@ -427,7 +427,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     @.. broadcast = false integrator.fsallast = k
     integrator.k[1] = integrator.fsalfirst
@@ -515,7 +515,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = f(u, p, t + dt)
@@ -601,7 +601,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     f(integrator.fsallast, u, p, t + dt)
@@ -683,7 +683,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = f(u, p, t + dt)
@@ -765,7 +765,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     f(integrator.fsallast, u, p, t + dt)
@@ -846,7 +846,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = f(u, p, t + dt)
@@ -928,7 +928,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     f(integrator.fsallast, u, p, t + dt)
@@ -994,7 +994,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = k
@@ -1059,7 +1059,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = k

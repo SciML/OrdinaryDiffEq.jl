@@ -32,7 +32,7 @@ function (integrator::HistoryODEIntegrator)(
 end
 
 mutable struct DDEIntegrator{
-        algType, IIP, uType, tType, P, eigenType, EEstT, tTypeNoUnits,
+        algType, IIP, uType, tType, P, eigenType, tTypeNoUnits,
         tdirType,
         ksEltype, SolType, F, CacheType, IType, FP, O, dAbsType,
         dRelType, H,
@@ -70,7 +70,6 @@ mutable struct DDEIntegrator{
     dtpropose::tType
     tdir::tdirType
     eigen_est::eigenType
-    EEst::EEstT
     success_iter::Int
     iter::Int
     saveiter::Int

@@ -211,7 +211,7 @@ based on the RI1 scheme with theta-method implicitization of the drift.
             u - uhat, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(resids, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(resids, t))
     end
 
     integrator.u = u
@@ -437,7 +437,7 @@ IRI1 perform_step! implementation (mutable cache, in-place)
             resids, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(resids, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(resids, t))
     end
 end
 

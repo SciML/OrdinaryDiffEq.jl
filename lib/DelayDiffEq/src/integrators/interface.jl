@@ -46,8 +46,8 @@ function DiffEqBase.savevalues!(
     ode_integrator = integrator.integrator
 
     # update time of ODE integrator (can be slightly modified (< 10ϵ) because of time stops)
-    # integrator.EEst has unitless type of integrator.t
-    if integrator.EEst isa AbstractFloat
+    # OrdinaryDiffEqCore.get_EEst(integrator) has unitless type of integrator.t
+    if OrdinaryDiffEqCore.get_EEst(integrator) isa AbstractFloat
         if ode_integrator.t != integrator.t
             abs(integrator.t - ode_integrator.t) < 100eps(integrator.t) ||
                 error("unexpected time discrepancy detected")
