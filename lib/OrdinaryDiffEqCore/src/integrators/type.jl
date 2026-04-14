@@ -183,4 +183,3 @@ mutable struct ODEIntegrator{
     c::CType
     rate_constants::RCType
 end
-

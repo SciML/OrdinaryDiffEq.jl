@@ -44,9 +44,11 @@ end
         else
             # Zienkiewicz and Xie (1991) Eq. 21
             @.. thread = thread atmp = (integrator.fsallast - aₙ₊₁)
-            OrdinaryDiffEqCore.set_EEst!(integrator,
+            OrdinaryDiffEqCore.set_EEst!(
+                integrator,
                 dt * dt * (β - 1 // 6) *
-                integrator.opts.internalnorm(atmp, t))
+                    integrator.opts.internalnorm(atmp, t)
+            )
         end
     end
 
@@ -113,9 +115,11 @@ end
         else
             # Zienkiewicz and Xie (1991) Eq. 21
             @.. thread = thread atmp = (integrator.fsallast.x[1] - aₙ₊₁)
-            OrdinaryDiffEqCore.set_EEst!(integrator,
+            OrdinaryDiffEqCore.set_EEst!(
+                integrator,
                 dt * dt * (β - 1 // 6) *
-                integrator.opts.internalnorm(atmp, t))
+                    integrator.opts.internalnorm(atmp, t)
+            )
         end
     end
 
