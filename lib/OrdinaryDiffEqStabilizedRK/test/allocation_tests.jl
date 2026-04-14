@@ -26,21 +26,32 @@ using Test
                 step!(integrator)
 
                 cache = integrator.cache
-                allocs = check_allocs(
-                    OrdinaryDiffEqCore.perform_step!,
-                    (typeof(integrator), typeof(cache))
-                )
-
-                @test length(allocs) == 0 broken = true
-
-                if length(allocs) > 0
-                    println(
-                        "AllocCheck found $(length(allocs)) allocation sites in $(typeof(solver)) perform_step!"
+                # ROCK2/4 and ESERK use very large SVector fields (up to SVector{50})
+                # which cause AllocCheck's LLVM analysis to throw MethodError.
+                # Wrap in try-catch to gracefully skip those.
+                allocs = try
+                    check_allocs(
+                        OrdinaryDiffEqCore.perform_step!,
+                        (typeof(integrator), typeof(cache))
                     )
-                else
+                catch e
                     println(
-                        "$(typeof(solver)) perform_step! appears allocation-free with AllocCheck"
+                        "check_allocs threw for $(typeof(solver)): $(typeof(e)) (skipping)"
                     )
+                    nothing
+                end
+
+                if allocs !== nothing
+                    @test length(allocs) == 0 broken = true
+                    if length(allocs) > 0
+                        println(
+                            "AllocCheck found $(length(allocs)) allocation sites in $(typeof(solver)) perform_step!"
+                        )
+                    else
+                        println(
+                            "$(typeof(solver)) perform_step! appears allocation-free with AllocCheck"
+                        )
+                    end
                 end
             end
         end
