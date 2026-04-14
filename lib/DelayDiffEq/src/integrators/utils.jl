@@ -51,9 +51,8 @@ function advance_ode_integrator!(integrator::DDEIntegrator, always_calc_begin = 
     ode_integrator = integrator.integrator
 
     # algorithm only works if current time of DDE integrator equals final time point
-    # of solution (allow one-ULP gap from shift_past_discontinuity!)
-    abs(t - ode_integrator.sol.t[end]) > eps(t) &&
-        error("cannot advance ODE integrator")
+    # of solution
+    t != ode_integrator.sol.t[end] && error("cannot advance ODE integrator")
 
     # complete interpolation data of DDE integrator for time interval [t, t+dt]
     # and copy it to ODE integrator
@@ -232,16 +231,19 @@ function OrdinaryDiffEqCore.handle_discontinuities!(integrator::DDEIntegrator)
     return nothing
 end
 
-# Override shift_past_discontinuity! for DDEIntegrator: shift integrator.t
-# and ode_integrator.t by one ULP. We do NOT modify ode_integrator.sol.t
-# (which must stay in lockstep with the outer DDE sol.t). Instead, the
-# one-ULP gap between t and sol.t[end] is tolerated by a relaxed check
-# in advance_ode_integrator!.
+# Override shift_past_discontinuity! for DDEIntegrator: shift the DDE's
+# `integrator.t`, the ODE sub-integrator's `t`, and the last saved endpoint
+# `sol.t[end]` together. `u` is continuous across the propagated derivative-
+# discontinuity so only times move. Keeping the invariant
+# `integrator.t == ode_integrator.sol.t[end]` lets the strict equality check
+# in `advance_ode_integrator!` stay strict.
 function OrdinaryDiffEqCore.shift_past_discontinuity!(integrator::DDEIntegrator)
-    OrdinaryDiffEqCore._shift_past_discontinuity!(
-        integrator, integrator.t, integrator.tdir
-    )
-    integrator.integrator.t = integrator.t
+    integrator.t isa AbstractFloat || return nothing
+    newt = integrator.tdir > 0 ? nextfloat(integrator.t) : prevfloat(integrator.t)
+    integrator.t = newt
+    ode_integrator = integrator.integrator
+    ode_integrator.t = newt
+    ode_integrator.sol.t[end] = newt
     return nothing
 end
 
