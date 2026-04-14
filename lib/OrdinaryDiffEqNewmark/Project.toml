@@ -20,7 +20,6 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 
 [extras]
-AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -55,7 +54,7 @@ Static = "1"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = ["AllocCheck", "DiffEqDevTools", "Random", "SafeTestsets", "Test", "Pkg"]
+test = [""DiffEqDevTools", "Random", "SafeTestsets", "Test", "Pkg"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

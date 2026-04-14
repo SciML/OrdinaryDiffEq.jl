@@ -6,7 +6,6 @@ using Aqua
 
 @testset "Aqua" begin
     Aqua.test_all(
-        OrdinaryDiffEqExponentialRK;
-        deps_compat = (check_extras = false,)
+        OrdinaryDiffEqExponentialRK
     )
 end

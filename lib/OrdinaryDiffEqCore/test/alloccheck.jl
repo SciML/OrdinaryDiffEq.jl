@@ -1,5 +1,4 @@
 using OrdinaryDiffEqCore
-using AllocCheck
 using Test
 
 # Core infrastructure function tests (loopheader!, _loopfooter!, apply_step!, etc.)

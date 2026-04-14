@@ -31,7 +31,6 @@ Test = "<0.0.1, 1"
 julia = "1.10"
 
 [extras]
-AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
@@ -48,4 +47,4 @@ path = "../OrdinaryDiffEqCore"
 path = "../OrdinaryDiffEqLowOrderRK"
 
 [targets]
-test = ["AllocCheck", "DiffEqDevTools", "LinearAlgebra", "OrdinaryDiffEqLowOrderRK", "SafeTestsets", "Test", "Pkg"]
+test = [""DiffEqDevTools", "LinearAlgebra", "OrdinaryDiffEqLowOrderRK", "SafeTestsets", "Test", "Pkg"]

@@ -10,7 +10,6 @@ using Aqua
         unbound_args = false,
         undefined_exports = false,
         stale_deps = false,
-        deps_compat = false,
         ambiguities = false
     )
 end

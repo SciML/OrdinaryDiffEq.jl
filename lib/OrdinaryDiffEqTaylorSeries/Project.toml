@@ -22,7 +22,6 @@ TaylorDiff = "b36ab563-344f-407b-a36a-4f200bebf99c"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 
 [extras]
-AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
@@ -66,4 +65,4 @@ julia = "1.10"
 path = "../OrdinaryDiffEqCore"
 
 [targets]
-test = ["AllocCheck", "DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg"]
+test = [""DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg"]

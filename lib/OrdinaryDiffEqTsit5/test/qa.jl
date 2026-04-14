@@ -6,7 +6,6 @@ using Aqua
 
 @testset "Aqua" begin
     Aqua.test_all(
-        OrdinaryDiffEqTsit5;
-        deps_compat = (check_extras = false,)
+        OrdinaryDiffEqTsit5
     )
 end

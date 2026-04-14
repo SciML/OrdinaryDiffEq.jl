@@ -12,7 +12,6 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 VectorizationBase = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
 
 [extras]
-AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
@@ -36,7 +35,7 @@ SafeTestsets = "0.1.0"
 Reexport = "1"
 
 [targets]
-test = ["AllocCheck", "DiffEqDevTools", "SafeTestsets", "StaticArrays", "Test", "Pkg"]
+test = [""DiffEqDevTools", "SafeTestsets", "StaticArrays", "Test", "Pkg"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

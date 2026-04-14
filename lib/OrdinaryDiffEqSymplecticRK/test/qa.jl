@@ -6,7 +6,6 @@ using Aqua
 
 @testset "Aqua" begin
     Aqua.test_all(
-        OrdinaryDiffEqSymplecticRK;
-        deps_compat = (check_extras = false,)
+        OrdinaryDiffEqSymplecticRK
     )
 end
