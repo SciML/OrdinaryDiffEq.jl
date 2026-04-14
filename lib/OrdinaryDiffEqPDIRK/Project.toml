@@ -50,7 +50,7 @@ Test = "<0.0.1, 1"
 julia = "1.10"
 
 [targets]
-test = [""DiffEqDevTools", "ODEProblemLibrary", "Random", "SafeTestsets", "Test", "Pkg"]
+test = ["DiffEqDevTools", "ODEProblemLibrary", "Random", "SafeTestsets", "Test", "Pkg"]
 
 [sources.OrdinaryDiffEqDifferentiation]
 path = "../OrdinaryDiffEqDifferentiation"

@@ -64,7 +64,7 @@ SafeTestsets = "0.1.0"
 SciMLOperators = "1.4"
 
 [targets]
-test = [""DiffEqDevTools", "GenericSchur", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg"]
+test = ["DiffEqDevTools", "GenericSchur", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg"]
 
 [sources.OrdinaryDiffEqDifferentiation]
 path = "../OrdinaryDiffEqDifferentiation"

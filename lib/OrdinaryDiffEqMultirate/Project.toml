@@ -47,4 +47,4 @@ path = "../OrdinaryDiffEqCore"
 path = "../OrdinaryDiffEqLowOrderRK"
 
 [targets]
-test = [""DiffEqDevTools", "LinearAlgebra", "OrdinaryDiffEqLowOrderRK", "SafeTestsets", "Test", "Pkg"]
+test = ["DiffEqDevTools", "LinearAlgebra", "OrdinaryDiffEqLowOrderRK", "SafeTestsets", "Test", "Pkg"]

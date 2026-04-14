@@ -50,7 +50,7 @@ OrdinaryDiffEqRosenbrock = "1.15.1"
 Reexport = "1.2"
 
 [targets]
-test = [""DiffEqDevTools", "Random", "OrdinaryDiffEqRosenbrock", "SafeTestsets", "Test", "OrdinaryDiffEqVerner", "OrdinaryDiffEqTsit5", "Pkg"]
+test = ["DiffEqDevTools", "Random", "OrdinaryDiffEqRosenbrock", "SafeTestsets", "Test", "OrdinaryDiffEqVerner", "OrdinaryDiffEqTsit5", "Pkg"]
 
 [sources.OrdinaryDiffEqTsit5]
 path = "../OrdinaryDiffEqTsit5"

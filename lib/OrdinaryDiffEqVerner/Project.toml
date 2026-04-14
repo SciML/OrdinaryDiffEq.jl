@@ -58,7 +58,7 @@ Reexport = "1.2"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = [""DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqExplicitRK", "ODEProblemLibrary", "Pkg"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqExplicitRK", "ODEProblemLibrary", "Pkg"]
 
 [sources.OrdinaryDiffEqExplicitRK]
 path = "../OrdinaryDiffEqExplicitRK"

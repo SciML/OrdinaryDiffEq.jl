@@ -58,7 +58,7 @@ Adapt = "4.3"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = [""DiffEqDevTools", "Random", "SafeTestsets", "StaticArrays", "StructArrays", "Test", "ODEProblemLibrary", "Pkg"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "StaticArrays", "StructArrays", "Test", "ODEProblemLibrary", "Pkg"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
