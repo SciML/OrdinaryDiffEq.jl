@@ -99,16 +99,16 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
             EEst = integrator.opts.internalnorm(atmp, t)
 
             beta1 = integrator.controller_cache.controller.beta1
-            e = integrator.EEst
+            e = OrdinaryDiffEqCore.get_EEst(integrator)
             qold = integrator.controller_cache.q11
 
             integrator.controller_cache.controller.beta1 = 1 / (i + 1)
-            integrator.EEst = EEst
+            OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
-            integrator.EEst = e
+            OrdinaryDiffEqCore.set_EEst!(integrator, e)
             integrator.controller_cache.controller.beta1 = beta1
             integrator.controller_cache.q11 = qold
 
@@ -119,7 +119,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
                 cache.dtpropose = dtpropose
                 cache.cur_order = i
                 minimum_work = work
-                integrator.EEst = EEst
+                OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             end
         end
     end
@@ -224,16 +224,16 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
             EEst = integrator.opts.internalnorm(atmp, t)
 
             beta1 = integrator.controller_cache.controller.beta1
-            e = integrator.EEst
+            e = OrdinaryDiffEqCore.get_EEst(integrator)
             qold = integrator.controller_cache.q11
 
             integrator.controller_cache.controller.beta1 = 1 / (i + 1)
-            integrator.EEst = EEst
+            OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
-            integrator.EEst = e
+            OrdinaryDiffEqCore.set_EEst!(integrator, e)
             integrator.controller_cache.controller.beta1 = beta1
             integrator.controller_cache.q11 = qold
 
@@ -244,7 +244,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
                 cache.dtpropose = dtpropose
                 cache.cur_order = i
                 minimum_work = work
-                integrator.EEst = EEst
+                OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             end
         end
     end
@@ -363,7 +363,7 @@ function perform_step!(
         let n_curr = n_curr, uprev = uprev, dt = dt, p = p, t = t, T = T, W = W,
                 integrator = integrator, cache = cache, repeat_step = repeat_step,
                 k_tmps = k_tmps, u_tmps = u_tmps, u_tmps2 = u_tmps2, diff1 = diff1,
-                diff2 = diff2
+                diff2 = diff2, J = J
 
             @threaded alg.threading for i in 1:2
                 startIndex = (i == 1) ? 1 : n_curr + 1
@@ -461,7 +461,7 @@ function perform_step!(
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -473,8 +473,8 @@ function perform_step!(
                 # Accept current approximation u of order n_curr
                 break
             elseif (n_curr < alg.min_order + 1) ||
-                    integrator.EEst <=
-                    typeof(integrator.EEst)(
+                    OrdinaryDiffEqCore.get_EEst(integrator) <=
+                    typeof(OrdinaryDiffEqCore.get_EEst(integrator))(
                     prod(
                         sequence[(n_curr + 2):(win_max + 1)] .//
                             sequence[1]^2
@@ -541,7 +541,7 @@ function perform_step!(
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -629,7 +629,7 @@ function perform_step!(
     else
         J = calc_J(integrator, cache) # Store the calculated jac as it won't change in internal discretisation
         let n_curr = n_curr, dt = dt, integrator = integrator, cache = cache,
-                repeat_step = repeat_step, uprev = uprev, T = T
+                repeat_step = repeat_step, uprev = uprev, T = T, J = J
 
             @threaded alg.threading for i in 1:2
                 startIndex = (i == 1) ? 1 : n_curr + 1
@@ -699,7 +699,7 @@ function perform_step!(
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(res, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -711,8 +711,8 @@ function perform_step!(
                 # Accept current approximation u of order n_curr
                 break
             elseif (n_curr < alg.min_order + 1) ||
-                    integrator.EEst <=
-                    typeof(integrator.EEst)(
+                    OrdinaryDiffEqCore.get_EEst(integrator) <=
+                    typeof(OrdinaryDiffEqCore.get_EEst(integrator))(
                     prod(
                         sequence[(n_curr + 2):(win_max + 1)] .//
                             sequence[1]^2
@@ -750,7 +750,7 @@ function perform_step!(
                             ((sequence[i] / sequence[i - j + 1]) - 1)
                     end
                 end
-                # Update u, integrator.EEst and cache.Q
+                # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 u = T[n_curr + 1, n_curr + 1]
                 utilde = T[n_curr + 1, n_curr]
                 # FIXME this should be stored in the controller cache
@@ -759,7 +759,7 @@ function perform_step!(
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(res, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -933,7 +933,7 @@ function perform_step!(
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -943,7 +943,7 @@ function perform_step!(
             if accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
                 # Accept current approximation u of order n_curr
                 break
-            elseif integrator.EEst <=
+            elseif OrdinaryDiffEqCore.get_EEst(integrator) <=
                     tol^(
                     stage_number[n_curr - alg.min_order + 1] /
                         stage_number[win_max - alg.min_order + 1] - 1
@@ -966,7 +966,7 @@ function perform_step!(
                     @.. broadcast = false u_temp1 = T[n_curr + 1]
                 end
 
-                # Update u, integrator.EEst and cache.Q
+                # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
                 #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
 
@@ -988,7 +988,7 @@ function perform_step!(
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -1151,7 +1151,7 @@ function perform_step!(
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(res, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -1161,7 +1161,7 @@ function perform_step!(
             if accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
                 # Accept current approximation u of order n_curr
                 break
-            elseif integrator.EEst <=
+            elseif OrdinaryDiffEqCore.get_EEst(integrator) <=
                     tol^(
                     stage_number[n_curr - alg.min_order + 1] /
                         stage_number[win_max - alg.min_order + 1] - 1
@@ -1184,7 +1184,7 @@ function perform_step!(
                     u_temp1 = T[n_curr + 1]
                 end
 
-                # Update u, integrator.EEst and cache.Q
+                # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
                     sum(
                     broadcast(
@@ -1215,7 +1215,7 @@ function perform_step!(
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(res, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -1365,7 +1365,7 @@ function perform_step!(
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -1472,7 +1472,7 @@ function perform_step!(
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i) #Use flag to avoid union
@@ -1605,7 +1605,7 @@ function perform_step!(
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -1613,11 +1613,11 @@ function perform_step!(
         # Check if an approximation of some order in the order window can be accepted
         while n_curr <= win_max
             tol = integrator.opts.internalnorm(cache.utilde - integrator.u, t) /
-                integrator.EEst # Used by the convergence monitor
+                OrdinaryDiffEqCore.get_EEst(integrator) # Used by the convergence monitor
             if accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
                 # Accept current approximation u of order n_curr
                 break
-            elseif integrator.EEst <=
+            elseif OrdinaryDiffEqCore.get_EEst(integrator) <=
                     tol^(
                     stage_number[n_curr - alg.min_order + 1] /
                         stage_number[win_max - alg.min_order + 1] - 1
@@ -1662,7 +1662,7 @@ function perform_step!(
                     @.. broadcast = false u_temp1 = T[n_curr + 1]
                 end
 
-                # Update u, integrator.EEst and cache.Q
+                # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
                 #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
 
@@ -1684,7 +1684,7 @@ function perform_step!(
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -1798,7 +1798,7 @@ function perform_step!(
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
+                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -1853,7 +1853,7 @@ function perform_step!(
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, integrator = integrator, p = p, t = t, T = T
+                    dt = dt, integrator = integrator, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -1932,18 +1932,18 @@ function perform_step!(
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(res, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
         # Check if an approximation of some order in the order window can be accepted
         while n_curr <= win_max
-            tol = integrator.opts.internalnorm(utilde - u, t) / integrator.EEst # Used by the convergence monitor
+            tol = integrator.opts.internalnorm(utilde - u, t) / OrdinaryDiffEqCore.get_EEst(integrator) # Used by the convergence monitor
             if accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
                 # Accept current approximation u of order n_curr
                 break
-            elseif integrator.EEst <=
+            elseif OrdinaryDiffEqCore.get_EEst(integrator) <=
                     tol^(
                     stage_number[n_curr - alg.min_order + 1] /
                         stage_number[win_max - alg.min_order + 1] - 1
@@ -1977,7 +1977,7 @@ function perform_step!(
                     u_temp1 = T[n_curr + 1]
                 end
 
-                # Update u, integrator.EEst and cache.Q
+                # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
                     sum(
                     broadcast(
@@ -2008,7 +2008,7 @@ function perform_step!(
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(res, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -2195,7 +2195,7 @@ function perform_step!(
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -2207,8 +2207,8 @@ function perform_step!(
                 # Accept current approximation u of order n_curr
                 break
             elseif (n_curr < alg.min_order + 1) ||
-                    integrator.EEst <=
-                    typeof(integrator.EEst)(
+                    OrdinaryDiffEqCore.get_EEst(integrator) <=
+                    typeof(OrdinaryDiffEqCore.get_EEst(integrator))(
                     prod(
                         subdividing_sequence[(n_curr + 2):(win_max + 1)] .//
                             subdividing_sequence[1]^2
@@ -2232,7 +2232,7 @@ function perform_step!(
                     @.. broadcast = false u_temp1 = T[n_curr + 1]
                 end
 
-                # Update u, integrator.EEst and cache.Q
+                # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
                 #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
 
@@ -2254,7 +2254,7 @@ function perform_step!(
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -2417,7 +2417,7 @@ function perform_step!(
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(res, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -2429,8 +2429,8 @@ function perform_step!(
                 # Accept current approximation u of order n_curr
                 break
             elseif (n_curr < alg.min_order + 1) ||
-                    integrator.EEst <=
-                    typeof(integrator.EEst)(
+                    OrdinaryDiffEqCore.get_EEst(integrator) <=
+                    typeof(OrdinaryDiffEqCore.get_EEst(integrator))(
                     prod(
                         subdividing_sequence[(n_curr + 2):(win_max + 1)] .//
                             subdividing_sequence[1]^2
@@ -2454,7 +2454,7 @@ function perform_step!(
                     u_temp1 = T[n_curr + 1]
                 end
 
-                # Update u, integrator.EEst and cache.Q
+                # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
                     sum(
                     broadcast(
@@ -2485,7 +2485,7 @@ function perform_step!(
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(res, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -2616,7 +2616,7 @@ function perform_step!(
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
+                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -2672,7 +2672,7 @@ function perform_step!(
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, integrator = integrator, p = p, t = t, T = T
+                    dt = dt, integrator = integrator, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -2755,7 +2755,7 @@ function perform_step!(
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(res, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -2767,8 +2767,8 @@ function perform_step!(
                 # Accept current approximation u of order n_curr
                 break
             elseif (n_curr < alg.min_order + 1) ||
-                    integrator.EEst <=
-                    typeof(integrator.EEst)(
+                    OrdinaryDiffEqCore.get_EEst(integrator) <=
+                    typeof(OrdinaryDiffEqCore.get_EEst(integrator))(
                     prod(
                         subdividing_sequence[(n_curr + 2):(win_max + 1)] .//
                             subdividing_sequence[1]^2
@@ -2806,7 +2806,7 @@ function perform_step!(
                     u_temp1 = T[n_curr + 1]
                 end
 
-                # Update u, integrator.EEst and cache.Q
+                # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
                     sum(
                     broadcast(
@@ -2837,7 +2837,7 @@ function perform_step!(
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(res, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -2994,7 +2994,7 @@ function perform_step!(
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -3107,7 +3107,7 @@ function perform_step!(
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     tid = Threads.threadid()
@@ -3220,7 +3220,7 @@ function perform_step!(
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -3228,7 +3228,7 @@ function perform_step!(
         # Check if an approximation of some order in the order window can be accepted
         # Make sure a stepsize scaling factor of order (alg.min_order + 1) is provided for the step_*_controller!
         while n_curr <= win_max
-            EEst1 = one(integrator.EEst)
+            EEst1 = one(OrdinaryDiffEqCore.get_EEst(integrator))
             for i in (n_curr + 2):(win_max + 1)
                 EEst1 *= subdividing_sequence[i] / subdividing_sequence[1]
             end
@@ -3236,7 +3236,7 @@ function perform_step!(
             if accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
                 # Accept current approximation u of order n_curr
                 break
-            elseif (n_curr < alg.min_order + 1) || integrator.EEst <= EEst1
+            elseif (n_curr < alg.min_order + 1) || OrdinaryDiffEqCore.get_EEst(integrator) <= EEst1
                 # Reject current approximation order but pass convergence monitor
                 # Compute approximation of order (n_curr + 1)
                 n_curr = n_curr + 1
@@ -3296,7 +3296,7 @@ function perform_step!(
                     @.. broadcast = false u_temp1 = T[n_curr + 1]
                 end
 
-                # Update u, integrator.EEst and cache.Q
+                # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
                 #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
 
@@ -3318,7 +3318,7 @@ function perform_step!(
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -3438,7 +3438,7 @@ function perform_step!(
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
+                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -3492,7 +3492,7 @@ function perform_step!(
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, integrator = integrator, p = p, t = t, T = T
+                    dt = dt, integrator = integrator, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -3573,7 +3573,7 @@ function perform_step!(
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(res, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -3585,8 +3585,8 @@ function perform_step!(
                 # Accept current approximation u of order n_curr
                 break
             elseif (n_curr < alg.min_order + 1) ||
-                    integrator.EEst <=
-                    typeof(integrator.EEst)(
+                    OrdinaryDiffEqCore.get_EEst(integrator) <=
+                    typeof(OrdinaryDiffEqCore.get_EEst(integrator))(
                     prod(
                         subdividing_sequence[(n_curr + 2):(win_max + 1)] .//
                             subdividing_sequence[1]^2
@@ -3622,7 +3622,7 @@ function perform_step!(
                     u_temp1 = T[n_curr + 1]
                 end
 
-                # Update u, integrator.EEst and cache.Q
+                # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
                     sum(
                     broadcast(
@@ -3653,7 +3653,7 @@ function perform_step!(
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(res, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(res, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -3811,7 +3811,7 @@ function perform_step!(
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -3921,7 +3921,7 @@ function perform_step!(
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -4056,7 +4056,7 @@ function perform_step!(
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -4064,7 +4064,7 @@ function perform_step!(
         # Check if an approximation of some order in the order window can be accepted
         # Make sure a stepsize scaling factor of order (alg.min_order + 1) is provided for the step_*_controller!
         while n_curr <= win_max
-            EEst1 = one(integrator.EEst)
+            EEst1 = one(OrdinaryDiffEqCore.get_EEst(integrator))
             for i in (n_curr + 2):(win_max + 1)
                 EEst1 *= subdividing_sequence[i] / subdividing_sequence[1]
             end
@@ -4074,7 +4074,7 @@ function perform_step!(
             if accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
                 # Accept current approximation u of order n_curr
                 break
-            elseif (n_curr < alg.min_order + 1) || integrator.EEst <= EEst1
+            elseif (n_curr < alg.min_order + 1) || OrdinaryDiffEqCore.get_EEst(integrator) <= EEst1
                 # Reject current approximation order but pass convergence monitor
                 # Compute approximation of order (n_curr + 1)
                 n_curr = n_curr + 1
@@ -4130,7 +4130,7 @@ function perform_step!(
                     @.. broadcast = false u_temp1 = T[n_curr + 1]
                 end
 
-                # Update u, integrator.EEst and cache.Q
+                # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
                 #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
 
@@ -4152,7 +4152,7 @@ function perform_step!(
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                integrator.EEst = integrator.opts.internalnorm(cache.atmp, t)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor

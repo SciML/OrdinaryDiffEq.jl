@@ -36,7 +36,7 @@ function loopheader!(integrator)
             )
             # ACCEPT
             @SciMLMessage(
-                lazy"Step accepted: t = $(integrator.t), dt = $(integrator.dt), EEst = $(integrator.EEst)",
+                lazy"Step accepted: t = $(integrator.t), dt = $(integrator.dt), EEst = $(get_EEst(integrator))",
                 integrator.opts.verbose, :step_accepted
             )
             integrator.success_iter += 1
@@ -64,7 +64,7 @@ end
 # Handles step rejection in loopheader: adjust dt, reject noise, and call post_step_reject!.
 function handle_step_rejection!(integrator)
     @SciMLMessage(
-        lazy"Step rejected: t = $(integrator.t), EEst = $(integrator.EEst)",
+        lazy"Step rejected: t = $(integrator.t), EEst = $(get_EEst(integrator))",
         integrator.opts.verbose, :step_rejected
     )
     if integrator.isout

@@ -7,7 +7,7 @@ function step_accept_controller!(
     (; cache) = integrator
     (; num_stages, step, iter, hist_iter, index) = cache
 
-    EEst = DiffEqBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(OrdinaryDiffEqCore.get_EEst(integrator))
 
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, cache) + 1)

@@ -141,7 +141,7 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
 
     # Previous step was rejected (EEst > 1): the old W wasn't good enough.
     # Recompute everything since we're retrying with a different dt anyway.
-    if integrator.EEst > 1
+    if OrdinaryDiffEqCore.get_EEst(integrator) > 1
         return (true, true)
     end
 
@@ -496,7 +496,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     islin, _ = islinearfunction(integrator)
     islin && return false, false # no further JW eval when it's linear
     !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize
-    errorfail = integrator.EEst > one(integrator.EEst)
+    errorfail = OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
     # TODO: add `isJcurrent` support for Rosenbrock solvers
     if !isnewton(nlsolver)
         isfreshJ = !(integrator.alg isa CompositeAlgorithm) &&

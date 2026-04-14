@@ -16,7 +16,7 @@
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(resids, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(resids, t))
     end
     integrator.u = u
 end
@@ -43,7 +43,7 @@ end
     calculate_residuals!(tmp, E₁, E₂, uprev, u, integrator.opts.abstol,
                          integrator.opts.reltol, integrator.opts.delta,
                          integrator.opts.internalnorm, t)
-    integrator.EEst = integrator.opts.internalnorm(tmp, t)
+    OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
   end
   integrator.u = u
 end
@@ -93,7 +93,7 @@ end
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(tmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
     end
 end
 
@@ -123,7 +123,7 @@ end
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(resids, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(resids, t))
     end
     integrator.u = u
 end
@@ -172,7 +172,7 @@ end
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(tmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
     end
 end
 
@@ -230,7 +230,7 @@ end
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(resids, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(resids, t))
     end
     integrator.u = u
 end
@@ -304,7 +304,7 @@ end
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(tmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
     end
     nothing
 end
@@ -350,7 +350,7 @@ end
     calculate_residuals!(tmp, E₁, E₂, uprev, u, integrator.opts.abstol,
                          integrator.opts.reltol, integrator.opts.delta,
                          integrator.opts.internalnorm, t)
-    integrator.EEst = integrator.opts.internalnorm(tmp, t)
+    OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
   end
   integrator.u = u
 end
@@ -422,7 +422,7 @@ end
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(tmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
     end
 end
 
@@ -469,7 +469,7 @@ end
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(resids, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(resids, t))
     end
     integrator.u = u
 end

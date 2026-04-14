@@ -1475,7 +1475,7 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step = fa
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     # Update integrator state
@@ -1523,7 +1523,7 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
             tmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(tmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
     end
 
     # Update integrator state
@@ -1569,7 +1569,7 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step = fa
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     # Update integrator state
@@ -1624,7 +1624,7 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step = false)
             tmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(tmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
     end
 
     # Update integrator state

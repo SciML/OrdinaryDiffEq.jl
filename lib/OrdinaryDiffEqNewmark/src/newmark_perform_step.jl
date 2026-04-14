@@ -40,12 +40,15 @@ end
         integrator.stats.nf += 1
 
         if integrator.success_iter == 0
-            integrator.EEst = one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         else
             # Zienkiewicz and Xie (1991) Eq. 21
             @.. thread = thread atmp = (integrator.fsallast - aₙ₊₁)
-            integrator.EEst = dt * dt * (β - 1 // 6) *
-                integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(
+                integrator,
+                dt * dt * (β - 1 // 6) *
+                    integrator.opts.internalnorm(atmp, t)
+            )
         end
     end
 
@@ -108,12 +111,15 @@ end
         integrator.stats.nf += 1
 
         if integrator.success_iter == 0
-            integrator.EEst = one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         else
             # Zienkiewicz and Xie (1991) Eq. 21
             @.. thread = thread atmp = (integrator.fsallast.x[1] - aₙ₊₁)
-            integrator.EEst = dt * dt * (β - 1 // 6) *
-                integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(
+                integrator,
+                dt * dt * (β - 1 // 6) *
+                    integrator.opts.internalnorm(atmp, t)
+            )
         end
     end
 

@@ -9,8 +9,8 @@
             newrate = P.cache.rate(integrator.u, p, t + dt)
             EEstcache = @. abs(newrate - oldrate) /
                 max(50integrator.opts.reltol * oldrate, integrator.rate_constants / integrator.dt)
-            integrator.EEst = maximum(EEstcache)
-            if integrator.EEst <= 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, maximum(EEstcache))
+            if OrdinaryDiffEqCore.get_EEst(integrator) <= 1
                 P.cache.currate = newrate
             end
         elseif integrator.alg isa CaoTauLeaping
@@ -31,8 +31,8 @@ end
             P.cache.rate(newrate, u, p, t + dt)
             @.. EEstcache = abs(newrate - oldrate) /
                 max(50integrator.opts.reltol * oldrate, integrator.rate_constants / integrator.dt)
-            integrator.EEst = maximum(EEstcache)
-            if integrator.EEst <= 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, maximum(EEstcache))
+            if OrdinaryDiffEqCore.get_EEst(integrator) <= 1
                 P.cache.currate .= newrate
             end
         elseif integrator.alg isa CaoTauLeaping

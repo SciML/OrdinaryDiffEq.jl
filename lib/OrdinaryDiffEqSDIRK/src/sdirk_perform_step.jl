@@ -60,9 +60,9 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     else
-        integrator.EEst = 1
+        OrdinaryDiffEqCore.set_EEst!(integrator, 1)
     end
 
     integrator.fsallast = f(u, p, t + dt)
@@ -70,7 +70,7 @@ end
     if integrator.opts.adaptive && integrator.differential_vars !== nothing
         atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
             integrator.opts.abstol
-        integrator.EEst += integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
     end
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -122,9 +122,9 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     else
-        integrator.EEst = 1
+        OrdinaryDiffEqCore.set_EEst!(integrator, 1)
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     f(integrator.fsallast, u, p, t + dt)
@@ -132,7 +132,7 @@ end
     if integrator.opts.adaptive && integrator.differential_vars !== nothing
         @.. broadcast = false atmp = ifelse(cache.algebraic_vars, integrator.fsallast, false) /
             integrator.opts.abstol
-        integrator.EEst += integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
     end
 end
 
@@ -249,17 +249,17 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst <= 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) <= 1
                 cache.uprev3 = uprev2
                 cache.tprev2 = tprev
             end
         elseif integrator.success_iter > 0
-            integrator.EEst = 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
             cache.uprev3 = integrator.uprev2
             cache.tprev2 = integrator.tprev
         else
-            integrator.EEst = 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
         end
     end
 
@@ -340,17 +340,17 @@ end
                 atmp, tmp, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst <= 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) <= 1
                 copyto!(cache.uprev3, uprev2)
                 cache.tprev2 = tprev
             end
         elseif integrator.success_iter > 0
-            integrator.EEst = 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
             copyto!(cache.uprev3, integrator.uprev2)
             cache.tprev2 = integrator.tprev
         else
-            integrator.EEst = 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
         end
     end
 
@@ -406,7 +406,7 @@ end
             est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.fsallast = z ./ dt
@@ -471,7 +471,7 @@ end
             atmp, est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     @.. broadcast = false integrator.fsallast = z / dt
@@ -546,7 +546,7 @@ end
             atmp, est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     @inbounds @simd ivdep for i in eachindex(u)
@@ -598,7 +598,7 @@ end
             est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.fsallast = f(u, p, t)
@@ -666,7 +666,7 @@ end
             atmp, est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -730,17 +730,17 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst <= 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) <= 1
                 cache.uprev3 = uprev2
                 cache.tprev2 = tprev
             end
         elseif integrator.success_iter > 0
-            integrator.EEst = 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
             cache.uprev3 = integrator.uprev2
             cache.tprev2 = integrator.tprev
         else
-            integrator.EEst = 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
         end
     end
 
@@ -809,17 +809,17 @@ end
                 atmp, tmp, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst <= 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) <= 1
                 copyto!(cache.uprev3, uprev2)
                 cache.tprev2 = tprev
             end
         elseif integrator.success_iter > 0
-            integrator.EEst = 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
             copyto!(cache.uprev3, integrator.uprev2)
             cache.tprev2 = integrator.tprev
         else
-            integrator.EEst = 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
         end
     end
 
@@ -1024,7 +1024,7 @@ end
             est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.fsallast = z₅ ./ dt
@@ -1134,7 +1134,7 @@ end
             atmp, est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     @.. broadcast = false integrator.fsallast = z₅ / dt
@@ -2059,7 +2059,7 @@ end
             est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.fsallast = z₅ ./ dt
@@ -2159,7 +2159,7 @@ end
             atmp, est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     @.. broadcast = false integrator.fsallast = z₅ / dt
@@ -2270,7 +2270,7 @@ end
             est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.fsallast = z₈ ./ dt
@@ -2385,7 +2385,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     @.. broadcast = false integrator.fsallast = z₈ / dt
@@ -2476,7 +2476,7 @@ end
             est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.fsallast = z₆ ./ dt
@@ -2569,7 +2569,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     @.. broadcast = false integrator.fsallast = z₆ / dt
@@ -2670,7 +2670,7 @@ end
             est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.fsallast = z₇ ./ dt
@@ -2774,7 +2774,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     @.. broadcast = false integrator.fsallast = z₇ / dt
@@ -2875,7 +2875,7 @@ end
             est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.fsallast = z₇ ./ dt
@@ -2979,7 +2979,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     @.. broadcast = false integrator.fsallast = z₇ / dt
@@ -3099,7 +3099,7 @@ end
             est, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.fsallast = z₉ ./ dt
@@ -3224,7 +3224,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     @.. broadcast = false integrator.fsallast = z₉ / dt
