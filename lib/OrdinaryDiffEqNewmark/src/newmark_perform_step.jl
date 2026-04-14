@@ -12,7 +12,7 @@ end
 
     # Evaluate predictor
     vₙ, uₙ = integrator.uprev.x
-    if integrator.u_modified || !integrator.opts.adaptive
+    if integrator.derivative_discontinuity || !integrator.opts.adaptive
         f(integrator.fsalfirst, integrator.u, p, t + dt)
         integrator.stats.nf += 1
     end
@@ -67,7 +67,7 @@ end
     (; β, γ, thread, nlsolver, atmp) = cache
 
     # Evaluate predictor
-    if integrator.u_modified || !integrator.opts.adaptive
+    if integrator.derivative_discontinuity || !integrator.opts.adaptive
         integrator.fsalfirst .= f(u, p, t + dt)
         integrator.stats.nf += 1
     end

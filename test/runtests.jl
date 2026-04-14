@@ -106,7 +106,7 @@ end
         @time @safetestset "save_idxs Tests" include("interface/ode_saveidxs_tests.jl")
         @time @safetestset "Scalar Handling Tests" include("interface/scalar_handling_tests.jl")
         @time @safetestset "Static Array Tests" include("interface/static_array_tests.jl")
-        @time @safetestset "u_modified Tests" include("interface/umodified_test.jl")
+        @time @safetestset "derivative_discontinuity Tests" include("interface/derivative_discontinuity_test.jl")
         @time @safetestset "Composite Algorithm Tests" include("interface/composite_algorithm_test.jl")
         @time @safetestset "Complex Tests" include("interface/complex_tests.jl")
         @time @safetestset "Ndim Complex Tests" include("interface/ode_ndim_complex_tests.jl")

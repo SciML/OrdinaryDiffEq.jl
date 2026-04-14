@@ -39,7 +39,7 @@ for τ in tvector
     if dist ≥ threshold
         # Rescale and reset everything:
         integ2.u .= integ1.u #.+ (integ2.u .- integ1.u)./a
-        u_modified!(integ2, true)
+        derivative_discontinuity!(integ2, true)
         set_proposed_dt!(integ2, integ1)
         break
     end

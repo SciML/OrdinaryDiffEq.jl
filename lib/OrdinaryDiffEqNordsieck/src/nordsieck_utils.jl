@@ -353,7 +353,7 @@ function setη!(integrator, cache::T) where {T}
         cache.η = 1
     else
         # TODO: Not the same with SUNDIALS
-        (integrator.iter == 1 || integrator.u_modified) &&
+        (integrator.iter == 1 || integrator.derivative_discontinuity) &&
             (cache.η = min(1.0e5, cache.η); return nothing)
         cache.η = min(integrator.alg.qmax, max(integrator.alg.qmin, cache.η))
     end

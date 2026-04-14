@@ -88,7 +88,7 @@ mutable struct DDEIntegrator{
     accept_step::Bool
     isout::Bool
     reeval_fsal::Bool
-    u_modified::Bool
+    derivative_discontinuity::Bool
     isdae::Bool
     opts::O
     stats::SciMLBase.DEStats

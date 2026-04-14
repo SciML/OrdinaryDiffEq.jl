@@ -26,7 +26,7 @@ end
 
 mutable struct ShootoutSet
     shootouts::Vector{Shootout}
-    probs::Any #::Vector{DEProblem}
+    probs::Any #::Vector{AbstractDEProblem}
     probaux::Any #::Vector{Dict{Symbol,Any}}
     N::Int
     winners::Vector{String}
