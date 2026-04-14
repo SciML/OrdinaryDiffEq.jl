@@ -1109,7 +1109,7 @@ end
         α42, α52, α62, β12, β22, β32, β42, β52, β62, c22, c32, c42, c52, c62,
     ) = cache
 
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     # cnt = cache.step
@@ -1180,7 +1180,7 @@ end
         α52, α62, β12, β22, β32, β42, β52, β62, c22, c32, c42, c52, c62,
     ) = cache.tab
 
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
 

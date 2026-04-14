@@ -21,7 +21,7 @@ end
 callback = ContinuousCallback(condition, affect!)
 
 sol = solve(prob, Tsit5(), callback = callback)
-@test length(sol) < 20
+@test length(sol.t) < 20
 
 # Force integrator to step on event
 sol = solve(prob, Tsit5(), callback = callback, tstops = [-2.95])
@@ -240,7 +240,7 @@ sol4 = solve(prob, Tsit5(), callback = saving_callback)
 @test sol2(3) ≈ sol(3)
 
 affect! = function (integrator)
-    return u_modified!(integrator, false)
+    return derivative_discontinuity!(integrator, false)
 end
 saving_callback2 = DiscreteCallback(condition, affect!, save_positions = save_positions)
 sol4 = solve(prob, Tsit5(), callback = saving_callback2)
@@ -248,7 +248,7 @@ sol4 = solve(prob, Tsit5(), callback = saving_callback2)
 cbs = CallbackSet(saving_callback, saving_callback2)
 sol4_extra = solve(prob, Tsit5(), callback = cbs)
 
-@test length(sol4_extra) == 2length(sol4) - 1
+@test length(sol4_extra.t) == 2length(sol4.t) - 1
 
 condition = function (u, t, integrator)
     return u[1]

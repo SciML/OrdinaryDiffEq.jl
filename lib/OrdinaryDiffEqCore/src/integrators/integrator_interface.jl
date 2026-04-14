@@ -74,7 +74,7 @@ function SciMLBase.reeval_internals_due_to_modification!(
         end
     end
 
-    integrator.u_modified = false
+    integrator.derivative_discontinuity = false
     return integrator.reeval_fsal = true
 end
 
@@ -144,8 +144,8 @@ end
     end
 end
 
-function u_modified!(integrator::ODEIntegrator, bool::Bool)
-    return integrator.u_modified = bool
+function SciMLBase.derivative_discontinuity!(integrator::ODEIntegrator, bool::Bool)
+    return integrator.derivative_discontinuity = bool
 end
 
 function get_proposed_dt(integrator::ODEIntegrator)
@@ -545,7 +545,7 @@ function SciMLBase.reinit!(
     end
     integrator.iter = 0
     integrator.success_iter = 0
-    integrator.u_modified = false
+    integrator.derivative_discontinuity = false
 
     # full re-initialize the controller in timestepping
     reinit_controller!(integrator, integrator.controller_cache)
@@ -634,7 +634,7 @@ function SciMLBase.set_u!(integrator::ODEIntegrator, u)
         )
     end
     integrator.u = u
-    return u_modified!(integrator, true)
+    return derivative_discontinuity!(integrator, true)
 end
 
 SciMLBase.has_stats(i::ODEIntegrator) = true

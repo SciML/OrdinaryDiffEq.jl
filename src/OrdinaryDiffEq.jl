@@ -23,7 +23,7 @@ using SciMLBase: SciMLBase,
     CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
     ReturnCode, set_proposed_dt!,
     remake, successful_retcode, reinit!,
-    u_modified!, add_tstop!, ODEAliasSpecifier
+    derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
 
 # Import ADTypes for autodiff specification
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
@@ -51,7 +51,7 @@ export DAEProblem, DAEFunction, DAESolution
 export CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback
 
 # Utilities
-export ReturnCode, u_modified!, add_tstop!, ODEAliasSpecifier
+export ReturnCode, derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
 export remake, successful_retcode, reinit!, set_proposed_dt!
 
 # ADTypes

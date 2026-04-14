@@ -127,7 +127,7 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     end
     # Restart BDf (clear history) when we failed repeatedly
     if kₙ == 1 && cache.consfailcnt > 3
-        u_modified!(integrator, true)
+        derivative_discontinuity!(integrator, true)
     end
     integrator.dt = hₙ
     return cache.order = kₙ

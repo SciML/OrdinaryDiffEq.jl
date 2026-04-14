@@ -76,7 +76,7 @@ for iip in (true, false)
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
         @test sol.stats.njacs < sol.stats.nw # W reuse
     end
-    @test length(sol) < 150
+    @test length(sol.t) < 150
     @test SciMLBase.successful_retcode(sol)
     sol_temp = solve(remake(vanstiff, p = [1.0e7]), RadauIIA5())
     @test length(sol_temp) < 150
@@ -114,6 +114,6 @@ for iip in (true, false)
         @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
         @test sol.stats.njacs < sol.stats.nw # W reuse
     end
-    @test length(sol) < 5000 # the error estimate is not very good
+    @test length(sol.t) < 5000 # the error estimate is not very good
     @test SciMLBase.successful_retcode(sol)
 end

@@ -296,7 +296,7 @@ function test_convergence(probs, convergence_axis, alg; kwargs...)
     return ConvergenceSimulation([solve(prob, alg; kwargs...) for prob in probs], convergence_axis)
 end
 
-function test_convergence(c::ConvergenceSetup, alg::DEAlgorithm; kwargs...)
+function test_convergence(c::ConvergenceSetup, alg::AbstractDEAlgorithm; kwargs...)
     return test_convergence(c.probs, c.convergence_axis, alg; kwargs...)
 end
 

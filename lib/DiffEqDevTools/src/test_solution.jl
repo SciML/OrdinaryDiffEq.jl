@@ -27,7 +27,7 @@ function TestSolution(t, u, interp)
         ReturnCode.Success
     )
 end
-function TestSolution(interp::DESolution)
+function TestSolution(interp::AbstractTimeseriesSolution)
     return TestSolution{Nothing, 0, true, Nothing, Nothing, typeof(interp)}(
         nothing, nothing,
         interp, true,
@@ -172,7 +172,7 @@ function appxtrue(
 end
 
 function appxtrue(sim::EnsembleSolution, appx_setup; kwargs...)
-    _new_sols = Vector{DESolution}(length(sim.u))
+    _new_sols = Vector{AbstractTimeseriesSolution}(length(sim.u))
     for i in eachindex(sim)
         prob = sim[i].prob
         prob2 = SDEProblem(
