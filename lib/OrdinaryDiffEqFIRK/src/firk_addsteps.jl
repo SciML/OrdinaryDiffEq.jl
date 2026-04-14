@@ -109,7 +109,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3ConstantCache)
         end
     end
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         if alg.extrapolant != :constant
             integrator.k[3] = (z1 - z2) / c1m1
             integrator.k[4] = integrator.k[3] - (z1 / c1)
@@ -273,7 +273,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
     @. u = uprev + z2
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             integrator.k[3] = (z1 - z2) / c1m1
@@ -429,7 +429,7 @@ function _ode_addsteps!(
 
     u = @.. uprev + z3
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         if alg.extrapolant != :constant
             integrator.k[3] = (z2 - z3) / c2m1
             tmp = @.. (z1 - z2) / c1mc2
@@ -650,7 +650,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
     @.. u = uprev + z3
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             integrator.k[3] = (z2 - z3) / c2m1
@@ -899,7 +899,7 @@ function _ode_addsteps!(
 
     u = @.. uprev + z5
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         #cache.dtprev = dt
         if alg.extrapolant != :constant
             integrator.k[3] = (z4 - z5) / c4m1 # first derivative on [c4, 1]
@@ -1457,7 +1457,7 @@ function _ode_addstep!(integrator, cache::AdaptiveRadauConstantCache, repeat_ste
 
     u = @.. uprev + z[num_stages]
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             derivatives = Matrix{typeof(u)}(undef, num_stages, num_stages)
@@ -1749,7 +1749,7 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
 
     step_limiter!(u, integrator, p, t + dt)
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             @.. derivatives[1, 1] = z[1] / c[1]

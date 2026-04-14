@@ -121,7 +121,7 @@ For more info see the linked documentation page.
 """
 mutable struct ODEIntegrator{
         algType, IIP,
-        uType, duType, tType, pType, eigenType, EEstT, tdirType,
+        uType, duType, tType, pType, eigenType, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
         CallbackCacheType, IA, DV, CC, RNGType, WType, PType, SqdtType,
         NoiseType, CType, RCType,
@@ -145,7 +145,6 @@ mutable struct ODEIntegrator{
     dtpropose::tType
     tdir::tdirType
     eigen_est::eigenType
-    EEst::EEstT
     controller_cache::CC
     success_iter::Int
     iter::Int

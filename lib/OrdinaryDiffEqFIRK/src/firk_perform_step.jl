@@ -295,10 +295,10 @@ end
     if adaptive
         utilde = @. dt * (e1 * ff1 + e2 * ff2)
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
-        integrator.EEst = internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
     end
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             integrator.k[3] = z1
@@ -467,10 +467,10 @@ end
         utilde = w2
         @. utilde = dt * (e1 * fsallast + e2 * k2)
         calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
-        integrator.EEst = internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
     end
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             integrator.k[3] .= z1
@@ -655,20 +655,20 @@ end
         # RadauIIA5 needs a transformed rtol and atol see
         # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
-        integrator.EEst = internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
 
-        if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
+        if !(OrdinaryDiffEqCore.get_EEst(integrator) < oneunit(OrdinaryDiffEqCore.get_EEst(integrator))) && integrator.iter == 1 ||
                 integrator.derivative_discontinuity
             f0 = f(uprev .+ utilde, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             utilde = @.. f0 + tmp
             alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
-            integrator.EEst = internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
         end
     end
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             integrator.k[3] = z1
@@ -922,9 +922,9 @@ end
         # RadauIIA5 needs a transformed rtol and atol see
         # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
         calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
-        integrator.EEst = internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
 
-        if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
+        if !(OrdinaryDiffEqCore.get_EEst(integrator) < oneunit(OrdinaryDiffEqCore.get_EEst(integrator))) && integrator.iter == 1 ||
                 integrator.derivative_discontinuity
             @.. utilde = uprev + utilde
             f(fsallast, utilde, p, t)
@@ -941,11 +941,11 @@ end
             end
 
             calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
-            integrator.EEst = internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
         end
     end
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             integrator.k[3] .= z1
@@ -1223,20 +1223,20 @@ end
             integrator.stats.nsolve += 1
         end
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
-        integrator.EEst = internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
 
-        if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
+        if !(OrdinaryDiffEqCore.get_EEst(integrator) < oneunit(OrdinaryDiffEqCore.get_EEst(integrator))) && integrator.iter == 1 ||
                 integrator.derivative_discontinuity
             f0 = f(uprev .+ utilde, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             utilde = @.. f0 + tmp
             alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
-            integrator.EEst = internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
         end
     end
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             integrator.k[3] = z1
@@ -1612,9 +1612,9 @@ end
         # RadauIIA5 needs a transformed rtol and atol see
         # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
         calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
-        integrator.EEst = internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
 
-        if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
+        if !(OrdinaryDiffEqCore.get_EEst(integrator) < oneunit(OrdinaryDiffEqCore.get_EEst(integrator))) && integrator.iter == 1 ||
                 integrator.derivative_discontinuity
             @.. utilde = uprev + utilde
             f(fsallast, utilde, p, t)
@@ -1631,11 +1631,11 @@ end
             end
 
             calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
-            integrator.EEst = internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
         end
     end
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             integrator.k[3] .= z1
@@ -1874,9 +1874,9 @@ end
             integrator.stats.nsolve += 1
         end
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
-        integrator.EEst = internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
 
-        if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
+        if !(OrdinaryDiffEqCore.get_EEst(integrator) < oneunit(OrdinaryDiffEqCore.get_EEst(integrator))) && integrator.iter == 1 ||
                 integrator.derivative_discontinuity
             f0 = f(uprev .+ utilde, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1887,11 +1887,11 @@ end
                 integrator.stats.nsolve += 1
             end
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
-            integrator.EEst = internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
         end
     end
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             for i in 1:num_stages
@@ -2205,9 +2205,9 @@ end
         # RadauIIA5 needs a transformed rtol and atol see
         # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
         calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
-        integrator.EEst = internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
 
-        if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
+        if !(OrdinaryDiffEqCore.get_EEst(integrator) < oneunit(OrdinaryDiffEqCore.get_EEst(integrator))) && integrator.iter == 1 ||
                 integrator.derivative_discontinuity
             @.. utilde = uprev + utilde
             f(fsallast, utilde, p, t)
@@ -2224,11 +2224,11 @@ end
             end
 
             calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
-            integrator.EEst = internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
         end
     end
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             for i in 1:num_stages

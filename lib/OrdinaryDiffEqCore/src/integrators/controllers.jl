@@ -1,14 +1,58 @@
 abstract type AbstractController end
 
+"""
+    AbstractControllerCache
+
+Each controller cache is expected to own the scalar error estimate used by the
+step-size logic and exposed to users as `get_EEst(integrator)`. The accessors
+[`get_EEst`](@ref) and [`set_EEst!`](@ref) read/write that scalar; the default
+implementations dispatch on a `EEst` field. Controllers that track multiple
+error estimates (e.g. BDF methods with `EEst1`, `EEst2`) can either still hold
+a canonical scalar EEst or override the accessors directly.
+"""
 abstract type AbstractControllerCache end
 
 """
-    setup_controller_cache(alg, algcache, controller::AbstractController)::AbstractControllerCache
+    get_EEst(controller_cache)
+    get_EEst(integrator)
+
+Return the scalar error estimate stored by the controller cache. When passed
+an integrator, forwards to its `controller_cache`. The fallback reads the
+`EEst` field on the cache; controllers that represent the error estimate
+differently can override this method.
+"""
+@inline get_EEst(cache::AbstractControllerCache) = getfield(cache, :EEst)
+@inline get_EEst(integrator::SciMLBase.DEIntegrator) =
+    get_EEst(getfield(integrator, :controller_cache))
+
+"""
+    set_EEst!(controller_cache, val)
+    set_EEst!(integrator, val)
+
+Store `val` as the scalar error estimate on the controller cache. When passed
+an integrator, forwards to its `controller_cache`. The fallback writes the
+`EEst` field on the cache; controllers that represent the error estimate
+differently can override this method.
+"""
+@inline set_EEst!(cache::AbstractControllerCache, val) =
+    setfield!(cache, :EEst, convert(fieldtype(typeof(cache), :EEst), val))
+@inline set_EEst!(integrator::SciMLBase.DEIntegrator, val) =
+    set_EEst!(getfield(integrator, :controller_cache), val)
+
+"""
+    setup_controller_cache(alg, algcache, controller::AbstractController, ::Type{EEstT})::AbstractControllerCache
 
 This function takes a controller together with the time stepping algorithm to
-construct and initialize the respective cache for the controller.
+construct and initialize the respective cache for the controller. The
+`EEstT` type parameter is the element type of the error estimate stored on
+the returned cache (matches what used to live on `get_EEst(integrator)`).
 """
 setup_controller_cache
+
+# Back-compat dispatch for any 3-arg implementation still in the ecosystem.
+# New code should pass the `EEstT` type parameter explicitly.
+setup_controller_cache(alg, cache, controller::AbstractController) =
+    setup_controller_cache(alg, cache, controller, Float64)
 
 """
     accept_step_controller(integrator, alg)::Bool
@@ -53,7 +97,7 @@ step_reject_controller!
     return accept_step_controller(integrator, integrator.controller_cache, alg)
 end
 @inline function accept_step_controller(integrator, cache::Union{AbstractControllerCache, OrdinaryDiffEqCache}, alg)
-    return integrator.EEst <= 1
+    return get_EEst(integrator) <= 1
 end
 
 @inline function stepsize_controller!(integrator, alg)
@@ -95,6 +139,13 @@ See also: https://github.com/SciML/DifferentialEquations.jl/issues/299
 @inline function get_current_qmax(integrator, qmax)
     if integrator.success_iter == 0
         ctrl = integrator.controller_cache
+        # Look through a DummyController wrapper at the embedded alg cache.
+        if ctrl isa DummyControllerCache
+            inner = ctrl.cache
+            if hasfield(typeof(inner), :qmax_first_step)
+                return inner.qmax_first_step
+            end
+        end
         if hasfield(typeof(ctrl), :controller) &&
                 hasfield(typeof(ctrl.controller), :qmax_first_step)
             return ctrl.controller.qmax_first_step
@@ -126,7 +177,39 @@ end
 # This is a helper struct for algorithms with integrated controllers like Nordsieck and BDF methods.
 struct DummyController <: AbstractController
 end
-setup_controller_cache(alg, cache, controller::DummyController) = cache
+
+"""
+    DummyControllerCache
+
+Controller cache used by algorithms that manage step-size selection themselves
+(BDF, Nordsieck, Leaping, …). Holds the scalar error estimate exposed through
+`get_EEst(integrator)` and a reference to the algorithm cache so existing dispatch
+on the algorithm cache continues to work.
+"""
+mutable struct DummyControllerCache{T, C} <: AbstractControllerCache
+    EEst::T
+    cache::C
+end
+
+function setup_controller_cache(alg, cache, controller::DummyController, ::Type{E}) where {E}
+    return DummyControllerCache{E, typeof(cache)}(oneunit(E), cache)
+end
+
+# Algorithms with integrated controllers (BDF, Nordsieck, …) only define their
+# own `stepsize_controller!(integrator, alg)` 2-arg method that reaches for
+# `integrator.cache`. When such an algorithm appears as a branch of a
+# `CompositeAlgorithm`, the composite dispatch hands us the sub-cache
+# (`DummyControllerCache`) explicitly, so fall back to the alg-level method.
+@inline stepsize_controller!(integrator, ::DummyControllerCache, alg) =
+    stepsize_controller!(integrator, alg)
+@inline step_accept_controller!(integrator, ::DummyControllerCache, alg, q) =
+    step_accept_controller!(integrator, alg, q)
+@inline step_reject_controller!(integrator, ::DummyControllerCache, alg) =
+    step_reject_controller!(integrator, alg)
+@inline post_newton_controller!(integrator, ::DummyControllerCache, alg) =
+    post_newton_controller!(integrator, alg)
+@inline accept_step_controller(integrator, cache::DummyControllerCache, alg) =
+    get_EEst(cache) <= 1
 
 
 # Standard integral (I) step size controller
@@ -146,11 +229,11 @@ based on the formula
 ```
 
 where `k = get_current_adaptive_order(alg, integrator.cache) + 1` and `εᵢ` is the
-inverse of the error estimate `integrator.EEst` scaled by the tolerance
+inverse of the error estimate `get_EEst(integrator)` scaled by the tolerance
 (Hairer, Nørsett, Wanner, 2008, Section II.4).
 The step size factor is multiplied by the safety factor `gamma` and clipped to
 the interval `[qmin, qmax]`.
-A step will be accepted whenever the estimated error `integrator.EEst` is
+A step will be accepted whenever the estimated error `get_EEst(integrator)` is
 less than or equal to unity. Otherwise, the step is rejected and re-tried with
 the predicted step size.
 
@@ -195,22 +278,24 @@ function IController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = 
     )
 end
 
-mutable struct IControllerCache{T} <: AbstractControllerCache
+mutable struct IControllerCache{T, E} <: AbstractControllerCache
     controller::IController{T}
     dtreject::T
+    EEst::E
 end
 
-function setup_controller_cache(alg, cache, controller::IController{T}) where {T}
-    return IControllerCache(
+function setup_controller_cache(alg, cache, controller::IController{T}, ::Type{E}) where {T, E}
+    return IControllerCache{T, E}(
         controller,
         T(1 // 10^4),
+        oneunit(E),
     )
 end
 
 @inline function stepsize_controller!(integrator, cache::IControllerCache, alg)
     (; qmin, qmax, gamma) = cache.controller
     qmax = get_current_qmax(integrator, qmax)
-    EEst = DiffEqBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(get_EEst(integrator))
 
     if iszero(EEst)
         q = inv(qmax)
@@ -263,7 +348,7 @@ where `εᵢ` are inverses of the error estimates scaled by the tolerance
 (Hairer, Nørsett, Wanner, 2010, Section IV.2).
 The step size factor is multiplied by the safety factor `gamma` and clipped to
 the interval `[qmin, qmax]`.
-A step will be accepted whenever the estimated error `integrator.EEst` is
+A step will be accepted whenever the estimated error `get_EEst(integrator)` is
 less than or equal to unity. Otherwise, the step is rejected and re-tried with
 the predicted step size.
 
@@ -329,19 +414,21 @@ function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing,
     )
 end
 
-mutable struct PIControllerCache{T} <: AbstractControllerCache
+mutable struct PIControllerCache{T, E} <: AbstractControllerCache
     controller::PIController{T}
     # Cached εₙ₊₁^β₁
     q11::T
     # Previous EEst
     errold::T
+    EEst::E
 end
 
-function setup_controller_cache(alg, cache, controller::PIController{T}) where {T}
-    return PIControllerCache(
+function setup_controller_cache(alg, cache, controller::PIController{T}, ::Type{E}) where {T, E}
+    return PIControllerCache{T, E}(
         controller,
         one(T),
         T(controller.qoldinit),
+        oneunit(E),
     )
 end
 
@@ -350,7 +437,7 @@ end
     (; qmin, qmax, gamma) = controller
     qmax = get_current_qmax(integrator, qmax)
     (; beta1, beta2) = controller
-    EEst = DiffEqBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(get_EEst(integrator))
 
     if iszero(EEst)
         q = inv(qmax)
@@ -366,7 +453,7 @@ end
 function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
     (; controller) = cache
     (; qsteady_min, qsteady_max, qoldinit) = controller
-    EEst = DiffEqBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(get_EEst(integrator))
 
     if qsteady_min <= q <= qsteady_max
         q = one(q)
@@ -511,10 +598,11 @@ function Base.show(io::IO, controller::PIDController)
     )
 end
 
-mutable struct PIDControllerCache{T, Limiter} <: AbstractControllerCache
+mutable struct PIDControllerCache{T, Limiter, E} <: AbstractControllerCache
     controller::PIDController{T, Limiter}
     err::Vector{T} # history of the error estimates
     dt_factor::T
+    EEst::E
 end
 
 function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PIDControllerCache{T}) where {T}
@@ -523,12 +611,13 @@ function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PIDContro
     return nothing
 end
 
-function setup_controller_cache(alg, cache, controller::PIDController{QT}) where {QT}
+function setup_controller_cache(alg, cache, controller::PIDController{QT}, ::Type{E}) where {QT, E}
     err = ones(QT, 3)
-    return PIDControllerCache(
+    return PIDControllerCache{QT, typeof(controller.limiter), E}(
         controller,
         err,
         one(QT),
+        oneunit(E),
     )
 end
 
@@ -536,7 +625,7 @@ end
     (; controller) = cache
     beta1, beta2, beta3 = controller.beta
 
-    EEst = DiffEqBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(get_EEst(integrator))
 
     # If the error estimate is zero, we can increase the step size as much as
     # desired. This additional check fixes problems of the code below when the
@@ -619,7 +708,7 @@ fac = min(gamma,
     (1 + 2 * integrator.alg.max_newton_iter) * gamma /
     (niters + 2 * integrator.alg.max_newton_iter))
 expo = 1 / (alg_order(integrator.alg) + 1)
-qtmp = (integrator.EEst^expo) / fac
+qtmp = (get_EEst(integrator)^expo) / fac
 @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
 if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
     q = one(q)
@@ -636,7 +725,7 @@ the following logic is applied:
 ```julia
 if integrator.success_iter > 0
     expo = 1 / (alg_adaptive_order(integrator.alg) + 1)
-    qgus = (integrator.dtacc / integrator.dt) * (((integrator.EEst^2) / integrator.erracc)^expo)
+    qgus = (integrator.dtacc / integrator.dt) * (((get_EEst(integrator)^2) / integrator.erracc)^expo)
     qgus = max(inv(integrator.opts.qmax),
         min(inv(integrator.opts.qmin), qgus / integrator.opts.gamma))
     qacc = max(q, qgus)
@@ -644,7 +733,7 @@ else
     qacc = q
 end
 integrator.dtacc = integrator.dt
-integrator.erracc = max(1e-2, integrator.EEst)
+integrator.erracc = max(1e-2, get_EEst(integrator))
 integrator.dt / qacc
 ```
 
@@ -692,11 +781,12 @@ function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, qmax_firs
     )
 end
 
-mutable struct PredictiveControllerCache{T} <: AbstractControllerCache
+mutable struct PredictiveControllerCache{T, E} <: AbstractControllerCache
     controller::PredictiveController{T}
     dtacc::T
     erracc::T
     qold::T
+    EEst::E
 end
 
 function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PredictiveControllerCache{T}) where {T}
@@ -713,19 +803,20 @@ function sync_controllers!(cache1::PredictiveControllerCache, cache2::Predictive
     return nothing
 end
 
-function setup_controller_cache(alg, cache, controller::PredictiveController{T}) where {T}
-    return PredictiveControllerCache(
+function setup_controller_cache(alg, cache, controller::PredictiveController{T}, ::Type{E}) where {T, E}
+    return PredictiveControllerCache{T, E}(
         controller,
         one(T),
         one(T),
         one(T),
+        oneunit(E),
     )
 end
 
 @inline function stepsize_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; qmin, qmax, gamma) = cache.controller
     qmax = get_current_qmax(integrator, qmax)
-    EEst = DiffEqBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(get_EEst(integrator))
     if iszero(EEst)
         q = inv(qmax)
     else
@@ -753,7 +844,7 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
     (; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller
     qmax = get_current_qmax(integrator, qmax)
 
-    EEst = DiffEqBase.value(integrator.EEst)
+    EEst = DiffEqBase.value(get_EEst(integrator))
 
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
@@ -784,14 +875,14 @@ struct CompositeController{T} <: AbstractController
     controllers::T
 end
 
-struct CompositeControllerCache{T} <: AbstractControllerCache
+mutable struct CompositeControllerCache{T, E} <: AbstractControllerCache
     caches::T
+    EEst::E
 end
 
-function setup_controller_cache(alg::CompositeAlgorithm, caches::CompositeCache, cc::CompositeController)
-    return CompositeControllerCache(
-        map((alg, cache, controller) -> setup_controller_cache(alg, cache, controller), alg.algs, caches.caches, cc.controllers),
-    )
+function setup_controller_cache(alg::CompositeAlgorithm, caches::CompositeCache, cc::CompositeController, ::Type{E}) where {E}
+    sub = map((alg, cache, controller) -> setup_controller_cache(alg, cache, controller, E), alg.algs, caches.caches, cc.controllers)
+    return CompositeControllerCache{typeof(sub), E}(sub, oneunit(E))
 end
 
 @inline function accept_step_controller(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
@@ -839,17 +930,16 @@ end
     return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
 
-function setup_controller_cache(alg::CompositeAlgorithm, caches::DefaultCache, controller::CompositeController)
-    return CompositeControllerCache(
-        (
-            setup_controller_cache(alg.algs[1], caches, controller.controllers[1]),
-            setup_controller_cache(alg.algs[2], caches, controller.controllers[2]),
-            setup_controller_cache(alg.algs[3], caches, controller.controllers[3]),
-            setup_controller_cache(alg.algs[4], caches, controller.controllers[4]),
-            setup_controller_cache(alg.algs[5], caches, controller.controllers[5]),
-            setup_controller_cache(alg.algs[6], caches, controller.controllers[6]),
-        )
+function setup_controller_cache(alg::CompositeAlgorithm, caches::DefaultCache, controller::CompositeController, ::Type{E}) where {E}
+    sub = (
+        setup_controller_cache(alg.algs[1], caches, controller.controllers[1], E),
+        setup_controller_cache(alg.algs[2], caches, controller.controllers[2], E),
+        setup_controller_cache(alg.algs[3], caches, controller.controllers[3], E),
+        setup_controller_cache(alg.algs[4], caches, controller.controllers[4], E),
+        setup_controller_cache(alg.algs[5], caches, controller.controllers[5], E),
+        setup_controller_cache(alg.algs[6], caches, controller.controllers[6], E),
     )
+    return CompositeControllerCache{typeof(sub), E}(sub, oneunit(E))
 end
 
 # Default alg

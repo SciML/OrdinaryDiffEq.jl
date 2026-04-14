@@ -46,9 +46,9 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     else
-        integrator.EEst = 1
+        OrdinaryDiffEqCore.set_EEst!(integrator, 1)
     end
 
     integrator.u = u
@@ -94,9 +94,9 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     else
-        integrator.EEst = 1
+        OrdinaryDiffEqCore.set_EEst!(integrator, 1)
     end
 
     if integrator.opts.calck
@@ -148,12 +148,12 @@ end
             est, uₙ₋₁, uₙ, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     ################################### Finalize
 
-    if integrator.EEst < one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) < one(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.fsalfirstprev = integrator.fsalfirst
         cache.dtₙ₋₁ = dtₙ
     end
@@ -220,12 +220,12 @@ end
             atmp, tmp, uₙ₋₁, uₙ, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     ################################### Finalize
 
-    if integrator.EEst < one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) < one(OrdinaryDiffEqCore.get_EEst(integrator))
         @.. broadcast = false cache.fsalfirstprev = integrator.fsalfirst
         cache.dtₙ₋₁ = dtₙ
     end
@@ -349,7 +349,7 @@ function perform_step!(
             lte, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         terk = estimate_terk(integrator, cache, k + 1, Val(max_order), u)
         atmp = calculate_residuals(
@@ -502,7 +502,7 @@ function perform_step!(
             atmp, terk_tmp, uprev, u, abstol, reltol,
             internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         estimate_terk!(integrator, cache, k + 1, Val(max_order))
         calculate_residuals!(
             atmp, terk_tmp, uprev, u, abstol, reltol,
