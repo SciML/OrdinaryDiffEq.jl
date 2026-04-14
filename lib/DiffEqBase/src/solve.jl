@@ -216,7 +216,7 @@ function step!(integ::NullODEIntegrator, dt = nothing, stop_at_tdt = false)
     end
     return nothing
 end
-function SciMLBase.u_modified!(integ::NullODEIntegrator, u) end
+function SciMLBase.derivative_discontinuity!(integ::NullODEIntegrator, u) end
 SciMLBase.check_error(integ::NullODEIntegrator) = integ.sol.retcode
 
 function hack_null_solution_init(prob)
@@ -385,7 +385,7 @@ section at the end of this page for some example usage.
   `false`. Defaults to
   `save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat`.
 * `initialize_save`: Denotes whether to save after the callback initialization
-  phase (when `u_modified=true`). Defaults to `true`.
+  phase (when `derivative_discontinuity=true`). Defaults to `true`.
 
 Note that `dense` requires `save_everystep=true` and `saveat=false`. If you need
 additional saving while keeping dense output, see

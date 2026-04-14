@@ -539,7 +539,7 @@ testTol = 0.2
                 reltol = 1.0e-3
             )
             @test SciMLBase.successful_retcode(sol)
-            @test length(sol) > 0
+            @test length(sol.t) > 0
         end
 
         @testset "ImplicitEulerExtrapolation with threading" begin
@@ -549,7 +549,7 @@ testTol = 0.2
                 reltol = 1.0e-3
             )
             @test SciMLBase.successful_retcode(sol)
-            @test length(sol) > 0
+            @test length(sol.t) > 0
         end
 
         @testset "ImplicitDeuflhardExtrapolation with threading" begin
@@ -559,7 +559,7 @@ testTol = 0.2
                 reltol = 1.0e-3
             )
             @test SciMLBase.successful_retcode(sol)
-            @test length(sol) > 0
+            @test length(sol.t) > 0
         end
     end
 end # Extrapolation methods

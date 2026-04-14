@@ -116,7 +116,7 @@ end
     (; dtₙ₋₁, nlsolver) = cache
     dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
-    if integrator.iter == 1 && !integrator.u_modified
+    if integrator.iter == 1 && !integrator.derivative_discontinuity
         cache.dtₙ₋₁ = dtₙ
         perform_step!(integrator, cache.eulercache, repeat_step)
         integrator.fsalfirst = @.. broadcast = false (integrator.u - integrator.uprev) / dtₙ
@@ -183,7 +183,7 @@ end
     (; z, tmp) = nlsolver
     uₙ, uₙ₋₁, uₙ₋₂, dtₙ = integrator.u, integrator.uprev, integrator.uprev2, integrator.dt
 
-    if integrator.iter == 1 && !integrator.u_modified
+    if integrator.iter == 1 && !integrator.derivative_discontinuity
         cache.dtₙ₋₁ = dtₙ
         perform_step!(integrator, cache.eulercache, repeat_step)
         @.. broadcast = false integrator.fsalfirst = (uₙ - uₙ₋₁) / dt
@@ -246,10 +246,10 @@ function initialize!(integrator, cache::DFBDFConstantCache{max_order}) where {ma
         integrator.k[i] = zero(integrator.fsalfirst)
     end
 
-    u_modified = integrator.u_modified
-    integrator.u_modified = true
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
     reinitFBDF!(integrator, cache)
-    return integrator.u_modified = u_modified
+    return integrator.derivative_discontinuity = derivative_discontinuity
 end
 
 function perform_step!(
@@ -419,10 +419,10 @@ function initialize!(integrator, cache::DFBDFCache{max_order}) where {max_order}
         integrator.k[i] = cache.dense[i]
     end
 
-    u_modified = integrator.u_modified
-    integrator.u_modified = true
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
     reinitFBDF!(integrator, cache)
-    return integrator.u_modified = u_modified
+    return integrator.derivative_discontinuity = derivative_discontinuity
 end
 
 function perform_step!(

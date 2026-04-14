@@ -70,7 +70,7 @@ solve!(integ)
 # Catch save for maxiters
 ode = SDEProblem((u, p, t) -> u, (u, p, t) -> u, 1.0, (0.0, 1.0))
 sol = solve(ode, SOSRI(), save_everystep = false) # okay, as expected
-@test length(sol) == 2
+@test length(sol.t) == 2
 @info "Warning Expected"
 sol = solve(ode, SOSRI(), save_everystep = false, maxiters = 3) # doesn't save the final solution anymore!
-@test length(sol) == 2
+@test length(sol.t) == 2
