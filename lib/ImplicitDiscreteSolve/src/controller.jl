@@ -36,8 +36,9 @@ Base.@kwdef struct KantorovichTypeController{T} <: AbstractController
     strict::Bool = true
 end
 
-struct KantorovichTypeControllerCache{T} <: AbstractControllerCache
+mutable struct KantorovichTypeControllerCache{T, E} <: AbstractControllerCache
     controller::KantorovichTypeController{T}
+    EEst::E
 end
 
 function OrdinaryDiffEqCore.default_controller(
@@ -46,9 +47,10 @@ function OrdinaryDiffEqCore.default_controller(
     return KantorovichTypeController{QT}(; Θmin = QT(1 // 8), p = 1)
 end
 
-function OrdinaryDiffEqCore.setup_controller_cache(alg, cache, controller::KantorovichTypeController{T}) where {T}
-    return KantorovichTypeControllerCache(
+function OrdinaryDiffEqCore.setup_controller_cache(alg, cache, controller::KantorovichTypeController{T}, ::Type{E}) where {T, E}
+    return KantorovichTypeControllerCache{T, E}(
         controller,
+        oneunit(E),
     )
 end
 

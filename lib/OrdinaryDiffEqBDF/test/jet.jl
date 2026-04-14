@@ -35,8 +35,9 @@ using Test
             ABDF2(), QNDF1(), QBDF1(), QNDF2(), QBDF2(), QNDF(), QBDF(), FBDF(),
             MEBDF2(),
         ]
-        # Some of these are type-stable for the initialization step, but not all
-        stable_bdf_solvers = [QNDF(), QBDF(), FBDF(), MEBDF2()]
+        # After the controller-cache refactor every regular BDF init is
+        # type-stable for `init`.
+        stable_bdf_solvers = regular_bdf_solvers
 
         # DAE solvers (DAEProblem)
         dae_solvers = [DABDF2(), DImplicitEuler(), DFBDF()]

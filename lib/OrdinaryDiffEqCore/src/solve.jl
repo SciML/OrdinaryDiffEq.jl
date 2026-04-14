@@ -507,7 +507,7 @@ function _ode_init(
         typeof(internalnorm(u, t))
     end
 
-    controller_cache = setup_controller_cache(_alg, cache, controller)
+    controller_cache = setup_controller_cache(_alg, cache, controller, EEstT)
 
     save_end_user = save_end
     save_end = save_end === nothing ?
@@ -632,9 +632,13 @@ function _ode_init(
 
     _rng = rng === nothing ? Random.default_rng() : rng
 
+    # Seed the initial EEst on the controller cache (was previously
+    # `integrator.EEst = oneunit(EEstT)`).
+    set_EEst!(controller_cache, EEst)
+
     integrator = ODEIntegrator{
         typeof(_alg), isinplace(prob), uType, typeof(du),
-        tType, typeof(p), typeof(eigen_est), EEstT,
+        tType, typeof(p), typeof(eigen_est),
         typeof(tdir), typeof(k), SolType,
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
@@ -647,7 +651,7 @@ function _ode_init(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
-        dtpropose, tdir, eigen_est, EEst,
+        dtpropose, tdir, eigen_est,
         controller_cache,
         success_iter,
         iter, saveiter, saveiter_dense, cache,

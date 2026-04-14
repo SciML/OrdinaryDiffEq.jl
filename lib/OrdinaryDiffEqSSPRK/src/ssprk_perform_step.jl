@@ -794,7 +794,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.u = u
 end
@@ -843,7 +843,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
 end
@@ -892,7 +892,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.u = u
 end
@@ -940,7 +940,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
 end
@@ -1257,7 +1257,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.u = u
 end
@@ -1333,7 +1333,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 

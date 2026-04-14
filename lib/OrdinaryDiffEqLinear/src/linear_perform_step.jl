@@ -353,7 +353,7 @@ function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step = false
             atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 

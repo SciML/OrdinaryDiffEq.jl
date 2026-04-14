@@ -121,7 +121,7 @@ function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.fsallast = cache.du₁ + cache.du₂
@@ -258,7 +258,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     @.. broadcast = false integrator.fsallast = du₁ + du₂
