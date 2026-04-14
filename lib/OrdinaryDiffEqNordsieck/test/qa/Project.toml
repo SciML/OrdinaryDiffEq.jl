@@ -11,9 +11,6 @@ path = "../../../OrdinaryDiffEqCore"
 [sources.OrdinaryDiffEqNordsieck]
 path = "../../"
 
-[sources.DiffEqBase]
-path = "../../../DiffEqBase"
-
 [compat]
 AllocCheck = "0.2"
 OrdinaryDiffEqCore = "3"
