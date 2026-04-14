@@ -1080,13 +1080,13 @@ end
     onemq = 1 - q
     onepq = 1 + q
     onepq2 = onepq * onepq
-    
+
     # The first and possibly second steps are calculated via the one-step RKC method.
     rkcstep = q < 0.49
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
-        if (rkcstep)
+    if (rkcstep)
         mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
         w0 = 1 + 2 / (13 * (mdeg^2))
         temp1 = w0^2 - 1
@@ -1232,7 +1232,7 @@ end
         tsw0 = constantcache.tsw0
         acoshtsw0 = constantcache.acoshtsw0
         acoshtsw0dm = acoshtsw0 / mdeg
-        w0 = cosh(acoshtsw0dm);
+        w0 = cosh(acoshtsw0dm)
         w0sq = w0^2
         w0sqm1 = w0sq - 1
         dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
@@ -1295,7 +1295,7 @@ end
     end
 
     if (!rkcstep)
-        a = onepq / (q * dtsw0 + w1 * d2tsw0);
+        a = onepq / (q * dtsw0 + w1 * d2tsw0)
         g = (a * dtsw0 - 1) / q
         b = a / (b * w1)
         μ = 1 - g - b
