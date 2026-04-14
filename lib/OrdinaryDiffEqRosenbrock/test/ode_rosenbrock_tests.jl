@@ -22,7 +22,7 @@ end
     @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
     sol = solve(prob, Rosenbrock23())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -31,7 +31,7 @@ end
     @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
     sol = solve(prob, Rosenbrock23())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     if isempty(VERSION.prerelease)
@@ -51,7 +51,7 @@ end
                 )
             )
         )
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
 
@@ -61,7 +61,7 @@ end
     @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
     sol = solve(prob, Rosenbrock23(linsolve = QRFactorization()))
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
 
@@ -73,7 +73,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, ROS34PW3())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -83,7 +83,7 @@ end
     @test sim.𝒪est[:L2] ≈ 4 atol = testTol
 
     sol = solve(prob, ROS34PW3())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
 
@@ -94,7 +94,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, ROK4a())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -103,7 +103,7 @@ end
     @test sim.𝒪est[:final] ≈ 4 atol = testTol
 
     sol = solve(prob, ROK4a())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
 
@@ -119,7 +119,7 @@ end
     @test sim.𝒪est[:L2] ≈ 2 atol = testTol
 
     sol = solve(prob, Rodas23W())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -129,7 +129,7 @@ end
     @test sim.𝒪est[:L2] ≈ 2 atol = testTol
 
     sol = solve(prob, Rodas23W())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     if isempty(VERSION.prerelease)
@@ -154,7 +154,7 @@ end
                 linsolve = LinearSolve.KrylovJL()
             )
         )
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
 
@@ -168,7 +168,7 @@ end
     @test sim.𝒪est[:L2] ≈ 5 atol = testTol
 
     sol = solve(prob, Rodas5P())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -178,7 +178,7 @@ end
     @test sim.𝒪est[:L2] ≈ 5 atol = testTol
 
     sol = solve(prob, Rodas5P())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     println("Rodas5Pe")
@@ -190,7 +190,7 @@ end
     @test sim.𝒪est[:L2] ≈ 5 atol = testTol
 
     sol = solve(prob, Rodas5Pe())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -200,7 +200,7 @@ end
     @test sim.𝒪est[:L2] ≈ 5 atol = testTol
 
     sol = solve(prob, Rodas5Pe())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     println("Rodas6P")
@@ -212,7 +212,7 @@ end
     @test sim.𝒪est[:L2] ≈ 6 atol = testTol
 
     sol = solve(prob, Rodas6P())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
     prob = prob_ode_2Dlinear
@@ -222,7 +222,7 @@ end
     @test sim.𝒪est[:L2] ≈ 6 atol = testTol
 
     sol = solve(prob, Rodas6P())
-    @test length(sol) < 20
+    @test length(sol.t) < 20
     @test SciMLBase.successful_retcode(sol)
 
 
@@ -243,7 +243,7 @@ end
             prob,
             Rodas5P(autodiff = AutoEnzyme(mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const))
         )
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
 
         prob = prob_ode_2Dlinear
@@ -291,7 +291,7 @@ end
                 )
             )
         )
-        @test length(sol) < 20
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
 
 

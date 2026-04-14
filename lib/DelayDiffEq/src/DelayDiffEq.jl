@@ -41,13 +41,13 @@ using DiffEqBase: is_diagonal_noise
 # Explicit imports for functions
 using OrdinaryDiffEqCore: AutoSwitch, CompositeAlgorithm
 using OrdinaryDiffEqDefault: DefaultODEAlgorithm
-using SciMLBase: CallbackSet, DAEProblem, DDEProblem, DESolution, ODEProblem, ReturnCode,
+using SciMLBase: CallbackSet, DAEProblem, DDEProblem, AbstractSciMLSolution, ODEProblem, ReturnCode,
     VectorContinuousCallback, addat!, addat_non_user_cache!,
     deleteat_non_user_cache!,
     du_cache, full_cache, get_tmp_cache, isinplace,
     reeval_internals_due_to_modification!,
     reinit!, resize_non_user_cache!, savevalues!, u_cache, user_cache,
-    step!, terminate!, u_modified!, get_proposed_dt, set_proposed_dt!,
+    step!, terminate!, get_proposed_dt, set_proposed_dt!,
     auto_dt_reset!,
     add_tstop!, add_saveat!, get_du, get_du!, addsteps!,
     change_t_via_interpolation!, isadaptive

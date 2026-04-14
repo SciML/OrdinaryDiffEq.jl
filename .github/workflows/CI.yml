@@ -21,6 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     continue-on-error: ${{ matrix.group == 'Downstream' }}
+    env:
+      # Bypass Julia's Pkg server for registry; it lags behind JuliaRegistries/General
+      # by up to hours and caches on a TTL. Resolve against git directly so newly
+      # registered package versions are seen immediately by CI.
+      JULIA_PKG_SERVER: ""
     strategy:
       fail-fast: false
       matrix:
@@ -114,6 +119,16 @@ jobs:
               isempty(specs) || Pkg.develop(specs)
             end
           end
+      - name: Refresh General registry directly from git
+        shell: julia --color=yes --project=. {0}
+        run: |
+          using Pkg
+          # Force a fresh git clone of General to dodge pkg server lag.
+          try
+              Pkg.Registry.rm("General")
+          catch
+          end
+          Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/JuliaRegistries/General.git"))
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:

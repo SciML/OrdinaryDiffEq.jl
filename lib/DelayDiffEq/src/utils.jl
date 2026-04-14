@@ -232,11 +232,11 @@ function solution_arrays(
 end
 
 """
-    _sizehint_solution!(sol::DESolution, n)
+    _sizehint_solution!(sol::AbstractSciMLSolution, n)
 
 Suggest that solution `sol` reserves capacity for at least `n` elements.
 """
-function _sizehint_solution!(sol::DESolution, n)
+function _sizehint_solution!(sol::AbstractSciMLSolution, n)
     sizehint!(sol.u, n)
     sizehint!(sol.t, n)
     hasproperty(sol, :k) && sol.k !== nothing && sizehint!(sol.k, n)
@@ -245,13 +245,13 @@ function _sizehint_solution!(sol::DESolution, n)
 end
 
 """
-    _sizehint_solution!(sol::DESolution, alg, tspan, tstops, saveat; kwargs...)
+    _sizehint_solution!(sol::AbstractSciMLSolution, alg, tspan, tstops, saveat; kwargs...)
 
 Suggest that solution `sol` reserves capacity for a number of elements that
 depends on the parameter settings of the numerical solver.
 """
 function _sizehint_solution!(
-        sol::DESolution, alg, tspan, tstops, saveat;
+        sol::AbstractSciMLSolution, alg, tspan, tstops, saveat;
         save_everystep, adaptive, internalnorm, dt, dtmin
     )
     # obtain integration time

@@ -17,7 +17,7 @@ end
     dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
     # TODO: this doesn't look right
-    if integrator.iter == 1 && !integrator.u_modified
+    if integrator.iter == 1 && !integrator.derivative_discontinuity
         cache.dtₙ₋₁ = dtₙ
         cache.eulercache.nlsolver.method = DIRK
         perform_step!(integrator, cache.eulercache, repeat_step)
@@ -106,7 +106,7 @@ end
     alg = unwrap_alg(integrator, true)
     uₙ, uₙ₋₁, uₙ₋₂, dtₙ = integrator.u, integrator.uprev, integrator.uprev2, integrator.dt
 
-    if integrator.iter == 1 && !integrator.u_modified
+    if integrator.iter == 1 && !integrator.derivative_discontinuity
         cache.dtₙ₋₁ = dtₙ
         cache.eulercache.nlsolver.method = DIRK
         perform_step!(integrator, cache.eulercache, repeat_step)
@@ -205,7 +205,7 @@ function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false
     (; uprev2, uprev3, uprev4, du₁, du₂, k₁, k₂, k₃, nlsolver) = cache
     (; f1, f2) = integrator.f
     cnt = cache.cnt = min(alg.order, integrator.iter + 1)
-    integrator.iter == 1 && !integrator.u_modified && (cnt = cache.cnt = 1)
+    integrator.iter == 1 && !integrator.derivative_discontinuity && (cnt = cache.cnt = 1)
     nlsolver.γ = γ = inv(γₖ[cnt])
     if cache.ark
         # Additive Runge-Kutta Method
@@ -288,7 +288,7 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step = false)
     (; tmp, z) = nlsolver
     (; f1, f2) = integrator.f
     cnt = cache.cnt = min(alg.order, integrator.iter + 1)
-    integrator.iter == 1 && !integrator.u_modified && (cnt = cache.cnt = 1)
+    integrator.iter == 1 && !integrator.derivative_discontinuity && (cnt = cache.cnt = 1)
     nlsolver.γ = γ = inv(γₖ[cnt])
     # Explicit part
     if cache.ark
@@ -775,7 +775,7 @@ function perform_step!(
     (; dtprev, order, D, U, nlsolver, γₖ) = cache
     alg = unwrap_alg(integrator, true)
 
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         dtprev = one(dt)
         order = 1
         cache.nconsteps = 0
@@ -920,7 +920,7 @@ function perform_step!(
     ) = cache
     alg = unwrap_alg(integrator, true)
 
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         dtprev = one(dt)
         order = 1
         cache.nconsteps = 0
@@ -1167,10 +1167,10 @@ function initialize!(integrator, cache::FBDFConstantCache{max_order}) where {max
         integrator.k[i] = zero(integrator.fsalfirst)
     end
 
-    u_modified = integrator.u_modified
-    integrator.u_modified = true
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
     reinitFBDF!(integrator, cache)
-    return integrator.u_modified = u_modified
+    return integrator.derivative_discontinuity = derivative_discontinuity
 end
 
 function perform_step!(
@@ -1361,10 +1361,10 @@ function initialize!(integrator, cache::FBDFCache{max_order}) where {max_order}
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-    u_modified = integrator.u_modified
-    integrator.u_modified = true
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
     reinitFBDF!(integrator, cache)
-    return integrator.u_modified = u_modified
+    return integrator.derivative_discontinuity = derivative_discontinuity
 end
 
 function perform_step!(

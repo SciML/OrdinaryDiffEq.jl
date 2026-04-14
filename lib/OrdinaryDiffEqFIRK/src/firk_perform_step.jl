@@ -4,7 +4,7 @@ function do_newJ(integrator, alg, cache, repeat_step)::Bool # for FIRK
     first(islinearfunction(integrator)) && return false
     integrator.opts.adaptive || return true
     alg_can_repeat_jac(alg) || return true
-    integrator.u_modified && return true
+    integrator.derivative_discontinuity && return true
     # below is Newton specific logic, so we return non-Newton algs here
     alg isa NewtonAlgorithm || return true
     nlstatus = cache.status
@@ -191,7 +191,7 @@ end
     J = calc_J(integrator, cache)
 
     c1m1 = c1 - 1
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = map(zero, u)
         z1 = @.. uzero
@@ -341,7 +341,7 @@ end
     end
 
     c1m1 = c1 - 1
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = zero(eltype(u))
         @.. z1 = uzero
@@ -517,7 +517,7 @@ end
     integrator.stats.nw += 1
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = map(zero, u)
         z1 = @.. uzero
@@ -658,7 +658,7 @@ end
         integrator.EEst = internalnorm(atmp, t)
 
         if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
-                integrator.u_modified
+                integrator.derivative_discontinuity
             f0 = f(uprev .+ utilde, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             utilde = @.. f0 + tmp
@@ -722,7 +722,7 @@ end
     end
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = zero(eltype(u))
         @.. z1 = uzero
@@ -925,7 +925,7 @@ end
         integrator.EEst = internalnorm(atmp, t)
 
         if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
-                integrator.u_modified
+                integrator.derivative_discontinuity
             @.. utilde = uprev + utilde
             f(fsallast, utilde, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1008,7 +1008,7 @@ end
     integrator.stats.nw += 1
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         z1 = map(zero, u)
         z2 = map(zero, u)
@@ -1226,7 +1226,7 @@ end
         integrator.EEst = internalnorm(atmp, t)
 
         if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
-                integrator.u_modified
+                integrator.derivative_discontinuity
             f0 = f(uprev .+ utilde, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             utilde = @.. f0 + tmp
@@ -1307,7 +1307,7 @@ end
     end
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = zero(eltype(u))
         @.. z1 = uzero
@@ -1615,7 +1615,7 @@ end
         integrator.EEst = internalnorm(atmp, t)
 
         if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
-                integrator.u_modified
+                integrator.derivative_discontinuity
             @.. utilde = uprev + utilde
             f(fsallast, utilde, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1694,7 +1694,7 @@ end
     integrator.stats.nw += 1
     z = Vector{typeof(u)}(undef, num_stages)
     w = Vector{typeof(u)}(undef, num_stages)
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         for i in 1:num_stages
             z[i] = @.. map(zero, u)
@@ -1877,7 +1877,7 @@ end
         integrator.EEst = internalnorm(atmp, t)
 
         if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
-                integrator.u_modified
+                integrator.derivative_discontinuity
             f0 = f(uprev .+ utilde, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             #utilde = @..  1 / γ * dt * f0 + tmp
@@ -1968,7 +1968,7 @@ end
     end
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         for i in 1:num_stages
             @.. z[i] = map(zero, u)
@@ -2208,7 +2208,7 @@ end
         integrator.EEst = internalnorm(atmp, t)
 
         if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
-                integrator.u_modified
+                integrator.derivative_discontinuity
             @.. utilde = uprev + utilde
             f(fsallast, utilde, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)

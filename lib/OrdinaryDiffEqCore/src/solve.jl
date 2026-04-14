@@ -608,7 +608,7 @@ function _ode_init(
     iter = 0
     kshortsize = 0
     reeval_fsal = false
-    u_modified = false
+    derivative_discontinuity = false
     EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
     next_step_tstop = false
@@ -662,7 +662,7 @@ function _ode_init(
         vector_event_last_time,
         last_event_error, accept_step,
         isout, reeval_fsal,
-        u_modified, reinitialize, isdae,
+        derivative_discontinuity, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
         fsalfirst, fsallast, _rng,
         W, P, sqdt,
@@ -972,13 +972,13 @@ function initialize_callbacks!(integrator, initialize_save = true)
     t = integrator.t
     u = integrator.u
     callbacks = integrator.opts.callback
-    integrator.u_modified = true
+    integrator.derivative_discontinuity = true
 
-    u_modified = initialize!(callbacks, u, t, integrator)
+    derivative_discontinuity = initialize!(callbacks, u, t, integrator)
 
     # if the user modifies u, we need to fix previous values before initializing
     # FSAL in order for the starting derivatives to be correct
-    if u_modified
+    if derivative_discontinuity
         if isinplace(integrator.sol.prob)
             recursivecopy!(integrator.uprev, integrator.u)
         else
@@ -1003,7 +1003,7 @@ function initialize_callbacks!(integrator, initialize_save = true)
     end
 
     # reset this as it is now handled so the integrators should proceed as normal
-    integrator.u_modified = false
+    integrator.derivative_discontinuity = false
 
     return if initialize_save
         SciMLBase.save_discretes_if_enabled!(integrator, integrator.opts.callback; skip_duplicates = true)
