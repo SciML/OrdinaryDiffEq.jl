@@ -97,7 +97,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -159,7 +159,7 @@ end
   if integrator.opts.adaptive
     @.. broadcast=false tmp = dt*(k2 - k16) * adaptiveConst
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+    OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp,t))
   end
   f(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
 end
@@ -304,7 +304,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -494,7 +494,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -569,7 +569,7 @@ end
   if integrator.opts.adaptive
     @.. broadcast=false tmp = dt*(k2 - k24) * adaptiveConst
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+    OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp,t))
   end
   f(k, u, p, t+dt)
 end
@@ -828,7 +828,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     f(k, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1118,7 +1118,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1217,7 +1217,7 @@ end
   if integrator.opts.adaptive
     @.. broadcast=false tmp = dt*(k2 - k34) * adaptiveConst
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+    OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp,t))
   end
   f(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
 end
@@ -1562,7 +1562,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)

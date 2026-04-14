@@ -1,6 +1,6 @@
 # JVODE
 function stepsize_controller!(integrator, alg::JVODE)
-    if iszero(integrator.EEst)
+    if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
         η = alg.qmax
     else
         η = integrator.cache.η

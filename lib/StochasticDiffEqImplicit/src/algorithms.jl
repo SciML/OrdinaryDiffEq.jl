@@ -84,7 +84,7 @@ function ImplicitRKMil(;
     return ImplicitRKMil{
         typeof(autodiff), typeof(linsolve), typeof(nlsolve),
         typeof(symplectic ? 1 / 2 : theta), typeof(new_jac_conv_bound),
-        typeof(interpretation), typeof(_unwrap_val(concrete_jac)),
+        interpretation, typeof(_unwrap_val(concrete_jac)),
     }(
         linsolve, nlsolve, symplectic ? 1 / 2 : theta,
         extrapolant,

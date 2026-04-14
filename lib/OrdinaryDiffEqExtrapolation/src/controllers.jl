@@ -11,19 +11,21 @@ function ExtrapolationController(QT, alg; qmin = nothing, qmax = nothing)
     )
 end
 
-mutable struct ExtrapolationControllerCache{QT} <: AbstractControllerCache
+mutable struct ExtrapolationControllerCache{QT, E} <: AbstractControllerCache
     controller::ExtrapolationController{QT}
     beta1::QT
     gamma::QT
     qold::QT
+    EEst::E
 end
 
-function setup_controller_cache(alg, cache, controller::ExtrapolationController{T}) where {T}
-    return ExtrapolationControllerCache(
+function setup_controller_cache(alg, cache, controller::ExtrapolationController{T}, ::Type{E}) where {T, E}
+    return ExtrapolationControllerCache{T, E}(
         controller,
         T(1),
         T(1),
         T(1 // 10^4),
+        oneunit(E),
     )
 end
 
@@ -75,7 +77,7 @@ function stepsize_controller_internal!(
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
     (; controller) = cache
 
-    if iszero(integrator.EEst)
+    if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
         q = inv(controller.qmax)
     else
         # Update gamma and beta1
@@ -85,7 +87,7 @@ function stepsize_controller_internal!(
             cache.beta1
         )
         # Compute new stepsize scaling
-        qtmp = FastPower.fastpower(integrator.EEst, cache.beta1) /
+        qtmp = FastPower.fastpower(OrdinaryDiffEqCore.get_EEst(integrator), cache.beta1) /
             cache.gamma
         @fastmath q = max(inv(controller.qmax), min(inv(controller.qmin), qtmp))
     end
@@ -103,11 +105,12 @@ function stepsize_predictor!(
     # Compute and save the stepsize scaling for order n_new based on the latest error estimate of the current order.
     (; controller) = cache
 
-    if iszero(integrator.EEst)
+    if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
         q = inv(controller.qmax)
     else
         # Initialize
-        (; t, EEst) = integrator
+        t = integrator.t
+        EEst = OrdinaryDiffEqCore.get_EEst(integrator)
         (; stage_number) = integrator.cache
         tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
         s_curr = stage_number[integrator.cache.n_curr - alg.min_order + 1]
@@ -213,7 +216,7 @@ function stepsize_controller_internal!(
             ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation,
             ImplicitHairerWannerExtrapolation,
         }
-        if iszero(integrator.EEst)
+        if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
             q = inv(controller.qmax)
         else
             # Update gamma and beta1
@@ -238,7 +241,7 @@ function stepsize_controller_internal!(
                 cache.beta1
             )
             # Compute new stepsize scaling
-            qtmp = FastPower.fastpower(integrator.EEst, cache.beta1) /
+            qtmp = FastPower.fastpower(OrdinaryDiffEqCore.get_EEst(integrator), cache.beta1) /
                 (cache.gamma)
             @fastmath q = max(
                 inv(controller.qmax),
@@ -247,7 +250,7 @@ function stepsize_controller_internal!(
         end
         integrator.cache.Q[integrator.cache.n_curr + 1] = q
     else
-        if iszero(integrator.EEst)
+        if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
             q = inv(controller.qmax)
         else
             # Update gamma and beta1
@@ -260,7 +263,7 @@ function stepsize_controller_internal!(
                 cache.beta1
             )
             # Compute new stepsize scaling
-            qtmp = FastPower.fastpower(integrator.EEst, cache.beta1) /
+            qtmp = FastPower.fastpower(OrdinaryDiffEqCore.get_EEst(integrator), cache.beta1) /
                 cache.gamma
             @fastmath q = max(
                 inv(controller.qmax),
