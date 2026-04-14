@@ -15,7 +15,7 @@ function alg_autodiff(
     return alg.autodiff
 end
 
-Base.@pure function determine_chunksize(u, alg::SciMLBase.DEAlgorithm)
+Base.@pure function determine_chunksize(u, alg::SciMLBase.AbstractDEAlgorithm)
     determine_chunksize(u, get_chunksize(alg))
 end
 Base.@pure function determine_chunksize(u, CS)

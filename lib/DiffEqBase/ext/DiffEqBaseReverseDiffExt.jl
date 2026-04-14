@@ -148,7 +148,7 @@ function DiffEqBase.solve_up(
 end
 
 function DiffEqBase.solve_up(
-        prob::DiffEqBase.DEProblem,
+        prob::DiffEqBase.AbstractDEProblem,
         sensealg::Union{
             SciMLBase.AbstractOverloadingSensitivityAlgorithm,
             Nothing,
@@ -162,7 +162,7 @@ function DiffEqBase.solve_up(
 end
 
 function DiffEqBase.solve_up(
-        prob::DiffEqBase.DEProblem,
+        prob::DiffEqBase.AbstractDEProblem,
         sensealg::Union{
             SciMLBase.AbstractOverloadingSensitivityAlgorithm,
             Nothing,

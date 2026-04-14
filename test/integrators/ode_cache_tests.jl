@@ -154,7 +154,7 @@ affect!_adapt = function (integrator)
     set_proposed_dt!(integrator, dt)
     integrator.opts.dtmax = dt
     integrator.dtcache = dt
-    u_modified!(integrator, false)
+    derivative_discontinuity!(integrator, false)
     return nothing
 end
 callback_adapt = DiscreteCallback(

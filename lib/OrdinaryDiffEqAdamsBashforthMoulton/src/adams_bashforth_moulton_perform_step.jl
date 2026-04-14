@@ -45,7 +45,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -78,7 +78,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, ralk2, k, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -107,7 +107,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -138,7 +138,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, ralk2, k, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -175,7 +175,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3, k4) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -212,7 +212,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -251,7 +251,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3, k4) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -288,7 +288,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, t5, t6, t7, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -335,7 +335,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3, k4, k5) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     if cache.step <= 4
@@ -375,7 +375,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -420,7 +420,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3, k4, k5) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -460,7 +460,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4, t5, t6, t7, t8, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -528,7 +528,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, tab) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -594,7 +594,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k4, dts, g, ϕstar_n, ϕstar_nm1, order, atmp, utilde, bs3cache, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -659,7 +659,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -734,7 +734,7 @@ end
         thread,
     ) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -807,7 +807,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -889,7 +889,7 @@ end
         thread,
     ) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -969,7 +969,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, tab) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -1042,7 +1042,7 @@ end
         thread,
     ) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -1113,7 +1113,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -1192,7 +1192,7 @@ end
         thread,
     ) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -1269,7 +1269,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -1356,7 +1356,7 @@ end
             order, atmp, utilde, rk4cache, thread,
         ) = cache
         k1 = integrator.fsalfirst
-        if integrator.u_modified
+        if integrator.derivative_discontinuity
             cache.step = 1
         end
         k = cache.step

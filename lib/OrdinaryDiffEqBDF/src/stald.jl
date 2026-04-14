@@ -174,7 +174,7 @@ end
 """
     stald_reset!(stald)
 
-Reset STALD state (e.g., after u_modified or reinit).
+Reset STALD state (e.g., after derivative_discontinuity or reinit).
 """
 function stald_reset!(stald::StabilityLimitDetectionState{T}) where {T}
     z = zero(T)

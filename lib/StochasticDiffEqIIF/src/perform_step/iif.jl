@@ -47,7 +47,7 @@ end
         tmp = exp(A * dt) * (uprev + 0.5dt * integrator.f.f2(uprev, p, t) + integrator.f.g(uprev, p, t) * W.dW)
     end
 
-    if integrator.iter > 1 && !integrator.u_modified
+    if integrator.iter > 1 && !integrator.derivative_discontinuity
         uhold[1] = current_extrapolant(t + dt, integrator)
     end # else uhold is previous value.
 
@@ -119,7 +119,7 @@ end
     M = exp(A * dt)
     mul!(tmp, M, rtmp3)
 
-    if integrator.iter > 1 && !integrator.u_modified
+    if integrator.iter > 1 && !integrator.derivative_discontinuity
         current_extrapolant!(uhold, t + dt, integrator)
     end # else uhold is previous value.
 
@@ -192,7 +192,7 @@ end
         tmp .+= rtmp3
     end
 
-    if integrator.iter > 1 && !integrator.u_modified
+    if integrator.iter > 1 && !integrator.derivative_discontinuity
         current_extrapolant!(uhold, t + dt, integrator)
     end # else uhold is previous value.
 

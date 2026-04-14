@@ -132,7 +132,7 @@ end
 
     repeat_step = false
 
-    if integrator.success_iter > 0 && !integrator.u_modified &&
+    if integrator.success_iter > 0 && !integrator.derivative_discontinuity &&
             alg.extrapolant == :interpolant
         current_extrapolant!(u, t + dt, integrator)
     elseif alg.extrapolant == :linear
