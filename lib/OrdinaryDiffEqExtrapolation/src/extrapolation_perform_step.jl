@@ -363,7 +363,7 @@ function perform_step!(
         let n_curr = n_curr, uprev = uprev, dt = dt, p = p, t = t, T = T, W = W,
                 integrator = integrator, cache = cache, repeat_step = repeat_step,
                 k_tmps = k_tmps, u_tmps = u_tmps, u_tmps2 = u_tmps2, diff1 = diff1,
-                diff2 = diff2
+                diff2 = diff2, J = J
 
             @threaded alg.threading for i in 1:2
                 startIndex = (i == 1) ? 1 : n_curr + 1
@@ -629,7 +629,7 @@ function perform_step!(
     else
         J = calc_J(integrator, cache) # Store the calculated jac as it won't change in internal discretisation
         let n_curr = n_curr, dt = dt, integrator = integrator, cache = cache,
-                repeat_step = repeat_step, uprev = uprev, T = T
+                repeat_step = repeat_step, uprev = uprev, T = T, J = J
 
             @threaded alg.threading for i in 1:2
                 startIndex = (i == 1) ? 1 : n_curr + 1
@@ -1365,7 +1365,7 @@ function perform_step!(
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -1472,7 +1472,7 @@ function perform_step!(
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i) #Use flag to avoid union
@@ -1798,7 +1798,7 @@ function perform_step!(
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
+                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -1853,7 +1853,7 @@ function perform_step!(
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, integrator = integrator, p = p, t = t, T = T
+                    dt = dt, integrator = integrator, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -2616,7 +2616,7 @@ function perform_step!(
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
+                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -2672,7 +2672,7 @@ function perform_step!(
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, integrator = integrator, p = p, t = t, T = T
+                    dt = dt, integrator = integrator, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -2994,7 +2994,7 @@ function perform_step!(
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -3107,7 +3107,7 @@ function perform_step!(
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     tid = Threads.threadid()
@@ -3438,7 +3438,7 @@ function perform_step!(
             # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T
+                    dt = dt, u_temp2 = u_temp2, u_temp2 = u_temp2, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -3492,7 +3492,7 @@ function perform_step!(
             end
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
-                    dt = dt, integrator = integrator, p = p, t = t, T = T
+                    dt = dt, integrator = integrator, p = p, t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
@@ -3811,7 +3811,7 @@ function perform_step!(
             # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
@@ -3921,7 +3921,7 @@ function perform_step!(
         else
             let n_curr = n_curr, subdividing_sequence = subdividing_sequence, uprev = uprev,
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
-                    t = t, T = T
+                    t = t, T = T, J = J
 
                 @threaded alg.threading for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
