@@ -41,3 +41,4 @@ OrdinaryDiffEqLowStorageRK = {path = "../../lib/OrdinaryDiffEqLowStorageRK"}
 OrdinaryDiffEqRosenbrock = {path = "../../lib/OrdinaryDiffEqRosenbrock"}
 OrdinaryDiffEqSDIRK = {path = "../../lib/OrdinaryDiffEqSDIRK"}
 OrdinaryDiffEqSSPRK = {path = "../../lib/OrdinaryDiffEqSSPRK"}
+StochasticDiffEq = {path = "../../lib/StochasticDiffEq"}
