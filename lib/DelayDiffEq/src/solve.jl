@@ -279,7 +279,7 @@ function SciMLBase.__init(
             nothing, uEltypeNoUnits, uBottomEltypeNoUnits,
             tTypeNoUnits, uprev, f_with_history, t0,
             tType(dt), Val{isinplace(prob)},
-            OrdinaryDiffEqCore.DEVerbosity()
+            DiffEqBase.DEVerbosity()
         )
     else
         OrdinaryDiffEqCore.alg_cache(
@@ -287,7 +287,7 @@ function SciMLBase.__init(
             uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2,
             f_with_history, t0, zero(tType), reltol_internal, p,
             calck,
-            Val(isinplace(prob)), OrdinaryDiffEqCore.DEVerbosity()
+            Val(isinplace(prob)), DiffEqBase.DEVerbosity()
         )
     end
 
