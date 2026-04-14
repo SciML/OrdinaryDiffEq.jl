@@ -122,12 +122,17 @@ abstol = 1.0e-3
     sol_op(tv, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol
 )
 
-# higher derivatives should be zero
+# higher derivatives should be zero.
+# `sol(tv, Val{k})` returns a DiffEqArray; `.== 0` yields a VectorOfArray whose
+# `.u` is Vector{BitVector} (one per timestep). Iterate `.u` to compare each
+# timestep's pattern — `map(==(target), ::VectorOfArray)` broadcasts
+# element-wise over the underlying matrix and collapses the pattern.
+
 # second derivative, no index
 @test (sol_ip(t, Val{2}) .== 0) == [false, false, true]
-@test all(map(==([false, false, true]), sol_ip(tv, Val{2}) .== 0))
+@test all(==([false, false, true]), (sol_ip(tv, Val{2}) .== 0).u)
 @test (sol_op(t, Val{2}) .== 0) == [false, false, true]
-@test all(map(==([false, false, true]), sol_op(tv, Val{2}) .== 0))
+@test all(==([false, false, true]), (sol_op(tv, Val{2}) .== 0).u)
 
 # second derivative, scalar index
 @test sol_ip(t, Val{2}, idxs = idxs) == 0
@@ -137,15 +142,15 @@ abstol = 1.0e-3
 
 # second derivative, vector index
 @test (sol_ip(t, Val{2}, idxs = idxsv) .== 0) == [false, true]
-@test all(map(==([false, true]), sol_ip(tv, Val{2}, idxs = idxsv) .== 0))
+@test all(==([false, true]), (sol_ip(tv, Val{2}, idxs = idxsv) .== 0).u)
 @test (sol_op(t, Val{2}, idxs = idxsv) .== 0) == [false, true]
-@test all(map(==([false, true]), sol_op(tv, Val{2}, idxs = idxsv) .== 0))
+@test all(==([false, true]), (sol_op(tv, Val{2}, idxs = idxsv) .== 0).u)
 
 # third derivative, no index
 @test (sol_ip(t, Val{3}) .== 0) == [false, false, true]
-@test all(map(==([false, false, true]), sol_ip(tv, Val{3}) .== 0))
+@test all(==([false, false, true]), (sol_ip(tv, Val{3}) .== 0).u)
 @test (sol_op(t, Val{3}) .== 0) == [false, false, true]
-@test all(map(==([false, false, true]), sol_op(tv, Val{3}) .== 0))
+@test all(==([false, false, true]), (sol_op(tv, Val{3}) .== 0).u)
 
 # third derivative, scalar index
 @test sol_ip(t, Val{3}, idxs = idxs) == 0
@@ -155,6 +160,6 @@ abstol = 1.0e-3
 
 # third derivative, vector index
 @test (sol_ip(t, Val{3}, idxs = idxsv) .== 0) == [false, true]
-@test all(map(==([false, true]), sol_ip(tv, Val{3}, idxs = idxsv) .== 0))
+@test all(==([false, true]), (sol_ip(tv, Val{3}, idxs = idxsv) .== 0).u)
 @test (sol_op(t, Val{3}, idxs = idxsv) .== 0) == [false, true]
-@test all(map(==([false, true]), sol_op(tv, Val{3}, idxs = idxsv) .== 0))
+@test all(==([false, true]), (sol_op(tv, Val{3}, idxs = idxsv) .== 0).u)
