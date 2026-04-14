@@ -350,7 +350,7 @@ function SciMLBase.__init(
         typeof(internalnorm(u, t0))
     end
 
-    controller_cache = OrdinaryDiffEqCore.setup_controller_cache(alg.alg, cache, controller)
+    controller_cache = OrdinaryDiffEqCore.setup_controller_cache(alg.alg, cache, controller, EEstT)
 
     # create integrator combining the new defined problem function with history
     # information, the new solution, the parameters of the ODE integrator, and
@@ -381,10 +381,11 @@ function SciMLBase.__init(
     dtacc = tType(1)
 
     fsalfirst, fsallast = OrdinaryDiffEqCore.get_fsalfirstlast(cache, rate_prototype)
+    OrdinaryDiffEqCore.set_EEst!(controller_cache, EEst)
     integrator = DDEIntegrator{
         typeof(alg.alg), isinplace(prob), typeof(u0), tType,
         typeof(p),
-        typeof(eigen_est), EEstT, QT, typeof(tdir), typeof(k), typeof(sol),
+        typeof(eigen_est), QT, typeof(tdir), typeof(k), typeof(sol),
         typeof(f_with_history), typeof(cache),
         typeof(ode_integrator), typeof(fpsolver),
         typeof(opts), typeof(discontinuity_abstol),
@@ -421,7 +422,6 @@ function SciMLBase.__init(
         dtpropose,
         tdir,
         eigen_est,
-        EEst,
         success_iter,
         iter,
         length(ts),

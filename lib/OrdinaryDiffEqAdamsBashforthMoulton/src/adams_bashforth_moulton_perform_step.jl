@@ -561,8 +561,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:2
                     dts[i] = dts[i + 1]
                 end
@@ -628,8 +628,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:2
                     dts[i] = dts[i + 1]
                 end
@@ -698,8 +698,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:3
                     dts[i] = dts[i + 1]
                 end
@@ -774,8 +774,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:3
                     dts[i] = dts[i + 1]
                 end
@@ -853,8 +853,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:4
                     dts[i] = dts[i + 1]
                 end
@@ -936,8 +936,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:4
                     dts[i] = dts[i + 1]
                 end
@@ -1006,8 +1006,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:2
                     dts[i] = dts[i + 1]
                 end
@@ -1080,8 +1080,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:2
                     dts[i] = dts[i + 1]
                 end
@@ -1156,8 +1156,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:3
                     dts[i] = dts[i + 1]
                 end
@@ -1236,8 +1236,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:3
                     dts[i] = dts[i + 1]
                 end
@@ -1319,8 +1319,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:4
                     dts[i] = dts[i + 1]
                 end
@@ -1408,8 +1408,8 @@ end
                     integrator.opts.reltol, integrator.opts.internalnorm,
                     t
                 )
-                integrator.EEst = integrator.opts.internalnorm(atmp, t)
-                if integrator.EEst > one(integrator.EEst)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+                if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                     dts[1] = dts[2]
                     dts[2] = dts[3]
                     dts[4] = dts[5]
@@ -1472,8 +1472,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:12
                     dts[i] = dts[i + 1]
                 end
@@ -1510,11 +1510,12 @@ end
                 errm2 = integrator.opts.internalnorm(atmpm2, t)
                 errm1 = integrator.opts.internalnorm(atmpm1, t)
                 errp1 = integrator.opts.internalnorm(atmpp1, t)
-                if max(errm2, errm1) <= integrator.EEst
+                if max(errm2, errm1) <= OrdinaryDiffEqCore.get_EEst(integrator)
                     cache.order = order - 1
-                elseif errp1 < integrator.EEst
+                elseif errp1 < OrdinaryDiffEqCore.get_EEst(integrator)
                     cache.order = min(order + 1, max_order)
-                    integrator.EEst = one(integrator.EEst)   # for keeping the stepsize constant in the next step
+                    # for keeping the stepsize constant in the next step
+                    OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
                 end # if
             end # step <= 4
         end # integrator.opts.adaptive
@@ -1569,8 +1570,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:12
                     dts[i] = dts[i + 1]
                 end
@@ -1609,11 +1610,12 @@ end
                 errm2 = integrator.opts.internalnorm(atmpm2, t)
                 errm1 = integrator.opts.internalnorm(atmpm1, t)
                 errp1 = integrator.opts.internalnorm(atmpp1, t)
-                if max(errm2, errm1) <= integrator.EEst
+                if max(errm2, errm1) <= OrdinaryDiffEqCore.get_EEst(integrator)
                     cache.order = order - 1
-                elseif errp1 < integrator.EEst
+                elseif errp1 < OrdinaryDiffEqCore.get_EEst(integrator)
                     cache.order = min(order + 1, max_order)
-                    integrator.EEst = one(integrator.EEst)    # for keeping the stepsize constant in the next step
+                    # for keeping the stepsize constant in the next step
+                    OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
                 end
             end
         end

@@ -44,7 +44,7 @@ end
         perform_predict!(cache)
         cache.Δ = integrator.u - integrator.uprev
         update_nordsieck_vector!(cache)
-        if integrator.opts.adaptive && integrator.EEst >= one(integrator.EEst)
+        if integrator.opts.adaptive && OrdinaryDiffEqCore.get_EEst(integrator) >= one(OrdinaryDiffEqCore.get_EEst(integrator))
             cache.order = 1
         end
     else
@@ -75,8 +75,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:5
                     dts[i] = dts[i + 1]
                 end
@@ -145,7 +145,7 @@ end
         perform_predict!(cache)
         @.. broadcast = false cache.Δ = integrator.u - integrator.uprev
         update_nordsieck_vector!(cache)
-        if integrator.opts.adaptive && integrator.EEst >= one(integrator.EEst)
+        if integrator.opts.adaptive && OrdinaryDiffEqCore.get_EEst(integrator) >= one(OrdinaryDiffEqCore.get_EEst(integrator))
             cache.order = 1
         end
     else
@@ -176,8 +176,8 @@ end
                 atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:5
                     dts[i] = dts[i + 1]
                 end
@@ -247,8 +247,8 @@ end
             cache.Δ, uprev, integrator.u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
-        if integrator.EEst > one(integrator.EEst)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
+        if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
             for i in 1:12
                 dts[i] = dts[i + 1]
             end
@@ -318,8 +318,8 @@ end
             atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
-        if integrator.EEst > one(integrator.EEst)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
+        if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
             for i in 1:12
                 dts[i] = dts[i + 1]
             end

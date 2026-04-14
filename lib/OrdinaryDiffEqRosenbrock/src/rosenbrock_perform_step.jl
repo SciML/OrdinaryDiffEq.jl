@@ -134,13 +134,13 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
             algvar = reshape(cache.algebraic_vars, size(u))
             invatol = inv(integrator.opts.abstol)
             @.. atmp = ifelse(algvar, fsallast, false) * invatol
-            integrator.EEst += integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
     cache.linsolve = linres.cache
@@ -239,12 +239,12 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
             invatol = inv(integrator.opts.abstol)
             @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) * invatol
-            integrator.EEst += integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
     cache.linsolve = linres.cache
@@ -273,7 +273,7 @@ end
     # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
     if !issuccess_W(W)
-        integrator.EEst = 2
+        OrdinaryDiffEqCore.set_EEst!(integrator, 2)
         return nothing
     end
 
@@ -320,13 +320,13 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
             invatol = inv(integrator.opts.abstol)
             atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) *
                 invatol
-            integrator.EEst += integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
     integrator.k[1] = k₁
@@ -358,7 +358,7 @@ end
     # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
     if !issuccess_W(W)
-        integrator.EEst = 2
+        OrdinaryDiffEqCore.set_EEst!(integrator, 2)
         return nothing
     end
 
@@ -403,13 +403,13 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
             invatol = inv(integrator.opts.abstol)
             atmp = ifelse(integrator.differential_vars, false, integrator.fsallast) .*
                 invatol
-            integrator.EEst += integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
 
@@ -449,7 +449,7 @@ end
     # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
-        integrator.EEst = 2
+        OrdinaryDiffEqCore.set_EEst!(integrator, 2)
         return nothing
     end
 
@@ -518,7 +518,7 @@ end
             du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     if integrator.opts.calck
@@ -532,7 +532,7 @@ end
                 end
             end
             if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
-                    (integrator.EEst < 1.0)
+                    (OrdinaryDiffEqCore.get_EEst(integrator) < 1.0)
                 k2 = 0.5 * (
                     uprev + u +
                         0.5 *
@@ -548,7 +548,7 @@ end
                 end
                 EEst = norm(du2) /
                     norm(integrator.opts.abstol .+ integrator.opts.reltol .* k2)
-                integrator.EEst = max(EEst, integrator.EEst)
+                OrdinaryDiffEqCore.set_EEst!(integrator, max(EEst, OrdinaryDiffEqCore.get_EEst(integrator)))
             end
         else
             # No H matrix: set k[1]=f(uprev), k[2]=f(u_new) for Hermite interpolation
@@ -667,7 +667,7 @@ end
             atmp, du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     if integrator.opts.calck
@@ -681,7 +681,7 @@ end
                 end
             end
             if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
-                    (integrator.EEst < 1.0)
+                    (OrdinaryDiffEqCore.get_EEst(integrator) < 1.0)
                 ks[2] = 0.5 * (
                     uprev + u +
                         0.5 *
@@ -701,7 +701,7 @@ end
                 end
                 EEst = norm(du2) /
                     norm(integrator.opts.abstol .+ integrator.opts.reltol .* ks[2])
-                integrator.EEst = max(EEst, integrator.EEst)
+                OrdinaryDiffEqCore.set_EEst!(integrator, max(EEst, OrdinaryDiffEqCore.get_EEst(integrator)))
             end
         else
             # No H matrix: set k[1]=fsalfirst, k[2]=f(u_new) for interpolation
@@ -851,7 +851,7 @@ end
             err_vec, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     # Dense output
@@ -1025,7 +1025,7 @@ end
             atmp, du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     # Dense output

@@ -109,7 +109,7 @@ end
         tmp = calculate_residuals_mip(
             tmp, utilde, uprev, u, abstol, reltol, internalnorm, t, iip
         ) # error computation maybe in place
-        integrator.EEst = internalnorm(tmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(tmp, t))
     end
 
     fsallast = f_mip!(fsallast, cache.tmp, Â, f.f2, u, p, t + dt, iip) # derivative estimation for interpolation
