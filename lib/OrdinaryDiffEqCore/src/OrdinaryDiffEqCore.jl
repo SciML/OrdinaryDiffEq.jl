@@ -52,7 +52,7 @@ using ArrayInterface: ArrayInterface, issingular
 
 import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
-import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
+import StaticArraysCore: SArray, SVector, StaticArray, MMatrix,
     StaticMatrix
 
 # Integrator Interface
