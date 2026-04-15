@@ -1,11 +1,11 @@
 function ROCK4ConstantCache(T, T2, zprev)
-    ms = SVector{50, Int}(
+    ms = Int[
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
         20,
         22, 24, 26, 28, 30, 32, 34, 36, 38, 41, 44, 47, 50, 53, 56, 59,
         63, 67, 71, 76, 81, 86,
-        92, 98, 105, 112, 120, 129, 138, 148
-    )
+        92, 98, 105, 112, 120, 129, 138, 148,
+    ]
     fpa = [
         (
             -0.149352078672699, 0.629768962985252,
@@ -4945,9 +4945,9 @@ function ROCK4ConstantCache(T, T2, zprev)
         0.9136748776971255,
     ]
 
-    _fpa = map(x -> SVector{6, T}(x), fpa)
-    _fpb = map(x -> SVector{4, T}(x), fpb)
-    _fpbe = map(x -> SVector{5, T}(x), fpbe)
+    _fpa = map(x -> NTuple{6, T}(x), fpa)
+    _fpb = map(x -> NTuple{4, T}(x), fpb)
+    _fpbe = map(x -> NTuple{5, T}(x), fpbe)
     return ROCK4ConstantCache{eltype(_fpa), eltype(_fpb), eltype(_fpbe), T2, typeof(zprev)}(
         ms,
         _fpa,
