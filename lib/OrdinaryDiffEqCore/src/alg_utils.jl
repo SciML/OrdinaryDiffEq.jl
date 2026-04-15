@@ -211,6 +211,13 @@ anyadaptive(alg) = isadaptive(alg)
 has_dtnew_modification(alg) = false
 dtnew_modification(integrator, alg, dtnew) = dtnew
 
+# Whether the algorithm's alg_cache / perform_step! handle `u === nothing` directly.
+# Default: false, and __init coerces a null u0 to Float64[] so generic cache code
+# (zero(u), similar(u), broadcasts) still works. Solvers that want to preserve the
+# `nothing` signal — e.g., to bypass nonlinear solvers or skip allocation — override
+# to true.
+allows_null_u0(alg) = false
+
 # Whether an algorithm uses a posteriori dt estimates (always accepts, then picks next dt).
 # Default is false. CaoTauLeaping overrides to true.
 isaposteriori(alg) = false

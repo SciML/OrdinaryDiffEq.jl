@@ -19,3 +19,7 @@ dt_required(alg::IDSolve) = false
 isdiscretealg(alg::IDSolve) = true
 
 isadaptive(alg::IDSolve) = true
+
+# Preserve `u === nothing` through __init so alg_cache(alg, ::Nothing, ...) fires
+# and we skip building a NonlinearProblem over an empty state.
+allows_null_u0(alg::IDSolve) = true

@@ -284,9 +284,12 @@ function _ode_init(
         u = recursivecopy(prob.u0)
     end
 
-    # Handle null u0 (e.g., MTK systems with only callbacks and no state variables)
-    # Convert to empty Float64 array to allow initialization to proceed
-    if u === nothing
+    # Null u0 (e.g., MTK systems with only callbacks and no state variables).
+    # Most solvers' caches are built with zero(u)/similar(u) and can't ingest `nothing`,
+    # so coerce to Float64[] to let them limp through. Solvers that can handle the
+    # `nothing` signal directly (e.g., IDSolve bypasses NonlinearSolve entirely)
+    # opt in via allows_null_u0 and keep the richer signal.
+    if u === nothing && !allows_null_u0(_alg)
         u = Float64[]
     end
 

@@ -135,6 +135,22 @@ if TEST_GROUP != "QA"
         @test integ.cache.nlcache.prob isa NonlinearProblem
     end
 
+    @testset "Null u0 bypasses NonlinearSolve" begin
+        # IDSolve overrides allows_null_u0 so `nothing` reaches alg_cache unchanged
+        # and the `::Nothing` dispatch returns a cache with nlcache=nothing. Without
+        # the opt-in, u0 is coerced to Float64[] and NonlinearSolve fails building
+        # a 0x1 Jacobian for the least-squares branch.
+        fn = ImplicitDiscreteFunction(; resid_prototype = [0.0]) do du, unext, u, p, t
+            du[1] = 1
+        end
+        pr = ImplicitDiscreteProblem(fn, nothing, (0, 1))
+        integ = init(pr, IDSolve())
+        @test integ.cache.u === nothing
+        @test integ.cache.nlcache === nothing
+        sol = solve(pr, IDSolve())
+        @test SciMLBase.successful_retcode(sol)
+    end
+
     @testset "InitialFailure thrown" begin
         function bad(u_next, u, p, t)
             [u_next[1] - u_next[2], u_next[1] - 3, u_next[2] - 4]
