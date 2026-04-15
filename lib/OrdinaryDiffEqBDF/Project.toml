@@ -72,7 +72,7 @@ SafeTestsets = "0.1.0"
 StaticArrays = "1.9"
 
 [targets]
-test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "StaticArrays", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg", "JET", "Aqua"]
+test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "StaticArrays", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg"]
 
 [sources.OrdinaryDiffEqSDIRK]
 path = "../OrdinaryDiffEqSDIRK"
