@@ -3,11 +3,10 @@ using Test
 using SafeTestsets
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
-const ORIGINAL_PROJECT = dirname(Base.active_project())
 
 function activate_qa_env()
     Pkg.activate(joinpath(@__DIR__, "qa"))
-    Pkg.instantiate()
+    return Pkg.instantiate()
 end
 
 # Run functional tests
@@ -24,6 +23,5 @@ end
 # invalidates compiled code and causes spurious runtime allocations.
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
     activate_qa_env()
-    @time @safetestset "Allocation Tests" include("allocation_tests.jl")
-    Pkg.activate(ORIGINAL_PROJECT)
+    @time @safetestset "Allocation Tests" include("qa/allocation_tests.jl")
 end

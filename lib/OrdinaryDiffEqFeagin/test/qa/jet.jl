@@ -1,0 +1,8 @@
+import OrdinaryDiffEqFeagin
+using JET
+
+@testset "JET Tests" begin
+    test_package(
+        OrdinaryDiffEqFeagin, target_modules = (OrdinaryDiffEqFeagin,), mode = :typo
+    )
+end

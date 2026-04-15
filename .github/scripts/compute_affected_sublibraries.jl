@@ -29,6 +29,12 @@
 #   Core on ["lts", "1.11", "1", "pre"]
 #   QA on ["1"]
 #
+# A group that needs test-only deps beyond the sublibrary's [targets].test list should
+# carry an isolated environment at test/<group>/Project.toml that runtests.jl activates
+# before running that group. This keeps heavy tooling (JET, Aqua, AllocCheck, CUDA, MTK, …)
+# out of the main test env and out of reverse-dependency resolution. See CONTRIBUTING.md
+# ("Per-group test environments") for the standard pattern.
+#
 # Directly changed packages get their full version matrix.
 # Transitively affected packages (reverse deps) only run on version "1".
 #

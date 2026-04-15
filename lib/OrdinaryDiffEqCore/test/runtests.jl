@@ -8,6 +8,11 @@ function activate_gpu_env()
     return Pkg.instantiate()
 end
 
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    return Pkg.instantiate()
+end
+
 # Run GPU tests
 if TEST_GROUP == "GPU"
     activate_gpu_env()
@@ -19,9 +24,10 @@ end
 # Allocation tests must run before JET because JET's static analysis
 # invalidates compiled code and causes spurious runtime allocations.
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
-    @time @safetestset "Core Infrastructure AllocCheck Tests" include("alloccheck.jl")
-    @time @safetestset "JET Tests" include("jet.jl")
-    @time @safetestset "Aqua" include("qa.jl")
+    activate_qa_env()
+    @time @safetestset "Core Infrastructure AllocCheck Tests" include("qa/alloccheck.jl")
+    @time @safetestset "JET Tests" include("qa/jet.jl")
+    @time @safetestset "Aqua" include("qa/qa.jl")
 end
 
 # Functional tests
