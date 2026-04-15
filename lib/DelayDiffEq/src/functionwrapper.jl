@@ -13,11 +13,11 @@ macro wrap_h(signature)
         else
             if isinplace(f)
                 let _f = f.$name, h = h
-                    ($(args_wo_h...),) -> _f($(args...))
+                    ($(args_wo_h...)) -> _f($(args...))
                 end
             else
                 let _f = f.$name, h = h
-                    ($(args_wo_h[2:end]...),) -> _f($(args[2:end]...))
+                    ($(args_wo_h[2:end]...)) -> _f($(args[2:end]...))
                 end
             end
         end
