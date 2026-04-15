@@ -1,7 +1,7 @@
 @verbosity_specifier DEVerbosity begin
     toggles = (
         :linear_verbosity, :nonlinear_verbosity,
-        :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability,
+        :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability, :inconsistent_input,
         :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
         :w_factorization, :newton_iterations,
@@ -29,6 +29,7 @@
             max_iters = Silent(),
             dt_min_unstable = Silent(),
             instability = Silent(),
+            inconsistent_input = Silent(),
             newton_convergence = Silent(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -65,6 +66,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            inconsistent_input = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -101,6 +103,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            inconsistent_input = WarnLevel(),
             newton_convergence = Silent(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -137,6 +140,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            inconsistent_input = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -173,6 +177,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            inconsistent_input = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = InfoLevel(),
             step_accepted = InfoLevel(),
@@ -205,7 +210,7 @@
     groups = (
         error_control = (
             :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable,
-            :instability, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
+            :instability, :inconsistent_input, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         ),
         performance = (
             :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
@@ -235,8 +240,8 @@ end
 """
     DEVerbosity <: AbstractVerbositySpecifier
 
-Verbosity configuration for OrdinaryDiffEq.jl solvers, providing fine-grained control over
-diagnostic messages, warnings, and errors during ODE solution.
+Verbosity configuration for differential equation solvers, providing fine-grained control over
+diagnostic messages, warnings, and errors during solution.
 
 # Fields
 
@@ -290,7 +295,7 @@ diagnostic messages, warnings, and errors during ODE solution.
 
     DEVerbosity(preset::AbstractVerbosityPreset)
 
-Create an `DEVerbosity` using a preset configuration:
+Create a `DEVerbosity` using a preset configuration:
 - `SciMLLogging.None()`: All messages disabled
 - `SciMLLogging.Minimal()`: Only critical errors and fatal issues
 - `SciMLLogging.Standard()`: Balanced verbosity (default)
@@ -299,7 +304,7 @@ Create an `DEVerbosity` using a preset configuration:
 
     DEVerbosity(; preset=nothing, error_control=nothing, performance=nothing, numerical=nothing, sde_specific=nothing, dde_specific=nothing, kwargs...)
 
-Create an `DEVerbosity` with group-level or individual field control.
+Create a `DEVerbosity` with group-level or individual field control.
 
 # Examples
 
@@ -329,13 +334,17 @@ verbose = DEVerbosity(
 function DEVerbosity end
 
 const DEFAULT_VERBOSE = DEVerbosity()
+const NONE_VERBOSE = DEVerbosity(SciMLLogging.None())
 
 @inline function _process_verbose_param(verbose::SciMLLogging.AbstractVerbosityPreset)
     return DEVerbosity(verbose)
 end
 
-@inline function _process_verbose_param(verbose::Bool)
-    return verbose ? DEFAULT_VERBOSE : DEVerbosity(SciMLLogging.None())
+@inline _process_verbose_param(::Val{true}) = DEFAULT_VERBOSE
+@inline _process_verbose_param(::Val{false}) = NONE_VERBOSE
+
+Base.@constprop :aggressive @inline function _process_verbose_param(verbose::Bool)
+    return verbose ? DEFAULT_VERBOSE : NONE_VERBOSE
 end
 
 @inline _process_verbose_param(verbose::DEVerbosity) = verbose

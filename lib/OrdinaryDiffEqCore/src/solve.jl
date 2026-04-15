@@ -1,4 +1,4 @@
-function SciMLBase.__solve(
+Base.@constprop :aggressive function SciMLBase.__solve(
         prob::Union{
             SciMLBase.AbstractODEProblem,
             SciMLBase.AbstractDAEProblem,
@@ -16,7 +16,7 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
-function SciMLBase.__init(
+Base.@constprop :aggressive function SciMLBase.__init(
         prob::Union{
             SciMLBase.AbstractODEProblem,
             SciMLBase.AbstractDAEProblem,
@@ -44,7 +44,7 @@ Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
 separated from `__init` so that SDE packages can call it directly, bypassing
 method dispatch (which would otherwise re-enter SDE's more specific `__init`).
 """
-function _ode_init(
+Base.@constprop :aggressive function _ode_init(
         prob,
         alg,
         timeseries_init = (),

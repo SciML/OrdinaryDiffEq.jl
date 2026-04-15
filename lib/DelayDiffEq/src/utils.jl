@@ -324,7 +324,7 @@ function build_history_function(
         uBottomEltypeNoUnits, tTypeNoUnits, ode_uprev,
         ode_uprev, ode_f, t0, zero(tType), reltol, p,
         calck,
-        Val(isinplace(prob)), OrdinaryDiffEqCore.DEVerbosity()
+        Val(isinplace(prob)), DiffEqBase.DEVerbosity()
     )
 
     # build dense interpolation of history
@@ -444,7 +444,7 @@ function build_history_function(
         uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits, ode_uprev, ode_f, t0,
         zero(tType), Val{isinplace(prob)},
-        OrdinaryDiffEqCore.DEVerbosity()
+        DiffEqBase.DEVerbosity()
     )
 
     ode_alg_choice = iscomposite(alg) ? Int[] : nothing

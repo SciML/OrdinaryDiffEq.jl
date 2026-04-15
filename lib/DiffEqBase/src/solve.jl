@@ -88,9 +88,9 @@ function init_call(
     end
 end
 
-function init(
+Base.@constprop :aggressive function init(
         prob::AbstractDEProblem, args...; sensealg = nothing,
-        u0 = nothing, p = nothing, kwargs...
+        u0 = nothing, p = nothing, verbose = true, kwargs...
     )
     if sensealg === nothing && has_kwargs(prob) && haskey(prob.kwargs, :sensealg)
         sensealg = prob.kwargs[:sensealg]
@@ -99,14 +99,14 @@ function init(
     u0 = u0 !== nothing ? u0 : prob.u0
     p = p !== nothing ? p : prob.p
 
-    return init_up(prob, sensealg, u0, p, args...; kwargs...)
+    return init_up(prob, sensealg, u0, p, args...; verbose, kwargs...)
 end
 
 function init(prob::AbstractJumpProblem, args...; kwargs...)
     return init_call(prob, args...; kwargs...)
 end
 
-function init_up(prob::AbstractDEProblem, sensealg, u0, p, args...; kwargs...)
+Base.@constprop :aggressive function init_up(prob::AbstractDEProblem, sensealg, u0, p, args...; kwargs...)
     alg = extract_alg(args, kwargs, has_kwargs(prob) ? prob.kwargs : kwargs)
     return if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
@@ -588,9 +588,9 @@ the extension to other types is straightforward.
    to save size or because the user does not care about the others. Finally, with
    `progress = true` you are enabling the progress bar.
 """
-function solve(
+Base.@constprop :aggressive function solve(
         prob::AbstractDEProblem, args...; sensealg = nothing,
-        u0 = nothing, p = nothing, wrap = Val(true), kwargs...
+        u0 = nothing, p = nothing, wrap = Val(true), verbose = true, kwargs...
     )
     if sensealg === nothing && haskey(prob.kwargs, :sensealg)
         sensealg = prob.kwargs[:sensealg]
@@ -604,19 +604,19 @@ function solve(
             solve_up(
                 prob, sensealg, u0, p, args...;
                 originator = SciMLBase.set_mooncakeoriginator_if_mooncake(SciMLBase.ChainRulesOriginator()),
-                kwargs...
+                verbose, kwargs...
             )
         )
     else
         solve_up(
             prob, sensealg, u0, p, args...;
             originator = SciMLBase.set_mooncakeoriginator_if_mooncake(SciMLBase.ChainRulesOriginator()),
-            kwargs...
+            verbose, kwargs...
         )
     end
 end
 
-function solve_up(
+Base.@constprop :aggressive function solve_up(
         prob::AbstractDEProblem, sensealg, u0, p,
         args...; originator = SciMLBase.ChainRulesOriginator(),
         kwargs...
