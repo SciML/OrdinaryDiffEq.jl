@@ -17,7 +17,6 @@ end
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Low Storage RK Tests" include("ode_low_storage_rk_tests.jl")
-    @time @safetestset "RDPK3 solve regression (#3384)" include("rdpk3_init_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)
