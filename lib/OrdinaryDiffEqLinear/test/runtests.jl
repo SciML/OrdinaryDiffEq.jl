@@ -11,7 +11,7 @@ end
 
 function activate_qa_env()
     Pkg.activate(joinpath(@__DIR__, "qa"))
-    Pkg.instantiate()
+    return Pkg.instantiate()
 end
 
 # Run GPU tests

@@ -6,7 +6,7 @@ const ORIGINAL_PROJECT = dirname(Base.active_project())
 
 function activate_qa_env()
     Pkg.activate(joinpath(@__DIR__, "qa"))
-    Pkg.instantiate()
+    return Pkg.instantiate()
 end
 
 @time @safetestset "Generic RK Tests" include("interpolation_tests.jl")
