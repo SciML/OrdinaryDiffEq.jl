@@ -3,7 +3,9 @@ function _ode_addsteps!(
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false
     )
-    if length(k) < size(cache.tab.H, 1) || always_calc_begin
+    H_rows = size(cache.tab.H, 1)
+    kneeded = H_rows == 0 ? 2 : H_rows
+    if length(k) < kneeded || always_calc_begin
         (; tf, uf) = cache
         (; A, C, gamma, c, d, H) = cache.tab
 
