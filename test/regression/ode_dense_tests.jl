@@ -111,7 +111,11 @@ function regression_test(
     sol(interpolation_results_2d, interpolation_points)
     sol(interpolation_points[1])
     sol2 = solve(prob_ode_2Dlinear, alg, dt = 1 // 2^(4), dense = true, adaptive = false)
-    for i in eachindex(sol2)
+    # `eachindex(sol2)` now returns `CartesianIndices` over the full solution
+    # tensor (u_dims..., nsteps) under RecursiveArrayTools v4; iterate the
+    # timestep axis via `sol2.u` so `sol2.u[i]` / `interpolation_results_2d[i]`
+    # index the per-step matrix as the test intends.
+    for i in eachindex(sol2.u)
         print_results(
             @test maximum(maximum.(abs.(sol2.u[i] - interpolation_results_2d[i]))) <
                 tol_ode_2Dlinear
