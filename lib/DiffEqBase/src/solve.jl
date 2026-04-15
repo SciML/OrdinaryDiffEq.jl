@@ -88,7 +88,7 @@ function init_call(
     end
 end
 
-function init(
+Base.@constprop :aggressive function init(
         prob::AbstractDEProblem, args...; sensealg = nothing,
         u0 = nothing, p = nothing, verbose = true, kwargs...
     )
@@ -106,7 +106,7 @@ function init(prob::AbstractJumpProblem, args...; kwargs...)
     return init_call(prob, args...; kwargs...)
 end
 
-function init_up(prob::AbstractDEProblem, sensealg, u0, p, args...; kwargs...)
+Base.@constprop :aggressive function init_up(prob::AbstractDEProblem, sensealg, u0, p, args...; kwargs...)
     alg = extract_alg(args, kwargs, has_kwargs(prob) ? prob.kwargs : kwargs)
     return if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
@@ -588,7 +588,7 @@ the extension to other types is straightforward.
    to save size or because the user does not care about the others. Finally, with
    `progress = true` you are enabling the progress bar.
 """
-function solve(
+Base.@constprop :aggressive function solve(
         prob::AbstractDEProblem, args...; sensealg = nothing,
         u0 = nothing, p = nothing, wrap = Val(true), verbose = true, kwargs...
     )
@@ -616,7 +616,7 @@ function solve(
     end
 end
 
-function solve_up(
+Base.@constprop :aggressive function solve_up(
         prob::AbstractDEProblem, sensealg, u0, p,
         args...; originator = SciMLBase.ChainRulesOriginator(),
         kwargs...

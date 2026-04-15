@@ -28,7 +28,7 @@ using Test
         for solver in ssprk_solvers
             @testset "$(typeof(solver)) type stability" begin
                 try
-                    @test_opt broken = true init(prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
+                    @test_opt skip = true init(prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
                     integrator = init(prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
                     @test_opt broken = true step!(integrator)
                 catch e

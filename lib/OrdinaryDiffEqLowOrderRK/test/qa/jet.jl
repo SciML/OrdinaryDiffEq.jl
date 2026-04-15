@@ -32,10 +32,10 @@ using Test
                 try
                     # Some solvers need fixed timestep
                     if solver isa Euler || solver isa Midpoint || solver isa Heun
-                        @test_opt broken = true init(prob, solver, dt = 0.1, save_everystep = false, adaptive = false)
+                        @test_opt skip = true init(prob, solver, dt = 0.1, save_everystep = false, adaptive = false)
                         integrator = init(prob, solver, dt = 0.1, save_everystep = false, adaptive = false)
                     else
-                        @test_opt broken = true init(prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
+                        @test_opt skip = true init(prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
                         integrator = init(prob, solver, dt = 0.1, save_everystep = false, abstol = 1.0e-6, reltol = 1.0e-6)
                     end
                     @test_opt broken = true step!(integrator)

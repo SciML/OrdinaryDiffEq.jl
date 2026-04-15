@@ -340,7 +340,10 @@ const NONE_VERBOSE = DEVerbosity(SciMLLogging.None())
     return DEVerbosity(verbose)
 end
 
-@inline function _process_verbose_param(verbose::Bool)
+@inline _process_verbose_param(::Val{true}) = DEFAULT_VERBOSE
+@inline _process_verbose_param(::Val{false}) = NONE_VERBOSE
+
+Base.@constprop :aggressive @inline function _process_verbose_param(verbose::Bool)
     return verbose ? DEFAULT_VERBOSE : NONE_VERBOSE
 end
 

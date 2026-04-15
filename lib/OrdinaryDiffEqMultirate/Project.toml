@@ -40,6 +40,9 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[sources.DiffEqBase]
+path = "../DiffEqBase"
+
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
 
