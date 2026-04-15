@@ -145,7 +145,7 @@ rosenbrock_algs = [
     @test sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
 end
 
-rkc_algs = [RKC(), ROCK2(), ROCK4(), SERK2(), TSRKC3()]
+rkc_algs = [RKC(), ROCK2(), ROCK4(), SERK2(), OrdinaryDiffEq.OrdinaryDiffEqStabilizedRK.TSRKC3()]
 
 @testset "Algorithm $(nameof(typeof(alg)))" for alg in rkc_algs
     println(nameof(typeof(alg)))
