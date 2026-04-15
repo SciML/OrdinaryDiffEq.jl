@@ -7,7 +7,7 @@ import OrdinaryDiffEqCore, OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqDifferent
 import OrdinaryDiffEqDefault: OrdinaryDiffEqDefault
 import OrdinaryDiffEqFunctionMap: OrdinaryDiffEqFunctionMap
 
-using DataStructures: BinaryMinHeap
+using BinaryHeaps: BinaryMinHeap
 using LinearAlgebra: opnorm, I
 using Logging: @logmsg
 using RecursiveArrayTools: copyat_or_push!, recursivecopy, recursivecopy!,

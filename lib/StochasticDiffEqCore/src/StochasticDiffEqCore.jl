@@ -42,7 +42,7 @@ import OrdinaryDiffEqCore: handle_callbacks!, handle_tstop!,
     initialize_callbacks!,
     current_extrapolant, current_extrapolant!
 
-using RecursiveArrayTools, DataStructures
+using RecursiveArrayTools
 using DiffEqNoiseProcess, Random, ArrayInterface
 using SimpleNonlinearSolve, ForwardDiff, StaticArrays, MuladdMacro, FiniteDiff, Base.Threads
 using Adapt

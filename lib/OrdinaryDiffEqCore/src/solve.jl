@@ -958,7 +958,7 @@ end
 
 # time stops
 @inline function initialize_tstops(::Type{T}, tstops, d_discontinuities, tspan) where {T}
-    tstops_internal = BinaryHeap{T}(DataStructures.FasterForward())
+    tstops_internal = BinaryHeap{T}(FasterForward())
 
     t0, tf = tspan
     tdir = sign(tf - t0)
@@ -1010,7 +1010,7 @@ end
 
 # saving time points
 function initialize_saveat(::Type{T}, saveat, tspan) where {T}
-    saveat_internal = BinaryHeap{T}(DataStructures.FasterForward())
+    saveat_internal = BinaryHeap{T}(FasterForward())
 
     t0, tf = tspan
     tdir = sign(tf - t0)
@@ -1055,7 +1055,7 @@ end
 
 # discontinuities
 function initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) where {T}
-    d_discontinuities_internal = BinaryHeap{T}(DataStructures.FasterForward())
+    d_discontinuities_internal = BinaryHeap{T}(FasterForward())
     sizehint!(d_discontinuities_internal, length(d_discontinuities))
 
     t0, tf = tspan
