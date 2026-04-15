@@ -1,18 +1,8 @@
-using Pkg
-Pkg.add("AllocCheck")
-
 using OrdinaryDiffEqVerner
 using OrdinaryDiffEqCore
 using SciMLBase: FullSpecialize
 using AllocCheck
 using Test
-
-"""
-Allocation tests for OrdinaryDiffEqVerner solvers using AllocCheck.jl.
-Tests perform_step! directly (the core stepping function) rather than step!,
-since step! includes saving operations that naturally allocate.
-Uses FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.
-"""
 
 @testset "Verner Allocation Tests" begin
     function simple_system!(du, u, p, t)

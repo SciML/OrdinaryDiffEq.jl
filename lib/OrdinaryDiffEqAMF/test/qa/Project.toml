@@ -1,0 +1,21 @@
+[deps]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
+OrdinaryDiffEqAMF = "08082164-f6a1-4363-b3df-3aa6fcf571ad"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources.OrdinaryDiffEqAMF]
+path = "../../"
+
+[sources.OrdinaryDiffEqCore]
+path = "../../../OrdinaryDiffEqCore"
+
+[compat]
+AllocCheck = "0.2"
+OrdinaryDiffEqAMF = "1"
+OrdinaryDiffEqCore = "3"
+SciMLBase = "2"
+SciMLOperators = "1"
+julia = "1.10"

@@ -17,7 +17,6 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
@@ -31,7 +30,6 @@ DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
 ADTypes = "1.16"
-AllocCheck = "0.2"
 Aqua = "0.8.11"
 DiffEqBase = "6.194"
 DiffEqDevTools = "2.44.4"

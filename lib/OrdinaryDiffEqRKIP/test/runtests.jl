@@ -21,7 +21,9 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @safetestset "Fourier Semilinear PDE Tests" include("semilinear_pde_test_cpu.jl")
 end
 
-# Run QA tests (JET)
+# Run QA tests (AllocCheck, JET) - skip on pre-release Julia
+# Allocation tests must run before JET because JET's static analysis
+# invalidates compiled code and causes spurious runtime allocations.
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("jet.jl")
 end
