@@ -42,8 +42,8 @@ using OrdinaryDiffEq
         du[1] = -3sin(3t)
         du[2] = -sin(t)
     end
-    affect1 = (integ,) -> push!(record, 1)
-    affect2 = (integ,) -> push!(record, 2)
+    affect1 = (integ) -> push!(record, 1)
+    affect2 = (integ) -> push!(record, 2)
     cb1 = ContinuousCallback((u, i, integ) -> u[2], affect1, affect1; rootfind = SciMLBase.LeftRootFind, abstol = 0.0)
     cb2 = ContinuousCallback((u, i, integ) -> u[1], affect2, affect2; rootfind = SciMLBase.RightRootFind, abstol = 0.0)
 
