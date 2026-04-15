@@ -1086,6 +1086,8 @@ end
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+    dtsw0 = zero(typeof(cache.tsw0))
+    d2tsw0 = zero(typeof(cache.tsw0))
     if (rkcstep)
         mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
         w0 = 1 + 2 / (13 * (mdeg^2))
@@ -1216,6 +1218,8 @@ end
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+    dtsw0 = zero(typeof(constantcache.tsw0))
+    d2tsw0 = zero(typeof(constantcache.tsw0))
     if (rkcstep)
         mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
         w0 = 1 + 2 / (13 * (mdeg^2))
