@@ -1212,7 +1212,7 @@ end
     onemq = 1 - q
     onepq = 1 + q
     onepq2 = onepq * onepq
-    
+
     # The first and possibly second steps are calculated via the one-step RKC method.
     rkcstep = q < 0.49
 
