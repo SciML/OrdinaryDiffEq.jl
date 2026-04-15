@@ -38,7 +38,15 @@ function Rosenbrock23RodasTableau(T, T2)
         convert(T, igamma / 6),
     ]
 
-    H = zeros(T, 0, 3)
+    # Shampine 2nd-order "free" stiff interpolation encoded as a 2-row H matrix
+    # (interp_order=2) so the standard Rodas 2-vector formula applies:
+    #   p(Θ) = (1-Θ)y₀ + Θ(y₁ + (1-Θ)(K[1] + Θ·K[2]))
+    # K[1] = -ks[2]/(γ(1-2γ)),  K[2] = 0
+    # Algebraically equals the MATLAB ODE Suite c1·k̃₁ + c2·k̃₂ dense output
+    # with c1=Θ(1-Θ)/(1-2γ), c2=Θ(Θ-2γ)/(1-2γ); K[2]=0 because the Θ² term
+    # from c2 is already absorbed into K[1] via the y₁ endpoint.
+    H = T[zero(T) convert(T, -1/(gamma*(1 - 2*gamma))) zero(T)
+          zero(T) zero(T)                              zero(T)]
 
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
@@ -75,7 +83,9 @@ function Rosenbrock32RodasTableau(T, T2)
         convert(T, igamma / 6),
     ]
 
-    H = zeros(T, 0, 3)
+    # Same Shampine interpolation as Rosenbrock23 (identical γ, same stencil)
+    H = T[zero(T) convert(T, -1/(gamma*(1 - 2*gamma))) zero(T)
+          zero(T) zero(T)                              zero(T)]
 
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
