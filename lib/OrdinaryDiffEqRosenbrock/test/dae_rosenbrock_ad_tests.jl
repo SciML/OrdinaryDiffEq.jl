@@ -38,8 +38,10 @@ sol = @inferred solve(
 
 # Test Tsit5DA (Hybrid Explicit/Linear-Implicit)
 # Tsit5DA is explicit so it will hit maxiters on stiff rober — just test inference
-sol = @inferred solve(prob_mm, Tsit5DA(), reltol = 1.0e-8, abstol = 1.0e-8,
-    initializealg = BrownFullBasicInit())
+sol = @inferred solve(
+    prob_mm, Tsit5DA(), reltol = 1.0e-8, abstol = 1.0e-8,
+    initializealg = BrownFullBasicInit()
+)
 
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
