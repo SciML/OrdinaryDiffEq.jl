@@ -1267,7 +1267,7 @@ function ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::OrdinaryDiffEqMutableCache, idxs,
         T::Type{Val{TI}}, differential_vars
     ) where {TI}
-    return if idxs isa Number || y₀ isa Union{Number, SArray}
+    return if idxs isa Number || !ArrayInterface.ismutable(y₀)
         # typeof(y₀) can be these if saveidxs gives a single value
         _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
     elseif idxs isa Nothing

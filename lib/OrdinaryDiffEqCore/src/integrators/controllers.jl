@@ -532,9 +532,11 @@ Some standard controller parameters suggested in the literature are
     Compressible Computational Fluid Dynamics    # is bigger than this parameter
     [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)    # limiter of the dt factor (before clipping)
 """
-struct PIDController{QT, Limiter} <: AbstractLegacyController
+mutable struct PIDController{QT, Limiter} <: AbstractLegacyController
     beta::NTuple{3, QT} # controller coefficients
-    err::MVector{3, QT} # history of the error estimates (mutable via indexing)
+    err1::QT            # history of the error estimates
+    err2::QT
+    err3::QT
     accept_safety::QT   # accept a step if the predicted change of the step size
     # is bigger than this parameter
     limiter::Limiter    # limiter of the dt factor (before clipping)
@@ -547,8 +549,7 @@ function PIDController(
     )
     beta = map(float, promote(beta1, beta2, beta3))
     QT = eltype(beta)
-    err = MVector{3, QT}(true, true, true)
-    return PIDController(beta, err, convert(QT, accept_safety), limiter)
+    return PIDController(beta, one(QT), one(QT), one(QT), convert(QT, accept_safety), limiter)
 end
 
 function Base.show(io::IO, controller::PIDController)
@@ -585,8 +586,8 @@ end
     # ```
     EEst = max(EEst, EEst_min)
 
-    controller.err[1] = inv(EEst)
-    err1, err2, err3 = controller.err
+    controller.err1 = inv(EEst)
+    (; err1, err2, err3) = controller
 
     k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
     dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
@@ -625,10 +626,8 @@ function step_accept_controller!(integrator, controller::PIDController, alg, dt_
     if qsteady_min <= inv(dt_factor) <= qsteady_max
         dt_factor = one(dt_factor)
     end
-    @inbounds begin
-        controller.err[3] = controller.err[2]
-        controller.err[2] = controller.err[1]
-    end
+    controller.err3 = controller.err2
+    controller.err2 = controller.err1
     return integrator.dt * dt_factor # new dt
 end
 
@@ -679,21 +678,24 @@ end
 
 mutable struct PIDControllerCache{T, Limiter, UT} <: AbstractControllerCache
     controller::NewPIDController{T, Limiter}
-    err::MVector{3, T} # history of the error estimates
+    err1::T # history of the error estimates
+    err2::T
+    err3::T
     dt_factor::T
     atmp::UT
 end
 
 function SciMLBase.reinit!(integrator::ODEIntegrator, cache::PIDControllerCache{T}) where {T}
-    cache.err = MVector{3, T}(true, true, true)
+    cache.err1 = one(T)
+    cache.err2 = one(T)
+    cache.err3 = one(T)
     return cache.dt_factor = T(1 // 10^4)
 end
 
 function setup_controller_cache(alg, atmp, controller::NewPIDController{QT}) where {QT}
-    err = MVector{3, QT}(true, true, true)
     return PIDControllerCache(
         controller,
-        err,
+        one(QT), one(QT), one(QT),
         QT(1 // 10^4),
         atmp,
     )
@@ -723,8 +725,8 @@ end
     # ```
     EEst = max(EEst, EEst_min)
 
-    cache.err[1] = inv(EEst)
-    err1, err2, err3 = cache.err
+    cache.err1 = inv(EEst)
+    (; err1, err2, err3) = cache
 
     k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
     dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
@@ -756,10 +758,8 @@ function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_
         dt_factor = one(dt_factor)
         # cache.q = ...?
     end
-    @inbounds begin
-        cache.err[3] = cache.err[2]
-        cache.err[2] = cache.err[1]
-    end
+    cache.err3 = cache.err2
+    cache.err2 = cache.err1
     return integrator.dt * dt_factor # new dt
 end
 
