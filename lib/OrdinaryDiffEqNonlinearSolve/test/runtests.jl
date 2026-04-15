@@ -17,6 +17,11 @@ function activate_modelingtoolkit_env()
     return Pkg.instantiate()
 end
 
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    return Pkg.instantiate()
+end
+
 # Run functional tests
 if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "Newton Tests" include("newton_tests.jl")
@@ -34,8 +39,9 @@ end
 
 # Run QA tests (JET, Aqua)
 if TEST_GROUP ∉ ("Core", "ModelingToolkit") && isempty(VERSION.prerelease)
-    @time @safetestset "JET Tests" include("jet.jl")
-    @time @safetestset "Aqua" include("qa.jl")
+    activate_qa_env()
+    @time @safetestset "JET Tests" include("qa/jet.jl")
+    @time @safetestset "Aqua" include("qa/qa.jl")
 end
 
 # Run ModelingToolkit tests (separate environment due to heavy MTK dependency)

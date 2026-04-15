@@ -8,6 +8,11 @@ function activate_gpu_env()
     return Pkg.instantiate()
 end
 
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    return Pkg.instantiate()
+end
+
 # Run GPU tests
 if TEST_GROUP == "GPU"
     activate_gpu_env()
@@ -21,9 +26,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @safetestset "Fourier Semilinear PDE Tests" include("semilinear_pde_test_cpu.jl")
 end
 
-# Run QA tests (AllocCheck, JET) - skip on pre-release Julia
-# Allocation tests must run before JET because JET's static analysis
-# invalidates compiled code and causes spurious runtime allocations.
+# Run QA tests (JET) - skip on pre-release Julia
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
-    @time @safetestset "JET Tests" include("jet.jl")
+    activate_qa_env()
+    @time @safetestset "JET Tests" include("qa/jet.jl")
 end

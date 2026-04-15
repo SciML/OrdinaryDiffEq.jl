@@ -2,8 +2,14 @@ using Test
 using SimpleImplicitDiscreteSolve
 using OrdinaryDiffEqSDIRK
 using SafeTestsets
+using Pkg
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    return Pkg.instantiate()
+end
 
 # Run functional tests
 if TEST_GROUP != "QA"
@@ -77,5 +83,6 @@ end
 
 # Run QA tests (JET)
 if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
-    @time @safetestset "JET Tests" include("jet.jl")
+    activate_qa_env()
+    @time @safetestset "JET Tests" include("qa/jet.jl")
 end

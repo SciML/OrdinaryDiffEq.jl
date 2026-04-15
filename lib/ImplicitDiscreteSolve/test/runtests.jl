@@ -5,8 +5,14 @@ using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
 using SciMLBase
 using SafeTestsets
+using Pkg
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    return Pkg.instantiate()
+end
 
 # Run functional tests
 if TEST_GROUP != "QA"
@@ -168,14 +174,7 @@ end
 
 # Run QA tests (JET, Aqua)
 if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
-    using Pkg
-    Pkg.add("JET")
-    using JET
-    @testset "JET Tests" begin
-        test_package(
-            ImplicitDiscreteSolve, target_modules = (ImplicitDiscreteSolve,), mode = :typo
-        )
-    end
-
-    include("qa.jl")
+    activate_qa_env()
+    @time @safetestset "JET Tests" include("qa/jet.jl")
+    @time @safetestset "Aqua" include("qa/qa.jl")
 end
