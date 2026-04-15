@@ -145,7 +145,12 @@ rosenbrock_algs = [
     @test sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
 end
 
-rkc_algs = [RKC(), ROCK2(), ROCK4(), SERK2(), OrdinaryDiffEq.OrdinaryDiffEqStabilizedRK.TSRKC3()]
+rkc_algs = Any[RKC(), ROCK2(), ROCK4(), SERK2()]
+# TSRKC3 was added in OrdinaryDiffEqStabilizedRK 1.11.0; Pkg on Julia 1.10 ignores
+# [sources] and pulls the registered version, which may not have it yet.
+if isdefined(OrdinaryDiffEq.OrdinaryDiffEqStabilizedRK, :TSRKC3)
+    push!(rkc_algs, OrdinaryDiffEq.OrdinaryDiffEqStabilizedRK.TSRKC3())
+end
 
 @testset "Algorithm $(nameof(typeof(alg)))" for alg in rkc_algs
     println(nameof(typeof(alg)))
