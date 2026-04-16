@@ -39,6 +39,10 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
+OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
+OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}
 
 [compat]
 Pkg = "1"
@@ -74,15 +78,3 @@ StaticArrays = "1.9"
 
 [targets]
 test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "StaticArrays", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg"]
-
-[sources.OrdinaryDiffEqSDIRK]
-path = "../OrdinaryDiffEqSDIRK"
-
-[sources.OrdinaryDiffEqDifferentiation]
-path = "../OrdinaryDiffEqDifferentiation"
-
-[sources.OrdinaryDiffEqNonlinearSolve]
-path = "../OrdinaryDiffEqNonlinearSolve"
-
-[sources.OrdinaryDiffEqCore]
-path = "../OrdinaryDiffEqCore"
