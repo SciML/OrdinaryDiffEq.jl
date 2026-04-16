@@ -45,8 +45,10 @@ function Rosenbrock23RodasTableau(T, T2)
     # Algebraically equals the MATLAB ODE Suite c1·k̃₁ + c2·k̃₂ dense output
     # with c1=Θ(1-Θ)/(1-2γ), c2=Θ(Θ-2γ)/(1-2γ); K[2]=0 because the Θ² term
     # from c2 is already absorbed into K[1] via the y₁ endpoint.
-    H = T[zero(T) convert(T, -1/(gamma*(1 - 2*gamma))) zero(T)
-          zero(T) zero(T)                              zero(T)]
+    H = T[
+        zero(T) convert(T, -1 / (gamma * (1 - 2 * gamma))) zero(T)
+        zero(T) zero(T)                              zero(T)
+    ]
 
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
@@ -84,8 +86,10 @@ function Rosenbrock32RodasTableau(T, T2)
     ]
 
     # Same Shampine interpolation as Rosenbrock23 (identical γ, same stencil)
-    H = T[zero(T) convert(T, -1/(gamma*(1 - 2*gamma))) zero(T)
-          zero(T) zero(T)                              zero(T)]
+    H = T[
+        zero(T) convert(T, -1 / (gamma * (1 - 2 * gamma))) zero(T)
+        zero(T) zero(T)                              zero(T)
+    ]
 
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
