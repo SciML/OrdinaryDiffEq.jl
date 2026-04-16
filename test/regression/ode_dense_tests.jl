@@ -66,7 +66,7 @@ function regression_test(
     @inferred sol(interpolation_results_1d, interpolation_points)
     @inferred sol(interpolation_points[1])
     sol2 = solve(prob_ode_linear, alg, dt = 1 // 2^(4), dense = true, adaptive = false)
-    for i in eachindex(sol2)
+    for i in eachindex(sol2.u)
         print_results(
             @test maximum(abs.(sol2.u[i] - interpolation_results_1d[i])) <
                 tol_ode_linear
