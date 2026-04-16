@@ -37,11 +37,11 @@ using NonlinearSolve: NonlinearVerbosity
         @test v1.w_factorization isa SciMLLogging.Silent
         @test v1.newton_iterations isa SciMLLogging.Silent
 
-        # Test numerical group (default: WarnLevel except shampine_dt, dt_epsilon, stability_check)
+        # Test numerical group (default: WarnLevel except shampine_dt, stability_check)
         @test v1.rosenbrock_no_differential_states isa SciMLLogging.WarnLevel
         @test v1.shampine_dt isa SciMLLogging.Silent
         @test v1.unlimited_dt isa SciMLLogging.WarnLevel
-        @test v1.dt_epsilon isa SciMLLogging.Silent
+        @test v1.dt_epsilon isa SciMLLogging.WarnLevel
         @test v1.stability_check isa SciMLLogging.Silent
         @test v1.near_singular isa SciMLLogging.Silent
     end
