@@ -272,6 +272,29 @@ end
     @test sol.u[end] ≈ 0.0 atol = 1.0e-10
 end
 
+@testset "Fixed-dt: no spurious tiny final step from accumulated drift" begin
+    # Regression test: with fixed dt = 0.1 and tspan = (0.0, 1.0) the
+    # accumulated `t + dt + dt + ...` drifts and used to produce a spurious
+    # 12th step at 0.9999999999999999 followed by 1.0. A tolerance in
+    # modify_dt_for_tstops! ensures the final tstop is hit cleanly.
+    f!(du, u, p, t) = (du .= u; nothing)
+    u0 = [1.0]
+    prob = ODEProblem(f!, u0, (0.0, 1.0))
+    sol = solve(prob, Euler(); dt = 0.1)
+    @test length(sol.t) == 11
+    @test sol.t[end] == 1.0
+
+    # Reverse direction
+    prob_rev = ODEProblem(f!, u0, (1.0, 0.0))
+    sol_rev = solve(prob_rev, Euler(); dt = -0.1)
+    @test length(sol_rev.t) == 11
+    @test sol_rev.t[end] == 0.0
+
+    # dt that does not evenly divide tspan still hits tspan[end] cleanly
+    sol_uneven = solve(prob, Euler(); dt = 0.3)
+    @test sol_uneven.t[end] == 1.0
+end
+
 @testset "d_discontinuities: tprev advanced past discontinuity" begin
     # Directly verify the shift-past invariant using the integrator interface:
     # after stepping past the discontinuity, integrator.tprev should be

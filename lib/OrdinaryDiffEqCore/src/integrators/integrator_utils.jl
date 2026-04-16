@@ -178,11 +178,22 @@ function modify_dt_for_tstops!(integrator)
         tdir_t = integrator.tdir * integrator.t
         tdir_tstop = first_tstop(integrator)
         distance_to_tstop = abs(tdir_tstop - tdir_t)
+        # Floating-point tolerance so that a dt whose nominal value matches
+        # distance_to_tstop to within rounding still triggers the tstop
+        # branch.  Without this, accumulated `t + dt + dt + …` can drift
+        # just past the last tstop and produce a spurious micro-step.
+        tstop_tol = if integrator.t isa AbstractFloat && isfinite(tdir_tstop) &&
+                isfinite(integrator.t)
+            100 * eps(float(max(abs(integrator.t), abs(tdir_tstop)) /
+                            oneunit(integrator.t))) * oneunit(integrator.t)
+        else
+            zero(distance_to_tstop)
+        end
 
         if integrator.opts.adaptive
             original_dt = abs(integrator.dt)
             integrator.dtpropose = integrator.tdir * original_dt
-            if original_dt < distance_to_tstop
+            if original_dt + tstop_tol < distance_to_tstop
                 _set_tstop_flag!(integrator, false)
             else
                 _set_tstop_flag!(
@@ -198,7 +209,7 @@ function modify_dt_for_tstops!(integrator)
         elseif integrator.dtchangeable && !integrator.force_stepfail
             # always try to step! with dtcache, but lower if a tstop
             # however, if force_stepfail then don't set to dtcache, and no tstop worry
-            if abs(integrator.dtcache) < distance_to_tstop
+            if abs(integrator.dtcache) + tstop_tol < distance_to_tstop
                 _set_tstop_flag!(integrator, false)
             else
                 _set_tstop_flag!(
