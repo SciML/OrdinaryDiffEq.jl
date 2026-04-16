@@ -184,8 +184,12 @@ function modify_dt_for_tstops!(integrator)
         # just past the last tstop and produce a spurious micro-step.
         tstop_tol = if integrator.t isa AbstractFloat && isfinite(tdir_tstop) &&
                 isfinite(integrator.t)
-            100 * eps(float(max(abs(integrator.t), abs(tdir_tstop)) /
-                            oneunit(integrator.t))) * oneunit(integrator.t)
+            100 * eps(
+                float(
+                    max(abs(integrator.t), abs(tdir_tstop)) /
+                        oneunit(integrator.t)
+                )
+            ) * oneunit(integrator.t)
         else
             zero(distance_to_tstop)
         end
