@@ -1,3 +1,12 @@
+# RAT v4 helpers: DiffEqArray{Float64,3,...} has eltype Float64 but stores
+# Vector{Matrix{Float64}} in .u — use per-timestep element type and indexing.
+_vals_eltype(vals) = eltype(vals)
+_vals_eltype(vals::RecursiveArrayTools.AbstractVectorOfArray) = eltype(vals.u)
+@inline _get_val(vals, j) = vals[j]
+@inline _get_val(vals::RecursiveArrayTools.AbstractVectorOfArray, j) = vals.u[j]
+@inline _set_val!(vals, j, v) = (vals[j] = v; nothing)
+@inline _set_val!(vals::RecursiveArrayTools.AbstractVectorOfArray, j, v) = (vals.u[j] = v; nothing)
+
 const DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE = """
 Derivative order too high for interpolation order. An interpolation derivative is
 only accurate to a certain derivative. For example, a second order interpolation
@@ -832,28 +841,28 @@ function ode_interpolation!(
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
 
         if isdiscretecache(cache)
-            if eltype(vals) <: AbstractArray
+            if _vals_eltype(vals) <: AbstractArray
                 ode_interpolant!(
-                    vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache,
+                    _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache,
                     idxs, deriv, differential_vars
                 )
             else
-                vals[j] = ode_interpolant(
+                _set_val!(vals, j, ode_interpolant(
                     Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache,
                     idxs, deriv, differential_vars
-                )
+                ))
             end
         elseif !id.dense
-            if eltype(vals) <: AbstractArray
+            if _vals_eltype(vals) <: AbstractArray
                 linear_interpolant!(
-                    vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], idxs,
+                    _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], idxs,
                     deriv
                 )
             else
-                vals[j] = linear_interpolant(
+                _set_val!(vals, j, linear_interpolant(
                     Θ, dt, timeseries[i₋], timeseries[i₊], idxs,
                     deriv
-                )
+                ))
             end
         elseif cache isa DefaultCache
             if current_alg != id.alg_choice[i₊] # switched algorithm
@@ -863,96 +872,96 @@ function ode_interpolation!(
                         ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                         cache.cache1
                     ) # update the kcurrent
-                    if eltype(vals) <: AbstractArray
+                    if _vals_eltype(vals) <: AbstractArray
                         ode_interpolant!(
-                            vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                            _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache1, idxs, deriv, differential_vars
                         )
                     else
-                        vals[j] = ode_interpolant(
+                        _set_val!(vals, j, ode_interpolant(
                             Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache1, idxs, deriv, differential_vars
-                        )
+                        ))
                     end
                 elseif current_alg == 2
                     _ode_addsteps!(
                         ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                         cache.cache2
                     ) # update the kcurrent
-                    if eltype(vals) <: AbstractArray
+                    if _vals_eltype(vals) <: AbstractArray
                         ode_interpolant!(
-                            vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                            _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache2, idxs, deriv, differential_vars
                         )
                     else
-                        vals[j] = ode_interpolant(
+                        _set_val!(vals, j, ode_interpolant(
                             Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache2, idxs, deriv, differential_vars
-                        )
+                        ))
                     end
                 elseif current_alg == 3
                     _ode_addsteps!(
                         ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                         cache.cache3
                     ) # update the kcurrent
-                    if eltype(vals) <: AbstractArray
+                    if _vals_eltype(vals) <: AbstractArray
                         ode_interpolant!(
-                            vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                            _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache3, idxs, deriv, differential_vars
                         )
                     else
-                        vals[j] = ode_interpolant(
+                        _set_val!(vals, j, ode_interpolant(
                             Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache3, idxs, deriv, differential_vars
-                        )
+                        ))
                     end
                 elseif current_alg == 4
                     _ode_addsteps!(
                         ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                         cache.cache4
                     ) # update the kcurrent
-                    if eltype(vals) <: AbstractArray
+                    if _vals_eltype(vals) <: AbstractArray
                         ode_interpolant!(
-                            vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                            _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache4, idxs, deriv, differential_vars
                         )
                     else
-                        vals[j] = ode_interpolant(
+                        _set_val!(vals, j, ode_interpolant(
                             Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache4, idxs, deriv, differential_vars
-                        )
+                        ))
                     end
                 elseif current_alg == 5
                     _ode_addsteps!(
                         ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                         cache.cache5
                     ) # update the kcurrent
-                    if eltype(vals) <: AbstractArray
+                    if _vals_eltype(vals) <: AbstractArray
                         ode_interpolant!(
-                            vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                            _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache5, idxs, deriv, differential_vars
                         )
                     else
-                        vals[j] = ode_interpolant(
+                        _set_val!(vals, j, ode_interpolant(
                             Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache5, idxs, deriv, differential_vars
-                        )
+                        ))
                     end
                 elseif current_alg == 6
                     _ode_addsteps!(
                         ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                         cache.cache6
                     ) # update the kcurrent
-                    if eltype(vals) <: AbstractArray
+                    if _vals_eltype(vals) <: AbstractArray
                         ode_interpolant!(
-                            vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                            _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache6, idxs, deriv, differential_vars
                         )
                     else
-                        vals[j] = ode_interpolant(
+                        _set_val!(vals, j, ode_interpolant(
                             Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                             cache.cache6, idxs, deriv, differential_vars
-                        )
+                        ))
                     end
                 end
             end
@@ -967,16 +976,16 @@ function ode_interpolation!(
                 ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                 cache_i₊
             ) # update the kcurrent
-            if eltype(vals) <: AbstractArray
+            if _vals_eltype(vals) <: AbstractArray
                 ode_interpolant!(
-                    vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                    _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                     cache_i₊, idxs, deriv, differential_vars
                 )
             else
-                vals[j] = ode_interpolant(
+                _set_val!(vals, j, ode_interpolant(
                     Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                     cache_i₊, idxs, deriv, differential_vars
-                )
+                ))
             end
         end
     end
