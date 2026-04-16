@@ -31,6 +31,11 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
+OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
+OrdinaryDiffEqVerner = {path = "../OrdinaryDiffEqVerner"}
 
 [compat]
 Pkg = "1"
@@ -58,18 +63,3 @@ SafeTestsets = "0.1.0"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqTsit5", "LinearSolve", "SparseArrays", "OrdinaryDiffEqVerner", "OrdinaryDiffEqSDIRK", "Pkg"]
-
-[sources.OrdinaryDiffEqSDIRK]
-path = "../OrdinaryDiffEqSDIRK"
-
-[sources.OrdinaryDiffEqDifferentiation]
-path = "../OrdinaryDiffEqDifferentiation"
-
-[sources.OrdinaryDiffEqCore]
-path = "../OrdinaryDiffEqCore"
-
-[sources.OrdinaryDiffEqVerner]
-path = "../OrdinaryDiffEqVerner"
-
-[sources.OrdinaryDiffEqTsit5]
-path = "../OrdinaryDiffEqTsit5"
