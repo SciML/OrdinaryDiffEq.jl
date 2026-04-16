@@ -26,6 +26,7 @@ StochasticDiffEqWeak = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
 ImplicitDiscreteSolve = {path = "../ImplicitDiscreteSolve"}
 OrdinaryDiffEq = {path = "../../"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}

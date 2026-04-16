@@ -8,6 +8,7 @@ test = ["DiffEqDevTools", "OrdinaryDiffEqBDF", "OrdinaryDiffEqRosenbrock", "Ordi
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
 Pkg = "1"
