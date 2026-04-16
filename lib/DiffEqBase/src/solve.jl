@@ -90,7 +90,7 @@ end
 
 Base.@constprop :aggressive function init(
         prob::AbstractDEProblem, args...; sensealg = nothing,
-        u0 = nothing, p = nothing, verbose = true, kwargs...
+        u0 = nothing, p = nothing, verbose = DEFAULT_VERBOSE, kwargs...
     )
     if sensealg === nothing && has_kwargs(prob) && haskey(prob.kwargs, :sensealg)
         sensealg = prob.kwargs[:sensealg]
@@ -590,7 +590,7 @@ the extension to other types is straightforward.
 """
 Base.@constprop :aggressive function solve(
         prob::AbstractDEProblem, args...; sensealg = nothing,
-        u0 = nothing, p = nothing, wrap = Val(true), verbose = true, kwargs...
+        u0 = nothing, p = nothing, wrap = Val(true), verbose = DEFAULT_VERBOSE, kwargs...
     )
     if sensealg === nothing && haskey(prob.kwargs, :sensealg)
         sensealg = prob.kwargs[:sensealg]
