@@ -54,6 +54,7 @@ StochasticDiffEqImplicit = {path = "../StochasticDiffEqImplicit"}
 StochasticDiffEqLowOrder = {path = "../StochasticDiffEqLowOrder"}
 StochasticDiffEqROCK = {path = "../StochasticDiffEqROCK"}
 DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
 ADTypes = "1.16"
