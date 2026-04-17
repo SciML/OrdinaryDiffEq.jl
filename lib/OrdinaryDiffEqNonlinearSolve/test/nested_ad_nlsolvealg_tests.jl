@@ -75,7 +75,9 @@ end
         lorenz_dae!, du0, u0, (0.0, 1.0);
         differential_vars = [true, true, true]
     )
-    sol = solve(prob, DFBDF(); reltol = 1.0e-6, abstol = 1.0e-6,
-        initializealg = BrownFullBasicInit())
+    sol = solve(
+        prob, DFBDF(); reltol = 1.0e-6, abstol = 1.0e-6,
+        initializealg = BrownFullBasicInit()
+    )
     @test sol.retcode == ReturnCode.Success
 end
