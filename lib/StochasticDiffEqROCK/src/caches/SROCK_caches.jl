@@ -295,7 +295,7 @@ function alg_cache(
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
     Gₛ = zero(noise_rate_prototype)
-    if ΔW isa Number  || is_diagonal_noise(prob)
+    if ΔW isa Number || is_diagonal_noise(prob)
         Gₛ₁ = Gₛ
     else
         Gₛ₁ = zero(noise_rate_prototype)
@@ -377,7 +377,7 @@ function alg_cache(
     Xₛ₋₃ = zero(noise_rate_prototype)
     vec_χ = false .* vec(ΔW)
     WikRange = false .* vec(ΔW)
-    if ΔW isa Number  || is_diagonal_noise(prob)
+    if ΔW isa Number || is_diagonal_noise(prob)
         Gₛ = Xₛ₋₁
         SXₛ₋₁ = utmp
         SXₛ₋₂ = utmp

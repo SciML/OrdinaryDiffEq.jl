@@ -22,8 +22,6 @@ import SciMLBase
 using LinearAlgebra
 using StaticArrays
 using RecursiveArrayTools
-import DiffEqNoiseProcess
-using Random: rand!
 
 include("algorithms.jl")
 include("alg_utils.jl")

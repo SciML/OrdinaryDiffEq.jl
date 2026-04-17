@@ -267,7 +267,7 @@ end
     # Now uᵢ₋₂ = uₛ₋₂, uᵢ₋₁ = uₛ₋₁, uᵢ = uₛ
     # Similarly tᵢ₋₂ = tₛ₋₂, tᵢ₋₁ = tₛ₋₁, tᵢ = tₛ
 
-    if (W.dW isa Number)  || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         Gₛ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
         u += Gₛ .* W.dW
         Gₛ = integrator.f.g(uᵢ, p, tᵢ)
@@ -418,7 +418,7 @@ end
     # Now uᵢ₋₂ = uₛ₋₂, uᵢ₋₁ = uₛ₋₁, uᵢ = uₛ
     # Similarly tᵢ₋₂ = tₛ₋₂, tᵢ₋₁ = tₛ₋₁, tᵢ = tₛ
 
-    if (W.dW isa Number)  || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         integrator.f.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
         @.. u += Gₛ * W.dW
         integrator.f.g(Gₛ, uᵢ, p, tᵢ)
@@ -542,14 +542,14 @@ end
     end
 
     Gₛ = integrator.f.g(u, p, tᵢ)
-    if (W.dW isa Number)  || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         u += Gₛ .* W.dW
     else
         u += Gₛ * W.dW
     end
 
     if integrator.alg.strong_order_1
-        if (W.dW isa Number)  ||
+        if (W.dW isa Number) ||
                 (is_diagonal_noise(integrator.sol.prob))
             uᵢ₋₂ = @. 1 // 2 * Gₛ * (W.dW^2 - abs(dt))
             tmp = @. u + uᵢ₋₂
@@ -633,7 +633,7 @@ end
     end
 
     integrator.f.g(Gₛ, u, p, tᵢ)
-    if (W.dW isa Number)  || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         @.. u += Gₛ * W.dW
     else
         mul!(uᵢ₋₁, Gₛ, W.dW)
@@ -641,7 +641,7 @@ end
     end
 
     if integrator.alg.strong_order_1
-        if (W.dW isa Number)  ||
+        if (W.dW isa Number) ||
                 (is_diagonal_noise(integrator.sol.prob))
             @.. uᵢ₋₂ = 1 // 2 * Gₛ * (W.dW^2 - abs(dt))
             @.. tmp = u + uᵢ₋₂
@@ -1168,7 +1168,7 @@ end
         end
     end
 
-    if (W.dW isa Number)  || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         integrator.f.g(Gₛ, Û₁, p, t̂₁)
         @.. uₓ += Gₛ * W.dW
 
@@ -1291,7 +1291,7 @@ end
     tᵢ₋₁ += θₛ₋₃ * (tᵢ₋₁ - tᵢ₋₂)
     tᵢ₋₂ = ttmp
 
-    if W.dW isa Number  || is_diagonal_noise(integrator.sol.prob)
+    if W.dW isa Number || is_diagonal_noise(integrator.sol.prob)
         # stage s-3
         yₛ₋₃ = integrator.f(uᵢ₋₁, p, tᵢ₋₁)
         utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃
@@ -1460,7 +1460,9 @@ end
     τ = mτ[deg_index]
 
     sqrt_dt = sqrt(abs(dt))
-    if gen_prob; init_χ!(vec_χ, W); end
+    if gen_prob
+        init_χ!(vec_χ, W)
+    end
 
     tᵢ₋₂ = t
     @.. uᵢ₋₂ = uprev
@@ -1503,7 +1505,7 @@ end
     tᵢ₋₁ += θₛ₋₃ * (tᵢ₋₁ - tᵢ₋₂)
     tᵢ₋₂ = ttmp
 
-    if W.dW isa Number  || is_diagonal_noise(integrator.sol.prob)
+    if W.dW isa Number || is_diagonal_noise(integrator.sol.prob)
         # stage s-3
         integrator.f(yₛ₋₃, uᵢ₋₁, p, tᵢ₋₁)
         @.. utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃
@@ -1714,7 +1716,7 @@ end
     uᵢ₋₂ = integrator.f(uᵢ₋₂, p, tᵢ₋₂)
     u += dt * (σ + τ) * uᵢ₋₂
 
-    if (W.dW isa Number)  || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         Gₛ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
         u += Gₛ .* W.dW
 
@@ -1809,7 +1811,7 @@ end
     integrator.f(k, uᵢ₋₂, p, tᵢ₋₂)
     @.. u += dt * (σ + τ) * k
 
-    if (W.dW isa Number)  || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         integrator.f.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
         @.. u += Gₛ * W.dW
 
@@ -1845,9 +1847,10 @@ end
 end
 
 function init_χ!(vec_χ, W)
-    rand!(rng(W), vec_χ)
-    @.. vec_χ = 2 * floor(vec_χ + 1 // 2) - 1
+    r = rng(W)
+    for i in eachindex(vec_χ)
+        vec_χ[i] = 2 * floor(rand(r) + 0.5) - 1
+    end
 end
 
-rng(W::DiffEqNoiseProcess.AbstractNoiseProcess) = W.rng
-rng(W::DiffEqNoiseProcess.NoiseWrapper) = W.source.rng
+rng(W) = hasfield(typeof(W), :rng) ? W.rng : W.source.rng
