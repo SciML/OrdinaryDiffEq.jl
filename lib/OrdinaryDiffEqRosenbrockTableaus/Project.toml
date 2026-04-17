@@ -24,3 +24,6 @@ julia = "1.10"
 
 [targets]
 test = ["ADTypes", "DiffEqDevTools", "Enzyme", "LinearAlgebra", "LinearSolve", "ODEProblemLibrary", "Test"]
+
+[sources.DiffEqDevTools]
+path = "../DiffEqDevTools"
