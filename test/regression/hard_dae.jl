@@ -291,6 +291,7 @@ simple_implicit_euler = ImplicitEuler(
 alg_switch = CompositeAlgorithm((ImplicitEuler(), simple_implicit_euler), choice_function)
 
 for prob in [prob1, prob2], alg in [simple_implicit_euler, alg_switch]
+    N_FAILS[] = 0  # reset shared state before each solve
     sol = solve(prob, alg, callback = cb, dt = 1 / 2^10, adaptive = false)
     @test sol.retcode == ReturnCode.Success
     @test sol(0, idxs = 1) == 5
