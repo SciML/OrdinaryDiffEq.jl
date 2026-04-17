@@ -72,8 +72,6 @@ Base.@pure function determine_chunksize(u, CS)
     end
 end
 
-
-
 function DiffEqBase.prepare_alg(
         alg::Union{
             OrdinaryDiffEqAdaptiveImplicitAlgorithm{
