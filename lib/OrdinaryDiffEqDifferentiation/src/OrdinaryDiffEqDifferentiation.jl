@@ -36,6 +36,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     OrdinaryDiffEqImplicitAlgorithm, CompositeAlgorithm,
     OrdinaryDiffEqExponentialAlgorithm,
     OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+    OrdinaryDiffEqLinearExponentialAlgorithm,
     StochasticDiffEqNewtonAlgorithm, StochasticDiffEqNewtonAdaptiveAlgorithm,
     StochasticDiffEqJumpNewtonAdaptiveAlgorithm,
     StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
