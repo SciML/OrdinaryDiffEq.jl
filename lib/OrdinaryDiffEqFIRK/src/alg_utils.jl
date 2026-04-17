@@ -25,3 +25,16 @@ get_current_adaptive_order(alg::AdaptiveRadau, cache) = cache.num_stages
 function has_stiff_interpolation(::Union{RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau})
     return true
 end
+
+qmax_default(alg::GaussLegendre) = 8
+
+alg_order(alg::GaussLegendre) = 2 * alg.num_stages
+
+isfirk(alg::GaussLegendre) = true
+
+alg_adaptive_order(alg::GaussLegendre) = 2 * alg.num_stages - 1
+isadaptive(alg::GaussLegendre) = false #first draft not adaptive, fix controller and adaptive is to do
+has_stiff_interpolation(::GaussLegendre) = true
+
+get_current_alg_order(alg::GaussLegendre, cache) = 2 * alg.num_stages
+get_current_adaptive_order(alg::GaussLegendre, cache) = 2 * alg.num_stages - 1

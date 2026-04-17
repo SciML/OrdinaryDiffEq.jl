@@ -14,20 +14,22 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     qmax_default, alg_adaptive_order,
     stepsize_controller!, step_accept_controller!,
     step_reject_controller!,
-    PredictiveController, alg_can_repeat_jac, NewtonAlgorithm,
+    alg_can_repeat_jac, NewtonAlgorithm,
     fac_default_gamma,
     get_current_adaptive_order, get_fsalfirstlast,
-    isfirk, generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
+    get_current_alg_order,
+    isfirk, generic_solver_docstring,
+    _ad_chunksize_int, _ad_fdtype, _fixup_ad,
     LinearAliasSpecifier
-using MuladdMacro, DiffEqBase, RecursiveArrayTools
-isfirk, generic_solver_docstring
+using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
 using SciMLOperators: AbstractSciMLOperator
-using LinearAlgebra: I, UniformScaling, mul!, lu
+using LinearAlgebra: I, UniformScaling, mul!, lu, dot
 import LinearSolve
 import FastBroadcast: @..
 import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: _ode_interpolant, _ode_interpolant!, has_stiff_interpolation
 import FastPower: fastpower
+import FastGaussQuadrature: gausslegendre
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_config,
     UDerivativeWrapper, calc_J!, dolinsolve, calc_J,
     islinearfunction
@@ -62,6 +64,6 @@ include("firk_interpolants.jl")
 include("firk_addsteps.jl")
 include("integrator_interface.jl")
 
-export RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau
+export RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau, GaussLegendre
 
 end

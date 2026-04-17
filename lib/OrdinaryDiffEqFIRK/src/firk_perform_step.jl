@@ -2241,3 +2241,297 @@ end
     integrator.stats.nf += 1
     return
 end
+
+
+function initialize!(integrator, cache::GaussLegendreConstantCache)
+    integrator.kshortsize = integrator.alg.num_stages + 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    for i in 3:(integrator.alg.num_stages + 2)
+        integrator.k[i] = zero(integrator.fsalfirst)
+    end
+    return nothing
+end
+
+function initialize!(integrator, cache::GaussLegendreCache)
+    integrator.kshortsize = integrator.alg.num_stages + 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    for i in 3:(integrator.alg.num_stages + 2)
+        integrator.k[i] = similar(integrator.fsallast)
+    end
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    if integrator.opts.adaptive
+        (; abstol, reltol) = integrator.opts
+        if reltol isa Number
+            cache.rtol = reltol^((cache.num_stages + 1) / (2 * cache.num_stages)) / 10
+            cache.atol = cache.rtol * (abstol / reltol)
+        else
+            @.. cache.rtol = reltol^((cache.num_stages + 1) / (2 * cache.num_stages)) / 10
+            @.. cache.atol = cache.rtol * (abstol / reltol)
+        end
+    end
+    return nothing
+end
+
+@muladd function perform_step!(integrator, cache::GaussLegendreConstantCache,
+        repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tab, κ, num_stages) = cache
+    (; A, b, c) = tab
+    (; internalnorm, abstol, reltol, adaptive) = integrator.opts
+    alg = unwrap_alg(integrator, true)
+    (; maxiters) = alg
+    mass_matrix = integrator.f.mass_matrix
+
+    rtol = @.. reltol^((num_stages + 1) / (num_stages * 2)) / 10
+    atol = @.. rtol * (abstol / reltol)
+
+    J = calc_J(integrator, cache)
+
+    # build W = I - dt * A ⊗ J (no decoupling of system yet although an appraoch for it is real valued without complex decomposition)
+    n = length(uprev)
+    In = I(n)
+    W_full = kron(I(num_stages), In) - dt * kron(A, J)
+    LU_full = lu(W_full)
+    integrator.stats.nw += 1
+
+    # initial guess: zero
+    z = [map(zero, u) for _ in 1:num_stages]
+    w = [map(zero, u) for _ in 1:num_stages]
+
+    ndw = one(eltype(u))
+    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    fail_convergence = true
+    iter = 0
+
+    while iter < maxiters
+        iter += 1
+        integrator.stats.nnonliniter += 1
+
+        # evaluate stage functions
+        ff = [f(uprev + z[i], p, t + c[i] * dt) for i in 1:num_stages]
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, num_stages)
+
+        # build residual: r[i] = z[i] - dt * sum_j A[i,j] * ff[j]
+        r = zeros(eltype(u), num_stages * n)
+        for i in 1:num_stages
+            acc = zero(u)
+            for j in 1:num_stages
+                acc = @.. acc + A[i, j] * ff[j]
+            end
+            r[((i-1)*n+1):(i*n)] = z[i] - dt * acc
+        end
+
+        dw_flat = LU_full \ r
+        integrator.stats.nsolve += 1
+
+        dw = [dw_flat[((i-1)*n+1):(i*n)] for i in 1:num_stages]
+
+        ndwprev = ndw
+        ndw = sum(internalnorm(
+            calculate_residuals(dw[i], uprev, u, atol, rtol, internalnorm, t), t)
+            for i in 1:num_stages)
+
+        if iter > 1
+            θ = ndw / ndwprev
+            (diverge = θ > 1) && (cache.status = Divergence)
+            (veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ)) &&
+                (cache.status = VerySlowConvergence)
+            if diverge || veryslowconvergence
+                break
+            end
+            η = θ / (1 - θ)
+        end
+
+        for i in 1:num_stages
+            z[i] = @.. z[i] - dw[i]
+        end
+
+        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence : Convergence
+            fail_convergence = false
+            break
+        end
+    end
+
+    if fail_convergence
+        integrator.force_stepfail = true
+        integrator.stats.nnonlinconvfail += 1
+        return
+    end
+    cache.ηold = η
+    cache.iter = iter
+
+    # update solution: u = uprev + sum b[i] * f(stage_i)
+    ff = [f(uprev + z[i], p, t + c[i] * dt) for i in 1:num_stages]
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, num_stages)
+    u = copy(uprev)
+    for i in 1:num_stages
+        u = @.. u + dt * b[i] * ff[i]
+    end
+
+    # TODO: implement proper embedded GL error estimate for better step size control
+    # TODO: implement stage decoupling (complex Schur decomposition) for O(s*n^3) scaling
+    # TODO: add dense output / interpolation
+
+    if adaptive
+        utilde = zero(u)
+        for i in 1:num_stages
+            utilde = @.. utilde + tab.e[i] * ff[i]
+        end
+        utilde = @.. dt * utilde
+        integrator.EEst = internalnorm(
+            calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t), t)
+    end
+
+    if integrator.EEst <= oneunit(integrator.EEst)
+        cache.dtprev = dt
+        if alg.extrapolant != :constant
+            for i in 1:num_stages
+                integrator.k[i + 2] = z[i]
+            end
+        end
+    end
+
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+    return
+end
+
+@muladd function perform_step!(integrator, cache::GaussLegendreCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p, fsallast, fsalfirst) = integrator
+    (; tab, κ, z, w, dw, ks, fw, J, W, ubuff,
+        tmp, atmp, jac_config, linsolve, rtol, atol, step_limiter!, num_stages) = cache
+    (; A, b, c, e) = tab
+    (; internalnorm, abstol, reltol, adaptive) = integrator.opts
+    alg = unwrap_alg(integrator, true)
+    (; maxiters) = alg
+    mass_matrix = integrator.f.mass_matrix
+    n = length(uprev)
+
+    (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
+        (calc_J!(J, integrator, cache); cache.W_γdt = dt)
+    if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
+        W .= kron(I(num_stages), I(n)) .- dt .* kron(A, J)
+        integrator.stats.nw += 1
+    end
+
+    for i in 1:num_stages
+        @.. z[i] = zero(eltype(u))
+    end
+
+    ndw = one(eltype(u))
+    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    fail_convergence = true
+    iter = 0
+
+    while iter < maxiters
+        iter += 1
+        integrator.stats.nnonliniter += 1
+
+        for i in 1:num_stages
+            @.. tmp = uprev + z[i]
+            f(ks[i], tmp, p, t + c[i] * dt)
+        end
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, num_stages)
+
+        for i in 1:num_stages
+            acc = zero(u)
+            for j in 1:num_stages
+                @.. acc = acc + A[i, j] * ks[j]
+            end
+            ubuff[((i-1)*n+1):(i*n)] .= _vec(z[i]) .- dt .* _vec(acc)
+        end
+
+        needfactor = iter == 1 && new_W
+        linres = dolinsolve(integrator, linsolve;
+            A = needfactor ? W : nothing, b = ubuff, linu = ubuff)
+        cache.linsolve = linres.cache
+        integrator.stats.nsolve += 1
+
+        for i in 1:num_stages
+            dw[i] .= ubuff[((i-1)*n+1):(i*n)]
+        end
+
+        ndwprev = ndw
+        ndw = sum(begin
+            calculate_residuals!(atmp, dw[i], uprev, u, atol, rtol, internalnorm, t)
+            internalnorm(atmp, t)
+        end for i in 1:num_stages)
+
+        if iter > 1
+            θ = ndw / ndwprev
+            (diverge = θ > 1) && (cache.status = Divergence)
+            (veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ)) &&
+                (cache.status = VerySlowConvergence)
+            if diverge || veryslowconvergence
+                break
+            end
+            η = θ / (1 - θ)
+        end
+
+        for i in 1:num_stages
+            @.. z[i] = z[i] - dw[i]
+        end
+
+        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence : Convergence
+            fail_convergence = false
+            break
+        end
+    end
+
+    if fail_convergence
+        integrator.force_stepfail = true
+        integrator.stats.nnonlinconvfail += 1
+        return
+    end
+    cache.ηold = η
+    cache.iter = iter
+
+    @.. u = uprev
+    for i in 1:num_stages
+        @.. tmp = uprev + z[i]
+        f(ks[i], tmp, p, t + c[i] * dt)
+        @.. u = u + dt * b[i] * ks[i]
+    end
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, num_stages)
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    # TODO: implement proper embedded GL error estimate for better step size control
+    # TODO: implement stage decoupling (complex Schur decomposition) for O(s*n^3) scaling
+    # TODO: add dense output / interpolation
+    if adaptive
+        @.. tmp = zero(eltype(u))
+        for i in 1:num_stages
+            @.. tmp = tmp + e[i] * ks[i]
+        end
+        @.. tmp = dt * tmp
+        calculate_residuals!(atmp, tmp, uprev, u, atol, rtol, internalnorm, t)
+        integrator.EEst = internalnorm(atmp, t)
+    end
+
+    if integrator.EEst <= oneunit(integrator.EEst)
+        cache.dtprev = dt
+        if alg.extrapolant != :constant
+            for i in 1:num_stages
+                integrator.k[i + 2] .= z[i]
+            end
+        end
+    end
+
+    f(fsallast, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return
+end
