@@ -35,5 +35,8 @@ Reexport = "1"
 [targets]
 test = ["DiffEqDevTools", "SafeTestsets", "StaticArrays", "Test", "Pkg"]
 
+[sources.DiffEqDevTools]
+path = "../DiffEqDevTools"
+
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
