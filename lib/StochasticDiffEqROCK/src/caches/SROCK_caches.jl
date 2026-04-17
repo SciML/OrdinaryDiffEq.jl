@@ -161,7 +161,7 @@ function alg_cache(
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
     Gₛ = zero(noise_rate_prototype)
-    if (!alg.strong_order_1 || is_diagonal_noise(prob) || ΔW isa Number )
+    if (!alg.strong_order_1 || is_diagonal_noise(prob) || ΔW isa Number)
         Gₛ₁ = Gₛ
     else
         Gₛ₁ = zero(noise_rate_prototype)

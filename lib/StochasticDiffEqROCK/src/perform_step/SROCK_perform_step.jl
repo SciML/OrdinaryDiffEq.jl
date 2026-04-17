@@ -194,7 +194,7 @@ end
     (; recf, recf2, mα, mσ, mτ) = cache
 
     gen_prob = !(
-        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number) 
+        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number)
     )
     if gen_prob
         vec_χ = similar(W.dW)
@@ -334,7 +334,7 @@ end
     (; recf, recf2, mα, mσ, mτ) = cache.constantcache
     ccache = cache.constantcache
     gen_prob = !(
-        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number) 
+        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number)
     )
 
     alg = unwrap_alg(integrator, true)
@@ -982,7 +982,7 @@ end
         end
     end
 
-    if (W.dW isa Number) 
+    if (W.dW isa Number)
         Gₛ = integrator.f.g(Û₁, p, t̂₁)
         uₓ += Gₛ * W.dW
 
@@ -1227,7 +1227,7 @@ end
     (; recf, mσ, mτ, mδ) = cache
 
     gen_prob = !(
-        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number) 
+        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number)
     )
 
     alg = unwrap_alg(integrator, true)
@@ -1433,7 +1433,7 @@ end
 
     ccache = cache.constantcache
     gen_prob = !(
-        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number) 
+        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number)
     )
 
     alg = unwrap_alg(integrator, true)
