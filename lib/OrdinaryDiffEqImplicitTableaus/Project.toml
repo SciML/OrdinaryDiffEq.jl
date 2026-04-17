@@ -10,9 +10,6 @@ DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources.DiffEqDevTools]
-path = "../DiffEqDevTools"
-
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 
