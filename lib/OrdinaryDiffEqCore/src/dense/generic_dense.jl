@@ -847,10 +847,12 @@ function ode_interpolation!(
                     idxs, deriv, differential_vars
                 )
             else
-                _set_val!(vals, j, ode_interpolant(
-                    Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache,
-                    idxs, deriv, differential_vars
-                ))
+                _set_val!(
+                    vals, j, ode_interpolant(
+                        Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache,
+                        idxs, deriv, differential_vars
+                    )
+                )
             end
         elseif !id.dense
             if _vals_eltype(vals) <: AbstractArray
@@ -859,10 +861,12 @@ function ode_interpolation!(
                     deriv
                 )
             else
-                _set_val!(vals, j, linear_interpolant(
-                    Θ, dt, timeseries[i₋], timeseries[i₊], idxs,
-                    deriv
-                ))
+                _set_val!(
+                    vals, j, linear_interpolant(
+                        Θ, dt, timeseries[i₋], timeseries[i₊], idxs,
+                        deriv
+                    )
+                )
             end
         elseif cache isa DefaultCache
             if current_alg != id.alg_choice[i₊] # switched algorithm
@@ -878,10 +882,12 @@ function ode_interpolation!(
                             cache.cache1, idxs, deriv, differential_vars
                         )
                     else
-                        _set_val!(vals, j, ode_interpolant(
-                            Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                            cache.cache1, idxs, deriv, differential_vars
-                        ))
+                        _set_val!(
+                            vals, j, ode_interpolant(
+                                Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                                cache.cache1, idxs, deriv, differential_vars
+                            )
+                        )
                     end
                 elseif current_alg == 2
                     _ode_addsteps!(
@@ -894,10 +900,12 @@ function ode_interpolation!(
                             cache.cache2, idxs, deriv, differential_vars
                         )
                     else
-                        _set_val!(vals, j, ode_interpolant(
-                            Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                            cache.cache2, idxs, deriv, differential_vars
-                        ))
+                        _set_val!(
+                            vals, j, ode_interpolant(
+                                Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                                cache.cache2, idxs, deriv, differential_vars
+                            )
+                        )
                     end
                 elseif current_alg == 3
                     _ode_addsteps!(
@@ -910,10 +918,12 @@ function ode_interpolation!(
                             cache.cache3, idxs, deriv, differential_vars
                         )
                     else
-                        _set_val!(vals, j, ode_interpolant(
-                            Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                            cache.cache3, idxs, deriv, differential_vars
-                        ))
+                        _set_val!(
+                            vals, j, ode_interpolant(
+                                Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                                cache.cache3, idxs, deriv, differential_vars
+                            )
+                        )
                     end
                 elseif current_alg == 4
                     _ode_addsteps!(
@@ -926,10 +936,12 @@ function ode_interpolation!(
                             cache.cache4, idxs, deriv, differential_vars
                         )
                     else
-                        _set_val!(vals, j, ode_interpolant(
-                            Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                            cache.cache4, idxs, deriv, differential_vars
-                        ))
+                        _set_val!(
+                            vals, j, ode_interpolant(
+                                Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                                cache.cache4, idxs, deriv, differential_vars
+                            )
+                        )
                     end
                 elseif current_alg == 5
                     _ode_addsteps!(
@@ -942,10 +954,12 @@ function ode_interpolation!(
                             cache.cache5, idxs, deriv, differential_vars
                         )
                     else
-                        _set_val!(vals, j, ode_interpolant(
-                            Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                            cache.cache5, idxs, deriv, differential_vars
-                        ))
+                        _set_val!(
+                            vals, j, ode_interpolant(
+                                Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                                cache.cache5, idxs, deriv, differential_vars
+                            )
+                        )
                     end
                 elseif current_alg == 6
                     _ode_addsteps!(
@@ -958,10 +972,12 @@ function ode_interpolation!(
                             cache.cache6, idxs, deriv, differential_vars
                         )
                     else
-                        _set_val!(vals, j, ode_interpolant(
-                            Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                            cache.cache6, idxs, deriv, differential_vars
-                        ))
+                        _set_val!(
+                            vals, j, ode_interpolant(
+                                Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                                cache.cache6, idxs, deriv, differential_vars
+                            )
+                        )
                     end
                 end
             end
@@ -982,10 +998,12 @@ function ode_interpolation!(
                     cache_i₊, idxs, deriv, differential_vars
                 )
             else
-                _set_val!(vals, j, ode_interpolant(
-                    Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                    cache_i₊, idxs, deriv, differential_vars
-                ))
+                _set_val!(
+                    vals, j, ode_interpolant(
+                        Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                        cache_i₊, idxs, deriv, differential_vars
+                    )
+                )
             end
         end
     end
