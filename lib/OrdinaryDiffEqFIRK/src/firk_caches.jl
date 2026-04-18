@@ -768,9 +768,12 @@ mutable struct GaussLegendreCache{
     u::uType
     uprev::uType
     z::Vector{uType}
+    z_last::Vector{uType}   
     w::Vector{uType}
     dw::Vector{uType}
     ubuff::uType
+    u_full::uType           
+    u_half::uType          
     du1::rateType
     fsalfirst::rateType
     k::rateType
@@ -809,11 +812,14 @@ function alg_cache(
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 
     z = [zero(u) for _ in 1:num_stages]
+    z_last = [zero(u) for _ in 1:num_stages]
     w = [zero(u) for _ in 1:num_stages]
     dw = [zero(u) for _ in 1:num_stages]
     n = length(_vec(u))
     ubuff = similar(u, (num_stages * n,))
     recursivefill!(ubuff, false)
+    u_full = zero(u)
+    u_half = zero(u)
 
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
@@ -847,7 +853,7 @@ function alg_cache(
     atol = reltol isa Number ? reltol : zero(reltol)
 
     return GaussLegendreCache(
-        u, uprev, z, w, dw, ubuff,
+        u, uprev, z, z_last, w, dw, ubuff, u_full, u_half,
         du1, fsalfirst, k, ks, fw,
         J, W,
         uf, tab, κ, one(uToltype), 10000,

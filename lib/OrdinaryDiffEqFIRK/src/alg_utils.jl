@@ -32,9 +32,10 @@ alg_order(alg::GaussLegendre) = 2 * alg.num_stages
 
 isfirk(alg::GaussLegendre) = true
 
-alg_adaptive_order(alg::GaussLegendre) = 2 * alg.num_stages - 1
-isadaptive(alg::GaussLegendre) = false #first draft not adaptive, fix controller and adaptive is to do
+# Richardson step-doubling controller
+isadaptive(alg::GaussLegendre) = alg.num_stages >= 2
+alg_adaptive_order(alg::GaussLegendre) = 2 * alg.num_stages
 has_stiff_interpolation(::GaussLegendre) = true
 
 get_current_alg_order(alg::GaussLegendre, cache) = 2 * alg.num_stages
-get_current_adaptive_order(alg::GaussLegendre, cache) = 2 * alg.num_stages - 1
+get_current_adaptive_order(alg::GaussLegendre, cache) = 2 * alg.num_stages

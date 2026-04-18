@@ -234,8 +234,9 @@ With s stages, the method has order 2s. Symplectic and A-stable, making it suita
 for Hamiltonian systems and problems requiring long-time geometric integration.
 
 !!! warning \"Experimental\"
-    `GaussLegendre` is experimental. Details such as error estimation, linear system
-    structure, and stage transforms may change as the implementation is refined.",
+    `GaussLegendre` is experimental. Adaptive stepping currently uses Richardson
+    step-doubling (roughly 3× the work per accepted step) and requires `num_stages ≥ 2`;
+    Details may change as the implementation is refined.",
     "GaussLegendre",
     "Fully-Implicit Runge-Kutta Method.";
     references = gauss_legendre_docstring,
