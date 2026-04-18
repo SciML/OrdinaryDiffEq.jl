@@ -367,7 +367,7 @@ end
     dt₀ = min(dt₀, dtmax_tdir)
     dt₀_tdir = tdir * dt₀
 
-    u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
+    u₁ = u0 + dt₀_tdir * f₀
     f₁ = f(u₁, p, t + dt₀_tdir)
 
     # Constant zone before callback
