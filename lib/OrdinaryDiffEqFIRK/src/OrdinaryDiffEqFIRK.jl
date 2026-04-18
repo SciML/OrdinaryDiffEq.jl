@@ -23,13 +23,12 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     LinearAliasSpecifier
 using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
 using SciMLOperators: AbstractSciMLOperator
-using LinearAlgebra: I, UniformScaling, mul!, lu, dot
+using LinearAlgebra: I, UniformScaling, mul!, lu, dot, eigvals
 import LinearSolve
 import FastBroadcast: @..
 import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: _ode_interpolant, _ode_interpolant!, has_stiff_interpolation
 import FastPower: fastpower
-import FastGaussQuadrature: gausslegendre
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_config,
     UDerivativeWrapper, calc_J!, dolinsolve, calc_J,
     islinearfunction

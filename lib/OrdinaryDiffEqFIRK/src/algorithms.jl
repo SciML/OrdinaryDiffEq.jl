@@ -231,7 +231,11 @@ publisher={Wiley}}"""
 @doc differentiation_rk_docstring(
     "A symplectic fully implicit Runge-Kutta method based on Gauss-Legendre quadrature.
 With s stages, the method has order 2s. Symplectic and A-stable, making it suitable
-for Hamiltonian systems and problems requiring long-time geometric integration.",
+for Hamiltonian systems and problems requiring long-time geometric integration.
+
+!!! warning \"Experimental\"
+    `GaussLegendre` is experimental. Details such as error estimation, linear system
+    structure, and stage transforms may change as the implementation is refined.",
     "GaussLegendre",
     "Fully-Implicit Runge-Kutta Method.";
     references = gauss_legendre_docstring,
