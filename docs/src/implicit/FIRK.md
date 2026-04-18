@@ -80,4 +80,5 @@ first_steps("OrdinaryDiffEqFIRK", "RadauIIA5")
 RadauIIA3
 RadauIIA5
 RadauIIA9
+AdaptiveRadau
 ```
