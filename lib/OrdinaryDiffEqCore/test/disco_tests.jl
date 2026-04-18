@@ -1,5 +1,5 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
-using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner 
+using OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error)) 
 
@@ -19,13 +19,20 @@ end
 cb = ContinuousCallback(condition, affect!; is_discontinuity = true)
 cb2 = ContinuousCallback(condition, affect!; is_discontinuity = false)
 
-sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
+sol_disco_radau = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
 #  298.084 μs (8108 allocations: 257.11 KiB)
-sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
+sol_no_disco_radau = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
 #  356.708 μs (10024 allocations: 312.08 KiB)
-@profview for i in 1:1000 
-    solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
-end
+
+sol_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6)
+#   418.584 μs (16472 allocations: 576.75 KiB)
+sol_no_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb2, reltol = 1e-6)
+#   440.375 μs (17875 allocations: 622.09 KiB)
+
+sol_disco_tsit5 = solve(prob, Tsit5(); callback = cb, reltol = 1e-6)
+#  59.542 μs (7248 allocations: 233.67 KiB)
+sol_no_disco_tsit5 = solve(prob, Tsit5(); callback = cb2, reltol = 1e-6)
+#  46.500 μs (7129 allocations: 226.22 KiB)
 
 #TEST 2: TWO DISCONTINUITIES
 #two discontinuity functions
@@ -63,13 +70,18 @@ cb2 = CallbackSet(cb1f, cb2f)
 #disco solve
 sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
 #  1.503 ms (41672 allocations: 1.27 MiB)
-#fixed order solve
 sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
 #  1.306 ms (37092 allocations: 1.13 MiB)
 
-@profview for i in 1:1000 
-    solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
-end
+sol_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6)
+#   1.164 ms (44318 allocations: 1.52 MiB)
+sol_no_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb2, reltol = 1e-6)
+#   1.306 ms (51713 allocations: 1.76 MiB)
+
+sol_disco_tsit5 = solve(prob, Tsit5(); callback = cb, reltol = 1e-6)
+#   279.792 μs (34573 allocations: 1.07 MiB)
+sol_no_disco_tsit5 = solve(prob, Tsit5(); callback = cb2, reltol = 1e-6)
+#  266.167 μs (39024 allocations: 1.21 MiB)
 
 
 #TEST 3: EXPONENTIAL DISCONTINUITY
@@ -108,13 +120,18 @@ cb_multi2 = CallbackSet(cb_multi_1f, cb_multi_2f)
 #disco solve
 sol_disco = solve(prob_multi, RadauIIA5(); callback=cb_multi, reltol=1e-7, abstol=1e-9)
 #  175.625 μs (1871 allocations: 81.55 KiB)
-#fixed order solve
 sol_no_disco = solve(prob_multi, RadauIIA5(); callback=cb_multi2, reltol = 1e-7, abstol = 1e-9)
 #  142.875 μs (1244 allocations: 59.17 KiB)
 
-@profview for i in 1:1000 
-    solve(prob_multi, RadauIIA5(); callback = cb_multi, reltol = 1e-6)
-end
+sol_disco_rosenbrock = solve(prob_multi, Rodas5P(); callback=cb_multi, reltol=1e-7, abstol=1e-9)
+#   295.834 μs (2216 allocations: 90.70 KiB)
+sol_no_disco_rosenbrock = solve(prob_multi, Rodas5P(); callback=cb_multi2, reltol=1e-7, abstol=1e-9)
+#  253.709 μs (1380 allocations: 74.28 KiB)
+
+sol_disco_tsit5 = solve(prob_multi, Tsit5(); callback=cb_multi, reltol=1e-7, abstol=1e-9)
+#  127.375 μs (1953 allocations: 87.49 KiB)
+sol_no_disco_tsit5 = solve(prob_multi, Tsit5(); callback=cb_multi2, reltol = 1e-7, abstol = 1e-9)
+#  95.250 μs (1499 allocations: 73.62 KiB)
 
 #TEST 4: STIFF DISCONTINUITY
 # very stiff discontinuous system
@@ -142,13 +159,18 @@ cb_stiff_f = ContinuousCallback(cond_stiff, affect_stiff!; is_discontinuity = fa
 #disco solve
 sol_disco = solve(prob_stiff, RadauIIA5(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
 #  149.167 μs (1819 allocations: 75.19 KiB)
-#fixed order solve
 sol_no_disco = solve(prob_stiff, RadauIIA5(); callback=cb_stiff_f, reltol = 1e-9, abstol = 1e-11)
 #  138.125 μs (1565 allocations: 64.09 KiB)
 
-@profview for i in 1:1000 
-    solve(prob_stiff, RadauIIA5(); callback = cb_stiff, reltol = 1e-9, abstol = 1e-11)
-end
+sol_disco_rosenbrock = solve(prob_stiff, Rodas5P(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
+#   204.833 μs (1517 allocations: 59.33 KiB)
+sol_no_disco_rosenbrock = solve(prob_stiff, Rodas5P(); callback=cb_stiff_f, reltol=1e-9, abstol=1e-11)
+#   156.500 μs (1047 allocations: 44.59 KiB)
+
+sol_disco_tsit5 = solve(prob_stiff, Tsit5(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
+#  93.833 μs (2040 allocations: 80.59 KiB)
+sol_no_disco_tsit5 = solve(prob_stiff, Tsit5(); callback=cb_stiff_f, reltol = 1e-9, abstol = 1e-11)
+#  82.750 μs (1898 allocations: 72.12 KiB)
 
 #TEST 5: DISCONTINUOUS DAE
 # discontinuous DAE with mass matrix
@@ -185,6 +207,11 @@ radau_disco = solve(prob_dae, RadauIIA5(); callback=cb_dae, reltol=1e-8, abstol=
 radau_no_disco = solve(prob_dae, RadauIIA5(); callback=cb_daef, reltol=1e-8, abstol=1e-10)
 #  73.000 μs (673 allocations: 32.05 KiB)
 
+sol_disco_rosenbrock = solve(prob_dae, Rodas5P(); callback=cb_dae, reltol=1e-8, abstol=1e-10)
+#   312.167 μs (1200 allocations: 48.73 KiB)
+sol_no_disco_rosenbrock = solve(prob_dae, Rodas5P(); callback=cb_daef, reltol=1e-8, abstol=1e-10)
+#   256.792 μs (672 allocations: 32.56 KiB)
+
 #TEST 6: VECTOR CALLBACK
 function f!(du, u, p, t)
     du[1] = -u[1]
@@ -220,9 +247,15 @@ sol_disco = solve(prob, RadauIIA5(); callback = cb)
 sol_no_disco = solve(prob, RadauIIA5(); callback = cb2)
 #   37.375 μs (531 allocations: 25.23 KiB)
 
-@profview for i in 1:1000 
-    solve(prob, RadauIIA5(); callback = cb)
-end
+sol_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb)
+#   57.333 μs (592 allocations: 31.23 KiB)
+sol_no_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb2)
+#  44.250 μs (476 allocations: 23.73 KiB)
+
+sol_disco_tsit5 = solve(prob, Tsit5(); callback = cb)
+#   37.833 μs (673 allocations: 31.80 KiB)
+sol_no_disco_tsit5 = solve(prob, Tsit5(); callback = cb2)
+#  24.958 μs (557 allocations: 24.23 KiB)
 
 #TEST 7
 function f!(du, u, p, t)
@@ -245,9 +278,15 @@ affect!(integrator) = nothing
 cb = ContinuousCallback(cond, affect!; is_discontinuity = true)
 cb2 = ContinuousCallback(cond, affect!; is_discontinuity = false)
 
-sol_disco = solve(prob, Tsit5(); callback = cb, reltol = 1e-8, abstol = 1e-10)
-sol_no_disco = solve(prob, Tsit5(); callback = cb2, reltol = 1e-8, abstol = 1e-10)
+sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-8, abstol = 1e-10)
+sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-8, abstol = 1e-10)
 
-@profview for i in 1:1000 
-    solve(prob, Tsit5(); callback = cb, reltol = 1e-8, abstol = 1e-10)
-end
+sol_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1e-8, abstol = 1e-10)
+#   240.291 μs (1821 allocations: 71.56 KiB)
+sol_no_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb2, reltol = 1e-8, abstol = 1e-10)
+#   184.625 μs (1029 allocations: 49.23 KiB)
+
+sol_disco_tsit5 = solve(prob, Tsit5(); callback = cb, reltol = 1e-8, abstol = 1e-10)
+#   79.791 μs (1678 allocations: 73.85 KiB)
+sol_no_disco_tsit5 = solve(prob, Tsit5(); callback = cb2, reltol = 1e-8, abstol = 1e-10)
+#   55.958 μs (1259 allocations: 57.04 KiB)
