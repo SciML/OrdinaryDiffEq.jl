@@ -11,6 +11,7 @@ end
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "FIRK Tests" include("ode_firk_tests.jl")
+    @time @safetestset "GaussLegendre Adaptive Tests" include("gausslegendre_adaptive_tests.jl")
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia

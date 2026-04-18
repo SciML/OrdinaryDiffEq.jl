@@ -106,6 +106,37 @@ for prob in [prob_ode_linear, prob_ode_2Dlinear]
     @test sim.𝒪est[:L2] ≈ 3 atol = 0.25
 end
 
+# GL4 on the convergence tests
+for prob in [prob_ode_linear, prob_ode_2Dlinear]
+    dts = Float64.(1 ./ 2 .^ (5:-1:2))
+    sim = test_convergence(
+        dts,
+        prob,
+        GaussLegendre(num_stages = 2; maxiters = 100);
+        dense_errors = false,
+        abstol = 1.0e-12,
+        reltol = 1.0e-12,
+    )
+    @test sim.𝒪est[:final] ≈ 4 atol = testTol
+end
+
+# GL6 on the 2D linear problem only due to scalar log–log slope being noisier at high order
+dts = Float64.(1 ./ 2 .^ (5:-1:2))
+sim_gl3 = test_convergence(
+    dts,
+    prob_ode_2Dlinear,
+    GaussLegendre(num_stages = 3; maxiters = 100);
+    dense_errors = false,
+    abstol = 1.0e-12,
+    reltol = 1.0e-12,
+)
+@test sim_gl3.𝒪est[:final] ≈ 6 atol = testTol
+
+for prob in [prob_ode_linear, prob_ode_2Dlinear]
+    sol = solve(prob, GaussLegendre(num_stages = 3); reltol = 1.0e-5, abstol = 1.0e-8)
+    @test SciMLBase.successful_retcode(sol)
+end
+
 # test adaptivity
 for iip in (true, false)
     vanstiff = ODEProblem{iip}(vanderpol_firk, [sqrt(3), 0], (0.0, 1.0), [1.0e6])

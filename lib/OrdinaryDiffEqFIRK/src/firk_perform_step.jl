@@ -2516,7 +2516,7 @@ end
         integrator.stats.nsolve += 1
 
         for i in 1:num_stages
-            dw[i] .= ubuff[((i - 1) * n + 1):(i * n)]
+            @views copyto!(_vec(dw[i]), ubuff[((i - 1) * n + 1):(i * n)])
         end
 
         ndwprev = ndw
@@ -2597,7 +2597,7 @@ end
             return
         end
 
-            # second half step at dt/2
+        # second half step at dt/2
         ok3 = _gausslegendre_substep!(u, u_half, t + half_dt, half_dt, J, cache, integrator, alg)
         if !ok3
             integrator.force_stepfail = true

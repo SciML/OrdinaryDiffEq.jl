@@ -761,19 +761,20 @@ function alg_cache(
     )
 end
 
+
 mutable struct GaussLegendreCache{
-        uType, uNoUnitsType, rateType, JType, WType,
+        uType, uNoUnitsType, rateType, JType, WType, Buff,
         UF, JC, F1, Tab, Tol, Dt, rTol, aTol, StepLimiter,
     } <: FIRKMutableCache
     u::uType
     uprev::uType
     z::Vector{uType}
-    z_last::Vector{uType}   
+    z_last::Vector{uType}
     w::Vector{uType}
     dw::Vector{uType}
-    ubuff::uType
-    u_full::uType           
-    u_half::uType          
+    ubuff::Buff
+    u_full::uType
+    u_half::uType
     du1::rateType
     fsalfirst::rateType
     k::rateType
@@ -816,7 +817,7 @@ function alg_cache(
     w = [zero(u) for _ in 1:num_stages]
     dw = [zero(u) for _ in 1:num_stages]
     n = length(_vec(u))
-    ubuff = similar(u, (num_stages * n,))
+    ubuff = similar(_vec(u), num_stages * n)
     recursivefill!(ubuff, false)
     u_full = zero(u)
     u_half = zero(u)
