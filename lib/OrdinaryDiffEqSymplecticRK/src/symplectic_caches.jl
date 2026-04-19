@@ -149,20 +149,20 @@ end
 end
 
 # Mapping from algorithm to tableau constructor
-_symplectic_tableau(::PseudoVerletLeapfrog, T, T2) = PseudoVerletLeapfrogConstantCache(T, T2)
-_symplectic_tableau(::McAte2, T, T2) = McAte2ConstantCache(T, T2)
-_symplectic_tableau(::Ruth3, T, T2) = Ruth3ConstantCache(T, T2)
-_symplectic_tableau(::McAte3, T, T2) = McAte3ConstantCache(T, T2)
-_symplectic_tableau(::CandyRoz4, T, T2) = CandyRoz4ConstantCache(T, T2)
-_symplectic_tableau(::McAte4, T, T2) = McAte4ConstantCache(T, T2)
-_symplectic_tableau(::CalvoSanz4, T, T2) = CalvoSanz4ConstantCache(T, T2)
-_symplectic_tableau(::McAte42, T, T2) = McAte42ConstantCache(T, T2)
-_symplectic_tableau(::McAte5, T, T2) = McAte5ConstantCache(T, T2)
-_symplectic_tableau(::Yoshida6, T, T2) = Yoshida6ConstantCache(T, T2)
-_symplectic_tableau(::KahanLi6, T, T2) = KahanLi6ConstantCache(T, T2)
-_symplectic_tableau(::McAte8, T, T2) = McAte8ConstantCache(T, T2)
-_symplectic_tableau(::KahanLi8, T, T2) = KahanLi8ConstantCache(T, T2)
-_symplectic_tableau(::SofSpa10, T, T2) = SofSpa10ConstantCache(T, T2)
+_symplectic_tableau(::PseudoVerletLeapfrog, ::Type{T}, T2) = PseudoVerletLeapfrogConstantCache(T, T2)
+_symplectic_tableau(::McAte2, ::Type{T}, ::Type{T2}) where {T,T2} = McAte2ConstantCache(T, T2)
+_symplectic_tableau(::Ruth3, ::Type{T}, ::Type{T2}) where {T,T2} = Ruth3ConstantCache(T, T2)
+_symplectic_tableau(::McAte3, ::Type{T}, ::Type{T2}) where {T,T2} = McAte3ConstantCache(T, T2)
+_symplectic_tableau(::CandyRoz4,, ::Type{T}, ::Type{T2}) where {T,T2} = CandyRoz4ConstantCache(T, T2)
+_symplectic_tableau(::McAte4, ::Type{T}, ::Type{T2}) where {T,T2} = McAte4ConstantCache(T, T2)
+_symplectic_tableau(::CalvoSanz4, ::Type{T}, ::Type{T2}) where {T,T2} = CalvoSanz4ConstantCache(T, T2)
+_symplectic_tableau(::McAte42, ::Type{T}, ::Type{T2}) where {T,T2} = McAte42ConstantCache(T, T2)
+_symplectic_tableau(::McAte5, ::Type{T}, ::Type{T2}) where {T,T2}= McAte5ConstantCache(T, T2)
+_symplectic_tableau(::Yoshida6, ::Type{T}, ::Type{T2}) where {T,T2} = Yoshida6ConstantCache(T, T2)
+_symplectic_tableau(::KahanLi6, ::Type{T}, ::Type{T2}) where {T,T2} = KahanLi6ConstantCache(T, T2)
+_symplectic_tableau(::McAte8, ::Type{T}, ::Type{T2}) where {T,T2} = McAte8ConstantCache(T, T2)
+_symplectic_tableau(::KahanLi8, ::Type{T}, ::Type{T2}) where {T,T2} = KahanLi8ConstantCache(T, T2)
+_symplectic_tableau(::SofSpa10, ::Type{T}, ::Type{T2}) where {T,T2} = SofSpa10ConstantCache(T, T2)
 
 const SymplecticGenericAlgorithm = Union{
     PseudoVerletLeapfrog, McAte2, Ruth3, McAte3, CandyRoz4, McAte4,
