@@ -2257,9 +2257,13 @@ function initialize!(integrator, cache::GaussLegendreConstantCache)
 
     # adaptive Richardson controller requires num_stages >= 2
     if integrator.opts.adaptive && integrator.alg.num_stages < 2
-        throw(ArgumentError("GaussLegendre with num_stages = $(integrator.alg.num_stages) " *
-                            "does not support adaptive stepping (Richardson controller " *
-                            "requires num_stages ≥ 2). Use num_stages ≥ 2 or pass adaptive = false."))
+        throw(
+            ArgumentError(
+                "GaussLegendre with num_stages = $(integrator.alg.num_stages) " *
+                    "does not support adaptive stepping (Richardson controller " *
+                    "requires num_stages ≥ 2). Use num_stages ≥ 2 or pass adaptive = false."
+            )
+        )
     end
     return nothing
 end
@@ -2276,9 +2280,13 @@ function initialize!(integrator, cache::GaussLegendreCache)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     if integrator.opts.adaptive
         if cache.num_stages < 2
-            throw(ArgumentError("GaussLegendre with num_stages = $(cache.num_stages) " *
-                                "does not support adaptive stepping (Richardson controller " *
-                                "requires num_stages ≥ 2). Use num_stages ≥ 2 or pass adaptive = false."))
+            throw(
+                ArgumentError(
+                    "GaussLegendre with num_stages = $(cache.num_stages) " *
+                        "does not support adaptive stepping (Richardson controller " *
+                        "requires num_stages ≥ 2). Use num_stages ≥ 2 or pass adaptive = false."
+                )
+            )
         end
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
@@ -2346,10 +2354,13 @@ end
         end
 
         ndwprev = ndw
-        ndw = sum(internalnorm(
-                      calculate_residuals(dw[i], uprev_local, uprev_local, atol, rtol, internalnorm, t_local),
-                      t_local)
-                  for i in 1:num_stages)
+        ndw = sum(
+            internalnorm(
+                    calculate_residuals(dw[i], uprev_local, uprev_local, atol, rtol, internalnorm, t_local),
+                    t_local
+                )
+                for i in 1:num_stages
+        )
 
         if iter > 1
             θ = ndw / ndwprev
@@ -2390,8 +2401,10 @@ end
     return (u_out, z, true)
 end
 
-@muladd function perform_step!(integrator, cache::GaussLegendreConstantCache,
-        repeat_step = false)
+@muladd function perform_step!(
+        integrator, cache::GaussLegendreConstantCache,
+        repeat_step = false
+    )
     (; t, dt, uprev, f, p) = integrator
     (; num_stages) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
@@ -2405,7 +2418,8 @@ end
     if adaptive && num_stages >= 2
         # Richardson step-doubling: one full step at dt, two successive half-steps.
         u_H, z_full, ok1 = _gausslegendre_substep_constant(
-            integrator, cache, alg, uprev, t, dt, J, atol, rtol)
+            integrator, cache, alg, uprev, t, dt, J, atol, rtol
+        )
         if !ok1
             integrator.force_stepfail = true
             integrator.stats.nnonlinconvfail += 1
@@ -2414,7 +2428,8 @@ end
 
         half_dt = dt / 2
         u_h1, _, ok2 = _gausslegendre_substep_constant(
-            integrator, cache, alg, uprev, t, half_dt, J, atol, rtol)
+            integrator, cache, alg, uprev, t, half_dt, J, atol, rtol
+        )
         if !ok2
             integrator.force_stepfail = true
             integrator.stats.nnonlinconvfail += 1
@@ -2422,7 +2437,8 @@ end
         end
 
         u_h, _, ok3 = _gausslegendre_substep_constant(
-            integrator, cache, alg, u_h1, t + half_dt, half_dt, J, atol, rtol)
+            integrator, cache, alg, u_h1, t + half_dt, half_dt, J, atol, rtol
+        )
         if !ok3
             integrator.force_stepfail = true
             integrator.stats.nnonlinconvfail += 1
@@ -2432,13 +2448,15 @@ end
         p_order = 2 * num_stages
         utilde = @.. (u_h - u_H) / (2^p_order - 1)
         integrator.EEst = internalnorm(
-            calculate_residuals(utilde, uprev, u_h, atol, rtol, internalnorm, t), t)
+            calculate_residuals(utilde, uprev, u_h, atol, rtol, internalnorm, t), t
+        )
 
         u = u_h
         z_for_fsal = z_full
     else
         u_out, z_out, ok = _gausslegendre_substep_constant(
-            integrator, cache, alg, uprev, t, dt, J, atol, rtol)
+            integrator, cache, alg, uprev, t, dt, J, atol, rtol
+        )
         if !ok
             integrator.force_stepfail = true
             integrator.stats.nnonlinconvfail += 1
@@ -2471,8 +2489,10 @@ end
         u_dest, uprev_local, t_local, dt_local, J_local,
         cache::GaussLegendreCache, integrator, alg
     )
-    (; tab, κ, z, dw, ks, W, ubuff, tmp, atmp, linsolve,
-        rtol, atol, num_stages) = cache
+    (;
+        tab, κ, z, dw, ks, W, ubuff, tmp, atmp, linsolve,
+        rtol, atol, num_stages,
+    ) = cache
     (; A, b, c) = tab
     (; internalnorm) = integrator.opts
     (; maxiters) = alg
@@ -2510,8 +2530,10 @@ end
         end
 
         needfactor = iter == 1
-        linres = dolinsolve(integrator, linsolve;
-            A = needfactor ? W : nothing, b = ubuff, linu = ubuff)
+        linres = dolinsolve(
+            integrator, linsolve;
+            A = needfactor ? W : nothing, b = ubuff, linu = ubuff
+        )
         cache.linsolve = linres.cache
         integrator.stats.nsolve += 1
 
@@ -2520,10 +2542,12 @@ end
         end
 
         ndwprev = ndw
-        ndw = sum(begin
-                      calculate_residuals!(atmp, dw[i], uprev_local, uprev_local, atol, rtol, internalnorm, t_local)
-                      internalnorm(atmp, t_local)
-                  end for i in 1:num_stages)
+        ndw = sum(
+            begin
+                    calculate_residuals!(atmp, dw[i], uprev_local, uprev_local, atol, rtol, internalnorm, t_local)
+                    internalnorm(atmp, t_local)
+                end for i in 1:num_stages
+        )
 
         if iter > 1
             θ = ndw / ndwprev
@@ -2567,8 +2591,10 @@ end
 
 @muladd function perform_step!(integrator, cache::GaussLegendreCache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsallast) = integrator
-    (; atmp, J, z, z_last, u_full, u_half, rtol, atol,
-        step_limiter!, num_stages) = cache
+    (;
+        atmp, J, z, z_last, u_full, u_half, rtol, atol,
+        step_limiter!, num_stages,
+    ) = cache
     (; internalnorm, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
 
@@ -2576,7 +2602,7 @@ end
     new_jac && (calc_J!(J, integrator, cache); cache.W_γdt = dt)
 
     if adaptive && num_stages >= 2
-        # fll step at dt 
+        # fll step at dt
         ok1 = _gausslegendre_substep!(u_full, uprev, t, dt, J, cache, integrator, alg)
         if !ok1
             integrator.force_stepfail = true
@@ -2609,7 +2635,7 @@ end
 
         p_order = 2 * num_stages
         denom = 2^p_order - 1
-        @.. u_full = (u - u_full) / denom       
+        @.. u_full = (u - u_full) / denom
         calculate_residuals!(atmp, u_full, uprev, u, atol, rtol, internalnorm, t)
         integrator.EEst = internalnorm(atmp, t)
     else
