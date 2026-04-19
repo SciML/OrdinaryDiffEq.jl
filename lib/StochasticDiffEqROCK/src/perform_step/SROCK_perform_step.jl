@@ -1847,10 +1847,8 @@ end
 end
 
 function init_χ!(vec_χ, W)
-    r = rng(W)
-    for i in eachindex(vec_χ)
-        vec_χ[i] = 2 * floor(rand(r) + 0.5) - 1
-    end
+    rand!(rng(W), vec_χ)
+    @.. vec_χ = 2 * floor(vec_χ + 1 // 2) - 1
 end
 
 rng(W) = hasfield(typeof(W), :rng) ? W.rng : W.source.rng
