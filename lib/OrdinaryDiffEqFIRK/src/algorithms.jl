@@ -8,6 +8,14 @@ pages={93--111},
 year={1999},
 publisher={Elsevier}}"""
 
+AdaptiveRadauPaper = """@article{AdaptiveRadauPaper,
+  author={Ekanathan, Shreyas and Smith, Oscar and Rackauckas, Christopher},
+  booktitle={2025 IEEE High Performance Extreme Computing Conference (HPEC)}, 
+  title={A Fully Adaptive Radau Method for the Efficient Solution of Stiff Ordinary Differential Equations at Low Tolerances}, 
+  year={2025},
+  pages={1-9},
+  doi={10.1109/HPEC67600.2025.11196706}}"""
+
 extra_keyword_description = """
 - `extrapolant`: TBD
 - `smooth_est`: TBD
@@ -181,7 +189,15 @@ function RadauIIA9(;
         AD_choice
     )
 end
-
+@doc differentiation_rk_docstring(
+    "An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
+     Fully autonomous derivation of tableau for arbitrary order and order adaptivity.",
+    "AdaptiveRadau",
+    "Fully-Implicit Runge-Kutta Method.";
+    references = AdaptiveRadauPaper,
+    extra_keyword_description = extra_keyword_description,
+    extra_keyword_default = extra_keyword_default
+)
 struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter, TO} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
