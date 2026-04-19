@@ -1,8 +1,6 @@
 abstract type HamiltonMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type HamiltonConstantCache <: OrdinaryDiffEqConstantCache end
 
-# ===== Unique caches (not refactored) =====
-
 @cache struct SymplecticEulerCache{uType, rateType} <: HamiltonMutableCache
     u::uType
     uprev::uType
