@@ -153,7 +153,7 @@ _symplectic_tableau(::PseudoVerletLeapfrog, ::Type{T}, ::Type{T2}) where {T, T2}
 _symplectic_tableau(::McAte2, ::Type{T}, ::Type{T2}) where {T,T2} = McAte2ConstantCache(T, T2)
 _symplectic_tableau(::Ruth3, ::Type{T}, ::Type{T2}) where {T,T2} = Ruth3ConstantCache(T, T2)
 _symplectic_tableau(::McAte3, ::Type{T}, ::Type{T2}) where {T,T2} = McAte3ConstantCache(T, T2)
-_symplectic_tableau(::CandyRoz4,, ::Type{T}, ::Type{T2}) where {T,T2} = CandyRoz4ConstantCache(T, T2)
+_symplectic_tableau(::CandyRoz4, ::Type{T}, ::Type{T2}) where {T,T2} = CandyRoz4ConstantCache(T, T2)
 _symplectic_tableau(::McAte4, ::Type{T}, ::Type{T2}) where {T,T2} = McAte4ConstantCache(T, T2)
 _symplectic_tableau(::CalvoSanz4, ::Type{T}, ::Type{T2}) where {T,T2} = CalvoSanz4ConstantCache(T, T2)
 _symplectic_tableau(::McAte42, ::Type{T}, ::Type{T2}) where {T,T2} = McAte42ConstantCache(T, T2)
