@@ -149,7 +149,7 @@ end
 end
 
 # Mapping from algorithm to tableau constructor
-_symplectic_tableau(::PseudoVerletLeapfrog, ::Type{T}, T2) = PseudoVerletLeapfrogConstantCache(T, T2)
+_symplectic_tableau(::PseudoVerletLeapfrog, ::Type{T}, ::Type{T2}) where {T, T2} = PseudoVerletLeapfrogConstantCache(T, T2)
 _symplectic_tableau(::McAte2, ::Type{T}, ::Type{T2}) where {T,T2} = McAte2ConstantCache(T, T2)
 _symplectic_tableau(::Ruth3, ::Type{T}, ::Type{T2}) where {T,T2} = Ruth3ConstantCache(T, T2)
 _symplectic_tableau(::McAte3, ::Type{T}, ::Type{T2}) where {T,T2} = McAte3ConstantCache(T, T2)
