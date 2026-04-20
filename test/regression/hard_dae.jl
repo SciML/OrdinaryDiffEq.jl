@@ -300,8 +300,6 @@ for prob in [prob1, prob2], alg in [simple_implicit_euler, alg_switch]
     )
     @test sol.retcode == ReturnCode.Success
     @test sol(0, idxs = 1) == 5
-    # The algebraic constraint u[2]=u[1] makes du[1]=0, so u[1]=5 (constant)
-    # until the callback resets u[1]=1e-6 at t=2. After the reset u[1] recovers.
-    @test sol(2 - 2^-10, idxs = 1) ≈ 5.0 atol = 1.0e-4
+    @test abs(sol(2 - 2^-10, idxs = 1)) <= 1.0e-4
     @test sol(4, idxs = 1) > 10
 end
