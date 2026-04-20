@@ -17,6 +17,7 @@ StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
@@ -46,7 +47,7 @@ SafeTestsets = "0.1.0"
 julia = "1.10"
 
 [targets]
-test = ["Test", "Pkg", "SafeTestsets", "DiffEqDevTools", "SDEProblemLibrary", "Random"]
+test = ["Test", "Pkg", "SafeTestsets", "DiffEqDevTools", "DiffEqNoiseProcess", "SDEProblemLibrary", "Random"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

@@ -1426,7 +1426,7 @@ end
 @muladd function perform_step!(integrator, cache::KomBurSROCK2Cache)
     (;
         utmp, uᵢ₋₁, uᵢ₋₂, k, yₛ₋₁, yₛ₋₂, yₛ₋₃, SXₛ₋₁, SXₛ₋₂,
-        SXₛ₋₃, Gₛ, Xₛ₋₁, Xₛ₋₂, Xₛ₋₃, vec_χ,
+        SXₛ₋₃, Gₛ, Xₛ₋₁, Xₛ₋₂, Xₛ₋₃, vec_χ, WikRange,
     ) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
     (; recf, mσ, mτ, mδ) = cache.constantcache
@@ -1566,8 +1566,7 @@ end
             ttmp = tᵢ₋₂ + C₁
             integrator.f.g(Gₛ, utmp, p, ttmp)
             WikRange .= 1 .* (1:length(W.dW) .== i)
-            # @.. @view(Xₛ₋₂[:,i]) =  @view(Gₛ[:,i])
-            @.. Xₛ₋₂ = Gₛ * W.dW
+            @view(Xₛ₋₂[:, i]) .= @view(Gₛ[:, i])
         end
         mul!(SXₛ₋₂, Xₛ₋₂, W.dW)
         @.. u += μₛ₋₂ * yₛ₋₂ + 3 // 8 * SXₛ₋₂
@@ -1581,14 +1580,13 @@ end
             # @.. utmp = uᵢ₋₁ + μₛ₋₃*yₛ₋₃ + δ₁*yₛ₋₂ - 1//6*W.dW[i]*@view(Xₛ₋₃[:,i]) - 1//2*W.dW[i]*@view(Xₛ₋₂[:,i]) + 1//4*SXₛ₋₃ + 3//4*SXₛ₋₂
             @.. utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃ + δ₁ * yₛ₋₂ + 1 // 4 * SXₛ₋₃ + 3 // 4 * SXₛ₋₂
             mul!(SXₛ₋₁, Xₛ₋₃, WikRange)
-            @.. utmp += 1 // 6 * SXₛ₋₁
+            @.. utmp -= 1 // 6 * SXₛ₋₁
             mul!(SXₛ₋₁, Xₛ₋₂, WikRange)
-            @.. utmp += 1 // 2 * SXₛ₋₁
+            @.. utmp -= 1 // 2 * SXₛ₋₁
             ttmp = tᵢ₋₁ + μₛ₋₃ + δ₁
             integrator.f.g(Gₛ, utmp, p, ttmp)
             WikRange .= 1 .* (1:length(W.dW) .== i)
-            # @.. @view(Xₛ₋₁[:,i]) = @view(Gₛ[:,i])
-            @.. Xₛ₋₁ = Gₛ * WikRange
+            @view(Xₛ₋₁[:, i]) .= @view(Gₛ[:, i])
         end
         mul!(SXₛ₋₁, Xₛ₋₁, W.dW)
         @.. u += (σ - τ) * dt * yₛ₋₁ + 3 // 8 * SXₛ₋₁
