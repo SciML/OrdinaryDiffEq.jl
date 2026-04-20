@@ -51,9 +51,33 @@ ssp_coefficient(alg::SSPSDIRK2) = 4
 
 isesdirk(alg::TRBDF2) = true
 
+isesdirk(alg::ARS222) = true
+isesdirk(alg::ARS232) = true
+isesdirk(alg::ARS443) = true
+isesdirk(alg::BHR553) = true
+
 issplit(alg::KenCarp3) = true
 issplit(alg::KenCarp4) = true
 issplit(alg::KenCarp47) = true
 issplit(alg::KenCarp5) = true
 issplit(alg::KenCarp58) = true
 issplit(alg::CFNLIRK3) = true
+issplit(alg::IMEXSSP222) = true
+issplit(alg::IMEXSSP2322) = true
+issplit(alg::IMEXSSP3332) = true
+issplit(alg::IMEXSSP3433) = true
+
+issplit(alg::ARS222) = true
+issplit(alg::ARS232) = true
+issplit(alg::ARS443) = true
+issplit(alg::BHR553) = true
+
+alg_order(alg::IMEXSSP222) = 2
+alg_order(alg::IMEXSSP2322) = 2
+alg_order(alg::IMEXSSP3332) = 2
+alg_order(alg::IMEXSSP3433) = 3
+
+alg_order(alg::ARS222) = 2
+alg_order(alg::ARS232) = 2
+alg_order(alg::ARS443) = 3
+alg_order(alg::BHR553) = 3

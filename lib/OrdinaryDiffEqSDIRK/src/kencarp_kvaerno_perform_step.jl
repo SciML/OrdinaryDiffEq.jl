@@ -2734,3 +2734,644 @@ end
         @.. broadcast = false integrator.fsallast = z₈ / dt
     end
 end
+
+# ===========================================================================
+# IMEX-SSP methods (Pareschi & Russo 2005)
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# IMEXSSP222 — 2-stage, 2nd order, L-stable (Table 2)
+# ---------------------------------------------------------------------------
+
+@muladd function perform_step!(
+        integrator, cache::IMEXSSP222ConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    nlsolver = cache.nlsolver
+    (; γ, a21, c2, ea21, eb1, eb2) = cache.tab
+
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    markfirststage!(nlsolver)
+
+    ##### Stage 1
+    nlsolver.z = zero(u)
+    nlsolver.tmp = uprev
+    nlsolver.c = γ
+    z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        k1 = dt * f2(nlsolver.tmp + γ * z₁, p, t)
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 2
+    nlsolver.z = z₁
+    if integrator.f isa SplitFunction
+        nlsolver.tmp = uprev + a21 * z₁ + ea21 * k1
+    else
+        nlsolver.tmp = uprev + a21 * z₁
+    end
+    nlsolver.c = c2
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        k2 = dt * f2(nlsolver.tmp + γ * z₂, p, t + dt)
+        integrator.stats.nf2 += 1
+        u = uprev + eb1 * (z₁ + k1) + eb2 * (z₂ + k2)
+    else
+        u = uprev + eb1 * z₁ + eb2 * z₂
+    end
+
+    ################################### Finalize
+    if integrator.f isa SplitFunction
+        integrator.k[1] = integrator.fsalfirst
+        integrator.fsallast = integrator.f(u, p, t + dt)
+        integrator.k[2] = integrator.fsallast
+    else
+        integrator.fsallast = z₂ / dt
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+    end
+    integrator.u = u
+end
+
+@muladd function perform_step!(
+        integrator, cache::IMEXSSP222Cache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    (; z₁, z₂, k1, k2, nlsolver, step_limiter!) = cache
+    (; tmp) = nlsolver
+    (; γ, a21, c2, ea21, eb1, eb2) = cache.tab
+
+    f2 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    markfirststage!(nlsolver)
+
+    ##### Stage 1
+    z₁ .= zero(eltype(u))
+    nlsolver.z = z₁
+    @.. broadcast=false tmp = uprev
+    nlsolver.c = γ
+    z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+
+    if integrator.f isa SplitFunction
+        @.. broadcast=false u = tmp + γ * z₁
+        f2(k1, u, p, t)
+        k1 .*= dt
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 2
+    copyto!(z₂, z₁)
+    nlsolver.z = z₂
+    if integrator.f isa SplitFunction
+        @.. broadcast=false tmp = uprev + a21 * z₁ + ea21 * k1
+    else
+        @.. broadcast=false tmp = uprev + a21 * z₁
+    end
+    nlsolver.c = c2
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        @.. broadcast=false u = tmp + γ * z₂
+        f2(k2, u, p, t + dt)
+        k2 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast=false u = uprev + eb1 * (z₁ + k1) + eb2 * (z₂ + k2)
+    else
+        @.. broadcast=false u = uprev + eb1 * z₁ + eb2 * z₂
+    end
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    ################################### Finalize
+    if integrator.f isa SplitFunction
+        integrator.f(integrator.fsallast, u, p, t + dt)
+    else
+        @.. broadcast=false integrator.fsallast = z₂ / dt
+    end
+end
+
+# ---------------------------------------------------------------------------
+# IMEXSSP2322 — 3-stage, 2nd order, stiffly accurate (Table 3)
+# ---------------------------------------------------------------------------
+
+@muladd function perform_step!(
+        integrator, cache::IMEXSSP2322ConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    nlsolver = cache.nlsolver
+    (; γ, a21, c2, c3, ea32, eb2, eb3) = cache.tab
+
+    f2 = nothing
+    k2 = nothing
+    k3 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    markfirststage!(nlsolver)
+
+    ##### Stage 1 (k₁ never needed: b̃₁=0 and ã_{i1}=0 for all i)
+    nlsolver.z = zero(u)
+    nlsolver.tmp = uprev
+    nlsolver.c = γ
+    z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    ##### Stage 2
+    nlsolver.z = z₁
+    nlsolver.tmp = uprev + a21 * z₁
+    nlsolver.c = c2
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        k2 = dt * f2(nlsolver.tmp + γ * z₂, p, t)
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 3
+    nlsolver.z = z₂
+    if integrator.f isa SplitFunction
+        nlsolver.tmp = uprev + γ * z₂ + ea32 * k2
+    else
+        nlsolver.tmp = uprev + γ * z₂
+    end
+    nlsolver.c = c3
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        k3 = dt * f2(nlsolver.tmp + γ * z₃, p, t + dt)
+        integrator.stats.nf2 += 1
+        u = uprev + eb2 * (z₂ + k2) + eb3 * (z₃ + k3)
+    else
+        u = nlsolver.tmp + γ * z₃
+    end
+
+    ################################### Finalize
+    if integrator.f isa SplitFunction
+        integrator.k[1] = integrator.fsalfirst
+        integrator.fsallast = integrator.f(u, p, t + dt)
+        integrator.k[2] = integrator.fsallast
+    else
+        integrator.fsallast = z₃ / dt
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+    end
+    integrator.u = u
+end
+
+@muladd function perform_step!(
+        integrator, cache::IMEXSSP2322Cache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    (; z₁, z₂, z₃, k2, k3, nlsolver, step_limiter!) = cache
+    (; tmp) = nlsolver
+    (; γ, a21, c2, c3, ea32, eb2, eb3) = cache.tab
+
+    f2 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    markfirststage!(nlsolver)
+
+    ##### Stage 1 (k₁ never needed)
+    z₁ .= zero(eltype(u))
+    nlsolver.z = z₁
+    @.. broadcast=false tmp = uprev
+    nlsolver.c = γ
+    z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+
+    ##### Stage 2
+    copyto!(z₂, z₁)
+    nlsolver.z = z₂
+    @.. broadcast=false tmp = uprev + a21 * z₁
+    nlsolver.c = c2
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        @.. broadcast=false u = tmp + γ * z₂
+        f2(k2, u, p, t)
+        k2 .*= dt
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 3
+    copyto!(z₃, z₂)
+    nlsolver.z = z₃
+    if integrator.f isa SplitFunction
+        @.. broadcast=false tmp = uprev + γ * z₂ + ea32 * k2
+    else
+        @.. broadcast=false tmp = uprev + γ * z₂
+    end
+    nlsolver.c = c3
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        @.. broadcast=false u = tmp + γ * z₃
+        f2(k3, u, p, t + dt)
+        k3 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast=false u = uprev + eb2 * (z₂ + k2) + eb3 * (z₃ + k3)
+    else
+        @.. broadcast=false u = tmp + γ * z₃
+    end
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    ################################### Finalize
+    if integrator.f isa SplitFunction
+        integrator.f(integrator.fsallast, u, p, t + dt)
+    else
+        @.. broadcast=false integrator.fsallast = z₃ / dt
+    end
+end
+
+# ---------------------------------------------------------------------------
+# IMEXSSP3332 — 3-stage, 2nd order IMEX, L-stable (Table 6)
+# ---------------------------------------------------------------------------
+
+@muladd function perform_step!(
+        integrator, cache::IMEXSSP3332ConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    nlsolver = cache.nlsolver
+    (; γ, a21, a31, c2, c3, ea21, ea31, ea32, eb1, eb2, eb3) = cache.tab
+
+    f2 = nothing
+    k1 = nothing
+    k2 = nothing
+    k3 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    markfirststage!(nlsolver)
+
+    ##### Stage 1
+    nlsolver.z = zero(u)
+    nlsolver.tmp = uprev
+    nlsolver.c = γ
+    z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        k1 = dt * f2(nlsolver.tmp + γ * z₁, p, t)
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 2
+    nlsolver.z = z₁
+    if integrator.f isa SplitFunction
+        nlsolver.tmp = uprev + a21 * z₁ + ea21 * k1
+    else
+        nlsolver.tmp = uprev + a21 * z₁
+    end
+    nlsolver.c = c2
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        k2 = dt * f2(nlsolver.tmp + γ * z₂, p, t + dt)
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 3
+    nlsolver.z = z₂
+    if integrator.f isa SplitFunction
+        nlsolver.tmp = uprev + a31 * z₁ + ea31 * k1 + ea32 * k2
+    else
+        nlsolver.tmp = uprev + a31 * z₁
+    end
+    nlsolver.c = c3
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        k3 = dt * f2(nlsolver.tmp + γ * z₃, p, t + c3 * dt)
+        integrator.stats.nf2 += 1
+        u = uprev + eb1 * (z₁ + k1) + eb2 * (z₂ + k2) + eb3 * (z₃ + k3)
+    else
+        u = uprev + eb1 * z₁ + eb2 * z₂ + eb3 * z₃
+    end
+
+    ################################### Finalize
+    if integrator.f isa SplitFunction
+        integrator.k[1] = integrator.fsalfirst
+        integrator.fsallast = integrator.f(u, p, t + dt)
+        integrator.k[2] = integrator.fsallast
+    else
+        integrator.fsallast = z₃ / dt
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+    end
+    integrator.u = u
+end
+
+@muladd function perform_step!(
+        integrator, cache::IMEXSSP3332Cache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    (; z₁, z₂, z₃, k1, k2, k3, nlsolver, step_limiter!) = cache
+    (; tmp) = nlsolver
+    (; γ, a21, a31, c2, c3, ea21, ea31, ea32, eb1, eb2, eb3) = cache.tab
+
+    f2 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    markfirststage!(nlsolver)
+
+    ##### Stage 1
+    z₁ .= zero(eltype(u))
+    nlsolver.z = z₁
+    @.. broadcast=false tmp = uprev
+    nlsolver.c = γ
+    z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+
+    if integrator.f isa SplitFunction
+        @.. broadcast=false u = tmp + γ * z₁
+        f2(k1, u, p, t)
+        k1 .*= dt
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 2
+    copyto!(z₂, z₁)
+    nlsolver.z = z₂
+    if integrator.f isa SplitFunction
+        @.. broadcast=false tmp = uprev + a21 * z₁ + ea21 * k1
+    else
+        @.. broadcast=false tmp = uprev + a21 * z₁
+    end
+    nlsolver.c = c2
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        @.. broadcast=false u = tmp + γ * z₂
+        f2(k2, u, p, t + dt)
+        k2 .*= dt
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 3
+    copyto!(z₃, z₂)
+    nlsolver.z = z₃
+    if integrator.f isa SplitFunction
+        @.. broadcast=false tmp = uprev + a31 * z₁ + ea31 * k1 + ea32 * k2
+    else
+        @.. broadcast=false tmp = uprev + a31 * z₁
+    end
+    nlsolver.c = c3
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        @.. broadcast=false u = tmp + γ * z₃
+        f2(k3, u, p, t + c3 * dt)
+        k3 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast=false u = uprev + eb1 * (z₁ + k1) + eb2 * (z₂ + k2) + eb3 * (z₃ + k3)
+    else
+        @.. broadcast=false u = uprev + eb1 * z₁ + eb2 * z₂ + eb3 * z₃
+    end
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    ################################### Finalize
+    if integrator.f isa SplitFunction
+        integrator.f(integrator.fsallast, u, p, t + dt)
+    else
+        @.. broadcast=false integrator.fsallast = z₃ / dt
+    end
+end
+
+# ---------------------------------------------------------------------------
+# IMEXSSP3433 — 4-stage, 3rd order, L-stable (Table 7)
+# ---------------------------------------------------------------------------
+
+@muladd function perform_step!(
+        integrator, cache::IMEXSSP3433ConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    nlsolver = cache.nlsolver
+    (; γ, a21, a32, a41, a42, a43, c3, c4, ea32, ea42, ea43, eb2, eb3, eb4) = cache.tab
+
+    f2 = nothing
+    k2 = nothing
+    k3 = nothing
+    k4 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    markfirststage!(nlsolver)
+
+    ##### Stage 1 (k₁ never needed: b̃₁=0 and ã_{i1}=0 for all i)
+    nlsolver.z = zero(u)
+    nlsolver.tmp = uprev
+    nlsolver.c = γ
+    z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    ##### Stage 2
+    nlsolver.z = z₁
+    nlsolver.tmp = uprev + a21 * z₁
+    nlsolver.c = zero(γ)
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        k2 = dt * f2(nlsolver.tmp + γ * z₂, p, t)
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 3
+    nlsolver.z = z₂
+    if integrator.f isa SplitFunction
+        nlsolver.tmp = uprev + a32 * z₂ + ea32 * k2
+    else
+        nlsolver.tmp = uprev + a32 * z₂
+    end
+    nlsolver.c = c3
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        k3 = dt * f2(nlsolver.tmp + γ * z₃, p, t + dt)
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 4
+    nlsolver.z = z₃
+    if integrator.f isa SplitFunction
+        nlsolver.tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea42 * k2 + ea43 * k3
+    else
+        nlsolver.tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃
+    end
+    nlsolver.c = c4
+    z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        k4 = dt * f2(nlsolver.tmp + γ * z₄, p, t + c4 * dt)
+        integrator.stats.nf2 += 1
+        u = uprev + eb2 * (z₂ + k2) + eb3 * (z₃ + k3) + eb4 * (z₄ + k4)
+    else
+        u = uprev + eb2 * z₂ + eb3 * z₃ + eb4 * z₄
+    end
+
+    ################################### Finalize
+    if integrator.f isa SplitFunction
+        integrator.k[1] = integrator.fsalfirst
+        integrator.fsallast = integrator.f(u, p, t + dt)
+        integrator.k[2] = integrator.fsallast
+    else
+        integrator.fsallast = z₄ / dt
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+    end
+    integrator.u = u
+end
+
+@muladd function perform_step!(
+        integrator, cache::IMEXSSP3433Cache, repeat_step = false
+    )
+    (; t, dt, uprev, u, p) = integrator
+    (; z₁, z₂, z₃, z₄, k2, k3, k4, nlsolver, step_limiter!) = cache
+    (; tmp) = nlsolver
+    (; γ, a21, a32, a41, a42, a43, c3, c4, ea32, ea42, ea43, eb2, eb3, eb4) = cache.tab
+
+    f2 = nothing
+    if integrator.f isa SplitFunction
+        f = integrator.f.f1
+        f2 = integrator.f.f2
+    else
+        f = integrator.f
+    end
+
+    markfirststage!(nlsolver)
+
+    ##### Stage 1 (k₁ never needed)
+    z₁ .= zero(eltype(u))
+    nlsolver.z = z₁
+    @.. broadcast=false tmp = uprev
+    nlsolver.c = γ
+    z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    isnewton(nlsolver) && set_new_W!(nlsolver, false)
+
+    ##### Stage 2
+    copyto!(z₂, z₁)
+    nlsolver.z = z₂
+    @.. broadcast=false tmp = uprev + a21 * z₁
+    nlsolver.c = zero(γ)
+    z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        @.. broadcast=false u = tmp + γ * z₂
+        f2(k2, u, p, t)
+        k2 .*= dt
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 3
+    copyto!(z₃, z₂)
+    nlsolver.z = z₃
+    if integrator.f isa SplitFunction
+        @.. broadcast=false tmp = uprev + a32 * z₂ + ea32 * k2
+    else
+        @.. broadcast=false tmp = uprev + a32 * z₂
+    end
+    nlsolver.c = c3
+    z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        @.. broadcast=false u = tmp + γ * z₃
+        f2(k3, u, p, t + dt)
+        k3 .*= dt
+        integrator.stats.nf2 += 1
+    end
+
+    ##### Stage 4
+    copyto!(z₄, z₃)
+    nlsolver.z = z₄
+    if integrator.f isa SplitFunction
+        @.. broadcast=false tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ +
+            ea42 * k2 + ea43 * k3
+    else
+        @.. broadcast=false tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃
+    end
+    nlsolver.c = c4
+    z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    if integrator.f isa SplitFunction
+        @.. broadcast=false u = tmp + γ * z₄
+        f2(k4, u, p, t + c4 * dt)
+        k4 .*= dt
+        integrator.stats.nf2 += 1
+        @.. broadcast=false u = uprev + eb2 * (z₂ + k2) + eb3 * (z₃ + k3) + eb4 * (z₄ + k4)
+    else
+        @.. broadcast=false u = uprev + eb2 * z₂ + eb3 * z₃ + eb4 * z₄
+    end
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    ################################### Finalize
+    if integrator.f isa SplitFunction
+        integrator.f(integrator.fsallast, u, p, t + dt)
+    else
+        @.. broadcast=false integrator.fsallast = z₄ / dt
+    end
+end
+
+# ARS and BHR IMEX methods are handled by generic_imex_perform_step.jl

@@ -2828,3 +2828,184 @@ function KenCarp58Tableau(T, T2)
         ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8
     )
 end
+
+#=
+IMEX-SSP2(2,2,2) — Pareschi & Russo (2005), Table 2
+2-stage, 2nd order, L-stable, SSP
+
+Implicit tableau (γ = 1 - 1/√2):
+  c = [γ,  1-γ]
+  A = [γ    0 ]
+      [1-2γ  γ ]
+  b = [1/2, 1/2]
+
+Explicit tableau:
+  c̃ = [0, 1]
+  Ã = [0  0]
+      [1  0]
+  b̃ = [1/2, 1/2]
+=#
+struct IMEXSSP222Tableau{T, T2}
+    γ::T2
+    a21::T
+    c2::T2
+    ea21::T
+    eb1::T
+    eb2::T
+end
+
+function IMEXSSP222Tableau(T, T2)
+    γ = convert(T2, 1 - 1 / sqrt(2))
+    a21 = convert(T, sqrt(2) - 1)   # = 1 - 2γ
+    c2 = convert(T2, 1 / sqrt(2))   # = 1 - γ
+    ea21 = convert(T, 1)
+    eb1 = convert(T, 1 // 2)
+    eb2 = convert(T, 1 // 2)
+    return IMEXSSP222Tableau(γ, a21, c2, ea21, eb1, eb2)
+end
+
+#=
+IMEX-SSP2(3,2,2) — Pareschi & Russo (2005), Table 3
+3-stage, 2nd order, stiffly accurate, SSP
+
+Implicit tableau (γ = 1/2):
+  c = [1/2, 0,  1]
+  A = [ γ   0   0]
+      [-γ   γ   0]
+      [ 0   γ   γ]
+  b = [0,  1/2, 1/2]  (= last row, stiffly accurate)
+
+Explicit tableau:
+  c̃ = [0, 0, 1]
+  Ã = [0  0  0]
+      [0  0  0]
+      [0  1  0]
+  b̃ = [0, 1/2, 1/2]
+=#
+struct IMEXSSP2322Tableau{T, T2}
+    γ::T2
+    a21::T
+    c2::T2
+    c3::T2
+    ea32::T
+    eb2::T
+    eb3::T
+end
+
+function IMEXSSP2322Tableau(T, T2)
+    γ = convert(T2, 1 // 2)
+    a21 = convert(T, -1 // 2)
+    c2 = convert(T2, 0)
+    c3 = convert(T2, 1)
+    ea32 = convert(T, 1)
+    eb2 = convert(T, 1 // 2)
+    eb3 = convert(T, 1 // 2)
+    return IMEXSSP2322Tableau(γ, a21, c2, c3, ea32, eb2, eb3)
+end
+
+#=
+IMEX-SSP3(3,3,2) — Pareschi & Russo (2005), Table 6
+3-stage, 2nd order IMEX (3rd order SSP explicit), L-stable
+
+Implicit tableau (γ = 1 - 1/√2):
+  c = [γ,   1-γ, 1/2]
+  A = [γ    0    0  ]
+      [1-2γ  γ    0  ]
+      [1/2-γ 0    γ  ]
+  b = [1/6, 1/6, 2/3]
+
+Explicit tableau:
+  c̃ = [0, 1, 1/2]
+  Ã = [0    0   0]
+      [1    0   0]
+      [1/4  1/4 0]
+  b̃ = [1/6, 1/6, 2/3]
+=#
+struct IMEXSSP3332Tableau{T, T2}
+    γ::T2
+    a21::T
+    a31::T
+    c2::T2
+    c3::T2
+    ea21::T
+    ea31::T
+    ea32::T
+    eb1::T
+    eb2::T
+    eb3::T
+end
+
+function IMEXSSP3332Tableau(T, T2)
+    γ = convert(T2, 1 - 1 / sqrt(2))
+    a21 = convert(T, sqrt(2) - 1)          # = 1 - 2γ
+    a31 = convert(T, 1 / sqrt(2) - 1 // 2) # = 1/2 - γ
+    c2 = convert(T2, 1 / sqrt(2))           # = 1 - γ
+    c3 = convert(T2, 1 // 2)
+    ea21 = convert(T, 1)
+    ea31 = convert(T, 1 // 4)
+    ea32 = convert(T, 1 // 4)
+    eb1 = convert(T, 1 // 6)
+    eb2 = convert(T, 1 // 6)
+    eb3 = convert(T, 2 // 3)
+    return IMEXSSP3332Tableau(γ, a21, a31, c2, c3, ea21, ea31, ea32, eb1, eb2, eb3)
+end
+
+#=
+IMEX-SSP3(4,3,3) — Pareschi & Russo (2005), Table 7
+4-stage, 3rd order, L-stable, SSP
+α=0.24169426078821, β=0.06042356519705, η=0.12915286960590, γ=α
+
+Implicit tableau:
+  c = [α,  0, 1, 1/2]
+  A = [ α    0      0        0 ]
+      [-α    α      0        0 ]
+      [ 0   1-α     α        0 ]
+      [ β    η   1/2-β-η-α   α ]
+  b = [0,  1/6,  1/6,  2/3]
+
+Explicit tableau:
+  c̃ = [0, 0, 1, 1/2]
+  Ã = [0    0    0   0]
+      [0    0    0   0]
+      [0    1    0   0]
+      [0   1/4  1/4  0]
+  b̃ = [0, 1/6, 1/6, 2/3]
+  (k₁ never used: b̃₁=0 and ã_{i1}=0 for all i)
+=#
+struct IMEXSSP3433Tableau{T, T2}
+    γ::T2
+    a21::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    c3::T2
+    c4::T2
+    ea32::T
+    ea42::T
+    ea43::T
+    eb2::T
+    eb3::T
+    eb4::T
+end
+
+function IMEXSSP3433Tableau(T, T2)
+    α = 0.24169426078821
+    β = 0.06042356519705
+    η = 0.12915286960590
+    γ = convert(T2, α)
+    a21 = convert(T, -α)
+    a32 = convert(T, 1 - α)
+    a41 = convert(T, β)
+    a42 = convert(T, η)
+    a43 = convert(T, 1 // 2 - β - η - α)
+    c3 = convert(T2, 1)
+    c4 = convert(T2, 1 // 2)
+    ea32 = convert(T, 1)
+    ea42 = convert(T, 1 // 4)
+    ea43 = convert(T, 1 // 4)
+    eb2 = convert(T, 1 // 6)
+    eb3 = convert(T, 1 // 6)
+    eb4 = convert(T, 2 // 3)
+    return IMEXSSP3433Tableau(γ, a21, a32, a41, a42, a43, c3, c4, ea32, ea42, ea43, eb2, eb3, eb4)
+end
