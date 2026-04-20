@@ -75,7 +75,7 @@ jobs:
           cache-compiled: 'false'
       - name: Cache Julia depot (PR — restore only)
         if: github.event_name != 'push'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         continue-on-error: true
         with:
           path: |
