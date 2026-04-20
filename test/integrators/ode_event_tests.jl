@@ -463,3 +463,20 @@ step!(integrator, 1.0e-5, true)
     solve(prob, LinearExponential(), dt = t_l[2] - t_l[1], callback = cb)
     @test length(saved_values.saveval) == length(t_l)
 end
+
+# https://github.com/SciML/DifferentialEquations.jl/issues/1092
+@testset "set_u! on first timestep" begin
+    prob = ODEProblem((du, u, p, t) -> (du .= [u[2], 0]), [4.0,-1.0], (0.0,1.0))
+    integ = init(prob, Euler(); dt=0.002, adaptive=false, save_everystep=false)
+    set_u!(integ, [4.0, 2.0])
+    @test integ.u == [4,2]
+    step!(integ)
+    @test integ.u == [4.004, 2]
+    # check that set_u! also works after a step
+    integ = init(prob, Euler(); dt=0.002, adaptive=false, save_everystep=false)
+    step!(integ)
+    set_u!(integ, [4.0, 2.0])
+    @test integ.u == [4,2]
+    step!(integ)
+    @test integ.u == [4.004, 2]
+end
