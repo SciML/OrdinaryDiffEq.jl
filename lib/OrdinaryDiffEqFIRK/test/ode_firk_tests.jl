@@ -79,22 +79,22 @@ for iip in (true, false)
     @test length(sol.t) < 150
     @test SciMLBase.successful_retcode(sol)
     sol_temp = solve(remake(vanstiff, p = [1.0e7]), RadauIIA5())
-    @test length(sol_temp) < 150
+    @test length(sol_temp.t) < 150
     @test SciMLBase.successful_retcode(sol_temp)
     sol_temp2 = solve(remake(vanstiff, p = [1.0e7]), reltol = [1.0e-6, 1.0e-4], RadauIIA5())
-    @test length(sol_temp2) < 180
+    @test length(sol_temp2.t) < 180
     @test SciMLBase.successful_retcode(sol_temp2)
     sol_temp3 = solve(
         remake(vanstiff, p = [1.0e7]), RadauIIA5(), reltol = 1.0e-9,
         abstol = 1.0e-9
     )
-    @test length(sol_temp3) < 970
+    @test length(sol_temp3.t) < 970
     @test SciMLBase.successful_retcode(sol_temp3)
     sol_temp4 = solve(remake(vanstiff, p = [1.0e9]), RadauIIA5())
-    @test length(sol_temp4) < 170
+    @test length(sol_temp4.t) < 170
     @test SciMLBase.successful_retcode(sol_temp4)
     sol_temp5 = solve(remake(vanstiff, p = [1.0e10]), RadauIIA5())
-    @test length(sol_temp5) < 190
+    @test length(sol_temp5.t) < 190
     @test SciMLBase.successful_retcode(sol_temp5)
 end
 
