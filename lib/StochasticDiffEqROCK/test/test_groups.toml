@@ -12,6 +12,8 @@ local_only = true
 
 [NonDiagonalConvergence]
 versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 240
 
 [QA]
 versions = ["1"]
