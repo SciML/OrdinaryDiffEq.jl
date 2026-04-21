@@ -1,7 +1,6 @@
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
-DynamicQuantities = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
 Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
@@ -19,7 +18,6 @@ StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 [compat]
 ADTypes = "1.16"
 DifferentiationInterface = "0.6.54, 0.7"
-DynamicQuantities = "1.8"
 Enzyme = "0.13"
 FiniteDiff = "2.27"
 Measurements = "2.9"
