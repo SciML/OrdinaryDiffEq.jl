@@ -253,7 +253,13 @@ function hardstop!(du, u, p, t)
     pm, pg = p
     y, f_wall, dy = u
     du[1] = dy
-    du[2] = ifelse(y <= 0, y, f_wall)
+    # Strict `<` (rather than `<=`) so ForwardDiff's lexicographic comparator on
+    # `Dual(0.0, partial)` stays on the same branch whether the partial is zero
+    # or non-zero.  With `<=` and chunksize=1, different Jacobian columns end up
+    # linearizing different branches at y=0 and J's algebraic row collapses to
+    # zero — see SciML/OrdinaryDiffEq.jl#3482.  Revisit once the chunksize=1
+    # FunctionWrappersWrapper issue is addressed in DiffEqBase.promote_f.
+    du[2] = ifelse(y < 0, y, f_wall)
     return du[3] = (-ifelse(t < 2, -pg * pm, pg * pm) - f_wall) / (-pm)
 end
 
