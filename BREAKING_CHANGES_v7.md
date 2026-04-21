@@ -313,7 +313,7 @@ DiffEqBase is now a sublibrary under `lib/DiffEqBase` (migrated from standalone 
 - `concrete_solve` deprecation removed — use `solve` directly
 - `FunctionWrappersWrapper` wrapping updated for new LinearSolve precs interface
 
-**Why migrate DiffEqBase into the monorepo:** it's tightly coupled to OrdinaryDiffEq's internals and was never consumed independently of it; keeping them in lockstep releases eliminates a compatibility-bound class of bugs.
+**Why migrate DiffEqBase into the monorepo:** it's tightly coupled to OrdinaryDiffEq's internals and most features were only available through OrdinaryDiffEq; keeping them in lockstep releases eliminates a compatibility-bound class of bugs.
 
 ---
 
