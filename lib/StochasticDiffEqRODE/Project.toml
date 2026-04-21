@@ -23,7 +23,7 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
-DiffEqBase = "6.187"
+DiffEqBase = "7"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
 OrdinaryDiffEqCore = "3.22"

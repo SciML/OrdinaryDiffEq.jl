@@ -37,7 +37,7 @@ StaticArraysCore = "1.4.3"
 SparseMatrixColorings = "0.4.14"
 julia = "1.10"
 ADTypes = "1.16"
-DiffEqBase = "6.194"
+DiffEqBase = "7"
 SafeTestsets = "0.1.0"
 SciMLOperators = "1.15"
 

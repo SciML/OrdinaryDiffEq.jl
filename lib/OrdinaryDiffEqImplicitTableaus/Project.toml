@@ -17,7 +17,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 path = "../DiffEqDevTools"
 
 [compat]
-DiffEqBase = "6.194"
+DiffEqBase = "7"
 DiffEqDevTools = "2.48"
 Test = "<0.0.1, 1"
 julia = "1.10"

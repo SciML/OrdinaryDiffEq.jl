@@ -42,7 +42,7 @@ OrdinaryDiffEqCore = "3"
 Preferences = "1.4"
 julia = "1.10"
 RecursiveArrayTools = "4"
-DiffEqBase = "6.194"
+DiffEqBase = "7"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
 

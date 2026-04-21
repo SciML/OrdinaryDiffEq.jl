@@ -44,7 +44,7 @@ julia = "1.10"
 ADTypes = "1.16"
 RecursiveArrayTools = "4"
 OrdinaryDiffEqNonlinearSolve = "1.16.0"
-DiffEqBase = "6.194"
+DiffEqBase = "7"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
 

@@ -37,7 +37,7 @@ OrdinaryDiffEqRosenbrockTableaus = {path = "../OrdinaryDiffEqRosenbrockTableaus"
 
 [compat]
 ADTypes = "1.16"
-DiffEqBase = "6.194"
+DiffEqBase = "7"
 DiffEqDevTools = "2.44.4"
 DifferentiationInterface = "0.6.54, 0.7"
 Enzyme = "0.13"

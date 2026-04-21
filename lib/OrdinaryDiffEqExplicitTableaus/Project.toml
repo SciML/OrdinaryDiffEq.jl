@@ -19,7 +19,7 @@ DiffEqDevTools = {path = "../DiffEqDevTools"}
 OrdinaryDiffEq = {path = "../OrdinaryDiffEq"}
 
 [compat]
-DiffEqBase = "6.194"
+DiffEqBase = "7"
 DiffEqDevTools = "2.48"
 ODEProblemLibrary = "0.1"
 OrdinaryDiffEq = "6, 7"

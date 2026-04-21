@@ -45,7 +45,7 @@ StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
 
 [compat]
 ADTypes = "1.21.0"
-DiffEqBase = "6.187"
+DiffEqBase = "7"
 DiffEqNoiseProcess = "5.13"
 LinearAlgebra = "1.6"
 OrdinaryDiffEqCore = "3.22"

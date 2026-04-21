@@ -80,7 +80,7 @@ RecursiveArrayTools = "4"
 FastPower = "1.1"
 Logging = "1.10"
 Mooncake = "0.4, 0.5"
-DiffEqBase = "6.217"
+DiffEqBase = "7"
 Adapt = "4.3"
 Reexport = "1.2"
 
