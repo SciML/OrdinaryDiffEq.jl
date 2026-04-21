@@ -57,7 +57,7 @@ using FastBroadcast: @..
 
 using ConcreteStructs: @concrete
 
-import SciMLBase: OrdinaryDiffEqTag
+import DiffEqBase: OrdinaryDiffEqTag
 
 # Functions for sparse array handling - will be overloaded by extension
 # Default implementations return false/error for non-sparse types

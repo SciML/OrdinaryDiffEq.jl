@@ -62,7 +62,7 @@ import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_
 
 import StaticArraysCore: StaticArray
 
-import SciMLBase: OrdinaryDiffEqTag
+import DiffEqBase: OrdinaryDiffEqTag
 
 include("type.jl")
 include("utils.jl")
