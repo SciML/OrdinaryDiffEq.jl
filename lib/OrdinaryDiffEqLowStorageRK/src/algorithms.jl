@@ -16,14 +16,6 @@ Base.@kwdef struct ORK256{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAl
     thread::Thread = Serial()
     williamson_condition::Bool = true
 end
-# for backwards compatibility
-function ORK256(
-        stage_limiter!,
-        step_limiter! = trivial_limiter!;
-        williamson_condition = false
-    )
-    return ORK256(stage_limiter!, step_limiter!, Serial(), williamson_condition)
-end
 
 @doc explicit_rk_docstring(
     "7-stage, third order low-storage low-dissipation, low-dispersion scheme for
@@ -45,18 +37,6 @@ Base.@kwdef struct DGLDDRK73_C{StageLimiter, StepLimiter, Thread} <: OrdinaryDif
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     williamson_condition::Bool = true
-end
-# for backwards compatibility
-function DGLDDRK73_C(
-        stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = false
-    )
-    return DGLDDRK73_C(
-        stage_limiter!,
-        step_limiter!,
-        Serial(),
-        williamson_condition
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -80,14 +60,6 @@ Base.@kwdef struct CarpenterKennedy2N54{StageLimiter, StepLimiter, Thread} <:
     thread::Thread = Serial()
     williamson_condition::Bool = true
 end
-# for backwards compatibility
-function CarpenterKennedy2N54(
-        stage_limiter!,
-        step_limiter! = trivial_limiter!;
-        williamson_condition = false
-    )
-    return CarpenterKennedy2N54(stage_limiter!, step_limiter!, Serial(), williamson_condition)
-end
 
 @doc explicit_rk_docstring(
     "12-stage, fourth order low-storage method with optimized stability regions for
@@ -106,17 +78,6 @@ Base.@kwdef struct NDBLSRK124{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     williamson_condition::Bool = true
-end
-# for backwards compatibility
-function NDBLSRK124(
-        stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = false
-    )
-    return NDBLSRK124(
-        stage_limiter!,
-        step_limiter!, Serial(),
-        williamson_condition
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -137,17 +98,6 @@ Base.@kwdef struct NDBLSRK144{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
     thread::Thread = Serial()
     williamson_condition::Bool = true
 end
-# for backwards compatibility
-function NDBLSRK144(
-        stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = false
-    )
-    return NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!, Serial(),
-        williamson_condition
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -161,14 +111,6 @@ Base.@kwdef struct CFRLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function CFRLDDRK64(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CFRLDDRK64(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -184,14 +126,6 @@ Base.@kwdef struct TSLDDRK74{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function TSLDDRK74(stage_limiter!, step_limiter! = trivial_limiter!)
-    return TSLDDRK74(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -215,18 +149,6 @@ Base.@kwdef struct DGLDDRK84_C{StageLimiter, StepLimiter, Thread} <: OrdinaryDif
     thread::Thread = Serial()
     williamson_condition::Bool = true
 end
-# for backwards compatibility
-function DGLDDRK84_C(
-        stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = false
-    )
-    return DGLDDRK84_C(
-        stage_limiter!,
-        step_limiter!,
-        Serial(),
-        williamson_condition
-    )
-end
 
 @doc explicit_rk_docstring(
     "8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for
@@ -249,18 +171,6 @@ Base.@kwdef struct DGLDDRK84_F{StageLimiter, StepLimiter, Thread} <: OrdinaryDif
     thread::Thread = Serial()
     williamson_condition::Bool = true
 end
-# for backwards compatibility
-function DGLDDRK84_F(
-        stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = false
-    )
-    return DGLDDRK84_F(
-        stage_limiter!,
-        step_limiter!,
-        Serial(),
-        williamson_condition
-    )
-end
 
 @doc explicit_rk_docstring(
     "A fourth-order, six-stage low-storage method. Fixed timestep only.",
@@ -281,14 +191,6 @@ Base.@kwdef struct SHLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     thread::Thread = Serial()
     williamson_condition::Bool = true
 end
-# for backwards compatibility
-function SHLDDRK64(
-        stage_limiter!,
-        step_limiter! = trivial_limiter!;
-        williamson_condition = false
-    )
-    return SHLDDRK64(stage_limiter!, step_limiter!, Serial(), williamson_condition)
-end
 
 @doc explicit_rk_docstring(
     "6-stage, fourth order low-stage, low-dissipation, low-dispersion scheme.
@@ -299,10 +201,6 @@ Base.@kwdef struct RK46NL{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAl
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function RK46NL(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RK46NL(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -320,14 +218,6 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S32{StageLimiter, StepLimiter, Thre
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function ParsaniKetchesonDeconinck3S32(stage_limiter!, step_limiter! = trivial_limiter!)
-    return ParsaniKetchesonDeconinck3S32{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -343,14 +233,6 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S82{StageLimiter, StepLimiter, Thre
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function ParsaniKetchesonDeconinck3S82(stage_limiter!, step_limiter! = trivial_limiter!)
-    return ParsaniKetchesonDeconinck3S82{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -368,14 +250,6 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S53{StageLimiter, StepLimiter, Thre
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function ParsaniKetchesonDeconinck3S53(stage_limiter!, step_limiter! = trivial_limiter!)
-    return ParsaniKetchesonDeconinck3S53{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -391,14 +265,6 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S173{StageLimiter, StepLimiter, Thr
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function ParsaniKetchesonDeconinck3S173(stage_limiter!, step_limiter! = trivial_limiter!)
-    return ParsaniKetchesonDeconinck3S173{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -416,14 +282,6 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S94{StageLimiter, StepLimiter, Thre
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function ParsaniKetchesonDeconinck3S94(stage_limiter!, step_limiter! = trivial_limiter!)
-    return ParsaniKetchesonDeconinck3S94{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -439,14 +297,6 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S184{StageLimiter, StepLimiter, Thr
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function ParsaniKetchesonDeconinck3S184(stage_limiter!, step_limiter! = trivial_limiter!)
-    return ParsaniKetchesonDeconinck3S184{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -464,14 +314,6 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S105{StageLimiter, StepLimiter, Thr
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function ParsaniKetchesonDeconinck3S105(stage_limiter!, step_limiter! = trivial_limiter!)
-    return ParsaniKetchesonDeconinck3S105{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -487,14 +329,6 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S205{StageLimiter, StepLimiter, Thr
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function ParsaniKetchesonDeconinck3S205(stage_limiter!, step_limiter! = trivial_limiter!)
-    return ParsaniKetchesonDeconinck3S205{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -517,14 +351,6 @@ Base.@kwdef struct CKLLSRK43_2{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function CKLLSRK43_2(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK43_2{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -545,14 +371,6 @@ Base.@kwdef struct CKLLSRK54_3C{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function CKLLSRK54_3C(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK54_3C{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -575,14 +393,6 @@ Base.@kwdef struct CKLLSRK95_4S{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function CKLLSRK95_4S(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK95_4S{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -603,14 +413,6 @@ Base.@kwdef struct CKLLSRK95_4C{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function CKLLSRK95_4C(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK95_4C{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -633,14 +435,6 @@ Base.@kwdef struct CKLLSRK95_4M{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function CKLLSRK95_4M(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK95_4M{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -661,14 +455,6 @@ Base.@kwdef struct CKLLSRK54_3C_3R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function CKLLSRK54_3C_3R(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK54_3C_3R{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -691,14 +477,6 @@ Base.@kwdef struct CKLLSRK54_3M_3R{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function CKLLSRK54_3M_3R(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK54_3M_3R{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -719,14 +497,6 @@ Base.@kwdef struct CKLLSRK54_3N_3R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function CKLLSRK54_3N_3R(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK54_3N_3R{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -749,14 +519,6 @@ Base.@kwdef struct CKLLSRK85_4C_3R{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function CKLLSRK85_4C_3R(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK85_4C_3R{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -777,14 +539,6 @@ Base.@kwdef struct CKLLSRK85_4M_3R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function CKLLSRK85_4M_3R(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK85_4M_3R{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -807,14 +561,6 @@ Base.@kwdef struct CKLLSRK85_4P_3R{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function CKLLSRK85_4P_3R(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK85_4P_3R{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -835,14 +581,6 @@ Base.@kwdef struct CKLLSRK54_3N_4R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function CKLLSRK54_3N_4R(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK54_3N_4R{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -865,14 +603,6 @@ Base.@kwdef struct CKLLSRK54_3M_4R{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function CKLLSRK54_3M_4R(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK54_3M_4R{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "6-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.",
@@ -892,14 +622,6 @@ Base.@kwdef struct CKLLSRK65_4M_4R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function CKLLSRK65_4M_4R(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK65_4M_4R(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -922,14 +644,6 @@ Base.@kwdef struct CKLLSRK85_4FM_4R{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function CKLLSRK85_4FM_4R(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK85_4FM_4R(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "CKLLSRK75_4M_5R: Low-Storage Method
@@ -951,14 +665,6 @@ Base.@kwdef struct CKLLSRK75_4M_5R{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function CKLLSRK75_4M_5R(stage_limiter!, step_limiter! = trivial_limiter!)
-    return CKLLSRK75_4M_5R{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "A third-order, five-stage method with embedded error estimator
@@ -974,13 +680,6 @@ Base.@kwdef struct RDPK3Sp35{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function RDPK3Sp35(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RDPK3Sp35{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!, Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -999,14 +698,6 @@ Base.@kwdef struct RDPK3SpFSAL35{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function RDPK3SpFSAL35(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RDPK3SpFSAL35{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "A fourth-order, nine-stage method with embedded error estimator
@@ -1022,13 +713,6 @@ Base.@kwdef struct RDPK3Sp49{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function RDPK3Sp49(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RDPK3Sp49{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!, Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -1047,14 +731,6 @@ Base.@kwdef struct RDPK3SpFSAL49{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function RDPK3SpFSAL49(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RDPK3SpFSAL49{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "A fifth-order, ten-stage method with embedded error estimator
@@ -1070,13 +746,6 @@ Base.@kwdef struct RDPK3Sp510{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function RDPK3Sp510(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RDPK3Sp510{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!, Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -1094,14 +763,6 @@ Base.@kwdef struct RDPK3SpFSAL510{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function RDPK3SpFSAL510(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RDPK3SpFSAL510{typeof(stage_limiter!), typeof(step_limiter!), typeof(Serial())}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 #Low Storage Explicit Runge-Kutta Methods
@@ -1124,17 +785,6 @@ Base.@kwdef struct NDBLSRK134{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
     thread::Thread = Serial()
     williamson_condition::Bool = true
 end
-# for backwards compatibility
-function NDBLSRK134(
-        stage_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = false
-    )
-    return NDBLSRK134(
-        stage_limiter!,
-        step_limiter!, Serial(),
-        williamson_condition
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low dissipation and dispersion Runge-Kutta schemes for computational acoustics",
@@ -1154,14 +804,6 @@ Base.@kwdef struct SHLDDRK_2N{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function SHLDDRK_2N(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SHLDDRK_2N(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low dissipation and dispersion Runge-Kutta schemes for computational acoustics",
@@ -1180,12 +822,4 @@ Base.@kwdef struct SHLDDRK52{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function SHLDDRK52(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SHLDDRK52(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end

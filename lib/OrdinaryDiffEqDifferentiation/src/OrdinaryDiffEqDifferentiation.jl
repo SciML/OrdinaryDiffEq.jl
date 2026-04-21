@@ -16,8 +16,6 @@ import LinearAlgebra: LowerTriangular, UpperTriangular
 import ArrayInterface
 import ArrayInterface: fast_scalar_indexing, zeromatrix, lu_instance
 
-# StaticArrayInterface imported but not used
-# import StaticArrayInterface
 import StaticArraysCore: StaticArray, StaticMatrix
 
 using DiffEqBase: TimeGradientWrapper,
@@ -59,13 +57,7 @@ using FastBroadcast: @..
 
 using ConcreteStructs: @concrete
 
-@static if isdefined(SciMLBase, :OrdinaryDiffEqTag)
-    import SciMLBase: OrdinaryDiffEqTag
-elseif isdefined(DiffEqBase, :OrdinaryDiffEqTag)
-    import DiffEqBase: OrdinaryDiffEqTag
-else
-    struct OrdinaryDiffEqTag end
-end
+import SciMLBase: OrdinaryDiffEqTag
 
 # Functions for sparse array handling - will be overloaded by extension
 # Default implementations return false/error for non-sparse types

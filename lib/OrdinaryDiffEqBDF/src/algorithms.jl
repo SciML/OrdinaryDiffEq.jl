@@ -28,40 +28,6 @@ function BDF_docstring(
           For example, to use [KLU.jl](https://github.com/JuliaSparse/KLU.jl), specify
           `$name(linsolve = KLUFactorization()`).
            When `nothing` is passed, uses `DefaultLinearSolver`.
-        - `precs`: Any [LinearSolve.jl-compatible preconditioner](https://docs.sciml.ai/LinearSolve/stable/basics/Preconditioners/)
-          can be used as a left or right preconditioner.
-          Preconditioners are specified by the `Pl,Pr = precs(W,du,u,p,t,newW,Plprev,Prprev,solverdata)`
-          function where the arguments are defined as:
-            - `W`: the current Jacobian of the nonlinear system. Specified as either
-                ``I - \\gamma J`` or ``I/\\gamma - J`` depending on the algorithm. This will
-                commonly be a `WOperator` type defined by OrdinaryDiffEq.jl. It is a lazy
-                representation of the operator. Users can construct the W-matrix on demand
-                by calling `convert(AbstractMatrix,W)` to receive an `AbstractMatrix` matching
-                the `jac_prototype`.
-            - `du`: the current ODE derivative
-            - `u`: the current ODE state
-            - `p`: the ODE parameters
-            - `t`: the current ODE time
-            - `newW`: a `Bool` which specifies whether the `W` matrix has been updated since
-                the last call to `precs`. It is recommended that this is checked to only
-                update the preconditioner when `newW == true`.
-            - `Plprev`: the previous `Pl`.
-            - `Prprev`: the previous `Pr`.
-            - `solverdata`: Optional extra data the solvers can give to the `precs` function.
-                Solver-dependent and subject to change.
-          The return is a tuple `(Pl,Pr)` of the LinearSolve.jl-compatible preconditioners.
-          To specify one-sided preconditioning, simply return `nothing` for the preconditioner
-          which is not used. Additionally, `precs` must supply the dispatch:
-          ```julia
-          Pl, Pr = precs(W, du, u, p, t, ::Nothing, ::Nothing, ::Nothing, solverdata)
-          ```
-          which is used in the solver setup phase to construct the integrator
-          type with the preconditioners `(Pl,Pr)`.
-          The default is `precs=DEFAULT_PRECS` where the default preconditioner function
-          is defined as:
-          ```julia
-          DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
-          ```
             """ * "/n" * extra_keyword_description
     return generic_solver_docstring(
         description, name, "Multistep Method.", references,
@@ -78,11 +44,11 @@ end
     29, pp 1014-1026, 2014. doi: https://doi.org/10.1016/j.procs.2014.05.091
     """,
     extra_keyword_description = """
-    - `κ`: TBD
-    - `tol`: TBD
-    - `nlsolve`: TBD
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
+    - `κ`: coefficient for the order and stability control of the BDF method. When `nothing`, the default value is used.
+    - `tol`: tolerance for the nonlinear solver. When `nothing`, uses the default tolerance.
+    - `nlsolve`: nonlinear solver algorithm used for solving the implicit system.
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -139,11 +105,11 @@ like `KenCarp4`, but instead using a multistep BDF approach",
     publisher={SIAM}}
     """,
     extra_keyword_description = """
-    - `κ`: TBD
-    - `tol`: TBD
-    - `nlsolve`: TBD
-    - `extrapolant`: TBD
-    - `ark`: TBD
+    - `κ`: coefficient for the order and stability control of the BDF method. When `nothing`, the default value is used.
+    - `tol`: tolerance for the nonlinear solver. When `nothing`, uses the default tolerance.
+    - `nlsolve`: nonlinear solver algorithm used for solving the implicit system.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `ark`: whether to use an additive Runge-Kutta formulation.
     """,
     extra_keyword_default = """
     κ = nothing,
@@ -274,9 +240,9 @@ SBDF4(; kwargs...) = SBDF(4; kwargs...)
     publisher={SIAM}
     }""",
     extra_keyword_description = """
-    - `nlsolve`: TBD
-    - `extrapolant`: TBD
-    - `kappa`: TBD
+    - `nlsolve`: nonlinear solver algorithm used for solving the implicit system.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `kappa`: coefficient for the BDF error estimator.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -332,9 +298,9 @@ end
     publisher={SIAM}
     }""",
     extra_keyword_description = """
-    - `nlsolve`: TBD
-    - `extrapolant`: TBD
-    - `kappa`: TBD
+    - `nlsolve`: nonlinear solver algorithm used for solving the implicit system.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `kappa`: coefficient for the BDF error estimator.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -390,11 +356,11 @@ end
     publisher={SIAM}
     }""",
     extra_keyword_description = """
-    - `κ`: TBD
-    - `tol`: TBD
-    - `nlsolve`: TBD
-    - `extrapolant`: TBD
-    - `kappa`: TBD
+    - `κ`: coefficient for the order and stability control of the BDF method. When `nothing`, the default value is used.
+    - `tol`: tolerance for the nonlinear solver. When `nothing`, uses the default tolerance.
+    - `nlsolve`: nonlinear solver algorithm used for solving the implicit system.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `kappa`: coefficient for the BDF error estimator.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -460,8 +426,8 @@ end
     year={2000},
     publisher={Elsevier}}""",
     extra_keyword_description = """
-    - `nlsolve`: TBD
-    - `extrapolant`: TBD
+    - `nlsolve`: nonlinear solver algorithm used for solving the implicit system.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     """,
     extra_keyword_default = """
     nlsolve = NLNewton(),
@@ -505,12 +471,12 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     year={2002},
     publisher={Walter de Gruyter GmbH \\& Co. KG}}""",
     extra_keyword_description = """
-    - `κ`: TBD
-    - `tol`: TBD
-    - `nlsolve`: TBD
-    - `extrapolant`: TBD
+    - `κ`: coefficient for the order and stability control of the BDF method. When `nothing`, the default value is used.
+    - `tol`: tolerance for the nonlinear solver. When `nothing`, uses the default tolerance.
+    - `nlsolve`: nonlinear solver algorithm used for solving the implicit system.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
-    - `max_order`: TBD
+    - `max_order`: maximum order of the adaptive-order BDF method.
     - `stald`: Enable Stability Limit Detection (STALD) for BDF orders 3-5. Default: `true`.
     - `stald_rrcut`: STALD cutoff for characteristic root magnitude. Default: `0.98`.
     - `stald_vrrtol`: STALD tolerance for variance of ratios. Default: `1e-4`.
@@ -670,8 +636,8 @@ IMEXEulerARK(; kwargs...) = SBDF(1; ark = true, kwargs...)
 It uses an apriori error estimator for adaptivity based on a finite differencing approximation from SPICE.",
     "DImplicitEuler",
     extra_keyword_description = """
-    - `nlsolve`: TBD
-    - `extrapolant`: TBD
+    - `nlsolve`: nonlinear solver algorithm used for solving the implicit system.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     """,
     extra_keyword_default = """
     nlsolve = NLNewton(),
@@ -712,8 +678,8 @@ end
     year={2014},
     publisher={Elsevier}}""",
     extra_keyword_description = """
-    - `nlsolve`: TBD
-    - `extrapolant`: TBD
+    - `nlsolve`: nonlinear solver algorithm used for solving the implicit system.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     """,
     extra_keyword_default = """
     nlsolve = NLNewton(),
@@ -752,11 +718,11 @@ end
     publisher={Walter de Gruyter GmbH and Co. KG}
     }""",
     extra_keyword_description = """
-    - `κ`: TBD
-    - `tol`: TBD
-    - `nlsolve`: TBD
-    - `extrapolant`: TBD
-    - `max_order`: TBD
+    - `κ`: coefficient for the order and stability control of the BDF method. When `nothing`, the default value is used.
+    - `tol`: tolerance for the nonlinear solver. When `nothing`, uses the default tolerance.
+    - `nlsolve`: nonlinear solver algorithm used for solving the implicit system.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `max_order`: maximum order of the adaptive-order BDF method.
     """,
     extra_keyword_default = """
     κ = nothing,
