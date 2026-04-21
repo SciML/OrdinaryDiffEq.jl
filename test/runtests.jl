@@ -208,6 +208,7 @@ end
         activate_downstream_env()
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
         @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
+        @time @safetestset "DynamicQuantities + Measurements Tests" include("downstream/dynamicquantities_measurements.jl")
     end
 
     # AD tests - Enzyme/Zygote only on Julia <= 1.11 (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
