@@ -325,7 +325,7 @@ DiffEqBase is now a sublibrary under `lib/DiffEqBase` (migrated from standalone 
 - `DEFAULT_PRECS` removed (preconditioners now configured via `linsolve`)
 - `ispredictive` / `isstandard` controller traits removed — algorithms now override `default_controller` directly. **Migration:** if you defined a custom algorithm that set `isstandard(::MyAlg) = true`, instead define `default_controller(::MyAlg, args...) = IController(…)`
 - `has_chunksize` removed (dead code — chunksize is on the ADTypes object now)
-- Backwards-compat positional constructors removed from LowStorageRK (44 constructors) and Tsit5 — use keyword form
+- Backwards-compat positional `Alg(stage_limiter!, step_limiter!)` constructors removed from every explicit RK sublibrary — 99 constructors total across LowStorageRK (44), SSPRK (18), LowOrderRK (22), Verner (5: Vern6/7/8/9, RKV76IIa), HighOrderRK (4: TanYam7, TsitPap8, DP8, PFRK87), SIMDRK (3: MER5v2, MER6v2, RK6v4), QPRK (QPRK98), TaylorSeries (ExplicitTaylor2), and Tsit5. **Migration:** use the keyword form `Alg(; stage_limiter! = my_limiter, step_limiter! = my_limiter)`. The kwarg constructors (and no-arg `Alg()` defaulting both limiters to `trivial_limiter!`) are unchanged.
 
 ---
 
