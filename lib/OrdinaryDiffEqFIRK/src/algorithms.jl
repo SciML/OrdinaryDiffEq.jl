@@ -9,12 +9,12 @@ year={1999},
 publisher={Elsevier}}"""
 
 AdaptiveRadauPaper = """@article{AdaptiveRadauPaper,
-  author={Ekanathan, Shreyas and Smith, Oscar and Rackauckas, Christopher},
-  booktitle={2025 IEEE High Performance Extreme Computing Conference (HPEC)}, 
-  title={A Fully Adaptive Radau Method for the Efficient Solution of Stiff Ordinary Differential Equations at Low Tolerances}, 
-  year={2025},
-  pages={1-9},
-  doi={10.1109/HPEC67600.2025.11196706}}"""
+author={Ekanathan, Shreyas and Smith, Oscar and Rackauckas, Christopher},
+booktitle={2025 IEEE High Performance Extreme Computing Conference (HPEC)}, 
+title={A Fully Adaptive Radau Method for the Efficient Solution of Stiff Ordinary Differential Equations at Low Tolerances}, 
+year={2025},
+pages={1-9},
+doi={10.1109/HPEC67600.2025.11196706}}"""
 
 extra_keyword_description = """
 - `extrapolant`: TBD

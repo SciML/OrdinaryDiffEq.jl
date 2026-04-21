@@ -345,10 +345,14 @@ function KahanLi8ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFlo
     b17 = b2
     b18 = b1
     return SymplecticTableau(
-        (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
-            a14, a15, a16, a17, a18),
-        (b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
-            b14, b15, b16, b17, b18)
+        (
+            a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
+            a14, a15, a16, a17, a18,
+        ),
+        (
+            b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
+            b14, b15, b16, b17, b18,
+        )
     )
 end
 
@@ -390,10 +394,14 @@ function KahanLi8ConstantCache(T::Type, T2::Type)
     b17 = b2
     b18 = b1
     return SymplecticTableau(
-        (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
-            a14, a15, a16, a17, a18),
-        (b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
-            b14, b15, b16, b17, b18)
+        (
+            a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
+            a14, a15, a16, a17, a18,
+        ),
+        (
+            b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
+            b14, b15, b16, b17, b18,
+        )
     )
 end
 
@@ -471,14 +479,18 @@ function SofSpa10ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFlo
     b35 = b2
     b36 = b1
     return SymplecticTableau(
-        (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
+        (
+            a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
             a14, a15, a16, a17, a18,
             a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30,
-            a31, a32, a33, a34, a35, a36),
-        (b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
+            a31, a32, a33, a34, a35, a36,
+        ),
+        (
+            b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
             b14, b15, b16, b17, b18,
             b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30,
-            b31, b32, b33, b34, b35, b36)
+            b31, b32, b33, b34, b35, b36,
+        )
     )
 end
 
@@ -556,13 +568,17 @@ function SofSpa10ConstantCache(T::Type, T2::Type)
     b35 = b2
     b36 = b1
     return SymplecticTableau(
-        (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
+        (
+            a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
             a14, a15, a16, a17, a18,
             a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30,
-            a31, a32, a33, a34, a35, a36),
-        (b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
+            a31, a32, a33, a34, a35, a36,
+        ),
+        (
+            b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
             b14, b15, b16, b17, b18,
             b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30,
-            b31, b32, b33, b34, b35, b36)
+            b31, b32, b33, b34, b35, b36,
+        )
     )
 end
