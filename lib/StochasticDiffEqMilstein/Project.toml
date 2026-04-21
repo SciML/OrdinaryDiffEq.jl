@@ -25,7 +25,7 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
-DiffEqBase = "6.187"
+DiffEqBase = "7"
 DiffEqNoiseProcess = "5.13"
 StochasticDiffEqLevyArea = "1"
 LinearAlgebra = "1.10"

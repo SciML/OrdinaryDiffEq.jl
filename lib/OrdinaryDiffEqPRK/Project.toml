@@ -32,7 +32,7 @@ MuladdMacro = "0.2"
 SciMLBase = "3"
 OrdinaryDiffEqCore = "3"
 julia = "1.10"
-DiffEqBase = "6.194"
+DiffEqBase = "7"
 SafeTestsets = "0.1.0"
 Reexport = "1.2"
 
