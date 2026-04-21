@@ -1,5 +1,6 @@
 using OrdinaryDiffEq
 using DiffEqBase: BrownFullBasicInit
+using SciMLBase: FullSpecialize
 using LinearAlgebra
 using NLsolve
 using Test
@@ -259,7 +260,13 @@ end
 
 hardstop!(u, p, t) = (du = similar(u); hardstop!(du, u, p, t); du)
 
-fun = ODEFunction(hardstop!, mass_matrix = Diagonal([1, 0, 1]))
+# FullSpecialize skips the FunctionWrappersWrapper wrapping in
+# DiffEqBase.promote_f.  That wrapper bakes chunksize=1 Dual signatures into the
+# RHS, which downstream causes _prepare_ADType_fwd to force AutoForwardDiff{1}.
+# For this DAE's `ifelse(y <= 0, y, f_wall)` kink, chunksize=1 autodiff produces
+# a column-wise inconsistent Jacobian with a zero algebraic row, stalling
+# Newton in the composite path (see SciML/OrdinaryDiffEq.jl#3482).
+fun = ODEFunction{true, FullSpecialize}(hardstop!, mass_matrix = Diagonal([1, 0, 1]))
 prob1 = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
 prob2 = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
 for prob in [prob1, prob2]
