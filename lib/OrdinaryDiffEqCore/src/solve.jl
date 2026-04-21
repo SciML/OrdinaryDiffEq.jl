@@ -276,7 +276,7 @@ Base.@constprop :aggressive function _ode_init(
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
 
     uEltypeNoUnits = recursive_unitless_eltype(u)
-    tTypeNoUnits = typeof(DiffEqBase.value(oneunit(first(tspan))))
+    tTypeNoUnits = typeof(DiffEqBase.stripunits(oneunit(first(tspan))))
 
     scalar_type_tol =
         uBottomEltypeNoUnits == uBottomEltype &&

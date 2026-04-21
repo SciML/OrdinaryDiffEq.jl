@@ -52,6 +52,12 @@ end
 # for the non-unitful case the correct type is just u
 _rate_prototype(u, t::T, onet::T) where {T} = u
 
+# Strip only the unit wrapper, leaving AD/uncertainty wrappers (Dual, Measurement,
+# Tracker, etc.) intact. Extensions for Unitful, DynamicQuantities, and FlexUnits
+# override this to return the underlying numeric value.
+# Complementary to `value` (strips everything) and `unitfulvalue` (strips AD, keeps units).
+stripunits(x) = x
+
 # Nonlinear Solve functionality
 @inline __fast_scalar_indexing(args...) = all(ArrayInterface.fast_scalar_indexing, args)
 

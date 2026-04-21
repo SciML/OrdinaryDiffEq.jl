@@ -10,6 +10,8 @@ import DiffEqBase: default_factorize
     return real(abs2(ustrip(x)))
 end
 
+DiffEqBase.stripunits(x::UnionAbstractQuantity) = ustrip(x)
+
 DiffEqBase._rate_prototype(u, t::UnionAbstractQuantity, onet) = u / oneunit(t)
 DiffEqBase.timedepentdtmin(t::UnionAbstractQuantity, dtmin) =
     abs(ustrip(dtmin / oneunit(t)) * oneunit(t))
