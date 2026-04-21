@@ -23,7 +23,7 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "SROCKC2WeakConvergence"
     end
 end
 
-if TEST_GROUP == "ALL" || TEST_GROUP == "NonDiagonalConvergence"
+if TEST_GROUP == "ALL" || TEST_GROUP == "SROCK2NonDiagonalConvergence"
     @time @safetestset "Non-Diagonal Noise Convergence Tests (SROCK2, #3188, #3170)" begin
         include("convergence/nondiagonal_convergence.jl")
     end
