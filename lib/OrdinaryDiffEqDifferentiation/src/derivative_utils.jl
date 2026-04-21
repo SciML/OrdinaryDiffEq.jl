@@ -17,16 +17,6 @@ does not have a `jac_reuse` field.
     end
 end
 
-# Store dtgamma as-is in JacReuseState. Previously we called `ForwardDiff.value`
-# here to strip Duals, but unconditional unwrapping is unsafe under nested
-# (higher-order) AD: a `Dual{OuterTag,Dual{InnerTag,...}}` with the inner tag
-# currently active would have its *inner* Dual stripped, collapsing the
-# still-active derivative into a primal. The reuse logic only uses
-# `iszero(·)`, ratios, and `abs(dtgamma/last - 1)` comparisons, all of which
-# work on Duals, so we just keep the value as-is. `JacReuseState`'s dtgamma
-# fields are `::Any` to accommodate whatever type `dtgamma` has.
-_jac_reuse_value(x) = x
-
 """
     _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma) -> NTuple{2,Bool}
 
@@ -874,7 +864,7 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
             )
             jac_reuse.last_step_iter = integrator.iter
             if new_jac
-                jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
+                jac_reuse.pending_dtgamma = dtgamma
                 jac_reuse.last_u_length = length(integrator.u)
             end
         else
@@ -925,7 +915,7 @@ function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step
         jac_reuse.cached_J = calc_J(integrator, cache)
         jac_reuse.cached_dT = dT
         jac_reuse.cached_W = W
-        jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
+        jac_reuse.pending_dtgamma = dtgamma
         jac_reuse.last_u_length = length(integrator.u)
 
         return dT, W
