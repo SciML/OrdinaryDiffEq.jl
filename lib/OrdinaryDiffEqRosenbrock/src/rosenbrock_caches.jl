@@ -472,8 +472,6 @@ function alg_cache(
     end
     # Seed JacReuseState with `zero(dt)` so its dtgamma fields carry the full
     # (possibly ForwardDiff.Dual) type dtgamma will have at solve time.
-    # `constvalue(uBottomEltypeNoUnits)` unconditionally strips Duals, which is
-    # wrong under nested AD (e.g. `ForwardDiff.hessian` through solve).
     return RosenbrockCombinedConstantCache(
         tf, uf,
         tab, J, W, linsolve,
