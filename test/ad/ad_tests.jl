@@ -2,6 +2,8 @@ using Test
 using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra, ADTypes,
     StaticArrays
 using SciMLSensitivity  # Loaded so Mooncake can dispatch through SciMLSensitivityMooncakeExt
+using OrdinaryDiffEqSDIRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqLinear: LinearExponential, MatrixOperator
 import DifferentiationInterface as DI
 using Mooncake  # Load Mooncake after DI to ensure extension is loaded
 
@@ -424,28 +426,20 @@ implicit_algs = [
     TRBDF2,
 ]
 
-@testset "deprecated AD keyword arguments still work with $alg" for alg in implicit_algs
-    f = (du, u, p, t) -> du .= -0.5 * u
+@testset "Bool autodiff no longer accepted for $alg" for alg in implicit_algs
+    # In v7, passing autodiff=true or autodiff=false should error (MethodError)
+    @test_throws ArgumentError alg(autodiff = true)
+    @test_throws ArgumentError alg(autodiff = false)
+
+    # ADType-based constructors should work
     alg1 = alg(autodiff = AutoForwardDiff())
-    alg2 = @test_deprecated alg(autodiff = true)
+    @test OrdinaryDiffEqCore.alg_autodiff(alg1) isa AutoForwardDiff
 
-    alg3 = alg(autodiff = AutoFiniteDiff())
-    alg4 = @test_deprecated alg(autodiff = false)
+    alg2 = alg(autodiff = AutoFiniteDiff())
+    @test OrdinaryDiffEqCore.alg_autodiff(alg2) isa AutoFiniteDiff
 
-    alg5 = alg(autodiff = AutoForwardDiff(chunksize = 5))
-    alg6 = @test_deprecated alg(autodiff = true, chunk_size = 5)
-
-    alg7 = alg(autodiff = AutoFiniteDiff(fdtype = Val(:central)))
-    alg8 = @test_deprecated alg(autodiff = false, diff_type = Val(:central))
-
-    alg9 = alg(autodiff = AutoForwardDiff(chunksize = 1))
-    alg10 = @test_deprecated alg(chunk_size = 1)
-
-    @test OrdinaryDiffEqCore.alg_autodiff(alg1) == OrdinaryDiffEqCore.alg_autodiff(alg2)
-    @test OrdinaryDiffEqCore.alg_autodiff(alg3) == OrdinaryDiffEqCore.alg_autodiff(alg4)
-    @test OrdinaryDiffEqCore.alg_autodiff(alg5) == OrdinaryDiffEqCore.alg_autodiff(alg6)
-    @test OrdinaryDiffEqCore.alg_autodiff(alg7) == OrdinaryDiffEqCore.alg_autodiff(alg8)
-    @test OrdinaryDiffEqCore.alg_autodiff(alg9) == OrdinaryDiffEqCore.alg_autodiff(alg10)
+    alg3 = alg(autodiff = AutoForwardDiff(chunksize = 5))
+    @test OrdinaryDiffEqCore.alg_autodiff(alg3) isa AutoForwardDiff
 end
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2675
@@ -581,4 +575,62 @@ end
     ref = FiniteDiff.finite_difference_gradient(sum_of_solution_ens, [u0_lv; p_lv])
     # Finite differences lose accuracy over long integrations; ForwardDiff is exact.
     @test gs ≈ ref rtol = 0.1
+end
+
+if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
+    # Regression for https://github.com/SciML/DiffEqBase.jl/issues/1265
+    using StaticArrays, DiffEqBase
+    @testset "Direct Differentiation of Explicit ODE Solve" begin
+        function lorenz!(du, u, p, t)
+            du[1] = 10.0(u[2] - u[1])
+            du[2] = u[1] * (28.0 - u[3]) - u[2]
+            du[3] = u[1] * u[2] - (8 / 3) * u[3]
+        end
+
+        _saveat = SA[0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0]
+
+        function f_dt(y::Array{Float64}, u0::Array{Float64})
+            tspan = (0.0, 3.0)
+            prob = ODEProblem{true, SciMLBase.FullSpecialize}(lorenz!, u0, tspan)
+            sol = DiffEqBase.solve(prob, Tsit5(), saveat = _saveat, sensealg = DiffEqBase.SensitivityADPassThrough(), abstol = 1.0e-12, reltol = 1.0e-12)
+            y .= sol[1, :]
+            return nothing
+        end
+
+        function f_dt(u0)
+            tspan = (0.0, 3.0)
+            prob = ODEProblem{true, SciMLBase.FullSpecialize}(lorenz!, u0, tspan)
+            sol = DiffEqBase.solve(prob, Tsit5(), saveat = _saveat, sensealg = DiffEqBase.SensitivityADPassThrough(), abstol = 1.0e-12, reltol = 1.0e-12)
+            sol[1, :]
+        end
+
+        u0 = [1.0; 0.0; 0.0]
+        fdj = ForwardDiff.jacobian(f_dt, u0)
+
+        ezj = stack(
+            map(1:3) do i
+                d_u0 = zeros(3)
+                dy = zeros(13)
+                y = zeros(13)
+                d_u0[i] = 1.0
+                Enzyme.autodiff(Forward, f_dt, Duplicated(y, dy), Duplicated(u0, d_u0))
+                dy
+            end
+        )
+
+        @test ezj ≈ fdj
+
+        function f_dt2(u0)
+            tspan = (0.0, 3.0)
+            prob = ODEProblem{true, SciMLBase.FullSpecialize}(lorenz!, u0, tspan)
+            sol = DiffEqBase.solve(prob, Tsit5(), dt = 0.1, saveat = _saveat, sensealg = DiffEqBase.SensitivityADPassThrough(), abstol = 1.0e-12, reltol = 1.0e-12)
+            sum(sol[1, :])
+        end
+
+        fdg = ForwardDiff.gradient(f_dt2, u0)
+        d_u0 = zeros(3)
+        Enzyme.autodiff(Reverse, f_dt2, Active, Duplicated(u0, d_u0))
+
+        @test d_u0 ≈ fdg
+    end
 end

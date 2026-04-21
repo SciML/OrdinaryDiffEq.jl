@@ -1,5 +1,6 @@
-using OrdinaryDiffEq, Test, Statistics
-import ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
+using OrdinaryDiffEq, Test
+using SciMLBase: DiscreteProblem, DiscreteFunction
+using ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
 @testset "Scalar Discrete Problem" begin
     prob = DiscreteProblem(0.5, (0.0, 1.0))

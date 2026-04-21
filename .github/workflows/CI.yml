@@ -3,9 +3,11 @@ on:
   pull_request:
     branches:
       - master
+      - v7
   push:
     branches:
       - master
+      - v7
 concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
@@ -19,6 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     continue-on-error: ${{ matrix.group == 'Downstream' }}
+    env:
+      # Bypass Julia's Pkg server for registry; it lags behind JuliaRegistries/General
+      # by up to hours and caches on a TTL. Resolve against git directly so newly
+      # registered package versions are seen immediately by CI.
+      JULIA_PKG_SERVER: ""
     strategy:
       fail-fast: false
       matrix:
@@ -91,6 +98,37 @@ jobs:
           key: julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};run_id=${{ github.run_id }};run_attempt=${{ github.run_attempt }}
           restore-keys: |
             julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};
+      - name: Develop local path deps (Julia < 1.11)
+        shell: julia --color=yes --project=. {0}
+        run: |
+          using Pkg
+          if VERSION < v"1.11.0-DEV.0"
+            toml = Pkg.TOML.parsefile("Project.toml")
+            if haskey(toml, "sources")
+              specs = Pkg.PackageSpec[]
+              for (dep, spec) in toml["sources"]
+                if spec isa Dict && haskey(spec, "path") && isdir(spec["path"])
+                  @info "Developing" dep spec["path"]
+                  push!(specs, Pkg.PackageSpec(path=spec["path"]))
+                end
+              end
+              # Batch the develop call so Pkg resolves all path deps together.
+              # Calling Pkg.develop once per source triggers a full re-resolve
+              # each time, which fails if any sibling path dep isn't yet
+              # registered (e.g. OrdinaryDiffEqRosenbrockTableaus).
+              isempty(specs) || Pkg.develop(specs)
+            end
+          end
+      - name: Refresh General registry directly from git
+        shell: julia --color=yes --project=. {0}
+        run: |
+          using Pkg
+          # Force a fresh git clone of General to dodge pkg server lag.
+          try
+              Pkg.Registry.rm("General")
+          catch
+          end
+          Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/JuliaRegistries/General.git"))
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:

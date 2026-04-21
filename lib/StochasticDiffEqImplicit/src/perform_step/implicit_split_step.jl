@@ -111,7 +111,7 @@
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(resids, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(resids, t))
     end
 
     integrator.u = u
@@ -132,7 +132,7 @@ end
 
     repeat_step = false
 
-    if integrator.success_iter > 0 && !integrator.u_modified &&
+    if integrator.success_iter > 0 && !integrator.derivative_discontinuity &&
             alg.extrapolant == :interpolant
         current_extrapolant!(u, t + dt, integrator)
     elseif alg.extrapolant == :linear
@@ -256,6 +256,6 @@ end
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(tmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
     end
 end

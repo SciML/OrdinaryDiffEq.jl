@@ -184,7 +184,7 @@ function reinitFBDF!(integrator, cache)
     ) = cache
     (; t, dt, uprev) = integrator
 
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         order = cache.order = 1
         consfailcnt = cache.consfailcnt = cache.nconsteps = 0
         cache.qwait = 3 # order + 2, matching nconsteps >= order + 2 for failure-free runs

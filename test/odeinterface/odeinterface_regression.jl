@@ -1,5 +1,9 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Test,
     ODEInterface, ODEInterfaceDiffEq
+using OrdinaryDiffEqLowOrderRK: DP5
+using OrdinaryDiffEqHighOrderRK: DP8
+using OrdinaryDiffEqExplicitRK: ExplicitRK
+using OrdinaryDiffEqCore: PIController
 
 import ODEProblemLibrary: prob_ode_bigfloatlinear,
     prob_ode_linear,

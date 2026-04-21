@@ -2,6 +2,7 @@ using OrdinaryDiffEq, OrdinaryDiffEqCore, DiffEqBase, Test, ADTypes
 using Random
 using OrdinaryDiffEqDefault
 using ElasticArrays, LinearSolve
+using OrdinaryDiffEqBDF, OrdinaryDiffEqExtrapolation, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqLowStorageRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqSSPRK
 Random.seed!(213)
 CACHE_TEST_ALGS = [
     Euler(), Midpoint(), RK4(), SSPRK22(), SSPRK33(), SSPRK43(), SSPRK104(),
@@ -153,7 +154,7 @@ affect!_adapt = function (integrator)
     set_proposed_dt!(integrator, dt)
     integrator.opts.dtmax = dt
     integrator.dtcache = dt
-    u_modified!(integrator, false)
+    derivative_discontinuity!(integrator, false)
     return nothing
 end
 callback_adapt = DiscreteCallback(

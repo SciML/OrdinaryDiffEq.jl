@@ -72,14 +72,7 @@ Base.@constprop :aggressive function _ode_init(
         adaptive = anyadaptive(alg),
         abstol = nothing,
         reltol = nothing,
-        gamma = nothing,
-        qmin = nothing,
-        qmax = nothing,
-        qsteady_min = nothing,
-        qsteady_max = nothing,
-        beta1 = nothing,
-        beta2 = nothing,
-        qoldinit = nothing,
+        controller = nothing,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
@@ -88,7 +81,6 @@ Base.@constprop :aggressive function _ode_init(
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
         verbose = Standard(),
-        controller = nothing,
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,
@@ -228,57 +220,24 @@ Base.@constprop :aggressive function _ode_init(
         _alg = alg
     end
 
-    use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_du0)
-
-    aliases = nothing
-    if use_old_kwargs
-        aliases = ODEAliasSpecifier()
-        if haskey(kwargs, :alias_u0)
-            message = "`alias_u0` keyword argument is deprecated, to set `alias_u0`,
-            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            aliases = ODEAliasSpecifier(alias_u0 = values(kwargs).alias_u0)
-        else
-            aliases = ODEAliasSpecifier(alias_u0 = nothing)
-        end
-
-        if haskey(kwargs, :alias_du0)
-            message = "`alias_du0` keyword argument is deprecated, to set `alias_du0`,
-            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            aliases = ODEAliasSpecifier(
-                alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0
-            )
-        else
-            aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = nothing)
-        end
-
-        aliases
-
-    else
-        # If alias isa Bool, all fields of ODEAliases set to alias
-        if alias isa Bool
-            aliases = ODEAliasSpecifier(alias = alias)
-        elseif alias isa ODEAliasSpecifier
-            aliases = alias
-        end
+    alias
+    if !(alias isa ODEAliasSpecifier)
+        throw(ArgumentError("alias kwarg must be an ODEAliasSpecifier"))
     end
 
-    if isnothing(aliases.alias_f) || aliases.alias_f
+    if isnothing(alias.alias_f) || alias.alias_f
         f = prob.f
     else
         f = deepcopy(prob.f)
     end
 
-    if isnothing(aliases.alias_p) || aliases.alias_p
+    if isnothing(alias.alias_p) || alias.alias_p
         p = prob.p
     else
         p = recursivecopy(prob.p)
     end
 
-    if !isnothing(aliases.alias_u0) && aliases.alias_u0
+    if !isnothing(alias.alias_u0) && alias.alias_u0
         u = prob.u0
     else
         u = recursivecopy(prob.u0)
@@ -299,7 +258,7 @@ Base.@constprop :aggressive function _ode_init(
     end
 
     if _alg isa DAEAlgorithm
-        if !isnothing(aliases.alias_du0) && aliases.alias_du0
+        if !isnothing(alias.alias_du0) && alias.alias_du0
             du = prob.du0
         else
             du = recursivecopy(prob.du0)
@@ -389,7 +348,7 @@ Base.@constprop :aggressive function _ode_init(
         resType = typeof(res_prototype)
     end
 
-    if isnothing(aliases.alias_tstops) || aliases.alias_tstops
+    if isnothing(alias.alias_tstops) || alias.alias_tstops
         tstops = tstops
     else
         tstops = recursivecopy(tstops)
@@ -537,70 +496,21 @@ Base.@constprop :aggressive function _ode_init(
         )
     end
 
-    # Setting up the step size controller
-    if (beta1 !== nothing || beta2 !== nothing) && controller !== nothing
-        throw(ArgumentError("Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."))
-    end
-
-    # Deprecation warnings for users to break down which parameters they accidentally set.
-    if (beta1 !== nothing || beta2 !== nothing)
-        message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-    if (qmin !== nothing || qmax !== nothing)
-        message = "Providing the legacy PID parameters `qmin, qmax` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-    if (qsteady_min !== nothing || qsteady_max !== nothing)
-        message = "Providing the legacy PID parameters `qsteady_min, qsteady_max` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-    if (qoldinit !== nothing)
-        message = "Providing the legacy PID parameters `qoldinit` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-
     QT = determine_controller_datatype(u, internalnorm, tspan)
 
-    # The following code provides an upgrade path for users by preserving the old behavior.
-    legacy_controller_parameters = (gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit)
-    if controller === nothing # We have to reconstruct the old controller before breaking release.
-        if any(legacy_controller_parameters .== nothing)
-            gamma = convert(QT, gamma === nothing ? gamma_default(alg) : gamma)
-            qmin = convert(QT, qmin === nothing ? qmin_default(alg) : qmin)
-            qmax = convert(QT, qmax === nothing ? qmax_default(alg) : qmax)
-            qsteady_min = convert(QT, qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min)
-            qsteady_max = convert(QT, qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max)
-            qoldinit = convert(QT, qoldinit === nothing ? (anyadaptive(alg) ? 1 // 10^4 : 0) : qoldinit)
-        end
-        controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
-    else # Controller has been passed
-        gamma = hasfield(typeof(controller), :gamma) ? controller.gamma : gamma_default(alg)
-        qmin = hasfield(typeof(controller), :qmin) ? controller.qmin : qmin_default(alg)
-        qmax = hasfield(typeof(controller), :qmax) ? controller.qmax : qmax_default(alg)
-        qsteady_min = hasfield(typeof(controller), :qsteady_min) ? controller.qsteady_min : qsteady_min_default(alg)
-        qsteady_max = hasfield(typeof(controller), :qsteady_max) ? controller.qsteady_max : qsteady_max_default(alg)
-        qoldinit = hasfield(typeof(controller), :qoldinit) ? controller.qoldinit : (anyadaptive(alg) ? 1 // 10^4 : 0)
+    if controller === nothing
+        controller = default_controller(QT, alg)
     end
 
     EEstT = if tTypeNoUnits <: Integer
-        promote_type(typeof(qmin), typeof(qmax))
+        QT
     elseif prob isa SciMLBase.AbstractDiscreteProblem
         constvalue(tTypeNoUnits)
     else
         typeof(internalnorm(u, t))
     end
 
-    atmp = if hasfield(typeof(cache), :atmp)
-        cache.atmp
-    else
-        nothing
-    end
-    controller_cache = setup_controller_cache(_alg, atmp, controller)
+    controller_cache = setup_controller_cache(_alg, cache, controller, EEstT)
 
     save_end_user = save_end
     save_end = save_end === nothing ?
@@ -610,8 +520,6 @@ Base.@constprop :aggressive function _ode_init(
     opts = DEOptions{
         typeof(abstol_internal), typeof(reltol_internal),
         QT, tType,
-        # typeof(controller),
-        typeof(controller_cache),
         typeof(internalnorm), typeof(internalopnorm),
         typeof(save_end_user),
         typeof(callbacks_internal),
@@ -627,20 +535,8 @@ Base.@constprop :aggressive function _ode_init(
         maxiters, save_everystep,
         adaptive, abstol_internal,
         reltol_internal,
-        # TODO vvv remove this block as these are controller and not integrator parameters vvv
-        QT(gamma),
-        QT(qmax),
-        QT(qmin),
-        QT(qsteady_max),
-        QT(qsteady_min),
-        QT(qoldinit),
-        # TODO ^^^remove this block as these are controller and not integrator parameters ^^^
         QT(failfactor),
         tType(dtmax), tType(dtmin),
-        # TODO vvv remove this vvv
-        # controller,
-        controller_cache,
-        # TODO ^^^ remove this ^^^
         internalnorm,
         internalopnorm,
         save_idxs, tstops_internal,
@@ -712,7 +608,7 @@ Base.@constprop :aggressive function _ode_init(
     iter = 0
     kshortsize = 0
     reeval_fsal = false
-    u_modified = false
+    derivative_discontinuity = false
     EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
     next_step_tstop = false
@@ -730,10 +626,7 @@ Base.@constprop :aggressive function _ode_init(
             0.0
         )
     dtchangeable = isdtchangeable(_alg)
-    q11 = QT(1)
     success_iter = 0
-    erracc = QT(1)
-    dtacc = tType(1)
     reinitialize = true
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
@@ -742,11 +635,14 @@ Base.@constprop :aggressive function _ode_init(
 
     _rng = rng === nothing ? Random.default_rng() : rng
 
+    # Seed the initial EEst on the controller cache (was previously
+    # `integrator.EEst = oneunit(EEstT)`).
+    set_EEst!(controller_cache, EEst)
+
     integrator = ODEIntegrator{
         typeof(_alg), isinplace(prob), uType, typeof(du),
-        tType, typeof(p),
-        typeof(eigen_est), EEstT,
-        QT, typeof(tdir), typeof(k), SolType,
+        tType, typeof(p), typeof(eigen_est),
+        typeof(tdir), typeof(k), SolType,
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),
@@ -758,11 +654,7 @@ Base.@constprop :aggressive function _ode_init(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
-        dtpropose, tdir, eigen_est, EEst,
-        # TODO vvv remove these
-        QT(qoldinit), q11,
-        erracc, dtacc,
-        # TODO ^^^ remove these
+        dtpropose, tdir, eigen_est,
         controller_cache,
         success_iter,
         iter, saveiter, saveiter_dense, cache,
@@ -774,11 +666,11 @@ Base.@constprop :aggressive function _ode_init(
         vector_event_last_time,
         last_event_error, accept_step,
         isout, reeval_fsal,
-        u_modified, reinitialize, isdae,
+        derivative_discontinuity, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
         fsalfirst, fsallast, _rng,
         W, P, sqdt,
-        noise, c, rate_constants, QT(1)
+        noise, c, rate_constants
     )
 
     if initialize_integrator
@@ -1084,13 +976,13 @@ function initialize_callbacks!(integrator, initialize_save = true)
     t = integrator.t
     u = integrator.u
     callbacks = integrator.opts.callback
-    integrator.u_modified = true
+    integrator.derivative_discontinuity = true
 
-    u_modified = initialize!(callbacks, u, t, integrator)
+    derivative_discontinuity = initialize!(callbacks, u, t, integrator)
 
     # if the user modifies u, we need to fix previous values before initializing
     # FSAL in order for the starting derivatives to be correct
-    if u_modified
+    if derivative_discontinuity
         if isinplace(integrator.sol.prob)
             recursivecopy!(integrator.uprev, integrator.u)
         else
@@ -1115,7 +1007,7 @@ function initialize_callbacks!(integrator, initialize_save = true)
     end
 
     # reset this as it is now handled so the integrators should proceed as normal
-    integrator.u_modified = false
+    integrator.derivative_discontinuity = false
 
     return if initialize_save
         SciMLBase.save_discretes_if_enabled!(integrator, integrator.opts.callback; skip_duplicates = true)

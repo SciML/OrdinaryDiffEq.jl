@@ -7,7 +7,6 @@ end
 import PrecompileTools
 
 import FastPower
-@deprecate fastpow(x, y) FastPower.fastpower(x, y)
 
 using ArrayInterface
 
@@ -22,10 +21,7 @@ using FunctionWrappers: FunctionWrapper
 using MuladdMacro
 
 
-using FastBroadcast: @..
-using Static: True, False
-
-using Static: reduce_tup
+using FastBroadcast: @.., Serial, Threaded
 
 import RecursiveArrayTools
 import TruncatedStacktraces
@@ -94,7 +90,7 @@ using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     calculate_ensemble_errors, isconstant,
     DEFAULT_REDUCTION, isautodifferentiable,
     isadaptive, isdiscrete, has_syms, AbstractAnalyticalSolution,
-    RECOMPILE_BY_DEFAULT, wrap_sol, has_destats
+    RECOMPILE_BY_DEFAULT, wrap_sol
 
 import SciMLBase: solve, init, step!, solve!, __init, __solve, update_coefficients!,
     update_coefficients, isadaptive, wrapfun_oop, wrapfun_iip,

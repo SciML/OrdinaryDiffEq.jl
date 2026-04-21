@@ -22,32 +22,30 @@
     year={2010},
     publisher={Wiley Online Library}}", "", ""
 )
-struct CNAB2{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+struct CNAB2{AD, F, F2, CJ} <:
+    OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function CNAB2(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return CNAB2{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-    }(
+    return CNAB2(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -72,30 +70,28 @@ end
     year={2015},
     publisher={Elsevier}}", "", ""
 )
-struct CNLF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+struct CNLF2{AD, F, F2, CJ} <:
+    OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     autodiff::AD
+    concrete_jac::CJ
 end
 function CNLF2(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return CNLF2{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-    }(
+    return CNLF2(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end

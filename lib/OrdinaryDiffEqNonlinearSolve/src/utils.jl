@@ -148,7 +148,7 @@ SciMLBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact_t(f
 
 # Wrappers for computing separated DAE Jacobians: dF/du and dF/d(du).
 # These pass the differentiation variable directly to f, so ForwardDiff
-# handles mixed Float64/Dual arithmetic natively. No dualcache needed.
+# handles mixed Float64/Dual arithmetic natively. No DiffCache needed.
 
 # IIP: varies u only, du held fixed → Jacobian is dF/du
 mutable struct DAEJacobianUWrapper{F, pType, duType, tType} <: Function
@@ -308,19 +308,11 @@ function build_nlsolver(
             jac_config = build_jac_config(alg, nf, uf, du1, uprev, u, ztmp, dz)
         end
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-        linprob = LinearProblem(W, _vec(k); u0 = _vec(dz))
-        Pl,
-            Pr = wrapprecs(
-            alg.precs(
-                W, nothing, u, p, t, nothing, nothing, nothing,
-                nothing
-            )...,
-            weight, dz
-        )
+        du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
+        linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
         linsolve = init(
-            linprob, alg.linsolve,
+            linprob, wrapprecs(alg.linsolve, W, weight),
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-            Pl = Pl, Pr = Pr,
             assumptions = LinearSolve.OperatorAssumptions(true),
             verbose = verbose.linear_verbosity
         )

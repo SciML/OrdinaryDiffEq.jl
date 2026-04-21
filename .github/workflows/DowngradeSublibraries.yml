@@ -3,11 +3,13 @@ on:
   pull_request:
     branches:
       - master
+      - v7
     paths-ignore:
       - 'docs/**'
   push:
     branches:
       - master
+      - v7
     paths-ignore:
       - 'docs/**'
 concurrency:

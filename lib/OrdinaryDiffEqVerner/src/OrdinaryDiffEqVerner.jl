@@ -14,9 +14,9 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     @OnDemandTableauExtract, AutoAlgSwitch,
     DerivativeOrderNotPossibleError,
     get_fsalfirstlast, copyat_or_push!
-using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
+using FastBroadcast, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
-using Static: False
+using FastBroadcast: Serial
 using TruncatedStacktraces: @truncate_stacktrace
 using LinearAlgebra: norm
 import OrdinaryDiffEqCore

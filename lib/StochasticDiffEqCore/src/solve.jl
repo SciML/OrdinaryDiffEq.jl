@@ -139,7 +139,7 @@ function _sde_init(
         internalnorm = ODE_DEFAULT_NORM,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-        verbose = true, force_dtmin = false,
+        verbose = Standard(), force_dtmin = false,
         timeseries_errors = true, dense_errors = false,
         advance_to_tstop = false, stop_at_next_tstop = false,
         initialize_save = true,
@@ -161,61 +161,16 @@ function _sde_init(
     is_sde = _prob isa SDEProblem
 
     # ── Alias resolution (SDE/RODE-specific specifier types) ─────────────
-    use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_jumps) ||
-        haskey(kwargs, :alias_noise)
-
-    if use_old_kwargs
-        aliases = ODEAliasSpecifier()
-        if haskey(kwargs, :alias_u0)
-            message = "`alias_u0` keyword argument is deprecated, to set `alias_u0`,
-            please use an SDEAliasSpecifier or RODEAliasSpecifier, e.g. `solve(prob, alias = SDEAliasSpecifier(alias_u0 = true))`"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            alias_u0 = values(kwargs).alias_u0
-        else
-            alias_u0 = nothing
-        end
-
-        if haskey(kwargs, :alias_jumps)
-            message = "`alias_jumps` keyword argument is deprecated, to set `alias_jumps`,
-            please use an SDEAliasSpecifier or RODEAliasSpecifier, e.g. `solve(prob, alias = SDEAliasSpecifier(alias_jumps = true))`"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            alias_jumps = values(kwargs).alias_jumps
-        else
-            alias_jumps = nothing
-        end
-
-        if haskey(kwargs, :alias_noise)
-            message = "`alias_noise` keyword argument is deprecated, to set `alias_noise`,
-            please use a RODEAliasSpecifier, e.g. `solve(prob, alias = RODEAliasSpecifier(alias_noise = true))`"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            alias_noise = values(kwargs).alias_noise
-        else
-            alias_noise = nothing
-        end
-
-        aliases = if alias_noise !== nothing
-            SciMLBase.RODEAliasSpecifier(; alias_u0, alias_jumps, alias_noise)
-        elseif is_sde
-            SciMLBase.SDEAliasSpecifier(; alias_u0, alias_jumps)
-        else
-            SciMLBase.RODEAliasSpecifier(; alias_u0, alias_jumps)
-        end
-
+    if alias isa Bool
+        aliases = is_sde ? SciMLBase.SDEAliasSpecifier(; alias) :
+            SciMLBase.RODEAliasSpecifier(; alias)
+    elseif alias isa SciMLBase.SDEAliasSpecifier
+        aliases = alias
+    elseif alias isa SciMLBase.RODEAliasSpecifier
+        aliases = alias
     else
-        if alias isa Bool
-            aliases = is_sde ? SciMLBase.SDEAliasSpecifier(; alias) :
-                SciMLBase.RODEAliasSpecifier(; alias)
-        elseif alias isa SciMLBase.SDEAliasSpecifier
-            aliases = alias
-        elseif alias isa SciMLBase.RODEAliasSpecifier
-            aliases = alias
-        else
-            aliases = is_sde ? SciMLBase.SDEAliasSpecifier() :
-                SciMLBase.RODEAliasSpecifier()
-        end
+        aliases = is_sde ? SciMLBase.SDEAliasSpecifier() :
+            SciMLBase.RODEAliasSpecifier()
     end
 
     prob = concrete_prob(_prob)
@@ -509,13 +464,13 @@ function _sde_init(
     dW, dZ = isnothing(W) ? (nothing, nothing) : (W.dW, W.dZ)
 
     verbose_internal = if verbose isa Bool
-        verbose ? DEVerbosity(Standard()) : DEVerbosity(None())
+        throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
     elseif verbose isa AbstractVerbosityPreset
         DEVerbosity(verbose)
     elseif verbose isa DEVerbosity
         verbose
     else
-        throw(ArgumentError("verbose must be a Bool, AbstractVerbosityPreset, or DEVerbosity"))
+        throw(ArgumentError("verbose must be an AbstractVerbosityPreset or DEVerbosity"))
     end
 
     cache = alg_cache(
@@ -523,27 +478,6 @@ function _sde_init(
         jump_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits, uprev, f, t, dt, Val{isinplace(_prob)}, verbose_internal
     )
-
-    # ── Controller computation ───────────────────────────────────────────
-    QT = tTypeNoUnits <: Integer ? typeof(qmin) : tTypeNoUnits
-
-    if (beta1 !== nothing || beta2 !== nothing) && controller !== nothing
-        throw(
-            ArgumentError(
-                "Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."
-            )
-        )
-    end
-
-    if (beta1 !== nothing || beta2 !== nothing)
-        message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-
-    if controller === nothing
-        controller = default_controller(alg, cache, QT(qoldinit), beta1, beta2)
-    end
 
     # ── Delegate to ODE's _ode_init directly ─────────────────────────────
     ode_alias = ODEAliasSpecifier(alias_u0 = true, alias_f = true, alias_p = true)
@@ -561,16 +495,13 @@ function _sde_init(
         noise = noise, c = c, rate_constants = rate_constants,
         seed = _seed,
         rng = _rng,
-        controller = controller,
+        controller,
         # SDE-specific defaults (passed through from SDE's kwargs)
         saveat, tstops, d_discontinuities,
         save_idxs, save_everystep, save_noise, save_on,
         save_start, save_end, callback = _callback,
         dense, calck, dt = iszero(dt) ? nothing : dt, adaptive,
         abstol, reltol,
-        gamma = nothing, qmin = nothing, qmax = nothing,
-        qsteady_min = nothing, qsteady_max = nothing,
-        beta1 = nothing, beta2 = nothing, qoldinit = nothing,
         fullnormalize, failfactor,
         delta = convert.(uBottomEltypeNoUnits, delta),
         maxiters, dtmax, dtmin,

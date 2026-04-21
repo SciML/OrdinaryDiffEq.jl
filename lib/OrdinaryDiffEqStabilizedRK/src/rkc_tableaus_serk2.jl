@@ -1004,5 +1004,5 @@ function SERK2ConstantCache(zprev)
         5.11169642004104218813,
     ]
 
-    return SERK2ConstantCache{eltype(Bᵢ), typeof(zprev)}(ms, zprev, Bᵢ, 1, 0, 0)
+    return SERK2ConstantCache{eltype(Bᵢ), typeof(zprev)}(Tuple(ms), zprev, Bᵢ, 1, 0, 0)
 end

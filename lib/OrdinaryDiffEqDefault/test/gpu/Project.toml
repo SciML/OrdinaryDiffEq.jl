@@ -1,11 +1,16 @@
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources.OrdinaryDiffEq]
 path = "../../../.."
 
+[sources.OrdinaryDiffEqLowOrderRK]
+path = "../../../OrdinaryDiffEqLowOrderRK"
+
 [compat]
 CUDA = "4, 5"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "6, 7"
+OrdinaryDiffEqLowOrderRK = "1"

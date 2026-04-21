@@ -74,7 +74,7 @@ function SciMLBase.reeval_internals_due_to_modification!(
         end
     end
 
-    integrator.u_modified = false
+    integrator.derivative_discontinuity = false
     return integrator.reeval_fsal = true
 end
 
@@ -144,8 +144,8 @@ end
     end
 end
 
-function u_modified!(integrator::ODEIntegrator, bool::Bool)
-    return integrator.u_modified = bool
+function SciMLBase.derivative_discontinuity!(integrator::ODEIntegrator, bool::Bool)
+    return integrator.derivative_discontinuity = bool
 end
 
 function get_proposed_dt(integrator::ODEIntegrator)
@@ -158,9 +158,8 @@ end
 function set_proposed_dt!(integrator::ODEIntegrator, integrator2::ODEIntegrator)
     integrator.dtpropose = integrator2.dtpropose
     integrator.dtcache = integrator2.dtcache
-    integrator.qold = integrator2.qold
-    integrator.erracc = integrator2.erracc
-    return integrator.dtacc = integrator2.dtacc
+    sync_controllers!(integrator.controller_cache, integrator2.controller_cache)
+    return nothing
 end
 
 #TODO: Bigger caches for most algorithms
@@ -546,14 +545,10 @@ function SciMLBase.reinit!(
     end
     integrator.iter = 0
     integrator.success_iter = 0
-    integrator.u_modified = false
+    integrator.derivative_discontinuity = false
 
-    # full re-initialize the PI in timestepping
-    reinit!(integrator, integrator.opts.controller)
-    integrator.qold = integrator.opts.qoldinit
-    integrator.q11 = typeof(integrator.q11)(1)
-    integrator.erracc = typeof(integrator.erracc)(1)
-    integrator.dtacc = typeof(integrator.dtacc)(1)
+    # full re-initialize the controller in timestepping
+    reinit_controller!(integrator, integrator.controller_cache)
 
     if rng !== nothing
         SciMLBase.set_rng!(integrator, rng)
@@ -639,7 +634,7 @@ function SciMLBase.set_u!(integrator::ODEIntegrator, u)
         )
     end
     integrator.u = u
-    return u_modified!(integrator, true)
+    return derivative_discontinuity!(integrator, true)
 end
 
 SciMLBase.has_stats(i::ODEIntegrator) = true

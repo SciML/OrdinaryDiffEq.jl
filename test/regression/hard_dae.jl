@@ -1,7 +1,12 @@
 using OrdinaryDiffEq
+using DiffEqBase: BrownFullBasicInit
+using SciMLBase: FullSpecialize
 using LinearAlgebra
 using NLsolve
 using Test
+using OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqNonlinearSolve: NLNewton
+using OrdinaryDiffEqCore: CompositeAlgorithm
 
 p_inv = [
     500.0
@@ -226,9 +231,11 @@ affect!(integrator) = integrator.p[28] += 0.2
 cb = DiscreteCallback(condition, affect!)
 
 prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
+# v7 default is CheckInit which rejects nlsolve residuals at tight tolerances;
+# use BrownFullBasicInit to initialize algebraic variables as before v7.
 refsol = solve(
     prob, Rodas4(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1.0e-12,
-    abstol = 1.0e-17
+    abstol = 1.0e-17, initializealg = BrownFullBasicInit()
 )
 
 for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF)
@@ -236,7 +243,7 @@ for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF)
     prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
     sol = solve(
         prob, solver(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1.0e-14,
-        abstol = 1.0e-14
+        abstol = 1.0e-14, initializealg = BrownFullBasicInit()
     )
     @test sol.retcode == ReturnCode.Success
     @test sol.t[end] == 20.0
@@ -253,12 +260,20 @@ end
 
 hardstop!(u, p, t) = (du = similar(u); hardstop!(du, u, p, t); du)
 
-fun = ODEFunction(hardstop!, mass_matrix = Diagonal([1, 0, 1]))
+# FullSpecialize skips the FunctionWrappersWrapper wrapping in
+# DiffEqBase.promote_f.  That wrapper bakes chunksize=1 Dual signatures into the
+# RHS, which downstream causes _prepare_ADType_fwd to force AutoForwardDiff{1}.
+# For this DAE's `ifelse(y <= 0, y, f_wall)` kink, chunksize=1 autodiff produces
+# a column-wise inconsistent Jacobian with a zero algebraic row, stalling
+# Newton in the composite path (see SciML/OrdinaryDiffEq.jl#3482).
+fun = ODEFunction{true, FullSpecialize}(hardstop!, mass_matrix = Diagonal([1, 0, 1]))
 prob1 = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
 prob2 = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
 for prob in [prob1, prob2]
-    @test solve(prob, ImplicitEuler(), dt = 1 / 2^10, adaptive = false).retcode ==
-        ReturnCode.ConvergenceFailure
+    @test solve(
+        prob, ImplicitEuler(), dt = 1 / 2^10, adaptive = false,
+        initializealg = BrownFullBasicInit()
+    ).retcode == ReturnCode.ConvergenceFailure
 end
 
 condition2 = (u, t, integrator) -> t == 2
@@ -285,7 +300,11 @@ simple_implicit_euler = ImplicitEuler(
 alg_switch = CompositeAlgorithm((ImplicitEuler(), simple_implicit_euler), choice_function)
 
 for prob in [prob1, prob2], alg in [simple_implicit_euler, alg_switch]
-    sol = solve(prob, alg, callback = cb, dt = 1 / 2^10, adaptive = false)
+    N_FAILS[] = 0  # reset shared state before each solve
+    sol = solve(
+        prob, alg, callback = cb, dt = 1 / 2^10, adaptive = false,
+        initializealg = BrownFullBasicInit()
+    )
     @test sol.retcode == ReturnCode.Success
     @test sol(0, idxs = 1) == 5
     @test abs(sol(2 - 2^-10, idxs = 1)) <= 1.0e-4

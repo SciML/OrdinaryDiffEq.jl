@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Test
+using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK
+import OrdinaryDiffEqExplicitTableaus
 
 import ODEProblemLibrary: prob_ode_bigfloatlinear,
     prob_ode_linear,
@@ -21,7 +23,7 @@ sim = test_convergence(dts, probnum, BS3())
 sim = test_convergence(dts, prob, BS3())
 @test abs.(sim.𝒪est[:l2] - 3) < testTol
 
-tabalg = ExplicitRK(tableau = constructBogakiShampine3())
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.BogakiShampine3())
 sol1 = solve(probnum, BS3(), dt = 1 / 2^1, adaptive = false, save_everystep = false)
 sol2 = solve(probnum, tabalg, dt = 1 / 2^1, adaptive = false, save_everystep = false)
 
@@ -35,7 +37,7 @@ sol2 = solve(prob, tabalg, dt = 1 / 2^1, adaptive = false, save_everystep = fals
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, BS3(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -47,7 +49,7 @@ sim = test_convergence(dts, probnumbig, BS5())
 sim = test_convergence(dts, probbig, BS5())
 @test abs.(sim.𝒪est[:l2] - 5) < testTol
 
-tabalg = ExplicitRK(tableau = constructBogakiShampine5())
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.BogakiShampine5())
 sol1 = solve(probnum, BS5(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnum, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
@@ -61,7 +63,7 @@ sol2 = solve(prob, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = fals
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, BS5(), dt = 1 / 2^6)
 
-@test length(sol1) <= length(sol2) # Dual error estimators is more strict
+@test length(sol1.t) <= length(sol2.t) # Dual error estimators is more strict
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -74,7 +76,7 @@ sim = test_convergence(dts, probnum, Tsit5())
 sim = test_convergence(dts, prob, Tsit5())
 @test abs.(sim.𝒪est[:l2] - 5) < testTol + 0.2
 
-tabalg = ExplicitRK(tableau = constructTsitouras5())
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.Tsitouras5())
 sol1 = solve(probnum, Tsit5(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnum, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
@@ -88,7 +90,7 @@ sol2 = solve(prob, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = fals
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, Tsit5(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -101,7 +103,7 @@ sim = test_convergence(dts, probnumbig, Vern6())
 sim = test_convergence(dts, probbig, Vern6())
 @test abs.(sim.𝒪est[:l2] - 6) < testTol
 
-tabalg = ExplicitRK(tableau = constructVernerEfficient6(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.VernerEfficient6(BigFloat))
 sol1 = solve(probnumbig, Vern6(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
@@ -115,7 +117,7 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(probbig, tabalg, dt = 1 / 2^6)
 sol2 = solve(probbig, Vern6(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -128,7 +130,7 @@ sim = test_convergence(dts, probnumbig, Vern7(), dense_errors = true)
 sim = test_convergence(dts, probbig, Vern7(), dense_errors = true)
 @test abs.(sim.𝒪est[:l2] - 7) < testTol
 
-tabalg = ExplicitRK(tableau = constructVerner7(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.Verner7(BigFloat))
 sol1 = solve(probnumbig, Vern7(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
@@ -142,7 +144,7 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(probbig, tabalg, dt = 1 / 2^6)
 sol2 = solve(probbig, Vern7(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -155,13 +157,13 @@ sim = test_convergence(dts, probnumbig, TanYam7())
 sim = test_convergence(dts, probbig, TanYam7())
 @test abs.(sim.𝒪est[:l2] - 7) < testTol
 
-tabalg = ExplicitRK(tableau = constructTanakaYamashitaEfficient7(Float64))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.TanakaYamashitaEfficient7(Float64))
 sol1 = solve(probnum, TanYam7(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnum, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
 @test sol1.u[end] - sol2.u[end] < 2.0e-9
 
-tabalg = ExplicitRK(tableau = constructTanakaYamashitaEfficient7(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.TanakaYamashitaEfficient7(BigFloat))
 sol1 = solve(probbig, TanYam7(), dt = 1 / 2^3, adaptive = false, save_everystep = false)
 sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = false)
 
@@ -170,7 +172,7 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, TanYam7(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -183,7 +185,7 @@ sim = test_convergence(dts, probnumbig, Vern8(), dense_errors = true)
 sim = test_convergence(dts, probbig, Vern8(), dense_errors = true)
 @test abs.(sim.𝒪est[:l2] - 8) < testTol
 
-tabalg = ExplicitRK(tableau = constructVerner8(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.Verner8(BigFloat))
 sol1 = solve(probnumbig, Vern8(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
@@ -197,7 +199,7 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, Vern8(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -210,7 +212,7 @@ sim = test_convergence(dts, probnumbig, TsitPap8())
 sim = test_convergence(dts, probbig, TsitPap8())
 @test abs.(sim.𝒪est[:l2] - 8) < testTol
 
-tabalg = ExplicitRK(tableau = constructTsitourasPapakostas8(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.TsitourasPapakostas8(BigFloat))
 sol1 = solve(probnumbig, TsitPap8(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
@@ -224,7 +226,7 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(prob, tabalg, dt = 1 / 2^6)
 sol2 = solve(prob, TsitPap8(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -237,7 +239,7 @@ sim = test_convergence(dts, probnumbig, Vern9(), dense_errors = true)
 sim = test_convergence(dts, probbig, Vern9(), dense_errors = true)
 @test abs.(sim.𝒪est[:l2] - 9) < testTol
 
-tabalg = ExplicitRK(tableau = constructVernerEfficient9(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.VernerEfficient9(BigFloat))
 sol1 = solve(probnumbig, Vern9(), dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg, dt = 1 / 2^6, adaptive = false, save_everystep = false)
 
@@ -251,6 +253,6 @@ sol2 = solve(probbig, tabalg, dt = 1 / 2^3, adaptive = false, save_everystep = f
 sol1 = solve(probbig, tabalg, dt = 1 / 2^6)
 sol2 = solve(probbig, Vern9(), dt = 1 / 2^6)
 
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)

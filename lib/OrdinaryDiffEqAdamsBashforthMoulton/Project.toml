@@ -5,8 +5,6 @@ version = "1.11.0"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
-Polyester = "f517fe37-dbe3-4b94-8317-1923a5111588"
-Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
@@ -25,6 +23,9 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
 
 [compat]
 Pkg = "1"
@@ -33,13 +34,11 @@ FastBroadcast = "1.3"
 Random = "<0.0.1, 1"
 DiffEqDevTools = "2.44.4"
 MuladdMacro = "0.2"
-Polyester = "0.7"
-SciMLBase = "2.116"
+SciMLBase = "3"
 OrdinaryDiffEqCore = "3"
-Static = "1.2"
 OrdinaryDiffEqLowOrderRK = "1.5.0"
 julia = "1.10"
-RecursiveArrayTools = "3.52"
+RecursiveArrayTools = "4"
 ODEProblemLibrary = "1"
 DiffEqBase = "6.194"
 Reexport = "1.2"
@@ -47,9 +46,3 @@ SafeTestsets = "0.1.0"
 
 [targets]
 test = ["DiffEqDevTools", "ODEProblemLibrary", "Random", "SafeTestsets", "Test", "Pkg"]
-
-[sources.OrdinaryDiffEqLowOrderRK]
-path = "../OrdinaryDiffEqLowOrderRK"
-
-[sources.OrdinaryDiffEqCore]
-path = "../OrdinaryDiffEqCore"

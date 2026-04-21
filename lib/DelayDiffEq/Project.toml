@@ -54,6 +54,7 @@ StochasticDiffEqImplicit = {path = "../StochasticDiffEqImplicit"}
 StochasticDiffEqLowOrder = {path = "../StochasticDiffEqLowOrder"}
 StochasticDiffEqROCK = {path = "../StochasticDiffEqROCK"}
 DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
 ADTypes = "1.16"
@@ -88,10 +89,10 @@ OrdinaryDiffEqSSPRK = "1.5.0"
 OrdinaryDiffEqTsit5 = "1.4.0"
 OrdinaryDiffEqVerner = "1.5.0"
 Random = "<0.0.1, 1"
-RecursiveArrayTools = "3.52"
+RecursiveArrayTools = "4"
 Reexport = "1.0"
 SafeTestsets = "0.1.0"
-SciMLBase = "2.115.0"
+SciMLBase = "3"
 SparseArrays = "<0.0.1, 1, 2"
 StochasticDiffEqCore = "1"
 StochasticDiffEqHighOrder = "1"
@@ -109,10 +110,10 @@ julia = "1.10"
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
 StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
-StochasticDiffEqHighOrder = "0520c28c-50fd-4d16-9c96-902fc80b3bab"
-StochasticDiffEqImplicit = "5080b986-4c76-4669-b5dc-373a41579d5b"
+StochasticDiffEqHighOrder = "2396deb8-7031-47e3-b5f0-b712c0a6b4cc"
+StochasticDiffEqImplicit = "b4b012ad-4b5e-4e99-a72e-7e09e7e0b800"
 StochasticDiffEqLowOrder = "d15fe365-ce7f-450a-828a-7985bd5b681b"
-StochasticDiffEqROCK = "db241ea8-0e6b-4abc-8f2d-1adff2294fd9"
+StochasticDiffEqROCK = "c3d49e4e-9e6b-4ee6-becc-4dd72c61f2cc"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 DDEProblemLibrary = "f42792ee-6ffc-4e2a-ae83-8ee2f22de800"

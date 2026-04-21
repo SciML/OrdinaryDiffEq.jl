@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 
 f_ec(u, p, t) = exp(u)
 u0 = 0.0 # explosion time is 1.0
@@ -46,7 +48,7 @@ let
         return out[1] = u[1] + 1 - sin(t)
     end
     mprob = ODEProblem(ODEFunction(f!, mass_matrix = [0.0;;]), [0.0], (0, 2.0))
-    @test solve(mprob, Rosenbrock23()).retcode == ReturnCode.Success
+    @test solve(mprob, Rosenbrock23(); initializealg = BrownFullBasicInit()).retcode == ReturnCode.Success
 end
 
 @testset "Callbacks shouldn't disable error checking" begin

@@ -177,7 +177,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -245,7 +245,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -315,7 +315,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -402,7 +402,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -476,7 +476,7 @@ end
     (; bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2, k₂) = cache
     k₁ = integrator.fsalfirst
     # if there's a discontinuity or the solver is in the first step
-    if integrator.iter < 2 && !integrator.u_modified
+    if integrator.iter < 2 && !integrator.derivative_discontinuity
         perform_step!(integrator, Nystrom4VelocityIndependentConstantCache())
         k = integrator.fsallast
         k1cache = ArrayPartition((k.x[1], f.f1(duprev, uprev, p, t + c1 * dt)))
@@ -518,7 +518,7 @@ end
     k1cache = cache.tmp2
     k₁ = fsalfirst
     # if there's a discontinuity or the solver is in the first step
-    if integrator.iter < 2 && !integrator.u_modified
+    if integrator.iter < 2 && !integrator.derivative_discontinuity
         perform_step!(integrator, integrator.cache.onestep_cache)
         copyto!(k1cache.x[1], k.x[1])
         f.f1(k1cache.x[2], duprev, uprev, p, t + c1 * dt)
@@ -562,7 +562,7 @@ end
     k1cache = integrator.cache.tmp2
     k₁ = fsalfirst
     # if there's a discontinuity or the solver is in the first step
-    if integrator.iter < 2 && !integrator.u_modified
+    if integrator.iter < 2 && !integrator.derivative_discontinuity
         perform_step!(integrator, integrator.cache.onestep_cache)
         copyto!(k1cache.x[1], k.x[1])
         f.f1(k1cache.x[2], duprev, uprev, p, t + c1 * dt)
@@ -711,7 +711,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -769,7 +769,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -820,7 +820,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -899,7 +899,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -975,7 +975,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -1056,7 +1056,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -1111,7 +1111,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -1194,7 +1194,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -1270,7 +1270,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -1393,7 +1393,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -1556,7 +1556,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -1795,7 +1795,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -1834,7 +1834,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -1892,7 +1892,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -1928,7 +1928,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -1981,7 +1981,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp.x[2], t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp.x[2], t))
     end
 end
 
@@ -2035,7 +2035,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 
@@ -2116,7 +2116,7 @@ end
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 end
 

@@ -45,7 +45,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -78,7 +78,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, ralk2, k, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -107,7 +107,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -138,7 +138,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, ralk2, k, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -175,7 +175,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3, k4) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -212,7 +212,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -251,7 +251,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3, k4) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -288,7 +288,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, t5, t6, t7, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -335,7 +335,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3, k4, k5) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     if cache.step <= 4
@@ -375,7 +375,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -420,7 +420,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, k3, k4, k5) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -460,7 +460,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4, t5, t6, t7, t8, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
@@ -528,7 +528,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, tab) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -561,8 +561,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:2
                     dts[i] = dts[i + 1]
                 end
@@ -594,7 +594,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; k4, dts, g, ϕstar_n, ϕstar_nm1, order, atmp, utilde, bs3cache, thread) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -628,8 +628,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:2
                     dts[i] = dts[i + 1]
                 end
@@ -659,7 +659,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -698,8 +698,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:3
                     dts[i] = dts[i + 1]
                 end
@@ -734,7 +734,7 @@ end
         thread,
     ) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -774,8 +774,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:3
                     dts[i] = dts[i + 1]
                 end
@@ -807,7 +807,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -853,8 +853,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:4
                     dts[i] = dts[i + 1]
                 end
@@ -889,7 +889,7 @@ end
         thread,
     ) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -936,8 +936,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:4
                     dts[i] = dts[i + 1]
                 end
@@ -969,7 +969,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, tab) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -1006,8 +1006,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:2
                     dts[i] = dts[i + 1]
                 end
@@ -1042,7 +1042,7 @@ end
         thread,
     ) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -1080,8 +1080,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:2
                     dts[i] = dts[i + 1]
                 end
@@ -1113,7 +1113,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -1156,8 +1156,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:3
                     dts[i] = dts[i + 1]
                 end
@@ -1192,7 +1192,7 @@ end
         thread,
     ) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -1236,8 +1236,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:3
                     dts[i] = dts[i + 1]
                 end
@@ -1269,7 +1269,7 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
     k1 = integrator.fsalfirst
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         cache.step = 1
     end
     k = cache.step
@@ -1319,8 +1319,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:4
                     dts[i] = dts[i + 1]
                 end
@@ -1356,7 +1356,7 @@ end
             order, atmp, utilde, rk4cache, thread,
         ) = cache
         k1 = integrator.fsalfirst
-        if integrator.u_modified
+        if integrator.derivative_discontinuity
             cache.step = 1
         end
         k = cache.step
@@ -1408,8 +1408,8 @@ end
                     integrator.opts.reltol, integrator.opts.internalnorm,
                     t
                 )
-                integrator.EEst = integrator.opts.internalnorm(atmp, t)
-                if integrator.EEst > one(integrator.EEst)
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+                if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                     dts[1] = dts[2]
                     dts[2] = dts[3]
                     dts[4] = dts[5]
@@ -1472,8 +1472,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:12
                     dts[i] = dts[i + 1]
                 end
@@ -1510,11 +1510,12 @@ end
                 errm2 = integrator.opts.internalnorm(atmpm2, t)
                 errm1 = integrator.opts.internalnorm(atmpm1, t)
                 errp1 = integrator.opts.internalnorm(atmpp1, t)
-                if max(errm2, errm1) <= integrator.EEst
+                if max(errm2, errm1) <= OrdinaryDiffEqCore.get_EEst(integrator)
                     cache.order = order - 1
-                elseif errp1 < integrator.EEst
+                elseif errp1 < OrdinaryDiffEqCore.get_EEst(integrator)
                     cache.order = min(order + 1, max_order)
-                    integrator.EEst = one(integrator.EEst)   # for keeping the stepsize constant in the next step
+                    # for keeping the stepsize constant in the next step
+                    OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
                 end # if
             end # step <= 4
         end # integrator.opts.adaptive
@@ -1569,8 +1570,8 @@ end
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            if integrator.EEst > one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
                 for i in 1:12
                     dts[i] = dts[i + 1]
                 end
@@ -1609,11 +1610,12 @@ end
                 errm2 = integrator.opts.internalnorm(atmpm2, t)
                 errm1 = integrator.opts.internalnorm(atmpm1, t)
                 errp1 = integrator.opts.internalnorm(atmpp1, t)
-                if max(errm2, errm1) <= integrator.EEst
+                if max(errm2, errm1) <= OrdinaryDiffEqCore.get_EEst(integrator)
                     cache.order = order - 1
-                elseif errp1 < integrator.EEst
+                elseif errp1 < OrdinaryDiffEqCore.get_EEst(integrator)
                     cache.order = min(order + 1, max_order)
-                    integrator.EEst = one(integrator.EEst)    # for keeping the stepsize constant in the next step
+                    # for keeping the stepsize constant in the next step
+                    OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
                 end
             end
         end

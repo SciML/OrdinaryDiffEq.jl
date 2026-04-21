@@ -30,6 +30,12 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEqBDF = {path = "../OrdinaryDiffEqBDF"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
+OrdinaryDiffEqVerner = {path = "../OrdinaryDiffEqVerner"}
 
 [compat]
 Pkg = "1"
@@ -43,7 +49,7 @@ LinearSolve = "3.46"
 PrecompileTools = "1.2, 1.3"
 EnumX = "1.0"
 LinearAlgebra = "1.10"
-SciMLBase = "2.116"
+SciMLBase = "3"
 OrdinaryDiffEqCore = "3"
 SparseArrays = "1.10"
 Preferences = "1.4"
@@ -57,18 +63,3 @@ SafeTestsets = "0.1.0"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "StaticArrays", "Test", "Pkg"]
-
-[sources.OrdinaryDiffEqTsit5]
-path = "../OrdinaryDiffEqTsit5"
-
-[sources.OrdinaryDiffEqBDF]
-path = "../OrdinaryDiffEqBDF"
-
-[sources.OrdinaryDiffEqRosenbrock]
-path = "../OrdinaryDiffEqRosenbrock"
-
-[sources.OrdinaryDiffEqCore]
-path = "../OrdinaryDiffEqCore"
-
-[sources.OrdinaryDiffEqVerner]
-path = "../OrdinaryDiffEqVerner"

@@ -41,25 +41,3 @@ testTol = 0.2
     sim106 = test_convergence(dts, prob, VCABM5())
     @test sim106.𝒪est[:l2] ≈ 5 atol = testTol
 end
-
-@testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i])) - threaded " for i in
-    1:2
-
-    prob = (
-        ODEProblemLibrary.prob_ode_linear,
-        ODEProblemLibrary.prob_ode_2Dlinear,
-    )[i]
-
-    sim5 = test_convergence(dts, prob, AB3(true))
-    @test sim5.𝒪est[:l2] ≈ 3 atol = testTol
-    sim7 = test_convergence(dts, prob, AB4(true))
-    @test sim7.𝒪est[:l2] ≈ 4 atol = testTol
-    sim9 = test_convergence(dts, prob, AB5(true))
-    @test sim9.𝒪est[:l2] ≈ 5 atol = testTol
-    sim101 = test_convergence(dts, prob, VCAB3(true))
-    @test sim101.𝒪est[:l2] ≈ 3 atol = testTol
-    sim103 = test_convergence(dts, prob, VCAB5(true))
-    @test sim103.𝒪est[:l2] ≈ 5 atol = testTol
-    sim105 = test_convergence(dts, prob, VCABM4(true))
-    @test sim105.𝒪est[:l2] ≈ 4 atol = testTol
-end

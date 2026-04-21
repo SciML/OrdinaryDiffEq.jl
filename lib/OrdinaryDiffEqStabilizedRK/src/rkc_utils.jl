@@ -3,7 +3,7 @@
 const RKCAlgs = Union{RKC, TSRKC3, ESERK4, ESERK5, SERK2, ROCK2, ROCK4}
 
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
-    isfirst = integrator.iter == 1 || integrator.u_modified
+    isfirst = integrator.iter == 1 || integrator.derivative_discontinuity
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     maxiter = (integrator.alg isa Union{ESERK4, ESERK5, SERK2}) ? 100 : 50
 
@@ -91,7 +91,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
 end
 
 function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
-    isfirst = integrator.iter == 1 || integrator.u_modified
+    isfirst = integrator.iter == 1 || integrator.derivative_discontinuity
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     fz, z, atmp = cache.k, cache.tmp, cache.atmp
     ccache = cache.constantcache
@@ -100,14 +100,14 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     # Initial guess for eigenvector `z`
     if isfirst
         if integrator.alg isa RKCAlgs
-            @.. broadcast = false z = fsalfirst
+            @.. z = fsalfirst
         else
-            @.. broadcast = false fz = fsalfirst
+            @.. fz = fsalfirst
             f(z, fz, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
     else
-        @.. broadcast = false z = ccache.zprev
+        @..  z = ccache.zprev
     end
     # Perturbation
     u_norm = integrator.opts.internalnorm(uprev, t)
@@ -120,24 +120,24 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     if (!is_u_zero && !is_z_zero)
         dz_u = u_norm * sqrt_pert
         quot = dz_u / z_norm
-        @.. broadcast = false z = uprev + quot * z
+        @..  z = uprev + quot * z
     elseif !is_u_zero
         dz_u = u_norm * sqrt_pert
-        @.. broadcast = false z = uprev + uprev * dz_u
+        @..  z = uprev + uprev * dz_u
     elseif !is_z_zero
         dz_u = pert
         quot = dz_u / z_norm
-        @.. broadcast = false z *= quot
+        @..  z *= quot
     else
         dz_u = pert
-        @.. broadcast = false z = dz_u * one(eltype(z))
+        @..  z = dz_u * one(eltype(z))
     end # endif
     # Start power iteration
     integrator.eigen_est = 0
     for iter in 1:maxiter
         f(fz, z, p, t)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false atmp = fz - fsalfirst
+        @..  atmp = fz - fsalfirst
         Δ = integrator.opts.internalnorm(atmp, t)
         eig_prev = integrator.eigen_est
         integrator.eigen_est = Δ / dz_u * safe
@@ -148,21 +148,21 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
                     max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
                 integrator.eigen_est *= 1.2
                 # Store the eigenvector
-                @.. broadcast = false ccache.zprev = z - uprev
+                @..  ccache.zprev = z - uprev
                 return true
             end
         else
             if iter >= 2 &&
                     abs(eig_prev - integrator.eigen_est) < integrator.eigen_est * 0.05
                 # Store the eigenvector
-                @.. broadcast = false ccache.zprev = z - uprev
+                @..  ccache.zprev = z - uprev
                 return true
             end
         end
         # Next `z`
         if Δ != zero(Δ)
             quot = dz_u / Δ
-            @.. broadcast = false z = uprev + quot * atmp
+            @..  z = uprev + quot * atmp
         else
             # An arbitrary change on `z`
             nind = length(uprev)

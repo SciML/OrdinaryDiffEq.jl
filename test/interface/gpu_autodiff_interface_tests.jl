@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, JLArrays, LinearAlgebra, Test, ADTypes
+using OrdinaryDiffEqSDIRK
 
 @testset "GPU AutoDiff with JLArrays" begin
     function f(u, p, t)

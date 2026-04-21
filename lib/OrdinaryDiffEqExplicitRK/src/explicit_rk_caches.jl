@@ -33,14 +33,14 @@ function alg_cache(
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
-    tab = ExplicitRKConstantCache(alg.tableau, rate_prototype)
+    tab = ExplicitRKConstantCache(alg.tableau, rate_prototype, typeof(dt))
     return ExplicitRKCache(u, uprev, tmp, utilde, atmp, fsalfirst, fsallast, kk, tab)
 end
 
-struct ExplicitRKConstantCache{MType, VType, KType, BType, BiType} <:
+struct ExplicitRKConstantCache{MType, VType, CType, KType, BType, BiType} <:
     OrdinaryDiffEqConstantCache
     A::MType
-    c::VType
+    c::CType
     α::VType
     αEEst::VType
     stages::Int
@@ -49,9 +49,15 @@ struct ExplicitRKConstantCache{MType, VType, KType, BType, BiType} <:
     bi::BiType  # Pre-allocated buffer for interpolation polynomial weights
 end
 
-function ExplicitRKConstantCache(tableau, rate_prototype)
+function ExplicitRKConstantCache(tableau, rate_prototype, ::Type{tType} = Float64) where {tType}
     (; A, c, α, αEEst, stages) = tableau
     A = copy(A') # Transpose A to column major looping
+    # Convert c to match the dimensionless numeric type of dt so that
+    # t + c[i]*dt doesn't promote t beyond what FunctionWrapper signatures
+    # expect under AutoSpecialize. `one(tType)` strips units for Unitful
+    # quantities while preserving precision for BigFloat/Float32 time types.
+    cType = typeof(one(tType))
+    c = cType.(c)
     kk = Array{typeof(rate_prototype)}(undef, stages) # Not ks since that's for integrator.opts.dense
     αEEst = isempty(αEEst) ? αEEst : α .- αEEst
     B_interp = hasproperty(tableau, :B_interp) ? tableau.B_interp : nothing
@@ -69,5 +75,5 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ExplicitRKConstantCache(alg.tableau, rate_prototype)
+    return ExplicitRKConstantCache(alg.tableau, rate_prototype, typeof(dt))
 end

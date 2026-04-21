@@ -9,7 +9,12 @@ using OrdinaryDiffEq
 
     vcb = VectorContinuousCallback(
         (out, u, t, integrator) -> out .= (t - 1.0e-8, t - 2.0e-8, t - 2.0e-7),
-        (integrator, event_index) -> push!(record, event_index),
+        (integrator, events) -> begin
+            for (idx, dir) in enumerate(events)
+                iszero(dir) && continue
+                push!(record, idx)
+            end
+        end,
         3;
         abstol = 0.0
     )
@@ -37,8 +42,8 @@ using OrdinaryDiffEq
         du[1] = -3sin(3t)
         du[2] = -sin(t)
     end
-    affect1 = (integ,) -> push!(record, 1)
-    affect2 = (integ,) -> push!(record, 2)
+    affect1 = (integ) -> push!(record, 1)
+    affect2 = (integ) -> push!(record, 2)
     cb1 = ContinuousCallback((u, i, integ) -> u[2], affect1, affect1; rootfind = SciMLBase.LeftRootFind, abstol = 0.0)
     cb2 = ContinuousCallback((u, i, integ) -> u[1], affect2, affect2; rootfind = SciMLBase.RightRootFind, abstol = 0.0)
 
@@ -54,8 +59,8 @@ using OrdinaryDiffEq
 end
 
 @testset "Successive same event detection" begin
-    @testset for affect_integrator in [false, true]
-        @testset for tdir in [1, -1]
+    @testset "affect_integrator: affect_integrator" for affect_integrator in [false, true]
+        @testset "tdir: $tdir" for tdir in [1, -1]
             poly(t) = (t - 0.1) * (t - 0.4) * (t - 0.8)
             function affect!(integrator, index = 1)
                 push!(record, tdir * integrator.t)

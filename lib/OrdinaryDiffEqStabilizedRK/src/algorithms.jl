@@ -150,15 +150,13 @@ function ESERK5 end
         If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
     """,
     """
-    controller = :PI
     eigen_est = nothing,
     """
 )
 struct SERK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
-    controller::Symbol
     eigen_est::E
 end
-SERK2(; controller = :PI, eigen_est = nothing) = SERK2(controller, eigen_est)
+SERK2(; eigen_est = nothing) = SERK2(eigen_est)
 
 @doc generic_solver_docstring(
     """Third order method. Exhibits high stability for real eigenvalues.""",

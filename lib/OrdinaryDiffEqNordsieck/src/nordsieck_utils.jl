@@ -33,14 +33,14 @@ function nordsieck_prepare_next!(integrator, cache::T) where {T}
     (; maxη, order, L) = cache
     # TODO: further clean up
     (; bias1, bias2, bias3, addon) = integrator.alg
-    if integrator.EEst > one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
         nordsieck_rewind!(cache)
         cache.n_wait = max(2, cache.n_wait)
         cache.nextorder = order
-        cache.η = inv((bias2 * integrator.EEst)^inv(L) + addon)
+        cache.η = inv((bias2 * OrdinaryDiffEqCore.get_EEst(integrator))^inv(L) + addon)
         return nothing
     end
-    cache.ηq = inv((bias2 * integrator.EEst)^inv(L) + addon)
+    cache.ηq = inv((bias2 * OrdinaryDiffEqCore.get_EEst(integrator))^inv(L) + addon)
     stepsize_η!(integrator, cache, cache.order)
     if !is_nordsieck_change_order(cache)
         cache.η = cache.ηq
@@ -349,13 +349,13 @@ end
 
 # `η` is `dtₙ₊₁/dtₙ`
 function setη!(integrator, cache::T) where {T}
-    if cache.η < integrator.opts.qsteady_max
+    if cache.η < integrator.alg.qsteady_max
         cache.η = 1
     else
         # TODO: Not the same with SUNDIALS
-        (integrator.iter == 1 || integrator.u_modified) &&
+        (integrator.iter == 1 || integrator.derivative_discontinuity) &&
             (cache.η = min(1.0e5, cache.η); return nothing)
-        cache.η = min(integrator.opts.qmax, max(integrator.opts.qmin, cache.η))
+        cache.η = min(integrator.alg.qmax, max(integrator.alg.qmin, cache.η))
     end
     return nothing
 end
@@ -364,7 +364,7 @@ function chooseη!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
     (; ηq, η₋₁, η₊₁, order, z, Δ) = cache
     η = max(ηq, η₋₁, η₊₁)
-    if η < integrator.opts.qsteady_max
+    if η < integrator.alg.qsteady_max
         cache.η = 1
         cache.nextorder = order
     end
@@ -394,7 +394,7 @@ function stepsize_η!(integrator, cache, order)
     bias2 = integrator.alg.bias2
     addon = integrator.alg.addon
     L = order + 1
-    cache.ηq = inv((bias2 * integrator.EEst)^inv(L) + addon)
+    cache.ηq = inv((bias2 * OrdinaryDiffEqCore.get_EEst(integrator))^inv(L) + addon)
     return cache.ηq
 end
 

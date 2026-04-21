@@ -52,7 +52,7 @@ using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
     MethodType, alg_order, error_constant,
     alg_extrapolates, resize_J_W!, has_autodiff
 
-import OrdinaryDiffEqCore: _initialize_dae!, _default_dae_init!,
+import OrdinaryDiffEqCore: _initialize_dae!,
     isnewton, get_W, isfirstcall, isfirststage,
     isJcurrent, get_new_W_γdt_cutoff, resize_nlsolver!, apply_step!,
     postamble!, @SciMLMessage
@@ -62,8 +62,7 @@ import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_
     build_jac_config, dolinsolve, alg_autodiff,
     resize_jac_config!
 
-import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
-    StaticMatrix
+import StaticArraysCore: StaticArray
 
 @static if isdefined(SciMLBase, :OrdinaryDiffEqTag)
     import SciMLBase: OrdinaryDiffEqTag
@@ -75,7 +74,6 @@ end
 
 include("type.jl")
 include("utils.jl")
-include("deprecated.jl")
 include("nlsolve.jl")
 include("functional.jl")
 include("newton.jl")

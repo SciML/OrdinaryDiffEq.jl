@@ -3,6 +3,7 @@ using OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqBDF
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
 using DiffEqBase: DAEProblem, ODEProblem, ReturnCode
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 using ForwardDiff
 
 # Regression test for "No matching function wrapper was found!" errors raised
@@ -74,6 +75,9 @@ end
         lorenz_dae!, du0, u0, (0.0, 1.0);
         differential_vars = [true, true, true]
     )
-    sol = solve(prob, DFBDF(); reltol = 1.0e-6, abstol = 1.0e-6)
+    sol = solve(
+        prob, DFBDF(); reltol = 1.0e-6, abstol = 1.0e-6,
+        initializealg = BrownFullBasicInit()
+    )
     @test sol.retcode == ReturnCode.Success
 end

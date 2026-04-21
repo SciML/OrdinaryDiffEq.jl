@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test, Random, StableRNGs
+using OrdinaryDiffEqLowOrderRK
 
 # Simple ODE for testing: du/dt = 2u
 f_oop(u, p, t) = 2u

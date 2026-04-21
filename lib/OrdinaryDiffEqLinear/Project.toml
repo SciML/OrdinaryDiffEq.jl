@@ -25,6 +25,7 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
 SciMLOperators = "1.4"
@@ -36,10 +37,10 @@ DiffEqDevTools = "2.44.4"
 OrdinaryDiffEqVerner = "1.5.0"
 ExponentialUtilities = "1.27"
 LinearAlgebra = "1.10"
-SciMLBase = "2.116"
+SciMLBase = "3"
 OrdinaryDiffEqCore = "3"
 julia = "1.10"
-RecursiveArrayTools = "3.52"
+RecursiveArrayTools = "4"
 DiffEqBase = "6.194"
 SafeTestsets = "0.1.0"
 OrdinaryDiffEqRosenbrock = "1.15.1"

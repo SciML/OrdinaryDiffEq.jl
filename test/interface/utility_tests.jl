@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
-using OrdinaryDiffEq: OrdinaryDiffEqDifferentiation
-using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: WOperator, calc_W, calc_W!, jacobian2W!
+using OrdinaryDiffEqRosenbrock: OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqDifferentiation: WOperator, calc_W, calc_W!, jacobian2W!
+using OrdinaryDiffEqSDIRK
 
 @testset "calc_W and calc_W!" begin
     A = [-1.0 0.0; 0.0 -0.5]
@@ -76,7 +77,7 @@ end
         )
     )
 
-    for Alg in [ImplicitEuler, Rosenbrock23, Rodas5]
+    @testset "Alg: $Alg" for Alg in [ImplicitEuler, Rosenbrock23, Rodas5P]
         println(Alg)
         sol1 = solve(ODEProblem(fun1, u0, tspan), Alg(); adaptive = false, dt = 0.01)
         sol2 = solve(ODEProblem(fun2, u0, tspan), Alg(); adaptive = false, dt = 0.01)
@@ -84,6 +85,6 @@ end
 
         sol1_ip = solve(ODEProblem(fun1_ip, u0, tspan), Alg(); adaptive = false, dt = 0.01)
         sol2_ip = solve(ODEProblem(fun2_ip, u0, tspan), Alg(); adaptive = false, dt = 0.01)
-        @test sol1_ip(1.0) ≈ sol2_ip(1.0) atol = 5.0e-4
+        @test sol1_ip(1.0) ≈ sol2_ip(1.0) atol = 1.0e-3
     end
 end

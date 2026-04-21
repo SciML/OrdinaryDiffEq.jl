@@ -1,5 +1,5 @@
 function SciMLBase.__solve(
-        prob::Union{SciMLBase.AbstractDDEProblem, AbstractSDDEProblem},
+        prob::SciMLBase.AbstractDDEProblem,
         alg::AbstractMethodOfStepsAlgorithm, args...;
         kwargs...
     )
@@ -8,35 +8,8 @@ function SciMLBase.__solve(
     return integrator.sol
 end
 
-# Compile-time detection for OrdinaryDiffEqCore version compatibility
-# Detects if DEOptions has typeof(verbose) as a type parameter (PR #2895)
-"""
-    _count_deoptions_typeparams()
-
-Count the number of type parameters in OrdinaryDiffEqCore.DEOptions.
-Used for compile-time detection of API changes.
-"""
-function _count_deoptions_typeparams()
-    count = 0
-    T = OrdinaryDiffEqCore.DEOptions
-    while T isa UnionAll
-        count += 1
-        T = T.body
-    end
-    return count
-end
-
-"""
-    DEOPTIONS_HAS_VERBOSE_TYPEPARAM
-
-Compile-time constant that is `true` if OrdinaryDiffEqCore.DEOptions includes
-`typeof(verbose)` as a type parameter (OrdinaryDiffEqCore >= 1.37.0 or with PR #2895).
-Old version has 20 parameters, new version has 21 parameters (adds typeof(verbose)).
-"""
-const DEOPTIONS_HAS_VERBOSE_TYPEPARAM = _count_deoptions_typeparams() >= 21
-
 function SciMLBase.__init(
-        prob::Union{SciMLBase.AbstractDDEProblem, AbstractSDDEProblem},
+        prob::SciMLBase.AbstractDDEProblem,
         alg::AbstractMethodOfStepsAlgorithm,
         timeseries_init = (),
         ts_init = (),
@@ -51,7 +24,6 @@ function SciMLBase.__init(
             saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
         save_discretes = true,
-        save_noise = save_everystep,
         callback = nothing,
         dense = save_everystep && isempty(saveat),
         calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
@@ -61,19 +33,11 @@ function SciMLBase.__init(
         dtmax = eltype(prob.tspan)(prob.tspan[end] - prob.tspan[1]),
         force_dtmin = false,
         adaptive = isadaptive(alg),
-        gamma = OrdinaryDiffEqCore.gamma_default(alg.alg),
         abstol = nothing,
         reltol = nothing,
-        qmin = OrdinaryDiffEqCore.qmin_default(alg.alg),
-        qmax = OrdinaryDiffEqCore.qmax_default(alg.alg),
-        qsteady_min = OrdinaryDiffEqCore.qsteady_min_default(alg.alg),
-        qsteady_max = OrdinaryDiffEqCore.qsteady_max_default(alg.alg),
-        qoldinit = isadaptive(alg) ? 1 // 10^4 : 0,
         controller = nothing,
         fullnormalize = true,
         failfactor = 2,
-        beta1 = nothing,
-        beta2 = nothing,
         maxiters = adaptive ? 1000000 : typemax(Int),
         internalnorm = DiffEqBase.ODE_DEFAULT_NORM,
         internalopnorm = opnorm,
@@ -94,37 +58,27 @@ function SciMLBase.__init(
         allow_extrapolation = OrdinaryDiffEqCore.alg_extrapolates(alg),
         initialize_integrator = true,
         alias_u0 = false,
-        seed = UInt64(0),
         # keyword arguments for DDEs
         discontinuity_interp_points::Int = 10,
         discontinuity_abstol = eltype(prob.tspan)(1 // Int64(10)^12),
         discontinuity_reltol = 0,
         initializealg = DDEDefaultInit(),
+        delta = nothing,
+        save_noise = false,
         kwargs...
     )
-    is_stochastic = prob isa AbstractSDDEProblem
+    order_discontinuity_t0 = prob.order_discontinuity_t0
 
-    if haskey(kwargs, :initial_order)
-        @warn "initial_order has been deprecated. Please specify order_discontinuity_t0 in the DDEProblem/SDDEProblem instead."
-        order_discontinuity_t0::Int = kwargs[:initial_order]
-    else
-        order_discontinuity_t0 = is_stochastic ? Int(prob.order_discontinuity_t0) : prob.order_discontinuity_t0
-    end
-
-    # Handle verbose argument: convert Bool or AbstractVerbosityPreset to DEVerbosity
+    # Handle verbose argument: convert AbstractVerbosityPreset to DEVerbosity
     if verbose isa Bool
-        if verbose
-            verbose_spec = DEVerbosity()
-        else
-            verbose_spec = DEVerbosity(None())
-        end
+        throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
     elseif verbose isa AbstractVerbosityPreset
         verbose_spec = DEVerbosity(verbose)
     else
         verbose_spec = verbose
     end
 
-    if !is_stochastic && alg.alg isa CompositeAlgorithm && alg.alg.choice_function isa AutoSwitch
+    if alg.alg isa CompositeAlgorithm && alg.alg.choice_function isa AutoSwitch
         auto = alg.alg.choice_function
         alg = MethodOfSteps(
             CompositeAlgorithm(
@@ -192,20 +146,6 @@ function SciMLBase.__init(
     # get rate prototype
     rate_prototype = rate_prototype_of(u0, tspan)
 
-    # compute noise_rate_prototype for SDDE
-    if is_stochastic
-        _noise_rate_prototype = prob.noise_rate_prototype
-        if is_diagonal_noise(prob)
-            noise_rate_prototype = rate_prototype
-        elseif _noise_rate_prototype !== nothing
-            noise_rate_prototype = copy(_noise_rate_prototype)
-        else
-            noise_rate_prototype = nothing
-        end
-    else
-        noise_rate_prototype = nothing
-    end
-
     # get states (possibly different from the ODE integrator!)
     u, uprev,
         uprev2 = u_uprev_uprev2(
@@ -219,13 +159,8 @@ function SciMLBase.__init(
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
 
     # get the differential vs algebraic variables
-    differential_vars = if is_stochastic
+    differential_vars = prob isa DAEProblem ? prob.differential_vars :
         OrdinaryDiffEqCore.get_differential_vars(f, u)
-    elseif prob isa DAEProblem
-        prob.differential_vars
-    else
-        OrdinaryDiffEqCore.get_differential_vars(f, u)
-    end
 
     # create a history function
     history = build_history_function(
@@ -234,23 +169,7 @@ function SciMLBase.__init(
         dt = dt, dtmin = dtmin, calck = false,
         adaptive = adaptive, internalnorm = internalnorm
     )
-    f_with_history = if is_stochastic
-        SDEFunctionWrapper(f, history)
-    else
-        ODEFunctionWrapper(f, history)
-    end
-
-    # ── Noise creation (SDDE only) ─────────────────────────────────────
-    if is_stochastic
-        W, P, sqdt = _create_sdde_noise(
-            prob, alg.alg, u0, t0, tType(dt), tdir, noise_rate_prototype,
-            save_noise, seed, isinplace(prob), isadaptive(alg)
-        )
-    else
-        W = nothing
-        P = nothing
-        sqdt = nothing
-    end
+    f_with_history = ODEFunctionWrapper(f, history)
 
     # initialize output arrays of the solution
     save_idxs,
@@ -265,31 +184,18 @@ function SciMLBase.__init(
         ks_init = ks_init,
         save_idxs = save_idxs,
         save_start = save_start,
-        is_stochastic = is_stochastic
+        is_stochastic = false # FIXME the interface changed and now I do not know how to query this anymore.
     )
 
     # build cache
     ode_integrator = history.integrator
-    cache = if is_stochastic
-        dW = W.dW
-        dZ = W.dZ
-        _sde_alg_cache(
-            alg.alg, prob, u, dW, dZ, p,
-            rate_prototype, noise_rate_prototype,
-            nothing, uEltypeNoUnits, uBottomEltypeNoUnits,
-            tTypeNoUnits, uprev, f_with_history, t0,
-            tType(dt), Val{isinplace(prob)},
-            DiffEqBase.DEVerbosity()
-        )
-    else
-        OrdinaryDiffEqCore.alg_cache(
-            alg.alg, u, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2,
-            f_with_history, t0, zero(tType), reltol_internal, p,
-            calck,
-            Val(isinplace(prob)), DiffEqBase.DEVerbosity()
-        )
-    end
+    cache = OrdinaryDiffEqCore.alg_cache(
+        alg.alg, u, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2,
+        f_with_history, t0, zero(tType), reltol_internal, p,
+        calck,
+        Val(isinplace(prob)), OrdinaryDiffEqCore.DEVerbosity()
+    )
 
     # separate statistics of the integrator and the history
     stats = SciMLBase.DEStats(0)
@@ -300,21 +206,12 @@ function SciMLBase.__init(
         f_with_history, timeseries, ts, ks,
         alg_choice, dense, cache, differential_vars, false
     )
-    sol = if is_stochastic
-        SciMLBase.build_solution(
-            prob, alg.alg, ts, timeseries;
-            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
-            alg_choice = id.alg_choice, calculate_error = false,
-            stats = stats, W = W
-        )
-    else
-        SciMLBase.build_solution(
-            prob, alg.alg, ts, timeseries;
-            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
-            alg_choice = id.alg_choice, calculate_error = false,
-            stats = stats
-        )
-    end
+    sol = SciMLBase.build_solution(
+        prob, alg.alg, ts, timeseries;
+        dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
+        alg_choice = id.alg_choice, calculate_error = false,
+        stats = stats
+    )
 
     # retrieve time stops, time points at which solutions is saved, and discontinuities
     tstops_internal = OrdinaryDiffEqCore.initialize_tstops(
@@ -364,25 +261,11 @@ function SciMLBase.__init(
 
     # separate options of integrator and of dummy ODE integrator since ODE integrator always saves
     # every step and every index (necessary for history function)
-    QT = tTypeNoUnits <: Integer ? typeof(qmin) : typeof(internalnorm(u, t0))
+    QT = OrdinaryDiffEqCore.determine_controller_datatype(u, internalnorm, tspan)
 
     # Setting up the step size controller
-    if (beta1 !== nothing || beta2 !== nothing) && controller !== nothing
-        throw(ArgumentError("Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."))
-    end
-
-    if (beta1 !== nothing || beta2 !== nothing)
-        message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-
     if controller === nothing
-        controller = OrdinaryDiffEqCore.default_controller(
-            alg.alg, cache,
-            convert(QT, qoldinit)::QT, beta1,
-            beta2
-        )
+        controller = OrdinaryDiffEqCore.default_controller(QT, alg.alg)
     end
 
     save_end_user = save_end
@@ -390,15 +273,10 @@ function SciMLBase.__init(
         save_everystep || isempty(saveat) || saveat isa Number ||
         prob.tspan[2] in saveat : save_end
 
-    # Compute delta for SDE algorithms (used by Milstein-type methods).
-    # For pure DDE, delta is nothing (unused).
-    delta = is_stochastic ?
-        convert(recursive_unitless_bottom_eltype(u), 1 // 1) : nothing
-
-    # Construct DEOptions using full constructor (with delta and save_noise fields)
+    # Construct DEOptions
     opts = OrdinaryDiffEqCore.DEOptions{
         typeof(abstol_internal), typeof(reltol_internal),
-        QT, tType, typeof(controller),
+        QT, tType,
         typeof(internalnorm), typeof(internalopnorm),
         typeof(save_end_user),
         typeof(callback_set),
@@ -416,16 +294,9 @@ function SciMLBase.__init(
         adaptive,
         abstol_internal,
         reltol_internal,
-        QT(gamma),
-        QT(qmax),
-        QT(qmin),
-        QT(qsteady_max),
-        QT(qsteady_min),
-        QT(qoldinit),
         QT(failfactor),
         tType(dtmax),
         tType(dtmin),
-        controller,
         internalnorm,
         internalopnorm,
         save_idxs,
@@ -471,6 +342,16 @@ function SciMLBase.__init(
     prev_idx = 1
     prev2_idx = 1
 
+    EEstT = if tTypeNoUnits <: Integer
+        QT
+    elseif prob isa SciMLBase.AbstractDiscreteProblem
+        constvalue(tTypeNoUnits)
+    else
+        typeof(internalnorm(u, t0))
+    end
+
+    controller_cache = OrdinaryDiffEqCore.setup_controller_cache(alg.alg, cache, controller, EEstT)
+
     # create integrator combining the new defined problem function with history
     # information, the new solution, the parameters of the ODE integrator, and
     # parameters of fixed-point iteration
@@ -483,8 +364,8 @@ function SciMLBase.__init(
     iter = 0
     kshortsize = 0
     reeval_fsal = false
-    u_modified = false
-    EEst = QT(1)
+    derivative_discontinuity = false
+    EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
     do_error_check = true
     isout = false
@@ -495,12 +376,12 @@ function SciMLBase.__init(
     vector_event_last_time = 1
     last_event_error = zero(uBottomEltypeNoUnits)
     dtchangeable = OrdinaryDiffEqCore.isdtchangeable(alg.alg)
-    q11 = QT(1)
     success_iter = 0
     erracc = QT(1)
     dtacc = tType(1)
 
     fsalfirst, fsallast = OrdinaryDiffEqCore.get_fsalfirstlast(cache, rate_prototype)
+    OrdinaryDiffEqCore.set_EEst!(controller_cache, EEst)
     integrator = DDEIntegrator{
         typeof(alg.alg), isinplace(prob), typeof(u0), tType,
         typeof(p),
@@ -513,8 +394,9 @@ function SciMLBase.__init(
         typeof(d_discontinuities_propagated),
         typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),
-        typeof(differential_vars), typeof(initializealg),
-        typeof(W), typeof(P), typeof(sqdt), Nothing,
+        typeof(differential_vars), typeof(controller_cache),
+        typeof(initializealg),
+        Nothing, Nothing, Nothing, Nothing,
     }(
         sol, u, k,
         t0,
@@ -540,11 +422,6 @@ function SciMLBase.__init(
         dtpropose,
         tdir,
         eigen_est,
-        EEst,
-        QT(qoldinit),
-        q11,
-        erracc,
-        dtacc,
         success_iter,
         iter,
         length(ts),
@@ -562,14 +439,15 @@ function SciMLBase.__init(
         accept_step,
         isout,
         reeval_fsal,
-        u_modified,
+        derivative_discontinuity,
         isdae,
         opts,
         stats,
         history,
         differential_vars,
+        controller_cache,
         ode_integrator, fsalfirst, fsallast, initializealg,
-        W, P, sqdt, nothing,
+        nothing, nothing, nothing, nothing,
     )
 
     # initialize DDE integrator
@@ -586,16 +464,9 @@ function SciMLBase.__init(
     # take care of time step dt = 0 and dt with incorrect sign
     OrdinaryDiffEqCore.handle_dt!(integrator)
 
-    # After handle_dt! may have changed dt (via auto_dt_reset!), update noise state.
-    # This mirrors what OrdinaryDiffEqCore's ODE __init does for SDE integrators.
-    if !isnothing(integrator.W)
-        OrdinaryDiffEqCore.modify_dt_for_tstops!(integrator)
-        integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
-        integrator.W.dt = integrator.dt
-    end
-
     # Starting-time discontinuity handling: mirrors OrdinaryDiffEqCore's __init.
     OrdinaryDiffEqCore.handle_starting_time_discontinuity!(integrator)
+
 
     return integrator
 end
@@ -654,13 +525,13 @@ function OrdinaryDiffEqCore.initialize_callbacks!(
     # set up additional initial values of newly created DDE integrator
     # (such as fsalfirst) and its callbacks
 
-    integrator.u_modified = true
+    integrator.derivative_discontinuity = true
 
-    u_modified = initialize!(callbacks, integrator.u, integrator.t, integrator)
+    derivative_discontinuity = initialize!(callbacks, integrator.u, integrator.t, integrator)
 
     # if the user modifies u, we need to fix previous values before initializing
     # FSAL in order for the starting derivatives to be correct
-    if u_modified
+    if derivative_discontinuity
         if isinplace(prob)
             recursivecopy!(integrator.uprev, integrator.u)
         else
@@ -692,7 +563,7 @@ function OrdinaryDiffEqCore.initialize_callbacks!(
     end
 
     # reset this as it is now handled so the integrators should proceed as normal
-    return integrator.u_modified = false
+    return integrator.derivative_discontinuity = false
 end
 
 function initialize_tstops_d_discontinuities_propagated(
@@ -729,25 +600,6 @@ function initialize_tstops_d_discontinuities_propagated(
 
     return tstops_propagated, d_discontinuities_propagated
 end
-
-# Override check_prob_alg_pairing: MethodOfSteps wrapping an SDE algorithm can solve SDDEProblem
-function DiffEqBase.check_prob_alg_pairing(prob::SDDEProblem, alg::AbstractMethodOfStepsAlgorithm)
-    # MethodOfSteps wrapping an SDE algorithm is valid for SDDEProblem
-    if !(alg.alg isa SDEAlgUnion)
-        throw(SciMLBase.ProblemSolverPairingError(prob, alg))
-    end
-    if isdefined(prob, :u0) && SciMLBase.eltypedual(prob.u0) &&
-            !SciMLBase.isautodifferentiable(alg)
-        throw(SciMLBase.DirectAutodiffError())
-    end
-    return nothing
-end
-
-# SDE caches don't have fsalfirst/fsallast (SDE algorithms are never FSAL)
-OrdinaryDiffEqCore.get_fsalfirstlast(cache::StochasticDiffEqConstantCache, u) = (zero(u), zero(u))
-OrdinaryDiffEqCore.get_fsalfirstlast(cache::StochasticDiffEqMutableCache, u) = (zero(u), zero(u))
-
-## Note: StochasticDiffEqCore already defines initialize!(integrator, cache::StochasticDiffEqCache)
 
 struct DDEDefaultInit <: SciMLBase.DAEInitializationAlgorithm end
 

@@ -127,13 +127,13 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     end
 
     # Callback modification: recompute
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         return (true, true)
     end
 
     # Resize detection: if u changed length since last J computation,
     # the cached LU factorization has wrong dimensions.
-    # (u_modified is already cleared by reeval_internals_due_to_modification!
+    # (derivative_discontinuity is already cleared by reeval_internals_due_to_modification!
     #  before perform_step! runs, so we need this explicit check.)
     if length(integrator.u) != jac_reuse.last_u_length && jac_reuse.last_u_length != 0
         return (true, true)
@@ -141,7 +141,7 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
 
     # Previous step was rejected (EEst > 1): the old W wasn't good enough.
     # Recompute everything since we're retrying with a different dt anyway.
-    if integrator.EEst > 1
+    if OrdinaryDiffEqCore.get_EEst(integrator) > 1
         return (true, true)
     end
 
@@ -496,16 +496,16 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     islin, _ = islinearfunction(integrator)
     islin && return false, false # no further JW eval when it's linear
     !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize
-    errorfail = integrator.EEst > one(integrator.EEst)
+    errorfail = OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
     # TODO: add `isJcurrent` support for Rosenbrock solvers
     if !isnewton(nlsolver)
         isfreshJ = !(integrator.alg isa CompositeAlgorithm) &&
-            (integrator.iter > 1 && errorfail && !integrator.u_modified)
+            (integrator.iter > 1 && errorfail && !integrator.derivative_discontinuity)
         return !isfreshJ, true
     end
     isfirstcall(nlsolver) && return true, true
     isfs = isfirststage(nlsolver)
-    isfreshJ = isJcurrent(nlsolver, integrator) && !integrator.u_modified
+    isfreshJ = isJcurrent(nlsolver, integrator) && !integrator.derivative_discontinuity
     iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
     isdae = alg isa DAEAlgorithm
     if !isdae

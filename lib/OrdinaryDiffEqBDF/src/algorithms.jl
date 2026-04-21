@@ -7,12 +7,9 @@ function BDF_docstring(
         extra_keyword_default::String = ""
     )
     keyword_default = """
-        chunk_size = Val{0}(),
         autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(),
         concrete_jac = nothing,
         linsolve = nothing,
-        precs = DEFAULT_PRECS,
         """ * "\n" * extra_keyword_default
 
     keyword_default_description = """
@@ -24,10 +21,6 @@ function BDF_docstring(
             `chunksize = 0`, and thus uses the internal ForwardDiff.jl algorithm for the choice.
             To use `FiniteDiff.jl`, the `AutoFiniteDiff()` ADType can be used, which has a keyword argument
             `fdtype` with default value `Val{:forward}()`, and alternatives `Val{:central}()` and `Val{:complex}()`.
-        - `standardtag`: Specifies whether to use package-specific tags instead of the
-            ForwardDiff default function-specific tags. For more information, see
-            [this blog post](https://www.stochasticlifestyle.com/improved-forwarddiff-jl-stacktraces-with-package-tags/).
-            Defaults to `Val{true}()`.
         - `concrete_jac`: Specifies whether a Jacobian should be constructed. Defaults to
             `nothing`, which means it will be chosen true/false depending on circumstances
             of the solver, such as whether a Krylov subspace method is used for `linsolve`.
@@ -90,7 +83,6 @@ end
     - `nlsolve`: TBD
     - `smooth_est`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -99,40 +91,34 @@ end
     nlsolve = NLNewton(),
     smooth_est = true,
     extrapolant = :linear,
-    controller = :Standard,
     step_limiter! = trivial_limiter!,
     """
 )
-struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct ABDF2{AD, F, F2, K, T, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     κ::K
     tol::T
     smooth_est::Bool
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::CJ
 end
 function ABDF2(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
-        κ = nothing, tol = nothing, linsolve = nothing, precs = DEFAULT_PRECS,
-        nlsolve = NLNewton(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        κ = nothing, tol = nothing, linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :Standard, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return ABDF2{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(step_limiter!),
-    }(
-        linsolve, nlsolve, precs, κ, tol,
-        smooth_est, extrapolant, controller, step_limiter!, AD_choice
+    return ABDF2(
+        linsolve, nlsolve, κ, tol,
+        smooth_est, extrapolant, step_limiter!, autodiff,
+        _unwrap_val(concrete_jac)
     )
 end
 
@@ -168,70 +154,64 @@ like `KenCarp4`, but instead using a multistep BDF approach",
     order,
     """
 )
-struct SBDF{CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+struct SBDF{AD, F, F2, K, T, CJ} <:
+    OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     κ::K
     tol::T
     extrapolant::Symbol
     order::Int
     ark::Bool
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function SBDF(
-        order; chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing, diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
+        order; autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear, ark = false
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return SBDF{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol),
-    }(
+    return SBDF(
         linsolve,
         nlsolve,
-        precs,
         κ,
         tol,
         extrapolant,
         order,
         ark,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
 # All keyword form needed for remake
 function SBDF(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear,
         order, ark = false
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return SBDF{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol),
-    }(
+    return SBDF(
         linsolve,
         nlsolve,
-        precs,
         κ,
         tol,
         extrapolant,
         order,
         ark,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -297,51 +277,44 @@ SBDF4(; kwargs...) = SBDF(4; kwargs...)
     - `nlsolve`: TBD
     - `extrapolant`: TBD
     - `kappa`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     nlsolve = NLNewton(),
     extrapolant = :linear,
     kappa = -0.1850,
-    controller = :Standard,
     step_limiter! = trivial_limiter!,
     """
 )
-struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct QNDF1{AD, F, F2, κType, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     kappa::κType
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function QNDF1(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear, kappa = -37 // 200,
-        controller = :Standard, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return QNDF1{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(kappa), typeof(step_limiter!),
-    }(
+    return QNDF1(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         kappa,
-        controller,
         step_limiter!,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -362,51 +335,44 @@ end
     - `nlsolve`: TBD
     - `extrapolant`: TBD
     - `kappa`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     nlsolve = NLNewton(),
     extrapolant = :linear,
     kappa =  -1 // 9,
-    controller = :Standard,
     step_limiter! = trivial_limiter!,
     """
 )
-struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct QNDF2{AD, F, F2, κType, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     kappa::κType
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function QNDF2(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear, kappa = -1 // 9,
-        controller = :Standard, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return QNDF2{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve), typeof(nlsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(kappa), typeof(step_limiter!),
-    }(
+    return QNDF2(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
         kappa,
-        controller,
         step_limiter!,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -429,7 +395,6 @@ end
     - `nlsolve`: TBD
     - `extrapolant`: TBD
     - `kappa`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -438,46 +403,43 @@ end
     nlsolve = NLNewton(),
     extrapolant = :linear,
     kappa =  promote(-0.1850, -1 // 9, -0.0823, -0.0415, 0),
-    controller = :Standard,
     step_limiter! = trivial_limiter!,
     """
 )
-struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct QNDF{MO, AD, F, F2, K, T, κType, StepLimiter, CJ, QT} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     max_order::Val{MO}
     linsolve::F
     nlsolve::F2
-    precs::P
     κ::K
     tol::T
     extrapolant::Symbol
     kappa::κType
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::CJ
+    qmax::QT
+    qsteady_min::QT
+    qsteady_max::QT
 end
 
 function QNDF(;
-        max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
-        autodiff = AutoForwardDiff(), standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
+        max_order::Val{MO} = Val{5}(),
+        autodiff = AutoForwardDiff(), concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear, kappa = (
             -37 // 200, -1 // 9, -823 // 10000, -83 // 2000, 0 // 1,
         ),
-        controller = :Standard, step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!,
+        qsteady_min = 1 // 1, qsteady_max = 2 // 1, qmax = 10 // 1,
     ) where {MO}
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return QNDF{
-        MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(kappa), typeof(step_limiter!),
-    }(
-        max_order, linsolve, nlsolve, precs, κ, tol,
-        extrapolant, kappa, controller, step_limiter!, AD_choice
+    return QNDF(
+        max_order, linsolve, nlsolve, κ, tol,
+        extrapolant, kappa, step_limiter!, autodiff,
+        _unwrap_val(concrete_jac), qmax, qsteady_min, qsteady_max,
     )
 end
 
@@ -506,32 +468,29 @@ end
     extrapolant = :constant,
     """
 )
-struct MEBDF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+struct MEBDF2{AD, F, F2, CJ} <:
+    OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     autodiff::AD
+    concrete_jac::CJ
 end
 function MEBDF2(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return MEBDF2{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),
-    }(
+    return MEBDF2(
         linsolve,
         nlsolve,
-        precs,
         extrapolant,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -550,7 +509,6 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     - `tol`: TBD
     - `nlsolve`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     - `max_order`: TBD
     - `stald`: Enable Stability Limit Detection (STALD) for BDF orders 3-5. Default: `true`.
@@ -566,7 +524,6 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     tol = nothing,
     nlsolve = NLNewton(),
     extrapolant = :linear,
-    controller = :Standard,
     step_limiter! = trivial_limiter!,
     max_order::Val{MO} = Val{5}(),
     stald = true,
@@ -578,16 +535,14 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     stald_tiny = 1e-90,
     """
 )
-struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct FBDF{MO, AD, F, F2, K, T, StepLimiter, CJ, QT} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     max_order::Val{MO}
     linsolve::F
     nlsolve::F2
-    precs::P
     κ::K
     tol::T
     extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     stald::Bool
@@ -597,35 +552,36 @@ struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
     stald_sqtol::Float64
     stald_rrtol::Float64
     stald_tiny::Float64
+    concrete_jac::CJ
+    qmax::QT
+    qsteady_min::QT
+    qsteady_max::QT
 end
 
 function FBDF(;
-        max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
-        autodiff = AutoForwardDiff(), standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
+        max_order::Val{MO} = Val{5}(),
+        autodiff = AutoForwardDiff(), concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!,
+        extrapolant = :linear, step_limiter! = trivial_limiter!,
         stald = true,
         stald_rrcut = 0.98,
         stald_vrrtol = 1.0e-4,
         stald_vrrt2 = 5.0e-4,
         stald_sqtol = 1.0e-3,
         stald_rrtol = 1.0e-2,
-        stald_tiny = 1.0e-90
+        stald_tiny = 1.0e-90,
+        qsteady_min = 9 // 10, qsteady_max = 2 // 1, qmax = 10 // 1,
     ) where {MO}
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return FBDF{
-        MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(step_limiter!),
-    }(
-        max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller, step_limiter!, AD_choice,
+    return FBDF(
+        max_order, linsolve, nlsolve, κ, tol, extrapolant,
+        step_limiter!, autodiff,
         stald, Float64(stald_rrcut), Float64(stald_vrrtol), Float64(stald_vrrt2),
-        Float64(stald_sqtol), Float64(stald_rrtol), Float64(stald_tiny)
+        Float64(stald_sqtol), Float64(stald_rrtol), Float64(stald_tiny),
+        _unwrap_val(concrete_jac),
+        qmax, qsteady_min, qsteady_max,
     )
 end
 
@@ -716,38 +672,31 @@ It uses an apriori error estimator for adaptivity based on a finite differencing
     extra_keyword_description = """
     - `nlsolve`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
     """,
     extra_keyword_default = """
     nlsolve = NLNewton(),
     extrapolant = :constant,
-    controller = :Standard,
     """
 )
-struct DImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
+struct DImplicitEuler{AD, F, F2, CJ} <: DAEAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
+    concrete_jac::CJ
 end
 function DImplicitEuler(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
-        controller = :Standard
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return DImplicitEuler{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),
-    }(
+    return DImplicitEuler(
         linsolve,
-        nlsolve, precs, extrapolant, controller, AD_choice
+        nlsolve, extrapolant, autodiff,
+        _unwrap_val(concrete_jac)
     )
 end
 
@@ -765,53 +714,45 @@ end
     extra_keyword_description = """
     - `nlsolve`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
     """,
     extra_keyword_default = """
     nlsolve = NLNewton(),
     extrapolant = :constant,
-    controller = :Standard,
     """
 )
-struct DABDF2{CS, AD, F, F2, P, FDT, ST, CJ} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
+struct DABDF2{AD, F, F2, CJ} <: DAEAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
+    concrete_jac::CJ
 end
 function DABDF2(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
-        controller = :Standard
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return DABDF2{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),
-    }(
+    return DABDF2(
         linsolve,
-        nlsolve, precs, extrapolant, controller, AD_choice
+        nlsolve, extrapolant, autodiff,
+        _unwrap_val(concrete_jac)
     )
 end
 
 #=
-struct DBDF{CS,AD,F,F2,P,FDT,ST,CJ} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
+struct DBDF{AD, F, F2, P} <: DAEAlgorithm
   linsolve::F
   nlsolve::F2
-  precs::P
   extrapolant::Symbol
 end
 
-DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-     linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),extrapolant=:linear) =
-     DBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-     linsolve,nlsolve,precs,extrapolant)
+DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+     linsolve=nothing,nlsolve=NLNewton(),extrapolant=:linear) =
+     DBDF{_ad_chunksize_int(autodiff),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,true,_unwrap_val(concrete_jac)}(
+     linsolve,nlsolve,extrapolant)
 =#
 
 @doc BDF_docstring(
@@ -828,7 +769,6 @@ DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concr
     - `tol`: TBD
     - `nlsolve`: TBD
     - `extrapolant`: TBD
-    - `controller`: TBD
     - `max_order`: TBD
     """,
     extra_keyword_default = """
@@ -836,39 +776,37 @@ DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concr
     tol = nothing,
     nlsolve = NLNewton(),
     extrapolant = :linear,
-    controller = :Standard,
     max_order::Val{MO} = Val{5}(),
     """
 )
-struct DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
+struct DFBDF{MO, AD, F, F2, K, T, CJ, QT} <: DAEAlgorithm
     max_order::Val{MO}
     linsolve::F
     nlsolve::F2
-    precs::P
     κ::K
     tol::T
     extrapolant::Symbol
-    controller::Symbol
     autodiff::AD
+    concrete_jac::CJ
+    qmax::QT
+    qsteady_min::QT
+    qsteady_max::QT
 end
 function DFBDF(;
-        max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
-        autodiff = AutoForwardDiff(), standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
+        max_order::Val{MO} = Val{5}(),
+        autodiff = AutoForwardDiff(), concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard
+        extrapolant = :linear,
+        qsteady_min = 1 // 1, qsteady_max = 2 // 1, qmax = 10 // 1,
     ) where {MO}
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return DFBDF{
-        MO, _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+    return DFBDF(
+        max_order, linsolve, nlsolve, κ, tol, extrapolant,
+        autodiff,
         _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol),
-    }(
-        max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller, AD_choice
+        qmax, qsteady_min, qsteady_max,
     )
 end
 

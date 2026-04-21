@@ -1,7 +1,7 @@
 module OrdinaryDiffEqStabilizedIRK
 
 import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
-    calculate_residuals!,
+    calculate_residuals!, isstandard,
     beta2_default, beta1_default, gamma_default, issplit,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals, fac_default_gamma,
@@ -9,9 +9,9 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-    alg_cache, _unwrap_val, DEFAULT_PRECS, @cache,
+    alg_cache, _unwrap_val, @cache,
     _reshape, _vec, full_cache, get_fsalfirstlast,
-    generic_solver_docstring, _bool_to_ADType, _process_AD_choice
+    generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad
 
 using OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
 using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver,

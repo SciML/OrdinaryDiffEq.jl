@@ -90,7 +90,7 @@ end
 
 Base.@constprop :aggressive function init(
         prob::AbstractDEProblem, args...; sensealg = nothing,
-        u0 = nothing, p = nothing, verbose = true, kwargs...
+        u0 = nothing, p = nothing, verbose = DEFAULT_VERBOSE, kwargs...
     )
     if sensealg === nothing && has_kwargs(prob) && haskey(prob.kwargs, :sensealg)
         sensealg = prob.kwargs[:sensealg]
@@ -216,7 +216,7 @@ function step!(integ::NullODEIntegrator, dt = nothing, stop_at_tdt = false)
     end
     return nothing
 end
-function SciMLBase.u_modified!(integ::NullODEIntegrator, u) end
+function SciMLBase.derivative_discontinuity!(integ::NullODEIntegrator, u) end
 SciMLBase.check_error(integ::NullODEIntegrator) = integ.sol.retcode
 
 function hack_null_solution_init(prob)
@@ -385,7 +385,7 @@ section at the end of this page for some example usage.
   `false`. Defaults to
   `save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat`.
 * `initialize_save`: Denotes whether to save after the callback initialization
-  phase (when `u_modified=true`). Defaults to `true`.
+  phase (when `derivative_discontinuity=true`). Defaults to `true`.
 
 Note that `dense` requires `save_everystep=true` and `saveat=false`. If you need
 additional saving while keeping dense output, see
@@ -590,7 +590,7 @@ the extension to other types is straightforward.
 """
 Base.@constprop :aggressive function solve(
         prob::AbstractDEProblem, args...; sensealg = nothing,
-        u0 = nothing, p = nothing, wrap = Val(true), verbose = true, kwargs...
+        u0 = nothing, p = nothing, wrap = Val(true), verbose = DEFAULT_VERBOSE, kwargs...
     )
     if sensealg === nothing && haskey(prob.kwargs, :sensealg)
         sensealg = prob.kwargs[:sensealg]
@@ -831,7 +831,7 @@ function promote_f(
         # has a sparsity pattern, since the solver may use either depending on
         # the autodiff configuration (AutoSparse creates sparse J from sparsity).
         if f.jac !== nothing && !(f.jac isa FunctionWrappersWrappers.FunctionWrappersWrapper)
-            if f.jac_prototype !== nothing
+            if f.jac_prototype !== nothing && !(f.jac_prototype isa AbstractSciMLOperator)
                 J_T = Base.promote_op(similar, typeof(f.jac_prototype), Type{uElType})
                 sig = Tuple{J_T, typeof(u0), typeof(p), typeof(t)}
                 f = @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
@@ -1068,17 +1068,6 @@ struct SensitivityADPassThrough <: AbstractDEAlgorithm end
 ### Legacy Dispatches to be Non-Breaking
 ###
 
-@deprecate concrete_solve(
-    prob::AbstractDEProblem,
-    alg::Union{AbstractDEAlgorithm, Nothing},
-    u0 = prob.u0, p = prob.p, args...; kwargs...
-) solve(
-    prob, alg,
-    args...;
-    u0 = u0,
-    p = p,
-    kwargs...
-)
 
 function _solve_adjoint(
         prob, sensealg, u0, p, originator, args...; merge_callbacks = true,

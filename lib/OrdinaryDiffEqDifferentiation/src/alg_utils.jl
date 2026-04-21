@@ -1,61 +1,21 @@
-# Extract AD type parameter from algorithm, returning as Val to ensure type stability for boolean options.
-function _alg_autodiff(alg::OrdinaryDiffEqAlgorithm)
+function alg_autodiff(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have an autodifferentiation option defined.")
 end
-function _alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD}
-    return alg.autodiff
-end
-_alg_autodiff(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
-_alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = alg.autodiff
-_alg_autodiff(alg::CompositeAlgorithm) = _alg_autodiff(alg.algs[end])
-
-# SDE Newton algorithm abstract types
-function _alg_autodiff(
-        alg::StochasticDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ, Controller}
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val{AD}()
-end
-function _alg_autodiff(
-        alg::StochasticDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ, Controller}
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val{AD}()
-end
-function _alg_autodiff(
-        alg::StochasticDiffEqJumpNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ, Controller}
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val{AD}()
-end
-function _alg_autodiff(
-        alg::StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm{
-            CS, AD, FDT, ST, CJ, Controller,
-        }
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val{AD}()
-end
-function _alg_autodiff(
+alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = alg.autodiff
+alg_autodiff(alg::DAEAlgorithm) = alg.autodiff
+alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm) = alg.autodiff
+alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[end])
+function alg_autodiff(
         alg::Union{
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
+            OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         }
-    ) where {
-        CS, AD,
-    }
+    )
+    hasfield(typeof(alg), :autodiff) || return AutoForwardDiff()
     return alg.autodiff
 end
 
-function alg_autodiff(alg)
-    autodiff = _alg_autodiff(alg)
-
-    if autodiff == Val(true)
-        return AutoForwardDiff()
-    elseif autodiff == Val(false)
-        return AutoFiniteDiff()
-    else
-        return autodiff
-    end
-end
-
-Base.@pure function determine_chunksize(u, alg::SciMLBase.DEAlgorithm)
+Base.@pure function determine_chunksize(u, alg::SciMLBase.AbstractDEAlgorithm)
     determine_chunksize(u, get_chunksize(alg))
 end
 Base.@pure function determine_chunksize(u, CS)
@@ -68,18 +28,15 @@ end
 
 function DiffEqBase.prepare_alg(
         alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{
-                CS, AD,
-                FDT, ST,
-            },
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST},
-            DAEAlgorithm{CS, AD, FDT, ST},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST},
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+            OrdinaryDiffEqImplicitAlgorithm,
+            DAEAlgorithm,
+            OrdinaryDiffEqExponentialAlgorithm,
         },
         u0::AbstractArray{T},
         p, prob
-    ) where {CS, AD, FDT, ST, T}
-    prepped_AD = prepare_ADType(alg_autodiff(alg), prob, u0, p, Val{ST}())
+    ) where {T}
+    prepped_AD = prepare_ADType(alg_autodiff(alg), prob, u0, p, Val{true}())
 
     sparse_prepped_AD = prepare_user_sparsity(prepped_AD, prob)
 

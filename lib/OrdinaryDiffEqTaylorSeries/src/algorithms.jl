@@ -6,12 +6,12 @@ Base.@kwdef struct ExplicitTaylor2{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 @truncate_stacktrace ExplicitTaylor2 3
 # for backwards compatibility
 function ExplicitTaylor2(stage_limiter!, step_limiter! = trivial_limiter!)
-    return ExplicitTaylor2(stage_limiter!, step_limiter!, False())
+    return ExplicitTaylor2(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -23,7 +23,7 @@ Base.@kwdef struct ExplicitTaylor{P, StageLimiter, StepLimiter, Thread} <:
     order::Val{P} = Val{1}()
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -36,5 +36,5 @@ Base.@kwdef struct ExplicitTaylorAdaptiveOrder{P, Q, StageLimiter, StepLimiter, 
     max_order::Val{Q} = Val{10}()
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end

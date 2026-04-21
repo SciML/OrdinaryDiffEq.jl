@@ -10,9 +10,9 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     constvalue, _unwrap_val, get_fsalfirstlast,
     generic_solver_docstring, trivial_limiter!,
     _ode_interpolant!, _ode_addsteps!
-using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
+using FastBroadcast, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
-using Static: False
+using FastBroadcast: Serial
 import OrdinaryDiffEqCore
 
 using Reexport

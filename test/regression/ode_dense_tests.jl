@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, OrdinaryDiffEqBDF, Test, DiffEqBase
 using OrdinaryDiffEqCore
 using ForwardDiff
+using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqLowStorageRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSSPRK
 import ODEProblemLibrary: prob_ode_linear,
     prob_ode_2Dlinear,
     prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
@@ -65,7 +66,7 @@ function regression_test(
     @inferred sol(interpolation_results_1d, interpolation_points)
     @inferred sol(interpolation_points[1])
     sol2 = solve(prob_ode_linear, alg, dt = 1 // 2^(4), dense = true, adaptive = false)
-    for i in eachindex(sol2)
+    for i in eachindex(sol2.u)
         print_results(
             @test maximum(abs.(sol2.u[i] - interpolation_results_1d[i])) <
                 tol_ode_linear
@@ -110,7 +111,11 @@ function regression_test(
     sol(interpolation_results_2d, interpolation_points)
     sol(interpolation_points[1])
     sol2 = solve(prob_ode_2Dlinear, alg, dt = 1 // 2^(4), dense = true, adaptive = false)
-    for i in eachindex(sol2)
+    # `eachindex(sol2)` now returns `CartesianIndices` over the full solution
+    # tensor (u_dims..., nsteps) under RecursiveArrayTools v4; iterate the
+    # timestep axis via `sol2.u` so `sol2.u[i]` / `interpolation_results_2d[i]`
+    # index the per-step matrix as the test intends.
+    for i in eachindex(sol2.u)
         print_results(
             @test maximum(maximum.(abs.(sol2.u[i] - interpolation_results_2d[i]))) <
                 tol_ode_2Dlinear
@@ -137,12 +142,12 @@ for co in (:right, :left)
     @test interpdright == sol(similar(sol.u[end]), last(sol.t), continuity = co)
     tmp = [similar(sol.u[end]) for i in 1:3]
     sol(tmp, ts, continuity = co)
-    @test all(map((x, y) -> x == y, interpdrights, tmp))
+    @test all(map((x, y) -> x == y, interpdrights.u, tmp))
 end
 
 interpd_idxs = sol(0:(1 // 2^(4)):1, idxs = 1:2:5)
 
-@test minimum([isapprox(interpd_idxs[i], interpd[i][1:2:5], rtol = 1.0e-14) for i in 1:length(interpd)])
+@test minimum([isapprox(interpd_idxs.u[i], interpd.u[i][1:2:5], rtol = 1.0e-14) for i in 1:length(interpd.u)])
 
 interpd_single = sol(0:(1 // 2^(4)):1, idxs = 1)
 
@@ -157,7 +162,9 @@ sol2 = solve(prob, Euler(), dt = 1 // 2^(4), dense = true)
 
 @test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd)) < 0.2
 
-sol(interpd, 0:(1 // 2^(4)):1)
+# In-place fill of a VectorOfArray container.
+interpd_buf = [similar(sol.u[end]) for _ in 0:(1 // 2^(4)):1]
+sol(interpd_buf, 0:(1 // 2^(4)):1)
 
 @test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd)) < 0.2
 
@@ -264,39 +271,30 @@ println("SSPRKMSs")
 println("Low Storage RKs")
 
 # ORK256
-@test ORK256() == ORK256(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(ORK256(), 3.0e-5, 5.0e-5)
 
 # CarpenterKennedy2N54
-@test CarpenterKennedy2N54() == CarpenterKennedy2N54(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(CarpenterKennedy2N54(), 3.0e-5, 5.0e-5)
 
 # SHLDDRK64
-@test SHLDDRK64() == SHLDDRK64(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(SHLDDRK64(), 3.0e-5, 3.0e-5)
 
 # DGLDDRK73_C
-@test DGLDDRK73_C() == DGLDDRK73_C(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(DGLDDRK73_C(), 3.0e-4, 3.0e-4)
 
 # DGLDDRK84_C
-@test DGLDDRK84_C() == DGLDDRK84_C(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(DGLDDRK84_C(), 3.0e-5, 5.0e-5)
 
 # DGLDDRK84_F
-@test DGLDDRK84_F() == DGLDDRK84_F(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(DGLDDRK84_F(), 3.0e-5, 5.0e-5)
 
 # NDBLSRK124
-@test NDBLSRK124() == NDBLSRK124(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(NDBLSRK124(), 3.0e-5, 3.0e-5)
 
 # NDBLSRK134
-@test NDBLSRK134() == NDBLSRK134(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(NDBLSRK134(), 3.0e-5, 3.0e-5)
 
 # NDBLSRK144
-@test NDBLSRK144() == NDBLSRK144(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(NDBLSRK144(), 3.0e-5, 3.0e-5)
 
 # CFRLDDRK64
@@ -480,7 +478,7 @@ regression_test(Feagin10(), 6.0e-4, 9.0e-4)
 @test BS5() == BS5(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(BS5(), 4.0e-8, 6.0e-8; test_diff1 = true, nth_der = 1, dertol = 1.0e-12)
 regression_test(
-    BS5(lazy = false), 4.0e-8, 6.0e-8; test_diff1 = true, nth_der = 1,
+    BS5(lazy = Val{false}()), 4.0e-8, 6.0e-8; test_diff1 = true, nth_der = 1,
     dertol = 1.0e-12
 )
 
@@ -506,7 +504,7 @@ println("Verns")
 @test Vern6() == Vern6(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(Vern6(), 7.0e-8, 7.0e-8; test_diff1 = true, nth_der = 1, dertol = 1.0e-9)
 regression_test(
-    Vern6(lazy = false), 7.0e-8, 7.0e-8; test_diff1 = true, nth_der = 1,
+    Vern6(lazy = Val{false}()), 7.0e-8, 7.0e-8; test_diff1 = true, nth_der = 1,
     dertol = 1.0e-9
 )
 
@@ -530,7 +528,7 @@ print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_big)) < 
 # Vern7
 regression_test(Vern7(), 3.0e-9, 5.0e-9; test_diff1 = true, nth_der = 1, dertol = 1.0e-10)
 regression_test(
-    Vern7(lazy = false), 3.0e-9, 5.0e-9; test_diff1 = true, nth_der = 1,
+    Vern7(lazy = Val{false}()), 3.0e-9, 5.0e-9; test_diff1 = true, nth_der = 1,
     dertol = 1.0e-10
 )
 
@@ -538,7 +536,7 @@ regression_test(
 @test Vern8() == Vern8(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(Vern8(), 3.0e-8, 5.0e-8; test_diff1 = true, nth_der = 1, dertol = 1.0e-7)
 regression_test(
-    Vern8(lazy = false), 3.0e-8, 5.0e-8; test_diff1 = true, nth_der = 1,
+    Vern8(lazy = Val{false}()), 3.0e-8, 5.0e-8; test_diff1 = true, nth_der = 1,
     dertol = 1.0e-7
 )
 
@@ -546,7 +544,7 @@ regression_test(
 @test Vern9() == Vern9(OrdinaryDiffEqCore.trivial_limiter!) # old non-kwarg constructor
 regression_test(Vern9(), 1.0e-9, 2.0e-9; test_diff1 = true, nth_der = 4, dertol = 5.0e-2)
 regression_test(
-    Vern9(lazy = false), 1.0e-9, 2.0e-9; test_diff1 = true, nth_der = 4,
+    Vern9(lazy = Val{false}()), 1.0e-9, 2.0e-9; test_diff1 = true, nth_der = 4,
     dertol = 5.0e-2
 )
 

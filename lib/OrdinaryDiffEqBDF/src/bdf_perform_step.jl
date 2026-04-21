@@ -17,7 +17,7 @@ end
     dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
     # TODO: this doesn't look right
-    if integrator.iter == 1 && !integrator.u_modified
+    if integrator.iter == 1 && !integrator.derivative_discontinuity
         cache.dtₙ₋₁ = dtₙ
         cache.eulercache.nlsolver.method = DIRK
         perform_step!(integrator, cache.eulercache, repeat_step)
@@ -72,12 +72,12 @@ end
             est, uₙ₋₁, uₙ, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     ################################### Finalize
 
-    if integrator.EEst < one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) < one(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.fsalfirstprev = integrator.fsalfirst
         cache.dtₙ₋₁ = dtₙ
     end
@@ -106,7 +106,7 @@ end
     alg = unwrap_alg(integrator, true)
     uₙ, uₙ₋₁, uₙ₋₂, dtₙ = integrator.u, integrator.uprev, integrator.uprev2, integrator.dt
 
-    if integrator.iter == 1 && !integrator.u_modified
+    if integrator.iter == 1 && !integrator.derivative_discontinuity
         cache.dtₙ₋₁ = dtₙ
         cache.eulercache.nlsolver.method = DIRK
         perform_step!(integrator, cache.eulercache, repeat_step)
@@ -168,12 +168,12 @@ end
             atmp, tmp, uₙ₋₁, uₙ, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     ################################### Finalize
 
-    if integrator.EEst < one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) < one(OrdinaryDiffEqCore.get_EEst(integrator))
         @.. broadcast = false cache.fsalfirstprev = integrator.fsalfirst
         cache.dtₙ₋₁ = dtₙ
     end
@@ -205,7 +205,7 @@ function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false
     (; uprev2, uprev3, uprev4, du₁, du₂, k₁, k₂, k₃, nlsolver) = cache
     (; f1, f2) = integrator.f
     cnt = cache.cnt = min(alg.order, integrator.iter + 1)
-    integrator.iter == 1 && !integrator.u_modified && (cnt = cache.cnt = 1)
+    integrator.iter == 1 && !integrator.derivative_discontinuity && (cnt = cache.cnt = 1)
     nlsolver.γ = γ = inv(γₖ[cnt])
     if cache.ark
         # Additive Runge-Kutta Method
@@ -288,7 +288,7 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step = false)
     (; tmp, z) = nlsolver
     (; f1, f2) = integrator.f
     cnt = cache.cnt = min(alg.order, integrator.iter + 1)
-    integrator.iter == 1 && !integrator.u_modified && (cnt = cache.cnt = 1)
+    integrator.iter == 1 && !integrator.derivative_discontinuity && (cnt = cache.cnt = 1)
     nlsolver.γ = γ = inv(γₖ[cnt])
     # Explicit part
     if cache.ark
@@ -410,7 +410,7 @@ function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = fals
     nlsolvefail(nlsolver) && return
     if integrator.opts.adaptive
         if integrator.success_iter == 0
-            integrator.EEst = one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         else
             D2[1] = u - uprev
             D2[2] = D2[1] - D[1]
@@ -420,10 +420,10 @@ function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = fals
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
     end
-    if integrator.EEst > one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
         return
     end
     cache.dtₙ₋₁ = dt
@@ -501,7 +501,7 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
 
     if integrator.opts.adaptive
         if integrator.success_iter == 0
-            integrator.EEst = one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         else
             @.. broadcast = false D2[1] = u - uprev
             @.. broadcast = false D2[2] = D2[1] - D[1]
@@ -510,10 +510,10 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
     end
-    if integrator.EEst > one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
         return
     end
     cache.uprev2 .= uprev
@@ -599,7 +599,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
 
     if integrator.opts.adaptive
         if integrator.success_iter == 0
-            integrator.EEst = one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         elseif integrator.success_iter == 1
             utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             atmp = calculate_residuals(
@@ -607,7 +607,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         else
             D2[1] = u - uprev
             D2[2] = D2[1] - D[1]
@@ -618,10 +618,10 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
     end
-    if integrator.EEst > one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
         return
     end
 
@@ -720,14 +720,14 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 
     if integrator.opts.adaptive
         if integrator.success_iter == 0
-            integrator.EEst = one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         elseif integrator.success_iter == 1
             @.. broadcast = false utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             calculate_residuals!(
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         else
             @.. broadcast = false D2[1] = u - uprev
             @.. broadcast = false D2[2] = D2[1] - D[1]
@@ -737,10 +737,10 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
     end
-    if integrator.EEst > one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
         return
     end
 
@@ -775,7 +775,7 @@ function perform_step!(
     (; dtprev, order, D, U, nlsolver, γₖ) = cache
     alg = unwrap_alg(integrator, true)
 
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         dtprev = one(dt)
         order = 1
         cache.nconsteps = 0
@@ -856,7 +856,7 @@ function perform_step!(
         else
             atmp = calculate_residuals(dd, uprev, u, abstol, reltol, internalnorm, t)
         end
-        integrator.EEst = error_constant(integrator, k) * internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
         if k > 1
             atmpm1 = calculate_residuals(
                 D[k],
@@ -873,7 +873,7 @@ function perform_step!(
             cache.EEst2 = error_constant(integrator, k + 1) * internalnorm(atmpp1, t)
         end
     end
-    if integrator.EEst <= one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= one(OrdinaryDiffEqCore.get_EEst(integrator))
         # Deep copy to avoid aliasing: prevD[i] must not share arrays with D[i]
         for i in eachindex(D)
             cache.prevD[i] = copy(D[i])
@@ -920,7 +920,7 @@ function perform_step!(
     ) = cache
     alg = unwrap_alg(integrator, true)
 
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         dtprev = one(dt)
         order = 1
         cache.nconsteps = 0
@@ -1009,7 +1009,7 @@ function perform_step!(
         else
             calculate_residuals!(atmp, dd, uprev, u, abstol, reltol, internalnorm, t)
         end
-        integrator.EEst = error_constant(integrator, k) * internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
         if k > 1
             calculate_residuals!(
                 atmpm1, D[k], uprev, u, abstol,
@@ -1025,7 +1025,7 @@ function perform_step!(
             cache.EEst2 = error_constant(integrator, k + 1) * internalnorm(atmpp1, t)
         end
     end
-    if integrator.EEst <= one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= one(OrdinaryDiffEqCore.get_EEst(integrator))
         for i in eachindex(D)
             copyto!(cache.prevD[i], D[i])
         end
@@ -1167,10 +1167,10 @@ function initialize!(integrator, cache::FBDFConstantCache{max_order}) where {max
         integrator.k[i] = zero(integrator.fsalfirst)
     end
 
-    u_modified = integrator.u_modified
-    integrator.u_modified = true
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
     reinitFBDF!(integrator, cache)
-    return integrator.u_modified = u_modified
+    return integrator.derivative_discontinuity = derivative_discontinuity
 end
 
 function perform_step!(
@@ -1275,7 +1275,7 @@ function perform_step!(
             lte, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         terk = estimate_terk(integrator, cache, k + 1, Val(max_order), u)
         fd_weights = calc_finite_difference_weights(ts_tmp, tdt, k, Val(max_order))
@@ -1361,10 +1361,10 @@ function initialize!(integrator, cache::FBDFCache{max_order}) where {max_order}
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-    u_modified = integrator.u_modified
-    integrator.u_modified = true
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
     reinitFBDF!(integrator, cache)
-    return integrator.u_modified = u_modified
+    return integrator.derivative_discontinuity = derivative_discontinuity
 end
 
 function perform_step!(
@@ -1459,7 +1459,7 @@ function perform_step!(
             atmp, terk_tmp, uprev, u, abstol, reltol,
             internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         estimate_terk!(integrator, cache, k + 1, Val(max_order))
         calculate_residuals!(
             atmp, terk_tmp, uprev, u, abstol, reltol,

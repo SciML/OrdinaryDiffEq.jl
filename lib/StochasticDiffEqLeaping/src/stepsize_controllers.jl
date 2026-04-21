@@ -10,12 +10,12 @@ function stepsize_controller!(integrator, alg::TauLeaping)
 end
 
 function step_accept_controller!(integrator, alg::TauLeaping)
-    integrator.q = min(integrator.opts.gamma / integrator.EEst, integrator.opts.qmax)
-    return integrator.dt * integrator.q
+    q = min(integrator.alg.gamma / OrdinaryDiffEqCore.get_EEst(integrator), integrator.alg.qmax)
+    return integrator.dt * q
 end
 
 function step_reject_controller!(integrator, alg::TauLeaping)
-    return integrator.dt = integrator.opts.gamma * integrator.dt / integrator.EEst
+    return integrator.dt = integrator.alg.gamma * integrator.dt / OrdinaryDiffEqCore.get_EEst(integrator)
 end
 
 function stepsize_controller!(integrator, alg::CaoTauLeaping)
@@ -23,7 +23,7 @@ function stepsize_controller!(integrator, alg::CaoTauLeaping)
 end
 
 function step_accept_controller!(integrator, alg::CaoTauLeaping)
-    return integrator.EEst # use EEst for the τ
+    return OrdinaryDiffEqCore.get_EEst(integrator) # use EEst for the τ
 end
 
 function step_reject_controller!(integrator, alg::CaoTauLeaping)
