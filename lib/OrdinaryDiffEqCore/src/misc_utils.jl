@@ -187,3 +187,18 @@ function _fixup_ad(ad_alg::Bool)
     )
 end
 _fixup_ad(ad_alg) = ad_alg
+
+# The effective linear solver for an algorithm: prefer the one attached to the
+# inner nlsolve object (canonical forward-compatible location, matching the
+# NonlinearSolveAlg / NonlinearSolve.jl convention), falling back to the
+# algorithm-level `linsolve` field (historical location) when the nlsolve
+# doesn't carry one of its own. Rosenbrock-family algorithms don't have a
+# nlsolve and are handled by the final fallback.
+function effective_linsolve(alg)
+    if hasfield(typeof(alg), :nlsolve)
+        nl_linsolve = _nlsolve_linsolve(alg.nlsolve)
+        nl_linsolve === nothing || return nl_linsolve
+    end
+    return hasfield(typeof(alg), :linsolve) ? alg.linsolve : nothing
+end
+_nlsolve_linsolve(nlalg) = hasfield(typeof(nlalg), :linsolve) ? nlalg.linsolve : nothing

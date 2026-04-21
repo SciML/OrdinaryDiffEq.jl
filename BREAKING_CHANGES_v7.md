@@ -184,6 +184,44 @@ Across all implicit/Rosenbrock/BDF/SDIRK/FIRK/Exponential constructors:
 
 **Why:** `chunk_size` and `diff_type` only meant anything to ForwardDiff and FiniteDiff respectively. Hoisting them onto the `ADTypes` object means every solver now works with **any** AD backend (Enzyme, Zygote, ReverseDiff, Mooncake, …) by just swapping `autodiff=AutoEnzyme()` — no per-solver kwarg surface needed. `standardtag` was always the right default. `precs` moved under `linsolve` because LinearSolve now owns the preconditioner abstraction.
 
+### Linear solver configuration: canonical location is on the nlsolve object
+
+For Newton-based implicit solvers (SDIRK, BDF, PDIRK, IMEXMultistep, Stabilized, ExponentialRK, and the StochasticDiffEq implicit families), there were historically two distinct paths to configure the inner linear solve:
+
+```julia
+# path A: on the algorithm
+ImplicitEuler(linsolve = KLUFactorization())
+
+# path B: via the nonlinear solver (only worked for NonlinearSolveAlg)
+ImplicitEuler(nlsolve = NonlinearSolveAlg(NewtonRaphson(linsolve = KLUFactorization())))
+```
+
+Path A put `linsolve` on the algorithm struct; path B put it on the NonlinearSolve.jl algorithm wrapped by `NonlinearSolveAlg`. `NLNewton` had no `linsolve` field of its own, so users who configured an `NLNewton` nlsolve had to route their linear solver through path A even though it logically belonged next to the rest of the nlsolve configuration.
+
+In v7, `NLNewton` carries its own `linsolve` field and path B works uniformly:
+
+```julia
+# Canonical v7 form — works for any nlsolve
+ImplicitEuler(nlsolve = NLNewton(linsolve = KLUFactorization()))
+ImplicitEuler(nlsolve = NonlinearSolveAlg(NewtonRaphson(linsolve = KLUFactorization())))
+```
+
+**Path A still works** as a convenience shortcut: when only `alg.linsolve` is set, the effective linear solver falls back to it. When `nlsolve.linsolve` is set it wins. This is a non-breaking change for existing code — `ImplicitEuler(linsolve = X)` continues to produce the same solves it did before.
+
+**Why this matters beyond ergonomics:** the default nlsolve is planned to move from `NLNewton()` to `NonlinearSolveAlg(NewtonRaphson(...))` in a **non-breaking v7 minor release**, once the NonlinearSolve.jl-backed path meets the performance requirements (specifically, allocations and per-step overhead on the benchmarked SDIRK/BDF workloads). With a unified `nlsolve.linsolve` configuration, that default swap is invisible to user code — `alg(linsolve = X)` threads through either implementation, and `alg(nlsolve = …)` writes the same way for both.
+
+**Recommended migration:** for new code, configure `linsolve` on the nlsolve object. When/if you customize `nlsolve`, this is the only location that works uniformly today and after the default swap:
+
+```julia
+# forward-compatible
+ImplicitEuler(nlsolve = NLNewton(linsolve = KLUFactorization(), relax = BackTracking()))
+```
+
+**Related follow-up items** on the nlsolve interface that are *not* in this release but are being considered to make the eventual default swap smoother — mentioned here so you can design around them:
+
+- Accepting a bare NonlinearSolve.jl algorithm as `nlsolve`, auto-wrapped in `NonlinearSolveAlg` (so `nlsolve = NewtonRaphson(...)` would be equivalent to `nlsolve = NonlinearSolveAlg(NewtonRaphson(...))`).
+- Aligning `NonlinearSolveAlg`'s inner default autodiff with the outer algorithm's `autodiff` kwarg instead of the current hard-coded `AutoFiniteDiff()`, so that switching nlsolve implementations doesn't silently change the AD backend.
+
 ### autodiff: Bool no longer accepted
 
 ```julia

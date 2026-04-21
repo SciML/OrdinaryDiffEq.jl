@@ -311,7 +311,7 @@ function build_nlsolver(
         du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
         linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
         linsolve = init(
-            linprob, wrapprecs(alg.linsolve, W, weight),
+            linprob, wrapprecs(effective_linsolve(alg), W, weight),
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
             assumptions = LinearSolve.OperatorAssumptions(true),
             verbose = verbose.linear_verbosity

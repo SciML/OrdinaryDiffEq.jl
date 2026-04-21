@@ -22,8 +22,9 @@ function dolinsolve(
     linres = solve!(linsolve; reltol)
 
     # TODO: this ignores the add of the `f` count for add_steps!
-    if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
-            !LinearSolve.needs_concrete_A(_alg.linsolve) &&
+    _effective_linsolve = effective_linsolve(_alg)
+    if integrator isa SciMLBase.DEIntegrator && _effective_linsolve !== nothing &&
+            !LinearSolve.needs_concrete_A(_effective_linsolve) &&
             linsolve.A isa WOperator && linsolve.A.J isa AbstractSciMLOperator
         ad = alg_autodiff(_alg) isa ADTypes.AutoSparse ? ADTypes.dense_ad(alg_autodiff(_alg)) :
             alg_autodiff(_alg)

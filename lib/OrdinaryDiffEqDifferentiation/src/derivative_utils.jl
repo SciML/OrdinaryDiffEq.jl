@@ -1096,15 +1096,15 @@ function build_J_W(
         J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
         W = WOperator{IIP}(f.mass_matrix, dt, J, _vec(u))
     elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
-            (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))
+            (effective_linsolve(alg) === nothing || LinearSolve.needs_concrete_A(effective_linsolve(alg)))
 
         # If factorization, then just use the jac_prototype
         J = similar(f.jac_prototype)
         W = similar(J)
     elseif (
             IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
-                alg.linsolve !== nothing &&
-                !LinearSolve.needs_concrete_A(alg.linsolve)
+                effective_linsolve(alg) !== nothing &&
+                !LinearSolve.needs_concrete_A(effective_linsolve(alg))
         )
         # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
         # Jacobian is a bad idea and create a fully matrix-free solver. This can
@@ -1113,7 +1113,7 @@ function build_J_W(
 
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, _vec(u), jacvec)
-    elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
+    elseif effective_linsolve(alg) !== nothing && !LinearSolve.needs_concrete_A(effective_linsolve(alg)) ||
             concrete_jac(alg) !== nothing && concrete_jac(alg)
         # The linear solver does not need a concrete Jacobian, but the user has
         # asked for one. This will happen when the Jacobian is used in the preconditioner
