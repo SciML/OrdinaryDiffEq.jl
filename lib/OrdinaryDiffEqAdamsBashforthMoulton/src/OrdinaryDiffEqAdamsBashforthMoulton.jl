@@ -2,7 +2,7 @@ module OrdinaryDiffEqAdamsBashforthMoulton
 
 import OrdinaryDiffEqCore: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, @cache,
     alg_cache,
-    initialize!, perform_step!, alg_order, isstandard,
+    initialize!, perform_step!, alg_order, default_controller, IController,
     OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,

@@ -32,9 +32,7 @@ import OrdinaryDiffEqCore
 import SciMLOperators: islinear
 import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
 
-@static if isdefined(OrdinaryDiffEqCore, :default_nlsolve)
-    import OrdinaryDiffEqCore: default_nlsolve
-end
+import OrdinaryDiffEqCore: default_nlsolve
 
 using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
     AbstractNLSolverAlgorithm, AbstractNLSolverCache,
@@ -64,13 +62,7 @@ import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_
 
 import StaticArraysCore: StaticArray
 
-@static if isdefined(SciMLBase, :OrdinaryDiffEqTag)
-    import SciMLBase: OrdinaryDiffEqTag
-elseif isdefined(DiffEqBase, :OrdinaryDiffEqTag)
-    import DiffEqBase: OrdinaryDiffEqTag
-else
-    struct OrdinaryDiffEqTag end
-end
+import DiffEqBase: OrdinaryDiffEqTag
 
 include("type.jl")
 include("utils.jl")

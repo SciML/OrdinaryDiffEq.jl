@@ -28,41 +28,7 @@ function SDIRK_docstring(
           For example, to use [KLU.jl](https://github.com/JuliaSparse/KLU.jl), specify
           `$name(linsolve = KLUFactorization()`).
            When `nothing` is passed, uses `DefaultLinearSolver`.
-        - `precs`: Any [LinearSolve.jl-compatible preconditioner](https://docs.sciml.ai/LinearSolve/stable/basics/Preconditioners/)
-          can be used as a left or right preconditioner.
-          Preconditioners are specified by the `Pl,Pr = precs(W,du,u,p,t,newW,Plprev,Prprev,solverdata)`
-          function where the arguments are defined as:
-            - `W`: the current Jacobian of the nonlinear system. Specified as either
-                ``I - \\gamma J`` or ``I/\\gamma - J`` depending on the algorithm. This will
-                commonly be a `WOperator` type defined by OrdinaryDiffEq.jl. It is a lazy
-                representation of the operator. Users can construct the W-matrix on demand
-                by calling `convert(AbstractMatrix,W)` to receive an `AbstractMatrix` matching
-                the `jac_prototype`.
-            - `du`: the current ODE derivative
-            - `u`: the current ODE state
-            - `p`: the ODE parameters
-            - `t`: the current ODE time
-            - `newW`: a `Bool` which specifies whether the `W` matrix has been updated since
-                the last call to `precs`. It is recommended that this is checked to only
-                update the preconditioner when `newW == true`.
-            - `Plprev`: the previous `Pl`.
-            - `Prprev`: the previous `Pr`.
-            - `solverdata`: Optional extra data the solvers can give to the `precs` function.
-                Solver-dependent and subject to change.
-          The return is a tuple `(Pl,Pr)` of the LinearSolve.jl-compatible preconditioners.
-          To specify one-sided preconditioning, simply return `nothing` for the preconditioner
-          which is not used. Additionally, `precs` must supply the dispatch:
-          ```julia
-          Pl, Pr = precs(W, du, u, p, t, ::Nothing, ::Nothing, ::Nothing, solverdata)
-          ```
-          which is used in the solver setup phase to construct the integrator
-          type with the preconditioners `(Pl,Pr)`.
-          The default is `precs=DEFAULT_PRECS` where the default preconditioner function
-          is defined as:
-          ```julia
-          DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
-          ```
-        - `nlsolve`: TBD
+        - `nlsolve`: nonlinear solver algorithm used for solving the implicit system.
             """ * extra_keyword_description
 
     return generic_solver_docstring(
@@ -81,7 +47,7 @@ end
     year={1996},
     publisher={Springer Berlin Heidelberg New York}}",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -125,7 +91,7 @@ end
     year={1996},
     publisher={Springer Berlin Heidelberg New York}}",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -166,7 +132,7 @@ end
     "Trapezoid";
     references = "Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York, NY, USA.",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -216,8 +182,8 @@ end
     year={1996},
     publisher={Elsevier}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -268,8 +234,8 @@ end
     year={2005},
     publisher={ACM}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -308,15 +274,15 @@ function SDIRK2(;
 end
 
 @doc SDIRK_docstring(
-    "Description TBD",
+    "An SDIRK method.",
     "SDIRK22";
     references = "@techreport{kennedy2016diagonally,
     title={Diagonally implicit Runge-Kutta methods for ordinary differential equations. A review},
     author={Kennedy, Christopher A and Carpenter, Mark H},
     year={2016}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -371,8 +337,8 @@ end
     year={2009},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
         """,
     extra_keyword_default = """
     smooth_est = true,
@@ -417,8 +383,8 @@ end
     year={2004},
     publisher={Springer}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -462,8 +428,8 @@ end
     year={2001},
     publisher={National Aeronautics and Space Administration, Langley Research Center}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
@@ -511,7 +477,7 @@ end
     year={2001},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -556,9 +522,9 @@ end
     year={2005},
     publisher={ACM}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
-    - `embedding`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `embedding`: which embedded error estimate to use for step size control.
     """,
     extra_keyword_default = """
     smooth_est = true,
@@ -610,7 +576,7 @@ end
     year={2008},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -655,7 +621,7 @@ end
     year={2008},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -701,7 +667,7 @@ end
     year={2008},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -747,7 +713,7 @@ end
     year={2008},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -793,7 +759,7 @@ end
     year={2008},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -833,8 +799,8 @@ end
     differential-algebraic problems. Computational mathematics (2nd revised ed.),
     Springer (1996)",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
         """,
     extra_keyword_default = """
     smooth_est = true,
@@ -872,8 +838,8 @@ end
     differential-algebraic problems. Computational mathematics (2nd revised ed.),
     Springer (1996)",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
         """,
     extra_keyword_default = """
     smooth_est = true,
@@ -917,9 +883,9 @@ end
     year={2004},
     publisher={Springer}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
-    - `step_limiter!`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
@@ -966,9 +932,9 @@ end
     year={2004},
     publisher={Springer}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
-    - `step_limiter!`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
@@ -1011,9 +977,9 @@ end
     year={2001},
     publisher={National Aeronautics and Space Administration, Langley Research Center}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
-    - `step_limiter!`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
@@ -1061,8 +1027,8 @@ end
     year={2019},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
         """,
     extra_keyword_default = """
     smooth_est = true,
@@ -1102,9 +1068,9 @@ end
     year={2001},
     publisher={National Aeronautics and Space Administration, Langley Research Center}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
-    - `step_limiter!`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
@@ -1150,8 +1116,8 @@ end
     year={2019},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `smooth_est`: TBD
-    - `extrapolant`: TBD
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
         """,
     extra_keyword_default = """
     smooth_est = true,
@@ -1197,7 +1163,7 @@ but are still being fully evaluated in context.",
     pages={221-244}
     }""",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
         """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -1240,7 +1206,7 @@ but are still being fully evaluated in context.",
     pages={221-244}
     }""",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
         """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -1283,7 +1249,7 @@ but are still being fully evaluated in context.",
     pages={221-244}
     }""",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
         """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -1326,7 +1292,7 @@ but are still being fully evaluated in context.",
     pages={221-244}
     }""",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
         """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -1371,7 +1337,7 @@ Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more deta
     pages={221-244}
     }""",
     extra_keyword_description = """
-    - `extrapolant`: TBD
+    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
         """,
     extra_keyword_default = """
     extrapolant = :linear,

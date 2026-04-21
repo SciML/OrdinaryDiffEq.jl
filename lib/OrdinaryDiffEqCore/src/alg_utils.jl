@@ -241,16 +241,6 @@ qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 qmax_default(alg) = 10
 
-function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
-    return alg isa Union{
-        OrdinaryDiffEqExponentialAlgorithm,
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm,
-        OrdinaryDiffEqImplicitAlgorithm,
-        OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-        DAEAlgorithm,
-        CompositeAlgorithm,
-    }
-end
 function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
@@ -430,13 +420,7 @@ alg_adaptive_order(alg) = alg_order(alg) - 1
 # to track the real error much better
 
 function default_controller(QT, alg)
-    if ispredictive(alg)
-        return PredictiveController(QT, alg)
-    elseif isstandard(alg)
-        return IController(QT, alg)
-    else
-        return PIController(QT, alg)
-    end
+    return PIController(QT, alg)
 end
 
 function default_controller(QT, alg::OrdinaryDiffEqCompositeAlgorithm)
@@ -565,10 +549,6 @@ uses_uprev(alg::OrdinaryDiffEqAdaptiveAlgorithm, adaptive::Bool) = true
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 uses_uprev(alg, adaptive) = true
 
-ispredictive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = false
-isstandard(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = false
 
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 

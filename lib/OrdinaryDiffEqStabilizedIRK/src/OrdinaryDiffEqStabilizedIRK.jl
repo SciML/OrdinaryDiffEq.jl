@@ -1,7 +1,7 @@
 module OrdinaryDiffEqStabilizedIRK
 
 import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
-    calculate_residuals!, isstandard,
+    calculate_residuals!, default_controller, IController,
     beta2_default, beta1_default, gamma_default, issplit,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals, fac_default_gamma,

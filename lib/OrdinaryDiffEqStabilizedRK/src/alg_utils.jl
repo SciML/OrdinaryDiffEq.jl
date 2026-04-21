@@ -11,8 +11,8 @@ alg_order(alg::TSRKC3) = 3
 
 alg_extrapolates(alg::TSRKC3) = true
 
-ispredictive(alg::Union{SERK2}) = true
-ispredictive(alg::Union{RKC, TSRKC3}) = true
+default_controller(QT, alg::SERK2) = PredictiveController(QT, alg)
+default_controller(QT, alg::Union{RKC, TSRKC3}) = PredictiveController(QT, alg)
 
 alg_adaptive_order(alg::Union{RKC, TSRKC3}) = 2
 

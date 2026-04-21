@@ -4,7 +4,7 @@ using Reexport
 @reexport using StochasticDiffEqCore
 
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: perform_step!, initialize!, issplit
+import OrdinaryDiffEqCore: perform_step!, initialize!, issplit, default_controller, PredictiveController
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     alg_needs_extra_process, is_split_step, Ihat2, _z_prototype,
