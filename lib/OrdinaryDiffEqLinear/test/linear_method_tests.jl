@@ -267,3 +267,21 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 
 sim = analyticless_test_convergence(dts, prob, CayleyEuler(), test_setup)
 @test sim.𝒪est[:l2] ≈ 1 atol = 0.2
+
+# Regression test for https://github.com/SciML/OrdinaryDiffEq.jl/issues/3232
+# Magnus/Linear integrators must not FieldError when OrdinaryDiffEqDifferentiation
+# is loaded (which happens transitively via DifferentialEquations.jl).
+@testset "Regression #3232: non-autonomous Magnus solve does not FieldError" begin
+    function update_func_3232!(A, u, p, t)
+        A[1, 1] = cos(t)
+        A[2, 1] = sin(t)
+        A[1, 2] = -sin(t)
+        A[2, 2] = cos(t)
+    end
+    A_3232 = MatrixOperator(ones(2, 2), update_func! = update_func_3232!)
+    prob_3232 = ODEProblem(A_3232, ones(2), (1.0, 6.0))
+    for alg in (MagnusGL6(), MagnusGL4(), MagnusGL8(), LieEuler(), CG2(), CG3(), CG4a())
+        sol = solve(prob_3232, alg, dt = 1 / 10)
+        @test sol.retcode == ReturnCode.Success
+    end
+end

@@ -32,6 +32,12 @@ function _alg_autodiff(
     ) where {CS, AD, FDT, ST, CJ, Controller}
     return Val{AD}()
 end
+# OrdinaryDiffEqLinearExponentialAlgorithm subtypes (Magnus integrators, LieEuler,
+# CG methods, etc.) have NO autodiff field — their only fields are krylov, m, iop.
+# They must be excluded before the generic ExponentialAlgorithm dispatch below.
+function _alg_autodiff(::OrdinaryDiffEqLinearExponentialAlgorithm)
+    return Val{false}()
+end
 function _alg_autodiff(
         alg::Union{
             OrdinaryDiffEqExponentialAlgorithm{CS, AD},
