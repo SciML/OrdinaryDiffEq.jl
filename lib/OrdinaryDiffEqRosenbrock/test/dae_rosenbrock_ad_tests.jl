@@ -2,6 +2,8 @@ using OrdinaryDiffEqRosenbrock, LinearAlgebra, Test
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
 import DifferentiationInterface as DI
+using SciMLBase: ODEProblem
+using ForwardDiff
 
 afd_cs3 = AutoForwardDiff(chunksize = 3)
 function rober(du, u, p, t)
@@ -61,4 +63,24 @@ sol = @inferred solve(
         sum(sol.u[end])
     end
     @test DI.gradient(f, AutoForwardDiff(), [0.04, 3.0e7, 1.0e4]) ≈ [0, 0, 0] atol = 1.0e-8
+end
+
+# Regression test for issue #3486 — nested ForwardDiff (hessian / gradient-of-gradient)
+# through a Rosenbrock solve used to error with:
+#   MethodError: no method matching Float64(::ForwardDiff.Dual{...})
+# ...when the Jacobian-reuse state tried to unwrap one Dual level via
+# `ForwardDiff.value(dtgamma)` and assign it to a strictly-typed `::Float64`
+# field. Unconditional unwrapping collapses the still-active inner derivative,
+# so the fix stores `dtgamma` verbatim (Dual and all) in `JacReuseState`.
+@testset "Second-order ForwardDiff through solve (issue #3486)" begin
+    rhs_oop_simple(u, p, t) = [-p[1] * u[1] * u[1]]
+    function loss_oop(p)
+        prob = ODEProblem{false}(rhs_oop_simple, [1.0], (0.0, p[2]), p)
+        sol = solve(prob, Rodas5P())
+        return only(last(sol.u))
+    end
+    g = ForwardDiff.gradient(loss_oop, [1.0, 1.0])
+    @test all(isfinite, g)
+    H = ForwardDiff.hessian(loss_oop, [1.0, 1.0])
+    @test all(isfinite, H)
 end

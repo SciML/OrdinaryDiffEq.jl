@@ -17,9 +17,15 @@ does not have a `jac_reuse` field.
     end
 end
 
-# Strip ForwardDiff.Dual to plain value for heuristic storage in JacReuseState.
-# JacReuseState fields are Float64 (or similar) and don't need to carry AD derivatives.
-_jac_reuse_value(x) = ForwardDiff.value(x)
+# Store dtgamma as-is in JacReuseState. Previously we called `ForwardDiff.value`
+# here to strip Duals, but unconditional unwrapping is unsafe under nested
+# (higher-order) AD: a `Dual{OuterTag,Dual{InnerTag,...}}` with the inner tag
+# currently active would have its *inner* Dual stripped, collapsing the
+# still-active derivative into a primal. The reuse logic only uses
+# `iszero(·)`, ratios, and `abs(dtgamma/last - 1)` comparisons, all of which
+# work on Duals, so we just keep the value as-is. `JacReuseState`'s dtgamma
+# fields are `::Any` to accommodate whatever type `dtgamma` has.
+_jac_reuse_value(x) = x
 
 """
     _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma) -> NTuple{2,Bool}

@@ -2,15 +2,20 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
 
 """
-    JacReuseState{T}
+    JacReuseState
 
 Lightweight mutable state for tracking Jacobian reuse in Rosenbrock-W methods.
 W-methods guarantee correctness with a stale Jacobian, so we can skip expensive
 Jacobian recomputations when conditions allow it.
 
 Fields:
-- `last_dtgamma`: The dtgamma value from the last Jacobian computation
-- `pending_dtgamma`: The dtgamma from the current step (committed on accept)
+- `last_dtgamma`: The dtgamma value from the last Jacobian computation. Stored
+  type-erased (`Any`) so the same cache can hold `Float64` on a plain solve
+  and `ForwardDiff.Dual` values under (possibly nested) forward-mode AD without
+  needing to unwrap via `ForwardDiff.value`, which loses derivative information
+  under higher-order differentiation.
+- `pending_dtgamma`: The dtgamma from the current step (committed on accept).
+  Also type-erased, same reasoning as `last_dtgamma`.
 - `last_naccept`: The naccept count at last Jacobian computation
 - `max_jac_age`: Maximum number of accepted steps between Jacobian updates
   (populated from `alg.max_jac_age`, default 20)
@@ -20,9 +25,9 @@ Fields:
 - `last_step_iter`: The integrator.iter at the last Rosenbrock step
 - `last_u_length`: The length of u at the last Jacobian computation
 """
-mutable struct JacReuseState{T}
-    last_dtgamma::T
-    pending_dtgamma::T
+mutable struct JacReuseState
+    last_dtgamma::Any
+    pending_dtgamma::Any
     last_naccept::Int
     max_jac_age::Int
     cached_J::Any
@@ -32,8 +37,8 @@ mutable struct JacReuseState{T}
     last_u_length::Int
 end
 
-function JacReuseState(dtgamma::T, max_jac_age::Int = 20) where {T}
-    return JacReuseState{T}(
+function JacReuseState(dtgamma, max_jac_age::Int = 20)
+    return JacReuseState(
         dtgamma, dtgamma, 0, max_jac_age, nothing, nothing, nothing, 0, 0
     )
 end
