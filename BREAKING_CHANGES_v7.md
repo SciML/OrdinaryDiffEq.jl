@@ -269,6 +269,5 @@ OrdinaryDiffEqExplicitTableaus.DormandPrince()
 - `alias_u0`/`alias_jumps`/`alias_noise` deprecated kwargs removed
 - `beta1`/`beta2` PID parameter deprecation warnings removed
 - `initial_order` deprecated kwarg removed from DelayDiffEq
-- SDDE (StochasticDDE) code paths removed from DelayDiffEq
 - `ispredictive`/`isstandard` trait definitions removed; direct `default_controller` overrides used
 - `@static if isdefined` version guards removed (always true on v7)
