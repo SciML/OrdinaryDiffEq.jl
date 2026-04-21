@@ -29,7 +29,7 @@ alg_order(alg::SMEB) = 1 // 1
 
 alg_order(alg::IRI1) = 1 // 1  # Strong order, weak order is 2
 
-ispredictive(::IRI1) = true
+default_controller(QT, alg::IRI1) = PredictiveController(QT, alg)
 
 ## alg_interpretation (Stratonovich methods)
 

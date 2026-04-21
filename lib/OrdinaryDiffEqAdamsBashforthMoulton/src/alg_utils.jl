@@ -12,4 +12,4 @@ alg_order(alg::VCABM4) = 4
 alg_order(alg::VCABM5) = 5
 alg_order(alg::VCABM) = 1  #dummy value
 
-isstandard(alg::VCABM) = true
+default_controller(QT, alg::VCABM) = IController(QT, alg)

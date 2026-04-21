@@ -742,19 +742,6 @@ function DABDF2(;
     )
 end
 
-#=
-struct DBDF{AD, F, F2, P} <: DAEAlgorithm
-  linsolve::F
-  nlsolve::F2
-  extrapolant::Symbol
-end
-
-DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-     linsolve=nothing,nlsolve=NLNewton(),extrapolant=:linear) =
-     DBDF{_ad_chunksize_int(autodiff),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,true,_unwrap_val(concrete_jac)}(
-     linsolve,nlsolve,extrapolant)
-=#
-
 @doc BDF_docstring(
     "Fixed-leading coefficient adaptive-order adaptive-time BDF method. Fully implicit implementation of FBDF based on Shampine's",
     "DFBDF",

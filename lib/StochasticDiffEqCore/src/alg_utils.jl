@@ -129,8 +129,6 @@ function OrdinaryDiffEqCore.gamma_default(
     return isadaptive(alg) ? 9 // 10 : 0
 end
 
-ispredictive(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}) = false
-isstandard(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}) = false
 function qsteady_min_default(
         alg::Union{
             StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm,
@@ -256,32 +254,26 @@ function OrdinaryDiffEqCore.get_chunksize(
     return OrdinaryDiffEqCore._get_fwd_chunksize(typeof(alg.autodiff))
 end
 
-@static if isdefined(OrdinaryDiffEqCore, :standardtag)
-    OrdinaryDiffEqCore.standardtag(
-        alg::Union{
-            StochasticDiffEqNewtonAdaptiveAlgorithm,
-            StochasticDiffEqNewtonAlgorithm,
-        }
-    ) = true
-end
+OrdinaryDiffEqCore.standardtag(
+    alg::Union{
+        StochasticDiffEqNewtonAdaptiveAlgorithm,
+        StochasticDiffEqNewtonAlgorithm,
+    }
+) = true
 
-@static if isdefined(OrdinaryDiffEqCore, :alg_difftype)
-    OrdinaryDiffEqCore.alg_difftype(
-        alg::Union{
-            StochasticDiffEqNewtonAdaptiveAlgorithm,
-            StochasticDiffEqNewtonAlgorithm,
-        }
-    ) = OrdinaryDiffEqCore._get_fdtype(alg.autodiff)
-end
+OrdinaryDiffEqCore.alg_difftype(
+    alg::Union{
+        StochasticDiffEqNewtonAdaptiveAlgorithm,
+        StochasticDiffEqNewtonAlgorithm,
+    }
+) = OrdinaryDiffEqCore._get_fdtype(alg.autodiff)
 
-@static if isdefined(OrdinaryDiffEqCore, :concrete_jac)
-    OrdinaryDiffEqCore.concrete_jac(
-        alg::Union{
-            StochasticDiffEqNewtonAdaptiveAlgorithm,
-            StochasticDiffEqNewtonAlgorithm,
-        }
-    ) = alg.concrete_jac
-end
+OrdinaryDiffEqCore.concrete_jac(
+    alg::Union{
+        StochasticDiffEqNewtonAdaptiveAlgorithm,
+        StochasticDiffEqNewtonAlgorithm,
+    }
+) = alg.concrete_jac
 
 alg_mass_matrix_compatible(alg::StochasticDiffEqAlgorithm) = false
 alg_mass_matrix_compatible(alg::StochasticDiffEqRODEAlgorithm) = false
