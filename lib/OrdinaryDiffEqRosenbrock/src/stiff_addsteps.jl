@@ -37,7 +37,7 @@ function _ode_addsteps!(
         end
 
         num_stages = size(A, 1)
-        du = f(u, p, t)
+        du = f(uprev, p, t)
         linsolve_tmp = @.. du + dtd[1] * dT
         k1 = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
         # constant number for type stability make sure this is greater than num_stages
