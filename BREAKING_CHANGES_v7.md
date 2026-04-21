@@ -210,12 +210,25 @@ ImplicitEuler(nlsolve = NonlinearSolveAlg(NewtonRaphson(linsolve = KLUFactorizat
 
 **Why this matters beyond ergonomics:** the default nlsolve is planned to move from `NLNewton()` to `NonlinearSolveAlg(NewtonRaphson(...))` in a **non-breaking v7 minor release**, once the NonlinearSolve.jl-backed path meets the performance requirements (specifically, allocations and per-step overhead on the benchmarked SDIRK/BDF workloads). With a unified `nlsolve.linsolve` configuration, that default swap is invisible to user code — `alg(linsolve = X)` threads through either implementation, and `alg(nlsolve = …)` writes the same way for both.
 
-**Recommended migration:** for new code, configure `linsolve` on the nlsolve object. When/if you customize `nlsolve`, this is the only location that works uniformly today and after the default swap:
+**No v6 pre-migration path for this one.** Unlike the renamed APIs listed elsewhere in this document (which ship deprecation shims on v6 so you can rename-in-place before bumping), the `linsolve` field on `NLNewton` *does not exist on v6*. `NLNewton(linsolve = …)` on v6 errors as an unknown keyword. On v6 the algorithm-level kwarg is the only form that works:
 
 ```julia
-# forward-compatible
+# v6 — the only form that works
+ImplicitEuler(linsolve = KLUFactorization())
+```
+
+On v7, both forms work. The algorithm-level kwarg stays as a convenience shortcut, so v6 code that uses it continues to work unchanged after bumping:
+
+```julia
+# v7: algorithm-level kwarg still works (convenience shortcut)
+ImplicitEuler(linsolve = KLUFactorization())
+
+# v7: nlsolve-level form — required if you also customize nlsolve,
+# and the form that will survive the future default nlsolve swap.
 ImplicitEuler(nlsolve = NLNewton(linsolve = KLUFactorization(), relax = BackTracking()))
 ```
+
+**Recommended migration:** if your v6 code only set `alg(linsolve = X)` and didn't touch `nlsolve`, do nothing — the convenience shortcut carries the value through. If you customize `nlsolve` on v7, put `linsolve` on the nlsolve object; that is the form that stays correct after the default swap.
 
 **Related follow-up items** on the nlsolve interface that are *not* in this release but are being considered to make the eventual default swap smoother — mentioned here so you can design around them:
 
