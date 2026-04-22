@@ -1,61 +1,11 @@
 function _ode_addsteps!(
-        k, t, uprev, u, dt, f, p,
-        cache::Union{
-            Rosenbrock23ConstantCache,
-            Rosenbrock32ConstantCache,
-        },
-        always_calc_begin = false, allow_calc_end = true,
-        force_calc_end = false
-    )
-    if length(k) < 2 || always_calc_begin
-        (; tf, uf, d) = cache
-        dtγ = dt * d
-        neginvdtγ = -inv(dtγ)
-        dto2 = dt / 2
-        tf.u = uprev
-
-        autodiff_alg = cache.autodiff
-
-        if autodiff_alg isa AutoFiniteDiff
-            autodiff_alg = SciMLBase.@set autodiff_alg.dir = sign(dt)
-        end
-
-        dT = DI.derivative(tf, autodiff_alg, t)
-
-        mass_matrix = f.mass_matrix
-        if uprev isa Number
-            J = DI.derivative(uf, autodiff_alg, uprev)
-            W = neginvdtγ .+ J
-        else
-            J = DI.jacobian(uf, autodiff_alg, uprev)
-            if mass_matrix isa UniformScaling
-                W = neginvdtγ * mass_matrix + J
-            else
-                W = @.. neginvdtγ * mass_matrix .+ J
-            end
-        end
-        f₀ = f(uprev, p, t)
-        k₁ = _reshape(W \ _vec((f₀ + dtγ * dT)), axes(uprev)) * neginvdtγ
-        tmp = @.. uprev + dto2 * k₁
-        f₁ = f(tmp, p, t + dto2)
-        if mass_matrix === I
-            k₂ = _reshape(W \ _vec(f₁ - k₁), axes(uprev))
-        else
-            k₂ = _reshape(W \ _vec(f₁ - mass_matrix * k₁), axes(uprev))
-        end
-        k₂ = @.. k₂ * neginvdtγ + k₁
-        copyat_or_push!(k, 1, k₁)
-        copyat_or_push!(k, 2, k₂)
-    end
-    return nothing
-end
-
-function _ode_addsteps!(
         k, t, uprev, u, dt, f, p, cache::RosenbrockCombinedConstantCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false
     )
-    if length(k) < size(cache.tab.H, 1) || always_calc_begin
+    H_rows = size(cache.tab.H, 1)
+    kneeded = H_rows == 0 ? 2 : H_rows
+    if length(k) < kneeded || always_calc_begin
         (; tf, uf) = cache
         (; A, C, gamma, c, d, H) = cache.tab
 
@@ -87,7 +37,7 @@ function _ode_addsteps!(
         end
 
         num_stages = size(A, 1)
-        du = f(u, p, t)
+        du = f(uprev, p, t)
         linsolve_tmp = @.. du + dtd[1] * dT
         k1 = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
         # constant number for type stability make sure this is greater than num_stages
