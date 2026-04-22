@@ -93,10 +93,6 @@ sim = test_convergence(
 @show sim.𝒪est[:weak_final]
 
 ### SDDE
-# Migrated from StochasticDelayDiffEq (deprecated, no DiffEqBase v7 release) to
-# DelayDiffEq's SDDE support — depends on DelayDiffEq's
-# `__solve`/`__init(::AbstractSDDEProblem, ::MethodOfSteps{<:AbstractSDEAlg})`
-# dispatches being in place (restored in SciML/OrdinaryDiffEq.jl#3505).
 
 function hayes_modelf(du, u, h, p, t)
     τ, a, b, c, α, β, γ = p
