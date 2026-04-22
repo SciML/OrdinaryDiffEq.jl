@@ -91,6 +91,18 @@ OrdinaryDiffEqCore.is_constant_cache(cache::StochasticCompositeCache) =
     OrdinaryDiffEqCore.is_constant_cache(cache.caches[1])
 
 # ============================================================================
+# get_fsalfirstlast for SDE cache types: SDE algorithms are never FSAL, so
+# return zero sentinels. The ODE composite perform_step machinery reads these
+# through OrdinaryDiffEqCore.get_fsalfirstlast when DelayDiffEq wraps an SDE
+# integrator cache for SDDEProblem.
+# ============================================================================
+
+OrdinaryDiffEqCore.get_fsalfirstlast(::StochasticDiffEqConstantCache, u) =
+    (zero(u), zero(u))
+OrdinaryDiffEqCore.get_fsalfirstlast(::StochasticDiffEqMutableCache, u) =
+    (zero(u), zero(u))
+
+# ============================================================================
 # reinit_noise!: reinitialize noise process (called from ODE's reinit!)
 # ============================================================================
 

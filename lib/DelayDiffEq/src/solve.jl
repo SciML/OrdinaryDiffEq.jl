@@ -1,5 +1,5 @@
 function SciMLBase.__solve(
-        prob::SciMLBase.AbstractDDEProblem,
+        prob::Union{SciMLBase.AbstractDDEProblem, AbstractSDDEProblem},
         alg::AbstractMethodOfStepsAlgorithm, args...;
         kwargs...
     )
@@ -9,7 +9,7 @@ function SciMLBase.__solve(
 end
 
 function SciMLBase.__init(
-        prob::SciMLBase.AbstractDDEProblem,
+        prob::Union{SciMLBase.AbstractDDEProblem, AbstractSDDEProblem},
         alg::AbstractMethodOfStepsAlgorithm,
         timeseries_init = (),
         ts_init = (),
@@ -28,6 +28,7 @@ function SciMLBase.__init(
         dense = save_everystep && isempty(saveat),
         calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
             dense, # and no dense output
+        seed = UInt64(0),
         dt = zero(eltype(prob.tspan)),
         dtmin = DiffEqBase.prob2dtmin(prob; use_end_time = false),
         dtmax = eltype(prob.tspan)(prob.tspan[end] - prob.tspan[1]),
@@ -67,7 +68,9 @@ function SciMLBase.__init(
         save_noise = false,
         kwargs...
     )
-    order_discontinuity_t0 = prob.order_discontinuity_t0
+    is_stochastic = prob isa AbstractSDDEProblem
+    order_discontinuity_t0 = is_stochastic ? Int(prob.order_discontinuity_t0) :
+        prob.order_discontinuity_t0
 
     # Handle verbose argument: convert AbstractVerbosityPreset to DEVerbosity
     if verbose isa Bool
@@ -78,7 +81,7 @@ function SciMLBase.__init(
         verbose_spec = verbose
     end
 
-    if alg.alg isa CompositeAlgorithm && alg.alg.choice_function isa AutoSwitch
+    if !is_stochastic && alg.alg isa CompositeAlgorithm && alg.alg.choice_function isa AutoSwitch
         auto = alg.alg.choice_function
         alg = MethodOfSteps(
             CompositeAlgorithm(
@@ -146,6 +149,20 @@ function SciMLBase.__init(
     # get rate prototype
     rate_prototype = rate_prototype_of(u0, tspan)
 
+    # compute noise_rate_prototype for SDDE
+    noise_rate_prototype = if is_stochastic
+        _nrp = prob.noise_rate_prototype
+        if is_diagonal_noise(prob)
+            rate_prototype
+        elseif _nrp !== nothing
+            copy(_nrp)
+        else
+            nothing
+        end
+    else
+        nothing
+    end
+
     # get states (possibly different from the ODE integrator!)
     u, uprev,
         uprev2 = u_uprev_uprev2(
@@ -159,8 +176,13 @@ function SciMLBase.__init(
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
 
     # get the differential vs algebraic variables
-    differential_vars = prob isa DAEProblem ? prob.differential_vars :
+    differential_vars = if is_stochastic
+        nothing
+    elseif prob isa DAEProblem
+        prob.differential_vars
+    else
         OrdinaryDiffEqCore.get_differential_vars(f, u)
+    end
 
     # create a history function
     history = build_history_function(
@@ -169,7 +191,21 @@ function SciMLBase.__init(
         dt = dt, dtmin = dtmin, calck = false,
         adaptive = adaptive, internalnorm = internalnorm
     )
-    f_with_history = ODEFunctionWrapper(f, history)
+    f_with_history = if is_stochastic
+        SDEFunctionWrapper(f, history)
+    else
+        ODEFunctionWrapper(f, history)
+    end
+
+    # ── Noise creation (SDDE only) ─────────────────────────────────────
+    W, P, sqdt = if is_stochastic
+        _create_sdde_noise(
+            prob, alg.alg, u0, t0, tType(dt), tdir, noise_rate_prototype,
+            save_noise, seed, isinplace(prob), isadaptive(alg)
+        )
+    else
+        (nothing, nothing, nothing)
+    end
 
     # initialize output arrays of the solution
     save_idxs,
@@ -184,18 +220,31 @@ function SciMLBase.__init(
         ks_init = ks_init,
         save_idxs = save_idxs,
         save_start = save_start,
-        is_stochastic = false # FIXME the interface changed and now I do not know how to query this anymore.
+        is_stochastic = is_stochastic
     )
 
     # build cache
     ode_integrator = history.integrator
-    cache = OrdinaryDiffEqCore.alg_cache(
-        alg.alg, u, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2,
-        f_with_history, t0, zero(tType), reltol_internal, p,
-        calck,
-        Val(isinplace(prob)), OrdinaryDiffEqCore.DEVerbosity()
-    )
+    cache = if is_stochastic
+        dW = W.dW
+        dZ = W.dZ
+        _sde_alg_cache(
+            alg.alg, prob, u, dW, dZ, p,
+            rate_prototype, noise_rate_prototype,
+            nothing, uEltypeNoUnits, uBottomEltypeNoUnits,
+            tTypeNoUnits, uprev, f_with_history, t0,
+            tType(dt), Val{isinplace(prob)},
+            DiffEqBase.DEVerbosity()
+        )
+    else
+        OrdinaryDiffEqCore.alg_cache(
+            alg.alg, u, rate_prototype, uEltypeNoUnits,
+            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2,
+            f_with_history, t0, zero(tType), reltol_internal, p,
+            calck,
+            Val(isinplace(prob)), DiffEqBase.DEVerbosity()
+        )
+    end
 
     # separate statistics of the integrator and the history
     stats = SciMLBase.DEStats(0)
@@ -206,12 +255,21 @@ function SciMLBase.__init(
         f_with_history, timeseries, ts, ks,
         alg_choice, dense, cache, differential_vars, false
     )
-    sol = SciMLBase.build_solution(
-        prob, alg.alg, ts, timeseries;
-        dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
-        alg_choice = id.alg_choice, calculate_error = false,
-        stats = stats
-    )
+    sol = if is_stochastic
+        SciMLBase.build_solution(
+            prob, alg.alg, ts, timeseries;
+            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
+            alg_choice = id.alg_choice, calculate_error = false,
+            stats = stats, W = W
+        )
+    else
+        SciMLBase.build_solution(
+            prob, alg.alg, ts, timeseries;
+            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
+            alg_choice = id.alg_choice, calculate_error = false,
+            stats = stats
+        )
+    end
 
     # retrieve time stops, time points at which solutions is saved, and discontinuities
     tstops_internal = OrdinaryDiffEqCore.initialize_tstops(
@@ -272,6 +330,12 @@ function SciMLBase.__init(
     save_end = save_end === nothing ?
         save_everystep || isempty(saveat) || saveat isa Number ||
         prob.tspan[2] in saveat : save_end
+
+    # Compute delta for SDE algorithms (used by Milstein-type methods).
+    # For pure DDE, delta is nothing (unused).
+    if delta === nothing && is_stochastic
+        delta = convert(recursive_unitless_bottom_eltype(u), 1 // 1)
+    end
 
     # Construct DEOptions
     opts = OrdinaryDiffEqCore.DEOptions{
@@ -396,7 +460,7 @@ function SciMLBase.__init(
         typeof(last_event_error), typeof(callback_cache),
         typeof(differential_vars), typeof(controller_cache),
         typeof(initializealg),
-        Nothing, Nothing, Nothing, Nothing,
+        typeof(W), typeof(P), typeof(sqdt), Nothing,
     }(
         sol, u, k,
         t0,
@@ -447,7 +511,7 @@ function SciMLBase.__init(
         differential_vars,
         controller_cache,
         ode_integrator, fsalfirst, fsallast, initializealg,
-        nothing, nothing, nothing, nothing,
+        W, P, sqdt, nothing,
     )
 
     # initialize DDE integrator
@@ -463,6 +527,14 @@ function SciMLBase.__init(
 
     # take care of time step dt = 0 and dt with incorrect sign
     OrdinaryDiffEqCore.handle_dt!(integrator)
+
+    # After handle_dt! may have changed dt (via auto_dt_reset!), update noise state.
+    # This mirrors what OrdinaryDiffEqCore's ODE __init does for SDE integrators.
+    if !isnothing(integrator.W)
+        OrdinaryDiffEqCore.modify_dt_for_tstops!(integrator)
+        integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
+        integrator.W.dt = integrator.dt
+    end
 
     # Starting-time discontinuity handling: mirrors OrdinaryDiffEqCore's __init.
     OrdinaryDiffEqCore.handle_starting_time_discontinuity!(integrator)
