@@ -17,7 +17,8 @@ function scalar_noise!(du, u, p, t)
     return nothing
 end
 
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.i; repeat = ctx.repeat
     Random.seed!(seeds[i])
     W = WienerProcess(0.0, 0.0, 0.0)
     return remake(prob, noise = W)

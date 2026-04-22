@@ -17,7 +17,8 @@ function weak_error(
     return sum((computed_exp - true_exp) .^ 2) / length(trange)
 end
 
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.i; repeat = ctx.repeat
     #(i%50000 == 0) && @show i
     return remake(prob, seed = seeds[i])
 end
@@ -26,7 +27,8 @@ function reduction(u, batch, I)
     return u .+ sum(batch), false
 end
 
-function output_func(sol, i)
+function output_func(sol, ctx)
+    i = ctx.i
     #h1(asinh(sol.u[end][1])),false
     return h1.(asinh.(sol)), false
 end
@@ -86,7 +88,7 @@ h2(z) = z #z^2
 prob2 = SDEProblem(f2!, g2!, u₀, tspan)
 ensemble_prob2 = EnsembleProblem(
     prob2;
-    output_func = (sol, i) -> (h2.(sol), false),
+    output_func = (sol, ctx) -> (h2.(sol), false),
     prob_func = prob_func,
     reduction = reduction,
     u_init = Vector{eltype(prob2.u0)}([0.0, 0.0]),

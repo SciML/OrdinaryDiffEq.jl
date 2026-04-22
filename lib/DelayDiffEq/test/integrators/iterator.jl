@@ -49,8 +49,10 @@ end
         prob, MethodOfSteps(Tsit5());
         dt = 1 // 2^(4), tstops = [0.5], advance_to_tstop = true
     )
-    for (u, t) in tuples(integrator1)
-        @test 0.5 ≤ t ≤ 10
+    # SciMLBase v3: `tuples(integrator)` removed; iterate integrator directly
+    # and read `integrator.u`/`.t` off each step.
+    for integ in integrator1
+        @test 0.5 ≤ integ.t ≤ 10
     end
 
     # move to grid point in one step and stop there
@@ -59,24 +61,33 @@ end
         dt = 1 // 2^(4), tstops = [0.5], advance_to_tstop = true,
         stop_at_next_tstop = true
     )
-    for (u, t) in tuples(integrator2)
-        @test t == 0.5
+    for integ in integrator2
+        @test integ.t == 0.5
     end
     integrator2([10; 20])
 
     # step and show intervals
+    # SciMLBase v3: `intervals(integrator)` removed; iterate integrator directly
+    # and read `integrator.tprev`/`.uprev`/`.t`/`.u` off each step.
     integrator3 = init(prob, MethodOfSteps(Tsit5()); dt = 1 // 2^(4), tstops = [0.5])
-    for (uprev, tprev, u, t) in intervals(integrator3)
-        @show tprev, t
+    for integ in integrator3
+        @show integ.tprev, integ.t
     end
     integrator3([10; 20])
 
     # iterator for chosen time points
+    # SciMLBase v3: `TimeChoiceIterator` removed; drive manually via step! + interp.
     integrator4 = init(prob, MethodOfSteps(Tsit5()); dt = 1 // 2^(4))
     ts = 1:10
     us = Float64[]
-    for (u, t) in TimeChoiceIterator(integrator4, ts)
-        push!(us, u)
+    for t in ts
+        while integrator4.t < t && !isempty(integrator4.opts.tstops)
+            step!(integrator4)
+        end
+        while integrator4.t < t
+            step!(integrator4)
+        end
+        push!(us, integrator4(t))
     end
     @test us ≈ integrator4.sol(ts).u
 end

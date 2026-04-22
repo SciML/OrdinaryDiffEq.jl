@@ -10,7 +10,8 @@ println("There are $(nprocs()) processes")
     using OrdinaryDiffEq
     prob = ODEProblem((u, p, t) -> 1.01u, 0.5, (0.0, 1.0))
     u0s = [rand() * prob.u0 for i in 1:2]
-    function simple_prob_func(prob, i, repeat)
+    function simple_prob_func(prob, ctx)
+        i = ctx.i; repeat = ctx.repeat
         println("Running trajectory $i")
         ODEProblem(prob.f, u0s[i], prob.tspan)
     end
@@ -30,7 +31,7 @@ tspan = (0.0, 100.0)
 p = [1, 2.0, 3]
 prob = ODEProblem(lorenz!, u0, tspan, p)
 
-@everywhere function lorenz_prob_func(prob, i, repeat)
+@everywhere function lorenz_prob_func(prob, ctx)
     prob = remake(prob, tspan = (rand(), 100.0), p = rand(3))
     return prob
 end
