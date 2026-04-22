@@ -44,7 +44,7 @@ Statistics = "1"
 StochasticDelayDiffEq = "1"
 StochasticDiffEq = "6"
 StructArrays = "0.6, 0.7"
-julia = "1.9"
+julia = "1.10"
 
 [extras]
 BVProblemLibrary = "ded0fc24-dfea-4565-b1d9-79c027d14d84"
