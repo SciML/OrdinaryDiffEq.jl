@@ -13,6 +13,13 @@ jobs:
   benchmark:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Benchmarks compare master vs the PR head using AirspeedVelocity, which
+    # resolves OrdinaryDiffEq from master's Project.toml via the General
+    # registry. During the v7-DEV window, master's [deps] reference
+    # sublibraries (e.g. OrdinaryDiffEqRosenbrockTableaus) that are not yet
+    # registered, so the benchmark job cannot resolve. Allow the job to fail
+    # without blocking PR CI until the v7 sublibraries are registered.
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:

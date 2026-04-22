@@ -5,29 +5,82 @@ const LONGER_TESTS = false
 const GROUP = get(ENV, "GROUP", "All")
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
 
-function activate_downstream_env()
-    Pkg.activate("downstream")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+# On Julia < 1.11, the [sources] section in Project.toml is not supported, so
+# the unregistered v7-DEV sublibraries referenced by OrdinaryDiffEq's own
+# [sources] would fail to resolve. Walk the [sources] transitively from a set
+# of starting package directories and collect PackageSpecs for every local
+# path dep found, so they can be developed together with the root package.
+function _collect_local_source_specs(start_dirs::AbstractVector{<:AbstractString})
+    developed = Set{String}()
+    specs = Pkg.PackageSpec[]
+    queue = collect(start_dirs)
+    while !isempty(queue)
+        pkg_dir = popfirst!(queue)
+        toml_path = joinpath(pkg_dir, "Project.toml")
+        isfile(toml_path) || continue
+        toml = Pkg.TOML.parsefile(toml_path)
+        if haskey(toml, "sources")
+            for (dep_name, source_spec) in toml["sources"]
+                if source_spec isa Dict && haskey(source_spec, "path")
+                    dep_path = normpath(joinpath(pkg_dir, source_spec["path"]))
+                    isdir(dep_path) || continue
+                    # Canonicalize so different syntactic spellings of the same
+                    # path (with/without trailing slash, symlinks, …) dedupe.
+                    key = realpath(dep_path)
+                    if !(key in developed)
+                        push!(developed, key)
+                        @info "Queuing local source dependency" dep_name dep_path
+                        push!(specs, Pkg.PackageSpec(path = dep_path))
+                        push!(queue, dep_path)
+                    end
+                end
+            end
+        end
+    end
+    return specs
+end
+
+# Batch the develop call so Pkg resolves all path deps together;
+# calling it one-at-a-time would re-resolve the active project and
+# fail to find unregistered siblings.
+function _develop_local_sources_transitively(start_dirs::AbstractVector{<:AbstractString})
+    specs = _collect_local_source_specs(start_dirs)
+    isempty(specs) || Pkg.develop(specs)
+    return nothing
+end
+
+_canonical_path(p::AbstractString) = realpath(p)
+
+function _activate_env_with_monorepo_sources(subdir::AbstractString)
+    Pkg.activate(subdir)
+    repo_root = dirname(@__DIR__)
+    if VERSION < v"1.11.0-DEV.0"
+        # On Julia < 1.11 the test env's [sources] and the repo root's
+        # [sources] are both ignored, so we must hand the resolver every
+        # path dep up front (in a single Pkg.develop call) — including
+        # OrdinaryDiffEq itself, alongside all of its v7 sublibraries.
+        specs = _collect_local_source_specs([
+            repo_root,
+            joinpath(@__DIR__, subdir),
+        ])
+        # Ensure OrdinaryDiffEq itself is developed. Some test envs list it
+        # in their own [sources], so it may already be in `specs`; only add
+        # if no spec points at the repo root yet.
+        canonical_root = _canonical_path(repo_root)
+        if !any(s -> s.path !== nothing && _canonical_path(s.path) == canonical_root, specs)
+            pushfirst!(specs, Pkg.PackageSpec(path = repo_root))
+        end
+        Pkg.develop(specs)
+    else
+        Pkg.develop(PackageSpec(path = repo_root))
+    end
     return Pkg.instantiate()
 end
 
-function activate_odeinterface_env()
-    Pkg.activate("odeinterface")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
-end
-
-function activate_ad_env()
-    Pkg.activate("ad")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
-end
-
-function activate_modelingtoolkit_env()
-    Pkg.activate("modelingtoolkit")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
-end
+activate_downstream_env()     = _activate_env_with_monorepo_sources("downstream")
+activate_odeinterface_env()   = _activate_env_with_monorepo_sources("odeinterface")
+activate_ad_env()             = _activate_env_with_monorepo_sources("ad")
+activate_modelingtoolkit_env() = _activate_env_with_monorepo_sources("modelingtoolkit")
 
 #Start Test Script
 
@@ -60,33 +113,7 @@ end
         # dependency of OrdinaryDiffEqRosenbrock) are correctly found even when testing
         # a higher-level sublibrary like OrdinaryDiffEqDefault.
         if VERSION < v"1.11.0-DEV.0"
-            developed = Set{String}()
-            specs = Pkg.PackageSpec[]
-            queue = [joinpath(lib_dir, base_group)]
-            while !isempty(queue)
-                pkg_dir = popfirst!(queue)
-                toml_path = joinpath(pkg_dir, "Project.toml")
-                isfile(toml_path) || continue
-                toml = Pkg.TOML.parsefile(toml_path)
-                if haskey(toml, "sources")
-                    for (dep_name, source_spec) in toml["sources"]
-                        if source_spec isa Dict && haskey(source_spec, "path")
-                            dep_path = normpath(joinpath(pkg_dir, source_spec["path"]))
-                            if isdir(dep_path) && !(dep_path in developed)
-                                push!(developed, dep_path)
-                                @info "Queuing local source dependency" dep_name dep_path
-                                push!(specs, Pkg.PackageSpec(path = dep_path))
-                                # Queue this dependency so its own [sources] are also resolved.
-                                push!(queue, dep_path)
-                            end
-                        end
-                    end
-                end
-            end
-            # Batch the develop call so Pkg resolves all path deps together;
-            # calling it one-at-a-time would re-resolve the active project and
-            # fail to find unregistered siblings.
-            isempty(specs) || Pkg.develop(specs)
+            _develop_local_sources_transitively([joinpath(lib_dir, base_group)])
         end
         withenv("ODEDIFFEQ_TEST_GROUP" => test_group) do
             Pkg.test(base_group, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
