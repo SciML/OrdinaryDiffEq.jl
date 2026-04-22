@@ -10,3 +10,4 @@ profile.pb.gz
 LocalPreferences.toml
 
 docs/build
+.claude/

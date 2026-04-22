@@ -142,8 +142,4 @@ function DiffEqBase.check_prob_alg_pairing(
     return nothing
 end
 
-# SDE caches don't have fsalfirst/fsallast (SDE algorithms are never FSAL)
-OrdinaryDiffEqCore.get_fsalfirstlast(cache::StochasticDiffEqConstantCache, u) = (zero(u), zero(u))
-OrdinaryDiffEqCore.get_fsalfirstlast(cache::StochasticDiffEqMutableCache, u) = (zero(u), zero(u))
-
 end # module
