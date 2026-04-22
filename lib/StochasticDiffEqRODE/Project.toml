@@ -26,7 +26,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 DiffEqBase = "7"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
-OrdinaryDiffEqCore = "3.22"
+OrdinaryDiffEqCore = "4"
 Pkg = "1"
 RecursiveArrayTools = "4"
 Reexport = "0.2, 1.0"
