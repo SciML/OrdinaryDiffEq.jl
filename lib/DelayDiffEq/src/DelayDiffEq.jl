@@ -131,12 +131,6 @@ end
 function DiffEqBase.check_prob_alg_pairing(prob::SDDEProblem, alg::SDEAlgUnion)
     return nothing
 end
-# Also bypass the default DDE-only pairing check when the user explicitly
-# constructs `MethodOfSteps(sde_alg)` for an SDDEProblem. Without this override
-# DiffEqBase.check_prob_alg_pairing sees `prob::SDDEProblem` with an
-# `AbstractDDEAlgorithm` (which MethodOfSteps subtypes) and throws
-# ProblemSolverPairingError — the auto-wrap path above covers bare SDE algs
-# but not the already-wrapped form produced by `solve(prob, MethodOfSteps(EM()))`.
 function DiffEqBase.check_prob_alg_pairing(
         prob::SDDEProblem,
         alg::AbstractMethodOfStepsAlgorithm
