@@ -355,3 +355,9 @@ Same theme as the ODE side — all of the following break identically to the ODE
 - `initial_order` deprecated kwarg removed from DelayDiffEq
 - `ispredictive` / `isstandard` trait definitions removed; algorithms now override `default_controller` directly
 - `@static if isdefined` version guards removed (always true on v7)
+
+### StochasticDelayDiffEq deprecated
+
+`StochasticDelayDiffEq.jl` is deprecated. Use `DelayDiffEq.jl` directly — it has supported SDDE problems for some time, and the separate `StochasticDelayDiffEq` wrapper is no longer being maintained. It will not receive a v7-compatible release.
+
+**Migration:** replace `using StochasticDelayDiffEq` with `using DelayDiffEq` (plus `using StochasticDiffEq` if you were relying on the SDE algorithm re-exports). `MethodOfSteps(alg)` and the `SDDEProblem` constructor continue to work from `DelayDiffEq` / `SciMLBase` respectively.
