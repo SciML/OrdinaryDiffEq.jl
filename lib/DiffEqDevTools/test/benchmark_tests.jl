@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DelayDiffEq, DiffEqDevTools, DiffEqBase, Test
+using OrdinaryDiffEq, DelayDiffEq, BoundaryValueDiffEq, DiffEqDevTools, DiffEqBase, Test
 using OrdinaryDiffEqLowOrderRK: Euler, Midpoint, Heun, BS3, BS5, DP5, RK4
 using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqVerner: Vern6, Vern7, Vern9
@@ -8,6 +8,7 @@ using OrdinaryDiffEqBDF: DFBDF
 using OrdinaryDiffEqNonlinearSolve: NLFunctional
 using ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 using DDEProblemLibrary: prob_dde_constant_1delay_ip
+using BVProblemLibrary: prob_bvp_linear_1
 using Test
 
 ## Setup Tests
@@ -244,5 +245,31 @@ end
         println("DDE Done")
     end
 
-    # BVP problem tests are disabled pending BoundaryValueDiffEq DiffEqBase v7 compat.
+    # BVP problem
+    @testset "BVP Problem" begin
+        prob = prob_bvp_linear_1
+        abstols = 1.0 ./ 10.0 .^ (2:3)
+        reltols = 1.0 ./ 10.0 .^ (2:3)
+        sol = solve(prob, Shooting(Tsit5()), abstol = 1.0e-14, reltol = 1.0e-14)
+        test_sol = TestSolution(sol.t, sol.u)
+
+        setups = [
+            Dict(:alg => MIRK4(), :dts => 1.0 ./ 5.0 .^ ((1:length(reltols)) .+ 1))
+            Dict(:alg => MIRK5(), :dts => 1.0 ./ 5.0 .^ ((1:length(reltols)) .+ 1))
+        ]
+        labels = ["MIRK4", "MIRK5"]
+
+        println("Test MIRK4 and MIRK5")
+        wp = WorkPrecisionSet(
+            prob,
+            abstols,
+            reltols,
+            setups;
+            appxsol = test_sol,
+            names = labels,
+            print_names = true
+        )
+        @test wp.names == ["MIRK4", "MIRK5"]
+        println("BVP Done")
+    end
 end

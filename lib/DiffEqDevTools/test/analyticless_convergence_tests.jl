@@ -89,39 +89,37 @@ sim = test_convergence(
     expected_value = exp(-3.0)
 )
 
-# TODO(v7): weak-convergence estimate degraded under SciMLBase v3 seed handling.
-# Was ≈2.0 previously, now ≈1.3. Investigate `remake(prob, seed=...)` on SDEProblem.
-@test_broken abs(sim.𝒪est[:weak_final] - 2.0) < 0.3
+@test abs(sim.𝒪est[:weak_final] - 2.0) < 0.3
 @show sim.𝒪est[:weak_final]
 
 ### SDDE
 # Migrated from StochasticDelayDiffEq (deprecated, no DiffEqBase v7 release) to
-# DelayDiffEq's SDDE support. Re-enable once DelayDiffEq gains `__solve`/`__init`
-# dispatches for `AbstractSDDEProblem + AbstractMethodOfStepsAlgorithm`
-# (currently only `AbstractDDEProblem` is wired through `MethodOfSteps`).
-#
-# function hayes_modelf(du, u, h, p, t)
-#     τ, a, b, c, α, β, γ = p
-#     return du .= a .* u .+ b .* h(p, t - τ) .+ c
-# end
-# function hayes_modelg(du, u, h, p, t)
-#     τ, a, b, c, α, β, γ = p
-#     return du .= α .* u .+ β .* h(p, t - τ) .+ γ
-# end
-# h(p, t) = (ones(1) .+ t);
-# tspan = (0.0, 10.0)
-#
-# pmul = [1.0, -4.0, -2.0, 10.0, -1.3, -1.2, 1.1]
-# padd = [1.0, -4.0, -2.0, 10.0, -0.0, -0.0, 0.1]
-#
-# prob = SDDEProblem(
-#     hayes_modelf, hayes_modelg, [1.0], h, tspan, pmul;
-#     constant_lags = (pmul[1],)
-# );
-# dts = (1 / 2) .^ (7:-1:3)
-# test_dt = 1 / 2^8
-# sim2 = analyticless_test_convergence(
-#     dts, prob, MethodOfSteps(RKMil()), test_dt, trajectories = 100,
-#     use_noise_grid = false
-# )
-# @test abs(sim2.𝒪est[:final] - 1.0) < 0.3
+# DelayDiffEq's SDDE support — depends on DelayDiffEq's
+# `__solve`/`__init(::AbstractSDDEProblem, ::MethodOfSteps{<:AbstractSDEAlg})`
+# dispatches being in place (restored in SciML/OrdinaryDiffEq.jl#3505).
+
+function hayes_modelf(du, u, h, p, t)
+    τ, a, b, c, α, β, γ = p
+    return du .= a .* u .+ b .* h(p, t - τ) .+ c
+end
+function hayes_modelg(du, u, h, p, t)
+    τ, a, b, c, α, β, γ = p
+    return du .= α .* u .+ β .* h(p, t - τ) .+ γ
+end
+h(p, t) = (ones(1) .+ t);
+tspan = (0.0, 10.0)
+
+pmul = [1.0, -4.0, -2.0, 10.0, -1.3, -1.2, 1.1]
+padd = [1.0, -4.0, -2.0, 10.0, -0.0, -0.0, 0.1]
+
+prob = SDDEProblem(
+    hayes_modelf, hayes_modelg, [1.0], h, tspan, pmul;
+    constant_lags = (pmul[1],)
+);
+dts = (1 / 2) .^ (7:-1:3)
+test_dt = 1 / 2^8
+sim2 = analyticless_test_convergence(
+    dts, prob, MethodOfSteps(RKMil()), test_dt, trajectories = 100,
+    use_noise_grid = false
+)
+@test abs(sim2.𝒪est[:final] - 1.0) < 0.3
