@@ -14,7 +14,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 ADTypes = "1.16"
-DiffEqDevTools = "2.44.4"
+DiffEqDevTools = "3"
 Enzyme = "0.13"
 LinearAlgebra = "1.10"
 LinearSolve = "3.46"

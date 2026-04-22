@@ -343,6 +343,24 @@ OrdinaryDiffEqExplicitTableaus.DormandPrince()
 
 ~80+ functions renamed. Functions are no longer exported — qualify explicitly with the sublibrary name. The new names also exist on v6 as deprecations, so you can rename first and bump later.
 
+### DiffEqDevTools tableau constructors removed (DiffEqDevTools v2 → v3, breaking)
+
+Previously, DiffEqDevTools re-exported 105 `construct*` tableau constructors (`constructEuler`, `constructKutta3`, `constructRK4`, `constructRK438Rule`, `constructSSPRK22`, `constructImplicitEuler`, `constructMidpointRule`, `constructTrapezoidalRule`, `constructLobattoIIIA4`, `constructGL2`, …) defined in its own `src/ode_tableaus.jl`. These are **removed** in DiffEqDevTools v3 — the authoritative tableau definitions now live exclusively in `OrdinaryDiffEqExplicitTableaus` / `OrdinaryDiffEqImplicitTableaus` under their renamed bare forms.
+
+**Migration:**
+
+```julia
+# v6 (DiffEqDevTools v2)
+using DiffEqDevTools
+tab = constructRK4()
+
+# v7 (DiffEqDevTools v3)
+using OrdinaryDiffEqExplicitTableaus
+tab = OrdinaryDiffEqExplicitTableaus.RK4()
+```
+
+`DiffEqDevTools.deduce_Butcher_tableau(alg)` (which recovers A/b/c from a live solver) is kept unchanged, as is the `ODERKTableau` / `ExplicitRKTableau` / `ImplicitRKTableau` type surface.
+
 ---
 
 ## StochasticDiffEq / DelayDiffEq
