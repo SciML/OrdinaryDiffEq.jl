@@ -139,10 +139,5 @@ clos = "clos"  # closure abbreviation
 # Journal abbreviations in BibTeX citations
 Comput = "Comput"  # J. Comput. Phys. (Journal of Computational Physics)
 
-# Function names with historical spelling (API-stable)
-occurence = "occurence"  # in check_event_occurence, is_event_occurence
-occured = "occured"  # in comments near occurence functions
-occuring = "occuring"  # in comments near occurence functions
-
 # Julia spelling convention
 inferrable = "inferrable"  # Julia uses "inferrable" not "inferable"
