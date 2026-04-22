@@ -145,10 +145,6 @@ function DiffEqBase.check_prob_alg_pairing(
     if !(alg.alg isa SDEAlgUnion)
         throw(ProblemSolverPairingError(prob, alg))
     end
-    if isdefined(prob, :u0) && eltypedual(prob.u0) &&
-            !isautodifferentiable(alg)
-        throw(DirectAutodiffError())
-    end
     return nothing
 end
 
