@@ -11,6 +11,74 @@ Base.@constprop :aggressive function SciMLBase.__solve(
     return integrator.sol
 end
 
+# ----------------------------------------------------------------------------
+# _calculate_solution_errors!
+#
+# Thin wrapper around `SciMLBase.calculate_solution_errors!` that works around
+# an upstream bug in SciMLBase v3 on top of RecursiveArrayTools v4.
+#
+# RecursiveArrayTools v4 removed the
+#   `Base.length(VA::AbstractVectorOfArray) = length(VA.u)`
+# specialization. `length(sol)` now falls back to `prod(size(sol))`, i.e. the
+# number of scalar entries across the entire timeseries — not the number of
+# saved time points.
+#
+# SciMLBase's `calculate_solution_errors!(::AbstractRODESolution)` iterates
+# `for i in 1:length(sol)` and indexes `sol.t[i]` / `sol.W[:, i]`, which
+# overruns those arrays for any non-scalar state and throws a `BoundsError`
+# in the final `solve!` postamble on SDE/RODE problems.
+#
+# We special-case RODE solutions here: reimplement the error-fill loop with
+# the correct bound `length(sol.t)` and then delegate the scalar reductions
+# back to SciMLBase by calling the upstream function with
+# `fill_uanalytic = false`.
+#
+# For non-RODE solutions (ODE/DAE), forward to SciMLBase unchanged.
+# ----------------------------------------------------------------------------
+function _calculate_solution_errors!(sol; kwargs...)
+    return SciMLBase.calculate_solution_errors!(sol; kwargs...)
+end
+
+function _calculate_solution_errors!(
+        sol::SciMLBase.AbstractRODESolution; fill_uanalytic = true,
+        timeseries_errors = true, dense_errors = true
+    )
+    f = sol.prob.f isa Tuple ? sol.prob.f[1] : sol.prob.f
+
+    if fill_uanalytic
+        empty!(sol.u_analytic)
+        if f isa SciMLBase.RODEFunction && f.analytic_full == true
+            f.analytic(sol)
+        elseif sol.W isa RecursiveArrayTools.AbstractDiffEqArray{T, N, nothing} where {T, N}
+            for i in 1:length(sol.t)
+                push!(
+                    sol.u_analytic,
+                    f.analytic(
+                        sol.prob.u0, sol.prob.p, sol.t[i], first(sol.W(sol.t[i]))
+                    )
+                )
+            end
+        else
+            for i in 1:length(sol.t)
+                push!(
+                    sol.u_analytic,
+                    f.analytic(sol.prob.u0, sol.prob.p, sol.t[i], sol.W[:, i])
+                )
+            end
+        end
+    end
+
+    # Delegate the norm/L^p reductions to SciMLBase with fill_uanalytic=false
+    # so it doesn't re-enter the buggy loop above.
+    SciMLBase.calculate_solution_errors!(
+        sol;
+        fill_uanalytic = false,
+        timeseries_errors,
+        dense_errors
+    )
+    return nothing
+end
+
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Number, <:Number}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(DiffEqBase.value.(ts)))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = promote_type(typeof(DiffEqBase.value(ts[1])), typeof(DiffEqBase.value(ts[2]))) # This seems to be an assumption implicitly taken somewhere
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
@@ -788,7 +856,7 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
     f = f isa Tuple ? f[1] : f
 
     if SciMLBase.has_analytic(f)
-        SciMLBase.calculate_solution_errors!(
+        _calculate_solution_errors!(
             integrator.sol;
             timeseries_errors = integrator.opts.timeseries_errors,
             dense_errors = integrator.opts.dense_errors
