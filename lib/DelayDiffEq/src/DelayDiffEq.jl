@@ -1,6 +1,7 @@
 module DelayDiffEq
 
 import Reexport: @reexport, Reexport
+import SciMLBase
 @reexport using SciMLBase
 import OrdinaryDiffEqCore, OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqDifferentiation,
     OrdinaryDiffEqRosenbrock
@@ -22,13 +23,15 @@ import SymbolicIndexingInterface as SII
 using SciMLBase: AbstractDDEAlgorithm, AbstractDDEIntegrator, AbstractODEIntegrator,
     DEIntegrator
 using SciMLBase: AbstractSDDEProblem, SDDEProblem
+using SciMLBase: ProblemSolverPairingError, DirectAutodiffError, eltypedual,
+    isautodifferentiable
 
 using Base: deleteat!
 import FastBroadcast: @..
 
 using OrdinaryDiffEqNonlinearSolve: NLAnderson, NLFunctional
 using OrdinaryDiffEqCore: AbstractNLSolverCache, SlowConvergence,
-    alg_extrapolates, alg_maximum_order, initialize!, DEVerbosity
+    alg_extrapolates, alg_maximum_order, initialize!
 using OrdinaryDiffEqCore: StochasticDiffEqAlgorithm,
     StochasticDiffEqRODEAlgorithm,
     StochasticDiffEqConstantCache, StochasticDiffEqMutableCache
@@ -36,7 +39,7 @@ using OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
 using OrdinaryDiffEqFunctionMap: FunctionMap
 # using OrdinaryDiffEqDifferentiation: resize_grad_config!, resize_jac_config!
 
-using DiffEqBase: is_diagonal_noise
+using DiffEqBase: is_diagonal_noise, DEVerbosity
 
 # Explicit imports for functions
 using OrdinaryDiffEqCore: AutoSwitch, CompositeAlgorithm
@@ -53,9 +56,7 @@ using SciMLBase: CallbackSet, DAEProblem, DDEProblem, AbstractSciMLSolution, ODE
     change_t_via_interpolation!, isadaptive
 using DiffEqBase: initialize!
 import DiffEqBase
-using SciMLLogging: AbstractVerbosityPreset, None, @SciMLMessage
-
-import SciMLBase
+using SciMLLogging: AbstractVerbosityPreset, @SciMLMessage
 
 const SDEAlgUnion = Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}
 
@@ -130,5 +131,29 @@ end
 function DiffEqBase.check_prob_alg_pairing(prob::SDDEProblem, alg::SDEAlgUnion)
     return nothing
 end
+# Also bypass the default DDE-only pairing check when the user explicitly
+# constructs `MethodOfSteps(sde_alg)` for an SDDEProblem. Without this override
+# DiffEqBase.check_prob_alg_pairing sees `prob::SDDEProblem` with an
+# `AbstractDDEAlgorithm` (which MethodOfSteps subtypes) and throws
+# ProblemSolverPairingError — the auto-wrap path above covers bare SDE algs
+# but not the already-wrapped form produced by `solve(prob, MethodOfSteps(EM()))`.
+function DiffEqBase.check_prob_alg_pairing(
+        prob::SDDEProblem,
+        alg::AbstractMethodOfStepsAlgorithm
+    )
+    # MethodOfSteps wrapping an SDE algorithm is valid for SDDEProblem
+    if !(alg.alg isa SDEAlgUnion)
+        throw(ProblemSolverPairingError(prob, alg))
+    end
+    if isdefined(prob, :u0) && eltypedual(prob.u0) &&
+            !isautodifferentiable(alg)
+        throw(DirectAutodiffError())
+    end
+    return nothing
+end
+
+# SDE caches don't have fsalfirst/fsallast (SDE algorithms are never FSAL)
+OrdinaryDiffEqCore.get_fsalfirstlast(cache::StochasticDiffEqConstantCache, u) = (zero(u), zero(u))
+OrdinaryDiffEqCore.get_fsalfirstlast(cache::StochasticDiffEqMutableCache, u) = (zero(u), zero(u))
 
 end # module
