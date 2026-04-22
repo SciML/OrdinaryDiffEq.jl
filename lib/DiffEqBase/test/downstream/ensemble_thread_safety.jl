@@ -8,7 +8,8 @@ prob = ODEProblem(f, u0, tspan)
 n = 100
 
 initial_conditions = range(0, stop = 1, length = n)
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.sim_id; repeat = ctx.repeat
     prob.u0[1] = initial_conditions[i]
     return prob
 end

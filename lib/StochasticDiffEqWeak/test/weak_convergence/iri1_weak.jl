@@ -7,7 +7,8 @@ using StochasticDiffEqWeak, DiffEqDevTools, Test
 using Random
 
 seed = 103478
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.sim_id; repeat = ctx.repeat
     return remake(prob, seed = seeds[i])
 end
 
@@ -33,7 +34,7 @@ seeds = rand(UInt, numtraj)
 prob = SDEProblem(f, g, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h1(asinh(sol.u[end])), false),
+    output_func = (sol, ctx) -> (h1(asinh(sol.u[end])), false),
     prob_func = prob_func
 )
 
