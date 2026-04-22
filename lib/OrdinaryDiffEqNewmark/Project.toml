@@ -28,7 +28,7 @@ OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 ADTypes = "1.21.0"
 ConcreteStructs = "0.2.3"
 DiffEqBase = "7"
-DiffEqDevTools = "2.44.4"
+DiffEqDevTools = "3"
 FastBroadcast = "1.3"
 JET = "0.9, 0.11"
 LinearAlgebra = "<0.0.1, 1"
