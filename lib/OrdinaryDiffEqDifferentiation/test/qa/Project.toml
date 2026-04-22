@@ -14,6 +14,6 @@ path = "../.."
 [compat]
 Aqua = "0.8.11"
 JET = "0.9, 0.11"
-OrdinaryDiffEqCore = "3"
+OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqDifferentiation = "2"
 julia = "1.10"

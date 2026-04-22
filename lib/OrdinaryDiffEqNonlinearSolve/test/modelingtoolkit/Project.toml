@@ -18,12 +18,12 @@ OrdinaryDiffEqNonlinearSolve = {path = "../.."}
 OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
 
 [compat]
-DiffEqDevTools = "2"
+DiffEqDevTools = "3"
 IncompleteLU = "0.2"
 LinearSolve = "3"
 ModelingToolkit = "10.10, 11"
 NonlinearSolve = "4.10"
-OrdinaryDiffEq = "6, 7"
+OrdinaryDiffEq = "7"
 OrdinaryDiffEqBDF = "1"
 OrdinaryDiffEqNonlinearSolve = "1"
 OrdinaryDiffEqSDIRK = "1"

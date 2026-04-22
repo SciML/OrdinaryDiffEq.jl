@@ -18,4 +18,4 @@ OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
 ADTypes = "1.16"
 ForwardDiff = "0.10, 1"
 ModelingToolkit = "10.10, 11"
-OrdinaryDiffEq = "6, 7"
+OrdinaryDiffEq = "7"
