@@ -3,7 +3,7 @@ struct Rosenbrock23Tableau{T}
     d::T
 end
 
-function Rosenbrock23Tableau(T)
+function Rosenbrock23Tableau(::Type{T}) where {T}
     c₃₂ = convert(T, 6 + sqrt(2))
     d = convert(T, 1 / (2 + sqrt(2)))
     return Rosenbrock23Tableau(c₃₂, d)
@@ -14,7 +14,7 @@ struct Rosenbrock32Tableau{T}
     d::T
 end
 
-function Rosenbrock32Tableau(T)
+function Rosenbrock32Tableau(::Type{T}) where {T}
     c₃₂ = convert(T, 6 + sqrt(2))
     d = convert(T, 1 / (2 + sqrt(2)))
     return Rosenbrock32Tableau(c₃₂, d)
@@ -61,7 +61,7 @@ Reference: Steinebach, G. (2023). Construction of Rosenbrock-Wanner method Rodas
     and numerical benchmarks within the Julia Differential Equations package.
     BIT Numerical Mathematics, 63, 27.
 """
-function Rodas5PTableau(T, T2)
+function Rodas5PTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = 0.21193756319429014
     s = size(RODAS5PA, 1)
     b = T[RODAS5PA[s, i] for i in 1:(s - 1)]
@@ -72,7 +72,7 @@ function Rodas5PTableau(T, T2)
 end
 
 # Rodas5Pe uses the same tableau as Rodas5P but with a custom btilde
-function Rodas5PeTableau(T, T2)
+function Rodas5PeTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = 0.21193756319429014
     s = size(RODAS5PA, 1)
     b = T[RODAS5PA[s, i] for i in 1:(s - 1)]
@@ -158,7 +158,7 @@ A 19-stage 6th order L-stable Rosenbrock method.
 Reference: Steinebach, G. (2025). Rodas6P and Tsit5DA - two new Rosenbrock-type
     methods for DAEs. arXiv:2511.21252.
 """
-function Rodas6PTableau(T, T2)
+function Rodas6PTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = 0.26
     b = T[
         RODAS6PA[16, 1], RODAS6PA[16, 2], RODAS6PA[16, 3], RODAS6PA[16, 4],
@@ -185,7 +185,7 @@ end
 A W-method variant of Rodas3P, providing 2nd order solutions with 5 stages.
 Reference: Steinebach, G. (2024). Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications. Proceedings of the JuliaCon Conferences.
 """
-function Rodas23WRodasTableau(T, T2)
+function Rodas23WRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 1 // 3)
     a21 = convert(T, 4.0 / 3.0)
     a41 = convert(T, 2.90625)
@@ -239,7 +239,7 @@ end
 # Essential W-method tableaus (best for Jacobian reuse, see PR #3075)
 ################################################################################
 
-function ROS34PW3RodasTableau(T, T2)
+function ROS34PW3RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 1.0685790213016289)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 2.3541034887609085)
@@ -263,7 +263,7 @@ function ROS34PW3RodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
-function ROK4aRodasTableau(T, T2)
+function ROK4aRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.572816062482135)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 1.745761101158346)
@@ -365,7 +365,7 @@ const TSIT5DA_H = [
 A 12-stage order 5(4) hybrid explicit/linear-implicit method for DAEs.
 Reference: Steinebach (2025), arXiv:2511.21252
 """
-function Tsit5DATableau(T, T2)
+function Tsit5DATableau(::Type{T}, ::Type{T2}) where {T, T2}
     return Tsit5DATableau{T, T2}(
         TSIT5DA_A, TSIT5DA_GAMMA, convert(T2, 0.15),
         TSIT5DA_b, TSIT5DA_bhat, TSIT5DA_c, TSIT5DA_d, TSIT5DA_H
