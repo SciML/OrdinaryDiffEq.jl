@@ -9,6 +9,6 @@ OrdinaryDiffEq = {path = "../../../.."}
 OrdinaryDiffEqBDF = {path = "../../../OrdinaryDiffEqBDF"}
 
 [compat]
-OrdinaryDiffEq = "6, 7"
+OrdinaryDiffEq = "7"
 OrdinaryDiffEqBDF = "1"
 Sundials = "4, 5"

@@ -23,7 +23,7 @@ DynamicQuantities = "1.8"
 Enzyme = "0.13"
 FiniteDiff = "2.27"
 Measurements = "2.9"
-OrdinaryDiffEq = "6, 7"
+OrdinaryDiffEq = "7"
 OrdinaryDiffEqFeagin = "1"
 OrdinaryDiffEqHighOrderRK = "1"
 OrdinaryDiffEqLowOrderRK = "1"
@@ -32,7 +32,7 @@ OrdinaryDiffEqRosenbrock = "1"
 OrdinaryDiffEqSDIRK = "1"
 OrdinaryDiffEqSSPRK = "1"
 StaticArrays = "1"
-StochasticDiffEq = "6.60.1"
+StochasticDiffEq = "6"
 
 [sources]
 OrdinaryDiffEq = {path = "../../"}

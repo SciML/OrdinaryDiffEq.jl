@@ -12,9 +12,9 @@ OrdinaryDiffEqAdamsBashforthMoulton = {path = "../.."}
 OrdinaryDiffEqCore = {path = "../../../OrdinaryDiffEqCore"}
 
 [compat]
-DiffEqDevTools = "2.44.4"
+DiffEqDevTools = "3"
 FastBroadcast = "1.3"
 ODEProblemLibrary = "1"
 OrdinaryDiffEqAdamsBashforthMoulton = "1"
-OrdinaryDiffEqCore = "3"
+OrdinaryDiffEqCore = "4"
 Polyester = "0.7"
