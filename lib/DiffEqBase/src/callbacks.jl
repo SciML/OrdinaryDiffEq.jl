@@ -1,7 +1,9 @@
 """
-    initialize!(cb::CallbackSet,u,t,integrator::DEIntegrator)
+    initialize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
 
-Recursively apply `initialize!` and return whether any modified u
+Recursively apply `initialize!` to every callback in `cb` and return
+`true` if any of them signaled a derivative discontinuity (i.e. set
+`integrator.derivative_discontinuity = true`).
 """
 function initialize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
     return initialize!(
@@ -26,9 +28,10 @@ function initialize!(
 end
 
 """
-    finalize!(cb::CallbackSet,u,t,integrator::DEIntegrator)
+    finalize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
 
-Recursively apply `finalize!` and return whether any modified u
+Recursively apply `finalize!` to every callback in `cb` and return
+`true` if any of them signaled a derivative discontinuity.
 """
 function finalize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
     return finalize!(u, t, integrator, false, cb.continuous_callbacks..., cb.discrete_callbacks...)
