@@ -153,7 +153,9 @@ end
     return ode_addsteps!(integrator, args...)
 end
 
-@inline function ode_interpolant(Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
+@inline function ode_interpolant(
+        Θ, integrator::SciMLBase.DEIntegrator, idxs, ::Type{deriv}
+    ) where {deriv}
     SciMLBase.addsteps!(integrator)
     if integrator.cache isa CompositeCache
         val = composite_ode_interpolant(
@@ -175,8 +177,8 @@ end
 end
 
 function default_ode_interpolant(
-        Θ, integrator, cache::DefaultCache, alg_choice, idxs, deriv
-    )
+        Θ, integrator, cache::DefaultCache, alg_choice, idxs, ::Type{deriv}
+    ) where {deriv}
     if alg_choice == 1
         return ode_interpolant(
             Θ, integrator.dt, integrator.uprev,
@@ -220,8 +222,8 @@ end
 
 @generated function composite_ode_interpolant(
         Θ, integrator, caches::T, current, idxs,
-        deriv
-    ) where {T <: Tuple}
+        ::Type{deriv}
+    ) where {T <: Tuple, deriv}
     expr = Expr(:block)
     for i in 1:length(T.types)
         push!(
