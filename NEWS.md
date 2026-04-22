@@ -378,7 +378,7 @@ Same theme as the ODE side — all of the following break identically to the ODE
 
 `StochasticDelayDiffEq.jl` is deprecated. Use `DelayDiffEq.jl` directly — it has supported SDDE problems for some time, and the separate `StochasticDelayDiffEq` wrapper is no longer being maintained. It will not receive a v7-compatible release.
 
-**Migration:** replace `using StochasticDelayDiffEq` with `using DelayDiffEq` (plus `using StochasticDiffEq` if you were relying on the SDE algorithm re-exports). `MethodOfSteps(alg)` and the `SDDEProblem` constructor continue to work from `DelayDiffEq` / `SciMLBase` respectively.
+**Migration:** replace `using StochasticDelayDiffEq` with `using DelayDiffEq` (plus `using StochasticDiffEq` if you were relying on the SDE algorithm re-exports). `SDDEProblem` continues to work from `SciMLBase`; bare SDE algorithms are auto-wrapped in `MethodOfSteps` (no explicit wrap required on either the DDE or SDDE path).
 
 ```julia
 # v6
@@ -389,5 +389,5 @@ sol = solve(prob, RKMil())
 # v7
 using DelayDiffEq, StochasticDiffEq
 prob = SDDEProblem(f, g, u0, h, tspan; constant_lags = [1.0])
-sol = solve(prob, MethodOfSteps(RKMil()))
+sol = solve(prob, RKMil())  # auto-wrapped as MethodOfSteps(RKMil()) — DelayDiffEq.jl:99
 ```
