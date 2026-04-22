@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, StochasticDelayDiffEq, ParameterizedFunctions, Test, Random
+using OrdinaryDiffEq, DelayDiffEq, StochasticDiffEq, ParameterizedFunctions, Test, Random
 using ParameterizedFunctions.ModelingToolkit # macro hygiene
 f = @ode_def LotkaVolterra begin
     dx = 1.5x - x * y
@@ -49,7 +49,9 @@ sim2 = analyticless_test_convergence(
 
 # EnsembleProblem
 
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.sim_id
+    repeat = ctx.repeat
     return remake(prob, seed = seeds[i])
 end
 
@@ -77,7 +79,7 @@ Random.seed!(seed)
 seeds = rand(UInt, numtraj)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h2(sol[1, end]), false),
+    output_func = (sol, ctx) -> (h2(sol[1, end]), false),
     prob_func = prob_func
 )
 sim = test_convergence(
@@ -113,7 +115,7 @@ prob = SDDEProblem(
 dts = (1 / 2) .^ (7:-1:3)
 test_dt = 1 / 2^8
 sim2 = analyticless_test_convergence(
-    dts, prob, RKMil(), test_dt, trajectories = 100,
+    dts, prob, MethodOfSteps(RKMil()), test_dt, trajectories = 100,
     use_noise_grid = false
 )
 @test abs(sim2.𝒪est[:final] - 1.0) < 0.3

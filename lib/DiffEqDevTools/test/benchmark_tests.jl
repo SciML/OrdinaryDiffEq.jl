@@ -1,4 +1,11 @@
 using OrdinaryDiffEq, DelayDiffEq, BoundaryValueDiffEq, DiffEqDevTools, DiffEqBase, Test
+using OrdinaryDiffEqLowOrderRK: Euler, Midpoint, Heun, BS3, BS5, DP5, RK4
+using OrdinaryDiffEqTsit5: Tsit5
+using OrdinaryDiffEqVerner: Vern6, Vern7, Vern9
+using OrdinaryDiffEqRosenbrock: Rodas4, Rodas5, RosShamp4
+using OrdinaryDiffEqFIRK: RadauIIA5
+using OrdinaryDiffEqBDF: DFBDF
+using OrdinaryDiffEqNonlinearSolve: NLFunctional
 using ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 using DDEProblemLibrary: prob_dde_constant_1delay_ip
 using BVProblemLibrary: prob_bvp_linear_1
