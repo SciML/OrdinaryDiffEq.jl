@@ -11,10 +11,6 @@ Base.@kwdef struct TanYam7{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function TanYam7(stage_limiter!, step_limiter! = trivial_limiter!)
-    return TanYam7(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "Tsitouras-Papakostas 8/7 Runge-Kutta method.", "TsitPap8",
@@ -34,10 +30,6 @@ Base.@kwdef struct TsitPap8{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function TsitPap8(stage_limiter!, step_limiter! = trivial_limiter!)
-    return TsitPap8(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "Hairer's 8/5/3 adaption of the Dormand-Prince Runge-Kutta method.",
@@ -50,10 +42,6 @@ Base.@kwdef struct DP8{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdapt
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function DP8(stage_limiter!, step_limiter! = trivial_limiter!)
-    return DP8(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -77,8 +65,4 @@ Base.@kwdef struct PFRK87{StageLimiter, StepLimiter, Thread, T} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     omega::T = 0.0
-end
-# for backwards compatibility
-function PFRK87(stage_limiter!, step_limiter! = trivial_limiter!; omega = 0.0)
-    return PFRK87(stage_limiter!, step_limiter!, Serial(), omega)
 end

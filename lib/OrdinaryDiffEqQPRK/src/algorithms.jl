@@ -10,7 +10,3 @@ Base.@kwdef struct QPRK98{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function QPRK98(stage_limiter!, step_limiter! = trivial_limiter!)
-    return QPRK98(stage_limiter!, step_limiter!, Serial())
-end

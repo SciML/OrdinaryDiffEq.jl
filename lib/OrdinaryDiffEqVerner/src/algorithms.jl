@@ -23,10 +23,6 @@ Base.@kwdef struct Vern6{StageLimiter, StepLimiter, Thread, L} <:
     lazy::L = Val{true}()
 end
 @truncate_stacktrace Vern6 3
-# for backwards compatibility
-function Vern6(stage_limiter!, step_limiter! = trivial_limiter!; lazy = Val{true}())
-    return Vern6(stage_limiter!, step_limiter!, Serial(), lazy)
-end
 
 @doc explicit_rk_docstring(
     "Verner's most efficient 7/6 method (lazy 7th order interpolant). Good for problems requiring high accuracy. Slightly more computationally expensive than Tsit5. Performance best when parameter vector remains unchanged. Recommended for high-accuracy non-stiff problems.",
@@ -53,10 +49,6 @@ Base.@kwdef struct Vern7{StageLimiter, StepLimiter, Thread, L} <:
     lazy::L = Val{true}()
 end
 @truncate_stacktrace Vern7 3
-# for backwards compatibility
-function Vern7(stage_limiter!, step_limiter! = trivial_limiter!; lazy = Val{true}())
-    return Vern7(stage_limiter!, step_limiter!, Serial(), lazy)
-end
 
 @doc explicit_rk_docstring(
     "Verner's most efficient 8/7 method (lazy 8th order interpolant).",
@@ -83,10 +75,6 @@ Base.@kwdef struct Vern8{StageLimiter, StepLimiter, Thread, L} <:
     lazy::L = Val{true}()
 end
 @truncate_stacktrace Vern8 3
-# for backwards compatibility
-function Vern8(stage_limiter!, step_limiter! = trivial_limiter!; lazy = Val{true}())
-    return Vern8(stage_limiter!, step_limiter!, Serial(), lazy)
-end
 
 @doc explicit_rk_docstring(
     "Verner's most efficient 9/8 method (lazy 9th order interpolant).",
@@ -112,10 +100,6 @@ Base.@kwdef struct Vern9{StageLimiter, StepLimiter, Thread, L} <:
     lazy::L = Val{true}()
 end
 @truncate_stacktrace Vern9 3
-# for backwards compatibility
-function Vern9(stage_limiter!, step_limiter! = trivial_limiter!; lazy = Val{true}())
-    return Vern9(stage_limiter!, step_limiter!, Serial(), lazy)
-end
 
 """
 Automatic switching algorithm that can switch between the (non-stiff) `Vern6()` and `stiff_alg`.
@@ -180,7 +164,3 @@ Base.@kwdef struct RKV76IIa{StageLimiter, StepLimiter, Thread, L} <:
     lazy::L = Val{true}()
 end
 @truncate_stacktrace RKV76IIa 3
-# for backwards compatibility
-function RKV76IIa(stage_limiter!, step_limiter! = trivial_limiter!; lazy = Val{true}())
-    return RKV76IIa(stage_limiter!, step_limiter!, Serial(), lazy)
-end

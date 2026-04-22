@@ -29,10 +29,6 @@ Base.@kwdef struct Heun{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function Heun(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Heun(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "The optimized second order midpoint method. Uses embedded Euler method for adaptivity.",
@@ -47,10 +43,6 @@ Base.@kwdef struct Ralston{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function Ralston(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Ralston(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "The second order midpoint method. Uses embedded Euler method for adaptivity.",
@@ -64,10 +56,6 @@ Base.@kwdef struct Midpoint{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function Midpoint(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Midpoint(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -89,10 +77,6 @@ Base.@kwdef struct RK4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdapt
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function RK4(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RK4(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "Bogacki-Shampine 3/2 method. Third-order adaptive method using embedded Euler method for adaptivity. Recommended for non-stiff problems at moderate tolerances.",
@@ -112,10 +96,6 @@ Base.@kwdef struct BS3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdapt
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function BS3(stage_limiter!, step_limiter! = trivial_limiter!)
-    return BS3(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -138,10 +118,6 @@ Base.@kwdef struct OwrenZen3{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function OwrenZen3(stage_limiter!, step_limiter! = trivial_limiter!)
-    return OwrenZen3(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "Owren-Zennaro optimized interpolation 4/3 method (free 4th order interpolant).",
@@ -163,10 +139,6 @@ Base.@kwdef struct OwrenZen4{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function OwrenZen4(stage_limiter!, step_limiter! = trivial_limiter!)
-    return OwrenZen4(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "Owren-Zennaro optimized interpolation 5/4 method (free 5th order interpolant).",
@@ -187,10 +159,6 @@ Base.@kwdef struct OwrenZen5{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function OwrenZen5(stage_limiter!, step_limiter! = trivial_limiter!)
-    return OwrenZen5(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -215,10 +183,6 @@ Base.@kwdef struct BS5{StageLimiter, StepLimiter, Thread, L} <: OrdinaryDiffEqAd
     thread::Thread = Serial()
     lazy::L = Val{true}()
 end
-# for backwards compatibility
-function BS5(stage_limiter!, step_limiter! = trivial_limiter!; lazy = Val{true}())
-    return BS5(stage_limiter!, step_limiter!, Serial(), lazy)
-end
 
 @doc explicit_rk_docstring(
     "Dormand-Prince's 5/4 Runge-Kutta method. (free 4th order interpolant).",
@@ -238,10 +202,6 @@ Base.@kwdef struct DP5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdapt
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function DP5(stage_limiter!, step_limiter! = trivial_limiter!)
-    return DP5(stage_limiter!, step_limiter!, Serial())
 end
 
 AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
@@ -268,10 +228,6 @@ Base.@kwdef struct Anas5{StageLimiter, StepLimiter, Thread, T} <: OrdinaryDiffEq
     thread::Thread = Serial()
     w::T = 1
 end
-# for backwards compatibility
-function Anas5(stage_limiter!, step_limiter! = trivial_limiter!; w = 1)
-    return Anas5(stage_limiter!, step_limiter!, Serial(), w)
-end
 
 @doc explicit_rk_docstring(
     "Tsitouras' Runge-Kutta-Oliver 6 stage 5th order method.", "RKO65",
@@ -283,10 +239,6 @@ Base.@kwdef struct RKO65{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlg
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function RKO65(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RKO65(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -312,10 +264,6 @@ Base.@kwdef struct FRK65{StageLimiter, StepLimiter, Thread, T} <:
     omega::T = 0.0
 end
 
-# for backwards compatibility
-function FRK65(stage_limiter!, step_limiter! = trivial_limiter!; omega = 0.0)
-    return FRK65(stage_limiter!, step_limiter!, Serial(), omega)
-end
 
 @doc explicit_rk_docstring(
     """Method designed to have good stability properties
@@ -338,10 +286,6 @@ Base.@kwdef struct RKM{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgor
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function RKM(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RKM(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "4th order Ralston method with minimum truncation error for 4-stage explicit Runge-Kutta.",
@@ -361,9 +305,6 @@ Base.@kwdef struct Ralston4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEq
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-function Ralston4(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Ralston4(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "5th order method.", "MSRK5",
@@ -374,10 +315,6 @@ Base.@kwdef struct MSRK5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlg
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function MSRK5(stage_limiter!, step_limiter! = trivial_limiter!)
-    return MSRK5(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "6th order method.", "MSRK6",
@@ -387,10 +324,6 @@ Base.@kwdef struct MSRK6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlg
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function MSRK6(stage_limiter!, step_limiter! = trivial_limiter!)
-    return MSRK6(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -476,10 +409,6 @@ Base.@kwdef struct Stepanov5{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function Stepanov5(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Stepanov5(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "5th order method suited for SIR-type epidemic models.",
@@ -498,10 +427,6 @@ Base.@kwdef struct SIR54{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function SIR54(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SIR54(stage_limiter!, step_limiter!, Serial())
 end
 
 @doc explicit_rk_docstring(
@@ -527,10 +452,6 @@ Base.@kwdef struct Alshina2{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function Alshina2(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Alshina2(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "3rd order, 3-stage Method with optimal parameters.",
@@ -555,10 +476,6 @@ Base.@kwdef struct Alshina3{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function Alshina3(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Alshina3(stage_limiter!, step_limiter!, Serial())
-end
 
 @doc explicit_rk_docstring(
     "6th order, 7-stage Method with optimal parameters.",
@@ -581,8 +498,4 @@ Base.@kwdef struct Alshina6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEq
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function Alshina6(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Alshina6(stage_limiter!, step_limiter!, Serial())
 end
