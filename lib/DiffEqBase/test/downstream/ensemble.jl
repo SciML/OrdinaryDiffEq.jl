@@ -82,7 +82,7 @@ sim = solve(prob2, Tsit5(), trajectories = 10000, batch_size = 20)
 @test sim.converged == true
 
 prob_func = function (prob, ctx)
-    i = ctx.i
+    i = ctx.sim_id
     return ODEProblem(prob.f, (1 + i / 100) * prob.u0, prob.tspan, 1.01)
 end
 

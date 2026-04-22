@@ -16,7 +16,7 @@ function weak_error(
 end
 
 function prob_func(prob, ctx)
-    i = ctx.i; repeat = ctx.repeat
+    i = ctx.sim_id; repeat = ctx.repeat
     #(i%50000 == 0) && @show i
     return remake(prob, seed = seeds[i])
 end
@@ -26,7 +26,7 @@ function reduction(u, batch, I)
 end
 
 function output_func(sol, ctx)
-    i = ctx.i
+    i = ctx.sim_id
     #h1(asinh(sol.u[end][1])),false
     return h1.(asinh.(sol)), false
 end

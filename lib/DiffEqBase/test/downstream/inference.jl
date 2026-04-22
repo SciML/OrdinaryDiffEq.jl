@@ -60,7 +60,7 @@ function solve_ode(f::F, p::P, ensemblealg; kwargs...) where {F, P}
     # prob = ODEProblem(f, [0., 0.], tspan, p)
 
     prob_func = (prob, ctx) -> begin
-        i = ctx.i
+        i = ctx.sim_id
         remake(prob, tspan = (T[i + 1], t[1]))
     end
 

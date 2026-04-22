@@ -12,7 +12,7 @@ using Random
 using DiffEqDevTools
 seed = 103473
 function prob_func(prob, ctx)
-    i = ctx.i; repeat = ctx.repeat
+    i = ctx.sim_id; repeat = ctx.repeat
     return remake(prob, seed = seeds[i])
 end
 

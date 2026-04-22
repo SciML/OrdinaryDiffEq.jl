@@ -11,7 +11,7 @@ println("There are $(nprocs()) processes")
     prob = ODEProblem((u, p, t) -> 1.01u, 0.5, (0.0, 1.0))
     u0s = [rand() * prob.u0 for i in 1:2]
     function simple_prob_func(prob, ctx)
-        i = ctx.i; repeat = ctx.repeat
+        i = ctx.sim_id; repeat = ctx.repeat
         println("Running trajectory $i")
         ODEProblem(prob.f, u0s[i], prob.tspan)
     end
