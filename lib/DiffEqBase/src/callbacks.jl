@@ -231,9 +231,9 @@ end
         nudged_t = bottom_t
     end
 
-    # Check if an event occured
+    # Check if an event occurred
     event_occurred, event_idx, top_t, top_sign =
-        check_event_occurence(integrator, callback, bottom_sign)
+        check_event_occurrence(integrator, callback, bottom_sign)
 
     # Track simultaneous events
     (; simultaneous_events) = integrator.callback_cache
@@ -242,7 +242,7 @@ end
         simultaneous_events .= Int8(0)
     end
 
-    # Find callback time if occurence
+    # Find callback time if occurrence
     if !event_occurred
         callback_t = integrator.t
         min_event_idx = 1
@@ -328,9 +328,9 @@ end
     end
     bottom_sign = sign(bottom_condition)
 
-    # Check if an event occured
+    # Check if an event occurred
     event_occurred, event_idx, top_t, top_sign =
-        check_event_occurence(integrator, callback, bottom_sign)
+        check_event_occurrence(integrator, callback, bottom_sign)
 
     if !event_occurred
         callback_t = integrator.t
@@ -351,8 +351,8 @@ end
 """
 Return a nudged (if necessary) value of `integrator.tprev` to avoid repeat event detection
 - `integrator`
-- `callback`: Last occuring callback
-- `condition_tprev`: Condition of last occuring callback evaluated at `integrator.tprev`
+- `callback`: Last occurring callback
+- `condition_tprev`: Condition of last occurring callback evaluated at `integrator.tprev`
 """
 function nudge_tprev(integrator, callback, condition_tprev)
     # Assume the previous event might affect the condition/root
@@ -366,12 +366,12 @@ function nudge_tprev(integrator, callback, condition_tprev)
 end
 
 """
-Determine if an event occured in the integration time step
+Determine if an event occurred in the integration time step
 """
-function check_event_occurence(integrator, callback, bottom_sign)
+function check_event_occurrence(integrator, callback, bottom_sign)
     top_t = integrator.t
     event_occurred, event_idx, top_sign =
-        check_event_occurence_upto(integrator, callback, bottom_sign, top_t)
+        check_event_occurrence_upto(integrator, callback, bottom_sign, top_t)
 
     if callback.interp_points != 0 && !isdiscrete(integrator.alg) &&
             any(iszero, event_idx)
@@ -380,7 +380,7 @@ function check_event_occurence(integrator, callback, bottom_sign)
         for i in 2:length(ts)
             top_t = ts[i]
             event_occurred, event_idx, top_sign =
-                check_event_occurence_upto(integrator, callback, bottom_sign, top_t)
+                check_event_occurrence_upto(integrator, callback, bottom_sign, top_t)
             if event_occurred
                 break
             end
@@ -391,22 +391,22 @@ function check_event_occurence(integrator, callback, bottom_sign)
 end
 
 """
-Determine if an event occured before `top_t``
+Determine if an event occurred before `top_t``
 """
-function check_event_occurence_upto(integrator, callback::ContinuousCallback, bottom_sign, top_t)
+function check_event_occurrence_upto(integrator, callback::ContinuousCallback, bottom_sign, top_t)
     top_sign = sign(get_condition(integrator, callback, top_t))
-    event_occurred = is_event_occurence(bottom_sign, top_sign, callback.affect!, callback.affect_neg!)
+    event_occurred = is_event_occurrence(bottom_sign, top_sign, callback.affect!, callback.affect_neg!)
     event_idx = event_occurred ? 1.0 : 0.0
     return event_occurred, event_idx, top_sign
 end
 
-function check_event_occurence_upto(integrator, callback::VectorContinuousCallback, bottom_sign, top_t)
+function check_event_occurrence_upto(integrator, callback::VectorContinuousCallback, bottom_sign, top_t)
     event_idx = top_condition = @views(integrator.callback_cache.next_condition[1:(callback.len)])
     top_sign = @view(integrator.callback_cache.next_sign[1:(callback.len)])
     copyto!(top_condition, get_condition(integrator, callback, top_t))
     @. top_sign = sign(top_condition)
 
-    # Determine event occurence
+    # Determine event occurrence
     event_occurred = findall_events!(
         top_condition, callback.affect!, callback.affect_neg!,
         bottom_sign
@@ -440,7 +440,7 @@ findall_events!(next_sign,affect!,affect_neg!,prev_sign)
 
 Modifies `next_sign` to be an array of booleans for if there is a sign change
 in the interval between prev_sign and next_sign.
-Return `true` if any event occured.
+Return `true` if any event occurred.
 """
 function findall_events!(
         next_sign::Union{Array, SubArray}, affect!::F1, affect_neg!::F2,
@@ -465,9 +465,9 @@ function findall_events!(next_sign, affect!::F1, affect_neg!::F2, prev_sign) whe
 end
 
 """
-Return `true` if an event occured.
+Return `true` if an event occurred.
 """
-function is_event_occurence(prev_sign::Number, next_sign::Number, affect!::F1, affect_neg!::F2) where {F1, F2}
+function is_event_occurrence(prev_sign::Number, next_sign::Number, affect!::F1, affect_neg!::F2) where {F1, F2}
     return (
         (prev_sign < 0 && affect! !== nothing) ||
             (prev_sign > 0 && affect_neg! !== nothing)
