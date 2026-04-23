@@ -76,7 +76,7 @@ using Test
                     (typeof(integrator), typeof(cache))
                 )
 
-                @test length(allocs) == 0 broken=true
+                @test length(allocs) == 0 broken = true
 
                 if length(allocs) > 0
                     println(
@@ -107,7 +107,7 @@ using Test
                     (typeof(integrator), typeof(cache))
                 )
 
-                @test length(allocs) == 0 broken=true
+                @test length(allocs) == 0 broken = true
 
                 if length(allocs) > 0
                     println(
