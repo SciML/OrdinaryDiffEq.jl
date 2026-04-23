@@ -5,12 +5,12 @@ alg_order(alg::ISSEM) = 1 // 2
 alg_order(alg::ISSEulerHeun) = 1 // 2
 alg_order(alg::SKenCarp) = 2 // 1
 
-default_controller(QT, alg::ImplicitEM) = PredictiveController(QT, alg)
-default_controller(QT, alg::ImplicitEulerHeun) = PredictiveController(QT, alg)
-default_controller(QT, alg::ImplicitRKMil) = PredictiveController(QT, alg)
-default_controller(QT, alg::ISSEM) = PredictiveController(QT, alg)
-default_controller(QT, alg::ISSEulerHeun) = PredictiveController(QT, alg)
-default_controller(QT, alg::SKenCarp) = PredictiveController(QT, alg)
+default_controller(QT, alg::ImplicitEM) = PIController(QT, alg)
+default_controller(QT, alg::ImplicitEulerHeun) = PIController(QT, alg)
+default_controller(QT, alg::ImplicitRKMil) = PIController(QT, alg)
+default_controller(QT, alg::ISSEM) = PIController(QT, alg)
+default_controller(QT, alg::ISSEulerHeun) = PIController(QT, alg)
+default_controller(QT, alg::SKenCarp) = PIController(QT, alg)
 
 supports_regular_jumps(::ImplicitEM) = true
 isadaptive(prob::JumpProblem, alg::ImplicitEM) = false
