@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqFunctionMap: FunctionMap
+using OrdinaryDiffEqLowOrderRK: Euler
 using SciMLBase: DiscreteProblem, DiscreteFunction
 using ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 

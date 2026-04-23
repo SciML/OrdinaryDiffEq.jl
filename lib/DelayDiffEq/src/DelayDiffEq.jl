@@ -23,8 +23,7 @@ import SymbolicIndexingInterface as SII
 using SciMLBase: AbstractDDEAlgorithm, AbstractDDEIntegrator, AbstractODEIntegrator,
     DEIntegrator
 using SciMLBase: AbstractSDDEProblem, SDDEProblem
-using SciMLBase: ProblemSolverPairingError, DirectAutodiffError, eltypedual,
-    isautodifferentiable
+using SciMLBase: ProblemSolverPairingError
 
 using Base: deleteat!
 import FastBroadcast: @..
@@ -33,8 +32,7 @@ using OrdinaryDiffEqNonlinearSolve: NLAnderson, NLFunctional
 using OrdinaryDiffEqCore: AbstractNLSolverCache, SlowConvergence,
     alg_extrapolates, alg_maximum_order, initialize!
 using OrdinaryDiffEqCore: StochasticDiffEqAlgorithm,
-    StochasticDiffEqRODEAlgorithm,
-    StochasticDiffEqConstantCache, StochasticDiffEqMutableCache
+    StochasticDiffEqRODEAlgorithm
 using OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
 using OrdinaryDiffEqFunctionMap: FunctionMap
 # using OrdinaryDiffEqDifferentiation: resize_grad_config!, resize_jac_config!
