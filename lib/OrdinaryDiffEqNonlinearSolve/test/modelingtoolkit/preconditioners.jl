@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, LinearSolve, Test, IncompleteLU, SparseArrays
+using OrdinaryDiffEq, OrdinaryDiffEqSDIRK, LinearSolve, Test, IncompleteLU, SparseArrays
 
 # Required due to https://github.com/JuliaSmoothOptimizers/Krylov.jl/pull/477
 Base.eltype(::IncompleteLU.ILUFactorization{Tv, Ti}) where {Tv, Ti} = Tv

@@ -1,5 +1,6 @@
 # Import packages
 using OrdinaryDiffEqExtrapolation, RecursiveFactorization, DiffEqDevTools, Test, Random
+using Polyester
 
 println("Running on $(Threads.nthreads()) thread(s).")
 

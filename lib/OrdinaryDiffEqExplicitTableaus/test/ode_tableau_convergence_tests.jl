@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqDevTools, Test, Random
+using OrdinaryDiffEq, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqLowOrderRK, DiffEqDevTools, Test, Random
 using ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear,
     prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 

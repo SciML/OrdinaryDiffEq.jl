@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, SciMLBase, Test
+using OrdinaryDiffEq, OrdinaryDiffEqSDIRK, SciMLBase, Test
 my_f(u, p, t) = u
 my_f!(du, u, p, t) = du .= u
 ode = ODEProblem(my_f, [1.0], (0.0, 1.0))
