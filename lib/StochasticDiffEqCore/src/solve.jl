@@ -60,6 +60,16 @@ function _resolve_rng(rng, seed, prob)
             )
         end
         if rng isa Random.TaskLocalRNG
+            # TaskLocalRNG is the ensemble-layer default, not an explicit
+            # per-trajectory RNG. If the user set an explicit seed (via the
+            # `seed` kwarg or `prob.seed`, typically from `remake(prob, seed=…)`
+            # inside `prob_func`), respect it over the TaskLocalRNG so
+            # `remake(prob, seed=s)` inside an ensemble is actually reproducible.
+            if !iszero(seed)
+                return Random.Xoshiro(seed), seed, false
+            elseif prob isa DiffEqBase.AbstractRODEProblem && !iszero(prob.seed)
+                return Random.Xoshiro(prob.seed), prob.seed, false
+            end
             _seed = rand(rng, UInt64)
             return Random.Xoshiro(_seed), _seed, true
         end
