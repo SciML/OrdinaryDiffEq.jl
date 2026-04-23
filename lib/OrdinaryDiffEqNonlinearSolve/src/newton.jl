@@ -142,13 +142,19 @@ end
         )
         nlstep_data.nlprobmap(ztmp, nlstepsol)
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
+        atmp_sub = @view(atmp[nlstep_data.u0perm])
         calculate_residuals!(
-            @view(atmp[nlstep_data.u0perm]), nlcache.fu,
+            atmp_sub, nlcache.fu,
             @view(uprev[nlstep_data.u0perm]),
             @view(ustep[nlstep_data.u0perm]), opts.abstol,
             opts.reltol, opts.internalnorm, t
         )
-        ndz = opts.internalnorm(atmp, t)
+        # Norm must be computed over the nlstep subset only.
+        # The full-length `atmp` has zeros in non-`u0perm` slots (set in
+        # `initialize!`), which would otherwise dilute the scalar norm
+        # (e.g. `ODE_DEFAULT_NORM` divides by `length`), causing the Newton
+        # convergence check to declare success ~sqrt(n_full/n_sub) early.
+        ndz = opts.internalnorm(atmp_sub, t)
     else
         @.. broadcast = false ztmp = nlcache.u
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
